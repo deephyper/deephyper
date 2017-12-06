@@ -1,3 +1,6 @@
+Directory structure 
+===================
+
 benchmarks
     directory for problems
 experiments
