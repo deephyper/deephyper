@@ -1,0 +1,15 @@
+#!/bin/bash -x
+#COBALT -n 1
+#COBALT -q debug-flat-quad
+#COBALT -A Performance
+#COBALT -t 30
+
+outputfile=../experiments//exp-01/results/00002.dat
+
+ut=$(date '+%s')
+echo START TIME:$ut > ../experiments//exp-01/results/00002.dat
+echo INPUT:"['GRU', 13, 24, 'softmax', 5, 304, 'rmsprop', 3.8341913262237588, 0.021109115757441975, 1.5078918237243573, 0.91181040318519824, 2.0917132779888141, True, 1.4485620765158984, 6.5452945128207443, 8.8571985334996697, 1.6417219080088203]" >> ../experiments//exp-01/results/00002.dat
+python /Users/pbalapra/Projects/repos/2017/dl-hps/benchmarks/b1/addition_rnn.py --rnn_type=GRU --layers=24 --activation=softmax --epochs=5 --batch_size=304 --optimizer=rmsprop --clipnorm=3.83419132622 --clipvalue=0.0211091157574 --learning_rate=1.50789182372 --momentum=0.911810403185 --decay=2.09171327799 --nesterov=True --rho=1.44856207652 --epsilon=6.54529451282 --beta1=8.8571985335 --beta2=1.64172190801   >> ../experiments//exp-01/results/00002.dat
+ut=$(date '+%s')
+echo END TIME:$ut>> ../experiments//exp-01/results/00002.dat
+echo 
