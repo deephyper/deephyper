@@ -65,7 +65,7 @@ def saveResults(resultsList, json_fname, csv_fname):
         json.dump(resultsList, outfile, indent=4, sort_keys=True)
 
     keys = resultsList[0].keys()
-    with open(csv_fname, 'wb') as output_file:
+    with open(csv_fname, 'w') as output_file:
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
         dict_writer.writerows(resultsList)

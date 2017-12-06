@@ -8,6 +8,23 @@ experiments
 search
     directory for source files
 ```
+Install instructions
+====================
+
+With anaconda do the following:
+
+```
+conda create -n dl-hps python=3
+source activate dl-hps
+conda install h5py
+conda install scikit-learn
+conda install pandas
+conda install -c conda-forge keras
+conda install -c conda-forge scikit-optimize
+git clone https://github.com/scikit-optimize/scikit-optimize.git
+cd scikit-optimize
+pip install -e.
+```
 Usage
 =====
 ```
@@ -31,5 +48,6 @@ optional arguments:
 ```
 Example
 =======
-
+```
 mpiexec -np 2 python async-search.py --prob_dir=../benchmarks/b1 --exp_dir=../experiments/ --exp_id=exp-01 --max_evals=10 --max_time=60 
+```
