@@ -10,7 +10,7 @@ search
 
 Usage
 =====
-
+```
 usage: async-search.py [-h] [-v] [--prob_dir [PROB_DIR]] [--exp_dir [EXP_DIR]]
                        [--exp_id [EXP_ID]] [--max_evals [MAX_EVALS]]
                        [--max_time [MAX_TIME]]
@@ -26,7 +26,7 @@ optional arguments:
                         maximum number of evaluations
   --max_time [MAX_TIME]
                         maximum time in secs
-
+```
 Example
 =======
 
