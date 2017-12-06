@@ -1,16 +1,18 @@
 Directory structure 
 ===================
-
+```
 benchmarks
     directory for problems
 experiments
     directory for saving the running the experiments and storing the results
 search
     directory for source files
-
+```
 Usage
 =====
 ```
+cd search
+
 usage: async-search.py [-h] [-v] [--prob_dir [PROB_DIR]] [--exp_dir [EXP_DIR]]
                        [--exp_id [EXP_ID]] [--max_evals [MAX_EVALS]]
                        [--max_time [MAX_TIME]]
