@@ -25,6 +25,7 @@ conda install -c conda-forge scikit-optimize
 git clone https://github.com/scikit-optimize/scikit-optimize.git
 cd scikit-optimize
 pip install -e.
+conda install -c conda-forge xgboost 
 ```
 Usage
 =====

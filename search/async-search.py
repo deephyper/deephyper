@@ -22,6 +22,7 @@ from skopt import Optimizer
 from utils import *
 import os
 import argparse
+from ExtremeGradientBoostingQuantileRegressor import ExtremeGradientBoostingQuantileRegressor
 seed = 12345
 
 def create_parser():
@@ -109,7 +110,7 @@ if rank == 0:
     evalDict = {}
     resultsList = []
     parDict['kappa'] = 0
-    opt = Optimizer(space, base_estimator=RF, acq_optimizer='sampling',
+    opt = Optimizer(space, base_estimator=ExtremeGradientBoostingQuantileRegressor(), acq_optimizer='sampling',
                     acq_func='LCB', acq_func_kwargs=parDict, random_state=seed)
     print("Master starting with %d workers" % num_workers)
     while closed_workers < num_workers:
@@ -153,9 +154,6 @@ if rank == 0:
             print("Worker %d exited." % source)
             closed_workers = closed_workers + 1
     print('Search finishing')
-    # print(resultsList)
-    # print(json.dumps(resultsList, indent=4, sort_keys=True))
-    
     saveResults(resultsList, results_json_fname, results_csv_fname)
 
 else:
