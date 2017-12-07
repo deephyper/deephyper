@@ -19,6 +19,7 @@ source activate dl-hps
 conda install h5py
 conda install scikit-learn
 conda install pandas
+conda install mpi4py
 conda install -c conda-forge keras
 conda install -c conda-forge scikit-optimize
 git clone https://github.com/scikit-optimize/scikit-optimize.git

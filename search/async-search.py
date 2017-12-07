@@ -109,7 +109,7 @@ if rank == 0:
     evalDict = {}
     resultsList = []
     parDict['kappa'] = 0
-    opt = Optimizer(space, base_estimator="RF", acq_optimizer='sampling',
+    opt = Optimizer(space, base_estimator=RF, acq_optimizer='sampling',
                     acq_func='LCB', acq_func_kwargs=parDict, random_state=seed)
     print("Master starting with %d workers" % num_workers)
     while closed_workers < num_workers:
