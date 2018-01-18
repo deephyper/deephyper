@@ -109,6 +109,7 @@ if rank == 0:
     evalDict = {}
     resultsList = []
     parDict['kappa'] = 0
+    init_x = []
     opt = Optimizer(space, base_estimator='RF', acq_optimizer='sampling',
                     acq_func='LCB', acq_func_kwargs=parDict, random_state=seed)
     print("Master starting with %d workers" % num_workers)
@@ -123,9 +124,13 @@ if rank == 0:
                 # Worker is ready, so send it a task
                 if starting_point is not None:
                     x = starting_point
+                    init_x = opt.ask(n_points=num_workers-1)
                     starting_point = None
                 else:
-                    x = opt.ask(n_points=1)[0]
+                    if len(init_x) > 0:
+                        x = init_x.pop(0)
+                    else:
+                        x = opt.ask(n_points=1)[0]
                 key = str(x)
                 print('sample %s' % key)
                 if key in evalDict.keys():
