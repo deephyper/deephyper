@@ -134,13 +134,14 @@ def create_job(x, eval_counter, cfg):
     with open(fname, 'w') as fp:
         fp.write(json.dumps(task))
 
-    dag.spawn_child(name=jname, workflow="dl-hps",
+    child = dag.spawn_child(name=jname, workflow="dl-hps",
                 application="eval_point", wall_time_minutes=2,
                 num_nodes=1, ranks_per_node=1,
                 input_files=f"{jname}.dat", 
                 application_args=f"{jname}.dat",
                 wait_for_parents=False
                )
+    return child.job_id
 
 def saveResults(resultsList, json_fname, csv_fname):
     print(resultsList)
@@ -166,6 +167,7 @@ def main():
 
     evalDict = {}
     resultsList = []
+    my_jobs = []
     finished_jobs = []
 
     # Gracefully handle shutdown
@@ -186,6 +188,7 @@ def main():
         if len(finished_jobs) == cfg.max_evals: break
         
         # Read in new results
+        new_jobs = BalsamJob.objects.filter(job_id__in=my_jobs)
         new_jobs = BalsamJob.objects.filter(state="JOB_FINISHED")
         new_jobs = new_jobs.exclude(job_id__in=finished_jobs)
         for job in new_jobs:
@@ -217,7 +220,8 @@ def main():
             key = str(x)
             if key in evalDict: print(f"{key} already submitted!")
             evalDict[key] = None
-            create_job(x, eval_counter, cfg)
+            jobid = create_job(x, eval_counter, cfg)
+            my_jobs.append(jobid)
     
     print('Hyperopt driver finishing')
     saveResults(resultsList, cfg.results_json_fname, cfg.results_csv_fname)
