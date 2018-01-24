@@ -1,16 +1,19 @@
 import argparse
+import json
 import os
 from pprint import pprint
+import signal
 import sys
 import time
 
 from skopt import Optimizer
 
-from balsam.service.models import BalsamJob, END_STATES
 import balsam.launcher.dag as dag
+from balsam.service.models import BalsamJob, END_STATES
 
-from search.ExtremeGradientBoostingQuantileRegressor import ExtremeGradientBoostingQuantileRegressor
-from search.utils import saveResults
+from dl_hps.search.ExtremeGradientBoostingQuantileRegressor import ExtremeGradientBoostingQuantileRegressor
+from dl_hps.search.utils import saveResults
+from dl_hps.benchmarks.b1.problem import Problem
 
 SEED = 12345
 MAX_QUEUED_TASKS = 128
@@ -76,24 +79,22 @@ def configureOptimizer(args):
     class Config: pass
     P = Config()
     P.prob_dir = args.prob_dir #'/Users/pbalapra/Projects/repos/2017/dl-hps/benchmarks/test'
-    sys.path.insert(0, P.prob_dir)
 
     P.exp_dir = args.exp_dir #'/Users/pbalapra/Projects/repos/2017/dl-hps/experiments'
     P.eid = args.exp_id  #'exp-01'
     P.max_evals = args.max_evals 
     P.max_time = args.max_time
 
-    P.exp_dir = os.path.join(P.exp_dir, str(eid))
+    P.exp_dir = os.path.join(P.exp_dir, str(P.eid))
     P.jobs_dir = os.path.join(P.exp_dir, 'jobs')
     P.results_dir = os.path.join(P.exp_dir, 'results')
     dirs = P.exp_dir, P.jobs_dir, P.results_dir
     for dir_name in dirs:
         if not os.path.exists(dir_name): os.makedirs(dir_name)
 
-    P.results_json_fname = os.path.join(exp_dir, f"{P.eid}_results.json")
-    P.results_json_fname = os.path.join(exp_dir, f"{P.eid}_results.csv")
+    P.results_json_fname = os.path.join(P.exp_dir, f"{P.eid}_results.json")
+    P.results_json_fname = os.path.join(P.exp_dir, f"{P.eid}_results.csv")
     
-    from problem import Problem
     instance = Problem()
     P.params = instance.params
     P.starting_point = instance.starting_point
@@ -118,11 +119,16 @@ def create_job(x, eval_counter, cfg):
     task['jobs_dir'] = cfg.jobs_dir
     task['results_dir'] = cfg.results_dir
 
+
     print(f"Adding task {eval_counter} to job DB")
     jname = f"task{eval_counter}"
+    fname = f"{jname}.dat"
+
+    with open(fname, 'w') as fp:
+        fp.write(json.dumps(task))
 
     dag.add_job(name=jname, workflow="dl-hps",
-                application="eval_point", wall_minutes=2,
+                application="eval_point", wall_time_minutes=2,
                 num_nodes=1, ranks_per_node=1,
                 input_files=f"{jname}.dat", 
                 application_args=f"{jname}.dat"
@@ -135,7 +141,7 @@ def main():
     cfg = configureOptimizer(args)
     opt = cfg.optimizer
 
-    timer = elapsed_timer(max_runtime=max_time)
+    timer = elapsed_timer(max_runtime=cfg.max_time)
     eval_counter = 0
 
     evalDict = {}
@@ -144,7 +150,9 @@ def main():
 
     # Gracefully handle shutdown
     SIG_TERMINATE = False
-    handler = lambda a,b: SIG_TERMINATE = True
+    def handler(signum, stack):
+        print('Received SIGINT/SIGTERM')
+        SIG_TERMINATE = True
     signal.signal(signal.SIGINT, handler)
     signal.signal(signal.SIGTERM, handler)
 
@@ -191,7 +199,6 @@ def main():
         if SIG_TERMINATE: break
     
     print('Hyperopt driver finishing')
-    if SIG_TERMINATE: print('Received SIGINT/SIGTERM')
     saveResults(resultsList, cfg.results_json_fname, cfg.results_csv_fname)
 
 if __name__ == "__main__":
