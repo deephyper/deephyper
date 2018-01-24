@@ -189,7 +189,7 @@ def main():
         
         # Read in new results
         new_jobs = BalsamJob.objects.filter(job_id__in=my_jobs)
-        new_jobs = BalsamJob.objects.filter(state="JOB_FINISHED")
+        new_jobs = new_jobs.filter(state="JOB_FINISHED")
         new_jobs = new_jobs.exclude(job_id__in=finished_jobs)
         for job in new_jobs:
             result = json.loads(job.read_file_in_workdir('result.dat'))
