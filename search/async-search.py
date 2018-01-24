@@ -1,5 +1,6 @@
 import argparse
 import json
+from numpy import float64, int64
 import os
 from pprint import pprint
 import signal
@@ -93,10 +94,10 @@ def configureOptimizer(args):
         if not os.path.exists(dir_name): os.makedirs(dir_name)
 
     P.results_json_fname = os.path.join(P.exp_dir, f"{P.eid}_results.json")
-    P.results_json_fname = os.path.join(P.exp_dir, f"{P.eid}_results.csv")
+    P.results_csv_fname = os.path.join(P.exp_dir, f"{P.eid}_results.csv")
     
     instance = Problem()
-    P.params = instance.params
+    P.params = list(instance.params)
     P.starting_point = instance.starting_point
     
     spaceDict = instance.space
@@ -119,6 +120,9 @@ def create_job(x, eval_counter, cfg):
     task['jobs_dir'] = cfg.jobs_dir
     task['results_dir'] = cfg.results_dir
 
+    for i, val in enumerate(x):
+        if type(val) is int64: x[i]   = int(val)
+        if type(val) is float64: x[i] = float(val)
 
     print(f"Adding task {eval_counter} to job DB")
     jname = f"task{eval_counter}"
@@ -153,6 +157,9 @@ def main():
     def handler(signum, stack):
         print('Received SIGINT/SIGTERM')
         SIG_TERMINATE = True
+        saveResults(resultsList, cfg.results_json_fname, cfg.results_csv_fname)
+        sys.exit(0)
+
     signal.signal(signal.SIGINT, handler)
     signal.signal(signal.SIGTERM, handler)
 
@@ -161,6 +168,20 @@ def main():
     for elapsed_seconds in timer:
         print("Elapsed time:", pretty_time(elapsed_seconds))
         if len(finished_jobs) == cfg.max_evals: break
+        
+        # Read in new results
+        new_jobs = BalsamJob.objects.filter(state="JOB_FINISHED")
+        new_jobs = new_jobs.exclude(job_id__in=finished_jobs)
+        for job in new_jobs:
+            result = json.loads(job.read_file_in_workdir('result.dat'))
+            result['run_time'] = job.runtime_seconds
+            print(f"Got data from {job.cute_id}")
+            pprint(result)
+            resultsList.append(result)
+            finished_jobs.append(job.job_id)
+            x = result['x']
+            y = result['cost']
+            opt.tell(x, y)
         
         # Which points, and how many, are next?
         if cfg.starting_point is not None:
@@ -181,22 +202,6 @@ def main():
             if key in evalDict: print(f"{key} already submitted!")
             evalDict[key] = None
             create_job(x, eval_counter, cfg)
-
-        # Read in new results
-        new_jobs = BalsamJob.objects.filter(state="JOB_FINISHED")
-        new_jobs = new_jobs.exclude(job_id__in=finished_jobs)
-        for job in new_jobs:
-            result = json.loads(job.read_file_in_workdir('result.dat'))
-            result['run_time'] = job.runtime_seconds
-            print(f"Got data from {job.cute_id}")
-            pprint(result)
-            resultsList.append(result)
-            finished_jobs.append(job.job_id)
-            x = result['x']
-            y = result['cost']
-            opt.tell(x, y)
-
-        if SIG_TERMINATE: break
     
     print('Hyperopt driver finishing')
     saveResults(resultsList, cfg.results_json_fname, cfg.results_csv_fname)

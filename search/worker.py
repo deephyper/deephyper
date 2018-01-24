@@ -1,6 +1,6 @@
 import json
 from pprint import pprint
-from search.utils import evaluatePoint
+from dl_hps.search.utils import evaluatePoint
 from sys import argv
 
 with open(argv[1]) as fp:
