@@ -1,33 +1,54 @@
-#!/usr/bin/env python
-"""Demonstrate the task-pull paradigm for high-throughput computing
-using mpi4py. Task pull is an efficient way to perform a large number of
-independent tasks when there are more tasks than processors, especially
-when the run times vary for each task.
-
-This code is over-commented for instructional purposes.
-
-This example was contributed by Craig Finch (cfinch@ieee.org).
-Inspired by http://math.acadiau.ca/ACMMaC/Rmpi/index.html
-"""
-from __future__ import print_function
-
-from mpi4py import MPI
-import re
+import argparse
 import os
+from pprint import pprint
 import sys
 import time
-import json
-import math
+
 from skopt import Optimizer
-from utils import *
-import os
-import argparse
-from ExtremeGradientBoostingQuantileRegressor import ExtremeGradientBoostingQuantileRegressor
-seed = 12345
+
+from balsam.service.models import BalsamJob, END_STATES
+import balsam.launcher.dag as dag
+
+from search.ExtremeGradientBoostingQuantileRegressor import ExtremeGradientBoostingQuantileRegressor
+from search.utils import saveResults
+
+SEED = 12345
+MAX_QUEUED_TASKS = 128
+SERVICE_PERIOD = 5
+
+def elapsed_timer(max_runtime=None):
+    '''Iterator over elapsed seconds; ensure delay of SERVICE_PERIOD
+    Raises StopIteration when time is up'''
+    if max_runtime is None: 
+        max_runtime = float('inf')
+
+    start = time.time()
+    nexttime = start + SERVICE_PERIOD
+    while True:
+        now = time.time()
+        elapsed = now - start
+        if elapsed > max_runtime+0.5:
+            raise StopIteration
+        else:
+            yield elapsed
+        tosleep = nexttime - now
+        if tosleep <= 0:
+            nexttime = now + SERVICE_PERIOD
+        else:
+            nexttime = now + tosleep + SERVICE_PERIOD
+            time.sleep(tosleep)
+
+
+def pretty_time(seconds):
+    '''Format time string'''
+    seconds = round(seconds)
+    minutes, seconds = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+    return "%02d:%02d:%02d" % (hours,minutes,seconds)
+
 
 def create_parser():
-    'command line parser for keras'
-
+    '''Command line parser for Keras'''
     parser = argparse.ArgumentParser(add_help=True)
     group = parser.add_argument_group('required arguments')
     parser.add_argument('-v', '--version', action='version',
@@ -47,128 +68,131 @@ def create_parser():
     parser.add_argument('--max_time', action='store', dest='max_time',
                         nargs='?', const=1, type=float, default='60',
                         help='maximum time in secs')
-
-    return(parser)
-
-parser = create_parser()
-cmdline_args = parser.parse_args()
-param_dict = vars(cmdline_args)
-
-prob_dir = param_dict['prob_dir'] #'/Users/pbalapra/Projects/repos/2017/dl-hps/benchmarks/test'
-exp_dir = param_dict['exp_dir'] #'/Users/pbalapra/Projects/repos/2017/dl-hps/experiments'
-eid = param_dict['exp_id'] #'exp-01'
-max_evals = param_dict['max_evals']
-max_time = param_dict['max_time']
+    return parser
 
 
+def configureOptimizer(args):
+    '''Return a Config object with skopt.Optimizer and various options configured'''
+    class Config: pass
+    P = Config()
+    P.prob_dir = args.prob_dir #'/Users/pbalapra/Projects/repos/2017/dl-hps/benchmarks/test'
+    sys.path.insert(0, P.prob_dir)
+
+    P.exp_dir = args.exp_dir #'/Users/pbalapra/Projects/repos/2017/dl-hps/experiments'
+    P.eid = args.exp_id  #'exp-01'
+    P.max_evals = args.max_evals 
+    P.max_time = args.max_time
+
+    P.exp_dir = os.path.join(P.exp_dir, str(eid))
+    P.jobs_dir = os.path.join(P.exp_dir, 'jobs')
+    P.results_dir = os.path.join(P.exp_dir, 'results')
+    dirs = P.exp_dir, P.jobs_dir, P.results_dir
+    for dir_name in dirs:
+        if not os.path.exists(dir_name): os.makedirs(dir_name)
+
+    P.results_json_fname = os.path.join(exp_dir, f"{P.eid}_results.json")
+    P.results_json_fname = os.path.join(exp_dir, f"{P.eid}_results.csv")
+    
+    from problem import Problem
+    instance = Problem()
+    P.params = instance.params
+    P.starting_point = instance.starting_point
+    
+    spaceDict = instance.space
+    space = [spaceDict[key] for key in P.params]
+    
+    parDict = {}
+    parDict['kappa'] = 0
+    P.optimizer = Optimizer(space, base_estimator=ExtremeGradientBoostingQuantileRegressor(), acq_optimizer='sampling',
+                    acq_func='LCB', acq_func_kwargs=parDict, random_state=SEED)
+    return P
 
 
+def create_job(x, eval_counter, cfg):
+    '''Add a new evaluatePoint job to the Balsam DB'''
+    task = {}
+    task['x'] = x
+    task['eval_counter'] = eval_counter
+    task['params'] = cfg.params
+    task['prob_dir'] = cfg.prob_dir
+    task['jobs_dir'] = cfg.jobs_dir
+    task['results_dir'] = cfg.results_dir
 
-exp_dir = exp_dir+'/'+eid
-jobs_dir = exp_dir+'/jobs'
-results_dir = exp_dir+'/results'
-results_json_fname = exp_dir+'/'+eid+'_results.json'
-results_csv_fname = exp_dir+'/'+eid+'_results.csv'
+    print(f"Adding task {eval_counter} to job DB")
+    jname = f"task{eval_counter}"
 
-sys.path.insert(0, prob_dir)
-import problem as problem
-instance = problem.Problem()
-spaceDict = instance.space
-params = instance.params
-starting_point = instance.starting_point
+    dag.add_job(name=jname, workflow="dl-hps",
+                application="eval_point", wall_minutes=2,
+                num_nodes=1, ranks_per_node=1,
+                input_files=f"{jname}.dat", 
+                application_args=f"{jname}.dat"
+               )
 
-def enum(*sequential, **named):
-    """Handy way to fake an enumerated type in Python
-    http://stackoverflow.com/questions/36932/how-can-i-represent-an-enum-in-python
-    """
-    enums = dict(zip(sequential, range(len(sequential))), **named)
-    return type('Enum', (), enums)
+def main():
+    '''Service loop: add jobs; read results; drive optimizer'''
+    parser = create_parser()
+    args = parser.parse_args()
+    cfg = configureOptimizer(args)
+    opt = cfg.optimizer
 
-# Define MPI message tags
-tags = enum('READY', 'DONE', 'EXIT', 'START')
-
-# Initializations and preliminaries
-comm = MPI.COMM_WORLD   # get MPI communicator object
-size = comm.size        # total number of processes
-rank = comm.rank        # rank of this process
-status = MPI.Status()   # get MPI status object
-
-# Master process executes code below
-if rank == 0:
-    start_time = time.time()
-    for dir_name in [exp_dir, jobs_dir, results_dir]: 
-        if not os.path.exists(dir_name):
-            os.makedirs(dir_name)
-
-    num_workers = size - 1
-    closed_workers = 0
-    space = [spaceDict[key] for key in params]
+    timer = elapsed_timer(max_runtime=max_time)
     eval_counter = 0
 
-
-    parDict = {}
     evalDict = {}
     resultsList = []
-    parDict['kappa'] = 0
-    opt = Optimizer(space, base_estimator=ExtremeGradientBoostingQuantileRegressor(), acq_optimizer='sampling',
-                    acq_func='LCB', acq_func_kwargs=parDict, random_state=seed)
-    print("Master starting with %d workers" % num_workers)
-    while closed_workers < num_workers:
-        data = comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
-        source = status.Get_source()
-        tag = status.Get_tag()
-        elapsed_time = float(time.time() - start_time)
-        print('elapsed_time:%1.3f'%elapsed_time)
-        if tag == tags.READY:
-            if eval_counter < max_evals and elapsed_time < max_time:
-                # Worker is ready, so send it a task
-                if starting_point is not None:
-                    x = starting_point
-                    starting_point = None
-                else:
-                    x = opt.ask(n_points=1)[0]
-                key = str(x)
-                print('sample %s' % key)
-                if key in evalDict.keys():
-                    print('%s already evalauted' % key)
-                evalDict[key] = None
-                task = {}
-                task['x'] = x
-                task['eval_counter'] = eval_counter
-                task['start_time'] = elapsed_time
-                print("Sending task %d to worker %d" % (eval_counter, source))
-                comm.send(task, dest=source, tag=tags.START)
-                eval_counter = eval_counter + 1
-            else:
-                comm.send(None, dest=source, tag=tags.EXIT)
-        elif tag == tags.DONE:
-            result = data
-            result['end_time'] = elapsed_time
-            print("Got data from worker %d" % source)
-            print(result)
+    finished_jobs = []
+
+    # Gracefully handle shutdown
+    SIG_TERMINATE = False
+    handler = lambda a,b: SIG_TERMINATE = True
+    signal.signal(signal.SIGINT, handler)
+    signal.signal(signal.SIGTERM, handler)
+
+    print("Hyperopt driver starting")
+
+    for elapsed_seconds in timer:
+        print("Elapsed time:", pretty_time(elapsed_seconds))
+        if len(finished_jobs) == cfg.max_evals: break
+        
+        # Which points, and how many, are next?
+        if cfg.starting_point is not None:
+            XX = [cfg.starting_point]
+            cfg.starting_point = None
+        elif eval_counter < cfg.max_evals:
+            already_active = BalsamJob.objects.exclude(state__in=END_STATES).count()
+            num_tocreate = max(MAX_QUEUED_TASKS - already_active, 0)
+            num_tocreate = min(num_tocreate, cfg.max_evals - eval_counter)
+            XX = opt.ask(n_points=num_tocreate) if num_tocreate else []
+        else:
+            XX = []
+                
+        # Create a BalsamJob for each point
+        for x in XX:
+            eval_counter += 1
+            key = str(x)
+            if key in evalDict: print(f"{key} already submitted!")
+            evalDict[key] = None
+            create_job(x, eval_counter, cfg)
+
+        # Read in new results
+        new_jobs = BalsamJob.objects.filter(state="JOB_FINISHED")
+        new_jobs = new_jobs.exclude(job_id__in=finished_jobs)
+        for job in new_jobs:
+            result = json.loads(job.read_file_in_workdir('result.dat'))
+            result['run_time'] = job.runtime_seconds
+            print(f"Got data from {job.cute_id}")
+            pprint(result)
             resultsList.append(result)
+            finished_jobs.append(job.job_id)
             x = result['x']
             y = result['cost']
             opt.tell(x, y)
-        elif tag == tags.EXIT:
-            print("Worker %d exited." % source)
-            closed_workers = closed_workers + 1
-    print('Search finishing')
-    saveResults(resultsList, results_json_fname, results_csv_fname)
 
-else:
-    # Worker processes execute code below
-    name = MPI.Get_processor_name()
-    print("worker with rank %d on %s." % (rank, name))
-    while True:
-        comm.send(None, dest=0, tag=tags.READY)
-        task = comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
-        tag = status.Get_tag()
-        if tag == tags.START:
-            print(task)
-            result = evaluatePoint(task['x'], task['eval_counter'], params, prob_dir, jobs_dir, results_dir)
-            result['start_time'] = task['start_time']
-            comm.send(result, dest=0, tag=tags.DONE)
-        elif tag == tags.EXIT:
-            break
-    comm.send(None, dest=0, tag=tags.EXIT)
+        if SIG_TERMINATE: break
+    
+    print('Hyperopt driver finishing')
+    if SIG_TERMINATE: print('Received SIGINT/SIGTERM')
+    saveResults(resultsList, cfg.results_json_fname, cfg.results_csv_fname)
+
+if __name__ == "__main__":
+    main()

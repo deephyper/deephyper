@@ -1,6 +1,5 @@
 from string import Template
 import re
-import os
 import sys
 import time
 import json
@@ -8,6 +7,7 @@ import math
 import os
 import subprocess
 import csv
+
 def readResults(fname, evalnum):
     pattern1 = re.compile("START TIME:", re.IGNORECASE)
     pattern2 = re.compile("OUTPUT:", re.IGNORECASE)
