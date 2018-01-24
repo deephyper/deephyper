@@ -1,9 +1,12 @@
 import argparse
+import csv
 import json
 from numpy import float64, int64
 import os
 from pprint import pprint
 import signal
+from importlib import import_module
+from importlib.util import find_spec
 import sys
 import time
 
@@ -13,12 +16,10 @@ import balsam.launcher.dag as dag
 from balsam.service.models import BalsamJob, END_STATES
 
 from dl_hps.search.ExtremeGradientBoostingQuantileRegressor import ExtremeGradientBoostingQuantileRegressor
-from dl_hps.search.utils import saveResults
-from dl_hps.benchmarks.b1.problem import Problem
 
 SEED = 12345
 MAX_QUEUED_TASKS = 128
-SERVICE_PERIOD = 5
+SERVICE_PERIOD = 2
 
 def elapsed_timer(max_runtime=None):
     '''Iterator over elapsed seconds; ensure delay of SERVICE_PERIOD
@@ -57,9 +58,12 @@ def create_parser():
     group = parser.add_argument_group('required arguments')
     parser.add_argument('-v', '--version', action='version',
                         version='%(prog)s 0.1')
-    parser.add_argument("--prob_dir", nargs='?', type=str,
-                        default='../problems/prob1',
-                        help="problem directory")
+    parser.add_argument("--benchmark", nargs='?', type=str,
+                        default='b1.addition_rnn',
+                        help="name of benchmark module (e.g. b1.addition_rnn)")
+    parser.add_argument("--backend", nargs='?', type=str,
+                        default='tensorflow',
+                        help="Keras backend module name")
     parser.add_argument("--exp_dir", nargs='?', type=str,
                         default='../experiments',
                         help="experiments directory")
@@ -67,7 +71,7 @@ def create_parser():
                         default='exp-01',
                         help="experiments id")
     parser.add_argument('--max_evals', action='store', dest='max_evals',
-                        nargs='?', const=2, type=int, default='30',
+                        nargs='?', const=2, type=int, default='10',
                         help='maximum number of evaluations')
     parser.add_argument('--max_time', action='store', dest='max_time',
                         nargs='?', const=1, type=float, default='60',
@@ -79,24 +83,25 @@ def configureOptimizer(args):
     '''Return a Config object with skopt.Optimizer and various options configured'''
     class Config: pass
     P = Config()
-    P.prob_dir = args.prob_dir #'/Users/pbalapra/Projects/repos/2017/dl-hps/benchmarks/test'
 
-    P.exp_dir = args.exp_dir #'/Users/pbalapra/Projects/repos/2017/dl-hps/experiments'
+    top = args.benchmark.split('.')[0]
+    problem = import_module(f'dl_hps.benchmarks.{top}.problem')
+    P.benchmark = find_spec(f'dl_hps.benchmarks.{args.benchmark}').origin # b1.addition_rnn
+    P.backend = args.backend
+
+    P.exp_dir = os.path.expanduser(args.exp_dir) #'/Users/pbalapra/Projects/repos/2017/dl-hps/experiments'
     P.eid = args.exp_id  #'exp-01'
     P.max_evals = args.max_evals 
     P.max_time = args.max_time
 
     P.exp_dir = os.path.join(P.exp_dir, str(P.eid))
-    P.jobs_dir = os.path.join(P.exp_dir, 'jobs')
-    P.results_dir = os.path.join(P.exp_dir, 'results')
-    dirs = P.exp_dir, P.jobs_dir, P.results_dir
-    for dir_name in dirs:
-        if not os.path.exists(dir_name): os.makedirs(dir_name)
+    if not os.path.exists(P.exp_dir):
+        os.makedirs(P.exp_dir)
 
     P.results_json_fname = os.path.join(P.exp_dir, f"{P.eid}_results.json")
     P.results_csv_fname = os.path.join(P.exp_dir, f"{P.eid}_results.csv")
     
-    instance = Problem()
+    instance = problem.Problem()
     P.params = list(instance.params)
     P.starting_point = instance.starting_point
     
@@ -114,11 +119,9 @@ def create_job(x, eval_counter, cfg):
     '''Add a new evaluatePoint job to the Balsam DB'''
     task = {}
     task['x'] = x
-    task['eval_counter'] = eval_counter
     task['params'] = cfg.params
-    task['prob_dir'] = cfg.prob_dir
-    task['jobs_dir'] = cfg.jobs_dir
-    task['results_dir'] = cfg.results_dir
+    task['benchmark'] = cfg.benchmark
+    task['backend'] = cfg.backend
 
     for i, val in enumerate(x):
         if type(val) is int64: x[i]   = int(val)
@@ -131,12 +134,25 @@ def create_job(x, eval_counter, cfg):
     with open(fname, 'w') as fp:
         fp.write(json.dumps(task))
 
-    dag.add_job(name=jname, workflow="dl-hps",
+    dag.spawn_child(name=jname, workflow="dl-hps",
                 application="eval_point", wall_time_minutes=2,
                 num_nodes=1, ranks_per_node=1,
                 input_files=f"{jname}.dat", 
-                application_args=f"{jname}.dat"
+                application_args=f"{jname}.dat",
+                wait_for_parents=False
                )
+
+def saveResults(resultsList, json_fname, csv_fname):
+    print(resultsList)
+    print(json.dumps(resultsList, indent=4, sort_keys=True))
+    with open(json_fname, 'w') as outfile:
+        json.dump(resultsList, outfile, indent=4, sort_keys=True)
+
+    keys = resultsList[0].keys()
+    with open(csv_fname, 'w') as output_file:
+        dict_writer = csv.DictWriter(output_file, keys)
+        dict_writer.writeheader()
+        dict_writer.writerows(resultsList)
 
 def main():
     '''Service loop: add jobs; read results; drive optimizer'''
