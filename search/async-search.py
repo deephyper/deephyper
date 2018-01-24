@@ -207,7 +207,8 @@ def main():
             XX = [cfg.starting_point]
             cfg.starting_point = None
         elif eval_counter < cfg.max_evals:
-            already_active = BalsamJob.objects.exclude(state__in=END_STATES).count()
+            already_active = BalsamJob.objects.filter(job_id__in=my_jobs)
+            already_active = already_active.exclude(state__in=END_STATES).count()
             num_tocreate = max(MAX_QUEUED_TASKS - already_active, 0)
             num_tocreate = min(num_tocreate, cfg.max_evals - eval_counter)
             XX = opt.ask(n_points=num_tocreate) if num_tocreate else []
