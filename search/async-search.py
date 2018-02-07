@@ -53,6 +53,10 @@ def pretty_time(seconds):
 
 
 def create_parser():
+    here = os.path.dirname(__file__)
+    parent = os.path.dirname(here)
+    exp_dir = os.path.join(parent, 'experiments')
+
     '''Command line parser for Keras'''
     parser = argparse.ArgumentParser(add_help=True)
     group = parser.add_argument_group('required arguments')
@@ -65,7 +69,7 @@ def create_parser():
                         default='tensorflow',
                         help="Keras backend module name")
     parser.add_argument("--exp_dir", nargs='?', type=str,
-                        default='../experiments',
+                        default=exp_dir,
                         help="experiments directory")
     parser.add_argument("--exp_id", nargs='?', type=str,
                         default='exp-01',
@@ -76,6 +80,7 @@ def create_parser():
     parser.add_argument('--max_time', action='store', dest='max_time',
                         nargs='?', const=1, type=float, default='60',
                         help='maximum time in secs')
+    print("exp_dir", exp_dir)
     return parser
 
 
@@ -134,7 +139,7 @@ def create_job(x, eval_counter, cfg):
     with open(fname, 'w') as fp:
         fp.write(json.dumps(task))
 
-    child = dag.spawn_child(name=jname, workflow="dl-hps",
+    child = dag.spawn_child(name=jname, 
                 application="eval_point", wall_time_minutes=2,
                 num_nodes=1, ranks_per_node=1,
                 input_files=f"{jname}.dat", 
