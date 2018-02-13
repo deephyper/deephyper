@@ -2,9 +2,11 @@ import argparse
 import csv
 import json
 from math import isnan
+from numpy import integer, floating, ndarray
 import os
 from pprint import pprint
 import pickle
+from uuid import UUID
 from re import findall
 import signal
 from importlib import import_module
@@ -23,19 +25,30 @@ sys.path.append(top)
 from dl_hps.search.ExtremeGradientBoostingQuantileRegressor import ExtremeGradientBoostingQuantileRegressor
 
 SEED = 12345                # Optimizer initialized with this random seed
-MAX_QUEUED_TASKS = 128      # Limit of pending hyperparam evaluation jobs in DB
+MAX_QUEUED_TASKS = 4      # Limit of pending hyperparam evaluation jobs in DB
 SERVICE_PERIOD = 2          # Delay (seconds) between main loop iterations
 CHECKPOINT_INTERVAL = 10    # How many jobs to complete between optimizer checkpoints
 
 
 class Encoder(json.JSONEncoder):
     '''Enables JSON dump of numpy data'''
-    from numpy import integer, floating, ndarray
     def default(self, obj):
+        if isinstance(obj, UUID): return obj.hex
         if isinstance(obj, integer): return int(obj)
         elif isinstance(obj, floating): return float(obj)
         elif isinstance(obj, ndarray): return obj.tolist()
         else: return super(Encoder, self).default(obj)
+
+class Config:
+    '''Optimizer and related options datastore'''
+    def __init__(self):
+        self.backend = None
+        self.max_evals = None
+        self.repeat_evals = None
+        self.benchmark_filename = None
+        self.params = None
+        self.starting_point = None
+        self.optimizer = None
 
 
 def elapsed_timer(max_runtime_minutes=None):
@@ -95,9 +108,7 @@ def create_parser():
 
 def configureOptimizer(args):
     '''Return a Config object containing skopt.Optimizer and various options'''
-    class Config: pass
     cfg = Config()
-    
     cfg.backend = args.backend
     cfg.max_evals = args.max_evals 
     cfg.repeat_evals = args.repeat_evals
@@ -170,7 +181,7 @@ def save_checkpoint(resultsList, opt_config, my_jobs, finished_jobs):
     with open('results.json', 'w') as fp:
         json.dump(resultsList, fp, indent=4, sort_keys=True, cls=Encoder)
 
-    keys = resultsList[0].keys()
+    keys = resultsList[0].keys() if resultsList else []
     with open('results.csv', 'w') as fp:
         dict_writer = csv.DictWriter(fp, keys)
         dict_writer.writeheader()
@@ -203,10 +214,12 @@ def next_points(cfg, eval_counter, my_jobs, opt):
     elif eval_counter < cfg.max_evals:
         already_active = BalsamJob.objects.filter(job_id__in=my_jobs.keys())
         already_active = already_active.exclude(state__in=END_STATES).count()
+        print("Tracking", already_active, "pending jobs")
         num_tocreate = max(MAX_QUEUED_TASKS - already_active, 0)
         num_tocreate = min(num_tocreate, cfg.max_evals - eval_counter)
         XX = opt.ask(n_points=num_tocreate) if num_tocreate else []
     else:
+        print("Reached max_evals; no longer starting new runs")
         XX = []
 
     if not cfg.repeat_evals:
@@ -234,7 +247,7 @@ def read_result(job, my_jobs):
     '''Return dict of hyperparams, cost, runtime'''
     outfile = os.path.join(job.working_directory, f"{job.name}.out")
     cost = read_cost(outfile)
-    x = json.loads(my_jobs[job.job_id])
+    x = json.loads(my_jobs[job.job_id.hex])
     runtime = job.runtime_seconds
     result = dict(run_time=runtime, x=x, cost=cost)
     return result
@@ -248,6 +261,15 @@ def main():
     args = parser.parse_args()
     cfg = configureOptimizer(args)
     opt = cfg.optimizer
+
+    if dag.current_job is None:
+        this = dag.add_job(name='search', workflow='dl_hps',
+                           wall_time_minutes=60
+                          )
+        this.create_working_path()
+        this.update_state('JOB_FINISHED')
+        dag.current_job = this
+        dag.JOB_ID = this.job_id
 
     walltime = dag.current_job.wall_time_minutes
     timer = elapsed_timer(max_runtime_minutes=walltime)
@@ -265,7 +287,7 @@ def main():
         eval_counter = len(my_jobs)
         print(f"Resume at eval # {eval_counter} from {chk_dir}")
 
-    assert id(opt) == id(cfg.opt)
+    assert id(opt) == id(cfg.optimizer)
 
     # Gracefully handle shutdown
     def handler(signum, stack):
@@ -279,9 +301,9 @@ def main():
     # MAIN LOOP
     print("Hyperopt driver starting")
     for elapsed_seconds in timer:
-        print("Elapsed time:", pretty_time(elapsed_seconds))
+        print("\nElapsed time:", pretty_time(elapsed_seconds))
         if len(finished_jobs) == cfg.max_evals: break
-        
+
         # Read in new results
         new_jobs = BalsamJob.objects.filter(job_id__in=my_jobs.keys())
         new_jobs = new_jobs.filter(state="JOB_FINISHED")
@@ -309,12 +331,13 @@ def main():
         # Create a BalsamJob for each point
         for x in XX:
             jobid = create_job(x, eval_counter, cfg)
-            my_jobs[jobid] = json.dumps(x, cls=Encoder)
+            my_jobs[jobid.hex] = json.dumps(x, cls=Encoder)
             eval_counter += 1
 
         if chkpoint_counter >= CHECKPOINT_INTERVAL:
             save_checkpoint(resultsList, cfg, my_jobs, finished_jobs)
             chkpoint_counter = 0
+        sys.stdout.flush()
     
     # EXIT
     print('Hyperopt driver finishing')
