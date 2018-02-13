@@ -1,9 +1,11 @@
 import argparse
 import csv
 import json
-from numpy import float64, int64
+from math import isnan
 import os
 from pprint import pprint
+import pickle
+from re import findall
 import signal
 from importlib import import_module
 from importlib.util import find_spec
@@ -11,21 +13,38 @@ import sys
 import time
 
 from skopt import Optimizer
-
 import balsam.launcher.dag as dag
 from balsam.service.models import BalsamJob, END_STATES
 
+here = os.path.dirname(os.path.abspath(__file__)) # search dir
+top  = os.path.dirname(os.path.dirname(here)) # directory containing dl_hps
+sys.path.append(top)
+
 from dl_hps.search.ExtremeGradientBoostingQuantileRegressor import ExtremeGradientBoostingQuantileRegressor
 
-SEED = 12345
-MAX_QUEUED_TASKS = 128
-SERVICE_PERIOD = 2
+SEED = 12345                # Optimizer initialized with this random seed
+MAX_QUEUED_TASKS = 128      # Limit of pending hyperparam evaluation jobs in DB
+SERVICE_PERIOD = 2          # Delay (seconds) between main loop iterations
+CHECKPOINT_INTERVAL = 10    # How many jobs to complete between optimizer checkpoints
 
-def elapsed_timer(max_runtime=None):
+
+class Encoder(json.JSONEncoder):
+    '''Enables JSON dump of numpy data'''
+    from numpy import integer, floating, ndarray
+    def default(self, obj):
+        if isinstance(obj, integer): return int(obj)
+        elif isinstance(obj, floating): return float(obj)
+        elif isinstance(obj, ndarray): return obj.tolist()
+        else: return super(Encoder, self).default(obj)
+
+
+def elapsed_timer(max_runtime_minutes=None):
     '''Iterator over elapsed seconds; ensure delay of SERVICE_PERIOD
     Raises StopIteration when time is up'''
-    if max_runtime is None: 
-        max_runtime = float('inf')
+    if max_runtime_minutes is None:
+        max_runtime_minutes = float('inf')
+        
+    max_runtime = max_runtime_minutes * 60.0
 
     start = time.time()
     nexttime = start + SERVICE_PERIOD
@@ -53,184 +72,253 @@ def pretty_time(seconds):
 
 
 def create_parser():
-    here = os.path.dirname(__file__)
-    parent = os.path.dirname(here)
-    exp_dir = os.path.join(parent, 'experiments')
+    '''Command line parser'''
+    parser = argparse.ArgumentParser()
 
-    '''Command line parser for Keras'''
-    parser = argparse.ArgumentParser(add_help=True)
-    group = parser.add_argument_group('required arguments')
-    parser.add_argument('-v', '--version', action='version',
-                        version='%(prog)s 0.1')
-    parser.add_argument("--benchmark", nargs='?', type=str,
-                        default='b1.addition_rnn',
-                        help="name of benchmark module (e.g. b1.addition_rnn)")
-    parser.add_argument("--backend", nargs='?', type=str,
-                        default='tensorflow',
-                        help="Keras backend module name")
-    parser.add_argument("--exp_dir", nargs='?', type=str,
-                        default=exp_dir,
-                        help="experiments directory")
-    parser.add_argument("--exp_id", nargs='?', type=str,
-                        default='exp-01',
-                        help="experiments id")
-    parser.add_argument('--max_evals', action='store', dest='max_evals',
-                        nargs='?', const=2, type=int, default='10',
-                        help='maximum number of evaluations')
-    parser.add_argument('--max_time', action='store', dest='max_time',
-                        nargs='?', const=1, type=float, default='60',
-                        help='maximum time in secs')
-    print("exp_dir", exp_dir)
+    parser.add_argument("--benchmark", default='b1.addition_rnn',
+                        help="name of benchmark module (e.g. b1.addition_rnn)"
+                       )
+    parser.add_argument("--backend", default='tensorflow',
+                        help="Keras backend module name"
+                       )
+    parser.add_argument('--max-evals', type=int, default='10',
+                        help='maximum number of evaluations'
+                       )
+    parser.add_argument('--from-checkpoint', default=None,
+                        help='working directory of previous search, containing pickled optimizer'
+                       )
+    parser.add_argument('--repeat-evals', action='store_true',
+                        help='Re-evaluate points visited by hyperparameter optimizer'
+                       )
     return parser
 
 
 def configureOptimizer(args):
-    '''Return a Config object with skopt.Optimizer and various options configured'''
+    '''Return a Config object containing skopt.Optimizer and various options'''
     class Config: pass
-    P = Config()
-
-    top = args.benchmark.split('.')[0]
-    problem = import_module(f'dl_hps.benchmarks.{top}.problem')
-    P.benchmark = find_spec(f'dl_hps.benchmarks.{args.benchmark}').origin # b1.addition_rnn
-    P.backend = args.backend
-
-    P.exp_dir = os.path.expanduser(args.exp_dir) #'/Users/pbalapra/Projects/repos/2017/dl-hps/experiments'
-    P.eid = args.exp_id  #'exp-01'
-    P.max_evals = args.max_evals 
-    P.max_time = args.max_time
-
-    P.exp_dir = os.path.join(P.exp_dir, str(P.eid))
-    if not os.path.exists(P.exp_dir):
-        os.makedirs(P.exp_dir)
-
-    P.results_json_fname = os.path.join(P.exp_dir, f"{P.eid}_results.json")
-    P.results_csv_fname = os.path.join(P.exp_dir, f"{P.eid}_results.csv")
+    cfg = Config()
     
-    instance = problem.Problem()
-    P.params = list(instance.params)
-    P.starting_point = instance.starting_point
+    cfg.backend = args.backend
+    cfg.max_evals = args.max_evals 
+    cfg.repeat_evals = args.repeat_evals
+
+    # THIS IS WHERE THE BENCHMARK IS AUTO-LOCATED
+    # args.benchmark has the form "<benchmark_directory>.<benchmark_module>"
+    # for example, the default value of args.benchmark is "b1.addition_rnn"
+    # ----------------------------------------------------------------------
+    benchmark_directory = args.benchmark.split('.')[0] # "b1"
+
+    # import the b1/problem.py module here:
+    problem_module = import_module(f'dl_hps.benchmarks.{benchmark_directory}.problem')
+
+    # get the path of the b1/addition_rnn.py file here:
+    cfg.benchmark_filename = find_spec(f'dl_hps.benchmarks.{args.benchmark}').origin
+
+    # create a problem instance and configure the skopt.Optimizer
+    instance = problem_module.Problem()
+    cfg.params = list(instance.params)
+    cfg.starting_point = instance.starting_point
     
     spaceDict = instance.space
-    space = [spaceDict[key] for key in P.params]
+    space = [spaceDict[key] for key in cfg.params]
     
     parDict = {}
     parDict['kappa'] = 0
-    P.optimizer = Optimizer(space, base_estimator=ExtremeGradientBoostingQuantileRegressor(), acq_optimizer='sampling',
-                    acq_func='LCB', acq_func_kwargs=parDict, random_state=SEED)
-    return P
+    cfg.optimizer = Optimizer(space, base_estimator=ExtremeGradientBoostingQuantileRegressor(), 
+                              acq_optimizer='sampling', acq_func='LCB', acq_func_kwargs=parDict, 
+                              random_state=SEED
+                             )
+    return cfg
 
 
 def create_job(x, eval_counter, cfg):
-    '''Add a new evaluatePoint job to the Balsam DB'''
-    task = {}
-    task['x'] = x
-    task['params'] = cfg.params
-    task['benchmark'] = cfg.benchmark
-    task['backend'] = cfg.backend
+    '''Add a new benchmark evaluation job to the Balsam DB'''
 
-    for i, val in enumerate(x):
-        if type(val) is int64: x[i]   = int(val)
-        if type(val) is float64: x[i] = float(val)
+    jobname = f"task{eval_counter}"
+    cmd = f"{sys.executable} {cfg.benchmark_filename}"
+    args = ' '.join(f"--{p}={v}"
+                    for p,v in zip(cfg.params, x) 
+                    if 'hidden' not in p
+                   )
+    envs = f"KERAS_BACKEND={cfg.backend}"
 
-    print(f"Adding task {eval_counter} to job DB")
-    jname = f"task{eval_counter}"
-    fname = f"{jname}.dat"
-
-    with open(fname, 'w') as fp:
-        fp.write(json.dumps(task))
-
-    child = dag.spawn_child(name=jname, 
-                application="eval_point", wall_time_minutes=2,
-                num_nodes=1, ranks_per_node=1,
-                input_files=f"{jname}.dat", 
-                application_args=f"{jname}.dat",
-                wait_for_parents=False
+    child = dag.spawn_child(
+                name = jobname,
+                direct_command = cmd,
+                application_args = args,
+                environ_vars = envs,
+                wall_time_minutes = 2,
+                num_nodes = 1, ranks_per_node = 1,
+                wait_for_parents = False
                )
+    print(f"Added task {eval_counter} to job DB")
+    print(cmd, args)
     return child.job_id
 
-def saveResults(resultsList, json_fname, csv_fname):
-    print(resultsList)
-    print(json.dumps(resultsList, indent=4, sort_keys=True))
-    with open(json_fname, 'w') as outfile:
-        json.dump(resultsList, outfile, indent=4, sort_keys=True)
+
+def save_checkpoint(resultsList, opt_config, my_jobs, finished_jobs):
+    '''Dump the current experiment state to disk'''
+    print("checkpointing optimization")
+
+    with open('optimizer.pkl', 'wb') as fp:
+        pickle.dump(opt_config, fp)
+
+    with open('jobs.json', 'w') as fp:
+        jobsDict = dict(my_jobs=my_jobs, finished_jobs=finished_jobs)
+        json.dump(jobsDict, fp, cls=Encoder)
+
+    with open('results.json', 'w') as fp:
+        json.dump(resultsList, fp, indent=4, sort_keys=True, cls=Encoder)
 
     keys = resultsList[0].keys()
-    with open(csv_fname, 'w') as output_file:
-        dict_writer = csv.DictWriter(output_file, keys)
+    with open('results.csv', 'w') as fp:
+        dict_writer = csv.DictWriter(fp, keys)
         dict_writer.writeheader()
         dict_writer.writerows(resultsList)
 
+
+def load_checkpoint(checkpoint_directory):
+    '''Load the state of a previous run to resume experiment'''
+    optpath = os.path.join(checkpoint_directory, 'optimizer.pkl')
+    with open(optpath, 'rb') as fp:
+        opt_config = pickle.load(fp)
+
+    jobspath = os.path.join(checkpoint_directory, 'jobs.json')
+    with open(jobspath, 'r') as fp:
+        jobsDict = json.load(fp)
+    my_jobs = jobsDict['my_jobs']
+    finished_jobs = jobsDict['finished_jobs']
+    
+    resultpath = os.path.join(checkpoint_directory, 'results.json')
+    with open(resultpath, 'r') as fp: 
+        resultsList = json.load(fp)
+    return opt_config, my_jobs, finished_jobs, resultsList
+        
+
+def next_points(cfg, eval_counter, my_jobs, opt):
+    '''Query optimizer for the next set of points to evaluate'''
+    if cfg.starting_point is not None:
+        XX = [cfg.starting_point]
+        cfg.starting_point = None
+    elif eval_counter < cfg.max_evals:
+        already_active = BalsamJob.objects.filter(job_id__in=my_jobs.keys())
+        already_active = already_active.exclude(state__in=END_STATES).count()
+        num_tocreate = max(MAX_QUEUED_TASKS - already_active, 0)
+        num_tocreate = min(num_tocreate, cfg.max_evals - eval_counter)
+        XX = opt.ask(n_points=num_tocreate) if num_tocreate else []
+    else:
+        XX = []
+
+    if not cfg.repeat_evals:
+        XX = [x for x in XX if json.dumps(x, cls=Encoder) not in my_jobs.values()]
+    return XX
+
+
+def read_cost(fname):
+    '''Parse OUTPUT line from keras model fit'''
+    cost = sys.float_info.max
+    with open(fname, 'rt') as fp:
+        for linenum, line in enumerate(fp):
+            if "OUTPUT:" in line.upper():
+                str1 = line.rstrip('\n')
+                res = findall('OUTPUT:(.*)', str1)
+                rv = float(res[0])
+                if isnan(rv):
+                    rv = sys.float_info.max
+                cost = rv
+                break
+    return cost
+
+
+def read_result(job, my_jobs):
+    '''Return dict of hyperparams, cost, runtime'''
+    outfile = os.path.join(job.working_directory, f"{job.name}.out")
+    cost = read_cost(outfile)
+    x = json.loads(my_jobs[job.job_id])
+    runtime = job.runtime_seconds
+    result = dict(run_time=runtime, x=x, cost=cost)
+    return result
+
+
 def main():
     '''Service loop: add jobs; read results; drive optimizer'''
+
+    # Initialize optimizer
     parser = create_parser()
     args = parser.parse_args()
     cfg = configureOptimizer(args)
     opt = cfg.optimizer
 
-    timer = elapsed_timer(max_runtime=cfg.max_time)
+    walltime = dag.current_job.wall_time_minutes
+    timer = elapsed_timer(max_runtime_minutes=walltime)
     eval_counter = 0
+    chkpoint_counter = 0
 
-    evalDict = {}
     resultsList = []
-    my_jobs = []
+    my_jobs = {}
     finished_jobs = []
 
+    if args.from_checkpoint:
+        chk_dir = args.from_checkpoint
+        cfg, my_jobs, finished_jobs, resultsList = load_checkpoint(chk_dir)
+        opt = cfg.optimizer
+        eval_counter = len(my_jobs)
+        print(f"Resume at eval # {eval_counter} from {chk_dir}")
+
+    assert id(opt) == id(cfg.opt)
+
     # Gracefully handle shutdown
-    SIG_TERMINATE = False
     def handler(signum, stack):
         print('Received SIGINT/SIGTERM')
-        SIG_TERMINATE = True
-        saveResults(resultsList, cfg.results_json_fname, cfg.results_csv_fname)
+        save_checkpoint(resultsList, cfg, my_jobs, finished_jobs)
         sys.exit(0)
 
     signal.signal(signal.SIGINT, handler)
     signal.signal(signal.SIGTERM, handler)
 
+    # MAIN LOOP
     print("Hyperopt driver starting")
-
     for elapsed_seconds in timer:
         print("Elapsed time:", pretty_time(elapsed_seconds))
         if len(finished_jobs) == cfg.max_evals: break
         
         # Read in new results
-        new_jobs = BalsamJob.objects.filter(job_id__in=my_jobs)
+        new_jobs = BalsamJob.objects.filter(job_id__in=my_jobs.keys())
         new_jobs = new_jobs.filter(state="JOB_FINISHED")
         new_jobs = new_jobs.exclude(job_id__in=finished_jobs)
         for job in new_jobs:
-            result = json.loads(job.read_file_in_workdir('result.dat'))
-            result['run_time'] = job.runtime_seconds
-            print(f"Got data from {job.cute_id}")
-            pprint(result)
-            resultsList.append(result)
-            finished_jobs.append(job.job_id)
-            x = result['x']
-            y = result['cost']
-            opt.tell(x, y)
+            try:
+                result = read_result(job, my_jobs)
+            except FileNotFoundError:
+                print(f"ERROR: could not read output from {job.cute_id}")
+            else:
+                resultsList.append(result)
+                print(f"Got data from {job.cute_id}")
+                pprint(result)
+                x, y = result['x'], result['cost']
+                opt.tell(x, y)
+                chkpoint_counter += 1
+                if y == sys.float_info.max:
+                    print(f"WARNING: {job.cute_id} cost was not found or NaN")
+            finally:
+                finished_jobs.append(job.job_id)
         
-        # Which points, and how many, are next?
-        if cfg.starting_point is not None:
-            XX = [cfg.starting_point]
-            cfg.starting_point = None
-        elif eval_counter < cfg.max_evals:
-            already_active = BalsamJob.objects.filter(job_id__in=my_jobs)
-            already_active = already_active.exclude(state__in=END_STATES).count()
-            num_tocreate = max(MAX_QUEUED_TASKS - already_active, 0)
-            num_tocreate = min(num_tocreate, cfg.max_evals - eval_counter)
-            XX = opt.ask(n_points=num_tocreate) if num_tocreate else []
-        else:
-            XX = []
+        # Which points are next?
+        XX = next_points(cfg, eval_counter, my_jobs, opt)
                 
         # Create a BalsamJob for each point
         for x in XX:
-            eval_counter += 1
-            key = str(x)
-            if key in evalDict: print(f"{key} already submitted!")
-            evalDict[key] = None
             jobid = create_job(x, eval_counter, cfg)
-            my_jobs.append(jobid)
+            my_jobs[jobid] = json.dumps(x, cls=Encoder)
+            eval_counter += 1
+
+        if chkpoint_counter >= CHECKPOINT_INTERVAL:
+            save_checkpoint(resultsList, cfg, my_jobs, finished_jobs)
+            chkpoint_counter = 0
     
+    # EXIT
     print('Hyperopt driver finishing')
-    saveResults(resultsList, cfg.results_json_fname, cfg.results_csv_fname)
+    save_checkpoint(resultsList, cfg, my_jobs, finished_jobs)
 
 if __name__ == "__main__":
     main()
