@@ -282,6 +282,10 @@ def main():
 
     if args.from_checkpoint:
         chk_dir = args.from_checkpoint
+    else:
+        chk_dir = dag.current_job.working_directory
+
+    if os.path.exists(os.path.join(chk_dir, 'optimizer.pkl')):
         cfg, my_jobs, finished_jobs, resultsList = load_checkpoint(chk_dir)
         opt = cfg.optimizer
         eval_counter = len(my_jobs)

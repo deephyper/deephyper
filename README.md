@@ -39,11 +39,9 @@ Run once
 
     cd directory_containing_dl-hps
     mv dl-hps dl_hps         # important: change to underscore (import system relies on this)
-    export PYTHONPATH=$(pwd) # now dl_hps package is importable from anywhere 
 
     cd dl_hps/search
-    balsam app --name eval_point --description "run dl_hps.search.worker.py to evaluate a point from disk" --executable worker.py
-    balsam app --name hps-driver --description "run async_driver" --executable async-search.py
+    balsam app --name search --description "run async_search" --executable async-search.py
 ```
 
 From a qsub bash script (or in this case, an interactive session)
@@ -54,12 +52,30 @@ From a qsub bash script (or in this case, an interactive session)
     source ~/.bash_profile    # this should set LD_library_path correctly for mpi4py and make conda available (see balsam quickstart guide)
     source activate dl-hps   # balsam is installed here too (commands like “balsam ls” should work)
 
-    cd directory_containing_dl_hps
-    export PYTHONPATH=$(pwd) # now dl_hps package is importable from anywhere
+    balsam job --name test --workflow b1_addition --app search --wall-minutes 20 --num-nodes 1 --ranks-per-node 1 --args '--max_evals=20'
 
-    balsam job --name dl_driver --workflow "dl-hps" --app "hps-driver" --wall-minutes 5 --num-nodes 1 --ranks-per-node 1 --args '--exp_dir=~/workflows/dl_hps/experiments --exp_id=exp-01 --max_evals=10 --max_time=6000’
-
-    # notice that above, we are referring to the driver itself only taking 1 rank/1 node (not the whole workflow)
     balsam launcher --consume --max-ranks-per-node 4   
-    # will auto-recognize 8 nodes and allow only 4 addition_rnn.py tasks to run simultaneously on a node
+    # will auto-recognize the nodes and allow only 4 addition_rnn.py tasks to run simultaneously on a node
+```
+
+To restart:
+----------------------------------------------------------------------
+If async-search.py stops for any reason, it will create checkpoint files in the
+search working directory.  If you simply restart the balsam launcher, it will
+resume any timed-out jobs which have the state "RUN_TIMEOUT".  The async-search
+will automatically resume where it left off by finding the checkpoint files in
+its working directory.
+
+Alternatively, async-search may have completed, but you wish to extend the
+optimization with more iterations.  In this case, you can create a new
+async-search job and specify the argument "--restart-from" with the full path
+to the previous run's working directory.
+
+```
+    # To simply re-start timed-out jobs:
+    balsam launcher --consume --max-ranks 4
+
+    # To create a new job extending a previously finished optimization
+    balsam job --name test --workflow b1_addition --app search --wall-minutes 20 --num-nodes 1 --ranks-per-node 1 --args '--max_evals=20 --restart-from    /path/to/previous/search/directory'
+    balsam launcher --consume --max-ranks-per-node 4   
 ```
