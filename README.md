@@ -53,7 +53,7 @@ Example
 mpiexec -np 2 python async-search.py --prob_dir=../benchmarks/b1 --exp_dir=../experiments/ --exp_id=exp-01 --max_evals=10 --max_time=60 
 ```
 
-How to define your own autotuning problem
+How to define your own problem
 =========================================
 This will be illustrated with the example in /benchmarks/b1 directory. 
 
