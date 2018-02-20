@@ -1,14 +1,4 @@
 #!/usr/bin/env python
-"""Demonstrate the task-pull paradigm for high-throughput computing
-using mpi4py. Task pull is an efficient way to perform a large number of
-independent tasks when there are more tasks than processors, especially
-when the run times vary for each task.
-
-This code is over-commented for instructional purposes.
-
-This example was contributed by Craig Finch (cfinch@ieee.org).
-Inspired by http://math.acadiau.ca/ACMMaC/Rmpi/index.html
-"""
 from __future__ import print_function
 
 from mpi4py import MPI
@@ -60,9 +50,6 @@ max_evals = param_dict['max_evals']
 max_time = param_dict['max_time']
 
 
-
-
-
 exp_dir = exp_dir+'/'+eid
 jobs_dir = exp_dir+'/jobs'
 results_dir = exp_dir+'/results'
@@ -71,6 +58,8 @@ results_csv_fname = exp_dir+'/'+eid+'_results.csv'
 
 sys.path.insert(0, prob_dir)
 import problem as problem
+from evaluate import evaluate
+
 instance = problem.Problem()
 spaceDict = instance.space
 params = instance.params
@@ -102,14 +91,16 @@ if rank == 0:
     num_workers = size - 1
     closed_workers = 0
     space = [spaceDict[key] for key in params]
+    print(space)
     eval_counter = 0
-
 
     parDict = {}
     evalDict = {}
     resultsList = []
-    parDict['kappa'] = 0
+    parDict['kappa'] = 1.96
     init_x = []
+
+
     opt = Optimizer(space, base_estimator='RF', acq_optimizer='sampling',
                     acq_func='LCB', acq_func_kwargs=parDict, random_state=seed)
     print("Master starting with %d workers" % num_workers)
@@ -124,7 +115,8 @@ if rank == 0:
                 # Worker is ready, so send it a task
                 if starting_point is not None:
                     x = starting_point
-                    init_x = opt.ask(n_points=num_workers-1)
+                    if num_workers-1 > 0:
+                        init_x = opt.ask(n_points=num_workers-1)
                     starting_point = None
                 else:
                     if len(init_x) > 0:
@@ -158,9 +150,6 @@ if rank == 0:
             print("Worker %d exited." % source)
             closed_workers = closed_workers + 1
     print('Search finishing')
-    # print(resultsList)
-    # print(json.dumps(resultsList, indent=4, sort_keys=True))
-    
     saveResults(resultsList, results_json_fname, results_csv_fname)
 
 else:
@@ -173,7 +162,7 @@ else:
         tag = status.Get_tag()
         if tag == tags.START:
             print(task)
-            result = evaluatePoint(task['x'], task['eval_counter'], params, prob_dir, jobs_dir, results_dir)
+            result = evaluate(task['x'], task['eval_counter'], params, prob_dir, jobs_dir, results_dir)
             result['start_time'] = task['start_time']
             comm.send(result, dest=0, tag=tags.DONE)
         elif tag == tags.EXIT:
