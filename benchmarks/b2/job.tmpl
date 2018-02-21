@@ -1,0 +1,15 @@
+#!/bin/bash -x
+#COBALT -n 1
+#COBALT -q debug-flat-quad
+#COBALT -A Performance
+#COBALT -t 30
+
+outputfile=$outputfile
+
+ut=$$(date '+%s')
+echo START TIME:$$ut > $outputfile
+echo INPUT:"$inpstr" >> $outputfile
+python ../benchmarks/b2/babi_memnn.py $cmd  >> $outputfile
+ut=$$(date '+%s')
+echo END TIME:$$ut>> $outputfile
+echo 
