@@ -25,7 +25,7 @@ sys.path.append(top)
 from dl_hps.search.ExtremeGradientBoostingQuantileRegressor import ExtremeGradientBoostingQuantileRegressor
 
 SEED = 12345                # Optimizer initialized with this random seed
-MAX_QUEUED_TASKS = 4      # Limit of pending hyperparam evaluation jobs in DB
+MAX_QUEUED_TASKS = 128        # Limit of pending hyperparam evaluation jobs in DB
 SERVICE_PERIOD = 2          # Delay (seconds) between main loop iterations
 CHECKPOINT_INTERVAL = 10    # How many jobs to complete between optimizer checkpoints
 
@@ -135,7 +135,7 @@ def configureOptimizer(args):
     
     parDict = {}
     parDict['kappa'] = 0
-    cfg.optimizer = Optimizer(space, base_estimator=ExtremeGradientBoostingQuantileRegressor(), 
+    cfg.optimizer = Optimizer(space, base_estimator=ExtremeGradientBoostingQuantileRegressor(),
                               acq_optimizer='sampling', acq_func='LCB', acq_func_kwargs=parDict, 
                               random_state=SEED
                              )
@@ -160,6 +160,7 @@ def create_job(x, eval_counter, cfg):
                 environ_vars = envs,
                 wall_time_minutes = 2,
                 num_nodes = 1, ranks_per_node = 1,
+                threads_per_rank=64,
                 wait_for_parents = False
                )
     print(f"Added task {eval_counter} to job DB")
@@ -206,7 +207,7 @@ def load_checkpoint(checkpoint_directory):
     return opt_config, my_jobs, finished_jobs, resultsList
         
 
-def next_points(cfg, eval_counter, my_jobs, opt):
+def next_points(cfg, eval_counter, my_jobs):
     '''Query optimizer for the next set of points to evaluate'''
     if cfg.starting_point is not None:
         XX = [cfg.starting_point]
@@ -217,7 +218,7 @@ def next_points(cfg, eval_counter, my_jobs, opt):
         print("Tracking", already_active, "pending jobs")
         num_tocreate = max(MAX_QUEUED_TASKS - already_active, 0)
         num_tocreate = min(num_tocreate, cfg.max_evals - eval_counter)
-        XX = opt.ask(n_points=num_tocreate) if num_tocreate else []
+        XX = cfg.optimizer.ask(n_points=num_tocreate) if num_tocreate else []
     else:
         print("Reached max_evals; no longer starting new runs")
         XX = []
@@ -260,16 +261,17 @@ def main():
     parser = create_parser()
     args = parser.parse_args()
     cfg = configureOptimizer(args)
-    opt = cfg.optimizer
 
     if dag.current_job is None:
-        this = dag.add_job(name='search', workflow='dl_hps',
+        this = dag.add_job(name='search', workflow=args.benchmark,
                            wall_time_minutes=60
                           )
         this.create_working_path()
         this.update_state('JOB_FINISHED')
         dag.current_job = this
         dag.JOB_ID = this.job_id
+        os.chdir(this.working_directory)
+        print(f"Running in Balsam job directory: {this.working_directory}")
 
     walltime = dag.current_job.wall_time_minutes
     timer = elapsed_timer(max_runtime_minutes=walltime)
@@ -287,11 +289,9 @@ def main():
 
     if os.path.exists(os.path.join(chk_dir, 'optimizer.pkl')):
         cfg, my_jobs, finished_jobs, resultsList = load_checkpoint(chk_dir)
-        opt = cfg.optimizer
         eval_counter = len(my_jobs)
         print(f"Resume at eval # {eval_counter} from {chk_dir}")
 
-    assert id(opt) == id(cfg.optimizer)
 
     # Gracefully handle shutdown
     def handler(signum, stack):
@@ -322,7 +322,7 @@ def main():
                 print(f"Got data from {job.cute_id}")
                 pprint(result)
                 x, y = result['x'], result['cost']
-                opt.tell(x, y)
+                cfg.optimizer.tell(x, y)
                 chkpoint_counter += 1
                 if y == sys.float_info.max:
                     print(f"WARNING: {job.cute_id} cost was not found or NaN")
@@ -330,7 +330,7 @@ def main():
                 finished_jobs.append(job.job_id)
         
         # Which points are next?
-        XX = next_points(cfg, eval_counter, my_jobs, opt)
+        XX = next_points(cfg, eval_counter, my_jobs)
                 
         # Create a BalsamJob for each point
         for x in XX:
