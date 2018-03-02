@@ -2,53 +2,25 @@ import argparse
 import csv
 import json
 from math import isnan
-from numpy import integer, floating, ndarray
 import os
 from pprint import pprint
 import pickle
-from uuid import UUID
 from re import findall
 import signal
-from importlib import import_module
-from importlib.util import find_spec
 import sys
 import time
 
-from skopt import Optimizer
-import balsam.launcher.dag as dag
-from balsam.service.models import BalsamJob, END_STATES
+from deephyper.evaluate import Encoder, LocalEvaluator
+
 
 here = os.path.dirname(os.path.abspath(__file__)) # search dir
-top  = os.path.dirname(os.path.dirname(here)) # directory containing dl_hps
+top  = os.path.dirname(os.path.dirname(here)) # directory containing deephyper
 sys.path.append(top)
 
-from dl_hps.search.ExtremeGradientBoostingQuantileRegressor import ExtremeGradientBoostingQuantileRegressor
-
-SEED = 12345                # Optimizer initialized with this random seed
 MAX_QUEUED_TASKS = 128        # Limit of pending hyperparam evaluation jobs in DB
 SERVICE_PERIOD = 2          # Delay (seconds) between main loop iterations
 CHECKPOINT_INTERVAL = 10    # How many jobs to complete between optimizer checkpoints
 
-
-class Encoder(json.JSONEncoder):
-    '''Enables JSON dump of numpy data'''
-    def default(self, obj):
-        if isinstance(obj, UUID): return obj.hex
-        if isinstance(obj, integer): return int(obj)
-        elif isinstance(obj, floating): return float(obj)
-        elif isinstance(obj, ndarray): return obj.tolist()
-        else: return super(Encoder, self).default(obj)
-
-class Config:
-    '''Optimizer and related options datastore'''
-    def __init__(self):
-        self.backend = None
-        self.max_evals = None
-        self.repeat_evals = None
-        self.benchmark_filename = None
-        self.params = None
-        self.starting_point = None
-        self.optimizer = None
 
 
 def elapsed_timer(max_runtime_minutes=None):
@@ -105,41 +77,6 @@ def create_parser():
                        )
     return parser
 
-
-def configureOptimizer(args):
-    '''Return a Config object containing skopt.Optimizer and various options'''
-    cfg = Config()
-    cfg.backend = args.backend
-    cfg.max_evals = args.max_evals 
-    cfg.repeat_evals = args.repeat_evals
-
-    # THIS IS WHERE THE BENCHMARK IS AUTO-LOCATED
-    # args.benchmark has the form "<benchmark_directory>.<benchmark_module>"
-    # for example, the default value of args.benchmark is "b1.addition_rnn"
-    # ----------------------------------------------------------------------
-    benchmark_directory = args.benchmark.split('.')[0] # "b1"
-
-    # import the b1/problem.py module here:
-    problem_module = import_module(f'dl_hps.benchmarks.{benchmark_directory}.problem')
-
-    # get the path of the b1/addition_rnn.py file here:
-    cfg.benchmark_filename = find_spec(f'dl_hps.benchmarks.{args.benchmark}').origin
-
-    # create a problem instance and configure the skopt.Optimizer
-    instance = problem_module.Problem()
-    cfg.params = list(instance.params)
-    cfg.starting_point = instance.starting_point
-    
-    spaceDict = instance.space
-    space = [spaceDict[key] for key in cfg.params]
-    
-    parDict = {}
-    parDict['kappa'] = 0
-    cfg.optimizer = Optimizer(space, base_estimator=ExtremeGradientBoostingQuantileRegressor(),
-                              acq_optimizer='sampling', acq_func='LCB', acq_func_kwargs=parDict, 
-                              random_state=SEED
-                             )
-    return cfg
 
 
 def create_job(x, eval_counter, cfg):
