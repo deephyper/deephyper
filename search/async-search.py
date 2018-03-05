@@ -19,16 +19,14 @@ import balsam.launcher.dag as dag
 from balsam.service.models import BalsamJob, END_STATES
 
 here = os.path.dirname(os.path.abspath(__file__)) # search dir
-top  = os.path.dirname(os.path.dirname(here)) # directory containing dl_hps
+top  = os.path.dirname(os.path.dirname(here)) # directory containing deephyper
 sys.path.append(top)
 
-from dl_hps.search.ExtremeGradientBoostingQuantileRegressor import ExtremeGradientBoostingQuantileRegressor
+from deephyper.search.ExtremeGradientBoostingQuantileRegressor import ExtremeGradientBoostingQuantileRegressor
 
 SEED = 12345                # Optimizer initialized with this random seed
-MAX_QUEUED_TASKS = 128        # Limit of pending hyperparam evaluation jobs in DB
 SERVICE_PERIOD = 2          # Delay (seconds) between main loop iterations
-CHECKPOINT_INTERVAL = 10    # How many jobs to complete between optimizer checkpoints
-
+CHECKPOINT_INTERVAL = 30    # How many jobs to complete between optimizer checkpoints
 
 class Encoder(json.JSONEncoder):
     '''Enables JSON dump of numpy data'''
@@ -62,6 +60,7 @@ def elapsed_timer(max_runtime_minutes=None):
     start = time.time()
     nexttime = start + SERVICE_PERIOD
     while True:
+        print("next timer")
         now = time.time()
         elapsed = now - start
         if elapsed > max_runtime+0.5:
@@ -94,8 +93,11 @@ def create_parser():
     parser.add_argument("--backend", default='tensorflow',
                         help="Keras backend module name"
                        )
-    parser.add_argument('--max-evals', type=int, default='10',
+    parser.add_argument('--max-evals', type=int, default=100,
                         help='maximum number of evaluations'
+                       )
+    parser.add_argument('--num-workers', type=int, default=10,
+                        help='Number of points to ask for initially'
                        )
     parser.add_argument('--from-checkpoint', default=None,
                         help='working directory of previous search, containing pickled optimizer'
@@ -112,6 +114,7 @@ def configureOptimizer(args):
     cfg.backend = args.backend
     cfg.max_evals = args.max_evals 
     cfg.repeat_evals = args.repeat_evals
+    cfg.num_workers = args.num_workers
 
     # THIS IS WHERE THE BENCHMARK IS AUTO-LOCATED
     # args.benchmark has the form "<benchmark_directory>.<benchmark_module>"
@@ -120,10 +123,10 @@ def configureOptimizer(args):
     benchmark_directory = args.benchmark.split('.')[0] # "b1"
 
     # import the b1/problem.py module here:
-    problem_module = import_module(f'dl_hps.benchmarks.{benchmark_directory}.problem')
+    problem_module = import_module(f'deephyper.benchmarks.{benchmark_directory}.problem')
 
     # get the path of the b1/addition_rnn.py file here:
-    cfg.benchmark_filename = find_spec(f'dl_hps.benchmarks.{args.benchmark}').origin
+    cfg.benchmark_filename = find_spec(f'deephyper.benchmarks.{args.benchmark}').origin
 
     # create a problem instance and configure the skopt.Optimizer
     instance = problem_module.Problem()
@@ -137,7 +140,7 @@ def configureOptimizer(args):
     parDict['kappa'] = 0
     cfg.optimizer = Optimizer(space, base_estimator=ExtremeGradientBoostingQuantileRegressor(),
                               acq_optimizer='sampling', acq_func='LCB', acq_func_kwargs=parDict, 
-                              random_state=SEED
+                              random_state=SEED, n_initial_points=args.num_workers
                              )
     return cfg
 
@@ -212,13 +215,16 @@ def next_points(cfg, eval_counter, my_jobs):
     if cfg.starting_point is not None:
         XX = [cfg.starting_point]
         cfg.starting_point = None
+        additional_pts = cfg.optimizer.ask(n_points=cfg.num_workers-1)
+        XX.extend(additional_pts)
     elif eval_counter < cfg.max_evals:
         already_active = BalsamJob.objects.filter(job_id__in=my_jobs.keys())
         already_active = already_active.exclude(state__in=END_STATES).count()
         print("Tracking", already_active, "pending jobs")
-        num_tocreate = max(MAX_QUEUED_TASKS - already_active, 0)
-        num_tocreate = min(num_tocreate, cfg.max_evals - eval_counter)
-        XX = cfg.optimizer.ask(n_points=num_tocreate) if num_tocreate else []
+        if already_active < cfg.num_workers:
+            XX = cfg.optimizer.ask(n_points=1)
+        else:
+            XX = []
     else:
         print("Reached max_evals; no longer starting new runs")
         XX = []
@@ -305,6 +311,7 @@ def main():
     # MAIN LOOP
     print("Hyperopt driver starting")
     for elapsed_seconds in timer:
+        print('top of service loop')
         print("\nElapsed time:", pretty_time(elapsed_seconds))
         if len(finished_jobs) == cfg.max_evals: break
 
@@ -317,6 +324,8 @@ def main():
                 result = read_result(job, my_jobs)
             except FileNotFoundError:
                 print(f"ERROR: could not read output from {job.cute_id}")
+            except:
+                raise
             else:
                 resultsList.append(result)
                 print(f"Got data from {job.cute_id}")
@@ -335,12 +344,17 @@ def main():
         # Create a BalsamJob for each point
         for x in XX:
             jobid = create_job(x, eval_counter, cfg)
+            print('exited create_job')
             my_jobs[jobid.hex] = json.dumps(x, cls=Encoder)
+            print('added key to my_jobs')
             eval_counter += 1
+        print('done with for x in XX')
 
         if chkpoint_counter >= CHECKPOINT_INTERVAL:
+            print('trying to checkpoint')
             save_checkpoint(resultsList, cfg, my_jobs, finished_jobs)
             chkpoint_counter = 0
+        print('skipping stdout flush')
         sys.stdout.flush()
     
     # EXIT
