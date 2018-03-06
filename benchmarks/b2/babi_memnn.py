@@ -23,6 +23,7 @@ from keras.utils.data_utils import get_file
 from keras.preprocessing.sequence import pad_sequences
 from functools import reduce
 import tarfile
+import os
 import numpy as np
 import re
 
@@ -121,9 +122,32 @@ param_dict = vars(cmdline_args)
 optimizer = keras_cmdline.return_optimizer(param_dict)
 print(param_dict)
 
+def stage_in(file_names, local_path='/local/scratch/', use_cache=True):
+    if os.path.exists(local_path):
+        prepend = local_path
+    else:
+        prepend = ''
+
+    origin_dir_path = os.path.dirname(os.path.abspath(__file__))
+    origin_dir_path = os.path.join(origin_dir_path, 'data')
+    print("Looking for files:", file_names)
+    print("In origin:", origin_dir_path)
+
+    paths = {}
+    for name in file_names:
+        origin = os.path.join(origin_dir_path, name)
+        if use_cache:
+            paths[name] = get_file(fname=prepend+name, origin='file://'+origin)
+        else:
+            paths[name] = origin
+
+        print(f"File {name} will be read from {paths[name]}")
+
+    return paths
 
 try:
-    path = get_file('babi-tasks-v1-2.tar.gz', origin='https://s3.amazonaws.com/text-datasets/babi_tasks_1-20_v1-2.tar.gz')
+    paths = stage_in(['babi-tasks-v1-2.tar.gz'], use_cache=True)
+    path = paths['babi-tasks-v1-2.tar.gz']
 except:
     print('Error downloading dataset, please download it manually:\n'
           '$ wget http://www.thespermwhale.com/jaseweston/babi/tasks_1-20_v1-2.tar.gz\n'
