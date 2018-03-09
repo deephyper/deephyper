@@ -31,3 +31,4 @@ __pycache__
 experiments/*
 db*
 scikit-optimize
+benchmarks/*/data/*.tar.gz
