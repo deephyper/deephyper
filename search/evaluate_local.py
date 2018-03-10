@@ -32,10 +32,10 @@ class LocalEvaluator(evaluate.Evaluator):
         if self.executor is None:
             self._setup_executor()
 
-        kwargs = {k:v for k,v in zip(self.params_list, x) if 'hidden' not in k}
+        param_dict = {k:v for k,v in zip(self.params_list, x) if 'hidden' not in k}
         eval_func = self.bench_module.run
-        future = self.executor.submit(eval_func, **kwargs)
-        logger.info(f"Running: {kwargs}")
+        future = self.executor.submit(eval_func, param_dict)
+        logger.info(f"Running: {param_dict}")
         return future
 
     def await_evals(self, to_read):

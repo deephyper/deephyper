@@ -4,7 +4,7 @@ import time
 import pickle
 
 HERE = os.path.dirname(os.path.abspath(__file__)) # search dir
-top  = os.path.dirname(os.path.dirname(HERE)) # directory containing deephyper
+top  = os.path.dirname(os.path.dirname(os.path.dirname(HERE))) # directory containing deephyper
 sys.path.append(top)
 
 from deephyper.search import evaluate_balsam, util

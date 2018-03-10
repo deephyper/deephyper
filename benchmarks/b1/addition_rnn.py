@@ -25,20 +25,27 @@ Five digits inverted:
 + One layer LSTM (128 HN), 550k training examples = 99% train/test accuracy in 30 epochs
 '''
 
-from __future__ import print_function
+import sys
+import os
+import time
+
+here = os.path.dirname(os.path.abspath(__file__))
+top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
+sys.path.insert(top)
+
+start = time.time()
 from keras.models import Sequential
 from keras import layers
 import numpy as np
 from six.moves import range
-import keras_cmdline 
+from deephyper.benchmarks import keras_cmdline 
 
 from numpy.random import seed
 seed(1)
 from tensorflow import set_random_seed
 set_random_seed(2)
-
-import argparse
-import sys
+load_time = time.time() - start
+print(f"module import time: {load_time:.3f} seconds")
 
 
 class CharacterTable(object):
@@ -74,14 +81,129 @@ class CharacterTable(object):
             x = x.argmax(axis=-1)
         return ''.join(self.indices_char[x] for x in x)
 
+def generate_data():
+    # Parameters for the model and dataset.
+    TRAINING_SIZE = 500
+    DIGITS = 3
+    INVERT = True
 
-class colors:
-    ok = '\033[92m'
-    fail = '\033[91m'
-    close = '\033[0m'
+    # Maximum length of input is 'int + int' (e.g., '345+678'). Maximum length of
+    # int is DIGITS.
+    MAXLEN = DIGITS + 1 + DIGITS
+
+    # All the numbers, plus sign and space for padding.
+    chars = '0123456789+ '
+    ctable = CharacterTable(chars)
+
+    questions = []
+    expected = []
+    seen = set()
+    print('Generating data...')
+    while len(questions) < TRAINING_SIZE:
+        f = lambda: int(''.join(np.random.choice(list('0123456789'))
+                        for i in range(np.random.randint(1, DIGITS + 1))))
+        a, b = f(), f()
+        # Skip any addition questions we've already seen
+        # Also skip any such that x+Y == Y+x (hence the sorting).
+        key = tuple(sorted((a, b)))
+        if key in seen:
+            continue
+        seen.add(key)
+        # Pad the data with spaces such that it is always MAXLEN.
+        q = '{}+{}'.format(a, b)
+        query = q + ' ' * (MAXLEN - len(q))
+        ans = str(a + b)
+        # Answers can be of maximum size DIGITS + 1.
+        ans += ' ' * (DIGITS + 1 - len(ans))
+        if INVERT:
+            # Reverse the query, e.g., '12+345  ' becomes '  543+21'. (Note the
+            # space used for padding.)
+            query = query[::-1]
+        questions.append(query)
+        expected.append(ans)
+    print('Total addition questions:', len(questions))
+
+    print('Vectorization...')
+    x = np.zeros((len(questions), MAXLEN, len(chars)), dtype=np.bool)
+    y = np.zeros((len(questions), DIGITS + 1, len(chars)), dtype=np.bool)
+    for i, sentence in enumerate(questions):
+        x[i] = ctable.encode(sentence, MAXLEN)
+    for i, sentence in enumerate(expected):
+        y[i] = ctable.encode(sentence, DIGITS + 1)
+
+    # Shuffle (x, y) in unison as the later parts of x will almost all be larger
+    # digits.
+    indices = np.arange(len(y))
+    np.random.shuffle(indices)
+    x = x[indices]
+    y = y[indices]
+
+    # Explicitly set apart 10% for validation data that we never train over.
+    split_at = len(x) - len(x) // 10
+    (x_train, x_val) = x[:split_at], x[split_at:]
+    (y_train, y_val) = y[:split_at], y[split_at:]
+
+    print('Training Data:')
+    print(x_train.shape)
+    print(y_train.shape)
+
+    print('Validation Data:')
+    print(x_val.shape)
+    print(y_val.shape)
+    return x_train, y_train, x_val, y_val
 
 
-def agument_parser(parser):
+def run(param_dict):
+    optimizer = keras_cmdline.return_optimizer(param_dict)
+    print(param_dict)
+    x_train, y_train, x_val, y_val = generate_data()
+
+    # Try replacing GRU, or SimpleRNN.
+    if param_dict['rnn_type'] == 'GRU':
+        RNN = layers.GRU
+    elif param_dict['rnn_type'] == 'SimpleRNN':
+        RNN = layers.SimpleRNN
+    else:
+        RNN = layers.LSTM
+
+    HIDDEN_SIZE = param_dict['hidden_size']
+    BATCH_SIZE = param_dict['batch_size']
+    LAYERS = param_dict['layers']
+    activation = param_dict['activation']
+
+    print('Build model...')
+    model = Sequential()
+    # "Encode" the input sequence using an RNN, producing an output of HIDDEN_SIZE.
+    # Note: In a situation where your input sequences have a variable length,
+    # use input_shape=(None, num_feature).
+    model.add(RNN(HIDDEN_SIZE, input_shape=(MAXLEN, len(chars))))
+    # As the decoder RNN's input, repeatedly provide with the last hidden state of
+    # RNN for each time step. Repeat 'DIGITS + 1' times as that's the maximum
+    # length of output, e.g., when DIGITS=3, max output is 999+999=1998.
+    model.add(layers.RepeatVector(DIGITS + 1))
+    # The decoder RNN could be multiple layers stacked or a single layer.
+    for _ in range(LAYERS):
+        # By setting return_sequences to True, return not only the last output but
+        # all the outputs so far in the form of (num_samples, timesteps,
+        # output_dim). This is necessary as TimeDistributed in the below expects
+        # the first dimension to be the timesteps.
+        model.add(RNN(HIDDEN_SIZE, return_sequences=True))
+
+    # Apply a dense layer to the every temporal slice of an input. For each of step
+    # of the output sequence, decide which character should be chosen.
+    model.add(layers.TimeDistributed(layers.Dense(len(chars))))
+    model.add(layers.Activation(activation))
+    model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
+    model.summary()
+    train_history = model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=param_dict['epochs'], validation_data=(x_val, y_val))
+    train_loss = train_history.history['loss']
+    val_acc = train_history.history['val_acc']
+    print('===Train loss:', train_loss[-1])
+    print('OUTPUT:', val_acc[-1])
+    return val_acc[-1]
+
+
+def augment_parser(parser):
     parser.add_argument('--rnn_type', action='store',
                         dest='rnn_type',
                         nargs='?', const=1, type=str, default='LSTM',
@@ -98,122 +220,9 @@ def agument_parser(parser):
     return parser
 
 
-parser = keras_cmdline.create_parser()
-parser = agument_parser(parser)
-cmdline_args = parser.parse_args()
-param_dict = vars(cmdline_args)
-optimizer = keras_cmdline.return_optimizer(param_dict)
-print(param_dict)
-
-# Parameters for the model and dataset.
-TRAINING_SIZE = 500
-DIGITS = 3
-INVERT = True
-
-# Maximum length of input is 'int + int' (e.g., '345+678'). Maximum length of
-# int is DIGITS.
-MAXLEN = DIGITS + 1 + DIGITS
-
-# All the numbers, plus sign and space for padding.
-chars = '0123456789+ '
-ctable = CharacterTable(chars)
-
-questions = []
-expected = []
-seen = set()
-print('Generating data...')
-while len(questions) < TRAINING_SIZE:
-    f = lambda: int(''.join(np.random.choice(list('0123456789'))
-                    for i in range(np.random.randint(1, DIGITS + 1))))
-    a, b = f(), f()
-    # Skip any addition questions we've already seen
-    # Also skip any such that x+Y == Y+x (hence the sorting).
-    key = tuple(sorted((a, b)))
-    if key in seen:
-        continue
-    seen.add(key)
-    # Pad the data with spaces such that it is always MAXLEN.
-    q = '{}+{}'.format(a, b)
-    query = q + ' ' * (MAXLEN - len(q))
-    ans = str(a + b)
-    # Answers can be of maximum size DIGITS + 1.
-    ans += ' ' * (DIGITS + 1 - len(ans))
-    if INVERT:
-        # Reverse the query, e.g., '12+345  ' becomes '  543+21'. (Note the
-        # space used for padding.)
-        query = query[::-1]
-    questions.append(query)
-    expected.append(ans)
-print('Total addition questions:', len(questions))
-
-print('Vectorization...')
-x = np.zeros((len(questions), MAXLEN, len(chars)), dtype=np.bool)
-y = np.zeros((len(questions), DIGITS + 1, len(chars)), dtype=np.bool)
-for i, sentence in enumerate(questions):
-    x[i] = ctable.encode(sentence, MAXLEN)
-for i, sentence in enumerate(expected):
-    y[i] = ctable.encode(sentence, DIGITS + 1)
-
-# Shuffle (x, y) in unison as the later parts of x will almost all be larger
-# digits.
-indices = np.arange(len(y))
-np.random.shuffle(indices)
-x = x[indices]
-y = y[indices]
-
-# Explicitly set apart 10% for validation data that we never train over.
-split_at = len(x) - len(x) // 10
-(x_train, x_val) = x[:split_at], x[split_at:]
-(y_train, y_val) = y[:split_at], y[split_at:]
-
-print('Training Data:')
-print(x_train.shape)
-print(y_train.shape)
-
-print('Validation Data:')
-print(x_val.shape)
-print(y_val.shape)
-
-# Try replacing GRU, or SimpleRNN.
-
-if param_dict['rnn_type'] == 'GRU':
-    RNN = layers.GRU
-elif param_dict['rnn_type'] == 'SimpleRNN':
-    RNN = layers.SimpleRNN
-else:
-    RNN = layers.LSTM
-
-HIDDEN_SIZE = param_dict['hidden_size']
-BATCH_SIZE = param_dict['batch_size']
-LAYERS = param_dict['layers']
-activation = param_dict['activation']
-
-print('Build model...')
-model = Sequential()
-# "Encode" the input sequence using an RNN, producing an output of HIDDEN_SIZE.
-# Note: In a situation where your input sequences have a variable length,
-# use input_shape=(None, num_feature).
-model.add(RNN(HIDDEN_SIZE, input_shape=(MAXLEN, len(chars))))
-# As the decoder RNN's input, repeatedly provide with the last hidden state of
-# RNN for each time step. Repeat 'DIGITS + 1' times as that's the maximum
-# length of output, e.g., when DIGITS=3, max output is 999+999=1998.
-model.add(layers.RepeatVector(DIGITS + 1))
-# The decoder RNN could be multiple layers stacked or a single layer.
-for _ in range(LAYERS):
-    # By setting return_sequences to True, return not only the last output but
-    # all the outputs so far in the form of (num_samples, timesteps,
-    # output_dim). This is necessary as TimeDistributed in the below expects
-    # the first dimension to be the timesteps.
-    model.add(RNN(HIDDEN_SIZE, return_sequences=True))
-
-# Apply a dense layer to the every temporal slice of an input. For each of step
-# of the output sequence, decide which character should be chosen.
-model.add(layers.TimeDistributed(layers.Dense(len(chars))))
-model.add(layers.Activation(activation))
-model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
-model.summary()
-train_history = model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=param_dict['epochs'], validation_data=(x_val, y_val))
-train_loss = train_history.history['loss']
-val_acc = train_history.history['val_acc']
-print('===Train loss:', train_loss[-1])
-print('OUTPUT:', val_acc[-1])
+if __name__ == "__main__":
+    parser = keras_cmdline.create_parser()
+    parser = augment_parser(parser)
+    cmdline_args = parser.parse_args()
+    param_dict = vars(cmdline_args)
+    run(param_dict)

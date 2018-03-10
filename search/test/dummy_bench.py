@@ -4,7 +4,8 @@ import argparse
 
 logger = logging.getLogger(__name__)
 
-def run(*, x=1, y=0, sleep=0.5):
+def run(param_dict):
+    x, y, sleep = param_dict['x'], param_dict['y'], param_dict['sleep']
     logger.info(f'run: (x={x}, y={y})')
     time.sleep(sleep)
     print("OUTPUT:", x+y)

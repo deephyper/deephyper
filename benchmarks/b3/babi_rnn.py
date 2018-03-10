@@ -57,7 +57,15 @@ noise to find the relevant statements, improving performance substantially.
 This becomes especially obvious on QA2 and QA3, both far longer than QA1.
 '''
 
-from __future__ import print_function
+import sys
+import time
+import os
+
+here = os.path.dirname(os.path.abspath(__file__))
+top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
+sys.path.insert(top)
+
+start = time.time()
 from functools import reduce
 import re
 import tarfile
@@ -72,9 +80,9 @@ from keras.models import Model
 from keras.preprocessing.sequence import pad_sequences
 
 from keras import layers
-import keras_cmdline
-import argparse
-import sys
+from deephyper.benchmarks import keras_cmdline
+load_time = time.time() - start
+print(f"module import time: {load_time:.3f} seconds")
 
 
 def tokenize(sent):
@@ -147,7 +155,130 @@ def vectorize_stories(data, word_idx, story_maxlen, query_maxlen):
         ys.append(y)
     return pad_sequences(xs, maxlen=story_maxlen), pad_sequences(xqs, maxlen=query_maxlen), np.array(ys)
 
-def agument_parser(parser):
+
+def stage_in(file_names, local_path='/local/scratch/', use_cache=True):
+    if os.path.exists(local_path):
+        prepend = local_path
+    else:
+        prepend = ''
+
+    origin_dir_path = os.path.dirname(os.path.abspath(__file__))
+    origin_dir_path = os.path.join(origin_dir_path, 'data')
+    print("Looking for files:", file_names)
+    print("In origin:", origin_dir_path)
+
+    paths = {}
+    for name in file_names:
+        origin = os.path.join(origin_dir_path, name)
+        if use_cache:
+            paths[name] = get_file(fname=prepend+name, origin='file://'+origin)
+        else:
+            paths[name] = origin
+
+        print(f"File {name} will be read from {paths[name]}")
+    return paths
+
+
+def run(param_dict):
+    optimizer = keras_cmdline.return_optimizer(param_dict)
+    print(param_dict)
+
+    BATCH_SIZE = param_dict['batch_size']
+    EPOCHS = param_dict['epochs']
+    DROPOUT = param_dict['dropout']
+
+    if param_dict['rnn_type'] == 'GRU':
+        RNN = layers.GRU
+    elif param_dict['rnn_type'] == 'SimpleRNN':
+        RNN = layers.SimpleRNN
+    else:
+        RNN = layers.LSTM
+
+    EMBED_HIDDEN_SIZE = param_dict['embed_hidden_size']
+    SENT_HIDDEN_SIZE = param_dict['sent_hidden_size']
+    QUERY_HIDDEN_SIZE = param_dict['query_hidden_size']
+
+    print('RNN / Embed / Sent / Query = {}, {}, {}, {}'.format(RNN,
+                                                               EMBED_HIDDEN_SIZE,
+                                                               SENT_HIDDEN_SIZE,
+                                                               QUERY_HIDDEN_SIZE))
+
+    try:
+        paths = stage_in(['babi-tasks-v1-2.tar.gz'], use_cache=True)
+        path = paths['babi-tasks-v1-2.tar.gz']
+    except:
+        print('Error downloading dataset, please download it manually:\n'
+              '$ wget http://www.thespermwhale.com/jaseweston/babi/tasks_1-20_v1-2.tar.gz\n'
+              '$ mv tasks_1-20_v1-2.tar.gz ~/.keras/datasets/babi-tasks-v1-2.tar.gz')
+        raise
+
+    # Default QA1 with 1000 samples
+    # challenge = 'tasks_1-20_v1-2/en/qa1_single-supporting-fact_{}.txt'
+    # QA1 with 10,000 samples
+    # challenge = 'tasks_1-20_v1-2/en-10k/qa1_single-supporting-fact_{}.txt'
+    # QA2 with 1000 samples
+    challenge = 'tasks_1-20_v1-2/en/qa2_two-supporting-facts_{}.txt'
+    # QA2 with 10,000 samples
+    # challenge = 'tasks_1-20_v1-2/en-10k/qa2_two-supporting-facts_{}.txt'
+    with tarfile.open(path) as tar:
+        train = get_stories(tar.extractfile(challenge.format('train')))
+        test = get_stories(tar.extractfile(challenge.format('test')))
+
+    vocab = set()
+    for story, q, answer in train + test:
+        vocab |= set(story + q + [answer])
+    vocab = sorted(vocab)
+
+    # Reserve 0 for masking via pad_sequences
+    vocab_size = len(vocab) + 1
+    word_idx = dict((c, i + 1) for i, c in enumerate(vocab))
+    story_maxlen = max(map(len, (x for x, _, _ in train + test)))
+    query_maxlen = max(map(len, (x for _, x, _ in train + test)))
+
+    x, xq, y = vectorize_stories(train, word_idx, story_maxlen, query_maxlen)
+    tx, txq, ty = vectorize_stories(test, word_idx, story_maxlen, query_maxlen)
+
+    print('vocab = {}'.format(vocab))
+    print('x.shape = {}'.format(x.shape))
+    print('xq.shape = {}'.format(xq.shape))
+    print('y.shape = {}'.format(y.shape))
+    print('story_maxlen, query_maxlen = {}, {}'.format(story_maxlen, query_maxlen))
+
+    print('Build model...')
+
+    sentence = layers.Input(shape=(story_maxlen,), dtype='int32')
+    encoded_sentence = layers.Embedding(vocab_size, EMBED_HIDDEN_SIZE)(sentence)
+    encoded_sentence = layers.Dropout(DROPOUT)(encoded_sentence)
+
+    question = layers.Input(shape=(query_maxlen,), dtype='int32')
+    encoded_question = layers.Embedding(vocab_size, EMBED_HIDDEN_SIZE)(question)
+    encoded_question = layers.Dropout(DROPOUT)(encoded_question)
+    encoded_question = RNN(EMBED_HIDDEN_SIZE)(encoded_question)
+    encoded_question = layers.RepeatVector(story_maxlen)(encoded_question)
+
+    merged = layers.add([encoded_sentence, encoded_question])
+    merged = RNN(EMBED_HIDDEN_SIZE)(merged)
+    merged = layers.Dropout(DROPOUT)(merged)
+    preds = layers.Dense(vocab_size, activation='softmax')(merged)
+
+    model = Model([sentence, question], preds)
+    model.compile(optimizer=optimizer,
+                  loss='categorical_crossentropy',
+                  metrics=['accuracy'])
+
+    print('Training')
+    model.fit([x, xq], y,
+              batch_size=BATCH_SIZE,
+              epochs=EPOCHS,
+              validation_split=0.05)
+    loss, acc = model.evaluate([tx, txq], ty,
+                               batch_size=BATCH_SIZE)
+    print('Test loss / test accuracy = {:.4f} / {:.4f}'.format(loss, acc))
+    print('OUTPUT:', acc)
+    return acc
+
+
+def augment_parser(parser):
     parser.add_argument('--rnn_type', action='store',
                         dest='rnn_type',
                         nargs='?', const=1, type=str, default='LSTM',
@@ -169,103 +300,9 @@ def agument_parser(parser):
     return parser
 
 
-parser = keras_cmdline.create_parser()
-parser = agument_parser(parser)
-cmdline_args = parser.parse_args()
-param_dict = vars(cmdline_args)
-optimizer = keras_cmdline.return_optimizer(param_dict)
-print(param_dict)
-
-
-BATCH_SIZE = param_dict['batch_size']
-EPOCHS = param_dict['epochs']
-DROPOUT = param_dict['dropout']
-
-if param_dict['rnn_type'] == 'GRU':
-    RNN = layers.GRU
-elif param_dict['rnn_type'] == 'SimpleRNN':
-    RNN = layers.SimpleRNN
-else:
-    RNN = layers.LSTM
-
-EMBED_HIDDEN_SIZE = param_dict['embed_hidden_size']
-SENT_HIDDEN_SIZE = param_dict['sent_hidden_size']
-QUERY_HIDDEN_SIZE = param_dict['query_hidden_size']
-
-print('RNN / Embed / Sent / Query = {}, {}, {}, {}'.format(RNN,
-                                                           EMBED_HIDDEN_SIZE,
-                                                           SENT_HIDDEN_SIZE,
-                                                           QUERY_HIDDEN_SIZE))
-
-try:
-    path = get_file('babi-tasks-v1-2.tar.gz', origin='https://s3.amazonaws.com/text-datasets/babi_tasks_1-20_v1-2.tar.gz')
-except:
-    print('Error downloading dataset, please download it manually:\n'
-          '$ wget http://www.thespermwhale.com/jaseweston/babi/tasks_1-20_v1-2.tar.gz\n'
-          '$ mv tasks_1-20_v1-2.tar.gz ~/.keras/datasets/babi-tasks-v1-2.tar.gz')
-    raise
-
-# Default QA1 with 1000 samples
-# challenge = 'tasks_1-20_v1-2/en/qa1_single-supporting-fact_{}.txt'
-# QA1 with 10,000 samples
-# challenge = 'tasks_1-20_v1-2/en-10k/qa1_single-supporting-fact_{}.txt'
-# QA2 with 1000 samples
-challenge = 'tasks_1-20_v1-2/en/qa2_two-supporting-facts_{}.txt'
-# QA2 with 10,000 samples
-# challenge = 'tasks_1-20_v1-2/en-10k/qa2_two-supporting-facts_{}.txt'
-with tarfile.open(path) as tar:
-    train = get_stories(tar.extractfile(challenge.format('train')))
-    test = get_stories(tar.extractfile(challenge.format('test')))
-
-vocab = set()
-for story, q, answer in train + test:
-    vocab |= set(story + q + [answer])
-vocab = sorted(vocab)
-
-# Reserve 0 for masking via pad_sequences
-vocab_size = len(vocab) + 1
-word_idx = dict((c, i + 1) for i, c in enumerate(vocab))
-story_maxlen = max(map(len, (x for x, _, _ in train + test)))
-query_maxlen = max(map(len, (x for _, x, _ in train + test)))
-
-x, xq, y = vectorize_stories(train, word_idx, story_maxlen, query_maxlen)
-tx, txq, ty = vectorize_stories(test, word_idx, story_maxlen, query_maxlen)
-
-print('vocab = {}'.format(vocab))
-print('x.shape = {}'.format(x.shape))
-print('xq.shape = {}'.format(xq.shape))
-print('y.shape = {}'.format(y.shape))
-print('story_maxlen, query_maxlen = {}, {}'.format(story_maxlen, query_maxlen))
-
-print('Build model...')
-
-sentence = layers.Input(shape=(story_maxlen,), dtype='int32')
-encoded_sentence = layers.Embedding(vocab_size, EMBED_HIDDEN_SIZE)(sentence)
-encoded_sentence = layers.Dropout(DROPOUT)(encoded_sentence)
-
-question = layers.Input(shape=(query_maxlen,), dtype='int32')
-encoded_question = layers.Embedding(vocab_size, EMBED_HIDDEN_SIZE)(question)
-encoded_question = layers.Dropout(DROPOUT)(encoded_question)
-encoded_question = RNN(EMBED_HIDDEN_SIZE)(encoded_question)
-encoded_question = layers.RepeatVector(story_maxlen)(encoded_question)
-
-merged = layers.add([encoded_sentence, encoded_question])
-merged = RNN(EMBED_HIDDEN_SIZE)(merged)
-merged = layers.Dropout(DROPOUT)(merged)
-preds = layers.Dense(vocab_size, activation='softmax')(merged)
-
-model = Model([sentence, question], preds)
-model.compile(optimizer=optimizer,
-              loss='categorical_crossentropy',
-              metrics=['accuracy'])
-
-print('Training')
-model.fit([x, xq], y,
-          batch_size=BATCH_SIZE,
-          epochs=EPOCHS,
-          validation_split=0.05)
-loss, acc = model.evaluate([tx, txq], ty,
-                           batch_size=BATCH_SIZE)
-print('Test loss / test accuracy = {:.4f} / {:.4f}'.format(loss, acc))
-print('OUTPUT:', acc)
-
+if __name__ == "__main__":
+    parser = keras_cmdline.create_parser()
+    parser = augment_parser(parser)
+    cmdline_args = parser.parse_args()
+    param_dict = vars(cmdline_args)
+    run(param_dict)
