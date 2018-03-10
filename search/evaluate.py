@@ -2,7 +2,9 @@ from numpy import integer, floating, ndarray
 import json
 import uuid
 import multiprocessing
-import concurrent.futures
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Encoder(json.JSONEncoder):
     '''Enables JSON dump of numpy data'''
@@ -16,42 +18,36 @@ class Encoder(json.JSONEncoder):
 class Evaluator:
 
     def __init__(self):
-        self.points = {}
-        self.already_read = []
+        self.pending_evals = {} # x --> future or x --> UUID
+        self.evals = {} # x --> cost
 
-    def add_point(x, cfg):
-        x_id = self._new_point(x, cfg)
-        self.points[str(x_id)] = json.dumps(x, cls=Encoder)
-        self._submit_eval(x, cfg)
+    def _encode(self, x):
+        '''from x (list) to JSON string'''
+        return json.dumps(x, cls=Encoder)
 
-    def read_points(self):
-        raise NotImplementedError
+    def _decode(self, key):
+        '''from JSON string to x (list)'''
+        return json.loads(key)
 
-    def _submit_eval(self):
-        raise NotImplementedError
+    def add_eval(self, x):
+        key = self._encode(x)
+        new_eval = self._eval_exec(x) # future or job UUID
+        self.pending_evals[key] = new_eval
 
     @property
     def counter(self):
-        return len(self.points)
+        return len(self.evals) + len(self.pending_evals)
+    
+    def num_free_workers(self):
+        num_evals = len(self.pending_evals)
+        logger.debug(f"{num_evals} pending evals; {self.num_workers} workers")
+        if num_evals <= self.num_workers:
+            return self.num_workers - num_evals
+        else:
+            return 0
 
-class LocalEvaluator(Evaluator):
-    ExecutorCls = concurrent.futures.ProcessPoolExecutor
-
-    def __init__(self):
-        super(self).__init__()
-        self.executor = None
-        self.evals = []
-
-    def _submit_eval(self, x, cfg):
-        if self.executor is None:
-            os.environ['KERAS_BACKEND'] = cfg.backend
-            self.executor = ExecutorCls()
-
-        kwargs = {k:v for k,v in zip(cfg.params, x) if 'hidden' not in k}
-        eval_func = cfg.benchmark_module.run
-        future = self.executor.submit(eval_func, kwargs=kwargs)
-        self.evals.append((x, future))
-
-    def read_points(self):
-        for (x, future) in self.futures:
-            if future.done():
+    def save(self):
+        with open('evaluator.pkl', 'wb') as fp: 
+            pickle.dump(self, fp)
+        with open('results.json', 'w') as fp:
+            json.dump(self.evals, fp, indent=4, sort_keys=True, cls=Encoder)
