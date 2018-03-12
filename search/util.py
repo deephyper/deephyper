@@ -3,6 +3,35 @@ import csv
 import time
 import logging
 
+class OptConfig:
+    '''Optimizer-related options'''
+
+    def __init__(self, args):
+        package = os.path.basename(os.path.dirname(HERE)) # 'deephyper'
+
+        self.backend = args.backend
+        self.max_evals = args.max_evals 
+        self.repeat_evals = args.repeat_evals
+        self.num_workers = args.num_workers
+        
+        # for example, the default value of args.benchmark is "b1.addition_rnn"
+        benchmark_directory = args.benchmark.split('.')[0] # "b1"
+        self.benchmark = args.benchmark
+        problem_module_name = f'{package}.benchmarks.{benchmark_directory}.problem'
+        problem_module = import_module(problem_module_name)
+
+        # get the path of the b1/addition_rnn.py file here:
+        self.benchmark_module_name = f'{package}.benchmarks.{args.benchmark}'
+        self.benchmark_filename = find_spec(benchmark_module_name).origin
+        
+        # create a problem instance and configure the skopt.Optimizer
+        instance = problem_module.Problem()
+        self.params = list(instance.params)
+        self.starting_point = instance.starting_point
+        
+        spaceDict = instance.space
+        self.space = [spaceDict[key] for key in self.params]
+
 def conf_logger():
     logger = logging.getLogger('deephyper')
 
@@ -66,48 +95,10 @@ def create_parser():
                         help='Number of points to ask for initially'
                        )
     parser.add_argument('--from-checkpoint', default=None,
-                        help='working directory of previous search, containing pickled optimizer'
+                        help='path of checkpoint file from a previous run'
                        )
     parser.add_argument('--evaluator', default='balsam')
     parser.add_argument('--repeat-evals', action='store_true',
                         help='Re-evaluate points visited by hyperparameter optimizer'
                        )
     return parser
-
-def save_checkpoint(resultsList, opt_config, my_jobs, finished_jobs):
-    '''Dump the current experiment state to disk'''
-    print("checkpointing optimization")
-
-    with open('optimizer.pkl', 'wb') as fp:
-        pickle.dump(opt_config, fp)
-
-    with open('jobs.json', 'w') as fp:
-        jobsDict = dict(my_jobs=my_jobs, finished_jobs=finished_jobs)
-        json.dump(jobsDict, fp, cls=Encoder)
-
-    with open('results.json', 'w') as fp:
-        json.dump(resultsList, fp, indent=4, sort_keys=True, cls=Encoder)
-
-    keys = resultsList[0].keys() if resultsList else []
-    with open('results.csv', 'w') as fp:
-        dict_writer = csv.DictWriter(fp, keys)
-        dict_writer.writeheader()
-        dict_writer.writerows(resultsList)
-
-
-def load_checkpoint(checkpoint_directory):
-    '''Load the state of a previous run to resume experiment'''
-    optpath = os.path.join(checkpoint_directory, 'optimizer.pkl')
-    with open(optpath, 'rb') as fp:
-        opt_config = pickle.load(fp)
-
-    jobspath = os.path.join(checkpoint_directory, 'jobs.json')
-    with open(jobspath, 'r') as fp:
-        jobsDict = json.load(fp)
-    my_jobs = jobsDict['my_jobs']
-    finished_jobs = jobsDict['finished_jobs']
-    
-    resultpath = os.path.join(checkpoint_directory, 'results.json')
-    with open(resultpath, 'r') as fp: 
-        resultsList = json.load(fp)
-    return opt_config, my_jobs, finished_jobs, resultsList

@@ -1,68 +1,263 @@
-def main():
-    resultsList = []
-    eval_counter = 0
-    start_time = time.time()
-    pop = toolbox.population(n=50)
-    CXPB, MUTPB, NGEN = 0.5, 0.2, 40
-    for x in pop:
-        task = {}
-        task['x'] = space_enc.decode_point(x)
-        print(task['x'])
-    # Evaluate the entire population
-    #fitnesses = map(toolbox.evaluate_ga, pop)
-    fitnesses = []
-    for x in pop:
-        task = {}
-        task['x'] = space_enc.decode_point(x)
-        task['eval_counter'] = eval_counter
-        task['start_time'] = float(time.time() - start_time)
-        fitness = toolbox.evaluate_ga(task['x'], task['eval_counter'])
-        task['end_time'] = float(time.time() - start_time)
-        eval_counter = eval_counter + 1
-        fitnesses.append(fitness)
-    for ind, fit in zip(pop, fitnesses):
+import logging
+import pickle
+import os
+import signal
+import sys
+
+import deap
+import deap.gp
+import deap.benchmarks
+from deap import base
+from deap import creator
+from deap import tools
+from deap import algorithms
+
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import LabelEncoder
+import numpy as np
+import random
+
+masterLogger = util.conf_logger()
+logger = logging.getLogger(__name__)
+
+HERE = os.path.dirname(os.path.abspath(__file__)) # search dir
+top  = os.path.dirname(os.path.dirname(HERE)) # directory containing deephyper
+sys.path.append(top)
+
+SEED = 12345
+CHECKPOINT_INTERVAL = 1    # How many generations between optimizer checkpoints
+
+def uniform(lower_list, upper_list, dimensions):
+    """Fill array """
+    if hasattr(lower_list, '__iter__'):
+        return [random.uniform(lower, upper) 
+                for lower, upper in zip(lower_list, upper_list)]
+    else:
+        return [random.uniform(lower_list, upper_list) 
+                for _ in range(dimensions)]
+
+
+class SpaceEncoder:
+    def __init__(self, space):
+        self.space = space
+        self.encoders = []
+        self.ttypes = []
+        self.encode_space() 
+
+    def encode_space(self):
+        for p in self.space:
+            enc, ttype = self.encode(p)
+            self.encoders.append(enc)
+            self.ttypes.append(ttype)
+
+    def encode(self, val):
+        ttype = 'i'
+        if isinstance(val, list):
+            encoder = LabelEncoder()
+            encoder.fit(val)
+            ttype = 'c'
+        else:
+            encoder = MinMaxScaler()
+            encoder.fit(np.asarray(val).reshape(-1, 1))
+            if isinstance(val[0], float):
+                ttype = 'f'
+        return encoder, ttype
+
+    def decode_point(self, point):
+        result = [ self.decode(point[i], self.encoders[i]) for i in range(len(point)) ]
+        for i in range(len(point)): 
+            if self.ttypes[i] == 'i':
+                result[i] = int(round(result[i])) 
+        return result
+
+    def decode(self, enc_val, encoder):
+        dec_val = enc_val
+        if hasattr(encoder, 'classes_'):
+            bins = np.linspace(0.0, 1.0, num=1+len(list(encoder.classes_)))
+            dec_val = max(0, np.digitize(enc_val, bins, right=True) - 1)
+        dec_val = np.asscalar(encoder.inverse_transform(dec_val))
+        return dec_val
+
+
+class GAOptimizer:
+    def __init__(self, opt_config, seed=SEED, CXPB=0.5,
+                 MUTPB=0.2, NGEN=40, INIT_POP_SIZE=50):
+        self.SEED = seed
+        self.CXPB = CXPB
+        self.MUTPB = MUTPB
+        self.NGEN = NGEN
+        self.INIT_POP_SIZE = INIT_POP_SIZE
+        self.IND_SIZE = len(opt_config.space)
+
+        self.toolbox = None
+        self.space_encoder = SpaceEncoder(opt_config.space)
+
+        self._setup()
+
+        self.current_gen = 0
+        self.pop = None
+        self.halloffame = tools.HallOfFame(maxsize=1)
+        self.logbook = tools.Logbook()
+
+    def _setup(self):
+        random.seed(self.SEED)
+
+        creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+        creator.create("Individual", list, fitness=creator.FitnessMin)
+
+        self.toolbox = base.Toolbox()
+        
+        LOWER = [0.0] * self.IND_SIZE
+        UPPER = [1.0] * self.IND_SIZE
+        self.toolbox.register("uniformparams", uniform, LOWER, UPPER, self.IND_SIZE)
+        self.toolbox.register("Individual",tools.initIterate,
+                              creator.Individual,toolbox.uniformparams)
+        self.toolbox.register("population", tools.initRepeat, list, toolbox.Individual)
+        self.toolbox.register("mate", tools.cxTwoPoint)
+        self.toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=1, indpb=0.1)
+        self.toolbox.register("select", tools.selTournament, tournsize=3)
+    
+        self.stats = tools.Statistics(lambda ind: ind.fitness.values)
+        self.stats.register("avg", np.mean)
+        self.stats.register("max", np.max)
+
+
+    def record_generation(self, num_evals):
+        self.halloffame.update(self.pop)
+        record = self.stats.compile(self.pop)
+        self.logbook.record(gen=self.current_gen, evals=num_evals, **record)
+
+    def __getstate__(self):
+        d = self.__dict__
+        d['toolbox'] = None
+        return d
+    
+    def __setstate__(self, d):
+        self.__dict__ = d
+        self._setup()
+
+
+def evaluate_fitnesses(individuals, opt, evaluator):
+    points = list(map(opt.space_encoder.decode_point, individuals))
+    for x in points: evaluator.add_eval(x)
+    logger.info(f"Waiting on {len(points)} individual fitness evaluations")
+    results = evaluator.await_evals(points)
+
+    for ind, (x,fit) in zip(individuals, results):
         ind.fitness.values = fit
 
-    for g in range(NGEN):
+    opt.record_generation(num_evals=len(points))
+
+
+def save_checkpoint(opt_config, optimizer, evaluator):
+    data = {}
+    data['opt_config'] = opt_config
+    data['optimizer'] = optimizer
+    data['evaluator'] = evaluator
+    
+    fname = f'{opt_config.benchmark}.pkl'
+    with open(fname, 'wb') as fp: pickle.dump(data, fp)
+
+    evaluator.dump_evals()
+    logger.info(f"Checkpointed run in {os.path.abspath(fname)}")
+
+
+def load_checkpoint(chk_path):
+    assert os.path.exists(chk_path), "No such checkpoint file"
+    with open(chk_path, 'rb') as fp: data = pickle.load(fp)
+    
+    cfg, opt, evaluator = data['opt_config'], data['optimizer'], data['evaluator']
+
+    cfg.num_workers = args.num_workers
+    logger.info(f"Resuming GA from checkpoint in {chkdir}")
+    logger.info(f"On eval {evaluator.counter}")
+    return cfg, opt, evaluator
+
+
+def main(args):
+    if args.from_checkpoint:
+        chk_path = args.from_checkpoint
+        cfg, opt, evaluator = load_checkpoint(chk_path)
+    else:
+        cfg = util.OptConfig(args)
+        opt = GAOptimizer(cfg)
+        evaluator = evaluate.create_evaluator(cfg)
+        logger.info(f"Starting new run with {cfg.benchmark_module_name}")
+
+
+    timer = util.elapsed_timer(max_runtime_minutes=None, service_period=SERVICE_PERIOD)
+    elapsed_seconds = next(timer)
+    chkpoint_counter = 0
+
+    # Gracefully handle shutdown
+    def handler(signum, stack):
+        logger.info('Received SIGINT/SIGTERM')
+        save_checkpoint(cfg, opt, evaluator)
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, handler)
+    signal.signal(signal.SIGTERM, handler)
+
+    
+    logger.info("Hyperopt GA driver starting")
+    logger.info(f"Elapsed time: {util.pretty_time(elapsed_seconds)}")
+
+    if opt.pop is None:
+        logger.info("Generating initial population")
+        opt.pop = opt.toolbox.population(n=opt.INIT_POP_SIZE)
+        individuals = opt.pop
+        evaluate_fitnesses(individuals, opt, evaluator)
+        
+    with open('ga_logbook.log', 'w') as fp:
+        fp.write(str(opt.logbook))
+    
+
+    while opt.current_gen < opt.NGEN:
+        opt.current_gen += 1
+        elapsed_seconds = next(timer)
+        logger.info(f"Generation {opt.current_gen}")
+        logger.info(f"Elapsed time: {util.pretty_time(elapsed_seconds)}")
+
         # Select the next generation individuals
-        offspring = toolbox.select(pop, len(pop))
+        offspring = opt.toolbox.select(opt.pop, len(opt.pop))
         # Clone the selected individuals
-        offspring = map(toolbox.clone, offspring)
+        offspring = map(opt.toolbox.clone, offspring)
 
         # Apply crossover and mutation on the offspring
         for child1, child2 in zip(offspring[::2], offspring[1::2]):
-            if random.random() < CXPB:
-                toolbox.mate(child1, child2)
+            if random.random() < opt.CXPB:
+                opt.toolbox.mate(child1, child2)
                 del child1.fitness.values
                 del child2.fitness.values
 
         for mutant in offspring:
-            if random.random() < MUTPB:
-                toolbox.mutate(mutant)
+            if random.random() < opt.MUTPB:
+                opt.toolbox.mutate(mutant)
                 del mutant.fitness.values
 
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-        fitnesses = []
-        for x in invalid_ind:
-            task = {}
-            task['x'] = space_enc.decode_point(x)
-            task['eval_counter'] = eval_counter
-            task['start_time'] = float(time.time() - start_time)
-            fitness = toolbox.evaluate_ga(task['x'], task['eval_counter'])
-            task['end_time'] = float(time.time() - start_time)
-            eval_counter = eval_counter + 1
-            fitnesses.append(fitness)
-            resultsList.append(task)
+        logger.info(f"Evaluating {len(invalid_ind)} invalid individuals")
+        evaluate_fitnesses(invalid_ind, opt, evaluator)
 
-        for ind, fit in zip(invalid_ind, fitnesses):
-            ind.fitness.values = fit
-            print(ind.fitness.values)
+        with open('ga_logbook.log', 'w') as fp:
+            fp.write(str(opt.logbook))
 
         # The population is entirely replaced by the offspring
-        pop[:] = offspring
-    saveResults(resultsList, results_json_fname, results_csv_fname)
-    return pop
+        opt.pop[:] = offspring
 
-if __name__ == '__main__':
-    main()
+        chkpoint_counter += 1
+        if chkpoint_counter >= CHECKPOINT_INTERVAL:
+            save_checkpoint(cfg, opt, evaluator)
+            chkpoint_counter = 0
+        sys.stdout.flush()
+    
+    # EXIT
+    logger.info('Hyperopt GA driver finishing')
+    save_checkpoint(cfg, opt, evaluator)
+
+
+if __name__ == "__main__":
+    parser = util.create_parser()
+    args = parser.parse_args()
+    main(args)

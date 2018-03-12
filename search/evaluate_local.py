@@ -66,28 +66,19 @@ class LocalEvaluator(evaluate.Evaluator):
             yield (x, y)
 
     def __getstate__(self):
-        d = {}
-        d['evals'] = self.evals
+        d = self.__dict__
         d['pending_evals'] = list(self.pending_evals.keys())
-        d['backend'] = self.backend
         d['executor'] = None
-        d['num_workers'] = self.num_workers
-        d['params_list'] = self.params_list
-        d['bench_module_name'] = self.bench_module_name
+        d['bench_module'] = None
         return d
 
     def __setstate__(self, d):
         logger.info(f"Unpickling LocalEvaluator")
 
-        self.evals = d['evals']
-        self.pending_evals = {}
-        self.backend = d['backend']
-        self.executor = d['executor']
-        self.num_workers = d['num_workers']
-        self.params_list = d['params_list']
-        self.bench_module_name = d['bench_module_name']
-        
+        self.__dict__ = d
         self.bench_module = import_module(self.bench_module_name)
+
+        self.pending_evals = {}
         pending_eval_keys = d['pending_evals']
         
         logger.info(f"Restored {len(self.evals)} finished evals")

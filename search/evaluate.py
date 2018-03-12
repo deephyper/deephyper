@@ -21,6 +21,9 @@ class Evaluator:
         self.pending_evals = {} # x --> future or x --> UUID
         self.evals = {} # x --> cost
 
+    def encode(self, x):
+        return self._encode(x)
+
     def _encode(self, x):
         '''from x (list) to JSON string'''
         return json.dumps(x, cls=Encoder)
@@ -46,8 +49,24 @@ class Evaluator:
         else:
             return 0
 
-    def save(self):
-        with open('evaluator.pkl', 'wb') as fp: 
-            pickle.dump(self, fp)
+    def dump_evals(self):
         with open('results.json', 'w') as fp:
             json.dump(self.evals, fp, indent=4, sort_keys=True, cls=Encoder)
+
+def create_evaluator(opt_config):
+    evaluator_class = opt_config.evaluator
+    assert evaluator_class in ['balsam', 'local']
+
+    if evaluator_class == "balsam":
+        from deephyper.search.evaluate_balsam import BalsamEvaluator
+        cls = BalsamEvaluator
+    else:
+        from deephyper.search.evaluate_local import LocalEvaluator
+        cls = LocalEvaluator
+
+    evaluator = cls(opt_config.params,
+                    opt_config.benchmark_module_name,
+                    num_workers=opt_config.num_workers,
+                    backend=opt_config.backend
+                   )
+    return evaluator

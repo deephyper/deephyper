@@ -17,7 +17,6 @@ class BalsamEvaluator(evaluate.Evaluator):
     def __init__(self, params_list, bench_module_name, num_workers=1, backend='tensorflow'):
         super().__init__()
 
-
         self.id_key_map = {}
         self.num_workers = num_workers
         self.params_list = params_list
@@ -80,7 +79,7 @@ class BalsamEvaluator(evaluate.Evaluator):
         return y
 
     def await_evals(self, to_read, timeout=1000, delay=5):
-        x_map = {self._encode(x) : x for x in to_read}
+        x_map = [self._encode(x) for x in to_read]
         job_ids = [self.pending_evals[key] for key in x_map]
         jobs = BalsamJob.objects.filter(job_id__in=job_ids)
 
@@ -107,9 +106,8 @@ class BalsamEvaluator(evaluate.Evaluator):
             logger.error("Balsam Jobs did not finish in alloted timeout; aborting")
             raise RuntimeError(f"The jobs did not finish in {timeout} seconds")
 
-        for job in jobs:
-            key = self.id_key_map[job.job_id.hex]
-            x =  x_map[key]
+        for x, key, job_id in zip(to_read, x_map, job_ids):
+            job = BalsamJob.objects.get(job_id=job_id)
             y = self._read_eval_output(job)
             self.evals[key] = y
             del self.pending_evals[key]
@@ -124,6 +122,7 @@ class BalsamEvaluator(evaluate.Evaluator):
         logger.info("Checking if any pending Balsam jobs are done")
 
         for job in done_jobs:
+            logger.info(f"Got data from {job.cute_id}")
             key = self.id_key_map[job.job_id.hex]
             x = self._decode(key)
             y = self._read_eval_output(job)
