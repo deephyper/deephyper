@@ -5,6 +5,7 @@ import pickle
 
 HERE = os.path.dirname(os.path.abspath(__file__)) # search dir
 top  = os.path.dirname(os.path.dirname(os.path.dirname(HERE))) # directory containing deephyper
+print(top)
 sys.path.append(top)
 
 from deephyper.search import evaluate_local, util
@@ -13,7 +14,7 @@ import logging
 master_logger = util.conf_logger()
 logger = logging.getLogger(__name__)
 
-bench_module = 'deephyper.search.dummy_bench'
+bench_module = 'deephyper.search.test.dummy_bench'
 params_list = ['x', 'y', 'sleep']
 
 evaluator = evaluate_local.LocalEvaluator(params_list, bench_module,

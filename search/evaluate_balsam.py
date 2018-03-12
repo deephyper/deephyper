@@ -131,3 +131,44 @@ class BalsamEvaluator(evaluate.Evaluator):
             del self.pending_evals[key]
             logger.info(f"x: {x} y: {y}")
             yield (x, y)
+    
+    def __getstate__(self):
+        d = {}
+        d['evals'] = self.evals
+        d['pending_evals'] = self.pending_evals
+        d['id_key_map'] = self.id_key_map
+        d['backend'] = self.backend
+        d['num_workers'] = self.num_workers
+        d['params_list'] = self.params_list
+        d['bench_module_name'] = self.bench_module_name
+        d['bench_file'] = self.bench_file
+        return d
+
+    def __setstate__(self, d):
+        self.evals = d['evals']
+        self.pending_evals = d['pending_evals']
+        self.id_key_map = d['id_key_map']
+        self.backend = d['backend']
+        self.num_workers = d['num_workers']
+        self.params_list = d['params_list']
+        self.bench_module_name = d['bench_module_name']
+        self.bench_file = d['bench_file']
+
+        if dag.current_job is None:
+            self._init_current_balsamjob()
+
+
+        pending_ids = self.pending_evals.values()
+        num_pending = BalsamJob.objects.filter(job_id__in=pending_ids).count()
+
+        if num_pending != len(pending_ids):
+            logger.error("Pickled Balsam evaluator had {len(pending_ids)} pending jobs")
+            logger.error("But only {num_pending} found in Balsam DB")
+            raise RuntimeError("Pending evals are missing in Balsam DB, did you delete them?")
+
+        logger.debug("Balsam Evaluator loaded from pickle")
+        logger.debug(f"Backend: {self.backend}")
+        logger.info(f"Benchmark: {self.bench_file}")
+
+        logger.info(f"Restored {len(self.evals)} finished evals")
+        logger.info(f"Resuming {len(self.pending_evals)} evals")

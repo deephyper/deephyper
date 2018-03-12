@@ -13,7 +13,7 @@ import logging
 master_logger = util.conf_logger()
 logger = logging.getLogger(__name__)
 
-bench_module = 'deephyper.search.dummy_bench'
+bench_module = 'deephyper.search.test.dummy_bench'
 params_list = ['x', 'y', 'sleep']
 
 evaluator = evaluate_balsam.BalsamEvaluator(params_list, bench_module, num_workers=1)
@@ -29,7 +29,6 @@ time.sleep(0.4)
 for x, y in evaluator.await_evals([ [1, 1, 0], [3, 3, 4.5] ]):
     print(x, y)
 
-sys.exit(0)
 
 print("Checkpointing!")
 with open('evaluator.pkl', 'wb') as fp: pickle.dump(evaluator, fp)
@@ -49,6 +48,14 @@ print(evaluator.num_free_workers(), "free workers")
 
 awaiting = [ [2,2,0], [4,4,0.0], [5, 5, 0.1], [6, 6, 0.0] ]
 
+time.sleep(3)
+print("Get finished (any):")
+for x, y in evaluator.get_finished_evals():
+    print(x, y)
+    awaiting.remove(x)
+
+
+print("Awaiting:", awaiting)
 for x, y in evaluator.await_evals(awaiting):
     print(x, y)
 

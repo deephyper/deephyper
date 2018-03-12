@@ -20,4 +20,5 @@ if __name__ == "__main__":
     x = args.x
     y = args.y
     sleep = args.sleep
-    run(x=x, y=y, sleep=sleep)
+    param_dict = vars(args)
+    run(param_dict)
