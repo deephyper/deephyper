@@ -129,6 +129,10 @@ def stage_in(file_names, local_path='/local/scratch/', use_cache=True):
 
 
 def run(param_dict):
+    default_params = defaults()
+    for key in default_params:
+        if key not in param_dict:
+            param_dict[key] = default_params[key]
     optimizer = keras_cmdline.return_optimizer(param_dict)
     print(param_dict)
 
@@ -290,6 +294,11 @@ def augment_parser(parser):
                         nargs='?', const=2, type=int, default='128',
                         help='number of epochs')
     return parser
+
+def defaults():
+    def_parser = keras_cmdline.create_parser()
+    def_parser = augment_parser(def_parser)
+    return vars(def_parser.parse_args(''))
 
 
 if __name__ == "__main__":

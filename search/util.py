@@ -1,16 +1,21 @@
 import argparse
+import os
 import csv
 import time
 import logging
+from importlib import import_module
+from importlib.util import find_spec
 
 class OptConfig:
     '''Optimizer-related options'''
 
     def __init__(self, args):
+        HERE = os.path.dirname(os.path.abspath(__file__)) # search dir
         package = os.path.basename(os.path.dirname(HERE)) # 'deephyper'
 
         self.backend = args.backend
         self.max_evals = args.max_evals 
+        self.evaluator = args.evaluator
         self.repeat_evals = args.repeat_evals
         self.num_workers = args.num_workers
         
@@ -22,7 +27,7 @@ class OptConfig:
 
         # get the path of the b1/addition_rnn.py file here:
         self.benchmark_module_name = f'{package}.benchmarks.{args.benchmark}'
-        self.benchmark_filename = find_spec(benchmark_module_name).origin
+        self.benchmark_filename = find_spec(self.benchmark_module_name).origin
         
         # create a problem instance and configure the skopt.Optimizer
         instance = problem_module.Problem()
@@ -57,7 +62,6 @@ def elapsed_timer(max_runtime_minutes=None, service_period=2):
     start = time.time()
     nexttime = start + service_period
     while True:
-        print("next timer")
         now = time.time()
         elapsed = now - start
         if elapsed > max_runtime+0.5:

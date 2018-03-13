@@ -17,15 +17,19 @@ from sklearn.preprocessing import LabelEncoder
 import numpy as np
 import random
 
-masterLogger = util.conf_logger()
-logger = logging.getLogger(__name__)
 
 HERE = os.path.dirname(os.path.abspath(__file__)) # search dir
 top  = os.path.dirname(os.path.dirname(HERE)) # directory containing deephyper
 sys.path.append(top)
 
+from deephyper.search import evaluate, util
+
+masterLogger = util.conf_logger()
+logger = logging.getLogger(__name__)
+
 SEED = 12345
 CHECKPOINT_INTERVAL = 1    # How many generations between optimizer checkpoints
+SERVICE_PERIOD = 2
 
 def uniform(lower_list, upper_list, dimensions):
     """Fill array """
@@ -81,7 +85,7 @@ class SpaceEncoder:
 
 class GAOptimizer:
     def __init__(self, opt_config, seed=SEED, CXPB=0.5,
-                 MUTPB=0.2, NGEN=40, INIT_POP_SIZE=50):
+                 MUTPB=0.2, NGEN=40, INIT_POP_SIZE=4):
         self.SEED = seed
         self.CXPB = CXPB
         self.MUTPB = MUTPB
@@ -111,8 +115,8 @@ class GAOptimizer:
         UPPER = [1.0] * self.IND_SIZE
         self.toolbox.register("uniformparams", uniform, LOWER, UPPER, self.IND_SIZE)
         self.toolbox.register("Individual",tools.initIterate,
-                              creator.Individual,toolbox.uniformparams)
-        self.toolbox.register("population", tools.initRepeat, list, toolbox.Individual)
+                              creator.Individual, self.toolbox.uniformparams)
+        self.toolbox.register("population", tools.initRepeat, list, self.toolbox.Individual)
         self.toolbox.register("mate", tools.cxTwoPoint)
         self.toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=1, indpb=0.1)
         self.toolbox.register("select", tools.selTournament, tournsize=3)
@@ -130,6 +134,7 @@ class GAOptimizer:
     def __getstate__(self):
         d = self.__dict__
         d['toolbox'] = None
+        d['stats'] = None
         return d
     
     def __setstate__(self, d):

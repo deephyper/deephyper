@@ -28,10 +28,11 @@ Five digits inverted:
 import sys
 import os
 import time
+from pprint import pprint
 
 here = os.path.dirname(os.path.abspath(__file__))
 top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
-sys.path.insert(top)
+sys.path.append(top)
 
 start = time.time()
 from keras.models import Sequential
@@ -46,6 +47,11 @@ from tensorflow import set_random_seed
 set_random_seed(2)
 load_time = time.time() - start
 print(f"module import time: {load_time:.3f} seconds")
+    
+TRAINING_SIZE = 500
+DIGITS = 3
+INVERT = True
+MAXLEN = DIGITS + 1 + DIGITS
 
 
 class CharacterTable(object):
@@ -83,13 +89,9 @@ class CharacterTable(object):
 
 def generate_data():
     # Parameters for the model and dataset.
-    TRAINING_SIZE = 500
-    DIGITS = 3
-    INVERT = True
 
     # Maximum length of input is 'int + int' (e.g., '345+678'). Maximum length of
     # int is DIGITS.
-    MAXLEN = DIGITS + 1 + DIGITS
 
     # All the numbers, plus sign and space for padding.
     chars = '0123456789+ '
@@ -150,13 +152,22 @@ def generate_data():
     print('Validation Data:')
     print(x_val.shape)
     print(y_val.shape)
-    return x_train, y_train, x_val, y_val
+    return x_train, y_train, x_val, y_val, chars
 
+def defaults():
+    def_parser = keras_cmdline.create_parser()
+    def_parser = augment_parser(def_parser)
+    return vars(def_parser.parse_args(''))
 
 def run(param_dict):
+    default_params = defaults()
+    for key in default_params:
+        if key not in param_dict:
+            param_dict[key] = default_params[key]
+    pprint(param_dict)
     optimizer = keras_cmdline.return_optimizer(param_dict)
     print(param_dict)
-    x_train, y_train, x_val, y_val = generate_data()
+    x_train, y_train, x_val, y_val, chars = generate_data()
 
     # Try replacing GRU, or SimpleRNN.
     if param_dict['rnn_type'] == 'GRU':
