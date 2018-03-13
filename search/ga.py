@@ -110,7 +110,7 @@ class GAOptimizer:
         self.halloffame = tools.HallOfFame(maxsize=1)
         self.logbook = tools.Logbook()
 
-    def _checkBounds(self, min, max):
+    def _check_bounds(self, min, max):
         def decorator(func):
             def wrapper(*args, **kargs):
                 offspring = func(*args, **kargs)
@@ -141,8 +141,8 @@ class GAOptimizer:
         self.toolbox.register("mate", tools.cxTwoPoint)
         self.toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=1, indpb=0.1)
         self.toolbox.register("select", tools.selTournament, tournsize=3)
-        self.toolbox.decorate("mate", self._checkBounds(0.0, 1.0))
-        self.toolbox.decorate("mutate", self._checkBounds(0.0, 1.0))
+        self.toolbox.decorate("mate", self._check_bounds(0.0, 1.0))
+        self.toolbox.decorate("mutate", self._check_bounds(0.0, 1.0))
 
         self.stats = tools.Statistics(lambda ind: ind.fitness.values)
         self.stats.register("avg", np.mean)
