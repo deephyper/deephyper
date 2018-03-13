@@ -26,7 +26,7 @@ sys.path.append(top)
 from deephyper.search import evaluate, util
 
 masterLogger = util.conf_logger()
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('deephyper.search.ga')
 
 SEED = 12345
 CHECKPOINT_INTERVAL = 100    # How many generations between optimizer checkpoints
@@ -192,13 +192,14 @@ def save_checkpoint(opt_config, optimizer, evaluator):
 
 
 def load_checkpoint(chk_path):
+    chk_path = os.path.abspath(os.path.expanduser(chk_path))
     assert os.path.exists(chk_path), "No such checkpoint file"
     with open(chk_path, 'rb') as fp: data = pickle.load(fp)
     
     cfg, opt, evaluator = data['opt_config'], data['optimizer'], data['evaluator']
 
     cfg.num_workers = args.num_workers
-    logger.info(f"Resuming GA from checkpoint in {chkdir}")
+    logger.info(f"Resuming GA from checkpoint in {chk_path}")
     logger.info(f"On eval {evaluator.counter}")
     return cfg, opt, evaluator
 

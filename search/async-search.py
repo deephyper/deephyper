@@ -14,10 +14,10 @@ from skopt import Optimizer
 from deephyper.search.ExtremeGradientBoostingQuantileRegressor import ExtremeGradientBoostingQuantileRegressor
 
 masterLogger = util.conf_logger()
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('deephyper.search.async-search')
 
 SERVICE_PERIOD = 2          # Delay (seconds) between main loop iterations
-CHECKPOINT_INTERVAL = 30    # How many jobs to complete between optimizer checkpoints
+CHECKPOINT_INTERVAL = 10    # How many jobs to complete between optimizer checkpoints
 SEED = 12345
 
 def submit_next_points(opt_config, optimizer, evaluator):
@@ -54,6 +54,11 @@ def save_checkpoint(opt_config, optimizer, evaluator):
     data['opt_config'] = opt_config
     data['optimizer'] = optimizer
     data['evaluator'] = evaluator
+
+    if evaluator.evals:
+        best = min(evaluator.evals.items(), key=lambda x: x[1])
+        data['best'] = best
+        logger.info(f'best point: {best}')
     
     fname = f'{opt_config.benchmark}.pkl'
     with open(fname, 'wb') as fp:
@@ -63,13 +68,14 @@ def save_checkpoint(opt_config, optimizer, evaluator):
     logger.info(f"Checkpointed run in {os.path.abspath(fname)}")
 
 def load_checkpoint(chk_path):
+    chk_path = os.path.abspath(os.path.expanduser(chk_path))
     assert os.path.exists(chk_path), "No such checkpoint file"
     with open(chk_path, 'rb') as fp: data = pickle.load(fp)
     
     cfg, opt, evaluator = data['opt_config'], data['optimizer'], data['evaluator']
 
     cfg.num_workers = args.num_workers
-    logger.info(f"Resuming from checkpoint in {chkdir}")
+    logger.info(f"Resuming from checkpoint in {chk_path}")
     logger.info(f"On eval {evaluator.counter}")
     return cfg, opt, evaluator
 
@@ -89,7 +95,9 @@ def main(args):
             acq_optimizer='sampling',
             acq_func='LCB',
             acq_func_kwargs={'kappa':0},
-            random_state=SEED)
+            random_state=SEED,
+            n_initial_points=args.num_workers
+        )
         evaluator = evaluate.create_evaluator(cfg)
         logger.info(f"Starting new run with {cfg.benchmark_module_name}")
 
@@ -109,7 +117,7 @@ def main(args):
     logger.info("Hyperopt driver starting")
 
     for elapsed_seconds in timer:
-        logger.info("\nElapsed time:", util.pretty_time(elapsed_seconds))
+        logger.info(f"Elapsed time: {util.pretty_time(elapsed_seconds)}")
         if len(evaluator.evals) == cfg.max_evals: break
 
         for (x, y) in evaluator.get_finished_evals():
