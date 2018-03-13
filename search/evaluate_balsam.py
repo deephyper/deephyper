@@ -78,14 +78,16 @@ class BalsamEvaluator(evaluate.Evaluator):
         if isnan(y): y = sys.float_info.max
         return y
 
-    def await_evals(self, to_read, timeout=1000, delay=5):
-        x_map = [self._encode(x) for x in to_read]
-        job_ids = [self.pending_evals[key] for key in x_map]
-        jobs = BalsamJob.objects.filter(job_id__in=job_ids)
+    def await_evals(self, to_read, timeout=2000, delay=5):
+        keys = [self._encode(x) for x in to_read]
+        job_ids = [self.pending_evals[k] for k in keys
+                   if k in self.pending_evals]
+        job_ids = list(set(job_ids))
+        assert all(k in self.evals for k in keys if k not in self.pending_evals)
 
-        num_jobs = len(to_read)
-        assert jobs.count() == num_jobs
-        logger.debug(f"Waiting on {num_jobs} Balsam eval jobs to finish")
+        jobs = BalsamJob.objects.filter(job_id__in=job_ids)
+        num_jobs = jobs.count()
+        logger.info(f"Waiting on {num_jobs} Balsam eval jobs to finish")
 
         num_checks = round(timeout / delay)
         for i in range(num_checks):
@@ -106,11 +108,14 @@ class BalsamEvaluator(evaluate.Evaluator):
             logger.error("Balsam Jobs did not finish in alloted timeout; aborting")
             raise RuntimeError(f"The jobs did not finish in {timeout} seconds")
 
-        for x, key, job_id in zip(to_read, x_map, job_ids):
-            job = BalsamJob.objects.get(job_id=job_id)
+        for job in jobs:
             y = self._read_eval_output(job)
+            key = self.id_key_map[job.job_id.hex]
             self.evals[key] = y
-            del self.pending_evals[key]
+            if key in self.pending_evals: del self.pending_evals[key]
+        
+        for x, key in zip(to_read, keys):
+            y = self.evals[key]
             logger.info(f"x: {x} y: {y}")
             yield (x,y)
     

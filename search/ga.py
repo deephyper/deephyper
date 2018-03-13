@@ -74,8 +74,6 @@ class SpaceEncoder:
         except ValueError:
             print("GOT VALUE ERROR WHEN TRYING TO DECODE", point)
             raise
-        else:
-            print("DECODE OK:", point)
         for i in range(len(point)): 
             if self.ttypes[i] == 'i':
                 result[i] = int(round(result[i])) 
