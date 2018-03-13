@@ -27,7 +27,7 @@ def submit_next_points(opt_config, optimizer, evaluator):
         return
 
     if opt_config.starting_point is not None:
-        XX = [self.starting_point]
+        XX = [opt_config.starting_point]
         opt_config.starting_point = None
         additional_pts = optimizer.ask(n_points=evaluator.num_workers-1)
         XX.extend(additional_pts)
@@ -45,7 +45,7 @@ def submit_next_points(opt_config, optimizer, evaluator):
               ]
 
     for x in XX:
-        evaluator.add_eval(x)
+        evaluator.add_eval(x, re_evaluate=opt_config.repeat_evals)
         logger.info(f"Submitted eval of {x}")
 
 

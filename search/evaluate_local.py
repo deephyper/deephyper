@@ -41,13 +41,28 @@ class LocalEvaluator(evaluate.Evaluator):
     def await_evals(self, to_read):
         '''wait for a set of points to finish evaluating; iter over results'''
         keys = list(map(self._encode, to_read))
-        futures = [self.pending_evals[key] for key in keys]
-        logger.info(f"Waiting on {len(keys)} evals to finish...")
-        result = concurrent.futures.wait(futures)
-        for x, key, future in zip(to_read, keys, futures):
-            y = future.result()
+
+        results = []
+        for x, key in zip(to_read, keys):
+            if key in self.pending_evals:
+                future = self.pending_evals[key]
+                results.append( (x, key, future) )
+            else:
+                y = self.evals[key]
+                logger.info(f"Already evaluated x: {x} y: {y}")
+                results.append( (x, key, y) )
+
+        futures = [r[2] for r in results if isinstance(r, concurrent.futures.Future)]
+        logger.info(f"Waiting on {len(futures)} evals to finish...")
+        done = concurrent.futures.wait(futures)
+
+        for (x, key, future) in results:
+            if isinstance(future, concurrent.futures.Future):
+                y = future.result()
+            else:
+                y = future
             self.evals[key] = y
-            del self.pending_evals[key]
+            if key in self.pending_evals: del self.pending_evals[key]
             logger.info(f"x: {x} y: {y}")
             yield (x, y)
         
@@ -66,8 +81,13 @@ class LocalEvaluator(evaluate.Evaluator):
             yield (x, y)
 
     def __getstate__(self):
-        d = self.__dict__
+        d = {}
+        d['num_workers'] = self.num_workers
+        d['backend'] = self.backend
+        d['params_list'] = self.params_list
+        d['bench_module_name'] = self.bench_module_name
         d['pending_evals'] = list(self.pending_evals.keys())
+        d['evals'] = self.evals
         d['executor'] = None
         d['bench_module'] = None
         return d

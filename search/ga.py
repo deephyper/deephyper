@@ -1,3 +1,4 @@
+from copy import copy
 import logging
 import pickle
 import os
@@ -28,7 +29,7 @@ masterLogger = util.conf_logger()
 logger = logging.getLogger(__name__)
 
 SEED = 12345
-CHECKPOINT_INTERVAL = 1    # How many generations between optimizer checkpoints
+CHECKPOINT_INTERVAL = 100    # How many generations between optimizer checkpoints
 SERVICE_PERIOD = 2
 
 def uniform(lower_list, upper_list, dimensions):
@@ -68,7 +69,13 @@ class SpaceEncoder:
         return encoder, ttype
 
     def decode_point(self, point):
-        result = [ self.decode(point[i], self.encoders[i]) for i in range(len(point)) ]
+        try:
+            result = [ self.decode(point[i], self.encoders[i]) for i in range(len(point)) ]
+        except ValueError:
+            print("GOT VALUE ERROR WHEN TRYING TO DECODE", point)
+            raise
+        else:
+            print("DECODE OK:", point)
         for i in range(len(point)): 
             if self.ttypes[i] == 'i':
                 result[i] = int(round(result[i])) 
@@ -85,7 +92,7 @@ class SpaceEncoder:
 
 class GAOptimizer:
     def __init__(self, opt_config, seed=SEED, CXPB=0.5,
-                 MUTPB=0.2, NGEN=40, INIT_POP_SIZE=4):
+                 MUTPB=0.2, NGEN=40, INIT_POP_SIZE=20):
         self.SEED = seed
         self.CXPB = CXPB
         self.MUTPB = MUTPB
@@ -123,7 +130,7 @@ class GAOptimizer:
     
         self.stats = tools.Statistics(lambda ind: ind.fitness.values)
         self.stats.register("avg", np.mean)
-        self.stats.register("max", np.max)
+        self.stats.register("min", np.min)
 
 
     def record_generation(self, num_evals):
@@ -132,8 +139,9 @@ class GAOptimizer:
         self.logbook.record(gen=self.current_gen, evals=num_evals, **record)
 
     def __getstate__(self):
-        d = self.__dict__
+        d = copy(self.__dict__)
         d['toolbox'] = None
+        assert self.toolbox is not None
         d['stats'] = None
         return d
     
@@ -149,7 +157,7 @@ def evaluate_fitnesses(individuals, opt, evaluator):
     results = evaluator.await_evals(points)
 
     for ind, (x,fit) in zip(individuals, results):
-        ind.fitness.values = fit
+        ind.fitness.values = (fit,)
 
     opt.record_generation(num_evals=len(points))
 
@@ -215,6 +223,8 @@ def main(args):
         
     with open('ga_logbook.log', 'w') as fp:
         fp.write(str(opt.logbook))
+
+    print("best:", opt.halloffame[0])
     
 
     while opt.current_gen < opt.NGEN:
@@ -226,7 +236,7 @@ def main(args):
         # Select the next generation individuals
         offspring = opt.toolbox.select(opt.pop, len(opt.pop))
         # Clone the selected individuals
-        offspring = map(opt.toolbox.clone, offspring)
+        offspring = list(map(opt.toolbox.clone, offspring))
 
         # Apply crossover and mutation on the offspring
         for child1, child2 in zip(offspring[::2], offspring[1::2]):
@@ -247,6 +257,7 @@ def main(args):
 
         with open('ga_logbook.log', 'w') as fp:
             fp.write(str(opt.logbook))
+        print("best:", opt.halloffame[0])
 
         # The population is entirely replaced by the offspring
         opt.pop[:] = offspring

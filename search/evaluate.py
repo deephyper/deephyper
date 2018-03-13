@@ -32,8 +32,12 @@ class Evaluator:
         '''from JSON string to x (list)'''
         return json.loads(key)
 
-    def add_eval(self, x):
+    def add_eval(self, x, re_evaluate=False):
         key = self._encode(x)
+        if key in self.evals or key in self.pending_evals:
+            if not re_evaluate:
+                logger.info(f"Point {key} has already been evaluated! Skipping.")
+                return
         new_eval = self._eval_exec(x) # future or job UUID
         self.pending_evals[key] = new_eval
 
