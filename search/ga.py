@@ -110,6 +110,20 @@ class GAOptimizer:
         self.halloffame = tools.HallOfFame(maxsize=1)
         self.logbook = tools.Logbook()
 
+    def _check_bounds(self, min, max):
+        def decorator(func):
+            def wrapper(*args, **kargs):
+                offspring = func(*args, **kargs)
+                for child in offspring:
+                    for i in range(len(child)):
+                        if child[i] > max:
+                            child[i] = max
+                        elif child[i] < min:
+                            child[i] = min
+                return offspring
+            return wrapper
+        return decorator
+
     def _setup(self):
         random.seed(self.SEED)
 
@@ -127,10 +141,14 @@ class GAOptimizer:
         self.toolbox.register("mate", tools.cxTwoPoint)
         self.toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=1, indpb=0.1)
         self.toolbox.register("select", tools.selTournament, tournsize=3)
-    
+        self.toolbox.decorate("mate", self._check_bounds(0.0, 1.0))
+        self.toolbox.decorate("mutate", self._check_bounds(0.0, 1.0))
+
         self.stats = tools.Statistics(lambda ind: ind.fitness.values)
         self.stats.register("avg", np.mean)
         self.stats.register("min", np.min)
+
+
 
 
     def record_generation(self, num_evals):
