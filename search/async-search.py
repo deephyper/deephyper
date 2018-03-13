@@ -33,7 +33,7 @@ def submit_next_points(opt_config, optimizer, evaluator):
         XX.extend(additional_pts)
         logger.debug("Generating starting points")
     elif evaluator.num_free_workers() > 0:
-        XX = optimizer.ask(n_points=1)
+        XX = optimizer.ask(n_points=evaluator.num_free_workers())
         logger.debug("Generating one point")
     else:
         XX = []
