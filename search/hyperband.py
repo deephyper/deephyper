@@ -160,8 +160,6 @@ def main(args):
         logger.info("\nElapsed time:", util.pretty_time(elapsed_seconds))
         hyperband = Hyperband(cfg, optimizer, evaluator)
         results = hyperband.run()
-        #print(results) #= hyperband.run()
-        sys.exit(0)
         
         save_checkpoint(cfg, optimizer, evaluator)
         sys.stdout.flush()
