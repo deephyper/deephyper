@@ -132,11 +132,9 @@ def main(args):
 
         optimizer = Optimizer(
             cfg.space,
-            base_estimator='RF',
+            base_estimator='dummy',
             acq_optimizer='sampling',
-            acq_func='LCB',
-            acq_func_kwargs={'kappa':0},
-            n_initial_points=100000,
+            n_initial_points=np.inf,
             random_state=SEED)
         evaluator = evaluate.create_evaluator(cfg)
         logger.info(f"Starting new run with {cfg.benchmark_module_name}")
