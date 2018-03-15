@@ -21,6 +21,7 @@ class LocalEvaluator(evaluate.Evaluator):
         logger.info("Local Evaluator instantiated")
         logger.info(f"Backend: {self.backend}")
         logger.info(f"Benchmark: {bench_module_name}")
+        self._setup_executor()
 
     def _setup_executor(self):
         os.environ['KERAS_BACKEND'] = self.backend

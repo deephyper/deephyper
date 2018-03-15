@@ -3,6 +3,7 @@ import json
 import uuid
 import multiprocessing
 import logging
+import csv
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +68,8 @@ class Evaluator:
             resultsList.append(resultDict)
 
         with open('results.csv', 'w') as fp:
-            writer = csv.DictWriter(fp, keys)
+            columns = resultsList[0].keys()
+            writer = csv.DictWriter(fp, columns)
             writer.writeheader()
             writer.writerows(resultsList)
 
