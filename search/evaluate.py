@@ -57,6 +57,21 @@ class Evaluator:
         with open('results.json', 'w') as fp:
             json.dump(self.evals, fp, indent=4, sort_keys=True, cls=Encoder)
 
+        resultsList = []
+
+        for key in self.evals:
+            x = self._decode(key)
+            resultDict = {name : value for (name,value) 
+                          in zip(self.params_list, x)}
+            resultDict['objective'] = self.evals[key]
+            resultsList.append(resultDict)
+
+        with open('results.csv', 'w') as fp:
+            writer = csv.DictWriter(fp, keys)
+            writer.writeheader()
+            writer.writerows(resultsList)
+
+
 def create_evaluator(opt_config):
     evaluator_class = opt_config.evaluator
     assert evaluator_class in ['balsam', 'local']
