@@ -56,14 +56,13 @@ networks that use attentional processes can efficiently search through this
 noise to find the relevant statements, improving performance substantially.
 This becomes especially obvious on QA2 and QA3, both far longer than QA1.
 '''
-
 import sys
-import time
 import os
+import time
 
 here = os.path.dirname(os.path.abspath(__file__))
 top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
-sys.path.insert(top)
+sys.path.append(top)
 
 start = time.time()
 from functools import reduce
@@ -80,10 +79,34 @@ from keras.models import Model
 from keras.preprocessing.sequence import pad_sequences
 
 from keras import layers
+
 from deephyper.benchmarks import keras_cmdline
+from keras.models import load_model
+import hashlib
+import pickle
+
 load_time = time.time() - start
 print(f"module import time: {load_time:.3f} seconds")
 
+BNAME = 'babi_rnn'
+
+def extension_from_parameters(param_dict):
+    extension = ''
+    for key in sorted(param_dict):
+        if key != 'epochs':
+            print ('%s: %s' % (key, param_dict[key]))
+            extension += '.{}={}'.format(key,param_dict[key])
+    print(extension)
+    return extension
+
+def save_meta_data(data, filename):
+    with open(filename, 'wb') as handle:
+        pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+def load_meta_data(filename):
+    with open(filename, 'rb') as handle:
+        data = pickle.load(handle)
+    return data
 
 def tokenize(sent):
     '''Return the tokens of a sentence including punctuation.
@@ -248,38 +271,52 @@ def run(param_dict):
     print('y.shape = {}'.format(y.shape))
     print('story_maxlen, query_maxlen = {}, {}'.format(story_maxlen, query_maxlen))
 
-    print('Build model...')
 
-    sentence = layers.Input(shape=(story_maxlen,), dtype='int32')
-    encoded_sentence = layers.Embedding(vocab_size, EMBED_HIDDEN_SIZE)(sentence)
-    encoded_sentence = layers.Dropout(DROPOUT)(encoded_sentence)
+    extension = extension_from_parameters(param_dict)
+    hex_name = hashlib.sha224(extension.encode('utf-8')).hexdigest()
+    model_name = '{}-{}.h5'.format(BNAME, hex_name)
+    model_mda_name = '{}-{}.pkl'.format(BNAME, hex_name)
+    initial_epoch = 0
 
-    question = layers.Input(shape=(query_maxlen,), dtype='int32')
-    encoded_question = layers.Embedding(vocab_size, EMBED_HIDDEN_SIZE)(question)
-    encoded_question = layers.Dropout(DROPOUT)(encoded_question)
-    encoded_question = RNN(EMBED_HIDDEN_SIZE)(encoded_question)
-    encoded_question = layers.RepeatVector(story_maxlen)(encoded_question)
+    resume = False
 
-    merged = layers.add([encoded_sentence, encoded_question])
-    merged = RNN(EMBED_HIDDEN_SIZE)(merged)
-    merged = layers.Dropout(DROPOUT)(merged)
-    preds = layers.Dense(vocab_size, activation='softmax')(merged)
+    if os.path.exists(model_name) and os.path.exists(model_mda_name):
+        print('model and meta data exists; loading model from h5 file')
+        model = load_model(model_name)
+        saved_param_dict = load_meta_data(model_mda_name)
+        initial_epoch = saved_param_dict['epochs']
+        if initial_epoch < param_dict['epochs']:
+            resume = True
 
-    model = Model([sentence, question], preds)
-    model.compile(optimizer=optimizer,
-                  loss='categorical_crossentropy',
-                  metrics=['accuracy'])
+    if not resume:
+        print('Build model...')
+        sentence = layers.Input(shape=(story_maxlen,), dtype='int32')
+        encoded_sentence = layers.Embedding(vocab_size, EMBED_HIDDEN_SIZE)(sentence)
+        encoded_sentence = layers.Dropout(DROPOUT)(encoded_sentence)
+
+        question = layers.Input(shape=(query_maxlen,), dtype='int32')
+        encoded_question = layers.Embedding(vocab_size, EMBED_HIDDEN_SIZE)(question)
+        encoded_question = layers.Dropout(DROPOUT)(encoded_question)
+        encoded_question = RNN(EMBED_HIDDEN_SIZE)(encoded_question)
+        encoded_question = layers.RepeatVector(story_maxlen)(encoded_question)
+
+        merged = layers.add([encoded_sentence, encoded_question])
+        merged = RNN(EMBED_HIDDEN_SIZE)(merged)
+        merged = layers.Dropout(DROPOUT)(merged)
+        preds = layers.Dense(vocab_size, activation='softmax')(merged)
+
+        model = Model([sentence, question], preds)
+        model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
     print('Training')
-    model.fit([x, xq], y,
-              batch_size=BATCH_SIZE,
-              epochs=EPOCHS,
-              validation_split=0.05)
-    loss, acc = model.evaluate([tx, txq], ty,
-                               batch_size=BATCH_SIZE)
+    model.fit([x, xq], y, batch_size=BATCH_SIZE, epochs=EPOCHS, validation_split=0.05)
+    loss, acc = model.evaluate([tx, txq], ty, batch_size=BATCH_SIZE)
     print('Test loss / test accuracy = {:.4f} / {:.4f}'.format(loss, acc))
-    print('OUTPUT:', acc)
-    return acc
+    print('OUTPUT:', -acc)
+    
+    model.save(model_name)  
+    save_meta_data(param_dict, model_mda_name)
+    return -acc
 
 
 def augment_parser(parser):

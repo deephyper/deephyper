@@ -250,7 +250,7 @@ def run(param_dict):
         model.add(layers.Activation(activation))
         model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
         model.summary()
-    print(model.test_on_batch(x_val, y_val))
+    #print(model.test_on_batch(x_val, y_val))
     train_history = model.fit(x_train, y_train, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=param_dict['epochs'], validation_data=(x_val, y_val))
     train_loss = train_history.history['loss']
     val_acc = train_history.history['val_acc']

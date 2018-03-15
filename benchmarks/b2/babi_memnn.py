@@ -15,10 +15,12 @@ Time per epoch: 3s on CPU (core i7).
 '''
 import sys
 import os
+import time
 
 here = os.path.dirname(os.path.abspath(__file__))
 top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
-sys.path.insert(top)
+sys.path.append(top)
+
 
 start = time.time()
 from keras.models import Sequential, Model
@@ -34,8 +36,32 @@ import re
 
 from keras import layers
 from deephyper.benchmarks import keras_cmdline
+from keras.models import load_model
+import hashlib
+import pickle
+
 load_time = time.time() - start
 print(f"module import time: {load_time:.3f} seconds")
+
+BNAME = 'babi_memnn'
+
+def extension_from_parameters(param_dict):
+    extension = ''
+    for key in sorted(param_dict):
+        if key != 'epochs':
+            print ('%s: %s' % (key, param_dict[key]))
+            extension += '.{}={}'.format(key,param_dict[key])
+    print(extension)
+    return extension
+
+def save_meta_data(data, filename):
+    with open(filename, 'wb') as handle:
+        pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+def load_meta_data(filename):
+    with open(filename, 'rb') as handle:
+        data = pickle.load(handle)
+    return data
 
 
 def tokenize(sent):
@@ -94,7 +120,7 @@ def get_stories(f, only_supporting=False, max_length=None):
     return data
 
 
-def vectorize_stories(data):
+def vectorize_stories(data, word_idx, story_maxlen, query_maxlen):
     inputs, queries, answers = [], [], []
     for story, query, answer in data:
         inputs.append([word_idx[w] for w in story])
@@ -182,8 +208,8 @@ def run(param_dict):
     print('Vectorizing the word sequences...')
 
     word_idx = dict((c, i + 1) for i, c in enumerate(vocab))
-    inputs_train, queries_train, answers_train = vectorize_stories(train_stories)
-    inputs_test, queries_test, answers_test = vectorize_stories(test_stories)
+    inputs_train, queries_train, answers_train = vectorize_stories(train_stories, word_idx, story_maxlen, query_maxlen)
+    inputs_test, queries_test, answers_test = vectorize_stories(test_stories, word_idx, story_maxlen, query_maxlen)
 
     print('-')
     print('inputs: integer tensor of shape (samples, max_length)')
@@ -213,74 +239,96 @@ def run(param_dict):
         RNN = layers.LSTM
 
 
-    # placeholders
-    input_sequence = Input((story_maxlen,))
-    question = Input((query_maxlen,))
+    extension = extension_from_parameters(param_dict)
+    hex_name = hashlib.sha224(extension.encode('utf-8')).hexdigest()
+    model_name = '{}-{}.h5'.format(BNAME, hex_name)
+    model_mda_name = '{}-{}.pkl'.format(BNAME, hex_name)
+    initial_epoch = 0
 
-    # encoders
-    # embed the input sequence into a sequence of vectors
-    input_encoder_m = Sequential()
-    input_encoder_m.add(Embedding(input_dim=vocab_size,
-                                  output_dim=64))
-    input_encoder_m.add(Dropout(DROPOUT))
-    # output: (samples, story_maxlen, embedding_dim)
+    resume = False
 
-    # embed the input into a sequence of vectors of size query_maxlen
-    input_encoder_c = Sequential()
-    input_encoder_c.add(Embedding(input_dim=vocab_size,
-                                  output_dim=query_maxlen))
-    input_encoder_c.add(Dropout(DROPOUT))
-    # output: (samples, story_maxlen, query_maxlen)
+    if os.path.exists(model_name) and os.path.exists(model_mda_name):
+        print('model and meta data exists; loading model from h5 file')
+        model = load_model(model_name)
+        saved_param_dict = load_meta_data(model_mda_name)
+        initial_epoch = saved_param_dict['epochs']
+        if initial_epoch < param_dict['epochs']:
+            resume = True
 
-    # embed the question into a sequence of vectors
-    question_encoder = Sequential()
-    question_encoder.add(Embedding(input_dim=vocab_size,
-                                   output_dim=64,
-                                   input_length=query_maxlen))
-    question_encoder.add(Dropout(DROPOUT))
-    # output: (samples, query_maxlen, embedding_dim)
+    if not resume:
+        # placeholders
+        input_sequence = Input((story_maxlen,))
+        question = Input((query_maxlen,))
 
-    # encode input sequence and questions (which are indices)
-    # to sequences of dense vectors
-    input_encoded_m = input_encoder_m(input_sequence)
-    input_encoded_c = input_encoder_c(input_sequence)
-    question_encoded = question_encoder(question)
+        # encoders
+        # embed the input sequence into a sequence of vectors
+        input_encoder_m = Sequential()
+        input_encoder_m.add(Embedding(input_dim=vocab_size,
+                                    output_dim=64))
+        input_encoder_m.add(Dropout(DROPOUT))
+        # output: (samples, story_maxlen, embedding_dim)
 
-    # compute a 'match' between the first input vector sequence
-    # and the question vector sequence
-    # shape: `(samples, story_maxlen, query_maxlen)`
-    match = dot([input_encoded_m, question_encoded], axes=(2, 2))
-    match = Activation('softmax')(match)
+        # embed the input into a sequence of vectors of size query_maxlen
+        input_encoder_c = Sequential()
+        input_encoder_c.add(Embedding(input_dim=vocab_size,
+                                    output_dim=query_maxlen))
+        input_encoder_c.add(Dropout(DROPOUT))
+        # output: (samples, story_maxlen, query_maxlen)
 
-    # add the match matrix with the second input vector sequence
-    response = add([match, input_encoded_c])  # (samples, story_maxlen, query_maxlen)
-    response = Permute((2, 1))(response)  # (samples, query_maxlen, story_maxlen)
+        # embed the question into a sequence of vectors
+        question_encoder = Sequential()
+        question_encoder.add(Embedding(input_dim=vocab_size,
+                                    output_dim=64,
+                                    input_length=query_maxlen))
+        question_encoder.add(Dropout(DROPOUT))
+        # output: (samples, query_maxlen, embedding_dim)
 
-    # concatenate the match matrix with the question vector sequence
-    answer = concatenate([response, question_encoded])
+        # encode input sequence and questions (which are indices)
+        # to sequences of dense vectors
+        input_encoded_m = input_encoder_m(input_sequence)
+        input_encoded_c = input_encoder_c(input_sequence)
+        question_encoded = question_encoder(question)
 
-    # the original paper uses a matrix multiplication for this reduction step.
-    # we choose to use a RNN instead.
-    answer = RNN(HIDDEN_SIZE)(answer)  # (samples, 32)
+        # compute a 'match' between the first input vector sequence
+        # and the question vector sequence
+        # shape: `(samples, story_maxlen, query_maxlen)`
+        match = dot([input_encoded_m, question_encoded], axes=(2, 2))
+        match = Activation('softmax')(match)
 
-    # one regularization layer -- more would probably be needed.
-    answer = Dropout(DROPOUT)(answer)
-    answer = Dense(vocab_size)(answer)  # (samples, vocab_size)
-    # we output a probability distribution over the vocabulary
-    answer = Activation('softmax')(answer)
+        # add the match matrix with the second input vector sequence
+        response = add([match, input_encoded_c])  # (samples, story_maxlen, query_maxlen)
+        response = Permute((2, 1))(response)  # (samples, query_maxlen, story_maxlen)
 
-    # build the final model
-    model = Model([input_sequence, question], answer)
-    model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy',
-                  metrics=['accuracy'])
+        # concatenate the match matrix with the question vector sequence
+        answer = concatenate([response, question_encoded])
 
-    # train
-    train_history = model.fit([inputs_train, queries_train], answers_train, batch_size=BATCH_SIZE, epochs=EPOCHS, validation_data=([inputs_test, queries_test], answers_test))
+        # the original paper uses a matrix multiplication for this reduction step.
+        # we choose to use a RNN instead.
+        answer = RNN(HIDDEN_SIZE)(answer)  # (samples, 32)
+
+        # one regularization layer -- more would probably be needed.
+        answer = Dropout(DROPOUT)(answer)
+        answer = Dense(vocab_size)(answer)  # (samples, vocab_size)
+        # we output a probability distribution over the vocabulary
+        answer = Activation('softmax')(answer)
+
+        # build the final model
+        model = Model([input_sequence, question], answer)
+        model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy',
+                    metrics=['accuracy'])
+        model.summary()
+
+
+    train_history = model.fit([inputs_train, queries_train], answers_train, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=param_dict['epochs'], validation_data=([inputs_test, queries_test], answers_test))
     train_loss = train_history.history['loss']
     val_acc = train_history.history['val_acc']
     print('===Train loss:', train_loss[-1])
-    print('OUTPUT:', val_acc[-1])
-    return val_acc[-1]
+    print('===Validation accuracy:', val_acc[-1])
+    print('OUTPUT:', -val_acc[-1])
+    
+    model.save(model_name)  
+    save_meta_data(param_dict, model_mda_name)
+    return -val_acc[-1]
 
 
 def augment_parser(parser):
