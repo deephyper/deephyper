@@ -31,6 +31,9 @@ logger = logging.getLogger('deephyper.search.ga')
 SEED = 12345
 CHECKPOINT_INTERVAL = 100    # How many generations between optimizer checkpoints
 SERVICE_PERIOD = 2
+    
+creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+creator.create("Individual", list, fitness=creator.FitnessMin)
 
 def uniform(lower_list, upper_list, dimensions):
     """Fill array """
@@ -89,6 +92,7 @@ class SpaceEncoder:
 
 
 class GAOptimizer:
+
     def __init__(self, opt_config, seed=SEED, CXPB=0.5,
                  MUTPB=0.2, NGEN=40, INIT_POP_SIZE=100):
         self.SEED = seed
@@ -125,9 +129,6 @@ class GAOptimizer:
     def _setup(self):
         random.seed(self.SEED)
 
-        creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
-        creator.create("Individual", list, fitness=creator.FitnessMin)
-
         self.toolbox = base.Toolbox()
         
         LOWER = [0.0] * self.IND_SIZE
@@ -146,9 +147,6 @@ class GAOptimizer:
         self.stats.register("avg", np.mean)
         self.stats.register("min", np.min)
 
-
-
-
     def record_generation(self, num_evals):
         self.halloffame.update(self.pop)
         record = self.stats.compile(self.pop)
@@ -157,7 +155,6 @@ class GAOptimizer:
     def __getstate__(self):
         d = copy(self.__dict__)
         d['toolbox'] = None
-        assert self.toolbox is not None
         d['stats'] = None
         return d
     
@@ -174,8 +171,6 @@ def evaluate_fitnesses(individuals, opt, evaluator):
 
     for ind, (x,fit) in zip(individuals, results):
         ind.fitness.values = (fit,)
-
-    opt.record_generation(num_evals=len(points))
 
 
 def save_checkpoint(opt_config, optimizer, evaluator):
@@ -219,16 +214,6 @@ def main(args):
     elapsed_seconds = next(timer)
     chkpoint_counter = 0
 
-    # Gracefully handle shutdown
-    def handler(signum, stack):
-        logger.info('Received SIGINT/SIGTERM')
-        save_checkpoint(cfg, opt, evaluator)
-        sys.exit(0)
-
-    signal.signal(signal.SIGINT, handler)
-    signal.signal(signal.SIGTERM, handler)
-
-    
     logger.info("Hyperopt GA driver starting")
     logger.info(f"Elapsed time: {util.pretty_time(elapsed_seconds)}")
 
@@ -237,11 +222,20 @@ def main(args):
         opt.pop = opt.toolbox.population(n=opt.INIT_POP_SIZE)
         individuals = opt.pop
         evaluate_fitnesses(individuals, opt, evaluator)
+        opt.record_generation(num_evals=len(opt.pop))
         
-    with open('ga_logbook.log', 'w') as fp:
-        fp.write(str(opt.logbook))
+        with open('ga_logbook.log', 'w') as fp:
+            fp.write(str(opt.logbook))
+        print("best:", opt.halloffame[0])
+    
+    # Gracefully handle shutdown
+    def handler(signum, stack):
+        logger.info('Received SIGINT/SIGTERM')
+        save_checkpoint(cfg, opt, evaluator)
+        sys.exit(0)
 
-    print("best:", opt.halloffame[0])
+    signal.signal(signal.SIGINT, handler)
+    signal.signal(signal.SIGTERM, handler)
     
 
     while opt.current_gen < opt.NGEN:
@@ -271,13 +265,16 @@ def main(args):
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
         logger.info(f"Evaluating {len(invalid_ind)} invalid individuals")
         evaluate_fitnesses(invalid_ind, opt, evaluator)
+        
+        # The population is entirely replaced by the offspring
+        opt.pop[:] = offspring
+
+        opt.record_generation(num_evals=len(invalid_ind))
 
         with open('ga_logbook.log', 'w') as fp:
             fp.write(str(opt.logbook))
         print("best:", opt.halloffame[0])
-
-        # The population is entirely replaced by the offspring
-        opt.pop[:] = offspring
+        
 
         chkpoint_counter += 1
         if chkpoint_counter >= CHECKPOINT_INTERVAL:

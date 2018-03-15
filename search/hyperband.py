@@ -79,7 +79,7 @@ class Hyperband:
 				additional_pts = self.optimizer.ask(n_points=n-1)
 				T.extend(additional_pts)
 			else:
-				T = self.optimizer.ask(n)
+				T = self.optimizer.ask(n_points=n)
 			for i in range(( s + 1 )):	# changed from s + 1
 				print('==> (%d, %d, %d) ' % (s, len(T), r))
 				# Run each of the n configs for <iterations> 
@@ -170,4 +170,3 @@ if __name__ == "__main__":
     parser = util.create_parser()
     args = parser.parse_args()
     main(args)
-	
