@@ -2,7 +2,7 @@ from collections import OrderedDict
 class Problem():
     def __init__(self):
         space = OrderedDict()
-        
+        space['epochs'] = (2, 10)
         #bechmark specific parameters
         space['rnn_type'] = ['LSTM', 'GRU', 'SimpleRNN']
         space['hidden_size'] = (10, 100)
@@ -10,7 +10,6 @@ class Problem():
         #network parameters
         space['activation'] = ['softmax', 'elu', 'selu', 'softplus', 'relu', 'tanh', 'sigmoid']
         #space['loss'] = ['mse', 'mae', 'mape', 'msle', 'squared_hinge', 'categorical_hinge', 'hinge', 'logcosh', 'categorical_crossentropy', 'sparse_categorical_crossentropy', 'binary_crossentropy', 'kullback_leibler_divergence', 'poisson', 'cosine_proximity']
-        space['epochs'] = (2, 10)
         space['batch_size'] = (8, 1024)
         #space['init'] = ['Zeros', 'Ones', 'Constant', 'RandomNormal', 'RandomUniform', 'TruncatedNormal', 'VarianceScaling', 'Orthogonal', 'Identity', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'lecun_normal', 'he_uniform']
         #space['dropout'] = (0.0, 1.0)

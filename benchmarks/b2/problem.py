@@ -2,12 +2,11 @@ from collections import OrderedDict
 class Problem():
     def __init__(self):
         space = OrderedDict()
-        
+        space['epochs'] = (1, 10)
         #bechmark specific parameters
         space['rnn_type'] = ['LSTM', 'GRU', 'SimpleRNN']
         space['hidden_size'] = (10, 100)
         #network parameters
-        space['epochs'] = (1, 10)
         space['batch_size'] = (8, 1024)
         space['dropout'] = (0.0, 1.0)
         space['optimizer'] = ['sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam', 'adamax', 'nadam']
