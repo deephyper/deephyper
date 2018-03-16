@@ -23,14 +23,18 @@ HERE = os.path.dirname(os.path.abspath(__file__)) # search dir
 top  = os.path.dirname(os.path.dirname(HERE)) # directory containing deephyper
 sys.path.append(top)
 
-from deephyper.search import evaluate, util
+from deephyper.evaluators import evaluate
+from deephyper.search import util
 
 masterLogger = util.conf_logger()
 logger = logging.getLogger('deephyper.search.ga')
 
 SEED = 12345
-CHECKPOINT_INTERVAL = 100    # How many generations between optimizer checkpoints
+CHECKPOINT_INTERVAL = 1    # How many generations between optimizer checkpoints
 SERVICE_PERIOD = 2
+    
+creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+creator.create("Individual", list, fitness=creator.FitnessMin)
 
 def uniform(lower_list, upper_list, dimensions):
     """Fill array """
@@ -89,13 +93,15 @@ class SpaceEncoder:
 
 
 class GAOptimizer:
-    def __init__(self, opt_config, seed=SEED, CXPB=0.5,
-                 MUTPB=0.2, NGEN=40, INIT_POP_SIZE=100):
+
+    def __init__(self, opt_config, seed=SEED, CXPB=0.5, MUTPB=0.2):
         self.SEED = seed
         self.CXPB = CXPB
         self.MUTPB = MUTPB
-        self.NGEN = NGEN
-        self.INIT_POP_SIZE = INIT_POP_SIZE
+        self.NGEN = opt_config.ga_num_gen
+
+        pop_size = opt_config.num_workers * opt_config.individuals_per_worker
+        self.INIT_POP_SIZE = pop_size
         self.IND_SIZE = len(opt_config.space)
 
         self.toolbox = None
@@ -125,9 +131,6 @@ class GAOptimizer:
     def _setup(self):
         random.seed(self.SEED)
 
-        creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
-        creator.create("Individual", list, fitness=creator.FitnessMin)
-
         self.toolbox = base.Toolbox()
         
         LOWER = [0.0] * self.IND_SIZE
@@ -146,9 +149,6 @@ class GAOptimizer:
         self.stats.register("avg", np.mean)
         self.stats.register("min", np.min)
 
-
-
-
     def record_generation(self, num_evals):
         self.halloffame.update(self.pop)
         record = self.stats.compile(self.pop)
@@ -157,7 +157,6 @@ class GAOptimizer:
     def __getstate__(self):
         d = copy(self.__dict__)
         d['toolbox'] = None
-        assert self.toolbox is not None
         d['stats'] = None
         return d
     
@@ -175,10 +174,9 @@ def evaluate_fitnesses(individuals, opt, evaluator):
     for ind, (x,fit) in zip(individuals, results):
         ind.fitness.values = (fit,)
 
-    opt.record_generation(num_evals=len(points))
-
 
 def save_checkpoint(opt_config, optimizer, evaluator):
+    if evaluator.counter == 0: return
     data = {}
     data['opt_config'] = opt_config
     data['optimizer'] = optimizer
@@ -215,40 +213,41 @@ def main(args):
         logger.info(f"Starting new run with {cfg.benchmark_module_name}")
 
 
-    timer = util.elapsed_timer(max_runtime_minutes=None, service_period=SERVICE_PERIOD)
+    timer = util.DelayTimer(max_minutes=None, period=SERVICE_PERIOD)
     elapsed_seconds = next(timer)
     chkpoint_counter = 0
 
+    logger.info("Hyperopt GA driver starting")
+    logger.info(f"Elapsed time: {util.pretty_time(elapsed_seconds)}")
+
+    if opt.pop is None:
+        logger.info("Generating initial population")
+        logger.info(f"{opt.INIT_POP_SIZE} individuals")
+        opt.pop = opt.toolbox.population(n=opt.INIT_POP_SIZE)
+        individuals = opt.pop
+        evaluate_fitnesses(individuals, opt, evaluator)
+        opt.record_generation(num_evals=len(opt.pop))
+        
+        with open('ga_logbook.log', 'w') as fp:
+            fp.write(str(opt.logbook))
+        print("best:", opt.halloffame[0])
+    
     # Gracefully handle shutdown
     def handler(signum, stack):
+        evaluator.stop()
         logger.info('Received SIGINT/SIGTERM')
         save_checkpoint(cfg, opt, evaluator)
         sys.exit(0)
 
     signal.signal(signal.SIGINT, handler)
     signal.signal(signal.SIGTERM, handler)
-
-    
-    logger.info("Hyperopt GA driver starting")
-    logger.info(f"Elapsed time: {util.pretty_time(elapsed_seconds)}")
-
-    if opt.pop is None:
-        logger.info("Generating initial population")
-        opt.pop = opt.toolbox.population(n=opt.INIT_POP_SIZE)
-        individuals = opt.pop
-        evaluate_fitnesses(individuals, opt, evaluator)
-        
-    with open('ga_logbook.log', 'w') as fp:
-        fp.write(str(opt.logbook))
-
-    print("best:", opt.halloffame[0])
     
 
     while opt.current_gen < opt.NGEN:
         opt.current_gen += 1
-        elapsed_seconds = next(timer)
-        logger.info(f"Generation {opt.current_gen}")
-        logger.info(f"Elapsed time: {util.pretty_time(elapsed_seconds)}")
+        time_str = next(timer)
+        logger.info(f"Generation {opt.current_gen} out of {opt.NGEN}")
+        logger.info(f"Elapsed time: {elapsed_str}")
 
         # Select the next generation individuals
         offspring = opt.toolbox.select(opt.pop, len(opt.pop))
@@ -271,13 +270,16 @@ def main(args):
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
         logger.info(f"Evaluating {len(invalid_ind)} invalid individuals")
         evaluate_fitnesses(invalid_ind, opt, evaluator)
+        
+        # The population is entirely replaced by the offspring
+        opt.pop[:] = offspring
+
+        opt.record_generation(num_evals=len(invalid_ind))
 
         with open('ga_logbook.log', 'w') as fp:
             fp.write(str(opt.logbook))
         print("best:", opt.halloffame[0])
-
-        # The population is entirely replaced by the offspring
-        opt.pop[:] = offspring
+        
 
         chkpoint_counter += 1
         if chkpoint_counter >= CHECKPOINT_INTERVAL:
@@ -291,6 +293,8 @@ def main(args):
 
 
 if __name__ == "__main__":
+    import multiprocessing
+    multiprocessing.set_start_method('forkserver')
     parser = util.create_parser()
     args = parser.parse_args()
     main(args)

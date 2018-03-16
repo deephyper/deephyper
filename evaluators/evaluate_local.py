@@ -1,6 +1,6 @@
 import concurrent.futures
 import logging
-from deephyper.search import evaluate
+from deephyper.evaluators import evaluate
 from importlib import import_module
 import os
 
@@ -21,6 +21,7 @@ class LocalEvaluator(evaluate.Evaluator):
         logger.info("Local Evaluator instantiated")
         logger.info(f"Backend: {self.backend}")
         logger.info(f"Benchmark: {bench_module_name}")
+        self._setup_executor()
 
     def _setup_executor(self):
         os.environ['KERAS_BACKEND'] = self.backend
@@ -91,6 +92,9 @@ class LocalEvaluator(evaluate.Evaluator):
         d['executor'] = None
         d['bench_module'] = None
         return d
+
+    def stop(self):
+        self.executor.shutdown(wait=True)
 
     def __setstate__(self, d):
         logger.info(f"Unpickling LocalEvaluator")

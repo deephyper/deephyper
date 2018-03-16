@@ -8,7 +8,7 @@ import logging
 
 import balsam.launcher.dag as dag
 from balsam.service.models import BalsamJob, END_STATES
-from deephyper.search import evaluate
+from deephyper.evaluators import evaluate
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +30,9 @@ class BalsamEvaluator(evaluate.Evaluator):
         logger.debug("Balsam Evaluator instantiated")
         logger.debug(f"Backend: {self.backend}")
         logger.info(f"Benchmark: {self.bench_file}")
+
+    def stop(self):
+        pass
 
     def _init_current_balsamjob(self):
         this = dag.add_job(name='search', workflow=self.bench_module_name,
