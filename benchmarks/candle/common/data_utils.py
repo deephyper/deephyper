@@ -39,7 +39,8 @@ else:
 
 
 def get_file(fname, origin, untar=False,
-             md5_hash=None, cache_subdir='common'):
+             md5_hash=None, cache_subdir='common',
+             fast_cache_subdir='/local/scratch'):
     '''Downloads a file from a URL if it not already in the cache.
 
     Passing the MD5 hash will verify the file after download as well as if it is already present in the cache.
@@ -118,9 +119,24 @@ def get_file(fname, origin, untar=False,
                         shutil.rmtree(untar_fpath)
                 raise
             tfile.close()
-        return untar_fpath
+        fpath = untar_fpath
         print()
 
+    if os.path.exists(fast_cache_subdir):
+        print("Detected fast cache subdir:", fast_cache_subdir)
+        basename = os.path.basename(fname)
+        cached_fpath = os.path.join(fast_cache_subdir, basename)
+        print("Checking for existence of:", cached_fpath)
+        if os.path.exists(cached_fpath):
+            print("Already exists!")
+        else:
+            print(f"Copying {fpath} to {cached_fpath}")
+            shutil.copy2(fpath, cached_fpath)
+        fpath = cached_fpath
+    else:
+        print("Did not find fast cache subdir:", fast_cache_subdir)
+
+    print(f"get_file done: file is at {fpath}")
     return fpath
 
 
