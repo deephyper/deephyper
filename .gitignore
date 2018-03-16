@@ -32,3 +32,4 @@ experiments/*
 db*
 scikit-optimize
 benchmarks/*/data/*.tar.gz
+xgboost/

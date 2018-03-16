@@ -55,6 +55,8 @@ class Evaluator:
             return 0
 
     def dump_evals(self):
+        if self.counter == 0: return
+
         with open('results.json', 'w') as fp:
             json.dump(self.evals, fp, indent=4, sort_keys=True, cls=Encoder)
 

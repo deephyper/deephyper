@@ -3,15 +3,15 @@ import os
 import pickle
 import signal
 import sys
+import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__)) # search dir
 top  = os.path.dirname(os.path.dirname(HERE)) # directory containing deephyper
 sys.path.append(top)
 
-from deephyper.search import evaluate, util
+from deephyper.evaluators import evaluate
+from deephyper.search import util
 
-from skopt import Optimizer
-from deephyper.search.ExtremeGradientBoostingQuantileRegressor import ExtremeGradientBoostingQuantileRegressor
 
 masterLogger = util.conf_logger()
 logger = logging.getLogger('deephyper.search.async-search')
@@ -24,7 +24,7 @@ def submit_next_points(opt_config, optimizer, evaluator):
     '''Query optimizer for the next set of points to evaluate'''
     if evaluator.counter >= opt_config.max_evals:
         logger.debug("Reached max_evals; no longer starting new runs")
-        return
+        return False
 
     if opt_config.starting_point is not None:
         XX = [opt_config.starting_point]
@@ -33,7 +33,7 @@ def submit_next_points(opt_config, optimizer, evaluator):
         XX.extend(additional_pts)
         logger.debug("Generating starting points")
     elif evaluator.num_free_workers() > 0:
-        XX = optimizer.ask(n_points=evaluator.num_free_workers())
+        XX = optimizer.ask(n_points=1)
         logger.debug("Generating one point")
     else:
         XX = []
@@ -47,9 +47,14 @@ def submit_next_points(opt_config, optimizer, evaluator):
     for x in XX:
         evaluator.add_eval(x, re_evaluate=opt_config.repeat_evals)
         logger.info(f"Submitted eval of {x}")
+    if XX:
+        return True
+    else:
+        return False
 
 
 def save_checkpoint(opt_config, optimizer, evaluator):
+    if evaluator.counter == 0: return
     data = {}
     data['opt_config'] = opt_config
     data['optimizer'] = optimizer
@@ -89,19 +94,11 @@ def main(args):
         cfg, optimizer, evaluator = load_checkpoint(chk_path)
     else:
         cfg = util.OptConfig(args)
-        optimizer = Optimizer(
-            cfg.space,
-            base_estimator=ExtremeGradientBoostingQuantileRegressor(),
-            acq_optimizer='sampling',
-            acq_func='LCB',
-            acq_func_kwargs={'kappa':0},
-            random_state=SEED,
-            n_initial_points=args.num_workers
-        )
+        optimizer = util.sk_optimizer_from_config(cfg, SEED)
         evaluator = evaluate.create_evaluator(cfg)
         logger.info(f"Starting new run with {cfg.benchmark_module_name}")
 
-    timer = util.elapsed_timer(max_runtime_minutes=None, service_period=SERVICE_PERIOD)
+    timer = util.DelayTimer(max_minutes=None, period=SERVICE_PERIOD)
     chkpoint_counter = 0
 
     # Gracefully handle shutdown
@@ -116,8 +113,8 @@ def main(args):
     # MAIN LOOP
     logger.info("Hyperopt driver starting")
 
-    for elapsed_seconds in timer:
-        logger.info(f"Elapsed time: {util.pretty_time(elapsed_seconds)}")
+    for elapsed_str in timer:
+        logger.info(f"Elapsed time: {elapsed_str}")
         if len(evaluator.evals) == cfg.max_evals: break
 
         for (x, y) in evaluator.get_finished_evals():
@@ -126,7 +123,8 @@ def main(args):
             if y == sys.float_info.max:
                 logger.warning(f"WARNING: {job.cute_id} cost was not found or NaN")
         
-        submit_next_points(cfg, optimizer, evaluator)
+        submitted_any = submit_next_points(cfg, optimizer, evaluator)
+        timer.delay = not submitted_any # no idling while there's evals to submit
 
         if chkpoint_counter >= CHECKPOINT_INTERVAL:
             save_checkpoint(cfg, optimizer, evaluator)

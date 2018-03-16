@@ -23,13 +23,14 @@ HERE = os.path.dirname(os.path.abspath(__file__)) # search dir
 top  = os.path.dirname(os.path.dirname(HERE)) # directory containing deephyper
 sys.path.append(top)
 
-from deephyper.search import evaluate, util
+from deephyper.evaluators import evaluate
+from deephyper.search import util
 
 masterLogger = util.conf_logger()
 logger = logging.getLogger('deephyper.search.ga')
 
 SEED = 12345
-CHECKPOINT_INTERVAL = 100    # How many generations between optimizer checkpoints
+CHECKPOINT_INTERVAL = 1    # How many generations between optimizer checkpoints
 SERVICE_PERIOD = 2
     
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
@@ -93,13 +94,14 @@ class SpaceEncoder:
 
 class GAOptimizer:
 
-    def __init__(self, opt_config, seed=SEED, CXPB=0.5,
-                 MUTPB=0.2, NGEN=40, INIT_POP_SIZE=100):
+    def __init__(self, opt_config, seed=SEED, CXPB=0.5, MUTPB=0.2):
         self.SEED = seed
         self.CXPB = CXPB
         self.MUTPB = MUTPB
-        self.NGEN = NGEN
-        self.INIT_POP_SIZE = INIT_POP_SIZE
+        self.NGEN = opt_config.ga_num_gen
+
+        pop_size = opt_config.num_workers * opt_config.individuals_per_worker
+        self.INIT_POP_SIZE = pop_size
         self.IND_SIZE = len(opt_config.space)
 
         self.toolbox = None
@@ -174,6 +176,7 @@ def evaluate_fitnesses(individuals, opt, evaluator):
 
 
 def save_checkpoint(opt_config, optimizer, evaluator):
+    if evaluator.counter == 0: return
     data = {}
     data['opt_config'] = opt_config
     data['optimizer'] = optimizer
@@ -210,7 +213,7 @@ def main(args):
         logger.info(f"Starting new run with {cfg.benchmark_module_name}")
 
 
-    timer = util.elapsed_timer(max_runtime_minutes=None, service_period=SERVICE_PERIOD)
+    timer = util.DelayTimer(max_minutes=None, period=SERVICE_PERIOD)
     elapsed_seconds = next(timer)
     chkpoint_counter = 0
 
@@ -219,6 +222,7 @@ def main(args):
 
     if opt.pop is None:
         logger.info("Generating initial population")
+        logger.info(f"{opt.INIT_POP_SIZE} individuals")
         opt.pop = opt.toolbox.population(n=opt.INIT_POP_SIZE)
         individuals = opt.pop
         evaluate_fitnesses(individuals, opt, evaluator)
@@ -240,9 +244,9 @@ def main(args):
 
     while opt.current_gen < opt.NGEN:
         opt.current_gen += 1
-        elapsed_seconds = next(timer)
-        logger.info(f"Generation {opt.current_gen}")
-        logger.info(f"Elapsed time: {util.pretty_time(elapsed_seconds)}")
+        time_str = next(timer)
+        logger.info(f"Generation {opt.current_gen} out of {opt.NGEN}")
+        logger.info(f"Elapsed time: {elapsed_str}")
 
         # Select the next generation individuals
         offspring = opt.toolbox.select(opt.pop, len(opt.pop))
