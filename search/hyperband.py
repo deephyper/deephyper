@@ -143,6 +143,7 @@ def main(args):
 
     # Gracefully handle shutdown
     def handler(signum, stack):
+        evaluator.stop()
         logger.info('Received SIGINT/SIGTERM')
         save_checkpoint(cfg, optimizer, evaluator)
         sys.exit(0)
@@ -166,6 +167,8 @@ def main(args):
     save_checkpoint(cfg, optimizer, evaluator)
 
 if __name__ == "__main__":
+    import multiprocessing
+    multiprocessing.set_start_method('forkserver')
     parser = util.create_parser()
     args = parser.parse_args()
     main(args)

@@ -81,10 +81,10 @@ def create_evaluator(opt_config):
     assert evaluator_class in ['balsam', 'local']
 
     if evaluator_class == "balsam":
-        from deephyper.search.evaluate_balsam import BalsamEvaluator
+        from deephyper.evaluators.evaluate_balsam import BalsamEvaluator
         cls = BalsamEvaluator
     else:
-        from deephyper.search.evaluate_local import LocalEvaluator
+        from deephyper.evaluators.evaluate_local import LocalEvaluator
         cls = LocalEvaluator
 
     evaluator = cls(opt_config.params,

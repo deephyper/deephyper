@@ -137,8 +137,8 @@ def create_parser():
                        )
     parser.add_argument('--ga-num-gen', type=int, default=40)
     parser.add_argument('--uniform-sampling', action='store_true',
-                        default=False, help='for skopt optimizers; use dummy
-                        base_estimator (default is False)'
+                        default=False, help='for skopt optimizers; use dummy'
+                        ' base_estimator (default is False)'
                        )
     parser.add_argument('--from-checkpoint', default=None,
                         help='path of checkpoint file from a previous run'

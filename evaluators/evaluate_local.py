@@ -1,6 +1,6 @@
 import concurrent.futures
 import logging
-from deephyper.search import evaluate
+from deephyper.evaluators import evaluate
 from importlib import import_module
 import os
 
@@ -92,6 +92,9 @@ class LocalEvaluator(evaluate.Evaluator):
         d['executor'] = None
         d['bench_module'] = None
         return d
+
+    def stop(self):
+        self.executor.shutdown(wait=True)
 
     def __setstate__(self, d):
         logger.info(f"Unpickling LocalEvaluator")
