@@ -183,9 +183,6 @@ def defaults():
     return vars(def_parser.parse_args(''))
 
 
-
-
-
 def run(param_dict):
     default_params = defaults()
     for key in default_params:
@@ -224,6 +221,8 @@ def run(param_dict):
         initial_epoch = saved_param_dict['epochs']
         if initial_epoch < param_dict['epochs']:
             resume = True
+        else:
+            initial_epoch = 0
     
     if not resume:
         print('Build model...')
@@ -243,14 +242,12 @@ def run(param_dict):
             # output_dim). This is necessary as TimeDistributed in the below expects
             # the first dimension to be the timesteps.
             model.add(RNN(HIDDEN_SIZE, return_sequences=True))
-
         # Apply a dense layer to the every temporal slice of an input. For each of step
         # of the output sequence, decide which character should be chosen.
         model.add(layers.TimeDistributed(layers.Dense(len(chars))))
         model.add(layers.Activation(activation))
         model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
         model.summary()
-    #print(model.test_on_batch(x_val, y_val))
     train_history = model.fit(x_train, y_train, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=param_dict['epochs'], validation_data=(x_val, y_val))
     train_loss = train_history.history['loss']
     val_acc = train_history.history['val_acc']
