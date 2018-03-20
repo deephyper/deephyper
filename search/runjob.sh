@@ -12,14 +12,17 @@ BNAME=$1
 NNODES=$2
 METHOD=$3
 
-
-JOBNAME=$BNAME_$NNODE_$METHOD
-WORKFLOWNAME=$BNAME_$NNODE_$METHOD
 WALLMINUTES=110
 MAXEVALS=100000000
 BENCHMARK=$BNAME
+
 SEARCH_APP_PATH=/projects/datascience/pbalapra/deephyper/deephyper/search/$METHOD.py
 NUM_WORKERS=$(( $COBALT_JOBSIZE-1 ))
+
+JOBNAME="$BNAME"_"$NNODES"_"$METHOD"
+WORKFLOWNAME="$BNAME"_"$NNODES"_"$METHOD"
+
+echo "Creating new job:" $JOBNAME
 
 balsam init /projects/datascience/pbalapra/deephyper/database/$WORKFLOWNAME
 export BALSAM_DB_PATH=/projects/datascience/pbalapra/deephyper/database/$WORKFLOWNAME
@@ -27,7 +30,6 @@ export BALSAM_DB_PATH=/projects/datascience/pbalapra/deephyper/database/$WORKFLO
 balsam rm apps --all --force
 balsam app --name search --desc 'run search' --executable $SEARCH_APP_PATH
 balsam rm jobs --all --force
-
 
 ARGS="--max-evals $MAXEVALS --benchmark $BENCHMARK --num-workers $NUM_WORKERS"
 
@@ -37,4 +39,3 @@ balsam dbserver --reset /projects/datascience/pbalapra/deephyper/hpc-edge-servic
 balsam dbserver
 sleep 1
 balsam launcher --wf-name $WORKFLOWNAME --max-ranks-per-node 1
-
