@@ -64,6 +64,8 @@ class BalsamEvaluator(evaluate.Evaluator):
                     threads_per_rank=64,
                     wait_for_parents = False
                    )
+        child.create_working_path()
+        child.update_state('PREPROCESSED')
         logger.debug(f"Created job {jobname}")
         logger.debug(f"Command: {cmd}")
         logger.debug(f"Args: {args}")
@@ -94,7 +96,7 @@ class BalsamEvaluator(evaluate.Evaluator):
 
         num_checks = round(timeout / delay)
         for i in range(num_checks):
-            num_finished = jobs.filter(state='JOB_FINISHED').count()
+            num_finished = jobs.filter(state='RUN_DONE').count()
             logger.debug(f"{num_finished} out of {num_jobs} finished")
             isDone = num_finished == num_jobs
             failed = jobs.filter(state='FAILED').exists()
@@ -106,7 +108,7 @@ class BalsamEvaluator(evaluate.Evaluator):
             else:
                 time.sleep(delay)
 
-        isDone = jobs.filter(state='JOB_FINISHED').count() == num_jobs
+        isDone = jobs.filter(state='RUN_DONE').count() == num_jobs
         if not isDone:
             logger.error("Balsam Jobs did not finish in alloted timeout; aborting")
             raise RuntimeError(f"The jobs did not finish in {timeout} seconds")
@@ -126,7 +128,7 @@ class BalsamEvaluator(evaluate.Evaluator):
         '''iter over any immediately available results'''
         pending_ids = self.pending_evals.values()
         done_jobs = BalsamJob.objects.filter(job_id__in=pending_ids)
-        done_jobs = done_jobs.filter(state='JOB_FINISHED')
+        done_jobs = done_jobs.filter(state='RUN_DONE')
         logger.info("Checking if any pending Balsam jobs are done")
 
         for job in done_jobs:
