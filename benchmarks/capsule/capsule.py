@@ -33,7 +33,7 @@ sys.path.append(top)
 from deephyper.benchmarks import keras_cmdline 
 
 
-BNAME = 'cifar10_cnn_capsule'
+BNAME = 'capsule'
 
 def extension_from_parameters(param_dict):
     extension = ''
