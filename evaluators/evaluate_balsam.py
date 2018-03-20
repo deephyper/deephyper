@@ -62,6 +62,7 @@ class BalsamEvaluator(evaluate.Evaluator):
                     wall_time_minutes = 2,
                     num_nodes = 1, ranks_per_node = 1,
                     threads_per_rank=64,
+                    serial_node_packing_count=1,
                     wait_for_parents = False
                    )
         child.create_working_path()
