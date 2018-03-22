@@ -48,6 +48,7 @@ from keras.models import Sequential
 from keras import layers
 from keras.models import load_model
 from deephyper.benchmarks import keras_cmdline 
+from keras.callbacks import EarlyStopping
 
 seed(1)
 set_random_seed(2)
@@ -217,9 +218,13 @@ def run(param_dict):
         model.summary()
     timer.end()
 
+    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=5, verbose=1, mode='auto')
+    callbacks_list = [earlystop]
+
     timer.start('model training')
-    train_history = model.fit(x_train, y_train, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=param_dict['epochs'], validation_data=(x_val, y_val))
+    train_history = model.fit(x_train, y_train, callbacks=callbacks_list, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=param_dict['epochs'], validation_data=(x_val, y_val))
     timer.end()
+    
     train_loss = train_history.history['loss']
     val_acc = train_history.history['val_acc']
     print('===Train loss:', train_loss[-1])

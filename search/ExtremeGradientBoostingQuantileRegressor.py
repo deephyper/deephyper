@@ -67,7 +67,7 @@ class ExtremeGradientBoostingQuantileRegressor(BaseEstimator, RegressorMixin):
         self.quant_var_upper = 3.2
         
         #xgboost parameters
-        n_estimators = 500
+        n_estimators = 100
         max_depth = 5
         reg_alpha = 5.
         reg_lambda=1.0
@@ -160,7 +160,7 @@ class ExtremeGradientBoostingQuantileRegressor(BaseEstimator, RegressorMixin):
             return np.asarray(predicted_quantiles.T)
 
         elif return_std:
-            std_quantiles = [0.16, 0.5, 0.84]
+            std_quantiles = [0.16, 0.5, 0.84] #[0.05, 0.5, 0.95] #
             is_present_mask = np.in1d(std_quantiles, self.quantiles)
             if not np.all(is_present_mask):
                 raise ValueError(
@@ -169,6 +169,7 @@ class ExtremeGradientBoostingQuantileRegressor(BaseEstimator, RegressorMixin):
             low = self.regressors_[self.quantiles.index(0.16)].predict(X)
             high = self.regressors_[self.quantiles.index(0.84)].predict(X)
             mean = self.regressors_[self.quantiles.index(0.5)].predict(X)
+            #print('===>{}; {}; {}'.format(low, mean, high))
             return mean, ((high - low) / 2.0)
 
         # return the mean
