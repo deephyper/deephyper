@@ -10,7 +10,8 @@ class LocalEvaluator(evaluate.Evaluator):
     ExecutorCls = concurrent.futures.ProcessPoolExecutor
 
     def __init__(self, params_list, bench_module_name, num_workers=None,
-                 backend='tensorflow'):
+                 backend='tensorflow', model_path='', data_source='', 
+                 stage_in_destination=''):
         super().__init__()
         self.executor = None
         self.num_workers = num_workers
@@ -18,6 +19,9 @@ class LocalEvaluator(evaluate.Evaluator):
         self.params_list = params_list
         self.bench_module_name = bench_module_name
         self.bench_module = import_module(bench_module_name)
+        self.model_path = model_path
+        self.data_source = data_source
+        self.stage_in_destination = stage_in_destination
         logger.info("Local Evaluator instantiated")
         logger.info(f"Backend: {self.backend}")
         logger.info(f"Benchmark: {bench_module_name}")
@@ -34,6 +38,9 @@ class LocalEvaluator(evaluate.Evaluator):
             self._setup_executor()
 
         param_dict = {k:v for k,v in zip(self.params_list, x) if 'hidden' not in k}
+        param_dict['model_path'] = self.model_path
+        param_dict['data_source'] = self.data_source
+        param_dict['stage_in_destination'] = self.stage_in_destination
         eval_func = self.bench_module.run
         future = self.executor.submit(eval_func, param_dict)
         logger.info(f"Running: {param_dict}")

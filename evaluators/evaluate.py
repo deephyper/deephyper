@@ -90,6 +90,9 @@ def create_evaluator(opt_config):
     evaluator = cls(opt_config.params,
                     opt_config.benchmark_module_name,
                     num_workers=opt_config.num_workers,
-                    backend=opt_config.backend
+                    backend=opt_config.backend,
+                    model_path=opt_config.model_path,
+                    data_source=opt_config.data_source,
+                    stage_in_destination=opt_config.stage_in_destination
                    )
     return evaluator

@@ -14,7 +14,9 @@ logger = logging.getLogger(__name__)
 
 class BalsamEvaluator(evaluate.Evaluator):
 
-    def __init__(self, params_list, bench_module_name, num_workers=1, backend='tensorflow'):
+    def __init__(self, params_list, bench_module_name, num_workers=1,
+                 backend='tensorflow', model_path='', data_source='', 
+                 stage_in_destination=''):
         super().__init__()
 
         self.id_key_map = {}
@@ -23,6 +25,9 @@ class BalsamEvaluator(evaluate.Evaluator):
         self.bench_module_name = bench_module_name
         self.bench_file = os.path.abspath(find_spec(bench_module_name).origin)
         self.backend = backend
+        self.model_path = model_path
+        self.data_source = data_source
+        self.stage_in_destination = stage_in_destination
         
         if dag.current_job is None:
             self._init_current_balsamjob()
@@ -48,10 +53,13 @@ class BalsamEvaluator(evaluate.Evaluator):
     def _eval_exec(self, x):
         jobname = f"task{self.counter}"
         cmd = f"{sys.executable} {self.bench_file}"
-        args = ' '.join(f"--{p}={v}"
-                        for p,v in zip(self.params_list, x)
-                        if 'hidden' not in p
-                       )
+        
+        param_dict = {p:v for p,v in zip(self.params_list, x)} # if 'hidden' not in p
+        param_dict['model_path'] = self.model_path
+        param_dict['data_source'] = self.data_source
+        param_dict['stage_in_destination'] = self.stage_in_destination
+
+        args = ' '.join(f"--{p}={v}" for p,v in param_dict.items())
         envs = f"KERAS_BACKEND={self.backend}"
 
         child = dag.spawn_child(

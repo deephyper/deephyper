@@ -21,6 +21,10 @@ class OptConfig:
         self.repeat_evals = args.repeat_evals
         self.num_workers = args.num_workers
         self.uniform_sampling = args.uniform_sampling
+
+        self.model_path = args.model_path
+        self.data_source = args.data_source
+        self.stage_in_destination = args.stage_in_destination
         
         # for example, the default value of args.benchmark is "b1.addition_rnn"
         benchmark_directory = args.benchmark.split('.')[0] # "b1"
@@ -147,4 +151,8 @@ def create_parser():
     parser.add_argument('--repeat-evals', action='store_true',
                         help='Re-evaluate points visited by hyperparameter optimizer'
                        )
+    parser.add_argument('--model_path', help="path from which models are loaded/saved", default='')
+    parser.add_argument('--data_source', help="location of dataset to load", default='')
+    parser.add_argument('--stage_in_destination', help="if provided; cache data at this location", 
+                        default='')
     return parser

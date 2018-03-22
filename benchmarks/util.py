@@ -5,16 +5,16 @@ import time
 
 class Timer:
     def __init__(self):
-        self.start = 0.0
+        self.t0 = 0.0
         self.name = None
     def start(self, name):
         self.name = name
-        self.start = time.time()
+        self.t0 = time.time()
     def end(self):
-        elapsed = time.time() - self.start
+        elapsed = time.time() - self.t0
         if not self.name: return
         print(f"TIMER {self.name}: {elapsed:.4f} seconds")
-        self.start = None
+        self.t0 = 0.0
         self.name = None
 
 def extension_from_parameters(param_dict):
