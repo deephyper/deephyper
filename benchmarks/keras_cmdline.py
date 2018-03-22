@@ -5,7 +5,6 @@ def create_parser():
     'command line parser for keras'
 
     parser = argparse.ArgumentParser(add_help=True)
-    group = parser.add_argument_group('required arguments')
     parser.add_argument('-v', '--version', action='version',
                         version='%(prog)s 0.1')
     parser.add_argument('--backend', action='store',
@@ -82,6 +81,12 @@ def create_parser():
     parser.add_argument('--beta2', action='store', dest='beta2',
                         nargs='?', const=1, type=float, default=0.999,
                         help='float >= 0')
+
+    # model and data I/O options
+    parser.add_argument('--model_path', help="path from which models are loaded/saved", default='')
+    parser.add_argument('--data_source', help="location of dataset to load", default='')
+    parser.add_argument('--stage_in_destination', help="if provided; cache data at this location", 
+                        default='')
     return(parser)
 
 def return_optimizer(param_dict):
@@ -138,3 +143,15 @@ def return_optimizer(param_dict):
                         clipnorm=param_dict['clipnorm'],
                         clipvalue=param_dict['clipvalue'])
     return(optimizer)
+
+def fill_missing_defaults(augment_parser_fxn, param_dict):
+    '''Build an augmented parser; return param_dict filled in
+    with missing values that were not supplied directly'''
+    def_parser = create_parser()
+    def_parser = augment_parser_fxn(def_parser)
+    default_params = vars(def_parser.parse_args(''))
+
+    missing = (k for k in default_params if k not in param_dict)
+    for k in missing:
+        param_dict[k] = default_params[k]
+    return param_dict

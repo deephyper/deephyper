@@ -24,58 +24,41 @@ Four digits inverted:
 Five digits inverted:
 + One layer LSTM (128 HN), 550k training examples = 99% train/test accuracy in 30 epochs
 '''
-
-import sys
 import os
-import time
 from pprint import pprint
+import sys
 
 here = os.path.dirname(os.path.abspath(__file__))
 top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
 sys.path.append(top)
+BNAME = os.path.splitext(os.path.basename(__file__))[0]
 
-start = time.time()
+from deephyper.benchmarks import util 
+
+timer = util.Timer()
+timer.start('module loading')
+
+import numpy as np
+from numpy.random import seed
+from six.moves import range
+
+
+from tensorflow import set_random_seed
 from keras.models import Sequential
 from keras import layers
-import numpy as np
-from six.moves import range
+from keras.models import load_model
 from deephyper.benchmarks import keras_cmdline 
 
-from numpy.random import seed
 seed(1)
-from tensorflow import set_random_seed
-from keras.models import load_model
-import hashlib
-import pickle
-
-
 set_random_seed(2)
-load_time = time.time() - start
-print(f"module import time: {load_time:.3f} seconds")
+
+timer.end()
     
 TRAINING_SIZE = 500
 DIGITS = 3
 INVERT = True
 MAXLEN = DIGITS + 1 + DIGITS
-BNAME = 'addition_rnn'
 
-def extension_from_parameters(param_dict):
-    extension = ''
-    for key in sorted(param_dict):
-        if key != 'epochs':
-            print ('%s: %s' % (key, param_dict[key]))
-            extension += '.{}={}'.format(key,param_dict[key])
-    print(extension)
-    return extension
-
-def save_meta_data(data, filename):
-    with open(filename, 'wb') as handle:
-        pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-def load_meta_data(filename):
-    with open(filename, 'rb') as handle:
-        data = pickle.load(handle)
-    return data
 
 class CharacterTable(object):
     """Given a set of characters:
@@ -177,20 +160,11 @@ def generate_data():
     print(y_val.shape)
     return x_train, y_train, x_val, y_val, chars
 
-def defaults():
-    def_parser = keras_cmdline.create_parser()
-    def_parser = augment_parser(def_parser)
-    return vars(def_parser.parse_args(''))
-
-
 def run(param_dict):
-    default_params = defaults()
-    for key in default_params:
-        if key not in param_dict:
-            param_dict[key] = default_params[key]
+    timer.start('preprocessing')
+    param_dict = keras_cmdline.fill_missing_defaults(augment_parser, param_dict)
     pprint(param_dict)
     optimizer = keras_cmdline.return_optimizer(param_dict)
-    print(param_dict)
 
     x_train, y_train, x_val, y_val, chars = generate_data()
 
@@ -205,27 +179,20 @@ def run(param_dict):
     BATCH_SIZE = param_dict['batch_size']
     LAYERS = param_dict['layers']
     activation = param_dict['activation']
-
-    extension = extension_from_parameters(param_dict)
-    hex_name = hashlib.sha224(extension.encode('utf-8')).hexdigest()
-    model_name = '{}-{}.h5'.format(BNAME, hex_name)
-    model_mda_name = '{}-{}.pkl'.format(BNAME, hex_name)
+    
+    model_path = param_dict['model_path']
+    model_mda_path = None
+    model = None
     initial_epoch = 0
 
-    resume = False
-
-    if os.path.exists(model_name) and os.path.exists(model_mda_name):
-        print('model and meta data exists; loading model from h5 file')
-        model = load_model(model_name)
-        saved_param_dict = load_meta_data(model_mda_name)
-        initial_epoch = saved_param_dict['epochs']
-        if initial_epoch < param_dict['epochs']:
-            resume = True
-        else:
-            initial_epoch = 0
-    
-    if not resume:
-        print('Build model...')
+    if model_path:
+        savedModel = util.resume_from_disk(BNAME, param_dict, data_dir=model_path)
+        model_mda_path = savedModel.model_mda_path
+        model_path = savedModel.model_path
+        model = savedModel.model
+        initial_epoch = savedModel.initial_epoch
+    if model is None:
+        print('Building model...')
         model = Sequential()
         # "Encode" the input sequence using an RNN, producing an output of HIDDEN_SIZE.
         # Note: In a situation where your input sequences have a variable length,
@@ -248,15 +215,22 @@ def run(param_dict):
         model.add(layers.Activation(activation))
         model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
         model.summary()
+    timer.end()
+
+    timer.start('model training')
     train_history = model.fit(x_train, y_train, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=param_dict['epochs'], validation_data=(x_val, y_val))
+    timer.end()
     train_loss = train_history.history['loss']
     val_acc = train_history.history['val_acc']
     print('===Train loss:', train_loss[-1])
     print('===Validation accuracy:', val_acc[-1])
     print('OUTPUT:', -val_acc[-1])
     
-    model.save(model_name)  
-    save_meta_data(param_dict, model_mda_name)
+    if model_path:
+        timer.start('model save')
+        model.save(model_path)
+        save_meta_data(param_dict, model_mda_path)
+        timer.end()
     return -val_acc[-1]
 
 def augment_parser(parser):
@@ -267,12 +241,10 @@ def augment_parser(parser):
                         help='type of RNN')
 
     parser.add_argument('--hidden_size', action='store', dest='hidden_size',
-                        nargs='?', const=2, type=int, default='128',
-                        help='number of epochs')
+                        nargs='?', const=2, type=int, default='128',)
 
     parser.add_argument('--layers', action='store', dest='layers',
-                        nargs='?', const=2, type=int, default='1',
-                        help='number of epochs')
+                        nargs='?', const=2, type=int, default='1',)
     return parser
 
 

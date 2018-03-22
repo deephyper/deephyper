@@ -1,14 +1,31 @@
 import hashlib
 import pickle
 from collections import NamedTuple
+import time
+
+class Timer:
+    def __init__(self):
+        self.start = 0.0
+        self.name = None
+    def start(self, name):
+        self.name = name
+        self.start = time.time()
+    def end(self):
+        elapsed = time.time() - self.start
+        if not self.name: return
+        print(f"TIMER {self.name}: {elapsed:.4f} seconds")
+        self.start = None
+        self.name = None
 
 def extension_from_parameters(param_dict):
+    EXCLUDE_PARAMS = ['epochs', 'model_path', 'data_source',
+                      'stage_in_destination', 'version', 
+                      'backend']
     extension = ''
     for key in sorted(param_dict):
-        if key != 'epochs':
-            print ('%s: %s' % (key, param_dict[key]))
+        if key not in EXCLUDE_PARAMS:
             extension += '.{}={}'.format(key,param_dict[key])
-    print(extension)
+    print("extension:", extension)
     return extension
 
 def save_meta_data(data, filename):
@@ -45,19 +62,28 @@ def resume_from_disk(benchmark_name, param_dict, data_dir=''):
             print(f"running to epoch {param_dict['epochs']}")
         else:
             raise RuntimeError("Specified Epochs is less than the initial epoch; will not run")
+    else:
+        print("Did not find saved model at", model_path)
 
     return SavedModel(model=model, model_path=model_path,
               model_mda_path=model_mda_path,
               inital_epoch=initial_epoch)
 
-def fill_missing_defaults(augment_parser_fxn, param_dict):
-    '''Build an augmented parser; return param_dict filled in
-    with missing values that were not supplied directly'''
-    def_parser = keras_cmdline.create_parser()
-    def_parser = augment_parser_fxn(def_parser)
-    default_params = vars(def_parser.parse_args(''))
+def stage_in(file_names, source, dest):
+    print("Stage in files:", file_names)
+    print("From source dir:", source)
+    print("To destination:", dest)
 
-    missing = (k for k in default_params if k not in param_dict)
-    for k in missing:
-        param_dict[k] = default_params[k]
-    return param_dict
+    paths = {}
+    for name in file_names:
+        origin = os.path.join(source, name)
+        assert os.path.exists(origin), f'{origin} not found'
+
+        if os.path.exists(dest):
+            target = os.path.join(dest, name)
+            paths[name] = get_file(fname=target, origin='file://'+origin)
+        else:
+            paths[name] = origin
+
+        print(f"File {name} will be read from {paths[name]}")
+    return paths
