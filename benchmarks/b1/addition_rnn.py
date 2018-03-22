@@ -47,6 +47,7 @@ from tensorflow import set_random_seed
 from keras.models import load_model
 import hashlib
 import pickle
+from keras.callbacks import EarlyStopping
 
 
 set_random_seed(2)
@@ -248,7 +249,10 @@ def run(param_dict):
         model.add(layers.Activation(activation))
         model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
         model.summary()
-    train_history = model.fit(x_train, y_train, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=param_dict['epochs'], validation_data=(x_val, y_val))
+    
+    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=5, verbose=1, mode='auto')
+    callbacks_list = [earlystop]
+    train_history = model.fit(x_train, y_train, callbacks=callbacks_list, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=param_dict['epochs'], validation_data=(x_val, y_val))
     train_loss = train_history.history['loss']
     val_acc = train_history.history['val_acc']
     print('===Train loss:', train_loss[-1])

@@ -25,7 +25,7 @@ import sys
 import os
 import time
 from pprint import pprint
-
+import hashlib
 
 here = os.path.dirname(os.path.abspath(__file__))
 top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
