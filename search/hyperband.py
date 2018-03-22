@@ -90,6 +90,7 @@ class Hyperband:
                         early_stops = []
                         for t in T:		
                             self.counter += 1
+                            t[0] = r 
                             self.evaluator.add_eval(t, re_evaluate=True)
                             results = self.evaluator.await_evals(T) # barrier
 

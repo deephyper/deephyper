@@ -20,7 +20,7 @@ class OptConfig:
         self.evaluator = args.evaluator
         self.repeat_evals = args.repeat_evals
         self.num_workers = args.num_workers
-        self.uniform_sampling = args.uniform_sampling
+        self.learner = args.learner
         
         # for example, the default value of args.benchmark is "b1.addition_rnn"
         benchmark_directory = args.benchmark.split('.')[0] # "b1"
@@ -45,26 +45,29 @@ def sk_optimizer_from_config(opt_config, random_state):
     from deephyper.search.ExtremeGradientBoostingQuantileRegressor import \
          ExtremeGradientBoostingQuantileRegressor
     logger = logging.getLogger(__name__)
-    if opt_config.uniform_sampling:
+    kappa = 1.96
+    if opt_config.learner in ["RF", "ET", "GBRT", "DUMMY"]:
         optimizer = Optimizer(
             opt_config.space,
-            base_estimator='dummy',
+            base_estimator=opt_config.learner,
             acq_optimizer='sampling',
+            acq_func='LCB',
+            acq_func_kwargs={'kappa':kappa},
             random_state=random_state,
-            n_initial_points=np.inf
+            n_initial_points=opt_config.num_workers
         )
-        logger.info("Creating skopt.Optimizer with 'dummy' base_estimator")
     else:
         optimizer = Optimizer(
             opt_config.space,
             base_estimator=ExtremeGradientBoostingQuantileRegressor(),
             acq_optimizer='sampling',
             acq_func='LCB',
-            acq_func_kwargs={'kappa':0},
+            acq_func_kwargs={'kappa':kappa},
             random_state=random_state,
             n_initial_points=opt_config.num_workers
         )
-        logger.info("Creating skopt.Optimizer with XGB base_estimator")
+    logger.info("Creating skopt.Optimizer with %s base_estimator" % opt_config.learner)
+    #print("Creating skopt.Optimizer with %s, %d base_estimator" % (opt_config.learner, opt_config.num_workers))
     return optimizer
 
 def conf_logger():
@@ -136,10 +139,13 @@ def create_parser():
                         ' ind-per-worker', dest='individuals_per_worker'
                        )
     parser.add_argument('--ga-num-gen', type=int, default=40)
-    parser.add_argument('--uniform-sampling', action='store_true',
-                        default=False, help='for skopt optimizers; use dummy'
-                        ' base_estimator (default is False)'
-                       )
+
+    parser.add_argument('--learner', action='store',
+                        dest='learner',
+                        nargs='?', const=1, type=str, default='XGB',
+                        choices=["XGB", "RF", "ET", "GBRT", "DUMMY"],
+                        help='type of learner')
+
     parser.add_argument('--from-checkpoint', default=None,
                         help='path of checkpoint file from a previous run'
                        )
