@@ -64,7 +64,7 @@ class Evaluator:
 
         for key in self.evals:
             x = self._decode(key)
-            resultDict = {name : value for (name,value) 
+            resultDict = {name : value for (name,value)
                           in zip(self.params_list, x)}
             resultDict['objective'] = self.evals[key]
             resultsList.append(resultDict)

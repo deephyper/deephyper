@@ -48,8 +48,16 @@ def sk_optimizer_from_config(opt_config, random_state):
     from skopt import Optimizer
     from deephyper.search.ExtremeGradientBoostingQuantileRegressor import \
          ExtremeGradientBoostingQuantileRegressor
+    from numpy import inf
     logger = logging.getLogger(__name__)
     kappa = 1.96
+
+    if opt_config.learner in "RF ET GBRT XGB".split():
+        n_init = opt_config.num_workers
+    else:
+        assert opt_config.learner == "DUMMY"
+        n_init = inf
+
     if opt_config.learner in ["RF", "ET", "GBRT", "DUMMY"]:
         optimizer = Optimizer(
             opt_config.space,
@@ -58,7 +66,7 @@ def sk_optimizer_from_config(opt_config, random_state):
             acq_func='LCB',
             acq_func_kwargs={'kappa':kappa},
             random_state=random_state,
-            n_initial_points=opt_config.num_workers
+            n_initial_points=n_init
         )
     elif opt_config.learner == "XGB":
         optimizer = Optimizer(
@@ -68,7 +76,7 @@ def sk_optimizer_from_config(opt_config, random_state):
             acq_func='LCB',
             acq_func_kwargs={'kappa':kappa},
             random_state=random_state,
-            n_initial_points=opt_config.num_workers
+            n_initial_points=n_init
         )
     else:
         raise ValueError(f"Unknown learner type {opt_config.learner}")

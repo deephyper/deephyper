@@ -24,12 +24,6 @@ SERVICE_PERIOD = 2          # Delay (seconds) between main loop iterations
 CHECKPOINT_INTERVAL = 30    # How many jobs to complete between optimizer checkpoints
 SEED = 12345
 
-def evaluate_points(points, opt, evaluator):
-    for x in points: evaluator.add_eval(x)
-    logger.info(f"Waiting on {len(points)} evaluations")
-    results = evaluator.await_evals(points)
-    return list(results)
-
 def save_checkpoint(opt_config, optimizer, evaluator):
     data = {}
     data['opt_config'] = opt_config
@@ -44,33 +38,26 @@ def save_checkpoint(opt_config, optimizer, evaluator):
     logger.info(f"Checkpointed run in {os.path.abspath(fname)}")
 
 class Hyperband:
-
     def __init__(self, cfg, evaluator):
         self.evaluator = evaluator
         self.opt_config = cfg
-        self.opt_config.uniform_sampling = True
+        self.opt_config.learner = "DUMMY"
         self.optimizer = util.sk_optimizer_from_config(self.opt_config, SEED)
 
-        self.max_iter = cfg.num_workers # maximum iterations per configuration
+        self.max_iter = self.opt_config.num_workers # maximum iterations per configuration
         self.eta = 3			# defines configuration downsampling rate (default = 3)
 
         self.logeta = lambda x: log( x ) / log( self.eta )
         self.s_max = int(self.logeta(self.max_iter))
         self.B = ( self.s_max + 1 ) * self.max_iter
 
-        self.results = []	# list of dicts
-        self.counter = 0
         self.best_loss = np.inf
-        self.best_counter = -1
 
     def run(self):
         for s in reversed( range( self.s_max + 1 )):
-            # initial number of configurations
-            n = int( ceil( self.B / self.max_iter / ( s + 1 ) * self.eta ** s ))	
-            # initial number of iterations per config
-            r = self.max_iter * self.eta ** ( -s )		
-            # n random configurations
-            #T = [ self.get_params() for i in range( n )]
+            n = int( ceil( self.B / self.max_iter / ( s + 1 ) * self.eta ** s ))
+            r = self.max_iter * self.eta ** ( -s )
+
             if self.opt_config.starting_point is not None:
                 T = [self.opt_config.starting_point]
                 self.opt_config.starting_point = None
@@ -78,45 +65,37 @@ class Hyperband:
                 T.extend(additional_pts)
             else:
                 T = self.optimizer.ask(n_points=n)
-                for i in range(( s + 1 )):	# changed from s + 1
-                    print('==> (%d, %d, %d) ' % (s, len(T), r))
-                    # Run each of the n configs for <iterations> 
-                    # and keep best (n_configs / eta) configurations
-                    n_configs = n * self.eta ** ( -i )
-                    n_iterations = r * self.eta ** ( i )
-                    #print "\n*** {} configurations x {:.1f} iterations each".format(n_configs, n_iterations )
-                    val_losses = []
-                    early_stops = []
-                    for t in T:		
-                        self.counter += 1
-                        self.evaluator.add_eval(t, re_evaluate=True)
-                        results = self.evaluator.await_evals(T) # barrier
 
-                        for (t, loss) in results:
-                            result = {}
-                            result['loss'] = loss	
-                            val_losses.append(loss)
-                            early_stops.append(False)
-                            # early_stop = result.get('early_stop', False)
-                            # early_stops.append(early_stop)
-                            # keeping track of the best result so far (for display only)
-                            # could do it be checking results each time, but hey
-                            if loss < self.best_loss:
-                                self.best_loss = loss
-                                self.best_counter = self.counter
-                                result['counter'] = self.counter
-                                #result['seconds'] = seconds
-                                result['params'] = t
-                                result['iterations'] = n_iterations
-                                self.results.append(result)
+            self._inner_loop(s, n, r, T)
 
-                            # select a number of best configurations for the next loop
-                            # filter out early stops, if any
-                            indices = np.argsort( val_losses )
-                            T = [ T[i] for i in indices if not early_stops[i]]
-                            T = T[ 0:int( n_configs / self.eta )]
+    def _inner_loop(self, s, n, r, T):
+        epochs_index = self.opt_config.params.index('epochs')
+        print(f"Hyperband Inner Loop n={n} r={r}")
 
-            return self.results
+        for i in range(( s + 1 )):
+            # Run each of the n_configs for <n_iterations>
+            n_configs = len(T)
+            n_iterations = r * self.eta ** ( i )
+            
+            for t in T: t[epochs_index] = n_iterations
+            assert all(t[epochs_index] == n_iterations for t in T)
+            print(f'==> n_configs={n_configs} n_iterations={n_iterations}')
+
+            for t in T: self.evaluator.add_eval(t, re_evaluate=True)
+            eval_results = self.evaluator.await_evals(T) # barrier
+            val_losses = [loss for (t, loss) in eval_results]
+
+            best_t, best_loss = min(evaluator.evals.items(), key=lambda x: x[1])
+            if best_loss < self.best_loss:
+                print("best loss so far:", best_loss)
+                print(best_t, '\n')
+                self.best_loss = best_loss
+
+            # keep best (n_configs / eta) configurations (TODO: filter out early stops)
+            indices = np.argsort( val_losses )
+            T = [T[i] for i in indices]
+            T = T[:int(n_configs / self.eta)]
+
 
 def main(args):
     '''Service loop: add jobs; read results; drive optimizer'''
@@ -127,8 +106,7 @@ def main(args):
         cfg, optimizer, evaluator = load_checkpoint(chk_path)
     else:
         cfg = util.OptConfig(args)
-        cfg.uniform_sampling = True
-        optimizer = Hyperband() 
+        optimizer = Hyperband(cfg)
 
         evaluator = evaluate.create_evaluator(cfg)
         logger.info(f"Starting new run with {cfg.benchmark_module_name}")
@@ -166,4 +144,7 @@ if __name__ == "__main__":
     multiprocessing.set_start_method('forkserver')
     parser = util.create_parser()
     args = parser.parse_args()
+    if not args.model_path:
+        raise ValueError("Need to specify model_path directory where "
+        "intermediate models will be loaded/stored")
     main(args)
