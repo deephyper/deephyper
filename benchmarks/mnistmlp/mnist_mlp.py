@@ -55,7 +55,9 @@ def run(param_dict):
         raise
     timer.end()
 
+    #batch_size = 32
     num_classes = 10
+    #epochs = 100
     num_predictions = 20
 
     BATCH_SIZE = param_dict['batch_size']
@@ -65,12 +67,19 @@ def run(param_dict):
     NHIDDEN = param_dict['nhidden']
     NUNITS = param_dict['nunits']
 
-    (x_train, y_train), (x_test, y_test) = cifar10.load_data()
-    print('x_train shape:', x_train.shape)
+    # the data, split between train and test sets
+    (x_train, y_train), (x_test, y_test) = mnist.load_data()
+
+    x_train = x_train.reshape(60000, 784)
+    x_test = x_test.reshape(10000, 784)
+    x_train = x_train.astype('float32')
+    x_test = x_test.astype('float32')
+    x_train /= 255
+    x_test /= 255
     print(x_train.shape[0], 'train samples')
     print(x_test.shape[0], 'test samples')
 
-    # Convert class vectors to binary class matrices.
+    # convert class vectors to binary class matrices
     y_train = keras.utils.to_categorical(y_train, num_classes)
     y_test = keras.utils.to_categorical(y_test, num_classes)
 
@@ -113,7 +122,7 @@ def run(param_dict):
     score = model.evaluate(x_test, y_test, verbose=0)
     print('Test loss:', score[0])
     print('Test accuracy:', score[1])
-       
+    
     if model_path:
         timer.start('model save')
         model.save(model_name)  
@@ -125,29 +134,14 @@ def run(param_dict):
 
 
 def augment_parser(parser):
-    parser.add_argument('--data_augmentation', action='store', dest='data_augmentation',
-                        nargs='?', const=1, type=bool, default=False,
-                        help='boolean. data_augmentation?')
 
     parser.add_argument('--nunits', action='store', dest='nunits',
-                        nargs='?', const=2, type=int, default='500',
-                        help='number of units in FC layer')
+                        nargs='?', const=2, type=int, default='512',
+                        help='number of units/layer in MLP')
 
-    parser.add_argument('--f1_size', action='store', dest='f1_size',
-                        nargs='?', const=2, type=int, default='32',
-                        help='Filter 1 dim')
-
-    parser.add_argument('--f2_size', action='store', dest='f2_size',
-                        nargs='?', const=2, type=int, default='64',
-                        help='Filter 2 dim')
-
-    parser.add_argument('--p_size', action='store', dest='p_size',
+    parser.add_argument('--nhidden', action='store', dest='nhidden',
                         nargs='?', const=2, type=int, default='2',
-                        help='pool size')
-
-    parser.add_argument('--k_size', action='store', dest='k_size',
-                        nargs='?', const=2, type=int, default='3',
-                        help='kernel_size')
+                        help='number of hidden layers in MLP')
 
     return parser
 
