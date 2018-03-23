@@ -65,4 +65,4 @@ balsam dbserver --stop
 balsam dbserver --reset $DBPATH
 balsam dbserver
 sleep 1
-aprun -n $COBALT_JOBSIZE -N 2 -cc none python $BALSAM_PATH/balsam/launcher/mpi_ensemble_pull.py --time-limit-min=$(( $WALLMINUTES+10 ))
+aprun -n $COBALT_JOBSIZE -N 1 -cc none python $BALSAM_PATH/balsam/launcher/mpi_ensemble_pull.py --time-limit-min=$(( $WALLMINUTES+10 ))
