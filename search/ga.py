@@ -214,11 +214,12 @@ def main(args):
 
 
     timer = util.DelayTimer(max_minutes=None, period=SERVICE_PERIOD)
-    elapsed_seconds = next(timer)
+    timer = iter(timer)
+    elapsed_str = next(timer)
     chkpoint_counter = 0
 
     logger.info("Hyperopt GA driver starting")
-    logger.info(f"Elapsed time: {util.pretty_time(elapsed_seconds)}")
+    logger.info(f"Elapsed time: {elapsed_str}")
 
     if opt.pop is None:
         logger.info("Generating initial population")
