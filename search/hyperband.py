@@ -127,8 +127,6 @@ def main(args):
         hyperband.run()
 
 if __name__ == "__main__":
-    import multiprocessing
-    multiprocessing.set_start_method('forkserver')
     parser = util.create_parser()
     args = parser.parse_args()
     if not args.model_path:

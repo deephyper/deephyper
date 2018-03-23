@@ -19,6 +19,12 @@ STAGE_IN_DIR=""
 
 # DO NOT CHANGE ANYTHING BELOW HERE:
 # ----------------------------------
+if [ $# -ne 1 ] 
+then
+    echo "Please provide one argument: benchmark_name (e.g. dummy2.regression or b2.babi_memnn)"
+    exit 1
+fi
+
 source ~/.bash_profile
 source activate $DEEPHYPER_ENV_NAME
 
@@ -60,4 +66,4 @@ balsam dbserver --stop
 balsam dbserver --reset $DBPATH
 balsam dbserver
 sleep 1
-aprun -n $COBALT_JOBSIZE -N 1 -cc none python $BALSAM_PATH/balsam/launcher/mpi_ensemble_pull.py --time-limit-min=$(( $WALLMINUTES+10 ))
+aprun -n $COBALT_JOBSIZE -N 2 -cc none python $BALSAM_PATH/balsam/launcher/mpi_ensemble_pull.py --time-limit-min=$(( $WALLMINUTES+10 ))
