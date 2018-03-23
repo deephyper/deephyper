@@ -1,6 +1,19 @@
+import os
+from pprint import pprint
+import sys
 import argparse
 
+here = os.path.dirname(os.path.abspath(__file__))
+top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
+sys.path.append(top)
+BNAME = os.path.splitext(os.path.basename(__file__))[0]
+
+from deephyper.benchmarks import util 
+
+timer = util.Timer()
+
 def run(param_dict):
+    timer.start('begin run')
     x = param_dict['x']
     y = param_dict['y']
     penalty = param_dict['penalty']
@@ -9,6 +22,7 @@ def run(param_dict):
     if penalty == 'yes': 
         result += 2.0
 
+    timer.end()
     print("OUTPUT: ", result)
     return result
 

@@ -1,4 +1,5 @@
 import numpy as np
+import glob
 
 from random import random
 from math import log, ceil
@@ -24,19 +25,6 @@ SERVICE_PERIOD = 2          # Delay (seconds) between main loop iterations
 CHECKPOINT_INTERVAL = 30    # How many jobs to complete between optimizer checkpoints
 SEED = 12345
 
-def save_checkpoint(opt_config, optimizer, evaluator):
-    data = {}
-    data['opt_config'] = opt_config
-    data['optimizer'] = optimizer
-    data['evaluator'] = evaluator
-    
-    fname = f'{opt_config.benchmark}.pkl'
-    with open(fname, 'wb') as fp:
-        pickle.dump(data, fp)
-
-    evaluator.dump_evals()
-    logger.info(f"Checkpointed run in {os.path.abspath(fname)}")
-
 class Hyperband:
     def __init__(self, cfg, evaluator):
         self.evaluator = evaluator
@@ -53,10 +41,13 @@ class Hyperband:
 
         self.best_loss = np.inf
 
+    def save_checkpoint(self):
+        self.evaluator.dump_evals()
+
     def run(self):
         for s in reversed( range( self.s_max + 1 )):
             n = int( ceil( self.B / self.max_iter / ( s + 1 ) * self.eta ** s ))
-            r = self.max_iter * self.eta ** ( -s )
+            r = round(self.max_iter * self.eta ** ( -s ))
 
             if self.opt_config.starting_point is not None:
                 T = [self.opt_config.starting_point]
@@ -67,6 +58,7 @@ class Hyperband:
                 T = self.optimizer.ask(n_points=n)
 
             self._inner_loop(s, n, r, T)
+        print("Hyperband run done")
 
     def _inner_loop(self, s, n, r, T):
         epochs_index = self.opt_config.params.index('epochs')
@@ -75,7 +67,7 @@ class Hyperband:
         for i in range(( s + 1 )):
             # Run each of the n_configs for <n_iterations>
             n_configs = len(T)
-            n_iterations = r * self.eta ** ( i )
+            n_iterations = round(r * self.eta **i)
             
             for t in T: t[epochs_index] = n_iterations
             assert all(t[epochs_index] == n_iterations for t in T)
@@ -84,8 +76,9 @@ class Hyperband:
             for t in T: self.evaluator.add_eval(t, re_evaluate=True)
             eval_results = self.evaluator.await_evals(T) # barrier
             val_losses = [loss for (t, loss) in eval_results]
+            assert len(val_losses) == len(T)
 
-            best_t, best_loss = min(evaluator.evals.items(), key=lambda x: x[1])
+            best_t, best_loss = min(self.evaluator.evals.items(), key=lambda x: x[1])
             if best_loss < self.best_loss:
                 print("best loss so far:", best_loss)
                 print(best_t, '\n')
@@ -95,49 +88,32 @@ class Hyperband:
             indices = np.argsort( val_losses )
             T = [T[i] for i in indices]
             T = T[:int(n_configs / self.eta)]
+            self.save_checkpoint()
 
 
 def main(args):
     '''Service loop: add jobs; read results; drive optimizer'''
 
-    # Initialize optimizer
-    if args.from_checkpoint:
-        chk_path = args.from_checkpoint
-        cfg, optimizer, evaluator = load_checkpoint(chk_path)
-    else:
-        cfg = util.OptConfig(args)
-        optimizer = Hyperband(cfg)
+    cfg = util.OptConfig(args)
+    evaluator = evaluate.create_evaluator(cfg)
+    hyperband = Hyperband(cfg, evaluator)
+    logger.info(f"Starting Hyperband run with {cfg.benchmark_module_name}")
 
-        evaluator = evaluate.create_evaluator(cfg)
-        logger.info(f"Starting new run with {cfg.benchmark_module_name}")
-
-    timer = util.elapsed_timer(max_runtime_minutes=None, service_period=SERVICE_PERIOD)
-    chkpoint_counter = 0
+    timer = util.DelayTimer(max_minutes=None, period=SERVICE_PERIOD)
 
     # Gracefully handle shutdown
     def handler(signum, stack):
         evaluator.stop()
         logger.info('Received SIGINT/SIGTERM')
-        save_checkpoint(cfg, optimizer, evaluator)
+        hyperband.save_checkpoint()
         sys.exit(0)
 
     signal.signal(signal.SIGINT, handler)
     signal.signal(signal.SIGTERM, handler)
 
-    # MAIN LOOP
-    logger.info("Hyperopt driver starting")
-
-    for elapsed_seconds in timer:
-        logger.info("\nElapsed time:", util.pretty_time(elapsed_seconds))
-        hyperband = Hyperband(cfg, optimizer, evaluator)
-        results = hyperband.run()
-
-        save_checkpoint(cfg, optimizer, evaluator)
-        sys.stdout.flush()
-
-    # EXIT
-    logger.info('Hyperopt driver finishing')
-    save_checkpoint(cfg, optimizer, evaluator)
+    for time_str in timer:
+        logger.debug(f"Starting hyperband run at elapsed time {time_str}")
+        hyperband.run()
 
 if __name__ == "__main__":
     import multiprocessing
@@ -147,4 +123,9 @@ if __name__ == "__main__":
     if not args.model_path:
         raise ValueError("Need to specify model_path directory where "
         "intermediate models will be loaded/stored")
+    path = os.path.abspath(os.path.expanduser(args.model_path))
+    pattern = os.path.join(path, '*.h5')
+    for fname in glob.glob(pattern):
+        print("clearing old model", fname)
+        os.remove(fname)
     main(args)

@@ -1,7 +1,9 @@
 import hashlib
 import pickle
-from collections import NamedTuple
+from collections import namedtuple
 import time
+import os
+from filelock import FileLock
 
 class Timer:
     def __init__(self):
@@ -38,7 +40,8 @@ def load_meta_data(filename):
     return data
     
 def resume_from_disk(benchmark_name, param_dict, data_dir=''):
-    SavedModel = NamedTuple('SavedModel', ['model', 'model_path',
+    from keras.models import load_model
+    SavedModel = namedtuple('SavedModel', ['model', 'model_path',
                                        'initial_epoch', 'model_mda_path']
                             )
     extension = extension_from_parameters(param_dict)
@@ -46,6 +49,7 @@ def resume_from_disk(benchmark_name, param_dict, data_dir=''):
     model_name = '{}-{}.h5'.format(benchmark_name, hex_name)
     model_mda_name = '{}-{}.pkl'.format(benchmark_name, hex_name)
 
+    data_dir = os.path.abspath(os.path.expanduser(data_dir))
     model_path = os.path.join(data_dir, model_name)
     model_mda_path = os.path.join(data_dir, model_mda_name)
 
@@ -54,7 +58,11 @@ def resume_from_disk(benchmark_name, param_dict, data_dir=''):
 
     if os.path.exists(model_path) and os.path.exists(model_mda_path):
         print('model and meta data exists; loading model from h5 file')
-        model = load_model(model_path)
+        if benchmark_name == 'regression':
+            with open(model_path, 'rb') as fp: model = pickle.load(fp)
+        else:
+            model = load_model(model_path)
+
         saved_param_dict = load_meta_data(model_mda_path)
         initial_epoch = saved_param_dict['epochs']
         if initial_epoch < param_dict['epochs']:
@@ -67,9 +75,10 @@ def resume_from_disk(benchmark_name, param_dict, data_dir=''):
 
     return SavedModel(model=model, model_path=model_path,
               model_mda_path=model_mda_path,
-              inital_epoch=initial_epoch)
+              initial_epoch=initial_epoch)
 
 def stage_in(file_names, source, dest):
+    from keras.utils.data_utils import get_file
     print("Stage in files:", file_names)
     print("From source dir:", source)
     print("To destination:", dest)
@@ -81,7 +90,8 @@ def stage_in(file_names, source, dest):
 
         if os.path.exists(dest):
             target = os.path.join(dest, name)
-            paths[name] = get_file(fname=target, origin='file://'+origin)
+            with FileLock(target + '.lock'):
+                paths[name] = get_file(fname=target, origin='file://'+origin)
         else:
             paths[name] = origin
 

@@ -32,7 +32,6 @@ from keras.models import Sequential, Model
 from keras.layers.embeddings import Embedding
 from keras.layers import Input, Activation, Dense, Permute, Dropout, add, dot, concatenate
 from keras.layers import LSTM
-from keras.utils.data_utils import get_file
 from keras.preprocessing.sequence import pad_sequences
 from functools import reduce
 import tarfile
@@ -41,7 +40,6 @@ import re
 
 from keras import layers
 from deephyper.benchmarks import keras_cmdline
-from keras.models import load_model
 import hashlib
 import pickle
 
@@ -124,7 +122,7 @@ def run(param_dict):
         data_source = param_dict['data_source']
     else:
         data_source = os.path.dirname(os.path.abspath(__file__))
-        data_source = os.path.join(origin_dir_path, 'data')
+        data_source = os.path.join(data_source, 'data')
 
     try:
         paths = util.stage_in(['babi-tasks-v1-2.tar.gz'],
@@ -295,8 +293,8 @@ def run(param_dict):
     
     if model_path:
         timer.start('model save')
-        model.save(model_name)  
-        save_meta_data(param_dict, model_mda_name)
+        model.save(model_path)  
+        util.save_meta_data(param_dict, model_mda_path)
         timer.end()
     return -val_acc[-1]
 
