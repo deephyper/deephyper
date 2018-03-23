@@ -62,7 +62,6 @@ balsam modify jobs $NEW_ID --attr state --value PREPROCESSED
 
 # Start up Balsam DB server
 # -------------------------
-balsam dbserver --stop
 balsam dbserver --reset $DBPATH
 balsam dbserver
 sleep 1

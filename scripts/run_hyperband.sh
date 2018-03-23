@@ -1,8 +1,8 @@
 #!/bin/bash -x
 #COBALT -A datascience
-#COBALT -n 11
-#COBALT -q default
-#COBALT -t 00:30:00
+#COBALT -n 8
+#COBALT -q debug-flat-quad
+#COBALT -t 00:20:00
 #COBALT --attrs ssds=required:ssd_size=128
 
 # User-specific paths and names go here (NO TRAILING SLASHES):
@@ -12,7 +12,7 @@ DATABASE_TOP=/projects/datascience/msalim/deephyper/database
 BALSAM_PATH=/home/msalim/hpc-edge-service
 
 # Set Hyperband options
-WALLMINUTES=20   # should be about 10 min less than COBALT requested time
+WALLMINUTES=10   # should be about 10 min less than COBALT requested time
 SAVED_MODEL_DIR=/projects/datascience/msalim/deephyper/saved_models
 STAGE_IN_DIR="/local/scratch"
 
@@ -62,7 +62,6 @@ balsam modify jobs $NEW_ID --attr state --value PREPROCESSED
 
 # Start up Balsam DB server
 # -------------------------
-balsam dbserver --stop
 balsam dbserver --reset $DBPATH
 balsam dbserver
 sleep 1

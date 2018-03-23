@@ -34,7 +34,7 @@ def submit_next_points(opt_config, optimizer, evaluator):
         logger.debug("Generating starting points")
     elif evaluator.num_free_workers() > 0:
         XX = optimizer.ask(n_points=1)
-        logger.debug("Generating one point")
+        logger.debug("Asking for one point")
     else:
         XX = []
         logger.info("No free workers; waiting")
@@ -42,6 +42,7 @@ def submit_next_points(opt_config, optimizer, evaluator):
     if not opt_config.repeat_evals:
         XX = [x for x in XX 
               if evaluator.encode(x) not in evaluator.evals
+              and evaluator.encode(x) not in evaluator.pending_evals
               ]
 
     for x in XX:
