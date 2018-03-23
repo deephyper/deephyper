@@ -44,6 +44,15 @@ class Hyperband:
     def save_checkpoint(self):
         self.evaluator.dump_evals()
 
+    def clear_old_models(self):
+        path = self.opt_config.model_path
+        path = os.path.abspath(os.path.expanduser(model_path))
+        print("Clearing all .h5 and .pkl files in {path}")
+        pattern = os.path.join(path, '*.h5')
+        for fname in glob.glob(pattern): os.remove(fname)
+        pattern = os.path.join(path, '*.pkl')
+        for fname in glob.glob(pattern): os.remove(fname)
+
     def run(self):
         for s in reversed( range( self.s_max + 1 )):
             n = int( ceil( self.B / self.max_iter / ( s + 1 ) * self.eta ** s ))
@@ -58,6 +67,7 @@ class Hyperband:
                 T = self.optimizer.ask(n_points=n)
 
             self._inner_loop(s, n, r, T)
+        self.clear_old_models()
         print("Hyperband run done")
 
     def _inner_loop(self, s, n, r, T):
@@ -124,9 +134,4 @@ if __name__ == "__main__":
     if not args.model_path:
         raise ValueError("Need to specify model_path directory where "
         "intermediate models will be loaded/stored")
-    path = os.path.abspath(os.path.expanduser(args.model_path))
-    pattern = os.path.join(path, '*.h5')
-    for fname in glob.glob(pattern):
-        print("clearing old model", fname)
-        os.remove(fname)
     main(args)
