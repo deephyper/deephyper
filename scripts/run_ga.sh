@@ -1,8 +1,8 @@
 #!/bin/bash -x
 #COBALT -A datascience
-#COBALT -n 5
-#COBALT -q debug-cache-quad
-#COBALT -t 00:20:00
+#COBALT -n 8
+#COBALT -q default
+#COBALT -t 00:30:00
 #COBALT --attrs ssds=required:ssd_size=128
 
 # User-specific paths and names go here (NO TRAILING SLASHES):

@@ -21,6 +21,7 @@ class Evaluator:
     def __init__(self):
         self.pending_evals = {} # x --> future or x --> UUID
         self.evals = {} # x --> cost
+        self.repeated_evals = []
 
     def encode(self, x):
         return self._encode(x)
@@ -38,6 +39,7 @@ class Evaluator:
         if key in self.evals or key in self.pending_evals:
             if not re_evaluate:
                 logger.info(f"Point {key} has already been evaluated! Skipping.")
+                self.repeated_evals.append(key)
                 return
         new_eval = self._eval_exec(x) # future or job UUID
         self.pending_evals[key] = new_eval

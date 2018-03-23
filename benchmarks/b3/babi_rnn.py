@@ -81,6 +81,7 @@ from keras.preprocessing.sequence import pad_sequences
 from keras import layers
 
 from deephyper.benchmarks import keras_cmdline
+from deephyper.benchmarks import util
 from keras.models import load_model
 import hashlib
 import pickle

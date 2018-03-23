@@ -1,8 +1,8 @@
 #!/bin/bash -x
 #COBALT -A datascience
-#COBALT -n 128
+#COBALT -n 8
 #COBALT -q default
-#COBALT -t 02:00:00
+#COBALT -t 00:30:00
 #COBALT --attrs ssds=required:ssd_size=128
 
 # User-specific paths and names go here (NO TRAILING SLASHES):
@@ -12,9 +12,9 @@ DATABASE_TOP=/projects/datascience/msalim/deephyper/database
 BALSAM_PATH=/home/msalim/hpc-edge-service
 
 # Set Wall minutes and max evals
-WALLMINUTES=110   # should be about 10 min less than COBALT requested time
+WALLMINUTES=10   # should be about 10 min less than COBALT requested time
 MAXEVALS=100000000
-STAGE_IN_DIR=""
+STAGE_IN_DIR="/local/scratch"
 
 # DO NOT CHANGE ANYTHING BELOW HERE:
 # ----------------------------------

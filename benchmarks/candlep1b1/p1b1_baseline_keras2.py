@@ -152,7 +152,7 @@ def build_type_classifier(x_train, y_train, x_test, y_test):
 def initialize_parameters():
     # Get command-line parameters
     parser = get_p1b1_parser()
-    args = parser.parse_args()
+    args = parser.parse_args("")
     # Get parameters from configuration file
     file_params = p1b1.read_config_file(args.config_file)
     # Consolidate parameter set. Command-line parameters overwrite file configuration

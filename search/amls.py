@@ -114,15 +114,21 @@ def main(args):
     # MAIN LOOP
     logger.info("Hyperopt driver starting")
 
+    last_100 = []
     for elapsed_str in timer:
         logger.info(f"Elapsed time: {elapsed_str}")
         if len(evaluator.evals) == cfg.max_evals: break
 
         for (x, y) in evaluator.get_finished_evals():
+            last_100.append(x)
             optimizer.tell(x, y)
             chkpoint_counter += 1
             if y == sys.float_info.max:
                 logger.warning(f"WARNING: {job.cute_id} cost was not found or NaN")
+
+        if len(last_100) >= 100 and all(x == last_100[0] for x in last_100):
+            logger.warning("Optimizer has converged to a single point; terminating now")
+            break
         
         submitted_any = submit_next_points(cfg, optimizer, evaluator)
         timer.delay = not submitted_any # no idling while there's evals to submit

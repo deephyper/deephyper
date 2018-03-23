@@ -16,7 +16,6 @@ Time per epoch: 3s on CPU (core i7).
 import sys
 from pprint import pprint
 import os
-from deephyper.benchmarks import util
 
 here = os.path.dirname(os.path.abspath(__file__))
 top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
