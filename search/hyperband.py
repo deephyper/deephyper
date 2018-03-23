@@ -88,6 +88,7 @@ class Hyperband:
             indices = np.argsort( val_losses )
             T = [T[i] for i in indices]
             T = T[:int(n_configs / self.eta)]
+            sys.stdout.flush()
             self.save_checkpoint()
 
 

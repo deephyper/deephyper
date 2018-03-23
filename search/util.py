@@ -22,9 +22,9 @@ class OptConfig:
         self.num_workers = args.num_workers
         self.learner = args.learner
 
-        self.model_path = args.model_path
-        self.data_source = args.data_source
-        self.stage_in_destination = args.stage_in_destination
+        self.model_path = args.model_path.strip()
+        self.data_source = args.data_source.strip()
+        self.stage_in_destination = args.stage_in_destination.strip()
         
         # for example, the default value of args.benchmark is "b1.addition_rnn"
         benchmark_directory = args.benchmark.split('.')[0] # "b1"
