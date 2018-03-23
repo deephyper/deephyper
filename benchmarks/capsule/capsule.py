@@ -11,8 +11,19 @@ In my test, highest validation accuracy is 83.79% after 50 epcohs.
 
 This is a fast Implement, just 20s/epcoh with a gtx 1070 gpu.
 """
+import sys
+import os
+from pprint import pprint
 
-from __future__ import print_function
+here = os.path.dirname(os.path.abspath(__file__))
+top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
+sys.path.append(top)
+BNAME = os.path.splitext(os.path.basename(__file__))[0]
+
+from deephyper.benchmarks import util 
+timer = util.Timer()
+timer.start('module loading')
+
 from keras import backend as K
 from keras.engine.topology import Layer
 from keras import activations
@@ -24,34 +35,10 @@ from keras.preprocessing.image import ImageDataGenerator
 import sys
 import os
 import time
-from pprint import pprint
 import hashlib
 
-here = os.path.dirname(os.path.abspath(__file__))
-top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
-sys.path.append(top)
 from deephyper.benchmarks import keras_cmdline 
-
-
-BNAME = 'capsule'
-
-def extension_from_parameters(param_dict):
-    extension = ''
-    for key in sorted(param_dict):
-        if key != 'epochs':
-            print ('%s: %s' % (key, param_dict[key]))
-            extension += '.{}={}'.format(key,param_dict[key])
-    print(extension)
-    return extension
-
-def save_meta_data(data, filename):
-    with open(filename, 'wb') as handle:
-        pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-def load_meta_data(filename):
-    with open(filename, 'rb') as handle:
-        data = pickle.load(handle)
-    return data
+timer.end()
 
 
 # the squashing function.
@@ -175,20 +162,10 @@ class Capsule(Layer):
         return (None, self.num_capsule, self.dim_capsule)
 
 
-def defaults():
-    def_parser = keras_cmdline.create_parser()
-    def_parser = augment_parser(def_parser)
-    return vars(def_parser.parse_args(''))
-
-
 def run(param_dict):
-    default_params = defaults()
-    for key in default_params:
-        if key not in param_dict:
-            param_dict[key] = default_params[key]
-    pprint(param_dict)
+    param_dict = keras_cmdline.fill_missing_defaults(augment_parser, param_dict)
     optimizer = keras_cmdline.return_optimizer(param_dict)
-    print(param_dict)
+    pprint(param_dict)
 
     BATCH_SIZE = param_dict['batch_size']
     EPOCHS = param_dict['epochs']
@@ -198,26 +175,10 @@ def run(param_dict):
     ROUTINGS = param_dict['routings']
     SHARE_WEIGHTS = param_dict['share_weights']
 
-    extension = extension_from_parameters(param_dict)
-    hex_name = hashlib.sha224(extension.encode('utf-8')).hexdigest()
-    model_name = '{}-{}.h5'.format(BNAME, hex_name)
-    model_mda_name = '{}-{}.pkl'.format(BNAME, hex_name)
-    initial_epoch = 0
-
-    resume = False
-
-    if os.path.exists(model_name) and os.path.exists(model_mda_name):
-        print('model and meta data exists; loading model from h5 file')
-        model = load_model(model_name)
-        saved_param_dict = load_meta_data(model_mda_name)
-        initial_epoch = saved_param_dict['epochs']
-        if initial_epoch < param_dict['epochs']:
-            resume = True
-        else:
-            initial_epoch = 0
 
     num_classes = 10
 
+    timer.start('preprocessing')
     (x_train, y_train), (x_test, y_test) = cifar10.load_data()
 
     x_train = x_train.astype('float32')
@@ -226,34 +187,50 @@ def run(param_dict):
     x_test /= 255
     y_train = utils.to_categorical(y_train, num_classes)
     y_test = utils.to_categorical(y_test, num_classes)
+    
+    model_path = param_dict['model_path']
+    model_mda_path = None
+    model = None
+    initial_epoch = 0
 
-    # A common Conv2D model
-    input_image = Input(shape=(None, None, 3))
-    x = input_image #Conv2D(64, (3, 3), activation='relu')(input_image)
-    for i in range(NUM_CONV):
-        x = Conv2D(64, (3, 3), activation='relu')(x)
-    x = AveragePooling2D((2, 2))(x)
-    for i in range(NUM_CONV):
-        x = Conv2D(128, (3, 3), activation='relu')(x)
+    if model_path:
+        savedModel = util.resume_from_disk(BNAME, param_dict, data_dir=model_path)
+        model_mda_path = savedModel.model_mda_path
+        model_path = savedModel.model_path
+        model = savedModel.model
+        initial_epoch = savedModel.initial_epoch
 
-    """now we reshape it as (batch_size, input_num_capsule, input_dim_capsule)
-    then connect a Capsule layer.
+    if model is None:
+        # A common Conv2D model
+        input_image = Input(shape=(None, None, 3))
+        x = input_image #Conv2D(64, (3, 3), activation='relu')(input_image)
+        for i in range(NUM_CONV):
+            x = Conv2D(64, (3, 3), activation='relu')(x)
+        x = AveragePooling2D((2, 2))(x)
+        for i in range(NUM_CONV):
+            x = Conv2D(128, (3, 3), activation='relu')(x)
 
-    the output of final model is the lengths of 10 Capsule, whose dim=16.
+        """now we reshape it as (batch_size, input_num_capsule, input_dim_capsule)
+        then connect a Capsule layer.
 
-    the length of Capsule is the proba,
-    so the problem becomes a 10 two-classification problem.
-    """
+        the output of final model is the lengths of 10 Capsule, whose dim=16.
 
-    x = Reshape((-1, 128))(x)
-    capsule = Capsule(10, DIM_CAPS, ROUTINGS, SHARE_WEIGHTS)(x)
-    output = Lambda(lambda z: K.sqrt(K.sum(K.square(z), 2)))(capsule)
-    model = Model(inputs=input_image, outputs=output)
+        the length of Capsule is the proba,
+        so the problem becomes a 10 two-classification problem.
+        """
 
-    # we use a margin loss
-    model.compile(loss=margin_loss, optimizer=optimizer, metrics=['accuracy'])
-    model.summary()
+        x = Reshape((-1, 128))(x)
+        capsule = Capsule(10, DIM_CAPS, ROUTINGS, SHARE_WEIGHTS)(x)
+        output = Lambda(lambda z: K.sqrt(K.sum(K.square(z), 2)))(capsule)
+        model = Model(inputs=input_image, outputs=output)
 
+        # we use a margin loss
+        model.compile(loss=margin_loss, optimizer=optimizer, metrics=['accuracy'])
+        model.summary()
+
+    timer.end()
+
+    timer.start('model training')
     # we can compare the performance with or without data augmentation
     data_augmentation = True
 
@@ -264,6 +241,7 @@ def run(param_dict):
             y_train,
             batch_size=BATCH_SIZE,
             epochs=EPOCHS,
+            initial_epoch=initial_epoch,
             validation_data=(x_test, y_test),
             shuffle=True)
     else:
@@ -289,11 +267,16 @@ def run(param_dict):
         history = model.fit_generator(
             datagen.flow(x_train, y_train, batch_size=BATCH_SIZE),
             steps_per_epoch=EPOCHS,
+            initial_epoch=initial_epoch,
             validation_data=(x_test, y_test),
             workers=4)
     
-    model.save(model_name)  
-    save_meta_data(param_dict, model_mda_name)
+    timer.end()
+    if model_path:
+        timer.start('model save')
+        model.save(model_path)  
+        util.save_meta_data(param_dict, model_mda_path)
+        timer.end()
 
     val_acc = history.history['val_acc']
     print('===Validation accuracy:', val_acc[-1])
@@ -330,5 +313,4 @@ if __name__ == "__main__":
     parser = augment_parser(parser)
     cmdline_args = parser.parse_args()
     param_dict = vars(cmdline_args)
-    print(param_dict)
     run(param_dict)

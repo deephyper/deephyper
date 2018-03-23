@@ -15,7 +15,7 @@ timer.start('module loading')
 
 
 import keras
-from keras.datasets import cifar10
+from deephyper.benchmarks.cifar10cnn.load_data import load_data
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
@@ -41,19 +41,18 @@ def run(param_dict):
         data_source = param_dict['data_source']
     else:
         data_source = os.path.dirname(os.path.abspath(__file__))
-        data_source = os.path.join(origin_dir_path, 'data')
+        data_source = os.path.join(data_source, 'data')
 
     try:
-        paths = util.stage_in(['babi-tasks-v1-2.tar.gz'],
+        paths = util.stage_in(['cifar-10-python.tar.gz'],
                               source=data_source,
                               dest=param_dict['stage_in_destination'])
-        path = paths['babi-tasks-v1-2.tar.gz']
+        path = paths['cifar-10-python.tar.gz']
     except:
         print('Error downloading dataset, please download it manually:\n'
               '$ wget http://www.thespermwhale.com/jaseweston/babi/tasks_1-20_v1-2.tar.gz\n'
               '$ mv tasks_1-20_v1-2.tar.gz ~/.keras/datasets/babi-tasks-v1-2.tar.gz')
         raise
-    timer.end()
 
     num_classes = 10
     num_predictions = 20
@@ -65,7 +64,8 @@ def run(param_dict):
     NHIDDEN = param_dict['nhidden']
     NUNITS = param_dict['nunits']
 
-    (x_train, y_train), (x_test, y_test) = cifar10.load_data()
+    (x_train, y_train), (x_test, y_test) = load_data(origin=path, dest=param_dict['stage_in_destination'])
+    timer.end()
     print('x_train shape:', x_train.shape)
     print(x_train.shape[0], 'train samples')
     print(x_test.shape[0], 'test samples')
@@ -107,6 +107,7 @@ def run(param_dict):
     history = model.fit(x_train, y_train,
                     batch_size=BATCH_SIZE,
                     epochs=EPOCHS,
+                    initial_epoch=initial_epoch,
                     verbose=1,
                     validation_data=(x_test, y_test))
     timer.end()
@@ -117,7 +118,7 @@ def run(param_dict):
     if model_path:
         timer.start('model save')
         model.save(model_name)  
-        save_meta_data(param_dict, model_mda_name)
+        util.save_meta_data(param_dict, model_mda_path)
         timer.end()
 
     print('OUTPUT:', -score[1])
@@ -148,6 +149,8 @@ def augment_parser(parser):
     parser.add_argument('--k_size', action='store', dest='k_size',
                         nargs='?', const=2, type=int, default='3',
                         help='kernel_size')
+    parser.add_argument('--hidden_size', action='store', dest='nhidden',
+                        nargs='?', const=2, type=int, default='128',)
 
     return parser
 

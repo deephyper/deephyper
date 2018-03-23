@@ -92,24 +92,6 @@ import pickle
 
 timer.end()
 
-def extension_from_parameters(param_dict):
-    extension = ''
-    for key in sorted(param_dict):
-        if key != 'epochs':
-            print ('%s: %s' % (key, param_dict[key]))
-            extension += '.{}={}'.format(key,param_dict[key])
-    print(extension)
-    return extension
-
-def save_meta_data(data, filename):
-    with open(filename, 'wb') as handle:
-        pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-def load_meta_data(filename):
-    with open(filename, 'rb') as handle:
-        data = pickle.load(handle)
-    return data
-
 def tokenize(sent):
     '''Return the tokens of a sentence including punctuation.
 
