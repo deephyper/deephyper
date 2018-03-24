@@ -149,8 +149,9 @@ def augment_parser(parser):
     parser.add_argument('--k_size', action='store', dest='k_size',
                         nargs='?', const=2, type=int, default='3',
                         help='kernel_size')
-    parser.add_argument('--hidden_size', action='store', dest='nhidden',
-                        nargs='?', const=2, type=int, default='128',)
+    parser.add_argument('--nhidden', action='store', dest='nhidden',
+                        nargs='?', const=2, type=int, default='2',
+                        help='number of hidden layers')
 
     return parser
 

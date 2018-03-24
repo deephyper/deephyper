@@ -9,6 +9,7 @@ class Problem():
         space['p_size'] = [2, 4, 6, 8]
         space['k_size'] = (2, 9)
         space['nunits'] = (100, 1000)
+        space['nhidden'] = (1, 10)
         #network parameters
         space['batch_size'] = (8, 1024)
         space['dropout'] = (0.0, 1.0)
@@ -28,7 +29,7 @@ class Problem():
 
         self.space = space
         self.params = self.space.keys()
-        self.starting_point = [10, 32, 64, 2, 3, 500, 32, 0.0, 'sgd', 1.0, 0.5, 0.01, 0, 0, False, 0.9, 1e-08, 0.9, 0.999]
+        self.starting_point = [10, 32, 64, 2, 3, 500, 1, 32, 0.0, 'sgd', 1.0, 0.5, 0.01, 0, 0, False, 0.9, 1e-08, 0.9, 0.999]
 
 if __name__ == '__main__':
     instance = Problem()
