@@ -36,23 +36,25 @@ def run(param_dict):
     optimizer = keras_cmdline.return_optimizer(param_dict)
     pprint(param_dict)
     
-    timer.start('stage in')
-    if param_dict['data_source']:
-        data_source = param_dict['data_source']
-    else:
-        data_source = os.path.dirname(os.path.abspath(__file__))
-        data_source = os.path.join(data_source, 'data')
+    if False:
+        timer.start('stage in')
+        if param_dict['data_source']:
+            data_source = param_dict['data_source']
+        else:
+            data_source = os.path.dirname(os.path.abspath(__file__))
+            data_source = os.path.join(origin_dir_path, 'data')
 
-    try:
-        paths = util.stage_in(['cifar-10-python.tar.gz'],
-                              source=data_source,
-                              dest=param_dict['stage_in_destination'])
-        path = paths['cifar-10-python.tar.gz']
-    except:
-        print('Error downloading dataset, please download it manually:\n'
-              '$ wget http://www.thespermwhale.com/jaseweston/babi/tasks_1-20_v1-2.tar.gz\n'
-              '$ mv tasks_1-20_v1-2.tar.gz ~/.keras/datasets/babi-tasks-v1-2.tar.gz')
-        raise
+        try:
+            paths = util.stage_in(['babi-tasks-v1-2.tar.gz'],
+                                source=data_source,
+                                dest=param_dict['stage_in_destination'])
+            path = paths['babi-tasks-v1-2.tar.gz']
+        except:
+            print('Error downloading dataset, please download it manually:\n'
+                '$ wget http://www.thespermwhale.com/jaseweston/babi/tasks_1-20_v1-2.tar.gz\n'
+                '$ mv tasks_1-20_v1-2.tar.gz ~/.keras/datasets/babi-tasks-v1-2.tar.gz')
+            raise
+        timer.end()
 
     num_classes = 10
     num_predictions = 20
@@ -61,8 +63,13 @@ def run(param_dict):
     EPOCHS = param_dict['epochs']
     DROPOUT = param_dict['dropout']
     ACTIVATION = param_dict['activation']
-    NHIDDEN = param_dict['nhidden']
     NUNITS = param_dict['nunits']
+    F1_SIZE = param_dict['f1_size']
+    F2_SIZE = param_dict['f2_size']
+    F1_UNITS = param_dict['f1_units']
+    F2_UNITS = param_dict['f2_units']
+    P_SIZE = param_dict['p_size']
+    DATA_AUGMENTATION = param_dict['data_augmentation']
 
     (x_train, y_train), (x_test, y_test) = load_data(origin=path, dest=param_dict['stage_in_destination'])
     timer.end()
@@ -89,13 +96,30 @@ def run(param_dict):
     if model is None:
         timer.start('model building')
         model = Sequential()
-        model.add(Dense(NUNITS, activation=ACTIVATION, input_shape=(784,)))
+        
+        model.add(Conv2D(F1_UNITS, (F1_SIZE, F1_SIZE), padding='same',
+                        input_shape=x_train.shape[1:]))
+        model.add(Activation(ACTIVATION))
+        model.add(Conv2D(F1_UNITS, (F1_SIZE, F1_SIZE)))
+        model.add(Activation(ACTIVATION))
+        model.add(MaxPooling2D(pool_size=(P_SIZE, P_SIZE)))
         model.add(Dropout(DROPOUT))
-        for i in range(NHIDDEN):
-            model.add(Dense(NUNITS, activation=ACTIVATION))
-            model.add(Dropout(DROPOUT))
-        model.add(Dense(num_classes, activation='softmax'))
+
+        model.add(Conv2D(F2_UNITS, (F2_SIZE, F2_SIZE), padding='same'))
+        model.add(Activation(ACTIVATION))
+        model.add(Conv2D(F2_UNITS, (F2_SIZE, F2_SIZE)))
+        model.add(Activation(ACTIVATION))
+        model.add(MaxPooling2D(pool_size=(P_SIZE, P_SIZE)))
+        model.add(Dropout(DROPOUT))
+
+        model.add(Flatten())
+        model.add(Dense(NUNITS))
+        model.add(Activation(ACTIVATION))
+        model.add(Dropout(DROPOUT))
+        model.add(Dense(num_classes))
+        model.add(Activation('softmax'))
         model.summary()
+        model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
         timer.end()
 
     x_train = x_train.astype('float32')
@@ -104,12 +128,26 @@ def run(param_dict):
     x_test /= 255
     
     timer.start('model training')
-    history = model.fit(x_train, y_train,
-                    batch_size=BATCH_SIZE,
-                    epochs=EPOCHS,
-                    initial_epoch=initial_epoch,
-                    verbose=1,
-                    validation_data=(x_test, y_test))
+    if not DATA_AUGMENTATION:
+        history = model.fit(x_train, y_train,
+                        batch_size=BATCH_SIZE,
+                        epochs=EPOCHS,
+                        verbose=1, shuffle=True,
+                        validation_data=(x_test, y_test))
+    else:
+        datagen = ImageDataGenerator(
+        featurewise_center=False,  # set input mean to 0 over the dataset
+        samplewise_center=False,  # set each sample mean to 0
+        featurewise_std_normalization=False,  # divide inputs by std of the dataset
+        samplewise_std_normalization=False,  # divide each input by its std
+        zca_whitening=False,  # apply ZCA whitening
+        rotation_range=0,  # randomly rotate images in the range (degrees, 0 to 180)
+        width_shift_range=0.1,  # randomly shift images horizontally (fraction of total width)
+        height_shift_range=0.1,  # randomly shift images vertically (fraction of total height)
+        horizontal_flip=True,  # randomly flip images
+        vertical_flip=False)  # randomly flip images
+        datagen.fit(x_train)
+        model.fit_generator(datagen.flow(x_train, y_train, batch_size=BATCH_SIZE), steps_per_epoch=10, epochs=EPOCHS, validation_data=(x_test, y_test), workers=4)
     timer.end()
     score = model.evaluate(x_test, y_test, verbose=0)
     print('Test loss:', score[0])
@@ -122,35 +160,36 @@ def run(param_dict):
         timer.end()
 
     print('OUTPUT:', -score[1])
-    return -scores[1]
-
+    return -score[1]
 
 def augment_parser(parser):
     parser.add_argument('--data_augmentation', action='store', dest='data_augmentation',
-                        nargs='?', const=1, type=bool, default=False,
+                        nargs='?', const=1, type=bool, default=True,
                         help='boolean. data_augmentation?')
 
-    parser.add_argument('--nunits', action='store', dest='nunits',
-                        nargs='?', const=2, type=int, default='500',
-                        help='number of units in FC layer')
-
     parser.add_argument('--f1_size', action='store', dest='f1_size',
-                        nargs='?', const=2, type=int, default='32',
+                        nargs='?', const=2, type=int, default='3',
                         help='Filter 1 dim')
 
     parser.add_argument('--f2_size', action='store', dest='f2_size',
-                        nargs='?', const=2, type=int, default='64',
+                        nargs='?', const=2, type=int, default='3',
                         help='Filter 2 dim')
+
+    parser.add_argument('--f1_units', action='store', dest='f1_units',
+                        nargs='?', const=2, type=int, default='32',
+                        help='Filter 1 units')
+
+    parser.add_argument('--f2_units', action='store', dest='f2_units',
+                        nargs='?', const=2, type=int, default='64',
+                        help='Filter 2 units')
 
     parser.add_argument('--p_size', action='store', dest='p_size',
                         nargs='?', const=2, type=int, default='2',
                         help='pool size')
 
-    parser.add_argument('--k_size', action='store', dest='k_size',
-                        nargs='?', const=2, type=int, default='3',
-                        help='kernel_size')
-    parser.add_argument('--hidden_size', action='store', dest='nhidden',
-                        nargs='?', const=2, type=int, default='128',)
+    parser.add_argument('--nunits', action='store', dest='nunits',
+                        nargs='?', const=2, type=int, default='500',
+                        help='number of units in FC layer')
 
     return parser
 

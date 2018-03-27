@@ -92,56 +92,20 @@ def create_parser():
 def return_optimizer(param_dict):
     optimizer = None
     if param_dict['optimizer'] == 'sgd':
-        optimizer = SGD(lr=param_dict['lr'],
-                        decay=param_dict['decay'],
-                        momentum=param_dict['momentum'],
-                        nesterov=param_dict['nesterov'],
-                        clipnorm=param_dict['clipnorm'],
-                        clipvalue=param_dict['clipvalue'])
+        optimizer = SGD(lr=param_dict['lr'])
     elif param_dict['optimizer'] == 'rmsprop':
-        optimizer = RMSprop(lr=param_dict['lr'],
-                            rho=param_dict['rho'],
-                            epsilon=param_dict['epsilon'],
-                            decay=param_dict['decay'],
-                            clipnorm=param_dict['clipnorm'],
-                            clipvalue=param_dict['clipvalue'])
+        optimizer = RMSprop(lr=param_dict['lr'])
     elif param_dict['optimizer'] == 'adagrad':
-        optimizer = Adagrad(lr=param_dict['lr'],
-                            epsilon=param_dict['epsilon'],
-                            decay=param_dict['decay'],
-                            clipnorm=param_dict['clipnorm'],
-                            clipvalue=param_dict['clipvalue'])
+        optimizer = Adagrad(lr=param_dict['lr'])
     elif param_dict['optimizer'] == 'adadelta':
-        optimizer = Adadelta(lr=param_dict['lr'],
-                            rho=param_dict['rho'],
-                            epsilon=param_dict['epsilon'],
-                            decay=param_dict['decay'],
-                            clipnorm=param_dict['clipnorm'],
-                            clipvalue=param_dict['clipvalue'])
+        optimizer = Adadelta(lr=param_dict['lr'])
     elif param_dict['optimizer'] == 'adam':
-        optimizer = Adam(lr=param_dict['lr'],
-                        beta_1=param_dict['beta1'],
-                        beta_2=param_dict['beta2'],
-                        epsilon=param_dict['epsilon'],
-                        decay=param_dict['decay'],
-                        clipnorm=param_dict['clipnorm'],
-                        clipvalue=param_dict['clipvalue'])
+        optimizer = Adam(lr=param_dict['lr'])
     elif param_dict['optimizer'] == 'adamax':
-        optimizer = Adamax(lr=param_dict['lr'],
-                        beta_1=param_dict['beta1'],
-                        beta_2=param_dict['beta2'],
-                        epsilon=param_dict['epsilon'],
-                        decay=param_dict['decay'],
-                        clipnorm=param_dict['clipnorm'],
-                        clipvalue=param_dict['clipvalue'])
+        optimizer = Adamax(lr=param_dict['lr'])
     elif param_dict['optimizer'] == 'nadam':
-        optimizer = Nadam(lr=param_dict['lr'],
-                        beta_1=param_dict['beta1'],
-                        beta_2=param_dict['beta2'],
-                        epsilon=param_dict['epsilon'],
-                        schedule_decay=param_dict['decay'],
-                        clipnorm=param_dict['clipnorm'],
-                        clipvalue=param_dict['clipvalue'])
+        optimizer = Nadam(lr=param_dict['lr'])
+                        
     return(optimizer)
 
 def fill_missing_defaults(augment_parser_fxn, param_dict):

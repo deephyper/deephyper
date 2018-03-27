@@ -27,6 +27,7 @@ from deephyper.benchmarks import keras_cmdline
 from keras.models import load_model
 import hashlib
 import pickle
+from keras.datasets import mnist
 
 timer.end()
 
@@ -36,24 +37,25 @@ def run(param_dict):
     optimizer = keras_cmdline.return_optimizer(param_dict)
     pprint(param_dict)
     
-    timer.start('stage in')
-    if param_dict['data_source']:
-        data_source = param_dict['data_source']
-    else:
-        data_source = os.path.dirname(os.path.abspath(__file__))
-        data_source = os.path.join(origin_dir_path, 'data')
+    if False:
+        timer.start('stage in')
+        if param_dict['data_source']:
+            data_source = param_dict['data_source']
+        else:
+            data_source = os.path.dirname(os.path.abspath(__file__))
+            data_source = os.path.join(origin_dir_path, 'data')
 
-    try:
-        paths = util.stage_in(['babi-tasks-v1-2.tar.gz'],
-                              source=data_source,
-                              dest=param_dict['stage_in_destination'])
-        path = paths['babi-tasks-v1-2.tar.gz']
-    except:
-        print('Error downloading dataset, please download it manually:\n'
-              '$ wget http://www.thespermwhale.com/jaseweston/babi/tasks_1-20_v1-2.tar.gz\n'
-              '$ mv tasks_1-20_v1-2.tar.gz ~/.keras/datasets/babi-tasks-v1-2.tar.gz')
-        raise
-    timer.end()
+        try:
+            paths = util.stage_in(['babi-tasks-v1-2.tar.gz'],
+                                source=data_source,
+                                dest=param_dict['stage_in_destination'])
+            path = paths['babi-tasks-v1-2.tar.gz']
+        except:
+            print('Error downloading dataset, please download it manually:\n'
+                '$ wget http://www.thespermwhale.com/jaseweston/babi/tasks_1-20_v1-2.tar.gz\n'
+                '$ mv tasks_1-20_v1-2.tar.gz ~/.keras/datasets/babi-tasks-v1-2.tar.gz')
+            raise
+        timer.end()
 
     #batch_size = 32
     num_classes = 10
@@ -105,6 +107,9 @@ def run(param_dict):
             model.add(Dropout(DROPOUT))
         model.add(Dense(num_classes, activation='softmax'))
         model.summary()
+        model.compile(loss='categorical_crossentropy',
+              optimizer=optimizer,
+              metrics=['accuracy'])
         timer.end()
 
     x_train = x_train.astype('float32')
@@ -130,7 +135,7 @@ def run(param_dict):
         timer.end()
 
     print('OUTPUT:', -score[1])
-    return -scores[1]
+    return -score[1]
 
 
 def augment_parser(parser):

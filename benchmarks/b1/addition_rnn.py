@@ -55,7 +55,7 @@ set_random_seed(2)
 
 timer.end()
     
-TRAINING_SIZE = 500
+TRAINING_SIZE = 50000
 DIGITS = 3
 INVERT = True
 MAXLEN = DIGITS + 1 + DIGITS
