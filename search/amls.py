@@ -29,21 +29,23 @@ def submit_next_points(opt_config, optimizer, evaluator):
     if opt_config.starting_point is not None:
         XX = [opt_config.starting_point]
         opt_config.starting_point = None
-        additional_pts = optimizer.ask(n_points=evaluator.num_workers-1)
+        additional_pts = optimizer.ask(n_points=evaluator.num_workers-1, strategy='cl_max')
         XX.extend(additional_pts)
         logger.debug("Generating starting points")
     elif evaluator.num_free_workers() > 0:
-        XX = optimizer.ask(n_points=1)
-        logger.debug("Asking for one point")
+        XX = optimizer.ask(n_points=1, strategy='cl_max')
+        optimizer.cache_ = {}
+        logger.debug("Asking for one point; clearing optimizer cache")
+        if not opt_config.repeat_evals:
+            XX = [x for x in XX 
+                  if evaluator.encode(x) not in evaluator.evals
+                  and evaluator.encode(x) not in evaluator.pending_evals
+                  ]
+        if len(XX) == 0:
+            logger.warning("Tried to ask for one point, but it was evaluated already")
     else:
         XX = []
         logger.info("No free workers; waiting")
-
-    if not opt_config.repeat_evals:
-        XX = [x for x in XX 
-              if evaluator.encode(x) not in evaluator.evals
-              and evaluator.encode(x) not in evaluator.pending_evals
-              ]
 
     for x in XX:
         evaluator.add_eval(x, re_evaluate=opt_config.repeat_evals)
@@ -122,10 +124,13 @@ def main(args):
 
         for (x, y) in evaluator.get_finished_evals():
             last_100.append(x)
+            if y == sys.float_info.max:
+                logger.warning(f"WARNING: {job.cute_id} cost was not found or NaN")
+                logger.warning(f"setting y to max encountered in optimizer.yi")
+                y = max(optimizer.yi)
             optimizer.tell(x, y)
             chkpoint_counter += 1
             if y == sys.float_info.max:
-                logger.warning(f"WARNING: {job.cute_id} cost was not found or NaN")
 
         if len(last_100) >= 100 and all(x == last_100[0] for x in last_100):
             logger.warning("Optimizer has converged to a single point; terminating now")
