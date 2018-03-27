@@ -154,6 +154,19 @@ class BalsamEvaluator(evaluate.Evaluator):
                 del self.pending_evals[key]
                 logger.info(f"x: {x} y: {y}")
                 yield (x, y)
+            
+            error_jobs = BalsamJob.objects.filter(job_id__in=query_block)
+            error_jobs = error_jobs.filter(state__in=['RUN_ERROR', 'FAILED'])
+
+            for job in error_jobs:
+                logger.info(f"Failed job: {job.cute_id}")
+                key = self.id_key_map[job.job_id.hex]
+                x = self._decode(key)
+                y = sys.float_info.max
+                self.evals[key] = y
+                del self.pending_evals[key]
+                logger.info(f"x: {x} y: {y}")
+                yield (x, y)
 
         while self.repeated_evals:
             key = self.repeated_evals.pop()

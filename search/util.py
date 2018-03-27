@@ -63,7 +63,7 @@ def sk_optimizer_from_config(opt_config, random_state):
             opt_config.space,
             base_estimator=opt_config.learner,
             acq_optimizer='sampling',
-            acq_func='LCB',
+            acq_func='gp_hedge',
             acq_func_kwargs={'kappa':kappa},
             random_state=random_state,
             n_initial_points=n_init
@@ -73,7 +73,7 @@ def sk_optimizer_from_config(opt_config, random_state):
             opt_config.space,
             base_estimator=ExtremeGradientBoostingQuantileRegressor(),
             acq_optimizer='sampling',
-            acq_func='LCB',
+            acq_func='gp_hedge',
             acq_func_kwargs={'kappa':kappa},
             random_state=random_state,
             n_initial_points=n_init
