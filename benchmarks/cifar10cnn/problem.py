@@ -31,6 +31,7 @@ class Problem():
         self.params = self.space.keys()
         self.starting_point = [10, 3, 3, 32, 64, 2, 500, 128, 0.5, 'sgd', 0.25]
 
+
 if __name__ == '__main__':
     instance = Problem()
     print(instance.space)
