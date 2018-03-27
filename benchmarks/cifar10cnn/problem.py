@@ -4,32 +4,32 @@ class Problem():
         space = OrderedDict()
         space['epochs'] = (10, 100)
         #bechmark specific parameters
-        space['f1_size'] = [8, 16, 32, 64]
-        space['f2_size'] = [8, 16, 32, 64]
+        space['f1_size'] = [1, 3, 5]
+        space['f2_size'] = [1, 3, 5]
+        space['f1_units'] = [8, 16, 32, 64]
+        space['f2_units'] = [8, 16, 32, 64]
         space['p_size'] = [2, 4, 6, 8]
-        space['k_size'] = (2, 9)
         space['nunits'] = (100, 1000)
-        space['nhidden'] = (1, 10)
         #network parameters
         space['batch_size'] = (8, 1024)
         space['dropout'] = (0.0, 1.0)
         space['optimizer'] = ['sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam', 'adamax', 'nadam']
         # common optimizer parameters
-        space['clipnorm'] = (1e-04, 1e01)
-        space['clipvalue'] = (1e-04, 1e01)
+        #space['clipnorm'] = (1e-04, 1e01)
+        #space['clipvalue'] = (1e-04, 1e01)
         # optimizer parameters
         space['learning_rate'] = (1e-04, 1e01)
-        space['momentum'] =  (0, 1e01)
-        space['decay'] =  (0, 1e01)
-        space['nesterov'] = [False, True]
-        space['rho'] = (1e-04, 1e01)
-        space['epsilon'] = (1e-08, 1e01)
-        space['beta1'] = (1e-04, 1e01)
-        space['beta2'] = (1e-04, 1e01)
+        #space['momentum'] =  (0, 1e01)
+        #space['decay'] =  (0, 1e01)
+        #space['nesterov'] = [False, True]
+        #space['rho'] = (1e-04, 1e01)
+        #space['epsilon'] = (1e-08, 1e01)
+        #space['beta1'] = (1e-04, 1e01)
+        #space['beta2'] = (1e-04, 1e01)
 
         self.space = space
         self.params = self.space.keys()
-        self.starting_point = [10, 32, 64, 2, 3, 500, 1, 32, 0.0, 'sgd', 1.0, 0.5, 0.01, 0, 0, False, 0.9, 1e-08, 0.9, 0.999]
+        self.starting_point = [10, 3, 3, 32, 64, 2, 500, 128, 0.5, 'sgd', 0.25]
 
 if __name__ == '__main__':
     instance = Problem()
