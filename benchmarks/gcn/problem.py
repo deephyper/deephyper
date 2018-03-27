@@ -27,7 +27,7 @@ class Problem():
 
         self.space = space
         self.params = self.space.keys()
-        self.starting_point = [10, False, 2, localpool, 3, True, 'relu', 128, 'sgd', 1.0, 0.5, 0.01, 0, 0, False, 0.9, 1e-08, 0.9, 0.999]
+        self.starting_point = [10, False, 2, 'localpool', 3, True, 'relu', 128, 'sgd', 1.0, 0.5, 0.01, 0, 0, False, 0.9, 1e-08, 0.9, 0.999]
 
 if __name__ == '__main__':
     instance = Problem()

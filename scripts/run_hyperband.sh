@@ -1,8 +1,8 @@
 #!/bin/bash -x
 #COBALT -A datascience
-#COBALT -n 128
+#COBALT -n 11
 #COBALT -q default
-#COBALT -t 02:00:00
+#COBALT -t 00:30:00
 #COBALT --attrs ssds=required:ssd_size=128
 
 # User-specific paths and names go here (NO TRAILING SLASHES):
@@ -12,13 +12,19 @@ DATABASE_TOP=/projects/datascience/msalim/deephyper/database
 BALSAM_PATH=/home/msalim/hpc-edge-service
 
 # Set Hyperband options
-WALLMINUTES=110   # should be about 10 min less than COBALT requested time
+WALLMINUTES=10   # should be about 10 min less than COBALT requested time
 SAVED_MODEL_DIR=/projects/datascience/msalim/deephyper/saved_models
-STAGE_IN_DIR=""
+STAGE_IN_DIR="/local/scratch"
 
 
 # DO NOT CHANGE ANYTHING BELOW HERE:
 # ----------------------------------
+if [ $# -ne 1 ] 
+then
+    echo "Please provide one argument: benchmark_name (e.g. dummy2.regression or b2.babi_memnn)"
+    exit 1
+fi
+
 source ~/.bash_profile
 source activate $DEEPHYPER_ENV_NAME
 
@@ -27,7 +33,7 @@ BNAME=$1
 METHOD="hyperband"
 
 NNODES=$COBALT_JOBSIZE
-NUM_WORKERS=$(( $NNODES-1 ))
+NUM_WORKERS=$(( $NNODES-2 ))
 JOBNAME="$BNAME"_"$NNODES"_"$METHOD"
 WORKFLOWNAME="$BNAME"_"$NNODES"_"$METHOD"
 echo "Creating new job:" $JOBNAME
@@ -42,7 +48,7 @@ balsam rm apps --all --force
 balsam rm jobs --all --force
 
 # Register search app
----------------------
+#---------------------
 SEARCH_APP_PATH=$DEEPHYPER_TOP/search/hyperband.py
 ARGS="--benchmark $BNAME --num-workers $NUM_WORKERS --model_path=$SAVED_MODEL_DIR --stage_in_destination=$STAGE_IN_DIR"
 balsam app --name search --desc 'run Hyperband' --executable $SEARCH_APP_PATH
@@ -56,7 +62,6 @@ balsam modify jobs $NEW_ID --attr state --value PREPROCESSED
 
 # Start up Balsam DB server
 # -------------------------
-balsam dbserver --stop
 balsam dbserver --reset $DBPATH
 balsam dbserver
 sleep 1

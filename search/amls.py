@@ -34,7 +34,7 @@ def submit_next_points(opt_config, optimizer, evaluator):
         logger.debug("Generating starting points")
     elif evaluator.num_free_workers() > 0:
         XX = optimizer.ask(n_points=1)
-        logger.debug("Generating one point")
+        logger.debug("Asking for one point")
     else:
         XX = []
         logger.info("No free workers; waiting")
@@ -42,6 +42,7 @@ def submit_next_points(opt_config, optimizer, evaluator):
     if not opt_config.repeat_evals:
         XX = [x for x in XX 
               if evaluator.encode(x) not in evaluator.evals
+              and evaluator.encode(x) not in evaluator.pending_evals
               ]
 
     for x in XX:
@@ -114,15 +115,21 @@ def main(args):
     # MAIN LOOP
     logger.info("Hyperopt driver starting")
 
+    last_100 = []
     for elapsed_str in timer:
         logger.info(f"Elapsed time: {elapsed_str}")
         if len(evaluator.evals) == cfg.max_evals: break
 
         for (x, y) in evaluator.get_finished_evals():
+            last_100.append(x)
             optimizer.tell(x, y)
             chkpoint_counter += 1
             if y == sys.float_info.max:
                 logger.warning(f"WARNING: {job.cute_id} cost was not found or NaN")
+
+        if len(last_100) >= 100 and all(x == last_100[0] for x in last_100):
+            logger.warning("Optimizer has converged to a single point; terminating now")
+            break
         
         submitted_any = submit_next_points(cfg, optimizer, evaluator)
         timer.delay = not submitted_any # no idling while there's evals to submit
@@ -137,8 +144,6 @@ def main(args):
     save_checkpoint(cfg, optimizer, evaluator)
 
 if __name__ == "__main__":
-    import multiprocessing
-    multiprocessing.set_start_method('forkserver')
     parser = util.create_parser()
     args = parser.parse_args()
     main(args)

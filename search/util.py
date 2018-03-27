@@ -147,7 +147,7 @@ def create_parser():
     parser.add_argument('--num-workers', type=int, default=10,
                         help='Number of points to ask for initially'
                        )
-    parser.add_argument('--ga-individuals-per-worker', type=int, default=10,
+    parser.add_argument('--ga-individuals-per-worker', type=int, default=1,
                         help='Initial population is num_workers *'
                         ' ind-per-worker', dest='individuals_per_worker'
                        )

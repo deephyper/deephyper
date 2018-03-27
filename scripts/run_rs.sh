@@ -1,8 +1,8 @@
 #!/bin/bash -x
 #COBALT -A datascience
 #COBALT -n 8
-#COBALT -q debug-cache-quad
-#COBALT -t 00:20:00
+#COBALT -q default
+#COBALT -t 00:30:00
 #COBALT --attrs ssds=required:ssd_size=128
 
 # User-specific paths and names go here (NO TRAILING SLASHES):
@@ -32,7 +32,7 @@ BNAME=$1
 METHOD="rs"
 
 NNODES=$COBALT_JOBSIZE
-NUM_WORKERS=$(( $NNODES-1 ))
+NUM_WORKERS=$(( $NNODES-2 ))
 JOBNAME="$BNAME"_"$NNODES"_"$METHOD"
 WORKFLOWNAME="$BNAME"_"$NNODES"_"$METHOD"
 echo "Creating new job:" $JOBNAME
@@ -61,8 +61,7 @@ balsam modify jobs $NEW_ID --attr state --value PREPROCESSED
 
 # Start up Balsam DB server
 # -------------------------
-balsam dbserver --stop
 balsam dbserver --reset $DBPATH
 balsam dbserver
 sleep 1
-aprun -n $COBALT_JOBSIZE -N 2 -cc none python $BALSAM_PATH/balsam/launcher/mpi_ensemble_pull.py --time-limit-min=$(( $WALLMINUTES+10 ))
+aprun -n $COBALT_JOBSIZE -N 1 -cc none python $BALSAM_PATH/balsam/launcher/mpi_ensemble_pull.py --time-limit-min=$(( $WALLMINUTES+10 ))

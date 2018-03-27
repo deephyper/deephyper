@@ -1,5 +1,16 @@
-from __future__ import print_function
+import sys
+import os
+from pprint import pprint
 
+here = os.path.dirname(os.path.abspath(__file__))
+top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
+sys.path.append(top)
+BNAME = os.path.splitext(os.path.basename(__file__))[0]
+
+from deephyper.benchmarks import util
+
+timer = util.Timer()
+timer.start('module loading')
 from keras.layers import Input, Dropout
 from keras.models import Model
 from keras.optimizers import Adam
@@ -8,53 +19,17 @@ from keras.regularizers import l2
 from kegra.layers.graph import GraphConvolution
 from kegra.utils import *
 
-import time
-import os
-import sys
-from pprint import pprint
 import hashlib
 import pickle
 from keras.models import load_model
 
-here = os.path.dirname(os.path.abspath(__file__))
-top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
-sys.path.append(top)
 from deephyper.benchmarks import keras_cmdline 
-
-BNAME = 'GCN'
-
-def extension_from_parameters(param_dict):
-    extension = ''
-    for key in sorted(param_dict):
-        if key != 'epochs':
-            print ('%s: %s' % (key, param_dict[key]))
-            extension += '.{}={}'.format(key,param_dict[key])
-    print(extension)
-    return extension
-
-def save_meta_data(data, filename):
-    with open(filename, 'wb') as handle:
-        pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-def load_meta_data(filename):
-    with open(filename, 'rb') as handle:
-        data = pickle.load(handle)
-    return data
-
-
-def defaults():
-    def_parser = keras_cmdline.create_parser()
-    def_parser = augment_parser(def_parser)
-    return vars(def_parser.parse_args(''))
+timer.end()
 
 def run(param_dict):
-    default_params = defaults()
-    for key in default_params:
-        if key not in param_dict:
-            param_dict[key] = default_params[key]
-    pprint(param_dict)
+    param_dict = keras_cmdline.fill_missing_defaults(augment_parser, param_dict)
     optimizer = keras_cmdline.return_optimizer(param_dict)
-    print(param_dict)
+    pprint(param_dict)
 
     EPOCHS = param_dict['epochs']
     FILTER = param_dict['filter']
@@ -71,33 +46,47 @@ def run(param_dict):
     #MAX_DEGREE = 2  # maximum polynomial degree
     #SYM_NORM = True  # symmetric (True) vs. left-only (False) normalization
     
-
     PATIENCE = 10  # early stopping patience
 
     # Get data
-    X, A, y = load_data(dataset=DATASET)
+    timer.start('stage in')
+    if param_dict['data_source']:
+        data_source = param_dict['data_source']
+    else:
+        data_source = os.path.dirname(os.path.abspath(__file__))
+        data_source = os.path.join(data_source, 'data/cora')
+
+    paths = util.stage_in(['cora.content', 'cora.cites'],
+                          source=data_source,
+                          dest=param_dict['stage_in_destination'])
+    path_content = paths['cora.content']
+    path_cites = paths['cora.cites']
+
+    idx_features_labels = np.genfromtxt(path_content, dtype=np.dtype(str))
+    features = sp.csr_matrix(idx_features_labels[:, 1:-1], dtype=np.float32)
+    labels = encode_onehot(idx_features_labels[:, -1])
+
+    # build graph
+    idx = np.array(idx_features_labels[:, 0], dtype=np.int32)
+    idx_map = {j: i for i, j in enumerate(idx)}
+    edges_unordered = np.genfromtxt(path_cites, dtype=np.int32)
+    edges = np.array(list(map(idx_map.get, edges_unordered.flatten())),
+                     dtype=np.int32).reshape(edges_unordered.shape)
+    adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),
+                        shape=(labels.shape[0], labels.shape[0]), dtype=np.float32)
+
+    # build symmetric adjacency matrix
+    adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
+
+    print('Dataset has {} nodes, {} edges, {} features.'.format(
+        adj.shape[0], edges.shape[0], features.shape[1]))
+    X, A, y = features.todense(), adj, labels
+    timer.end()
+
     y_train, y_val, y_test, idx_train, idx_val, idx_test, train_mask = get_splits(y)
 
     # Normalize X
     X /= X.sum(1).reshape(-1, 1)
-
-    extension = extension_from_parameters(param_dict)
-    hex_name = hashlib.sha224(extension.encode('utf-8')).hexdigest()
-    model_name = '{}-{}.h5'.format(BNAME, hex_name)
-    model_mda_name = '{}-{}.pkl'.format(BNAME, hex_name)
-    initial_epoch = 0
-
-    resume = False
-
-    if os.path.exists(model_name) and os.path.exists(model_mda_name):
-        print('model and meta data exists; loading model from h5 file')
-        model = load_model(model_name, custom_objects={'GraphConvolution': GraphConvolution})
-        saved_param_dict = load_meta_data(model_mda_name)
-        initial_epoch = saved_param_dict['epochs']
-        if initial_epoch < param_dict['epochs']:
-            resume = True
-        else:
-            initial_epoch = 0
 
     if FILTER == 'localpool':
         """ Local pooling filters (see 'renormalization trick' in Kipf & Welling, arXiv 2016) """
@@ -106,7 +95,6 @@ def run(param_dict):
         support = 1
         graph = [X, A_]
         G = [Input(shape=(None, None), batch_shape=(None, None), sparse=True)]
-
     elif FILTER == 'chebyshev':
         """ Chebyshev polynomial basis filters (Defferard et al., NIPS 2016)  """
         print('Using Chebyshev polynomial basis filters...')
@@ -116,12 +104,23 @@ def run(param_dict):
         support = MAX_DEGREE + 1
         graph = [X]+T_k
         G = [Input(shape=(None, None), batch_shape=(None, None), sparse=True) for _ in range(support)]
-
     else:
         raise Exception('Invalid filter type.')
 
-    if not resume:
-        X_in = Input(shape=(X.shape[1],))        
+    model_path = param_dict['model_path']
+    model_mda_path = None
+    model = None
+    initial_epoch = 0
+
+    if model_path:
+        savedModel = util.resume_from_disk(BNAME, param_dict, data_dir=model_path)
+        model_mda_path = savedModel.model_mda_path
+        model_path = savedModel.model_path
+        model = savedModel.model
+        initial_epoch = savedModel.initial_epoch
+
+    if model is None:
+        X_in = Input(shape=(X.shape[1],))
         # Define model architecture
         # NOTE: We pass arguments for graph convolutional layers as a list of tensors.
         # This is somewhat hacky, more elegant options would require rewriting the Layer base class.
@@ -140,9 +139,11 @@ def run(param_dict):
         best_val_loss = 99999
 
     # Fit
+    training_timer = util.Timer()
+    training_timer.start('model training')
     for epoch in range(initial_epoch, EPOCHS):
         # Log wall-clock time
-        t = time.time()
+        timer.start(f'epoch {epoch}')
 
         # Single training iteration (we mask nodes without labels for loss calculation)
         model.fit(graph, y_train, sample_weight=train_mask, batch_size=A.shape[0], epochs=1, shuffle=False, verbose=0)
@@ -157,8 +158,9 @@ def run(param_dict):
             "train_loss= {:.4f}".format(train_val_loss[0]),
             "train_acc= {:.4f}".format(train_val_acc[0]),
             "val_loss= {:.4f}".format(train_val_loss[1]),
-            "val_acc= {:.4f}".format(train_val_acc[1]),
-            "time= {:.4f}".format(time.time() - t))
+            "val_acc= {:.4f}".format(train_val_acc[1]))
+        timer.end()
+    training_timer.end()
 
     # Testing
     test_loss, test_acc = evaluate_preds(preds, [y_test], [idx_test])
@@ -168,9 +170,11 @@ def run(param_dict):
     print('===Validation accuracy:', train_val_acc[1])
     print('OUTPUT:', -train_val_acc[1])
     
-    if CHECKPOINT:
-        model.save(model_name)  
-        save_meta_data(param_dict, model_mda_name)
+    if model_path:
+        timer.start('model save')
+        model.save(model_path)  
+        util.save_meta_data(param_dict, model_mda_path)
+        timer.end()
 
     return -train_val_acc[1]
 

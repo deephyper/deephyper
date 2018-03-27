@@ -149,11 +149,20 @@ class BalsamEvaluator(evaluate.Evaluator):
             del self.pending_evals[key]
             logger.info(f"x: {x} y: {y}")
             yield (x, y)
+
+        while self.repeated_evals:
+            key = self.repeated_evals.pop()
+            x = self._decode(key)
+            if key in self.evals:
+                y = self.evals[key]
+                logger.info(f"giving repeated_eval x: {x} y: {y}")
+                yield (x,y)
     
     def __getstate__(self):
         d = {}
         d['evals'] = self.evals
         d['pending_evals'] = self.pending_evals
+        d['repeated_evals'] = self.repeated_evals
         d['id_key_map'] = self.id_key_map
         d['backend'] = self.backend
         d['num_workers'] = self.num_workers
@@ -165,6 +174,7 @@ class BalsamEvaluator(evaluate.Evaluator):
     def __setstate__(self, d):
         self.evals = d['evals']
         self.pending_evals = d['pending_evals']
+        self.repeated_evals = d['repeated_evals']
         self.id_key_map = d['id_key_map']
         self.backend = d['backend']
         self.num_workers = d['num_workers']

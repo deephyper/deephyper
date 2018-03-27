@@ -58,13 +58,18 @@ This becomes especially obvious on QA2 and QA3, both far longer than QA1.
 '''
 import sys
 import os
-import time
+from pprint import pprint
 
 here = os.path.dirname(os.path.abspath(__file__))
 top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
 sys.path.append(top)
+BNAME = os.path.splitext(os.path.basename(__file__))[0]
 
-start = time.time()
+from deephyper.benchmarks import util 
+
+timer = util.Timer()
+timer.start('module loading')
+
 from functools import reduce
 import re
 import tarfile
@@ -85,28 +90,7 @@ from keras.models import load_model
 import hashlib
 import pickle
 
-load_time = time.time() - start
-print(f"module import time: {load_time:.3f} seconds")
-
-BNAME = 'babi_rnn'
-
-def extension_from_parameters(param_dict):
-    extension = ''
-    for key in sorted(param_dict):
-        if key != 'epochs':
-            print ('%s: %s' % (key, param_dict[key]))
-            extension += '.{}={}'.format(key,param_dict[key])
-    print(extension)
-    return extension
-
-def save_meta_data(data, filename):
-    with open(filename, 'wb') as handle:
-        pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-def load_meta_data(filename):
-    with open(filename, 'rb') as handle:
-        data = pickle.load(handle)
-    return data
+timer.end()
 
 def tokenize(sent):
     '''Return the tokens of a sentence including punctuation.
@@ -179,36 +163,10 @@ def vectorize_stories(data, word_idx, story_maxlen, query_maxlen):
     return pad_sequences(xs, maxlen=story_maxlen), pad_sequences(xqs, maxlen=query_maxlen), np.array(ys)
 
 
-def stage_in(file_names, local_path='/local/scratch/', use_cache=True):
-    if os.path.exists(local_path):
-        prepend = local_path
-    else:
-        prepend = ''
-
-    origin_dir_path = os.path.dirname(os.path.abspath(__file__))
-    origin_dir_path = os.path.join(origin_dir_path, 'data')
-    print("Looking for files:", file_names)
-    print("In origin:", origin_dir_path)
-
-    paths = {}
-    for name in file_names:
-        origin = os.path.join(origin_dir_path, name)
-        if use_cache:
-            paths[name] = get_file(fname=prepend+name, origin='file://'+origin)
-        else:
-            paths[name] = origin
-
-        print(f"File {name} will be read from {paths[name]}")
-    return paths
-
-
 def run(param_dict):
-    default_params = defaults()
-    for key in default_params:
-        if key not in param_dict:
-            param_dict[key] = default_params[key]
+    param_dict = keras_cmdline.fill_missing_defaults(augment_parser, param_dict)
     optimizer = keras_cmdline.return_optimizer(param_dict)
-    print(param_dict)
+    pprint(param_dict)
 
     BATCH_SIZE = param_dict['batch_size']
     EPOCHS = param_dict['epochs']
@@ -229,16 +187,26 @@ def run(param_dict):
                                                                EMBED_HIDDEN_SIZE,
                                                                SENT_HIDDEN_SIZE,
                                                                QUERY_HIDDEN_SIZE))
+    timer.start('stage in')
+    if param_dict['data_source']:
+        data_source = param_dict['data_source']
+    else:
+        data_source = os.path.dirname(os.path.abspath(__file__))
+        data_source = os.path.join(data_source, 'data')
 
     try:
-        paths = stage_in(['babi-tasks-v1-2.tar.gz'], use_cache=True)
+        paths = util.stage_in(['babi-tasks-v1-2.tar.gz'],
+                              source=data_source,
+                              dest=param_dict['stage_in_destination'])
         path = paths['babi-tasks-v1-2.tar.gz']
     except:
         print('Error downloading dataset, please download it manually:\n'
               '$ wget http://www.thespermwhale.com/jaseweston/babi/tasks_1-20_v1-2.tar.gz\n'
               '$ mv tasks_1-20_v1-2.tar.gz ~/.keras/datasets/babi-tasks-v1-2.tar.gz')
         raise
+    timer.end()
 
+    timer.start('preprocessing')
     # Default QA1 with 1000 samples
     # challenge = 'tasks_1-20_v1-2/en/qa1_single-supporting-fact_{}.txt'
     # QA1 with 10,000 samples
@@ -271,24 +239,19 @@ def run(param_dict):
     print('y.shape = {}'.format(y.shape))
     print('story_maxlen, query_maxlen = {}, {}'.format(story_maxlen, query_maxlen))
 
-
-    extension = extension_from_parameters(param_dict)
-    hex_name = hashlib.sha224(extension.encode('utf-8')).hexdigest()
-    model_name = '{}-{}.h5'.format(BNAME, hex_name)
-    model_mda_name = '{}-{}.pkl'.format(BNAME, hex_name)
+    model_path = param_dict['model_path']
+    model_mda_path = None
+    model = None
     initial_epoch = 0
 
-    resume = False
+    if model_path:
+        savedModel = util.resume_from_disk(BNAME, param_dict, data_dir=model_path)
+        model_mda_path = savedModel.model_mda_path
+        model_path = savedModel.model_path
+        model = savedModel.model
+        initial_epoch = savedModel.initial_epoch
 
-    if os.path.exists(model_name) and os.path.exists(model_mda_name):
-        print('model and meta data exists; loading model from h5 file')
-        model = load_model(model_name)
-        saved_param_dict = load_meta_data(model_mda_name)
-        initial_epoch = saved_param_dict['epochs']
-        if initial_epoch < param_dict['epochs']:
-            resume = True
-
-    if not resume:
+    if model is None:
         print('Build model...')
         sentence = layers.Input(shape=(story_maxlen,), dtype='int32')
         encoded_sentence = layers.Embedding(vocab_size, EMBED_HIDDEN_SIZE)(sentence)
@@ -308,14 +271,22 @@ def run(param_dict):
         model = Model([sentence, question], preds)
         model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
+    timer.end()
+
+    timer.start('model training')
     print('Training')
-    model.fit([x, xq], y, batch_size=BATCH_SIZE, epochs=EPOCHS, validation_split=0.05)
+    model.fit([x, xq], y, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=EPOCHS, validation_split=0.05)
+    timer.end()
     loss, acc = model.evaluate([tx, txq], ty, batch_size=BATCH_SIZE)
     print('Test loss / test accuracy = {:.4f} / {:.4f}'.format(loss, acc))
     print('OUTPUT:', -acc)
     
-    model.save(model_name)  
-    save_meta_data(param_dict, model_mda_name)
+    if model_path:
+        timer.start('model save')
+        model.save(model_path)  
+        util.save_meta_data(param_dict, model_mda_path)
+        timer.end()
+    
     return -acc
 
 
@@ -339,12 +310,6 @@ def augment_parser(parser):
                         help='number of epochs')                        
 
     return parser
-
-def defaults():
-    def_parser = keras_cmdline.create_parser()
-    def_parser = augment_parser(def_parser)
-    return vars(def_parser.parse_args(''))
-
 
 if __name__ == "__main__":
     parser = keras_cmdline.create_parser()
