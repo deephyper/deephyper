@@ -137,7 +137,7 @@ class BalsamEvaluator(evaluate.Evaluator):
         '''iter over any immediately available results'''
         logger.info("Checking if any pending Balsam jobs are done")
         
-        pending_ids = self.pending_evals.values()
+        pending_ids = list(self.pending_evals.values())
         num_pending = len(pending_ids)
         num_blocks = 1 + (num_pending // 900)
         for i in range(num_blocks):
