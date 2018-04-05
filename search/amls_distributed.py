@@ -36,10 +36,7 @@ class Config:
             else: return super(Encoder, self).default(obj)
 
     def __init__(self, args):
-        if not isinstance(args, dict):
-            self.__dict__ = vars(args)
-        else:
-            self.__dict__ = args
+        self.__dict__ = vars(args)
         
         # for example, the default value of args.benchmark is "b1.addition_rnn"
         benchmark_directory = args.benchmark.split('.')[0] # "b1"
@@ -78,7 +75,7 @@ class Config:
         return import_module(self.benchmark_module_name)
 
     def init_optimizer(self):
-        kappa = 1.96
+        kappa = 2.56
         random_state = rank * 12345
 
         if self.learner in ["RF", "ET", "GBRT", "DUMMY"]:
@@ -141,7 +138,7 @@ def master_main(config):
     signal.signal(signal.SIGINT, handler)
     signal.signal(signal.SIGTERM, handler)
 
-    CHKPOINT_INTVAL = 10
+    CHKPOINT_INTVAL = 5
     chkpoint_counter = 0
     start_time = time.time()
     best_eval = sys.float_info.max
@@ -202,7 +199,7 @@ def worker_main(config):
        
 if __name__ == "__main__":
     if rank == 0:
-        args = vars(util.create_parser().parse_args())
+        args = util.create_parser().parse_args()
         args = comm.bcast(args, root=0)
         config = Config(args)
         master_main(config)
