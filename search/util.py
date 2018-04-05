@@ -6,6 +6,24 @@ import logging
 from importlib import import_module
 from importlib.util import find_spec
 
+masterLogger = None
+
+class Timer:
+    def __init__(self):
+        self.timings = {}
+
+    def start(self, name):
+        self.timings[name] = time.time()
+
+    def end(self, name):
+        try:
+            elapsed = time.time() - self.timings[name]
+        except KeyError:
+            print(f"TIMER error: never called timer.start({name})")
+        else:
+            print(f"TIMER {name}: {elapsed:.4f} seconds")
+            del self.timings[name]
+
 class OptConfig:
     '''Optimizer-related options'''
 
@@ -83,8 +101,9 @@ def sk_optimizer_from_config(opt_config, random_state):
     logger.info("Creating skopt.Optimizer with %s base_estimator" % opt_config.learner)
     return optimizer
 
-def conf_logger():
-    logger = logging.getLogger('deephyper')
+def conf_logger(name):
+    global masterLogger
+    masterLogger = logging.getLogger('deephyper')
 
     handler = logging.FileHandler('deephyper.log')
     formatter = logging.Formatter(
@@ -92,10 +111,10 @@ def conf_logger():
         "%Y-%m-%d %H:%M:%S"
     )
     handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel(logging.DEBUG)
-    logger.info("\n\nLoading Deephyper\n--------------")
-    return logger
+    masterLogger.addHandler(handler)
+    masterLogger.setLevel(logging.DEBUG)
+    masterLogger.info("\n\nLoading Deephyper\n--------------")
+    return logging.getLogger(name)
 
 class DelayTimer:
     def __init__(self, max_minutes=None, period=2):
