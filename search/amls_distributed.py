@@ -75,26 +75,29 @@ class Config:
         return import_module(self.benchmark_module_name)
 
     def init_optimizer(self):
-        kappa = 2.56
+        kappa = 1.7 + 0.005*comm.size
         random_state = rank * 12345
+        n_init = comm.size * 2
 
         if self.learner in ["RF", "ET", "GBRT", "DUMMY"]:
             optimizer = Optimizer(
                 self.space,
                 base_estimator=self.learner,
                 acq_optimizer='sampling',
-                acq_func='gp_hedge',
+                acq_func='LCB',
                 acq_func_kwargs={'kappa':kappa},
                 random_state=random_state,
+                n_initial_points = n_init
             )
         elif self.learner == "XGB":
             optimizer = Optimizer(
                 self.space,
                 base_estimator=ExtremeGradientBoostingQuantileRegressor(),
                 acq_optimizer='sampling',
-                acq_func='gp_hedge',
+                acq_func='LCB',
                 acq_func_kwargs={'kappa':kappa},
                 random_state=random_state,
+                n_initial_points = n_init
             )
         else:
             raise ValueError(f"Unknown learner type {self.learner}")
