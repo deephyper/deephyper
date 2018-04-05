@@ -29,31 +29,22 @@ def submit_next_points(opt_config, optimizer, evaluator):
     if opt_config.starting_point is not None:
         XX = [opt_config.starting_point]
         opt_config.starting_point = None
+        optimizer.cache_ = {}
         additional_pts = optimizer.ask(n_points=evaluator.num_workers-1, strategy='cl_max')
         XX.extend(additional_pts)
         logger.debug("Generating starting points")
-    elif evaluator.num_free_workers() > 0:
-        XX = optimizer.ask(n_points=1, strategy='cl_max')
-        optimizer.cache_ = {}
-        logger.debug("Asking for one point; clearing optimizer cache")
-        if not opt_config.repeat_evals:
-            XX = [x for x in XX 
-                  if evaluator.encode(x) not in evaluator.evals
-                  and evaluator.encode(x) not in evaluator.pending_evals
-                  ]
-        if len(XX) == 0:
-            logger.warning("Tried to ask for one point, but it was evaluated already")
     else:
         XX = []
-        logger.info("No free workers; waiting")
+        n_pts = evaluator.num_free_workers()
+        logger.debug(f"Generating {n_pts} tasks for {n_pts} free workers")
+        for i in range(n_pts):
+            optimizer.cache_ = {}
+            XX.extend(optimizer.ask(n_points=1, strategy='cl_max'))
 
-    for x in XX:
-        evaluator.add_eval(x, re_evaluate=opt_config.repeat_evals)
-        logger.info(f"Submitted eval of {x}")
-    if XX:
-        return True
-    else:
-        return False
+    for x in XX: evaluator.add_eval(x, re_evaluate=opt_config.repeat_evals)
+
+    if evaluator.num_free_workers() > 0: return True
+    else: return False
 
 
 def save_checkpoint(opt_config, optimizer, evaluator):
@@ -117,27 +108,20 @@ def main(args):
     # MAIN LOOP
     logger.info("Hyperopt driver starting")
 
-    last_100 = []
     for elapsed_str in timer:
         logger.info(f"Elapsed time: {elapsed_str}")
         if len(evaluator.evals) == cfg.max_evals: break
 
         for (x, y) in evaluator.get_finished_evals():
-            last_100.append(x)
             if y == sys.float_info.max:
-                logger.warning(f"WARNING: {job.cute_id} cost was not found or NaN")
+                logger.warning(f"WARNING: cost was not found or NaN for point {x}")
                 logger.warning(f"setting y to max encountered in optimizer.yi")
                 y = max(optimizer.yi)
             optimizer.tell(x, y)
             chkpoint_counter += 1
-            if y == sys.float_info.max:
 
-        if len(last_100) >= 100 and all(x == last_100[0] for x in last_100):
-            logger.warning("Optimizer has converged to a single point; terminating now")
-            break
-        
-        submitted_any = submit_next_points(cfg, optimizer, evaluator)
-        timer.delay = not submitted_any # no idling while there's evals to submit
+        free_workers = submit_next_points(cfg, optimizer, evaluator)
+        timer.delay = not free_workers # no idling while there's evals to submit
 
         if chkpoint_counter >= CHECKPOINT_INTERVAL:
             save_checkpoint(cfg, optimizer, evaluator)

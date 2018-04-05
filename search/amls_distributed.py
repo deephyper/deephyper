@@ -5,39 +5,36 @@ import json
 import os
 import sys
 import signal
-import numpy as np
-from numpy import integer, floating, ndarray
+import time
 from importlib import import_module
 from importlib.util import find_spec
+from numpy import integer, floating, ndarray
 
 HERE = os.path.dirname(os.path.abspath(__file__)) # search dir
 package = os.path.basename(os.path.dirname(HERE)) # 'deephyper'
 top  = os.path.dirname(os.path.dirname(HERE)) # directory containing deephyper
 sys.path.append(top)
-
 os.environ['KERAS_BACKEND']='tensorflow'
 
+from skopt import Optimizer
+from deephyper.search.ExtremeGradientBoostingQuantileRegressor import ExtremeGradientBoostingQuantileRegressor
 from deephyper.search import util
-from mpi4py import MPI
 
+from mpi4py import MPI
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
+logger = util.conf_logger('deephyper.search.amls_mpi')
 
-masterLogger = util.conf_logger()
-logger = logging.getLogger('deephyper.search.amls_mpi')
-
-CHECKPOINT_INTERVAL = 10    # How many jobs to complete between optimizer checkpoints
-SEED = 12345
-
-class Encoder(json.JSONEncoder):
-    '''Enables JSON dump of numpy data'''
-    def default(self, obj):
-        if isinstance(obj, integer): return int(obj)
-        elif isinstance(obj, floating): return float(obj)
-        elif isinstance(obj, ndarray): return obj.tolist()
-        else: return super(Encoder, self).default(obj)
 
 class Config:
+    class Encoder(json.JSONEncoder):
+        '''JSON dump of numpy data'''
+        def default(self, obj):
+            if isinstance(obj, integer): return int(obj)
+            elif isinstance(obj, floating): return float(obj)
+            elif isinstance(obj, ndarray): return obj.tolist()
+            else: return super(Encoder, self).default(obj)
+
     def __init__(self, args):
         if not isinstance(args, dict):
             self.__dict__ = vars(args)
@@ -63,7 +60,7 @@ class Config:
         self.space = [spaceDict[key] for key in self.params]
 
     def encode(self, x):
-        return json.dumps(x, cls=Encoder)
+        return json.dumps(x, cls=self.Encoder)
 
     def decode(self, x):
         return json.loads(x)
@@ -81,12 +78,7 @@ class Config:
         return import_module(self.benchmark_module_name)
 
     def init_optimizer(self):
-        from skopt import Optimizer
-        from deephyper.search.ExtremeGradientBoostingQuantileRegressor import \
-             ExtremeGradientBoostingQuantileRegressor
-        from numpy import inf
         kappa = 1.96
-
         random_state = rank * 12345
 
         if self.learner in ["RF", "ET", "GBRT", "DUMMY"]:
@@ -109,12 +101,13 @@ class Config:
             )
         else:
             raise ValueError(f"Unknown learner type {self.learner}")
-        logger.info("Creating skopt.Optimizer with %s base_estimator" % self.learner)
+        logger.info(f"Rank {rank} Optimizer: {self.learner} random_state {random_state}")
         return optimizer
 
-    def dump_evals(self, evals, quit=False):
-        with open('results.json', 'w') as fp:
-            json.dump(evals, fp, indent=4, sort_keys=True, cls=Encoder)
+    def dump_evals(self, evals, timing, quit=False):
+        basename = f"results_{self.benchmark}_{self.learner}"
+        with open(basename+'.json', 'w') as fp:
+            json.dump(evals, fp, indent=4, sort_keys=False)
 
         resultsList = []
 
@@ -124,33 +117,46 @@ class Config:
             resultsList.append(resultDict)
 
         if resultsList:
-            with open('results.csv', 'w') as fp:
+            with open(basename+'.csv', 'w') as fp:
                 columns = resultsList[0].keys()
                 writer = csv.DictWriter(fp, columns)
                 writer.writeheader()
                 writer.writerows(resultsList)
+        if timing:
+            with open(basename+'_evalStats', 'w') as fp:
+                fp.write(f'# {comm.size-1} MPI workers\n')
+                fp.write(f'# {"Elapsed time / sec":20} {"Eval count":12} {"Min(objective)":16}\n')
+                for elapsed, neval, best in timing:
+                    fp.write(f'{elapsed:20.3f} {neval:12} {best:16.6f}\n')
         if quit:
             sys.exit(0)
 
 def master_main(config):
     eval_dict = OrderedDict()
+    timing_data = []
     workers_known_eval_index = [0 for i in range(comm.size)]
     status = MPI.Status()
 
-    handler = lambda a, b: config.dump_evals(eval_dict, quit=True)
+    handler = lambda a, b: config.dump_evals(eval_dict, timing_data, quit=True)
     signal.signal(signal.SIGINT, handler)
     signal.signal(signal.SIGTERM, handler)
 
     CHKPOINT_INTVAL = 10
-    chkpoint_counter = 1
+    chkpoint_counter = 0
+    start_time = time.time()
+    best_eval = sys.float_info.max
 
     while True:
         new_eval = comm.recv(source=MPI.ANY_SOURCE, status=status)
+        elapsed = time.time() - start_time
         x, y = new_eval
         if x in eval_dict: logger.info(f"Received duplicate evaluation of point {x}")
+        if y < best_eval: best_eval = y
         eval_dict[x] = y
+        chkpoint_counter += 1
         source = status.source
         logger.info(f"received x={x} y={y} from rank {source}")
+        timing_data.append((elapsed, len(eval_dict), best_eval))
 
         update_index = workers_known_eval_index[source]
         update_keys = list(eval_dict.keys())[update_index:]
@@ -160,10 +166,8 @@ def master_main(config):
 
         if chkpoint_counter == CHKPOINT_INTVAL:
             logger.info(f"Checkpointing {len(eval_dict)} evals to disk")
-            config.dump_evals(eval_dict)
+            config.dump_evals(eval_dict, timing_data)
             chkpoint_counter = 0
-        else:
-            chkpoint_counter += 1
         req.wait()
 
 def worker_main(config):
@@ -192,21 +196,18 @@ def worker_main(config):
         comm.send(new_eval, dest=0)
         updates = comm.recv(source=0)
         points = [(config.decode(x), updates[x]) for x in updates]
-        XX, YY = [p[0] for p in points], [p[1] for p in points]
+        XX, YY = zip(*points)
         optimizer.tell(XX, YY, fit=True)
-
-        if rank == 1:
-            logger.debug(f"Rank 1 received {len(points)} new evals from master; now my optimizer has {len(optimizer.yi)} evals stored")
-            
+        logger.debug(f"Rank {rank} got {len(points)} new evals from master; now my model has fit to {len(optimizer.yi)} evals")
        
-
 if __name__ == "__main__":
     if rank == 0:
-        args = util.create_parser().parse_args()
+        args = vars(util.create_parser().parse_args())
+        args = comm.bcast(args, root=0)
         config = Config(args)
-        config = comm.bcast(config)
         master_main(config)
     else:
-        config = None
-        config = comm.bcast(config)
+        args = None
+        args = comm.bcast(args, root=0)
+        config = Config(args)
         worker_main(config)
