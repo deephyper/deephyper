@@ -1,9 +1,20 @@
-from __future__ import print_function
+import sys
+import os
+from pprint import pprint
+
+here = os.path.dirname(os.path.abspath(__file__))
+top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
+sys.path.append(top)
+BNAME = os.path.splitext(os.path.basename(__file__))[0]
+
+from deephyper.benchmarks import util 
+
+timer = util.Timer()
+timer.start('module loading')
 
 import argparse
 import h5py
 import logging
-import os
 
 import numpy as np
 
@@ -20,9 +31,9 @@ from sklearn.manifold import TSNE
 from keras.models import load_model
 import hashlib
 import pickle
-import sys
+timer.end()
 
-BNAME = 'p1b1'
+from deephyper.benchmarks import keras_cmdline
 
 import warnings
 with warnings.catch_warnings():
@@ -62,8 +73,6 @@ def load_meta_data(filename):
     with open(filename, 'rb') as handle:
         data = pickle.load(handle)
     return data
-
-
 
 def get_p1b1_parser():
     parser = argparse.ArgumentParser(prog='p1b1_baseline', formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -152,7 +161,7 @@ def build_type_classifier(x_train, y_train, x_test, y_test):
 def initialize_parameters():
     # Get command-line parameters
     parser = get_p1b1_parser()
-    args = parser.parse_args("")
+    args = parser.parse_args()
     # Get parameters from configuration file
     file_params = p1b1.read_config_file(args.config_file)
     # Consolidate parameter set. Command-line parameters overwrite file configuration
@@ -228,6 +237,9 @@ class Struct:
         self.__dict__.update(entries)
 
 def run(params):
+    keras_defaults = p1_common.keras_default_config()
+    optimizer = keras_cmdline.return_optimizer(params)
+
     args = Struct(**params)
     # Construct extension to save model
     ext = p1b1.extension_from_parameters(params, '.keras')
@@ -238,11 +250,13 @@ def run(params):
     logger = set_up_logger(logfile, params['verbose'])
 
     logger.info('Params: {}'.format(params))
+    pprint(params)
 
     # Get default parameters for initialization and optimizer functions
-    keras_defaults = p1_common.keras_default_config()
+    pprint(keras_defaults)
     seed = params['rng_seed']
     set_seed(seed)
+    sys.exit(0)
 
     # Load dataset
     x_train, y_train, x_val, y_val, x_test, y_test, x_labels, y_labels = p1b1.load_data(params, seed)
@@ -293,8 +307,8 @@ def run(params):
         dropout_layer = keras.layers.noise.AlphaDropout if params['alpha_dropout'] else Dropout
 
         # Initialize weights and learning rule
-        initializer_weights = p1_common_keras.build_initializer(params['initialization'], keras_defaults, seed)
-        initializer_bias = p1_common_keras.build_initializer('constant', keras_defaults, 0.)
+        initializer_weights = p1_common_keras.build_initializer(params['initialization'], params, seed)
+        initializer_bias = p1_common_keras.build_initializer('constant', params, 0.)
 
         if dense_layers is not None:
             if type(dense_layers) != list:
@@ -405,10 +419,6 @@ def run(params):
             with open(prefix+'.model.json', 'w') as f:
                 print(model_json, file=f)
 
-        # Define optimizer
-        # optimizer = p1_common_keras.build_optimizer(params['optimizer'],
-        #                                             params['learning_rate'],
-        #                                             keras_defaults)
         optimizer = optimizers.deserialize({'class_name': params['optimizer'], 'config': {}})
         base_lr = params['base_lr'] or K.get_value(optimizer.lr)
         if params['learning_rate']:
@@ -498,15 +508,31 @@ def run(params):
 
     logger.handlers = []
 
-    return history
+    return -score[1]
 
-
-def main():
-    params = initialize_parameters()
-    run(params)
-
+#def augment_parser(parser):
+#    parser.add_argument("--dense", nargs='+', type=int, default=[2000,600])
+#    parser.add_argument('--minval_uniform', type=float, default=-0.05)
+#    parser.add_argument('--maxval_uniform', type=float, default=0.05)
+#    parser.add_argument('--mean_normal', type=float, default=0.0)
+#    parser.add_argument('--stddev_normal', type=float, default=0.05)
+#    parser.add_argument("--initialization",
+#                        default='glorot_uniform',
+#                        choices=['constant', 'uniform', 'normal', 'glorot_uniform', 'lecun_uniform', 'lecun_normal', 'he_normal'])
+#    parser.add_argument("--alpha_dropout", action='store_true',
+#                        help="use AlphaDropout instead of regular Dropout")
+#                        
+#    return parser
 
 if __name__ == '__main__':
-    main()
-    if K.backend() == 'tensorflow':
-        K.clear_session()
+    parser = keras_cmdline.create_parser()
+    #parser = augment_parser(parser)
+    cmdline_args = parser.parse_args()
+    param_dict = vars(cmdline_args)
+
+    params_p1b1 = initialize_parameters()
+    param_dict.update(params_p1b1)
+    param_dict['drop'] = param_dict['dropout']
+    param_dict['learning_rate'] = param_dict['lr']
+
+    run(param_dict)

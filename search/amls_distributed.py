@@ -10,6 +10,7 @@ import time
 from importlib import import_module
 from importlib.util import find_spec
 from numpy import integer, floating, ndarray
+import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__)) # search dir
 package = os.path.basename(os.path.dirname(HERE)) # 'deephyper'
@@ -53,6 +54,7 @@ class Config:
         instance = problem_module.Problem()
         self.params = list(instance.params)
         self.starting_point = instance.starting_point
+        self.n_init = max(comm.size, 10)
         
         spaceDict = instance.space
         self.space = [spaceDict[key] for key in self.params]
@@ -76,35 +78,34 @@ class Config:
         return import_module(self.benchmark_module_name)
 
     def init_optimizer(self):
-        #random.seed(rank)
-        #kappa = 1.9 + random.uniform(-1.5, 6.0)
-        #kappa = 1.94
+        kappa = 1.96 # np.inf if rank <= 3 else random.uniform(1, 100)
         random_state = rank * random.randint(1, 12345)
-        n_init = max(5*len(self.space), comm.size - 1)
 
         if self.learner in ["GP", "RF", "ET", "GBRT", "DUMMY"]:
             optimizer = Optimizer(
                 self.space,
                 base_estimator=self.learner,
                 acq_optimizer='sampling',
-                acq_func='gp_hedge',
-                #acq_func_kwargs={'kappa':kappa},
+                acq_func='LCB',
+                acq_func_kwargs={'kappa':kappa},
+                acq_optimizer_kwargs={'n_points':10000},
                 random_state=random_state,
-                n_initial_points = n_init
+                n_initial_points = self.n_init
             )
         elif self.learner == "XGB":
             optimizer = Optimizer(
                 self.space,
                 base_estimator=ExtremeGradientBoostingQuantileRegressor(),
                 acq_optimizer='sampling',
-                acq_func='gp_hedge',
-                #acq_func_kwargs={'kappa':kappa},
+                acq_func='LCB',
+                acq_func_kwargs={'kappa':kappa},
+                acq_optimizer_kwargs={'n_points':10000},
                 random_state=random_state,
-                n_initial_points = n_init
+                n_initial_points = self.n_init
             )
         else:
             raise ValueError(f"Unknown learner type {self.learner}") 
-        logger.info(f"Rank {rank} Optimizer: {self.learner} random_state {random_state}; {n_init} random points before using model")
+        logger.info(f"Rank {rank} Optimizer: {self.learner} random_state {random_state}; {self.n_init} random points before using model; kappa={kappa}")
         return optimizer
 
     def dump_evals(self, evals, timing, quit=False):
@@ -196,12 +197,14 @@ def worker_main(config):
     signal.signal(signal.SIGINT, handler)
     signal.signal(signal.SIGTERM, handler)
 
+    my_x = []
     while True:
         if rank == 1 and config.starting_point:
             x = config.starting_point
             config.starting_point = None
         else:
             x = optimizer.ask()
+            my_x.append(x)
 
         params = config.to_param_dict(x)
         try:
@@ -216,16 +219,31 @@ def worker_main(config):
         updates = comm.recv(source=0)
         if updates == 'quit': return
 
+        # LIAR: set other optimizers values to to median
+        x_current = config.encode(x)
+        assert x_current in updates
+        for i, x in enumerate(updates, 1):
+            if x != x_current and i+len(optimizer.yi) >= 10:
+                updates[x] = np.percentile(optimizer.yi, 70) if optimizer.yi else result
+
         points = [(config.decode(x), updates[x]) for x in updates]
         XX, YY = zip(*points)
         optimizer.tell(XX, YY, fit=True)
         logger.debug(f"Rank {rank} got {len(points)} new evals from master; now my model has fit to {len(optimizer.yi)} evals")
+
+        if rank == 1:
+            with open('all_points1.dat', 'wb') as fp: np.savez(fp, x=optimizer.Xi, y=optimizer.yi)
+
+        with open(f'points_rank{rank}.dat', 'wb') as fp:
+            arr = np.asarray(my_x)
+            np.savez(fp, x=arr)
        
 if __name__ == "__main__":
     if rank == 0:
         try:
             args = util.create_parser().parse_args()
-        except:
+        except Exception as e:
+            print(e)
             args = comm.bcast('quit', root=0)
         else:
             args = comm.bcast(args, root=0)
