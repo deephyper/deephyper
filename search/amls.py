@@ -1,9 +1,11 @@
+import json
 import logging
 import os
 import pickle
 import signal
 import sys
 import numpy as np
+from numpy import integer, floating, ndarray
 
 HERE = os.path.dirname(os.path.abspath(__file__)) # search dir
 top  = os.path.dirname(os.path.dirname(HERE)) # directory containing deephyper
@@ -13,39 +15,13 @@ from deephyper.evaluators import evaluate
 from deephyper.search import util
 
 
-masterLogger = util.conf_logger()
-logger = logging.getLogger('deephyper.search.async-search')
+logger = util.conf_logger('deephyper.search.amls')
 
 SERVICE_PERIOD = 2          # Delay (seconds) between main loop iterations
 CHECKPOINT_INTERVAL = 10    # How many jobs to complete between optimizer checkpoints
 SEED = 12345
 
-def submit_next_points(opt_config, optimizer, evaluator):
-    '''Query optimizer for the next set of points to evaluate'''
-    if evaluator.counter >= opt_config.max_evals:
-        logger.debug("Reached max_evals; no longer starting new runs")
-        return False
-
-    if opt_config.starting_point is not None:
-        XX = [opt_config.starting_point]
-        opt_config.starting_point = None
-        optimizer.cache_ = {}
-        additional_pts = optimizer.ask(n_points=evaluator.num_workers-1, strategy='cl_max')
-        XX.extend(additional_pts)
-        logger.debug("Generating starting points")
-    else:
-        XX = []
-        n_pts = evaluator.num_free_workers()
-        logger.debug(f"Generating {n_pts} tasks for {n_pts} free workers")
-        for i in range(n_pts):
-            optimizer.cache_ = {}
-            XX.extend(optimizer.ask(n_points=1, strategy='cl_max'))
-
-    for x in XX: evaluator.add_eval(x, re_evaluate=opt_config.repeat_evals)
-
-    if evaluator.num_free_workers() > 0: return True
-    else: return False
-
+profile_timer = util.Timer()
 
 def save_checkpoint(opt_config, optimizer, evaluator):
     if evaluator.counter == 0: return
@@ -78,6 +54,64 @@ def load_checkpoint(chk_path):
     logger.info(f"On eval {evaluator.counter}")
     return cfg, opt, evaluator
 
+class Optimizer:
+    class Encoder(json.JSONEncoder):
+        '''JSON dump of numpy data'''
+        def default(self, obj):
+            if isinstance(obj, integer): return int(obj)
+            elif isinstance(obj, floating): return float(obj)
+            elif isinstance(obj, ndarray): return obj.tolist()
+            else: return super(Encoder, self).default(obj)
+    
+    def encode(self, x):
+        return json.dumps(x, cls=self.Encoder)
+
+    def decode(self, key):
+        return json.loads(key)
+
+    def __init__(self, cfg):
+        self._optimizer = util.sk_optimizer_from_config(cfg, SEED)
+        assert cfg.amls_lie_strategy in "cl_min cl_mean cl_max".split()
+        self.strategy = cfg.amls_lie_strategy
+        self.evals = {}
+
+    def _get_lie(self):
+        if self.strategy == "cl_min":
+            return min(self._optimizer.yi) if self._optimizer.yi else 0.0
+        elif self.strategy == "cl_mean":
+            return self._optimizer.yi.mean() if self._optimizer.yi else 0.0
+        else:
+            return  max(self._optimizer.yi) if self._optimizer.yi else 0.0
+
+    def xy_from_dict(self):
+        keys = list(self.evals.keys())
+        XX = [self.decode(x) for x in keys]
+        YY = [self.evals[x] for x in keys]
+        return XX, YY
+
+    def _ask(self):
+        x = self._optimizer.ask()
+        y = self._get_lie()
+        self._optimizer.tell(x,y)
+        self.evals[self.encode(x)] = y
+        return x
+
+    def ask(self, n_points=None):
+        if n_points is None:
+            return self._ask()
+        else:
+            return [self._ask() for i in range(n_points)]
+        
+    def tell(self, xy_data):
+        assert isinstance(xy_data, list)
+        maxval = max(self._optimizer.yi) if self._optimizer.yi else 0.0
+        for x,y in xy_data:
+            self.evals[self.encode(x)] = (y if y < sys.float_info.max else maxval)
+
+        XX, YY = self.xy_from_dict()
+        self._optimizer.Xi = []
+        self._optimizer.yi = []
+        self._optimizer.tell(XX, YY)
 
 def main(args):
     '''Service loop: add jobs; read results; drive optimizer'''
@@ -88,7 +122,7 @@ def main(args):
         cfg, optimizer, evaluator = load_checkpoint(chk_path)
     else:
         cfg = util.OptConfig(args)
-        optimizer = util.sk_optimizer_from_config(cfg, SEED)
+        optimizer = Optimizer(cfg)
         evaluator = evaluate.create_evaluator(cfg)
         logger.info(f"Starting new run with {cfg.benchmark_module_name}")
 
@@ -105,23 +139,25 @@ def main(args):
     signal.signal(signal.SIGINT, handler)
     signal.signal(signal.SIGTERM, handler)
 
-    # MAIN LOOP
-    logger.info("Hyperopt driver starting")
+    # INITIAL POINTS
+    logger.info("AMLS-Balsam driver starting")
+    logger.info(f"Generating {cfg.num_workers} initial points...")
+    XX = optimizer._optimizer.ask(n_points=cfg.num_workers)
+    for x in XX: evaluator.add_eval(x, re_evaluate=cfg.repeat_evals)
 
+    # MAIN LOOP
     for elapsed_str in timer:
         logger.info(f"Elapsed time: {elapsed_str}")
         if len(evaluator.evals) == cfg.max_evals: break
 
-        for (x, y) in evaluator.get_finished_evals():
-            if y == sys.float_info.max:
-                logger.warning(f"WARNING: cost was not found or NaN for point {x}")
-                logger.warning(f"setting y to max encountered in optimizer.yi")
-                y = max(optimizer.yi)
-            optimizer.tell(x, y)
-            chkpoint_counter += 1
-
-        free_workers = submit_next_points(cfg, optimizer, evaluator)
-        timer.delay = not free_workers # no idling while there's evals to submit
+        results = list(evaluator.get_finished_evals())
+        if results:
+            logger.info(f"Refitting model with batch of {len(results)} evals")
+            optimizer.tell(results)
+            logger.info(f"Drawing {len(results)} points with strategy {optimizer.strategy}")
+            XX = optimizer.ask(n_points=len(results))
+            for x in XX: evaluator.add_eval(x, re_evaluate=cfg.repeat_evals)
+            chkpoint_counter += len(results)
 
         if chkpoint_counter >= CHECKPOINT_INTERVAL:
             save_checkpoint(cfg, optimizer, evaluator)

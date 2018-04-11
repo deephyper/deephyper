@@ -39,6 +39,7 @@ class OptConfig:
         self.repeat_evals = args.repeat_evals
         self.num_workers = args.num_workers
         self.learner = args.learner
+        self.amls_lie_strategy = args.amls_lie_strategy
 
         self.model_path = args.model_path.strip()
         self.data_source = args.data_source.strip()
@@ -177,6 +178,8 @@ def create_parser():
                         nargs='?', const=1, type=str, default='XGB',
                         choices=["XGB", "RF", "ET", "GBRT", "DUMMY"],
                         help='type of learner')
+    parser.add_argument('--amls-lie-strategy', action='store',
+                        default="cl_max", choices=["cl_min", "cl_mean", "cl_max"])
 
     parser.add_argument('--from-checkpoint', default=None,
                         help='path of checkpoint file from a previous run'
