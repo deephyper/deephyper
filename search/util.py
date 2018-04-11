@@ -164,6 +164,7 @@ def create_parser():
     parser.add_argument('--max-evals', type=int, default=100,
                         help='maximum number of evaluations'
                        )
+    parser.add_argument('--run', help='optional tag appended to run files')
     parser.add_argument('--num-workers', type=int, default=10,
                         help='Number of points to ask for initially'
                        )
@@ -176,7 +177,7 @@ def create_parser():
     parser.add_argument('--learner', action='store',
                         dest='learner',
                         nargs='?', const=1, type=str, default='XGB',
-                        choices=["XGB", "RF", "ET", "GBRT", "DUMMY"],
+                        choices=["XGB", "RF", "ET", "GBRT", "DUMMY", "GP"],
                         help='type of learner')
     parser.add_argument('--amls-lie-strategy', action='store',
                         default="cl_max", choices=["cl_min", "cl_mean", "cl_max"])

@@ -3,6 +3,7 @@ import csv
 import logging
 import json
 import os
+import random
 import sys
 import signal
 import time
@@ -75,17 +76,19 @@ class Config:
         return import_module(self.benchmark_module_name)
 
     def init_optimizer(self):
-        kappa = 1.7 + 0.005*comm.size
-        random_state = rank * 12345
-        n_init = comm.size * 2
+        #random.seed(rank)
+        #kappa = 1.9 + random.uniform(-1.5, 6.0)
+        #kappa = 1.94
+        random_state = rank * random.randint(1, 12345)
+        n_init = max(5*len(self.space), comm.size - 1)
 
-        if self.learner in ["RF", "ET", "GBRT", "DUMMY"]:
+        if self.learner in ["GP", "RF", "ET", "GBRT", "DUMMY"]:
             optimizer = Optimizer(
                 self.space,
                 base_estimator=self.learner,
                 acq_optimizer='sampling',
-                acq_func='LCB',
-                acq_func_kwargs={'kappa':kappa},
+                acq_func='gp_hedge',
+                #acq_func_kwargs={'kappa':kappa},
                 random_state=random_state,
                 n_initial_points = n_init
             )
@@ -94,18 +97,23 @@ class Config:
                 self.space,
                 base_estimator=ExtremeGradientBoostingQuantileRegressor(),
                 acq_optimizer='sampling',
-                acq_func='LCB',
-                acq_func_kwargs={'kappa':kappa},
+                acq_func='gp_hedge',
+                #acq_func_kwargs={'kappa':kappa},
                 random_state=random_state,
                 n_initial_points = n_init
             )
         else:
-            raise ValueError(f"Unknown learner type {self.learner}")
-        logger.info(f"Rank {rank} Optimizer: {self.learner} random_state {random_state}")
+            raise ValueError(f"Unknown learner type {self.learner}") 
+        logger.info(f"Rank {rank} Optimizer: {self.learner} random_state {random_state}; {n_init} random points before using model")
         return optimizer
 
     def dump_evals(self, evals, timing, quit=False):
-        basename = f"results_{self.benchmark}_{self.learner}"
+        bench = self.benchmark.split('.')[0]
+        method = self.learner
+        ranks = comm.size
+        basename = f"{bench}.{method}.{ranks}"
+        if self.run: basename += f".{self.run}"
+
         with open(basename+'.json', 'w') as fp:
             json.dump(evals, fp, indent=4, sort_keys=False)
 
@@ -123,7 +131,7 @@ class Config:
                 writer.writeheader()
                 writer.writerows(resultsList)
         if timing:
-            with open(basename+'_evalStats', 'w') as fp:
+            with open(basename+'.time', 'w') as fp:
                 fp.write(f'# {comm.size-1} MPI workers\n')
                 fp.write(f'# {"Elapsed time / sec":20} {"Eval count":12} {"Min(objective)":16}\n')
                 for elapsed, neval, best in timing:
@@ -137,12 +145,15 @@ def master_main(config):
     workers_known_eval_index = [0 for i in range(comm.size)]
     status = MPI.Status()
 
-    handler = lambda a, b: config.dump_evals(eval_dict, timing_data, quit=True)
+    def handler(signum, stack):
+        logger.info(f"Received signal {signum}, quitting now")
+        config.dump_evals(eval_dict, timing_data, quit=True)
     signal.signal(signal.SIGINT, handler)
     signal.signal(signal.SIGTERM, handler)
 
     CHKPOINT_INTVAL = 5
     chkpoint_counter = 0
+    quit_count = 0
     start_time = time.time()
     best_eval = sys.float_info.max
 
@@ -162,6 +173,9 @@ def master_main(config):
         update_keys = list(eval_dict.keys())[update_index:]
         update = {x : eval_dict[x] for x in update_keys}
         workers_known_eval_index[source] = len(eval_dict)
+        if len(eval_dict) >= config.max_evals: 
+            update = 'quit'
+            quit_count += 1
         req = comm.isend(update, dest=source)
 
         if chkpoint_counter == CHKPOINT_INTVAL:
@@ -170,11 +184,15 @@ def master_main(config):
             chkpoint_counter = 0
         req.wait()
 
+        if quit_count == comm.size - 1: return
+
 def worker_main(config):
     bench_module =  config.load_benchmark()
     optimizer = config.init_optimizer()
 
-    handler = lambda a, b : sys.exit(0)
+    def handler(signum, stack):
+        logger.info(f"Worker received signal {signum}; quitting now")
+        sys.exit(0)
     signal.signal(signal.SIGINT, handler)
     signal.signal(signal.SIGTERM, handler)
 
@@ -194,7 +212,10 @@ def worker_main(config):
 
         new_eval = (config.encode(x), result)
         comm.send(new_eval, dest=0)
+        
         updates = comm.recv(source=0)
+        if updates == 'quit': return
+
         points = [(config.decode(x), updates[x]) for x in updates]
         XX, YY = zip(*points)
         optimizer.tell(XX, YY, fit=True)
@@ -202,12 +223,17 @@ def worker_main(config):
        
 if __name__ == "__main__":
     if rank == 0:
-        args = util.create_parser().parse_args()
-        args = comm.bcast(args, root=0)
-        config = Config(args)
-        master_main(config)
+        try:
+            args = util.create_parser().parse_args()
+        except:
+            args = comm.bcast('quit', root=0)
+        else:
+            args = comm.bcast(args, root=0)
+            config = Config(args)
+            master_main(config)
     else:
         args = None
         args = comm.bcast(args, root=0)
+        if args == 'quit': sys.exit(1)
         config = Config(args)
         worker_main(config)
