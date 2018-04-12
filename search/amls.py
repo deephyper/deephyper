@@ -63,10 +63,10 @@ class Optimizer:
             elif isinstance(obj, ndarray): return obj.tolist()
             else: return super(Encoder, self).default(obj)
     
-    def encode(self, x):
+    def _encode(self, x):
         return json.dumps(x, cls=self.Encoder)
 
-    def decode(self, key):
+    def _decode(self, key):
         return json.loads(key)
 
     def __init__(self, cfg):
@@ -74,6 +74,7 @@ class Optimizer:
         assert cfg.amls_lie_strategy in "cl_min cl_mean cl_max".split()
         self.strategy = cfg.amls_lie_strategy
         self.evals = {}
+        self.counter = 0
 
     def _get_lie(self):
         if self.strategy == "cl_min":
@@ -83,9 +84,9 @@ class Optimizer:
         else:
             return  max(self._optimizer.yi) if self._optimizer.yi else 0.0
 
-    def xy_from_dict(self):
+    def _xy_from_dict(self):
         keys = list(self.evals.keys())
-        XX = [self.decode(x) for x in keys]
+        XX = [self._decode(x) for x in keys]
         YY = [self.evals[x] for x in keys]
         return XX, YY
 
@@ -93,25 +94,39 @@ class Optimizer:
         x = self._optimizer.ask()
         y = self._get_lie()
         self._optimizer.tell(x,y)
-        self.evals[self.encode(x)] = y
+        self.evals[self._encode(x)] = y
         return x
 
     def ask(self, n_points=None):
         if n_points is None:
+            self.counter += 1
             return self._ask()
         else:
+            self.counter += n_points
             return [self._ask() for i in range(n_points)]
+
+    def ask_initial(self, n_points):
+        XX = self._optimizer.ask(n_points=n_points)
+        for x in XX:
+            key = self._encode(x)
+            self.evals[key] = 0.0
+        self.counter += n_points
+        return XX
         
     def tell(self, xy_data):
         assert isinstance(xy_data, list)
         maxval = max(self._optimizer.yi) if self._optimizer.yi else 0.0
         for x,y in xy_data:
-            self.evals[self.encode(x)] = (y if y < sys.float_info.max else maxval)
+            key = self._encode(x)
+            assert key in self.evals
+            self.evals[key] = (y if y < sys.float_info.max else maxval)
 
-        XX, YY = self.xy_from_dict()
         self._optimizer.Xi = []
         self._optimizer.yi = []
+        XX, YY = self._xy_from_dict()
+        assert len(XX) == len(YY) == self.counter
         self._optimizer.tell(XX, YY)
+
 
 def main(args):
     '''Service loop: add jobs; read results; drive optimizer'''
@@ -142,7 +157,7 @@ def main(args):
     # INITIAL POINTS
     logger.info("AMLS-Balsam driver starting")
     logger.info(f"Generating {cfg.num_workers} initial points...")
-    XX = optimizer._optimizer.ask(n_points=cfg.num_workers)
+    XX = optimizer.ask_initial(n_points=cfg.num_workers)
     for x in XX: evaluator.add_eval(x, re_evaluate=cfg.repeat_evals)
 
     # MAIN LOOP
