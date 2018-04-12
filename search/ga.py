@@ -26,8 +26,7 @@ sys.path.append(top)
 from deephyper.evaluators import evaluate
 from deephyper.search import util
 
-masterLogger = util.conf_logger()
-logger = logging.getLogger('deephyper.search.ga')
+logger = util.conf_logger('deephyper.search.ga')
 
 SEED = 12345
 CHECKPOINT_INTERVAL = 1    # How many generations between optimizer checkpoints

@@ -18,8 +18,7 @@ sys.path.append(top)
 from deephyper.evaluators import evaluate
 from deephyper.search import util
 
-masterLogger = util.conf_logger()
-logger = logging.getLogger(__name__)
+logger = util.conf_logger('deephyper.search.hyperband')
 
 SERVICE_PERIOD = 2          # Delay (seconds) between main loop iterations
 CHECKPOINT_INTERVAL = 30    # How many jobs to complete between optimizer checkpoints
