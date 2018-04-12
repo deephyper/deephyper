@@ -97,7 +97,7 @@ class BalsamEvaluator(evaluate.Evaluator):
         if isnan(y): y = sys.float_info.max
         return y
 
-    def await_evals(self, to_read, timeout=2000, delay=5):
+    def await_evals(self, to_read, timeout=5400, delay=5):
         keys = [self._encode(x) for x in to_read]
         job_ids = [self.pending_evals[k] for k in keys
                    if k in self.pending_evals]
@@ -111,24 +111,20 @@ class BalsamEvaluator(evaluate.Evaluator):
         num_checks = round(timeout / delay)
         for i in range(num_checks):
             num_finished = jobs.filter(state='RUN_DONE').count()
-            logger.debug(f"{num_finished} out of {num_jobs} finished")
-            isDone = num_finished == num_jobs
-            failed = jobs.filter(state='FAILED').exists()
-            if isDone: 
-                break
-            elif failed:
-                logger.error("A balsam job failed; terminating")
-                raise RuntimeError("An eval job failed")
-            else:
-                time.sleep(delay)
+            num_failed = jobs.filter(state__in=['RUN_ERROR', 'FAILED']).count()
+            logger.debug(f"{num_finished+num_failed} out of {num_jobs} finished ({num_failed} failed)")
+            isDone = (num_finished+num_failed) == num_jobs
+            if isDone: break
+            else: time.sleep(delay)
 
-        isDone = jobs.filter(state='RUN_DONE').count() == num_jobs
-        if not isDone:
-            logger.error("Balsam Jobs did not finish in alloted timeout; aborting")
-            raise RuntimeError(f"The jobs did not finish in {timeout} seconds")
+        done_ids = jobs.filter(state='RUN_DONE').values_list('job_id', flat=True)
 
         for job in jobs:
-            y = self._read_eval_output(job)
+            if job.job_id in done_ids:
+                y = self._read_eval_output(job)
+            else:
+                logger.warning(f"Job {job.cute_id} did not finish; state {job.state}")
+                y = sys.float_info.max
             key = self.id_key_map[job.job_id.hex]
             self.evals[key] = y
             if key in self.pending_evals: del self.pending_evals[key]
