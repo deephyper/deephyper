@@ -36,25 +36,24 @@ def run(param_dict):
     optimizer = keras_cmdline.return_optimizer(param_dict)
     pprint(param_dict)
     
-    if False:
-        timer.start('stage in')
-        if param_dict['data_source']:
-            data_source = param_dict['data_source']
-        else:
-            data_source = os.path.dirname(os.path.abspath(__file__))
-            data_source = os.path.join(origin_dir_path, 'data')
+    timer.start('stage in')
+    if param_dict['data_source']:
+        data_source = param_dict['data_source']
+    else:
+        data_source = os.path.dirname(os.path.abspath(__file__))
+        data_source = os.path.join(data_source, 'data')
 
-        try:
-            paths = util.stage_in(['babi-tasks-v1-2.tar.gz'],
-                                source=data_source,
-                                dest=param_dict['stage_in_destination'])
-            path = paths['babi-tasks-v1-2.tar.gz']
-        except:
-            print('Error downloading dataset, please download it manually:\n'
-                '$ wget http://www.thespermwhale.com/jaseweston/babi/tasks_1-20_v1-2.tar.gz\n'
-                '$ mv tasks_1-20_v1-2.tar.gz ~/.keras/datasets/babi-tasks-v1-2.tar.gz')
-            raise
-        timer.end()
+    try:
+        paths = util.stage_in(['cifar-10-python.tar.gz'],
+                            source=data_source,
+                            dest=param_dict['stage_in_destination'])
+        path = paths['cifar-10-python.tar.gz']
+    except:
+        print('Error downloading dataset, please download it manually:\n'
+            '$ wget http://www.thespermwhale.com/jaseweston/babi/tasks_1-20_v1-2.tar.gz\n'
+            '$ mv tasks_1-20_v1-2.tar.gz ~/.keras/datasets/babi-tasks-v1-2.tar.gz')
+        raise
+    timer.end()
 
     num_classes = 10
     num_predictions = 20

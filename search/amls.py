@@ -14,7 +14,6 @@ sys.path.append(top)
 from deephyper.evaluators import evaluate
 from deephyper.search import util
 
-
 logger = util.conf_logger('deephyper.search.amls')
 
 SERVICE_PERIOD = 2          # Delay (seconds) between main loop iterations
@@ -140,7 +139,7 @@ def main(args):
     signal.signal(signal.SIGTERM, handler)
 
     # INITIAL POINTS
-    logger.info("AMLS-Balsam driver starting")
+    logger.info("AMLS-single server driver starting")
     logger.info(f"Generating {cfg.num_workers} initial points...")
     XX = optimizer._optimizer.ask(n_points=cfg.num_workers)
     for x in XX: evaluator.add_eval(x, re_evaluate=cfg.repeat_evals)

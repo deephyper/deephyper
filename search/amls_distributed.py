@@ -158,6 +158,7 @@ def master_main(config):
     start_time = time.time()
     best_eval = sys.float_info.max
 
+    logger.info("AMLS-distributed opt starting")
     while True:
         new_eval = comm.recv(source=MPI.ANY_SOURCE, status=status)
         elapsed = time.time() - start_time

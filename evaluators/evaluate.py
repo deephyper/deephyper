@@ -42,6 +42,7 @@ class Evaluator:
                 self.repeated_evals.append(key)
                 return
         new_eval = self._eval_exec(x) # future or job UUID
+        logger.info(f"Submitted eval of {x}")
         self.pending_evals[key] = new_eval
 
     @property

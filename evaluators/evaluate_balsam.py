@@ -9,6 +9,7 @@ import logging
 import balsam.launcher.dag as dag
 from balsam.service.models import BalsamJob, END_STATES
 from deephyper.evaluators import evaluate
+from django.db import transaction
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +51,7 @@ class BalsamEvaluator(evaluate.Evaluator):
         os.chdir(this.working_directory)
         logger.debug(f"Running in Balsam job directory: {this.working_directory}")
 
+    @transaction.atomic
     def _eval_exec(self, x):
         jobname = f"task{self.counter}"
         cmd = f"{sys.executable} {self.bench_file}"
@@ -62,6 +64,7 @@ class BalsamEvaluator(evaluate.Evaluator):
         args = ' '.join(f"--{p}={v}" for p,v in param_dict.items())
         envs = f"KERAS_BACKEND={self.backend}"
 
+        start = time.time()
         child = dag.spawn_child(
                     name = jobname,
                     direct_command = cmd,
@@ -78,6 +81,8 @@ class BalsamEvaluator(evaluate.Evaluator):
         logger.debug(f"Created job {jobname}")
         logger.debug(f"Command: {cmd}")
         logger.debug(f"Args: {args}")
+        elapsed = time.time() - start
+        logger.debug(f'time to spawn_child, create_working_path, update to preproc: {elapsed:.4f}')
 
         self.id_key_map[child.job_id.hex] = self._encode(x)
         return child.job_id.hex

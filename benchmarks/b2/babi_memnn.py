@@ -26,6 +26,9 @@ from deephyper.benchmarks import util
 
 timer = util.Timer()
 timer.start('module loading')
+print("using python:", sys.executable)
+print("using deephyper lib:", os.path.abspath(util.__file__))
+print("importing keras...")
 
 from keras.models import Sequential, Model
 from keras.layers.embeddings import Embedding
@@ -41,6 +44,7 @@ from keras import layers
 from deephyper.benchmarks import keras_cmdline
 import hashlib
 import pickle
+print("using keras:", layers.__path__)
 
 timer.end()
 
