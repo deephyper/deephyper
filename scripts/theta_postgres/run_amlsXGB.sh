@@ -1,18 +1,18 @@
 #!/bin/bash -x
 #COBALT -A datascience
 #COBALT -n 8
-#COBALT -q default
-#COBALT -t 00:30:00
+#COBALT -q debug-cache-quad
+#COBALT -t 00:60:00
 #COBALT --attrs ssds=required:ssd_size=128
 
 # User-specific paths and names go here (NO TRAILING SLASHES):
-DEEPHYPER_ENV_NAME="dl-hps"
+DEEPHYPER_ENV_PATH=/projects/datascience/msalim/deephyper/deephyper-env
 DEEPHYPER_TOP=/home/msalim/workflows/deephyper
 DATABASE_TOP=/projects/datascience/msalim/deephyper/database
-BALSAM_PATH=/home/msalim/hpc-edge-service
+BALSAM_PATH=/home/msalim/hpc-edge-service/balsam
 
 # Set Wall minutes and max evals
-WALLMINUTES=10   # should be about 10 min less than COBALT requested time
+WALLMINUTES=50   # should be about 10 min less than COBALT requested time
 MAXEVALS=100000000
 STAGE_IN_DIR="/local/scratch"
 
@@ -25,11 +25,19 @@ then
 fi
 
 source ~/.bash_profile
-source activate $DEEPHYPER_ENV_NAME
+source activate $DEEPHYPER_ENV_PATH
+
+
+# Disable trackdeps and other modules that may intercept Popen system calls
+module unload trackdeps
+module unload darshan
+module unload xalt
+
+export LD_LIBRARY_PATH=$DEEPHYPER_ENV_PATH/lib:$LD_LIBRARY_PATH
 
 # Job naming
 BNAME=$1
-METHOD="amls_XGB_QR"
+METHOD="amls_XGB_QR_postgres"
 
 NNODES=$COBALT_JOBSIZE
 NUM_WORKERS=$(( $NNODES-2 ))
@@ -40,8 +48,14 @@ echo "Creating new job:" $JOBNAME
 # Set up Balsam DB: ensure it is clear
 # ------------------------------------
 DBPATH=$DATABASE_TOP/$WORKFLOWNAME
-balsam init $DBPATH
+balsam init $DBPATH --db-type postgres
+wait
+sleep 5
 export BALSAM_DB_PATH=$DBPATH
+balsam dbserver --reset $DBPATH
+balsam dbserver
+wait
+sleep 5
 
 balsam rm apps --all --force
 balsam rm jobs --all --force
@@ -61,7 +75,6 @@ balsam modify jobs $NEW_ID --attr state --value PREPROCESSED
 
 # Start up Balsam DB server
 # -------------------------
-balsam dbserver --reset $DBPATH
-balsam dbserver
-sleep 1
-aprun -n $COBALT_JOBSIZE -N 1 -cc none python $BALSAM_PATH/balsam/launcher/mpi_ensemble_pull.py --time-limit-min=$(( $WALLMINUTES+10 ))
+ulimit -c unlimited
+aprun -n $COBALT_JOBSIZE -N 1 -cc none python $BALSAM_PATH/launcher/mpi_ensemble_pull.py --time-limit-min=$(( $WALLMINUTES+5 )) --db-transaction
+balsam dbserver --stop

@@ -9,9 +9,19 @@ import logging
 import balsam.launcher.dag as dag
 from balsam.service.models import BalsamJob, END_STATES
 from deephyper.evaluators import evaluate
-from django.db import transaction
-
 logger = logging.getLogger(__name__)
+
+from django.conf import settings
+if 'sqlite' in settings.DATABASES['default']['ENGINE']:
+    class DummyContext:
+        def __enter__(self): pass
+        def __exit__(self, *args): pass
+    transaction_context = DummyContext
+    logger.info('Detected sqlite backend; not using transacations')
+else:
+    transaction_context = django.db.transaction.atomic
+    logger.info('Detected NON-sqlite backend; using Transactions')
+
 
 class BalsamEvaluator(evaluate.Evaluator):
 
@@ -51,7 +61,6 @@ class BalsamEvaluator(evaluate.Evaluator):
         os.chdir(this.working_directory)
         logger.debug(f"Running in Balsam job directory: {this.working_directory}")
 
-    @transaction.atomic
     def _eval_exec(self, x):
         jobname = f"task{self.counter}"
         cmd = f"{sys.executable} {self.bench_file}"
@@ -65,19 +74,20 @@ class BalsamEvaluator(evaluate.Evaluator):
         envs = f"KERAS_BACKEND={self.backend}"
 
         start = time.time()
-        child = dag.spawn_child(
-                    name = jobname,
-                    direct_command = cmd,
-                    application_args = args,
-                    environ_vars = envs,
-                    wall_time_minutes = 2,
-                    num_nodes = 1, ranks_per_node = 1,
-                    threads_per_rank=64,
-                    serial_node_packing_count=1,
-                    wait_for_parents = False
-                   )
-        child.create_working_path()
-        child.update_state('PREPROCESSED')
+        with transaction_context():
+            child = dag.spawn_child(
+                        name = jobname,
+                        direct_command = cmd,
+                        application_args = args,
+                        environ_vars = envs,
+                        wall_time_minutes = 2,
+                        num_nodes = 1, ranks_per_node = 1,
+                        threads_per_rank=64,
+                        serial_node_packing_count=1,
+                        wait_for_parents = False
+                       )
+            child.create_working_path()
+            child.update_state('PREPROCESSED')
         logger.debug(f"Created job {jobname}")
         logger.debug(f"Command: {cmd}")
         logger.debug(f"Args: {args}")
