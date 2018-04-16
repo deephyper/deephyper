@@ -19,7 +19,8 @@ if 'sqlite' in settings.DATABASES['default']['ENGINE']:
     transaction_context = DummyContext
     logger.info('Detected sqlite backend; not using transacations')
 else:
-    transaction_context = django.db.transaction.atomic
+    from django.db import transaction
+    transaction_context = transaction.atomic
     logger.info('Detected NON-sqlite backend; using Transactions')
 
 

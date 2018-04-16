@@ -1,0 +1,25 @@
+Jobid: 1510796
+qsub --mode script -A datascience -n 4 -q debug -t 00:30:00 run_amlsXGB.sh b2.babi_memnn
+Mon Apr 16 16:50:34 2018 +0000 (UTC) submitted with cwd set to: /gpfs/mira-home/msalim/workflows/deephyper/scripts/cooley
+jobid 1510796 submitted from terminal /dev/pts/80
+Mon Apr 16 16:50:48 2018 +0000 (UTC) 
+Mon Apr 16 16:50:48 2018 +0000 (UTC) Command: '/usr/bin/ssh' 'cc013.cooley' '/usr/sbin/cobalt-launcher.py' '--nf' '/var/tmp/cobalt.1510796' '--jobid' '1510796' '--cwd' '/gpfs/mira-home/msalim/workflows/deephyper/scripts/cooley' '--env' 'COBALT_JOBID=1510796' '/gpfs/mira-home/msalim/workflows/deephyper/scripts/cooley/run_amlsXGB.sh' 'b2.babi_memnn'
+Mon Apr 16 16:50:48 2018 +0000 (UTC) 
+Mon Apr 16 16:50:48 2018 +0000 (UTC) Environment:
+Mon Apr 16 16:50:48 2018 +0000 (UTC) SHELL=/bin/bash
+Mon Apr 16 16:50:48 2018 +0000 (UTC) COBALT_NODEFILE=/tmp/tmpNHBsOA
+Mon Apr 16 16:50:48 2018 +0000 (UTC) COBALT_PARTNAME=cc013.cooley
+Mon Apr 16 16:50:48 2018 +0000 (UTC) COBALT_JOBID=1510796
+Mon Apr 16 16:50:48 2018 +0000 (UTC) COBALT_STARTTIME=1523897435
+Mon Apr 16 16:50:48 2018 +0000 (UTC) LOGNAME=msalim
+Mon Apr 16 16:50:48 2018 +0000 (UTC) USER=msalim
+Mon Apr 16 16:50:48 2018 +0000 (UTC) COBALT_ENDTIME=1523899235
+Mon Apr 16 16:50:48 2018 +0000 (UTC) COBALT_PARTSIZE=4
+Mon Apr 16 16:50:48 2018 +0000 (UTC) HOME=/home/msalim
+Mon Apr 16 16:50:48 2018 +0000 (UTC) COBALT_JOBSIZE=4
+Mon Apr 16 16:50:48 2018 +0000 (UTC) 
+Mon Apr 16 16:50:48 2018 +0000 (UTC) Info: stdin received from /dev/null
+Mon Apr 16 16:50:48 2018 +0000 (UTC) Info: stdout sent to /gpfs/mira-home/msalim/workflows/deephyper/scripts/cooley/1510796.output
+Mon Apr 16 16:50:48 2018 +0000 (UTC) Info: stderr sent to /gpfs/mira-home/msalim/workflows/deephyper/scripts/cooley/1510796.error
+Mon Apr 16 16:50:48 2018 +0000 (UTC) 
+Mon Apr 16 16:56:19 2018 +0000 (UTC) Info: user delete requested with signal SIGTERM by user msalim

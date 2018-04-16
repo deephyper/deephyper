@@ -1,20 +1,19 @@
 #!/bin/bash -x
 #COBALT -A datascience
-#COBALT -n 8
-#COBALT -q debug-cache-quad
-#COBALT -t 00:40:00
-#COBALT --attrs ssds=required:ssd_size=128
+#COBALT -n 4
+#COBALT -q debug
+#COBALT -t 00:30:00
 
 # User-specific paths and names go here (NO TRAILING SLASHES):
-DEEPHYPER_ENV_PATH=/projects/datascience/msalim/deephyper/deephyper-env
+DEEPHYPER_ENV_NAME="deephyper-cooley"
 DEEPHYPER_TOP=/home/msalim/workflows/deephyper
-DATABASE_TOP=/projects/datascience/msalim/deephyper/database
-BALSAM_PATH=/home/msalim/hpc-edge-service/balsam
+DATABASE_TOP=/projects/datascience/msalim/deephyper/database-cooley
+BALSAM_PATH=/home/msalim/hpc-edge-service
 
 # Set Wall minutes and max evals
-WALLMINUTES=30   # should be about 10 min less than COBALT requested time
+WALLMINUTES=20   # should be about 10 min less than COBALT requested time
 MAXEVALS=100000000
-STAGE_IN_DIR="/local/scratch"
+STAGE_IN_DIR=""
 
 # DO NOT CHANGE ANYTHING BELOW HERE:
 # ----------------------------------
@@ -24,21 +23,14 @@ then
     exit 1
 fi
 
-source ~/.bash_profile
-source activate $DEEPHYPER_ENV_PATH
-
-# Disable trackdeps and other modules that may intercept Popen system calls
-module unload trackdeps
-module unload darshan
-module unload xalt
-
-export LD_LIBRARY_PATH=$DEEPHYPER_ENV_PATH/lib:$LD_LIBRARY_PATH
+source /soft/libraries/anaconda/bin/activate $DEEPHYPER_ENV_NAME
 
 # Job naming
 BNAME=$1
-METHOD="amls_XGB_QR.pg"
+METHOD="amls_XGB_QR"
 
-NNODES=$COBALT_JOBSIZE
+NNODES=`cat $COBALT_NODEFILE | wc -l`
+COBALT_JOBSIZE=$NNODES
 NUM_WORKERS=$(( $NNODES-2 ))
 JOBNAME="$BNAME"_"$NNODES"_"$METHOD"
 WORKFLOWNAME="$BNAME"_"$NNODES"_"$METHOD"
@@ -47,14 +39,8 @@ echo "Creating new job:" $JOBNAME
 # Set up Balsam DB: ensure it is clear
 # ------------------------------------
 DBPATH=$DATABASE_TOP/$WORKFLOWNAME
-balsam init $DBPATH --db-type postgres
-wait
-sleep 5
+balsam init $DBPATH
 export BALSAM_DB_PATH=$DBPATH
-balsam dbserver --reset $DBPATH
-balsam dbserver
-wait
-sleep 5
 
 balsam rm apps --all --force
 balsam rm jobs --all --force
@@ -74,6 +60,7 @@ balsam modify jobs $NEW_ID --attr state --value PREPROCESSED
 
 # Start up Balsam DB server
 # -------------------------
-ulimit -c unlimited
-aprun -n $COBALT_JOBSIZE -N 1 -cc none python $BALSAM_PATH/launcher/mpi_ensemble_pull.py --time-limit-min=$(( $WALLMINUTES+5 )) --db-transaction
-balsam dbserver --stop
+balsam dbserver --reset $DBPATH
+balsam dbserver
+sleep 1
+mpirun -f $COBALT_NODEFILE -n $(( $COBALT_JOBSIZE*2 )) --ppn 2 python $BALSAM_PATH/balsam/launcher/mpi_ensemble_pull.py --time-limit-min=$(( $WALLMINUTES+10 )) --gpus-per-node=2

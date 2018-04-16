@@ -1,0 +1,65 @@
+Creating new job: b2.babi_memnn_4_amls_XGB_QR
+DB settings: {'ENGINE': 'django.db.backends.sqlite3', 'NAME': '/projects/datascience/msalim/deephyper/database-cooley/b2.babi_memnn_4_amls_XGB_QR/db.sqlite3', 'OPTIONS': {'timeout': 5000}, 'USER': '', 'PASSWORD': '', 'HOST': '', 'PORT': '', 'CONN_MAX_AGE': 60, 'ATOMIC_REQUESTS': False, 'AUTOCOMMIT': True, 'TIME_ZONE': None, 'TEST': {'CHARSET': None, 'COLLATION': None, 'NAME': None, 'MIRROR': None}}
+Setting up new balsam database:
+'/projects/datascience/msalim/deephyper/database-cooley/b2.babi_memnn_4_amls_XGB_QR/db.sqlite3'
+BalsamJob table created successfully
+Deleted.
+Deleted.
+Application:
+------------
+PK:             1
+Name:           search
+Description:    run AMLS: XGB + QR
+Executable:     /home/msalim/.conda/envs/deephyper-cooley/bin/python /home/msalim/workflows/deephyper/search/amls.py 
+Preprocess:     
+Postprocess:    
+Envs:
+
+Added app to database
+Balsam Job
+----------
+ID:                     543c56e0-032a-4c57-a5b6-88303fe8a007
+name:                   b2.babi_memnn_4_amls_XGB_QR 
+workflow:               b2.babi_memnn_4_amls_XGB_QR
+latest state:           [04-16-2018 16:51:01.459401 CREATED]
+description:            
+work site:               
+allowed work sites:     theta
+working_directory:      
+parents:                []
+input_files:            *
+stage_in_url:           
+stage_out_url:          
+stage_out_files:        
+wall_time_minutes:      20
+actual_runtime:         00 min : 00.00 sec
+num_nodes:              1
+threads per rank:       64
+threads per core:       1
+ranks_per_node:         1
+scheduler_id:           
+application:            search
+args:                   --max-evals 100000000 --benchmark b2.babi_memnn --num-workers 2 --learner XGB --stage_in_destination=
+envs:                   
+created with qsub:      False
+preprocess override:    
+postprocess override:   
+post handles error:     False
+post handles timeout:   False
+auto timeout retry:     True
+
+job state changed to:  PREPROCESSED
+Reset done
+Starting Balsam DB server daemon (PID: 44893)
+cc014:UCM:296d:600d7740: 26079 us(26079 us):  create_ah: ERR Success
+cc014:UCM:296d:600d7740: 26103 us(24 us): UCM connect: snd ERR -> cm_lid 0 cm_qpn 28d1 r_psp 78e p_sz=24
+cc014:UCM:296e:548b9740: 23108 us(23108 us):  create_ah: ERR Success
+cc014:UCM:296e:548b9740: 23117 us(9 us): UCM connect: snd ERR -> cm_lid 0 cm_qpn 28d1 r_psp 78e p_sz=24
+cc006:UCM:4055:f3d66740: 45482 us(45482 us):  create_ah: ERR Success
+cc006:UCM:4055:f3d66740: 45504 us(22 us): UCM connect: snd ERR -> cm_lid 0 cm_qpn 1fba r_psp 296d p_sz=24
+cc006:UCM:4056:fdde2740: 43674 us(43674 us):  create_ah: ERR Success
+cc006:UCM:4056:fdde2740: 43693 us(19 us): UCM connect: snd ERR -> cm_lid 0 cm_qpn 1fba r_psp 296d p_sz=24
+cc013:UCM:af77:5b106740: 106467 us(106467 us):  create_ah: ERR Success
+cc013:UCM:af77:5b106740: 106480 us(13 us): UCM connect: snd ERR -> cm_lid 0 cm_qpn 23bc r_psp 4055 p_sz=24
+cc013:UCM:af78:22cc740: 104618 us(104618 us):  create_ah: ERR Success
+cc013:UCM:af78:22cc740: 104636 us(18 us): UCM connect: snd ERR -> cm_lid 0 cm_qpn 23bc r_psp 4055 p_sz=24
