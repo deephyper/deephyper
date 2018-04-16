@@ -63,4 +63,5 @@ balsam modify jobs $NEW_ID --attr state --value PREPROCESSED
 balsam dbserver --reset $DBPATH
 balsam dbserver
 sleep 1
-mpirun -f $COBALT_NODEFILE -n $(( $COBALT_JOBSIZE*2 )) --ppn 2 python $BALSAM_PATH/balsam/launcher/mpi_ensemble_pull.py --time-limit-min=$(( $WALLMINUTES+10 )) --gpus-per-node=2
+mpirun -f $COBALT_NODEFILE -n $(( $COBALT_JOBSIZE*2 )) --ppn 2 python $BALSAM_PATH/balsam/launcher/mpi_ensemble_pull.py --time-limit-min=$(( $WALLMINUTES+5 )) --gpus-per-node=2
+balsam dbserver --stop

@@ -1,0 +1,53 @@
+Creating new job: b2.babi_memnn_4_hyperband
+DB settings: {'ENGINE': 'django.db.backends.sqlite3', 'NAME': '/projects/datascience/msalim/deephyper/database-cooley/b2.babi_memnn_4_hyperband/db.sqlite3', 'OPTIONS': {'timeout': 5000}, 'USER': '', 'PASSWORD': '', 'HOST': '', 'PORT': '', 'CONN_MAX_AGE': 60, 'ATOMIC_REQUESTS': False, 'AUTOCOMMIT': True, 'TIME_ZONE': None, 'TEST': {'CHARSET': None, 'COLLATION': None, 'NAME': None, 'MIRROR': None}}
+Setting up new balsam database:
+'/projects/datascience/msalim/deephyper/database-cooley/b2.babi_memnn_4_hyperband/db.sqlite3'
+BalsamJob table created successfully
+Deleted.
+Deleted.
+Application:
+------------
+PK:             1
+Name:           search
+Description:    run Hyperband
+Executable:     /home/msalim/.conda/envs/deephyper-cooley/bin/python /home/msalim/workflows/deephyper/search/hyperband.py 
+Preprocess:     
+Postprocess:    
+Envs:
+
+Added app to database
+Balsam Job
+----------
+ID:                     58014394-203f-49c7-a8b9-951f87cbf151
+name:                   b2.babi_memnn_4_hyperband 
+workflow:               b2.babi_memnn_4_hyperband
+latest state:           [04-16-2018 18:40:14.433768 CREATED]
+description:            
+work site:               
+allowed work sites:     theta
+working_directory:      
+parents:                []
+input_files:            *
+stage_in_url:           
+stage_out_url:          
+stage_out_files:        
+wall_time_minutes:      20
+actual_runtime:         00 min : 00.00 sec
+num_nodes:              1
+threads per rank:       64
+threads per core:       1
+ranks_per_node:         1
+scheduler_id:           
+application:            search
+args:                   --benchmark b2.babi_memnn --num-workers 6 --model_path=/projects/datascience/msalim/deephyper/saved_models --stage_in_destination=
+envs:                   
+created with qsub:      False
+preprocess override:    
+postprocess override:   
+post handles error:     False
+post handles timeout:   False
+auto timeout retry:     True
+
+job state changed to:  PREPROCESSED
+Reset done
+Starting Balsam DB server daemon (PID: 97796)

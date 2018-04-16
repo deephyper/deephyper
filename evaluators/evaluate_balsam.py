@@ -1,3 +1,4 @@
+from itertools import chain
 from math import isnan
 import time
 import os
@@ -47,6 +48,7 @@ class BalsamEvaluator(evaluate.Evaluator):
         logger.debug("Balsam Evaluator instantiated")
         logger.debug(f"Backend: {self.backend}")
         logger.info(f"Benchmark: {self.bench_file}")
+
 
     def stop(self):
         pass
@@ -120,9 +122,21 @@ class BalsamEvaluator(evaluate.Evaluator):
         logger.info(f"Waiting on {num_jobs} Balsam eval jobs to finish")
 
         num_checks = round(timeout / delay)
+        checked_ids = []
         for i in range(num_checks):
-            num_finished = jobs.filter(state='RUN_DONE').count()
-            num_failed = jobs.filter(state__in=['RUN_ERROR', 'FAILED']).count()
+            finished_jobs = jobs.filter(state='RUN_DONE')
+            failed_jobs = jobs.filter(state__in=['RUN_ERROR', 'FAILED'])
+            num_finished = finished_jobs.count()
+            num_failed = failed_jobs.count()
+            finished_ids = finished_jobs.exclude(job_id__in=checked_ids).values_list('job_id', flat=True)
+            failed_ids = failed_jobs.exclude(job_id__in=checked_ids).values_list('job_id', flat=True)
+
+            for jid in chain(finished_ids, failed_ids):
+                key = self.id_key_map[jid.hex]
+                if key not in self.elapsed_times:
+                    self.elapsed_times[key] = time.time() - self.start_seconds
+                checked_ids.append(jid.hex)
+
             logger.debug(f"{num_finished+num_failed} out of {num_jobs} finished ({num_failed} failed)")
             isDone = (num_finished+num_failed) == num_jobs
             if isDone: break
@@ -163,6 +177,8 @@ class BalsamEvaluator(evaluate.Evaluator):
                 x = self._decode(key)
                 y = self._read_eval_output(job)
                 self.evals[key] = y
+                if key not in self.elapsed_times:
+                    self.elapsed_times[key] = time.time() - self.start_seconds
                 del self.pending_evals[key]
                 logger.info(f"x: {x} y: {y}")
                 yield (x, y)

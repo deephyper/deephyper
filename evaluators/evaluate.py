@@ -4,6 +4,7 @@ import uuid
 import multiprocessing
 import logging
 import csv
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,8 @@ class Evaluator:
         self.pending_evals = {} # x --> future or x --> UUID
         self.evals = {} # x --> cost
         self.repeated_evals = []
+        self.start_seconds = time.time()
+        self.elapsed_times = {}
 
     def encode(self, x):
         return self._encode(x)
@@ -58,7 +61,7 @@ class Evaluator:
             return 0
 
     def dump_evals(self):
-        if self.counter == 0: return
+        if not self.evals: return
 
         with open('results.json', 'w') as fp:
             json.dump(self.evals, fp, indent=4, sort_keys=True, cls=Encoder)
@@ -70,6 +73,7 @@ class Evaluator:
             resultDict = {name : value for (name,value)
                           in zip(self.params_list, x)}
             resultDict['objective'] = self.evals[key]
+            resultDict['elapsed_sec'] = self.elapsed_times[key] if key in self.elapsed_times else 0.0
             resultsList.append(resultDict)
 
         with open('results.csv', 'w') as fp:
