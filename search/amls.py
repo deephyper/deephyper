@@ -125,6 +125,7 @@ class Optimizer:
         XX, YY = self._xy_from_dict()
         assert len(XX) == len(YY) == self.counter
         self._optimizer.tell(XX, YY)
+        assert len(self._optimizer.Xi) == len(self._optimizer.yi) == self.counter
 
 
 def main(args):
@@ -167,10 +168,14 @@ def main(args):
         results = list(evaluator.get_finished_evals())
         if results:
             logger.info(f"Refitting model with batch of {len(results)} evals")
+            #profile_timer.start('tell')
             optimizer.tell(results)
+            #profile_timer.end('tell')
             logger.info(f"Drawing {len(results)} points with strategy {optimizer.strategy}")
+            #profile_timer.start('ask')
             XX = optimizer.ask(n_points=len(results))
-            for x in XX: evaluator.add_eval(x, re_evaluate=cfg.repeat_evals)
+            #profile_timer.end('ask')
+            evaluator.add_eval_batch(XX, re_evaluate=cfg.repeat_evals)
             chkpoint_counter += len(results)
 
         if chkpoint_counter >= CHECKPOINT_INTERVAL:

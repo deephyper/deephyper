@@ -12,16 +12,6 @@ from deephyper.evaluators import evaluate
 logger = logging.getLogger(__name__)
 
 from django.conf import settings
-if 'sqlite' in settings.DATABASES['default']['ENGINE']:
-    class DummyContext:
-        def __enter__(self): pass
-        def __exit__(self, *args): pass
-    transaction_context = DummyContext
-    logger.info('Detected sqlite backend; not using transacations')
-else:
-    from django.db import transaction
-    transaction_context = transaction.atomic
-    logger.info('Detected NON-sqlite backend; using Transactions')
 
 
 class BalsamEvaluator(evaluate.Evaluator):
@@ -47,6 +37,13 @@ class BalsamEvaluator(evaluate.Evaluator):
         logger.debug("Balsam Evaluator instantiated")
         logger.debug(f"Backend: {self.backend}")
         logger.info(f"Benchmark: {self.bench_file}")
+
+        if 'sqlite' in settings.DATABASES['default']['ENGINE']:
+            logger.info('Detected sqlite backend; not using transacations')
+        else:
+            from django.db import transaction
+            self.transaction_context = transaction.atomic
+            logger.info('Detected NON-sqlite backend; using Transactions')
 
     def stop(self):
         pass
@@ -75,7 +72,7 @@ class BalsamEvaluator(evaluate.Evaluator):
         envs = f"KERAS_BACKEND={self.backend}"
 
         start = time.time()
-        with transaction_context():
+        with self.transaction_context():
             child = dag.spawn_child(
                         name = jobname,
                         direct_command = cmd,
