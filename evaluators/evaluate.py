@@ -18,6 +18,9 @@ class Encoder(json.JSONEncoder):
         else: return super(Encoder, self).default(obj)
 
 class Evaluator:
+    class DummyContext:
+        def __enter__(self): pass
+        def __exit__(self, *args): pass
 
     def __init__(self):
         self.pending_evals = {} # x --> future or x --> UUID
@@ -25,6 +28,7 @@ class Evaluator:
         self.repeated_evals = []
         self.start_seconds = time.time()
         self.elapsed_times = {}
+        self.transaction_context = self.DummyContext
 
     def encode(self, x):
         return self._encode(x)
@@ -47,6 +51,10 @@ class Evaluator:
         new_eval = self._eval_exec(x) # future or job UUID
         logger.info(f"Submitted eval of {x}")
         self.pending_evals[key] = new_eval
+
+    def add_eval_batch(self, XX, re_evaluate=False):
+        with self.transaction_context():
+            for x in XX: self.add_eval(x, re_evaluate=re_evaluate)
 
     @property
     def counter(self):
