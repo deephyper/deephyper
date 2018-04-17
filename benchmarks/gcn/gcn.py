@@ -37,7 +37,6 @@ def run(param_dict):
     SYM_NORM = param_dict['sys_norm']
     DROPOUT = param_dict['dropout']
     NUNITS = param_dict['nunits']
-    CHECKPOINT = param_dict['checkpoint']
     ACTIVATION = param_dict['activation']
     #SHARE_WEIGHTS = param_dict['share_weights']
     # Define parameters
@@ -113,7 +112,9 @@ def run(param_dict):
     initial_epoch = 0
 
     if model_path:
-        savedModel = util.resume_from_disk(BNAME, param_dict, data_dir=model_path)
+        custom_objects = {'GraphConvolution': GraphConvolution}
+        savedModel = util.resume_from_disk(BNAME, param_dict,
+                data_dir=model_path, custom_objects=custom_objects)
         model_mda_path = savedModel.model_mda_path
         model_path = savedModel.model_path
         model = savedModel.model
@@ -197,10 +198,6 @@ def augment_parser(parser):
     parser.add_argument('--max_degree', action='store', dest='max_degree',
                         nargs='?', const=2, type=int, default='2',
                         help='maximum degree')
-
-    parser.add_argument('--checkpoint', action='store', dest='checkpoint',
-                        nargs='?', const=1, type=bool, default=False,
-                        help='boolean. Whether to save model?')
 
     return parser
 

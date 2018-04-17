@@ -35,3 +35,4 @@ benchmarks/*/data/*.tar.gz
 xgboost/
 rosen2_tests
 benchmarks/*/keras-gcn
+keras-gcn-master

@@ -39,7 +39,7 @@ def load_meta_data(filename):
         data = pickle.load(handle)
     return data
     
-def resume_from_disk(benchmark_name, param_dict, data_dir=''):
+def resume_from_disk(benchmark_name, param_dict, data_dir='', custom_objects={}):
     from keras.models import load_model
     SavedModel = namedtuple('SavedModel', ['model', 'model_path',
                                        'initial_epoch', 'model_mda_path']
@@ -61,7 +61,7 @@ def resume_from_disk(benchmark_name, param_dict, data_dir=''):
         if benchmark_name == 'regression':
             with open(model_path, 'rb') as fp: model = pickle.load(fp)
         else:
-            model = load_model(model_path)
+            model = load_model(model_path, custom_objects=custom_objects)
 
         saved_param_dict = load_meta_data(model_mda_path)
         initial_epoch = saved_param_dict['epochs']
