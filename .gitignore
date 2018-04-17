@@ -36,3 +36,4 @@ xgboost/
 rosen2_tests
 benchmarks/*/keras-gcn
 keras-gcn-master
+scripts/runs/

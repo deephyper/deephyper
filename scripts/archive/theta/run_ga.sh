@@ -2,7 +2,7 @@
 #COBALT -A datascience
 #COBALT -n 8
 #COBALT -q debug-flat-quad
-#COBALT -t 00:20:00
+#COBALT -t 00:30:00
 #COBALT --attrs ssds=required:ssd_size=128
 
 # User-specific paths and names go here (NO TRAILING SLASHES):
@@ -11,10 +11,11 @@ DEEPHYPER_TOP=/home/msalim/workflows/deephyper
 DATABASE_TOP=/projects/datascience/msalim/deephyper/database
 BALSAM_PATH=/home/msalim/hpc-edge-service
 
-# Set Wall minutes and max evals
+# Set Wall minutes and max generations
 WALLMINUTES=10   # should be about 10 min less than COBALT requested time
-MAXEVALS=100000000
+GA_NUM_GEN=1000    # how many generations of GA algorithm to run
 STAGE_IN_DIR="/local/scratch"
+
 
 # DO NOT CHANGE ANYTHING BELOW HERE:
 # ----------------------------------
@@ -29,7 +30,7 @@ source activate $DEEPHYPER_ENV_NAME
 
 # Job naming
 BNAME=$1
-METHOD="rs"
+METHOD="ga"
 
 NNODES=$COBALT_JOBSIZE
 NUM_WORKERS=$(( $NNODES-2 ))
@@ -48,9 +49,9 @@ balsam rm jobs --all --force
 
 # Register search app
 #---------------------
-SEARCH_APP_PATH=$DEEPHYPER_TOP/search/amls.py
-ARGS="--max-evals $MAXEVALS --benchmark $BNAME --num-workers $NUM_WORKERS --learner DUMMY --stage_in_destination=$STAGE_IN_DIR"
-balsam app --name search --desc 'run random search' --executable $SEARCH_APP_PATH
+SEARCH_APP_PATH=$DEEPHYPER_TOP/search/ga.py
+ARGS="--ga-num-gen=$GA_NUM_GEN --benchmark $BNAME --num-workers $NUM_WORKERS --stage_in_destination=$STAGE_IN_DIR"
+balsam app --name search --desc 'run GA' --executable $SEARCH_APP_PATH
 
 # Create job and mark as PREPROCESSED so it can be picked up immediately by mpi_ensemble module of Balsam
 # -------------------------------------------------------------------------------------------------------------
