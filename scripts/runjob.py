@@ -3,11 +3,59 @@ import argparse
 import json
 import subprocess
 import os
+import sys
 from socket import gethostname
 
 def time_str(minutes):
     hours, minutes = divmod(minutes, 60)
     return f"{hours:02d}:{minutes:02d}:00"
+
+def default_conf():
+    return '''{
+    "DEEPHYPER_ENV_NAME":   "dl-hps",
+    "DEEPHYPER_TOP":        "/home/msalim/workflows/deephyper",
+    "DATABASE_TOP":          "/projects/datascience/msalim/deephyper/database",
+    "BALSAM_PATH":           "/home/msalim/hpc-edge-service/balsam",
+    "STAGE_IN_DIR":          "/local/scratch",
+    "DISABLE_SUBMIT":        false
+}
+    '''
+
+def check_conf(conf, args):
+    assert os.path.exists(conf['DEEPHYPER_TOP'])
+    assert os.path.exists(conf['DATABASE_TOP'])
+    assert os.path.exists(conf['BALSAM_PATH'])
+    assert args.time_minutes > 10, 'need more than 10 minutes'
+    assert args.nodes > 2, 'need more than 2 nodes'
+
+    env_name = conf["DEEPHYPER_ENV_NAME"]
+    try:
+        subprocess.run(f'source activate {env_name}', check=True, shell=True)
+    except subprocess.CalledProcessError:
+        raise ValueError(f"Cannot activate {env_name} referenced in runjob.conf")
+    
+    if args.method == 'hyperband':
+        assert args.saved_model_path is not None, 'hyperband requires --saved_model_path'
+        args.saved_model_path = os.path.abspath(os.path.expanduser(args.saved_model_path))
+        assert os.path.exists(args.saved_model_path), f'{args.saved_model_path} not found'
+
+    hostname = gethostname()
+    if 'theta' in hostname: assert args.platform in ['theta', 'theta_postgres'], "please use a theta platform"
+    else: assert args.platform == 'cooley', "please use cooley platform"
+
+def get_conf(args):
+    here = os.path.dirname(os.path.abspath(__file__))
+    conf_fname = 'runjob.conf' if 'cooley' not in args.platform else 'runjob.conf.cooley'
+    conf_fpath = os.path.join(here, conf_fname)
+    if not os.path.exists(conf_fpath):
+        with open(conf_fpath, 'w') as fp:
+            fp.write(default_conf())
+        print(f"Created {conf_fpath}. Please modify this file appropriately and re-run!")
+        sys.exit(0)
+    else:
+        with open(conf_fpath) as fp: conf = json.load(fp)
+        return conf
+
 
 def get_parser():
     parser = argparse.ArgumentParser()
@@ -39,38 +87,14 @@ def get_parser():
     return parser
 
 
-def check_conf(conf, args):
-    assert os.path.exists(conf['DEEPHYPER_TOP'])
-    assert os.path.exists(conf['DATABASE_TOP'])
-    assert os.path.exists(conf['BALSAM_PATH'])
-    assert args.time_minutes > 10, 'need at least 10 minutes'
-
-    env_name = conf["DEEPHYPER_ENV_NAME"]
-    try:
-        subprocess.run(f'source activate {env_name}', check=True, shell=True)
-    except subprocess.CalledProcessError:
-        raise ValueError(f"Cannot activate {env_name} referenced in runjob.conf")
-    
-    if args.method == 'hyperband':
-        assert args.saved_model_path is not None, 'hyperband requires --saved_model_path'
-        args.saved_model_path = os.path.abspath(os.path.expanduser(args.saved_model_path))
-        assert os.path.exists(args.saved_model_path), f'{args.saved_model_path} not found'
-
-    hostname = gethostname()
-    if 'theta' in hostname: assert args.platform in ['theta', 'theta_postgres'], "please use a theta platform"
-    else: assert args.platform == 'cooley', "please use cooley platform"
-
 def main():
     parser = get_parser()
     args = parser.parse_args()
-
+    conf = get_conf(args)
     here = os.path.dirname(os.path.abspath(__file__))
-    conf_fname = 'runjob.conf' if 'cooley' not in args.platform else 'runjob.conf.cooley'
-    with open(os.path.join(here, conf_fname)) as fp: conf = json.load(fp)
-    template_env = Environment(loader=FileSystemLoader(here))#, lstrip_blocks=True, trim_blocks=True)
+
+    template_env = Environment(loader=FileSystemLoader(here))
     script_template = template_env.get_template('job.tmpl')
-    #template_env.trim_blocks = True
-    #template_env.lstrip_blocks = True
     check_conf(conf, args)
 
     conf['platform'] = args.platform

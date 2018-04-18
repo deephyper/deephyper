@@ -26,6 +26,12 @@ source ~/.bash_profile
     source activate {{ DEEPHYPER_ENV_NAME }}
 {% endif -%}
 
+{% if 'theta' in platform -%}
+module unload trackdeps
+module unload darshan
+module unload xalt
+{% endif -%}
+
 balsam init {{ db_path }} {% if 'postgres' in platform %} --db-type=postgres {% endif %}
 export BALSAM_DB_PATH={{ db_path }}
 wait
