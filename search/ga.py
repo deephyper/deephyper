@@ -93,7 +93,7 @@ class SpaceEncoder:
 
 class GAOptimizer:
 
-    def __init__(self, opt_config, seed=SEED, CXPB=0.2, MUTPB=0.05):
+    def __init__(self, opt_config, seed=SEED, CXPB=0.5, MUTPB=0.2):
         self.SEED = seed
         self.CXPB = CXPB
         self.MUTPB = MUTPB
