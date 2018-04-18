@@ -119,37 +119,39 @@ class BalsamEvaluator(evaluate.Evaluator):
 
         num_checks = round(timeout / delay)
         checked_ids = []
+
         for i in range(num_checks):
             finished_jobs = jobs.filter(state='RUN_DONE')
             failed_jobs = jobs.filter(state__in=['RUN_ERROR', 'FAILED'])
             num_finished = finished_jobs.count()
             num_failed = failed_jobs.count()
-            finished_ids = finished_jobs.exclude(job_id__in=checked_ids).values_list('job_id', flat=True)
-            failed_ids = failed_jobs.exclude(job_id__in=checked_ids).values_list('job_id', flat=True)
-
-            for jid in chain(finished_ids, failed_ids):
-                key = self.id_key_map[jid.hex]
-                if key not in self.elapsed_times:
-                    self.elapsed_times[key] = time.time() - self.start_seconds
-                checked_ids.append(jid.hex)
 
             logger.debug(f"{num_finished+num_failed} out of {num_jobs} finished ({num_failed} failed)")
             isDone = (num_finished+num_failed) == num_jobs
+
+            for job in finished_jobs.exclude(job_id__in=checked_ids):
+                checked_ids.append(job.job_id.hex)
+                key = self.id_key_map[job.job_id.hex]
+                y = self._read_eval_output(job)
+                self.evals[key] = y
+                if key in self.pending_evals: del self.pending_evals[key]
+                if key not in self.elapsed_times:
+                    self.elapsed_times[key] = time.time() - self.start_seconds
+
+            failed_ids = failed_jobs.exclude(job_id__in=checked_ids).values_list('job_id', flat=True)
+            for job_id in failed_ids:
+                checked_ids.append(job_id.hex)
+                logger.warning(f"{job_id.hex} failed; marking objective as Inf")
+                key = self.id_key_map[job_id.hex]
+                y = sys.float_info.max
+                self.evals[key] = y
+                if key in self.pending_evals: del self.pending_evals[key]
+                if key not in self.elapsed_times:
+                    self.elapsed_times[key] = time.time() - self.start_seconds
+
             if isDone: break
             else: time.sleep(delay)
 
-        done_ids = jobs.filter(state='RUN_DONE').values_list('job_id', flat=True)
-
-        for job in jobs:
-            if job.job_id in done_ids:
-                y = self._read_eval_output(job)
-            else:
-                logger.warning(f"Job {job.cute_id} did not finish; state {job.state}")
-                y = sys.float_info.max
-            key = self.id_key_map[job.job_id.hex]
-            self.evals[key] = y
-            if key in self.pending_evals: del self.pending_evals[key]
-        
         for x, key in zip(to_read, keys):
             y = self.evals[key]
             logger.info(f"x: {x} y: {y}")
