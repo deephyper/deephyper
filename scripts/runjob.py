@@ -64,7 +64,8 @@ def main():
     args = parser.parse_args()
 
     here = os.path.dirname(os.path.abspath(__file__))
-    with open(os.path.join(here, 'runjob.conf')) as fp: conf = json.load(fp)
+    conf_fname = 'runjob.conf' if 'cooley' not in args.platform else 'runjob.conf.cooley'
+    with open(os.path.join(here, conf_fname)) as fp: conf = json.load(fp)
     template_env = Environment(loader=FileSystemLoader(here))#, lstrip_blocks=True, trim_blocks=True)
     script_template = template_env.get_template('job.tmpl')
     #template_env.trim_blocks = True

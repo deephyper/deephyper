@@ -20,7 +20,11 @@ BALSAM_PATH={{ BALSAM_PATH }}
 WALLMINUTES={{ time_minutes - 10 }}
 
 source ~/.bash_profile
-source activate {{ DEEPHYPER_ENV_NAME }}
+{% if 'cooley' in platform -%}
+    source /soft/libraries/anaconda/bin/activate {{ DEEPHYPER_ENV_NAME }}
+{% else -%}
+    source activate {{ DEEPHYPER_ENV_NAME }}
+{% endif -%}
 
 balsam init {{ db_path }} {% if 'postgres' in platform %} --db-type=postgres {% endif %}
 export BALSAM_DB_PATH={{ db_path }}
@@ -84,7 +88,7 @@ aprun -n {{ nodes }} -N 1 -cc none python $BALSAM_PATH/launcher/mpi_ensemble_pul
 
 {% else -%}
 
-mpirun -f $COBALT_NODEFILE -n {{ nodes*2 }} --ppn 2 python $BALSAM_PATH/balsam/launcher/mpi_ensemble_pull.py --time-limit-min=$(( $WALLMINUTES+5 )) --gpus-per-node=2
+mpirun -f $COBALT_NODEFILE -n {{ nodes*2 }} --ppn 2 python $BALSAM_PATH/launcher/mpi_ensemble_pull.py --time-limit-min=$(( $WALLMINUTES+5 )) --gpus-per-node=2
 
 {% endif -%}
 
