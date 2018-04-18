@@ -1,8 +1,0 @@
-{
-    "DEEPHYPER_ENV_NAME":   "deephyper-cooley",
-    "DEEPHYPER_TOP":        "/home/msalim/workflows/deephyper",
-    "DATABASE_TOP":          "/projects/datascience/msalim/deephyper/database-cooley",
-    "BALSAM_PATH":           "/home/msalim/hpc-edge-service/balsam",
-    "STAGE_IN_DIR":          "",
-    "DISABLE_SUBMIT":        false
-}
