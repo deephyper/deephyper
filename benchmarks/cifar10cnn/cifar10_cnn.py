@@ -13,7 +13,6 @@ from deephyper.benchmarks import util
 timer = util.Timer()
 timer.start('module loading')
 
-
 import keras
 from deephyper.benchmarks.cifar10cnn.load_data import load_data
 from keras.preprocessing.image import ImageDataGenerator
@@ -43,16 +42,10 @@ def run(param_dict):
         data_source = os.path.dirname(os.path.abspath(__file__))
         data_source = os.path.join(data_source, 'data')
 
-    try:
-        paths = util.stage_in(['cifar-10-python.tar.gz'],
-                            source=data_source,
-                            dest=param_dict['stage_in_destination'])
-        path = paths['cifar-10-python.tar.gz']
-    except:
-        print('Error downloading dataset, please download it manually:\n'
-            '$ wget http://www.thespermwhale.com/jaseweston/babi/tasks_1-20_v1-2.tar.gz\n'
-            '$ mv tasks_1-20_v1-2.tar.gz ~/.keras/datasets/babi-tasks-v1-2.tar.gz')
-        raise
+    (x_train, y_train), (x_test, y_test) = load_data(
+        origin=os.path.join(data_source, 'cifar-10-python.tar.gz'),
+        dest=param_dict['stage_in_destination'],
+    )
     timer.end()
 
     num_classes = 10
@@ -70,8 +63,6 @@ def run(param_dict):
     P_SIZE = param_dict['p_size']
     DATA_AUGMENTATION = param_dict['data_augmentation']
 
-    (x_train, y_train), (x_test, y_test) = load_data(origin=path, dest=param_dict['stage_in_destination'])
-    timer.end()
     print('x_train shape:', x_train.shape)
     print(x_train.shape[0], 'train samples')
     print(x_test.shape[0], 'test samples')

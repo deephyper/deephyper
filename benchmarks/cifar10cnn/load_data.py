@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import sys
 
 import numpy as np
 
@@ -15,10 +16,17 @@ def load_data(origin, dest):
     Returns:
         Tuple of Numpy arrays: `(x_train, y_train), (x_test, y_test)`.
     """
-    dirname = os.path.join(dest, 'cifar-10-batches-py')
     #origin = 'https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz'
-    path = get_file(dirname, origin='file://'+origin, untar=True)
-  
+    if dest is None:
+        dest = 'datasets'
+    else:
+        dest = os.path.abspath(os.path.expanduser(dest))
+    
+    print(f"getfile(origin={origin}, dest={dest})")
+
+    path = get_file('cifar-10-batches-py', origin='file://'+origin, untar=True,
+                    cache_subdir=dest)
+
     num_train_samples = 50000
   
     x_train = np.empty((num_train_samples, 3, 32, 32), dtype='uint8')
