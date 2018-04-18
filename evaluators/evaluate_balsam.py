@@ -190,6 +190,8 @@ class BalsamEvaluator(evaluate.Evaluator):
                 x = self._decode(key)
                 y = sys.float_info.max
                 self.evals[key] = y
+                if key not in self.elapsed_times:
+                    self.elapsed_times[key] = time.time() - self.start_seconds
                 del self.pending_evals[key]
                 logger.info(f"x: {x} y: {y}")
                 yield (x, y)
