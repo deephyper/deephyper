@@ -1,0 +1,91 @@
+#!/bin/bash -x
+#COBALT -A {{ project }}
+#COBALT -n {{ nodes }}
+#COBALT -q {{ queue }}
+#COBALT -t {{ time_str }}
+{% if 'theta' in platform -%}
+    #COBALT --attrs ssds=required:ssd_size=128 
+{%- endif %}
+
+
+{% if 'theta' in platform -%}
+    NUM_WORKERS={{ nodes - 2 }}
+{% elif 'cooley' in platform -%}
+    NUM_WORKERS={{ 2*nodes - 2 }}
+{% endif -%}
+
+
+DEEPHYPER_TOP={{ DEEPHYPER_TOP }}
+BALSAM_PATH={{ BALSAM_PATH }}
+WALLMINUTES={{ time_minutes - 10 }}
+
+source ~/.bash_profile
+source activate {{ DEEPHYPER_ENV_NAME }}
+
+balsam init {{ db_path }} {% if 'postgres' in platform %} --db-type=postgres {% endif %}
+export BALSAM_DB_PATH={{ db_path }}
+wait
+sleep 5
+balsam dbserver --reset {{ db_path }}
+balsam dbserver
+wait
+sleep 5
+
+balsam rm apps --all --force
+balsam rm jobs --all --force
+
+
+{% if method|upper == 'XGB' -%}
+
+SEARCH_APP_PATH=$DEEPHYPER_TOP/search/amls.py
+ARGS="--max-evals {{ max_evals }} --benchmark {{ benchmark }} --num-workers $NUM_WORKERS --learner XGB --stage_in_destination={{ STAGE_IN_DIR }}"
+balsam app --name search --desc 'run AMLS: XGB+QR' --executable $SEARCH_APP_PATH
+
+{% elif method|upper == 'RF' -%}
+
+SEARCH_APP_PATH=$DEEPHYPER_TOP/search/amls.py
+ARGS="--max-evals {{ max_evals }} --benchmark {{ benchmark }} --num-workers $NUM_WORKERS --learner RF --stage_in_destination={{ STAGE_IN_DIR }}"
+balsam app --name search --desc 'run AMLS: RF' --executable $SEARCH_APP_PATH
+
+{% elif method|upper == 'RS' -%}
+
+SEARCH_APP_PATH=$DEEPHYPER_TOP/search/amls.py
+ARGS="--max-evals {{ max_evals }} --benchmark {{ benchmark }} --num-workers $NUM_WORKERS --learner DUMMY --stage_in_destination={{ STAGE_IN_DIR }}"
+balsam app --name search --desc 'run random search' --executable $SEARCH_APP_PATH
+
+{% elif method|upper == 'GA' -%}
+
+SEARCH_APP_PATH=$DEEPHYPER_TOP/search/ga.py
+ARGS="--ga-num-gen={{ ga_num_gen }} --benchmark {{ benchmark }} --num-workers $NUM_WORKERS --stage_in_destination={{ STAGE_IN_DIR }}"
+balsam app --name search --desc 'run ga' --executable $SEARCH_APP_PATH
+
+{% elif method|upper == 'HYPERBAND' -%}
+
+SEARCH_APP_PATH=$DEEPHYPER_TOP/search/hyperband.py
+ARGS="--benchmark {{ benchmark }} --num-workers $NUM_WORKERS --model_path={{ saved_model_path }} --stage_in_destination={{ STAGE_IN_DIR }}"
+balsam app --name search --desc 'run hyperband' --executable $SEARCH_APP_PATH
+
+{%- endif -%}
+
+
+balsam job --name {{ jobname }} --workflow {{ jobname }} --application search --wall-minutes $WALLMINUTES  --num-nodes 1 --ranks-per-node 1 --args "$ARGS" --yes --threads-per-rank 64 --threads-per-core 1
+
+NEW_ID=$(balsam ls | grep CREATED | awk '{print $1}' | cut -d '-' -f 1)
+balsam modify jobs $NEW_ID --attr state --value PREPROCESSED
+ulimit -c unlimited
+
+{% if platform == 'theta_postgres' -%}
+
+aprun -n {{ nodes }} -N 1 -cc none python $BALSAM_PATH/launcher/mpi_ensemble_pull.py --time-limit-min=$(( $WALLMINUTES+5 )) --db-transaction
+
+{% elif platform == 'theta' -%}
+
+aprun -n {{ nodes }} -N 1 -cc none python $BALSAM_PATH/launcher/mpi_ensemble_pull.py --time-limit-min=$(( $WALLMINUTES+5 ))
+
+{% else -%}
+
+mpirun -f $COBALT_NODEFILE -n {{ nodes*2 }} --ppn 2 python $BALSAM_PATH/balsam/launcher/mpi_ensemble_pull.py --time-limit-min=$(( $WALLMINUTES+5 )) --gpus-per-node=2
+
+{% endif -%}
+
+balsam dbserver --stop
