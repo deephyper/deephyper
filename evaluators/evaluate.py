@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from numpy import integer, floating, ndarray
 import json
 import uuid
@@ -24,7 +25,7 @@ class Evaluator:
 
     def __init__(self):
         self.pending_evals = {} # x --> future or x --> UUID
-        self.evals = {} # x --> cost
+        self.evals = OrderedDict() # x --> cost
         self.repeated_evals = []
         self.start_seconds = time.time()
         self.elapsed_times = {}
