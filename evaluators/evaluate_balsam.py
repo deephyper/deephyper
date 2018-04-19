@@ -106,7 +106,7 @@ class BalsamEvaluator(evaluate.Evaluator):
         if isnan(y): y = sys.float_info.max
         return y
 
-    def await_evals(self, to_read, timeout=5400, delay=5):
+    def await_evals(self, to_read, timeout=None, delay=5):
         keys = [self._encode(x) for x in to_read]
         job_ids = [self.pending_evals[k] for k in keys
                    if k in self.pending_evals]
@@ -115,9 +115,13 @@ class BalsamEvaluator(evaluate.Evaluator):
 
         jobs = BalsamJob.objects.filter(job_id__in=job_ids)
         num_jobs = jobs.count()
-        logger.info(f"Waiting on {num_jobs} Balsam eval jobs to finish")
 
-        num_checks = round(timeout / delay)
+        if timeout and timeout > delay:
+            num_checks = round(timeout / delay)
+        else:
+            num_checks = 1000000
+        logger.info(f"Waiting on {num_jobs} Balsam evals to finish"
+                    f" ({num_checks} checks with {delay}s delay)")
         checked_ids = []
 
         for i in range(num_checks):
@@ -153,6 +157,17 @@ class BalsamEvaluator(evaluate.Evaluator):
             else: time.sleep(delay)
 
         for x, key in zip(to_read, keys):
+            if key not in self.evals:
+                logger.warning(f"Eval {key} never finished; marking infinity")
+                if key in self.pending_evals:
+                    jid = self.pending_evals[key]
+                    job = BalsamJob.objects.get(job_id=jid)
+                    dag.kill(job)
+                    logger.info(f"Killed job {job.cute_id}")
+                    del self.pending_evals[key]
+                self.evals[key] = sys.float_info.max
+                self.elapsed_times[key] = time.time() - self.start_seconds
+
             y = self.evals[key]
             logger.info(f"x: {x} y: {y}")
             yield (x,y)

@@ -164,11 +164,11 @@ class GAOptimizer:
         self._setup()
 
 
-def evaluate_fitnesses(individuals, opt, evaluator):
+def evaluate_fitnesses(individuals, opt, evaluator, timeout):
     points = list(map(opt.space_encoder.decode_point, individuals))
     for x in points: evaluator.add_eval(x)
     logger.info(f"Waiting on {len(points)} individual fitness evaluations")
-    results = evaluator.await_evals(points)
+    results = evaluator.await_evals(points, timeout=timeout)
 
     for ind, (x,fit) in zip(individuals, results):
         ind.fitness.values = (fit,)
@@ -225,7 +225,7 @@ def main(args):
         logger.info(f"{opt.INIT_POP_SIZE} individuals")
         opt.pop = opt.toolbox.population(n=opt.INIT_POP_SIZE)
         individuals = opt.pop
-        evaluate_fitnesses(individuals, opt, evaluator)
+        evaluate_fitnesses(individuals, opt, evaluator, args.eval_timeout_seconds)
         opt.record_generation(num_evals=len(opt.pop))
         
         with open('ga_logbook.log', 'w') as fp:
@@ -269,7 +269,7 @@ def main(args):
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
         logger.info(f"Evaluating {len(invalid_ind)} invalid individuals")
-        evaluate_fitnesses(invalid_ind, opt, evaluator)
+        evaluate_fitnesses(invalid_ind, opt, evaluator, args.eval_timeout_seconds)
         
         # The population is entirely replaced by the offspring
         opt.pop[:] = offspring

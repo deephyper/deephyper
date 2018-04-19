@@ -82,6 +82,7 @@ def get_parser():
     parser.add_argument('--stage-in-path')
     parser.add_argument('--saved-model-path')
     parser.add_argument('--max-evals', type=int, default=100000000)
+    parser.add_argument('--eval-timeout-seconds', type=int, default=0)
     parser.add_argument('--ga-num-gen', type=int, default=100)
     parser.add_argument('--project', default='datascience')
     return parser
@@ -107,6 +108,7 @@ def main():
     conf['time_str'] = time_str(args.time_minutes)
     conf['max_evals'] = args.max_evals
     conf['ga_num_gen'] = args.ga_num_gen
+    conf['eval_timeout_seconds'] = args.eval_timeout_seconds
 
     if args.stage_in_path is not None:
         conf['STAGE_IN_DIR'] = args.stage_in_path
@@ -138,11 +140,13 @@ def main():
         cwd = os.path.dirname(fname)
         subprocess.run(f'chmod +x {fname}', check=True, shell=True)
 
-    print(f"SUBMITTING JOB IN {fname}")
+    print(f"CREATED JOB IN {fname}")
     if not conf['DISABLE_SUBMIT']:
         subprocess.run(f'qsub -O {run_name} --cwd {cwd} {fname}', check=True, shell=True)
         print("qsub done!")
         print("Job database will be at:", db_path)
+    else:
+        print("Dry run -- change DISABLE_SUBMIT in runjob.conf to enable auto-submission")
 
 if __name__ == "__main__":
     main()
