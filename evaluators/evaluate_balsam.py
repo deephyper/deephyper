@@ -154,7 +154,7 @@ class BalsamEvaluator(evaluate.Evaluator):
                     self.elapsed_times[key] = time.time() - self.start_seconds
 
             if isDone: break
-            else: time.sleep(delay)
+            elif i < num_checks-1: time.sleep(delay)
 
         for x, key in zip(to_read, keys):
             if key not in self.evals:
