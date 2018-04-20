@@ -82,7 +82,7 @@ def get_parser():
     parser.add_argument('--stage-in-path')
     parser.add_argument('--saved-model-path')
     parser.add_argument('--max-evals', type=int, default=100000000)
-    parser.add_argument('--eval-timeout-seconds', type=int, default=0)
+    parser.add_argument('--eval-timeout-minutes', type=int, default=0)
     parser.add_argument('--ga-num-gen', type=int, default=100)
     parser.add_argument('--project', default='datascience')
     return parser
@@ -108,7 +108,7 @@ def main():
     conf['time_str'] = time_str(args.time_minutes)
     conf['max_evals'] = args.max_evals
     conf['ga_num_gen'] = args.ga_num_gen
-    conf['eval_timeout_seconds'] = args.eval_timeout_seconds
+    conf['eval_timeout_minutes'] = args.eval_timeout_minutes
 
     if args.stage_in_path is not None:
         conf['STAGE_IN_DIR'] = args.stage_in_path

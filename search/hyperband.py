@@ -25,10 +25,10 @@ CHECKPOINT_INTERVAL = 30    # How many jobs to complete between optimizer checkp
 SEED = 12345
 
 class Hyperband:
-    def __init__(self, cfg, evaluator, eval_timeout_seconds):
+    def __init__(self, cfg, evaluator, eval_timeout_minutes):
         self.evaluator = evaluator
         self.opt_config = cfg
-        self.eval_timeout_seconds = eval_timeout_seconds
+        self.eval_timeout_seconds = eval_timeout_minutes * 60
         self.opt_config.learner = "DUMMY"
         self.optimizer = util.sk_optimizer_from_config(self.opt_config, SEED)
 
@@ -108,7 +108,7 @@ def main(args):
 
     cfg = util.OptConfig(args)
     evaluator = evaluate.create_evaluator(cfg)
-    hyperband = Hyperband(cfg, evaluator, args.eval_timeout_seconds)
+    hyperband = Hyperband(cfg, evaluator, args.eval_timeout_minutes)
     logger.info(f"Starting Hyperband run with {cfg.benchmark_module_name}")
 
     timer = util.DelayTimer(max_minutes=None, period=SERVICE_PERIOD)

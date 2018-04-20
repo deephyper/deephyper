@@ -66,13 +66,13 @@ balsam app --name search --desc 'run random search' --executable $SEARCH_APP_PAT
 {% elif method|upper == 'GA' -%}
 
 SEARCH_APP_PATH=$DEEPHYPER_TOP/search/ga.py
-ARGS="--ga-num-gen={{ ga_num_gen }} --eval-timeout={{ eval_timeout_seconds }} --benchmark {{ benchmark }} --num-workers $NUM_WORKERS --stage_in_destination={{ STAGE_IN_DIR }}"
+ARGS="--ga-num-gen={{ ga_num_gen }} --eval-timeout={{ eval_timeout_minutes }} --benchmark {{ benchmark }} --num-workers $NUM_WORKERS --stage_in_destination={{ STAGE_IN_DIR }}"
 balsam app --name search --desc 'run ga' --executable $SEARCH_APP_PATH
 
 {% elif method|upper == 'HYPERBAND' -%}
 
 SEARCH_APP_PATH=$DEEPHYPER_TOP/search/hyperband.py
-ARGS="--benchmark {{ benchmark }} --num-workers $NUM_WORKERS --eval-timeout={{ eval_timeout_seconds }} --model_path={{ saved_model_path }} --stage_in_destination={{ STAGE_IN_DIR }}"
+ARGS="--benchmark {{ benchmark }} --num-workers $NUM_WORKERS --eval-timeout={{ eval_timeout_minutes }} --model_path={{ saved_model_path }} --stage_in_destination={{ STAGE_IN_DIR }}"
 balsam app --name search --desc 'run hyperband' --executable $SEARCH_APP_PATH
 
 {%- endif %}
