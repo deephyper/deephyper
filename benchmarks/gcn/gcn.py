@@ -82,6 +82,7 @@ def run(param_dict):
     X, A, y = features.todense(), adj, labels
     timer.end()
 
+    timer.start('preprocessing')
     y_train, y_val, y_test, idx_train, idx_val, idx_test, train_mask = get_splits(y)
 
     # Normalize X
@@ -138,6 +139,7 @@ def run(param_dict):
         wait = 0
         preds = None
         best_val_loss = 99999
+    timer.end()
 
     # Fit
     training_timer = util.Timer()

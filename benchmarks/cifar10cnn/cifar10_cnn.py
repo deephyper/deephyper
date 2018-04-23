@@ -50,7 +50,6 @@ def run(param_dict):
     timer.end()
 
     num_classes = 10
-    num_predictions = 20
 
     BATCH_SIZE = param_dict['batch_size']
     EPOCHS = param_dict['epochs']
@@ -69,6 +68,8 @@ def run(param_dict):
     print(x_train.shape[0], 'train samples')
     print(x_test.shape[0], 'test samples')
 
+    timer.start('preprocessing')
+
     # Convert class vectors to binary class matrices.
     y_train = keras.utils.to_categorical(y_train, num_classes)
     y_test = keras.utils.to_categorical(y_test, num_classes)
@@ -86,7 +87,6 @@ def run(param_dict):
         initial_epoch = savedModel.initial_epoch
 
     if model is None:
-        timer.start('model building')
         model = Sequential()
         
         model.add(Conv2D(F1_UNITS, (F1_SIZE, F1_SIZE), padding='same',
@@ -112,18 +112,19 @@ def run(param_dict):
         model.add(Activation('softmax'))
         model.summary()
         model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
-        timer.end()
 
     x_train = x_train.astype('float32')
     x_test = x_test.astype('float32')
     x_train /= 255
     x_test /= 255
+    timer.end()
     
     timer.start('model training')
     if not DATA_AUGMENTATION:
         history = model.fit(x_train, y_train,
                         batch_size=BATCH_SIZE,
                         epochs=EPOCHS,
+                        initial_epoch=initial_epoch,
                         verbose=1, shuffle=True,
                         validation_data=(x_test, y_test))
     else:
@@ -141,8 +142,10 @@ def run(param_dict):
         steps_per_epoch = len(datagen.flow(x_train, y_train, batch_size=BATCH_SIZE))
         datagen.fit(x_train)
         model.fit_generator(datagen.flow(x_train, y_train, batch_size=BATCH_SIZE), epochs=EPOCHS,
+                            initial_epoch=initial_epoch,
                             steps_per_epoch=steps_per_epoch, verbose=1, validation_data=(x_test, y_test), workers=1)
     timer.end()
+
     score = model.evaluate(x_test, y_test, verbose=0)
     print('Test loss:', score[0])
     print('Test accuracy:', score[1])

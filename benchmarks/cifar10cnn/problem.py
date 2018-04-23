@@ -4,7 +4,7 @@ class Problem():
         space = OrderedDict()
         space['epochs'] = (10, 100)
         #bechmark specific parameters
-        space['activation'] = ['softmax', 'relu', 'sigmoid']
+        space['activation'] = ['tanh', 'relu', 'sigmoid']
         space['f1_size'] = [1, 3, 5]
         space['f2_size'] = [1, 3, 5]
         space['f1_units'] = [8, 16, 32, 64]

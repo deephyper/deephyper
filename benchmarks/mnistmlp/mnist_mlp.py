@@ -13,10 +13,7 @@ from deephyper.benchmarks import util
 timer = util.Timer()
 timer.start('module loading')
 
-
 import keras
-from keras.datasets import cifar10
-from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
 from keras.layers import Conv2D, MaxPooling2D
@@ -27,7 +24,7 @@ from deephyper.benchmarks import keras_cmdline
 from keras.models import load_model
 import hashlib
 import pickle
-from keras.datasets import mnist
+from deephyper.benchmarks.mnistmlp.load_data import load_data
 
 timer.end()
 
@@ -37,30 +34,21 @@ def run(param_dict):
     optimizer = keras_cmdline.return_optimizer(param_dict)
     pprint(param_dict)
     
-    if False:
-        timer.start('stage in')
-        if param_dict['data_source']:
-            data_source = param_dict['data_source']
-        else:
-            data_source = os.path.dirname(os.path.abspath(__file__))
-            data_source = os.path.join(origin_dir_path, 'data')
+    timer.start('stage in')
+    if param_dict['data_source']:
+        data_source = param_dict['data_source']
+    else:
+        data_source = os.path.dirname(os.path.abspath(__file__))
+        data_source = os.path.join(origin_dir_path, 'data')
 
-        try:
-            paths = util.stage_in(['babi-tasks-v1-2.tar.gz'],
-                                source=data_source,
-                                dest=param_dict['stage_in_destination'])
-            path = paths['babi-tasks-v1-2.tar.gz']
-        except:
-            print('Error downloading dataset, please download it manually:\n'
-                '$ wget http://www.thespermwhale.com/jaseweston/babi/tasks_1-20_v1-2.tar.gz\n'
-                '$ mv tasks_1-20_v1-2.tar.gz ~/.keras/datasets/babi-tasks-v1-2.tar.gz')
-            raise
-        timer.end()
+    (x_train, y_train), (x_test, y_test) = load_data(
+        origin=os.path.join(data_source, 'mnist.npz'),
+        dest=param_dict['stage_in_destination']
+    )
+    
+    timer.end()
 
-    #batch_size = 32
     num_classes = 10
-    #epochs = 100
-    num_predictions = 20
 
     BATCH_SIZE = param_dict['batch_size']
     EPOCHS = param_dict['epochs']
@@ -69,8 +57,7 @@ def run(param_dict):
     NHIDDEN = param_dict['nhidden']
     NUNITS = param_dict['nunits']
 
-    # the data, split between train and test sets
-    (x_train, y_train), (x_test, y_test) = mnist.load_data()
+    timer.start('preprocessing')
 
     x_train = x_train.reshape(60000, 784)
     x_test = x_test.reshape(10000, 784)
@@ -98,7 +85,6 @@ def run(param_dict):
         initial_epoch = savedModel.initial_epoch
 
     if model is None:
-        timer.start('model building')
         model = Sequential()
         model.add(Dense(NUNITS, activation=ACTIVATION, input_shape=(784,)))
         model.add(Dropout(DROPOUT))
@@ -110,16 +96,13 @@ def run(param_dict):
         model.compile(loss='categorical_crossentropy',
               optimizer=optimizer,
               metrics=['accuracy'])
-        timer.end()
 
-    x_train = x_train.astype('float32')
-    x_test = x_test.astype('float32')
-    x_train /= 255
-    x_test /= 255
+    timer.end()
     
     timer.start('model training')
     history = model.fit(x_train, y_train,
                     batch_size=BATCH_SIZE,
+                    initial_epoch=initial_epoch,
                     epochs=EPOCHS,
                     verbose=1,
                     validation_data=(x_test, y_test))

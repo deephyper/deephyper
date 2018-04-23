@@ -187,6 +187,16 @@ def run(param_dict):
                                                                EMBED_HIDDEN_SIZE,
                                                                SENT_HIDDEN_SIZE,
                                                                QUERY_HIDDEN_SIZE))
+    
+    # Default QA1 with 1000 samples
+    # challenge = 'tasks_1-20_v1-2/en/qa1_single-supporting-fact_{}.txt'
+    # QA1 with 10,000 samples
+    # challenge = 'tasks_1-20_v1-2/en-10k/qa1_single-supporting-fact_{}.txt'
+    # QA2 with 1000 samples
+    challenge = 'tasks_1-20_v1-2/en/qa2_two-supporting-facts_{}.txt'
+    # QA2 with 10,000 samples
+    # challenge = 'tasks_1-20_v1-2/en-10k/qa2_two-supporting-facts_{}.txt'
+
     timer.start('stage in')
     if param_dict['data_source']:
         data_source = param_dict['data_source']
@@ -204,21 +214,12 @@ def run(param_dict):
               '$ wget http://www.thespermwhale.com/jaseweston/babi/tasks_1-20_v1-2.tar.gz\n'
               '$ mv tasks_1-20_v1-2.tar.gz ~/.keras/datasets/babi-tasks-v1-2.tar.gz')
         raise
-    timer.end()
-
-    timer.start('preprocessing')
-    # Default QA1 with 1000 samples
-    # challenge = 'tasks_1-20_v1-2/en/qa1_single-supporting-fact_{}.txt'
-    # QA1 with 10,000 samples
-    # challenge = 'tasks_1-20_v1-2/en-10k/qa1_single-supporting-fact_{}.txt'
-    # QA2 with 1000 samples
-    challenge = 'tasks_1-20_v1-2/en/qa2_two-supporting-facts_{}.txt'
-    # QA2 with 10,000 samples
-    # challenge = 'tasks_1-20_v1-2/en-10k/qa2_two-supporting-facts_{}.txt'
     with tarfile.open(path) as tar:
         train = get_stories(tar.extractfile(challenge.format('train')))
         test = get_stories(tar.extractfile(challenge.format('test')))
+    timer.end()
 
+    timer.start('preprocessing')
     vocab = set()
     for story, q, answer in train + test:
         vocab |= set(story + q + [answer])

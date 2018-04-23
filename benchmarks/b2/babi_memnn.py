@@ -120,6 +120,15 @@ def run(param_dict):
     optimizer = keras_cmdline.return_optimizer(param_dict)
     pprint(param_dict)
     
+    challenges = {
+        # QA1 with 10,000 samples
+        'single_supporting_fact_10k': 'tasks_1-20_v1-2/en-10k/qa1_single-supporting-fact_{}.txt',
+        # QA2 with 10,000 samples
+        'two_supporting_facts_10k': 'tasks_1-20_v1-2/en-10k/qa2_two-supporting-facts_{}.txt',
+    }
+    challenge_type = 'single_supporting_fact_10k'
+    challenge = challenges[challenge_type]
+    
     timer.start('stage in')
     if param_dict['data_source']:
         data_source = param_dict['data_source']
@@ -137,22 +146,14 @@ def run(param_dict):
               '$ wget http://www.thespermwhale.com/jaseweston/babi/tasks_1-20_v1-2.tar.gz\n'
               '$ mv tasks_1-20_v1-2.tar.gz ~/.keras/datasets/babi-tasks-v1-2.tar.gz')
         raise
-    timer.end()
-
-    timer.start('preprocessing')
-    challenges = {
-        # QA1 with 10,000 samples
-        'single_supporting_fact_10k': 'tasks_1-20_v1-2/en-10k/qa1_single-supporting-fact_{}.txt',
-        # QA2 with 10,000 samples
-        'two_supporting_facts_10k': 'tasks_1-20_v1-2/en-10k/qa2_two-supporting-facts_{}.txt',
-    }
-    challenge_type = 'single_supporting_fact_10k'
-    challenge = challenges[challenge_type]
 
     print('Extracting stories for the challenge:', challenge_type)
     with tarfile.open(path) as tar:
         train_stories = get_stories(tar.extractfile(challenge.format('train')))
         test_stories = get_stories(tar.extractfile(challenge.format('test')))
+    timer.end()
+
+    timer.start('preprocessing')
 
     vocab = set()
     for story, q, answer in train_stories + test_stories:

@@ -32,6 +32,7 @@ experiments/*
 db*
 scikit-optimize
 benchmarks/*/data/*.tar.gz
+benchmarks/*/data/*.npz
 xgboost/
 rosen2_tests
 benchmarks/*/keras-gcn

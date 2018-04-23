@@ -47,6 +47,7 @@ def run(param_dict):
     n_pt = len(training_x)
     timer.end()
 
+    timer.start('preprocessing')
     penalty = param_dict['penalty']
     epochs = param_dict['epochs']
     if type(epochs) is not int:
@@ -75,7 +76,9 @@ def run(param_dict):
         print("loaded model from disk:", a, b)
         print("on epoch", initial_epoch)
 
-    timer.start('training')
+    timer.end()
+
+    timer.start('model training')
     for i in range(initial_epoch, epochs):
         predict = linear(training_x, a, b)
         error = predict - training_y
@@ -85,6 +88,7 @@ def run(param_dict):
         a -= lr * grad_a
         b -= lr * grad_b
     timer.end()
+
     print(f"training done\na={a}\nb={b}")
     predict = linear(training_x, a, b)
     error = predict - training_y
