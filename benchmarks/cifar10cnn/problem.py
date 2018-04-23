@@ -4,6 +4,7 @@ class Problem():
         space = OrderedDict()
         space['epochs'] = (10, 100)
         #bechmark specific parameters
+        space['activation'] = ['softmax', 'relu', 'sigmoid']
         space['f1_size'] = [1, 3, 5]
         space['f2_size'] = [1, 3, 5]
         space['f1_units'] = [8, 16, 32, 64]
@@ -13,6 +14,7 @@ class Problem():
         #network parameters
         space['batch_size'] = (8, 1024)
         space['dropout'] = (0.0, 1.0)
+        space['dropout2'] = (0.0, 1.0)
         space['optimizer'] = ['sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam', 'adamax', 'nadam']
         # common optimizer parameters
         #space['clipnorm'] = (1e-04, 1e01)
@@ -29,10 +31,10 @@ class Problem():
 
         self.space = space
         self.params = self.space.keys()
-        self.starting_point = [10, 3, 3, 32, 64, 2, 500, 128, 0.5, 'sgd', 0.25]
+        self.starting_point = [10, 'relu', 3, 3, 32, 64, 2, 512, 32, 0.25, 0.5,
+                               'rmsprop', 0.001]
 
 
 if __name__ == '__main__':
     instance = Problem()
-    print(instance.space)
-    print(instance.params)
+    print(' '.join(f'--{k}={instance.starting_point[i]}' for i,k in enumerate(instance.params)))

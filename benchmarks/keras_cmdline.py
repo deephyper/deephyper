@@ -14,7 +14,7 @@ def create_parser():
                         help='Keras backend')
     parser.add_argument('--activation', action='store',
                         dest='activation',
-                        nargs='?', const=1, type=str, default='softmax',
+                        nargs='?', const=1, type=str, default='relu',
                         choices=['softmax', 'elu', 'selu', 'softplus', 'softsign', 'relu', 'tanh', 'sigmoid',
                                  'hard_sigmoid', 'linear', 'LeakyReLU', 'PReLU', 'ELU', 'ThresholdedReLU'],
                         help='type of activation function hidden layer')

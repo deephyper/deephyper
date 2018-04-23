@@ -46,6 +46,7 @@ def run(param_dict):
         origin=os.path.join(data_source, 'cifar-10-python.tar.gz'),
         dest=param_dict['stage_in_destination'],
     )
+
     timer.end()
 
     num_classes = 10
@@ -54,6 +55,7 @@ def run(param_dict):
     BATCH_SIZE = param_dict['batch_size']
     EPOCHS = param_dict['epochs']
     DROPOUT = param_dict['dropout']
+    DROPOUT2 = param_dict['dropout2']
     ACTIVATION = param_dict['activation']
     NUNITS = param_dict['nunits']
     F1_SIZE = param_dict['f1_size']
@@ -105,7 +107,7 @@ def run(param_dict):
         model.add(Flatten())
         model.add(Dense(NUNITS))
         model.add(Activation(ACTIVATION))
-        model.add(Dropout(DROPOUT))
+        model.add(Dropout(DROPOUT2))
         model.add(Dense(num_classes))
         model.add(Activation('softmax'))
         model.summary()
@@ -136,8 +138,10 @@ def run(param_dict):
         height_shift_range=0.1,  # randomly shift images vertically (fraction of total height)
         horizontal_flip=True,  # randomly flip images
         vertical_flip=False)  # randomly flip images
+        steps_per_epoch = len(datagen.flow(x_train, y_train, batch_size=BATCH_SIZE))
         datagen.fit(x_train)
-        model.fit_generator(datagen.flow(x_train, y_train, batch_size=BATCH_SIZE), steps_per_epoch=10, epochs=EPOCHS, validation_data=(x_test, y_test), workers=4)
+        model.fit_generator(datagen.flow(x_train, y_train, batch_size=BATCH_SIZE), epochs=EPOCHS,
+                            steps_per_epoch=steps_per_epoch, verbose=1, validation_data=(x_test, y_test), workers=1)
     timer.end()
     score = model.evaluate(x_test, y_test, verbose=0)
     print('Test loss:', score[0])
@@ -153,8 +157,7 @@ def run(param_dict):
     return -score[1]
 
 def augment_parser(parser):
-    parser.add_argument('--data_augmentation', action='store', dest='data_augmentation',
-                        nargs='?', const=1, type=bool, default=True,
+    parser.add_argument('--data_augmentation', action='store_true',
                         help='boolean. data_augmentation?')
 
     parser.add_argument('--f1_size', action='store', dest='f1_size',
@@ -178,8 +181,10 @@ def augment_parser(parser):
                         help='pool size')
 
     parser.add_argument('--nunits', action='store', dest='nunits',
-                        nargs='?', const=2, type=int, default='500',
+                        nargs='?', const=2, type=int, default='512',
                         help='number of units in FC layer')
+    parser.add_argument('--dropout2', type=float, default=0.5, 
+                        help='dropout after FC layer')
 
     return parser
 
