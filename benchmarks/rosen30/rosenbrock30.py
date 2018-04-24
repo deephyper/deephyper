@@ -2,6 +2,7 @@ import os
 from pprint import pprint
 import sys
 import argparse
+from numpy import float64
 
 NDIM = 30
 
@@ -14,7 +15,8 @@ from deephyper.benchmarks import util
 
 def run(param_dict):
     x = [param_dict[f'x{i}'] for i in range(1, 1+NDIM)]
-    assert len(x) == NDIM and all(type(xi) is float for xi in x)
+    assert len(x) == NDIM, f'{x} has wrong dimension {len(x)}' 
+    assert all(type(xi) in [float,float64] for xi in x), f'Not all floats: {[type(xi) for xi in x]}'
     pprint(x)
 
     result = 0.0
