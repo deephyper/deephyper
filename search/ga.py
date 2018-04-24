@@ -219,6 +219,16 @@ def main(args):
 
     logger.info("Hyperopt GA driver starting")
     logger.info(f"Elapsed time: {elapsed_str}")
+    
+    # Gracefully handle shutdown
+    def handler(signum, stack):
+        evaluator.stop()
+        logger.info('Received SIGINT/SIGTERM')
+        save_checkpoint(cfg, opt, evaluator)
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, handler)
+    signal.signal(signal.SIGTERM, handler)
 
     if opt.pop is None:
         logger.info("Generating initial population")
@@ -232,17 +242,6 @@ def main(args):
             fp.write(str(opt.logbook))
         print("best:", opt.halloffame[0])
     
-    # Gracefully handle shutdown
-    def handler(signum, stack):
-        evaluator.stop()
-        logger.info('Received SIGINT/SIGTERM')
-        save_checkpoint(cfg, opt, evaluator)
-        sys.exit(0)
-
-    signal.signal(signal.SIGINT, handler)
-    signal.signal(signal.SIGTERM, handler)
-    
-
     while opt.current_gen < opt.NGEN:
         opt.current_gen += 1
         time_str = next(timer)

@@ -31,5 +31,4 @@ class Problem():
 
 if __name__ == '__main__':
     instance = Problem()
-    print(instance.space)
-    print(instance.params)
+    print(' '.join(f'--{k}={instance.starting_point[i]}' for i,k in enumerate(instance.params)))
