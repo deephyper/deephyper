@@ -40,6 +40,7 @@ class OptConfig:
         self.num_workers = args.num_workers
         self.learner = args.learner
         self.amls_lie_strategy = args.amls_lie_strategy
+        self.amls_acq_func = args.amls_acq_func
 
         self.model_path = args.model_path.strip()
         self.data_source = args.data_source.strip()
@@ -71,18 +72,18 @@ def sk_optimizer_from_config(opt_config, random_state):
     logger = logging.getLogger(__name__)
     kappa = 1.96
 
-    if opt_config.learner in "RF ET GBRT XGB".split():
+    if opt_config.learner in "RF ET GBRT XGB GP".split():
         n_init = opt_config.num_workers
     else:
         assert opt_config.learner == "DUMMY"
         n_init = inf
 
-    if opt_config.learner in ["RF", "ET", "GBRT", "DUMMY"]:
+    if opt_config.learner in ["RF", "ET", "GBRT", "GP", "DUMMY"]:
         optimizer = Optimizer(
             opt_config.space,
             base_estimator=opt_config.learner,
             acq_optimizer='sampling',
-            acq_func='gp_hedge',
+            acq_func=opt_config.amls_acq_func,
             acq_func_kwargs={'kappa':kappa},
             random_state=random_state,
             n_initial_points=n_init
@@ -179,8 +180,12 @@ def create_parser():
                         nargs='?', const=1, type=str, default='XGB',
                         choices=["XGB", "RF", "ET", "GBRT", "DUMMY", "GP"],
                         help='type of learner')
+
     parser.add_argument('--amls-lie-strategy', action='store',
                         default="cl_max", choices=["cl_min", "cl_mean", "cl_max"])
+
+    parser.add_argument('--amls-acq-func', action='store', 
+                        default="gp_hedge", choices=["LCB", "EI", "PI","gp_hedge"])
 
     parser.add_argument('--from-checkpoint', default=None,
                         help='path of checkpoint file from a previous run'

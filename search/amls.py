@@ -127,7 +127,6 @@ class Optimizer:
         self._optimizer.tell(XX, YY)
         assert len(self._optimizer.Xi) == len(self._optimizer.yi) == self.counter
 
-
 def main(args):
     '''Service loop: add jobs; read results; drive optimizer'''
 
@@ -137,6 +136,7 @@ def main(args):
         cfg, optimizer, evaluator = load_checkpoint(chk_path)
     else:
         cfg = util.OptConfig(args)
+        print(cfg)
         optimizer = Optimizer(cfg)
         evaluator = evaluate.create_evaluator(cfg)
         logger.info(f"Starting new run with {cfg.benchmark_module_name}")
@@ -190,4 +190,5 @@ def main(args):
 if __name__ == "__main__":
     parser = util.create_parser()
     args = parser.parse_args()
+    print(args)
     main(args)
