@@ -14,7 +14,7 @@ from deephyper.benchmarks import util
 
 def run(param_dict):
     x = [param_dict[f'x{i}'] for i in range(1, 1+NDIM)]
-    assert len(x) == NDIM and all(type(xi) is float for xi in x)
+    #assert len(x) == NDIM and all(type(xi) is float for xi in x)
     pprint(x)
 
     result = 0.0
