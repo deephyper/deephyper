@@ -57,6 +57,25 @@ SEARCH_APP_PATH=$DEEPHYPER_TOP/search/amls.py
 ARGS="--max-evals {{ max_evals }} --benchmark {{ benchmark }} --num-workers $NUM_WORKERS --learner RF --stage_in_destination={{ STAGE_IN_DIR }}"
 balsam app --name search --desc 'run AMLS: RF' --executable $SEARCH_APP_PATH
 
+{% elif method|upper == 'ET' -%}
+
+SEARCH_APP_PATH=$DEEPHYPER_TOP/search/amls.py
+ARGS="--max-evals {{ max_evals }} --benchmark {{ benchmark }} --num-workers $NUM_WORKERS --learner ET --stage_in_destination={{ STAGE_IN_DIR }}"
+balsam app --name search --desc 'run AMLS: ET' --executable $SEARCH_APP_PATH
+
+{% elif method|upper == 'GP' -%}
+
+SEARCH_APP_PATH=$DEEPHYPER_TOP/search/amls.py
+ARGS="--max-evals {{ max_evals }} --benchmark {{ benchmark }} --num-workers $NUM_WORKERS --learner GP --stage_in_destination={{ STAGE_IN_DIR }}"
+balsam app --name search --desc 'run AMLS: GP' --executable $SEARCH_APP_PATH
+
+{% elif method|upper == 'GBRT' -%}
+
+SEARCH_APP_PATH=$DEEPHYPER_TOP/search/amls.py
+ARGS="--max-evals {{ max_evals }} --benchmark {{ benchmark }} --num-workers $NUM_WORKERS --learner GBRT --stage_in_destination={{ STAGE_IN_DIR }}"
+balsam app --name search --desc 'run AMLS: GBRT' --executable $SEARCH_APP_PATH
+
+
 {% elif method|upper == 'RS' -%}
 
 SEARCH_APP_PATH=$DEEPHYPER_TOP/search/amls.py

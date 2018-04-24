@@ -56,14 +56,13 @@ def get_conf(args):
         with open(conf_fpath) as fp: conf = json.load(fp)
         return conf
 
-
 def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('platform', choices=['cooley', 'theta', 'theta_postgres'])
-    parser.add_argument('method', choices=['xgb', 'rf', 'rs', 'ga', 'hyperband'])
+    parser.add_argument('method', choices=['xgb', 'rf', 'et', 'gbrt', 'gp', 'rs', 'ga', 'hyperband'])
     parser.add_argument('benchmark', choices=['b1.addition_rnn',
                                              'b2.babi_memnn',
-                                             'b3.babi_rnn',
+                                             'b3.babi_rnn', 'wrf.wrf', 'traffic.traffic',
                                              'candlep1b1.p1b1_baseline_keras2',
                                              'capsule.capsule',
                                              'cifar10cnn.cifar10_cnn',
@@ -131,7 +130,7 @@ def main():
     conf['jobname'] = jobname
 
     run_name = os.path.basename(db_path)
-    run_dir = os.path.join(here, 'runs')
+    run_dir = os.path.join(here, 'runs-method')
     if not os.path.exists(run_dir): os.makedirs(run_dir)
 
     with open(os.path.join(run_dir, run_name+'.sh'), 'w') as fp:
