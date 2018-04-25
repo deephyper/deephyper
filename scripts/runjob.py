@@ -75,6 +75,7 @@ def get_parser():
                                              'rosen30.rosenbrock30',
                                              ]
                        )
+    parser.add_argument('acq', choices=["LCB", "EI", "PI","gp_hedge"], default ="gp_hedge")
     parser.add_argument('-q', required=True, dest='queue')
     parser.add_argument('-n', type=int, required=True, dest='nodes')
     parser.add_argument('-t', type=int, required=True, dest='time_minutes')
@@ -108,6 +109,7 @@ def main():
     conf['max_evals'] = args.max_evals
     conf['ga_num_gen'] = args.ga_num_gen
     conf['eval_timeout_minutes'] = args.eval_timeout_minutes
+    conf['acq'] = args.acq
 
     if args.stage_in_path is not None:
         conf['STAGE_IN_DIR'] = args.stage_in_path
@@ -116,7 +118,7 @@ def main():
         modelpath = os.path.abspath(os.path.expanduser(args.saved_model_path))
         conf['saved_model_path'] = modelpath
 
-    jobname = '.'.join(str(conf[key]) for key in 'benchmark nodes method'.split())
+    jobname = '.'.join(str(conf[key]) for key in 'benchmark nodes method acq'.split())
     if args.platform == 'cooley': 
         jobname += '.gpu'
     elif args.platform == 'theta_postgres':
@@ -130,7 +132,7 @@ def main():
     conf['jobname'] = jobname
 
     run_name = os.path.basename(db_path)
-    run_dir = os.path.join(here, 'runs-method')
+    run_dir = os.path.join(here, 'runs')
     if not os.path.exists(run_dir): os.makedirs(run_dir)
 
     with open(os.path.join(run_dir, run_name+'.sh'), 'w') as fp:
