@@ -46,7 +46,13 @@ import hashlib
 import pickle
 print("using keras:", layers.__path__)
 
+from numpy.random import seed
+from tensorflow import set_random_seed
 timer.end()
+
+seed(1)
+set_random_seed(2)
+
 
 def tokenize(sent):
     '''Return the tokens of a sentence including punctuation.

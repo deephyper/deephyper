@@ -26,8 +26,12 @@ import hashlib
 import pickle
 from deephyper.benchmarks.mnistmlp.load_data import load_data
 
+from numpy.random import seed
+from tensorflow import set_random_seed
 timer.end()
 
+seed(1)
+set_random_seed(2)
 
 def run(param_dict):
     param_dict = keras_cmdline.fill_missing_defaults(augment_parser, param_dict)

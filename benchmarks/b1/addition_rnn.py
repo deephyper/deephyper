@@ -39,21 +39,18 @@ timer = util.Timer()
 timer.start('module loading')
 
 import numpy as np
-from numpy.random import seed
 from six.moves import range
-
-
-from tensorflow import set_random_seed
 from keras.models import Sequential
 from keras import layers
 from keras.models import load_model
 from deephyper.benchmarks import keras_cmdline 
 from keras.callbacks import EarlyStopping
+from numpy.random import seed
+from tensorflow import set_random_seed
+timer.end()
 
 seed(1)
 set_random_seed(2)
-
-timer.end()
     
 TRAINING_SIZE = 50000
 DIGITS = 3
