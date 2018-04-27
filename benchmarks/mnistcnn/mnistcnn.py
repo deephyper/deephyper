@@ -153,7 +153,7 @@ def run(param_dict):
     return -score[1]
 
 def augment_parser(parser):
-    parser.add_argument('--data_augmentation', action='store_true',
+    parser.add_argument('--data_augmentation', action='store', type=util.str2bool,
                         help='boolean. data_augmentation?')
 
     parser.add_argument('--f1_size', action='store', dest='f1_size',

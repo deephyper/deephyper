@@ -1,5 +1,6 @@
 import argparse
 from keras.optimizers import SGD, RMSprop, Adagrad, Adadelta, Adam, Adamax, Nadam
+from deephyper.benchmarks import util
 
 def create_parser():
     'command line parser for keras'
@@ -66,7 +67,7 @@ def create_parser():
                         nargs='?', const=1, type=float, default=0.0,
                         help='float >= 0. Learning rate decay over each update')
     parser.add_argument('--nesterov', action='store', dest='nesterov',
-                        nargs='?', const=1, type=bool, default=False,
+                        nargs='?', const=1, type=util.str2bool, default=False,
                         help='boolean. Whether to apply Nesterov momentum?')
     parser.add_argument('--rho', action='store', dest='rho',
                         nargs='?', const=1, type=float, default=0.9,

@@ -101,7 +101,9 @@ class LocalEvaluator(evaluate.Evaluator):
         return d
 
     def stop(self):
-        self.executor.shutdown(wait=True)
+        for future in self.pending_evals:
+            future.cancel()
+        self.executor.shutdown()
 
     def __setstate__(self, d):
         logger.info(f"Unpickling LocalEvaluator")

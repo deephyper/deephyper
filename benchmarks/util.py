@@ -5,6 +5,13 @@ import time
 import os
 from filelock import FileLock
 
+def str2bool(s):
+    s = s.lower().strip()
+    if s == 'false':
+        return False
+    else:
+        return True
+
 class Timer:
     def __init__(self):
         self.t0 = 0.0

@@ -295,10 +295,11 @@ def run(param_dict):
     print('===Validation accuracy:', val_acc[-1])
     print('OUTPUT:', -val_acc[-1])
 
+
 def augment_parser(parser):
 
     parser.add_argument('--data_aug', action='store', dest='data_aug',
-                        nargs='?', const=1, type=bool, default=False,
+                        nargs='?', const=1, type=util.str2bool, default=False,
                         help='boolean. Whether to apply data augumentation?')
 
 
@@ -315,7 +316,7 @@ def augment_parser(parser):
                         help='dimension of capsule')
 
     parser.add_argument('--share_weights', action='store', dest='share_weights',
-                        nargs='?', const=1, type=bool, default=True,
+                        nargs='?', const=1, type=util.str2bool, default=True,
                         help='boolean. share weights?')
 
 

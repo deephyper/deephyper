@@ -191,7 +191,7 @@ def run(param_dict):
 def augment_parser(parser):
 
     parser.add_argument('--sys_norm', action='store', dest='sys_norm',
-                        nargs='?', const=1, type=bool, default=False,
+                        nargs='?', const=1, type=util.str2bool, default=False,
                         help='boolean. Whether to apply sys norm?')
 
     parser.add_argument('--nunits', action='store', dest='nunits',
