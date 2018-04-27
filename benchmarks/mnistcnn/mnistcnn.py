@@ -27,8 +27,12 @@ from deephyper.benchmarks import keras_cmdline
 from keras.models import load_model
 import hashlib
 import pickle
-
+from numpy.random import seed
+from tensorflow import set_random_seed
 timer.end()
+
+seed(1)
+set_random_seed(2)
 
 
 def run(param_dict):
