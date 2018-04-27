@@ -3,6 +3,7 @@ import sys
 from pprint import pprint
 import os
 
+
 here = os.path.dirname(os.path.abspath(__file__))
 top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
 sys.path.append(top)
@@ -12,9 +13,9 @@ from deephyper.benchmarks import util
 
 timer = util.Timer()
 timer.start('module loading')
-
 import keras
-from deephyper.benchmarks.mnistmlp import load_data
+from keras import backend as K
+from deephyper.benchmarks.mnistcnn.load_data import load_data
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
@@ -43,11 +44,22 @@ def run(param_dict):
         data_source = os.path.join(data_source, 'data')
 
     (x_train, y_train), (x_test, y_test) = load_data(
-        origin=os.path.join(data_source, 'cifar-10-python.tar.gz'),
+        origin=os.path.join(data_source, 'mnist.npz'),
         dest=param_dict['stage_in_destination'],
     )
 
     timer.end()
+
+    # input image dimensions
+    img_rows, img_cols = 28, 28
+    if K.image_data_format() == 'channels_first':
+        x_train = x_train.reshape(x_train.shape[0], 1, img_rows, img_cols)
+        x_test = x_test.reshape(x_test.shape[0], 1, img_rows, img_cols)
+        input_shape = (1, img_rows, img_cols)
+    else:
+        x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, 1)
+        x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, 1)
+        input_shape = (img_rows, img_cols, 1)
 
     num_classes = 10
 
@@ -90,7 +102,7 @@ def run(param_dict):
         model = Sequential()
         
         model.add(Conv2D(F1_UNITS, (F1_SIZE, F1_SIZE), padding='same',
-                        input_shape=x_train.shape[1:]))
+                        input_shape=input_shape))
         model.add(Activation(ACTIVATION))
         model.add(Conv2D(F1_UNITS, (F1_SIZE, F1_SIZE)))
         model.add(Activation(ACTIVATION))
