@@ -43,7 +43,7 @@ def run(param_dict):
         data_source = param_dict['data_source']
     else:
         data_source = os.path.dirname(os.path.abspath(__file__))
-        data_source = os.path.join(origin_dir_path, 'data')
+        data_source = os.path.join(data_source, 'data')
 
     (x_train, y_train), (x_test, y_test) = load_data(
         origin=os.path.join(data_source, 'mnist.npz'),
