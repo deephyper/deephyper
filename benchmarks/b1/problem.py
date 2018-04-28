@@ -2,18 +2,17 @@ from collections import OrderedDict
 class Problem():
     def __init__(self):
         space = OrderedDict()
-        space['epochs'] = (2, 500)
+        space['epochs'] = (5, 500)
         #bechmark specific parameters
         space['rnn_type'] = ['LSTM', 'GRU', 'SimpleRNN']
-        space['hidden_size'] = (10, 100)
-        space['layers'] = (1, 30)
+        space['nhidden'] = (1, 100)
+        space['nlayers'] = (1, 30)
         #network parameters
-        space['activation'] = ['softmax', 'elu', 'selu', 'softplus', 'relu', 'tanh', 'sigmoid']
-        #space['loss'] = ['mse', 'mae', 'mape', 'msle', 'squared_hinge', 'categorical_hinge', 'hinge', 'logcosh', 'categorical_crossentropy', 'sparse_categorical_crossentropy', 'binary_crossentropy', 'kullback_leibler_divergence', 'poisson', 'cosine_proximity']
+        space['activation'] = ['relu', 'softmax', 'elu', 'selu', 'softplus', 'tanh', 'sigmoid']
         space['batch_size'] = (8, 1024)
-        #space['init'] = ['Zeros', 'Ones', 'Constant', 'RandomNormal', 'RandomUniform', 'TruncatedNormal', 'VarianceScaling', 'Orthogonal', 'Identity', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'lecun_normal', 'he_uniform']
-        #space['dropout'] = (0.0, 1.0)
+        space['dropout'] = (0.0, 1.0)
         space['optimizer'] = ['sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam', 'adamax', 'nadam']
+        #space['init'] = ['Zeros', 'Ones', 'Constant', 'RandomNormal', 'RandomUniform', 'TruncatedNormal', 'VarianceScaling', 'Orthogonal', 'Identity', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'lecun_normal', 'he_uniform']
         # common optimizer parameters
         #space['clipnorm'] = (1e-04, 1e01)
         #space['clipvalue'] = (1e-04, 1e01)
@@ -29,7 +28,7 @@ class Problem():
 
         self.space = space
         self.params = self.space.keys()
-        self.starting_point = [5, 'LSTM', 10, 1, 'softmax', 32, 'sgd', 0.01]#, 1.0, 0.5, 0.01, 0, 0, False, 0.9, 1e-08, 0.9, 0.999]
+        self.starting_point = [5, 'LSTM', 1, 1, 'relu', 8, 0.0, 'sgd', 1e-04] #, 1.0, 0.5, 0.01, 0, 0, False, 0.9, 1e-08, 0.9, 0.999]
 
 if __name__ == '__main__':
     instance = Problem()

@@ -174,6 +174,7 @@ def run(param_dict):
 
     BATCH_SIZE = param_dict['batch_size']
     EPOCHS = param_dict['epochs']
+    DROPOUT = param_dict['dropout']
     DATA_AUG = param_dict['data_aug']
     NUM_CONV = param_dict['num_conv']
     DIM_CAPS = param_dict['dim_capsule']
@@ -223,9 +224,11 @@ def run(param_dict):
         x = input_image #Conv2D(64, (3, 3), activation='relu')(input_image)
         for i in range(NUM_CONV):
             x = Conv2D(64, (3, 3), activation='relu')(x)
+            x = Dropout(DROPOUT)(x)
         x = AveragePooling2D((2, 2))(x)
         for i in range(NUM_CONV):
             x = Conv2D(128, (3, 3), activation='relu')(x)
+            x = Dropout(DROPOUT)(x)
 
         """now we reshape it as (batch_size, input_num_capsule, input_dim_capsule)
         then connect a Capsule layer.

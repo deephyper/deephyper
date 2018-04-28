@@ -2,7 +2,7 @@ from collections import OrderedDict
 class Problem():
     def __init__(self):
         space = OrderedDict()
-        space['epochs'] = (2, 100)
+        space['epochs'] = (5, 500)
         #bechmark specific parameters
         space['data_aug'] = [False, True]
         space['num_conv'] = (1, 5)
@@ -10,8 +10,9 @@ class Problem():
         space['routings'] = (1, 5)
         space['share_weights'] = [False, True]
         #network parameters
-        space['activation'] = ['elu', 'selu', 'relu', 'tanh']
+        space['activation'] = ['relu', 'softmax', 'elu', 'selu', 'softplus', 'tanh', 'sigmoid']
         space['batch_size'] = (8, 1024)
+        space['dropout'] = (0.0, 1.0)
         space['optimizer'] = ['sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam', 'adamax', 'nadam']
         # common optimizer parameters
         #space['clipnorm'] = (1e-04, 1e01)
@@ -28,7 +29,7 @@ class Problem():
 
         self.space = space
         self.params = self.space.keys()
-        self.starting_point = [100, True, 2, 16, 3, True, 'relu', 128, 'sgd', 0.01] #, 0.5, 0.01, 0, 0, False, 0.9, 1e-08, 0.9, 0.999]
+        self.starting_point = [5, False, 1, 4, 1, False, 'relu', 8, 0.0, 'sgd', 1e-04]
 
 if __name__ == '__main__':
     instance = Problem()

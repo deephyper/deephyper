@@ -206,7 +206,9 @@ def run(param_dict):
     BATCH_SIZE = param_dict['batch_size']
     EPOCHS = param_dict['epochs']
     DROPOUT = param_dict['dropout']
-    HIDDEN_SIZE = param_dict['hidden_size']
+    NHIDDEN = param_dict['nhidden']
+    ACTIVATION = param_dict['activation']
+
     if param_dict['rnn_type'] == 'GRU':
         RNN = layers.GRU
     elif param_dict['rnn_type'] == 'SimpleRNN':
@@ -276,7 +278,7 @@ def run(param_dict):
 
         # the original paper uses a matrix multiplication for this reduction step.
         # we choose to use a RNN instead.
-        answer = RNN(HIDDEN_SIZE)(answer)  # (samples, 32)
+        answer = RNN(NHIDDEN, activation=ACTIVATION)(answer)  # (samples, 32)
 
         # one regularization layer -- more would probably be needed.
         answer = Dropout(DROPOUT)(answer)
@@ -293,7 +295,7 @@ def run(param_dict):
     timer.end()
 
     timer.start('model training')
-    train_history = model.fit([inputs_train, queries_train], answers_train, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=param_dict['epochs'], validation_data=([inputs_test, queries_test], answers_test))
+    train_history = model.fit([inputs_train, queries_train], answers_train, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=EPOCHS, validation_data=([inputs_test, queries_test], answers_test))
     timer.end()
     train_loss = train_history.history['loss']
     val_acc = train_history.history['val_acc']
@@ -316,7 +318,7 @@ def augment_parser(parser):
                         choices=['LSTM', 'GRU', 'SimpleRNN'],
                         help='type of RNN')
 
-    parser.add_argument('--hidden_size', action='store', dest='hidden_size',
+    parser.add_argument('--nhidden', action='store', dest='nhidden',
                         nargs='?', const=2, type=int, default='128',
                         help='number of epochs')
     return parser

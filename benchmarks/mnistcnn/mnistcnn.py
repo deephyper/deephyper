@@ -70,7 +70,6 @@ def run(param_dict):
     BATCH_SIZE = param_dict['batch_size']
     EPOCHS = param_dict['epochs']
     DROPOUT = param_dict['dropout']
-    DROPOUT2 = param_dict['dropout2']
     ACTIVATION = param_dict['activation']
     NUNITS = param_dict['nunits']
     F1_SIZE = param_dict['f1_size']
@@ -123,7 +122,7 @@ def run(param_dict):
         model.add(Flatten())
         model.add(Dense(NUNITS))
         model.add(Activation(ACTIVATION))
-        model.add(Dropout(DROPOUT2))
+        model.add(Dropout(DROPOUT))
         model.add(Dense(num_classes))
         model.add(Activation('softmax'))
         model.summary()

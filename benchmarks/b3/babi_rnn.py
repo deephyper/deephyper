@@ -176,7 +176,8 @@ def run(param_dict):
     BATCH_SIZE = param_dict['batch_size']
     EPOCHS = param_dict['epochs']
     DROPOUT = param_dict['dropout']
-
+    ACTIVATION = param_dict['activation']
+    
     if param_dict['rnn_type'] == 'GRU':
         RNN = layers.GRU
     elif param_dict['rnn_type'] == 'SimpleRNN':
@@ -187,6 +188,7 @@ def run(param_dict):
     EMBED_HIDDEN_SIZE = param_dict['embed_hidden_size']
     SENT_HIDDEN_SIZE = param_dict['sent_hidden_size']
     QUERY_HIDDEN_SIZE = param_dict['query_hidden_size']
+
 
     print('RNN / Embed / Sent / Query = {}, {}, {}, {}'.format(RNN,
                                                                EMBED_HIDDEN_SIZE,
@@ -266,11 +268,11 @@ def run(param_dict):
         question = layers.Input(shape=(query_maxlen,), dtype='int32')
         encoded_question = layers.Embedding(vocab_size, EMBED_HIDDEN_SIZE)(question)
         encoded_question = layers.Dropout(DROPOUT)(encoded_question)
-        encoded_question = RNN(EMBED_HIDDEN_SIZE)(encoded_question)
+        encoded_question = RNN(EMBED_HIDDEN_SIZE, activation=ACTIVATION)(encoded_question)
         encoded_question = layers.RepeatVector(story_maxlen)(encoded_question)
 
         merged = layers.add([encoded_sentence, encoded_question])
-        merged = RNN(EMBED_HIDDEN_SIZE)(merged)
+        merged = RNN(EMBED_HIDDEN_SIZE, activation=ACTIVATION)(merged)
         merged = layers.Dropout(DROPOUT)(merged)
         preds = layers.Dense(vocab_size, activation='softmax')(merged)
 
