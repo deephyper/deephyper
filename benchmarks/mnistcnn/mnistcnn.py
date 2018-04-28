@@ -110,14 +110,14 @@ def run(param_dict):
         model.add(Activation(ACTIVATION))
         model.add(Conv2D(F1_UNITS, (F1_SIZE, F1_SIZE)))
         model.add(Activation(ACTIVATION))
-        model.add(MaxPooling2D(pool_size=(P_SIZE, P_SIZE)))
+        model.add(MaxPooling2D(pool_size=(P_SIZE, P_SIZE), padding='same'))
         model.add(Dropout(DROPOUT))
 
         model.add(Conv2D(F2_UNITS, (F2_SIZE, F2_SIZE), padding='same'))
         model.add(Activation(ACTIVATION))
         model.add(Conv2D(F2_UNITS, (F2_SIZE, F2_SIZE)))
         model.add(Activation(ACTIVATION))
-        model.add(MaxPooling2D(pool_size=(P_SIZE, P_SIZE)))
+        model.add(MaxPooling2D(pool_size=(P_SIZE, P_SIZE), padding='same'))
         model.add(Dropout(DROPOUT))
 
         model.add(Flatten())
