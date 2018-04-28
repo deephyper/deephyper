@@ -5,11 +5,11 @@ class Problem():
         space['epochs'] = (10, 100)
         #bechmark specific parameters
         space['activation'] = ['tanh', 'relu', 'sigmoid']
-        space['f1_size'] = [1, 3, 5]
-        space['f2_size'] = [1, 3, 5]
+        space['f1_size'] = [1, 3, 5, 7]
+        space['f2_size'] = [1, 3, 5, 7]
         space['f1_units'] = [8, 16, 32, 64]
         space['f2_units'] = [8, 16, 32, 64]
-        space['p_size'] = [2, 4, 6, 8]
+        space['p_size'] = [1, 2, 3, 4, 5]
         space['nunits'] = (100, 1000)
         #network parameters
         space['batch_size'] = (8, 1024)

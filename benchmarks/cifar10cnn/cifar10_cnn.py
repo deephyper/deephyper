@@ -26,8 +26,12 @@ from deephyper.benchmarks import keras_cmdline
 from keras.models import load_model
 import hashlib
 import pickle
-
+from numpy.random import seed
+from tensorflow import set_random_seed
 timer.end()
+
+seed(1)
+set_random_seed(2)
 
 
 def run(param_dict):
@@ -89,19 +93,19 @@ def run(param_dict):
     if model is None:
         model = Sequential()
         
-        model.add(Conv2D(F1_UNITS, (F1_SIZE, F1_SIZE), padding='same',
+        model.add(Conv2D(F1_UNITS, (F1_SIZE, F1_SIZE), padding='valid',
                         input_shape=x_train.shape[1:]))
         model.add(Activation(ACTIVATION))
         model.add(Conv2D(F1_UNITS, (F1_SIZE, F1_SIZE)))
         model.add(Activation(ACTIVATION))
-        model.add(MaxPooling2D(pool_size=(P_SIZE, P_SIZE)))
+        model.add(MaxPooling2D(pool_size=(P_SIZE, P_SIZE), padding='valid'))
         model.add(Dropout(DROPOUT))
 
-        model.add(Conv2D(F2_UNITS, (F2_SIZE, F2_SIZE), padding='same'))
+        model.add(Conv2D(F2_UNITS, (F2_SIZE, F2_SIZE), padding='valid'))
         model.add(Activation(ACTIVATION))
         model.add(Conv2D(F2_UNITS, (F2_SIZE, F2_SIZE)))
         model.add(Activation(ACTIVATION))
-        model.add(MaxPooling2D(pool_size=(P_SIZE, P_SIZE)))
+        model.add(MaxPooling2D(pool_size=(P_SIZE, P_SIZE), padding='valid'))
         model.add(Dropout(DROPOUT))
 
         model.add(Flatten())
