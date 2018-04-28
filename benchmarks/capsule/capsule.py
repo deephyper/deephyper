@@ -38,7 +38,12 @@ import hashlib
 
 from deephyper.benchmarks.capsule.load_data import load_data
 from deephyper.benchmarks import keras_cmdline 
+from numpy.random import seed
+from tensorflow import set_random_seed
 timer.end()
+
+seed(1)
+set_random_seed(2)
 
 
 # the squashing function.
