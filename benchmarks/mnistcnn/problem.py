@@ -8,7 +8,7 @@ class Problem():
         space['f2_size'] = [1, 3, 5, 7]
         space['f1_units'] = [8, 16, 32, 64]
         space['f2_units'] = [8, 16, 32, 64]
-        space['p_size'] = [1, 2, 3, 4, 5]
+        space['p_size'] = [2, 3, 4]
         space['nunits'] = (1, 1000)
         #network parameters
         space['activation'] = ['relu', 'softmax', 'elu', 'selu', 'softplus', 'tanh', 'sigmoid']
