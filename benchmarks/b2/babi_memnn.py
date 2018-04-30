@@ -26,6 +26,8 @@ from deephyper.benchmarks import util
 
 timer = util.Timer()
 timer.start('module loading')
+
+from deephyper.benchmarks.util import TerminateOnTimeOut
 print("using python:", sys.executable)
 print("using deephyper lib:", os.path.abspath(util.__file__))
 print("importing keras...")
@@ -35,6 +37,7 @@ from keras.layers.embeddings import Embedding
 from keras.layers import Input, Activation, Dense, Permute, Dropout, add, dot, concatenate
 from keras.layers import LSTM
 from keras.preprocessing.sequence import pad_sequences
+from keras.callbacks import EarlyStopping
 from functools import reduce
 import tarfile
 import numpy as np
@@ -208,6 +211,7 @@ def run(param_dict):
     DROPOUT = param_dict['dropout']
     NHIDDEN = param_dict['nhidden']
     ACTIVATION = param_dict['activation']
+    TIMEOUT = param_dict['timeout']
 
     if param_dict['rnn_type'] == 'GRU':
         RNN = layers.GRU
@@ -294,8 +298,13 @@ def run(param_dict):
 
     timer.end()
 
+
+    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=5, verbose=1, mode='auto')
+    timeout_monitor = TerminateOnTimeOut(TIMEOUT)
+    callbacks_list = [earlystop, timeout_monitor]
+
     timer.start('model training')
-    train_history = model.fit([inputs_train, queries_train], answers_train, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=EPOCHS, validation_data=([inputs_test, queries_test], answers_test))
+    train_history = model.fit([inputs_train, queries_train], answers_train, callbacks=callbacks_list, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=EPOCHS, validation_data=([inputs_test, queries_test], answers_test))
     timer.end()
     train_loss = train_history.history['loss']
     val_acc = train_history.history['val_acc']

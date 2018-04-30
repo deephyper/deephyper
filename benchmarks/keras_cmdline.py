@@ -88,6 +88,11 @@ def create_parser():
     parser.add_argument('--data_source', help="location of dataset to load", default='')
     parser.add_argument('--stage_in_destination', help="if provided; cache data at this location", 
                         default='')
+
+    parser.add_argument('--timeout', help="benchmark timeout in mins", 
+                        action='store', dest='timeout',
+                        nargs='?', const=1, type=float, 
+                        default=50.0)
     return(parser)
 
 def return_optimizer(param_dict):

@@ -38,6 +38,7 @@ from deephyper.benchmarks import util
 timer = util.Timer()
 timer.start('module loading')
 
+from deephyper.benchmarks.util import TerminateOnTimeOut
 import numpy as np
 from six.moves import range
 from keras.models import Sequential
@@ -178,6 +179,7 @@ def run(param_dict):
     NLAYERS = param_dict['nlayers']
     DROPOUT = param_dict['dropout']
     ACTIVATION = param_dict['activation']
+    TIMEOUT = param_dict['timeout']
     
     model_path = param_dict['model_path']
     model_mda_path = None
@@ -217,7 +219,8 @@ def run(param_dict):
     timer.end()
 
     earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=5, verbose=1, mode='auto')
-    callbacks_list = [earlystop]
+    timeout_monitor = TerminateOnTimeOut(TIMEOUT)
+    callbacks_list = [earlystop, timeout_monitor]
 
     timer.start('model training')
     train_history = model.fit(x_train, y_train, callbacks=callbacks_list, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=param_dict['epochs'], validation_data=(x_val, y_val))

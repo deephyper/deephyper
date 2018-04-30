@@ -4,6 +4,9 @@ from collections import namedtuple
 import time
 import os
 from filelock import FileLock
+from keras.callbacks import Callback
+from datetime import datetime
+
 
 def str2bool(s):
     s = s.lower().strip()
@@ -104,3 +107,21 @@ def stage_in(file_names, source, dest):
 
         print(f"File {name} will be read from {paths[name]}")
     return paths
+
+class TerminateOnTimeOut(Callback):
+    def __init__(self, timeout_in_min = 10):
+        super(TerminateOnTimeOut, self).__init__()
+        self.run_timestamp = None
+        self.timeout_in_sec = timeout_in_min * 60
+    def on_train_begin(self, logs={}):
+        self.run_timestamp = datetime.now()
+    def on_epoch_end(self, epoch, logs={}):
+        run_end = datetime.now()
+        run_duration = run_end - self.run_timestamp
+        run_in_sec = run_duration.total_seconds() #/ (60 * 60)
+        print(' - current training time = %2.3fs/%2.3fs' % (run_in_sec, self.timeout_in_sec))
+        if self.timeout_in_sec != -1:
+            if run_in_sec >= self.timeout_in_sec:
+                print(' - timeout: training time = %2.3fs/%2.3fs' % (run_in_sec, self.timeout_in_sec))
+                #print('TimeoutRuntime: %2.3fs, Maxtime: %2.3fs' % (run_in_sec, self.timeout_in_sec))
+                self.model.stop_training = True
