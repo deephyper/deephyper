@@ -271,7 +271,7 @@ def run(param_dict):
             batch_size=BATCH_SIZE,
             epochs=EPOCHS,
             initial_epoch=initial_epoch,
-            validation_split=0.10,
+            #validation_split=0.10,
             #validation_data=(x_test, y_test),
             shuffle=True)
     else:
@@ -301,7 +301,7 @@ def run(param_dict):
             epochs=EPOCHS,
             steps_per_epoch=steps_per_epoch,
             initial_epoch=initial_epoch,
-            validation_split=0.10,
+            #validation_split=0.10,
             #validation_data=(x_test, y_test),
             workers=1)
     

@@ -108,7 +108,7 @@ def run(param_dict):
 
     if model is None:
         model = Sequential()
-        
+        print(input_shape)
         model.add(Conv2D(F1_UNITS, (F1_SIZE, F1_SIZE), padding='same',
                         input_shape=input_shape))
         model.add(Activation(ACTIVATION))
@@ -131,6 +131,7 @@ def run(param_dict):
         model.add(Dense(num_classes))
         model.add(Activation('softmax'))
         model.summary()
+        sys.exit(0)
         model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
 
     x_train = x_train.astype('float32')
