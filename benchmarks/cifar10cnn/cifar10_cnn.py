@@ -70,7 +70,7 @@ def run(param_dict):
     P_SIZE = param_dict['p_size']
     DATA_AUGMENTATION = param_dict['data_augmentation']
     TIMEOUT = param_dict['timeout']
-    
+
 
     print('x_train shape:', x_train.shape)
     print(x_train.shape[0], 'train samples')
@@ -129,7 +129,7 @@ def run(param_dict):
     
     earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=10, verbose=1, mode='auto')
     timeout_monitor = TerminateOnTimeOut((x_test, y_test),TIMEOUT)
-    callbacks_list = [earlystop, timeout_monitor]
+    callbacks_list = [timeout_monitor]
 
 
     timer.start('model training')

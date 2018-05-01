@@ -153,7 +153,7 @@ def run(param_dict):
     timer.end()
     earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=5, verbose=1, mode='auto')
     timeout_monitor = TerminateOnTimeOut(TIMEOUT)
-    callbacks_list = [earlystop, timeout_monitor]
+    callbacks_list = [timeout_monitor]
     # Fit
     training_timer = util.Timer()
     training_timer.start('model training')
@@ -186,9 +186,11 @@ def run(param_dict):
             count = 0
         else:
             count = count+1
-        if count >= patience:
+        
+        if False and count >= patience:
             print('Early stopping')
             break
+            
         elapsed = time.time() - training_timer.t0
         if elapsed >= TIMEOUT * 60:
             print(' - timeout: training time = %2.3fs/%2.3fs' % (elapsed, TIMEOUT * 60))
