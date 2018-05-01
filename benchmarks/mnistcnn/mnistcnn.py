@@ -22,6 +22,10 @@ from keras.layers import Dense, Dropout, Activation, Flatten
 from keras.layers import Conv2D, MaxPooling2D
 import os
 
+from keras.callbacks import EarlyStopping
+from deephyper.benchmarks.util import TerminateOnTimeOut
+
+
 from keras import layers
 from deephyper.benchmarks import keras_cmdline
 from keras.models import load_model
@@ -77,7 +81,8 @@ def run(param_dict):
     F1_UNITS = param_dict['f1_units']
     F2_UNITS = param_dict['f2_units']
     P_SIZE = param_dict['p_size']
-    DATA_AUGMENTATION = param_dict['data_augmentation']
+    # DATA_AUGMENTATION = param_dict['data_augmentation']
+    TIMEOUT = param_dict['timeout']
 
     print('x_train shape:', x_train.shape)
     print(x_train.shape[0], 'train samples')
@@ -133,14 +138,20 @@ def run(param_dict):
     x_train /= 255
     x_test /= 255
     timer.end()
-    
+
+    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=10, verbose=1, mode='auto')
+    timeout_monitor = TerminateOnTimeOut((x_test, y_test),TIMEOUT)
+    callbacks_list = [earlystop, timeout_monitor]
+
     timer.start('model training')
     history = model.fit(x_train, y_train,
                         batch_size=BATCH_SIZE,
                         epochs=EPOCHS,
                         initial_epoch=initial_epoch,
                         verbose=1, 
-                        validation_data=(x_test, y_test))
+                        callbacks=callbacks_list,
+                        validation_split = 0.1)
+                        #validation_data=(x_test, y_test))
     timer.end()
     score = model.evaluate(x_test, y_test, verbose=0)
     print('Test loss:', score[0])

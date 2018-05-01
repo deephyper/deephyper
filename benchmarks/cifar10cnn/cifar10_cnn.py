@@ -21,6 +21,9 @@ from keras.layers import Dense, Dropout, Activation, Flatten
 from keras.layers import Conv2D, MaxPooling2D
 import os
 
+from keras.callbacks import EarlyStopping
+from deephyper.benchmarks.util import TerminateOnTimeOut
+
 from keras import layers
 from deephyper.benchmarks import keras_cmdline
 from keras.models import load_model
@@ -66,6 +69,8 @@ def run(param_dict):
     F2_UNITS = param_dict['f2_units']
     P_SIZE = param_dict['p_size']
     DATA_AUGMENTATION = param_dict['data_augmentation']
+    TIMEOUT = param_dict['timeout']
+    
 
     print('x_train shape:', x_train.shape)
     print(x_train.shape[0], 'train samples')
@@ -122,6 +127,11 @@ def run(param_dict):
     x_test /= 255
     timer.end()
     
+    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=10, verbose=1, mode='auto')
+    timeout_monitor = TerminateOnTimeOut((x_test, y_test),TIMEOUT)
+    callbacks_list = [earlystop, timeout_monitor]
+
+
     timer.start('model training')
     if not DATA_AUGMENTATION:
         history = model.fit(x_train, y_train,
@@ -129,7 +139,9 @@ def run(param_dict):
                         epochs=EPOCHS,
                         initial_epoch=initial_epoch,
                         verbose=1, shuffle=True,
-                        validation_data=(x_test, y_test))
+                        callbacks=callbacks_list,
+                        validation_split=0.10)
+                        #validation_data=(x_test, y_test))
     else:
         datagen = ImageDataGenerator(
         featurewise_center=False,  # set input mean to 0 over the dataset
@@ -146,7 +158,10 @@ def run(param_dict):
         datagen.fit(x_train)
         model.fit_generator(datagen.flow(x_train, y_train, batch_size=BATCH_SIZE), epochs=EPOCHS,
                             initial_epoch=initial_epoch,
-                            steps_per_epoch=steps_per_epoch, verbose=1, validation_data=(x_test, y_test), workers=1)
+                            callbacks=callbacks_list,
+                            steps_per_epoch=steps_per_epoch, verbose=1,
+                            validation_split=0.10, workers=1)
+                            #validation_data=(x_test, y_test), 
     timer.end()
 
     score = model.evaluate(x_test, y_test, verbose=0)
