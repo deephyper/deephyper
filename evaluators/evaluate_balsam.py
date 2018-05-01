@@ -106,7 +106,7 @@ class BalsamEvaluator(evaluate.Evaluator):
         if isnan(y): y = sys.float_info.max
         return y
 
-    def await_evals(self, to_read, timeout=None, delay=5):
+    def await_evals(self, to_read, timeout_sec=None, delay_sec=5):
         keys = [self._encode(x) for x in to_read]
         job_ids = [self.pending_evals[k] for k in keys
                    if k in self.pending_evals]
@@ -116,12 +116,12 @@ class BalsamEvaluator(evaluate.Evaluator):
         jobs = BalsamJob.objects.filter(job_id__in=job_ids)
         num_jobs = jobs.count()
 
-        if timeout and timeout > delay:
-            num_checks = round(timeout / delay)
+        if timeout_sec and timeout_sec > delay_sec:
+            num_checks = round(timeout_sec / delay_sec)
         else:
             num_checks = 1000000
         logger.info(f"Waiting on {num_jobs} Balsam evals to finish"
-                    f" ({num_checks} checks with {delay}s delay)")
+                    f" ({num_checks} checks with {delay_sec}s delay_sec)")
         checked_ids = []
 
         for i in range(num_checks):
@@ -154,7 +154,7 @@ class BalsamEvaluator(evaluate.Evaluator):
                     self.elapsed_times[key] = time.time() - self.start_seconds
 
             if isDone: break
-            elif i < num_checks-1: time.sleep(delay)
+            elif i < num_checks-1: time.sleep(delay_sec)
 
         for x, key in zip(to_read, keys):
             if key not in self.evals:
