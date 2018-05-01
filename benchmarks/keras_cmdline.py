@@ -92,7 +92,7 @@ def create_parser():
     parser.add_argument('--timeout', help="benchmark timeout in mins", 
                         action='store', dest='timeout',
                         nargs='?', const=1, type=float, 
-                        default=50.0)
+                        default=60.0)
     return(parser)
 
 def return_optimizer(param_dict):
