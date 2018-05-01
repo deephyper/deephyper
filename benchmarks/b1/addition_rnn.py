@@ -179,8 +179,9 @@ def run(param_dict):
     NLAYERS = param_dict['nlayers']
     DROPOUT = param_dict['dropout']
     ACTIVATION = param_dict['activation']
+    EPOCHS = param_dict['epochs']
     TIMEOUT = param_dict['timeout']
-    
+
     model_path = param_dict['model_path']
     model_mda_path = None
     model = None
@@ -219,25 +220,24 @@ def run(param_dict):
     timer.end()
 
     earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=5, verbose=1, mode='auto')
-    timeout_monitor = TerminateOnTimeOut(TIMEOUT)
+    timeout_monitor = TerminateOnTimeOut((x_val, y_val),TIMEOUT)
     callbacks_list = [earlystop, timeout_monitor]
 
     timer.start('model training')
-    train_history = model.fit(x_train, y_train, callbacks=callbacks_list, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=param_dict['epochs'], validation_data=(x_val, y_val))
+    train_history = model.fit(x_train, y_train, callbacks=callbacks_list, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=EPOCHS, validation_split=0.10)#, validation_data=(x_val, y_val))
     timer.end()
     
-    train_loss = train_history.history['loss']
-    val_acc = train_history.history['val_acc']
-    print('===Train loss:', train_loss[-1])
-    print('===Validation accuracy:', val_acc[-1])
-    print('OUTPUT:', -val_acc[-1])
+    score = model.evaluate(x_val, y_val, batch_size=BATCH_SIZE)
+    print('===Validation loss:', score[0])
+    print('===Validation accuracy:', score[1])
+    print('OUTPUT:', -score[1])
     
     if model_path:
         timer.start('model save')
         model.save(model_path)
         util.save_meta_data(param_dict, model_mda_path)
         timer.end()
-    return -val_acc[-1]
+    return -score[1]
 
 def augment_parser(parser):
     parser.add_argument('--rnn_type', action='store',

@@ -259,7 +259,7 @@ def run(param_dict):
 
     # we can compare the performance with or without data augmentation
     earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=5, verbose=1, mode='auto')
-    timeout_monitor = TerminateOnTimeOut(TIMEOUT)
+    timeout_monitor = TerminateOnTimeOut((x_test, y_test),TIMEOUT)
     callbacks_list = [earlystop, timeout_monitor]
 
     if not DATA_AUG:
@@ -271,7 +271,8 @@ def run(param_dict):
             batch_size=BATCH_SIZE,
             epochs=EPOCHS,
             initial_epoch=initial_epoch,
-            validation_data=(x_test, y_test),
+            validation_split=0.10,
+            #validation_data=(x_test, y_test),
             shuffle=True)
     else:
         print('Using real-time data augmentation.')
@@ -300,7 +301,8 @@ def run(param_dict):
             epochs=EPOCHS,
             steps_per_epoch=steps_per_epoch,
             initial_epoch=initial_epoch,
-            validation_data=(x_test, y_test),
+            validation_split=0.10,
+            #validation_data=(x_test, y_test),
             workers=1)
     
     timer.end()
@@ -310,10 +312,11 @@ def run(param_dict):
         util.save_meta_data(param_dict, model_mda_path)
         timer.end()
 
-    val_acc = history.history['val_acc']
-    print('===Validation accuracy:', val_acc[-1])
-    print('OUTPUT:', -val_acc[-1])
+    loss, acc = model.evaluate(x_test, y_test, batch_size=BATCH_SIZE)
+    print('Test loss / test accuracy = {:.4f} / {:.4f}'.format(loss, acc))
+    print('OUTPUT:', -acc)
 
+    return -acc
 
 def augment_parser(parser):
 

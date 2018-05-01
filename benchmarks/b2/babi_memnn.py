@@ -304,21 +304,27 @@ def run(param_dict):
     callbacks_list = [earlystop, timeout_monitor]
 
     timer.start('model training')
-    train_history = model.fit([inputs_train, queries_train], answers_train, callbacks=callbacks_list, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=EPOCHS, validation_data=([inputs_test, queries_test], answers_test))
+    train_history = model.fit([inputs_train, queries_train], answers_train, callbacks=callbacks_list, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=EPOCHS, validation_split=0.10) #, validation_data=([inputs_test, queries_test], answers_test))
     timer.end()
-    train_loss = train_history.history['loss']
-    val_acc = train_history.history['val_acc']
-    print('===Train loss:', train_loss[-1])
-    print('===Validation accuracy:', val_acc[-1])
-    print('OUTPUT:', -val_acc[-1])
+    
+    score = model.evaluate([inputs_test, queries_test], answers_test, batch_size=BATCH_SIZE)
+    print('===Validation loss:', score[0])
+    print('===Validation accuracy:', score[1])
+    print('OUTPUT:', -score[1])
+
+    
+    #train_loss = train_history.history['loss']
+    #val_acc = train_history.history['val_acc']
+    #print('===Train loss:', train_loss[-1])
+    #print('===Validation accuracy:', val_acc[-1])
+    #print('OUTPUT:', -val_acc[-1])
     
     if model_path:
         timer.start('model save')
         model.save(model_path)  
         util.save_meta_data(param_dict, model_mda_path)
         timer.end()
-    return -val_acc[-1]
-
+    return -score[1]
 
 def augment_parser(parser):
     parser.add_argument('--rnn_type', action='store',

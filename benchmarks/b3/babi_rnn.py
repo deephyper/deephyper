@@ -289,7 +289,7 @@ def run(param_dict):
     callbacks_list = [earlystop, timeout_monitor]
     timer.start('model training')
     print('Training')
-    model.fit([x, xq], y, callbacks=callbacks_list, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=EPOCHS, validation_split=0.05)
+    model.fit([x, xq], y, callbacks=callbacks_list, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=EPOCHS, validation_split=0.10)
     timer.end()
     loss, acc = model.evaluate([tx, txq], ty, batch_size=BATCH_SIZE)
     print('Test loss / test accuracy = {:.4f} / {:.4f}'.format(loss, acc))
