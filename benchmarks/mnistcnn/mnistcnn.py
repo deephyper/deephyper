@@ -114,14 +114,14 @@ def run(param_dict):
         model.add(Activation(ACTIVATION))
         model.add(Conv2D(F1_UNITS, (F1_SIZE, F1_SIZE)))
         model.add(Activation(ACTIVATION))
-        model.add(MaxPooling2D(pool_size=(P_SIZE, P_SIZE), padding='same'))
+        #model.add(MaxPooling2D(pool_size=(P_SIZE, P_SIZE), padding='same'))
         model.add(Dropout(DROPOUT))
 
         model.add(Conv2D(F2_UNITS, (F2_SIZE, F2_SIZE), padding='same'))
         model.add(Activation(ACTIVATION))
         model.add(Conv2D(F2_UNITS, (F2_SIZE, F2_SIZE)))
         model.add(Activation(ACTIVATION))
-        model.add(MaxPooling2D(pool_size=(P_SIZE, P_SIZE), padding='same'))
+        #model.add(MaxPooling2D(pool_size=(P_SIZE, P_SIZE), padding='same'))
         model.add(Dropout(DROPOUT))
 
         model.add(Flatten())
@@ -131,7 +131,6 @@ def run(param_dict):
         model.add(Dense(num_classes))
         model.add(Activation('softmax'))
         model.summary()
-        sys.exit(0)
         model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
 
     x_train = x_train.astype('float32')
