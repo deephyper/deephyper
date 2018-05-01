@@ -198,5 +198,5 @@ def create_parser():
     parser.add_argument('--data_source', help="location of dataset to load", default='')
     parser.add_argument('--stage_in_destination', help="if provided; cache data at this location", 
                         default='')
-    parser.add_argument('--eval-timeout-minutes', type=int, default=None, help="Kill evals that take longer than this")
+    parser.add_argument('--eval-timeout-minutes', type=int, default=-1, help="Kill evals that take longer than this")
     return parser

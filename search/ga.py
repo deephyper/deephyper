@@ -168,7 +168,7 @@ def evaluate_fitnesses(individuals, opt, evaluator, timeout_minutes):
     points = list(map(opt.space_encoder.decode_point, individuals))
     for x in points: evaluator.add_eval(x)
     logger.info(f"Waiting on {len(points)} individual fitness evaluations")
-    results = evaluator.await_evals(points, timeout=timeout_minutes*60)
+    results = evaluator.await_evals(points, timeout_sec=timeout_minutes*60)
 
     for ind, (x,fit) in zip(individuals, results):
         ind.fitness.values = (fit,)

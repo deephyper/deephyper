@@ -85,7 +85,7 @@ class Hyperband:
             print(f'==> n_configs={n_configs} n_iterations={n_iterations}')
 
             for t in T: self.evaluator.add_eval(t, re_evaluate=True)
-            eval_results = self.evaluator.await_evals(T, timeout=self.eval_timeout_seconds) # barrier
+            eval_results = self.evaluator.await_evals(T, timeout_sec=self.eval_timeout_seconds) # barrier
             val_losses = [loss for (t, loss) in eval_results]
             assert len(val_losses) == len(T)
 
