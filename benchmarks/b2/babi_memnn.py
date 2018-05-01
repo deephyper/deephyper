@@ -299,7 +299,7 @@ def run(param_dict):
     timer.end()
 
 
-    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=5, verbose=1, mode='auto')
+    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=10, verbose=1, mode='auto')
     timeout_monitor = TerminateOnTimeOut(TIMEOUT)
     callbacks_list = [earlystop, timeout_monitor]
 

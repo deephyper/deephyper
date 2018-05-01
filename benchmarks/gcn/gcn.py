@@ -1,7 +1,7 @@
 import sys
 import os
 from pprint import pprint
-
+import  time
 here = os.path.dirname(os.path.abspath(__file__))
 top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
 sys.path.append(top)
@@ -24,7 +24,8 @@ import pickle
 from keras.models import load_model
 
 from deephyper.benchmarks import keras_cmdline 
-
+from keras.callbacks import EarlyStopping
+from deephyper.benchmarks.util import TerminateOnTimeOut
 from numpy.random import seed
 from tensorflow import set_random_seed
 timer.end()
@@ -45,6 +46,9 @@ def run(param_dict):
     DROPOUT = param_dict['dropout']
     NUNITS = param_dict['nunits']
     ACTIVATION = param_dict['activation']
+    BATCH_SIZE = param_dict['batch_size']
+    TIMEOUT = param_dict['timeout']
+
     #SHARE_WEIGHTS = param_dict['share_weights']
     # Define parameters
     DATASET = 'cora'
@@ -147,29 +151,48 @@ def run(param_dict):
         preds = None
         best_val_loss = 99999
     timer.end()
-
+    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=5, verbose=1, mode='auto')
+    timeout_monitor = TerminateOnTimeOut(TIMEOUT)
+    callbacks_list = [earlystop, timeout_monitor]
     # Fit
     training_timer = util.Timer()
     training_timer.start('model training')
+    prev_val_acc = 0
+    count = 0
+    patience = 10
+    delta = 0.0001
     for epoch in range(initial_epoch, EPOCHS):
         # Log wall-clock time
         timer.start(f'epoch {epoch}')
-
         # Single training iteration (we mask nodes without labels for loss calculation)
         model.fit(graph, y_train, sample_weight=train_mask, batch_size=A.shape[0], epochs=1, shuffle=False, verbose=0)
 
         # Predict on full dataset
-        preds = model.predict(graph, batch_size=A.shape[0])
+        preds = model.predict(graph, batch_size=A.shape[0]) #
 
         # Train / validation scores
-        train_val_loss, train_val_acc = evaluate_preds(preds, [y_train, y_val],
-                                                    [idx_train, idx_val])
+        train_val_loss, train_val_acc = evaluate_preds(preds, [y_train, y_val], [idx_train, idx_val])
         print("Epoch: {:04d}".format(epoch),
             "train_loss= {:.4f}".format(train_val_loss[0]),
             "train_acc= {:.4f}".format(train_val_acc[0]),
             "val_loss= {:.4f}".format(train_val_loss[1]),
             "val_acc= {:.4f}".format(train_val_acc[1]))
         timer.end()
+
+        diff = abs(prev_val_acc - train_val_acc[1])
+        #print(diff)
+        if diff > delta:
+            prev_val_acc = train_val_acc[1]
+            count = 0
+        else:
+            count = count+1
+        if count >= patience:
+            print('Early stopping')
+            break
+        elapsed = time.time() - training_timer.t0
+        if elapsed >= TIMEOUT * 60:
+            print(' - timeout: training time = %2.3fs/%2.3fs' % (elapsed, TIMEOUT * 60))
+            break
     training_timer.end()
 
     # Testing
@@ -177,8 +200,8 @@ def run(param_dict):
     print("Test set results:",
         "loss= {:.4f}".format(test_loss[0]),
         "accuracy= {:.4f}".format(test_acc[0]))
-    print('===Validation accuracy:', train_val_acc[1])
-    print('OUTPUT:', -train_val_acc[1])
+    print('===Validation accuracy:', test_acc[0])
+    print('OUTPUT:', -test_acc[0])
     
     if model_path:
         timer.start('model save')
@@ -186,7 +209,7 @@ def run(param_dict):
         util.save_meta_data(param_dict, model_mda_path)
         timer.end()
 
-    return -train_val_acc[1]
+    return -test_acc[0]
 
 def augment_parser(parser):
 

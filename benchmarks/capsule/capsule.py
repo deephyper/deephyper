@@ -258,7 +258,7 @@ def run(param_dict):
     timer.start('model training')
 
     # we can compare the performance with or without data augmentation
-    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=5, verbose=1, mode='auto')
+    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=10, verbose=1, mode='auto')
     timeout_monitor = TerminateOnTimeOut((x_test, y_test),TIMEOUT)
     callbacks_list = [earlystop, timeout_monitor]
 
