@@ -68,7 +68,7 @@ def run(param_dict):
     F1_UNITS = param_dict['f1_units']
     F2_UNITS = param_dict['f2_units']
     P_SIZE = param_dict['p_size']
-    DATA_AUGMENTATION = param_dict['data_augmentation']
+    DATA_AUGMENTATION = param_dict['data_aug']
     TIMEOUT = param_dict['timeout']
 
 
@@ -127,9 +127,9 @@ def run(param_dict):
     x_test /= 255
     timer.end()
     
-    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=10, verbose=1, mode='auto')
+    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=50, verbose=1, mode='auto')
     timeout_monitor = TerminateOnTimeOut((x_test, y_test),TIMEOUT)
-    callbacks_list = [timeout_monitor]
+    callbacks_list = [earlystop, timeout_monitor]
 
 
     timer.start('model training')
@@ -140,7 +140,7 @@ def run(param_dict):
                         initial_epoch=initial_epoch,
                         verbose=1, shuffle=True,
                         callbacks=callbacks_list,
-                        validation_split=0.10)
+                        validation_split=0.30)
                         #validation_data=(x_test, y_test))
     else:
         datagen = ImageDataGenerator(
@@ -160,7 +160,10 @@ def run(param_dict):
                             initial_epoch=initial_epoch,
                             callbacks=callbacks_list,
                             steps_per_epoch=steps_per_epoch, verbose=1,
-                            validation_split=0.10, workers=1)
+                            validation_data=datagen.flow(x_test, y_test, batch_size=BATCH_SIZE), 
+                            validation_steps=10,
+                            workers=1)
+                            #validation_split=0.30,
                             #validation_data=(x_test, y_test), 
     timer.end()
 
@@ -178,7 +181,7 @@ def run(param_dict):
     return -score[1]
 
 def augment_parser(parser):
-    parser.add_argument('--data_augmentation', action='store', type=util.str2bool,
+    parser.add_argument('--data_aug', action='store', type=util.str2bool, default=False,
                         help='boolean. data_augmentation?')
 
     parser.add_argument('--f1_size', action='store', dest='f1_size',

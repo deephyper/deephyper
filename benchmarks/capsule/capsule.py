@@ -303,6 +303,8 @@ def run(param_dict):
             initial_epoch=initial_epoch,
             #validation_split=0.10,
             #validation_data=(x_test, y_test),
+            validation_data=datagen.flow(x_test, y_test, batch_size=BATCH_SIZE), 
+            validation_steps=10,
             workers=1)
     
     timer.end()

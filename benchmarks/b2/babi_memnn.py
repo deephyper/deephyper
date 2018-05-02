@@ -299,12 +299,13 @@ def run(param_dict):
     timer.end()
 
 
-    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=10, verbose=1, mode='auto')
+    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=50, verbose=1, mode='auto')
     timeout_monitor = TerminateOnTimeOut(TIMEOUT)
-    callbacks_list = [timeout_monitor]
+    callbacks_list = [earlystop,timeout_monitor]
 
     timer.start('model training')
-    train_history = model.fit([inputs_train, queries_train], answers_train, callbacks=callbacks_list, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=EPOCHS, validation_split=0.10) #, validation_data=([inputs_test, queries_test], answers_test))
+    train_history = model.fit([inputs_train, queries_train], answers_train, callbacks=callbacks_list, 
+                                batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=EPOCHS, validation_split=0.30) #, validation_data=([inputs_test, queries_test], answers_test))
     timer.end()
     
     score = model.evaluate([inputs_test, queries_test], answers_test, batch_size=BATCH_SIZE)

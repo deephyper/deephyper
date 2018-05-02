@@ -109,9 +109,9 @@ def run(param_dict):
 
     timer.end()
 
-    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=10, verbose=1, mode='auto')
+    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=50, verbose=1, mode='auto')
     timeout_monitor = TerminateOnTimeOut((x_test, y_test),TIMEOUT)
-    callbacks_list = [timeout_monitor]
+    callbacks_list = [earlystop, timeout_monitor]
 
     timer.start('model training')
     history = model.fit(x_train, y_train,
@@ -120,7 +120,7 @@ def run(param_dict):
                     epochs=EPOCHS,
                     verbose=1,
                     callbacks=callbacks_list,
-                    validation_split = 0.1)
+                    validation_split = 0.3)
                     #validation_data=(x_test, y_test))
     timer.end()
     score = model.evaluate(x_test, y_test, verbose=0)
