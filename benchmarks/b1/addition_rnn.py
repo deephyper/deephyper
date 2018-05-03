@@ -224,9 +224,6 @@ def run(param_dict):
     earlystop = EarlyStopping(monitor='val_acc', min_delta=delta, patience=patience, verbose=1, mode='auto')
     timeout_monitor = TerminateOnTimeOut((x_val, y_val),TIMEOUT)
     callbacks_list = [earlystop, timeout_monitor]
-    print(patience)
-    print(delta)
-    sys.exit(0)
 
     timer.start('model training')
     train_history = model.fit(x_train, y_train, callbacks=callbacks_list, batch_size=BATCH_SIZE, 
