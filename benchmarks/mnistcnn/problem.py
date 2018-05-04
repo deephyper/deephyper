@@ -11,7 +11,7 @@ class Problem():
         space['p_size'] = [2, 3, 4]
         space['nunits'] = (1, 1000)
         #network parameters
-        space['activation'] = ['relu', 'softmax', 'elu', 'selu', 'softplus', 'tanh', 'sigmoid']
+        space['activation'] = ['relu', 'elu', 'selu', 'tanh']
         space['batch_size'] = (8, 1024)
         space['dropout'] = (0.0, 1.0)
         space['optimizer'] = ['sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam', 'adamax', 'nadam']
