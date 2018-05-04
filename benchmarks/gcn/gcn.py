@@ -151,9 +151,9 @@ def run(param_dict):
         preds = None
         best_val_loss = 99999
     timer.end()
-    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=50, verbose=1, mode='auto')
+    #earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=50, verbose=1, mode='auto')
     timeout_monitor = TerminateOnTimeOut(TIMEOUT)
-    callbacks_list = [earlystop, timeout_monitor]
+    callbacks_list = [timeout_monitor]
     # Fit
     training_timer = util.Timer()
     training_timer.start('model training')

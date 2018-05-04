@@ -284,9 +284,9 @@ def run(param_dict):
         model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
     timer.end()
-    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=50, verbose=1, mode='auto')
+    #earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=50, verbose=1, mode='auto')
     timeout_monitor = TerminateOnTimeOut(TIMEOUT)
-    callbacks_list = [earlystop, timeout_monitor]
+    callbacks_list = [timeout_monitor]
     timer.start('model training')
     print('Training')
     model.fit([x, xq], y, callbacks=callbacks_list, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, 

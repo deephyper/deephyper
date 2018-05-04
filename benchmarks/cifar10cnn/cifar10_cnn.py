@@ -127,9 +127,9 @@ def run(param_dict):
     x_test /= 255
     timer.end()
     
-    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=50, verbose=1, mode='auto')
-    timeout_monitor = TerminateOnTimeOut((x_test, y_test),TIMEOUT)
-    callbacks_list = [earlystop, timeout_monitor]
+    #earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=50, verbose=1, mode='auto')
+    timeout_monitor = TerminateOnTimeOut(TIMEOUT)
+    callbacks_list = [timeout_monitor]
 
 
     timer.start('model training')
