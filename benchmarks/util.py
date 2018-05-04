@@ -109,11 +109,11 @@ def stage_in(file_names, source, dest):
     return paths
 
 class TerminateOnTimeOut(Callback):
-    def __init__(self, validation_data = None, timeout_in_min = 10):
+    def __init__(self, timeout_in_min = 10):
         super(TerminateOnTimeOut, self).__init__()
         self.run_timestamp = None
         self.timeout_in_sec = timeout_in_min * 60
-        self.validation_data = validation_data
+        #self.validation_data = validation_data
     def on_train_begin(self, logs={}):
         self.run_timestamp = datetime.now()
     def on_batch_end(self, epoch, logs={}):
