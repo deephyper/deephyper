@@ -168,6 +168,14 @@ class Capsule(Layer):
     def compute_output_shape(self, input_shape):
         return (None, self.num_capsule, self.dim_capsule)
 
+    @classmethod
+    def from_config(cls, config, custom_objects):
+        num_capsule = custom_objects['num_capsule']
+        dim_capsule = custom_objects['dim_capsule']
+        routings = custom_objects['routings']
+        share_weights = custom_objects['share_weights']
+        return cls(num_capsule, dim_capsule, routings, share_weights)
+
 
 def run(param_dict):
     param_dict = keras_cmdline.fill_missing_defaults(augment_parser, param_dict)
@@ -216,7 +224,15 @@ def run(param_dict):
     initial_epoch = 0
 
     if model_path:
-        savedModel = util.resume_from_disk(BNAME, param_dict, data_dir=model_path)
+        custom_objects = {'Capsule' : Capsule,
+                          'num_capsule' : 10,
+                          'dim_capsule' : DIM_CAPS,
+                          'routings' : ROUTINGS,
+                          'share_weights' : SHARE_WEIGHTS,
+                          'margin_loss': margin_loss
+                         }
+        savedModel = util.resume_from_disk(BNAME, param_dict, 
+                       data_dir=model_path, custom_objects=custom_objects)
         model_mda_path = savedModel.model_mda_path
         model_path = savedModel.model_path
         model = savedModel.model
