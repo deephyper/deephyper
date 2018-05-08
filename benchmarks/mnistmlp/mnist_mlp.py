@@ -129,8 +129,8 @@ def run(param_dict):
     
     if model_path:
         timer.start('model save')
-        model.save(model_name)  
-        save_meta_data(param_dict, model_mda_name)
+        model.save(model_path)  
+        save_meta_data(param_dict, model_mda_path)
         timer.end()
 
     print('OUTPUT:', -score[1])
