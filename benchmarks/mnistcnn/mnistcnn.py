@@ -108,20 +108,20 @@ def run(param_dict):
 
     if model is None:
         model = Sequential()
-        
+        print(input_shape)
         model.add(Conv2D(F1_UNITS, (F1_SIZE, F1_SIZE), padding='same',
                         input_shape=input_shape))
         model.add(Activation(ACTIVATION))
         model.add(Conv2D(F1_UNITS, (F1_SIZE, F1_SIZE)))
         model.add(Activation(ACTIVATION))
-        model.add(MaxPooling2D(pool_size=(P_SIZE, P_SIZE), padding='same'))
+        #model.add(MaxPooling2D(pool_size=(P_SIZE, P_SIZE), padding='same'))
         model.add(Dropout(DROPOUT))
 
         model.add(Conv2D(F2_UNITS, (F2_SIZE, F2_SIZE), padding='same'))
         model.add(Activation(ACTIVATION))
         model.add(Conv2D(F2_UNITS, (F2_SIZE, F2_SIZE)))
         model.add(Activation(ACTIVATION))
-        model.add(MaxPooling2D(pool_size=(P_SIZE, P_SIZE), padding='same'))
+        #model.add(MaxPooling2D(pool_size=(P_SIZE, P_SIZE), padding='same'))
         model.add(Dropout(DROPOUT))
 
         model.add(Flatten())
@@ -139,8 +139,8 @@ def run(param_dict):
     x_test /= 255
     timer.end()
 
-    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=10, verbose=1, mode='auto')
-    timeout_monitor = TerminateOnTimeOut((x_test, y_test),TIMEOUT)
+    #earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=50, verbose=1, mode='auto')
+    timeout_monitor = TerminateOnTimeOut(TIMEOUT)
     callbacks_list = [timeout_monitor]
 
     timer.start('model training')
@@ -150,7 +150,7 @@ def run(param_dict):
                         initial_epoch=initial_epoch,
                         verbose=1, 
                         callbacks=callbacks_list,
-                        validation_split = 0.1)
+                        validation_split = 0.3)
                         #validation_data=(x_test, y_test))
     timer.end()
     score = model.evaluate(x_test, y_test, verbose=0)
@@ -167,7 +167,7 @@ def run(param_dict):
     return -score[1]
 
 def augment_parser(parser):
-    parser.add_argument('--data_augmentation', action='store', type=util.str2bool,
+    parser.add_argument('--data_aug', action='store', type=util.str2bool, default=False,
                         help='boolean. data_augmentation?')
 
     parser.add_argument('--f1_size', action='store', dest='f1_size',

@@ -151,7 +151,7 @@ def run(param_dict):
         preds = None
         best_val_loss = 99999
     timer.end()
-    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=5, verbose=1, mode='auto')
+    #earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=50, verbose=1, mode='auto')
     timeout_monitor = TerminateOnTimeOut(TIMEOUT)
     callbacks_list = [timeout_monitor]
     # Fit
@@ -159,7 +159,7 @@ def run(param_dict):
     training_timer.start('model training')
     prev_val_acc = 0
     count = 0
-    patience = 10
+    patience = 50
     delta = 0.0001
     for epoch in range(initial_epoch, EPOCHS):
         # Log wall-clock time
@@ -187,10 +187,10 @@ def run(param_dict):
         else:
             count = count+1
         
-        if False and count >= patience:
+        if count >= patience:
             print('Early stopping')
             break
-            
+
         elapsed = time.time() - training_timer.t0
         if elapsed >= TIMEOUT * 60:
             print(' - timeout: training time = %2.3fs/%2.3fs' % (elapsed, TIMEOUT * 60))

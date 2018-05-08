@@ -9,7 +9,7 @@ class Problem():
         space['filter'] = ['localpool', 'chebyshev']
         space['max_degree'] = (1, 10)
         #network parameters
-        space['activation'] = ['relu', 'softmax', 'elu', 'selu', 'softplus', 'tanh', 'sigmoid']
+        space['activation'] = ['relu', 'elu', 'selu', 'tanh']
         space['batch_size'] = (8, 1024)
         space['dropout'] = (0.0, 1.0)
         space['optimizer'] = ['sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam', 'adamax', 'nadam']

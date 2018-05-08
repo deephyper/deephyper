@@ -181,6 +181,8 @@ def run(param_dict):
     ACTIVATION = param_dict['activation']
     EPOCHS = param_dict['epochs']
     TIMEOUT = param_dict['timeout']
+    patience = param_dict['patience']
+    delta = param_dict['delta']
 
     model_path = param_dict['model_path']
     model_mda_path = None
@@ -199,7 +201,7 @@ def run(param_dict):
         # "Encode" the input sequence using an RNN, producing an output of HIDDEN_SIZE.
         # Note: In a situation where your input sequences have a variable length,
         # use input_shape=(None, num_feature).
-        model.add(RNN(HIDDEN_SIZE, dropout=DROPOUT, input_shape=(MAXLEN, len(chars))))
+        model.add(RNN(HIDDEN_SIZE, activation=ACTIVATION, dropout=DROPOUT, input_shape=(MAXLEN, len(chars))))
         # As the decoder RNN's input, repeatedly provide with the last hidden state of
         # RNN for each time step. Repeat 'DIGITS + 1' times as that's the maximum
         # length of output, e.g., when DIGITS=3, max output is 999+999=1998.
@@ -210,21 +212,22 @@ def run(param_dict):
             # all the outputs so far in the form of (num_samples, timesteps,
             # output_dim). This is necessary as TimeDistributed in the below expects
             # the first dimension to be the timesteps.
-            model.add(RNN(HIDDEN_SIZE, dropout=DROPOUT, return_sequences=True))
+            model.add(RNN(HIDDEN_SIZE, activation=ACTIVATION, dropout=DROPOUT, return_sequences=True))
         # Apply a dense layer to the every temporal slice of an input. For each of step
         # of the output sequence, decide which character should be chosen.
         model.add(layers.TimeDistributed(layers.Dense(len(chars))))
-        model.add(layers.Activation(ACTIVATION))
+        model.add(layers.Activation('softmax'))
         model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
         model.summary()
     timer.end()
 
-    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=10, verbose=1, mode='auto')
-    timeout_monitor = TerminateOnTimeOut((x_val, y_val),TIMEOUT)
+    earlystop = EarlyStopping(monitor='val_acc', min_delta=delta, patience=patience, verbose=1, mode='auto')
+    timeout_monitor = TerminateOnTimeOut(TIMEOUT)
     callbacks_list = [timeout_monitor]
 
     timer.start('model training')
-    train_history = model.fit(x_train, y_train, callbacks=callbacks_list, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=EPOCHS, validation_split=0.10)#, validation_data=(x_val, y_val))
+    train_history = model.fit(x_train, y_train, callbacks=callbacks_list, batch_size=BATCH_SIZE, 
+                                initial_epoch=initial_epoch, epochs=EPOCHS, validation_split=0.30)#, validation_data=(x_val, y_val))
     timer.end()
     
     score = model.evaluate(x_val, y_val, batch_size=BATCH_SIZE)
