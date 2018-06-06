@@ -8,6 +8,7 @@ import numpy as np
 def grep_times(path):
     taskpaths = os.path.join(path, 'task*/*.out')
     cmd = f'grep --color=never TIMER {taskpaths}'
+    print("running", cmd)
     proc = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     if proc.returncode != 0:
         print(proc.stdout)

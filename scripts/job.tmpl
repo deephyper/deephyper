@@ -30,6 +30,7 @@ source ~/.bash_profile
 module unload trackdeps
 module unload darshan
 module unload xalt
+export MPICH_GNI_FORK_MODE=FULLCOPY
 {% endif -%}
 
 balsam init {{ db_path }} {% if 'postgres' in platform %} --db-type=postgres {% endif %}

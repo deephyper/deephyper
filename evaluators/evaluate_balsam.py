@@ -51,14 +51,14 @@ class BalsamEvaluator(evaluate.Evaluator):
 
     def _init_current_balsamjob(self):
         this = dag.add_job(name='search', workflow=self.bench_module_name,
-                           wall_time_minutes=60
+                           wall_time_minutes=60, state='JOB_FINISHED'
                           )
-        this.create_working_path()
-        this.update_state('JOB_FINISHED')
+        workdir = this.working_directory
+        if not os.path.exists(workdir): os.makedirs(workdir)
         dag.current_job = this
         dag.JOB_ID = this.job_id
-        os.chdir(this.working_directory)
-        logger.debug(f"Running in Balsam job directory: {this.working_directory}")
+        os.chdir(workdir)
+        logger.debug(f"Running in Balsam job directory: {workdir}")
 
     def _eval_exec(self, x):
         jobname = f"task{self.counter}"
@@ -72,26 +72,22 @@ class BalsamEvaluator(evaluate.Evaluator):
         args = ' '.join(f"--{p}={v}" for p,v in param_dict.items())
         envs = f"KERAS_BACKEND={self.backend}"
 
-        start = time.time()
-        with self.transaction_context():
-            child = dag.spawn_child(
-                        name = jobname,
-                        direct_command = cmd,
-                        application_args = args,
-                        environ_vars = envs,
-                        wall_time_minutes = 2,
-                        num_nodes = 1, ranks_per_node = 1,
-                        threads_per_rank=64,
-                        serial_node_packing_count=2,
-                        wait_for_parents = False
-                       )
-            child.create_working_path()
-            child.update_state('PREPROCESSED')
+        child = dag.add_job(
+                    name = jobname,
+                    workflow = dag.current_job.workflow,
+                    direct_command = cmd,
+                    application_args = args,
+                    environ_vars = envs,
+                    wall_time_minutes = 2,
+                    num_nodes = 1, ranks_per_node = 1,
+                    threads_per_rank=64,
+                    serial_node_packing_count=2,
+                    wait_for_parents = False,
+                    state='PREPROCESSED'
+                   )
         logger.debug(f"Created job {jobname}")
         logger.debug(f"Command: {cmd}")
         logger.debug(f"Args: {args}")
-        elapsed = time.time() - start
-        logger.debug(f'time to spawn_child, create_working_path, update to preproc: {elapsed:.4f}')
 
         self.id_key_map[child.job_id.hex] = self._encode(x)
         return child.job_id.hex
@@ -197,7 +193,7 @@ class BalsamEvaluator(evaluate.Evaluator):
                 yield (x, y)
             
             error_jobs = BalsamJob.objects.filter(job_id__in=query_block)
-            error_jobs = error_jobs.filter(state__in=['RUN_ERROR', 'FAILED'])
+            error_jobs = error_jobs.filter(state__in=['RUN_ERROR', 'FAILED', 'USER_KILLED'])
 
             for job in error_jobs:
                 logger.info(f"Failed job: {job.cute_id}")

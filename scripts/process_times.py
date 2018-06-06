@@ -1,7 +1,10 @@
 from itertools import chain
 import sys
 import numpy as np
-from matplotlib import pyplot as plt
+try:
+    from matplotlib import pyplot as plt
+except:
+    plt = None
 
 from balsam.launcher import dag
 from balsam.service.models import process_job_times
@@ -11,7 +14,7 @@ def analyze(plot=False, csv=False):
 
     state_times = process_job_times(state0='PREPROCESSED')
     next_states = { 
-                   'CREATED' : ['PREPROCESSED', 'JOB_FINISHED'],
+                   'CREATED' : ['RUNNING'],
                    'PREPROCESSED' : ['RUNNING'],
                    'RUNNING': ['RUN_DONE', 'RUN_ERROR', 'FAILED', 'RUN_TIMEOUT', 'USER_KILLED'],
                    'RUN_DONE' : [],
@@ -45,7 +48,7 @@ def analyze(plot=False, csv=False):
         state_counts[state] = counts
 
     # Generate report
-    report_states = ['PREPROCESSED', 'RUNNING', 'RUN_DONE']
+    report_states = ['CREATED', 'RUNNING', 'RUN_DONE']
     if 'RUN_ERROR' in states: report_states.append('RUN_ERROR')
     if 'USER_KILLED' in states: report_states.append('USER_KILLED')
 
@@ -60,6 +63,8 @@ def analyze(plot=False, csv=False):
         for row in data: print(' '.join(map(str, row)))
 
     if plot:
+        if plt is None:
+            raise RuntimeError("Can't plot because matplotlib could not be imported!")
         for i, state in enumerate(report_states, 1):
             plt.plot(data[:,0], data[:,i], label=state)
         plt.xlabel('Elapsed seconds')
