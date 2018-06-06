@@ -168,6 +168,14 @@ class Capsule(Layer):
     def compute_output_shape(self, input_shape):
         return (None, self.num_capsule, self.dim_capsule)
 
+    @classmethod
+    def from_config(cls, config, custom_objects):
+        num_capsule = custom_objects['num_capsule']
+        dim_capsule = custom_objects['dim_capsule']
+        routings = custom_objects['routings']
+        share_weights = custom_objects['share_weights']
+        return cls(num_capsule, dim_capsule, routings, share_weights)
+
 
 def run(param_dict):
     param_dict = keras_cmdline.fill_missing_defaults(augment_parser, param_dict)
@@ -216,7 +224,15 @@ def run(param_dict):
     initial_epoch = 0
 
     if model_path:
-        savedModel = util.resume_from_disk(BNAME, param_dict, data_dir=model_path)
+        custom_objects = {'Capsule' : Capsule,
+                          'num_capsule' : 10,
+                          'dim_capsule' : DIM_CAPS,
+                          'routings' : ROUTINGS,
+                          'share_weights' : SHARE_WEIGHTS,
+                          'margin_loss': margin_loss
+                         }
+        savedModel = util.resume_from_disk(BNAME, param_dict, 
+                       data_dir=model_path, custom_objects=custom_objects)
         model_mda_path = savedModel.model_mda_path
         model_path = savedModel.model_path
         model = savedModel.model
@@ -258,8 +274,8 @@ def run(param_dict):
     timer.start('model training')
 
     # we can compare the performance with or without data augmentation
-    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=10, verbose=1, mode='auto')
-    timeout_monitor = TerminateOnTimeOut((x_test, y_test),TIMEOUT)
+    #earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=10, verbose=1, mode='auto')
+    timeout_monitor = TerminateOnTimeOut(TIMEOUT)
     callbacks_list = [timeout_monitor]
 
     if not DATA_AUG:
@@ -271,7 +287,7 @@ def run(param_dict):
             batch_size=BATCH_SIZE,
             epochs=EPOCHS,
             initial_epoch=initial_epoch,
-            validation_split=0.10,
+            #validation_split=0.10,
             #validation_data=(x_test, y_test),
             shuffle=True)
     else:
@@ -301,8 +317,10 @@ def run(param_dict):
             epochs=EPOCHS,
             steps_per_epoch=steps_per_epoch,
             initial_epoch=initial_epoch,
-            validation_split=0.10,
+            #validation_split=0.10,
             #validation_data=(x_test, y_test),
+            validation_data=datagen.flow(x_test, y_test, batch_size=BATCH_SIZE), 
+            validation_steps=10,
             workers=1)
     
     timer.end()

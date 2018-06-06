@@ -1,0 +1,26 @@
+[Global_Params]
+model_name='p1b1'
+dense=[2000, 600]
+batch_size=100
+epochs=100
+activation='relu'
+loss='mse'
+optimizer='adam'
+drop=0
+learning_rate=None
+base_lr=None
+scaling='minmax'
+model='ae'
+noise_factor=0
+validation_split=0.1
+epsilon_std=1.0
+rng_seed=2017
+initialization='glorot_uniform'
+latent_dim=2
+feature_subsample=0
+batch_normalization=False
+save='save'
+
+[Monitor_Params]
+solr_root=''
+timeout=3600

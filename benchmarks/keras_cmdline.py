@@ -46,6 +46,14 @@ def create_parser():
                         choices=['sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam', 'adamax', 'nadam'],
                         help='type of optimizer')
 
+    parser.add_argument('--patience', action='store', dest='patience',
+                        nargs='?', const=2, type=int, default='10',
+                        help='number of patience epochs for early stopping')
+
+    parser.add_argument('--delta', action='store', dest='delta',
+                        nargs='?', const=1, type=float, default=0.0001,
+                        help='float >= 0. min delta for early stopping')
+
     # common optimizer parameters
     parser.add_argument('--clipnorm', action='store', dest='clipnorm',
                         nargs='?', const=1, type=float, default=1.0,

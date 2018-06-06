@@ -96,13 +96,20 @@ class Optimizer:
         self.evals[self._encode(x)] = y
         return x
 
-    def ask(self, n_points=None):
+    def ask(self, n_points=None, batch_size=20):
         if n_points is None:
             self.counter += 1
             return self._ask()
         else:
             self.counter += n_points
-            return [self._ask() for i in range(n_points)]
+            batch = []
+            for i in range(n_points):
+                batch.append(self._ask())
+                if len(batch) == batch_size:
+                    yield batch
+                    batch = []
+            if batch:
+                yield batch
 
     def ask_initial(self, n_points):
         XX = self._optimizer.ask(n_points=n_points)
@@ -172,10 +179,8 @@ def main(args):
             optimizer.tell(results)
             #profile_timer.end('tell')
             logger.info(f"Drawing {len(results)} points with strategy {optimizer.strategy}")
-            #profile_timer.start('ask')
-            XX = optimizer.ask(n_points=len(results))
-            #profile_timer.end('ask')
-            evaluator.add_eval_batch(XX, re_evaluate=cfg.repeat_evals)
+            for batch in optimizer.ask(n_points=len(results)):
+                evaluator.add_eval_batch(batch, re_evaluate=cfg.repeat_evals)
             chkpoint_counter += len(results)
 
         if chkpoint_counter >= CHECKPOINT_INTERVAL:

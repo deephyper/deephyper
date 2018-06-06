@@ -109,8 +109,8 @@ def run(param_dict):
 
     timer.end()
 
-    earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=10, verbose=1, mode='auto')
-    timeout_monitor = TerminateOnTimeOut((x_test, y_test),TIMEOUT)
+    #earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=50, verbose=1, mode='auto')
+    timeout_monitor = TerminateOnTimeOut(TIMEOUT)
     callbacks_list = [timeout_monitor]
 
     timer.start('model training')
@@ -120,7 +120,7 @@ def run(param_dict):
                     epochs=EPOCHS,
                     verbose=1,
                     callbacks=callbacks_list,
-                    validation_split = 0.1)
+                    validation_split = 0.3)
                     #validation_data=(x_test, y_test))
     timer.end()
     score = model.evaluate(x_test, y_test, verbose=0)
@@ -129,8 +129,8 @@ def run(param_dict):
     
     if model_path:
         timer.start('model save')
-        model.save(model_name)  
-        save_meta_data(param_dict, model_mda_name)
+        model.save(model_path)  
+        util.save_meta_data(param_dict, model_mda_path)
         timer.end()
 
     print('OUTPUT:', -score[1])
