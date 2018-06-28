@@ -33,11 +33,13 @@ def check_conf(conf, args):
         subprocess.run(f'source activate {env_name}', check=True, shell=True)
     except subprocess.CalledProcessError:
         raise ValueError(f"Cannot activate {env_name} referenced in runjob.conf")
-    
+
     if args.method == 'hyperband':
         assert args.saved_model_path is not None, 'hyperband requires --saved_model_path'
         args.saved_model_path = os.path.abspath(os.path.expanduser(args.saved_model_path))
         assert os.path.exists(args.saved_model_path), f'{args.saved_model_path} not found'
+    elif args.method == 'nas':
+        pass # TODO : check conf for network architecture search
 
     hostname = gethostname()
     if 'theta' in hostname: assert args.platform in ['theta', 'theta_postgres'], "please use a theta platform"
@@ -59,7 +61,7 @@ def get_conf(args):
 def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('platform', choices=['cooley', 'theta', 'theta_postgres'])
-    parser.add_argument('method', choices=['xgb', 'rf', 'et', 'gbrt', 'gp', 'rs', 'ga', 'hyperband'])
+    parser.add_argument('method', choices=['xgb', 'rf', 'et', 'gbrt', 'gp', 'rs', 'ga', 'hyperband', 'nas'])
     parser.add_argument('benchmark', choices=['b1.addition_rnn',
                                              'b2.babi_memnn',
                                              'b3.babi_rnn', 'wrf.wrf', 'traffic.traffic',
@@ -73,6 +75,7 @@ def get_parser():
                                              'rosen2.rosenbrock2',
                                              'rosen10.rosenbrock10',
                                              'rosen30.rosenbrock30',
+                                             'mnistNas.mnist_nas',
                                              ]
                        )
     parser.add_argument('acq', choices=["LCB", "EI", "PI","gp_hedge"], default ="gp_hedge")
@@ -119,7 +122,7 @@ def main():
         conf['saved_model_path'] = modelpath
 
     jobname = '.'.join(str(conf[key]) for key in 'benchmark nodes method acq'.split())
-    if args.platform == 'cooley': 
+    if args.platform == 'cooley':
         jobname += '.gpu'
     elif args.platform == 'theta_postgres':
         jobname += '.pg'

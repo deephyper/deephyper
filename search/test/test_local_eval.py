@@ -8,10 +8,11 @@ top  = os.path.dirname(os.path.dirname(os.path.dirname(HERE))) # directory conta
 print(top)
 sys.path.append(top)
 
-from deephyper.search import evaluate_local, util
+from deephyper.search import util
+from deephyper.evaluators import evaluate_local
 import logging
 
-master_logger = util.conf_logger()
+master_logger = util.conf_logger('master')
 logger = logging.getLogger(__name__)
 
 bench_module = 'deephyper.search.test.dummy_bench'

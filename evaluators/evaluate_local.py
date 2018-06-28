@@ -10,7 +10,7 @@ class LocalEvaluator(evaluate.Evaluator):
     ExecutorCls = concurrent.futures.ProcessPoolExecutor
 
     def __init__(self, params_list, bench_module_name, num_workers=None,
-                 backend='tensorflow', model_path='', data_source='', 
+                 backend='tensorflow', model_path='', data_source='',
                  stage_in_destination=''):
         super().__init__()
         self.executor = None
@@ -64,6 +64,10 @@ class LocalEvaluator(evaluate.Evaluator):
         logger.info(f"Waiting on {len(futures)} evals to finish...")
         done = concurrent.futures.wait(futures)
 
+        print()
+        print(results)
+        print()
+
         for (x, key, future) in results:
             if isinstance(future, concurrent.futures.Future):
                 y = future.result()
@@ -73,7 +77,7 @@ class LocalEvaluator(evaluate.Evaluator):
             if key in self.pending_evals: del self.pending_evals[key]
             logger.info(f"x: {x} y: {y}")
             yield (x, y)
-        
+
     def get_finished_evals(self):
         '''iter over any immediately available results'''
         done_list = [(key,future) for (key,future) in self.pending_evals.items()
@@ -113,7 +117,7 @@ class LocalEvaluator(evaluate.Evaluator):
 
         self.pending_evals = {}
         pending_eval_keys = d['pending_evals']
-        
+
         logger.info(f"Restored {len(self.evals)} finished evals")
         logger.info(f"Resuming {len(pending_eval_keys)} evals")
 
