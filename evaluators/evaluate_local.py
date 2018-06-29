@@ -37,7 +37,9 @@ class LocalEvaluator(evaluate.Evaluator):
         if self.executor is None:
             self._setup_executor()
 
+        assert isinstance(x, list)
         param_dict = {k:v for k,v in zip(self.params_list, x) if 'hidden' not in k}
+
         param_dict['model_path'] = self.model_path
         param_dict['data_source'] = self.data_source
         param_dict['stage_in_destination'] = self.stage_in_destination
@@ -48,6 +50,12 @@ class LocalEvaluator(evaluate.Evaluator):
 
     def await_evals(self, to_read):
         '''wait for a set of points to finish evaluating; iter over results'''
+        for i, x in enumerate(to_read[:]):
+            if isinstance(x, dict):
+                to_read[i] = list(x.values())
+            else:
+                assert isinstance(x, list)
+
         keys = list(map(self._encode, to_read))
 
         results = []

@@ -43,6 +43,8 @@ class Evaluator:
         return json.loads(key)
 
     def add_eval(self, x, re_evaluate=False):
+        if isinstance(x, dict):
+            x = list(x.values())
         key = self._encode(x)
         if key in self.evals or key in self.pending_evals:
             if not re_evaluate:

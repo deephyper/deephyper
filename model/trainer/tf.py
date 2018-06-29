@@ -45,15 +45,15 @@ class BasicTrainer:
         self.train_X = self.config[a.data][a.train_X]
         self.train_y = self.config[a.data][a.train_Y]
         perm = np.random.permutation(np.shape(self.train_X)[0])
-        self.train_X = self.train_X[perm]
-        self.train_y = self.train_y[perm]
+        self.train_X = self.train_X[0][perm]
+        self.train_y = self.train_y[0][perm]
         self.valid_X = self.config[a.data][a.valid_X]
         self.valid_y = self.config[a.data][a.valid_Y]
         self.train_size = np.shape(self.config[a.data][a.train_X])[0]
         print(self.train_X.shape, self.train_y.shape, self.input_shape)
         self.train_X = self.train_X.reshape(
             [-1]+self.input_shape).astype('float32')
-        self.valid_X = self.valid_X.reshape(
+        self.valid_X = self.valid_X[0].reshape(
             [-1]+self.input_shape).astype('float32')
         self.np_label_type = 'float32' if self.num_outputs == 1 else 'int64'
         self.train_y = np.squeeze(self.train_y).astype(self.np_label_type)

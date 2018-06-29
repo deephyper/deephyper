@@ -63,7 +63,7 @@ class Search:
                 # training the generated CNN and get the reward
                 self.config['global_step'] = i_episode
                 self.evaluator.add_eval(self.config)
-                rewards = self.evaluator.await_evals([self.config)
+                rewards = self.evaluator.await_evals([self.config])
                 #print("[ Episode = {0} ] reward = {1}".format(i_episode, res[0]))
             else:
                 rewards = [-1.0]
