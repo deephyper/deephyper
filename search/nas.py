@@ -12,6 +12,7 @@ import os
 import pickle
 import signal
 import sys
+from pprint import pprint
 
 HERE = os.path.dirname(os.path.abspath(__file__)) # search dir
 top  = os.path.dirname(os.path.dirname(HERE)) # directory containing deephyper
@@ -62,8 +63,10 @@ class Search:
             if all(ai > 0 for ai in action[0][0]):
                 # training the generated CNN and get the reward
                 self.config['global_step'] = i_episode
+                print("HERE")
+                pprint(self.config)
                 self.evaluator.add_eval(self.config)
-                rewards = self.evaluator.await_evals([self.config)
+                rewards = self.evaluator.await_evals([self.config])
                 #print("[ Episode = {0} ] reward = {1}".format(i_episode, res[0]))
             else:
                 rewards = [-1.0]
