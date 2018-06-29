@@ -3,10 +3,12 @@ import deephyper.model.arch as a
 from deephyper.benchmarks.mnistNas.load_data import load_data
 from deephyper.model.trainer.tf import BasicTrainer
 from deephyper.model.builder.tf import BasicBuilder
+from pprint import pprint
 
 
 def run(param_dict):
     config = param_dict
+    pprint(config, indent=4)
 
 
     # Loading data
