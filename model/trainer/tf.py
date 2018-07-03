@@ -115,6 +115,7 @@ class BasicTrainer:
                                  model.train_labels_node: batch_labels}
                     _, l, predictions = sess.run([model.optimizer, model.loss,model.logits],
                                                      feed_dict=feed_dict)
+                    print("OOOO")
                     if step % self.eval_freq == 0:
                         elapsed_time = time.time() - start_time
                         start_time = time.time()
