@@ -98,11 +98,10 @@ class OptConfigNas:
 
         # load load_data.py and the load_data function inside it
         load_data_module_name = f'{package}.benchmarks.{self.benchmark}.load_data'
-        #self.load_data = import_module(load_data_module_name).load_data
 
         # run module which contain a run(param_dict) function which return 'something'
         self.run_module_name = f'{package}.{args.run_module_name}'
-        self.run = import_module(self.run_module_name).run #run function
+        #self.run = import_module(self.run_module_name).run #run function
 
         # create a problem instance
         instance = problem_module.Problem()

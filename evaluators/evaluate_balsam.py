@@ -3,6 +3,7 @@ from math import isnan
 import time
 import os
 import sys
+import json
 
 from importlib.util import find_spec
 import logging
@@ -17,9 +18,9 @@ from django.conf import settings
 
 class BalsamEvaluator(evaluate.Evaluator):
 
-    def __init__(self, params_list, bench_module_name, num_workers=1,
-                 backend='tensorflow', model_path='', data_source='', 
-                 stage_in_destination=''):
+    def __init__(self, params_list, bench_module_name='', run_module_name=None,
+        num_workers=1, backend='tensorflow', model_path='', data_source='',
+        stage_in_destination=''):
         super().__init__()
 
         self.id_key_map = {}
@@ -27,11 +28,13 @@ class BalsamEvaluator(evaluate.Evaluator):
         self.params_list = params_list
         self.bench_module_name = bench_module_name
         self.bench_file = os.path.abspath(find_spec(bench_module_name).origin)
+        self.run_module_name = run_module_name
+        self.run_file = os.path.abspath(find_spec(run_module_name).origin) if run_module_name != None else None
         self.backend = backend
         self.model_path = model_path
         self.data_source = data_source
         self.stage_in_destination = stage_in_destination
-        
+
         if dag.current_job is None:
             self._init_current_balsamjob()
 
@@ -63,13 +66,47 @@ class BalsamEvaluator(evaluate.Evaluator):
     def _eval_exec(self, x):
         jobname = f"task{self.counter}"
         cmd = f"{sys.executable} {self.bench_file}"
-        
+
         param_dict = {p:v for p,v in zip(self.params_list, x)} # if 'hidden' not in p
         param_dict['model_path'] = self.model_path
         param_dict['data_source'] = self.data_source
         param_dict['stage_in_destination'] = self.stage_in_destination
 
         args = ' '.join(f"--{p}={v}" for p,v in param_dict.items())
+        envs = f"KERAS_BACKEND={self.backend}"
+
+        child = dag.add_job(
+                    name = jobname,
+                    workflow = dag.current_job.workflow,
+                    direct_command = cmd,
+                    application_args = args,
+                    environ_vars = envs,
+                    wall_time_minutes = 2,
+                    num_nodes = 1, ranks_per_node = 1,
+                    threads_per_rank=64,
+                    serial_node_packing_count=2,
+                    wait_for_parents = False,
+                    state='PREPROCESSED'
+                   )
+        logger.debug(f"Created job {jobname}")
+        logger.debug(f"Command: {cmd}")
+        logger.debug(f"Args: {args}")
+
+        self.id_key_map[child.job_id.hex] = self._encode(x)
+        return child.job_id.hex
+
+    def _eval_exec_nas(self, x): # TODO
+        assert self.run_module_name != None
+        assert isinstance(x, dict)
+
+        jobname = f"task{self.counter}"
+        cmd = f"{sys.executable} {self.run_file}"
+
+        param_dict = x.copy()
+        param_dict['model_path'] = self.model_path
+        param_dict['stage_in_destination'] = self.stage_in_destination
+
+        args = '--config={0}'.format(json.dumps(param_dict))
         envs = f"KERAS_BACKEND={self.backend}"
 
         child = dag.add_job(
@@ -167,11 +204,11 @@ class BalsamEvaluator(evaluate.Evaluator):
             y = self.evals[key]
             logger.info(f"x: {x} y: {y}")
             yield (x,y)
-    
+
     def get_finished_evals(self):
         '''iter over any immediately available results'''
         logger.info("Checking if any pending Balsam jobs are done")
-        
+
         pending_ids = list(self.pending_evals.values())
         num_pending = len(pending_ids)
         num_blocks = 1 + (num_pending // 900)
@@ -191,7 +228,7 @@ class BalsamEvaluator(evaluate.Evaluator):
                 del self.pending_evals[key]
                 logger.info(f"x: {x} y: {y}")
                 yield (x, y)
-            
+
             error_jobs = BalsamJob.objects.filter(job_id__in=query_block)
             error_jobs = error_jobs.filter(state__in=['RUN_ERROR', 'FAILED', 'USER_KILLED'])
 
@@ -214,7 +251,7 @@ class BalsamEvaluator(evaluate.Evaluator):
                 y = self.evals[key]
                 logger.info(f"giving repeated_eval x: {x} y: {y}")
                 yield (x,y)
-    
+
     def __getstate__(self):
         d = {}
         d['evals'] = self.evals

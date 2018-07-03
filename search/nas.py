@@ -91,6 +91,7 @@ class Search:
 
 def run(param_dict):
     config = param_dict
+    pprint(config)
 
     load_data = import_module(param_dict['load_data_module_name']).load_data
 

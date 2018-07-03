@@ -94,12 +94,12 @@ def create_parser():
     # model and data I/O options
     parser.add_argument('--model_path', help="path from which models are loaded/saved", default='')
     parser.add_argument('--data_source', help="location of dataset to load", default='')
-    parser.add_argument('--stage_in_destination', help="if provided; cache data at this location", 
+    parser.add_argument('--stage_in_destination', help="if provided; cache data at this location",
                         default='')
 
-    parser.add_argument('--timeout', help="benchmark timeout in mins", 
+    parser.add_argument('--timeout', help="benchmark timeout in mins",
                         action='store', dest='timeout',
-                        nargs='?', const=1, type=float, 
+                        nargs='?', const=1, type=float,
                         default=60.0)
     return(parser)
 
@@ -119,7 +119,7 @@ def return_optimizer(param_dict):
         optimizer = Adamax(lr=param_dict['lr'])
     elif param_dict['optimizer'] == 'nadam':
         optimizer = Nadam(lr=param_dict['lr'])
-                        
+
     return(optimizer)
 
 def fill_missing_defaults(augment_parser_fxn, param_dict):
