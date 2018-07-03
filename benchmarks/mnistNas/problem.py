@@ -7,8 +7,10 @@ from collections import OrderedDict
 
 class Problem:
     def __init__(self):
-        # space = OrderedDict()
-        space = {}
+        space = OrderedDict()
+        #space = {}
+
+        space['num_outputs'] = 10
 
         # ARCH
         space['max_layers'] = 2
@@ -17,7 +19,7 @@ class Problem:
             'pool_height', 'stride_width', 'stride_height', 'drop_out']
 
         # ITER
-        space['max_episodes'] = 2500 # iter on controller
+        space['max_episodes'] = 10 # iter on controller
 
         # HyperParameters
         space['hyperparameters'] = { 'batch_size': 32,

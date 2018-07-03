@@ -4,7 +4,6 @@
 '''
 import deephyper.model.arch as a
 
-
 def action2dict(config, action):
     '''
       * config : a dict
