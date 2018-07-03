@@ -6,6 +6,7 @@ import logging
 from importlib import import_module
 from importlib.util import find_spec
 from pprint import pprint
+import numpy as np
 
 masterLogger = None
 
@@ -28,7 +29,7 @@ class Timer:
 class OptConfig:
     '''Optimizer-related options'''
 
-    def __init__(self, args):
+    def __init__(self, args, problem=None):
         HERE = os.path.dirname(os.path.abspath(__file__)) # search dir
         package = os.path.basename(os.path.dirname(HERE)) # 'deephyper'
 
@@ -67,6 +68,52 @@ class OptConfig:
 
         # get the whole space dictionnary
         self.space_dict = instance.space
+
+class OptConfigNas:
+    '''Nas-related options'''
+
+    def __init__(self, args, problem=None):
+        HERE = os.path.dirname(os.path.abspath(__file__)) # search dir
+        package = os.path.basename(os.path.dirname(HERE)) # 'deephyper'
+
+        self.backend = args.backend
+        self.max_evals = args.max_evals
+        self.individuals_per_worker = args.individuals_per_worker
+        self.ga_num_gen = args.ga_num_gen
+        self.evaluator = args.evaluator
+        self.repeat_evals = args.repeat_evals
+        self.num_workers = args.num_workers
+        self.learner = args.learner
+
+        self.model_path = args.model_path.strip()
+        self.stage_in_destination = args.stage_in_destination.strip()
+
+        # for example, the default value of args.benchmark is "mnistNast"
+        self.benchmark = args.benchmark
+        self.bench_package_name = f'{package}.benchmarks.{self.benchmark}'
+
+        # load problem.py
+        problem_module_name = f'{package}.benchmarks.{self.benchmark}.problem'
+        problem_module = import_module(problem_module_name)
+
+        # load load_data.py and the load_data function inside it
+        load_data_module_name = f'{package}.benchmarks.{self.benchmark}.load_data'
+        #self.load_data = import_module(load_data_module_name).load_data
+
+        # run module which contain a run(param_dict) function which return 'something'
+        self.run_module_name = f'{package}.{args.run_module_name}'
+        self.run = import_module(self.run_module_name).run #run function
+
+        # create a problem instance
+        instance = problem_module.Problem()
+
+        # get the whole space dictionnary
+        self.config = instance.space
+        self.config['load_data_module_name'] = load_data_module_name
+
+        # initial state
+        num_tokens = self.config['max_layers']*len(self.config['features'])
+        self.starting_point = [[ np.random.randint(1,10) for i in range(num_tokens)] for i in range(self.num_workers)]
 
 def sk_optimizer_from_config(opt_config, random_state):
     from skopt import Optimizer
@@ -161,7 +208,7 @@ def create_parser():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--benchmark", default='b1.addition_rnn',
-                        help="name of benchmark module (e.g. b1.addition_rnn)"
+                        help="if hyperparameters search : name of benchmark module (e.g. b1.addition_rnn \n if neural architecture search : name of benchmark package (e.g. mnistNas))"
                        )
     parser.add_argument("--backend", default='tensorflow',
                         help="Keras backend module name"
@@ -203,4 +250,9 @@ def create_parser():
     parser.add_argument('--stage_in_destination', help="if provided; cache data at this location",
                         default='')
     parser.add_argument('--eval-timeout-minutes', type=int, default=-1, help="Kill evals that take longer than this")
+
+    # Args for nas
+    parser.add_argument('--run_module_name', default='search.nas', help="name\
+        of run module (e.g. mnistNas.run1)")
+
     return parser

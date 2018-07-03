@@ -59,10 +59,17 @@ class Evaluator:
         with self.transaction_context():
             for x in XX: self.add_eval(x, re_evaluate=re_evaluate)
 
+    def add_eval_nas(self, run, x):
+        assert isinstance(x, dict)
+        key = json.dumps(x)
+        new_eval = self._eval_exec_nas(run, x) # future or job UUID
+        logger.info(f"Submitted nas eval of {x}")
+        self.pending_evals[key] = new_eval
+
     @property
     def counter(self):
         return len(self.evals) + len(self.pending_evals)
-    
+
     def num_free_workers(self):
         num_evals = len(self.pending_evals)
         logger.debug(f"{num_evals} pending evals; {self.num_workers} workers")
@@ -111,6 +118,27 @@ def create_evaluator(opt_config):
                     backend=opt_config.backend,
                     model_path=opt_config.model_path,
                     data_source=opt_config.data_source,
+                    stage_in_destination=opt_config.stage_in_destination
+                   )
+    return evaluator
+
+def create_evaluator_nas(opt_config):
+    evaluator_class = opt_config.evaluator
+    assert evaluator_class in ['balsam', 'local']
+
+    if evaluator_class == "balsam":
+        from deephyper.evaluators.evaluate_balsam import BalsamEvaluator
+        cls = BalsamEvaluator
+    else:
+        from deephyper.evaluators.evaluate_local import LocalEvaluator
+        cls = LocalEvaluator
+
+    evaluator = cls([],
+                    opt_config.bench_package_name,
+                    num_workers=opt_config.num_workers,
+                    backend=opt_config.backend,
+                    model_path=opt_config.model_path,
+                    #data_source=opt_config.data_source, using load_data.py
                     stage_in_destination=opt_config.stage_in_destination
                    )
     return evaluator

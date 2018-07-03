@@ -9,9 +9,8 @@ logger = logging.getLogger(__name__)
 class LocalEvaluator(evaluate.Evaluator):
     ExecutorCls = concurrent.futures.ProcessPoolExecutor
 
-    def __init__(self, params_list, bench_module_name, num_workers=None,
-                 backend='tensorflow', model_path='', data_source='',
-                 stage_in_destination=''):
+    def __init__(self, params_list, bench_module_name,
+        num_workers=None, backend='tensorflow', model_path='', data_source='', stage_in_destination=''):
         super().__init__()
         self.executor = None
         self.num_workers = num_workers
@@ -22,6 +21,7 @@ class LocalEvaluator(evaluate.Evaluator):
         self.model_path = model_path
         self.data_source = data_source
         self.stage_in_destination = stage_in_destination
+
         logger.info("Local Evaluator instantiated")
         logger.info(f"Backend: {self.backend}")
         logger.info(f"Benchmark: {bench_module_name}")
@@ -37,13 +37,26 @@ class LocalEvaluator(evaluate.Evaluator):
         if self.executor is None:
             self._setup_executor()
 
-        assert isinstance(x, list)
+        assert isinstance(x, dict)
         param_dict = {k:v for k,v in zip(self.params_list, x) if 'hidden' not in k}
 
         param_dict['model_path'] = self.model_path
         param_dict['data_source'] = self.data_source
         param_dict['stage_in_destination'] = self.stage_in_destination
         eval_func = self.bench_module.run
+        future = self.executor.submit(eval_func, param_dict)
+        logger.info(f"Running: {param_dict}")
+        return future
+
+    def _eval_exec_nas(self, run, x):
+        if self.executor is None:
+            self._setup_executor()
+
+        eval_func = run
+        param_dict = x
+
+        param_dict['model_path'] = self.model_path
+        param_dict['stage_in_destination'] = self.stage_in_destination
         future = self.executor.submit(eval_func, param_dict)
         logger.info(f"Running: {param_dict}")
         return future
@@ -71,10 +84,6 @@ class LocalEvaluator(evaluate.Evaluator):
         futures = [r[2] for r in results if isinstance(r, concurrent.futures.Future)]
         logger.info(f"Waiting on {len(futures)} evals to finish...")
         done = concurrent.futures.wait(futures)
-
-        print()
-        print(results)
-        print()
 
         for (x, key, future) in results:
             if isinstance(future, concurrent.futures.Future):

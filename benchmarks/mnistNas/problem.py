@@ -7,12 +7,8 @@ from collections import OrderedDict
 
 class Problem:
     def __init__(self):
-        space = OrderedDict()
-
-        # I/O
-        space['input_shape'] = [28,28, 1]
-
-        space['num_outputs'] = 10
+        # space = OrderedDict()
+        space = {}
 
         # ARCH
         space['max_layers'] = 2
@@ -33,10 +29,6 @@ class Problem:
                                    'test_metric': 'accuracy'
                                 }
         self.space = space
-        self.params = self.space.keys()
-        self.starting_point = [ 1.0 for i in range(space['max_layers']*len(space['features']))]
-
-        # space['data'] = ...
 
 
 if __name__ == '__main__':

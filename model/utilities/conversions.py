@@ -33,7 +33,8 @@ def action2dict(config, action):
     for l_i in range(num_layers):
         layer_name = 'layer_{0}'.format(l_i)
         layer_actions = action[l_i * num_features:(l_i + 1) * num_features]
-        layer_arch = { k:v for k, v in zip(features, layer_actions) }
+        # int(v) is here because json.dumps(...) raise TypeError: Object of type 'int32' is not JSON serializable
+        layer_arch = { k:int(v) for k, v in zip(features, layer_actions) }
         # layer_type is not a feature yet
         layer_arch[a.layer_type] = layer_type
         arch[layer_name] = layer_arch

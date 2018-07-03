@@ -1,38 +1,41 @@
-import tensorflow as tf
-import numpy as np
-import glob
-
-from random import random
-from math import log, ceil
-from time import time, ctime
 import datetime
-
+import glob
 import logging
 import os
 import pickle
 import signal
 import sys
+from collections import OrderedDict
+from math import ceil, log
 from pprint import pprint
+from random import random
+from time import ctime, time
+from importlib import import_module
+
+import numpy as np
+import tensorflow as tf
 
 HERE = os.path.dirname(os.path.abspath(__file__)) # search dir
 top  = os.path.dirname(os.path.dirname(HERE)) # directory containing deephyper
 sys.path.append(top)
 
-from deephyper.evaluators import evaluate
-from deephyper.search import util
 import deephyper.model.arch as a
-from deephyper.search.controller.nas.policy.tf import NASCellPolicy
-from deephyper.search.controller.nas.reinforce.tf import BasicReinforce
+from deephyper.evaluators import evaluate
+from deephyper.model.builder.tf import BasicBuilder
 from deephyper.model.trainer.tf import BasicTrainer
 from deephyper.model.utilities.conversions import action2dict
+from deephyper.search import util
+from deephyper.search.controller.nas.policy.tf import NASCellPolicy
+from deephyper.search.controller.nas.reinforce.tf import BasicReinforce
 
+SERVICE_PERIOD = 2          # Delay (seconds) between main loop iterations
 logger = util.conf_logger('deephyper.search.nas')
 
 class Search:
     def __init__(self, cfg):
         self.opt_config = cfg
-        self.evaluator = evaluate.create_evaluator(cfg)
-        self.config = cfg.space_dict
+        self.evaluator = evaluate.create_evaluator_nas(cfg)
+        self.config = cfg.config
 
     def run(self):
         session = tf.Session()
@@ -53,46 +56,77 @@ class Search:
         MAX_EPISODES = self.config[a.max_episodes]
         step = 0
         # Init State
-        state = np.array(
-            [[1.0 for i in range(len(self.config[a.features]))]*max_layers], dtype=np.float32)
+        states = np.array(self.opt_config.starting_point, dtype=np.float32)
         total_rewards = 0
-        for i_episode in range(MAX_EPISODES):
-            action = reinforce.get_action(state=state)
-            architecture = action2dict(self.config, action[0][0])
-            print("[ Episode = {0} ] action = {1}".format(i_episode, architecture))
-            if all(ai > 0 for ai in action[0][0]):
-                # training the generated CNN and get the reward
-                self.config['global_step'] = i_episode
-                print("HERE")
-                pprint(self.config)
-                self.evaluator.add_eval(self.config)
-                rewards = self.evaluator.await_evals([self.config])
-                #print("[ Episode = {0} ] reward = {1}".format(i_episode, res[0]))
-            else:
-                rewards = [-1.0]
-            for reward in rewards:
-                total_rewards += reward
-                print("R = ", reward)
 
-            # In our sample action is equal state
-            state = action[0]
-            reinforce.storeRollout(state, reward)
+        for state in states:
+            action = reinforce.get_action(state=np.array([state], dtype=np.float32))
+            cfg = self.config.copy()
+            cfg['global_step'] = step
+            cfg['arch_seq'] = action.tolist()
+            self.evaluator.add_eval_nas(self.opt_config.run, cfg)
 
-            step += 1
-            ls = reinforce.train_step(1)
-            log_str = "current time:  "+str(datetime.datetime.now().time())+" episode:  "+str(
-                i_episode)+" loss:  "+str(ls)+" last_state:  "+str(state)+" last_reward:  "+str(reward)+"\n"
-            log = open("lg3.txt", "a+")
-            log.write(log_str)
-            log.close()
-            print(log_str)
+        timer = util.DelayTimer(max_minutes=None, period=SERVICE_PERIOD)
+        for elapsed_str in timer:
+            results = list(self.evaluator.get_finished_evals())
+            print("[ Time = {0}, Step = {1} : results = {2} ]".format(elapsed_str, step, len(results)))
+            for cfg, reward in results:
+                state = cfg['arch_seq']
+                reinforce.storeRollout(state[0], reward)
+                step += 1
+                ls = reinforce.train_step(1)
+                log_str = "current time:  "+str(datetime.datetime.now().time())+" step:  "+str(
+                    step)+" loss:  "+str(ls)+" last_state:  "+str(state)+" last_reward:  "+str(reward)+"\n"
+            #log = open("lg3.txt", "a+")
+            #log.write(log_str)
+            #log.close()
+                print(log_str)
+            for cfg, reward in results:
+                state = cfg['arch_seq']
+                action = reinforce.get_action(state=np.array(state[0], dtype=np.float32))
+                cfg = self.config.copy()
+                cfg['global_step'] = step
+                cfg['arch_seq'] = action.tolist()
+                self.evaluator.add_eval_nas(self.opt_config.run, cfg)
+
+def run(param_dict):
+    """config = param_dict
+
+    load_data = import_module(param_dict['load_data_module.name']).load_data
+
+    # Loading data
+    (t_X, t_y), (v_X, v_y) = load_data(dest='MNISTnas')
+    config['input_shape'] = np.shape(t_X)
+    config['num_outputs'] = np.shape(t_y)
+
+    config[a.data] = { a.train_X: t_X,
+                       a.train_Y: t_y,
+                       a.valid_X: v_X,
+                       a.valid_Y: v_y }
+
+    action = config['arch_seq']
+    architecture = action2dict(config, action[0])
+
+    # For all the Net generated by the CONTROLLER
+    trainer = BasicTrainer(config)
+
+    arch_def = config['arch_def']
+    global_step = config['global_step']
+
+    # Run the trainer and get the rewards
+    rewards = trainer.get_rewards(arch_def, global_step)
+    print('OUTPUT: ', rewards)
+    return rewards"""
+    result = np.random.randint(1, 95) + np.random.random()
+    print('OUTPUT: ', result)
+    return result
 
 def main(args):
     '''Service loop: add jobs; read results; drive nas'''
 
-    cfg = util.OptConfig(args)
+    cfg = util.OptConfigNas(args)
     controller = Search(cfg)
-    logger.info(f"Starting new NAS run with {cfg.benchmark_module_name}")
+    logger.info(f"Starting new NAS on benchmark {cfg.benchmark} & run with {cfg.run_module_name}")
     controller.run()
 
 if __name__ == "__main__":
