@@ -90,7 +90,7 @@ class Search:
                 self.evaluator.add_eval_nas(self.opt_config.run, cfg)
 
 def run(param_dict):
-    """config = param_dict
+    config = param_dict
 
     load_data = import_module(param_dict['load_data_module.name']).load_data
 
@@ -114,10 +114,9 @@ def run(param_dict):
     global_step = config['global_step']
 
     # Run the trainer and get the rewards
-    rewards = trainer.get_rewards(arch_def, global_step)
-    print('OUTPUT: ', rewards)
-    return rewards"""
-    result = np.random.randint(1, 95) + np.random.random()
+    reward = trainer.get_rewards(arch_def, global_step)
+    result = reward
+    #result = np.random.randint(1, 95) + np.random.random()
     print('OUTPUT: ', result)
     return result
 
