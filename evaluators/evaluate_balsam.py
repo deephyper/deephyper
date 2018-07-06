@@ -18,7 +18,7 @@ from django.conf import settings
 
 class BalsamEvaluator(evaluate.Evaluator):
 
-    def __init__(self, params_list, bench_module_name='', run_module_name=None,
+    def __init__(self, params_list, bench_module_name='', run_module=None,
         num_workers=1, backend='tensorflow', model_path='', data_source='',
         stage_in_destination=''):
         super().__init__()
@@ -28,8 +28,9 @@ class BalsamEvaluator(evaluate.Evaluator):
         self.params_list = params_list
         self.bench_module_name = bench_module_name
         self.bench_file = os.path.abspath(find_spec(bench_module_name).origin)
-        self.run_module_name = run_module_name
-        self.run_file = os.path.abspath(find_spec(run_module_name).origin) if run_module_name != None else None
+        self.run_module = run_module
+        self.run_module_name = run_module.__name__ if run_module != None else None
+        self.run_file = os.path.abspath(find_spec(self.run_module_name).origin) if run_module != None else None
         self.backend = backend
         self.model_path = model_path
         self.data_source = data_source

@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 class LocalEvaluator(evaluate.Evaluator):
     ExecutorCls = concurrent.futures.ProcessPoolExecutor
 
-    def __init__(self, params_list, bench_module_name,
+    def __init__(self, params_list, bench_module_name, run_module=None,
         num_workers=None, backend='tensorflow', model_path='', data_source='', stage_in_destination=''):
         super().__init__()
         self.executor = None
@@ -18,6 +18,8 @@ class LocalEvaluator(evaluate.Evaluator):
         self.params_list = params_list
         self.bench_module_name = bench_module_name
         self.bench_module = import_module(bench_module_name)
+        self.run_module = run_module
+        self.run_module_name = run_module.__name__ if run_module != None else None
         self.model_path = model_path
         self.data_source = data_source
         self.stage_in_destination = stage_in_destination
@@ -48,18 +50,23 @@ class LocalEvaluator(evaluate.Evaluator):
         logger.info(f"Running: {param_dict}")
         return future
 
-    def _eval_exec_nas(self, run, x):
+    def _eval_exec_nas(self, x):
         if self.executor is None:
             self._setup_executor()
 
-        eval_func = run
         param_dict = x
 
         param_dict['model_path'] = self.model_path
         param_dict['stage_in_destination'] = self.stage_in_destination
-        future = self.executor.submit(eval_func, param_dict)
+        param_dict['run_module_name'] = self.run_module_name
+
+        future = self.executor.submit(self.childProcess, param_dict)
         logger.info(f"Running: {param_dict}")
         return future
+
+    def childProcess(self, cfg):
+        run = import_module(cfg['run_module_name']).run
+        return run(cfg)
 
     def await_evals(self, to_read):
         '''wait for a set of points to finish evaluating; iter over results'''

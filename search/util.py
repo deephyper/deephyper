@@ -101,7 +101,7 @@ class OptConfigNas:
 
         # run module which contain a run(param_dict) function which return 'something'
         self.run_module_name = f'{package}.{args.run_module_name}'
-        #self.run = import_module(self.run_module_name).run #run function
+        self.run_module = import_module(self.run_module_name) #run module
 
         # create a problem instance
         instance = problem_module.Problem()

@@ -99,7 +99,9 @@ class BasicTrainer:
             model = BasicBuilder(self.config, architecture)
             with tf.Session() as sess:
                 init = tf.global_variables_initializer()
+                print('#1')
                 sess.run(init)
+                print('#2')
                 if (self.config.get(a.summary)):
                     self.summary_writer = tf.summary.FileWriter(
                         'logs/run_{0}'.format(global_step), graph=tf.get_default_graph())
@@ -115,7 +117,6 @@ class BasicTrainer:
                                  model.train_labels_node: batch_labels}
                     _, l, predictions = sess.run([model.optimizer, model.loss,model.logits],
                                                      feed_dict=feed_dict)
-                    print("OOOO")
                     if step % self.eval_freq == 0:
                         elapsed_time = time.time() - start_time
                         start_time = time.time()
