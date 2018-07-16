@@ -1,6 +1,5 @@
 import datetime
 import glob
-import logging
 import os
 import pickle
 import signal
@@ -22,11 +21,11 @@ sys.path.append(top)
 import deephyper.model.arch as a
 from deephyper.evaluators import evaluate
 from deephyper.search import util
-from deephyper.search.nas.policy.tf import NASCellPolicy
+from deephyper.search.nas.policy.tf import NASCellPolicyV2
 from deephyper.search.nas.reinforce.tf import BasicReinforce
 
 SERVICE_PERIOD = 2          # Delay (seconds) between main loop iterations
-logger = util.conf_logger('deephyper.search.nas')
+logger = util.conf_logger('deephyper.search.run_nas')
 
 class Search:
     def __init__(self, cfg):
@@ -37,8 +36,8 @@ class Search:
     def run(self):
         session = tf.Session()
         global_step = tf.Variable(0, trainable=False)
-        num_features = len(self.config[a.features])
-        policy_network = NASCellPolicy(num_features=num_features)
+        state_space = self.config[a.state_space]
+        policy_network = NASCellPolicyV2(state_space)
         max_layers = self.config[a.max_layers]
 
         learning_rate = tf.train.exponential_decay(0.99, global_step,
@@ -47,8 +46,13 @@ class Search:
         optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate)
 
         # for the CONTROLLER
-        reinforce = BasicReinforce(session, optimizer, policy_network, max_layers, global_step,
-            num_features)
+        reinforce = BasicReinforce(session,
+                                   optimizer,
+                                   policy_network,
+                                   max_layers,
+                                   global_step,
+                                   num_features=state_space.size,
+                                   state_space=state_space)
 
         MAX_EPISODES = self.config[a.max_episodes]
         step = 0
@@ -66,22 +70,21 @@ class Search:
         timer = util.DelayTimer(max_minutes=None, period=SERVICE_PERIOD)
         for elapsed_str in timer:
             results = list(self.evaluator.get_finished_evals())
-            print("[ Time = {0}, Step = {1} : results = {2} ]".format(elapsed_str, step, len(results)))
+            logger.debug("[ Time = {0}, Step = {1} : results = {2} ]".format(elapsed_str, step, len(results)))
             for cfg, reward in results:
                 state = cfg['arch_seq']
-                reinforce.storeRollout(state[0], reward)
+                logger.debug(f'state = {state}')
+                reinforce.storeRollout(state, reward)
                 step += 1
                 ls = reinforce.train_step(1)
-                #log_str = "current time:  "+str(datetime.datetime.now().time())+" step:  "+str(
-                #    step)+" loss:  "+str(ls)+" last_state:  "+str(state)+" last_reward:  "+str(reward)+"\n"
-                #print(log_str)
             for cfg, reward in results:
                 state = cfg['arch_seq']
-                action = reinforce.get_action(state=np.array(state[0], dtype=np.float32))
+                action = reinforce.get_action(state=np.array(state, dtype=np.float32))
                 cfg = self.config.copy()
                 cfg['global_step'] = step
                 cfg['arch_seq'] = action.tolist()
-                self.evaluator.add_eval_nas(self.opt_config.run, cfg)
+                self.evaluator.add_eval_nas(cfg)
+                logger.debug('add_evals_nas')
 
 
 def main(args):

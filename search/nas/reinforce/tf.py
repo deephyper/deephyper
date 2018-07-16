@@ -6,11 +6,12 @@ import tensorflow as tf
 import numpy as np
 import random
 
-
 class BasicReinforce:
     def __init__(self, sess, optimizer, policy_network, max_layers, global_step,
                  num_features,
-                 division_rate=100.0,
+                 state_space=None,
+                 #division_rate=100.0,
+                 division_rate=1.0,
                  reg_param=0.001,
                  discount_factor=0.99,
                  exploration=0.3):
@@ -23,6 +24,7 @@ class BasicReinforce:
         self.max_layers = max_layers
         self.global_step = global_step
         self.num_features = num_features
+        self.state_space = state_space
 
         self.reward_buffer = []
         self.state_buffer = []
@@ -37,20 +39,25 @@ class BasicReinforce:
     def create_variables(self):
         with tf.name_scope("model_inputs"):
             # raw state representation
+            if (self.state_space.feature_is_defined('skip_conn')):
+                seq_length = (self.num_features - 1) * self.max_layers
+                seq_length += self.max_layers * (self.max_layers + 1) / 2
+            else:
+                seq_length = self.num_features * self.max_layers
             self.states = tf.placeholder(
-                tf.float32, [None, self.max_layers*self.num_features], name="states")
+                tf.float32, [None, seq_length], name="states")
 
         with tf.name_scope("predict_actions"):
             # initialize policy network
             with tf.variable_scope("policy_network"):
-                self.policy_outputs = self.policy_network.get(
+                _, self.policy_outputs = self.policy_network.get(
                     self.states, self.max_layers)
 
             self.action_scores = tf.identity(
                 self.policy_outputs, name="action_scores")
 
             self.predicted_action = tf.cast(tf.scalar_mul(
-                self.division_rate, self.action_scores), tf.int32, name="predicted_action")
+                self.division_rate, self.action_scores), tf.float32, name="predicted_action")
 
         # regularization loss
         policy_network_variables = tf.get_collection(
@@ -63,7 +70,7 @@ class BasicReinforce:
                 tf.float32, (None,), name="discounted_rewards")
 
             with tf.variable_scope("policy_network", reuse=True):
-                self.logprobs = self.policy_network.get(
+                self.logprobs, _ = self.policy_network.get(
                     self.states, self.max_layers)
 
             # compute policy loss and regularization loss

@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import time
 from importlib import import_module
 from pprint import pprint
 from deephyper.model.trainer.tf import BasicTrainer
@@ -7,10 +8,9 @@ from deephyper.model.utilities.conversions import action2dict
 import deephyper.model.arch as a
 
 def run(param_dict):
-
     config = param_dict
-
-    load_data = import_module(param_dict['load_data_module_name']).load_data
+    pprint(config)
+    """load_data = import_module(param_dict['load_data_module_name']).load_data
 
     # Loading data
     (t_X, t_y), (v_X, v_y) = load_data(dest='MNISTnas')
@@ -35,9 +35,9 @@ def run(param_dict):
 
     # Run the trainer and get the rewards
     reward = trainer.get_rewards(arch_def, global_step)
-    result = reward
-    #np.random.seed()
-    #sleep(np.random.randint(0,3))
-    #result = np.random.randint(1, 95) + np.random.random()
+    result = reward"""
+    np.random.seed()
+    time.sleep(np.random.randint(0,3))
+    result = np.random.randint(1, 95) + np.random.random()
     print('OUTPUT: ', result)
     return result

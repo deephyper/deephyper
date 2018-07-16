@@ -39,7 +39,35 @@ def action2dict(config, action):
         arch[layer_name] = layer_arch
     return arch
 
-def test():
+def action2dict_v2(config, action, num_layers):
+    layer_type = config[a.layer_type]
+    state_space = config['state_space']
+    arch = {}
+    assert isinstance(state_space, a.StateSpace)
+
+    # must check that state_space features are compatible with layer type
+    # must check that length of action list correspond to num_layers and state_space features
+
+    cursor = 0
+    for layer_n in range(num_layers):
+        layer_name = f'layer_{layer_n+1}'
+        layer_arch = {}
+        layer_arch[a.layer_type] = layer_type
+        for feature_i in range(state_space.size):
+            feature = state_space[feature_i]
+            if (feature['name'] == 'skip_conn'):
+                layer_arch[feature['name']] = []
+                for j in range(layer_n+1):
+                    if (action[cursor] == 1. ):
+                        layer_arch[feature['name']].append(j)
+                    cursor += 1
+            else:
+                layer_arch[feature['name']] = action[cursor]
+                cursor += 1
+        arch[layer_name] = layer_arch
+    return arch
+
+def test_action2dict_v1():
     cfg = {}
     cfg[a.layer_type] = 'conv1D'
     cfg[a.features] = ['num_filters']

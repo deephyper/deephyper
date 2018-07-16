@@ -7,26 +7,34 @@ import numpy as np
 import pprint
 from collections import OrderedDict
 
+
 # definition of a key
 layer_type = 'layer_type'
 
 features = 'features'
 input_shape = 'input_shape'
 num_outputs = 'num_outputs'
+num_steps = 'num_steps'
 max_layers = 'max_layers'
 hyperparameters = 'hyperparameters'
 summary = 'summary'
 logs = 'logs'
 data = 'data'
+regression = 'regression'
+num_features = 'num_features'
+state_space = 'state_space'
 
 # hyperparameters
 batch_size = 'batch_size'
+eval_batch_size = 'eval_batch_size'
 learning_rate = 'learning_rate'
 num_epochs = 'num_epochs'
 patience = 'patience'
 eval_freq = 'eval_freq'
 loss_metric = 'loss_metric'
 test_metric = 'test_metric'
+text_input = 'text_input'
+
 
 # data
 train_X = 'train_X'
@@ -34,6 +42,12 @@ train_Y = 'train_Y'
 valid_X = 'valid_X'
 valid_Y = 'valid_Y'
 train_set = 'train_set'
+test_X = 'test_X'
+test_Y = 'test_Y'
+vocabulary = 'vocabulary'
+
+#all
+skip_conn = 'skip_conn'
 
 # conv
 num_filters = 'num_filters'
@@ -43,6 +57,9 @@ filter_size = 'filter_size'
 stride_size = 'stride_size'
 pool_size = 'pool_size'
 
+# temp conv
+dilation = 'dilation'
+
 # conv 2D
 filter_height = 'filter_height'
 filter_width = 'filter_width'
@@ -51,6 +68,13 @@ stride_width = 'stride_width'
 pool_height = 'pool_height'
 pool_width = 'pool_width'
 padding = 'padding'
+
+# rnn
+num_units = 'num_units'
+unit_type = 'unit_type'
+drop_out = 'drop_out'
+vocab_size = 'vocab_size'
+
 
 # activation function
 relu = 'relu'
@@ -72,13 +96,18 @@ drop_out = 'drop_out'
 conv1D = 'conv1D'
 conv2D = 'conv2D'
 dense = 'dense'
+tempconv = 'tempconv'
+rnn = 'rnn'
 conv1D_params = [num_filters, filter_size, stride_size, pool_size, drop_out, padding]
 conv2D_params = [num_filters, filter_height, filter_width, stride_height, stride_width,
   pool_height, pool_width, padding, activation, batch_norm, batch_norm_bef, drop_out]
 dense_params = [num_outputs, drop_out, batch_norm, batch_norm_bef, activation]
+tempconv_params = [num_filters, filter_size, stride_size, pool_size, drop_out, dilation]
+rnn_params = [num_units, drop_out]
 
 # definition of possible values of the key arch_type
-layer_type_values = {conv1D: conv1D_params, conv2D:conv2D_params, dense: dense_params}
+layer_type_values = {conv1D: conv1D_params, conv2D:conv2D_params, dense: dense_params, tempconv:tempconv_params, rnn:rnn_params}
+
 
 max_episodes = 'max_episodes'
 
@@ -91,9 +120,12 @@ class StateSpace:
 
     Also provides a more convenient way to define the search space
     '''
-    def __init__(self):
+    def __init__(self, states=None):
         self.states = OrderedDict()
         self.state_count_ = 0
+        if ( states != None ):
+            for state in states:
+                self.add_state(state[0], state[1])
 
     def add_state(self, name, values):
         '''
@@ -136,6 +168,13 @@ class StateSpace:
 
         return self.state_count_ - 1
 
+    def feature_is_defined(self, name):
+        for feature_i in range(self.state_count_):
+            md = self.states[feature_i]
+            if (md['name'] == name):
+                return True
+        return False
+
     def embedding_encode(self, id, value):
         '''
         Embedding index encode the specific state value
@@ -176,7 +215,7 @@ class StateSpace:
         value = index_map[index]
         return value
 
-    def get_random_state_space(self, num_layers):
+    def get_random_state_space(self, num_layers, num=1): # ok for skip_co
         '''
         Constructs a random initial state space for feeding as an initial value
         to the Controller RNN
@@ -189,17 +228,26 @@ class StateSpace:
         '''
         states = []
 
-        for id in range(self.size * num_layers):
-            state = self[id]
-            size = state['size']
+        for state_i in range(num):
+            current_state = []
+            for layer_n in range(num_layers):
+                for feature_i in range(self.size):
+                    if (self[feature_i]['name'] == 'skip_conn'):
+                        for j in range(layer_n+1):
+                            current_state.append(float(np.random.randint(0,2)))
+                    elif (self[feature_i]['name'] == 'drop_out'):
+                        current_state.append(np.random.random())
+                    else:
+                        feature = self[feature_i]
+                        size = feature['size']
+                        sample = np.random.randint(0, size)
+                        current_state.append(feature['values'][sample])
 
-            sample = np.random.choice(size, size=1)
-            sample = state['index_map_'][sample[0]]
-            state = self.embedding_encode(id, sample)
-            states.append(state)
+            states.append(current_state)
+
         return states
 
-    def parse_state_space_list(self, state_list):
+    def parse_state_space_list(self, state_list): # not ok for skip_co
         '''
         Parses a list of one hot encoded states to retrieve a list of state values
 
@@ -216,6 +264,23 @@ class StateSpace:
             state_values.append(value)
 
         return state_values
+
+    def parse_state(self, state_list, num_layers): # ok for skip_co
+        list_values = []
+        cursor = 0
+        for layer_n in range(num_layers):
+            for feature_i in range(self.size):
+                if (self[feature_i]['name'] == 'skip_conn'):
+                    for j in range(layer_n+1):
+                        list_values.append(state_list[cursor])
+                        cursor += 1
+                elif (self[feature_i]['name'] == 'drop_out'):
+                    list_values.append(state_list[cursor])
+                    cursor += 1
+                else:
+                    list_values.append(self.get_state_value(feature_i, state_list[cursor]))
+                    cursor += 1
+        return list_values
 
     def print_state_space(self):
         ''' Pretty print the state space '''
@@ -246,37 +311,3 @@ class StateSpace:
     @property
     def size(self):
         return self.state_count_
-
-if __name__ == '__main__':
-    """ EXAMPLE OUTPUT :
-        space size = 1
-        space["filter_size"][0] = a
-        **************************************** STATE SPACE ****************************************
-        { 'id': 0,
-        'index_map_': {0: 'a', 1: 'b', 2: 'c'},
-        'name': 'filter_size',
-        'size': 3,
-        'value_map_': {'a': 0, 'b': 1, 'c': 2},
-        'values': ['a', 'b', 'c']}
-
-        random state space = [array([[ 0.,  0.,  3.]], dtype=float32), array([[ 1.,  0.,  0.]], dtype=float32)]
-        Actions :
-        ******************** Layer 2 ********************
-        filter_size :  [('a', 0.0), ('b', 0.0), ('c', 3.0)]
-        ******************** Layer 3 ********************
-        filter_size :  [('a', 1.0), ('b', 0.0), ('c', 0.0)]
-
-        state values = ['c', 'a']
-        embedding "a" = [[ 1.  0.  0.]]
-    """
-    sp = StateSpace()
-    sp.add_state('filter_size', ['a', 'b', 'c'])
-    print(f'space size = {sp.size}')
-    print(f'space["filter_size"][0] = {sp.get_state_value(0, 0)}')
-    sp.print_state_space()
-    state_space = sp.get_random_state_space(2)
-    print(f'random state space = {state_space}')
-    sp.print_actions(state_space)
-    print()
-    print(f'state values = {sp.parse_state_space_list(state_space)}')
-    print(f'embedding "a" = {sp.embedding_encode(0, "a")}')

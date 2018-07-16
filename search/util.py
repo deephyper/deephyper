@@ -111,13 +111,13 @@ class OptConfigNas:
         self.config['load_data_module_name'] = load_data_module_name
 
         # initial state
-        num_tokens = self.config['max_layers']*len(self.config['features'])
-        self.starting_point = [[ np.random.randint(1,10) for i in range(num_tokens)] for i in range(self.num_workers)]
+        self.state_space = self.config['state_space']
+        self.starting_point = self.state_space.get_random_state_space(self.config['max_layers'], num=self.num_workers)
 
 def sk_optimizer_from_config(opt_config, random_state):
     from skopt import Optimizer
-    from deephyper.search.ExtremeGradientBoostingQuantileRegressor import \
-         ExtremeGradientBoostingQuantileRegressor
+    #from deephyper.search.ExtremeGradientBoostingQuantileRegressor import \
+         #ExtremeGradientBoostingQuantileRegressor
     from numpy import inf
     logger = logging.getLogger(__name__)
     kappa = 1.96
@@ -155,17 +155,18 @@ def sk_optimizer_from_config(opt_config, random_state):
 
 def conf_logger(name):
     global masterLogger
-    masterLogger = logging.getLogger('deephyper')
+    if (masterLogger == None):
+        masterLogger = logging.getLogger('deephyper')
 
-    handler = logging.FileHandler('deephyper.log')
-    formatter = logging.Formatter(
-        '%(asctime)s|%(process)d|%(levelname)s|%(name)s:%(lineno)s] %(message)s',
-        "%Y-%m-%d %H:%M:%S"
-    )
-    handler.setFormatter(formatter)
-    masterLogger.addHandler(handler)
-    masterLogger.setLevel(logging.DEBUG)
-    masterLogger.info("\n\nLoading Deephyper\n--------------")
+        handler = logging.FileHandler('deephyper.log')
+        formatter = logging.Formatter(
+            '%(asctime)s|%(process)d|%(levelname)s|%(name)s:%(lineno)s] %(message)s',
+            "%Y-%m-%d %H:%M:%S"
+        )
+        handler.setFormatter(formatter)
+        masterLogger.addHandler(handler)
+        masterLogger.setLevel(logging.DEBUG)
+        masterLogger.info("\n\nLoading Deephyper\n--------------")
     return logging.getLogger(name)
 
 class DelayTimer:

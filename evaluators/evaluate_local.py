@@ -3,6 +3,8 @@ import logging
 from deephyper.evaluators import evaluate
 from importlib import import_module
 import os
+from pprint import pprint
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +61,9 @@ class LocalEvaluator(evaluate.Evaluator):
         param_dict['model_path'] = self.model_path
         param_dict['stage_in_destination'] = self.stage_in_destination
         param_dict['run_module_name'] = self.run_module_name
+
+        pprint(param_dict)
+        print("--config='{0}'".format(json.dumps(param_dict, cls=evaluate.Encoder)))
 
         future = self.executor.submit(self.childProcess, param_dict)
         logger.info(f"Running: {param_dict}")

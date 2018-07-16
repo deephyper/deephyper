@@ -107,7 +107,7 @@ class BalsamEvaluator(evaluate.Evaluator):
         param_dict['model_path'] = self.model_path
         param_dict['stage_in_destination'] = self.stage_in_destination
 
-        args = '--config={0}'.format(json.dumps(param_dict))
+        args = '--config=\'{0}\''.format(json.dumps(param_dict, cls=evaluate.Encoder))
         envs = f"KERAS_BACKEND={self.backend}"
 
         child = dag.add_job(
@@ -159,7 +159,7 @@ class BalsamEvaluator(evaluate.Evaluator):
         checked_ids = []
 
         for i in range(num_checks):
-            finished_jobs = jobs.filter(state='RUN_DONE')
+            finished_jobs = jobs.filter(state__in=['RUN_DONE', 'JOB_FINISHED'])
             failed_jobs = jobs.filter(state__in=['RUN_ERROR', 'FAILED'])
             num_finished = finished_jobs.count()
             num_failed = failed_jobs.count()
@@ -216,7 +216,8 @@ class BalsamEvaluator(evaluate.Evaluator):
         for i in range(num_blocks):
             query_block = pending_ids[i*900 : (i+1)*900]
             done_jobs = BalsamJob.objects.filter(job_id__in=query_block)
-            done_jobs = done_jobs.filter(state='RUN_DONE')
+            # done_jobs = done_jobs.filter(state='RUN_DONE')
+            done_jobs = done_jobs.filter(state__in=['RUN_DONE', 'JOB_FINISHED'])
 
             for job in done_jobs:
                 logger.info(f"Got data from {job.cute_id}")

@@ -7,6 +7,11 @@ class LoadsJsonAction(argparse.Action):
         super(LoadsJsonAction, self).__init__(option_strings, dest, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
+        print(f'parser = {parser}')
+        print(f'namespace = {namespace}')
+        print(f'values = {values}')
+        print(f'values type = {type(values)}')
+        print(f'json loads = {json.loads(values)}')
         setattr(namespace, self.dest, json.loads(values))
 
 def create_parser(): # TODO
