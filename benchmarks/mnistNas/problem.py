@@ -13,13 +13,18 @@ class Problem:
         space['regression'] = False
 
         # ARCH
-        space['max_layers'] = 2
+        space['max_layers'] = 3
         space['layer_type'] = 'conv2D'
         #space['features'] = ['num_filters', 'filter_width', 'filter_height', 'pool_width', 'pool_height', 'stride_width', 'stride_height', 'drop_out']
         state_space = StateSpace()
-        state_space.add_state('filter_size', [10., 20., 30.])
+        state_space.add_state('filter_height', [size for size in range(5,30,2)])
+        state_space.add_state('filter_width', [size for size in range(5,30,2)])
+        state_space.add_state('pool_height', [size for size in range(5,30,2)])
+        state_space.add_state('pool_width', [size for size in range(5,30,2)])
+        state_space.add_state('stride_height', [s for s in range(2,20,2)])
+        state_space.add_state('stride_width', [s for s in range(2,20,2)])
         state_space.add_state('drop_out', [])
-        state_space.add_state('num_filters', [32., 64.])
+        state_space.add_state('num_filters', [n for n in range(5,35,5)])
         state_space.add_state('skip_conn', [])
         space['state_space'] = state_space
 
