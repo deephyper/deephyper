@@ -164,6 +164,8 @@ class BasicBuilder:
                     padding = conv_params[a.padding]
                     stride_height = conv_params[a.stride_height]
                     stride_width = conv_params[a.stride_width]
+                    pool_width = conv_params[a.pool_width]
+                    pool_height = conv_params[a.pool_height]
                     if conv_params[a.batch_norm]:
                         if conv_params[a.batch_norm_bef]:
                             net = tf.layers.conv2d(net, filters=num_filters, kernel_size=[filter_height, filter_width], strides=[
@@ -185,12 +187,15 @@ class BasicBuilder:
                                                    stride_height, stride_width], padding=padding,
                                                kernel_initializer=weights_initializer, activation=activation, reuse=reuse,
                                                name=arch_key + '/{0}'.format(a.conv2D))
+                    if pool_height != 1 and pool_width !=1:
+                        net = tf.layers.max_pooling2d(net, [pool_height, pool_width])
                 elif layer_type == a.conv1D:
                     conv_params = layer_params
                     num_filters = conv_params[a.num_filters]
                     filter_size = conv_params[a.filter_size]
                     padding = conv_params[a.padding]
                     stride_size = conv_params[a.stride_size]
+                    pool_size = conv_params[a.pool_size]
                     if conv_params[a.batch_norm]:
                         if conv_params[a.batch_norm_bef]:
                             net = tf.layers.conv1d(net,
@@ -225,6 +230,8 @@ class BasicBuilder:
                                                kernel_initializer=weights_initializer, activation=activation,
                                                reuse=reuse,
                                                name=arch_key + '/{0}'.format(a.conv1D))
+                    if pool_size !=1:
+                        net = tf.layers.max_pooling1d(net, pool_size)
                 elif layer_type == a.tempconv:
                     conv_params = layer_params
                     num_filters = conv_params[a.num_filters]
@@ -234,6 +241,8 @@ class BasicBuilder:
                     padding_len = (filter_size-1)*dilation
                     pad_arr = tf.constant([(0, 0), (padding_len, 0), (0, 0)])
                     net = tf.pad(net, pad_arr)
+                    pool_size = conv_params[a.pool_size]
+
                     dilation = (dilation,)
                     padding = 'VALID'
                     if conv_params[a.batch_norm]:
@@ -277,7 +286,8 @@ class BasicBuilder:
                                                data_format='channels_last',
                                                name=arch_key + '/{0}'.format(a.tempconv))
                     net = tf.contrib.layers.layer_norm(net)
-
+                    if pool_size != 1:
+                        net = tf.layers.max_pooling1d(net, pool_size)
                 elif layer_type == a.dense:
                     if len(net.get_shape()> 2):
                         net = tf.contrib.layers.flatten(net)
