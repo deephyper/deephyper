@@ -47,8 +47,8 @@ class BasicTrainer:
         self.train_size = None
         self.preprocess_data()
         self.patience = self.config_hp[a.patience] if a.patience in self.config_hp else int(
-            self.train_size/self.batch_size * self.num_epochs/5)
-        self.eval_freq = self.config_hp[a.eval_freq] if a.eval_freq in self.config_hp else self.train_size/self.batch_size
+            self.train_size/self.batch_size * self.num_epochs/5.)
+        self.eval_freq = self.config_hp[a.eval_freq] if a.eval_freq in self.config_hp else self.train_size//self.batch_size
         logger.debug('[PARAM] BasicTrainer instantiated')
 
     def preprocess_data(self):
@@ -61,7 +61,7 @@ class BasicTrainer:
         self.valid_y = self.config[a.data][a.valid_Y]
         self.train_size = np.shape(self.config[a.data][a.train_X])[0]
         #if self.train_size == self.batch_size: self.train_size = self.train_X.shape[1]
-        logger.debug(f'train_X.shape = {self.train_X.shape},\n\
+        logger.debug(f'\ntrain_X.shape = {self.train_X.shape},\n\
                        train_y.shape = {self.train_y.shape},\n\
                        input_shape = {self.input_shape}')
         self.train_X = self.train_X.reshape(
@@ -239,13 +239,16 @@ class BasicTrainer:
                         offset + self.batch_size),]
                     feed_dict = {model.train_data_node: batch_data,
                                  model.train_labels_node: batch_labels}
-                    _, l, predictions = sess.run([model.optimizer, model.loss,model.logits],
-                                                     feed_dict=feed_dict)
+                    _, l, predictions = sess.run([model.optimizer,
+                                                  model.loss,
+                                                  model.logits],
+                                                  feed_dict=feed_dict)
                     if step % self.eval_freq == 0:
                         elapsed_time = time.time() - start_time
                         start_time = time.time()
-                        logs = 'Step %d (epoch %.2f), %.1f ms, ' % (step, float(step) % self.batch_size / self.train_size,
-                                                                 1000 * elapsed_time / self.eval_freq)
+                        logs = 'Step %d (epoch %.2f), %.1f ms, ' % (step,
+                            float(step) * self.batch_size / self.train_size,
+                            1000 * elapsed_time / self.eval_freq)
                         logs += 'Minibatch loss: %.3f, ' % (l)
                         if put_perc:
                             logs += 'Minibatch %s: %.3f%%, ' %(metric_term,
@@ -269,5 +272,6 @@ class BasicTrainer:
                             best_res = valid_res
                             best_step = step
                     if best_step + self.patience < step:
+                        logger.debug(f'--- PATIENCE BREAK ---- : best_step= {best_step} + patience= {self.patience} < step= {step}')
                         break
         return best_res

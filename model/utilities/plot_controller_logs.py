@@ -21,9 +21,10 @@ if __name__ == '__main__':
     fname = '/Users/Deathn0t/Desktop/hpc-edge-service/testdb/data/run_nas1/run_nas1_64fc7bf3/'
     fname += 'deephyper.log'
     lY = parsing(fname)
-    print(lY)
+    #print(lY)
+    plt.style.use('ggplot')
     fig, ax = plt.subplots()
-    ax.grid(color='b', linestyle='-', linewidth=1)
+    ax.grid(color='k', linestyle='-', linewidth=1)
     ax.plot([i for i in range(len(lY))], lY)
     ax.set_title('Architectures accuracy')
     plt.ylim(0, 100)

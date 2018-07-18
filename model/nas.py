@@ -26,6 +26,7 @@ logger = util.conf_logger('deephyper.search.nas')
 def run(param_dict):
     config = param_dict
 
+    logger.debug(f'[STEP] global_step = {config["global_step"]}')
     logger.debug('[PARAM] Creating StateSpace')
     config['state_space'] = a.StateSpace(config['state_space'])
     logger.debug('[PARAM] StateSpace created')

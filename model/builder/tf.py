@@ -306,6 +306,7 @@ class BasicBuilder:
             nets.append(net)
         net = self.get_layer_input(nets, skip_conns=[], last_layer=True)
         net = tf.contrib.layers.flatten(net)
+        #net = tf.layers.dense(net, units=512, name='hereItIs', reuse=reuse ) # TODO !!!
         net = tf.layers.dense(net, units=self.num_outputs, name='output_layer',reuse=reuse)
         nets.append(net)
         return net
