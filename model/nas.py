@@ -45,7 +45,8 @@ def run(param_dict):
                        a.valid_X: v_X,
                        a.valid_Y: v_y }
 
-    action = config['arch_seq']
+    #action = config['arch_seq']
+    action = [[64.0, 0.0, 64.0, 0.0, 1.0, 64.0, 0.0, 1.0, 1.0, 64.0, 0.0, 1.0, 1.0, 0.0]]
     logger.debug(f'[ACTION] = {action[0]}')
     architecture = action2dict_v2(config, action[0], config['max_layers'])
     logger.debug(f'[ARCHIT] = {pformat(architecture)}')

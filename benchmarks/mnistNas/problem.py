@@ -13,7 +13,7 @@ class Problem:
         space['regression'] = False
 
         # ARCH
-        space['max_layers'] = 5
+        space['max_layers'] = 4
         space['layer_type'] = 'conv2D'
         #space['features'] = ['num_filters', 'filter_width', 'filter_height', 'pool_width', 'pool_height', 'stride_width', 'stride_height', 'drop_out']
         state_space = StateSpace()
@@ -26,6 +26,7 @@ class Problem:
         # state_space.add_state('drop_out', [])
         # state_space.add_state('num_filters', [n for n in range(5,35,5)])
         # state_space.add_state('skip_conn', [])
+
         #state_space.add_state('filter_height', [3, 5])
         #state_space.add_state('filter_width', [3, 5])
         #state_space.add_state('pool_height', [1, 2])
@@ -33,8 +34,8 @@ class Problem:
         #state_space.add_state('stride_height', [1])
         #state_space.add_state('stride_width', [1])
         #state_space.add_state('drop_out', [])
-        state_space.add_state('num_filters', [32, 64, 128, 256])
-        #state_space.add_state('skip_conn', [])
+        state_space.add_state('num_filters', [2**i for i in range(5, 8)])
+        state_space.add_state('skip_conn', [])
 
         space['state_space'] = state_space
 
@@ -47,10 +48,10 @@ class Problem:
                                     'activation': 'relu',
                                     'learning_rate': 0.01,
                                     'optimizer': 'adam',
-                                    'num_epochs': 30,
+                                    'num_epochs': 100,
                                     'loss_metric': 'softmax_cross_entropy',
                                     'test_metric': 'accuracy',
-                                    'eval_freq': 500
+                                    'eval_freq': 10
                                 }
         self.space = space
 

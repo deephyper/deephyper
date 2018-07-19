@@ -7,6 +7,9 @@ import tensorflow as tf
 
 import deephyper.model.arch as a
 from deephyper.model.utilities.train_utils import *
+from deephyper.search import util
+
+logger = util.conf_logger('deephyper.model.builder.tf')
 
 class BasicBuilder:
     def __init__(self, config, arch_def):
@@ -16,6 +19,7 @@ class BasicBuilder:
         self.batch_size = config[a.hyperparameters][a.batch_size]
         self.loss_metric_name = config[a.hyperparameters][a.loss_metric]
         self.test_metric_name = config[a.hyperparameters][a.test_metric]
+        self.train_size = config['train_size']
         self.input_shape = config[a.input_shape] #for image it is [IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS], for vector [NUM_ATTRIBUTES]
         self.num_outputs = config[a.num_outputs]
         self.is_classifier = self.num_outputs > 1
@@ -30,8 +34,8 @@ class BasicBuilder:
                                a.batch_norm: False,
                                a.batch_norm_bef: True}
         self.conv2D_params = { a.num_filters: 32,
-                               a.filter_height: 3,
-                               a.filter_width: 3,
+                               a.filter_height: 5,
+                               a.filter_width: 5,
                                a.stride_height: 1,
                                a.stride_width: 1,
                                a.pool_height: 2,
@@ -40,7 +44,7 @@ class BasicBuilder:
                                a.activation: a.relu,
                                a.batch_norm: False,
                                a.batch_norm_bef: True,
-                               a.drop_out: 1}
+                               a.drop_out: 0.8}
 
         self.dense_params = { a.num_outputs: 1024,
                               a.drop_out: 1,
@@ -103,37 +107,51 @@ class BasicBuilder:
         self.loss_metric = selectLossMetric(self.loss_metric_name)
         self.test_metric = selectTestMetric(self.test_metric_name)
         self.loss = self.loss_metric(self.train_labels_node, self.logits)
-        if 'mean' not in self.loss_metric_name:
-            self.loss = tf.reduce_mean(self.loss)
+        #if 'mean' not in self.loss_metric_name:
+        #    self.loss = tf.reduce_mean(self.loss)
         self.batch = tf.Variable(0)
         self.optimizer_fn = selectOptimizer(self.optimizer_name)
-        self.optimizer = self.optimizer_fn(self.learning_rate).minimize(self.loss)
+        learning_rate = tf.train.exponential_decay(self.learning_rate, self.batch*self.batch_size, self.train_size, 0.95, staircase=True)
+        self.optimizer = self.optimizer_fn(learning_rate).minimize(self.loss)
 
     def get_layer_input(self, nets, skip_conns, last_layer = False):
-        if not skip_conns: return nets[0]
+        if not skip_conns and not last_layer: return nets[0]
         self.used_nets |= set(skip_conns)
         if not last_layer:
             inps = [nets[i] for i in skip_conns]
         else:
             inps = [nets[i] for i in range(len(nets)) if i not in self.used_nets]
-        input = inps[0]
+        input_layer = inps[0]
         for i in range(1, len(inps)):
-            curr_shape = input.get_shape().as_list()
-            next_shape = inps[i].get_shape().as_list()
-            assert len(curr_shape) == len(next_shape), 'Concatenation of two tensors with different dimensions not supported.'
-            max_shape = [max(curr_shape[x], next_shape[x]) for x in range(len(curr_shape))]
-            curr_padding_len = [[0,0]]
-            next_padding_len = [[0,0]]
-            for d in range(len(max_shape[1:-1])):
-                curr_padding_len.append([max_shape[d]-curr_shape[d]//2, max_shape[d]-(max_shape[d]-curr_shape[d]//2)])
-                next_padding_len.append(
-                    [max_shape[d] - next_shape[d] // 2, max_shape[d] - (max_shape[d] - next_shape[d] // 2)])
-            curr_padding_len.append([0,0])
-            next_padding_len.append([0,0])
-            input = tf.pad(input, curr_padding_len, 'CONSTANT')
-            next = tf.pad(inps[i], next_padding_len, 'CONSTANT')
-            input = tf.concat([input, next], len(max_shape)-1)
-        return input
+            curr_layer_shape = input_layer.get_shape().as_list()
+            next_layer_shape = inps[i].get_shape().as_list()
+            logger.debug(f'curr_layer_shape: {curr_layer_shape}, next_layer_shape: {next_layer_shape}')
+            assert len(curr_layer_shape) == len(next_layer_shape), 'Concatenation of two tensors with different dimensions not supported.'
+            max_shape = [ max(curr_layer_shape[x], next_layer_shape[x]) for x in range(len(curr_layer_shape))]
+            logger.debug(f'max_shape: {max_shape}')
+            curr_layer_padding_len = [[0,0]]
+            next_layer_padding_len = [[0,0]]
+            for d in range(1, len(max_shape[1:-1])+1):
+                curr_layer_padding_len.append([
+                    (max_shape[d] - curr_layer_shape[d]) // 2,
+                    (max_shape[d] - curr_layer_shape[d]) -
+                    ((max_shape[d] - curr_layer_shape[d]) // 2)])
+                next_layer_padding_len.append(
+                    [(max_shape[d] - next_layer_shape[d]) // 2,
+                     (max_shape[d] - next_layer_shape[d]) -
+                     ((max_shape[d] - next_layer_shape[d]) // 2)])
+            curr_layer_padding_len.append([0,0])
+            next_layer_padding_len.append([0,0])
+            logger.debug(f'clp: {curr_layer_padding_len}, nlp: {next_layer_padding_len}')
+            if sum([sum(x) for x in curr_layer_padding_len]) != 0:
+                input_layer = tf.pad(input_layer, curr_layer_padding_len, 'CONSTANT')
+            logger.debug('input padding done')
+            if sum([sum(x) for x in next_layer_padding_len]) != 0:
+                next_layer = tf.pad(inps[i], next_layer_padding_len, 'CONSTANT')
+            logger.debug('next_layer padding done')
+            logger.debug(f'CONCAT SHAPES = input_layer: {input_layer.get_shape()}, next_layer: {next_layer.get_shape()}')
+            input_layer = tf.concat([input_layer, next_layer], len(max_shape)-1)
+        return input_layer
 
     def build_graph(self, data_node, train=True):
         net = data_node
@@ -169,15 +187,18 @@ class BasicBuilder:
                     if conv_params[a.batch_norm]:
                         if conv_params[a.batch_norm_bef]:
                             net = tf.layers.conv2d(net, filters=num_filters, kernel_size=[filter_height, filter_width], strides=[
-                                                   stride_height, stride_width], padding=padding, kernel_initializer=weights_initializer, activation=None, reuse=reuse, name=arch_key+'/{0}'.format(a.conv2D))
-                            net = tf.layers.batch_normalization(
+                                                   stride_height, stride_width], padding=padding, kernel_initializer=weights_initializer,activation=None, reuse=reuse, name=arch_key+'/{0}'.format(a.conv2D))
+                                                   net = tf.layers.batch_normalization(
                                 net, reuse=reuse, name=arch_key+'/{0}'.format(a.batch_norm))
                             net = activation(net)
                         else:
-                            net = tf.layers.conv2d(net, filters=num_filters, kernel_size=[filter_height, filter_width],
-                                                   strides=[
-                                                       stride_height, stride_width], padding=padding,
-                                                   kernel_initializer=weights_initializer, activation=activation, reuse=reuse,
+                            net = tf.layers.conv2d(net,
+                                                   filters=num_filters,
+                                                   kernel_size=[filter_height,
+                                                                filter_width],
+                                                   strides=[stride_height, stride_width], padding=padding,
+                                                   kernel_initializer=weights_initializer,activation=activation,
+                                                   reuse=reuse,
                                                    name=arch_key + '/{0}'.format(a.conv2D))
                             net = tf.layers.batch_normalization(
                                 net, reuse=reuse, name=arch_key + '/{0}'.format(a.batch_norm))
@@ -188,7 +209,7 @@ class BasicBuilder:
                                                kernel_initializer=weights_initializer, activation=activation, reuse=reuse,
                                                name=arch_key + '/{0}'.format(a.conv2D))
                     if pool_height != 1 and pool_width !=1:
-                        net = tf.layers.max_pooling2d(net, [pool_height, pool_width])
+                        net = tf.layers.max_pooling2d(net, [pool_height, pool_width], strides=[1, 1])
                 elif layer_type == a.conv1D:
                     conv_params = layer_params
                     num_filters = conv_params[a.num_filters]
@@ -231,7 +252,7 @@ class BasicBuilder:
                                                reuse=reuse,
                                                name=arch_key + '/{0}'.format(a.conv1D))
                     if pool_size !=1:
-                        net = tf.layers.max_pooling1d(net, pool_size)
+                        net = tf.layers.max_pooling1d(net, pool_size, strides=1)
                 elif layer_type == a.tempconv:
                     conv_params = layer_params
                     num_filters = conv_params[a.num_filters]
@@ -287,7 +308,7 @@ class BasicBuilder:
                                                name=arch_key + '/{0}'.format(a.tempconv))
                     net = tf.contrib.layers.layer_norm(net)
                     if pool_size != 1:
-                        net = tf.layers.max_pooling1d(net, pool_size)
+                        net = tf.layers.max_pooling1d(net, pool_size, strides=1)
                 elif layer_type == a.dense:
                     if len(net.get_shape()> 2):
                         net = tf.contrib.layers.flatten(net)
@@ -314,9 +335,13 @@ class BasicBuilder:
             if dropout < 1.0:
                 net = tf.nn.dropout(net, keep_prob=dropout)
             nets.append(net)
-        net = self.get_layer_input(nets, skip_conns=[], last_layer=True)
+        if 'skip_conns' in layer_params:
+            net = self.get_layer_input(nets, skip_conns=[], last_layer=True)
+        else:
+            net = nets[-1]
         net = tf.contrib.layers.flatten(net)
         #net = tf.layers.dense(net, units=512, name='hereItIs', reuse=reuse ) # TODO !!!
+        #net = tf.nn.dropout(net, keep_prob=0.8)
         net = tf.layers.dense(net, units=self.num_outputs, name='output_layer',reuse=reuse)
         nets.append(net)
         return net

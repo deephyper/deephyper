@@ -222,13 +222,15 @@ class BasicTrainer:
         metric_term = 'error' if self.num_outputs ==1 else 'accuracy'
         put_perc = '%' if self.num_outputs > 1 else ''
         with tf.Graph().as_default() as g:
+            self.config['train_size'] = self.train_size
             model = BasicBuilder(self.config, architecture)
             with tf.Session() as sess:
                 init = tf.global_variables_initializer()
                 sess.run(init)
-                if (self.config.get(a.summary)):
+                # if (self.config.get(a.summary)):
+                if (True):
                     self.summary_writer = tf.summary.FileWriter(
-                        'logs/run_{0}'.format(global_step), graph=tf.get_default_graph())
+                        'summary_{0}'.format(global_step), graph=tf.get_default_graph())
                 start_time = time.time()
                 for step in range((self.num_epochs * self.train_size) // self.batch_size):
                     offset = (

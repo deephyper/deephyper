@@ -27,6 +27,7 @@ optimizers['sgd']     = tf.train.GradientDescentOptimizer
 optimizers['rmsprop'] = tf.train.RMSPropOptimizer
 optimizers['adagrad'] = tf.train.AdagradOptimizer
 optimizers['adam']    = tf.train.AdamOptimizer
+optimizers['momentum'] = lambda x : tf.train.MomentumOptimizer(x, momentum=0.9)
 
 def selectTestMetric(name):
     '''
