@@ -13,6 +13,7 @@ from importlib import import_module, reload
 
 import numpy as np
 import tensorflow as tf
+#from balsam.launcher import dag, worker
 
 HERE = os.path.dirname(os.path.abspath(__file__)) # search dir
 top  = os.path.dirname(os.path.dirname(HERE)) # directory containing deephyper
@@ -57,8 +58,8 @@ class Search:
         MAX_EPISODES = self.config[a.max_episodes]
         step = 0
         # Init State
+        logger.debug(f'num_workers = {self.opt_config.num_workers}')
         states = np.array(self.opt_config.starting_point, dtype=np.float32)
-        total_rewards = 0
 
         for state in states:
             action = reinforce.get_action(state=np.array([state], dtype=np.float32))
@@ -68,6 +69,7 @@ class Search:
             self.evaluator.add_eval_nas(cfg)
 
         timer = util.DelayTimer(max_minutes=None, period=SERVICE_PERIOD)
+        nb_iter = 0
         for elapsed_str in timer:
             results = list(self.evaluator.get_finished_evals())
             logger.debug("[ Time = {0}, Step = {1} : results = {2} ]".format(elapsed_str, step, len(results)))
@@ -85,11 +87,16 @@ class Search:
                 cfg['arch_seq'] = action.tolist()
                 self.evaluator.add_eval_nas(cfg)
                 logger.debug('add_evals_nas')
+            if nb_iter >= MAX_EPISODES:
+                break
+            else:
+                nb_iter += 1
 
 
 def main(args):
     '''Service loop: add jobs; read results; drive nas'''
 
+    #cfg = util.OptConfigNas(args, num_workers=len(worker)-2)
     cfg = util.OptConfigNas(args)
     controller = Search(cfg)
     logger.info(f"Starting new NAS on benchmark {cfg.benchmark} & run with {cfg.run_module_name}")

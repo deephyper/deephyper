@@ -72,7 +72,7 @@ class OptConfig:
 class OptConfigNas:
     '''Nas-related options'''
 
-    def __init__(self, args, problem=None):
+    def __init__(self, args, num_workers=None, problem=None):
         HERE = os.path.dirname(os.path.abspath(__file__)) # search dir
         package = os.path.basename(os.path.dirname(HERE)) # 'deephyper'
 
@@ -82,7 +82,7 @@ class OptConfigNas:
         self.ga_num_gen = args.ga_num_gen
         self.evaluator = args.evaluator
         self.repeat_evals = args.repeat_evals
-        self.num_workers = args.num_workers
+        self.num_workers = args.num_workers if num_workers == None else num_workers
         self.learner = args.learner
 
         self.model_path = args.model_path.strip()

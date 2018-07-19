@@ -125,10 +125,8 @@ class BasicBuilder:
         for i in range(1, len(inps)):
             curr_layer_shape = input_layer.get_shape().as_list()
             next_layer_shape = inps[i].get_shape().as_list()
-            logger.debug(f'curr_layer_shape: {curr_layer_shape}, next_layer_shape: {next_layer_shape}')
             assert len(curr_layer_shape) == len(next_layer_shape), 'Concatenation of two tensors with different dimensions not supported.'
             max_shape = [ max(curr_layer_shape[x], next_layer_shape[x]) for x in range(len(curr_layer_shape))]
-            logger.debug(f'max_shape: {max_shape}')
             curr_layer_padding_len = [[0,0]]
             next_layer_padding_len = [[0,0]]
             for d in range(1, len(max_shape[1:-1])+1):
@@ -142,14 +140,10 @@ class BasicBuilder:
                      ((max_shape[d] - next_layer_shape[d]) // 2)])
             curr_layer_padding_len.append([0,0])
             next_layer_padding_len.append([0,0])
-            logger.debug(f'clp: {curr_layer_padding_len}, nlp: {next_layer_padding_len}')
             if sum([sum(x) for x in curr_layer_padding_len]) != 0:
                 input_layer = tf.pad(input_layer, curr_layer_padding_len, 'CONSTANT')
-            logger.debug('input padding done')
             if sum([sum(x) for x in next_layer_padding_len]) != 0:
                 next_layer = tf.pad(inps[i], next_layer_padding_len, 'CONSTANT')
-            logger.debug('next_layer padding done')
-            logger.debug(f'CONCAT SHAPES = input_layer: {input_layer.get_shape()}, next_layer: {next_layer.get_shape()}')
             input_layer = tf.concat([input_layer, next_layer], len(max_shape)-1)
         return input_layer
 
@@ -188,7 +182,7 @@ class BasicBuilder:
                         if conv_params[a.batch_norm_bef]:
                             net = tf.layers.conv2d(net, filters=num_filters, kernel_size=[filter_height, filter_width], strides=[
                                                    stride_height, stride_width], padding=padding, kernel_initializer=weights_initializer,activation=None, reuse=reuse, name=arch_key+'/{0}'.format(a.conv2D))
-                                                   net = tf.layers.batch_normalization(
+                            net = tf.layers.batch_normalization(
                                 net, reuse=reuse, name=arch_key+'/{0}'.format(a.batch_norm))
                             net = activation(net)
                         else:
