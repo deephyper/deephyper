@@ -48,3 +48,5 @@ def load_data(dest):
         train_X = train_X.transpose(0, 2, 3, 1)
         test_X = test_X.transpose(0, 2, 3, 1)
     return (train_X, train_y), (test_X, test_y)
+
+#load_data('cifar10_data')
