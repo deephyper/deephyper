@@ -103,8 +103,9 @@ class Search:
 def main(args):
     '''Service loop: add jobs; read results; drive nas'''
 
-    cfg = util.OptConfigNas(args, num_workers=len(worker)-2)
-    # cfg = util.OptConfigNas(args)
+    #cfg = util.OptConfigNas(args, num_workers=len(list(worker.WorkerGroup()))-2)
+    #logger.debug(f'wokers = {list(worker.WorkerGroup())}')
+    cfg = util.OptConfigNas(args)
     controller = Search(cfg)
     logger.info(f"Starting new NAS on benchmark {cfg.benchmark} & run with {cfg.run_module_name}")
     controller.run()

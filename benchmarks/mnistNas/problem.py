@@ -1,6 +1,4 @@
-'''
- * @Author: romain.egele, dipendra.jha
- * @Date: 2018-06-21 15:31:30
+''' * @Author: romain.egele, dipendra.jha * @Date: 2018-06-21 15:31:30
 '''
 
 from collections import OrderedDict
@@ -15,7 +13,6 @@ class Problem:
         # ARCH
         space['max_layers'] = 4
         space['layer_type'] = 'conv2D'
-        #space['features'] = ['num_filters', 'filter_width', 'filter_height', 'pool_width', 'pool_height', 'stride_width', 'stride_height', 'drop_out']
         state_space = StateSpace()
         # state_space.add_state('filter_height', [size for size in range(5,30,2)])
         # state_space.add_state('filter_width', [size for size in range(5,30,2)])
@@ -27,13 +24,13 @@ class Problem:
         # state_space.add_state('num_filters', [n for n in range(5,35,5)])
         # state_space.add_state('skip_conn', [])
 
-        #state_space.add_state('filter_height', [3, 5])
-        #state_space.add_state('filter_width', [3, 5])
-        #state_space.add_state('pool_height', [1, 2])
-        #state_space.add_state('pool_width', [1, 2])
-        #state_space.add_state('stride_height', [1])
-        #state_space.add_state('stride_width', [1])
-        #state_space.add_state('drop_out', [])
+        state_space.add_state('filter_height', [3, 5])
+        state_space.add_state('filter_width', [3, 5])
+        state_space.add_state('pool_height', [1, 2])
+        state_space.add_state('pool_width', [1, 2])
+        state_space.add_state('stride_height', [1])
+        state_space.add_state('stride_width', [1])
+        state_space.add_state('drop_out', [])
         state_space.add_state('num_filters', [2**i for i in range(5, 8)])
         state_space.add_state('skip_conn', [])
 
