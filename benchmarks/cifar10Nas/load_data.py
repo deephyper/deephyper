@@ -12,14 +12,14 @@ import keras.backend as K
 from keras.utils.data_utils import get_file
 
 
-def load_data(dest):
+def load_data(dest=None):
     """Loads CIFAR10 dataset.
     Returns:
         Tuple of Numpy arrays: `(x_train, y_train), (x_test, y_test)`.
     """
     origin = 'https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz'
     if dest is None:
-        dest = 'datasets'
+        dest = '/projects/datascience/regele/deephyper/benchmarks/cifar10Nas/DATA'
     else:
         dest = os.path.abspath(os.path.expanduser(dest))
 
