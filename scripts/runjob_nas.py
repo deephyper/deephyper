@@ -17,7 +17,7 @@ def default_conf():
     "DATABASE_TOP":         "/projects/datascience/regele/database",
     "BALSAM_PATH":          "/projects/datascience/regele/hpc-edge-service/balsam",
     "STAGE_IN_DIR":         "/local/scratch",
-    "DISABLE_SUBMIT":       false
+    "DISABLE_SUBMIT":       true
 }
     ''' # TODO : What are DISABLE_SUBMIT & STAGE_IN_DIR ?
 
@@ -34,12 +34,12 @@ def check_conf(conf, args):
     except subprocess.CalledProcessError:
         raise ValueError(f"Cannot activate {env_name} referenced in runjob.conf")
 
-    if args.method == 'hyperband':
-        assert args.saved_model_path is not None, 'hyperband requires --saved_model_path'
-        args.saved_model_path = os.path.abspath(os.path.expanduser(args.saved_model_path))
-        assert os.path.exists(args.saved_model_path), f'{args.saved_model_path} not found'
-    elif args.method == 'nas':
-        pass # TODO : check conf for network architecture search
+    #if args.method == 'hyperband':
+    #    assert args.saved_model_path is not None, 'hyperband requires --saved_model_path'
+    #    args.saved_model_path = os.path.abspath(os.path.expanduser(args.saved_model_path))
+    #    assert os.path.exists(args.saved_model_path), f'{args.saved_model_path} not found'
+    #elif args.method == 'nas':
+    #    pass # TODO : check conf for network architecture search
 
     hostname = gethostname()
     if 'theta' in hostname: assert args.platform in ['theta', 'theta_postgres'], "please use a theta platform"
@@ -101,11 +101,11 @@ def main():
     if args.stage_in_path is not None:
         conf['STAGE_IN_DIR'] = args.stage_in_path
         print("Overriding STAGE_IN_DIR with", args.stage_in_path)
-    if args.method == 'hyperband':
-        modelpath = os.path.abspath(os.path.expanduser(args.saved_model_path))
-        conf['saved_model_path'] = modelpath
+    #if args.method == 'hyperband':
+    #    modelpath = os.path.abspath(os.path.expanduser(args.saved_model_path))
+    #    conf['saved_model_path'] = modelpath
 
-    jobname = '.'.join(str(conf[key]) for key in 'benchmark nodes method acq'.split())
+    jobname = '.'.join(str(conf[key]) for key in 'benchmark nodes'.split())
     if args.platform == 'cooley':
         jobname += '.gpu'
     elif args.platform == 'theta_postgres':
