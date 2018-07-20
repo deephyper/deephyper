@@ -5,7 +5,8 @@ def load_data(dest):
     """Loads the MNIST dataset.
     Returns Tuple of Numpy arrays: `(train_X, train_y), (valid_X, valid_y)`.
     """
-    dest = "/projects/datascience/regele/deephyper/benchmarks/mnistNas/DATA"
+    #dest = "/projects/datascience/regele/deephyper/benchmarks/mnistNas/DATA"
+
     mnist = input_data.read_data_sets(dest, one_hot=False)
 
     train_X = mnist.train.images
@@ -23,3 +24,5 @@ def load_data(dest):
     valid_y = mnist.validation.labels
 
     return (train_X, train_y), (valid_X, valid_y)
+
+#load_data('mnist_data')
