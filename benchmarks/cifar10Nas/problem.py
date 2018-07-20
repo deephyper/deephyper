@@ -15,7 +15,6 @@ class Problem:
         # ARCH
         space['max_layers'] = 8
         space['layer_type'] = 'conv2D'
-        space['features'] = ['num_filters', 'filter_width', 'filter_height', 'pool_width', 'pool_height', 'stride_width', 'stride_height', 'drop_out']
         state_space = StateSpace()
         state_space.add_state('filter_height', [size for size in range(3,10,2)])
         state_space.add_state('filter_width', [size for size in range(3,10,2)])
