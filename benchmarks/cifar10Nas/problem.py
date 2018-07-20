@@ -1,4 +1,6 @@
-''' * @Author: romain.egele, dipendra.jha * @Date: 2018-06-21 15:31:30
+'''
+ * @Author: romain.egele, dipendra.jha
+ * @Date: 2018-06-21 15:31:30
 '''
 
 from collections import OrderedDict
@@ -11,31 +13,30 @@ class Problem:
         space['regression'] = False
 
         # ARCH
-        space['max_layers'] = 6
+        space['max_layers'] = 8
         space['layer_type'] = 'conv2D'
-        space['features'] = ['num_filters', 'filter_width', 'filter_height', 'pool_width', 'pool_height',
-                             'stride_width', 'stride_height', 'drop_out']
+        space['features'] = ['num_filters', 'filter_width', 'filter_height', 'pool_width', 'pool_height', 'stride_width', 'stride_height', 'drop_out']
         state_space = StateSpace()
-        state_space.add_state('filter_height', [size for size in range(3, 10, 2)])
-        state_space.add_state('filter_width', [size for size in range(3, 10, 2)])
-        state_space.add_state('pool_height', [size for size in range(2, 5)])
-        state_space.add_state('pool_width', [size for size in range(2, 5)])
-        state_space.add_state('stride_height', [s for s in range(1, 3)])
-        state_space.add_state('stride_width', [s for s in range(1, 3)])
+        state_space.add_state('filter_height', [size for size in range(3,10,2)])
+        state_space.add_state('filter_width', [size for size in range(3,10,2)])
+        state_space.add_state('pool_height', [size for size in range(2,5)])
+        state_space.add_state('pool_width', [size for size in range(2,5)])
+        state_space.add_state('stride_height', [s for s in range(1,3)])
+        state_space.add_state('stride_width', [s for s in range(1,3)])
         state_space.add_state('drop_out', [])
-        state_space.add_state('num_filters', [2 ** i for i in range(5, 10)])
+        state_space.add_state('num_filters', [2**i for i in range(5, 10)])
         state_space.add_state('skip_conn', [])
 
         space['state_space'] = state_space
 
         # ITER
-        space['max_episodes'] = 10 # iter on controller
+        space['max_episodes'] = 50 # iter on controller
 
         # HyperParameters
         space['hyperparameters'] = {'batch_size': 64,
                                     'eval_batch_size': 32,
                                     'activation': 'relu',
-                                    'learning_rate': 0.01,
+                                    'learning_rate': 0.001,
                                     'optimizer': 'adam',
                                     'num_epochs': 100,
                                     'loss_metric': 'softmax_cross_entropy',
