@@ -1,0 +1,72 @@
+#!/bin/bash -x
+#COBALT -A {{ project }}
+#COBALT -n {{ nodes }}
+#COBALT -q {{ queue }}
+#COBALT -t {{ time_str }}
+{% if 'theta' in platform -%}
+    #COBALT --attrs ssds=required:ssd_size=128
+{%- endif %}
+
+
+{% if 'theta' in platform -%}
+    NUM_WORKERS={{ nodes - 2 }}
+{% elif 'cooley' in platform -%}
+    NUM_WORKERS={{ 2*nodes - 2 }}
+{% endif -%}
+
+
+DEEPHYPER_TOP={{ DEEPHYPER_TOP }}
+BALSAM_PATH={{ BALSAM_PATH }}
+WALLMINUTES={{ time_minutes - 10 }}
+
+source ~/.bash_profile
+{% if 'cooley' in platform -%}
+    source /soft/libraries/anaconda/bin/activate {{ DEEPHYPER_ENV_NAME }}
+{% else -%}
+    source activate {{ DEEPHYPER_ENV_NAME }}
+{% endif -%}
+
+{% if 'theta' in platform -%}
+module unload trackdeps
+module unload darshan
+module unload xalt
+export MPICH_GNI_FORK_MODE=FULLCOPY
+{% endif -%}
+
+balsam init {{ db_path }} {% if 'postgres' in platform %} --db-type=postgres {% endif %}
+# export BALSAM_DB_PATH={{ db_path }}
+source balsamactivate {{ db_path }}
+wait
+sleep 5
+balsam dbserver --reset {{ db_path }}
+balsam dbserver
+wait
+sleep 5
+
+balsam rm apps --all --force
+balsam rm jobs --all --force
+
+
+{% if method|upper == 'NAS' -%}
+
+SEARCH_APP_PATH=$DEEPHYPER_TOPsearch/run_nas.py
+ARGS="--benchmark {{ benchmark }} --run_module_name={{ run_module_name }} --num-workers $NUM_WORKERS"
+balsam app --name search --description 'run NAS on : {{ benchmark }}' --executable $SEARCH_APP_PATH
+
+{%- endif %}
+
+
+balsam job --name {{ jobname }} --description {{ jobname }} --application search --wall-minutes $WALLMINUTES  --num-nodes 1 --ranks-per-node 1 --args "$ARGS" --yes --threads-per-rank 64 --threads-per-core 1
+
+NEW_ID=$(balsam ls | grep CREATED | awk '{print $1}' | cut -d '-' -f 1)
+balsam modify jobs $NEW_ID --attr state --value CREATED
+ulimit -c unlimited
+
+
+{% if platform == 'theta' -%}
+
+balsam launcher --c --serial-jobs={{nodes}} --job-mode serial
+
+{% endif -%}
+
+source balsamdeactivate

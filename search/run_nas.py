@@ -13,7 +13,6 @@ from importlib import import_module, reload
 
 import numpy as np
 import tensorflow as tf
-#from balsam.launcher import dag, worker
 
 HERE = os.path.dirname(os.path.abspath(__file__)) # search dir
 top  = os.path.dirname(os.path.dirname(HERE)) # directory containing deephyper
@@ -25,8 +24,16 @@ from deephyper.search import util
 from deephyper.search.nas.policy.tf import NASCellPolicyV2
 from deephyper.search.nas.reinforce.tf import BasicReinforce
 
-SERVICE_PERIOD = 2          # Delay (seconds) between main loop iterations
 logger = util.conf_logger('deephyper.search.run_nas')
+
+import subprocess as sp
+logger.debug(f'ddd {sp.Popen("which mpirun".split())}')
+logger.debug(f'python exe : {sys.executable}')
+
+from balsam.launcher import dag
+from balsam.launcher import worker
+
+SERVICE_PERIOD = 2          # Delay (seconds) between main loop iterations
 
 class Search:
     def __init__(self, cfg):
@@ -96,8 +103,8 @@ class Search:
 def main(args):
     '''Service loop: add jobs; read results; drive nas'''
 
-    #cfg = util.OptConfigNas(args, num_workers=len(worker)-2)
-    cfg = util.OptConfigNas(args)
+    cfg = util.OptConfigNas(args, num_workers=len(worker)-2)
+    # cfg = util.OptConfigNas(args)
     controller = Search(cfg)
     logger.info(f"Starting new NAS on benchmark {cfg.benchmark} & run with {cfg.run_module_name}")
     controller.run()

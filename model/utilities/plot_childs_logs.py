@@ -43,12 +43,13 @@ def loop_directory(path_directory, ax):
 
 if __name__ == '__main__':
     fname = '/Users/Deathn0t/Desktop/hpc-edge-service/testdb/data/run_nas1'
-    plt.style.use('ggplot')
+    #plt.style.use('ggplot')
     plt.ylim(0, 100)
     fig = plt.figure()
     ax1 = fig.add_subplot(1,1,1)
     ax1.set_title('Childs accuracy')
-    #animate = lambda i: loop_directory(fname, ax1)
-    #ani = animation.FuncAnimation(fig, animate, interval=10000)
+    plt.xlabel("evaluation of accuracy on validation set (x10, 1 = 10 steps = 10 batchs)")
+    plt.ylabel("Accuracy on validation set of a child network")
+    plt.legend()
     loop_directory(fname, ax1)
     plt.show()
