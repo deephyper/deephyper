@@ -49,7 +49,7 @@ balsam rm jobs --all --force
 
 {% if method|upper == 'NAS' -%}
 
-SEARCH_APP_PATH=$DEEPHYPER_TOPsearch/run_nas.py
+SEARCH_APP_PATH=$DEEPHYPER_TOP/search/run_nas.py
 ARGS="--benchmark {{ benchmark }} --run_module_name={{ run_module_name }} --num-workers $NUM_WORKERS"
 balsam app --name search --description 'run NAS on : {{ benchmark }}' --executable $SEARCH_APP_PATH
 
