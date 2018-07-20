@@ -142,8 +142,9 @@ class BasicBuilder:
             next_layer_padding_len.append([0,0])
             if sum([sum(x) for x in curr_layer_padding_len]) != 0:
                 input_layer = tf.pad(input_layer, curr_layer_padding_len, 'CONSTANT')
+            next_layer = inps[i]
             if sum([sum(x) for x in next_layer_padding_len]) != 0:
-                next_layer = tf.pad(inps[i], next_layer_padding_len, 'CONSTANT')
+                next_layer = tf.pad(next_layer, next_layer_padding_len, 'CONSTANT')
             input_layer = tf.concat([input_layer, next_layer], len(max_shape)-1)
         return input_layer
 
