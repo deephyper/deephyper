@@ -62,7 +62,7 @@ def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('platform', choices=['cooley', 'theta', 'theta_postgres'])
     #parser.add_argument('method', choices=['NAS'], default='NAS')
-    parser.add_argument('benchmark', choices=['mnistNas'])
+    parser.add_argument('benchmark', choices=['mnistNas', 'cifar10Nas'])
     parser.add_argument('run_module_name', choices=['model.nas'])
     parser.add_argument('-q', required=True, dest='queue')
     parser.add_argument('-n', type=int, required=True, dest='nodes')

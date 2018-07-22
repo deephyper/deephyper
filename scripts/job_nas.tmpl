@@ -58,6 +58,6 @@ balsam job --name {{ jobname }} --workflow {{ jobname }} --application search --
 
 {% if platform == 'theta' -%}
 
-balsam launcher --c --serial-jobs={{nodes}} --job-mode serial
+balsam launcher --c --serial-jobs=1 --job-mode serial
 
 {% endif -%}
