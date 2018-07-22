@@ -1,11 +1,11 @@
 from tensorflow.examples.tutorials.mnist import input_data
 import numpy as np
 
-def load_data(dest):
+def load_data(dest=None):
     """Loads the MNIST dataset.
     Returns Tuple of Numpy arrays: `(train_X, train_y), (valid_X, valid_y)`.
     """
-    #dest = "/projects/datascience/regele/deephyper/benchmarks/mnistNas/DATA"
+    dest = "/projects/datascience/regele/deephyper/benchmarks/mnistNas/DATA"
 
     mnist = input_data.read_data_sets(dest, one_hot=False)
 
