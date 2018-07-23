@@ -60,4 +60,8 @@ balsam job --name {{ jobname }} --workflow {{ jobname }} --application search --
 
 balsam launcher --c --serial-jobs=1 --job-mode serial
 
+{% elif platform == 'cooley' -%}
+
+balsam launcher --c --serial-jobs-per-rank=1 --serial-ranks-per-node=2 --gpus-per-node=2 --job-mode serial
+
 {% endif -%}
