@@ -15,6 +15,7 @@ conda install tensorflow-gpu absl-py
 conda install keras scikit-optimize
 conda install xgboost deap
 
+conda install psycopg2
 cd hpc-edge-service
 pip install -e .
 
