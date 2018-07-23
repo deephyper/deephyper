@@ -245,7 +245,7 @@ class BasicTrainer:
                                                   model.loss,
                                                   model.logits],
                                                   feed_dict=feed_dict)
-                    if step % self.eval_freq == 0:
+                    if step % (self.eval_freq//10 if self.eval_freq//10 else 1) == 0:
                         elapsed_time = time.time() - start_time
                         start_time = time.time()
                         logs = 'Step %d (epoch %.2f), %.1f ms, ' % (step,
@@ -259,6 +259,8 @@ class BasicTrainer:
                             logs += 'Minibatch %s: %.3f%%, ' % (metric_term,
                                                            model.test_metric(predictions, batch_labels))
                         logger.debug(logs)
+
+                    if step % self.eval_freq == 0:
                         valid_preds = self.eval_in_batches(
                             model, self.valid_X,  sess)
                         valid_res = model.test_metric(valid_preds, self.valid_y)
