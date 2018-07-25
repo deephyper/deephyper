@@ -42,6 +42,7 @@ class Search:
         self.config = cfg.config
 
     def run(self):
+	NUM_WORKERS = self.opt_config.num_workers
         session = tf.Session()
         global_step = tf.Variable(0, trainable=False)
         state_space = self.config[a.state_space]
@@ -68,7 +69,7 @@ class Search:
         logger.debug(f'num_workers = {self.opt_config.num_workers}')
         states = np.array(self.opt_config.starting_point, dtype=np.float32)
 
-        for state in states:
+        for n, state in enumerates(states):
             action = reinforce.get_action(state=np.array([state], dtype=np.float32))
             cfg = self.config.copy()
             cfg['global_step'] = step
@@ -94,11 +95,6 @@ class Search:
                 cfg['arch_seq'] = action.tolist()
                 self.evaluator.add_eval_nas(cfg)
                 logger.debug('add_evals_nas')
-            if nb_iter >= MAX_EPISODES:
-                break
-            else:
-                nb_iter += 1
-
 
 def main(args):
     '''Service loop: add jobs; read results; drive nas'''

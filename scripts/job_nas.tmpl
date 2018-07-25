@@ -3,16 +3,15 @@
 #COBALT -n {{ nodes }}
 #COBALT -q {{ queue }}
 #COBALT -t {{ time_str }}
-{% if 'theta' in platform -%}
-    #COBALT --attrs ssds=required:ssd_size=128
-{%- endif %}
+{% if 'theta' == platform %}
+#COBALT --attrs ssds=required:ssd_size=128
+{% endif %}
 
-
-{% if 'theta' in platform -%}
-    NUM_WORKERS={{ nodes - 2 }}
-{% elif 'cooley' in platform -%}
-    NUM_WORKERS={{ 2*nodes - 2 }}
-{% endif -%}
+{% if 'theta' ==  platform %}
+NUM_WORKERS={{ nodes - 2 }}
+{% elif 'cooley' ==  platform %}
+NUM_WORKERS={{ 2*nodes - 2 }}
+{% endif %}
 
 
 DEEPHYPER_TOP={{ DEEPHYPER_TOP }}
@@ -20,21 +19,21 @@ BALSAM_PATH={{ BALSAM_PATH }}
 WALLMINUTES={{ time_minutes - 10 }}
 
 source ~/.bash_profile
-{% if 'cooley' in platform -%}
-    source /soft/libraries/anaconda/bin/activate {{ DEEPHYPER_ENV_NAME }}
-{% else -%}
-    source activate {{ DEEPHYPER_ENV_NAME }}
-{% endif -%}
+{% if 'cooley' == platform %}
+source /soft/libraries/anaconda/bin/activate {{ DEEPHYPER_ENV_NAME }}
+{% else %}
+source activate {{ DEEPHYPER_ENV_NAME }}
+{% endif %}
 
-{% if 'theta' in platform -%}
+{% if 'theta' == platform %}
 module unload trackdeps
 module unload darshan
 module unload xalt
 export MPICH_GNI_FORK_MODE=FULLCOPY
 export PMI_NO_FORK=1
-{% endif -%}
+{% endif %}
 
-balsam init {{ db_path }} {% if 'postgres' in platform %} --db-type=postgres {% endif %}
+balsam init {{ db_path }} 
 # export BALSAM_DB_PATH={{ db_path }}
 source balsamactivate {{ db_path }}
 wait
@@ -44,20 +43,24 @@ balsam rm apps --all --force
 balsam rm jobs --all --force
 
 
-{% if method|upper == 'NAS' -%}
+{% if method|upper == 'NAS' %}
 
 SEARCH_APP_PATH=$DEEPHYPER_TOP/search/run_nas.py
 ARGS="--benchmark {{ benchmark }} --run_module_name={{ run_module_name }} --num-workers $NUM_WORKERS"
 balsam app --name search --description 'run NAS on : {{ benchmark }}' --executable $SEARCH_APP_PATH
 
-{%- endif %}
+{% endif %}
 
 
-balsam job --name {{ jobname }} --workflow {{ jobname }} --application search --wall-minutes $WALLMINUTES  --num-nodes 1 --ranks-per-node 1 --args "$ARGS" --yes --threads-per-rank 64 --threads-per-core 1
+balsam job --name {{ jobname }} --workflow {{ jobname }} --application search --wall-minutes $WALLMINUTES  --num-nodes 1 --ranks-per-node 1 --args "$ARGS" --yes {% if platform == 'theta' %} --threads-per-rank 64 --threads-per-core 1 {% endif %}
 
 
-{% if platform == 'theta' -%}
+{% if 'theta' == platform  %}
 
 balsam launcher --c --serial-jobs=1 --job-mode serial
 
-{% endif -%}
+{% elif 'cooley' == platform %}
+
+balsam launcher --c --serial-jobs-per-node=2  --gpus-per-node=2 --job-mode serial
+
+{% endif %}

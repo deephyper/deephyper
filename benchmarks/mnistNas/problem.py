@@ -11,10 +11,8 @@ class Problem:
         space['regression'] = False
 
         # ARCH
-        space['max_layers'] = 6
+        space['max_layers'] = 2
         space['layer_type'] = 'conv2D'
-        space['features'] = ['num_filters', 'filter_width', 'filter_height', 'pool_width', 'pool_height',
-                             'stride_width', 'stride_height', 'drop_out']
         state_space = StateSpace()
         state_space.add_state('filter_height', [size for size in range(3, 10, 2)])
         state_space.add_state('filter_width', [size for size in range(3, 10, 2)])
@@ -37,10 +35,10 @@ class Problem:
                                     'activation': 'relu',
                                     'learning_rate': 0.01,
                                     'optimizer': 'adam',
-                                    'num_epochs': 100,
+                                    'num_epochs': 1,
                                     'loss_metric': 'softmax_cross_entropy',
                                     'test_metric': 'accuracy',
-                                    'eval_freq': 10
+                                    'eval_freq': 50
                                 }
         self.space = space
 
