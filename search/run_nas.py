@@ -74,6 +74,7 @@ class Search:
             cfg = self.config.copy()
             cfg['global_step'] = step
             cfg['num_worker'] = n
+            cfg['step'] = 0
             cfg['arch_seq'] = action.tolist()
             self.evaluator.add_eval_nas(cfg)
 

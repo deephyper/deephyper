@@ -11,7 +11,7 @@ class Problem:
         space['regression'] = False
 
         # ARCH
-        space['max_layers'] = 2
+        space['max_layers'] = 3
         space['layer_type'] = 'conv2D'
         state_space = StateSpace()
         state_space.add_state('filter_height', [size for size in range(3, 10, 2)])
@@ -26,16 +26,13 @@ class Problem:
 
         space['state_space'] = state_space
 
-        # ITER
-        space['max_episodes'] = 10 # iter on controller
-
         # HyperParameters
         space['hyperparameters'] = {'batch_size': 64,
                                     'eval_batch_size': 32,
                                     'activation': 'relu',
                                     'learning_rate': 0.01,
                                     'optimizer': 'adam',
-                                    'num_epochs': 1,
+                                    'num_epochs': 2,
                                     'loss_metric': 'softmax_cross_entropy',
                                     'test_metric': 'accuracy',
                                     'eval_freq': 50
