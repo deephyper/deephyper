@@ -169,7 +169,8 @@ class BasicTrainer:
                                  model.train_labels_node: batch_labels}
                     _, l, predictions = sess.run([model.optimizer, model.loss,model.logits],
                                                      feed_dict=feed_dict)
-                    if step % self.eval_freq == 0:
+                    if step % (self.eval_freq // 10 if self.eval_freq // 10 else 1) == 0:
+
                         elapsed_time = time.time() - start_time
                         start_time = time.time()
                         logs = f'Step {step} (epoch {float(step) % self.batch_size / self.train_size}), {1000 * elapsed_time / self.eval_freq} ms, '
@@ -182,9 +183,12 @@ class BasicTrainer:
                             logs += 'Minibatch %s: %.3f%%, ' %(metric_term,
                               train_res)
                         else:
-                            logs += 'Minibatch %s: %.3f%%, ' % (metric_term,
+                            logs += 'Minibatch %s: %.3f, ' % (metric_term,
                                                            train_res)
                         logger.debug(logs)
+
+                    if step % self.eval_freq == 0:
+
                         valid_preds, valid_loss = self.eval_rnn_in_batches(
                             model, self.valid_X, self.valid_y, sess)
                         if model.test_metric_name == 'perplexity':
@@ -195,14 +199,8 @@ class BasicTrainer:
                         if put_perc:
                             logger.debug('Validation %s: %.3f%%' %(metric_term, valid_res))
                         else:
-                            logger.debug('Validation %s: %.3f%%' %(metric_term, valid_res))
+                            logger.debug('Validation %s: %.3f' %(metric_term, valid_res))
 
-                        if put_perc:
-                            logger.debug('Minibatch %s: %.3f%%' %(metric_term,
-                              valid_res), end=', ')
-                        else:
-                            logger.debug('Minibatch %s: %.3f%%' % (metric_term,
-                                                           valid_res), end=', ')
 
                         if self.num_outputs > 1 and best_res < valid_res:
                             best_res = valid_res
