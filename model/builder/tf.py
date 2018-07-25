@@ -335,8 +335,8 @@ class BasicBuilder:
         else:
             net = nets[-1]
         net = tf.contrib.layers.flatten(net)
-        #net = tf.layers.dense(net, units=512, name='hereItIs', reuse=reuse ) # TODO !!!
-        #net = tf.nn.dropout(net, keep_prob=0.8)
+        net = tf.layers.dense(net, units=512, name='pen_output_layer', reuse=reuse ) # TODO !!!
+        net = tf.nn.dropout(net, keep_prob=0.8)
         net = tf.layers.dense(net, units=self.num_outputs, name='output_layer',reuse=reuse)
         nets.append(net)
         return net
