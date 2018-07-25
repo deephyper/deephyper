@@ -210,6 +210,8 @@ class BasicTrainer:
                             best_step = step
                     if best_step + self.patience < step:
                         break
+        if self.regression:
+            return -best_res
         return best_res
 
 
@@ -276,4 +278,6 @@ class BasicTrainer:
                     if best_step + self.patience < step:
                         logger.debug(f'--- PATIENCE BREAK ---- : best_step= {best_step} + patience= {self.patience} < step= {step}')
                         break
+        if self.regression:
+            return -best_res
         return best_res
