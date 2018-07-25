@@ -27,6 +27,8 @@ def run(param_dict):
     config = param_dict
 
     logger.debug(f'[STEP] global_step = {config["global_step"]}')
+    logger.debug(f'[STEP] num worker = {config["num_worker"]}')
+    logger.debug(f'[STEP] steps = {config["steps"]}')
     logger.debug('[PARAM] Creating StateSpace')
     config['state_space'] = a.StateSpace(config['state_space'])
     logger.debug('[PARAM] StateSpace created')

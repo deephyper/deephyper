@@ -42,7 +42,7 @@ class Search:
         self.config = cfg.config
 
     def run(self):
-	NUM_WORKERS = self.opt_config.num_workers
+        NUM_WORKERS = self.opt_config.num_workers
         session = tf.Session()
         global_step = tf.Variable(0, trainable=False)
         state_space = self.config[a.state_space]
@@ -63,16 +63,17 @@ class Search:
                                    num_features=state_space.size,
                                    state_space=state_space)
 
-        MAX_EPISODES = self.config[a.max_episodes]
-        step = 0
         # Init State
-        logger.debug(f'num_workers = {self.opt_config.num_workers}')
+        logger.debug(f'num_workers = {NUM_WORKERS}')
         states = np.array(self.opt_config.starting_point, dtype=np.float32)
+        step = 0
+        steps = [ 0 for i in range(len(states))]
 
-        for n, state in enumerates(states):
+        for n, state in enumerate(states):
             action = reinforce.get_action(state=np.array([state], dtype=np.float32))
             cfg = self.config.copy()
             cfg['global_step'] = step
+            cfg['num_worker'] = n
             cfg['arch_seq'] = action.tolist()
             self.evaluator.add_eval_nas(cfg)
 
@@ -89,12 +90,17 @@ class Search:
                 ls = reinforce.train_step(1)
             for cfg, reward in results:
                 state = cfg['arch_seq']
+                num_worker = cfg['num_worker']
                 action = reinforce.get_action(state=np.array(state, dtype=np.float32))
                 cfg = self.config.copy()
                 cfg['global_step'] = step
                 cfg['arch_seq'] = action.tolist()
+                cfg['num_worker'] = num_worker
+                steps[num_worker] += 1
+                cfg['step'] = steps[num_worker]
                 self.evaluator.add_eval_nas(cfg)
                 logger.debug('add_evals_nas')
+                logger.debug(f' steps = {steps}')
 
 def main(args):
     '''Service loop: add jobs; read results; drive nas'''
