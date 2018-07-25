@@ -457,7 +457,7 @@ class RNNModel:
             self.eval_loss = loss_fun([self.eval_preds], [tf.reshape(self.eval_labels_node, [-1])],
                                  [tf.ones([self.eval_batch_size * self.num_steps])],
                                  self.vocab_size)
-            self.eval_loss = tf.reduce_sum(self.eval_loss) / (self.num_steps)
+            self.eval_loss = tf.reduce_sum(self.eval_loss) / (self.eval_batch_size * self.num_steps)
         else:
             self.loss = self.loss_metric(self.train_labels_node, self.logits)
             self.eval_loss = self.loss_metric(self.eval_labels_node, self.eval_preds)
