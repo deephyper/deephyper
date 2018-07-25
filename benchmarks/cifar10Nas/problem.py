@@ -16,12 +16,12 @@ class Problem:
         space['max_layers'] = 5
         space['layer_type'] = 'conv2D'
         state_space = StateSpace()
-        state_space.add_state('filter_height', [size for size in range(3,10,2)])
-        state_space.add_state('filter_width', [size for size in range(3,10,2)])
-        state_space.add_state('pool_height', [size for size in range(2,5)])
-        state_space.add_state('pool_width', [size for size in range(2,5)])
-        state_space.add_state('stride_height', [s for s in range(1,3)])
-        state_space.add_state('stride_width', [s for s in range(1,3)])
+        state_space.add_state('filter_height', [size for size in range(3,6,2)])
+        state_space.add_state('filter_width', [size for size in range(3,6,2)])
+        state_space.add_state('pool_height', [size for size in range(1,3)])
+        state_space.add_state('pool_width', [size for size in range(1,3)])
+        state_space.add_state('stride_height', [s for s in range(1,2)])
+        state_space.add_state('stride_width', [s for s in range(1,2)])
         state_space.add_state('drop_out', [])
         state_space.add_state('num_filters', [2**i for i in range(5, 10)])
         state_space.add_state('skip_conn', [])
@@ -34,7 +34,7 @@ class Problem:
                                     'activation': 'relu',
                                     'learning_rate': 0.001,
                                     'optimizer': 'adam',
-                                    'num_epochs': 10,
+                                    'num_epochs': 50,
                                     'loss_metric': 'softmax_cross_entropy',
                                     'test_metric': 'accuracy',
                                     'eval_freq': 100
