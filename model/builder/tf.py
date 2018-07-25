@@ -396,7 +396,7 @@ class RNNModel:
                               a.activation: a.relu,
                               a.batch_norm: False,
                               a.batch_norm_bef: True}
-        self.genrnn_params = {
+        self.rnn_params = {
             a.num_units:64,
             a.unit_type: 'LSTM',
             a.drop_out: 1
@@ -409,7 +409,7 @@ class RNNModel:
             a.conv2D: self.conv2D_params,
             a.dense: self.dense_params,
             a.tempconv: self.tempconv_params,
-            a.genrnn: self.genrnn_params
+            a.rnn: self.rnn_params
         }
         self.define_model()
 
@@ -436,10 +436,12 @@ class RNNModel:
             self.train_labels_node = tf.placeholder(tf.int64, [self.batch_size, self.num_steps])
             self.eval_data_node = tf.placeholder(tf.int64, [self.eval_batch_size, self.num_steps, self.num_features])
             self.eval_labels_node = tf.placeholder(tf.int64, [self.eval_batch_size, self.num_steps])
-        print('Train data size: ', self.train_data_node.get_shape(), self.batch_size, self.num_steps, self.num_features)
+        logger.debug(f'Train data size: {self.train_data_node.get_shape()}, {self.batch_size}, {self.num_steps}, {self.num_features}')
+        logger.debug('Building training graph')
         logits, final_state = self.build_graph(self.train_data_node, train=True)
         self.logits = logits
         self.final_state = final_state
+        logger.debug('Building evaluation graph')
         self.eval_preds, _= self.build_graph(self.eval_data_node, train=False)
         self.loss_metric = selectLossMetric(self.loss_metric_name)
         if self.test_metric_name == 'perplexity':
@@ -464,11 +466,12 @@ class RNNModel:
         self.batch = tf.Variable(0)
         self.optimizer_fn = selectOptimizer(self.optimizer_name)
         self.optimizer = self.optimizer_fn(self.learning_rate).minimize(self.loss)
+        logger.debug('done with defining model')
 
     def build_graph(self, input_data, train=True):
         reuse = None if train else True
         if self.text_input:
-            embed_size = self.arch_def['layer_0']['num_units']
+            embed_size = self.arch_def['layer_1']['num_units']
             with tf.variable_scope('embedding', reuse=tf.AUTO_REUSE):
                 embedding = tf.get_variable(
                 'embedding', [self.vocab_size, embed_size], dtype=tf.float32)
@@ -476,7 +479,7 @@ class RNNModel:
         else:
             inputs = input_data
 
-        arch_keys = ['layer_' + str(i) for i in range(len(self.arch_def))]
+        arch_keys = ['layer_' + str(i) for i in range(1,len(self.arch_def)+1)]
         rnn_layers = []
         last_num_units = 0
         for arch_key in arch_keys:
@@ -490,26 +493,32 @@ class RNNModel:
             if train and layer_params['drop_out'] < 1:
                 layer = tf.contrib.rnn.DropoutWrapper(layer, output_keep_prob=layer_params['drop_out'])
             rnn_layers.append(layer)
+        logger.debug('creating multicellRNN')
         stacked_lstm = tf.contrib.rnn.MultiRNNCell(rnn_layers)
         self.initial_state = state = stacked_lstm.zero_state(batch_size=self.batch_size, dtype=tf.float32)
 
-        print('inputs shape ', inputs.get_shape())
+        logger.debug('inputs shape {}'.format(inputs.get_shape()))
 
         outputs, state = tf.nn.dynamic_rnn(
              stacked_lstm, inputs, initial_state=self.initial_state, dtype=tf.float32, time_major=False)
-        print('cell outputs shape ', outputs.get_shape())
+        logger.debug('cell outputs shape {}'.format(outputs.get_shape()))
+        last_num_units = int(last_num_units)
 
         if self.regression:
+            logger.debug('Last num units is {}'.format(last_num_units))
             output = tf.reshape(tf.concat(axis=1, values=outputs), [-1, last_num_units])
-            print('cell output shape after reshaping ', output.get_shape())
+            #output = tf.reshape(outputs, [-1, last_num_units])
+
+            logger.debug('cell output shape after reshaping:{}'.format(output.get_shape()))
             # Logits and output
             logits = tf.contrib.layers.fully_connected(output, self.vocab_size, activation_fn=tf.nn.softmax)
-            print('logit output shape: ', logits.get_shape())
+            logger.debug('logit output shape:{}'.format(logits.get_shape()))
 
         else:
             output = tf.reshape(tf.concat(axis=1, values=outputs), [self.batch_size,])
-            print('cell output shape after reshaping ', output.get_shape())
+            #output = tf.reshape(outputs, [self.batch_size, ])
+            logger.debug('cell output shape after reshaping: {}'.format(output.get_shape()))
             # Logits and output
             logits = tf.contrib.layers.fully_connected(output, self.num_outputs, activation_fn=tf.nn.softmax)
-            print('logit output shape: ', logits.get_shape())
+            logger.debug('logit output shape: {}'.format(logits.get_shape()))
         return logits, state
