@@ -150,7 +150,7 @@ class BasicTrainer:
         put_perc = '%' if self.num_outputs > 1 else ''
         with tf.Graph().as_default() as g:
             model = RNNModel(self.config, architecture)
-            with tf.Session() as sess:
+            with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as sess:
                 init = tf.global_variables_initializer()
                 sess.run(init)
                 if (self.config.get(a.summary)):
