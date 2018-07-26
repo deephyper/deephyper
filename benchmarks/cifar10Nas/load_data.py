@@ -46,6 +46,9 @@ def load_data(dest=None):
     train_y = np.reshape(train_y, (len(train_y)))
     test_y = np.reshape(test_y, (len(test_y)))
 
+    train_X /= 255.
+    test_X /= 255.
+
     if K.image_data_format() == 'channels_last':
         train_X = train_X.transpose(0, 2, 3, 1)
         test_X = test_X.transpose(0, 2, 3, 1)
