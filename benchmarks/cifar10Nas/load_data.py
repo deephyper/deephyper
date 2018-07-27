@@ -46,12 +46,19 @@ def load_data(dest=None):
     train_y = np.reshape(train_y, (len(train_y)))
     test_y = np.reshape(test_y, (len(test_y)))
 
-    train_X /= 255.
-    test_X /= 255.
+    train_X = np.true_divide(train_X, 255)
+    test_X = np.true_divide(test_X, 255)
 
     if K.image_data_format() == 'channels_last':
         train_X = train_X.transpose(0, 2, 3, 1)
         test_X = test_X.transpose(0, 2, 3, 1)
     return (train_X, train_y), (test_X, test_y)
 
+if __name__ == '__main__':
+    (train_X, train_y), (test_X, test_Y) = load_data()
+    print(train_X[0])
+    print(f'train_X shape = {np.shape(train_X)}')
+    print(f'train_y shape = {np.shape(train_y)}')
+    print(f'test_X shape = {np.shape(test_X)}')
+    print(f'test_y shape = {np.shape(test_y)}')
 #load_data('cifar10_data')

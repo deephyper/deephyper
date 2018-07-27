@@ -23,21 +23,20 @@ class Problem:
         state_space.add_state('stride_height', [s for s in range(1,2)])
         state_space.add_state('stride_width', [s for s in range(1,2)])
         state_space.add_state('drop_out', [])
-        state_space.add_state('num_filters', [2**i for i in range(5, 10)])
+        state_space.add_state('num_filters', [2**i for i in range(5, 9)])
         state_space.add_state('skip_conn', [])
 
         space['state_space'] = state_space
 
         # HyperParameters
         space['hyperparameters'] = {'batch_size': 64,
-                                    'eval_batch_size': 32,
+                                    'eval_batch_size': 64,
                                     'activation': 'relu',
-                                    'learning_rate': 0.001,
+                                    'learning_rate': 0.0001,
                                     'optimizer': 'adam',
-                                    'num_epochs': 50,
+                                    'num_epochs': 20,
                                     'loss_metric': 'softmax_cross_entropy',
                                     'test_metric': 'accuracy',
-                                    'eval_freq': 100
                                 }
         self.space = space
 
