@@ -72,6 +72,10 @@ class BasicTrainer:
         self.train_y = np.squeeze(self.train_y).astype(self.np_label_type)
         self.valid_y = np.squeeze(self.valid_y).astype(self.np_label_type)
 
+        logger.debug(f'\n after reshaping: train_X.shape = {self.train_X.shape},\n\
+                           train_y.shape = {self.train_y.shape},\n\
+                           input_shape = {self.input_shape}')
+
     def eval_in_batches(self, model, data, sess):
         size = data.shape[0]
         if size < self.batch_size:
@@ -201,7 +205,6 @@ class BasicTrainer:
                         else:
                             logger.debug('Validation %s: %.3f' %(metric_term, valid_res))
 
-
                         if self.num_outputs > 1 and best_res < valid_res:
                             best_res = valid_res
                             best_step = step
@@ -275,9 +278,9 @@ class BasicTrainer:
                         elif self.regression and best_res > valid_res:
                             best_res = valid_res
                             best_step = step
-                    if best_step + self.patience < step:
-                        logger.debug(f'--- PATIENCE BREAK ---- : best_step= {best_step} + patience= {self.patience} < step= {step}')
-                        break
+                        if best_step + self.patience < step:
+                            logger.debug(f'--- PATIENCE BREAK ---- : best_step= {best_step} + patience= {self.patience} < step= {step}')
+                            break
         if self.regression:
             return -best_res
         return best_res

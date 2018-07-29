@@ -91,6 +91,7 @@ class BasicBuilder:
                 cfg_layer[k] = cfg_default[k]
 
     def define_model(self):
+        logger.debug('Defining model')
         self.tf_label_type = np.float32 if self.num_outputs == 1 else np.int64
         self.train_data_node = tf.placeholder(tf.float32,
             shape=([self.batch_size] + self.input_shape))
@@ -100,10 +101,13 @@ class BasicBuilder:
         #    shape=([self.batch_size, self.num_outputs]))
         self.eval_data_node = tf.placeholder(tf.float32,
             shape=([self.batch_size] + self.input_shape))
+        logger.debug('Building training graph')
         self.logits = self.build_graph(self.train_data_node)
         self.logits = tf.squeeze(self.logits)
+        logger.debug('Building evaluation graph')
         self.eval_preds = self.build_graph(self.eval_data_node, train=False)
         self.eval_preds = tf.squeeze(self.eval_preds)
+        logger.debug('Defining optimizers')
         self.loss_metric = selectLossMetric(self.loss_metric_name)
         self.test_metric = selectTestMetric(self.test_metric_name)
         self.loss = self.loss_metric(self.train_labels_node, self.logits)
@@ -113,6 +117,7 @@ class BasicBuilder:
         self.optimizer_fn = selectOptimizer(self.optimizer_name)
         learning_rate = tf.train.exponential_decay(self.learning_rate, self.batch*self.batch_size, self.train_size, 0.95, staircase=True)
         self.optimizer = self.optimizer_fn(learning_rate).minimize(self.loss)
+        logger.debug('Done defining model')
 
     def get_layer_input(self, nets, skip_conns, last_layer = False):
         if not skip_conns and not last_layer: return nets[0]
@@ -247,7 +252,7 @@ class BasicBuilder:
                                                reuse=reuse,
                                                name=arch_key + '/{0}'.format(a.conv1D))
                     if pool_size !=1:
-                        net = tf.layers.max_pooling1d(net, pool_size, strides=1)
+                        net = tf.layers.max_pooling1d(net, (pool_size,), strides=1)
                 elif layer_type == a.tempconv:
                     conv_params = layer_params
                     num_filters = conv_params[a.num_filters]
@@ -303,7 +308,7 @@ class BasicBuilder:
                                                name=arch_key + '/{0}'.format(a.tempconv))
                     net = tf.contrib.layers.layer_norm(net)
                     if pool_size != 1:
-                        net = tf.layers.max_pooling1d(net, pool_size, strides=1)
+                        net = tf.layers.max_pooling1d(net, (pool_size,), strides=1)
                 elif layer_type == a.dense:
                     if len(net.get_shape()> 2):
                         net = tf.contrib.layers.flatten(net)
