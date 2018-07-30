@@ -74,6 +74,7 @@ num_units = 'num_units'
 unit_type = 'unit_type'
 drop_out = 'drop_out'
 vocab_size = 'vocab_size'
+max_grad_norm = 'max_grad_norm'
 
 
 # activation function

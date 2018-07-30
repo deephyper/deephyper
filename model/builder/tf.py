@@ -354,6 +354,7 @@ class RNNModel:
         self.optimizer_name = config[a.hyperparameters][a.optimizer]
         self.batch_size = config[a.hyperparameters][a.batch_size]
         self.loss_metric_name = config[a.hyperparameters][a.loss_metric]
+        self.max_grad_norm = config[a.hyperparameters][a.max_grad_norm]
         self.test_metric_name = config[a.hyperparameters][a.test_metric]
         self.num_steps = config[a.num_steps] #for image it is [IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS], for vector [NUM_ATTRIBUTES]
         self.num_outputs = config[a.num_outputs]
@@ -458,11 +459,11 @@ class RNNModel:
             self.loss = loss_fun([self.logits], [tf.reshape(self.train_labels_node, [-1])],
                             [tf.ones([self.batch_size * self.num_steps])],
                             self.vocab_size)
-            self.loss = tf.reduce_sum(self.loss) / (self.batch_size * self.num_steps)
-            self.eval_loss = loss_fun([self.eval_preds], [tf.reshape(self.eval_labels_node, [-1])],
+            self.loss = tf.reduce_sum(self.loss) / (self.batch_size*self.num_steps)
+            eval_loss = loss_fun([self.eval_preds], [tf.reshape(self.eval_labels_node, [-1])],
                                  [tf.ones([self.eval_batch_size * self.num_steps])],
                                  self.vocab_size)
-            self.eval_loss = tf.reduce_sum(self.eval_loss) / (self.eval_batch_size * self.num_steps)
+            self.eval_loss = tf.reduce_sum(eval_loss) / (self.eval_batch_size*self.num_steps)
         else:
             self.loss = self.loss_metric(self.train_labels_node, self.logits)
             self.eval_loss = self.loss_metric(self.eval_labels_node, self.eval_preds)
@@ -470,7 +471,15 @@ class RNNModel:
                 self.loss = tf.reduce_mean(self.loss)
         self.batch = tf.Variable(0)
         self.optimizer_fn = selectOptimizer(self.optimizer_name)
-        self.optimizer = self.optimizer_fn(self.learning_rate).minimize(self.loss)
+        self.optimizer_ = self.optimizer_fn(self.learning_rate)
+
+        tvars = tf.trainable_variables()
+        grads, _ = tf.clip_by_global_norm(tf.gradients(self.loss*self.num_steps, tvars), self.max_grad_norm)
+
+        self.optimizer = self.optimizer_.apply_gradients(
+            zip(grads, tvars),
+            global_step=tf.contrib.framework.get_or_create_global_step())
+
         logger.debug('done with defining model')
 
     def build_graph(self, input_data, train=True):

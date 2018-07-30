@@ -122,8 +122,9 @@ class BasicTrainer:
                                                          model.eval_data_node: data[begin:end, ...], model.eval_labels_node: labels[begin:end,...]})
                 else:
                     batch_predictions, curr_loss = sess.run([model.eval_preds, model.eval_loss], feed_dict={
-                                                 model.eval_data_node: data[-self.batch_size:, ...]})
+                                                 model.eval_data_node: data[-self.batch_size:, ...], model.eval_labels_node: labels[begin:end,...]})
                     predictions[-self.batch_size:, :] = batch_predictions
+                val_res += curr_loss
         else:
             predictions = np.ndarray(shape=(size*self.num_steps, self.vocab_size), dtype=np.float32)
             for begin in range(0, size, self.batch_size):
@@ -135,8 +136,8 @@ class BasicTrainer:
                     batch_predictions, curr_loss = sess.run([model.eval_preds,model.eval_loss],
                                                  feed_dict={model.eval_data_node: data[-self.batch_size:, ...], model.eval_labels_node: labels[-self.eval_batch_size:,...]})
                     predictions[-self.batch_size*self.num_steps:,] = batch_predictions
-        val_res += curr_loss* self.eval_batch_size
-        return predictions, val_res/data.shape[0]
+                val_res += curr_loss
+        return predictions, val_res/(size/self.eval_batch_size)
 
 
     def get_rewards(self, architecture, global_step=''):
@@ -177,7 +178,7 @@ class BasicTrainer:
 
                         elapsed_time = time.time() - start_time
                         start_time = time.time()
-                        logs = f'Step {step} (epoch {float(step) % self.batch_size / self.train_size}), {1000 * elapsed_time / self.eval_freq} ms, '
+                        logs = f'Step {step} (epoch {float(step) * self.batch_size / self.train_size}), {1000 * elapsed_time / self.eval_freq} ms, '
                         logs += f'Minibatch loss: {l}, '
                         if model.test_metric_name == 'perplexity':
                             train_res = np.exp(l)
