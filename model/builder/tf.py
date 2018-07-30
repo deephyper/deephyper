@@ -114,13 +114,14 @@ class BasicBuilder:
         learning_rate = tf.train.exponential_decay(self.learning_rate, self.batch*self.batch_size, self.train_size, 0.95, staircase=True)
         self.optimizer = self.optimizer_fn(learning_rate).minimize(self.loss)
 
-    def get_layer_input(self, nets, skip_conns, last_layer = False):
+    def get_layer_input(self, nets, skip_conns, last_layer=False):
         if not skip_conns and not last_layer: return nets[0]
         self.used_nets |= set(skip_conns)
         if not last_layer:
             inps = [nets[i] for i in skip_conns]
         else:
             inps = [nets[i] for i in range(len(nets)) if i not in self.used_nets]
+            test = [ i for i in range(len(nets)) if i not in self.used_nets]
         input_layer = inps[0]
         for i in range(1, len(inps)):
             curr_layer_shape = input_layer.get_shape().as_list()
@@ -167,7 +168,6 @@ class BasicBuilder:
                     net = self.get_layer_input(nets, layer_params['skip_conn'])
                 else:
                     net = nets[-1]
-                print (net.get_shape(), type(net.get_shape()), list(net.get_shape()))
                 if layer_type == a.conv2D:
                     conv_params = self.conv2D_params.copy()
                     conv_params.update(layer_params)
@@ -330,7 +330,7 @@ class BasicBuilder:
             if dropout < 1.0:
                 net = tf.nn.dropout(net, keep_prob=dropout)
             nets.append(net)
-        if 'skip_conns' in layer_params:
+        if 'skip_conn' in layer_params:
             net = self.get_layer_input(nets, skip_conns=[], last_layer=True)
         else:
             net = nets[-1]
