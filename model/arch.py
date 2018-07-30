@@ -248,6 +248,25 @@ class StateSpace:
 
         return states
 
+    def extends_num_layer_of_state(self, state, num_layers):
+        '''
+        Args:
+            state: list of tokens
+            num_layers: int, number of in the new extended states
+        '''
+        for layer_n in range(num_layers-1, num_layers):
+            for feature_i in range(self.size):
+                if (self[feature_i]['name'] == 'skip_conn'):
+                    for j in range(layer_n+1):
+                        state.append(float(np.random.randint(0,2)))
+                elif (self[feature_i]['name'] == 'drop_out'):
+                    state.append(np.random.random())
+                else:
+                    feature = self[feature_i]
+                    size = feature['size']
+                    sample = np.random.randint(0, size)
+                    state.append(feature['values'][sample])
+
     def parse_state_space_list(self, state_list): # not ok for skip_co
         '''
         Parses a list of one hot encoded states to retrieve a list of state values
@@ -312,3 +331,19 @@ class StateSpace:
     @property
     def size(self):
         return self.state_count_
+
+
+def test_random_and_extends():
+    state_space = StateSpace()
+    state_space.add_state('filter_height', ['FH'])
+    state_space.add_state('drop_out', [])
+    state_space.add_state('skip_conn', [])
+    states = state_space.get_random_state_space(1, 1)
+    assert len(states[0]) == 3
+    print(f'num_layer = 1, state ={states[0]}')
+    state_space.extends_num_layer_of_state(states[0], 2)
+    assert len(states[0]) == 7
+    print(f'num_layer = 2, state ={states[0]}')
+
+if __name__ == '__main__':
+    test_random_and_extends()
