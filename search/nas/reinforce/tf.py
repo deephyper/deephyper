@@ -2,9 +2,19 @@
  * @Author: romain.egele, dipendra.jha
  * @Date: 2018-06-20 14:59:13
 '''
+import os
+import sys
 import tensorflow as tf
 import numpy as np
 import random
+
+HERE = os.path.dirname(os.path.abspath(__file__)) # policy dir
+top  = os.path.dirname(os.path.dirname(HERE)) # search dir
+top  = os.path.dirname(os.path.dirname(top)) # dir containing deephyper
+sys.path.append(top)
+
+from deephyper.search.nas.policy.tf import NASCellPolicyV3
+from deephyper.model.arch import StateSpace
 
 class BasicReinforce:
     def __init__(self, sess, optimizer, policy_network, max_layers, global_step,
@@ -33,31 +43,22 @@ class BasicReinforce:
         var_lists = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
         self.sess.run(tf.variables_initializer(var_lists))
 
-    def get_action(self, state):
-        return self.sess.run(self.predicted_action, {self.states: state})
+    def get_action(self, state, num_layers):
+        rnn_res = np.array(self.sess.run(self.policy_outputs[:len(state[0])],
+                           {self.states: state})).flatten().tolist()
+        return self.state_space.parse_state(rnn_res, num_layers)
 
     def create_variables(self):
         with tf.name_scope("model_inputs"):
             # raw state representation
-            if (self.state_space.feature_is_defined('skip_conn')):
-                seq_length = (self.num_features - 1) * self.max_layers
-                seq_length += self.max_layers * (self.max_layers + 1) / 2
-            else:
-                seq_length = self.num_features * self.max_layers
             self.states = tf.placeholder(
-                tf.float32, [None, seq_length], name="states")
+                tf.float32, [None, None], name="states")
 
         with tf.name_scope("predict_actions"):
             # initialize policy network
             with tf.variable_scope("policy_network"):
                 _, self.policy_outputs = self.policy_network.get(
                     self.states, self.max_layers)
-
-            self.action_scores = tf.identity(
-                self.policy_outputs, name="action_scores")
-
-            self.predicted_action = tf.cast(tf.scalar_mul(
-                self.division_rate, self.action_scores), tf.float32, name="predicted_action")
 
         # regularization loss
         policy_network_variables = tf.get_collection(
@@ -73,9 +74,18 @@ class BasicReinforce:
                 self.logprobs, _ = self.policy_network.get(
                     self.states, self.max_layers)
 
+            # Here you get all the possible outputs, but be careful there are not always
+            # computed
+            self.logprobs = self.logprobs[:, -1, :]
+
+            # You need the slice as a tensor because you are building a computational
+            # graph (tf.slice). To build this slice, you need to get the dynamic shape of
+            # the states as a tensor. States is a tensor. (tf.shape)
+            self.logprobs = tf.slice(self.logprobs, [0, 0], tf.shape(self.states))
+
             # compute policy loss and regularization loss
             self.cross_entropy_loss = tf.nn.softmax_cross_entropy_with_logits_v2(
-                logits=self.logprobs[:, -1, :], labels=self.states)
+                logits=self.logprobs, labels=self.states)
             self.pg_loss = tf.reduce_mean(self.cross_entropy_loss)
             self.reg_loss = tf.reduce_sum([tf.reduce_sum(
                 tf.square(x)) for x in policy_network_variables])  # Regularization
@@ -106,3 +116,50 @@ class BasicReinforce:
                               {self.states: states,
                                self.discounted_rewards: rewards})
         return ls
+
+
+def test_BasicReinforce():
+    session = tf.Session()
+    global_step = tf.Variable(0, trainable=False)
+    state_space = StateSpace()
+    state_space.add_state('filter_size', [10., 20., 30.])
+    state_space.add_state('drop_out', [])
+    state_space.add_state('num_filters', [32., 64.])
+    state_space.add_state('skip_conn', [])
+    policy_network = NASCellPolicyV3(state_space)
+    max_layers = 3
+
+    learning_rate = tf.train.exponential_decay(0.99, global_step,
+                                                500, 0.96, staircase=True)
+
+    optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate)
+
+    # for the CONTROLLER
+    reinforce = BasicReinforce(session,
+                                optimizer,
+                                policy_network,
+                                max_layers,
+                                global_step,
+                                num_features=state_space.size,
+                                state_space=state_space)
+    state_l2 = [[10., 0.5, 32., 1.,
+                 10., 0.5, 32., 1., 1.]]
+    num_layers = 2
+    action = reinforce.get_action(state_l2, num_layers)
+    print(f'action = {action}')
+    reward = 90.
+    reinforce.storeRollout([action], reward)
+    reinforce.train_step(1)
+
+    state_l3 = [[10., 0.5, 32., 1.,
+                 10., 0.5, 32., 1., 1.,
+                 10., 0.5, 32., 1., 1., 1.]]
+    num_layers = 3
+    action = reinforce.get_action(state_l3, num_layers)
+    print(f'action = {action}')
+    reward = 90.
+    reinforce.storeRollout([action], reward)
+    reinforce.train_step(1)
+
+if __name__ == '__main__':
+    test_BasicReinforce()

@@ -21,7 +21,7 @@ sys.path.append(top)
 import deephyper.model.arch as a
 from deephyper.evaluators import evaluate
 from deephyper.search import util
-from deephyper.search.nas.policy.tf import NASCellPolicyV2
+from deephyper.search.nas.policy.tf import NASCellPolicyV3
 from deephyper.search.nas.reinforce.tf import BasicReinforce
 
 logger = util.conf_logger('deephyper.search.run_nas')
@@ -46,7 +46,7 @@ class Search:
         session = tf.Session()
         global_step = tf.Variable(0, trainable=False)
         state_space = self.config[a.state_space]
-        policy_network = NASCellPolicyV2(state_space)
+        policy_network = NASCellPolicyV3(state_space)
         max_layers = self.config[a.max_layers]
         assert max_layers > 0
         num_of_layers = max_layers if max_layers <= 2 else 2
@@ -77,7 +77,7 @@ class Search:
         steps = [ 0 for i in range(len(states))]
 
         for n, state in enumerate(states):
-            action = reinforce.get_action(state=np.array([state], dtype=np.float32))
+            action = reinforce.get_action(state=np.array([state], dtype=np.float32),                                    num_layers=num_of_layers)
             cfg = self.config.copy()
             cfg['global_step'] = step
             cfg['num_worker'] = n
@@ -116,7 +116,8 @@ class Search:
             for cfg, reward in results:
                 state = cfg['arch_seq']
                 num_worker = cfg['num_worker']
-                action = reinforce.get_action(state=np.array(state, dtype=np.float32))
+                action = reinforce.get_action(state=np.array(state, dtype=np.float32),
+                                              num_layers=num_of_layers)
                 cfg = self.config.copy()
                 cfg['global_step'] = step
                 cfg['arch_seq'] = action.tolist()
