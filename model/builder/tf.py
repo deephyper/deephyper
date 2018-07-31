@@ -113,6 +113,10 @@ class BasicBuilder:
         self.loss = self.loss_metric(self.train_labels_node, self.logits)
         #if 'mean' not in self.loss_metric_name:
         #    self.loss = tf.reduce_mean(self.loss)
+        if self.num_outputs > 1:
+            self.eval_preds = tf.nn.softmax(self.eval_preds)
+            self.logits = tf.nn.softmax(self.logits)
+
         self.batch = tf.Variable(0)
         self.optimizer_fn = selectOptimizer(self.optimizer_name)
         learning_rate = tf.train.exponential_decay(self.learning_rate, self.batch*self.batch_size, self.train_size, 0.95, staircase=True)
@@ -479,6 +483,11 @@ class RNNModel:
         self.optimizer = self.optimizer_.apply_gradients(
             zip(grads, tvars),
             global_step=tf.contrib.framework.get_or_create_global_step())
+
+        if self.num_outputs > 1:
+            self.eval_preds = tf.nn.softmax(self.eval_preds)
+            self.logits = tf.nn.softmax(self.logits)
+
 
         logger.debug('done with defining model')
 
