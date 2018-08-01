@@ -78,11 +78,11 @@ def load_data(config=None):
 
     """
     num_steps = 10
-    data_path = '/Users/Dipendra/Projects/deephyper/benchmarks/ptbNas/DATA'
+    data_path = '/projects/datascience/regele/deephyper/benchmarks/ptbNas/DATA'
     batch_size = 32
     if config and 'batch_size' in config: batch_size = config['batch_size']
     if config and 'num_steps' in config: num_steps = config['num_steps']
-    if config and 'dest' in config: data_path = config['dest']
+    #if config and 'dest' in config: data_path = config['dest']
     train_path = os.path.join(data_path, "ptb.train.txt")
     valid_path = os.path.join(data_path, "ptb.valid.txt")
     test_path = os.path.join(data_path, "ptb.test.txt")

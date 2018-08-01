@@ -28,14 +28,13 @@ class Problem:
 
         # HyperParameters
         space['hyperparameters'] = {'batch_size': 64,
-                                    'eval_batch_size': 32,
+                                    'eval_batch_size': 64,
                                     'activation': 'relu',
                                     'learning_rate': 0.01,
                                     'optimizer': 'adam',
-                                    'num_epochs': 2,
+                                    'num_epochs': 4,
                                     'loss_metric': 'softmax_cross_entropy',
                                     'test_metric': 'accuracy',
-                                    'eval_freq': 50
                                 }
         self.space = space
 

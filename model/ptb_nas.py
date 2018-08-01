@@ -63,11 +63,8 @@ def run(param_dict):
 
     # Run the trainer and get the rewards
     reward = trainer.get_rewards(arch_def, global_step)
-    logger.debug(f'[REWARD/RESULT] = {reward}')
-    result = reward
-    # np.random.seed()
-    # time.sleep(2)
-    # result = np.random.randint(1, 95) + np.random.random()
+    result = 1/reward
+    logger.debug(f'[REWARD/RESULT] : error = {reward}, result = {result}')
     print('OUTPUT: ', result)
     return result
 
