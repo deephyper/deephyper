@@ -21,7 +21,7 @@ sys.path.append(top)
 import deephyper.model.arch as a
 from deephyper.evaluators import evaluate
 from deephyper.search import util
-from deephyper.search.nas.policy.tf import NASCellPolicyV2
+from deephyper.search.nas.policy.tf import NASCellPolicyV3
 from deephyper.search.nas.reinforce.tf import BasicReinforce
 
 logger = util.conf_logger('deephyper.search.run_nas')
@@ -46,8 +46,13 @@ class Search:
         session = tf.Session()
         global_step = tf.Variable(0, trainable=False)
         state_space = self.config[a.state_space]
-        policy_network = NASCellPolicyV2(state_space)
+        policy_network = NASCellPolicyV3(state_space)
         max_layers = self.config[a.max_layers]
+        assert max_layers > 0
+        num_of_layers = max_layers if max_layers <= 2 else 2
+        children_exp = 0 # number of childs networks trainned since the last best reward
+        best_reward = 0.
+        last_reward = 0.
 
         learning_rate = tf.train.exponential_decay(0.99, global_step,
                                                    500, 0.96, staircase=True)
@@ -65,12 +70,14 @@ class Search:
 
         # Init State
         logger.debug(f'num_workers = {NUM_WORKERS}')
-        states = np.array(self.opt_config.starting_point, dtype=np.float32)
+        states = np.array(state_space.get_random_state_space(num_of_layers,
+                                                             num=NUM_WORKERS),
+                          dtype=np.float32)
         step = 0
         steps = [ 0 for i in range(len(states))]
 
         for n, state in enumerate(states):
-            action = reinforce.get_action(state=np.array([state], dtype=np.float32))
+            action = reinforce.get_action(state=np.array([state], dtype=np.float32),                                    num_layers=num_of_layers)
             cfg = self.config.copy()
             cfg['global_step'] = step
             cfg['num_worker'] = n
@@ -79,20 +86,38 @@ class Search:
             self.evaluator.add_eval_nas(cfg)
 
         timer = util.DelayTimer(max_minutes=None, period=SERVICE_PERIOD)
-        nb_iter = 0
         for elapsed_str in timer:
             results = list(self.evaluator.get_finished_evals())
-            logger.debug("[ Time = {0}, Step = {1} : results = {2} ]".format(elapsed_str, step, len(results)))
+            len_results = len(results)
+            logger.debug("[ Time = {0}, Step = {1} : results = {2} ]".format(elapsed_str, step, len_results))
+            children_exp += len_results
+
+            # Get rewards and apply reinforcement step by step
             for cfg, reward in results:
+                if (reward > best_reward):
+                    best_reward = reward
+                    children_exp = 0
                 state = cfg['arch_seq']
                 logger.debug(f'state = {state}')
                 reinforce.storeRollout(state, reward)
                 step += 1
                 ls = reinforce.train_step(1)
+
+            # Check improvement of children NN
+            if (children_exp > 100): # add a new layer to the search
+                if (num_of_layers < max_layers):
+                    num_of_layers += 1
+                    for cfg, _ in results:
+                        state_space.extends_num_layer_of_state(cfg['arch_seq'], num_of_layers)
+                else:
+                    logger.debug('Best accuracy is not increasing')
+
+            # Run training on new children NN
             for cfg, reward in results:
                 state = cfg['arch_seq']
                 num_worker = cfg['num_worker']
-                action = reinforce.get_action(state=np.array(state, dtype=np.float32))
+                action = reinforce.get_action(state=np.array(state, dtype=np.float32),
+                                              num_layers=num_of_layers)
                 cfg = self.config.copy()
                 cfg['global_step'] = step
                 cfg['arch_seq'] = action.tolist()
@@ -106,8 +131,6 @@ class Search:
 def main(args):
     '''Service loop: add jobs; read results; drive nas'''
 
-    #cfg = util.OptConfigNas(args, num_workers=len(list(worker.WorkerGroup()))-2)
-    #logger.debug(f'wokers = {list(worker.WorkerGroup())}')
     cfg = util.OptConfigNas(args)
     controller = Search(cfg)
     logger.info(f"Starting new NAS on benchmark {cfg.benchmark} & run with {cfg.run_module_name}")

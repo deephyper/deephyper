@@ -91,6 +91,7 @@ class BasicBuilder:
                 cfg_layer[k] = cfg_default[k]
 
     def define_model(self):
+        logger.debug('Defining model')
         self.tf_label_type = np.float32 if self.num_outputs == 1 else np.int64
         self.train_data_node = tf.placeholder(tf.float32,
             shape=([self.batch_size] + self.input_shape))
@@ -100,27 +101,36 @@ class BasicBuilder:
         #    shape=([self.batch_size, self.num_outputs]))
         self.eval_data_node = tf.placeholder(tf.float32,
             shape=([self.batch_size] + self.input_shape))
+        logger.debug('Building training graph')
         self.logits = self.build_graph(self.train_data_node)
         self.logits = tf.squeeze(self.logits)
+        logger.debug('Building evaluation graph')
         self.eval_preds = self.build_graph(self.eval_data_node, train=False)
         self.eval_preds = tf.squeeze(self.eval_preds)
+        logger.debug('Defining optimizers')
         self.loss_metric = selectLossMetric(self.loss_metric_name)
         self.test_metric = selectTestMetric(self.test_metric_name)
         self.loss = self.loss_metric(self.train_labels_node, self.logits)
         #if 'mean' not in self.loss_metric_name:
         #    self.loss = tf.reduce_mean(self.loss)
+        if self.num_outputs > 1:
+            self.eval_preds = tf.nn.softmax(self.eval_preds)
+            self.logits = tf.nn.softmax(self.logits)
+
         self.batch = tf.Variable(0)
         self.optimizer_fn = selectOptimizer(self.optimizer_name)
         learning_rate = tf.train.exponential_decay(self.learning_rate, self.batch*self.batch_size, self.train_size, 0.95, staircase=True)
         self.optimizer = self.optimizer_fn(learning_rate).minimize(self.loss)
+        logger.debug('Done defining model')
 
-    def get_layer_input(self, nets, skip_conns, last_layer = False):
+    def get_layer_input(self, nets, skip_conns, last_layer=False):
         if not skip_conns and not last_layer: return nets[0]
         self.used_nets |= set(skip_conns)
         if not last_layer:
             inps = [nets[i] for i in skip_conns]
         else:
             inps = [nets[i] for i in range(len(nets)) if i not in self.used_nets]
+            test = [ i for i in range(len(nets)) if i not in self.used_nets]
         input_layer = inps[0]
         for i in range(1, len(inps)):
             curr_layer_shape = input_layer.get_shape().as_list()
@@ -167,7 +177,6 @@ class BasicBuilder:
                     net = self.get_layer_input(nets, layer_params['skip_conn'])
                 else:
                     net = nets[-1]
-                print (net.get_shape(), type(net.get_shape()), list(net.get_shape()))
                 if layer_type == a.conv2D:
                     conv_params = self.conv2D_params.copy()
                     conv_params.update(layer_params)
@@ -247,7 +256,7 @@ class BasicBuilder:
                                                reuse=reuse,
                                                name=arch_key + '/{0}'.format(a.conv1D))
                     if pool_size !=1:
-                        net = tf.layers.max_pooling1d(net, pool_size, strides=1)
+                        net = tf.layers.max_pooling1d(net, (pool_size,), strides=1)
                 elif layer_type == a.tempconv:
                     conv_params = layer_params
                     num_filters = conv_params[a.num_filters]
@@ -303,7 +312,7 @@ class BasicBuilder:
                                                name=arch_key + '/{0}'.format(a.tempconv))
                     net = tf.contrib.layers.layer_norm(net)
                     if pool_size != 1:
-                        net = tf.layers.max_pooling1d(net, pool_size, strides=1)
+                        net = tf.layers.max_pooling1d(net, (pool_size,), strides=1)
                 elif layer_type == a.dense:
                     if len(net.get_shape()> 2):
                         net = tf.contrib.layers.flatten(net)
@@ -330,7 +339,7 @@ class BasicBuilder:
             if dropout < 1.0:
                 net = tf.nn.dropout(net, keep_prob=dropout)
             nets.append(net)
-        if 'skip_conns' in layer_params:
+        if 'skip_conn' in layer_params:
             net = self.get_layer_input(nets, skip_conns=[], last_layer=True)
         else:
             net = nets[-1]
@@ -349,6 +358,7 @@ class RNNModel:
         self.optimizer_name = config[a.hyperparameters][a.optimizer]
         self.batch_size = config[a.hyperparameters][a.batch_size]
         self.loss_metric_name = config[a.hyperparameters][a.loss_metric]
+        self.max_grad_norm = config[a.hyperparameters][a.max_grad_norm]
         self.test_metric_name = config[a.hyperparameters][a.test_metric]
         self.num_steps = config[a.num_steps] #for image it is [IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS], for vector [NUM_ATTRIBUTES]
         self.num_outputs = config[a.num_outputs]
@@ -453,11 +463,11 @@ class RNNModel:
             self.loss = loss_fun([self.logits], [tf.reshape(self.train_labels_node, [-1])],
                             [tf.ones([self.batch_size * self.num_steps])],
                             self.vocab_size)
-            self.loss = tf.reduce_sum(self.loss) / (self.batch_size * self.num_steps)
-            self.eval_loss = loss_fun([self.eval_preds], [tf.reshape(self.eval_labels_node, [-1])],
+            self.loss = tf.reduce_sum(self.loss) / (self.batch_size*self.num_steps)
+            eval_loss = loss_fun([self.eval_preds], [tf.reshape(self.eval_labels_node, [-1])],
                                  [tf.ones([self.eval_batch_size * self.num_steps])],
                                  self.vocab_size)
-            self.eval_loss = tf.reduce_sum(self.eval_loss) / (self.eval_batch_size * self.num_steps)
+            self.eval_loss = tf.reduce_sum(eval_loss) / (self.eval_batch_size*self.num_steps)
         else:
             self.loss = self.loss_metric(self.train_labels_node, self.logits)
             self.eval_loss = self.loss_metric(self.eval_labels_node, self.eval_preds)
@@ -465,7 +475,20 @@ class RNNModel:
                 self.loss = tf.reduce_mean(self.loss)
         self.batch = tf.Variable(0)
         self.optimizer_fn = selectOptimizer(self.optimizer_name)
-        self.optimizer = self.optimizer_fn(self.learning_rate).minimize(self.loss)
+        self.optimizer_ = self.optimizer_fn(self.learning_rate)
+
+        tvars = tf.trainable_variables()
+        grads, _ = tf.clip_by_global_norm(tf.gradients(self.loss*self.num_steps, tvars), self.max_grad_norm)
+
+        self.optimizer = self.optimizer_.apply_gradients(
+            zip(grads, tvars),
+            global_step=tf.contrib.framework.get_or_create_global_step())
+
+        if self.num_outputs > 1:
+            self.eval_preds = tf.nn.softmax(self.eval_preds)
+            self.logits = tf.nn.softmax(self.logits)
+
+
         logger.debug('done with defining model')
 
     def build_graph(self, input_data, train=True):
