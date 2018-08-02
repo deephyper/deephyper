@@ -223,12 +223,72 @@ class NASCellPolicyV3:
                             cursor += 1
 
         self.outputs_before_py_func = outputs
-        #outputs = tf.py_func(self.parse_state_tf, [outputs, num_layers], tf.float32)
         return rnn_outputs[:, -1:, :], outputs
 
-    def parse_state_tf(self, x, num_layers):
-        np_array = np.array([self.state_space.parse_state(x, num_layers)], dtype=np.float32)
-        return np_array
+class NASCellPolicyV4:
+    def __init__(self, state_space):
+        '''
+        Args:
+            state_space: an Object representing the space of the tokens we want to generate
+        '''
+        assert isinstance(state_space, a.StateSpace)
+        self.state_space = state_space
+        self.num_tokens_per_layer = state_space.size
+
+    @property
+    def max_num_classes(self):
+        max_num = 0
+        for feature_i in range(self.num_tokens_per_layer):
+            current_feature = self.state_space[feature_i]
+            max_num = max(max_num, current_feature['size'])
+        return max_num
+
+    def get(self, input_rnn, max_layers, num_units=20):
+        '''
+        This function build the maximal graph of the controller network. If we want to compute a number of layers < max_layers we will ask the computation on a sub graph.
+        Args:
+            input_rnn: a tensor (placeholder), input of the first time step of our policy
+                network, shape = [batch_size]
+            max_layers: int, maximum number of layers
+            num_units: int, state_size of all LSTMCells
+        '''
+
+        with tf.name_scope('policy_network'):
+            RNNCell = lambda x: tf.contrib.rnn.LSTMCell(num_units=x, state_is_tuple=True)
+            StackedCell = tf.contrib.rnn.MultiRNNCell([RNNCell(num_units),
+                                                       RNNCell(num_units)],
+                                                       state_is_tuple=True)
+            batch_size    = tf.shape(input_rnn)[0]
+            initial_state = StackedCell.zero_state(batch_size, tf.float32)
+
+            x_t = input_rnn # input at time t
+            s_t = initial_state
+            output_tensors = []
+            output_dense_layers = []
+            for token_i in range(max_layers*self.num_tokens_per_layer):
+                # o_t : final output at time t
+                # h_t : hidden state at time t
+                # s_t : state at time t
+                h_t, s_t = StackedCell(x_t, s_t)
+                with tf.name_scope(f'token_{token_i}'):
+                    o_t, o_t_before_softmax = self.softmax(h_t)
+                    output_dense_layers.append(o_t_before_softmax)
+                    output_tensors.append(o_t)
+                    x_t = tf.expand_dims(o_t, 1)
+
+        logits = tf.concat(output_dense_layers, axis=0)
+        return logits, output_tensors
+
+    def softmax(self, h_t):
+        classifier = tf.layers.dense(
+            inputs=h_t,
+            units=self.max_num_classes,
+            name=f'softmax',
+            reuse=tf.AUTO_REUSE)
+        prediction = tf.nn.softmax(classifier)
+        arg_max = tf.cast(tf.argmax(prediction, axis=1), tf.float32)
+        return arg_max, classifier
+
 
 def initialize_uninitialized(sess):
     global_vars          = tf.global_variables()
@@ -311,5 +371,30 @@ def test_NASCellPolicyV3():
         res1 = sp.parse_state(np.array(sess.run(net_outputs[:len(state_l3[0])], {ph_states: state_l3})).flatten().tolist(), num_layers)
         print(f'Predict = {res1}, length = {len(res1)} ')
 
+def test_NASCellPolicyV4():
+    max_layers = 3
+    sp = a.StateSpace()
+    sp.add_state('filter_size', [10., 20., 30.])
+    sp.add_state('num_filters', [10., 20.])
+    policy = NASCellPolicyV4(sp)
+    input_rnn = tf.placeholder(tf.float32, [None, 1], name="input_rnn")
+    _, output_tensors = policy.get(input_rnn, max_layers)
+    with tf.Session() as sess:
+        init = tf.global_variables_initializer()
+        tf.summary.FileWriter('graph', graph=tf.get_default_graph())
+        sess.run(init)
+        num_layers = 1
+        num_tokens = sp.size * num_layers
+        res = sess.run(output_tensors[:num_tokens], {input_rnn: [[0.1]]})
+        print(f'num_tokens: {num_tokens}, encoded_tokens: {np.array(res).tolist()}')
+        num_layers = 2
+        num_tokens = sp.size * num_layers
+        res = sess.run(output_tensors[:num_tokens], {input_rnn: [[0.1]]})
+        print(f'num_tokens: {num_tokens}, encoded_tokens: {np.array(res).tolist()}')
+        num_layers = 3
+        num_tokens = sp.size * num_layers
+        res = sess.run(output_tensors[:num_tokens], {input_rnn: [[0.0], [0.1]]})
+        print(f'num_tokens: {num_tokens}, encoded_tokens: {np.array(res).tolist()}')
+
 if __name__ == '__main__':
-    test_NASCellPolicyV3()
+    test_NASCellPolicyV4()
