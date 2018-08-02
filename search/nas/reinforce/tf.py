@@ -193,7 +193,7 @@ class BasicReinforceV2:
 
             # compute policy loss and regularization loss
             self.cross_entropy_loss = tf.nn.softmax_cross_entropy_with_logits_v2(
-                logits=self.logits_slice, labels=self.)
+                logits=self.logits_slice, labels=self.policy_outputs_slice)
             self.pg_loss = tf.reduce_mean(self.cross_entropy_loss)
             self.reg_loss = tf.reduce_sum([tf.reduce_sum(
                 tf.square(x)) for x in policy_network_variables])  # Regularization
