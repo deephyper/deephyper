@@ -290,6 +290,111 @@ class NASCellPolicyV4:
         return arg_max, classifier
 
 
+class NASCellPolicyV5:
+    def __init__(self, state_space, save_path):
+        '''
+        Args:
+            state_space: an Object representing the space of the tokens we want to generate
+        '''
+        assert isinstance(state_space, a.StateSpace)
+        self.state_space = state_space
+        self.num_tokens_per_layer = state_space.size
+        self.save_path = save_path
+
+    @property
+    def max_num_classes(self):
+        max_num = 0
+        for feature_i in range(self.num_tokens_per_layer):
+            current_feature = self.state_space[feature_i]
+            max_num = max(max_num, current_feature['size'])
+        return max_num
+
+    def save_model(self, sess):
+        print('saving model to '+self.save_path)
+        self.saver.save(sess, self.save_path)
+
+    def restore_model(self, sess):
+        if os.path.exists(self.save_path+'.meta'):
+            print('restoring the model from '+self.save_path)
+            self.saver.restore(sess, save_path=self.save_path)
+
+    def get(self, input, max_layers, num_units=512):
+        '''
+        This function build the maximal graph of the controller network. If we want to compute a number of layers < max_layers we will ask the computation on a sub graph.
+        Args:
+            input_rnn: a tensor (placeholder), input of the first time step of our policy
+                network, shape = [batch_size]
+            max_layers: int, maximum number of layers
+            num_units: int, state_size of all LSTMCells
+        '''
+
+        with tf.name_scope('policy_network'):
+            RNNCell = lambda x: tf.contrib.rnn.LSTMCell(num_units=num_units, state_is_tuple=True)
+            stacked_lstm = tf.contrib.rnn.MultiRNNCell([RNNCell(num_units),
+                                                       RNNCell(num_units)],
+                                                       state_is_tuple=True)
+            batch_size    = tf.shape(input)[0]
+            initial_state = stacked_lstm.zero_state(batch_size, tf.float32)
+            print('max num classes: ', self.max_num_classes)
+            #x_t = input # input at time t
+            state = initial_state
+            token_inds = []
+            input = tf.expand_dims(input,1)
+            state_skip_conns = []
+            with tf.variable_scope('skip_weights', reuse=tf.AUTO_REUSE):
+                skip_W_prev = tf.get_variable('skip_W_prev',[num_units, num_units])
+                skip_W_curr = tf.get_variable('skip_W_curr', [num_units, num_units])
+                skip_v = tf.get_variable('skip_v', [num_units, 1])
+
+            for token_i in range(max_layers*self.num_tokens_per_layer):
+                # o_t : final output at time t
+                # h_t : hidden state at time t
+                # s_t : state at time t
+                #print('\n\n',token_i, ': input shape: ', input.get_shape())
+                input = tf.expand_dims(input,1)
+                #print(token_i,': input shape after exp: ',input.get_shape())
+                outputs, state = tf.nn.dynamic_rnn(stacked_lstm, input, initial_state=state, dtype=tf.float32, time_major=False)
+                #print('output shape: ', outputs.get_shape())
+                #print('state shape: ', state[-1][-1].get_shape())
+                outputs = tf.squeeze(outputs)
+                #print('output shape: ', outputs.get_shape())
+
+                with tf.name_scope(f'token_{token_i}'):
+                    softmax_outputs = tf.layers.dense(inputs=outputs, units=self.max_num_classes, activation=tf.nn.softmax ,reuse=tf.AUTO_REUSE, name = 'softmax')
+                    #print('softmax output: ', softmax_outputs.get_shape())
+                    token_ind = tf.cast(tf.argmax(softmax_outputs, axis=1), tf.float32)
+                    #print('token ind: ', token_ind.get_shape())
+                    token_inds.append(token_ind)
+                    input = token_ind
+                    input = tf.expand_dims(input, 1)
+                    if not (token_i+1)%self.num_tokens_per_layer:
+                        #skip connections
+                        state_res = tf.reshape(state[-1][-1], [batch_size, num_units])
+                        #print('skip conn for token: ', token_i)
+                        for state_skip in state_skip_conns:
+                            #print('state skip: ', state_skip.get_shape())
+                            #print('state curr: ', state_res.get_shape())
+                            #print('skip W prev: ', skip_W_prev.get_shape())
+                            #print('skip W curr: ', skip_W_curr.get_shape())
+                            sum_prod_W = tf.matmul(state_res, skip_W_curr)+tf.matmul(state_skip, skip_W_prev)
+                            #print('sum_prod_W: ', sum_prod_W.get_shape())
+                            tan_out = tf.nn.tanh(sum_prod_W)
+                            v_tan = tf.matmul(tan_out, skip_v)
+                            #print('v tan: ', v_tan.get_shape())
+                            skip_conn = tf.nn.sigmoid(v_tan)
+                            skip_conn = tf.squeeze(skip_conn)
+                            #print('skipp conn: ', skip_conn.get_shape())
+                            token_inds.append(skip_conn)
+                        state_skip_conns.append(state_res)
+        logits = tf.concat(token_inds, axis=0)
+        self.saver = tf.train.Saver()
+        if not os.path.exists(self.save_path):
+            print('created save path: ' + self.save_path)
+            os.system('mkdir -p ' + self.save_path)
+        return logits
+
+
+
 def initialize_uninitialized(sess):
     global_vars          = tf.global_variables()
     is_not_initialized   = sess.run([tf.is_variable_initialized(var) for var in global_vars])
@@ -396,5 +501,27 @@ def test_NASCellPolicyV4():
         res = sess.run(output_tensors[:num_tokens], {input_rnn: [[0.0], [0.1]]})
         print(f'num_tokens: {num_tokens}, encoded_tokens: {np.array(res).tolist()}')
 
+def test_NASCellPolicyV5():
+    start_num_layers = 2
+    max_layers = 5
+    sp = a.StateSpace()
+    sp.add_state('filter_size', [10., 20., 30.])
+    sp.add_state('num_filters', [10., 20.])
+    policy = NASCellPolicyV5(sp, save_path='savepoint/model')
+    batch_size = 4
+    init_seeds = [1.*i/batch_size for i in range(batch_size)]
+    rnn_input = tf.placeholder(shape=(batch_size), dtype= tf.float32, name="input")
+    logits = policy.get(rnn_input, start_num_layers)
+    with tf.Session() as sess:
+        policy.restore_model(sess=sess)
+        init = tf.global_variables_initializer()
+        sess.run(init)
+        tf.summary.FileWriter('graph', graph=tf.get_default_graph())
+        for num_layers in range(start_num_layers, max_layers):
+            num_tokens = sp.size * num_layers + num_layers * (num_layers-1)//2
+            res = sess.run(logits[:num_tokens], {rnn_input: init_seeds})
+            print(f'num layers: {num_layers} num_tokens: {num_tokens}, encoded_tokens: {np.array(res).tolist()}')
+            policy.save_model(sess)
+
 if __name__ == '__main__':
-    test_NASCellPolicyV4()
+    test_NASCellPolicyV5()
