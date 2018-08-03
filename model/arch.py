@@ -10,7 +10,6 @@ from collections import OrderedDict
 
 # definition of a key
 layer_type = 'layer_type'
-
 features = 'features'
 input_shape = 'input_shape'
 num_outputs = 'num_outputs'

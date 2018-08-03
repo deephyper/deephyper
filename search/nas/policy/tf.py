@@ -341,6 +341,7 @@ class NASCellPolicyV5:
             token_inds = []
             input = tf.expand_dims(input,1)
             state_skip_conns = []
+            states = []
             with tf.variable_scope('skip_weights', reuse=tf.AUTO_REUSE):
                 skip_W_prev = tf.get_variable('skip_W_prev',[num_units, num_units])
                 skip_W_curr = tf.get_variable('skip_W_curr', [num_units, num_units])
@@ -358,7 +359,7 @@ class NASCellPolicyV5:
                 #print('state shape: ', state[-1][-1].get_shape())
                 outputs = tf.squeeze(outputs)
                 #print('output shape: ', outputs.get_shape())
-
+                states.append(state)
                 with tf.name_scope(f'token_{token_i}'):
                     softmax_outputs = tf.layers.dense(inputs=outputs, units=self.max_num_classes, activation=tf.nn.softmax ,reuse=tf.AUTO_REUSE, name = 'softmax')
                     #print('softmax output: ', softmax_outputs.get_shape())
@@ -387,7 +388,7 @@ class NASCellPolicyV5:
                             #print('skipp conn: ', skip_conn.get_shape())
                             token_inds.append(skip_conn)
                         state_skip_conns.append(state_res)
-        #logits = tf.concat(token_inds, axis=0)
+        logits = tf.concat(token_inds, axis=0)
         logits = token_inds
         self.saver = tf.train.Saver()
         if not os.path.exists(self.save_path):
