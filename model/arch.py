@@ -332,6 +332,22 @@ class StateSpace:
     def size(self):
         return self.state_count_
 
+    def argmax2tokens(self, argmax_list, num_layers, num_classes):
+        token_list = []
+        cursor = 0
+        for layer_i in range(num_layers):
+            for feature_i in range(self.size):
+                state = self[feature_i]
+                if (state['name'] == 'skip_conn'):
+                    for j in range(layer_i):
+                        ratio = argmax_list[cursor]/num_classes
+                        token = 0 if (ratio < 0.5) else 1
+                        token_list.append(token)
+                else:
+                    index = int(argmax_list[cursor]/num_classes * state['size'])
+                    token = self.get_state_value(feature_i, index)
+                    token_list.append(token)
+        return token_list
 
 def test_random_and_extends():
     state_space = StateSpace()
@@ -345,5 +361,18 @@ def test_random_and_extends():
     assert len(states[0]) == 7
     print(f'num_layer = 2, state ={states[0]}')
 
+def test_argmax2tokens():
+    sp = StateSpace()
+    sp.add_state('filter_size', [10., 20., 30.])
+    sp.add_state('num_filters', [10., 20.])
+    sp.add_state('skip_conn', [])
+    argmax_list = [0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0]
+    print(f'argmax_list: {argmax_list}')
+    num_layers = 4
+    num_classes = 3
+    token_list = sp.argmax2tokens(argmax_list, num_layers, num_classes)
+    print(f'token_list: {token_list}')
+
 if __name__ == '__main__':
-    test_random_and_extends()
+    #test_random_and_extends()
+    test_argmax2tokens()
