@@ -383,10 +383,12 @@ class NASCellPolicyV5:
                             #print('v tan: ', v_tan.get_shape())
                             skip_conn = tf.nn.sigmoid(v_tan)
                             skip_conn = tf.squeeze(skip_conn)
+                            skip_conn = tf.round(skip_conn)
                             #print('skipp conn: ', skip_conn.get_shape())
                             token_inds.append(skip_conn)
                         state_skip_conns.append(state_res)
-        logits = tf.concat(token_inds, axis=0)
+        #logits = tf.concat(token_inds, axis=0)
+        logits = token_inds
         self.saver = tf.train.Saver()
         if not os.path.exists(self.save_path):
             print('created save path: ' + self.save_path)
@@ -502,16 +504,16 @@ def test_NASCellPolicyV4():
         print(f'num_tokens: {num_tokens}, encoded_tokens: {np.array(res).tolist()}')
 
 def test_NASCellPolicyV5():
-    start_num_layers = 2
+    start_num_layers = 1
     max_layers = 5
     sp = a.StateSpace()
     sp.add_state('filter_size', [10., 20., 30.])
     sp.add_state('num_filters', [10., 20.])
     policy = NASCellPolicyV5(sp, save_path='savepoint/model')
-    batch_size = 4
+    batch_size = 2
     init_seeds = [1.*i/batch_size for i in range(batch_size)]
     rnn_input = tf.placeholder(shape=(batch_size), dtype= tf.float32, name="input")
-    logits = policy.get(rnn_input, start_num_layers)
+    logits = policy.get(rnn_input, max_layers)
     with tf.Session() as sess:
         policy.restore_model(sess=sess)
         init = tf.global_variables_initializer()
@@ -520,6 +522,7 @@ def test_NASCellPolicyV5():
         for num_layers in range(start_num_layers, max_layers):
             num_tokens = sp.size * num_layers + num_layers * (num_layers-1)//2
             res = sess.run(logits[:num_tokens], {rnn_input: init_seeds})
+            #print(res)
             print(f'num layers: {num_layers} num_tokens: {num_tokens}, encoded_tokens: {np.array(res).tolist()}')
             policy.save_model(sess)
 
