@@ -251,28 +251,36 @@ class BasicReinforceV5:
 
         self.create_variables()
         var_lists = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
-        self.sess.run(tf.variables_initializer(var_lists))
+        self.policy_network.restore_model(sess = self.sess)
+        init = tf.global_variables_initializer()
+        sess.run(init)
+
+        #self.sess.run(tf.variables_initializer(var_lists))
 
     def get_actions(self, rnn_input, num_layers):
-        if 'skip_conn' in self.state_space.states:
-            num_tokens = self.state_space.size * num_layers + num_layers * (num_layers - 1) // 2
-        else:
-            num_tokens = self.state_space.size * num_layers
-        return self.sess.run(self.logits[:self.num_tokens],
-                             {self.rnn_input:rnn_input})
+        self.num_tokens = self.state_space.size * num_layers * self.batch_size
+        if self.state_space.feature_is_defined('skip_conn'):
+
+            self.num_tokens = ((self.state_space.size-1) * num_layers + num_layers * (num_layers - 1) // 2) * self.batch_size
+        policy_outputs_ =  self.sess.run(self.policy_outputs[:self.num_tokens],
+                             {self.rnn_input:rnn_input, self.num_tokens_tensor: [self.num_tokens]})
+        #print(policy_outputs_, softmax_out_prob_, softmax_output_)
+        return policy_outputs_
     def create_variables(self):
         self.rnn_input = tf.placeholder(
             dtype=tf.float32, shape=(self.batch_size), name='rnn_input')
 
-        #self.num_tokens_tensor = tf.placeholder(
-        #    tf.int32, [1], name='num_tokens')
+        self.num_tokens_tensor = tf.placeholder(
+            tf.int32, [1], name='num_tokens')
+
+        self.batch_labels = tf.placeholder(tf.int32,[None,self.batch_size], name='labels')
 
         with tf.name_scope("predict_actions"):
             # initialize policy network
             with tf.variable_scope("policy_network"):
-                self.logits_ = self.policy_network.get(
+                self.policy_outputs, self.softmax_outputs = self.policy_network.get(
                     self.rnn_input, self.max_layers)
-                self.policy_outputs = tf.concat(self.logits_, axis=0)
+                #self.policy_outputs = tf.concat(self.logits_, axis=0)
 
             self.action_scores = tf.identity(
                 self.policy_outputs, name="action_scores")
@@ -289,19 +297,36 @@ class BasicReinforceV5:
             # gradients for selecting action from policy network
             self.discounted_rewards = tf.placeholder(
                 tf.float32, (None,), name="discounted_rewards")
+            self.policy_outputs_slice = tf.slice(self.policy_outputs, [0], [self.num_tokens_tensor[0]])
+            #print('softmax prob shape:',self.softmax_probs.get_shape())
+            #self.softmax_probs_slice = tf.slice(self.softmax_probs, [0,0], [self.num_tokens_tensor[0],self.batch_size])
+            self.softmax_outputs_slice = tf.slice(self.softmax_outputs, [0,0,0], [self.num_tokens_tensor[0]//self.batch_size, self.batch_size, self.policy_network.max_num_classes])
 
-            # with tf.variable_scope("policy_network", reuse=True):
-            #     self.logits = self.policy_network.get(
-            #         self.rnn_input, self.max_layers)
+            #self.logits_slice = tf.slice(self.policy_outputs, [0, 0, 0],
+            #                             [self.num_tokens_tensor[0],
+            #                              self.batch_size,
+            #                              self.policy_network.max_num_classes])
+
+            # shape : [num_tokens, batch_size]
+            #policy_outputs_shape = tf.shape(self.policy_outputs)
+            #self.policy_outputs_slice = tf.slice(self.policy_outputs, [0, 0],
+            #                                     [self.num_tokens_tensor[0],
+            #                                      policy_outputs_shape[1]])
 
             # compute policy loss and regularization loss
-            print(self.policy_outputs.get_shape(), self.rnn_input.get_shape())
-            self.cross_entropy_loss = tf.nn.softmax_cross_entropy_with_logits_v2(
-                logits=self.policy_outputs, labels=[self.rnn_input]+[self.policy_outputs[self.batch_size:]])
+            #print(self.policy_outputs_slice.get_shape(), self.rnn_input.get_shape(), self.policy_outputs_slice, self.rnn_input)
+            #labels = tf.concat([self.rnn_input, self.policy_outputs[self.batch_size:]], axis=0)
+            #print(labels.get_shape())
+            #print(self.softmax_outputs_slice.shape, self.batch_labels.shape)
+            self.cross_entropy_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
+                logits=self.softmax_outputs_slice, labels=self.batch_labels)
             self.pg_loss = tf.reduce_mean(self.cross_entropy_loss)
+            #self.log_loss = tf.reduce_sum(tf.log(self.softmax_probs))
             self.reg_loss = tf.reduce_sum([tf.reduce_sum(
                 tf.square(x)) for x in policy_network_variables])  # Regularization
             self.loss = self.pg_loss + self.reg_param * self.reg_loss
+
+            #self.train_op = self.optimizer.minimize(self.loss)
 
             # compute gradients
             self.gradients = self.optimizer.compute_gradients(self.loss)
@@ -309,24 +334,53 @@ class BasicReinforceV5:
             # compute policy gradients
             for i, (grad, var) in enumerate(self.gradients):
                 if grad is not None:
-                    self.gradients[i] = (grad * self.discounted_rewards, var)
+                    self.gradients[i] = (tf.multiply(grad, tf.reduce_mean(self.discounted_rewards)), var)
 
             # training update
             with tf.name_scope("train_policy_network"):
-                # apply gradients to update policy network
+            #    # apply gradients to update policy network
                 self.train_op = self.optimizer.apply_gradients(
                     self.gradients, global_step=self.global_step)
 
-    def storeRollout(self, state, reward):
-        self.reward_buffer.append(reward)
-        self.state_buffer.append(state[0])
+    def storeRollout(self, state, rewards, num_layers):
+        #print('state shape in storerollout:',len(state), state, rewards)
+        self.num_tokens = self.state_space.size * num_layers * self.batch_size
+        if self.state_space.feature_is_defined('skip_conn'):
+            self.num_tokens = ((self.state_space.size - 1) * num_layers + num_layers * (
+                num_layers - 1) // 2) * self.batch_size
 
-    def train_step(self, steps_count):
-        states = np.array(self.state_buffer[-steps_count:])/self.division_rate
+        for i in range(0,self.num_tokens, self.batch_size):
+            self.reward_buffer.extend(rewards)
+            self.state_buffer.extend(state[-i-self.batch_size:][:self.batch_size])
+            rewards = [self.discount_factor * x for x in rewards]
+            #print('curr: ',self.reward_buffer, self.state_buffer,state[-i-self.batch_size:][:self.batch_size])
+            #print('state: ', state, -i-self.batch_size, -i, state[-i-self.batch_size:][:self.batch_size])
+
+    def train_step(self, num_layers, init_state):
+        self.num_tokens = self.state_space.size * num_layers * self.batch_size
+        if self.state_space.feature_is_defined('skip_conn'):
+            self.num_tokens = ((self.state_space.size - 1) * num_layers + num_layers * (
+            num_layers - 1) // 2) * self.batch_size
+        print('num tokens: ', self.num_tokens)
+        steps_count = self.num_tokens
+        states = np.reshape(np.array(self.state_buffer[-steps_count:]), (self.num_tokens//self.batch_size, self.batch_size))/self.division_rate
+        prev_state = init_state
         rewards = self.reward_buffer[-steps_count:]
+        #print('states: ', states, rewards)
+
         _, ls = self.sess.run([self.train_op, self.loss],
-                              {self.rnn_input: states,
-                               self.discounted_rewards: rewards})
+                              {self.rnn_input: prev_state,
+                               self.discounted_rewards: rewards, self.batch_labels:states, self.num_tokens_tensor:[self.num_tokens]})
+
+        #for i in range(0,self.num_tokens, self.batch_size):
+        #    curr_state = states[i:i+self.batch_size]
+        #    curr_rewards = rewards[i:i+self.batch_size]
+        #    #print(i, 'crr_rewards: ', curr_rewards, curr_state, len(curr_state))
+        #    _, ls = self.sess.run([self.train_op, self.loss],
+        #                      {self.rnn_input: prev_state,
+        #                       self.discounted_rewards: curr_rewards, self.batch_labels:curr_state})
+        #    prev_state = curr_state
+        self.policy_network.save_model(self.sess)
         return ls
 
 
@@ -378,11 +432,11 @@ def test_BasicReinforce5():
     global_step = tf.Variable(0, trainable=False)
     state_space = StateSpace()
     state_space.add_state('filter_size', [10., 20., 30.])
-    state_space.add_state('drop_out', [])
+    #state_space.add_state('drop_out', [])
     state_space.add_state('num_filters', [32., 64.])
     state_space.add_state('skip_conn', [])
     policy_network = NASCellPolicyV5(state_space, save_path='savepoint/model')
-    max_layers = 5
+    max_layers = 8
     batch_size = 2
 
     learning_rate = tf.train.exponential_decay(0.99, global_step,
@@ -402,12 +456,13 @@ def test_BasicReinforce5():
     #state_l2 = [[10., 0.5, 32., 1.,
     #             10., 0.5, 32., 1., 1.]]
     init_seeds = [1. * i / batch_size for i in range(batch_size)]
-    for num_layers in range(2, max_layers):
-        action = reinforce.get_action(init_seeds, num_layers)
-        print(f'action = {action}')
-        reward = 90. * num_layers
-        reinforce.storeRollout([action], reward)
-        reinforce.train_step(1)
+    #init_seeds = [.5, .4, -.1, -.7]
+    for num_layers in range(1, max_layers):
+        actions = reinforce.get_actions(init_seeds, num_layers)
+        rewards = [.90] * batch_size
+        print(f' num_layer: {num_layers} action = {actions} rewards = {rewards}')
+        reinforce.storeRollout(actions, rewards, num_layers)
+        reinforce.train_step(num_layers, init_seeds)
 
 
 if __name__ == '__main__':
