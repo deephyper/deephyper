@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 jobname = "run_mnistNas"
-path_run_nas = "/Users/Deathn0t/Documents/Argonne/deephyper/search/run_nas.py"
+path_run_nas = "/Users/dipendra/Projects/deephyper/search/run_nas.py"
 cmd = f"{sys.executable} {path_run_nas}"
 args = "--benchmark=mnistNas --run_module_name=model.nas --num-workers=1"
 

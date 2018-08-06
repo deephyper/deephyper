@@ -3,6 +3,10 @@
  * @Date: 2018-06-20 15:44:33
 '''
 import deephyper.model.arch as a
+from deephyper.search import util
+
+
+logger = util.conf_logger('deephyper.model.util.conversions')
 
 def action2dict_v2(config, action, num_layers):
     layer_type = config[a.layer_type]
@@ -14,22 +18,36 @@ def action2dict_v2(config, action, num_layers):
     # must check that length of action list correspond to num_layers and state_space features
 
     cursor = 0
+    #logger.debug(f'conversions: config: {config}')
+    logger.debug(f'conversions: action: {action}')
+    logger.debug(f'conversions: numlayers: {num_layers}')
+    max_size = 1
+    skip_conn = False
     for layer_n in range(num_layers):
         layer_name = f'layer_{layer_n+1}'
         layer_arch = {}
         layer_arch[a.layer_type] = layer_type
+        #logger.debug(action)
+        logger.debug(f'{cursor}, {layer_n}, {layer_name}, {layer_type}, {action[cursor]}')
         for feature_i in range(state_space.size):
             feature = state_space[feature_i]
+            if feature['size'] > max_size: max_size = feature['size']
+            logger.debug(f'{cursor}, {layer_n}, {layer_name}, {layer_type}, {action[cursor]}')
+            logger.debug(f'{cursor}, {feature}')
             if (feature['name'] == 'skip_conn'):
-                layer_arch[feature['name']] = []
-                for j in range(layer_n+1):
-                    if (action[cursor] == 1. ):
-                        layer_arch[feature['name']].append(j)
+                skip_conn = True
+                continue
+            layer_arch[feature['name']] = feature['values'][int(action[cursor])%feature['size']]
+            cursor += 1
+        if skip_conn:
+            layer_arch['skip_conn'] = []
+            for j in range(layer_n):
+                logger.debug(f'skip conn  {cursor}, {action[cursor]}')
+                if (int(action[cursor])%2):
+                    layer_arch['skip_conn'].append(j+1)
                     cursor += 1
-            else:
-                layer_arch[feature['name']] = action[cursor]
-                cursor += 1
         arch[layer_name] = layer_arch
+    logger.debug(f'architecture is: {arch}')
     return arch
 
 def test_action2dict_v2():

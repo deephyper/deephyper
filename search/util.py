@@ -217,9 +217,15 @@ def create_parser():
                         help='maximum number of evaluations'
                        )
     parser.add_argument('--run', help='optional tag appended to run files')
-    parser.add_argument('--num-workers', type=int, default=10,
+    parser.add_argument('--num-workers', type=int, default=8,
                         help='Number of points to ask for initially'
                        )
+    # parser.add_argument('--start_num_layers', type=int, default=2,
+    #                     help='Number of layers to start for initially'
+    #                     )
+    # parser.add_argument('--max_num_layers', type=int, default=2,
+    #                     help='Max number of layers to try'
+    #                     )
     parser.add_argument('--ga-individuals-per-worker', type=int, default=1,
                         help='Initial population is num_workers *'
                         ' ind-per-worker', dest='individuals_per_worker'
@@ -245,7 +251,7 @@ def create_parser():
     parser.add_argument('--repeat-evals', action='store_true',
                         help='Re-evaluate points visited by hyperparameter optimizer'
                        )
-    parser.add_argument('--model_path', help="path from which models are loaded/saved", default='')
+    parser.add_argument('--model_path', help="path from which models are loaded/saved", default='savepoint/model')
     parser.add_argument('--data_source', help="location of dataset to load", default='')
     parser.add_argument('--stage_in_destination', help="if provided; cache data at this location",
                         default='')

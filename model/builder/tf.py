@@ -3,7 +3,7 @@
  * @Date: 2018-06-21 09:11:29
 '''
 
-import tensorflow as tf
+import tensorflow as tf, numpy as np
 
 import deephyper.model.arch as a
 from deephyper.model.utilities.train_utils import *
@@ -111,8 +111,8 @@ class BasicBuilder:
         self.loss_metric = selectLossMetric(self.loss_metric_name)
         self.test_metric = selectTestMetric(self.test_metric_name)
         self.loss = self.loss_metric(self.train_labels_node, self.logits)
-        #if 'mean' not in self.loss_metric_name:
-        #    self.loss = tf.reduce_mean(self.loss)
+        if 'mean' not in self.loss_metric_name:
+            self.loss = tf.reduce_mean(self.loss)
         if self.num_outputs > 1:
             self.eval_preds = tf.nn.softmax(self.eval_preds)
             self.logits = tf.nn.softmax(self.logits)

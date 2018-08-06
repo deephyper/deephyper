@@ -245,9 +245,9 @@ class BasicTrainer:
                         offset + self.batch_size),]
                     feed_dict = {model.train_data_node: batch_data,
                                  model.train_labels_node: batch_labels}
-                    _, l, predictions = sess.run([model.optimizer,
+                    predictions, l, _ = sess.run([model.logits,
                                                   model.loss,
-                                                  model.logits],
+                                                  model.optimizer],
                                                   feed_dict=feed_dict)
                     if step % (self.eval_freq//10 if self.eval_freq//10 else 1) == 0:
                         elapsed_time = time.time() - start_time

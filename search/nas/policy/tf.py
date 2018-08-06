@@ -353,13 +353,13 @@ class NASCellPolicyV5:
             self.num_tokens_exc_skip = self.state_space.size * max_layers
             print(self.state_space.states)
             if self.state_space.feature_is_defined('skip_conn'):
-                self.num_tokens_exc_skip = (self.state_space.size - 1) * max_layers
+                self.num_tokens_exc_skip = (self.state_space.size) * max_layers
             print('num_tokens exc skip: ', self.num_tokens_exc_skip, self.state_space.size, max_layers)
             for token_i in range(self.num_tokens_exc_skip):
                 # o_t : final output at time t
                 # h_t : hidden state at time t
                 # s_t : state at time t
-                print('\n\n',token_i, ': input shape: ', input.get_shape())
+                #print('\n\n',token_i, ': input shape: ', input.get_shape())
                 input = tf.expand_dims(input,1)
                 #print(token_i,': input shape after exp: ',input.get_shape())
                 outputs, state = tf.nn.dynamic_rnn(stacked_lstm, input, initial_state=state, dtype=tf.float32, time_major=False)
@@ -374,14 +374,26 @@ class NASCellPolicyV5:
                     softmax_output = tf.layers.dense(inputs=outputs, units=self.max_num_classes, activation=tf.nn.softmax ,reuse=tf.AUTO_REUSE, name = 'softmax')
                     softmax_outputs.append(softmax_output)
                     softmax_out_prob.append(tf.reduce_max(softmax_output, axis=1))
-                    print('softmax output: ', softmax_output.get_shape())
+                    #print('softmax output: ', softmax_output.get_shape())
                     token_ind = tf.cast(tf.argmax(softmax_output, axis=1), tf.float32)
-                    print('token ind: ', token_ind.get_shape())
+                    #print('token ind: ', token_ind.get_shape())
                     token_inds.append(token_ind)
                     input = token_ind
                     input = tf.expand_dims(input, 1)
                     if not (token_i+1)%(self.num_tokens_per_layer-1):
                         if not self.state_space.feature_is_defined('skip_conn'): continue
+                        input = tf.expand_dims(input, 1)
+                        # print(token_i,': input shape after exp: ',input.get_shape())
+                        outputs, state = tf.nn.dynamic_rnn(stacked_lstm, input, initial_state=state, dtype=tf.float32,
+                                                           time_major=False)
+                        # print('output shape: ', outputs.get_shape())
+                        # print('state shape: ', state[-1][-1].get_shape())
+                        outputs = tf.squeeze(outputs)
+                        if batch_size == 1:
+                            outputs = tf.reshape(outputs, shape=(1, -1))
+                        # print('output shape: ', outputs.get_shape(), batch_size)
+                        states.append(state)
+
                         #skip connections
                         state_res = tf.reshape(state[-1][-1], [batch_size, num_units])
                         #print('skip conn for token: ', token_i)
@@ -396,24 +408,27 @@ class NASCellPolicyV5:
                             v_tan = tf.matmul(tan_out, skip_v)
                             #print('v tan: ', v_tan.get_shape())
                             skip_conn = tf.nn.softmax(v_tan)
-                            print('skip conn adding to softmax outputs shape: ', skip_conn.get_shape())
+                            #print('skip conn adding to softmax outputs shape: ', skip_conn.get_shape())
                             softmax_outputs.append(skip_conn)
                             softmax_out_prob.append(tf.reduce_max(skip_conn, axis=1))
                             #skip_conn = tf.squeeze(skip_conn)
-                            print('skipp conn: ', skip_conn.get_shape())
+                            #print('skipp conn: ', skip_conn.get_shape())
 
                             skip_conn = tf.cast(tf.argmax(skip_conn,axis=1), tf.float32)
-                            print('skipp conn: ', skip_conn.get_shape())
+                            #print('skipp conn: ', skip_conn.get_shape())
 
                             #skip_conn = tf.round(skip_conn)
                             #print('skipp conn: ', skip_conn.get_shape())
                             #skip_conn = tf.divide(skip_conn, self.max_num_classes)
 
-                            print('skip conn adding to token inds: ', skip_conn.get_shape())
+                            #print('skip conn adding to token inds: ', skip_conn.get_shape())
 
-                            print('skipp conn: ', skip_conn.get_shape())
+                            #print('skipp conn: ', skip_conn.get_shape())
                             token_inds.append(skip_conn)
                         state_skip_conns.append(state_res)
+                        input = token_inds[-1]
+                        input = tf.expand_dims(input, 1)
+
         logits = tf.concat(token_inds, axis=0)
         #states = tf.concat(states, axis=0)
         softmax_out_prob = tf.convert_to_tensor(softmax_out_prob)
