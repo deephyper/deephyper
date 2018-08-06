@@ -175,12 +175,14 @@ class Search:
 
         #for n, state in enumerate(states):
         for n in range(NUM_WORKERS):
-            action = reinforce.get_actions(rnn_input=[float(np.random.uniform(-1,1))]*controller_batch_size,                                    num_layers=num_of_layers)
+            init_seed = [float(np.random.uniform(-1,1))]*controller_batch_size
+            action = reinforce.get_actions(rnn_input=init_seed,                                    num_layers=num_of_layers)
             cfg = self.config.copy()
             cfg['global_step'] = step
             cfg['num_worker'] = n
             cfg['num_layers'] = num_of_layers
             cfg['step'] = 0
+            cfg['init_seed'] = init_seed
             cfg['arch_seq'] = action
             self.evaluator.add_eval_nas(cfg)
 
@@ -203,7 +205,7 @@ class Search:
                 logger.debug(f'state = {state}')
                 reinforce.storeRollout(state, [reward], num_of_layers)
                 step += 1
-                ls = reinforce.train_step(num_of_layers, [float(np.random.uniform(-1,1))])
+                ls = reinforce.train_step(num_of_layers, cfg['init_seed'])
 
             # Check improvement of children NN
             if (children_exp > controller_patience): # add a new layer to the search
@@ -218,10 +220,13 @@ class Search:
             for cfg, reward in results:
                 #state = cfg['arch_seq']
                 num_worker = cfg['num_worker']
-                action = reinforce.get_actions(rnn_input=[float(np.random.uniform(-1,1))],
+                init_seed = [float(np.random.uniform(-1, 1))] * controller_batch_size
+
+                action = reinforce.get_actions(rnn_input=init_seed,
                                               num_layers=num_of_layers)
                 cfg = self.config.copy()
                 cfg['global_step'] = step
+                cfg['init_seed'] = init_seed
                 cfg['arch_seq'] = action
                 cfg['num_layers'] = num_of_layers
                 cfg['num_worker'] = num_worker

@@ -48,7 +48,7 @@ class BasicTrainer:
         self.preprocess_data()
         self.patience = self.config_hp[a.patience] if a.patience in self.config_hp else int(
             self.train_size/self.batch_size * self.num_epochs/5.)
-        self.eval_freq = self.config_hp[a.eval_freq] if a.eval_freq in self.config_hp else self.train_size//self.batch_size
+        self.eval_freq = self.config_hp[a.eval_freq] if a.eval_freq in self.config_hp else self.train_size//(self.batch_size*10)
         logger.debug('[PARAM] BasicTrainer instantiated')
 
     def preprocess_data(self):
