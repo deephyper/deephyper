@@ -26,7 +26,7 @@ def check_conf(conf, args):
     assert os.path.exists(conf['DATABASE_TOP'])
     assert os.path.exists(conf['BALSAM_PATH'])
     assert args.time_minutes > 10, 'need more than 10 minutes'
-    assert args.nodes > 2, 'need more than 2 nodes'
+    assert args.nodes == None or args.nodes > 2, 'need more than 2 nodes'
 
     env_name = conf["DEEPHYPER_ENV_NAME"]
     try:
@@ -59,7 +59,7 @@ def get_parser():
     parser.add_argument('-q', required=True, dest='queue')
 
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-n', type=int, dest='nodes')
+    group.add_argument('-n', type=int, dest='nodes', default=None)
     group.add_argument('-w', type=int, dest='num_workers', default=None)
 
     parser.add_argument('-sync', dest='sync', action='store_true', default=False)
@@ -90,17 +90,17 @@ def main():
     conf['project'] = args.project
     conf['queue'] = args.queue
 
-    if 'nodes' in dir(args):
-        conf['nodes'] = args.nodes
+    if args.nodes is not None:
+        conf['nodes'] = int(args.nodes)
         if args.platform == 'cooley':
             conf['num_workers'] = 2*conf['nodes'] - 2
         else:
             conf['num_workers'] = conf['nodes'] - 2
 
-    if 'num_workers' in dir(args):
-        conf['num_workers'] = args.num_workers
+    if args.num_workers is not None:
+        conf['num_workers'] = int(args.num_workers)
         if args.platform == 'cooley':
-            conf['nodes'] = (conf['num_workers'] + 2) // 2 + 1
+            conf['nodes'] = (conf['num_workers'] + 2) // 2 + (conf['num_workers']%2)
         else:
             conf['nodes'] = conf['num_workers'] + 2
 
@@ -123,6 +123,8 @@ def main():
         jobname += '.cooley'
     elif args.platform == 'theta':
         jobname += '.theta'
+    jobname += '.sync' if conf['sync'] else '.async'
+    jobname += '.'+str(conf['time_minutes'])
     db_path = os.path.join(conf['DATABASE_TOP'], jobname)
     i = 0
     while os.path.exists(db_path):
