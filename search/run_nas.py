@@ -194,15 +194,16 @@ class Search:
 
         while True:
             results = self.evaluator.await_evals(cfg_list)
-            len_results = len(results)
-            logger.debug("results = {2}".format(len_results))
-            children_exp += len_results
+            logger.debug("results received")
 
             # Get rewards and apply reinforcement step by step
             states = []
             rewards = []
             init_seeds = []
+            results_list = []
             for cfg, reward in results:
+                results_list.append((cfg,reward))
+                children_exp += 1
                 if (reward > best_reward):
                     best_reward = reward
                     children_exp = 0

@@ -19,8 +19,8 @@ def action2dict_v2(config, action, num_layers):
 
     cursor = 0
     #logger.debug(f'conversions: config: {config}')
-    logger.debug(f'conversions: action: {action}')
-    logger.debug(f'conversions: numlayers: {num_layers}')
+    #logger.debug(f'conversions: action: {action}')
+    #logger.debug(f'conversions: numlayers: {num_layers}')
     max_size = 1
     skip_conn = False
     for layer_n in range(num_layers):
@@ -28,12 +28,12 @@ def action2dict_v2(config, action, num_layers):
         layer_arch = {}
         layer_arch[a.layer_type] = layer_type
         #logger.debug(action)
-        logger.debug(f'{cursor}, {layer_n}, {layer_name}, {layer_type}, {action[cursor]}')
+        #logger.debug(f'{cursor}, {layer_n}, {layer_name}, {layer_type}, {action[cursor]}')
         for feature_i in range(state_space.size):
             feature = state_space[feature_i]
             if feature['size'] > max_size: max_size = feature['size']
-            logger.debug(f'{cursor}, {layer_n}, {layer_name}, {layer_type}, {action[cursor]}')
-            logger.debug(f'{cursor}, {feature}')
+            #logger.debug(f'{cursor}, {layer_n}, {layer_name}, {layer_type}, {action[cursor]}')
+            #logger.debug(f'{cursor}, {feature}')
             if (feature['name'] == 'skip_conn'):
                 skip_conn = True
                 continue
@@ -42,12 +42,12 @@ def action2dict_v2(config, action, num_layers):
         if skip_conn:
             layer_arch['skip_conn'] = []
             for j in range(layer_n):
-                logger.debug(f'skip conn  {cursor}, {action[cursor]}')
+                #logger.debug(f'skip conn  {cursor}, {action[cursor]}')
                 if (int(action[cursor])%2):
                     layer_arch['skip_conn'].append(j+1)
                     cursor += 1
         arch[layer_name] = layer_arch
-    logger.debug(f'architecture is: {arch}')
+    #logger.debug(f'architecture is: {arch}')
     return arch
 
 def test_action2dict_v2():
