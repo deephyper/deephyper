@@ -84,6 +84,7 @@ class OptConfigNas:
         self.repeat_evals = args.repeat_evals
         self.num_workers = args.num_workers if num_workers == None else num_workers
         self.learner = args.learner
+        self.sync = args.sync
 
         self.model_path = args.model_path.strip()
         self.stage_in_destination = args.stage_in_destination.strip()
@@ -260,5 +261,6 @@ def create_parser():
     # Args for nas
     parser.add_argument('--run_module_name', default='search.nas', help="name\
         of run module (e.g. mnistNas.run1)")
+    parser.add_argument('--sync', dest='sync', action='store_true', default=False)
 
     return parser

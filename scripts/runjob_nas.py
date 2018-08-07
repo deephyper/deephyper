@@ -34,13 +34,6 @@ def check_conf(conf, args):
     except subprocess.CalledProcessError:
         raise ValueError(f"Cannot activate {env_name} referenced in runjob.conf")
 
-    #if args.method == 'hyperband':
-    #    assert args.saved_model_path is not None, 'hyperband requires --saved_model_path'
-    #    args.saved_model_path = os.path.abspath(os.path.expanduser(args.saved_model_path))
-    #    assert os.path.exists(args.saved_model_path), f'{args.saved_model_path} not found'
-    #elif args.method == 'nas':
-    #    pass # TODO : check conf for network architecture search
-
     hostname = gethostname()
     if 'theta' in hostname: assert args.platform in ['theta', 'theta_postgres'], "please use a theta platform"
     else: assert args.platform == 'cooley', "please use cooley platform"
@@ -61,11 +54,15 @@ def get_conf(args):
 def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('platform', choices=['cooley', 'theta', 'theta_postgres'])
-    #parser.add_argument('method', choices=['NAS'], default='NAS')
     parser.add_argument('benchmark', choices=['mnistNas', 'cifar10Nas', 'ptbNas'])
     parser.add_argument('run_module_name', choices=['model.nas', 'model.ptb_nas'])
     parser.add_argument('-q', required=True, dest='queue')
-    parser.add_argument('-n', type=int, required=True, dest='nodes')
+
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-n', type=int, dest='nodes')
+    group.add_argument('-w', type=int, dest='num_workers', default=None)
+
+    parser.add_argument('-sync', dest='sync', action='store_true', default=False)
     parser.add_argument('-t', type=int, required=True, dest='time_minutes')
     parser.add_argument('--stage-in-path')
     parser.add_argument('--saved-model-path')
@@ -92,7 +89,23 @@ def main():
     conf['run_module_name'] = args.run_module_name
     conf['project'] = args.project
     conf['queue'] = args.queue
-    conf['nodes'] = args.nodes
+
+    if 'nodes' in dir(args):
+        conf['nodes'] = args.nodes
+        if args.platform == 'cooley':
+            conf['num_workers'] = 2*conf['nodes'] - 2
+        else:
+            conf['num_workers'] = conf['nodes'] - 2
+
+    if 'num_workers' in dir(args):
+        conf['num_workers'] = args.num_workers
+        if args.platform == 'cooley':
+            conf['nodes'] = (conf['num_workers'] + 2) // 2 + 1
+        else:
+            conf['nodes'] = conf['num_workers'] + 2
+
+    conf['sync'] = args.sync
+
     conf['time_minutes'] = args.time_minutes
     conf['time_str'] = time_str(args.time_minutes)
     conf['max_evals'] = args.max_evals
@@ -107,9 +120,9 @@ def main():
 
     jobname = '.'.join(str(conf[key]) for key in 'benchmark nodes'.split())
     if args.platform == 'cooley':
-        jobname += '.gpu'
-    elif args.platform == 'theta_postgres':
-        jobname += '.pg'
+        jobname += '.cooley'
+    elif args.platform == 'theta':
+        jobname += '.theta'
     db_path = os.path.join(conf['DATABASE_TOP'], jobname)
     i = 0
     while os.path.exists(db_path):
