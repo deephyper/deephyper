@@ -247,6 +247,7 @@ class Search:
 
 
 def join_states(states):
+    states = np.array(states)
     res = []
     for t in range(len(states[0])):
         res += states[:,t]
