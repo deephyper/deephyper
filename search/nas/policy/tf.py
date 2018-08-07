@@ -316,7 +316,9 @@ class NASCellPolicyV5:
     def restore_model(self, sess):
         if os.path.exists(self.save_path+'.meta'):
             print('restoring the model from '+self.save_path)
-            self.saver.restore(sess, save_path=self.save_path)
+            try:
+                self.saver.restore(sess, save_path=self.save_path)
+            except: pass
 
     def get(self, input, max_layers, num_units=512):
         '''

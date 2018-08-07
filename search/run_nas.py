@@ -169,23 +169,24 @@ class Search:
                                    controller_batch_size, #asynchronous
                                    self.global_step,
                                    state_space=state_space)
-
+        num_tokens = state_space.get_num_tokens(num_layers)
         # Init State
-        logger.debug(f'num_workers = {num_workers}')
+        logger.debug(f'num_workers = {num_workers}, num_layers = {num_layers}, num_tokens = {num_tokens}')
         step = 0
         worker_steps = [ 0 for i in range(num_workers)]
 
         cfg_list = []
+        init_seeds = [float(np.random.uniform(-1,1))]*controller_batch_size
+        actions = reinforce.get_actions(rnn_input=init_seeds,
+                                        num_layers=num_layers)
         for n in range(num_workers):
-            init_seed = [float(np.random.uniform(-1,1))]*controller_batch_size
-            action = reinforce.get_actions(rnn_input=init_seed,
-                                           num_layers=num_layers)
+            action = actions[n:len(actions):num_workers]
             cfg = self.config.copy()
             cfg['global_step'] = step
             cfg['num_worker'] = n
             cfg['num_layers'] = num_layers
             cfg['step'] = 0
-            cfg['init_seed'] = init_seed
+            cfg['init_seed'] = init_seeds[n]
             cfg['arch_seq'] = action
             self.evaluator.add_eval_nas(cfg)
             cfg_list.append(cfg)
@@ -211,6 +212,7 @@ class Search:
                 rewards.append(reward)
                 init_seeds.append(cfg['init_seed'])
 
+            states = join_states(states)
             reinforce.storeRollout(states, rewards, num_layers)
             step += 1
             reinforce.train_step(num_layers, init_seeds)
@@ -224,25 +226,31 @@ class Search:
                 else:
                     logger.debug('Best accuracy is not increasing')
 
-            # Run training on new children NN
-            for cfg, reward in results:
-                #state = cfg['arch_seq']
-                num_worker = cfg['num_worker']
-                init_seed = [float(np.random.uniform(-1, 1))] * controller_batch_size
+            actions = reinforce.get_actions(rnn_input=init_seeds,
+                                            num_layers=num_layers)
 
-                action = reinforce.get_actions(rnn_input=init_seed,
-                                               num_layers=num_layers)
+            # Run training on new children NN
+            cfg_list = []
+            for n in range(num_workers):
+                action = actions[n:len(actions):num_workers]
                 cfg = self.config.copy()
                 cfg['global_step'] = step
-                cfg['init_seed'] = init_seed
-                cfg['arch_seq'] = action
+                cfg['num_worker'] = n
                 cfg['num_layers'] = num_layers
-                cfg['num_worker'] = num_worker
-                worker_steps[num_worker] += 1
-                cfg['step'] = worker_steps[num_worker]
+                cfg['step'] = 0
+                cfg['init_seed'] = init_seeds[n]
+                cfg['arch_seq'] = action
+                worker_steps[n] += 1
                 self.evaluator.add_eval_nas(cfg)
+                cfg_list.append(cfg)
                 logger.debug('add_evals_nas')
-                logger.debug(f' steps = {worker_steps}')
+
+
+def join_states(states):
+    res = []
+    for t in range(len(states[0])):
+        res += states[:,t]
+    return res
 
 
 def main(args):
