@@ -250,7 +250,7 @@ def join_states(states):
     states = np.array(states)
     res = []
     for t in range(len(states[0])):
-        res += states[:,t]
+        res = res + states[:,t].tolist()
     return res
 
 
@@ -261,6 +261,13 @@ def main(args):
     controller = Search(cfg)
     logger.info(f"Starting new NAS on benchmark {cfg.benchmark} & run with {cfg.run_module_name}")
     controller.run()
+
+def test_join_states():
+    l1 = [3., 1., 1., 1., 0., 0., 4., 0., 0., 0., 3., 3., 3., 3., 1.]
+    l2 = [3., 1., 1., 1., 0., 0., 4., 0., 0., 0., 3., 3., 3., 3., 1.]
+    l3 = [3., 1., 1., 1., 0., 0., 4., 0., 0., 0., 3., 3., 3., 3., 1.]
+    l = [l1, l2, l3]
+    print(join_states(l))
 
 if __name__ == "__main__":
     parser = util.create_parser()
