@@ -119,7 +119,7 @@ class Search:
                     best_reward = reward
                     children_exp = 0
                 state = cfg['arch_seq']
-                logger.debug(f'state = {state}')
+                logger.debug(f'--> seed: {cfg["init_seed"]} , reward: {reward} , arch_seq: {cfg["arch_seq"]} , num_layers: {cfg["num_layers"]}')
                 reinforce.storeRollout(state, [reward], num_layers)
                 step += 1
                 ls = reinforce.train_step(num_layers, cfg['init_seed'])
@@ -128,8 +128,6 @@ class Search:
             if (children_exp > controller_patience): # add a new layer to the search
                 if (num_layers < self.max_layers):
                     num_layers += 1
-                    for cfg, _ in results:
-                        state_space.extends_num_layer_of_state(cfg['arch_seq'], num_layers)
                     children_exp = 0
                 else:
                     logger.debug('Best accuracy is not increasing')
@@ -174,7 +172,6 @@ class Search:
                                    state_space=state_space)
         num_tokens = state_space.get_num_tokens(num_layers)
         # Init State
-        logger.debug(f'num_workers = {num_workers}, num_layers = {num_layers}, num_tokens = {num_tokens}')
         step = 0
         worker_steps = [ 0 for i in range(num_workers)]
 
@@ -194,7 +191,7 @@ class Search:
             self.evaluator.add_eval_nas(cfg)
             cfg_list.append(cfg)
 
-        controller_patience= 5 * num_workers
+        controller_patience = 5 * num_workers
 
         while True:
             results = self.evaluator.await_evals(cfg_list)
@@ -214,6 +211,7 @@ class Search:
                 states.append(cfg['arch_seq'])
                 rewards.append(reward)
                 init_seeds.append(cfg['init_seed'])
+                logger.debug(f'--> seed: {cfg["init_seed"]} , reward: {reward} , arch_seq: {cfg["arch_seq"]} , num_layers: {cfg["num_layers"]}')
 
             states = join_states(states)
             reinforce.storeRollout(states, rewards, num_layers)
@@ -224,8 +222,6 @@ class Search:
             if (children_exp > controller_patience): # add a new layer to the search
                 if (num_layers < self.max_layers):
                     num_layers += 1
-                    for cfg, _ in results:
-                        state_space.extends_num_layer_of_state(cfg['arch_seq'], num_layers)
                     children_exp = 0
                 else:
                     logger.debug('Best accuracy is not increasing')
@@ -241,10 +237,10 @@ class Search:
                 cfg['global_step'] = step
                 cfg['num_worker'] = n
                 cfg['num_layers'] = num_layers
-                cfg['step'] = 0
                 cfg['init_seed'] = init_seeds[n]
                 cfg['arch_seq'] = action
                 worker_steps[n] += 1
+                cfg['step'] = worker_steps[n]
                 self.evaluator.add_eval_nas(cfg)
                 cfg_list.append(cfg)
                 logger.debug('add_evals_nas')
