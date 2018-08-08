@@ -291,7 +291,7 @@ class NASCellPolicyV4:
 
 
 class NASCellPolicyV5:
-    def __init__(self, state_space, save_path):
+    def __init__(self, state_space, save_path=None):
         '''
         Args:
             state_space: an Object representing the space of the tokens we want to generate
@@ -310,15 +310,17 @@ class NASCellPolicyV5:
         return max_num
 
     def save_model(self, sess):
-        print('saving model to '+self.save_path)
-        self.saver.save(sess, self.save_path)
+        if self.save_path != None:
+            print('saving model to '+self.save_path)
+            self.saver.save(sess, self.save_path)
 
     def restore_model(self, sess):
-        if os.path.exists(self.save_path+'.meta'):
-            print('restoring the model from '+self.save_path)
-            try:
-                self.saver.restore(sess, save_path=self.save_path)
-            except: pass
+        if self.save_path != None:
+            if os.path.exists(self.save_path+'.meta'):
+                print('restoring the model from '+self.save_path)
+                try:
+                    self.saver.restore(sess, save_path=self.save_path)
+                except: pass
 
     def get(self, input, max_layers, num_units=512):
         '''
@@ -439,7 +441,7 @@ class NASCellPolicyV5:
         #logits = token_inds
         print('logits shape: ', logits.get_shape(), logits)
         self.saver = tf.train.Saver()
-        if not os.path.exists(self.save_path):
+        if self.save_path != None and not os.path.exists(self.save_path):
             print('created save path: ' + self.save_path)
             os.system('mkdir -p ' + self.save_path)
         return logits, softmax_outputs
