@@ -28,7 +28,7 @@ def test_fixed_num_layers(func):
     learning_rate = tf.train.exponential_decay(0.99, global_step,
                                                 500, 0.96, staircase=True)
 
-    optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate)
+    optimizer = tf.train.RMSPropOptimizer(learning_rate=0.01)
 
     # for the CONTROLLER
     reinforce = BasicReinforceV5(session,
@@ -47,7 +47,7 @@ def test_fixed_num_layers(func):
         for n in range(batch_size):
             action = actions[n:len(actions):batch_size]
             rewards.append(func(action))
-        print(f'STEP = {i}')
+        print(f'\nSTEP = {i}')
         print(f'actions: {actions}')
         print(f'rewards: {rewards}')
         reinforce.storeRollout(actions, rewards, max_layers)
