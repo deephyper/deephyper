@@ -7,6 +7,8 @@ from importlib import import_module
 
 import numpy as np
 import tensorflow as tf
+tf.set_random_seed(1000003)
+np.random.seed(1000003)
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__)) # search dir

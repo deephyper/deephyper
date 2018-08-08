@@ -10,6 +10,8 @@ import time
 
 import numpy as np
 import tensorflow as tf
+tf.set_random_seed(1000003)
+np.random.seed(1000003)
 
 import deephyper.model.arch as a
 from deephyper.search import util

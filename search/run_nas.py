@@ -13,6 +13,8 @@ from importlib import import_module, reload
 
 import numpy as np
 import tensorflow as tf
+tf.set_random_seed(1000003)
+np.random.seed(1000003)
 
 HERE = os.path.dirname(os.path.abspath(__file__)) # search dir
 top  = os.path.dirname(os.path.dirname(HERE)) # directory containing deephyper
@@ -128,6 +130,7 @@ class Search:
                     num_layers += 1
                     for cfg, _ in results:
                         state_space.extends_num_layer_of_state(cfg['arch_seq'], num_layers)
+                    children_exp = 0
                 else:
                     logger.debug('Best accuracy is not increasing')
 
@@ -223,6 +226,7 @@ class Search:
                     num_layers += 1
                     for cfg, _ in results:
                         state_space.extends_num_layer_of_state(cfg['arch_seq'], num_layers)
+                    children_exp = 0
                 else:
                     logger.debug('Best accuracy is not increasing')
 
