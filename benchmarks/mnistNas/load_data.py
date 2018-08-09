@@ -6,6 +6,7 @@ def load_data(dest=None):
     Returns Tuple of Numpy arrays: `(train_X, train_y), (valid_X, valid_y)`.
     """
     dest = "/projects/datascience/regele/deephyper/benchmarks/mnistNas/DATA"
+    dest = '/Users/dipendra/Projects/deephyper/benchmarks/mnistNas/DATA'
 
     mnist = input_data.read_data_sets(dest, one_hot=False)
 

@@ -1,4 +1,4 @@
-#!/bin/bas
+#!/bin/bash
 rm $BALSAM_DB_PATH/log/*
 rm -rf $BALSAM_DB_PATH/data/*
 balsam rm jobs --name task

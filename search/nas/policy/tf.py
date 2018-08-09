@@ -316,8 +316,9 @@ class NASCellPolicyV5:
     def restore_model(self, sess):
         if os.path.exists(self.save_path+'.meta'):
             print('restoring the model from '+self.save_path)
-            self.saver.restore(sess, save_path=self.save_path)
-
+            try:
+                self.saver.restore(sess, save_path=self.save_path)
+            except: pass
     def get(self, input, max_layers, num_units=512):
         '''
         This function build the maximal graph of the controller network. If we want to compute a number of layers < max_layers we will ask the computation on a sub graph.
