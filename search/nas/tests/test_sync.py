@@ -55,13 +55,15 @@ def test_fixed_num_layers(func):
     max_reward = [0]
     map = {}
 
+    init_seeds = [0.5 for x in range(batch_size)]
+
     def update_line(num, max_reward, line1, line2):
-        #if i < 100:
+        global init_seeds, prev_rewards
         init_seeds = [0.5 for x in range(batch_size)]
-        #else:
-        #    init_seeds = map[max_reward]
+
         actions = reinforce.get_actions(init_seeds, max_layers)
         rewards = []
+        prev_rewards = rewards
         for n in range(batch_size):
             action = actions[n:len(actions):batch_size]
             conv_action = state_space.parse_state(action, num_layers=max_layers)
@@ -70,6 +72,10 @@ def test_fixed_num_layers(func):
             map[reward] = init_seeds
             max_reward[0] = max(reward, max_reward[0])
         print(f'STEP = {num} actions: {actions} exp: {reinforce.exploration} rewards: {max(rewards)} max_reward: {max_reward[0]}')
+        if prev_rewards == rewards:
+            init_seeds = [random.random() for x in range(batch_size)]
+        prev_rewards = rewards
+
         reinforce.storeRollout(actions, rewards, max_layers)
         reinforce.train_step(max_layers, init_seeds)
 
@@ -87,7 +93,7 @@ def test_fixed_num_layers(func):
 
     l1, = plt.plot([], [], 'r-')
     l2, = plt.plot([], [], 'b-')
-    plt.ylim(0, 20)
+    #plt.ylim(0, 20)
     plt.xlabel('steps')
     plt.title('test')
     nb_iter = 1000
@@ -101,6 +107,9 @@ def test_scheduled_num_layers(func):
 
 def add(v):
     return sum(v)
+
+def powell_(v):
+    return 1/ powell(v)
 
 if __name__ == '__main__':
     test_fixed_num_layers(powell)

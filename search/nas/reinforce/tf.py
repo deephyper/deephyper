@@ -265,7 +265,7 @@ class BasicReinforceV5:
         if self.state_space.feature_is_defined('skip_conn'):
 
             self.num_tokens = ((self.state_space.size-1) * num_layers + num_layers * (num_layers - 1) // 2) * self.batch_size
-        if True or random.random() > self.exploration:
+        if random.random() > self.exploration:
             policy_outputs_ =  self.sess.run(self.policy_outputs[:self.num_tokens],
                              {self.rnn_input:rnn_input, self.num_tokens_tensor: [self.num_tokens]})
             #print(policy_outputs_, softmax_out_prob_, softmax_output_)
@@ -361,7 +361,7 @@ class BasicReinforceV5:
         prev_state = init_state
         rewards = self.reward_buffer[-steps_count:]
         rewards_b = ema(self.reward_buffer, 10)
-        rewards = [x - rewards_b for x in rewards]
+        rewards = [rewards_b-x for x in rewards]
 
         _, ls = self.sess.run([self.train_op, self.loss],
                               {self.rnn_input: prev_state,
