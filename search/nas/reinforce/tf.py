@@ -264,7 +264,7 @@ class BasicReinforceV5:
         if self.state_space.feature_is_defined('skip_conn'):
 
             self.num_tokens = ((self.state_space.size-1) * num_layers + num_layers * (num_layers - 1) // 2) * self.batch_size
-        if random.random() > self.exploration:
+        if True or random.random() > self.exploration:
             policy_outputs_ =  self.sess.run(self.policy_outputs[:self.num_tokens],
                              {self.rnn_input:rnn_input, self.num_tokens_tensor: [self.num_tokens]})
             #print(policy_outputs_, softmax_out_prob_, softmax_output_)
@@ -303,28 +303,10 @@ class BasicReinforceV5:
         with tf.name_scope("compute_gradients"):
             # gradients for selecting action from policy network
             self.discounted_rewards = tf.placeholder(
-                tf.float32, (None,), name="discounted_rewards")
+                tf.float32, shape=(), name="discounted_rewards")
             self.policy_outputs_slice = tf.slice(self.policy_outputs, [0], [self.num_tokens_tensor[0]])
-            #print('softmax prob shape:',self.softmax_probs.get_shape())
-            #self.softmax_probs_slice = tf.slice(self.softmax_probs, [0,0], [self.num_tokens_tensor[0],self.batch_size])
             self.softmax_outputs_slice = tf.slice(self.softmax_outputs, [0,0,0], [self.num_tokens_tensor[0]//self.batch_size, self.batch_size, self.policy_network.max_num_classes])
 
-            #self.logits_slice = tf.slice(self.policy_outputs, [0, 0, 0],
-            #                             [self.num_tokens_tensor[0],
-            #                              self.batch_size,
-            #                              self.policy_network.max_num_classes])
-
-            # shape : [num_tokens, batch_size]
-            #policy_outputs_shape = tf.shape(self.policy_outputs)
-            #self.policy_outputs_slice = tf.slice(self.policy_outputs, [0, 0],
-            #                                     [self.num_tokens_tensor[0],
-            #                                      policy_outputs_shape[1]])
-
-            # compute policy loss and regularization loss
-            #print(self.policy_outputs_slice.get_shape(), self.rnn_input.get_shape(), self.policy_outputs_slice, self.rnn_input)
-            #labels = tf.concat([self.rnn_input, self.policy_outputs[self.batch_size:]], axis=0)
-            #print(labels.get_shape())
-            #print(self.softmax_outputs_slice.shape, self.batch_labels.shape)
             self.cross_entropy_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
                 logits=self.softmax_outputs_slice, labels=self.batch_labels)
             self.pg_loss = tf.reduce_mean(self.cross_entropy_loss)
@@ -341,7 +323,8 @@ class BasicReinforceV5:
             # compute policy gradients
             for i, (grad, var) in enumerate(self.gradients):
                 if grad is not None:
-                    self.gradients[i] = (tf.multiply(grad, tf.reduce_mean(self.discounted_rewards)), var)
+                    #self.gradients[i] = (tf.multiply(grad, tf.reduce_mean(self.discounted_rewards)), var)
+                    self.gradients[i] = (tf.scalar_mul(self.discounted_rewards, grad), var)
 
             # training update
             with tf.name_scope("train_policy_network"):
@@ -360,36 +343,46 @@ class BasicReinforceV5:
             self.reward_buffer.extend(rewards)
             self.state_buffer.extend(state[-i-self.batch_size:][:self.batch_size])
             rewards = [self.discount_factor * x for x in rewards]
-            #print('curr: ',self.reward_buffer, self.state_buffer,state[-i-self.batch_size:][:self.batch_size])
-            #print('state: ', state, -i-self.batch_size, -i, state[-i-self.batch_size:][:self.batch_size])
 
     def train_step(self, num_layers, init_state):
         self.num_tokens = self.state_space.size * num_layers * self.batch_size
         if self.state_space.feature_is_defined('skip_conn'):
             self.num_tokens = ((self.state_space.size - 1) * num_layers + num_layers * (
             num_layers - 1) // 2) * self.batch_size
-        #print('num tokens: ', self.num_tokens)
+
         steps_count = self.num_tokens
         states = np.reshape(np.array(self.state_buffer[-steps_count:]), (self.num_tokens//self.batch_size, self.batch_size))/self.division_rate
         prev_state = init_state
-        rewards = self.reward_buffer[-steps_count:]
-        #print('states: ', states, rewards)
+        #rewards = self.reward_buffer[-steps_count:]
+        rewards = ema(self.reward_buffer, 10)
 
         _, ls = self.sess.run([self.train_op, self.loss],
                               {self.rnn_input: prev_state,
-                               self.discounted_rewards: rewards, self.batch_labels:states, self.num_tokens_tensor:[self.num_tokens]})
+                               self.discounted_rewards: rewards,
+                               self.batch_labels:states,
+                               self.num_tokens_tensor:[self.num_tokens]})
 
-        #for i in range(0,self.num_tokens, self.batch_size):
-        #    curr_state = states[i:i+self.batch_size]
-        #    curr_rewards = rewards[i:i+self.batch_size]
-        #    #print(i, 'crr_rewards: ', curr_rewards, curr_state, len(curr_state))
-        #    _, ls = self.sess.run([self.train_op, self.loss],
-        #                      {self.rnn_input: prev_state,
-        #                       self.discounted_rewards: curr_rewards, self.batch_labels:curr_state})
-        #    prev_state = curr_state
         self.policy_network.save_model(self.sess)
         self.exploration *= math.exp(-.005)
         return ls
+
+def sma(data, window):
+    """
+    Calculates Simple Moving Average
+    http://fxtrade.oanda.com/learn/forex-indicators/simple-moving-average
+    """
+    if len(data) < window:
+        return None
+    return sum(data[-window:]) / float(window)
+
+def ema( data, window):
+    if len(data) < 2 * window:
+        return sum(data)/len(data)
+    c = 2.0 / (window + 1)
+    current_ema = sma(data[-window*2:-window], window)
+    for value in data[-window:]:
+        current_ema = (c * value) + ((1 - c) * current_ema)
+    return current_ema
 
 
 def test_BasicReinforce():

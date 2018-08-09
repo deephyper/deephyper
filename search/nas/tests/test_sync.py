@@ -6,6 +6,9 @@ import random
 tf.set_random_seed(1000003)
 np.random.seed(1000003)
 
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
 HERE = os.path.dirname(os.path.abspath(__file__)) # policy dir
 top  = os.path.dirname(os.path.dirname(HERE)) # search dir
 top  = os.path.dirname(os.path.dirname(top)) # dir containing deephyper
@@ -15,7 +18,7 @@ from deephyper.search.nas.policy.tf import NASCellPolicyV5
 from deephyper.search.nas.reinforce.tf import BasicReinforceV5
 from deephyper.model.arch import StateSpace
 
-from benchmark_functions import *
+#from benchmark_functions import *
 
 
 def test_fixed_num_layers(func):
@@ -48,12 +51,12 @@ def test_fixed_num_layers(func):
     #init_seeds = [1. * i / batch_size for i in range(batch_size)]
     get_seeds = lambda x : [float(np.random.uniform(-1,1))*10] * x
 
-    max_reward = 0
+    max_reward = [0]
     map = {}
-    for i in range(1, 10000):
 
+    def update_line(num, max_reward, line1, line2):
         #if i < 100:
-        init_seeds = [random.random() for x in range(batch_size)]
+        init_seeds = [0.5 for x in range(batch_size)]
         #else:
         #    init_seeds = map[max_reward]
         actions = reinforce.get_actions(init_seeds, max_layers)
@@ -61,22 +64,42 @@ def test_fixed_num_layers(func):
         for n in range(batch_size):
             action = actions[n:len(actions):batch_size]
             conv_action = state_space.parse_state(action, num_layers=max_layers)
-            #print(f'action: {action} conv_action: {conv_action}')
             reward = func(conv_action)
             rewards.append(reward)
             map[reward] = init_seeds
-            max_reward = max(reward, max_reward)
-        print(f'STEP = {i} actions: {actions} exp: {reinforce.exploration} rewards: {max(rewards)} max_reward: {max_reward}')
-        #print(f'actions: {actions}')
-        #print(f'rewards: {rewards}')
+            max_reward[0] = max(reward, max_reward[0])
+        print(f'STEP = {num} actions: {actions} exp: {reinforce.exploration} rewards: {max(rewards)} max_reward: {max_reward[0]}')
         reinforce.storeRollout(actions, rewards, max_layers)
         reinforce.train_step(max_layers, init_seeds)
+
+        lx1, ly1 = line1.get_data()
+        lx2, ly2 = line2.get_data()
+        lx1 = np.append(lx1, [num])
+        lx2 = np.append(lx2, [num])
+        ly1 = np.append(ly1, [reward])
+        ly2 = np.append(ly2, [max_reward[0]])
+        line1.set_data(np.array([lx1, ly1]))
+        line2.set_data(np.array([lx2, ly2]))
+        return [line1, line2]
+
+    fig1 = plt.figure()
+
+    l1, = plt.plot([], [], 'r-')
+    l2, = plt.plot([], [], 'b-')
+    plt.ylim(0, 20)
+    plt.xlabel('steps')
+    plt.title('test')
+    nb_iter = 1000
+    plt.xlim(0, nb_iter)
+    line_ani = animation.FuncAnimation(fig1, update_line, nb_iter, fargs=(max_reward, l1, l2), interval=50, blit=True)
+    plt.show()
+
 
 def test_scheduled_num_layers(func):
     pass
 
 def add(v):
-    return sum(v)
+    return -sum(v)
 
 if __name__ == '__main__':
     test_fixed_num_layers(add)
