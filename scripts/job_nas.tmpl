@@ -7,11 +7,7 @@
 #COBALT --attrs ssds=required:ssd_size=128
 {% endif %}
 
-{% if 'theta' ==  platform %}
-NUM_WORKERS={{ nodes - 2 }}
-{% elif 'cooley' ==  platform %}
-NUM_WORKERS={{ 2*nodes - 2 }}
-{% endif %}
+NUM_WORKERS={{ num_workers }}
 
 
 DEEPHYPER_TOP={{ DEEPHYPER_TOP }}
@@ -33,7 +29,7 @@ export MPICH_GNI_FORK_MODE=FULLCOPY
 export PMI_NO_FORK=1
 {% endif %}
 
-balsam init {{ db_path }} 
+balsam init {{ db_path }}
 # export BALSAM_DB_PATH={{ db_path }}
 source balsamactivate {{ db_path }}
 wait
@@ -46,7 +42,11 @@ balsam rm jobs --all --force
 {% if method|upper == 'NAS' %}
 
 SEARCH_APP_PATH=$DEEPHYPER_TOP/search/run_nas.py
+{% if sync %}
+ARGS="--benchmark {{ benchmark }} --run_module_name={{ run_module_name }} --num-workers $NUM_WORKERS --sync"
+{% else %}
 ARGS="--benchmark {{ benchmark }} --run_module_name={{ run_module_name }} --num-workers $NUM_WORKERS"
+{% endif %}
 balsam app --name search --description 'run NAS on : {{ benchmark }}' --executable $SEARCH_APP_PATH
 
 {% endif %}

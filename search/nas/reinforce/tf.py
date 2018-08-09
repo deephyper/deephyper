@@ -227,8 +227,8 @@ class BasicReinforceV2:
 
 
 class BasicReinforceV5:
-    def __init__(self, sess, optimizer, policy_network, max_layers, batch_size, global_step,
-                 num_features,
+    def __init__(self, sess, optimizer, policy_network, max_layers, batch_size,
+                 global_step,
                  state_space=None,
                  division_rate=1.0,
                  reg_param=0.001,
@@ -243,7 +243,6 @@ class BasicReinforceV5:
         self.max_layers = max_layers
         self.batch_size = batch_size
         self.global_step = global_step
-        self.num_features = num_features
         self.state_space = state_space
 
         self.reward_buffer = []
@@ -451,7 +450,6 @@ def test_BasicReinforce5():
                                 max_layers,
                                 batch_size,
                                 global_step,
-                                num_features=state_space.size,
                                 state_space=state_space)
     #state_l2 = [[10., 0.5, 32., 1.,
     #             10., 0.5, 32., 1., 1.]]

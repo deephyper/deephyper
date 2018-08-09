@@ -177,6 +177,12 @@ class StateSpace:
                 return True
         return False
 
+    def get_num_tokens(self, num_layers):
+        if self.feature_is_defined('skip_conn'):
+            return (self.size-1)*num_layers + (num_layers-1)*num_layers//2
+        else:
+            return self.size*num_layers
+
     def embedding_encode(self, id, value):
         '''
         Embedding index encode the specific state value

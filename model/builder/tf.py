@@ -4,6 +4,8 @@
 '''
 
 import tensorflow as tf, numpy as np
+tf.set_random_seed(1000003)
+np.random.seed(1000003)
 
 import deephyper.model.arch as a
 from deephyper.model.utilities.train_utils import *
