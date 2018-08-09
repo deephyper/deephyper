@@ -3,6 +3,7 @@ import sys
 import tensorflow as tf
 import numpy as np
 import random
+import math
 tf.set_random_seed(1000003)
 np.random.seed(1000003)
 
@@ -18,7 +19,7 @@ from deephyper.search.nas.policy.tf import NASCellPolicyV5
 from deephyper.search.nas.reinforce.tf import BasicReinforceV5
 from deephyper.model.arch import StateSpace
 
-#from benchmark_functions import *
+from benchmark_functions import *
 
 
 def test_fixed_num_layers(func):
@@ -26,9 +27,9 @@ def test_fixed_num_layers(func):
     global_step = tf.Variable(0, trainable=False)
     state_space = StateSpace()
     #state_space.add_state('x1', [x for x in range(10)])
-    state_space.add_state('x1', [1, 2, 3, 4])
-    state_space.add_state('x2', [1, 2, 3, 4])
-    state_space.add_state('x3', [1, 2, 3, 4])
+    state_space.add_state('x1', [4,3,2,1])
+    state_space.add_state('x2', [4, 3, 2, 1])
+    state_space.add_state('x3', [4,3,2,1])
 
     policy_network = NASCellPolicyV5(state_space)
     max_layers = 1
@@ -99,7 +100,7 @@ def test_scheduled_num_layers(func):
     pass
 
 def add(v):
-    return -sum(v)
+    return sum(v)
 
 if __name__ == '__main__':
-    test_fixed_num_layers(add)
+    test_fixed_num_layers(powell)

@@ -195,6 +195,7 @@ class BasicReinforceV2:
             # compute policy loss and regularization loss
             self.cross_entropy_loss = tf.nn.softmax_cross_entropy_with_logits_v2(
                 logits=self.logits_slice, labels=self.policy_outputs_slice)
+            print(f'cross entropy shape: {self.cross_entropy_loss.shape}')
             self.pg_loss = tf.reduce_mean(self.cross_entropy_loss)
             self.reg_loss = tf.reduce_sum([tf.reduce_sum(
                 tf.square(x)) for x in policy_network_variables])  # Regularization
@@ -303,12 +304,16 @@ class BasicReinforceV5:
         with tf.name_scope("compute_gradients"):
             # gradients for selecting action from policy network
             self.discounted_rewards = tf.placeholder(
-                tf.float32, shape=(), name="discounted_rewards")
+                tf.float32, shape=(None), name="discounted_rewards")
             self.policy_outputs_slice = tf.slice(self.policy_outputs, [0], [self.num_tokens_tensor[0]])
             self.softmax_outputs_slice = tf.slice(self.softmax_outputs, [0,0,0], [self.num_tokens_tensor[0]//self.batch_size, self.batch_size, self.policy_network.max_num_classes])
 
             self.cross_entropy_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
                 logits=self.softmax_outputs_slice, labels=self.batch_labels)
+            print(f'cross entropy shape: {self.cross_entropy_loss.shape}')
+            self.cross_entropy_loss = tf.multiply(self.cross_entropy_loss, self.discounted_rewards)
+            print(f'cross entropy shape: {self.cross_entropy_loss.shape}')
+
             self.pg_loss = tf.reduce_mean(self.cross_entropy_loss)
             #self.log_loss = tf.reduce_sum(tf.log(self.softmax_probs))
             self.reg_loss = tf.reduce_sum([tf.reduce_sum(
@@ -324,7 +329,8 @@ class BasicReinforceV5:
             for i, (grad, var) in enumerate(self.gradients):
                 if grad is not None:
                     #self.gradients[i] = (tf.multiply(grad, tf.reduce_mean(self.discounted_rewards)), var)
-                    self.gradients[i] = (tf.scalar_mul(self.discounted_rewards, grad), var)
+                    #self.gradients[i] = (tf.scalar_mul(self.discounted_rewards, grad), var)
+                    self.gradients[i] = (grad, var)
 
             # training update
             with tf.name_scope("train_policy_network"):
@@ -342,7 +348,7 @@ class BasicReinforceV5:
         for i in range(0,self.num_tokens, self.batch_size):
             self.reward_buffer.extend(rewards)
             self.state_buffer.extend(state[-i-self.batch_size:][:self.batch_size])
-            rewards = [self.discount_factor * x for x in rewards]
+            #rewards = [self.discount_factor * x for x in rewards]
 
     def train_step(self, num_layers, init_state):
         self.num_tokens = self.state_space.size * num_layers * self.batch_size
@@ -353,8 +359,9 @@ class BasicReinforceV5:
         steps_count = self.num_tokens
         states = np.reshape(np.array(self.state_buffer[-steps_count:]), (self.num_tokens//self.batch_size, self.batch_size))/self.division_rate
         prev_state = init_state
-        #rewards = self.reward_buffer[-steps_count:]
-        rewards = ema(self.reward_buffer, 10)
+        rewards = self.reward_buffer[-steps_count:]
+        rewards_b = ema(self.reward_buffer, 10)
+        rewards = [x - rewards_b for x in rewards]
 
         _, ls = self.sess.run([self.train_op, self.loss],
                               {self.rnn_input: prev_state,

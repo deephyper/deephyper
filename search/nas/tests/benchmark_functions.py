@@ -174,7 +174,7 @@ def rastrigin( x ):  # rast.m
     return 10*n + sum( x**2 - 10 * cos( 2 * pi * x ))
 
 #...............................................................................
-def rosenbrock( x ):  # rosen.m
+def roscenbrock( x ):  # rosen.m
     """ http://en.wikipedia.org/wiki/Rosenbrock_function """
         # a sum of squares, so LevMar (scipy.optimize.leastsq) is pretty good
     x = np.asarray_chkfinite(x)
@@ -251,7 +251,7 @@ allfuncs = [
     # powellsincos,  # many local mins
     powersum,
     rastrigin,
-    rosenbrock,
+    roscenbrock,
     schwefel,  # many local mins
     sphere,
     saddle,
