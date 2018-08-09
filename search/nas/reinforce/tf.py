@@ -7,6 +7,7 @@ import sys
 import tensorflow as tf
 import numpy as np
 import random
+import math
 
 HERE = os.path.dirname(os.path.abspath(__file__)) # policy dir
 top  = os.path.dirname(os.path.dirname(HERE)) # search dir
@@ -233,7 +234,7 @@ class BasicReinforceV5:
                  division_rate=1.0,
                  reg_param=0.001,
                  discount_factor=0.99,
-                 exploration=0.3):
+                 exploration=1):
         self.sess = sess
         self.optimizer = optimizer
         self.policy_network = policy_network
@@ -244,6 +245,7 @@ class BasicReinforceV5:
         self.batch_size = batch_size
         self.global_step = global_step
         self.state_space = state_space
+        self.exploration= exploration
 
         self.reward_buffer = []
         self.state_buffer = []
@@ -258,13 +260,19 @@ class BasicReinforceV5:
 
     def get_actions(self, rnn_input, num_layers):
         self.num_tokens = self.state_space.size * num_layers * self.batch_size
+
         if self.state_space.feature_is_defined('skip_conn'):
 
             self.num_tokens = ((self.state_space.size-1) * num_layers + num_layers * (num_layers - 1) // 2) * self.batch_size
-        policy_outputs_ =  self.sess.run(self.policy_outputs[:self.num_tokens],
+        if random.random() > self.exploration:
+            policy_outputs_ =  self.sess.run(self.policy_outputs[:self.num_tokens],
                              {self.rnn_input:rnn_input, self.num_tokens_tensor: [self.num_tokens]})
-        #print(policy_outputs_, softmax_out_prob_, softmax_output_)
-        return policy_outputs_
+            #print(policy_outputs_, softmax_out_prob_, softmax_output_)
+            return policy_outputs_
+        else:
+            tokens = [int(random.random() * self.policy_network.max_num_classes)*1. for i in range(self.num_tokens)]
+            return tokens
+
     def create_variables(self):
         self.rnn_input = tf.placeholder(
             dtype=tf.float32, shape=(self.batch_size), name='rnn_input')
@@ -360,7 +368,7 @@ class BasicReinforceV5:
         if self.state_space.feature_is_defined('skip_conn'):
             self.num_tokens = ((self.state_space.size - 1) * num_layers + num_layers * (
             num_layers - 1) // 2) * self.batch_size
-        print('num tokens: ', self.num_tokens)
+        #print('num tokens: ', self.num_tokens)
         steps_count = self.num_tokens
         states = np.reshape(np.array(self.state_buffer[-steps_count:]), (self.num_tokens//self.batch_size, self.batch_size))/self.division_rate
         prev_state = init_state
@@ -380,6 +388,7 @@ class BasicReinforceV5:
         #                       self.discounted_rewards: curr_rewards, self.batch_labels:curr_state})
         #    prev_state = curr_state
         self.policy_network.save_model(self.sess)
+        self.exploration *= math.exp(-.005)
         return ls
 
 

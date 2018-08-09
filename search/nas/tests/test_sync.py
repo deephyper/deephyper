@@ -2,6 +2,7 @@ import os
 import sys
 import tensorflow as tf
 import numpy as np
+import random
 tf.set_random_seed(1000003)
 np.random.seed(1000003)
 
@@ -14,13 +15,18 @@ from deephyper.search.nas.policy.tf import NASCellPolicyV5
 from deephyper.search.nas.reinforce.tf import BasicReinforceV5
 from deephyper.model.arch import StateSpace
 
+from benchmark_functions import *
+
 
 def test_fixed_num_layers(func):
     session = tf.Session()
     global_step = tf.Variable(0, trainable=False)
     state_space = StateSpace()
+    #state_space.add_state('x1', [x for x in range(10)])
     state_space.add_state('x1', [1, 2, 3, 4])
     state_space.add_state('x2', [1, 2, 3, 4])
+    state_space.add_state('x3', [1, 2, 3, 4])
+
     policy_network = NASCellPolicyV5(state_space)
     max_layers = 1
     batch_size = 1
@@ -41,15 +47,27 @@ def test_fixed_num_layers(func):
 
     init_seeds = [1. * i / batch_size for i in range(batch_size)]
 
-    for i in range(1, 100):
+    max_reward = 0
+    map = {}
+    for i in range(1, 10000):
+
+        #if i < 100:
+        init_seeds = [random.random() for x in range(batch_size)]
+        #else:
+        #    init_seeds = map[max_reward]
         actions = reinforce.get_actions(init_seeds, max_layers)
         rewards = []
         for n in range(batch_size):
             action = actions[n:len(actions):batch_size]
-            rewards.append(func(action))
-        print(f'STEP = {i}')
-        print(f'actions: {actions}')
-        print(f'rewards: {rewards}')
+            conv_action = state_space.parse_state(action, num_layers=max_layers)
+            #print(f'action: {action} conv_action: {conv_action}')
+            reward = func(conv_action)
+            rewards.append(reward)
+            map[reward] = init_seeds
+            max_reward = max(reward, max_reward)
+        print(f'STEP = {i} actions: {actions} exp: {reinforce.exploration} rewards: {max(rewards)} max_reward: {max_reward}')
+        #print(f'actions: {actions}')
+        #print(f'rewards: {rewards}')
         reinforce.storeRollout(actions, rewards, max_layers)
         reinforce.train_step(max_layers, init_seeds)
 
