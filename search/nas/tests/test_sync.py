@@ -34,7 +34,7 @@ def test_fixed_num_layers(func):
     learning_rate = tf.train.exponential_decay(0.99, global_step,
                                                 500, 0.96, staircase=True)
 
-    optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate)
+    optimizer = tf.train.RMSPropOptimizer(learning_rate=0.01)
 
     # for the CONTROLLER
     reinforce = BasicReinforceV5(session,
@@ -45,7 +45,8 @@ def test_fixed_num_layers(func):
                                 global_step,
                                 state_space=state_space)
 
-    init_seeds = [1. * i / batch_size for i in range(batch_size)]
+    #init_seeds = [1. * i / batch_size for i in range(batch_size)]
+    get_seeds = lambda x : [float(np.random.uniform(-1,1))*10] * x
 
     max_reward = 0
     map = {}
