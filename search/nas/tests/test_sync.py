@@ -39,15 +39,18 @@ def test_fixed_num_layers(func):
                                 global_step,
                                 state_space=state_space)
 
-    init_seeds = [1. * i / batch_size for i in range(batch_size)]
+    #init_seeds = [1. * i / batch_size for i in range(batch_size)]
+    get_seeds = lambda x : [float(np.random.uniform(-1,1))*10] * x
 
     for i in range(1, 100):
+        init_seeds = get_seeds(batch_size)
         actions = reinforce.get_actions(init_seeds, max_layers)
         rewards = []
         for n in range(batch_size):
             action = actions[n:len(actions):batch_size]
             rewards.append(func(action))
         print(f'\nSTEP = {i}')
+        print(f'seeds  : {init_seeds}')
         print(f'actions: {actions}')
         print(f'rewards: {rewards}')
         reinforce.storeRollout(actions, rewards, max_layers)
