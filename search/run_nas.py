@@ -146,6 +146,7 @@ class Search:
                     children_exp = 0
                 state = cfg['arch_seq']
                 logger.debug(f'--> seed: {cfg["init_seed"]} , reward: {reward} , arch_seq: {cfg["arch_seq"]} , num_layers: {cfg["num_layers"]}')
+                self.set_reward(cfg['arch_seq'], reward)
                 reinforce.storeRollout(state, [reward], num_layers)
                 step += 1
                 reinforce.train_step(num_layers, cfg['init_seed'])
