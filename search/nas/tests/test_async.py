@@ -26,13 +26,14 @@ def test_fixed_num_layers(func):
     session = tf.Session()
     global_step = tf.Variable(0, trainable=False)
     state_space = StateSpace()
+    #state_space.add_state('x1', [x for x in range(10)])
     state_space.add_state('x1', [4,3,2,1])
-    state_space.add_state('x2', [4,3,2,1])
+    state_space.add_state('x2', [4, 3, 2, 1])
     state_space.add_state('x3', [4,3,2,1])
 
     policy_network = NASCellPolicyV5(state_space)
     max_layers = 1
-    batch_size = 1
+    batch_size = 4
 
     learning_rate = tf.train.exponential_decay(0.99, global_step,
                                                 500, 0.96, staircase=True)
@@ -44,7 +45,7 @@ def test_fixed_num_layers(func):
                                 optimizer,
                                 policy_network,
                                 max_layers,
-                                batch_size,
+                                1, #async
                                 global_step,
                                 state_space=state_space)
 
@@ -60,7 +61,12 @@ def test_fixed_num_layers(func):
         global init_seeds, prev_rewards
         init_seeds = [0.5 for x in range(batch_size)]
 
-        actions = reinforce.get_actions(init_seeds, max_layers)
+        actions = []
+        for b in range(batch_size):
+            action = reinforce.get_actions([init_seeds[b]], max_layers)
+            actions.append(action)
+        random.shuffle(actions)
+        actions = np.stack(actions).reshape((-1,))
         rewards = []
         prev_rewards = rewards
         for n in range(batch_size):
@@ -69,14 +75,14 @@ def test_fixed_num_layers(func):
             reward = func(conv_action)
             rewards.append(reward)
             map[reward] = init_seeds
-            max_reward[n] = max(reward, max_reward[n])
-        print(f'STEP = {num} actions: {actions} exp: {reinforce.exploration} rewards: {max(rewards)} ema: {reinforce.rewards_b} max_rewards: {max_reward}')
-        # if prev_rewards == rewards:
-        #     init_seeds = [random.random() for x in range(batch_size)]
-        # prev_rewards = rewards
+            max_reward[0] = max(reward, max_reward[0])
+            print(f'STEP = {num} actions: {action} exp: {reinforce.exploration} rewards: {max(rewards)} ema: {reinforce.rewards_b} max_rewards: {max_reward}')
+            #if prev_rewards == rewards:
+            #     init_seeds = [random.random() for x in range(batch_size)]
+            #prev_rewards = rewards
 
-        reinforce.storeRollout(actions, rewards, max_layers)
-        reinforce.train_step(max_layers, init_seeds)
+            reinforce.storeRollout(action, [reward], max_layers)
+            reinforce.train_step(max_layers, [init_seeds[n]])
 
         lx1, ly1 = line1.get_data()
         lx2, ly2 = line2.get_data()
@@ -98,7 +104,7 @@ def test_fixed_num_layers(func):
     nb_iter = 1000
     plt.xlim(0, nb_iter)
     plt.ylim(0, 10000)
-    line_ani = animation.FuncAnimation(fig1, update_line, nb_iter, fargs=(max_reward, l1, l2), interval=50, blit=True, reapeat=False)
+    line_ani = animation.FuncAnimation(fig1, update_line, nb_iter, fargs=(max_reward, l1, l2), interval=50, blit=True, repeat=False)
     plt.show()
 
 
@@ -106,7 +112,7 @@ def test_scheduled_num_layers(func):
     pass
 
 def add(v):
-    return sum(v)
+    return -sum(v)
 
 def powell_(v):
     return 1/ powell(v)
