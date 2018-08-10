@@ -408,14 +408,15 @@ class BasicReinforceV5:
         prev_state = init_state
         rewards = self.reward_buffer[-steps_count:]
         self.rewards_b = ema(self.reward_list, 100)
-        # print(f'buffer: {self.reward_buffer}')
-        #self.reward_b = max(self.reward_buffer) if (len(self.reward_buffer) > 1) else 0
-        rewards = [x-self.rewards_b for x in rewards]
-
+        self.R_b = [x - self.rewards_b for x in rewards]
+        print(f'shape prev_state: {np.shape(prev_state)}\n'
+              f'shape self.R_b  : {np.shape(self.R_b)}\n'
+              f'shape states    : {np.shape(states)}\n'
+              f'shape num_tokens: {np.shape(self.num_tokens)}\n')
         _, ls = self.sess.run([self.train_op,
-                                          self.loss,],
+                               self.loss,],
                                    {self.rnn_input: prev_state,
-                                    self.discounted_rewards: rewards,
+                                    self.discounted_rewards: self.R_b,
                                     self.batch_labels: states,
                                     self.num_tokens_tensor: [self.num_tokens]})
         self.policy_network.save_model(self.sess)
@@ -509,10 +510,7 @@ def test_BasicReinforce5():
                                 batch_size,
                                 global_step,
                                 state_space=state_space)
-    #state_l2 = [[10., 0.5, 32., 1.,
-    #             10., 0.5, 32., 1., 1.]]
     init_seeds = [1. * i / batch_size for i in range(batch_size)]
-    #init_seeds = [.5, .4, -.1, -.7]
     for num_layers in range(1, max_layers):
         actions = reinforce.get_actions(init_seeds, num_layers)
         rewards = [.90] * batch_size
