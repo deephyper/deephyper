@@ -38,7 +38,7 @@ def test_fixed_num_layers(func):
     learning_rate = tf.train.exponential_decay(0.99, global_step,
                                                 500, 0.96, staircase=True)
 
-    optimizer = tf.train.RMSPropOptimizer(learning_rate=0.01)
+    optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate)
 
     # for the CONTROLLER
     reinforce = BasicReinforceV5(session,
@@ -70,11 +70,11 @@ def test_fixed_num_layers(func):
             reward = func(conv_action)
             rewards.append(reward)
             map[reward] = init_seeds
-            max_reward[0] = max(reward, max_reward[0])
-        print(f'STEP = {num} actions: {actions} exp: {reinforce.exploration} rewards: {max(rewards)} max_reward: {max_reward[0]}')
-        if prev_rewards == rewards:
-            init_seeds = [random.random() for x in range(batch_size)]
-        prev_rewards = rewards
+            max_reward[n] = max(reward, max_reward[n])
+        print(f'STEP = {num} actions: {actions} exp: {reinforce.exploration} rewards: {max(rewards)} ema: {reinforce.rewards_b} max_rewards: {max_reward}')
+        # if prev_rewards == rewards:
+        #     init_seeds = [random.random() for x in range(batch_size)]
+        # prev_rewards = rewards
 
         reinforce.storeRollout(actions, rewards, max_layers)
         reinforce.train_step(max_layers, init_seeds)
@@ -98,7 +98,8 @@ def test_fixed_num_layers(func):
     plt.title('test')
     nb_iter = 1000
     plt.xlim(0, nb_iter)
-    line_ani = animation.FuncAnimation(fig1, update_line, nb_iter, fargs=(max_reward, l1, l2), interval=50, blit=True)
+    plt.ylim(0, 10000)
+    line_ani = animation.FuncAnimation(fig1, update_line, nb_iter, fargs=(max_reward, l1, l2), interval=50, blit=True, reapeat=False)
     plt.show()
 
 
