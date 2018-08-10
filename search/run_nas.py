@@ -42,6 +42,28 @@ class Search:
         self.opt_config = cfg
         self.evaluator = evaluate.create_evaluator_nas(cfg)
         self.config = cfg.config
+        self.map_model_reward = {}
+
+    def get_reward(self, model):
+        '''
+        Args
+            model: list of index corresponding to tokens in StateSpace
+        Return
+            the corresponding reward if the model is already None, if the model is not
+            known returns None
+        '''
+        hash_key = str(model)
+        reward = self.map_model_reward.get(hash_key)
+        return reward
+
+    def set_reward(self, model, reward):
+        '''
+        Args
+            model: list of index corresponding to tokens in StateSpace
+            reward: corresponding reward of model
+        '''
+        hash_key = str(model)
+        self.map_model_reward[hash_key] = reward
 
     def run(self):
         print(self.config)
@@ -69,6 +91,9 @@ class Search:
             self.run_async(policy_network, optimizer, learning_rate, start_layers)
 
     def run_async(self, policy_network, optimizer, learning_rate, num_layers):
+        '''
+            Asynchronous approach.
+        '''
         session = tf.Session()
         num_workers = self.opt_config.num_workers
         state_space = self.config[a.state_space]
@@ -106,9 +131,10 @@ class Search:
         timer = util.DelayTimer(max_minutes=None, period=SERVICE_PERIOD)
 
         controller_patience= 5 * num_workers
-
+        results = []
         for elapsed_str in timer:
-            results = list(self.evaluator.get_finished_evals())
+            new_results = list(self.evaluator.get_finished_evals())
+            results.extend(new_results)
             len_results = len(results)
             logger.debug("[ Time = {0}, Step = {1} : results = {2} ]".format(elapsed_str, step, len_results))
             children_exp += len_results
@@ -122,7 +148,7 @@ class Search:
                 logger.debug(f'--> seed: {cfg["init_seed"]} , reward: {reward} , arch_seq: {cfg["arch_seq"]} , num_layers: {cfg["num_layers"]}')
                 reinforce.storeRollout(state, [reward], num_layers)
                 step += 1
-                ls = reinforce.train_step(num_layers, cfg['init_seed'])
+                reinforce.train_step(num_layers, cfg['init_seed'])
 
             # Check improvement of children NN
             if (children_exp > controller_patience): # add a new layer to the search
@@ -133,6 +159,7 @@ class Search:
                     logger.debug('Best accuracy is not increasing')
 
             # Run training on new children NN
+            next_results = []
             for cfg, reward in results:
                 #state = cfg['arch_seq']
                 num_worker = cfg['num_worker']
@@ -148,13 +175,18 @@ class Search:
                 cfg['num_worker'] = num_worker
                 worker_steps[num_worker] += 1
                 cfg['step'] = worker_steps[num_worker]
-                self.evaluator.add_eval_nas(cfg)
-                logger.debug('add_evals_nas')
+                supposed_reward = self.get_reward(cfg['arch_seq'])
+                if supposed_reward == None:
+                    self.evaluator.add_eval_nas(cfg)
+                    logger.debug('add_evals_nas')
+                else:
+                    next_results.append((cfg, supposed_reward))
                 logger.debug(f' steps = {worker_steps}')
+            results = next_results
 
     def run_sync(self, policy_network, optimizer, learning_rate, num_layers):
         '''
-        Batch Synchronous algorithm for NAS.
+            Batch Synchronous algorithm for NAS.
         '''
         session = tf.Session()
         num_workers = self.opt_config.num_workers
