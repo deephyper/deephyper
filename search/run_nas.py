@@ -63,7 +63,11 @@ class Search:
             reward: corresponding reward of model
         '''
         hash_key = str(model)
-        self.map_model_reward[hash_key] = reward
+        prev_reward = self.map_model_reward.get(hash_key)
+        if reward == None:
+            self.map_model_reward[hash_key] = reward
+        else:
+            self.map_model_reward[hash_key] = max(reward, prev_reward)
 
     def run(self):
         print(self.config)
