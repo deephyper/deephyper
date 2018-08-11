@@ -70,11 +70,11 @@ def test_fixed_num_layers(func):
             reward = func(conv_action)
             rewards.append(reward)
             map[reward] = init_seeds
-            max_reward[n] = max(reward, max_reward[n])
+            max_reward[0] = max(reward, max_reward[0])
         print(f'STEP = {num} actions: {actions} exp: {reinforce.exploration} rewards: {max(rewards)} ema: {reinforce.rewards_b} max_rewards: {max_reward}')
-        # if prev_rewards == rewards:
+        #if prev_rewards == rewards:
         #     init_seeds = [random.random() for x in range(batch_size)]
-        # prev_rewards = rewards
+        #prev_rewards = rewards
 
         reinforce.storeRollout(actions, rewards, max_layers)
         reinforce.train_step(max_layers, init_seeds)
@@ -99,7 +99,7 @@ def test_fixed_num_layers(func):
     nb_iter = 1000
     plt.xlim(0, nb_iter)
     plt.ylim(0, 10000)
-    line_ani = animation.FuncAnimation(fig1, update_line, nb_iter, fargs=(max_reward, l1, l2), interval=50, blit=True, reapeat=False)
+    line_ani = animation.FuncAnimation(fig1, update_line, nb_iter, fargs=(max_reward, l1, l2), interval=50, blit=True, repeat=False)
     plt.show()
 
 
@@ -110,7 +110,7 @@ def add(v):
     return sum(v)
 
 def powell_(v):
-    return 1/ powell(v)
+    return -powell(v)
 
 if __name__ == '__main__':
-    test_fixed_num_layers(powell)
+    test_fixed_num_layers(powell_)

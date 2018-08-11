@@ -118,7 +118,6 @@ class BasicReinforce:
                                self.discounted_rewards: rewards})
         return ls
 
-
 class BasicReinforceV2:
     def __init__(self, sess, optimizer, policy_network, max_layers, global_step,
                  num_features,
@@ -227,7 +226,6 @@ class BasicReinforceV2:
                                self.discounted_rewards: rewards})
         return ls
 
-
 class BasicReinforceV5:
     def __init__(self, sess, optimizer, policy_network, max_layers,
                 batch_size,
@@ -236,7 +234,8 @@ class BasicReinforceV5:
                 division_rate=1.0,
                 reg_param=0.001,
                 discount_factor=0.99,
-                exploration=1):
+                exploration=1.,
+                 exploration_decay = 0.05):
         '''
         Args
             sess: tensorflow session
@@ -262,6 +261,7 @@ class BasicReinforceV5:
         self.global_step = global_step
         self.state_space = state_space
         self.exploration= exploration
+        self.exploration_decay = exploration_decay
 
         self.max_reward = 0
         self.reward_list = [] # a reward is added only one time
@@ -287,7 +287,7 @@ class BasicReinforceV5:
             num_tokens_for_one = self.state_space.size * num_layers
         self.num_tokens = num_tokens_for_one * self.batch_size
 
-        if True or random.random() > self.exploration:
+        if random.random() > self.exploration:
             policy_outputs_ =  self.sess.run(
                 self.policy_outputs[:self.num_tokens],
                 {self.rnn_input:rnn_input,
@@ -295,7 +295,7 @@ class BasicReinforceV5:
 
             return policy_outputs_
         else:
-            tokens = [int(random.random() * self.policy_network.max_num_classes) * 1. for i in range(self.num_tokens)]
+            tokens = [int(random.random() * self.policy_network.max_num_classes) * 1. for _ in range(self.num_tokens)]
             return tokens
 
     def create_variables(self):
@@ -310,7 +310,7 @@ class BasicReinforceV5:
         with tf.name_scope("predict_actions"):
             # initialize policy network
             with tf.variable_scope("policy_network"):
-                self.policy_outputs, self.softmax_outputs = self.policy_network.get(
+                self.policy_outputs, self.before_softmax_outputs = self.policy_network.get(
                     self.rnn_input, self.max_layers)
 
             self.action_scores = tf.identity(
@@ -340,18 +340,18 @@ class BasicReinforceV5:
                 [0],
                 [self.num_tokens_tensor[0]])
 
-            self.softmax_outputs_slice = tf.slice(
-                self.softmax_outputs,
+            self.before_softmax_outputs_slice = tf.slice(
+                self.before_softmax_outputs,
                 [0, 0, 0],
                 [self.num_tokens_tensor[0] // self.batch_size,
                 self.batch_size,
                 self.policy_network.max_num_classes])
 
-            self.cross_entropy_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
-                logits=self.softmax_outputs_slice,
+            self.cross_entropy_loss_ = tf.nn.sparse_softmax_cross_entropy_with_logits(
+                logits=self.before_softmax_outputs_slice,
                 labels=self.batch_labels)
             self.cross_entropy_loss = tf.multiply(
-                self.cross_entropy_loss,
+                self.cross_entropy_loss_,
                 self.discounted_rewards)
 
             self.pg_loss = tf.reduce_mean(self.cross_entropy_loss)
@@ -419,7 +419,7 @@ class BasicReinforceV5:
                                     self.batch_labels: states,
                                     self.num_tokens_tensor: [self.num_tokens]})
         self.policy_network.save_model(self.sess)
-        self.exploration *= math.exp(-.005)
+        self.exploration *= math.exp(-self.exploration_decay)
         return ls
 
 def sma(data, window):
