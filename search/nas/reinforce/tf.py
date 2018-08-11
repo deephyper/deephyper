@@ -409,10 +409,11 @@ class BasicReinforceV5:
         rewards = self.reward_buffer[-steps_count:]
         self.rewards_b = ema(self.reward_list, 100)
         self.R_b = [x - self.rewards_b for x in rewards]
-        print(f'shape prev_state: {np.shape(prev_state)}\n'
-              f'shape self.R_b  : {np.shape(self.R_b)}\n'
-              f'shape states    : {np.shape(states)}\n'
-              f'shape num_tokens: {np.shape(self.num_tokens)}\n')
+        self.R_b = np.reshape(np.array(self.R_b), (self.num_tokens//self.batch_size, self.batch_size))
+        #print(f'shape prev_state: {np.shape(prev_state)}\n'
+        #     f'shape self.R_b  : {np.shape(self.R_b)}\n'
+        #     f'shape states    : {np.shape(states)}\n'
+        #     f'shape num_tokens: {np.shape(self.num_tokens)}\n')
         _, ls = self.sess.run([self.train_op,
                                self.loss,],
                                    {self.rnn_input: prev_state,
@@ -420,7 +421,10 @@ class BasicReinforceV5:
                                     self.batch_labels: states,
                                     self.num_tokens_tensor: [self.num_tokens]})
         self.policy_network.save_model(self.sess)
-        self.exploration *= math.exp(-self.exploration_decay)
+        if self.max_reward in rewards:
+            self.exploration *= math.exp(-self.exploration_decay)
+        else:
+            self.exploration /= math.exp(-self.exploration_decay)
         return ls
 
 def sma(data, window):

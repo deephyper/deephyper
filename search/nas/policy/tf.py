@@ -347,7 +347,7 @@ class NASCellPolicyV5:
             state_skip_conns = []
             states = []
             softmax_out_prob = []
-            softmax_outputs = []
+            before_softmax_outputs = []
             with tf.variable_scope('skip_weights', reuse=tf.AUTO_REUSE):
                 skip_W_prev = tf.get_variable('skip_W_prev',[num_units, num_units])
                 skip_W_curr = tf.get_variable('skip_W_curr', [num_units, num_units])
@@ -375,8 +375,8 @@ class NASCellPolicyV5:
                 #print('output shape: ', outputs.get_shape(), batch_size)
                 states.append(state)
                 with tf.name_scope(f'token_{token_i}'):
-                    softmax_output = tf.layers.dense(inputs=outputs, units=self.max_num_classes, activation=None ,reuse=tf.AUTO_REUSE, name = 'softmax')
-                    softmax_outputs.append(softmax_output)
+                    softmax_output = tf.layers.dense(inputs=outputs, units=self.max_num_classes, activation=None ,reuse=tf.AUTO_REUSE, name = 'dense')
+                    before_softmax_outputs.append(softmax_output)
                     softmax_output = tf.nn.softmax(softmax_output)
                     softmax_out_prob.append(tf.reduce_max(softmax_output, axis=1))
                     #print('softmax output: ', softmax_output.get_shape())
@@ -414,7 +414,7 @@ class NASCellPolicyV5:
                             #print('v tan: ', v_tan.get_shape())
                             skip_conn = tf.nn.softmax(v_tan)
                             #print('skip conn adding to softmax outputs shape: ', skip_conn.get_shape())
-                            softmax_outputs.append(v_tan)
+                            before_softmax_outputs.append(v_tan)
                             softmax_out_prob.append(tf.reduce_max(skip_conn, axis=1))
                             #skip_conn = tf.squeeze(skip_conn)
                             #print('skipp conn: ', skip_conn.get_shape())
@@ -437,14 +437,14 @@ class NASCellPolicyV5:
         logits = tf.concat(token_inds, axis=0)
         #states = tf.concat(states, axis=0)
         softmax_out_prob = tf.convert_to_tensor(softmax_out_prob)
-        softmax_outputs = tf.convert_to_tensor(softmax_outputs)
+        before_softmax_outputs = tf.convert_to_tensor(before_softmax_outputs)
         #logits = token_inds
         print('logits shape: ', logits.get_shape(), logits)
         self.saver = tf.train.Saver()
         if self.save_path != None and not os.path.exists(self.save_path):
             print('created save path: ' + self.save_path)
             os.system('mkdir -p ' + self.save_path)
-        return logits, softmax_outputs
+        return logits, before_softmax_outputs
 
 
 
