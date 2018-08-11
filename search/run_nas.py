@@ -186,7 +186,8 @@ class Search:
                     logger.debug('add_evals_nas')
                 else:
                     next_results.append((cfg, supposed_reward))
-                logger.debug(f' steps = {worker_steps}')
+                    logger.debug(f'supposed_reward used: {supposed_reward} for arch_seq: {cfg['arch_seq']}')
+                logger.debug(f'steps = {worker_steps}')
             results = next_results
 
     def run_sync(self, policy_network, optimizer, learning_rate, num_layers):

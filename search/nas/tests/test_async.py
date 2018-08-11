@@ -115,7 +115,7 @@ def add(v):
     return -sum(v)
 
 def powell_(v):
-    return 1/ powell(v)
+    return -powell(v)
 
 if __name__ == '__main__':
     test_fixed_num_layers(powell)
