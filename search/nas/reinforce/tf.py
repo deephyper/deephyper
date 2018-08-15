@@ -25,8 +25,9 @@ class BasicReinforce:
                  division_rate=1.0,
                  reg_param=0.001,
                  discount_factor=0.99,
-                 exploration=0.3):
+                 exploration=0.2):
         self.sess = sess
+        self.exploration_ = exploration
         self.optimizer = optimizer
         self.policy_network = policy_network
         self.division_rate = division_rate
@@ -234,8 +235,8 @@ class BasicReinforceV5:
                 division_rate=1.0,
                 reg_param=0.001,
                 discount_factor=0.99,
-                exploration=1.,
-                 exploration_decay = 0.05):
+                exploration=0.5,
+                 exploration_decay = 0.1):
         '''
         Args
             sess: tensorflow session
@@ -251,6 +252,8 @@ class BasicReinforceV5:
             exploration:
         '''
         self.sess = sess
+        self.exploration_ = exploration
+        self.curr_step_exp = False
         self.optimizer = optimizer
         self.policy_network = policy_network
         self.division_rate = division_rate
@@ -263,7 +266,7 @@ class BasicReinforceV5:
         self.exploration= exploration
         self.exploration_decay = exploration_decay
 
-        self.max_reward = 0
+        self.max_reward = -100000
         self.reward_list = [] # a reward is added only one time
         self.reward_buffer = [] # a reward is duplicate num_tokens time, corresponding to a 1D list with batch_size rewards num_tokens_in_one_batch time
         self.state_buffer = []
@@ -288,6 +291,7 @@ class BasicReinforceV5:
         self.num_tokens = num_tokens_for_one * self.batch_size
 
         if random.random() > self.exploration:
+            self.curr_step_exp = False
             policy_outputs_ =  self.sess.run(
                 self.policy_outputs[:self.num_tokens],
                 {self.rnn_input:rnn_input,
@@ -295,6 +299,8 @@ class BasicReinforceV5:
 
             return policy_outputs_
         else:
+            #print('exploring',end=',')
+            self.curr_step_exp = True
             tokens = [int(random.random() * self.policy_network.max_num_classes) * 1. for _ in range(self.num_tokens)]
             return tokens
 
@@ -388,8 +394,11 @@ class BasicReinforceV5:
             num_tokens_for_one = self.state_space.size * num_layers
         self.num_tokens = num_tokens_for_one * self.batch_size
 
-        self.reward_list.extend(rewards)
-        self.max_reward = max(self.max_reward, max(rewards))
+        #self.reward_list.extend(rewards)
+        if self.max_reward < max(rewards):
+            self.max_reward = max(self.max_reward, max(rewards))
+            self.reward_list.append(self.max_reward)
+        #self.max_reward = max(self.max_reward, max(rewards))
         for i in range(0, self.num_tokens, self.batch_size):
             self.reward_buffer.extend(rewards)
             self.state_buffer.extend(state[-i-self.batch_size:][:self.batch_size])
@@ -407,8 +416,10 @@ class BasicReinforceV5:
         (self.num_tokens // self.batch_size, self.batch_size)) / self.division_rate
         prev_state = init_state
         rewards = self.reward_buffer[-steps_count:]
-        self.rewards_b = ema(self.reward_list, 100)
+        self.rewards_b = ema(self.reward_list, 10)
         self.R_b = [x - self.rewards_b for x in rewards]
+        #self.R_b = [x-self.max_reward for x in rewards]
+
         self.R_b = np.reshape(np.array(self.R_b), (self.num_tokens//self.batch_size, self.batch_size))
         #print(f'shape prev_state: {np.shape(prev_state)}\n'
         #     f'shape self.R_b  : {np.shape(self.R_b)}\n'
@@ -421,10 +432,12 @@ class BasicReinforceV5:
                                     self.batch_labels: states,
                                     self.num_tokens_tensor: [self.num_tokens]})
         self.policy_network.save_model(self.sess)
-        if self.max_reward in rewards:
+        #if self.max_reward in rewards:
+        if self.max_reward not in rewards and self.curr_step_exp:
             self.exploration *= math.exp(-self.exploration_decay)
-        else:
-            self.exploration /= math.exp(-self.exploration_decay)
+        elif self.max_reward not in rewards and self.exploration < self.exploration_:
+            self.exploration *= math.exp(self.exploration_decay)
+
         return ls
 
 def sma(data, window):
@@ -439,7 +452,7 @@ def sma(data, window):
 def ema(data, window):
     if len(data) < 2 * window:
         #return sum(data)/len(data)
-        return max(data)
+        return max(data) if len(data) else 0
     c = 2.0 / (window + 1)
     current_ema = sma(data[-window*2:-window], window)
     for value in data[-window:]:
