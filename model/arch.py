@@ -247,10 +247,10 @@ class StateSpace:
                         current_state.append(np.random.random())
                     else:
                         feature = self[feature_i]
-                        size = feature['size']
-                        sample = np.random.randint(0, size)
-                        current_state.append(feature['values'][sample])
-
+                        # size = feature['size']
+                        # sample = np.random.randint(0, size)
+                        sample = np.random.choice(feature['values'])
+                        current_state.append(sample)
             states.append(current_state)
 
         return states

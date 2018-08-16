@@ -2,8 +2,10 @@ import os
 import sys
 import tensorflow as tf
 import numpy as np
+import seaborn as sns
 import random
 import math
+import logging
 tf.set_random_seed(1000003)
 np.random.seed(1000003)
 
@@ -21,8 +23,9 @@ from deephyper.model.arch import StateSpace
 
 from benchmark_functions import *
 
+NB_ITER = 1000
 NUM_VAL = 100
-NUM_DIM = 10
+NUM_DIM = 2
 
 def get_seeds_uniform(x):
     return [int(abs(float(np.random.uniform(0,1))) * NUM_VAL) - NUM_VAL//2 for i in range(x)]
@@ -35,7 +38,15 @@ RANDOM_SEEDS = get_seeds_uniform(BATCH_SIZE)
 # init_seeds = RANDOM_SEEDS
 init_seeds = [1]
 
-def test_fixed_num_layers(func, I, minimas):
+def test_fixed_num_layers(f):
+    func, I, minimas = f()
+
+    logger = logging.getLogger(f'{f.__name__}')
+    logger.setLevel(logging.DEBUG)
+    fh = logging.FileHandler(f'{f.__name__}.log')
+    fh.setLevel(logging.DEBUG)
+    logger.addHandler(fh)
+
     session = tf.Session()
     global_step = tf.Variable(0, trainable=False)
     state_space = StateSpace()
@@ -44,10 +55,16 @@ def test_fixed_num_layers(func, I, minimas):
     minimas = minimas(NUM_DIM)
 
     values = np.linspace(a, b, num_val)
-    # values.reverse()
-    for d in range(NUM_DIM):
-        # state_space.add_state('x%d' % d, values+(1*d))
-        state_space.add_state('x%d' % d, values)
+    x1_values = values
+    state_space.add_state('x1', x1_values)
+    x2_values = values
+    state_space.add_state('x2', x2_values)
+
+    x1_mesh, x2_mesh = np.meshgrid(x1_values, x2_values)
+    z_mesh = np.zeros((NUM_VAL, NUM_VAL))
+    for i in range(NUM_VAL):
+        for j in range(NUM_VAL):
+            z_mesh[i,j] = func([x1_mesh[i,j], x2_mesh[i,j]])
 
     policy_network = NASCellPolicyV5(state_space)
     max_layers = 1
@@ -71,13 +88,14 @@ def test_fixed_num_layers(func, I, minimas):
                                 global_step,
                                 state_space=state_space)
 
-    # init_seeds = RANDOM_SEEDS
+    tf.summary.FileWriter('graph', graph=tf.get_default_graph())
 
-    def update_line(num, line1, line2, minimas):
-        global init_seeds, prev_rewards
+    lx3 = [] # points
+
+    for num in range(1, NB_ITER+1):
         # init_seeds = get_seeds_normal(batch_size)
         num = num+1 # offset of one because log scale on axis x
-        print(f'init_seeds: {init_seeds}')
+        logger.debug(f'init_seeds: {init_seeds}')
 
         actions = []
         for b in range(batch_size):
@@ -87,53 +105,45 @@ def test_fixed_num_layers(func, I, minimas):
         rewards = []
         prev_rewards = rewards
 
-        lx1, ly1 = line1.get_data()
-        lx2, ly2 = line2.get_data()
-
         for n in range(batch_size):
-            # action = actions[n]
-            # conv_action = state_space.parse_state(action, num_layers=max_layers)
-            conv_action = state_space.get_random_state_space(BATCH_SIZE)[0]
+            action = actions[n]
+            conv_action = state_space.parse_state(action, num_layers=max_layers)
+            # conv_action = state_space.get_random_state_space(BATCH_SIZE)[0]
             reward = func(conv_action)
             rewards.append(reward)
+            logger.debug(f'STEP = {num*batch_size + n}')
             try:
-                print(f'STEP = {num*batch_size + n} reward: {reward} max_rewards: {reinforce.max_reward} ema: {reinforce.rewards_b} (R-b): {reinforce.R_b}')
-                print(f'action: {action}')
-                print(f'state_space: {conv_action}')
-                print(f'minimas: {minimas}')
-                #print(f'STEP = {num} actions: {actions} exp: {reinforce.exploration} rewards: {rewards} max_rewards: {reinforce.max_reward} ema: {reinforce.rewards_b}')
+                logger.debug(f'reward: {reward} max_rewards: {reinforce.max_reward} ema: {reinforce.rewards_b} (R-b): {reinforce.R_b}')
+                logger.debug(f'action: {action}')
+                logger.debug(f'state_space: {conv_action}')
+                logger.debug(f'minimas: {minimas}')
             except:
                 pass
 
             reinforce.storeRollout(action, [reward], max_layers)
-            # reinforce.train_step(max_layers, [init_seeds[n]])
-            # init_seeds = [action[0] for action in actions]
-            # init_seeds = [np.linalg.norm(conv_action) for action in actions]
+            reinforce.train_step(max_layers, [init_seeds[n]])
 
-            ly1 = np.append(ly1, [reward])
-            ly2 = np.append(ly2, [reinforce.max_reward])
+            lx3.append(conv_action)
 
-        # init_seeds = rewards
-        lx1 = np.append(lx1, [num*batch_size + n for n in range(batch_size)])
-        lx2 = np.append(lx2, [num*batch_size + n for n in range(batch_size)])
+    lx3 = np.array(lx3)
 
-        line1.set_data(np.array([lx1, ly1]))
-        line2.set_data(np.array([lx2, ly2]))
-        return [line1, line2]
+    v = [50, 100, 200, 400, 800, 1000]
+    ###
+    for num_points in v:
+        plt.title(f'{f.__name__}, {NUM_VAL} values, iter = {num_points}, rnn policy gradient')
+        # plt.title(f'{f.__name__}, {NUM_VAL} values, iter = {num_points}, random')
 
-    fig1 = plt.figure()
+        plt.contourf(x1_mesh, x2_mesh, z_mesh, 20, cmap='RdGy')
+        plt.colorbar()
 
-    l1, = plt.semilogx([], [], 'r-')
-    l2, = plt.semilogx([], [], 'b-')
-    plt.xlabel('steps')
-    # plt.title('p2, diff softmax, normal dist., rand seed, not dec')
-    plt.title('ackley, 100 values, 10 dims, random')
-    # plt.title('dixonprice, 100 values, 10 dims, stochastic')
-    nb_iter = 1000
-    plt.xlim(1, nb_iter)
-    plt.ylim(-1000000, 0)
-    line_ani = animation.FuncAnimation(fig1, update_line, nb_iter, fargs=(l1, l2, minimas), interval=10, blit=True, repeat=False)
-    plt.show()
+        plt.plot(minimas[0], minimas[1], 'co')
+
+        # cp = sns.color_palette("Blues", NB_ITER)
+        plt.scatter(lx3[:num_points,0], lx3[:num_points,1], c=np.array([i for i in range(1, num_points+1)]), cmap='hot', vmin=1, vmax=NB_ITER)
+        plt.colorbar()
+
+        plt.show()
+        plt.clf()
 
 
 def test_scheduled_num_layers(func):
@@ -178,6 +188,8 @@ def polynome_2():
 
 if __name__ == '__main__':
     # func, I, minimas = ackley_()
-    func, I, minimas = dixonprice_()
-    # func, I, minimas = polynome_2()
-    test_fixed_num_layers(func, I, minimas)
+    # func, I, minimas = dixonprice_()
+    f = polynome_2
+    # f = ackley_
+    # f = dixonprice_
+    test_fixed_num_layers(f)

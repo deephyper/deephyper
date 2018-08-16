@@ -23,7 +23,7 @@ from benchmark_functions import *
 
 
 def get_seeds(x):
-    return [float(np.random.uniform(-1,1)) * 10] * x
+    return [float(np.random.uniform(0,1)) * 10] * x
 
 def mean(x):
     return sum(x)/len(x)
@@ -66,15 +66,12 @@ def test_fixed_num_layers(func):
 
     #init_seeds = [1. * i / batch_size for i in range(batch_size)]
 
-    max_reward = [0]
     map = {}
 
-    init_seeds = [0.5 for x in range(batch_size)]
-
-    def update_line(num, max_reward, line1, line2):
+    def update_line(num, line1, line2):
         global init_seeds, prev_rewards
-        #init_seeds = [0.5 for x in range(batch_size)]
-        init_seeds = get_seeds(batch_size)
+        init_seeds = [0.5*x for x in range(batch_size)]
+        #init_seeds = get_seeds(batch_size)
 
         actions = reinforce.get_actions(init_seeds, max_layers)
         rewards = []
@@ -86,12 +83,10 @@ def test_fixed_num_layers(func):
             rewards.append(reward)
             map[reward] = init_seeds
         try:
-            print(f'STEP = {num} actions: {actions} exp: {reinforce.exploration} rewards: {rewards} max_rewards: {reinforce.max_reward} ema: {reinforce.rewards_b}')
+            print(f'STEP = {num} exp: {reinforce.exploration} rewards: {rewards} max_rewards: {reinforce.max_reward} ema: {reinforce.rewards_b} (R-b): {reinforce.R_b[0]}')
+            #print(f'STEP = {num} actions: {actions} exp: {reinforce.exploration} rewards: {rewards} max_rewards: {reinforce.max_reward} ema: {reinforce.rewards_b}')
         except:
             pass
-        # if prev_rewards == rewards:
-        #     init_seeds = [random.random() for x in range(batch_size)]
-        #prev_rewards = rewards
 
         reinforce.storeRollout(actions, rewards, max_layers)
         reinforce.train_step(max_layers, init_seeds)
@@ -115,8 +110,8 @@ def test_fixed_num_layers(func):
     plt.title('test')
     nb_iter = 1000
     plt.xlim(0, nb_iter)
-    plt.ylim(0, 100000)
-    line_ani = animation.FuncAnimation(fig1, update_line, nb_iter, fargs=(max_reward, l1, l2), interval=10, blit=True, repeat=False)
+    plt.ylim(-100000, 0)
+    line_ani = animation.FuncAnimation(fig1, update_line, nb_iter, fargs=(l1, l2), interval=10, blit=True, repeat=False)
     plt.show()
 
 

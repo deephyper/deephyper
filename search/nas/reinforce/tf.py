@@ -260,17 +260,15 @@ class BasicReinforceV5:
         self.batch_size = batch_size
         self.global_step = global_step
         self.state_space = state_space
-        self.exploration= exploration
-        self.exploration_decay = exploration_decay
 
-        self.max_reward = 0
+        self.max_reward = -math.inf
         self.reward_list = [] # a reward is added only one time
         self.reward_buffer = [] # a reward is duplicate num_tokens time, corresponding to a 1D list with batch_size rewards num_tokens_in_one_batch time
         self.state_buffer = []
         self.rewards_b = 0
 
         self.create_variables()
-        self.policy_network.restore_model(sess = self.sess)
+        # self.policy_network.restore_model(sess = self.sess)
         init = tf.global_variables_initializer()
         sess.run(init)
 
@@ -287,16 +285,12 @@ class BasicReinforceV5:
             num_tokens_for_one = self.state_space.size * num_layers
         self.num_tokens = num_tokens_for_one * self.batch_size
 
-        if random.random() > self.exploration:
-            policy_outputs_ =  self.sess.run(
-                self.policy_outputs[:self.num_tokens],
-                {self.rnn_input:rnn_input,
-                self.num_tokens_tensor: [self.num_tokens]})
+        policy_outputs_ =  self.sess.run(
+            self.policy_outputs[:self.num_tokens],
+            {self.rnn_input: rnn_input,
+            self.num_tokens_tensor: [self.num_tokens]})
 
-            return policy_outputs_
-        else:
-            tokens = [int(random.random() * self.policy_network.max_num_classes) * 1. for _ in range(self.num_tokens)]
-            return tokens
+        return policy_outputs_
 
     def create_variables(self):
         self.rnn_input = tf.placeholder(
@@ -357,7 +351,7 @@ class BasicReinforceV5:
             self.pg_loss = tf.reduce_mean(self.cross_entropy_loss)
             self.reg_loss = tf.reduce_sum([tf.reduce_sum(
                 tf.square(x)) for x in policy_network_variables])  # Regularization
-            self.loss = self.pg_loss + self.reg_param * self.reg_loss
+            self.loss = self.pg_loss #+ self.reg_param * self.reg_loss
 
             # compute gradients
             self.gradients = self.optimizer.compute_gradients(self.loss)
@@ -407,8 +401,12 @@ class BasicReinforceV5:
         (self.num_tokens // self.batch_size, self.batch_size)) / self.division_rate
         prev_state = init_state
         rewards = self.reward_buffer[-steps_count:]
-        self.rewards_b = ema(self.reward_list, 100)
+        # self.rewards_b = ema(self.reward_list, 10)
+        self.rewards_b = ema(self.reward_list[:-1], 0.5, self.rewards_b)
         self.R_b = [x - self.rewards_b for x in rewards]
+        # if abs(np.sum(self.R_b)) < 0.00001:
+        #     index = np.random.choice(len(self.R_b))
+        #     self.R_b[index] = self.R_b[index] - np.random.uniform(0, 10)
         self.R_b = np.reshape(np.array(self.R_b), (self.num_tokens//self.batch_size, self.batch_size))
         #print(f'shape prev_state: {np.shape(prev_state)}\n'
         #     f'shape self.R_b  : {np.shape(self.R_b)}\n'
@@ -420,11 +418,7 @@ class BasicReinforceV5:
                                     self.discounted_rewards: self.R_b,
                                     self.batch_labels: states,
                                     self.num_tokens_tensor: [self.num_tokens]})
-        self.policy_network.save_model(self.sess)
-        if self.max_reward in rewards:
-            self.exploration *= math.exp(-self.exploration_decay)
-        else:
-            self.exploration /= math.exp(-self.exploration_decay)
+        # self.policy_network.save_model(self.sess)
         return ls
 
 def sma(data, window):
@@ -436,15 +430,23 @@ def sma(data, window):
         return None
     return sum(data[-window:]) / float(window)
 
-def ema(data, window):
+def ema_old(data, window):
     if len(data) < 2 * window:
         #return sum(data)/len(data)
-        return max(data)
+        return data[-1]
     c = 2.0 / (window + 1)
     current_ema = sma(data[-window*2:-window], window)
     for value in data[-window:]:
         current_ema = (c * value) + ((1 - c) * current_ema)
     return current_ema
+
+def ema(reward_list, alpha, prev_sum):
+    if len(reward_list) == 0:
+        return 0
+    elif len(reward_list) == 1:
+        return reward_list[0]
+    else:
+        return alpha * reward_list[-1] + (1-alpha)*prev_sum
 
 def test_BasicReinforce():
     session = tf.Session()

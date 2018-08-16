@@ -290,6 +290,13 @@ class NASCellPolicyV4:
         return arg_max, classifier
 
 
+def rd_choice(distribs):
+    l = []
+    for dist in distribs:
+        index_choice = float(np.random.choice([i for i in range(len(dist))], p=dist))
+        l.append(index_choice)
+    return np.array(l, dtype=np.float32)
+
 class NASCellPolicyV5:
     def __init__(self, state_space, save_path=None):
         '''
@@ -355,10 +362,10 @@ class NASCellPolicyV5:
 
             token_i = 0
             self.num_tokens_exc_skip = self.state_space.size * max_layers
-            print(self.state_space.states)
+            #print(self.state_space.states)
             if self.state_space.feature_is_defined('skip_conn'):
                 self.num_tokens_exc_skip = (self.state_space.size) * max_layers
-            print('num_tokens exc skip: ', self.num_tokens_exc_skip, self.state_space.size, max_layers)
+            #print('num_tokens exc skip: ', self.num_tokens_exc_skip, self.state_space.size, max_layers)
             for token_i in range(self.num_tokens_exc_skip):
                 # o_t : final output at time t
                 # h_t : hidden state at time t
@@ -370,23 +377,26 @@ class NASCellPolicyV5:
                 #print('output shape: ', outputs.get_shape())
                 #print('state shape: ', state[-1][-1].get_shape())
                 outputs = tf.squeeze(outputs)
-                if batch_size==1:
+                if batch_size == 1:
                     outputs = tf.reshape(outputs, shape=(1,-1))
                 #print('output shape: ', outputs.get_shape(), batch_size)
                 states.append(state)
                 with tf.name_scope(f'token_{token_i}'):
+                    # softmax_output = tf.layers.dense(inputs=outputs, units=self.max_num_classes, activation=None ,reuse=tf.AUTO_REUSE, name = 'dense_%d' % (token_i))
                     softmax_output = tf.layers.dense(inputs=outputs, units=self.max_num_classes, activation=None ,reuse=tf.AUTO_REUSE, name = 'dense')
                     before_softmax_outputs.append(softmax_output)
                     softmax_output = tf.nn.softmax(softmax_output)
                     softmax_out_prob.append(tf.reduce_max(softmax_output, axis=1))
                     #print('softmax output: ', softmax_output.get_shape())
-                    token_ind = tf.cast(tf.argmax(softmax_output, axis=1), tf.float32)
+                    token_ind_old = tf.cast(tf.argmax(softmax_output, axis=1), tf.float32)
+                    token_ind = tf.py_func(rd_choice, [softmax_output], tf.float32)
+                    token_ind.set_shape(token_ind_old.get_shape())
                     #print('token ind: ', token_ind.get_shape())
                     token_inds.append(token_ind)
                     input = token_ind
                     input = tf.expand_dims(input, 1)
-                    if not (token_i+1)%(self.num_tokens_per_layer-1):
-                        if not self.state_space.feature_is_defined('skip_conn'): continue
+                    if self.state_space.feature_is_defined('skip_conn') and not (token_i+1)%(self.num_tokens_per_layer-1):
+                        #if not self.state_space.feature_is_defined('skip_conn'): continue
                         input = tf.expand_dims(input, 1)
                         # print(token_i,': input shape after exp: ',input.get_shape())
                         outputs, state = tf.nn.dynamic_rnn(stacked_lstm, input, initial_state=state, dtype=tf.float32,
@@ -560,7 +570,7 @@ def test_NASCellPolicyV5():
     sp = a.StateSpace()
     sp.add_state('filter_size', [10., 20., 30.])
     sp.add_state('num_filters', [10., 20.])
-    sp.add_state('skip_conn',[])
+    #sp.add_state('skip_conn',[])
     policy = NASCellPolicyV5(sp, save_path='savepoint/model')
     batch_size = 2
     init_seeds = [1.*i/batch_size for i in range(batch_size)]
