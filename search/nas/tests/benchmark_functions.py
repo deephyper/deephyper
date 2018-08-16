@@ -87,6 +87,15 @@ except ImportError:
 __version__ = "2015-03-06 mar  denis-bz-py t-online de"  # + randomquad logsumexp
 
 
+#.......................
+#has only one global minima
+def polynome_2(x):
+    p = -sum([x_i**2 for x_i in x])
+    #a = -2
+    #b = 2
+    #minimas = lambda d: [0 for i in range(d)]
+    #return p, (a, b), minimas
+    return p
 #...............................................................................
 def ackley( x, a=20, b=0.2, c=2*pi ):
     x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf

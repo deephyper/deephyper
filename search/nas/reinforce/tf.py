@@ -25,8 +25,9 @@ class BasicReinforce:
                  division_rate=1.0,
                  reg_param=0.001,
                  discount_factor=0.99,
-                 exploration=0.3):
+                 exploration=0.2):
         self.sess = sess
+        self.exploration_ = exploration
         self.optimizer = optimizer
         self.policy_network = policy_network
         self.division_rate = division_rate
@@ -234,8 +235,8 @@ class BasicReinforceV5:
                 division_rate=1.0,
                 reg_param=0.001,
                 discount_factor=0.99,
-                exploration=1.,
-                 exploration_decay = 0.05):
+                exploration=0.5,
+                 exploration_decay = 0.1):
         '''
         Args
             sess: tensorflow session
@@ -251,6 +252,8 @@ class BasicReinforceV5:
             exploration:
         '''
         self.sess = sess
+        self.exploration_ = exploration
+        self.curr_step_exp = False
         self.optimizer = optimizer
         self.policy_network = policy_network
         self.division_rate = division_rate
@@ -382,8 +385,11 @@ class BasicReinforceV5:
             num_tokens_for_one = self.state_space.size * num_layers
         self.num_tokens = num_tokens_for_one * self.batch_size
 
-        self.reward_list.extend(rewards)
-        self.max_reward = max(self.max_reward, max(rewards))
+        #self.reward_list.extend(rewards)
+        if self.max_reward < max(rewards):
+            self.max_reward = max(self.max_reward, max(rewards))
+            self.reward_list.append(self.max_reward)
+        #self.max_reward = max(self.max_reward, max(rewards))
         for i in range(0, self.num_tokens, self.batch_size):
             self.reward_buffer.extend(rewards)
             self.state_buffer.extend(state[-i-self.batch_size:][:self.batch_size])
