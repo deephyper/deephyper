@@ -367,6 +367,27 @@ class BasicReinforceV5:
             #     tf.square(x)) for x in policy_network_variables])  # Regularization
             self.loss = self.pg_loss #+ self.reg_param * self.reg_loss
 
+            self.softmax_outputs_slice = tf.slice(
+                self.so,
+                [0, 0, 0],
+                [self.num_tokens_tensor[0] // self.batch_size,
+                self.batch_size,
+                self.policy_network.max_num_classes],
+                name='softmax_outputs_slice')
+            one_hot = tf.one_hot(self.batch_labels,
+                                 depth=self.policy_network.max_num_classes,
+                                 dtype=tf.float32)
+            # print(f'one_hot.get_shape(): {one_hot.get_shape()}')
+            one_hot = tf.transpose(one_hot, perm=[0, 2, 1])
+            # one_hot = tf.Print(one_hot, [one_hot], '#one_hot: ')
+            pb = tf.matmul(self.softmax_outputs_slice, one_hot)
+            # pb = tf.multiply(self.softmax_outputs_slice, one_hot)
+            pb = tf.squeeze(pb)
+            # pb = tf.Print(pb, [pb], "#pb: ")
+            self.entropy = tf.reduce_sum(tf.multiply(pb, tf.log(pb)))
+
+            self.loss = tf.subtract(self.loss, -self.entropy)
+
             # compute gradients
             self.gradients = self.optimizer.compute_gradients(self.loss)
             # print(f'gradients: {self.gradients}')
@@ -416,13 +437,13 @@ class BasicReinforceV5:
         rewards = self.reward_buffer[-steps_count:]
         self.rewards_b = ema(self.reward_list[:-1], 0.9, self.rewards_b, self.batch_size)
 
-        # self.R_b = [(x - self.rewards_b) for x in rewards]
+        self.R_b = [(x - self.rewards_b) for x in rewards]
 
         # Percent
-        if (self.rewards_b == 0):
-            self.R_b = [0 for x in rewards]
-        else:
-            self.R_b = [(x - self.rewards_b)/abs(self.rewards_b) * 100 for x in rewards]
+        # if (self.rewards_b == 0):
+            # self.R_b = [0 for x in rewards]
+        # else:
+            # self.R_b = [(x - self.rewards_b)/abs(self.rewards_b) * 100 for x in rewards]
 
         self.R_b = np.reshape(np.array(self.R_b), (self.num_tokens//self.batch_size, self.batch_size))
         _, ls = self.sess.run([self.train_op,

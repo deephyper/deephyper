@@ -23,14 +23,13 @@ from deephyper.search.nas.reinforce.tf import BasicReinforceV5
 from deephyper.model.arch import StateSpace
 
 from benchmark_functions import *
+from benchmark_functions_wrappers import *
 
-NB_ITER = 1000
+NB_ITER = 2000
 NUM_VAL = 100
 NUM_DIM = 2
-BATCH_SIZE = 8
-
-def get_seeds_uniform(x):
-    return [int(abs(float(np.random.uniform(0,1))) * NUM_VAL) - NUM_VAL//2 for i in range(x)]
+BATCH_SIZE = 1
+LEARNING_RATE = 0.0001
 
 def equals(v, length=10):
     if (1 >= len(v)):
@@ -41,11 +40,6 @@ def equals(v, length=10):
         b = b and (v[-i] == v[-(i+1)])
     return b
 
-def get_seeds_normal(x):
-    return [int(np.random.normal() * NUM_VAL)//2 for i in range(x)]
-
-RANDOM_SEEDS = get_seeds_uniform(BATCH_SIZE)
-# init_seeds = RANDOM_SEEDS
 init_seeds = [1]
 
 def test_fixed_num_layers(f):
@@ -67,7 +61,7 @@ def test_fixed_num_layers(f):
     values = np.linspace(a, b, num_val)
     x1_values = values
     state_space.add_state('x1', x1_values)
-    x2_values = values
+    x2_values = values[::-1]
     state_space.add_state('x2', x2_values)
 
     x1_mesh, x2_mesh = np.meshgrid(x1_values, x2_values)
@@ -80,11 +74,10 @@ def test_fixed_num_layers(f):
     max_layers = 1
     batch_size = BATCH_SIZE
 
-    learning_rate = tf.train.exponential_decay(0.99, global_step,
-                                                500, 0.96, staircase=True)
+    # learning_rate = tf.train.exponential_decay(0.99, global_step,
+    #                                             500, 0.96, staircase=True)
 
-    # learning_rate = 0.0006
-    learning_rate = 0.01
+    learning_rate = LEARNING_RATE
 
     # optimizer = tf.train.RMSPopOptimizer(learning_rate=learning_rate)
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
@@ -111,24 +104,28 @@ def test_fixed_num_layers(f):
         actions, _ = reinforce.get_actions(seeds,
                                            max_layers)
         rewards = []
-
-        for n in range(batch_size):
-            action = actions[n:len(actions):batch_size]
-            # print(f'action: {action}')
-            conv_action = state_space.parse_state(action, num_layers=max_layers)
-            # conv_action = state_space.get_random_state_space(BATCH_SIZE)[0]
-            reward = func(conv_action)
-            rewards.append(reward)
-            rewards_history.append(reward)
-            logger.debug(f'STEP = {num*batch_size + n}')
-            try:
-                logger.debug(f'reward: {reward} max_rewards: {reinforce.max_reward} ema: {reinforce.rewards_b} (R-b): {reinforce.R_b}')
-                logger.debug(f'action: {action}')
-                logger.debug(f'state_space: {conv_action}')
-                logger.debug(f'minimas: {minimas}')
-            except:
-                pass
-            lx3.append(conv_action)
+        try:
+            for n in range(batch_size):
+                action = actions[n:len(actions):batch_size]
+                # action = action[::-1]
+                # print(f'action: {action}')
+                print(f'action: {action}')
+                conv_action = state_space.parse_state(action, num_layers=max_layers)
+                # conv_action = state_space.get_random_state_space(BATCH_SIZE)[0]
+                reward = func(conv_action)
+                rewards.append(reward)
+                rewards_history.append(reward)
+                logger.debug(f'STEP = {num*batch_size + n}')
+                try:
+                    logger.debug(f'reward: {reward} max_rewards: {reinforce.max_reward} ema: {reinforce.rewards_b} (R-b): {reinforce.R_b}')
+                    logger.debug(f'action: {action}')
+                    logger.debug(f'state_space: {conv_action}')
+                    logger.debug(f'minimas: {minimas}')
+                except:
+                    pass
+                lx3.append(conv_action)
+        except:
+            break
 
         reinforce.storeRollout(actions, rewards, max_layers)
         reinforce.train_step(max_layers, seeds)
@@ -191,39 +188,10 @@ def add(v):
 def powell_(v):
     return -powell(v)
 
-def ackley_():
-    '''
-    Many local minimas
-    global minimum = [0, 0, 0...0]
-    '''
-    max_ackley = lambda v: -ackley(v)
-    a = -32.768
-    b = 32.768
-    minimas = lambda d: [0 for i in range(d)]
-    return max_ackley, (a, b), minimas
-
-def dixonprice_():
-    '''
-    Boal function
-    global minimum = math.inf
-    '''
-    max_dixonprice = lambda v : -dixonprice(v)
-    a = -10
-    b = 10
-    min_i = lambda i: 2**(-(2**i - 2)/(2**i))
-    minimas = lambda d: [min_i(i) for i in range(d)]
-    return max_dixonprice, (a, b), minimas
-
-def polynome_2():
-    p = lambda x: -sum([x_i**2 for x_i in x])
-    a = -2
-    b = 2
-    minimas = lambda d: [0 for i in range(d)]
-    return p, (a, b), minimas
-
-
 if __name__ == '__main__':
     # f = polynome_2
-    f = ackley_
+    # f = ackley_
     # f = dixonprice_
+    # f = griewank_
+    f = levy_
     test_fixed_num_layers(f)

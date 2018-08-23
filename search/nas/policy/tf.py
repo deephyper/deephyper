@@ -412,6 +412,7 @@ class NASCellPolicyV5:
                         token_ind = tf.multinomial(tf.log(softmax_output), 1)
                         token_ind = tf.reshape(token_ind, [token_ind.get_shape()[0]])
                         token_ind = tf.cast(token_ind, tf.float32, name='token_index_%d' % token_i)
+                        # token_ind = tf.subtract(token_ind, 1.0)
                         token_inds.append(token_ind)
 
                         input_t = token_ind
@@ -446,10 +447,11 @@ class NASCellPolicyV5:
                                 softmax_inputs_list.append(v_tan)
                                 softmax_out_prob.append(skip_conn)
 
-                                skip_conn = tf.cast(tf.argmax(skip_conn,axis=1), tf.float32)
+                                # skip_conn = tf.cast(tf.argmax(skip_conn,axis=1), tf.float32)
                                 skip_conn = tf.multinomial(tf.log(skip_conn), 1)
                                 skip_conn = tf.reshape(skip_conn, [skip_conn.get_shape()[0]])
                                 skip_conn = tf.cast(skip_conn, tf.float32)
+                                # skip_conn = tf.subtract(token_ind, 1.0)
                                 token_inds.append(skip_conn)
                                 # end : for state_skip in state_skip_conns
 
