@@ -40,3 +40,6 @@ keras-gcn-master
 scripts/runs/
 scripts/runjob.conf
 scripts/runjob.conf.cooley
+
+#
+graph/

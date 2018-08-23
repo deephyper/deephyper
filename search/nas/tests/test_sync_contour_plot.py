@@ -24,9 +24,10 @@ from deephyper.model.arch import StateSpace
 
 from benchmark_functions import *
 
-NB_ITER = 4000
+NB_ITER = 1000
 NUM_VAL = 100
 NUM_DIM = 2
+BATCH_SIZE = 8
 
 def get_seeds_uniform(x):
     return [int(abs(float(np.random.uniform(0,1))) * NUM_VAL) - NUM_VAL//2 for i in range(x)]
@@ -43,7 +44,6 @@ def equals(v, length=10):
 def get_seeds_normal(x):
     return [int(np.random.normal() * NUM_VAL)//2 for i in range(x)]
 
-BATCH_SIZE = 1
 RANDOM_SEEDS = get_seeds_uniform(BATCH_SIZE)
 # init_seeds = RANDOM_SEEDS
 init_seeds = [1]
@@ -84,7 +84,7 @@ def test_fixed_num_layers(f):
                                                 500, 0.96, staircase=True)
 
     # learning_rate = 0.0006
-    learning_rate = 0.0001
+    learning_rate = 0.01
 
     # optimizer = tf.train.RMSPopOptimizer(learning_rate=learning_rate)
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
@@ -94,12 +94,12 @@ def test_fixed_num_layers(f):
                                 optimizer,
                                 policy_network,
                                 max_layers,
-                                1, #async
+                                BATCH_SIZE, #async
                                 global_step,
                                 state_space=state_space)
 
     tf.summary.FileWriter('graph', graph=tf.get_default_graph())
-
+    seeds = [ 1 for i in range(batch_size)]
     lx3 = [] # points
     rewards_history = []
 
@@ -108,15 +108,12 @@ def test_fixed_num_layers(f):
         num = num+1 # offset of one because log scale on axis x
         logger.debug(f'init_seeds: {init_seeds}')
 
-        actions = []
-        for b in range(batch_size):
-            action, _ = reinforce.get_actions([init_seeds[0]], max_layers)
-            actions.append(action)
-        random.shuffle(actions)
+        actions, _ = reinforce.get_actions(seeds,
+                                           max_layers)
         rewards = []
 
         for n in range(batch_size):
-            action = actions[n]
+            action = actions[n:len(actions):batch_size]
             # print(f'action: {action}')
             conv_action = state_space.parse_state(action, num_layers=max_layers)
             # conv_action = state_space.get_random_state_space(BATCH_SIZE)[0]
@@ -131,11 +128,11 @@ def test_fixed_num_layers(f):
                 logger.debug(f'minimas: {minimas}')
             except:
                 pass
-
-            reinforce.storeRollout(action, [reward], max_layers)
-            reinforce.train_step(max_layers, [init_seeds[0]])
-
             lx3.append(conv_action)
+
+        reinforce.storeRollout(actions, rewards, max_layers)
+        reinforce.train_step(max_layers, seeds)
+
 
         if equals(rewards_history):
             break
@@ -147,7 +144,7 @@ def test_fixed_num_layers(f):
     # v = [100]
     ###
     len_lx3 = len(lx3[:,0])
-    size_slice = 100
+    size_slice = batch_size * 10
     prev_num_points = 0
     num_points = size_slice
     while True:
@@ -227,6 +224,6 @@ def polynome_2():
 
 if __name__ == '__main__':
     # f = polynome_2
-    # f = ackley_
-    f = dixonprice_
+    f = ackley_
+    # f = dixonprice_
     test_fixed_num_layers(f)

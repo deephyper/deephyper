@@ -305,7 +305,8 @@ class StateSpace:
                     list_values.append(state_list[cursor])
                     cursor += 1
                 else:
-                    list_values.append(self.get_state_value(feature_i, state_list[cursor]))
+                    list_values.append(self.get_state_value(feature_i,
+                                                            state_list[cursor]))
                     cursor += 1
         return list_values
 

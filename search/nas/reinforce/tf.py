@@ -288,12 +288,14 @@ class BasicReinforceV5:
             num_tokens_for_one = self.state_space.size * num_layers
         self.num_tokens = num_tokens_for_one * self.batch_size
 
-        policy_outputs_ =  self.sess.run(
+        policy_outputs_, so =  self.sess.run([
             self.policy_outputs[:self.num_tokens],
+            self.so
+        ],
             {self.rnn_input: rnn_input,
             self.num_tokens_tensor: [self.num_tokens]})
 
-        return policy_outputs_
+        return policy_outputs_, so
 
     def create_variables(self):
         self.rnn_input = tf.placeholder(
@@ -307,8 +309,11 @@ class BasicReinforceV5:
         with tf.name_scope("predict_actions"):
             # initialize policy network
             with tf.variable_scope("policy_network"):
-                self.policy_outputs, self.before_softmax_outputs = self.policy_network.get(
-                    self.rnn_input, self.max_layers)
+                # self.policy_outputs : tokens_inds_gather
+                # self.before_softmax_outputs : softmax_inputs_tensor
+                # self.so : softmax_out_prob
+                self.policy_outputs, self.before_softmax_outputs, self.so = self.policy_network\
+                    .get(self.rnn_input, self.max_layers)
 
             self.action_scores = tf.identity(
                 self.policy_outputs, name="action_scores")
@@ -331,44 +336,45 @@ class BasicReinforceV5:
                 tf.float32,
                 shape=(None),
                 name="discounted_rewards")
-
-            self.policy_outputs_slice = tf.slice(
-                self.policy_outputs,
-                [0],
-                [self.num_tokens_tensor[0]])
+            # self.discounted_rewards = tf.Print(self.discounted_rewards, [self.discounted_rewards], '#DISC REWARDS: ')
 
             self.before_softmax_outputs_slice = tf.slice(
                 self.before_softmax_outputs,
                 [0, 0, 0],
                 [self.num_tokens_tensor[0] // self.batch_size,
                 self.batch_size,
-                self.policy_network.max_num_classes])
+                self.policy_network.max_num_classes],
+                name='before_softmax_outputs_slice')
 
             self.cross_entropy_loss_ = tf.nn.sparse_softmax_cross_entropy_with_logits(
                 logits=self.before_softmax_outputs_slice,
                 labels=self.batch_labels)
+            # self.cross_entropy_loss_ = tf.Print(self.cross_entropy_loss_, [self.cross_entropy_loss_], "#CROSS ENTROPY: ")
+            # self.cross_entropy_loss = tf.multiply(
+                # self.cross_entropy_loss_,
+                # self.discounted_rewards)
             self.cross_entropy_loss = tf.multiply(
                 self.cross_entropy_loss_,
                 self.discounted_rewards)
+            # self.cross_entropy_loss = tf.Print(self.cross_entropy_loss, [self.cross_entropy_loss], "#MULT: ")
 
-            self.pg_loss = tf.reduce_mean(self.cross_entropy_loss)
-            self.reg_loss = tf.reduce_sum([tf.reduce_sum(
-                tf.square(x)) for x in policy_network_variables])  # Regularization
+            # self.pg_loss = tf.reduce_mean(self.cross_entropy_loss)
+            self.pg_loss = tf.reduce_sum(self.cross_entropy_loss)
+            self.pg_loss = tf.divide(self.pg_loss, self.batch_size)
+            # self.pg_loss = tf.Print(self.pg_loss, [self.pg_loss], "#PG_LOSS: ")
+
+            # self.reg_loss = tf.reduce_sum([tf.reduce_sum(
+            #     tf.square(x)) for x in policy_network_variables])  # Regularization
             self.loss = self.pg_loss #+ self.reg_param * self.reg_loss
 
             # compute gradients
             self.gradients = self.optimizer.compute_gradients(self.loss)
-
-            # compute policy gradients
-            for i, (grad, var) in enumerate(self.gradients):
-                if grad is not None:
-                    #self.gradients[i] = (tf.multiply(grad, tf.reduce_mean(self.discounted_rewards)), var)
-                    #self.gradients[i] = (tf.scalar_mul(self.discounted_rewards, grad), var)
-                    self.gradients[i] = (grad, var)
+            # print(f'gradients: {self.gradients}')
 
             # training update
             with tf.name_scope("train_policy_network"):
                 # apply gradients to update policy network
+                # self.train_op = self.optimizer.minimize(self.loss)
                 self.train_op = self.optimizer.apply_gradients(
                     self.gradients, global_step=self.global_step)
 
@@ -385,15 +391,16 @@ class BasicReinforceV5:
             num_tokens_for_one = self.state_space.size * num_layers
         self.num_tokens = num_tokens_for_one * self.batch_size
 
-        #self.reward_list.extend(rewards)
-        if self.max_reward < max(rewards):
-            self.max_reward = max(self.max_reward, max(rewards))
+        tmp_max = max(rewards)
+        if self.max_reward < tmp_max:
+            self.max_reward = tmp_max
             self.reward_list.append(self.max_reward)
-        #self.max_reward = max(self.max_reward, max(rewards))
+
         for i in range(0, self.num_tokens, self.batch_size):
+            # discount
+            #rewards = [(self.discount_factor**i) * x for i, x in enumerate(rewards)]
             self.reward_buffer.extend(rewards)
             self.state_buffer.extend(state[-i-self.batch_size:][:self.batch_size])
-            #rewards = [self.discount_factor * x for x in rewards]
 
     def train_step(self, num_layers, init_state):
         if self.state_space.feature_is_defined('skip_conn'):
@@ -407,19 +414,19 @@ class BasicReinforceV5:
         (self.num_tokens // self.batch_size, self.batch_size)) / self.division_rate
         prev_state = init_state
         rewards = self.reward_buffer[-steps_count:]
-        # self.rewards_b = ema(self.reward_list, 10)
-        self.rewards_b = ema(self.reward_list[:-1], 0.5, self.rewards_b)
-        self.R_b = [x - self.rewards_b for x in rewards]
-        # if abs(np.sum(self.R_b)) < 0.00001:
-        #     index = np.random.choice(len(self.R_b))
-        #     self.R_b[index] = self.R_b[index] - np.random.uniform(0, 10)
+        self.rewards_b = ema(self.reward_list[:-1], 0.9, self.rewards_b, self.batch_size)
+
+        # self.R_b = [(x - self.rewards_b) for x in rewards]
+
+        # Percent
+        if (self.rewards_b == 0):
+            self.R_b = [0 for x in rewards]
+        else:
+            self.R_b = [(x - self.rewards_b)/abs(self.rewards_b) * 100 for x in rewards]
+
         self.R_b = np.reshape(np.array(self.R_b), (self.num_tokens//self.batch_size, self.batch_size))
-        #print(f'shape prev_state: {np.shape(prev_state)}\n'
-        #     f'shape self.R_b  : {np.shape(self.R_b)}\n'
-        #     f'shape states    : {np.shape(states)}\n'
-        #     f'shape num_tokens: {np.shape(self.num_tokens)}\n')
         _, ls = self.sess.run([self.train_op,
-                               self.loss,],
+                               self.loss],
                                    {self.rnn_input: prev_state,
                                     self.discounted_rewards: self.R_b,
                                     self.batch_labels: states,
@@ -446,13 +453,15 @@ def ema_old(data, window):
         current_ema = (c * value) + ((1 - c) * current_ema)
     return current_ema
 
-def ema(reward_list, alpha, prev_sum):
-    if len(reward_list) == 0:
+def ema(reward_list, alpha, prev_sum, window=1):
+    if len(reward_list) < window:
         return 0
-    elif len(reward_list) == 1:
-        return reward_list[0]
+    elif True:
+        return max(reward_list)
+    elif len(reward_list) == window:
+        return sum(reward_list[:])/window
     else:
-        return alpha * reward_list[-1] + (1-alpha)*prev_sum
+        return alpha * sum(reward_list[-window:])/window + (1-alpha)*prev_sum
 
 def test_BasicReinforce():
     session = tf.Session()

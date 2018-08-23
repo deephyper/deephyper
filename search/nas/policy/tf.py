@@ -338,16 +338,22 @@ class NASCellPolicyV5:
             max_layers: int, maximum number of layers
             num_units: int, state_size of all LSTMCells
         '''
+        # self.sequence_length = tf.placeholder(shape=(), dtype=tf.int32)
 
-        with tf.name_scope('policy_network'):
-            RNNCell = lambda x: tf.contrib.rnn.LSTMCell(
+        with tf.name_scope('rnn_network'):
+            RNNCell = lambda x, s: tf.contrib.rnn.LSTMCell(
                 num_units=num_units,
-                state_is_tuple=True)
-            stacked_lstm = tf.contrib.rnn.MultiRNNCell([RNNCell(num_units),
-                                                       RNNCell(num_units)],
-                                                       state_is_tuple=True)
+                state_is_tuple=True,
+                name='LSTM_%s' % s,
+                # activation=tf.nn.relu
+                )
+            new_cell = lambda s : tf.contrib.rnn.MultiRNNCell(
+                [RNNCell(num_units, '1_%s' % s),
+                 RNNCell(num_units, '2_%s' % s)],
+                 state_is_tuple=True)
+            cell = new_cell('0')
             batch_size    = input_rnn.get_shape()[0]
-            initial_state = stacked_lstm.zero_state(batch_size, tf.float32)
+            initial_state = cell.zero_state(batch_size, tf.float32)
 
             state = initial_state
             token_inds = []
@@ -367,98 +373,139 @@ class NASCellPolicyV5:
             else:
                 self.num_tokens_exc_skip = self.state_space.size * max_layers
 
+
             input_t = input_rnn
             for token_i in range(self.num_tokens_exc_skip):
+                with tf.name_scope('SCOPE_TOKEN_%d' % token_i):
 
-                input_t = tf.expand_dims(input_t, 1)
-
-                outputs, state = tf.nn.dynamic_rnn(
-                    stacked_lstm,
-                    input_t,
-                    initial_state=state,
-                    dtype=tf.float32,
-                    time_major=False)
-
-                outputs = tf.squeeze(outputs)
-                if batch_size == 1:
-                    outputs = tf.reshape(outputs, shape=(1,-1))
-
-                states.append(state)
-                with tf.name_scope(f'token_{token_i}'):
-                    # softmax_input = tf.layers.dense(inputs=outputs, units=self.max_num_classes, activation=None ,reuse=tf.AUTO_REUSE, name = 'dense_%d' % (token_i))
-                    softmax_input = tf.layers.dense(
-                        inputs=outputs,
-                        units=self.max_num_classes,
-                        activation=None,
-                        reuse=tf.AUTO_REUSE,
-                        name='dense')
-                    softmax_inputs_list.append(softmax_input)
-                    softmax_output = tf.nn.softmax(softmax_input)
-                    softmax_out_prob.append(tf.reduce_max(softmax_output, axis=1))
-
-                    token_ind_old = tf.cast(tf.argmax(softmax_output, axis=1), tf.float32)
-                    token_ind = tf.py_func(rd_choice, [softmax_output], tf.float32)
-                    token_ind.set_shape(token_ind_old.get_shape())
-                    token_inds.append(token_ind)
-
-                    input_t = token_ind
                     input_t = tf.expand_dims(input_t, 1)
+                    # if (token_i != 0):
+                    #     cell = new_cell(str(token_i))
+                    # outputs, state = cell(input_t, state)
+                    outputs, state = tf.nn.dynamic_rnn(
+                        cell,
+                        input_t,
+                        initial_state=state,
+                        dtype=tf.float32,
+                        time_major=False)
 
-                    if self.state_space.feature_is_defined('skip_conn') \
-                        and not (token_i+1)%(self.num_tokens_per_layer-1):
+                    outputs = tf.squeeze(outputs)
+                    if batch_size == 1:
+                        outputs = tf.reshape(outputs, shape=(1,-1))
+
+                    states.append(state)
+                    with tf.name_scope(f'token_{token_i}'):
+                        # softmax_input = tf.layers.dense(inputs=outputs, units=self.max_num_classes, activation=None ,reuse=tf.AUTO_REUSE, name = 'dense_%d' % (token_i))
+                        softmax_input = tf.layers.dense(
+                            inputs=outputs,
+                            units=self.max_num_classes,
+                            activation=None,
+                            reuse=tf.AUTO_REUSE,
+                            name='dense')
+                        softmax_inputs_list.append(softmax_input)
+                        softmax_output = tf.nn.softmax(softmax_input)
+                        softmax_out_prob.append(softmax_output)
+
+                        # token_ind_old = tf.cast(tf.argmax(softmax_output, axis=1), tf.float32)
+                        # token_ind = tf.py_func(rd_choice, [softmax_output], tf.float32)
+                        # token_ind.set_shape(token_ind_old.get_shape())
+                        token_ind = tf.multinomial(tf.log(softmax_output), 1)
+                        token_ind = tf.reshape(token_ind, [token_ind.get_shape()[0]])
+                        token_ind = tf.cast(token_ind, tf.float32, name='token_index_%d' % token_i)
+                        token_inds.append(token_ind)
+
+                        input_t = token_ind
                         input_t = tf.expand_dims(input_t, 1)
 
-                        outputs, state = tf.nn.dynamic_rnn(
-                            stacked_lstm,
-                            input_t,
-                            initial_state=state,
-                            dtype=tf.float32,
-                            time_major=False)
-                        outputs = tf.squeeze(outputs)
-                        if batch_size == 1:
-                            outputs = tf.reshape(outputs, shape=(1, -1))
+                        if self.state_space.feature_is_defined('skip_conn') \
+                            and not (token_i+1)%(self.num_tokens_per_layer-1):
+                            input_t = tf.expand_dims(input_t, 1)
 
-                        states.append(state)
+                            outputs, state = tf.nn.dynamic_rnn(
+                                cell,
+                                input_t,
+                                initial_state=state,
+                                dtype=tf.float32,
+                                time_major=False)
+                            outputs = tf.squeeze(outputs)
+                            if batch_size == 1:
+                                outputs = tf.reshape(outputs, shape=(1, -1))
 
-                        # skip connections
-                        state_res = tf.reshape(state[-1][-1], [batch_size, num_units])
+                            states.append(state)
 
-                        for state_skip in state_skip_conns:
-                            sum_prod_W = tf.matmul(state_res, skip_W_curr) \
-                                + tf.matmul(state_skip, skip_W_prev)
-                            tan_out = tf.nn.tanh(sum_prod_W)
-                            v_tan = tf.matmul(tan_out, skip_v)
-                            skip_conn = tf.nn.softmax(v_tan)
+                            # skip connections
+                            state_res = tf.reshape(state[-1][-1], [batch_size, num_units])
 
-                            softmax_inputs_list.append(v_tan)
-                            softmax_out_prob.append(tf.reduce_max(skip_conn, axis=1))
+                            for state_skip in state_skip_conns:
+                                sum_prod_W = tf.matmul(state_res, skip_W_curr) \
+                                    + tf.matmul(state_skip, skip_W_prev)
+                                tan_out = tf.nn.tanh(sum_prod_W)
+                                v_tan = tf.matmul(tan_out, skip_v)
+                                skip_conn = tf.nn.softmax(v_tan)
 
-                            skip_conn = tf.cast(tf.argmax(skip_conn,axis=1), tf.float32)
-                            token_inds.append(skip_conn)
-                            # end : for state_skip in state_skip_conns
+                                softmax_inputs_list.append(v_tan)
+                                softmax_out_prob.append(skip_conn)
 
-                        state_skip_conns.append(state_res)
-                        input_t = token_inds[-1]
-                        input_t = tf.expand_dims(input_t, 1)
-                        # end : if self.state_space.feature_is_defined('skip_conn')
-                        #      and not (token_i+1)%(self.num_tokens_per_layer-1)
+                                skip_conn = tf.cast(tf.argmax(skip_conn,axis=1), tf.float32)
+                                skip_conn = tf.multinomial(tf.log(skip_conn), 1)
+                                skip_conn = tf.reshape(skip_conn, [skip_conn.get_shape()[0]])
+                                skip_conn = tf.cast(skip_conn, tf.float32)
+                                token_inds.append(skip_conn)
+                                # end : for state_skip in state_skip_conns
 
-                    # end : with tf.name_scope(f'token_{token_i}')
+                            state_skip_conns.append(state_res)
+                            input_t = token_inds[-1]
+                            input_t = tf.expand_dims(input_t, 1)
+                            # end : if self.state_space.feature_is_defined('skip_conn')
+                            #      and not (token_i+1)%(self.num_tokens_per_layer-1)
+
+                        # end : with tf.name_scope(f'token_{token_i}')
 
                 # end : or token_i in range(self.num_tokens_exc_skip)
 
             # end : with tf.name_scope('policy_network')
 
         tokens_inds_gather = tf.concat(token_inds, axis=0)
-        softmax_out_prob = tf.convert_to_tensor(softmax_out_prob)
-        softmax_inputs_tensor = tf.convert_to_tensor(softmax_inputs_list)
+        softmax_out_prob = tf.convert_to_tensor(softmax_out_prob,
+                                                name='softmax_out_prob')
+        softmax_inputs_tensor = tf.convert_to_tensor(softmax_inputs_list,
+                                                     name='softmax_inputs_tensor')
 
         self.saver = tf.train.Saver()
         if self.save_path != None and not os.path.exists(self.save_path):
             print('created save path: ' + self.save_path)
             os.system('mkdir -p ' + self.save_path)
 
-        return tokens_inds_gather, softmax_inputs_tensor
+        return tokens_inds_gather, softmax_inputs_tensor, softmax_out_prob
+
+    # def loop_fn(self, time, cell_output, cell_state, loop_state):
+    #     emit_output = cell_output  # == None for time == 0
+    #     if cell_output is None:  # time == 0
+    #         next_cell_state = cell.zero_state(batch_size, tf.float32)
+    #         next_input = self.input_rnn # first time step we input a "seed"
+    #     else:
+    #         next_cell_state = cell_state
+    #         softmax_input = tf.layers.dense(
+    #                                     inputs=cell_output,
+    #                                     units=self.max_num_classes,
+    #                                     activation=None,
+    #                                     reuse=tf.AUTO_REUSE,
+    #                                     name='dense')
+    #         softmax_output = tf.nn.softmax(softmax_input)
+    #         token_ind = tf.multinomial(tf.log(softmax_output), 1)
+    #         token_ind = tf.reshape(token_ind, [token_ind.get_shape()[0]])
+    #         token_ind = tf.cast(token_ind, tf.float32, name='token_index_%d' % token_i)
+    #         next_input = token_ind
+    #     # elements_finished = (time >= sequence_length)
+    #     elements_finished =
+    #     finished = tf.reduce_all(elements_finished)
+    #     next_input = tf.cond(
+    #         finished,
+    #         lambda: tf.zeros([batch_size, input_depth], dtype=tf.float32),
+    #         lambda: inputs_ta.read(time))
+    #     next_loop_state = None
+    #     return (elements_finished, next_input, next_cell_state,
+    #             emit_output, next_loop_state)
 
 
 
@@ -579,7 +626,7 @@ def test_NASCellPolicyV5():
     batch_size = 2
     init_seeds = [1.*i/batch_size for i in range(batch_size)]
     rnn_input = tf.placeholder(shape=(batch_size), dtype= tf.float32, name="input")
-    logits, softmax_outputs = policy.get(rnn_input, max_layers)
+    logits, softmax_outputs, _ = policy.get(rnn_input, max_layers)
     with tf.Session() as sess:
         policy.restore_model(sess=sess)
         init = tf.global_variables_initializer()

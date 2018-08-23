@@ -22,7 +22,7 @@ from deephyper.model.arch import StateSpace
 from benchmark_functions import *
 
 NUM_VAL = 100
-NUM_DIM = 10
+NUM_DIM = 2
 
 def get_seeds_uniform(x):
     return [int(abs(float(np.random.uniform(0,1))) * NUM_VAL) - NUM_VAL//2 for i in range(x)]
@@ -57,7 +57,8 @@ def test_fixed_num_layers(func, I, minimas):
                                                 500, 0.96, staircase=True)
 
     # learning_rate = 0.0006
-    learning_rate = 0.0001
+    # learning_rate = 0.0001
+    learning_rate = 1.0
 
     # optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate)
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
@@ -81,7 +82,7 @@ def test_fixed_num_layers(func, I, minimas):
 
         actions = []
         for b in range(batch_size):
-            action = reinforce.get_actions([init_seeds[b]], max_layers)
+            action, so = reinforce.get_actions([init_seeds[b]], max_layers)
             actions.append(action)
         random.shuffle(actions)
         rewards = []
@@ -91,13 +92,14 @@ def test_fixed_num_layers(func, I, minimas):
         lx2, ly2 = line2.get_data()
 
         for n in range(batch_size):
-            # action = actions[n]
-            # conv_action = state_space.parse_state(action, num_layers=max_layers)
-            conv_action = state_space.get_random_state_space(BATCH_SIZE)[0]
+            action = actions[n]
+            conv_action = state_space.parse_state(action, num_layers=max_layers)
+            # conv_action = state_space.get_random_state_space(BATCH_SIZE)[0]
             reward = func(conv_action)
             rewards.append(reward)
             try:
                 print(f'STEP = {num*batch_size + n} reward: {reward} max_rewards: {reinforce.max_reward} ema: {reinforce.rewards_b} (R-b): {reinforce.R_b}')
+                print(f'prob: {so}')
                 print(f'action: {action}')
                 print(f'state_space: {conv_action}')
                 print(f'minimas: {minimas}')
@@ -106,7 +108,7 @@ def test_fixed_num_layers(func, I, minimas):
                 pass
 
             reinforce.storeRollout(action, [reward], max_layers)
-            # reinforce.train_step(max_layers, [init_seeds[n]])
+            reinforce.train_step(max_layers, [init_seeds[n]])
             # init_seeds = [action[0] for action in actions]
             # init_seeds = [np.linalg.norm(conv_action) for action in actions]
 
@@ -131,7 +133,7 @@ def test_fixed_num_layers(func, I, minimas):
     # plt.title('dixonprice, 100 values, 10 dims, stochastic')
     nb_iter = 1000
     plt.xlim(1, nb_iter)
-    plt.ylim(-1000000, 0)
+    plt.ylim(-40, 0)
     line_ani = animation.FuncAnimation(fig1, update_line, nb_iter, fargs=(l1, l2, minimas), interval=10, blit=True, repeat=False)
     plt.show()
 
@@ -178,6 +180,6 @@ def polynome_2():
 
 if __name__ == '__main__':
     # func, I, minimas = ackley_()
-    func, I, minimas = dixonprice_()
-    # func, I, minimas = polynome_2()
+    # func, I, minimas = dixonprice_()
+    func, I, minimas = polynome_2()
     test_fixed_num_layers(func, I, minimas)
