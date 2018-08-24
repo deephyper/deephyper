@@ -26,10 +26,11 @@ from benchmark_functions import *
 from benchmark_functions_wrappers import *
 
 NB_ITER = 2000
-NUM_VAL = 100
+NUM_VAL = 10
 NUM_DIM = 2
 BATCH_SIZE = 1
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.001
+SLICE_SIZE = 10
 
 def equals(v, length=10):
     if (1 >= len(v)):
@@ -141,7 +142,7 @@ def test_fixed_num_layers(f):
     # v = [100]
     ###
     len_lx3 = len(lx3[:,0])
-    size_slice = batch_size * 10
+    size_slice = batch_size * SLICE_SIZE
     prev_num_points = 0
     num_points = size_slice
     while True:
@@ -156,6 +157,8 @@ def test_fixed_num_layers(f):
         plt.colorbar()
 
         plt.plot(minimas[0], minimas[1], 'co')
+
+        plt.plot(x1_mesh, x2_mesh, 'g+')
 
         # cp = sns.color_palette("Blues", NB_ITER)
         plt.scatter(lx3[prev_num_points:num_points, 0],
@@ -189,9 +192,9 @@ def powell_(v):
     return -powell(v)
 
 if __name__ == '__main__':
-    # f = polynome_2
+    f = polynome_2
     # f = ackley_
     # f = dixonprice_
     # f = griewank_
-    f = levy_
+    # f = levy_
     test_fixed_num_layers(f)

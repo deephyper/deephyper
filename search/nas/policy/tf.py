@@ -341,17 +341,22 @@ class NASCellPolicyV5:
         # self.sequence_length = tf.placeholder(shape=(), dtype=tf.int32)
 
         with tf.name_scope('rnn_network'):
-            RNNCell = lambda x, s: tf.contrib.rnn.LSTMCell(
-                num_units=num_units,
+            # RNNCell = lambda x, s: tf.contrib.rnn.LSTMCell(
+            #     num_units=num_units,
+            #     state_is_tuple=True,
+            #     name='LSTM_%s' % s,
+            #     # activation=tf.nn.relu
+            #     )
+            # new_cell = lambda s : tf.contrib.rnn.MultiRNNCell(
+            #     [RNNCell(num_units, '1_%s' % s),
+            #      RNNCell(num_units, '2_%s' % s)],
+            #      state_is_tuple=True)
+            #cell = new_cell('0')
+            cell = tf.contrib.rnn.LSTMCell(
+                num_units=2,
                 state_is_tuple=True,
-                name='LSTM_%s' % s,
-                # activation=tf.nn.relu
-                )
-            new_cell = lambda s : tf.contrib.rnn.MultiRNNCell(
-                [RNNCell(num_units, '1_%s' % s),
-                 RNNCell(num_units, '2_%s' % s)],
-                 state_is_tuple=True)
-            cell = new_cell('0')
+                name='LSTM'
+            )
             batch_size    = input_rnn.get_shape()[0]
             initial_state = cell.zero_state(batch_size, tf.float32)
 

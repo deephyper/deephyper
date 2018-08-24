@@ -383,9 +383,11 @@ class BasicReinforceV5:
             pb = tf.matmul(self.softmax_outputs_slice, one_hot)
             # pb = tf.multiply(self.softmax_outputs_slice, one_hot)
             pb = tf.squeeze(pb)
-            # pb = tf.Print(pb, [pb], "#pb: ")
+
+            # ENTROPY == - self.entropy
             self.entropy = tf.reduce_sum(tf.multiply(pb, tf.log(pb)))
 
+            # Substract the ENTROPY from the LOSS, we are penalizing certainty
             self.loss = tf.subtract(self.loss, -self.entropy)
 
             # compute gradients
