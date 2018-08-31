@@ -25,12 +25,28 @@ from deephyper.model.arch import StateSpace
 from benchmark_functions import *
 from benchmark_functions_wrappers import *
 
-NB_ITER = 2000
-NUM_VAL = 10
+NB_ITER = 3000
+NUM_VAL = 20
 NUM_DIM = 2
-BATCH_SIZE = 1
-LEARNING_RATE = 0.001
-SLICE_SIZE = 10
+BATCH_SIZE = 2
+LEARNING_RATE = 1.
+
+SLICE_SIZE = 100
+
+ALGO = 'PPO'
+CLIP_PARAM = 0.3
+ENTROPY_PARAM = 0.1
+
+FUNCTION = polynome_2
+# FUNCTION = ackley_
+# FUNCTION = dixonprice_
+# FUNCTION = griewank_
+# FUNCTION = levy_
+
+directory = f'fc.{FUNCTION.__name__}_bs.{BATCH_SIZE}_lr.{LEARNING_RATE}_cp.{CLIP_PARAM}_ep.{ENTROPY_PARAM}'
+if not os.path.exists(directory):
+    os.makedirs(directory)
+    os.chdir(directory)
 
 def equals(v, length=10):
     if (1 >= len(v)):
@@ -90,6 +106,9 @@ def test_fixed_num_layers(f):
                                 max_layers,
                                 BATCH_SIZE, #async
                                 global_step,
+                                optimization_algorithm=ALGO,
+                                clip_param=CLIP_PARAM,
+                                entropy_param=ENTROPY_PARAM,
                                 state_space=state_space)
 
     tf.summary.FileWriter('graph', graph=tf.get_default_graph())
@@ -185,16 +204,6 @@ def test_fixed_num_layers(f):
 def test_scheduled_num_layers(func):
     pass
 
-def add(v):
-    return -sum(v)
-
-def powell_(v):
-    return -powell(v)
-
 if __name__ == '__main__':
-    f = polynome_2
-    # f = ackley_
-    # f = dixonprice_
-    # f = griewank_
-    # f = levy_
+    f = FUNCTION
     test_fixed_num_layers(f)

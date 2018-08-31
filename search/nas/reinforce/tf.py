@@ -17,226 +17,19 @@ sys.path.append(top)
 from deephyper.search.nas.policy.tf import NASCellPolicyV5
 from deephyper.model.arch import StateSpace
 
-class BasicReinforce:
-    def __init__(self, sess, optimizer, policy_network, max_layers, global_step,
-                 num_features,
-                 state_space=None,
-                 #division_rate=100.0,
-                 division_rate=1.0,
-                 reg_param=0.001,
-                 discount_factor=0.99,
-                 exploration=0.2):
-        self.sess = sess
-        self.exploration_ = exploration
-        self.optimizer = optimizer
-        self.policy_network = policy_network
-        self.division_rate = division_rate
-        self.reg_param = reg_param
-        self.discount_factor = discount_factor
-        self.max_layers = max_layers
-        self.global_step = global_step
-        self.num_features = num_features
-        self.state_space = state_space
-
-        self.reward_buffer = []
-        self.state_buffer = []
-
-        self.create_variables()
-        var_lists = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
-        self.sess.run(tf.variables_initializer(var_lists))
-
-    def get_action(self, state, num_layers):
-        rnn_res = np.array(self.sess.run(self.policy_outputs[:len(state[0])],
-                           {self.states: state})).flatten().tolist()
-        return self.state_space.parse_state(rnn_res, num_layers)
-
-    def create_variables(self):
-        with tf.name_scope("model_inputs"):
-            # raw state representation
-            self.states = tf.placeholder(
-                tf.float32, [None, None], name="states")
-
-        with tf.name_scope("predict_actions"):
-            # initialize policy network
-            with tf.variable_scope("policy_network"):
-                _, self.policy_outputs = self.policy_network.get(
-                    self.states, self.max_layers)
-
-        # regularization loss
-        policy_network_variables = tf.get_collection(
-            tf.GraphKeys.TRAINABLE_VARIABLES, scope="policy_network")
-
-        # compute loss and gradients
-        with tf.name_scope("compute_gradients"):
-            # gradients for selecting action from policy network
-            self.discounted_rewards = tf.placeholder(
-                tf.float32, (None,), name="discounted_rewards")
-
-            with tf.variable_scope("policy_network", reuse=True):
-                self.logprobs, _ = self.policy_network.get(
-                    self.states, self.max_layers)
-
-            # Here you get all the possible outputs, but be careful there are not always
-            # computed
-            self.logprobs = self.logprobs[:, -1, :]
-
-            # You need the slice as a tensor because you are building a computational
-            # graph (tf.slice). To build this slice, you need to get the dynamic shape of
-            # the states as a tensor. States is a tensor. (tf.shape)
-            self.logprobs = tf.slice(self.logprobs, [0, 0], tf.shape(self.states))
-
-            # compute policy loss and regularization loss
-            self.cross_entropy_loss = tf.nn.softmax_cross_entropy_with_logits_v2(
-                logits=self.logprobs, labels=self.states)
-            self.pg_loss = tf.reduce_mean(self.cross_entropy_loss)
-            self.reg_loss = tf.reduce_sum([tf.reduce_sum(
-                tf.square(x)) for x in policy_network_variables])  # Regularization
-            self.loss = self.pg_loss + self.reg_param * self.reg_loss
-
-            # compute gradients
-            self.gradients = self.optimizer.compute_gradients(self.loss)
-
-            # compute policy gradients
-            for i, (grad, var) in enumerate(self.gradients):
-                if grad is not None:
-                    self.gradients[i] = (grad * self.discounted_rewards, var)
-
-            # training update
-            with tf.name_scope("train_policy_network"):
-                # apply gradients to update policy network
-                self.train_op = self.optimizer.apply_gradients(
-                    self.gradients, global_step=self.global_step)
-
-    def storeRollout(self, state, reward):
-        self.reward_buffer.append(reward)
-        self.state_buffer.append(state[0])
-
-    def train_step(self, steps_count):
-        states = np.array(self.state_buffer[-steps_count:])/self.division_rate
-        rewards = self.reward_buffer[-steps_count:]
-        _, ls = self.sess.run([self.train_op, self.loss],
-                              {self.states: states,
-                               self.discounted_rewards: rewards})
-        return ls
-
-class BasicReinforceV2:
-    def __init__(self, sess, optimizer, policy_network, max_layers, global_step,
-                 num_features,
-                 state_space=None,
-                 division_rate=1.0,
-                 reg_param=0.001,
-                 discount_factor=0.99,
-                 exploration=0.3):
-        self.sess = sess
-        self.optimizer = optimizer
-        self.policy_network = policy_network
-        self.division_rate = division_rate
-        self.reg_param = reg_param
-        self.discount_factor = discount_factor
-        self.max_layers = max_layers
-        self.global_step = global_step
-        self.num_features = num_features
-        self.state_space = state_space
-
-        self.reward_buffer = []
-        self.state_buffer = []
-
-        self.create_variables()
-        var_lists = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
-        self.sess.run(tf.variables_initializer(var_lists))
-
-    def get_actions(self, input_rnn, num_layers):
-        num_tokens = num_layers * self.state_space.size
-        return self.sess.run(self.policy_outputs_list[:self.num_tokens],
-                             {self.input_rnn: input_rnn})
-    def create_variables(self):
-        self.input_rnn = tf.placeholder(
-            tf.float32, [None, 1], name='input_rnn')
-
-        self.num_tokens_tensor = tf.placeholder(
-            tf.int32, [1], name='num_tokens')
-
-        with tf.name_scope("predict_actions"):
-            # initialize policy network
-            with tf.variable_scope("policy_network"):
-                self.logits, self.policy_outputs_list = self.policy_network.get(
-                    self.input_rnn, self.max_layers)
-                self.policy_outputs = tf.concat(self.policy_outputs_list, axis=0)
-
-        # regularization loss
-        policy_network_variables = tf.get_collection(
-            tf.GraphKeys.TRAINABLE_VARIABLES, scope="policy_network")
-
-        # compute loss and gradients
-        with tf.name_scope("compute_gradients"):
-            # gradients for selecting action from policy network
-            self.discounted_rewards = tf.placeholder(
-                tf.float32, (None,), name="discounted_rewards")
-
-            # Here you get all the possible outputs, but be careful there are not always
-            # computed: logprobs
-
-            # You need the slice as a tensor because you are building a computational
-            # graph (tf.slice). To build this slice, you need to get the dynamic shape of
-            # the states as a tensor. States is a tensor. (tf.shape)
-            input_rnn_shape = tf.shape(self.input_rnn)
-            # shape : [num_tokens, batch_size, num_classes]
-            self.logits_slice = tf.slice(self.logprobs, [0, 0, 0],
-                                   [self.num_tokens_tensor[0],
-                                    input_rnn_shape[0],
-                                    self.policy_network.max_num_classes])
-
-            # shape : [num_tokens, batch_size]
-            policy_outputs_shape = tf.shape(self.policy_outputs)
-            self.policy_outputs_slice = tf.slice(self.policy_outputs, [0, 0],
-                                                [self.num_tokens_tensor[0],
-                                                policy_outputs_shape[1]])
-
-            # compute policy loss and regularization loss
-            self.cross_entropy_loss = tf.nn.softmax_cross_entropy_with_logits_v2(
-                logits=self.logits_slice, labels=self.policy_outputs_slice)
-            print(f'cross entropy shape: {self.cross_entropy_loss.shape}')
-            self.pg_loss = tf.reduce_mean(self.cross_entropy_loss)
-            self.reg_loss = tf.reduce_sum([tf.reduce_sum(
-                tf.square(x)) for x in policy_network_variables])  # Regularization
-            self.loss = self.pg_loss + self.reg_param * self.reg_loss
-
-            # compute gradients
-            self.gradients = self.optimizer.compute_gradients(self.loss)
-
-            # compute policy gradients
-            for i, (grad, var) in enumerate(self.gradients):
-                if grad is not None:
-                    self.gradients[i] = (grad * self.discounted_rewards, var)
-
-            # training update
-            with tf.name_scope("train_policy_network"):
-                # apply gradients to update policy network
-                self.train_op = self.optimizer.apply_gradients(
-                    self.gradients, global_step=self.global_step)
-
-    def storeRollout(self, state, reward):
-        self.reward_buffer.append(reward)
-        self.state_buffer.append(state[0])
-
-    def train_step(self, steps_count):
-        states = np.array(self.state_buffer[-steps_count:])/self.division_rate
-        rewards = self.reward_buffer[-steps_count:]
-        _, ls = self.sess.run([self.train_op, self.loss],
-                              {self.input_rnn: states,
-                               self.discounted_rewards: rewards})
-        return ls
-
 class BasicReinforceV5:
     def __init__(self, sess, optimizer, policy_network, max_layers,
                 batch_size,
                 global_step,
                 state_space=None,
+                optimization_algorithm='PG',
+                clip_param=0.3,
+                entropy_param=0.1,
                 division_rate=1.0,
                 reg_param=0.001,
                 discount_factor=0.99,
                 exploration=0.5,
-                 exploration_decay = 0.1):
+                exploration_decay = 0.1):
         '''
         Args
             sess: tensorflow session
@@ -263,12 +56,16 @@ class BasicReinforceV5:
         self.batch_size = batch_size
         self.global_step = global_step
         self.state_space = state_space
+        self.optimization_algorithm = optimization_algorithm
+        self.clip_param = clip_param
+        self.entropy_param = entropy_param
 
         self.max_reward = -math.inf
         self.reward_list = [] # a reward is added only one time
         self.reward_buffer = [] # a reward is duplicate num_tokens time, corresponding to a 1D list with batch_size rewards num_tokens_in_one_batch time
         self.state_buffer = []
         self.rewards_b = 0
+        self.pb_buffer = []
 
         self.create_variables()
         # self.policy_network.restore_model(sess = self.sess)
@@ -294,6 +91,8 @@ class BasicReinforceV5:
         ],
             {self.rnn_input: rnn_input,
             self.num_tokens_tensor: [self.num_tokens]})
+
+        self.pb_buffer.append(so)
 
         return policy_outputs_, so
 
@@ -325,10 +124,6 @@ class BasicReinforceV5:
                     tf.float32,
                     name="predicted_action")
 
-        # regularization loss
-        policy_network_variables = tf.get_collection(
-            tf.GraphKeys.TRAINABLE_VARIABLES, scope="policy_network")
-
         # compute loss and gradients
         with tf.name_scope("compute_gradients"):
             # gradients for selecting action from policy network
@@ -336,7 +131,13 @@ class BasicReinforceV5:
                 tf.float32,
                 shape=(None),
                 name="discounted_rewards")
-            # self.discounted_rewards = tf.Print(self.discounted_rewards, [self.discounted_rewards], '#DISC REWARDS: ')
+            self.discounted_rewards = tf.Print(self.discounted_rewards, [self.discounted_rewards], '#DISC REWARDS: ')
+
+            self.pb_old = tf.placeholder(
+                tf.float32,
+                shape=[None, self.batch_size, self.policy_network.max_num_classes],
+                name="pb_old"
+            )
 
             self.before_softmax_outputs_slice = tf.slice(
                 self.before_softmax_outputs,
@@ -346,27 +147,6 @@ class BasicReinforceV5:
                 self.policy_network.max_num_classes],
                 name='before_softmax_outputs_slice')
 
-            self.cross_entropy_loss_ = tf.nn.sparse_softmax_cross_entropy_with_logits(
-                logits=self.before_softmax_outputs_slice,
-                labels=self.batch_labels)
-            # self.cross_entropy_loss_ = tf.Print(self.cross_entropy_loss_, [self.cross_entropy_loss_], "#CROSS ENTROPY: ")
-            # self.cross_entropy_loss = tf.multiply(
-                # self.cross_entropy_loss_,
-                # self.discounted_rewards)
-            self.cross_entropy_loss = tf.multiply(
-                self.cross_entropy_loss_,
-                self.discounted_rewards)
-            # self.cross_entropy_loss = tf.Print(self.cross_entropy_loss, [self.cross_entropy_loss], "#MULT: ")
-
-            # self.pg_loss = tf.reduce_mean(self.cross_entropy_loss)
-            self.pg_loss = tf.reduce_sum(self.cross_entropy_loss)
-            self.pg_loss = tf.divide(self.pg_loss, self.batch_size)
-            # self.pg_loss = tf.Print(self.pg_loss, [self.pg_loss], "#PG_LOSS: ")
-
-            # self.reg_loss = tf.reduce_sum([tf.reduce_sum(
-            #     tf.square(x)) for x in policy_network_variables])  # Regularization
-            self.loss = self.pg_loss #+ self.reg_param * self.reg_loss
-
             self.softmax_outputs_slice = tf.slice(
                 self.so,
                 [0, 0, 0],
@@ -374,21 +154,63 @@ class BasicReinforceV5:
                 self.batch_size,
                 self.policy_network.max_num_classes],
                 name='softmax_outputs_slice')
+
+            # ENTROPY
             one_hot = tf.one_hot(self.batch_labels,
-                                 depth=self.policy_network.max_num_classes,
-                                 dtype=tf.float32)
+                depth=self.policy_network.max_num_classes,
+                dtype=tf.float32)
             # print(f'one_hot.get_shape(): {one_hot.get_shape()}')
             one_hot = tf.transpose(one_hot, perm=[0, 2, 1])
             # one_hot = tf.Print(one_hot, [one_hot], '#one_hot: ')
-            pb = tf.matmul(self.softmax_outputs_slice, one_hot)
-            # pb = tf.multiply(self.softmax_outputs_slice, one_hot)
-            pb = tf.squeeze(pb)
+            self.pb = tf.matmul(self.softmax_outputs_slice, one_hot)
+            self.pb = tf.squeeze(self.pb)
 
             # ENTROPY == - self.entropy
-            self.entropy = tf.reduce_sum(tf.multiply(pb, tf.log(pb)))
+            self.entropy = self.entropy_param * tf.reduce_sum(tf.multiply(self.pb, tf.log(self.pb)))
 
-            # Substract the ENTROPY from the LOSS, we are penalizing certainty
-            self.loss = tf.subtract(self.loss, -self.entropy)
+            if self.optimization_algorithm == 'PG':
+                self.cross_entropy_loss_ = tf.nn.sparse_softmax_cross_entropy_with_logits(
+                    logits=self.before_softmax_outputs_slice,
+                    labels=self.batch_labels)
+                # self.cross_entropy_loss_ = tf.Print(self.cross_entropy_loss_, [self.cross_entropy_loss_], "#CROSS ENTROPY: ")
+                self.cross_entropy_loss = tf.multiply(
+                    self.cross_entropy_loss_,
+                    self.discounted_rewards)
+                # self.cross_entropy_loss = tf.Print(self.cross_entropy_loss, [self.cross_entropy_loss], "#MULT: ")
+
+                self.pg_loss = tf.reduce_sum(self.cross_entropy_loss)
+                self.pg_loss = tf.divide(self.pg_loss, self.batch_size)
+                # self.pg_loss = tf.Print(self.pg_loss, [self.pg_loss], "#PG_LOSS: ")
+
+                self.loss = self.pg_loss
+
+                # Substract the ENTROPY from the LOSS, we are penalizing certainty
+                self.loss = tf.subtract(self.loss, -self.entropy)
+            elif self.optimization_algorithm == 'PPO': # TODO
+                pb_old = tf.matmul(self.pb_old, one_hot) # shape: [num_tokens, batchsize, 1]
+                # pb_old = tf.Print(pb_old, [pb_old], '#pb_old: ')
+                # print(f'pb_old.get_shape: {pb_old.get_shape()}')
+                atarg = self.discounted_rewards
+                # atarg = tf.Print(atarg, [atarg], '#atarg: ')
+                # print(f'atarg.get_shape: {atarg.get_shape()}')
+                # ratio = tf.reduce_sum(tf.divide(self.pb, pb_old))
+                ratio = tf.reduce_prod(tf.divide(self.pb, pb_old))
+                # ratio = tf.Print(ratio, [ratio], '#ratio: ')
+                # print(f'ratio.get_shape: {ratio.get_shape()}')
+                clip_obj = atarg * tf.clip_by_value(ratio,
+                                                 1.0 - self.clip_param,
+                                                 1.0 + self.clip_param)
+                # clip_obj = tf.Print(clip_obj, [clip_obj], '#clip_obj: ')
+                # print(f'clip_obj.get_shape: {clip_obj.get_shape()}')
+                unclip_obj = ratio * atarg
+                # unclip_obj = tf.Print(unclip_obj, [unclip_obj], '#unclip_obj: ')
+                # print(f'unclip_obj.get_shape: {unclip_obj.get_shape()}')
+                pol_surr = tf.reduce_mean(tf.minimum(unclip_obj, clip_obj))
+                # pol_surr = tf.Print(pol_surr, [pol_surr], '#pol_surr: ')
+                # print(f'pol_surr.get_shape: {pol_surr.get_shape()}')
+                self.loss = tf.add(-pol_surr, self.entropy)
+                # self.loss = -pol_surr
+                # self.loss = tf.Print(self.loss, [self.loss], '#loss: ')
 
             # compute gradients
             self.gradients = self.optimizer.compute_gradients(self.loss)
@@ -426,6 +248,15 @@ class BasicReinforceV5:
             self.state_buffer.extend(state[-i-self.batch_size:][:self.batch_size])
 
     def train_step(self, num_layers, init_state):
+        if self.optimization_algorithm == 'PG':
+            return self.train_step_PG(num_layers, init_state)
+        else:
+            return self.train_step_PPO(num_layers, init_state)
+
+    def train_step_PG(self, num_layers, init_state):
+        '''
+        Policy Gradient Optimization
+        '''
         if self.state_space.feature_is_defined('skip_conn'):
             num_tokens_for_one = ((self.state_space.size - 1) * num_layers + num_layers * (num_layers - 1) // 2)
         else:
@@ -440,13 +271,6 @@ class BasicReinforceV5:
         self.rewards_b = ema(self.reward_list[:-1], 0.9, self.rewards_b, self.batch_size)
 
         self.R_b = [(x - self.rewards_b) for x in rewards]
-
-        # Percent
-        # if (self.rewards_b == 0):
-            # self.R_b = [0 for x in rewards]
-        # else:
-            # self.R_b = [(x - self.rewards_b)/abs(self.rewards_b) * 100 for x in rewards]
-
         self.R_b = np.reshape(np.array(self.R_b), (self.num_tokens//self.batch_size, self.batch_size))
         _, ls = self.sess.run([self.train_op,
                                self.loss],
@@ -456,6 +280,35 @@ class BasicReinforceV5:
                                     self.num_tokens_tensor: [self.num_tokens]})
         # self.policy_network.save_model(self.sess)
         return ls
+
+    def train_step_PPO(self, num_layers, init_state):
+        '''
+        Proximal Policy Gradient Optimization
+        '''
+        if self.state_space.feature_is_defined('skip_conn'):
+            num_tokens_for_one = ((self.state_space.size - 1) * num_layers + num_layers * (num_layers - 1) // 2)
+        else:
+            num_tokens_for_one = self.state_space.size * num_layers
+        self.num_tokens = num_tokens_for_one * self.batch_size
+        rewards = self.reward_buffer[-self.num_tokens:]
+        states = np.reshape(np.array(self.state_buffer[-self.num_tokens:]),
+            (self.num_tokens // self.batch_size, self.batch_size)) / self.division_rate
+        prev_state = init_state
+        if len(self.pb_buffer) >= 2:
+            pb_old = self.pb_buffer[-2]
+        else:
+            pb_old = self.pb_buffer[-1]
+        print(f'pb_old: {pb_old}')
+        _, ls = self.sess.run([self.train_op,
+                               self.loss],
+                               {
+                                   self.rnn_input: prev_state,
+                                   self.discounted_rewards: rewards,
+                                   self.batch_labels: states,
+                                   self.num_tokens_tensor: [self.num_tokens],
+                                   self.pb_old: pb_old
+                               })
+        pass
 
 def sma(data, window):
     """
@@ -486,48 +339,6 @@ def ema(reward_list, alpha, prev_sum, window=1):
     else:
         return alpha * sum(reward_list[-window:])/window + (1-alpha)*prev_sum
 
-def test_BasicReinforce():
-    session = tf.Session()
-    global_step = tf.Variable(0, trainable=False)
-    state_space = StateSpace()
-    state_space.add_state('filter_size', [10., 20., 30.])
-    state_space.add_state('drop_out', [])
-    state_space.add_state('num_filters', [32., 64.])
-    state_space.add_state('skip_conn', [])
-    policy_network = NASCellPolicyV3(state_space)
-    max_layers = 3
-
-    learning_rate = tf.train.exponential_decay(0.99, global_step,
-                                                500, 0.96, staircase=True)
-
-    optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate)
-
-    # for the CONTROLLER
-    reinforce = BasicReinforce(session,
-                                optimizer,
-                                policy_network,
-                                max_layers,
-                                global_step,
-                                num_features=state_space.size,
-                                state_space=state_space)
-    state_l2 = [[10., 0.5, 32., 1.,
-                 10., 0.5, 32., 1., 1.]]
-    num_layers = 2
-    action = reinforce.get_action(state_l2, num_layers)
-    print(f'action = {action}')
-    reward = 90.
-    reinforce.storeRollout([action], reward)
-    reinforce.train_step(1)
-
-    state_l3 = [[10., 0.5, 32., 1.,
-                 10., 0.5, 32., 1., 1.,
-                 10., 0.5, 32., 1., 1., 1.]]
-    num_layers = 3
-    action = reinforce.get_action(state_l3, num_layers)
-    print(f'action = {action}')
-    reward = 90.
-    reinforce.storeRollout([action], reward)
-    reinforce.train_step(1)
 
 def test_BasicReinforce5():
     session = tf.Session()
