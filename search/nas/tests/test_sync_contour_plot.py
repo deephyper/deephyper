@@ -28,14 +28,14 @@ from benchmark_functions_wrappers import *
 NB_ITER = 3000
 NUM_VAL = 20
 NUM_DIM = 2
-BATCH_SIZE = 2
+BATCH_SIZE = 1
 LEARNING_RATE = 1.
 
 SLICE_SIZE = 100
 
 ALGO = 'PPO'
 CLIP_PARAM = 0.3
-ENTROPY_PARAM = 0.1
+ENTROPY_PARAM = 0.
 
 FUNCTION = polynome_2
 # FUNCTION = ackley_
@@ -47,6 +47,9 @@ directory = f'fc.{FUNCTION.__name__}_bs.{BATCH_SIZE}_lr.{LEARNING_RATE}_cp.{CLIP
 if not os.path.exists(directory):
     os.makedirs(directory)
     os.chdir(directory)
+
+def get_seeds_uniform(x):
+    return [int(-2 + np.random.uniform(0,1)*4) for i in range(x)]
 
 def equals(v, length=10):
     if (1 >= len(v)):
@@ -117,7 +120,7 @@ def test_fixed_num_layers(f):
     rewards_history = []
 
     for num in range(1, NB_ITER+1):
-        # init_seeds = get_seeds_normal(batch_size)
+        # init_seeds = get_seeds_uniform(BATCH_SIZE)
         num = num+1 # offset of one because log scale on axis x
         logger.debug(f'init_seeds: {init_seeds}')
 

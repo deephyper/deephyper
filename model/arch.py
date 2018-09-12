@@ -128,6 +128,7 @@ class StateSpace:
         if ( states != None ):
             for state in states:
                 self.add_state(state[0], state[1])
+        self.max_num_class = 0
 
     def add_state(self, name, values):
         '''
@@ -165,6 +166,9 @@ class StateSpace:
             'index_map_': index_map,
             'value_map_': value_map,
         }
+
+        self.max_num_class = max(self.max_num_class, metadata['size'])
+
         self.states[self.state_count_] = metadata
         self.state_count_ += 1
 
@@ -295,18 +299,20 @@ class StateSpace:
     def parse_state(self, state_list, num_layers): # ok for skip_co
         list_values = []
         cursor = 0
+        num_classes = self.max_num_class
         for layer_n in range(num_layers):
             for feature_i in range(self.size):
+                state = self[feature_i]
                 if (self[feature_i]['name'] == 'skip_conn'):
-                    for j in range(layer_n+1):
-                        list_values.append(state_list[cursor])
+                    for j in range(layer_n):
+                        ratio = state_list[cursor]/num_classes
+                        token = 0 if (ratio < 0.5) else 1
+                        list_values.append(token)
                         cursor += 1
-                elif (self[feature_i]['name'] == 'drop_out'):
-                    list_values.append(state_list[cursor])
-                    cursor += 1
                 else:
+                    index = int(state_list[cursor]/num_classes * state['size'])
                     list_values.append(self.get_state_value(feature_i,
-                                                            state_list[cursor]))
+                                                            index))
                     cursor += 1
         return list_values
 
