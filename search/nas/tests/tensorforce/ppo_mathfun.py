@@ -16,6 +16,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+import tensorflow as tf
+
+tf.set_random_seed(1000003)
+np.random.seed(1000003)
 
 from tensorforce.agents import PPOAgent
 from tensorforce.execution import Runner
