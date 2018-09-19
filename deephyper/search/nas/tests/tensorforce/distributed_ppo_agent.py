@@ -18,11 +18,12 @@ from __future__ import print_function
 from __future__ import division
 
 from collections import Counter
-from distributed_learning_agent import DistributedLearningAgent
+# from distributed_learning_agent import DistributedLearningAgent
+from tensorforce.agents import LearningAgent
 from tensorforce.models import PGProbRatioModel
 
 
-class DistributedPPOAgent(DistributedLearningAgent):
+class DistributedPPOAgent(LearningAgent):
     """
     Proximal Policy Optimization agent ([Schulman et al., 2017](https://arxiv.org/abs/1707.06347)).
     """
@@ -184,24 +185,28 @@ class DistributedPPOAgent(DistributedLearningAgent):
             likelihood_ratio_clipping=self.likelihood_ratio_clipping
         )
 
-    def observe(self, terminal, reward):
+    def observe(self, terminal, reward, index=0):
         self.current_terminal = terminal
         self.current_reward = reward
         batch_size = self.update_mode['batch_size']
 
         if self.batched_observe:
             # Batched observe for better performance with Python.
-            self.observe_terminal.append(self.current_terminal)
-            self.observe_reward.append(self.current_reward)
-            n = Counter(self.observe_terminal)[True]
+            print(f'self.current_terminal: {self.current_terminal}')
+            print(f'av - self.observe_terminal: {self.observe_terminal}')
+            self.observe_terminal[index].append(self.current_terminal)
+            self.observe_reward[index].append(self.current_reward)
+            print(f'ap - self.observe_terminal: {self.observe_terminal}')
+            n = Counter(self.observe_terminal[index])[True]
 
             if n == batch_size or len(self.observe_terminal) >= self.batching_capacity:
                 self.episode = self.model.observe(
-                    terminal=self.observe_terminal,
-                    reward=self.observe_reward
+                    terminal=self.observe_terminal[index],
+                    reward=self.observe_reward[index],
+                    index=index
                 )
-                self.observe_terminal = list()
-                self.observe_reward = list()
+                self.observe_terminal[index] = list()
+                self.observe_reward[index] = list()
 
         else:
             self.episode = self.model.observe(

@@ -27,6 +27,9 @@ import warnings
 from inspect import getargspec
 from tqdm import tqdm
 
+FREE = 'free'
+BUSY = 'busy'
+INIT = 'init'
 
 class DistributedRunner(BaseRunner):
     """
@@ -43,8 +46,10 @@ class DistributedRunner(BaseRunner):
         super(DistributedRunner, self).__init__(agent, environment, repeat_actions, history)
 
         self.id = id_  # the worker's ID in a distributed run (default=0)
-        self.current_timestep = None  # the time step in the current episode
         self.running_time = None
+        self.num_parallel = self.agent.execution['num_parallel']
+        self.num_free_workers = self.num_parallel
+        print(f'DistributedRunner with {self.num_parallel} workers.')
 
     def close(self):
         self.agent.close()
@@ -53,7 +58,7 @@ class DistributedRunner(BaseRunner):
     # TODO: make average reward another possible criteria for runner-termination
     def run(self, num_timesteps=None, num_episodes=None, max_episode_timesteps=None,
             deterministic=False, episode_finished=None, summary_report=None,
-            summary_interval=None, timesteps=None, episodes=None, testing=False,
+            summary_interval=None, testing=False,
             sleep=None):
         """
         Args:
@@ -61,24 +66,6 @@ class DistributedRunner(BaseRunner):
             episodes (int): Deprecated; see num_episodes.
         """
         self.running_time = time.time()
-
-        # deprecation warnings
-        if timesteps is not None:
-            num_timesteps = timesteps
-            warnings.warn("WARNING: `timesteps` parameter is deprecated, use `num_timesteps` instead.",
-                          category=DeprecationWarning)
-        if episodes is not None:
-            num_episodes = episodes
-            warnings.warn("WARNING: `episodes` parameter is deprecated, use `num_episodes` instead.",
-                          category=DeprecationWarning)
-
-        # figure out whether we are using the deprecated way of "episode_finished" reporting
-        old_episode_finished = False
-        if episode_finished is not None and len(getargspec(episode_finished).args) == 1:
-            old_episode_finished = True
-
-        # Keep track of episode reward and episode length for statistics.
-        self.start_time = time.time()
 
         self.agent.reset()
 
@@ -95,62 +82,61 @@ class DistributedRunner(BaseRunner):
 
             # episode loop
             self.global_episode = 0
+
+            workers = {FREE: [i for i in range(self.num_parallel)], BUSY:[], INIT:[]}
+            episodes_rewards = [ None for _ in range(self.num_parallel)]
+            print(f'init workers: {workers}')
             while True:
 
-                episodes_start_time = []
-                episodes_rewards = [[] for _ in range(update_mode['batch_size'])]
+                # Launch free workers
+                for _ in range(len(workers[FREE])):
+                    # get a free worker and change its state
+                    w = workers[FREE].pop()
+                    workers[INIT].append(w)
 
-                for episode_i in range(update_mode['batch_size']):
-                    episodes_start_time.append(time.time())
+                    #init worker: w
+                    episodes_rewards[w] = list()
                     state = self.environment.reset()
                     self.agent.reset()
 
-
                     # time step (within episode) loop
-                    for _ in range(self.environment.num_timesteps):
-                        action = self.agent.act(states=state, deterministic=deterministic)
+                    for i in range(self.environment.num_timesteps):
+                        action = self.agent.act(states=state,
+                                                deterministic=deterministic,
+                                                index=w)
 
                         state, terminal, reward = self.environment.execute(action=action)
 
-                        episodes_rewards[episode_i].append(reward)
+                        episodes_rewards[w].append(reward)
+                        if not isinstance(reward, ApplyResult):
+                            self.agent.observe(terminal=False, reward=reward, index=w)
 
-                for episode_i in range(update_mode['batch_size']):
+                    # change state of workers
+                    workers[INIT].remove(w)
+                    workers[BUSY].append(w)
 
-                    # Update global counters.
-                    self.global_timestep = 0
+                for w in workers[BUSY][:]:
 
-                    self.episode_rewards.append(0)
-                    self.current_timestep = 0
-
-                    for i, reward in enumerate(episodes_rewards[episode_i]):
-                        terminal = (i == (self.environment.num_timesteps - 1))
-                        if not testing:
-                            if isinstance(reward, ApplyResult):
-                                reward = reward.get()
-                            self.agent.observe(terminal=terminal, reward=reward)
-                            self.episode_rewards[-1] += reward
-
-                        self.global_timestep += 1
-                        self.current_timestep += 1
-
-                    # Update our episode stats.
-                    time_passed = time.time() - episodes_start_time[episode_i]
-                    self.episode_timesteps.append(self.current_timestep)
-                    self.episode_times.append(time_passed)
-
-                    self.global_episode += 1
-                    pbar.update(1)
+                    try:
+                        if (episodes_rewards[w][-1].successful()):
+                            reward = episodes_rewards[w][-1].get()
+                            self.episode_rewards.append(reward)
+                            # print(f'worker {w}, reward: {reward}')
+                            self.agent.observe(terminal=True, reward=reward, index=w)
+                            workers[BUSY].remove(w)
+                            workers[FREE].append(w)
+                            self.global_episode += 1
+                            pbar.update(1)
+                    except AssertionError:
+                        # print(f'worker {w} is still busy !')
+                        pass
 
                 if (num_episodes is not None and self.global_episode >= num_episodes):
                     break
-            pbar.update(num_episodes - self.global_episode)
+
+            # pbar.update(num_episodes - self.global_episode)
 
         self.running_time = time.time() - self.running_time
-
-    # keep backwards compatibility
-    @property
-    def episode_timestep(self):
-        return self.current_timestep
 
 
 # more descriptive alias for Runner class

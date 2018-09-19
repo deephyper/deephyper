@@ -17,8 +17,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-# from tensorforce.agents import PPOAgent
-from distributed_ppo_agent import DistributedPPOAgent
+from tensorforce.agents import PPOAgent
+# from distributed_ppo_agent import DistributedPPOAgent
 from distributed_runner import DistributedRunner
 # from tensorforce.execution import Runner
 from distributed_math_fun_env import DistMathFun
@@ -41,7 +41,7 @@ network_spec = [
     dict(type='internal_lstm', size=32)
 ]
 
-agent = DistributedPPOAgent(
+agent = PPOAgent(
     states=environment.states,
     actions=environment.actions,
     network=network_spec,
@@ -49,13 +49,14 @@ agent = DistributedPPOAgent(
     states_preprocessing=None,
     actions_exploration=None,
     reward_preprocessing=None,
+    # batching_capacity=10,
     # MemoryModel
     update_mode=dict(
         unit='episodes',
         # 10 episodes per update
-        batch_size=20,
+        batch_size=1,
         # Every 10 episodes
-        frequency=20,
+        frequency=1,
         # first_update=20
     ),
     memory=dict(
@@ -92,6 +93,7 @@ agent = DistributedPPOAgent(
     optimization_steps=25,
     execution=dict(
         type='single',
+        num_parallel=10,
         session_config=None,
         distributed_spec=None
     )
@@ -109,8 +111,7 @@ def episode_finished(r):
 
 def go_learning():
     runner = DistributedRunner(agent=agent, environment=environment)
-    runner.run(episodes=1000, max_episode_timesteps=200, episode_finished=episode_finished)
-    print(f'Run time: {runner.running_time}')
+    runner.run(num_episodes=1000, max_episode_timesteps=200)
     runner.close()
     return runner.episode_rewards
 

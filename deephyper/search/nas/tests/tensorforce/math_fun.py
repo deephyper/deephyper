@@ -59,7 +59,7 @@ class MathFun(Environment):
             return self._state, terminal, reward
 
         self.conv_action = [self.action_tokens[a] for a in self.action_buffer]
-        # print(f'action_buffer: {self.action_buffer}')
+        print(f'action_buffer: {self.action_buffer}')
         # print(f'conv_action: {conv_action}')
         terminal = True
         self.action_buffer = []

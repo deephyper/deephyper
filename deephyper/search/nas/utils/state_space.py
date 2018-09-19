@@ -11,13 +11,14 @@ class StateSpace:
 
     Also provides a more convenient way to define the search space
     '''
-    def __init__(self, states=None):
+    def __init__(self, states=None, num_blocks=1):
         self.states = OrderedDict()
         self.state_count_ = 0
         if ( states != None ):
             for state in states:
                 self.add_state(state[0], state[1])
-        self.max_num_class = 0
+        self.max_num_classes = 0
+        self.num_blocks = num_blocks
 
     def add_state(self, name, values):
         '''
@@ -56,7 +57,7 @@ class StateSpace:
             'value_map_': value_map,
         }
 
-        self.max_num_class = max(self.max_num_class, metadata['size'])
+        self.max_num_classes = max(self.max_num_classes, metadata['size'])
 
         self.states[self.state_count_] = metadata
         self.state_count_ += 1
@@ -185,10 +186,11 @@ class StateSpace:
 
         return state_values
 
-    def parse_state(self, state_list, num_layers): # ok for skip_co
+    def parse_state(self, state_list): # ok for skip_co
         list_values = []
         cursor = 0
-        num_classes = self.max_num_class
+        num_classes = self.max_num_classes
+        num_layers = self.num_blocks
         for layer_n in range(num_layers):
             for feature_i in range(self.size):
                 state = self[feature_i]

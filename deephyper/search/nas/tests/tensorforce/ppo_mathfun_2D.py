@@ -35,13 +35,13 @@ from benchmark_functions_wrappers import *
 
 def get_parser():
     parser = argparse.ArgumentParser(description='Process some integers.')
-    parser.add_argument('func_wrapper_name', type=str)
+    parser.add_argument('func_wrapper_name', type=str, default='ackley_')
     return parser
 
 def get_agent_environment(fw=ackley_):
 
     # Create an OpenAIgym environment.
-    environment = MathFun(num_dim=2, num_action=100, func_wrapper=fw)
+    environment = MathFun(num_dim=2, num_action=10, func_wrapper=fw)
 
     # Network as list of layers
     # - Embedding layer:
@@ -72,7 +72,7 @@ def get_agent_environment(fw=ackley_):
             # 10 episodes per update
             batch_size=10,
             # Every 10 episodes
-            frequency=1
+            frequency=10
         ),
         memory=dict(
             type='latest',
@@ -205,5 +205,5 @@ if __name__ == '__main__':
              pts[-1, 1], 'bo')
     plt.colorbar()
 
-    loc = '/Users/Deathn0t/Documents/Argonne/deephyper/search/nas/tests/tensorforce/graphs/2dim/100actions_10_1'
+    loc = '/Users/Deathn0t/Documents/Argonne/deephyper/search/nas/tests/tensorforce/graphs/2dim/PPO/parallel'
     save_plot(f'{loc}/ppo_{func_wrapper.__name__}_2dim_{num_action}actions')

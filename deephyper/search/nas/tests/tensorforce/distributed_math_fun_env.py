@@ -24,8 +24,11 @@ math_func, _, _ = ackley_()
 
 POOL = ThreadPool(processes=10)
 
+possible_times = np.linspace(0, 3, 30)
+
 def math_func_sleep(v):
-    time.sleep(1)
+    elps = np.random.choice(possible_times)
+    time.sleep(elps)
     return math_func(v)
 
 
@@ -56,6 +59,7 @@ class DistMathFun(Environment):
             return self._state, terminal, reward
 
         conv_action = [ACTION_NAMES[a] for a in self.action_buffer]
+        # print(f'conv_action: {conv_action}')
         terminal = True
         self.action_buffer = []
         self._state = [1.]
