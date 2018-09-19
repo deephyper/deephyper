@@ -7,7 +7,7 @@ import logging
 import csv
 import time
 from deephyper.model.arch import StateSpace
-
+from deephyper.evaluators import BalsamApplyResult
 
 logger = logging.getLogger(__name__)
 
@@ -144,7 +144,6 @@ def create_evaluator_nas(opt_config):
     evaluator = cls([],
                     opt_config.bench_package_name,
                     run_module=opt_config.run_module,
-                    num_workers=opt_config.num_workers,
                     backend=opt_config.backend,
                     model_path=opt_config.model_path,
                     #data_source=opt_config.data_source, using load_data.py

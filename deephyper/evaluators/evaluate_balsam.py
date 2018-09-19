@@ -9,12 +9,11 @@ from importlib.util import find_spec
 import logging
 
 import balsam.launcher.dag as dag
-from balsam.service.models import BalsamJob, END_STATES
+from balsam.core.models import BalsamJob, ApplicationDefinition, END_STATES
 from deephyper.evaluators import evaluate
 logger = logging.getLogger(__name__)
 
 from django.conf import settings
-
 
 class BalsamEvaluator(evaluate.Evaluator):
 
@@ -23,7 +22,7 @@ class BalsamEvaluator(evaluate.Evaluator):
         super().__init__()
 
         self.id_key_map = {}
-        self.num_workers = dag.current_job.coschedule_num_nodes
+        self.num_workers = dag.LAUNCHER_NODES
         self.params_list = params_list
         self.bench_module_name = bench_module_name
         self.bench_file = os.path.abspath(find_spec(bench_module_name).origin)
@@ -34,6 +33,10 @@ class BalsamEvaluator(evaluate.Evaluator):
         self.model_path = model_path
         self.data_source = data_source
         self.stage_in_destination = stage_in_destination
+
+        if not ApplicationDefinition.objects.filter(name=self.run_file).exists():
+            ApplicationDefinition(name=self.run_file,
+            executable=f'{sys.executable} {self.run_file}').save()
 
         if dag.current_job is None:
             self._init_current_balsamjob()
@@ -78,13 +81,13 @@ class BalsamEvaluator(evaluate.Evaluator):
         child = dag.add_job(
                     name = jobname,
                     workflow = dag.current_job.workflow,
-                    direct_command = cmd,
-                    application_args = args,
+                    application = self.run_file,
+                    args = args,
                     environ_vars = envs,
                     wall_time_minutes = 2,
                     num_nodes = 1, ranks_per_node = 1,
                     threads_per_rank=64,
-                    serial_node_packing_count=2,
+                    node_packing_count=2,
                     wait_for_parents = False,
                     state='PREPROCESSED'
                    )
@@ -112,13 +115,13 @@ class BalsamEvaluator(evaluate.Evaluator):
         child = dag.add_job(
                     name = jobname,
                     workflow = dag.current_job.workflow,
-                    direct_command = cmd,
-                    application_args = args,
+                    application = self.run_file,
+                    args = args,
                     environ_vars = envs,
                     wall_time_minutes = 2,
                     num_nodes = 1, ranks_per_node = 1,
                     threads_per_rank=64,
-                    serial_node_packing_count=2,
+                    node_packing_count=2,
                     wait_for_parents = False,
                     state='PREPROCESSED'
                    )

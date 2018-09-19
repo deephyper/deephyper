@@ -14,7 +14,8 @@ class BalsamApplyResult:
         self.result = None
         self._state = None
     
-    def _read(self, job):
+    def _read(self):
+        job = BalsamJob.objects.get(pk=self.pk)
         output = job.read_file_in_workdir(f'{job.name}.out')
         y = None
         for line in output.split('\n'):
@@ -52,7 +53,7 @@ class BalsamApplyResult:
             return self.result
         state = self._poll(timeout)
         if state in ['RUN_DONE', 'JOB_FINISHED']:
-            self.result = self._read(_job)
+            self.result = self._read()
             return self.result
         elif state in ['RUN_ERROR', 'FAILED']:
             raise EvalFailed(f'BalsamJob {self.pk} in failed state')

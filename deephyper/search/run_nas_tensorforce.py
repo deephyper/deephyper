@@ -12,7 +12,6 @@ from time import ctime, time, sleep
 from importlib import import_module, reload
 import numpy as np
 import tensorflow as tf
-from multiprocessing.pool import ThreadPool
 
 from deephyper.evaluators import evaluate
 from deephyper.search import util
