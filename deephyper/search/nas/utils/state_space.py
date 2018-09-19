@@ -2,6 +2,8 @@ import pprint
 from collections import OrderedDict
 import numpy as np
 
+import deephyper.model.arch as a
+
 class StateSpace:
     '''
     State Space manager
@@ -236,3 +238,45 @@ class StateSpace:
     @property
     def size(self):
         return self.state_count_
+
+    def action2dict(self, config, action):
+        layer_type = config[a.layer_type] # TODO : next should be list of types
+        state_space = self
+        num_layers = self.num_blocks
+        arch = {}
+
+        # must check that state_space features are compatible with layer type
+        # must check that length of action list correspond to num_layers and state_space features
+
+        cursor = 0
+        #logger.debug(f'conversions: config: {config}')
+        #logger.debug(f'conversions: action: {action}')
+        #logger.debug(f'conversions: numlayers: {num_layers}')
+        max_size = 1
+        skip_conn = False
+        for layer_n in range(num_layers):
+            layer_name = f'layer_{layer_n+1}'
+            layer_arch = {}
+            layer_arch[a.layer_type] = layer_type
+            #logger.debug(action)
+            #logger.debug(f'{cursor}, {layer_n}, {layer_name}, {layer_type}, {action[cursor]}')
+            for feature_i in range(state_space.size):
+                feature = state_space[feature_i]
+                if feature['size'] > max_size: max_size = feature['size']
+                #logger.debug(f'{cursor}, {layer_n}, {layer_name}, {layer_type}, {action[cursor]}')
+                #logger.debug(f'{cursor}, {feature}')
+                if (feature['name'] == 'skip_conn'):
+                    skip_conn = True
+                    continue
+                layer_arch[feature['name']] = feature['values'][int(action[cursor])%feature['size']]
+                cursor += 1
+            if skip_conn:
+                layer_arch['skip_conn'] = []
+                for j in range(layer_n):
+                    #logger.debug(f'skip conn  {cursor}, {action[cursor]}')
+                    if (int(action[cursor])%2):
+                        layer_arch['skip_conn'].append(j+1)
+                        cursor += 1
+            arch[layer_name] = layer_arch
+        #logger.debug(f'architecture is: {arch}')
+        return arch

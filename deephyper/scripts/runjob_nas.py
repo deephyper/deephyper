@@ -55,7 +55,7 @@ def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('platform', choices=['cooley', 'theta', 'theta_postgres'])
     parser.add_argument('benchmark', choices=['mnistNas', 'cifar10Nas', 'ptbNas'])
-    parser.add_argument('run_module_name', choices=['model.nas', 'model.ptb_nas'])
+    parser.add_argument('run_module_name', choices=['deephyper.run.nas', 'model.ptb_nas'])
     parser.add_argument('-q', required=True, dest='queue')
 
     group = parser.add_mutually_exclusive_group(required=True)
