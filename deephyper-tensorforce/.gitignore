@@ -1,0 +1,14 @@
+*.pyc
+/dist/
+/*.egg-info
+/.idea/
+/logs/*
+/tensorforce/logs/*
+/tensorforce_0.12
+/log_*
+/logs_async
+/docs/_*
+tf_worker_*.txt
+.DS_Store
+*.eggs
+*.vscode
