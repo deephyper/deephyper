@@ -82,7 +82,6 @@ class OptConfigNas:
         self.ga_num_gen = args.ga_num_gen
         self.evaluator = args.evaluator
         self.repeat_evals = args.repeat_evals
-        self.num_workers = args.num_workers if num_workers == None else num_workers
         self.learner = args.learner
         self.sync = args.sync
 
@@ -101,7 +100,7 @@ class OptConfigNas:
         load_data_module_name = f'{package}.benchmarks.{self.benchmark}.load_data'
 
         # run module which contain a run(param_dict) function which return 'something'
-        self.run_module_name = f'{package}.{args.run_module_name}'
+        self.run_module_name = args.run_module_name
         self.run_module = import_module(self.run_module_name) #run module
 
         # create a problem instance
@@ -110,10 +109,6 @@ class OptConfigNas:
         # get the whole space dictionnary
         self.config = instance.space
         self.config['load_data_module_name'] = load_data_module_name
-
-        # initial state
-        self.state_space = self.config['state_space']
-        self.starting_point = self.state_space.get_random_state_space(self.config['max_layers'], num=self.num_workers)
 
 def sk_optimizer_from_config(opt_config, random_state):
     from skopt import Optimizer
@@ -218,9 +213,6 @@ def create_parser():
                         help='maximum number of evaluations'
                        )
     parser.add_argument('--run', help='optional tag appended to run files')
-    parser.add_argument('--num-workers', type=int, default=8,
-                        help='Number of points to ask for initially'
-                       )
     # parser.add_argument('--start_num_layers', type=int, default=2,
     #                     help='Number of layers to start for initially'
     #                     )

@@ -14,9 +14,6 @@ import numpy as np
 import tensorflow as tf
 from multiprocessing.pool import ThreadPool
 
-tf.set_random_seed(1000003)
-np.random.seed(1000003)
-
 from deephyper.evaluators import evaluate
 from deephyper.search import util
 
@@ -30,8 +27,9 @@ logger = util.conf_logger('deephyper.search.run_nas')
 # logger.debug(f'ddd {sp.Popen("which mpirun".split())}')
 # logger.debug(f'python exe : {sys.executable}')
 
-POOL = ThreadPool(10)
-
+def print_logs(runner):
+    logger.debug('num_episodes = {}'.format(runner.global_episode))
+    logger.debug(' workers = {}'.format(runner.workers))
 
 class Search:
 
@@ -43,11 +41,11 @@ class Search:
 
     def run(self):
         # Settings
-        num_parallel = 10
+        num_parallel = self.opt_config.num_workers
         num_episodes = None
 
         # Creating the environment
-        environment = AsyncNasBalsamEnvironment(self.opt_config, POOL)
+        environment = AsyncNasBalsamEnvironment(self.opt_config)
 
         # Creating the Agent
         network_spec = [
@@ -113,7 +111,7 @@ class Search:
 
         # Creating the Runner
         runner = DistributedRunner(agent=agent, environment=environment)
-        runner.run(num_episodes=num_episodes)
+        runner.run(num_episodes=num_episodes, episode_finished=print_logs)
         runner.close()
 
 

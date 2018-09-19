@@ -18,13 +18,12 @@ from django.conf import settings
 
 class BalsamEvaluator(evaluate.Evaluator):
 
-    def __init__(self, params_list, bench_module_name='', run_module=None,
-        num_workers=1, backend='tensorflow', model_path='', data_source='',
+    def __init__(self, params_list, bench_module_name='', run_module=None, backend='tensorflow', model_path='', data_source='',
         stage_in_destination=''):
         super().__init__()
 
         self.id_key_map = {}
-        self.num_workers = num_workers
+        self.num_workers = dag.current_job.coschedule_num_nodes
         self.params_list = params_list
         self.bench_module_name = bench_module_name
         self.bench_file = os.path.abspath(find_spec(bench_module_name).origin)
