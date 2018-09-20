@@ -11,8 +11,9 @@ class Problem:
         space['regression'] = False
 
         # ARCH
-        space['max_layers'] = 5
-        space['min_layers'] = 2
+        # space['max_layers'] = 5
+        # space['min_layers'] = 2
+        space['num_layers'] = 2
         space['model_path'] = 'savepoint/model'
         space['layer_type'] = 'conv2D'
         state_space = StateSpace()
@@ -24,7 +25,7 @@ class Problem:
         state_space.add_state('stride_width', [s for s in range(1, 3)])
         #state_space.add_state('drop_out', [])
         state_space.add_state('num_filters', [2 ** i for i in range(5, 10)])
-        state_space.add_state('skip_conn', [])
+        # state_space.add_state('skip_conn', [])
 
         space['state_space'] = state_space
 

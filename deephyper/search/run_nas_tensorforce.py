@@ -60,7 +60,7 @@ class Search:
             states_preprocessing=None,
             actions_exploration=None,
             reward_preprocessing=None,
-            # batching_capacity=10,
+            # batchjing_capacity=10,
             # MemoryModel
             update_mode=dict(
                 unit='episodes',
