@@ -7,7 +7,7 @@ import logging
 import csv
 import time
 from deephyper.model.arch import StateSpace
-
+from deephyper.evaluators import BalsamApplyResult
 
 logger = logging.getLogger(__name__)
 
@@ -66,12 +66,13 @@ class Evaluator:
         with self.transaction_context():
             for x in XX: self.add_eval(x, re_evaluate=re_evaluate)
 
-    def add_eval_nas(self, x):
+    def apply_async(self, x):
         assert isinstance(x, dict)
         key = json.dumps(x, cls=Encoder)
         new_eval = self._eval_exec_nas(x) # future or job UUID
         logger.info(f"Submitted nas eval of {x}")
         self.pending_evals[key] = new_eval
+        return BalsamApplyResult(new_eval)
 
     @property
     def counter(self):
@@ -143,7 +144,6 @@ def create_evaluator_nas(opt_config):
     evaluator = cls([],
                     opt_config.bench_package_name,
                     run_module=opt_config.run_module,
-                    num_workers=opt_config.num_workers,
                     backend=opt_config.backend,
                     model_path=opt_config.model_path,
                     #data_source=opt_config.data_source, using load_data.py
