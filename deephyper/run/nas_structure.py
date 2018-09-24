@@ -11,12 +11,9 @@ import time
 
 import deephyper.model.arch as a
 from deephyper.search import util
-from deephyper.benchmarks.mnistNas.load_data import load_data
-from deephyper.benchmarks.mnistNas.problem import Problem
+from deephyper.model.utilities.nas_cmdline import create_parser
 
 from nas.model.trainer import BasicTrainer
-from nas.cell.mlp import create_dense_cell_example
-from nas.cell.structure import create_sequential_structure
 
 logger = util.conf_logger('deephyper.search.nas')
 
@@ -24,8 +21,12 @@ def run(param_dict):
     logger.debug('Starting...')
     config = param_dict
 
-    config['create_structure'] = util.load_attr_from(config['create_structure'])
-    config['create_cell'] = util.load_attr_from(config['create_cell'])
+    load_data = util.load_attr_from(config['load_data']['func'])
+
+    config['create_structure']['func'] = util.load_attr_from(
+        config['create_structure']['func'])
+
+    config['create_cell']['func'] = util.load_attr_from(config['create_cell']['func'])
 
     logger.debug('[PARAM] Loading data')
     # Loading data
@@ -54,6 +55,7 @@ def run(param_dict):
     return result
 
 if __name__ == '__main__':
-    pb = Problem()
-    param_dict = pb.space
+    parser = create_parser()
+    cmdline_args = parser.parse_args()
+    param_dict = cmdline_args.config
     run(param_dict)

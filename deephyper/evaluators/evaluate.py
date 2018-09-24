@@ -6,6 +6,7 @@ import multiprocessing
 import logging
 import csv
 import time
+import types
 from deephyper.model.arch import StateSpace
 from deephyper.evaluators import BalsamApplyResult
 
@@ -18,11 +19,8 @@ class Encoder(json.JSONEncoder):
         if isinstance(obj, integer): return int(obj)
         elif isinstance(obj, floating): return float(obj)
         elif isinstance(obj, ndarray): return obj.tolist()
-        elif isinstance(obj, StateSpace):
-            l  = []
-            for state_i in range(obj.size):
-                l.append([obj[state_i]['name'], obj[state_i]['values']])
-            return l
+        elif isinstance(obj, types.FunctionType):
+            return f'{obj.__module__}.{obj.__name}'
         else: return super(Encoder, self).default(obj)
 
 class Evaluator:

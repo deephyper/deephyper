@@ -4,28 +4,30 @@
 '''
 
 from collections import OrderedDict
-from deephyper.model.arch import StateSpace
+from nas.cell.structure import create_sequential_structure
+from nas.cell.mlp import create_dense_cell_example
+from deephyper.benchmarks.candleNT3Nas.load_data import load_data
 
 class Problem:
     def __init__(self):
         space = OrderedDict()
         space['num_outputs'] = 2
         space['regression'] = False
+        space['load_data'] = {
+            'func': load_data
+        }
 
         # ARCH
-        space['max_layers'] = 2
-        space['layer_type'] = 'conv1D'
-        state_space = StateSpace()
-        state_space.add_state('filter_size', [size for size in range(3, 10, 2)])
-        state_space.add_state('pool_size', [size for size in range(1, 6)])
-        state_space.add_state('stride_size', [s for s in range(1, 3)])
-        state_space.add_state('drop_out', [])
-        state_space.add_state('num_filters', [2 ** i for i in range(5, 10)])
-        state_space.add_state('skip_conn', [])
-        space['state_space'] = state_space
-
-        # ITER
-        space['max_episodes'] = 500 # iter on controller
+        space['num_cells'] = 2
+        space['create_structure'] = {
+            'func': create_sequential_structure,
+            'kwargs': {
+                'num_cells': 2
+            }
+        }
+        space['create_cell'] = {
+            'func': create_dense_cell_example
+        }
 
         # HyperParameters
         space['hyperparameters'] = {'batch_size': 64,

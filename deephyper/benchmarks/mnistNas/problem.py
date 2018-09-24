@@ -12,28 +12,33 @@ class Problem:
         space = OrderedDict()
         space['num_outputs'] = 10
         space['regression'] = False
-        space['load_data'] =
+        space['load_data'] = {
+            'func': load_data
+        }
 
         # ARCH
         space['num_cells'] = 2
-        space['create_structure'] = create_sequential_structure
-        space['create_cell'] = {
-            'func': create_dense_cell_example,
+        space['create_structure'] = {
+            'func': create_sequential_structure,
             'kwargs': {
                 'num_cells': 2
             }
         }
+        space['create_cell'] = {
+            'func': create_dense_cell_example
+        }
 
         # HyperParameters
-        space['hyperparameters'] = {'batch_size': 64,
-                                    'eval_batch_size': 64,
-                                    'activation': 'relu',
-                                    'learning_rate': 0.01,
-                                    'optimizer': 'adam',
-                                    'num_epochs': 1,
-                                    'loss_metric': 'softmax_cross_entropy',
-                                    'test_metric': 'accuracy',
-                                }
+        space['hyperparameters'] = {
+            'batch_size': 64,
+            'eval_batch_size': 64,
+            'activation': 'relu',
+            'learning_rate': 0.01,
+            'optimizer': 'adam',
+            'num_epochs': 1,
+            'loss_metric': 'softmax_cross_entropy',
+            'test_metric': 'accuracy',
+        }
         self.space = space
 
 
