@@ -36,15 +36,21 @@ class Search:
         self.opt_config = cfg
         self.evaluator = evaluate.create_evaluator_nas(cfg)
         self.config = cfg.config
-        self.map_model_reward = {}
+        self.structure = None
 
     def run(self):
         # Settings
         num_parallel = self.opt_config.num_workers
         num_episodes = None
 
+        self.structure = self.config['create_structure']['func'](
+            tf.constant([[1., 1.]]),
+            self.config['create_cell']['func'],
+            **self.config['create_structure']['kwargs']
+        )
+
         # Creating the environment
-        environment = AsyncNasBalsamEnvironment(self.opt_config)
+        environment = AsyncNasBalsamEnvironment(self.opt_config, self.structure)
 
         # Creating the Agent
         network_spec = [
