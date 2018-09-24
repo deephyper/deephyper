@@ -2,32 +2,27 @@
 '''
 
 from collections import OrderedDict
-from deephyper.model.arch import StateSpace
+
+from nas.cell.structure import create_sequential_structure
+from nas.cell.mlp import create_dense_cell_example
+from deephyper.benchmarks.mnistNas import load_data
 
 class Problem:
     def __init__(self):
         space = OrderedDict()
         space['num_outputs'] = 10
         space['regression'] = False
+        space['load_data'] =
 
         # ARCH
-        # space['max_layers'] = 5
-        # space['min_layers'] = 2
-        space['num_layers'] = 2
-        space['model_path'] = 'savepoint/model'
-        space['layer_type'] = 'conv2D'
-        state_space = StateSpace()
-        state_space.add_state('filter_height', [size for size in range(3, 10, 2)])
-        state_space.add_state('filter_width', [size for size in range(3, 10, 2)])
-        state_space.add_state('pool_height', [size for size in range(2, 5)])
-        state_space.add_state('pool_width', [size for size in range(2, 5)])
-        state_space.add_state('stride_height', [s for s in range(1, 3)])
-        state_space.add_state('stride_width', [s for s in range(1, 3)])
-        #state_space.add_state('drop_out', [])
-        state_space.add_state('num_filters', [2 ** i for i in range(5, 10)])
-        # state_space.add_state('skip_conn', [])
-
-        space['state_space'] = state_space
+        space['num_cells'] = 2
+        space['create_structure'] = create_sequential_structure
+        space['create_cell'] = {
+            'func': create_dense_cell_example,
+            'kwargs': {
+                'num_cells': 2
+            }
+        }
 
         # HyperParameters
         space['hyperparameters'] = {'batch_size': 64,

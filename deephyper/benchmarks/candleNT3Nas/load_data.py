@@ -13,8 +13,7 @@ import sys
 import numpy as np, pandas as pd
 from sklearn.preprocessing import MaxAbsScaler
 from keras.utils import np_utils
-#from deephyper.benchmarks.candleTC1Nas \
-from . import data_utils
+from deephyper.benchmarks.candleNT3Nas import data_utils
 
 
 
@@ -79,5 +78,5 @@ def load_data(dest = None):
 
     return (X_train, Y_train), (X_test, Y_test)
 
-
-load_data()
+if __name__ == '__main__':
+    load_data()
