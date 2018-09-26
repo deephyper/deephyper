@@ -3,8 +3,11 @@
 
 from collections import OrderedDict
 
+print('1')
 from nas.cell.structure import create_sequential_structure
+print('2')
 from nas.cell.mlp import create_dense_cell_example
+print('3')
 from deephyper.benchmarks.mnistNas import load_data
 
 class Problem:

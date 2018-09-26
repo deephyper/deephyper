@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys
 from deephyper.evaluators import create_evaluator_nas, EvalFailed, TimeoutError
 from importlib import import_module
@@ -6,7 +8,7 @@ class OptConfig:
     evaluator = 'balsam'
     bench_package_name = 'deephyper.benchmarks.mnistNas'
     run_module = import_module('deephyper.run.test')
-    num_workers = 8
+    num_workers = 4
     backend = 'tensorflow'
     model_path = ''
     stage_in_destination = ''
