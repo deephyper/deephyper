@@ -49,3 +49,4 @@ DATA/
 *.output
 *.cobaltlog
 bin/
+*.log
