@@ -40,7 +40,7 @@ class Search:
 
     def run(self):
         # Settings
-        num_parallel = 4 # TODO
+        num_parallel = self.evaluator.num_workers
         num_episodes = None
 
         # stub structure to know how many nodes we need to compute
