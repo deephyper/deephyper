@@ -40,7 +40,7 @@ class Search:
 
     def run(self):
         # Settings
-        num_parallel = self.opt_config.num_workers
+        num_parallel = 4 # TODO
         num_episodes = None
 
         # stub structure to know how many nodes we need to compute

@@ -20,7 +20,7 @@ class Encoder(json.JSONEncoder):
         elif isinstance(obj, floating): return float(obj)
         elif isinstance(obj, ndarray): return obj.tolist()
         elif isinstance(obj, types.FunctionType):
-            return f'{obj.__module__}.{obj.__name}'
+            return f'{obj.__module__}.{obj.__name__}'
         else: return super(Encoder, self).default(obj)
 
 class Evaluator:
