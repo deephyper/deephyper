@@ -12,6 +12,7 @@ from collections import OrderedDict
 layer_type = 'layer_type'
 features = 'features'
 input_shape = 'input_shape'
+output_shape = 'output_shape'
 num_outputs = 'num_outputs'
 num_steps = 'num_steps'
 max_layers = 'max_layers'
