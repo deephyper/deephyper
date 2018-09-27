@@ -1,30 +1,25 @@
-''' * @Author: romain.egele, dipendra.jha * @Date: 2018-06-21 15:31:30
+''' * @Author: romain.egele * @Date: 2018-06-21 15:31:30
 '''
 
 from collections import OrderedDict
 
-print('1')
 from nas.cell.structure import create_sequential_structure
-print('2')
 from nas.cell.mlp import create_dense_cell_example
-print('3')
-from deephyper.benchmarks.mnistNas import load_data
+from deephyper.benchmarks.linearRegNas.load_data import load_data
 
 class Problem:
     def __init__(self):
         space = OrderedDict()
-        space['num_outputs'] = 10
-        space['regression'] = False
+        space['regression'] = True
         space['load_data'] = {
             'func': load_data
         }
 
         # ARCH
-        space['num_cells'] = 2
         space['create_structure'] = {
             'func': create_sequential_structure,
             'kwargs': {
-                'num_cells': 2
+                'num_cells': 3
             }
         }
         space['create_cell'] = {
@@ -36,11 +31,11 @@ class Problem:
             'batch_size': 64,
             'eval_batch_size': 64,
             'activation': 'relu',
-            'learning_rate': 0.01,
+            'learning_rate': 0.1,
             'optimizer': 'adam',
-            'num_epochs': 1,
-            'loss_metric': 'softmax_cross_entropy',
-            'test_metric': 'accuracy',
+            'num_epochs': 20,
+            'loss_metric': 'mean_squared_error',
+            'test_metric': 'mean_squared_error',
         }
         self.space = space
 

@@ -45,3 +45,11 @@ scripts/runjob.conf.cooley
 graph/
 DATA/
 *.egg-info
+*.error
+*.output
+*.cobaltlog
+bin/
+*.log
+
+# Sphinx documentation
+_build/

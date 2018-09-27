@@ -90,14 +90,11 @@ class OptConfigNas:
 
         # for example, the default value of args.benchmark is "mnistNast"
         self.benchmark = args.benchmark
-        self.bench_package_name = f'{package}.benchmarks.{self.benchmark}'
+        self.bench_package_name = args.benchmark
 
         # load problem.py
-        problem_module_name = f'{package}.benchmarks.{self.benchmark}.problem'
+        problem_module_name = f'{self.benchmark}.problem'
         problem_module = import_module(problem_module_name)
-
-        # load load_data.py and the load_data function inside it
-        load_data_module_name = f'{package}.benchmarks.{self.benchmark}.load_data'
 
         # run module which contain a run(param_dict) function which return 'something'
         self.run_module_name = args.run_module_name
@@ -108,7 +105,6 @@ class OptConfigNas:
 
         # get the whole space dictionnary
         self.config = instance.space
-        self.config['load_data_module_name'] = load_data_module_name
 
 def sk_optimizer_from_config(opt_config, random_state):
     from skopt import Optimizer
