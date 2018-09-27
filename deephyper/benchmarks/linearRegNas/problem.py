@@ -1,11 +1,10 @@
-''' * @Author: romain.egele, dipendra.jha * @Date: 2018-06-21 15:31:30
+''' * @Author: romain.egele * @Date: 2018-06-21 15:31:30
 '''
 
 from collections import OrderedDict
 
 from nas.cell.structure import create_sequential_structure
 from nas.cell.mlp import create_dense_cell_example
-# from deephyper.benchmarks.mnistNas import load_data
 from deephyper.benchmarks.linearRegNas.load_data import load_data
 
 class Problem:
