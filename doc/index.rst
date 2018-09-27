@@ -10,6 +10,10 @@ Welcome to deephyper's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   usage/installation
+   usage/workflow
+   usage/evaluators
+
 
 
 Indices and tables

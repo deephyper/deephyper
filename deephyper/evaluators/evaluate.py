@@ -13,7 +13,9 @@ from deephyper.evaluators import BalsamApplyResult
 logger = logging.getLogger(__name__)
 
 class Encoder(json.JSONEncoder):
-    '''Enables JSON dump of numpy data'''
+    """
+    Enables JSON dump of numpy data
+    """
     def default(self, obj):
         if isinstance(obj, uuid.UUID): return obj.hex
         if isinstance(obj, integer): return int(obj)
@@ -24,6 +26,9 @@ class Encoder(json.JSONEncoder):
         else: return super(Encoder, self).default(obj)
 
 class Evaluator:
+    """
+    Abstract evaluator interface.
+    """
     class DummyContext:
         def __enter__(self): pass
         def __exit__(self, *args): pass

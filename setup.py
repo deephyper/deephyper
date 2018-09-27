@@ -1,5 +1,12 @@
 from distutils.core import setup
 
+
+# pip3 install -U Sphinx
+# pip3 install sphinx_rtd_theme
+install_requires = [
+    'sphinx_rtd_theme'
+]
+
 extras_require = {
     'tf': ['tensorflow>=1.10.0'],
     'tf_gpu': ['tensorflow-gpu>=1.10.0'],
