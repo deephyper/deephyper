@@ -1,3 +1,4 @@
+from collections import namedtuple, defaultdict
 import subprocess
 import sys
 import logging
@@ -62,6 +63,7 @@ class PopenFuture:
         return self._state == 'cancelled'
 
 class LocalEvaluator(evaluate.Evaluator):
+    WaitResult = namedtuple('WaitResult', ['active', 'done', 'failed', 'cancelled'])
     def __init__(self, run_function, cache_key=None):
         super().__init__(run_function, cache_key)
         self.num_workers = self.WORKERS_PER_NODE
@@ -72,28 +74,49 @@ class LocalEvaluator(evaluate.Evaluator):
         cmd = ' '.join((exe, self.encode(x)))
         return cmd
     
-    def wait(self, futures, timeout=None, return_when='ANY_COMPLETED'):
-
     def _eval_exec(self, x):
         assert isinstance(x, dict)
         cmd = self._args(x)
         future = PopenFuture(cmd)
         logger.info(f"Running: {x}")
         return future
+    
+    @staticmethod
+    def _timer(timeout):
+        if timeout is None: 
+            return lambda : True
+        else:
+            timeout = max(float(timeout), 0.01)
+            start = time.time()
+            return lambda : (time.time()-start) < timeout
 
-    def _check_done(self):
-        return [(key,future) for (key,future) in self.pending_evals.items() if future.done()]
+    def wait(self, futures, timeout=None, return_when='ANY_COMPLETED'):
+        assert return_when.strip() in ['ANY_COMPLETED', 'ALL_COMPLETED']
+        waitall = bool(return_when.strip() == 'ALL_COMPLETED')
 
-    def get_finished_evals(self):
-        '''iter over any immediately available results'''
-        done_list = [(key,future) for (key,future) in self.pending_evals.items()
-                     if future.done()]
+        num_futures = len(futures)
+        active_futures = [f for f in futures if f.active]
+        time_isLeft = self._timer(timeout)
 
-        logger.info(f"{len(done_list)} new evals have completed")
-        for key, future in done_list:
-            x = self._decode(key)
-            y = future.result()
-            logger.info(f"x: {x} y: {y}")
-            self.evals[key] = y
-            del self.pending_evals[key]
-            yield (x, y)
+        if waitall: can_exit = lambda : len(active_futures) == 0
+        else: can_exit = lambda : len(active_futures) < num_futures
+
+        while time_isLeft():
+            if can_exit(): 
+                break
+            else: 
+                active_futures = [f for f in futures if f.active]
+                time.sleep(1)
+    
+        if not can_exit():
+            raise TimeoutError(f'{timeout} sec timeout expired while '
+            f'waiting on {len(futures)} tasks until {return_when}')
+
+        results = defaultdict(list)
+        for f in futures.values(): results[f._state].append(f)
+        return WaitResult(
+            active=results['active'],
+            done=results['done'],
+            failed=results['failed'],
+            cancelled=results['cancelled']
+        )
