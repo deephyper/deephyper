@@ -1,17 +1,17 @@
 """
 Basic test for Evaluator : 'local' or 'balsam'.
 """
+import os
 import unittest
 from deephyper.evaluators import Evaluator
 from deephyper.evaluators.test_functions import run, key
+from deephyper.evaluators.test_utils import stop_launcher_processes
 
-class TestLocal(unittest.TestCase):
-    def setUp(self):
-        self.ev = Evaluator.create(run, cache_key=key, method='local')
+from balsam.core.models import BalsamJob
+from django.core.management import call_command
+import subprocess
 
-    def tearDown(self):
-        for f in self.ev.pending_evals.values(): f.cancel()
-
+class BaseEvaluatorTest:
     def test_add(self):
         '''ev.add_eval(x) works correctly; caching equivalent evals'''
         ev = self.ev
@@ -150,12 +150,12 @@ class TestLocal(unittest.TestCase):
         ev = self.ev
         evals = [
             dict(ID="test1", x1=3, x2=4, sleep=0.1),
-            dict(ID="test2", x1=3, x2=4, sleep=20),
+            dict(ID="test2", x1=3, x2=4, sleep=300),
             dict(ID="test3", x1=10, x2=10),
         ]
         ev.add_eval_batch(evals)
         with self.assertRaises(TimeoutError):
-            res = list(ev.await_evals(evals,timeout=3))
+            res = list(ev.await_evals(evals,timeout=30))
 
         res = list(ev.get_finished_evals())
         self.assertEqual(len(ev.finished_evals), 2)
@@ -163,6 +163,32 @@ class TestLocal(unittest.TestCase):
         self.assertIn(({'ID':'test1','x1':3,'x2':4,'sleep':0.1}, 25),    res)
         self.assertNotIn(({'ID':'test2','x1':3,'x2':4,'sleep':20}, 25),    res)
         self.assertIn(({'ID':'test3','x1':10,'x2':10}, 200), res)
+
+class TestLocal(unittest.TestCase, BaseEvaluatorTest):
+    def setUp(self):
+        self.ev = Evaluator.create(run, cache_key=key, method='local')
+    def tearDown(self):
+        for f in self.ev.pending_evals.values(): f.cancel()
+
+class TestBalsam(unittest.TestCase, BaseEvaluatorTest):
+    @classmethod
+    def setUpClass(cls):
+        test_db_path = os.environ['BALSAM_DB_PATH']
+        assert 'testdb' in test_db_path
+        call_command('flush',interactive=False,verbosity=0)
+
+    def setUp(self):
+        self.ev = Evaluator.create(run, cache_key=key, method='balsam')
+        self.launcher = subprocess.Popen('balsam launcher --job-mode=serial --consume-all --num-transition=1', shell=True)
+
+    def tearDown(self):
+        stop_launcher_processes()
+        try: 
+            self.launcher.kill()
+            self.launcher.communicate()
+        except:
+            pass
+        call_command('flush',interactive=False,verbosity=0)
 
 if __name__ == "__main__":
     unittest.main()
