@@ -71,8 +71,9 @@ class BalsamEvaluator(Evaluator):
         return future
 
     @staticmethod
-    def _on_done(job):
+    def _on_done(job, process_data):
         output = job.read_file_in_workdir(f'{job.name}.out')
+        # process_data(job)
         return Evaluator._parse(output)
 
     @staticmethod

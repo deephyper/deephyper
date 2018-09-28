@@ -15,6 +15,7 @@ Welcome to deephyper's documentation!
    usage/search
    usage/benchmarks
    usage/evaluators
+   usage/nas
 
 Quick start
 ===========
