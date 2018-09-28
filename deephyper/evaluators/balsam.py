@@ -5,7 +5,7 @@ import os
 import time
 
 from django.db import transaction
-import balsam.launcher import dag
+from balsam.launcher import dag
 from balsam.launcher.async import FutureTask
 from balsam.launcher.async import wait as balsam_wait
 from balsam.core.models import BalsamJob
@@ -25,7 +25,7 @@ class BalsamEvaluator(Evaluator):
         self._init_app()
         logger.info(f"Backend runs will execute function: {self.appName}")
         self.transaction_context = transaction.atomic
-    
+
     def wait(self, futures, timeout=None, return_when='ANY_COMPLETED'):
         return balsam_wait(futures, timeout=timeout, return_when=return_when)
 

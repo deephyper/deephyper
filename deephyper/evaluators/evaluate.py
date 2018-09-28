@@ -10,12 +10,16 @@ import os
 import sys
 import time
 import types
+import sys
+import os
 
 from deephyper.evaluators import runner
 logger = logging.getLogger(__name__)
 
 class Encoder(json.JSONEncoder):
-    '''Enables JSON dump of numpy data'''
+    """
+    Enables JSON dump of numpy data
+    """
     def default(self, obj):
         if isinstance(obj, uuid.UUID): return obj.hex
         if isinstance(obj, integer): return int(obj)
@@ -67,7 +71,7 @@ class Evaluator:
         if not isinstance(x, dict):
             raise ValueError(f'Expected dict, but got {type(x)}')
         return json.dumps(x, cls=Encoder)
-    
+
     def _elapsed_sec(self):
         return time.time() - self._start_sec
 
@@ -97,7 +101,7 @@ class Evaluator:
 
     def _eval_exec(self, x):
         raise NotImplementedError
-    
+
     def wait(self, futures, timeout=None, return_when='ANY_COMPLETED'):
         raise NotImplementedError
 
@@ -120,14 +124,14 @@ class Evaluator:
         if moduleName == '__main__':
             moduleName = os.path.splitext(os.path.basename(module.__file__))[0]
         runnerPath = os.path.abspath(runner.__file__)
-        runner_exec = ' '.join((self.PYTHON_EXE, runnerPath, modulePath, moduleName, 
+        runner_exec = ' '.join((self.PYTHON_EXE, runnerPath, modulePath, moduleName,
                             funcName))
         return runner_exec
 
     def await_evals(self, to_read, timeout=None):
         keys = list(map(self.encode, to_read))
         uids = [self._gen_uid(x) for x in to_read]
-        futures = {uid : self.pending_evals[uid] 
+        futures = {uid : self.pending_evals[uid]
                    for uid in set(uids) if uid in self.pending_evals}
         logger.info(f"Waiting on {len(futures)} evals to finish...")
 
@@ -145,7 +149,7 @@ class Evaluator:
             try: self.requested_evals.remove(key)
             except ValueError: pass
             yield (x,y)
-    
+
     def get_finished_evals(self):
         futures = self.pending_evals.values()
         waitRes = self.wait(futures, timeout=2.2, return_when='ANY_COMPLETED')
