@@ -34,6 +34,7 @@ def run(param_dict):
     logger.debug('[PARAM] Data loaded')
 
     config['input_shape'] = list(np.shape(t_X))[1:]
+    config['output_shape'] = list(np.shape(v_X))[1:]
 
     config[a.data] = { a.train_X: t_X,
                        a.train_Y: t_y,
@@ -49,8 +50,6 @@ def run(param_dict):
     result = trainer.get_rewards(architecture)
 
     logger.debug(f'[REWARD/RESULT] = {result}')
-    print('OUTPUT: ', result)
-
     return result
 
 if __name__ == '__main__':

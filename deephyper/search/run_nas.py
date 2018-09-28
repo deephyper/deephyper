@@ -4,6 +4,8 @@ import os
 import pickle
 import signal
 import sys
+import argparse
+import json
 from collections import OrderedDict
 from math import ceil, log
 from pprint import pprint
@@ -13,7 +15,7 @@ from importlib import import_module, reload
 import numpy as np
 import tensorflow as tf
 
-from deephyper.evaluators import evaluate
+from deephyper.evaluators import Evaluator
 from deephyper.search import util
 
 from tensorforce.agents import PPOAgent
@@ -30,28 +32,33 @@ def print_logs(runner):
     logger.debug('num_episodes = {}'.format(runner.global_episode))
     logger.debug(' workers = {}'.format(runner.workers))
 
+def key(d):
+    return json.dumps(dict(arch_seq=d['arch_seq']))
+
 class Search:
 
-    def __init__(self, cfg):
-        self.opt_config = cfg
-        self.evaluator = evaluate.create_evaluator_nas(cfg)
-        self.config = cfg.config
+    def __init__(self, **kwargs):
+        self.run_func = util.load_attr_from(kwargs.get('run'))
+        self.num_episodes = kwargs.get('num_episodes')
+        self.problem = util.load_attr_from(f'{kwargs.get("problem")}.problem.Problem')()
+        self.space = self.problem.space
+        self.evaluator = Evaluator.create(self.run_func, cache_key=key, method=args.evaluator)
         self.structure = None
 
     def run(self):
         # Settings
         num_parallel = self.evaluator.num_workers
-        num_episodes = None
+        num_episodes = self.num_episodes
 
         # stub structure to know how many nodes we need to compute
-        self.structure = self.config['create_structure']['func'](
+        self.structure = self.space['create_structure']['func'](
             tf.constant([[1., 1.]]),
-            self.config['create_cell']['func'],
-            **self.config['create_structure']['kwargs']
+            self.space['create_cell']['func'],
+            **self.space['create_structure']['kwargs']
         )
 
         # Creating the environment
-        environment = AsyncNasBalsamEnvironment(self.opt_config, self.structure)
+        environment = AsyncNasBalsamEnvironment(self.space, self.evaluator, self.structure)
 
         # Creating the Agent
         network_spec = [
@@ -122,12 +129,30 @@ class Search:
 
 def main(args):
     '''Service loop: add jobs; read results; drive nas'''
-    cfg = util.OptConfigNas(args)
-    controller = Search(cfg)
-    logger.info(f"Starting new NAS on benchmark {cfg.benchmark} & run with {cfg.run_module_name}")
+    kwargs = vars(args)
+    pprint(kwargs)
+    controller = Search(**kwargs)
     controller.run()
 
+def create_parser():
+    """Command line parser for NAS"""
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--evaluator',
+                        default='local',
+                        help="must be 'local' or 'balsam'")
+    parser.add_argument("--problem",
+                        default="deephyper.benchmarks.linearRegNas",
+                        help="")
+    parser.add_argument('--num-episodes', type=int, default=None,
+                        help='maximum number of episodes')
+    parser.add_argument('--run',
+                        default="deephyper.run.nas_structure.run",
+                        help='ex. deephyper.run.nas_structure.run')
+
+    return parser
+
 if __name__ == "__main__":
-    parser = util.create_parser()
+    parser = create_parser()
     args = parser.parse_args()
     main(args)

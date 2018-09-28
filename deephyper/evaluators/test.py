@@ -24,7 +24,7 @@ class TestLocal(unittest.TestCase):
         self.assertEqual(len(ev.pending_evals), 2)
         self.assertEqual(len(ev.finished_evals), 0)
         self.assertEqual(len(ev.requested_evals), 3)
-    
+
     def test_add_batch(self):
         '''ev.add_eval_batch(x_list) also works correctly'''
         ev = self.ev
@@ -40,7 +40,7 @@ class TestLocal(unittest.TestCase):
         self.assertEqual(len(ev.requested_evals), 3)
 
     def test_get_finished_success(self):
-        '''get_finished returns all requested evals''' 
+        '''get_finished returns all requested evals'''
         ev = self.ev
         ev.add_eval( dict(ID="test1", x1=3, x2=4) )
         ev.add_eval( dict(ID="test2", x1=3, x2=4) )
@@ -50,13 +50,13 @@ class TestLocal(unittest.TestCase):
         res = []
         while len(res) < 3:
             res.extend(ev.get_finished_evals())
-        
+
         self.assertEqual(len(ev.finished_evals), 2) # internally, only 2 results
         self.assertEqual(len(res), 3)
         self.assertIn(({'ID':'test1','x1':3,'x2':4}, 25),    res)
         self.assertIn(({'ID':'test2','x1':3,'x2':4}, 25),    res)
         self.assertIn(({'ID':'test3','x1':10,'x2':10}, 200), res)
-    
+
     def test_get_finished_one_slow(self):
         '''One straggler eval does not block return of all fast ones'''
         ev = self.ev
@@ -76,7 +76,7 @@ class TestLocal(unittest.TestCase):
         self.assertIn(({'ID':'test1','x1':3,'x2':4}, 25),    res)
         self.assertIn(({'ID':'test2','x1':3,'x2':4}, 25),    res)
         self.assertIn(({'ID':'test3','x1':10,'x2':10,'sleep':0.1}, 200), res)
-    
+
     def test_get_finished_timeout(self):
         '''No exceptions raised if get_finished_evals returns nothing'''
         ev = self.ev
@@ -87,7 +87,7 @@ class TestLocal(unittest.TestCase):
         # non-blocking; no problem:
         res = list(ev.get_finished_evals())
         self.assertEqual(len(res), 0)
-    
+
     def test_get_finished_fail(self):
         '''If one eval fails, then the result is marked as Evaluator.FAIL_RETURN_VALUE'''
         ev = self.ev
@@ -113,7 +113,7 @@ class TestLocal(unittest.TestCase):
         ]
         ev.add_eval_batch(evals)
         res = list(ev.await_evals(evals))
-        
+
         self.assertEqual(len(ev.finished_evals), 2) # internally, only 2 results
         self.assertEqual(len(res), 3)
         self.assertIn(({'ID':'test1','x1':3,'x2':4}, 25),    res)
@@ -130,7 +130,7 @@ class TestLocal(unittest.TestCase):
         ]
         ev.add_eval_batch(evals)
         res = list(ev.await_evals(evals))
-        
+
         self.assertEqual(len(ev.finished_evals), 3)
         self.assertEqual(len(res), 3)
         self.assertIn(({'ID':'test1','x1':3,'x2':4}, 25),    res)
