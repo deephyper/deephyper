@@ -4,7 +4,7 @@
 from collections import OrderedDict
 
 from nas.cell.structure import create_sequential_structure
-from nas.cell.mlp import create_dense_cell_example
+from nas.cell.mlp import create_dense_cell_type1
 from deephyper.benchmarks.linearRegNas.load_data import load_data
 
 class Problem:
@@ -23,7 +23,7 @@ class Problem:
             }
         }
         space['create_cell'] = {
-            'func': create_dense_cell_example
+            'func': create_dense_cell_type1
         }
 
         # HyperParameters
