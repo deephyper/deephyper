@@ -16,7 +16,8 @@ Welcome to deephyper's documentation!
    usage/benchmarks
    usage/evaluators
 
-
+Quick start
+===========
 
 
 Indices and tables
