@@ -1,8 +1,7 @@
-import logging
-from random import randint
-import sys
+"""
+Basic test for Evaluator : 'local' or 'balsam'.
+"""
 import unittest
-
 from deephyper.evaluators import Evaluator
 from deephyper.evaluators.test_functions import run, key
 
