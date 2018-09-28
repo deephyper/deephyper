@@ -152,14 +152,18 @@ class Evaluator:
 
     def get_finished_evals(self):
         futures = self.pending_evals.values()
-        waitRes = self.wait(futures, timeout=2.2, return_when='ANY_COMPLETED')
-        for future in (waitRes.done + waitRes.failed):
-            uid = future.uid
-            y = future.result()
-            logger.info(f'New eval finished: {uid} --> {y}')
-            self.elapsed_times[uid] = self._elapsed_sec()
-            del self.pending_evals[uid]
-            self.finished_evals[uid] = y
+        try: 
+            waitRes = self.wait(futures, timeout=0.5, return_when='ANY_COMPLETED')
+        except TimeoutError: 
+            pass
+        else:
+            for future in (waitRes.done + waitRes.failed):
+                uid = future.uid
+                y = future.result()
+                logger.info(f'New eval finished: {uid} --> {y}')
+                self.elapsed_times[uid] = self._elapsed_sec()
+                del self.pending_evals[uid]
+                self.finished_evals[uid] = y
 
         for key in self.requested_evals[:]:
             uid = self.key_uid_map[key]
