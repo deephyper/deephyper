@@ -67,6 +67,12 @@ class Evaluator:
         else:
             self._gen_uid = lambda d: self.encode(d)
 
+        moduleName = self._run_function.__module__
+        if moduleName == '__main__':
+            raise RuntimeError(f'Evaluator will not execute function "{run_function.__name__}" '
+            "because it is in the __main__ module.  Please provide a function " 
+            "imported from an external module!")
+
     def encode(self, x):
         if not isinstance(x, dict):
             raise ValueError(f'Expected dict, but got {type(x)}')
@@ -119,10 +125,9 @@ class Evaluator:
     def _runner_executable(self):
         funcName = self._run_function.__name__
         moduleName = self._run_function.__module__
+        assert moduleName != '__main__'
         module = sys.modules[moduleName]
         modulePath = os.path.dirname(os.path.abspath(module.__file__))
-        if moduleName == '__main__':
-            moduleName = os.path.splitext(os.path.basename(module.__file__))[0]
         runnerPath = os.path.abspath(runner.__file__)
         runner_exec = ' '.join((self.PYTHON_EXE, runnerPath, modulePath, moduleName,
                             funcName))
