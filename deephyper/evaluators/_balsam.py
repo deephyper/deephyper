@@ -53,9 +53,11 @@ class BalsamEvaluator(Evaluator):
         for key in resources:
             if key in x: resources[key] = x[key]
 
+        if dag.current_job is not None: wf = dag.current_job.workflow
+        else: wf = self.appName
         task = dag.add_job(
                     name = jobname,
-                    workflow = dag.current_job.workflow,
+                    workflow = wf,
                     application = self.appName,
                     args = args,
                     environ_vars = envs,
@@ -71,9 +73,9 @@ class BalsamEvaluator(Evaluator):
     @staticmethod
     def _on_done(job):
         output = job.read_file_in_workdir(f'{job.name}.out')
-        return self._parse(output)
+        return Evaluator._parse(output)
 
     @staticmethod
     def _on_fail(job):
         logger.info(f'Task {job.cute_id} failed; setting objective as float_max')
-        return self.FAIL_RETURN_VALUE
+        return Evaluator.FAIL_RETURN_VALUE

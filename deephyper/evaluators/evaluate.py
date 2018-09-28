@@ -41,10 +41,10 @@ class Evaluator:
     def create(run_function, cache_key=None, method='balsam'):
         assert method in ['balsam', 'local']
         if method == "balsam":
-            from deephyper.evaluators.balsam import BalsamEvaluator
+            from deephyper.evaluators._balsam import BalsamEvaluator
             Eval = BalsamEvaluator
         else:
-            from deephyper.evaluators.local import LocalEvaluator
+            from deephyper.evaluators._local import LocalEvaluator
             Eval = LocalEvaluator
         return Eval(run_function, cache_key=cache_key)
 
