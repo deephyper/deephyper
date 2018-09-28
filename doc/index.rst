@@ -12,7 +12,10 @@ Welcome to deephyper's documentation!
 
    usage/installation
    usage/workflow
+   usage/search
+   usage/benchmarks
    usage/evaluators
+
 
 
 

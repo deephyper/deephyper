@@ -7,6 +7,8 @@ import logging
 import csv
 import time
 import types
+import sys
+import os
 
 logger = logging.getLogger(__name__)
 
