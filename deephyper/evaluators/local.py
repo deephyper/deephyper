@@ -44,6 +44,8 @@ class PopenFuture:
 
     def cancel(self):
         self.proc.kill()
+        try: self.proc.communicate()
+        except ValueError: pass
         self._state = 'cancelled'
 
     @property
@@ -109,7 +111,7 @@ class LocalEvaluator(evaluate.Evaluator):
                 break
             else: 
                 active_futures = [f for f in futures if f.active]
-                time.sleep(1)
+                time.sleep(0.04)
     
         if not can_exit():
             raise TimeoutError(f'{timeout} sec timeout expired while '
