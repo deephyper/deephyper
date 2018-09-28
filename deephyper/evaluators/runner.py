@@ -16,7 +16,7 @@ if __name__ == "__main__":
     funcName = sys.argv[3]
     args = sys.argv[4]
     d = json.loads(args)
-
     module = load_module(moduleName, path)
     func = getattr(module, funcName)
-    func(d)
+    retval = func(d)
+    print("OUTPUT:", retval)

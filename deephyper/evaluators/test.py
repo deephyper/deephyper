@@ -1,41 +1,29 @@
-#!/usr/bin/env python
+import json
+from random import randint
+from deephyper.evaluators import Evaluator
+import logging
 
-import sys
-from deephyper.evaluators import create_evaluator_nas, EvalFailed, TimeoutError
-from importlib import import_module
+logging.basicConfig(level=logging.DEBUG)
 
-class OptConfig:
-    evaluator = 'balsam'
-    bench_package_name = 'deephyper.benchmarks.mnistNas'
-    run_module = import_module('deephyper.run.test')
-    num_workers = 4
-    backend = 'tensorflow'
-    model_path = ''
-    stage_in_destination = ''
+def my_run(d):
+    return  d['x1']**2 + d['x2']**2
 
-print("creating evaluator")
-evaluator = create_evaluator_nas(OptConfig())
+def my_key(d):
+    x1, x2 = d['x1'], d['x2']
+    return json.dumps(dict(x1=x1, x2=x2))
 
-print('adding 4 jobs')
-r1 = evaluator.apply_async({'x' : 10, 'idx': 1}) # 0.1 seconds: OK
-r2 = evaluator.apply_async({'x' : 100, 'idx': 2}) # 1 second: OK
-r3 = evaluator.apply_async({'x' : 100, 'fail': True, 'idx': 3}) # 1 second: FAIL
-r4 = evaluator.apply_async({'x' : 9000, 'idx': 4}) # 90 seconds: TIMEOUT
+if __name__ == "__main__":
+    ev = Evaluator.create(my_run, cache_key=my_key, method='local')
 
-results = [r1,r2,r3,r4]
+    N = 2
+    for i in range(N):
+        ID = str(i)
+        x1,x2 = randint(1, 10), randint(-10, 0)
+        d = dict(ID=ID, x1=x1, x2=x2)
+        d2 = d.copy()
+        d2['ID'] = d['ID'] + '_copy'
+        ev.add_eval(d)
+        ev.add_eval(d2)
 
-while results:
-    for i, r in enumerate(results[:]):
-        is_ready = r.ready()
-        print(i, "ready?", is_ready)
-        if is_ready or len(results) == 1:
-            try: 
-                value = r.get(5)
-            except EvalFailed: 
-                print(i, 'got EvalFailed')
-            except TimeoutError:
-                print(i, 'got TimeoutError')
-            else: 
-                print(i, 'succesful return:', value)
-            finally:
-                results.remove(r)
+    for x,y in ev.get_finished_evals():
+        print(x, y)

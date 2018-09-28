@@ -2,7 +2,6 @@ from importlib.util import find_spec
 import logging
 from math import isnan
 import os
-import sys
 import time
 
 from django.db import transaction
@@ -43,7 +42,7 @@ class BalsamEvaluator(Evaluator):
 
     def _eval_exec(self, x):
         jobname = f"task{self.counter}"
-        args = self.encode(x)
+        args = f"'{self.encode(x)}'"
         envs = f"KERAS_BACKEND={self.KERAS_BACKEND}"
         resources = {
             'num_nodes': 1,

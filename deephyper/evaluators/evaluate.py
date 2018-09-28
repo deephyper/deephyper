@@ -1,13 +1,17 @@
+import csv
 from collections import OrderedDict
 from contextlib import suppress as dummy_context
+from math import isnan
 from numpy import integer, floating, ndarray
 import json
 import uuid
 import logging
-import csv
+import os
+import sys
 import time
 import types
 
+from deephyper.evaluators import runner
 logger = logging.getLogger(__name__)
 
 class Encoder(json.JSONEncoder):
@@ -82,7 +86,7 @@ class Evaluator:
             logger.info(f"UID: {uid} already evaluated; skipping execution")
         else:
             future = self._eval_exec(x)
-            logger.info(f"Submitted eval of {x}")
+            logger.info(f"Submitted new eval of {x}")
             future.uid = uid
             self.pending_evals[uid] = future
         self.key_uid_map[key] = uid
@@ -113,6 +117,8 @@ class Evaluator:
         moduleName = self._run_function.__module__
         module = sys.modules[moduleName]
         modulePath = os.path.dirname(os.path.abspath(module.__file__))
+        if moduleName == '__main__':
+            moduleName = os.path.splitext(os.path.basename(module.__file__))[0]
         runnerPath = os.path.abspath(runner.__file__)
         runner_exec = ' '.join((self.PYTHON_EXE, runnerPath, modulePath, moduleName, 
                             funcName))
@@ -125,6 +131,7 @@ class Evaluator:
                    for uid in set(uids) if uid in self.pending_evals}
         logger.info(f"Waiting on {len(futures)} evals to finish...")
 
+        logger.info(f'Blocking on completion of {len(futures)} pending evals')
         self.wait(futures.values(), timeout=timeout, return_when='ALL_COMPLETED')
         # TODO: on TimeoutError, kill the evals that did not finish; return infinity
         for uid in futures:
@@ -145,6 +152,7 @@ class Evaluator:
         for future in (waitRes.done + waitRes.failed):
             uid = future.uid
             y = future.result()
+            logger.info(f'New eval finished: {uid} --> {y}')
             self.elapsed_times[uid] = self._elapsed_sec()
             del self.pending_evals[uid]
             self.finished_evals[uid] = y
@@ -154,7 +162,8 @@ class Evaluator:
             if uid in self.finished_evals:
                 self.requested_evals.remove(key)
                 x = self.decode(key)
-                logger.info(f"x: {x} y: {y}")
+                y = self.finished_evals[uid]
+                logger.info(f"Requested eval x: {x} y: {y}")
                 yield (x,y)
 
     @property

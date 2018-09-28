@@ -1,21 +1,23 @@
 from collections import namedtuple, defaultdict
-import subprocess
-import sys
-import logging
-from deephyper.evaluators import evaluate
 from importlib import import_module
-import os
-from pprint import pprint
+import logging
+import subprocess
 import json
+import time
+
+from deephyper.evaluators import evaluate
 
 logger = logging.getLogger(__name__)
 
 class PopenFuture:
-    def __init__(self, args):
+    FAIL_RETURN_VALUE = evaluate.Evaluator.FAIL_RETURN_VALUE
+
+    def __init__(self, args, parse_fxn):
         self.proc = subprocess.Popen(args, shell=True, stdout=subprocess.PIPE,
                                      stderr=subprocess.STDOUT, encoding='utf-8')
         self._state = 'active'
         self._result = None
+        self._parse = parse_fxn
 
     def _poll(self):
         if not self._state == 'active': return
@@ -35,7 +37,9 @@ class PopenFuture:
             stdout, _ = self.proc.communicate()
             self._result = self._parse(stdout)
         else:
+            stdout, _ = self.proc.communicate()
             self._result = self.FAIL_RETURN_VALUE
+            logger.error(f"Eval failed: {stdout}")
         return self._result
 
     def cancel(self):
@@ -71,14 +75,13 @@ class LocalEvaluator(evaluate.Evaluator):
     
     def _args(self, x):
         exe = self._runner_executable
-        cmd = ' '.join((exe, self.encode(x)))
+        cmd = ' '.join((exe, f"'{self.encode(x)}'"))
         return cmd
     
     def _eval_exec(self, x):
         assert isinstance(x, dict)
         cmd = self._args(x)
-        future = PopenFuture(cmd)
-        logger.info(f"Running: {x}")
+        future = PopenFuture(cmd, self._parse)
         return future
     
     @staticmethod
@@ -113,8 +116,8 @@ class LocalEvaluator(evaluate.Evaluator):
             f'waiting on {len(futures)} tasks until {return_when}')
 
         results = defaultdict(list)
-        for f in futures.values(): results[f._state].append(f)
-        return WaitResult(
+        for f in futures: results[f._state].append(f)
+        return self.WaitResult(
             active=results['active'],
             done=results['done'],
             failed=results['failed'],
