@@ -8,7 +8,7 @@ import argparse
 import json
 from collections import OrderedDict
 from math import ceil, log
-from pprint import pprint
+from pprint import pprint, pformat
 from random import random
 from time import ctime, time, sleep
 from importlib import import_module, reload
@@ -45,10 +45,11 @@ class Search:
         self.evaluator = Evaluator.create(self.run_func, cache_key=key, method=args.evaluator)
         logger.debug(f'evaluator: {type(self.evaluator)}')
         self.structure = None
+        self.num_workers = kwargs.get('nodes')
 
     def run(self):
         # Settings
-        num_parallel = self.evaluator.num_workers - 1
+        num_parallel = self.evaluator.num_workers - 1 if self.num_workers is None else self.num_workers-1
         num_episodes = self.num_episodes
         logger.debug(f'num_parallel: {num_parallel}')
         logger.debug(f'num_episodes: {num_episodes}')
@@ -152,6 +153,7 @@ def create_parser():
                         help="")
     parser.add_argument('--num-episodes', type=int, default=None,
                         help='maximum number of episodes')
+    parser.add_argument('--nodes', type=int, default=None)
     parser.add_argument('--run',
                         default="deephyper.run.nas_structure.run",
                         help='ex. deephyper.run.nas_structure.run')
