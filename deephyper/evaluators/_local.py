@@ -1,8 +1,6 @@
 from collections import namedtuple, defaultdict
-from importlib import import_module
 import logging
 import subprocess
-import json
 import time
 
 from deephyper.evaluators import evaluate

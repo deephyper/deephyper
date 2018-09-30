@@ -1,18 +1,13 @@
-from importlib.util import find_spec
 import logging
-from math import isnan
 import os
-import time
 
 from django.db import transaction
 from balsam.launcher import dag
 from balsam.launcher.async import FutureTask
 from balsam.launcher.async import wait as balsam_wait
-from balsam.core.models import BalsamJob
 from balsam.core.models import ApplicationDefinition as AppDef
 
-from django.conf import settings
-from deephyper.evaluators import Evaluator, runner
+from deephyper.evaluators import Evaluator
 logger = logging.getLogger(__name__)
 
 class BalsamEvaluator(Evaluator):

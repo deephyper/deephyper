@@ -10,8 +10,6 @@ import os
 import sys
 import time
 import types
-import sys
-import os
 
 from deephyper.evaluators import runner
 logger = logging.getLogger(__name__)
@@ -115,7 +113,7 @@ class Evaluator:
     def _parse(run_stdout):
         y = sys.float_info.max
         for line in run_stdout.split('\n'):
-            if "OUTPUT:" in line.upper():
+            if "DH-OUTPUT:" in line.upper():
                 y = float(line.split()[-1])
                 break
         if isnan(y): y = sys.float_info.max

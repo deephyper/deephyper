@@ -44,7 +44,7 @@ scripts/runjob.conf.cooley
 #
 graph/
 DATA/
-*.egg-info
+*.egg-info*
 *.error
 *.output
 *.cobaltlog
