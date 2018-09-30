@@ -43,6 +43,7 @@ class Search:
         self.problem = util.load_attr_from(f'{kwargs.get("problem")}.problem.Problem')()
         self.space = self.problem.space
         self.evaluator = Evaluator.create(self.run_func, cache_key=key, method=args.evaluator)
+        logger.debug(f'evaluator: {type(self.evaluator)}')
         self.structure = None
 
     def run(self):
@@ -130,7 +131,7 @@ class Search:
 def main(args):
     '''Service loop: add jobs; read results; drive nas'''
     kwargs = vars(args)
-    pprint(kwargs)
+    logger.debug(f'args: {pformat(kwargs)'})
     controller = Search(**kwargs)
     controller.run()
 
