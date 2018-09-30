@@ -48,10 +48,13 @@ class Search:
 
     def run(self):
         # Settings
-        num_parallel = self.evaluator.num_workers
+        num_parallel = self.evaluator.num_workers - 1
         num_episodes = self.num_episodes
+        logger.debug(f'num_parallel: {num_parallel}')
+        logger.debug(f'num_episodes: {num_episodes}')
 
         # stub structure to know how many nodes we need to compute
+        logger.debug('create structure')
         self.structure = self.space['create_structure']['func'](
             tf.constant([[1., 1.]]),
             self.space['create_cell']['func'],
@@ -59,13 +62,15 @@ class Search:
         )
 
         # Creating the environment
+        logger.debug('create environment')
         environment = AsyncNasBalsamEnvironment(self.space, self.evaluator, self.structure)
 
         # Creating the Agent
         network_spec = [
             dict(type='internal_lstm', size=32)
         ]
-
+        
+        logger.debug('create agent')
         agent = PPOAgent(
             states=environment.states,
             actions=environment.actions,
