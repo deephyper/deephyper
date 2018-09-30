@@ -69,7 +69,7 @@ class Search:
         network_spec = [
             dict(type='internal_lstm', size=32)
         ]
-        
+
         logger.debug('create agent')
         agent = PPOAgent(
             states=environment.states,
@@ -136,7 +136,7 @@ class Search:
 def main(args):
     '''Service loop: add jobs; read results; drive nas'''
     kwargs = vars(args)
-    logger.debug(f'args: {pformat(kwargs)'})
+    logger.debug(f'args: {pformat(kwargs)}')
     controller = Search(**kwargs)
     controller.run()
 
