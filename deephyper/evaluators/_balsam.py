@@ -2,6 +2,7 @@ import logging
 import os
 
 from django.db import transaction
+from django.core.exceptions import ObjectDoesNotExist
 from balsam.launcher import dag
 from balsam.launcher.async import FutureTask
 from balsam.launcher.async import wait as balsam_wait
@@ -10,12 +11,16 @@ from balsam.core.models import ApplicationDefinition as AppDef
 from deephyper.evaluators import Evaluator
 logger = logging.getLogger(__name__)
 
+LAUNCHER_NODES = int(os.environ.get('BALSAM_LAUNCHER_NODES', 1))
 class BalsamEvaluator(Evaluator):
     def __init__(self, run_function, cache_key=None):
         super().__init__(run_function, cache_key)
         self.id_key_map = {}
-        self.num_workers = dag.LAUNCHER_NODES * self.WORKERS_PER_NODE
+        self.num_workers = LAUNCHER_NODES * self.WORKERS_PER_NODE
         logger.info("Balsam Evaluator instantiated")
+        logger.debug(f"LAUNCHER_NODES = {LAUNCHER_NODES}")
+        logger.debug(f"WORKERS_PER_NODE = {self.WORKERS_PER_NODE}")
+        logger.debug(f"Total number of workers: {self.num_workers}")
         logger.info(f"Backend runs will use Python: {self.PYTHON_EXE}")
         self._init_app()
         logger.info(f"Backend runs will execute function: {self.appName}")
@@ -30,10 +35,12 @@ class BalsamEvaluator(Evaluator):
         self.appName = '.'.join((moduleName, funcName))
         try:
             app = AppDef.objects.get(name=self.appName)
-            assert os.path.isfile(app.executable)
-        except:
+        except ObjectDoesNotExist:
+            logger.info(f"ApplicationDefinition did not exist for {self.appName}; creating new app in BalsamDB")
             app = AppDef(name=self.appName, executable=self._runner_executable)
             app.save()
+        else:
+            logger.info(f"BalsamEvaluator will use existing app {self.appName}: {app.executable}")
 
     def _eval_exec(self, x):
         jobname = f"task{self.counter}"
@@ -43,7 +50,7 @@ class BalsamEvaluator(Evaluator):
             'num_nodes': 1,
             'ranks_per_node': 1,
             'threads_per_rank': 64,
-            'node_packing_count': 1,
+            'node_packing_count': self.WORKERS_PER_NODE,
         }
         for key in resources:
             if key in x: resources[key] = x[key]
