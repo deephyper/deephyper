@@ -47,7 +47,7 @@ class BalsamEvaluator(Evaluator):
             'num_nodes': 1,
             'ranks_per_node': 1,
             'threads_per_rank': 64,
-            'node_packing_count': 1,
+            'node_packing_count': self.WORKERS_PER_NODE,
         }
         for key in resources:
             if key in x: resources[key] = x[key]
