@@ -3,12 +3,9 @@
 
 from collections import OrderedDict
 
-print('1')
 from nas.cell.structure import create_sequential_structure
-print('2')
-from nas.cell.mlp import create_dense_cell_example
-print('3')
-from deephyper.benchmarks.mnistNas import load_data
+from nas.cell.cnn import create_cnn_normal_cell
+from deephyper.benchmarks.mnistNas.load_data import load_data
 
 class Problem:
     def __init__(self):
@@ -20,7 +17,6 @@ class Problem:
         }
 
         # ARCH
-        space['num_cells'] = 2
         space['create_structure'] = {
             'func': create_sequential_structure,
             'kwargs': {
@@ -28,7 +24,7 @@ class Problem:
             }
         }
         space['create_cell'] = {
-            'func': create_dense_cell_example
+            'func': create_cnn_normal_cell
         }
 
         # HyperParameters
