@@ -2,6 +2,7 @@ import logging
 import os
 
 from django.db import transaction
+from django.core.exceptions import ObjectDoesNotExist
 from balsam.launcher import dag
 from balsam.launcher.async import FutureTask
 from balsam.launcher.async import wait as balsam_wait
@@ -31,10 +32,12 @@ class BalsamEvaluator(Evaluator):
         self.appName = '.'.join((moduleName, funcName))
         try:
             app = AppDef.objects.get(name=self.appName)
-            assert os.path.isfile(app.executable)
-        except:
+        except ObjectDoesNotExist:
+            logger.info(f"ApplicationDefinition did not exist for {self.appName}; creating new app in BalsamDB")
             app = AppDef(name=self.appName, executable=self._runner_executable)
             app.save()
+        else:
+            logger.info(f"BalsamEvaluator will use existing app {self.appName}: {app.executable}")
 
     def _eval_exec(self, x):
         jobname = f"task{self.counter}"
