@@ -10,11 +10,12 @@ from balsam.core.models import ApplicationDefinition as AppDef
 from deephyper.evaluators import Evaluator
 logger = logging.getLogger(__name__)
 
+LAUNCHER_NODES = int(os.environ.get('BALSAM_LAUNCHER_NODES', 1))
 class BalsamEvaluator(Evaluator):
     def __init__(self, run_function, cache_key=None):
         super().__init__(run_function, cache_key)
         self.id_key_map = {}
-        self.num_workers = dag.LAUNCHER_NODES * self.WORKERS_PER_NODE
+        self.num_workers = LAUNCHER_NODES * self.WORKERS_PER_NODE
         logger.info("Balsam Evaluator instantiated")
         logger.info(f"Backend runs will use Python: {self.PYTHON_EXE}")
         self._init_app()
