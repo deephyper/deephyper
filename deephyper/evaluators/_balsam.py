@@ -18,6 +18,9 @@ class BalsamEvaluator(Evaluator):
         self.id_key_map = {}
         self.num_workers = LAUNCHER_NODES * self.WORKERS_PER_NODE
         logger.info("Balsam Evaluator instantiated")
+        logger.debug(f"LAUNCHER_NODES = {LAUNCHER_NODES}")
+        logger.debug(f"WORKERS_PER_NODE = {self.WORKERS_PER_NODE}")
+        logger.debug(f"Total number of workers: {self.num_workers}")
         logger.info(f"Backend runs will use Python: {self.PYTHON_EXE}")
         self._init_app()
         logger.info(f"Backend runs will execute function: {self.appName}")
