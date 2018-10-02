@@ -155,8 +155,8 @@ def create_parser():
                         help='maximum number of episodes')
     parser.add_argument('--nodes', type=int, default=None)
     parser.add_argument('--run',
-                        default="deephyper.run.nas_structure.run",
-                        help='ex. deephyper.run.nas_structure.run')
+                        default="deephyper.run.nas_structure_raw.run",
+                        help='ex. deephyper.run.nas_structure_raw.run')
 
     return parser
 
