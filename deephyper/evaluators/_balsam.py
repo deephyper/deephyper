@@ -1,5 +1,6 @@
 import logging
 import os
+import json
 
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
@@ -76,6 +77,13 @@ class BalsamEvaluator(Evaluator):
     def _on_done(job): #def _on_done(job, process_data):
         output = job.read_file_in_workdir(f'{job.name}.out')
         # process_data(job)
+        args = job.args
+        logger.debug(f'args: {args}')
+        logger.debug(f'type: {type(args)}')
+        args = json.loads(str(job.args))
+        job.data['reward'] = output
+        job.data['arch_seq'] = args['arch_seq']
+        job.data['id_worker'] = args['w']
         return Evaluator._parse(output)
 
     @staticmethod

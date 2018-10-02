@@ -49,7 +49,7 @@ class Search:
 
     def run(self):
         # Settings
-        num_parallel = self.evaluator.num_workers - 1 if self.num_workers is None else self.num_workers-1
+        num_parallel = self.evaluator.num_workers - 2 #balsam launcher & controller of search
         num_episodes = self.num_episodes
         logger.debug(f'num_parallel: {num_parallel}')
         logger.debug(f'num_episodes: {num_episodes}')
