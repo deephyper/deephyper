@@ -96,4 +96,4 @@ def load_data(batch_size):
     return (train_gen, train_steps), (val_gen, val_steps)
 
 if __name__ == '__main__':
-    load_data()
+    load_data(100)
