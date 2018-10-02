@@ -1,6 +1,7 @@
 import logging
 import os
 import json
+from io import StringIO
 
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
@@ -78,13 +79,18 @@ class BalsamEvaluator(Evaluator):
         output = job.read_file_in_workdir(f'{job.name}.out')
         # process_data(job)
         args = job.args
-        logger.debug(f'args: {args}')
-        logger.debug(f'type: {type(args)}')
-        args = json.loads(str(job.args))
+        args = args.replace("\'", "")
+        with open('test.json', 'w') as f:
+            f.write(args)
+
+        with open('test.json', 'r') as f:
+            args = json.load(f)
+        output = Evaluator._parse(output)
         job.data['reward'] = output
         job.data['arch_seq'] = args['arch_seq']
         job.data['id_worker'] = args['w']
-        return Evaluator._parse(output)
+        job.save()
+        return output
 
     @staticmethod
     def _on_fail(job):
