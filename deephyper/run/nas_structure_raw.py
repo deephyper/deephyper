@@ -30,7 +30,7 @@ def run(param_dict):
 
     logger.debug('[PARAM] Loading data')
     # Loading data
-    (t_X, t_y), (v_X, v_y) = load_data(dest='DATA')
+    (t_X, t_y), (v_X, v_y) = load_data()
     logger.debug('[PARAM] Data loaded')
 
     config['input_shape'] = list(np.shape(t_X))[1:]

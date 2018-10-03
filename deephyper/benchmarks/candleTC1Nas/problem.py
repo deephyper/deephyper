@@ -10,6 +10,7 @@ from deephyper.benchmarks.candleTC1Nas.load_data import load_data
 class Problem:
     def __init__(self):
         space = OrderedDict()
+        space['num_outputs'] = 1
         space['regression'] = True
         space['load_data'] = {
             'func': load_data
@@ -29,9 +30,8 @@ class Problem:
         # HyperParameters
         space['hyperparameters'] = {
             'batch_size': 64,
-            'eval_batch_size': 64,
             'activation': 'relu',
-            'learning_rate': 0.1,
+            'learning_rate': 0.01,
             'optimizer': 'adam',
             'num_epochs': 20,
             'loss_metric': 'mean_squared_error',
