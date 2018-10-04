@@ -209,12 +209,7 @@ def create_parser():
                         help='maximum number of evaluations'
                        )
     parser.add_argument('--run', help='optional tag appended to run files')
-    # parser.add_argument('--start_num_layers', type=int, default=2,
-    #                     help='Number of layers to start for initially'
-    #                     )
-    # parser.add_argument('--max_num_layers', type=int, default=2,
-    #                     help='Max number of layers to try'
-    #                     )
+
     parser.add_argument('--ga-individuals-per-worker', type=int, default=1,
                         help='Initial population is num_workers *'
                         ' ind-per-worker', dest='individuals_per_worker'
@@ -245,11 +240,6 @@ def create_parser():
     parser.add_argument('--stage_in_destination', help="if provided; cache data at this location",
                         default='')
     parser.add_argument('--eval-timeout-minutes', type=int, default=-1, help="Kill evals that take longer than this")
-
-    # Args for nas
-    parser.add_argument('--run_module_name', default='search.nas', help="name\
-        of run module (e.g. mnistNas.run1)")
-    parser.add_argument('--sync', dest='sync', action='store_true', default=False)
 
     return parser
 

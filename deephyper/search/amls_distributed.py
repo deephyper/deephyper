@@ -39,7 +39,7 @@ class Config:
 
     def __init__(self, args):
         self.__dict__ = vars(args)
-        
+
         # for example, the default value of args.benchmark is "b1.addition_rnn"
         benchmark_directory = args.benchmark.split('.')[0] # "b1"
         self.benchmark = args.benchmark
@@ -49,13 +49,13 @@ class Config:
         # get the path of the b1/addition_rnn.py file here:
         self.benchmark_module_name = f'{package}.benchmarks.{args.benchmark}'
         self.benchmark_filename = find_spec(self.benchmark_module_name).origin
-        
+
         # create a problem instance and configure the skopt.Optimizer
         instance = problem_module.Problem()
         self.params = list(instance.params)
         self.starting_point = instance.starting_point
         self.n_init = max(comm.size, 10)
-        
+
         spaceDict = instance.space
         self.space = [spaceDict[key] for key in self.params]
 
@@ -104,7 +104,7 @@ class Config:
                 n_initial_points = self.n_init
             )
         else:
-            raise ValueError(f"Unknown learner type {self.learner}") 
+            raise ValueError(f"Unknown learner type {self.learner}")
         logger.info(f"Rank {rank} Optimizer: {self.learner} random_state {random_state}; {self.n_init} random points before using model; kappa={kappa}")
         return optimizer
 
@@ -175,7 +175,7 @@ def master_main(config):
         update_keys = list(eval_dict.keys())[update_index:]
         update = {x : eval_dict[x] for x in update_keys}
         workers_known_eval_index[source] = len(eval_dict)
-        if len(eval_dict) >= config.max_evals: 
+        if len(eval_dict) >= config.max_evals:
             update = 'quit'
             quit_count += 1
         req = comm.isend(update, dest=source)
@@ -216,7 +216,7 @@ def worker_main(config):
 
         new_eval = (config.encode(x), result)
         comm.send(new_eval, dest=0)
-        
+
         updates = comm.recv(source=0)
         if updates == 'quit': return
 
@@ -238,7 +238,7 @@ def worker_main(config):
         with open(f'points_rank{rank}.dat', 'wb') as fp:
             arr = np.asarray(my_x)
             np.savez(fp, x=arr)
-       
+
 if __name__ == "__main__":
     if rank == 0:
         try:

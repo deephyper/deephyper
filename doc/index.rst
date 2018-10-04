@@ -11,14 +11,12 @@ Welcome to deephyper's documentation!
    :caption: Contents:
 
    usage/installation
+   usage/getting_started
    usage/workflow
    usage/search
    usage/benchmarks
    usage/evaluators
    usage/nas
-
-Quick start
-===========
 
 
 Indices and tables
