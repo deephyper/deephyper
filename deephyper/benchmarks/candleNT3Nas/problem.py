@@ -4,8 +4,7 @@
 '''
 
 from collections import OrderedDict
-from nas.cell.structure import create_sequential_structure
-from nas.cell.mlp import create_dense_cell_type1
+from nas.contrib.anl_mlp_1 import create_structure
 from deephyper.benchmarks.candleNT3Nas.load_data import load_data
 
 class Problem:
@@ -18,13 +17,10 @@ class Problem:
 
         # ARCH
         space['create_structure'] = {
-            'func': create_sequential_structure,
+            'func': create_structure,
             'kwargs': {
                 'num_cells': 4
             }
-        }
-        space['create_cell'] = {
-            'func': create_dense_cell_type1
         }
 
         # HyperParameters

@@ -3,8 +3,7 @@
 
 from collections import OrderedDict
 
-from nas.cell.structure import create_sequential_structure
-from nas.cell.cnn import create_cnn_normal_cell
+from nas.contrib.google_nas_net import create_structure
 from deephyper.benchmarks.mnistNas.load_data import load_data
 
 class Problem:
@@ -18,19 +17,16 @@ class Problem:
 
         # ARCH
         space['create_structure'] = {
-            'func': create_sequential_structure,
+            'func': create_structure,
             'kwargs': {
-                'num_cells': 2
+                'n_normal': 2
             }
-        }
-        space['create_cell'] = {
-            'func': create_cnn_normal_cell
         }
 
         # HyperParameters
         space['hyperparameters'] = {
             'batch_size': 64,
-            'eval_batch_size': 64,
+            'eval_batch_size': 64, # TODO : check if useful
             'activation': 'relu',
             'learning_rate': 0.01,
             'optimizer': 'adam',
