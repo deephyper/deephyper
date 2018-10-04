@@ -9,7 +9,7 @@ from deephyper.benchmarks.mnistNas.load_data import load_data
 class Problem:
     def __init__(self):
         space = OrderedDict()
-        space['num_outputs'] = 10
+        #space['num_outputs'] = 10
         space['regression'] = False
         space['load_data'] = {
             'func': load_data

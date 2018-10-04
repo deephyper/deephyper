@@ -83,7 +83,7 @@ class Search:
             update_mode=dict(
                 unit='episodes',
                 # 10 episodes per update
-                batch_size=1,
+                batch_size=10,
                 # Every 10 episodes
                 frequency=1,
             ),
