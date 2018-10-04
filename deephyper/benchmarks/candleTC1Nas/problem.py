@@ -20,7 +20,7 @@ class Problem:
         space['create_structure'] = {
             'func': create_sequential_structure,
             'kwargs': {
-                'num_cells': 3
+                'num_cells': 5
             }
         }
         space['create_cell'] = {
@@ -29,6 +29,7 @@ class Problem:
 
         # HyperParameters
         space['hyperparameters'] = {
+            'eval_batch_size': 64,
             'batch_size': 64,
             'activation': 'relu',
             'learning_rate': 0.01,

@@ -49,7 +49,7 @@ class Search:
 
     def run(self):
         # Settings
-        num_parallel = self.evaluator.num_workers - 2 #balsam launcher & controller of search
+        num_parallel = self.evaluator.num_workers - 4 #balsam launcher & controller of search
         num_episodes = self.num_episodes
         logger.debug(f'num_parallel: {num_parallel}')
         logger.debug(f'num_episodes: {num_episodes}')
@@ -58,7 +58,6 @@ class Search:
         logger.debug('create structure')
         self.structure = self.space['create_structure']['func'](
             tf.constant([[1., 1.]]),
-            self.space['create_cell']['func'],
             **self.space['create_structure']['kwargs']
         )
 
