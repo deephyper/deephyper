@@ -26,8 +26,6 @@ def run(param_dict):
     config['create_structure']['func'] = util.load_attr_from(
         config['create_structure']['func'])
 
-    config['create_cell']['func'] = util.load_attr_from(config['create_cell']['func'])
-
     logger.debug('[PARAM] Loading data')
     # Loading data
     (t_X, t_y), (v_X, v_y) = load_data()

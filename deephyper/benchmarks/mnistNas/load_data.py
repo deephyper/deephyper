@@ -4,7 +4,7 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-def load_data(dest=None):
+def load_data():
     """Loads the MNIST dataset.
     Returns Tuple of Numpy arrays: `(train_X, train_y), (valid_X, valid_y)`.
     """
@@ -30,4 +30,4 @@ def load_data(dest=None):
     return (train_X, train_y), (valid_X, valid_y)
 
 if __name__ == '__main__':
-    load_data('mnist_data')
+    load_data()
