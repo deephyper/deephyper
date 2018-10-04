@@ -29,7 +29,6 @@ class Problem:
         # HyperParameters
         space['hyperparameters'] = {
             'batch_size': 64,
-            'eval_batch_size': 64,
             'activation': 'relu',
             'learning_rate': 0.1,
             'optimizer': 'adam',

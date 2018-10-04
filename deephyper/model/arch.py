@@ -28,7 +28,6 @@ model_path = 'model_path'
 
 # hyperparameters
 batch_size = 'batch_size'
-eval_batch_size = 'eval_batch_size'
 learning_rate = 'learning_rate'
 num_epochs = 'num_epochs'
 patience = 'patience'
