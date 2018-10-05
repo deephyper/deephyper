@@ -10,7 +10,7 @@ from deephyper.benchmarks.candleNT3Nas.load_data import load_data
 class Problem:
     def __init__(self):
         space = OrderedDict()
-        space['regression'] = False
+        space['regression'] = True
         space['load_data'] = {
             'func': load_data
         }
@@ -19,20 +19,20 @@ class Problem:
         space['create_structure'] = {
             'func': create_structure,
             'kwargs': {
-                'num_cells': 5
+                'num_cells': 1
             }
         }
 
         # HyperParameters
-        space['hyperparameters'] = {'batch_size': 64,
-                                    'activation': 'relu',
-                                    'learning_rate': 0.01,
-                                    'optimizer': 'adam',
-                                    'num_epochs': 10,
-                                    'loss_metric': 'softmax_cross_entropy',
-                                    'test_metric': 'accuracy',
-                                    'eval_freq': 1
-                                }
+        space['hyperparameters'] = {
+            'batch_size': 64,
+            'activation': 'relu',
+            'learning_rate': 0.01,
+            'optimizer': 'adam',
+            'num_epochs': 10,
+            'loss_metric': 'mean_squared_error',
+            'test_metric': 'mean_squared_error',
+        }
         self.space = space
 
 
