@@ -13,7 +13,7 @@ def max_list(l):
 data = BalsamJob.objects.filter(workflow=sys.argv[1]).values_list('data__reward', flat=True)
 data = list(filter(lambda e: e != None, list(data)))
 
-print(f'data: {data}')
+print(f'data len: {len(data)}')
 
 plot([i for i in range(len(data))], data)
 
