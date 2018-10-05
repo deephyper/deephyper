@@ -28,7 +28,8 @@ def run(param_dict):
 
     logger.debug('[PARAM] Loading data')
     # Loading data
-    (t_X, t_y), (v_X, v_y) = load_data()
+    kwargs = config['load_data'].get('kwargs')
+    (t_X, t_y), (v_X, v_y) = load_data() if kwargs is None else load_data(**kwargs)
     logger.debug('[PARAM] Data loaded')
 
     config['input_shape'] = list(np.shape(t_X))[1:]

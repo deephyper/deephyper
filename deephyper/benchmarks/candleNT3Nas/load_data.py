@@ -16,9 +16,10 @@ from keras.utils import np_utils
 from deephyper.benchmarks.candleNT3Nas import data_utils
 
 
+HERE = os.path.dirname(os.path.abspath(__file__))
 
-def load_data(dest = None):
-    if not dest: dest = 'DATA'
+def load_data():
+    dest = HERE+'/DATA'
     gParameters = {
         'data_url': 'ftp://ftp.mcs.anl.gov/pub/candle/public/benchmarks/Pilot1/normal-tumor/',
         'test_data': 'nt_test2.csv',
@@ -59,10 +60,10 @@ def load_data(dest = None):
     mat = scaler.fit_transform(mat)
     X_train = mat[:X_train.shape[0], :]
     X_test = mat[X_train.shape[0]:, :]
-    X_train = np.reshape(X_train, (list(X_train.shape) + [1]))
-    Y_train = np.reshape(Y_train, (list(Y_train.shape)))
-    X_test = np.reshape(X_test, (list(X_test.shape) + [1]))
-    Y_test = np.reshape(Y_test, (list(Y_test.shape)))
+    X_train = np.reshape(X_train, (list(X_train.shape)))
+    Y_train = np.reshape(Y_train, (list(Y_train.shape) + [1]))
+    X_test = np.reshape(X_test, (list(X_test.shape)))
+    Y_test = np.reshape(Y_test, (list(Y_test.shape) + [1]))
 
     print(X_train.shape, X_test.shape, Y_train.shape, Y_test.shape)
 
