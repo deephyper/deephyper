@@ -74,7 +74,7 @@ class Search:
         ]
 
         logger.debug('create agent')
-        if self.agent_type = 'ppo':
+        if self.agent_type == 'ppo':
             agent = PPOAgent(
                 states=environment.states,
                 actions=environment.actions,
