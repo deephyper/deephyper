@@ -17,6 +17,7 @@ sys.path.append(lib_path)
 
 from deephyper.benchmarks.candleP1B3Nas.data_utils import get_file
 
+HERE = os.path.dirname(os.path.abspath(__file__))
 
 # Seed for random generation -- default value
 SEED = 7102
@@ -25,7 +26,7 @@ DEFAULT_DATATYPE = np.float32
 
 def get_p1_file(link):
     fname = os.path.basename(link)
-    return get_file(fname, origin=link, cache_subdir='Pilot1')
+    return get_file(fname, origin=link, cache_subdir=HERE+'/DATA/Pilot1')
 
 
 def get_default_neon_parse(parser):

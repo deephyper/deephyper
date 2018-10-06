@@ -68,29 +68,24 @@ def load_data(batch_size):
 
     train_gen = p1b3.DataGenerator(loader, batch_size=gParameters['batch_size'], shape=gen_shape, name='train_gen', cell_noise_sigma=gParameters['cell_noise_sigma']).flow()
     val_gen = p1b3.DataGenerator(loader, partition='val', batch_size=gParameters['batch_size'], shape=gen_shape, name='val_gen').flow()
-    # val_gen2 = p1b3.DataGenerator(loader, partition='val', batch_size=gParameters['batch_size'], shape=gen_shape, name='val_gen2').flow()
-    # test_gen = p1b3.DataGenerator(loader, partition='test', batch_size=gParameters['batch_size'], shape=gen_shape, name='test_gen').flow()
 
     train_steps = int(loader.n_train/gParameters['batch_size'])
     val_steps = int(loader.n_val/gParameters['batch_size'])
-    # test_steps = int(loader.n_test/gParameters['batch_size'])
 
     if 'train_steps' in gParameters:
         train_steps = gParameters['train_steps']
     if 'val_steps' in gParameters:
         val_steps = gParameters['val_steps']
-    # if 'test_steps' in gParameters:
-    #     test_steps = gParameters['test_steps']
 
-    # e = np.array(train_gen)
-    # e = next(train_gen)
-    # print(f'type: {type(e)}')
-    # print(f'len: {len(e)}')
-    # print(f'len1: {len(e[0])}, len2: {len(e[1])}')
-    # x = e[0]
-    # y = e[1]
-    # print(f'type_x: {type(x)}, type_y: {type(y)}')
-    # print(f'shape_x: {np.shape(x)}, shape_y: {np.shape(y)}')
+    e = np.array(train_gen)
+    e = next(train_gen)
+    print(f'type: {type(e)}')
+    print(f'len: {len(e)}')
+    print(f'len1: {len(e[0])}, len2: {len(e[1])}')
+    x = e[0]
+    y = e[1]
+    print(f'type_x: {type(x)}, type_y: {type(y)}')
+    print(f'shape_x: {np.shape(x)}, shape_y: {np.shape(y)}')
     print(f'train_steps: {train_steps}, val_steps: {val_steps}')
 
     return (train_gen, train_steps), (val_gen, val_steps)
