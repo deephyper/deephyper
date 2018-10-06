@@ -28,7 +28,7 @@ class Problem:
             'activation': 'relu',
             'learning_rate': 0.01,
             'optimizer': 'adam',
-            'num_epochs': 1,
+            'num_epochs': 10,
             'loss_metric': 'softmax_cross_entropy',
             'test_metric': 'accuracy',
         }

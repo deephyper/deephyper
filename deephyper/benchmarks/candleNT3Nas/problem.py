@@ -19,7 +19,7 @@ class Problem:
         space['create_structure'] = {
             'func': create_structure,
             'kwargs': {
-                'num_cells': 1
+                'num_cells': 3
             }
         }
 

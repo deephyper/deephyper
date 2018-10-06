@@ -1,6 +1,10 @@
 import sys
+import json
+import datetime
 from terminalplot import plot
 from balsam.launcher.dag import BalsamJob
+
+now = '_'.join(str(datetime.datetime.now(datetime.timezone.utc)).split(" "))
 
 def max_list(l):
     rl = [l[0]]
@@ -10,12 +14,37 @@ def max_list(l):
         rl.append(mx)
     return rl
 
-data = BalsamJob.objects.filter(workflow=sys.argv[1]).values_list('data__reward', flat=True)
-data = list(filter(lambda e: e != None, list(data)))
+def rm_none(l):
+    return list(filter(lambda e: e != None, list(l)))
 
-print(f'data len: {len(data)}')
+def process_data(workflow):
+    data = BalsamJob.objects.filter(workflow=workflow).values_list('data__reward', flat=True)
+    print(f'data len: {len(data)}')
 
-plot([i for i in range(len(data))], data)
+    raw_rewards = list(filter(lambda e: e != None, rm_none(data)))
 
-data = max_list(data)
-plot([i for i in range(len(data))], data)
+    plot([i for i in range(len(raw_rewards))], raw_rewards)
+
+    max_rewards = max_list(raw_rewards)
+    plot([i for i in range(len(max_rewards))], max_rewards)
+
+    data = BalsamJob.objects.filter(workflow=workflow).values_list('data__arch_seq', flat=True)
+    arch_seq = rm_none(data)
+
+    data = BalsamJob.objects.filter(workflow=workflow).values_list('data__w', flat=True)
+    w = rm_none(data)
+
+    filename = f'wf-{workflow}_{now}'
+    print(f'filename: {filename}')
+    with open('data/'+filename+'.json', "w") as f:
+        data = dict(
+            fig=filename,
+            raw_rewards=raw_rewards,
+            max_rewards=max_rewards,
+            arch_seq=arch_seq,
+            w=w
+            )
+        json.dump(data, f)
+
+for wf in sys.argv[1:]:
+    process_data(wf)

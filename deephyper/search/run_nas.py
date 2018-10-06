@@ -85,7 +85,7 @@ class Search:
                 # 10 episodes per update
                 batch_size=10,
                 # Every 10 episodes
-                frequency=1,
+                frequency=10,
             ),
             memory=dict(
                 type='latest',
