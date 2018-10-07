@@ -133,7 +133,13 @@ class Search:
         elif self.agent_type == 'rdm':
             agent = RandomAgent(
                 states=environment.states,
-                actions=environment.actions
+                actions=environment.actions,
+                execution=dict(
+                    type='single',
+                    num_parallel=num_parallel,
+                    session_config=None,
+                    distributed_spec=None
+                )
             )
         else:
             raise Exception(f'Invalid agent type :{self.agent_type}')
