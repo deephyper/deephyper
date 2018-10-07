@@ -19,13 +19,13 @@ class Problem:
         space['create_structure'] = {
             'func': create_structure,
             'kwargs': {
-                'num_cells': 3
+                'num_cells': 5:
             }
         }
 
         # HyperParameters
         space['hyperparameters'] = {
-            'batch_size': 64,
+            'batch_size': 32,
             'activation': 'relu',
             'learning_rate': 0.01,
             'optimizer': 'adam',
