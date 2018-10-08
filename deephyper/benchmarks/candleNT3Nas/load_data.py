@@ -1,8 +1,3 @@
-"""
-Created by Dipendra Jha (dipendra@u.northwestern.edu) on 7/16/18
-
-Utilities for parsing PTB text files.
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -10,9 +5,12 @@ from __future__ import print_function
 import collections
 import os
 import sys
+import shutil
 import numpy as np, pandas as pd
 from sklearn.preprocessing import MaxAbsScaler
 from keras.utils import np_utils
+
+from balsam.service.schedulers import JobEnv
 from deephyper.benchmarks.candleNT3Nas import data_utils
 
 
@@ -20,6 +18,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 def load_data():
     dest = HERE+'/DATA'
+    if JobEnv.host_type == 'THETA' and __name__ != '__main__':
+        ram_path = '/dev/shm/data'
+        if not os.path.isdir(ram_path):
+            shutil.copytree(src=dest, dst=ram_path)
+        dest = ram_path
+
     gParameters = {
         'data_url': 'ftp://ftp.mcs.anl.gov/pub/candle/public/benchmarks/Pilot1/normal-tumor/',
         'test_data': 'nt_test2.csv',
