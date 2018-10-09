@@ -1,9 +1,6 @@
-''' * @Author: romain.egele * @Date: 2018-06-21 15:31:30
-'''
-
 from collections import OrderedDict
 
-from nas.contrib.anl_mlp_1 import create_structure
+from nas.contrib.anl_mlp_2 import create_structure
 from deephyper.benchmarks.candleTC1Nas.load_data import load_data
 
 class Problem:
