@@ -48,6 +48,7 @@ class Search:
         self.update_freq = args.update_freq
         self.agent_type = args.agent
         self.env_mode = args.mode
+        self.lr = args.lr
         logger.debug(f'update mode: (batch_size={self.batch_size}, '
                      f'frequency={self.update_freq})')
 
@@ -112,7 +113,7 @@ class Search:
                     type='multi_step',
                     optimizer=dict(
                         type='adam',
-                        learning_rate=1e-3
+                        learning_rate=self.lr
                     ),
                     num_steps=5
                 ),
@@ -122,7 +123,7 @@ class Search:
                 # PPOAgent
                 step_optimizer=dict(
                     type='adam',
-                    learning_rate=1e-3
+                    learning_rate=self.lr
                 ),
                 subsampling_fraction=0.2,
                 optimization_steps=25,
@@ -180,6 +181,7 @@ def create_parser():
     parser.add_argument('--update_freq', type=int, default=10)
     parser.add_argument('--agent', default='ppo')
     parser.add_argument('--mode', default='full', help='can be "full" or "cell" search.')
+    parser.add_argument('--lr', type=float, default=1e-3)
 
     return parser
 
