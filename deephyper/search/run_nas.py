@@ -52,7 +52,9 @@ class Search:
 
     def run(self):
         # Settings
-        num_parallel = self.evaluator.num_workers - 4 #balsam launcher & controller of search
+        #num_parallel = self.evaluator.num_workers - 4 #balsam launcher & controller of search for cooley
+        num_parallel = self.evaluator.num_workers - 2 #balsam launcher & controller of search for cooley
+
         num_episodes = self.num_episodes
         logger.debug(f'num_parallel: {num_parallel}')
         logger.debug(f'num_episodes: {num_episodes}')

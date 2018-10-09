@@ -5,6 +5,10 @@ from pprint import pformat
 from random import random
 from importlib import import_module
 import numpy as np
+
+### !!! 
+os.path.expanduser = lambda p : p.replace('~', '/home/regele') # theta only, cray os error...
+### !!! 
 import tensorflow as tf
 
 import time

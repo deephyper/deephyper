@@ -47,11 +47,8 @@ class BalsamEvaluator(Evaluator):
     def _eval_exec(self, x):
         jobname = f"task{self.counter}"
         args = f"'{self.encode(x)}'"
-        # envs = (f"KERAS_BACKEND={self.KERAS_BACKEND} "
-        #         f"OMP_NUM_THREADS=62 "
-        #         f"KMP_BLOCKTIME=0 "
-        #         f"KMP_AFFINITY=\"granularity=fine,compact,1,0\"")
-        envs = ":".join(f'KERAS_BACKEND={self.KERAS_BACKEND} OMP_NUM_THREADS=62 KMP_BLOCKTIME=0 KMP_AFFINITY=\"granularity=fine,compact,1,0\"'.split())
+        envs = f"KERAS_BACKEND={self.KERAS_BACKEND}"
+        #envs = ":".join(f'KERAS_BACKEND={self.KERAS_BACKEND} OMP_NUM_THREADS=62 KMP_BLOCKTIME=0 KMP_AFFINITY=\"granularity=fine,compact,1,0\"'.split())
         resources = {
             'num_nodes': 1,
             'ranks_per_node': 1,

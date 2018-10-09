@@ -10,19 +10,22 @@ import numpy as np, pandas as pd
 from sklearn.preprocessing import MaxAbsScaler
 from keras.utils import np_utils
 
-from balsam.service.schedulers import JobEnv
 from deephyper.benchmarks.candleNT3Nas import data_utils
 
+from time import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 def load_data():
     dest = HERE+'/DATA'
-    if JobEnv.host_type == 'THETA' and __name__ != '__main__':
-        ram_path = '/dev/shm/data'
-        if not os.path.isdir(ram_path):
-            shutil.copytree(src=dest, dst=ram_path)
-        dest = ram_path
+    #if __name__ != '__main__':
+    #    print('Check caching to RAM')
+    #    ram_path = '/dev/shm/data'
+    #    if not os.path.isdir(ram_path):
+    #        print('copy to RAM')
+    #        shutil.copytree(src=dest, dst=ram_path)
+    #    print('use ram')
+    #    dest = ram_path
 
     gParameters = {
         'data_url': 'ftp://ftp.mcs.anl.gov/pub/candle/public/benchmarks/Pilot1/normal-tumor/',
@@ -33,13 +36,17 @@ def load_data():
     file_train = gParameters['train_data']
     file_test = gParameters['test_data']
     url = gParameters['data_url']
-
+    
+    print(f'dest get_file: {dest}')
     train_path = data_utils.get_file(file_train, url + file_train, cache_subdir=dest)
     test_path = data_utils.get_file(file_test, url + file_test, cache_subdir=dest)
 
     print('Loading data...')
-    df_train = (pd.read_csv(train_path, header=None).values).astype('float32')
-    df_test = (pd.read_csv(test_path, header=None).values).astype('float32')
+    df_train = pd.read_csv(train_path, header=None, memory_map=True)
+    df_test = pd.read_csv(test_path, header=None, memory_map=True)
+
+    df_train = (df_train.values).astype('float32')
+    df_test = (df_test.values).astype('float32')
     print('done')
 
     print('df_train shape:', df_train.shape)
