@@ -47,6 +47,7 @@ class Search:
         self.batch_size = args.batch_size
         self.update_freq = args.update_freq
         self.agent_type = args.agent
+        self.env_mode = args.mode
         logger.debug(f'update mode: (batch_size={self.batch_size}, '
                      f'frequency={self.update_freq})')
 
@@ -66,7 +67,7 @@ class Search:
 
         # Creating the environment
         logger.debug('create environment')
-        environment = AsyncNasBalsamEnvironment(self.space, self.evaluator, self.structure)
+        environment = AsyncNasBalsamEnvironment(self.space, self.evaluator, self.structure, mode=self.env_mode)
 
         # Creating the Agent
         network_spec = [
