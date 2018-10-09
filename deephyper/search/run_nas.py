@@ -178,6 +178,7 @@ def create_parser():
     parser.add_argument('--batch_size', type=int, default=10)
     parser.add_argument('--update_freq', type=int, default=10)
     parser.add_argument('--agent', default='ppo')
+    parser.add_argument('--mode', default='full', help='can be "full" or "cell" search.')
 
     return parser
 
