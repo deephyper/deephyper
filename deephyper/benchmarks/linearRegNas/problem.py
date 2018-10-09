@@ -3,7 +3,7 @@
 
 from collections import OrderedDict
 
-from nas.contrib.anl_mlp_1 import create_structure
+from nas.contrib.anl_mlp_toy import create_structure
 from deephyper.benchmarks.linearRegNas.load_data import load_data
 
 class Problem:
@@ -18,7 +18,7 @@ class Problem:
         space['create_structure'] = {
             'func': create_structure,
             'kwargs': {
-                'num_cells': 3
+                'num_cells': 1
             }
         }
 

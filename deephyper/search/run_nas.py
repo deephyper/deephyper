@@ -89,9 +89,9 @@ class Search:
                 # MemoryModel
                 update_mode=dict(
                     unit='episodes',
-                    # 10 episodes per update
+                    # 'batch_size' episodes per update
                     batch_size=self.batch_size,
-                    # Every 10 episodes
+                    # Every 'frequency' episodes
                     frequency=self.update_freq,
                 ),
                 memory=dict(
