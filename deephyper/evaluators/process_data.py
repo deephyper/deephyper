@@ -22,6 +22,9 @@ def process_data(workflow):
     print(f'data len: {len(data)}')
 
     raw_rewards = list(filter(lambda e: e != None, rm_none(data)))
+    if len(raw_rewards) == 0:
+        print(f'no rewards for : {workflow}')
+        return -1
 
     plot([i for i in range(len(raw_rewards))], raw_rewards)
 
@@ -31,7 +34,7 @@ def process_data(workflow):
     data = BalsamJob.objects.filter(workflow=workflow).values_list('data__arch_seq', flat=True)
     arch_seq = rm_none(data)
 
-    data = BalsamJob.objects.filter(workflow=workflow).values_list('data__w', flat=True)
+    data = BalsamJob.objects.filter(workflow=workflow).values_list('data__id_worker', flat=True)
     w = rm_none(data)
 
     filename = f'wf-{workflow}_{now}'
@@ -42,9 +45,10 @@ def process_data(workflow):
             raw_rewards=raw_rewards,
             max_rewards=max_rewards,
             arch_seq=arch_seq,
-            w=w
+            id_worker=w
             )
         json.dump(data, f)
+    return 0
 
 for wf in sys.argv[1:]:
     process_data(wf)
