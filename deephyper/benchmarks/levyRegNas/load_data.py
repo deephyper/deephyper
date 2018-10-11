@@ -1,7 +1,6 @@
 import os
-from tensorflow.examples.tutorials.mnist import input_data
 import numpy as np
-from deephyper.benchmarks.benchmark_functions_wrappers import linear_
+from deephyper.benchmarks.benchmark_functions_wrappers import levy_
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -9,12 +8,12 @@ np.random.seed(2018)
 
 def load_data(dest=None):
     """
-    Generate data for cosinus function.
+    Generate data for polynome_2 function.
     Returns Tuple of Numpy arrays: `(train_X, train_y), (valid_X, valid_y)`.
     """
     size = 10000
     prop = 0.85
-    f, (a, b), _ = linear_()
+    f, (a, b), _ = levy_()
     d = b - a
     x = np.array([a + np.random.random(10) * d for i in range(size)])
     y = np.array([[f(v)] for v in x])

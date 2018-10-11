@@ -1,14 +1,23 @@
+''' * @Author: romain.egele * @Date: 2018-06-21 15:31:30
+'''
+
 from collections import OrderedDict
 
 from nas.contrib.anl_mlp_2 import create_structure
-from deephyper.benchmarks.candleTC1Nas.load_data import load_data
+from nas.model.preprocessing import stdscaler_minmax
+from deephyper.benchmarks.levyRegNas.load_data import load_data
 
 class Problem:
     def __init__(self):
         space = OrderedDict()
         space['regression'] = True
+
         space['load_data'] = {
             'func': load_data
+        }
+
+        space['preprocessing'] = {
+            'func': stdscaler_minmax
         }
 
         # ARCH
@@ -21,11 +30,11 @@ class Problem:
 
         # HyperParameters
         space['hyperparameters'] = {
-            'batch_size': 32,
+            'batch_size': 64,
             'activation': 'relu',
-            'learning_rate': 0.01,
+            'learning_rate': 0.1,
             'optimizer': 'adam',
-            'num_epochs': 30,
+            'num_epochs': 20,
             'loss_metric': 'mean_squared_error',
             'test_metric': 'mean_squared_error',
         }

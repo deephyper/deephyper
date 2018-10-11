@@ -4,13 +4,13 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-def load_data(dest=None):
+def load_data():
     """Loads the MNIST dataset.
     Returns Tuple of Numpy arrays: `(train_X, train_y), (valid_X, valid_y)`.
     """
     dest = HERE+'/DATA'
 
-    mnist = input_data.read_data_sets(dest, one_hot=False)
+    mnist = input_data.read_data_sets(dest, one_hot=True)
 
     train_X = mnist.train.images
     shp_X = list(np.shape(train_X))[:1] + [28, 28, 1]
@@ -26,8 +26,8 @@ def load_data(dest=None):
     # valid_y = np.argmax(mnist.validation.labels, axis=1)
     valid_y = mnist.validation.labels
 
-    print(train_X[0])
+    # print(train_X[0])
     return (train_X, train_y), (valid_X, valid_y)
 
 if __name__ == '__main__':
-    load_data('mnist_data')
+    load_data()

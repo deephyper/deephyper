@@ -11,7 +11,7 @@ from math import ceil, log
 from pprint import pprint, pformat
 from random import random
 from time import ctime, time, sleep
-from importlib import import_module, reload
+from importlib import import_module
 import numpy as np
 import tensorflow as tf
 
@@ -19,14 +19,12 @@ from deephyper.evaluators import Evaluator
 from deephyper.search import util
 
 from tensorforce.agents import PPOAgent
+from tensorforce.agents import RandomAgent
 from tensorforce.execution import DistributedRunner
 from tensorforce.environments import AsyncNasBalsamEnvironment
 
 logger = util.conf_logger('deephyper.search.run_nas')
 
-# import subprocess as sp
-# logger.debug(f'ddd {sp.Popen("which mpirun".split())}')
-# logger.debug(f'python exe : {sys.executable}')
 
 def print_logs(runner):
     logger.debug('num_episodes = {}'.format(runner.global_episode))
@@ -46,10 +44,19 @@ class Search:
         logger.debug(f'evaluator: {type(self.evaluator)}')
         self.structure = None
         self.num_workers = kwargs.get('nodes')
+        self.batch_size = args.batch_size
+        self.update_freq = args.update_freq
+        self.agent_type = args.agent
+        self.env_mode = args.mode
+        self.lr = args.lr
+        logger.debug(f'update mode: (batch_size={self.batch_size}, '
+                     f'frequency={self.update_freq})')
 
     def run(self):
         # Settings
-        num_parallel = self.evaluator.num_workers - 1 if self.num_workers is None else self.num_workers-1
+        #num_parallel = self.evaluator.num_workers - 4 #balsam launcher & controller of search for cooley
+        num_parallel = self.evaluator.num_workers - 2 #balsam launcher & controller of search for cooley
+
         num_episodes = self.num_episodes
         logger.debug(f'num_parallel: {num_parallel}')
         logger.debug(f'num_episodes: {num_episodes}')
@@ -58,13 +65,12 @@ class Search:
         logger.debug('create structure')
         self.structure = self.space['create_structure']['func'](
             tf.constant([[1., 1.]]),
-            self.space['create_cell']['func'],
             **self.space['create_structure']['kwargs']
         )
 
         # Creating the environment
         logger.debug('create environment')
-        environment = AsyncNasBalsamEnvironment(self.space, self.evaluator, self.structure)
+        environment = AsyncNasBalsamEnvironment(self.space, self.evaluator, self.structure, mode=self.env_mode)
 
         # Creating the Agent
         network_spec = [
@@ -72,61 +78,75 @@ class Search:
         ]
 
         logger.debug('create agent')
-        agent = PPOAgent(
-            states=environment.states,
-            actions=environment.actions,
-            network=network_spec,
-            # Agent
-            states_preprocessing=None,
-            actions_exploration=None,
-            reward_preprocessing=None,
-            # MemoryModel
-            update_mode=dict(
-                unit='episodes',
-                # 10 episodes per update
-                batch_size=1,
-                # Every 10 episodes
-                frequency=1,
-            ),
-            memory=dict(
-                type='latest',
-                include_next_states=False,
-                capacity=5000
-            ),
-            # DistributionModel
-            distributions=None,
-            entropy_regularization=0.01,
-            # PGModel
-            baseline_mode='states',
-            baseline=dict(
-                type='mlp',
-                sizes=[32, 32]
-            ),
-            baseline_optimizer=dict(
-                type='multi_step',
-                optimizer=dict(
-                    type='adam',
-                    learning_rate=1e-3
+        if self.agent_type == 'ppo':
+            agent = PPOAgent(
+                states=environment.states,
+                actions=environment.actions,
+                network=network_spec,
+                # Agent
+                states_preprocessing=None,
+                actions_exploration=None,
+                reward_preprocessing=None,
+                # MemoryModel
+                update_mode=dict(
+                    unit='episodes',
+                    # 'batch_size' episodes per update
+                    batch_size=self.batch_size,
+                    # Every 'frequency' episodes
+                    frequency=self.update_freq,
                 ),
-                num_steps=5
-            ),
-            gae_lambda=0.97,
-            # PGLRModel
-            likelihood_ratio_clipping=0.2,
-            # PPOAgent
-            step_optimizer=dict(
-                type='adam',
-                learning_rate=1e-3
-            ),
-            subsampling_fraction=0.2,
-            optimization_steps=25,
-            execution=dict(
-                type='single',
-                num_parallel=num_parallel,
-                session_config=None,
-                distributed_spec=None
+                memory=dict(
+                    type='latest',
+                    include_next_states=False,
+                    capacity=5000
+                ),
+                # DistributionModel
+                distributions=None,
+                entropy_regularization=0.01,
+                # PGModel
+                baseline_mode='states',
+                baseline=dict(
+                    type='mlp',
+                    sizes=[32, 32]
+                ),
+                baseline_optimizer=dict(
+                    type='multi_step',
+                    optimizer=dict(
+                        type='adam',
+                        learning_rate=self.lr
+                    ),
+                    num_steps=5
+                ),
+                gae_lambda=0.97,
+                # PGLRModel
+                likelihood_ratio_clipping=0.2,
+                # PPOAgent
+                step_optimizer=dict(
+                    type='adam',
+                    learning_rate=self.lr
+                ),
+                subsampling_fraction=0.2,
+                optimization_steps=25,
+                execution=dict(
+                    type='single',
+                    num_parallel=num_parallel,
+                    session_config=None,
+                    distributed_spec=None
+                )
             )
-        )
+        elif self.agent_type == 'rdm':
+            agent = RandomAgent(
+                states=environment.states,
+                actions=environment.actions,
+                execution=dict(
+                    type='single',
+                    num_parallel=num_parallel,
+                    session_config=None,
+                    distributed_spec=None
+                )
+            )
+        else:
+            raise Exception(f'Invalid agent type :{self.agent_type}')
 
         # Creating the Runner
         runner = DistributedRunner(agent=agent, environment=environment)
@@ -155,8 +175,13 @@ def create_parser():
                         help='maximum number of episodes')
     parser.add_argument('--nodes', type=int, default=None)
     parser.add_argument('--run',
-                        default="deephyper.run.nas_structure.run",
-                        help='ex. deephyper.run.nas_structure.run')
+                        default="deephyper.run.nas_structure_raw.run",
+                        help='ex. deephyper.run.nas_structure_raw.run')
+    parser.add_argument('--batch_size', type=int, default=10)
+    parser.add_argument('--update_freq', type=int, default=10)
+    parser.add_argument('--agent', default='ppo')
+    parser.add_argument('--mode', default='full', help='can be "full" or "cell" search.')
+    parser.add_argument('--lr', type=float, default=1e-3)
 
     return parser
 

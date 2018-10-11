@@ -30,7 +30,6 @@ class Problem:
 
         # HyperParameters
         space['hyperparameters'] = {'batch_size': 20,
-                                    'eval_batch_size': 20,#needs to be same as batch size
                                     'activation': 'relu',
                                     'learning_rate': 1.0,
                                     'max_grad_norm':20,

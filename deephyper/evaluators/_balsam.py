@@ -1,5 +1,7 @@
 import logging
 import os
+import json
+from io import StringIO
 
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
@@ -46,6 +48,7 @@ class BalsamEvaluator(Evaluator):
         jobname = f"task{self.counter}"
         args = f"'{self.encode(x)}'"
         envs = f"KERAS_BACKEND={self.KERAS_BACKEND}"
+        #envs = ":".join(f'KERAS_BACKEND={self.KERAS_BACKEND} OMP_NUM_THREADS=62 KMP_BLOCKTIME=0 KMP_AFFINITY=\"granularity=fine,compact,1,0\"'.split())
         resources = {
             'num_nodes': 1,
             'ranks_per_node': 1,
@@ -73,9 +76,22 @@ class BalsamEvaluator(Evaluator):
         return future
 
     @staticmethod
-    def _on_done(job):
+    def _on_done(job): #def _on_done(job, process_data):
         output = job.read_file_in_workdir(f'{job.name}.out')
-        return Evaluator._parse(output)
+        # process_data(job)
+        args = job.args
+        args = args.replace("\'", "")
+        with open('test.json', 'w') as f:
+            f.write(args)
+
+        with open('test.json', 'r') as f:
+            args = json.load(f)
+        output = Evaluator._parse(output)
+        job.data['reward'] = output
+        job.data['arch_seq'] = args['arch_seq']
+        job.data['id_worker'] = args['w']
+        job.save()
+        return output
 
     @staticmethod
     def _on_fail(job):

@@ -19,6 +19,13 @@ Build custom structure
 .. autoclass:: nas.cell.SequentialStructure
     :members:
 
+Build in structures
+===================
+
+.. autofunction:: nas.contrib.anl_mlp_1.create_structure
+
+.. autofunction:: nas.contrib.google_nas_net.create_structure
+
 Build in operations
 ===================
 
@@ -34,10 +41,21 @@ MLP operations
 CNN operations
 --------------
 
+.. autoclass:: nas.operation.cnn.IdentityConv2D
+
 .. autoclass:: nas.operation.cnn.Convolution2D
     :members:
 
+.. autoclass:: nas.operation.cnn.DepthwiseSeparable2D
+    :members:
+
+.. autoclass:: nas.operation.cnn.Dilation2D
+    :members:
+
 .. autoclass:: nas.operation.cnn.MaxPooling2D
+    :members:
+
+.. autoclass:: nas.operation.cnn.AvgPooling2D
     :members:
 
 Build in cells
@@ -53,4 +71,8 @@ Multi Layer Perceptron
 Convolution
 -----------
 
-.. autofunction:: nas.cell.cnn.create_cnn_cell_type1
+.. autofunction:: nas.cell.cnn.create_cnn_base_cell
+
+.. autofunction:: nas.cell.cnn.create_cnn_normal_cell
+
+.. autofunction:: nas.cell.cnn.create_cnn_reduction_cell

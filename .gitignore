@@ -50,6 +50,8 @@ DATA/
 *.cobaltlog
 bin/
 *.log
+*.dot
+Data/
 
 # Sphinx documentation
 _build/

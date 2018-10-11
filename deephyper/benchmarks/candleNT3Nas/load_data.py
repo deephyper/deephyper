@@ -1,8 +1,3 @@
-"""
-Created by Dipendra Jha (dipendra@u.northwestern.edu) on 7/16/18
-
-Utilities for parsing PTB text files.
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -10,15 +5,28 @@ from __future__ import print_function
 import collections
 import os
 import sys
+import shutil
 import numpy as np, pandas as pd
 from sklearn.preprocessing import MaxAbsScaler
 from keras.utils import np_utils
+
 from deephyper.benchmarks.candleNT3Nas import data_utils
 
+from time import time
 
+HERE = os.path.dirname(os.path.abspath(__file__))
 
-def load_data(dest = None):
-    if not dest: dest = 'DATA'
+def load_data():
+    dest = HERE+'/DATA'
+    #if __name__ != '__main__':
+    #    print('Check caching to RAM')
+    #    ram_path = '/dev/shm/data'
+    #    if not os.path.isdir(ram_path):
+    #        print('copy to RAM')
+    #        shutil.copytree(src=dest, dst=ram_path)
+    #    print('use ram')
+    #    dest = ram_path
+
     gParameters = {
         'data_url': 'ftp://ftp.mcs.anl.gov/pub/candle/public/benchmarks/Pilot1/normal-tumor/',
         'test_data': 'nt_test2.csv',
@@ -28,13 +36,17 @@ def load_data(dest = None):
     file_train = gParameters['train_data']
     file_test = gParameters['test_data']
     url = gParameters['data_url']
-
+    
+    print(f'dest get_file: {dest}')
     train_path = data_utils.get_file(file_train, url + file_train, cache_subdir=dest)
     test_path = data_utils.get_file(file_test, url + file_test, cache_subdir=dest)
 
     print('Loading data...')
-    df_train = (pd.read_csv(train_path, header=None).values).astype('float32')
-    df_test = (pd.read_csv(test_path, header=None).values).astype('float32')
+    df_train = pd.read_csv(train_path, header=None, memory_map=True)
+    df_test = pd.read_csv(test_path, header=None, memory_map=True)
+
+    df_train = (df_train.values).astype('float32')
+    df_test = (df_test.values).astype('float32')
     print('done')
 
     print('df_train shape:', df_train.shape)
@@ -59,10 +71,10 @@ def load_data(dest = None):
     mat = scaler.fit_transform(mat)
     X_train = mat[:X_train.shape[0], :]
     X_test = mat[X_train.shape[0]:, :]
-    X_train = np.reshape(X_train, (list(X_train.shape) + [1]))
-    Y_train = np.reshape(Y_train, (list(Y_train.shape)))
-    X_test = np.reshape(X_test, (list(X_test.shape) + [1]))
-    Y_test = np.reshape(Y_test, (list(Y_test.shape)))
+    X_train = np.reshape(X_train, (list(X_train.shape)))
+    Y_train = np.reshape(Y_train, (list(Y_train.shape) + [1]))
+    X_test = np.reshape(X_test, (list(X_test.shape)))
+    Y_test = np.reshape(Y_test, (list(Y_test.shape) + [1]))
 
     print(X_train.shape, X_test.shape, Y_train.shape, Y_test.shape)
 

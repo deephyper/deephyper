@@ -3,14 +3,12 @@
 
 from collections import OrderedDict
 
-from nas.cell.structure import create_sequential_structure
-from nas.cell.cnn import create_cnn_normal_cell
+from nas.contrib.google_nas_net import create_structure
 from deephyper.benchmarks.mnistNas.load_data import load_data
 
 class Problem:
     def __init__(self):
         space = OrderedDict()
-        space['num_outputs'] = 10
         space['regression'] = False
         space['load_data'] = {
             'func': load_data
@@ -18,23 +16,19 @@ class Problem:
 
         # ARCH
         space['create_structure'] = {
-            'func': create_sequential_structure,
+            'func': create_structure,
             'kwargs': {
-                'num_cells': 2
+                'n_normal': 2
             }
-        }
-        space['create_cell'] = {
-            'func': create_cnn_normal_cell
         }
 
         # HyperParameters
         space['hyperparameters'] = {
             'batch_size': 64,
-            'eval_batch_size': 64,
             'activation': 'relu',
             'learning_rate': 0.01,
             'optimizer': 'adam',
-            'num_epochs': 1,
+            'num_epochs': 10,
             'loss_metric': 'softmax_cross_entropy',
             'test_metric': 'accuracy',
         }
