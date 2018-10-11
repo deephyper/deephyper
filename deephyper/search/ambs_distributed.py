@@ -19,13 +19,12 @@ sys.path.append(top)
 os.environ['KERAS_BACKEND']='tensorflow'
 
 from skopt import Optimizer
-from deephyper.search.ExtremeGradientBoostingQuantileRegressor import ExtremeGradientBoostingQuantileRegressor
 from deephyper.search import util
 
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
-logger = util.conf_logger('deephyper.search.amls_mpi')
+logger = util.conf_logger('deephyper.search.ambs_mpi')
 
 
 class Config:
@@ -85,17 +84,6 @@ class Config:
             optimizer = Optimizer(
                 self.space,
                 base_estimator=self.learner,
-                acq_optimizer='sampling',
-                acq_func='LCB',
-                acq_func_kwargs={'kappa':kappa},
-                acq_optimizer_kwargs={'n_points':10000},
-                random_state=random_state,
-                n_initial_points = self.n_init
-            )
-        elif self.learner == "XGB":
-            optimizer = Optimizer(
-                self.space,
-                base_estimator=ExtremeGradientBoostingQuantileRegressor(),
                 acq_optimizer='sampling',
                 acq_func='LCB',
                 acq_func_kwargs={'kappa':kappa},

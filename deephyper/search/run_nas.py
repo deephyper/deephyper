@@ -11,7 +11,7 @@ from math import ceil, log
 from pprint import pprint, pformat
 from random import random
 from time import ctime, time, sleep
-from importlib import import_module, reload
+from importlib import import_module
 import numpy as np
 import tensorflow as tf
 

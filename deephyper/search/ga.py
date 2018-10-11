@@ -31,17 +31,17 @@ logger = util.conf_logger('deephyper.search.ga')
 SEED = 12345
 CHECKPOINT_INTERVAL = 1    # How many generations between optimizer checkpoints
 SERVICE_PERIOD = 2
-    
+
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMin)
 
 def uniform(lower_list, upper_list, dimensions):
     """Fill array """
     if hasattr(lower_list, '__iter__'):
-        return [random.uniform(lower, upper) 
+        return [random.uniform(lower, upper)
                 for lower, upper in zip(lower_list, upper_list)]
     else:
-        return [random.uniform(lower_list, upper_list) 
+        return [random.uniform(lower_list, upper_list)
                 for _ in range(dimensions)]
 
 
@@ -50,7 +50,7 @@ class SpaceEncoder:
         self.space = space
         self.encoders = []
         self.ttypes = []
-        self.encode_space() 
+        self.encode_space()
 
     def encode_space(self):
         for p in self.space:
@@ -77,9 +77,9 @@ class SpaceEncoder:
         except ValueError:
             print("GOT VALUE ERROR WHEN TRYING TO DECODE", point)
             raise
-        for i in range(len(point)): 
+        for i in range(len(point)):
             if self.ttypes[i] == 'i':
-                result[i] = int(round(result[i])) 
+                result[i] = int(round(result[i]))
         return result
 
     def decode(self, enc_val, encoder):
@@ -131,7 +131,7 @@ class GAOptimizer:
         random.seed(self.SEED)
 
         self.toolbox = base.Toolbox()
-        
+
         LOWER = [0.0] * self.IND_SIZE
         UPPER = [1.0] * self.IND_SIZE
         self.toolbox.register("uniformparams", uniform, LOWER, UPPER, self.IND_SIZE)
@@ -158,7 +158,7 @@ class GAOptimizer:
         d['toolbox'] = None
         d['stats'] = None
         return d
-    
+
     def __setstate__(self, d):
         self.__dict__ = d
         self._setup()
@@ -180,7 +180,7 @@ def save_checkpoint(opt_config, optimizer, evaluator):
     data['opt_config'] = opt_config
     data['optimizer'] = optimizer
     data['evaluator'] = evaluator
-    
+
     fname = f'{opt_config.benchmark}.pkl'
     with open(fname, 'wb') as fp: pickle.dump(data, fp)
 
@@ -192,7 +192,7 @@ def load_checkpoint(chk_path):
     chk_path = os.path.abspath(os.path.expanduser(chk_path))
     assert os.path.exists(chk_path), "No such checkpoint file"
     with open(chk_path, 'rb') as fp: data = pickle.load(fp)
-    
+
     cfg, opt, evaluator = data['opt_config'], data['optimizer'], data['evaluator']
 
     cfg.num_workers = args.num_workers
@@ -219,7 +219,7 @@ def main(args):
 
     logger.info("Hyperopt GA driver starting")
     logger.info(f"Elapsed time: {elapsed_str}")
-    
+
     # Gracefully handle shutdown
     def handler(signum, stack):
         evaluator.stop()
@@ -237,11 +237,11 @@ def main(args):
         individuals = opt.pop
         evaluate_fitnesses(individuals, opt, evaluator, args.eval_timeout_minutes)
         opt.record_generation(num_evals=len(opt.pop))
-        
+
         with open('ga_logbook.log', 'w') as fp:
             fp.write(str(opt.logbook))
         print("best:", opt.halloffame[0])
-    
+
     while opt.current_gen < opt.NGEN:
         opt.current_gen += 1
         time_str = next(timer)
@@ -269,7 +269,7 @@ def main(args):
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
         logger.info(f"Evaluating {len(invalid_ind)} invalid individuals")
         evaluate_fitnesses(invalid_ind, opt, evaluator, args.eval_timeout_minutes)
-        
+
         # The population is entirely replaced by the offspring
         opt.pop[:] = offspring
 
@@ -278,14 +278,14 @@ def main(args):
         with open('ga_logbook.log', 'w') as fp:
             fp.write(str(opt.logbook))
         print("best:", opt.halloffame[0])
-        
+
 
         chkpoint_counter += 1
         if chkpoint_counter >= CHECKPOINT_INTERVAL:
             save_checkpoint(cfg, opt, evaluator)
             chkpoint_counter = 0
         sys.stdout.flush()
-    
+
     # EXIT
     logger.info('Hyperopt GA driver finishing')
     save_checkpoint(cfg, opt, evaluator)
