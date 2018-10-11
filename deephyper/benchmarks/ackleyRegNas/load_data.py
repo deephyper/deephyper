@@ -1,6 +1,7 @@
 import os
 import numpy as np
 from deephyper.benchmarks.benchmark_functions_wrappers import ackley_
+from deephyper.contrib import preprocessing
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -17,6 +18,12 @@ def load_data(dest=None):
     d = b - a
     x = np.array([a + np.random.random(10) * d for i in range(size)])
     y = np.array([[f(v)] for v in x])
+
+    # preprocessing
+    print(f'preprocessing data set')
+    data = preprocessing.classic(x, y)
+    x = data[:, :-1]
+    y = data[:, -1:]
 
     sep_index = int(prop * size)
     train_X = x[:sep_index]

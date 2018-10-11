@@ -1,6 +1,8 @@
 import os
 from tensorflow.examples.tutorials.mnist import input_data
 import numpy as np
+from deephyper.benchmarks.benchmark_functions_wrappers import linear_
+from deephyper.contrib import preprocessing
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -13,17 +15,16 @@ def load_data(dest=None):
     """
     size = 10000
     prop = 0.85
-    arr = np.arange(size)
-    np.random.shuffle(arr)
+    f, (a, b), _ = linear_()
+    d = b - a
+    x = np.array([a + np.random.random(10) * d for i in range(size)])
+    y = np.array([[f(v)] for v in x])
 
-    x = np.linspace(0, 10, size)
-    y = np.copy(x)
-
-    x = x[arr]
-    y = y[arr]
-
-    x = np.reshape(x, (size, 1))
-    y = np.reshape(y, (size, 1))
+    # preprocessing
+    print(f'preprocessing data set')
+    data = preprocessing.classic(x, y)
+    x = data[:, :-1]
+    y = data[:, -1:]
 
     sep_index = int(prop * size)
     train_X = x[:sep_index]

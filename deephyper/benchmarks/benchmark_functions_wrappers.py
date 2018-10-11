@@ -43,3 +43,10 @@ def levy_():
     b = 10
     minimas = lambda d: [1 for i in range(d)]
     return p, (a, b), minimas
+
+def linear_():
+    p = lambda x: sum(x)
+    a = 1
+    b = -1
+    minimas = lambda d: [-1 for i in range(d)]
+    return p, (a, b), minimas
