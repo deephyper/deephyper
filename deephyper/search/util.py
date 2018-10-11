@@ -152,8 +152,11 @@ def load_attr_from(str_full_module):
             - str_full_module: (str) correspond to {module_name}.{attr}
         Return: the loaded attribut from a module.
     """
-    split_full = str_full_module.split('.')
-    str_module = '.'.join(split_full[:-1])
-    str_attr = split_full[-1]
-    module = import_module(str_module)
-    return getattr(module, str_attr)
+    if type(str_full_module) == str:
+        split_full = str_full_module.split('.')
+        str_module = '.'.join(split_full[:-1])
+        str_attr = split_full[-1]
+        module = import_module(str_module)
+        return getattr(module, str_attr)
+    else:
+        return str_full_module

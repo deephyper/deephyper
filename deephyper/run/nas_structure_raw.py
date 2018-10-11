@@ -6,9 +6,9 @@ from random import random
 from importlib import import_module
 import numpy as np
 
-### !!! 
+### !!!
 os.path.expanduser = lambda p : p.replace('~', '/home/regele') # theta only, cray os error...
-### !!! 
+### !!!
 import tensorflow as tf
 
 import time
@@ -25,8 +25,11 @@ def run(param_dict):
     logger.debug('Starting...')
     config = param_dict
 
+    # load functions
+    preprocessing = util.load_attr_from(config['preprocessing']['func'])
     load_data = util.load_attr_from(config['load_data']['func'])
-
+    config['preprocessing']['func'] = preprocessing
+    config['load_data']['func'] = load_data
     config['create_structure']['func'] = util.load_attr_from(
         config['create_structure']['func'])
 
@@ -36,6 +39,7 @@ def run(param_dict):
     (t_X, t_y), (v_X, v_y) = load_data() if kwargs is None else load_data(**kwargs)
     logger.debug('[PARAM] Data loaded')
 
+    # Set data shape
     config['input_shape'] = list(np.shape(t_X))[1:]
     config['output_shape'] = list(np.shape(t_y))[1:]
 

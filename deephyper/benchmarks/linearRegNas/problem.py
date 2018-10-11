@@ -4,14 +4,20 @@
 from collections import OrderedDict
 
 from nas.contrib.anl_mlp_2 import create_structure
+from nas.model.preprocessing import stdscaler_minmax
 from deephyper.benchmarks.linearRegNas.load_data import load_data
 
 class Problem:
     def __init__(self):
         space = OrderedDict()
         space['regression'] = True
+
         space['load_data'] = {
             'func': load_data
+        }
+
+        space['preprocessing'] = {
+            'func': stdscaler_minmax
         }
 
         # ARCH
