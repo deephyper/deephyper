@@ -2,8 +2,8 @@ from deephyper.benchmarks.benchmark_functions import *
 
 def griewank_():
     max_griewank = lambda v: -griewank(v)
-    a = - 10
-    b = 10
+    a = - 50
+    b = 50
     minimas = lambda d : [ 0 for i in range(d)]
     return max_griewank, (a, b), minimas
 
@@ -24,16 +24,16 @@ def dixonprice_():
     global minimum = math.inf
     '''
     max_dixonprice = lambda v : -dixonprice(v)
-    a = -10
-    b = 10
+    a = -50
+    b = 50
     min_i = lambda i: 2**(-(2**i - 2)/(2**i))
     minimas = lambda d: [min_i(i) for i in range(d)]
     return max_dixonprice, (a, b), minimas
 
 def polynome_2():
     p = lambda x: -sum([x_i**2 for x_i in x])
-    a = -2
-    b = 2
+    a = -50
+    b = 50
     minimas = lambda d: [0 for i in range(d)]
     return p, (a, b), minimas
 
