@@ -174,7 +174,7 @@ class Evaluator:
                 self.requested_evals.remove(key)
                 x = self.decode(key)
                 y = self.finished_evals[uid]
-                logger.info(f"Requested eval x: {x} y: {y}")
+                logger.debug(f"Requested eval x: {x} y: {y}")
                 yield (x,y)
 
     @property

@@ -1,9 +1,12 @@
+import os
 import sys
 import time
 import logging
 from importlib import import_module
 
 masterLogger = None
+LOG_LEVEL = os.environ.get('DEEPHYPER_LOG_LEVEL', 'DEBUG')
+LOG_LEVEL = getattr(logging, LOG_LEVEL)
 
 class Timer:
     def __init__(self):
@@ -33,7 +36,7 @@ def conf_logger(name):
         )
         handler.setFormatter(formatter)
         masterLogger.addHandler(handler)
-        masterLogger.setLevel(logging.DEBUG)
+        masterLogger.setLevel(LOG_LEVEL)
         masterLogger.info("\n\nLoading Deephyper\n--------------")
     def log_uncaught_exceptions(exctype, value, tb):
         masterLogger.exception('Uncaught exception:', exc_info=(exctype,value,tb))
