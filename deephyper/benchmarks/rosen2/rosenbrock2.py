@@ -3,6 +3,7 @@ from pprint import pprint
 import sys
 import argparse
 from numpy import float64
+import tensorflow as tf
 
 NDIM = 2
 
