@@ -127,6 +127,7 @@ def vectorize_stories(data, word_idx, story_maxlen, query_maxlen):
 def run(param_dict):
     param_dict = keras_cmdline.fill_missing_defaults(augment_parser, param_dict)
     optimizer = keras_cmdline.return_optimizer(param_dict)
+    print("Param Dict for b2 run:")
     pprint(param_dict)
     
     challenges = {
@@ -139,7 +140,7 @@ def run(param_dict):
     challenge = challenges[challenge_type]
     
     timer.start('stage in')
-    if param_dict['data_source']:
+    if param_dict.get('data_source'):
         data_source = param_dict['data_source']
     else:
         data_source = os.path.dirname(os.path.abspath(__file__))
@@ -148,7 +149,7 @@ def run(param_dict):
     try:
         paths = util.stage_in(['babi-tasks-v1-2.tar.gz'],
                               source=data_source,
-                              dest=param_dict['stage_in_destination'])
+                              dest=param_dict.get('stage_in_destination', ''))
         path = paths['babi-tasks-v1-2.tar.gz']
     except:
         print('Error downloading dataset, please download it manually:\n'
@@ -221,7 +222,7 @@ def run(param_dict):
         RNN = layers.LSTM
 
     
-    model_path = param_dict['model_path']
+    model_path = param_dict.get('model_path','')
     model_mda_path = None
     model = None
     initial_epoch = 0
@@ -304,6 +305,7 @@ def run(param_dict):
     callbacks_list = [timeout_monitor]
 
     timer.start('model training')
+
     train_history = model.fit([inputs_train, queries_train], answers_train, callbacks=callbacks_list, 
                                 batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=EPOCHS, validation_split=0.30) #, validation_data=([inputs_test, queries_test], answers_test))
     timer.end()

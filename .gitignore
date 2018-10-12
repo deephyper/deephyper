@@ -51,6 +51,7 @@ DATA/
 bin/
 *.log
 *.dot
+*.tar.gz
 Data/
 
 # Sphinx documentation
