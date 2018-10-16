@@ -3,7 +3,6 @@ import pickle
 from collections import namedtuple
 import time
 import os
-from filelock import FileLock
 from keras.callbacks import Callback
 from datetime import datetime
 
@@ -100,8 +99,7 @@ def stage_in(file_names, source, dest):
 
         if os.path.exists(dest):
             target = os.path.join(dest, name)
-            with FileLock(target + '.lock'):
-                paths[name] = get_file(fname=target, origin='file://'+origin)
+            paths[name] = get_file(fname=target, origin='file://'+origin)
         else:
             paths[name] = origin
 
