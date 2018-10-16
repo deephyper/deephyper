@@ -48,7 +48,7 @@ class Search:
         # Settings
         #num_parallel = self.evaluator.num_workers - 4 #balsam launcher & controller of search for cooley
         num_nodes = self.evaluator.num_workers - 1 #balsam launcher & controller of search for theta
-        num_episodes_per_batch = num_nodes//self.num_agents
+        num_episodes_per_batch = (num_nodes-self.num_agents)//self.num_agents
 
         if self.rank == 0:
             logger.debug(f'<Rank={self.rank}> num_nodes: {num_nodes}')
