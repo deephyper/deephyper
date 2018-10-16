@@ -49,13 +49,21 @@ class Search:
         self.agent_type = args.agent
         self.env_mode = args.mode
         self.lr = args.lr
+        self.opt_steps = args.opt_steps
+        self.bopt_steps = args.bopt_steps
         logger.debug(f'update mode: (batch_size={self.batch_size}, '
-                     f'frequency={self.update_freq})')
+                     f'frequency={self.update_freq}), '
+                     f'learing_rate={self.lr}, '
+                     f'opt_steps={self.opt_steps}, '
+                     f'bopt_steps={self.bopt_steps}')
 
     def run(self):
         # Settings
         #num_parallel = self.evaluator.num_workers - 4 #balsam launcher & controller of search for cooley
-        num_parallel = self.evaluator.num_workers - 2 #balsam launcher & controller of search for cooley
+        if self.batch_size != None:
+            num_parallel = self.batch_size
+        else:
+            num_parallel = self.evaluator.num_workers - 2 #balsam launcher & controller of search for cooley
 
         num_episodes = self.num_episodes
         logger.debug(f'num_parallel: {num_parallel}')
@@ -91,9 +99,9 @@ class Search:
                 update_mode=dict(
                     unit='episodes',
                     # 'batch_size' episodes per update
-                    batch_size=self.batch_size,
+                    batch_size=num_parallel,
                     # Every 'frequency' episodes
-                    frequency=self.update_freq,
+                    frequency=int(num_parallel/self.update_freq),
                 ),
                 memory=dict(
                     type='latest',
@@ -115,7 +123,7 @@ class Search:
                         type='adam',
                         learning_rate=self.lr
                     ),
-                    num_steps=5
+                    num_steps=self.bopt_steps
                 ),
                 gae_lambda=0.97,
                 # PGLRModel
@@ -126,7 +134,7 @@ class Search:
                     learning_rate=self.lr
                 ),
                 subsampling_fraction=0.2,
-                optimization_steps=25,
+                optimization_steps=self.opt_steps,
                 execution=dict(
                     type='single',
                     num_parallel=num_parallel,
@@ -177,11 +185,13 @@ def create_parser():
     parser.add_argument('--run',
                         default="deephyper.run.nas_structure_raw.run",
                         help='ex. deephyper.run.nas_structure_raw.run')
-    parser.add_argument('--batch_size', type=int, default=10)
-    parser.add_argument('--update_freq', type=int, default=10)
+    parser.add_argument('--batch_size', type=int, default=None)
+    parser.add_argument('--update_freq', type=int, default=1)
     parser.add_argument('--agent', default='ppo')
     parser.add_argument('--mode', default='full', help='can be "full" or "cell" search.')
     parser.add_argument('--lr', type=float, default=1e-3)
+    parser.add_argument('--opt_steps', type=int, default=25)
+    parser.add_argument('--bopt_steps', type=int, default=5)
 
     return parser
 
