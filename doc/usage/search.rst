@@ -4,11 +4,38 @@ Search
 Hyper Parameter Search
 ======================
 
-Extreme Gradient Boosting Quantile Regressor
---------------------------------------------
+Asynchronous Model-Base Search (AMBS)
+-------------------------------------
 
-.. autoclass:: deephyper.search.ExtremeGradientBoostingQuantileRegressor.ExtremeGradientBoostingQuantileRegressor
+Environment variable of the search : ``DH_AMBS``
+
+Arguments :
+
+* ``learner``
+
+    * ``RF`` : Random Forest (default)
+    * ``ET`` :
+    * ``GBRT`` :
+    * ``DUMMY`` :
+    * ``GP`` :
+
+* ``liar-strategy``
+
+    * ``cl_max`` : (default)
+    * ``cl_min`` :
+    * ``cl_mean`` :
+
+* ``acq-func`` : Acquisition function
+
+    * ``LCB`` :
+    * ``EI`` :
+    * ``PI`` :
+    * ``gp_hedge`` : (default)
+
+.. autoclass:: deephyper.search.AMBS
   :members:
 
 Neural Architecture Search
 ==========================
+
+Coming soon...
