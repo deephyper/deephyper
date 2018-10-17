@@ -15,6 +15,7 @@ from importlib import import_module
 from mpi4py import MPI
 import numpy as np
 import tensorflow as tf
+import math
 
 from deephyper.evaluators import Evaluator
 from deephyper.search import util
@@ -36,6 +37,8 @@ class Search:
     def __init__(self, **kwargs):
         self.run_func = util.load_attr_from(kwargs.get('run'))
         self.num_episodes = kwargs.get('num_episodes')
+        if self.num_episodes is None:
+            self.num_episodes = math.inf
         self.problem = util.load_attr_from(f'{kwargs.get("problem")}.problem.Problem')()
         self.space = self.problem.space
         self.evaluator = Evaluator.create(self.run_func, cache_key=key, method=args.evaluator)
