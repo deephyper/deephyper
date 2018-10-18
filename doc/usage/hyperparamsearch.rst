@@ -1,11 +1,8 @@
-Search
-******
-
 Hyper Parameter Search
-======================
+**********************
 
 Asynchronous Model-Base Search (AMBS)
--------------------------------------
+=====================================
 
 Environment variable of the search : ``DH_AMBS``
 
@@ -34,8 +31,3 @@ Arguments :
 
 .. autoclass:: deephyper.search.AMBS
   :members:
-
-Neural Architecture Search
-==========================
-
-Coming soon...
