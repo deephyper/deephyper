@@ -41,7 +41,7 @@ def conf_logger(name):
         masterLogger.info("\n\nLoading Deephyper\n--------------")
 
     def log_uncaught_exceptions(exctype, value, tb):
-        masterLogger.exception('Uncaught exception:', 
+        masterLogger.exception('Uncaught exception:',
                 exc_info=(exctype,value,tb)
         )
         sys.stderr.write(f"Uncaught exception {exctype}: {value}")
@@ -110,7 +110,7 @@ def generic_loader(target, attribute):
         - target: either path to python file, or dotted Python package name
         - attribute: name of the attribute to load from the target module
     '''
-    assert attribute in ['Problem', 'run']
+    # assert attribute in ['Problem', 'run']
     if not isinstance(target, str):
         return target
     if os.path.isfile(os.path.abspath(target)):

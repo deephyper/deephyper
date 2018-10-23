@@ -16,14 +16,14 @@ class Search:
 
     A search comprises 3 main objects: a problem, a run function and an evaluator:
         The `problem` class defines the optimization problem, providing details like the search domain.  (You can find many kind of problems in `deephyper.benchmarks`)
-        The `run` function executes the black box function/model and returns the objective value which is to be optimized. 
+        The `run` function executes the black box function/model and returns the objective value which is to be optimized.
         The `evaluator` abstracts the run time environment (local, supercomputer...etc) in which run functions are executed.
     """
     def __init__(self, problem, run, evaluator, **kwargs):
         _args = vars(self.parse_args(''))
         _args.update(kwargs)
         self.args = Namespace(**_args)
-        self.problem = util.generic_loader(problem, 'Problem')()
+        self.problem = util.generic_loader(problem, 'Problem')
         self.run_func = util.generic_loader(run, 'run')
         logger.info('Evaluator will execute the function: '+run)
         self.evaluator = Evaluator.create(self.run_func, method=evaluator)
@@ -33,10 +33,6 @@ class Search:
         logger.info('Hyperparameter space definition: '+pformat(self.problem.space, indent=4))
         logger.info(f'Created {self.args.evaluator} evaluator')
         logger.info(f'Evaluator: num_workers is {self.num_workers}')
-
-    @staticmethod
-    def run_func(param_dict):
-        raise NotImplementedError
 
     def main(self):
         raise NotImplementedError
