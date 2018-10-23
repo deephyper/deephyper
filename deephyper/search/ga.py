@@ -16,12 +16,13 @@ def on_exit(signum, stack):
     EXIT_FLAG = True
 
 class GA(Search):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, problem, run, evaluator, **kwargs):
+        super().__init__(problem, run, evaluator, **kwargs)
         logger.info("Initializing GA")
         self.optimizer = GAOptimizer(self.problem, self.num_workers, self.args)
 
-    def _extend_parser(self, parser):
+    @staticmethod
+    def _extend_parser(parser):
         parser.add_argument('--ga_num_gen',
             default=100,
             type=int,
@@ -84,7 +85,8 @@ class GA(Search):
             # Evaluate the individuals with an invalid fitness
             invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
             logger.info(f"Evaluating {len(invalid_ind)} invalid individuals")
-            self.evaluate_fitnesses(invalid_ind, self.optimizer, self.evaluator, a.eval_timeout_minutes)
+            self.evaluate_fitnesses(invalid_ind, self.optimizer, self.evaluator,
+                    self.args.eval_timeout_minutes)
 
             # The population is entirely replaced by the offspring
             self.optimizer.pop[:] = offspring
@@ -96,17 +98,20 @@ class GA(Search):
             print("best:", self.optimizer.halloffame[0])
 
     def evaluate_fitnesses(self, individuals, opt, evaluator, timeout_minutes):
-        points = list(map(opt.space_encoder.decode_point, individuals))
-        for x in points: evaluator.add_eval(x)
+        points = map(opt.space_encoder.decode_point, individuals)
+        points = [{key:x for key,x in zip(self.problem.space.keys(), point)}
+                  for point in points]
+        evaluator.add_eval_batch(points)
         logger.info(f"Waiting on {len(points)} individual fitness evaluations")
-        results = evaluator.await_evals(points, timeout_sec=timeout_minutes*60)
+        results = evaluator.await_evals(points, timeout=timeout_minutes*60)
 
         for ind, (x,fit) in zip(individuals, results):
             ind.fitness.values = (fit,)
 
 
 if __name__ == "__main__":
-    search = GA()
+    args = GA.parse_args()
+    search = GA(**vars(args))
     signal.signal(signal.SIGINT, on_exit)
     signal.signal(signal.SIGTERM, on_exit)
     search.run()

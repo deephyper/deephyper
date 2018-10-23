@@ -73,7 +73,7 @@ class Search:
         )
         parser.add_argument('--eval-timeout-minutes',
             type=int,
-            default=-1,
+            default=4096,
             help="Kill evals that take longer than this"
         )
         parser.add_argument('--evaluator',

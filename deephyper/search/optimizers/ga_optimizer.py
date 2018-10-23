@@ -21,7 +21,7 @@ class GAOptimizer:
         self.IND_SIZE = len(problem.space)
 
         self.toolbox = None
-        self.space_encoder = SpaceEncoder(problem.space)
+        self.space_encoder = SpaceEncoder(problem.space.values())
 
         self._setup()
 
@@ -48,6 +48,8 @@ class GAOptimizer:
         random.seed(self.SEED)
 
         self.toolbox = base.Toolbox()
+        creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+        creator.create("Individual", list, fitness=creator.FitnessMin)
 
         LOWER = [0.0] * self.IND_SIZE
         UPPER = [1.0] * self.IND_SIZE
@@ -122,8 +124,8 @@ class SpaceEncoder:
         if hasattr(encoder, 'classes_'):
             bins = np.linspace(0.0, 1.0, num=1+len(list(encoder.classes_)))
             dec_val = max(0, np.digitize(enc_val, bins, right=True) - 1)
-        dec_val = np.asscalar(encoder.inverse_transform(dec_val))
-        return dec_val
+        dec_val = encoder.inverse_transform(np.array([dec_val]).reshape(1, -1))
+        return np.asscalar(dec_val)
 
 def uniform(lower_list, upper_list, dimensions):
     """Fill array """
