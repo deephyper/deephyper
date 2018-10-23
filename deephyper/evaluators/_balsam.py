@@ -18,7 +18,7 @@ class BalsamEvaluator(Evaluator):
     def __init__(self, run_function, cache_key=None):
         super().__init__(run_function, cache_key)
         self.id_key_map = {}
-        self.num_workers = LAUNCHER_NODES * self.WORKERS_PER_NODE
+        self.num_workers = max(1, LAUNCHER_NODES*self.WORKERS_PER_NODE - 2)
         logger.info("Balsam Evaluator instantiated")
         logger.debug(f"LAUNCHER_NODES = {LAUNCHER_NODES}")
         logger.debug(f"WORKERS_PER_NODE = {self.WORKERS_PER_NODE}")

@@ -15,12 +15,10 @@ def on_exit(signum, stack):
     EXIT_FLAG = True
 
 class AMBS(Search):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, problem, run, evaluator, **kwargs):
+        super().__init__(problem, run, evaluator, **kwargs)
         logger.info("Initializing AMBS")
         self.optimizer = Optimizer(self.problem, self.num_workers, self.args)
-        run_func = util.load_attr_from(self.args.run)
-        logger.info('Evaluator will execute the function: '+self.args.run)
 
     @staticmethod
     def _extend_parser(parser):

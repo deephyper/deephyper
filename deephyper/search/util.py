@@ -3,6 +3,7 @@ import sys
 import time
 import logging
 from importlib import import_module
+from traceback import print_exception
 
 masterLogger = None
 LOG_LEVEL = os.environ.get('DEEPHYPER_LOG_LEVEL', 'DEBUG')
@@ -38,9 +39,13 @@ def conf_logger(name):
         masterLogger.addHandler(handler)
         masterLogger.setLevel(LOG_LEVEL)
         masterLogger.info("\n\nLoading Deephyper\n--------------")
+
     def log_uncaught_exceptions(exctype, value, tb):
-        masterLogger.exception('Uncaught exception:', exc_info=(exctype,value,tb))
-        sys.stderr.write(f"Uncaught exception {exctype}: {value}\n{tb}")
+        masterLogger.exception('Uncaught exception:', 
+                exc_info=(exctype,value,tb)
+        )
+        sys.stderr.write(f"Uncaught exception {exctype}: {value}")
+        print_exception(exctype, value, tb)
     sys.excepthook = log_uncaught_exceptions
     return logging.getLogger(name)
 
@@ -91,3 +96,25 @@ def load_attr_from(str_full_module):
         return getattr(module, str_attr)
     else:
         return str_full_module
+
+def load_from_file(fname, attribute):
+    dirname, basename = os.path.split(fname)
+    sys.path.insert(0, dirname)
+    module_name = os.path.splitext(basename)[0]
+    module = import_module(module_name)
+    return getattr(module, attribute)
+
+def generic_loader(target, attribute):
+    '''Load attribute from target module
+    Args:
+        - target: either path to python file, or dotted Python package name
+        - attribute: name of the attribute to load from the target module
+    '''
+    assert attribute in ['Problem', 'run']
+    if not isinstance(target, str):
+        return target
+    if os.path.isfile(os.path.abspath(target)):
+        target_file = os.path.abspath(target)
+        return load_from_file(target_file, attribute)
+    else:
+        return load_attr_from(target)
