@@ -6,33 +6,52 @@ from deephyper.evaluators import Evaluator
 
 logger = logging.getLogger(__name__)
 
+class Namespace:
+    def __init__(self, **kwargs):
+        for k,v in kwargs.items():
+            self.__dict__[k] = v
+
 class Search:
     """Abstract representation of a black box optimization search.
 
-    A search is using 3 main concepts : a problem, a run function and an evaluator. The `problem` is a class that represents a high level definition of the search problem. You can find many kind of problems in `deephyper.benchmarks`. The run function is the function that run the black box function/model and return a value. The evaluator is an object which abstracts the run time environment (local, supercomputer...etc).
+    A search comprises 3 main objects: a problem, a run function and an evaluator:
+        The `problem` class defines the optimization problem, providing details like the search domain.  (You can find many kind of problems in `deephyper.benchmarks`)
+        The `run` function executes the black box function/model and returns the objective value which is to be optimized. 
+        The `evaluator` abstracts the run time environment (local, supercomputer...etc) in which run functions are executed.
     """
-
-    def __init__(self):
-        self.args = self.parse_args()
-        self.problem = util.load_attr_from(self.args.problem)()
-        run_func = util.load_attr_from(self.args.run)
-        self.evaluator = Evaluator.create(run_func, method=self.args.evaluator)
+    def __init__(self, problem, run, evaluator, **kwargs):
+        _args = vars(self.parse_args(''))
+        _args.update(kwargs)
+        self.args = Namespace(**_args)
+        self.problem = util.generic_loader(problem, 'Problem')()
+        self.run_func = util.generic_loader(run, 'run')
+        logger.info('Evaluator will execute the function: '+run)
+        self.evaluator = Evaluator.create(self.run_func, method=evaluator)
         self.num_workers = self.evaluator.num_workers
 
+        logger.info(f'Options: '+pformat(self.args.__dict__, indent=4))
         logger.info('Hyperparameter space definition: '+pformat(self.problem.space, indent=4))
-        logger.info('Evaluator will execute the function: '+self.args.run)
         logger.info(f'Created {self.args.evaluator} evaluator')
         logger.info(f'Evaluator: num_workers is {self.num_workers}')
 
-    def run(self):
+    @staticmethod
+    def run_func(param_dict):
         raise NotImplementedError
 
-    def parse_args(self):
-        base_parser = self._base_parser()
-        parser = self._extend_parser(base_parser)
-        return parser.parse_args()
+    def main(self):
+        raise NotImplementedError
 
-    def _extend_parser(self, base_parser):
+    @classmethod
+    def parse_args(cls, arg_str=None):
+        base_parser = cls._base_parser()
+        parser = cls._extend_parser(base_parser)
+        if arg_str is not None:
+            return parser.parse_args(arg_str)
+        else:
+            return parser.parse_args()
+
+    @staticmethod
+    def _extend_parser(base_parser):
         raise NotImplementedError
 
     @staticmethod

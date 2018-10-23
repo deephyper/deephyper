@@ -71,7 +71,7 @@ class LocalEvaluator(evaluate.Evaluator):
     def __init__(self, run_function, cache_key=None):
         super().__init__(run_function, cache_key)
         self.num_workers = self.WORKERS_PER_NODE
-        logger.info(f"Local Evaluator to run: {self._run_function}")
+        logger.info(f"Local Evaluator will execute {self._run_function.__name__}() from module {self._run_function.__module__}")
     
     def _args(self, x):
         exe = self._runner_executable
