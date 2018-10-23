@@ -19,8 +19,11 @@ class AMBS(Search):
         super().__init__()
         logger.info("Initializing AMBS")
         self.optimizer = Optimizer(self.problem, self.num_workers, self.args)
+        run_func = util.load_attr_from(self.args.run)
+        logger.info('Evaluator will execute the function: '+self.args.run)
 
-    def _extend_parser(self, parser):
+    @staticmethod
+    def _extend_parser(parser):
         parser.add_argument('--learner', 
             default='RF',
             choices=["RF", "ET", "GBRT", "DUMMY", "GP"],
@@ -38,7 +41,7 @@ class AMBS(Search):
         )
         return parser
 
-    def run(self):
+    def main(self):
         timer = util.DelayTimer(max_minutes=None, period=SERVICE_PERIOD)
         chkpoint_counter = 0
         num_evals = 0
@@ -69,7 +72,8 @@ class AMBS(Search):
         self.evaluator.dump_evals()
 
 if __name__ == "__main__":
-    search = AMBS()
+    args = AMBS.parse_args()
+    search = AMBS(**vars(args))
     signal.signal(signal.SIGINT, on_exit)
     signal.signal(signal.SIGTERM, on_exit)
-    search.run()
+    search.main()

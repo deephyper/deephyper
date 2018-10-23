@@ -81,7 +81,7 @@ def load_attr_from(str_full_module):
     """
         Args:
             - str_full_module: (str) correspond to {module_name}.{attr}
-        Return: the loaded attribut from a module.
+        Return: the loaded attribute from a module.
     """
     if type(str_full_module) == str:
         split_full = str_full_module.split('.')

@@ -6,28 +6,36 @@ from deephyper.evaluators import Evaluator
 
 logger = logging.getLogger(__name__)
 
+class Namespace:
+    def __init__(self, **kwargs):
+        for k,v in kwargs.items():
+            self.__dict__[k] = v
+
 class Search:
-    def __init__(self):
-        self.args = self.parse_args()
+    def __init__(self, problem=None, evaluator='local', **kwargs):
+        self.args = Namespace(**kwargs)
         self.problem = util.load_attr_from(self.args.problem)()
-        run_func = util.load_attr_from(self.args.run)
-        self.evaluator = Evaluator.create(run_func, method=self.args.evaluator)
         self.num_workers = self.evaluator.num_workers
+        self.evaluator = Evaluator.create(self.run_func, method=self.args.evaluator)
 
         logger.info('Hyperparameter space definition: '+pformat(self.problem.space, indent=4))
-        logger.info('Evaluator will execute the function: '+self.args.run)
         logger.info(f'Created {self.args.evaluator} evaluator')
         logger.info(f'Evaluator: num_workers is {self.num_workers}')
 
-    def run(self):
+    def run_func(self):
         raise NotImplementedError
 
-    def parse_args(self):
-        base_parser = self._base_parser()
-        parser = self._extend_parser(base_parser)
+    def main(self):
+        raise NotImplementedError
+
+    @classmethod
+    def parse_args(cls):
+        base_parser = cls._base_parser()
+        parser = cls._extend_parser(base_parser)
         return parser.parse_args()
 
-    def _extend_parser(self, base_parser):
+    @staticmethod
+    def _extend_parser(base_parser):
         raise NotImplementedError
 
     @staticmethod
