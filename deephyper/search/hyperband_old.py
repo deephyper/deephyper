@@ -79,7 +79,7 @@ class Hyperband:
             # Run each of the n_configs for <n_iterations>
             n_configs = len(T)
             n_iterations = round(r * self.eta **i)
-            
+
             for t in T: t[epochs_index] = n_iterations
             assert all(t[epochs_index] == n_iterations for t in T)
             print(f'==> n_configs={n_configs} n_iterations={n_iterations}')

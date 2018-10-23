@@ -11,5 +11,5 @@ class Problem:
             space[dim] = (-3.0, 4.0)
 
         self.space = space
-        self.params = self.space.keys()
+        self.params = list(self.space.keys())
         self.starting_point = [random.uniform(-3.0, 4.0) for i in range(NDIM)]

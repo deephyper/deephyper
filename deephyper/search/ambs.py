@@ -1,6 +1,6 @@
 import signal
 
-from deephyper.search._skopt import Optimizer
+from deephyper.search.optimizers import Optimizer
 from deephyper.search import Search
 from deephyper.search import util
 

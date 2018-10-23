@@ -7,6 +7,11 @@ from deephyper.evaluators import Evaluator
 logger = logging.getLogger(__name__)
 
 class Search:
+    """Abstract representation of a black box optimization search.
+
+    A search is using 3 main concepts : a problem, a run function and an evaluator. The `problem` is a class that represents a high level definition of the search problem. You can find many kind of problems in `deephyper.benchmarks`. The run function is the function that run the black box function/model and return a value. The evaluator is an object which abstracts the run time environment (local, supercomputer...etc).
+    """
+
     def __init__(self):
         self.args = self.parse_args()
         self.problem = util.load_attr_from(self.args.problem)()
