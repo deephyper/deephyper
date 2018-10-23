@@ -53,6 +53,9 @@ bin/
 *.dot
 *.tar.gz
 Data/
+*.csv
+*.json
+*.swp
 
 # Sphinx documentation
 _build/
