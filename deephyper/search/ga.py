@@ -112,6 +112,6 @@ class GA(Search):
 if __name__ == "__main__":
     args = GA.parse_args()
     search = GA(**vars(args))
-    signal.signal(signal.SIGINT, on_exit)
-    signal.signal(signal.SIGTERM, on_exit)
+    #signal.signal(signal.SIGINT, on_exit)
+    #signal.signal(signal.SIGTERM, on_exit)
     search.run()
