@@ -1,4 +1,4 @@
-from deephyper.model.utilities.nas_cmdline import create_parser
+from deephyper.run.nas_cmdline import create_parser
 import time
 import random
 from pprint import pformat

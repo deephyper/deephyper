@@ -2,7 +2,7 @@ from collections import OrderedDict
 class Problem():
     def __init__(self):
         space = OrderedDict()
-        space['epochs'] = (5, 500)
+        space['epochs'] = (5, 30)
         #bechmark specific parameters
         space['rnn_type'] = ['LSTM', 'GRU', 'SimpleRNN']
         space['nhidden'] = (1, 100)
@@ -25,7 +25,7 @@ class Problem():
         #space['beta2'] = (1e-04, 1e01)
 
         self.space = space
-        self.params = self.space.keys()
+        self.params = list(self.space.keys())
         self.starting_point = [5, 'LSTM', 1, 'relu', 8, 0.0, 'sgd', 1e-04] #1.0, 0.5, 0.01, 0, 0, False, 0.9, 1e-08, 0.9, 0.999]
 
 if __name__ == '__main__':

@@ -79,18 +79,18 @@ class BalsamEvaluator(Evaluator):
     def _on_done(job): #def _on_done(job, process_data):
         output = job.read_file_in_workdir(f'{job.name}.out')
         # process_data(job)
-        args = job.args
-        args = args.replace("\'", "")
-        with open('test.json', 'w') as f:
-            f.write(args)
-
-        with open('test.json', 'r') as f:
-            args = json.load(f)
+        #args = job.args
+        #args = args.replace("\'", "")
+        #with open('test.json', 'w') as f:
+        #    f.write(args)
+        #
+        #with open('test.json', 'r') as f:
+        #    args = json.load(f)
         output = Evaluator._parse(output)
-        job.data['reward'] = output
-        job.data['arch_seq'] = args['arch_seq']
-        job.data['id_worker'] = args['w']
-        job.save()
+        #job.data['reward'] = output
+        #job.data['arch_seq'] = args['arch_seq']
+        #job.data['id_worker'] = args['w']
+        #job.save()
         return output
 
     @staticmethod

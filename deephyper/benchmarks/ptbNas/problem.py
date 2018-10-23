@@ -1,10 +1,4 @@
-'''
- * @Author: romain.egele, dipendra.jha
- * @Date: 2018-06-21 15:31:30
-'''
-
 from collections import OrderedDict
-from deephyper.model.arch import StateSpace
 
 class Problem:
     def __init__(self):
@@ -17,13 +11,8 @@ class Problem:
         space['num_units'] = 20
 
         # ARCH
-        space['max_layers'] = 2
-        space['layer_type'] = 'rnn'
-        state_space = StateSpace()
-        state_space.add_state('num_units', [2 ** i for i in range(5, 6)])
-        state_space.add_state('drop_out', [])
-
-        space['state_space'] = state_space
+        # TODO
+        raise NotImplementedError
 
         # ITER
         space['max_episodes'] = 50 # iter on controller

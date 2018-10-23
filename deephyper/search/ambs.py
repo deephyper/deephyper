@@ -1,6 +1,6 @@
 import signal
 
-from deephyper.search._skopt import Optimizer
+from deephyper.search.optimizers import Optimizer
 from deephyper.search import Search
 from deephyper.search import util
 
@@ -30,12 +30,12 @@ class AMBS(Search):
             help='type of learner (surrogate model)'
         )
         parser.add_argument('--liar-strategy',
-            default="cl_max", 
+            default="cl_max",
             choices=["cl_min", "cl_mean", "cl_max"],
             help='Constant liar strategy'
         )
-        parser.add_argument('--acq-func', 
-            default="gp_hedge", 
+        parser.add_argument('--acq-func',
+            default="gp_hedge",
             choices=["LCB", "EI", "PI","gp_hedge"],
             help='Acquisition function type'
         )
@@ -56,7 +56,7 @@ class AMBS(Search):
             results = list(self.evaluator.get_finished_evals())
             num_evals += len(results)
             chkpoint_counter += len(results)
-            if EXIT_FLAG or num_evals >= self.args.max_evals: 
+            if EXIT_FLAG or num_evals >= self.args.max_evals:
                 break
             if results:
                 logger.info(f"Refitting model with batch of {len(results)} evals")

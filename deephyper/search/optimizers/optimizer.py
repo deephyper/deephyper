@@ -11,7 +11,7 @@ class Optimizer:
 
     def __init__(self, problem, num_workers, args):
         assert args.learner in ["RF", "ET", "GBRT", "GP", "DUMMY"], f"Unknown scikit-optimize base_estimator: {args.learner}"
-        
+
         self.space = problem.space
         n_init = inf if args.learner=='DUMMY' else num_workers
         self._optimizer = SkOptimizer(

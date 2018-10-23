@@ -9,9 +9,8 @@ import tensorflow as tf
 
 import time
 
-import deephyper.model.arch as a
 from deephyper.search import util
-from deephyper.model.utilities.nas_cmdline import create_parser
+from deephyper.run.nas_cmdline import create_parser
 
 from nas.model.trainer import BasicTrainer
 from nas.model.trainer_gen import GenTrainer
@@ -36,7 +35,7 @@ def run(param_dict):
     (gen_train, n_train), (gen_valid, n_valid) = load_data(**config['load_data']['kwargs'])
     logger.debug('[PARAM] Data loaded')
 
-    config[a.data] = { 'gen_train': gen_train,
+    config['data'] = { 'gen_train': gen_train,
                        'n_train': n_train,
                        'gen_valid': gen_valid,
                        'n_valid': n_valid }
