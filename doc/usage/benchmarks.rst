@@ -38,12 +38,27 @@ For HPS a benchmark is defined by a problem definition and a function that runs 
             problem.py
             model_run.py
 
-The problem contains the parameters you want to search over. They are defined by their name, their type and space. It also contains the starting point of the search. Three types of parameters exists :
-      - continuous
-      - discrete ordinal (for instance integers)
-      - discrete non ordinal (for instance a list of tokens)
+The problem contains the parameters you want to search over. They are defined
+by their name, their type and space. It also contains the starting point of the
+search. Deephyper recognizes three types of parameters:
+    - continuous
+    - discrete ordinal (for instance integers)
+    - discrete non-ordinal (for instance a list of tokens)
 
+.. WARNING::
+    When designing a new optimization experiment, keep in mind `model_run.py`
+    must be runnable from an arbitrary working directory. This means that Python
+    modules simply located in the same directory as the `model_run.py` will not be
+    part of the default Python import path, and importing them will cause an `ImportError`!
 
+To ensure that modules located alongside the `model_run.py` script are always importable, a
+quick workaround is to explicitly add the problem folder to `sys.path` at the top of the script::
+    import os
+    import sys
+    here = os.path.dirname(os.path.abspath(__file__))
+    sys.path.insert(0, here)
+    # import user modules below here
+    
 
 
 Neural Architecture Search
