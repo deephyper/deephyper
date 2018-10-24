@@ -14,8 +14,12 @@ import sys
 import json
 
 def load_module(name, path):
-    sys.path.insert(0, path)
-    return importlib.import_module(name)
+    try:
+        mod = importlib.import_module(name)
+    except (ModuleNotFoundError, ImportError):
+        sys.path.insert(0, path)
+        mod = importlib.import_module(name)
+    return mod
 
 if __name__ == "__main__":
     modulePath = sys.argv[1]
