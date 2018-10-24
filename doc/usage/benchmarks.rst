@@ -44,6 +44,8 @@ The problem contains the parameters you want to search over. They are defined by
       - discrete non ordinal (for instance a list of tokens)
 
 
+
+
 Neural Architecture Search
 ==========================
 
