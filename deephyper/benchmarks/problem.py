@@ -17,14 +17,14 @@ class Problem:
     def __repr__(self):
         return f'Problem\n{pformat({k:v for k,v in self.space.items()}, indent=2)}'
 
-    def add_dim(self, p_name, p_value):
+    def add_dim(self, p_name, p_space):
         """Add a dimension to the search space.
 
         Args:
             p_name (str): name of the parameter/dimension.
             p_space (Object): space corresponding to the new dimension.
         """
-        self.space[p_name] = p_value
+        self.space[p_name] = p_space
 
 class HpProblem(Problem):
     """Problem specification for Hyperparameter Optimization"""
@@ -54,7 +54,7 @@ class HpProblem(Problem):
     @property
     def starting_point(self):
         return (self.__def_values.values())
-    
+
     @property
     def starting_point_asdict(self):
         return self.__def_values
