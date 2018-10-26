@@ -25,9 +25,12 @@ def run(param_dict):
     config = param_dict
 
     # load functions
-    preprocessing = util.load_attr_from(config['preprocessing']['func'])
+    if config.get('preprocessing') is not None:
+        preprocessing = util.load_attr_from(config['preprocessing']['func'])
+        config['preprocessing']['func'] = preprocessing
+    else:
+        config['preprocessing'] = None
     load_data = util.load_attr_from(config['load_data']['func'])
-    config['preprocessing']['func'] = preprocessing
     config['load_data']['func'] = load_data
     config['create_structure']['func'] = util.load_attr_from(
         config['create_structure']['func'])

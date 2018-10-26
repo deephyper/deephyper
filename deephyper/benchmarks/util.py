@@ -3,9 +3,12 @@ import pickle
 from collections import namedtuple
 import time
 import os
+import numpy as np
 from keras.callbacks import Callback
 from datetime import datetime
+import logging
 
+logger = logging.getLogger(__name__)
 
 def str2bool(s):
     s = s.lower().strip()
@@ -128,3 +131,19 @@ class TerminateOnTimeOut(Callback):
                 #    x, y = self.validation_data[0], self.validation_data[1]  
                 #    loss, acc = self.model.evaluate(x,y)
                 #    #print(self.model.history.keys())
+
+
+def numpy_dict_cache(cache_loc):
+    def _cache(data_loader):
+        def wrapper():
+            if os.path.exists(cache_loc):
+                logger.debug("Reading data from cache")
+                with open(cache_loc, 'rb') as fp: 
+                    return {k: arr for k,arr in np.load(fp).items()}
+            else:
+                logger.debug("Data not cached; invoking user data loader")
+                data = data_loader()
+                with open(cache_loc, 'wb') as fp: np.savez(fp, **data)
+                return data
+        return wrapper
+    return _cache
