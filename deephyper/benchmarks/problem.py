@@ -9,13 +9,13 @@ class Problem:
     """
 
     def __init__(self):
-        self.space = OrderedDict()
+        self.__space = OrderedDict()
 
     def __str__(self):
         return repr(self)
 
     def __repr__(self):
-        return f'Problem\n{pformat({k:v for k,v in self.space.items()}, indent=2)}'
+        return f'Problem\n{pformat({k:v for k,v in self.__space.items()}, indent=2)}'
 
     def add_dim(self, p_name, p_value):
         """Add a dimension to the search space.
@@ -24,7 +24,11 @@ class Problem:
             p_name (str): name of the parameter/dimension.
             p_space (Object): space corresponding to the new dimension.
         """
-        self.space[p_name] = p_value
+        self.__space[p_name] = p_value
+    
+    @property 
+    def space(self):
+        return self.__space.copy()
 
 class HpProblem(Problem):
     """Problem specification for Hyperparameter Optimization"""
