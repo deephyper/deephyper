@@ -56,6 +56,7 @@ Data/
 *.csv
 *.json
 *.swp
+logdir
 
 # Sphinx documentation
 _build/

@@ -25,8 +25,8 @@ class Problem:
             p_space (Object): space corresponding to the new dimension.
         """
         self.__space[p_name] = p_space
-    
-    @property 
+
+    @property
     def space(self):
         return self.__space.copy()
 
