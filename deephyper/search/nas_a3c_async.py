@@ -27,7 +27,7 @@ class NasPPOAsyncA3C(Search):
         # set in super : self.evaluator
         self.evaluator = Evaluator.create(self.run_func,
                                           cache_key=key,
-                                          method=kwargs['evaluator'])
+                                          method=evaluator)
         self.num_episodes = kwargs.get('num_episodes')
         if self.num_episodes is None:
             self.num_episodes = math.inf
