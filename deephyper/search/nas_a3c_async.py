@@ -33,15 +33,13 @@ class NasPPOAsyncA3C(Search):
             self.num_episodes = math.inf
         self.space = self.problem.space
         logger.debug(f'evaluator: {type(self.evaluator)}')
-        self.num_agents = MPI.COMM_WORLD.Get_size()
+        self.num_agents = MPI.COMM_WORLD.Get_size() - 1 # one is  the parameter server
         self.rank = MPI.COMM_WORLD.Get_rank()
-        self.lr = args.lr
 
     @staticmethod
     def _extend_parser(parser):
         parser.add_argument('--num-episodes', type=int, default=None,
                             help='maximum number of episodes')
-        parser.add_argument('--lr', type=float, default=1e-3)
         return parser
 
     def main(self):
