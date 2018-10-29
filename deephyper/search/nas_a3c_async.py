@@ -35,6 +35,8 @@ class NasPPOAsyncA3C(Search):
         logger.debug(f'evaluator: {type(self.evaluator)}')
         self.num_agents = MPI.COMM_WORLD.Get_size() - 1 # one is  the parameter server
         self.rank = MPI.COMM_WORLD.Get_rank()
+        logger.debug(f'num_agents: {self.num_agents}')
+        logger.debug(f'rank: {self.rank}')
 
     @staticmethod
     def _extend_parser(parser):

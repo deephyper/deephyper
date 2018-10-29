@@ -39,7 +39,7 @@ class Search:
         self.num_episodes = kwargs.get('num_episodes')
         if self.num_episodes is None:
             self.num_episodes = math.inf
-        self.problem = util.load_attr_from(f'{kwargs.get("problem")}.problem.Problem')
+        self.problem = util.load_attr_from(f'{kwargs.get("problem")}')
         self.space = self.problem.space
         self.evaluator = Evaluator.create(self.run_func, cache_key=key, method=args.evaluator)
         logger.debug(f'evaluator: {type(self.evaluator)}')
