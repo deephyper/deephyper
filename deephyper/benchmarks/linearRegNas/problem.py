@@ -1,8 +1,3 @@
-''' * @Author: romain.egele * @Date: 2018-06-21 15:31:30
-'''
-
-from collections import OrderedDict
-
 from nas.contrib.anl_mlp_2 import create_structure
 from nas.model.preprocessing import stdscaler_minmax
 from deephyper.benchmarks import Problem
