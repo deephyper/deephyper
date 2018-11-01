@@ -40,3 +40,23 @@ keras-gcn-master
 scripts/runs/
 scripts/runjob.conf
 scripts/runjob.conf.cooley
+
+#
+graph/
+DATA/
+*.egg-info*
+*.error
+*.output
+*.cobaltlog
+bin/
+*.log
+*.dot
+*.tar.gz
+Data/
+*.csv
+*.json
+*.swp
+logdir
+
+# Sphinx documentation
+_build/
