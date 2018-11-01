@@ -11,8 +11,8 @@ def load_data(dest=None):
     Generate data for polynome_2 function.
     Returns Tuple of Numpy arrays: `(train_X, train_y), (valid_X, valid_y)`.
     """
-    size = 10000
-    prop = 0.85
+    size = 1000000
+    prop = 0.80
     f, (a, b), _ = levy_()
     d = b - a
     x = np.array([a + np.random.random(10) * d for i in range(size)])
