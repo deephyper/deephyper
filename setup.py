@@ -10,6 +10,9 @@ install_requires = [
     'tensorflow',
     'keras',
     'deap', # GA search
+    # nas
+    'gym',
+    'networkx'
 ]
 
 extras_require = {
@@ -18,7 +21,7 @@ extras_require = {
 
 setup(
     name='Deephyper',
-    version='0.1dev',
+    version='0.0.4',
     packages=['deephyper',],
     license='',
     long_description=open('README.md').read(),

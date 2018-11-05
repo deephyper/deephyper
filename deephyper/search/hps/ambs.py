@@ -1,10 +1,10 @@
 import signal
 
-from deephyper.search.optimizers import Optimizer
+from deephyper.search.hps.optimizers import Optimizer
 from deephyper.search import Search
 from deephyper.search import util
 
-logger = util.conf_logger('deephyper.search.ambs')
+logger = util.conf_logger('deephyper.search.hps.ambs')
 
 SERVICE_PERIOD = 2          # Delay (seconds) between main loop iterations
 CHECKPOINT_INTERVAL = 10    # How many jobs to complete between optimizer checkpoints
@@ -22,7 +22,7 @@ class AMBS(Search):
 
     @staticmethod
     def _extend_parser(parser):
-        parser.add_argument('--learner', 
+        parser.add_argument('--learner',
             default='RF',
             choices=["RF", "ET", "GBRT", "DUMMY", "GP"],
             help='type of learner (surrogate model)'

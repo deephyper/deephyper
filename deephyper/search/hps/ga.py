@@ -1,11 +1,11 @@
 import signal
 import random
 
-from deephyper.search.optimizers import GAOptimizer
+from deephyper.search.hps.optimizers import GAOptimizer
 from deephyper.search import Search
 from deephyper.search import util
 
-logger = util.conf_logger('deephyper.search.ga')
+logger = util.conf_logger('deephyper.search.hps.ga')
 
 SERVICE_PERIOD = 2          # Delay (seconds) between main loop iterations
 CHECKPOINT_INTERVAL = 10    # How many jobs to complete between optimizer checkpoints

@@ -1,19 +1,26 @@
-Directory structure
-===================
+# Directory structure
 ```
-benchmarks
-    directory for test problems
-evaluator
-    directory for evaluators (specific objects which help us to abstract task submission)
-search
+benchmarks/
+    directory for problems
+experiments/
+    directory for saving the running the experiments and storing the results
+search/
     directory for search applications
+    hps/
+        hyperparameter search applications
+    nas/
+        neural architecture search applications
 ```
-Install instructions
-====================
 
-It's better to install deephyper in a virtual environment.
+# Install instructions
 
 ```
 cd deephyper
 pip install -e .
 ```
+
+# Contributors
+
+Please use this :
+
+* [Git-flow](https://danielkummer.github.io/git-flow-cheatsheet/) : branching rules
