@@ -1,18 +1,22 @@
 # Directory structure
 ```
-benchmarks
+benchmarks/
     directory for problems
-experiments
+experiments/
     directory for saving the running the experiments and storing the results
-search
-    directory for source files
+search/
+    directory for search applications
+    hps/
+        hyperparameter search applications
+    nas/
+        neural architecture search applications
 ```
 
 # Install instructions
 
 ```
 cd deephyper
-pip install -e.
+pip install -e .
 ```
 
 # Contributors
