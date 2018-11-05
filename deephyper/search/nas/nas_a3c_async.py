@@ -8,9 +8,9 @@ import math
 from deephyper.evaluators import Evaluator
 from deephyper.search import util, Search
 
-from deephyper.search.nas.agent import pposgd_async
+from deephyper.search.nas.agent import nas_ppo_async_a3c
 
-logger = util.conf_logger('deephyper.search.run_nas')
+logger = util.conf_logger('deephyper.search.nas.nas_a3c_async')
 
 def print_logs(runner):
     logger.debug('num_episodes = {}'.format(runner.global_episode))
@@ -63,7 +63,7 @@ class NasPPOAsyncA3C(Search):
             logger.debug(f'<Rank={self.rank}> num_episodes_per_batch: {num_episodes_per_batch}')
 
         logger.debug(f'<Rank={self.rank}> starting training...')
-        pposgd_async.train(
+        nas_ppo_async_a3c.train(
             num_episodes=self.num_episodes,
             seed=2018,
             space=self.problem.space,

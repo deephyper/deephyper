@@ -7,9 +7,9 @@ import math
 from deephyper.evaluators import Evaluator
 from deephyper.search import util, Search
 
-from gym_nas.agent import nas_ppo_sync_a3c
+from deephyper.search.nas.agent import nas_ppo_sync_a3c
 
-logger = util.conf_logger('deephyper.search.run_nas')
+logger = util.conf_logger('deephyper.search.nas.nas_a3c_sync')
 
 def print_logs(runner):
     logger.debug('num_episodes = {}'.format(runner.global_episode))

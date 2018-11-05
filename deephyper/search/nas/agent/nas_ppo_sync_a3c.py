@@ -4,12 +4,12 @@ import os.path as osp
 import tensorflow as tf
 from mpi4py import MPI
 
-import  deephyper.search.nas.utils..common.tf_util as U
+import deephyper.search.nas.utils..common.tf_util as U
 from deephyper.evaluators import Evaluator
 from deephyper.search.nas.agent import lstm_policy, pposgd_sync
 from deephyper.search.nas.envs import NasEnv
 from  deephyper.search.nas.utils import bench, logger
-from  deephyper.search.nas.utils..common import set_global_seeds
+from  deephyper.search.nas.utils.common import set_global_seeds
 
 
 def train(num_episodes, seed, space, evaluator, num_episodes_per_batch):
