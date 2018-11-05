@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
 from nas.contrib.anl_mlp_2 import create_structure
-from nas.model.preprocessing import stdscaler_minmax
+from nas.model.preprocessing import stdscaler
 from deephyper.benchmarks.mnist1DNas.load_data import load_data
 from deephyper.benchmarks import Problem
 

@@ -1,5 +1,5 @@
 from nas.contrib.anl_mlp_2 import create_structure
-from nas.model.preprocessing import stdscaler_minmax
+from nas.model.preprocessing import stdscaler
 from deephyper.benchmarks import Problem
 from deephyper.benchmarks.polynome2RegNas.load_data import load_data
 
@@ -9,7 +9,7 @@ Problem.add_dim('load_data', {
     'func': load_data
 })
 Problem.add_dim('preprocessing', {
-    'func': stdscaler_minmax
+    'func': stdscaler
 })
 Problem.add_dim('create_structure', {
     'func': create_structure,
