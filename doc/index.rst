@@ -15,6 +15,7 @@ Welcome to deephyper's documentation!
    usage/benchmarks
    usage/evaluators
    usage/hyperparamsearch
+   usage/nas
 
 
 Quick start - (command line, Environment: local)

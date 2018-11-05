@@ -15,6 +15,8 @@ Local
     # Cloning repos en installing with pip
     git clone git@xgitlab.cels.anl.gov:pbalapra/deephyper.git
     pip install -e deephyper/
+    git clone git@xgitlab.cels.anl.gov:pbalapra/dl-nas.git
+    pip install -e dl-nas/
 
 Theta
 =====

@@ -41,9 +41,9 @@ For HPS a benchmark is defined by a problem definition and a function that runs 
 
 The problem contains the parameters you want to search over. They are defined
 by their name, their space and a default value for the starting point. Deephyper recognizes three types of parameters :
-- continuous
-- discrete ordinal (for instance integers)
-- discrete non-ordinal (for instance a list of tokens)
+    - continuous
+    - discrete ordinal (for instance integers)
+    - discrete non-ordinal (for instance a list of tokens)
 For example if we want to create an hyper parameter search problem for Mnist dataset :
 
 
@@ -139,3 +139,18 @@ quick workaround is to explicitly add the problem folder to `sys.path` at the to
     here = os.path.dirname(os.path.abspath(__file__))
     sys.path.insert(0, here)
     # import user modules below here
+
+
+
+Neural Architecture Search
+==========================
+
+============== ================ ===============
+      Neural Architecture Search Benchmarks
+-----------------------------------------------
+     Name            Type          Description
+============== ================ ===============
+ cifar10Nas     Classification   https://www.cs.toronto.edu/~kriz/cifar.html
+ linearRegNas   Regression       Generation of points in 1 dimension corresponding to y=x
+ mnistNas       Classification   http://yann.lecun.com/exdb/mnist/
+============== ================ ===============
