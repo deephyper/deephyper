@@ -1,9 +1,9 @@
 import tensorflow as tf
 
-import  deephyper.search.nas.utils..common.tf_util as U
+import  deephyper.search.nas.utils.common.tf_util as U
 import gym
-from  deephyper.search.nas.utils..common.distributions import make_pdtype
-from  deephyper.search.nas.utils..common.mpi_running_mean_std import \
+from  deephyper.search.nas.utils.common.distributions import make_pdtype
+from  deephyper.search.nas.utils.common.mpi_running_mean_std import \
     RunningMeanStd
 
 
