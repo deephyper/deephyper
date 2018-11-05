@@ -4,12 +4,14 @@ from math import ceil, log
 from pprint import pprint, pformat
 from mpi4py import MPI
 import math
+import tensorflow as tf
 
 from deephyper.evaluators import Evaluator
 from deephyper.search import util, Search
 
-# from gym_nas.agent import nas_ppo_sync_a3c
-from gym_nas.agent import nas_ppo_async_a3c
+from tensorforce.agents import RandomAgent
+from tensorforce.execution import DistributedRunner
+from tensorforce.environments import AsyncNasBalsamEnvironment
 
 logger = util.conf_logger('deephyper.search.run_nas')
 
@@ -23,7 +25,7 @@ def key(d):
 LAUNCHER_NODES = int(os.environ.get('BALSAM_LAUNCHER_NODES', 1))
 WORKERS_PER_NODE = int(os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
 
-class NasPPOAsyncA3C(Search):
+class NasRandom(Search):
     def __init__(self, problem, run, evaluator, **kwargs):
         super().__init__(problem, run, evaluator, **kwargs)
         # set in super : self.problem
@@ -37,10 +39,6 @@ class NasPPOAsyncA3C(Search):
             self.num_episodes = math.inf
         self.space = self.problem.space
         logger.debug(f'evaluator: {type(self.evaluator)}')
-        self.num_agents = MPI.COMM_WORLD.Get_size() - 1 # one is  the parameter server
-        self.rank = MPI.COMM_WORLD.Get_rank()
-        logger.debug(f'num_agents: {self.num_agents}')
-        logger.debug(f'rank: {self.rank}')
 
     @staticmethod
     def _extend_parser(parser):
@@ -52,27 +50,40 @@ class NasPPOAsyncA3C(Search):
         # Settings
         #num_parallel = self.evaluator.num_workers - 4 #balsam launcher & controller of search for cooley
         # num_nodes = self.evaluator.num_workers - 1 #balsam launcher & controller of search for theta
-        num_nodes = LAUNCHER_NODES * WORKERS_PER_NODE - 1 # balsam launcher
-        num_nodes -= 1 # parameter server is neither an agent nor a worker
-        if num_nodes > self.num_agents:
-            num_episodes_per_batch = (num_nodes-self.num_agents)//self.num_agents
-        else:
-            num_episodes_per_batch = 1
+        num_parallel = LAUNCHER_NODES * WORKERS_PER_NODE - 2 # balsam launcher and controller
+        num_episodes = self.num_episodes
 
-        if self.rank == 0:
-            logger.debug(f'<Rank={self.rank}> num_nodes: {num_nodes}')
-            logger.debug(f'<Rank={self.rank}> num_episodes_per_batch: {num_episodes_per_batch}')
+        logger.debug(f'num_parallel: {num_parallel}')
+        logger.debug(f'num_episodes: {num_episodes}')
 
-        logger.debug(f'<Rank={self.rank}> starting training...')
-        nas_ppo_async_a3c.train(
-            num_episodes=self.num_episodes,
-            seed=2018,
-            space=self.problem.space,
-            evaluator=self.evaluator,
-            num_episodes_per_batch=num_episodes_per_batch
+        # stub structure to know how many nodes we need to compute
+        logger.debug('create structure')
+        self.structure = self.space['create_structure']['func'](
+            tf.constant([[1., 1.]]),
+            **self.space['create_structure']['kwargs']
         )
 
+        # Creating the environment
+        logger.debug('create environment')
+        environment = AsyncNasBalsamEnvironment(self.space, self.evaluator, self.structure, mode='full')
+
+        agent = RandomAgent(
+            states=environment.states,
+            actions=environment.actions,
+            execution=dict(
+                type='single',
+                num_parallel=num_parallel,
+                session_config=None,
+                distributed_spec=None
+            )
+        )
+
+        # Creating the Runner
+        runner = DistributedRunner(agent=agent, environment=environment)
+        runner.run(num_episodes=num_episodes, episode_finished=print_logs)
+        runner.close()
+
 if __name__ == "__main__":
-    args = NasPPOAsyncA3C.parse_args()
-    search = NasPPOAsyncA3C(**vars(args))
+    args = NasRandom.parse_args()
+    search = NasRandom(**vars(args))
     search.main()

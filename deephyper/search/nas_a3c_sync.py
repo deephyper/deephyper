@@ -1,6 +1,5 @@
 import os
 import json
-from math import ceil, log
 from pprint import pprint, pformat
 from mpi4py import MPI
 import math
@@ -8,8 +7,7 @@ import math
 from deephyper.evaluators import Evaluator
 from deephyper.search import util, Search
 
-# from gym_nas.agent import nas_ppo_sync_a3c
-from gym_nas.agent import nas_ppo_async_a3c
+from gym_nas.agent import nas_ppo_sync_a3c
 
 logger = util.conf_logger('deephyper.search.run_nas')
 
@@ -23,7 +21,7 @@ def key(d):
 LAUNCHER_NODES = int(os.environ.get('BALSAM_LAUNCHER_NODES', 1))
 WORKERS_PER_NODE = int(os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
 
-class NasPPOAsyncA3C(Search):
+class NasPPOSyncA3C(Search):
     def __init__(self, problem, run, evaluator, **kwargs):
         super().__init__(problem, run, evaluator, **kwargs)
         # set in super : self.problem
@@ -53,7 +51,6 @@ class NasPPOAsyncA3C(Search):
         #num_parallel = self.evaluator.num_workers - 4 #balsam launcher & controller of search for cooley
         # num_nodes = self.evaluator.num_workers - 1 #balsam launcher & controller of search for theta
         num_nodes = LAUNCHER_NODES * WORKERS_PER_NODE - 1 # balsam launcher
-        num_nodes -= 1 # parameter server is neither an agent nor a worker
         if num_nodes > self.num_agents:
             num_episodes_per_batch = (num_nodes-self.num_agents)//self.num_agents
         else:
@@ -64,7 +61,7 @@ class NasPPOAsyncA3C(Search):
             logger.debug(f'<Rank={self.rank}> num_episodes_per_batch: {num_episodes_per_batch}')
 
         logger.debug(f'<Rank={self.rank}> starting training...')
-        nas_ppo_async_a3c.train(
+        nas_ppo_sync_a3c.train(
             num_episodes=self.num_episodes,
             seed=2018,
             space=self.problem.space,
@@ -73,6 +70,6 @@ class NasPPOAsyncA3C(Search):
         )
 
 if __name__ == "__main__":
-    args = NasPPOAsyncA3C.parse_args()
-    search = NasPPOAsyncA3C(**vars(args))
+    args = NasPPOSyncA3C.parse_args()
+    search = NasPPOSyncA3C(**vars(args))
     search.main()
