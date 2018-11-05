@@ -68,7 +68,7 @@ class Evaluator:
         moduleName = self._run_function.__module__
         if moduleName == '__main__':
             raise RuntimeError(f'Evaluator will not execute function "{run_function.__name__}" '
-            "because it is in the __main__ module.  Please provide a function " 
+            "because it is in the __main__ module.  Please provide a function "
             "imported from an external module!")
 
     def encode(self, x):
@@ -155,9 +155,9 @@ class Evaluator:
 
     def get_finished_evals(self):
         futures = self.pending_evals.values()
-        try: 
+        try:
             waitRes = self.wait(futures, timeout=0.5, return_when='ANY_COMPLETED')
-        except TimeoutError: 
+        except TimeoutError:
             pass
         else:
             for future in (waitRes.done + waitRes.failed):

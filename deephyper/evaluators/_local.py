@@ -72,21 +72,21 @@ class LocalEvaluator(evaluate.Evaluator):
         super().__init__(run_function, cache_key)
         self.num_workers = self.WORKERS_PER_NODE
         logger.info(f"Local Evaluator will execute {self._run_function.__name__}() from module {self._run_function.__module__}")
-    
+
     def _args(self, x):
         exe = self._runner_executable
         cmd = ' '.join((exe, f"'{self.encode(x)}'"))
         return cmd
-    
+
     def _eval_exec(self, x):
         assert isinstance(x, dict)
         cmd = self._args(x)
         future = PopenFuture(cmd, self._parse)
         return future
-    
+
     @staticmethod
     def _timer(timeout):
-        if timeout is None: 
+        if timeout is None:
             return lambda : True
         else:
             timeout = max(float(timeout), 0.01)
@@ -105,12 +105,12 @@ class LocalEvaluator(evaluate.Evaluator):
         else: can_exit = lambda : len(active_futures) < num_futures
 
         while time_isLeft():
-            if can_exit(): 
+            if can_exit():
                 break
-            else: 
+            else:
                 active_futures = [f for f in futures if f.active]
                 time.sleep(0.04)
-    
+
         if not can_exit():
             raise TimeoutError(f'{timeout} sec timeout expired while '
             f'waiting on {len(futures)} tasks until {return_when}')
