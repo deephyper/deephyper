@@ -18,6 +18,11 @@ class Search:
         The `problem` class defines the optimization problem, providing details like the search domain.  (You can find many kind of problems in `deephyper.benchmarks`)
         The `run` function executes the black box function/model and returns the objective value which is to be optimized.
         The `evaluator` abstracts the run time environment (local, supercomputer...etc) in which run functions are executed.
+
+    Args:
+        problem (str):
+        run (str):
+        evaluator (str): local or balsam
     """
     def __init__(self, problem, run, evaluator, **kwargs):
         _args = vars(self.parse_args(''))
