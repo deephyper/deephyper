@@ -1,8 +1,15 @@
 Hyper Parameter Search
 **********************
 
+.. image:: ../_static/img/search.png
+   :scale: 50 %
+   :alt: search
+   :align: right
+
 Asynchronous Model-Base Search (AMBS)
 =====================================
+
+You can download deephyper paper :download:`here <../downloads/deephyper_final.pdf>`
 
 Environment variable of the search : ``DH_AMBS``
 

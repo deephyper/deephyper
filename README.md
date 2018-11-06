@@ -1,3 +1,7 @@
+# Documentation
+
+Deephyper documentation is on : [ReadTheDocs](https://deephyper.readthedocs.io)
+
 # Directory structure
 ```
 benchmarks/
