@@ -1,6 +1,11 @@
 Hyper Parameter Search
 **********************
 
+.. image:: ../_static/img/search.png
+   :scale: 50 %
+   :alt: search
+   :align: right
+
 Asynchronous Model-Base Search (AMBS)
 =====================================
 

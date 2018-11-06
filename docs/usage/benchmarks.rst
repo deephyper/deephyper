@@ -133,7 +133,9 @@ Now we need to define how to run hour mnist model while taking in account this '
     part of the default Python import path, and importing them will cause an `ImportError`!
 
 To ensure that modules located alongside the `model_run.py` script are always importable, a
-quick workaround is to explicitly add the problem folder to `sys.path` at the top of the script::
+quick workaround is to explicitly add the problem folder to `sys.path` at the top of the script
+
+::
     import os
     import sys
     here = os.path.dirname(os.path.abspath(__file__))
