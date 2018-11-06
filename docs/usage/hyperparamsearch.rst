@@ -4,6 +4,8 @@ Hyper Parameter Search
 Asynchronous Model-Base Search (AMBS)
 =====================================
 
+You can download deephyper paper :download:`here <../downloads/deephyper_final.pdf>`
+
 Environment variable of the search : ``DH_AMBS``
 
 Arguments :
