@@ -1,13 +1,14 @@
-import os
 import json
-from math import ceil, log
-from pprint import pprint, pformat
-from mpi4py import MPI
 import math
+import os
+from math import ceil, log
+from pprint import pformat, pprint
+
 import tensorflow as tf
+from mpi4py import MPI
 
 from deephyper.evaluators import Evaluator
-from deephyper.search import util, Search
+from deephyper.search import Search, util
 from deephyper.search.nas.agent import nas_random
 
 logger = util.conf_logger('deephyper.search.run_nas')

@@ -51,7 +51,7 @@ def traj_segment_generator(env, horizon):
                     ep_rets[ts_i2n_ep[index]-1] += rew
             ts_i2n_ep = {}
             data = {"ob" : obs, "rew" : rews, "new" : news,
-                    "ac" : acs, "prevac" : prevacs, "nextvpred": vpred * (1 - new),
+                    "ac" : acs, "prevac" : prevacs,
                     "ep_rets" : ep_rets, "ep_lens" : ep_lens}
             yield data
             # Be careful!!! if you change the downstream algorithm to aggregate
@@ -122,5 +122,7 @@ def train(num_episodes, seed, space, evaluator, num_episodes_per_batch):
             logger.log("********** Iteration %i ************"%iters_so_far)
 
             seg = seg_gen.__next__()
+            print(seg)
+            iters_so_far += 1
 
         env.close()
