@@ -1,5 +1,8 @@
-Directory structure
-===================
+# Documentation
+
+Deephyper documentation is on : [ReadTheDocs](https://deephyper.readthedocs.io)
+
+# Directory structure
 ```
 benchmarks
     directory for test problems
@@ -8,8 +11,8 @@ evaluator
 search
     directory for search applications
 ```
-Install instructions
-====================
+
+# Install instructions
 
 It's better to install deephyper in a virtual environment.
 
