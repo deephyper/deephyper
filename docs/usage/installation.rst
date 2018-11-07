@@ -8,15 +8,18 @@ Local
 
     # Creation of a local environment for python
     pip install --user virtualenv
-    echo "export PATH=~/.local/bin:$PATH" >> ~/.bashrc
+    # sometimes it can help :
+    # echo "export PATH=~/.local/bin:$PATH" >> ~/.bashrc
+    # source ~/.bashrc
     virtualenv deephyper
     source deephyper/bin/activate
 
     # Cloning repos en installing with pip
-    git clone git@xgitlab.cels.anl.gov:pbalapra/deephyper.git
+    git clone https://github.com/deephyper/deephyper.git
     pip install -e deephyper/
     git clone git@xgitlab.cels.anl.gov:pbalapra/dl-nas.git
     pip install -e dl-nas/
+
 
 Theta
 =====
@@ -24,6 +27,7 @@ Theta
 ::
 
     module load deephyper
+
 
 Cooley
 ======

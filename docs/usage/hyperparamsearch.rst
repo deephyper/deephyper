@@ -92,12 +92,15 @@ Now if you want a search with the previous problem and model. Let's suppose that
     python ambs.py --problem package_name.problem.Problem --run package_name.mnist_mlp.run
 
 
+All searches can be used directly with the command line or inside an other python file.
+To print the parameters of a search just run ``python search_script.py --help``. For example with AMBS run ``python ambs.py --help``.
+
 Asynchronous Model-Base Search (AMBS)
 =====================================
 
 You can download deephyper paper :download:`here <../downloads/deephyper_final.pdf>`
 
-Environment variable of the search : ``DH_AMBS``
+Environment variable to access the search on Theta: ``DH_AMBS``
 
 Arguments :
 
