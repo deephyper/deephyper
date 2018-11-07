@@ -102,15 +102,15 @@ You can download deephyper paper :download:`here <../downloads/deephyper_final.p
 
 Environment variable to access the search on Theta: ``DH_AMBS``
 
-Arguments :
+Arguments of AMBS :
 
 * ``learner``
 
     * ``RF`` : Random Forest (default)
-    * ``ET`` :
-    * ``GBRT`` :
+    * ``ET`` : Extra Trees
+    * ``GBRT`` : Gradient Boosting Regression Trees
     * ``DUMMY`` :
-    * ``GP`` :
+    * ``GP`` : Gaussian process
 
 * ``liar-strategy``
 
