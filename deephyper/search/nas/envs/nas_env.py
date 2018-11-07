@@ -21,7 +21,7 @@ class NasEnv(gym.Env):
         self.action_buffer = []
         self.num_timesteps = self.structure.num_nodes
 
-    def step(self, action, index):
+    def step(self, action, index, rank=None):
 
         self.action_buffer.append(action)
 
@@ -42,6 +42,8 @@ class NasEnv(gym.Env):
         cfg = self.space.copy()
         cfg['arch_seq'] = list(conv_action)
         cfg['w'] = index
+        if rank != None:
+            cfg['rank'] = rank
 
         self.evaluator.add_eval(cfg)
 

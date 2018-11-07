@@ -69,7 +69,7 @@ def traj_segment_generator(env, horizon):
         prevacs[i] = prevac
 
         # observ, reward, episode_over, meta -> {}
-        ob, rew, new, _ = env.step(ac, i)
+        ob, rew, new, _ = env.step(ac, i, rank=MPI.COMM_WORLD.Get_rank())
         rews[i] = rew
 
         cur_ep_ret += rew if rew != None else 0

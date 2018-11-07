@@ -16,8 +16,6 @@ class LstmPolicy(object):
 
     def _init(self, ob_space, ac_space, num_units, gaussian_fixed_var=True, async_update=False):
         assert isinstance(ob_space, gym.spaces.Box)
-        num_hid_layers = 1
-        hid_size = 10
 
         self.pdtype = pdtype = make_pdtype(ac_space)
         sequence_length = None

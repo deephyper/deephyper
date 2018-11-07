@@ -53,7 +53,6 @@ def traj_segment_generator(pi, env, horizon, stochastic):
                 for (cfg, rew) in results:
                     index = cfg['w']
                     rews[index] = rew
-                    print(f'-> rew: {rew}')
                     num_evals -= 1
                     ep_rets[ts_i2n_ep[index]-1] += rew
             ts_i2n_ep = {}
@@ -73,7 +72,7 @@ def traj_segment_generator(pi, env, horizon, stochastic):
         prevacs[i] = prevac
 
         # observ, reward, episode_over, meta -> {}
-        ob, rew, new, _ = env.step(ac, i)
+        ob, rew, new, _ = env.step(ac, i, rank=MPI.COMM_WORLD.Get_rank())
         rews[i] = rew
 
         cur_ep_ret += rew if rew != None else 0
