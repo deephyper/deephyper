@@ -4,8 +4,8 @@ Evaluators
 .. automodule:: deephyper.evaluators.evaluate
     :members:
 
-.. automodule:: deephyper.evaluators.balsam
+.. automodule:: deephyper.evaluators._balsam
     :members:
 
-.. automodule:: deephyper.evaluators.local
+.. automodule:: deephyper.evaluators._local
     :members:
