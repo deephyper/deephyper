@@ -1,6 +1,8 @@
 Neural Architecture Search
 **************************
 
+
+
 Build custom cells
 ==================
 
@@ -38,10 +40,14 @@ Basic operations
 MLP operations
 --------------
 
+.. automodule:: deephyper.search.nas.operation.mlp
+    :members:
+
 CNN operations
 --------------
 
 .. autoclass:: deephyper.search.nas.operation.cnn.IdentityConv2D
+    :members:
 
 .. autoclass:: deephyper.search.nas.operation.cnn.Convolution2D
     :members:
@@ -63,8 +69,6 @@ Build in cells
 
 Multi Layer Perceptron
 ----------------------
-
-.. autofunction:: deephyper.search.nas.cell.mlp.create_dense_cell_example
 
 .. autofunction:: deephyper.search.nas.cell.mlp.create_dense_cell_type1
 

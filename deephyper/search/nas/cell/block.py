@@ -1,6 +1,6 @@
 import networkx as nx
 
-from deephyper.search.nas.cell import Node
+from deephyper.search.nas.cell.node import Node
 
 
 class Block:

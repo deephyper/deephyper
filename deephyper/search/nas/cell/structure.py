@@ -1,6 +1,8 @@
 import networkx as nx
 
-from deephyper.search.nas.cell import Block, Cell, Node
+from deephyper.search.nas.cell.cell import Cell
+from deephyper.search.nas.cell.block import Block
+from deephyper.search.nas.cell.node import Node
 from deephyper.search.nas.cell.block import create_tensor_aux
 from deephyper.search.nas.operation.basic import (Add, Concat, Connect,
                                                   Constant, Incr, Merge,

@@ -1,9 +1,9 @@
 import networkx as nx
 
-from deephyper.search.nas.cell import Block, Node
+from deephyper.search.nas.cell.node import Node
+from deephyper.search.nas.cell.block import Block
 from deephyper.search.nas.operation.basic import (Add, Concat, Connect,
                                                   Constant, Merge)
-from deephyper.search.nas.operation.mlp import mlp_ops
 
 
 class Cell:

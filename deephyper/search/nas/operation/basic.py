@@ -1,13 +1,21 @@
 import tensorflow as tf
 
 class Operation:
+    """Interface of an operation.
+    """
+
     def __str__(self):
         return type(self).__name__
 
     def __call__(self, **kwargs):
+        """
+        Return: a tensor
+        """
         raise NotImplementedError
 
     def is_set(self):
+        """Preprocess the current operation.
+        """
         pass
 
 
@@ -51,8 +59,8 @@ class Connect(Operation):
 
     Args:
         graph (nx.DiGraph): a graph
-        n1 (nx.Node): starting node
-        n2 (nx.Node): arrival node
+        n1 (Node): starting node
+        n2 (Node): arrival node
     """
     def __init__(self, graph, n1, n2):
         self.graph = graph

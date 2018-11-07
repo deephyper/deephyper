@@ -1,45 +1,11 @@
 import tensorflow as tf
 
-from deephyper.search.nas.cell import Block, Cell, Node
+from deephyper.search.nas.cell.cell import Cell
+from deephyper.search.nas.cell.block import Block
+from deephyper.search.nas.cell.node import Node
 from deephyper.search.nas.operation.basic import Connect, Identity
-from deephyper.search.nas.operation.mlp import MLP, dropout_ops, mlp_ops
+from deephyper.search.nas.operation.mlp import MLP, dropout_ops
 
-
-def create_dense_cell_example(input_nodes):
-    """Example MLP cell.
-
-    Args:
-        input_nodes (list(Node)): possible inputs of the current cell.
-
-    Returns:
-        Cell: a Cell instance.
-    """
-    cell = Cell(input_nodes)
-
-    def create_block():
-        n1 = Node('N1')
-        for inpt in input_nodes:
-            n1.add_op(Connect(cell.graph, inpt, n1))
-
-        n2 = Node('N2')
-        for op in mlp_ops:
-            n2.add_op(op)
-
-
-        block = Block()
-        block.add_node(n1)
-        block.add_node(n2)
-
-        block.add_edge(n1, n2)
-        return block
-
-    block1 = create_block()
-    block2 = create_block()
-
-    cell.add_block(block1)
-    cell.add_block(block2)
-    cell.set_outputs('stack', axis=1)
-    return cell
 
 def create_dense_cell_type1(input_nodes):
     """MLP type 1
