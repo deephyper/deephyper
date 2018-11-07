@@ -12,7 +12,10 @@ from deephyper.search.nas.utils.common import (Dataset, explained_variance,
                                                fmt_row, zipsame)
 from deephyper.search.nas.utils.common.mpi_adam import MpiAdam
 from deephyper.search.nas.utils.common.mpi_moments import mpi_moments
+from deephyper.search import util
+from deephyper.search.nas.utils.logging import JsonMessage as jm
 
+dh_logger = util.conf_logger('deephyper.search.nas.agent.pposgd_sync')
 
 def traj_segment_generator(pi, env, horizon, stochastic):
     t = 0
@@ -187,6 +190,7 @@ def learn(env, policy_fn, *,
         logger.log("********** Iteration %i ************"%iters_so_far)
 
         seg = seg_gen.__next__()
+        dh_logger.info(jm(type='seg', rank=MPI.COMM_WORLD.Get_rank(), **seg))
         add_vtarg_and_adv(seg, gamma, lam)
 
         # ob, ac, atarg, ret, td1ret = map(np.concatenate, (obs, acs, atargs, rets, td1rets))

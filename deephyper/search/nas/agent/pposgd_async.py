@@ -217,6 +217,7 @@ def learn(env, policy_fn, *,
             t2 = time.time()
             t = t2 - t1
             dh_logger.info(jm(type='batch_computation', rank=rank, duration=t, start_time=t1, end_time=t2))
+            dh_logger.info(jm(type='seg', rank=rank, **seg))
 
             add_vtarg_and_adv(seg, gamma, lam)
 
@@ -232,7 +233,7 @@ def learn(env, policy_fn, *,
 
             assign_old_eq_new() # set old parameter values to new parameter values
             dh_logger.info(f"Rank={rank}: Optimizing...")
-            # logger.log(fmt_row(13, loss_names))
+
             # Here we do a bunch of optimization epochs over the data
             for _ in range(optim_epochs):
                 losses = [] # list of tuples, each of which gives the loss for a minibatch
@@ -248,7 +249,6 @@ def learn(env, policy_fn, *,
                     dh_logger.info(jm(type='adam.worker_update', rank=rank, duration=t, start_time=t1, end_time=t2))
 
                     losses.append(newlosses)
-                # logger.log(fmt_row(13, np.mean(losses, axis=0)))
 
             dh_logger.info(f"Rank={rank}: Evaluating losses...")
             losses = []
@@ -256,23 +256,13 @@ def learn(env, policy_fn, *,
                 newlosses = compute_losses(batch["ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
                 losses.append(newlosses)
             meanlosses,_,_ = mpi_moments(losses, axis=0, use_mpi=False)
-            # logger.log(fmt_row(13, meanlosses))
-            # for (lossval, name) in zipsame(meanlosses, loss_names):
-            #     logger.record_tabular("loss_"+name, lossval)
-            # logger.record_tabular("ev_tdlam_before", explained_variance(vpredbefore, tdlamret))
+
             lens = seg["ep_lens"]
             rews = seg["ep_rets"]
-            # logger.record_tabular("EpLenMean", np.mean(lens))
-            # logger.record_tabular("EpRewMean", np.mean(rews))
-            # logger.record_tabular("EpThisIter", len(lens))
+
             episodes_so_far += len(lens)
             timesteps_so_far += sum(lens)
             iters_so_far += 1
-            # logger.record_tabular("EpisodesSoFar", episodes_so_far)
-            # logger.record_tabular("TimestepsSoFar", timesteps_so_far)
-            # logger.record_tabular("TimeElapsed", time.time() - tstart)
-            # logger.record_tabular("Rank", rank)
-            # logger.dump_tabular()
 
         return pi
 

@@ -11,6 +11,10 @@ from deephyper.search.nas.agent import lstm_policy, pposgd_sync
 from deephyper.search.nas.envs import NasEnv
 from deephyper.search.nas.utils import bench, logger
 from deephyper.search.nas.utils.common import set_global_seeds
+from deephyper.search import util
+from deephyper.search.nas.utils.logging import JsonMessage as jm
+
+dh_logger = util.conf_logger('deephyper.search.nas.agent.nas_random')
 
 
 def traj_segment_generator(env, horizon):
@@ -108,7 +112,6 @@ def train(num_episodes, seed, space, evaluator, num_episodes_per_batch):
 
         seg_gen = traj_segment_generator(env, timesteps_per_actorbatch)
 
-        episodes_so_far = 0
         timesteps_so_far = 0
         iters_so_far = 0
 
@@ -122,7 +125,7 @@ def train(num_episodes, seed, space, evaluator, num_episodes_per_batch):
             logger.log("********** Iteration %i ************"%iters_so_far)
 
             seg = seg_gen.__next__()
-            print(seg)
+            dh_logger.info(jm(type='seg', rank=MPI.COMM_WORLD.Get_rank(), **seg))
             iters_so_far += 1
 
         env.close()
