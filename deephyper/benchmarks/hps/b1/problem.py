@@ -1,4 +1,3 @@
-
 from deephyper.benchmarks import HpProblem
 
 Problem = HpProblem()
