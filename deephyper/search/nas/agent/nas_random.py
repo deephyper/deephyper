@@ -7,7 +7,6 @@ from mpi4py import MPI
 
 import deephyper.search.nas.utils.common.tf_util as U
 from deephyper.evaluators import Evaluator
-from deephyper.search.nas.agent import lstm_policy, pposgd_sync
 from deephyper.search.nas.envs import NasEnv
 from deephyper.search.nas.utils import bench, logger
 from deephyper.search.nas.utils.common import set_global_seeds
@@ -89,8 +88,7 @@ def train(num_episodes, seed, space, evaluator, num_episodes_per_batch):
     rank = MPI.COMM_WORLD.Get_rank()
     env_id = rank
     if rank != 0: # rank zero simule the use of a parameter server
-        sess = U.single_threaded_session()
-        sess.__enter__()
+        pass
     else:
         workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank() if seed is not None else None
         set_global_seeds(workerseed)

@@ -4,6 +4,16 @@ from deephyper.search.nas.operation.basic import Operation
 
 
 class Conv1D(Operation):
+    """Convolution for one dimension.
+
+    Help you to create a one dimension convolution operation.
+
+    Args:
+        filter_size (int): size kernels/filters
+        num_filters (int): number of kernels/filters
+        strides (int):
+        padding (str): 'SAME' or 'VALID'
+    """
     def __init__(self, filter_size, num_filters=1, strides=1, padding='SAME'):
         self.filter_size = filter_size
         self.num_filters = num_filters

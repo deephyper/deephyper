@@ -4,6 +4,15 @@ from deephyper.search.nas.operation.basic import Operation
 
 
 class MLP(Operation):
+    """Multi Layer Perceptron operation.
+
+    Help you to create a perceptron with n layers, m units per layer and an activation function.
+
+    Args:
+        layers (int): number of layers.
+        units (int): number of units per layer.
+        activation: an activation function from tensorflow.
+    """
     def __init__(self, layers, units, activation):
         self.layers = layers
         self.units = units
@@ -24,21 +33,14 @@ class MLP(Operation):
         return out
 
 
-MLP_2x2_relu = MLP(2, 2, tf.nn.relu)
-MLP_3x3_relu = MLP(3, 3, tf.nn.relu)
-MLP_5x5_relu = MLP(5, 5, tf.nn.relu)
-MLP_2x2_tanh = MLP(2, 2, tf.tanh)
-MLP_3x3_tanh = MLP(3, 3, tf.tanh)
-MLP_5x5_tanh = MLP(5, 5, tf.tanh)
-mlp_ops = [MLP_2x2_relu,
-           MLP_3x3_relu,
-           MLP_5x5_relu,
-           MLP_2x2_tanh,
-           MLP_3x3_tanh,
-           MLP_5x5_tanh]
-
-
 class Dropout(Operation):
+    """Dropout operation.
+
+    Help you to create a dropout operation.
+
+    Args:
+        keep_prob (float): probability to keep a value from the input.
+    """
     def __init__(self, keep_prob):
         self.keep_prob = keep_prob
 
