@@ -12,7 +12,8 @@ install_requires = [
     'deap', # GA search
     # nas
     'gym',
-    'networkx'
+    'networkx',
+    'mpi4py'
 ]
 
 extras_require = {

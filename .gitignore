@@ -58,6 +58,7 @@ Data/
 *.json
 *.swp
 logdir
+*.html
 
 # Sphinx documentation
 _build/
