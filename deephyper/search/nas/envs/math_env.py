@@ -6,7 +6,7 @@ from gym import spaces
 
 f, (a, b), optimum = polynome_2()
 DIST_SIZE = 10
-NUM_DIM   = 2
+NUM_DIM   = 10
 VALS      = np.linspace(a, b, DIST_SIZE)
 
 class MathEnv(gym.Env):
@@ -21,7 +21,7 @@ class MathEnv(gym.Env):
         self.action_buffer = []
         self.num_timesteps = NUM_DIM
 
-    def step(self, action, index):
+    def step(self, action, index, rank=None):
 
         self.action_buffer.append(action)
 
@@ -41,6 +41,8 @@ class MathEnv(gym.Env):
         cfg = {}
         cfg['x'] = conv_action
         cfg['w'] = index
+        if rank != None:
+            cfg['rank'] = rank
 
         self.evaluator.add_eval(cfg)
 
@@ -53,6 +55,3 @@ class MathEnv(gym.Env):
     def reset(self):
         self.__init__(self.evaluator)
         return self._state
-
-    def render(self, mode='human', close=False):
-        pass

@@ -4,18 +4,18 @@ import os.path as osp
 import tensorflow as tf
 from mpi4py import MPI
 
-import  deephyper.search.nas.utils..common.tf_util as U
+import deephyper.search.nas.utils.common.tf_util as U
 from deephyper.evaluators import Evaluator
-from deephyper.search.nas.agent import lstm_policy, pposgd_sync
+from deephyper.search.nas.agent import pposgd_sync
+from deephyper.search.nas.agent.policy import lstm
 from deephyper.search.nas.envs import MathEnv
-from  deephyper.search.nas.utils import bench, logger
-from  deephyper.search.nas.utils..common import set_global_seeds
+from deephyper.search.nas.utils import bench, logger
+from deephyper.search.nas.utils.common import set_global_seeds
 
 
 def train(num_episodes, seed, evaluator, num_episodes_per_batch):
 
     rank = MPI.COMM_WORLD.Get_rank()
-    env_id = rank
     sess = U.single_threaded_session()
     sess.__enter__()
     if rank == 0:
@@ -26,14 +26,13 @@ def train(num_episodes, seed, evaluator, num_episodes_per_batch):
     set_global_seeds(workerseed)
 
     # MAKE ENV_NAS
-    num_episodes = 1000
-    timesteps_per_actorbatch = 10
+    timesteps_per_actorbatch = 10*10
     num_timesteps = timesteps_per_actorbatch * num_episodes
 
     env = MathEnv(evaluator)
 
     def policy_fn(name, ob_space, ac_space): #pylint: disable=W0613
-        return lstm_policy.LstmPolicy(name=name, ob_space=ob_space, ac_space=ac_space, num_units=32)
+        return lstm.LstmPolicy(name=name, ob_space=ob_space, ac_space=ac_space, num_units=32)
 
     pposgd_sync.learn(env, policy_fn,
         max_timesteps=int(num_timesteps),
@@ -53,13 +52,13 @@ def key(d):
     return json.dumps(dict(arch_seq=d['x']))
 
 def main():
-    from gym_nas.agent.run_func_math import run_func
+    from deephyper.search.nas.agent.run_func_math import run_func
     evaluator = Evaluator.create(run_func, cache_key=key, method='local')
     train(
-        num_episodes=1,
+        num_episodes=500,
         seed=2018,
         evaluator=evaluator,
-        num_episodes_per_batch=2)
+        num_episodes_per_batch=10)
 
 if __name__ == '__main__':
     main()

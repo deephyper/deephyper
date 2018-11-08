@@ -14,6 +14,7 @@ from deephyper.search.nas.utils.common import (Dataset, explained_variance,
 from deephyper.search.nas.utils.common.mpi_adam_async import MpiAdamAsync
 from deephyper.search.nas.utils.common.mpi_moments import mpi_moments
 from deephyper.search.nas.utils.logging import JsonMessage as jm
+from deephyper.search.nas.agent.utils import episode_reward_for_final_timestep
 
 dh_logger = util.conf_logger('deephyper.search.nas.agent.pposgd_async')
 
@@ -23,7 +24,6 @@ def traj_segment_generator(pi, env, horizon, stochastic):
     new = True # marks if we're on first timestep of an episode
     ob = env.reset()
 
-    cur_ep_ret = 0 # return in current episode
     cur_ep_len = 0 # len of current episode
     ep_rets = [] # returns of completed episodes in this segment
     ep_lens = [] # lengths of ...
@@ -43,7 +43,6 @@ def traj_segment_generator(pi, env, horizon, stochastic):
     while True:
         prevac = ac
         ac, vpred = pi.act(stochastic, ob)
-        print(f'-> ac: {ac}')
         # Slight weirdness here because we need value function at time T
         # before returning segment [0, T-1] so we get the correct
         # terminal value
@@ -52,9 +51,10 @@ def traj_segment_generator(pi, env, horizon, stochastic):
                 results = env.get_rewards_ready()
                 for (cfg, rew) in results:
                     index = cfg['w']
-                    rews[index] = rew
+                    episode_length = ep_lens[ts_i2n_ep[index]-1]
+                    episode_rew = episode_reward_for_final_timestep(rews, index, rew, episode_length)
                     num_evals -= 1
-                    ep_rets[ts_i2n_ep[index]-1] += rew
+                    ep_rets[ts_i2n_ep[index]-1] = episode_rew
             ts_i2n_ep = {}
             data = {"ob" : obs, "rew" : rews, "vpred" : vpreds, "new" : news,
                     "ac" : acs, "prevac" : prevacs, "nextvpred": vpred * (1 - new),
@@ -75,14 +75,12 @@ def traj_segment_generator(pi, env, horizon, stochastic):
         ob, rew, new, _ = env.step(ac, i, rank=MPI.COMM_WORLD.Get_rank())
         rews[i] = rew
 
-        cur_ep_ret += rew if rew != None else 0
         cur_ep_len += 1
         if new:
             num_evals += 1
             ts_i2n_ep[i] =  num_evals
-            ep_rets.append(cur_ep_ret)
+            ep_rets.append(0)
             ep_lens.append(cur_ep_len)
-            cur_ep_ret = 0
             cur_ep_len = 0
             ob = env.reset()
         t += 1

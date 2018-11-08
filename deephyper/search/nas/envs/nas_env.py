@@ -56,6 +56,3 @@ class NasEnv(gym.Env):
     def reset(self):
         self.__init__(self.space, self.evaluator, self.structure)
         return self._state
-
-    def render(self, mode='human', close=False):
-        pass

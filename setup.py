@@ -13,7 +13,8 @@ install_requires = [
     # nas
     'gym',
     'networkx',
-    'mpi4py'
+    'mpi4py',
+    'joblib'
 ]
 
 extras_require = {
