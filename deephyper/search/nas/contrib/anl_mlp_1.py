@@ -11,7 +11,7 @@ if __name__ == '__main__':
     from random import random
 
     inpt = tf.constant(np.zeros((2, 28)), dtype=tf.float32)
-    num_cells = 5
+    num_cells = 3
     net_struct = create_structure(inpt, num_cells)
 
     cell_ops = [random() for _ in range(net_struct.num_nodes_cell(i=0)[0])]
@@ -20,7 +20,7 @@ if __name__ == '__main__':
     net_struct.set_ops(ops)
     net_struct.draw_graphviz('anl_mlp_1.dot')
 
-    out = net_struct.create_tensor()
+    out = net_struct.create_tensor(train=False)
 
     with tf.Session() as sess:
         init = tf.global_variables_initializer()

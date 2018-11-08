@@ -19,9 +19,9 @@ if __name__ == '__main__':
     print(f'ops: {ops}')
 
     net_struct.set_ops(ops)
-    net_struct.draw_graphviz('anl_mlp_2.dot')
+    net_struct.draw_graphviz('anl_mlp_toy.dot')
 
-    out = net_struct.create_tensor()
+    out = net_struct.create_tensor(train=False)
 
     with tf.Session() as sess:
         init = tf.global_variables_initializer()

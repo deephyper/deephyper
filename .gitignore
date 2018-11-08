@@ -42,6 +42,7 @@ scripts/runjob.conf
 scripts/runjob.conf.cooley
 
 #
+.vscode
 graph/
 DATA/
 *.egg-info*
