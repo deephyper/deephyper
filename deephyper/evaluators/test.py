@@ -3,6 +3,7 @@ Basic test for Evaluator : 'local' or 'balsam'.
 """
 import os
 import unittest
+os.environ['DEEPHYPER_WORKERS_PER_NODE'] = '4'
 from deephyper.evaluators import Evaluator
 from deephyper.evaluators.test_functions import run, key
 from deephyper.evaluators.test_utils import stop_launcher_processes
@@ -150,12 +151,12 @@ class BaseEvaluatorTest:
         ev = self.ev
         evals = [
             dict(ID="test1", x1=3, x2=4, sleep=0.1),
-            dict(ID="test2", x1=3, x2=4, sleep=300),
+            dict(ID="test2", x1=3, x2=4, sleep=32),
             dict(ID="test3", x1=10, x2=10),
         ]
         ev.add_eval_batch(evals)
         with self.assertRaises(TimeoutError):
-            res = list(ev.await_evals(evals,timeout=30))
+            res = list(ev.await_evals(evals,timeout=self.AWAIT_TIMEOUT))
 
         res = list(ev.get_finished_evals())
         self.assertEqual(len(ev.finished_evals), 2)
@@ -167,8 +168,17 @@ class BaseEvaluatorTest:
 class TestLocal(unittest.TestCase, BaseEvaluatorTest):
     def setUp(self):
         self.ev = Evaluator.create(run, cache_key=key, method='local')
+        self.AWAIT_TIMEOUT=8
     def tearDown(self):
         for f in self.ev.pending_evals.values(): f.cancel()
+
+class TestLocalLite(unittest.TestCase, BaseEvaluatorTest):
+    def setUp(self):
+        self.ev = Evaluator.create(run, cache_key=key, method='local-lite')
+        self.AWAIT_TIMEOUT=8
+    def tearDown(self):
+        for f in self.ev.pending_evals.values(): f.cancel()
+
 
 class TestBalsam(unittest.TestCase, BaseEvaluatorTest):
     @classmethod
@@ -179,6 +189,7 @@ class TestBalsam(unittest.TestCase, BaseEvaluatorTest):
 
     def setUp(self):
         self.ev = Evaluator.create(run, cache_key=key, method='balsam')
+        self.AWAIT_TIMEOUT=30
         self.launcher = subprocess.Popen('balsam launcher --job-mode=serial --consume-all --num-transition=1', shell=True)
 
     def tearDown(self):
