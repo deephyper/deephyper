@@ -1,0 +1,4 @@
+Search
+******
+
+.. automodule:: deephyper.searches

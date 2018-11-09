@@ -1,5 +1,5 @@
-from deephyper.search.nas.contrib.anl_mlp_2 import create_structure
-from deephyper.search.nas.model.preprocessing import stdscaler
+from deephyper.searches.nas.contrib.anl_mlp_2 import create_structure
+from deephyper.searches.nas.model.preprocessing import stdscaler
 from deephyper.benchmarks.nas.mnist1D.load_data import load_data
 from deephyper.benchmarks import Problem
 
