@@ -22,10 +22,10 @@ extras_require = {
 }
 
 setup(
-    name='Deephyper',
+    name='deephyper',
     version='0.0.4',
     packages=['deephyper',],
-    license='',
+    license=open('LICENSE.md').read(),
     long_description=open('README.md').read(),
     install_requires=install_requires,
     extras_require=extras_require,

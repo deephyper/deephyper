@@ -53,7 +53,7 @@ def key(d):
 
 def main():
     from deephyper.search.nas.agent.run_func_math import run_func
-    evaluator = Evaluator.create(run_func, cache_key=key, method='local')
+    evaluator = Evaluator.create(run_func, cache_key=key, method='threadPool')
     train(
         num_episodes=500,
         seed=2018,

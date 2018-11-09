@@ -6,6 +6,8 @@
 Welcome to deephyper's documentation!
 =====================================
 
+Deephyper is a Python package that provides a common interface for the implementation and study of scalable hyperparameter and neural architecture search methods.
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:

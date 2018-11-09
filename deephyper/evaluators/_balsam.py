@@ -15,6 +15,15 @@ logger = logging.getLogger(__name__)
 
 LAUNCHER_NODES = int(os.environ.get('BALSAM_LAUNCHER_NODES', 1))
 class BalsamEvaluator(Evaluator):
+    """Evaluator using balsam software.
+
+    Documentation to balsam : https://balsam.readthedocs.io
+    This class help us to run task on HPC systems with more flexibility and ease of use.
+
+    Args:
+        run_function (func): takes one parameter of type dict and returns a scalar value.
+        cache_key (func): takes one parameter of type dict and returns a hashable type, used as the key for caching evaluations. Multiple inputs that map to the same hashable key will only be evaluated once. If ``None``, then cache_key defaults to a lossless (identity) encoding of the input dict.
+    """
     def __init__(self, run_function, cache_key=None):
         super().__init__(run_function, cache_key)
         self.id_key_map = {}

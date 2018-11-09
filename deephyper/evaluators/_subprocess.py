@@ -66,12 +66,20 @@ class PopenFuture:
         self._poll()
         return self._state == 'cancelled'
 
-class LocalEvaluator(evaluate.Evaluator):
+class SubprocessEvaluator(evaluate.Evaluator):
+    """Evaluator using subprocess.
+
+        The ``SubprocessEvaluator`` use the ``subprocess`` package. The generated processes have a fresh memory independant from their parent process. All the imports are going to be repeated.
+
+        Args:
+            run_function (func): takes one parameter of type dict and returns a scalar value.
+            cache_key (func): takes one parameter of type dict and returns a hashable type, used as the key for caching evaluations. Multiple inputs that map to the same hashable key will only be evaluated once. If ``None``, then cache_key defaults to a lossless (identity) encoding of the input dict.
+    """
     WaitResult = namedtuple('WaitResult', ['active', 'done', 'failed', 'cancelled'])
     def __init__(self, run_function, cache_key=None):
         super().__init__(run_function, cache_key)
         self.num_workers = self.WORKERS_PER_NODE
-        logger.info(f"Local Evaluator will execute {self._run_function.__name__}() from module {self._run_function.__module__}")
+        logger.info(f"Subprocess Evaluator will execute {self._run_function.__name__}() from module {self._run_function.__module__}")
 
     def _args(self, x):
         exe = self._runner_executable

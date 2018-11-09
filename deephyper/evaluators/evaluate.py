@@ -37,16 +37,20 @@ class Evaluator:
 
     @staticmethod
     def create(run_function, cache_key=None, method='balsam'):
-        assert method in ['balsam', 'local', 'local-lite']
+        assert method in ['balsam', 'subprocess', 'processPool', 'threadPool']
         if method == "balsam":
             from deephyper.evaluators._balsam import BalsamEvaluator
             Eval = BalsamEvaluator
-        elif method == 'local':
-            from deephyper.evaluators._local import LocalEvaluator
-            Eval = LocalEvaluator
+        elif method == "subprocess":
+            from deephyper.evaluators._subprocess import SubprocessEvaluator
+            Eval = SubprocessEvaluator
+        elif method == "processPool":
+            from deephyper.evaluators._processPool import ProcessPoolEvaluator
+            Eval = ProcessPoolEvaluator
         else:
-            from deephyper.evaluators._local_lite import LocalLiteEvaluator
-            Eval = LocalLiteEvaluator
+            from deephyper.evaluators._threadPool import ThreadPoolEvaluator
+            Eval = ThreadPoolEvaluator
+
         return Eval(run_function, cache_key=cache_key)
 
     def __init__(self, run_function, cache_key=None):
@@ -71,7 +75,7 @@ class Evaluator:
         moduleName = self._run_function.__module__
         if moduleName == '__main__':
             raise RuntimeError(f'Evaluator will not execute function "{run_function.__name__}" '
-            "because it is in the __main__ module.  Please provide a function " 
+            "because it is in the __main__ module.  Please provide a function "
             "imported from an external module!")
 
     def encode(self, x):
@@ -158,9 +162,9 @@ class Evaluator:
 
     def get_finished_evals(self):
         futures = self.pending_evals.values()
-        try: 
+        try:
             waitRes = self.wait(futures, timeout=0.5, return_when='ANY_COMPLETED')
-        except TimeoutError: 
+        except TimeoutError:
             pass
         else:
             for future in (waitRes.done + waitRes.failed):
