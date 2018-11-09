@@ -16,7 +16,6 @@ from  deephyper.search.nas.utils.common import set_global_seeds
 def train(num_episodes, seed, space, evaluator, num_episodes_per_batch):
 
     rank = MPI.COMM_WORLD.Get_rank()
-    env_id = rank
     sess = U.single_threaded_session()
     sess.__enter__()
     if rank == 0:

@@ -124,7 +124,7 @@ def learn(env, policy_fn, *,
         logger.log("********** Iteration %i ************"%iters_so_far)
 
         seg = seg_gen.__next__()
-        dh_logger.info(jm(type='seg', rank=MPI.COMM_WORLD.Get_rank(), **seg))
+        # dh_logger.info(jm(type='seg', rank=MPI.COMM_WORLD.Get_rank(), **seg))
         add_vtarg_and_adv(seg, gamma, lam)
 
         # ob, ac, atarg, ret, td1ret = map(np.concatenate, (obs, acs, atargs, rets, td1rets))
