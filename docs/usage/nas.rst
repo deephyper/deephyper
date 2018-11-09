@@ -1,5 +1,5 @@
-Neural Architecture Search
-**************************
+Neural Architecture Search (NAS)
+********************************
 
 .. WARNING::
     If you want to output the dot files of graphs that you are creating with the nas api please install pygraphviz: ``pip install pygrapviz``

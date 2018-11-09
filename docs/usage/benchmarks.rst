@@ -1,17 +1,20 @@
 Benchmarks
 **********
 
-Benchmarks are here for you to test the performance of different search algorithm and reproduce our results. They can also help you to test your installation of deephyper or
-discover the many parameters of a search. In deephyper we have two different kind of benchmarks. The first type is `hyper parameters search` benchmarks and the second type is  `neural architecture search` benchmarks. To see a full explanation about the different kind of search please refer to the following page `Search <search.html>`_ . To access the benchmarks from python just use ``deephyper.benchmarks.name``.
+.. automodule:: deephyper.benchmarks
+    :members:
+
 
 Hyper Parameters Search (HPS)
 =============================
 
-============== ================ ===============
-      Hyper Parameters Search Benchmarks
------------------------------------------------
-     Name            Type          Description
-============== ================ ===============
+.. automodule:: deephyper.benchmarks.hps
+
+============== ================ =====================================
+      Hyper Parameters Search Benchmarks ``deephyper.benchmarks.hps``
+---------------------------------------------------------------------
+     Name            Type                    Description
+============== ================ =====================================
  b1
  b2
  b3
@@ -25,7 +28,7 @@ Hyper Parameters Search (HPS)
  rosen2
  rosen10
  rosen30
-============== ================ ===============
+============== ================ =====================================
 
 How to create a benchmark HPS
 -----------------------------
@@ -144,15 +147,20 @@ quick workaround is to explicitly add the problem folder to `sys.path` at the to
 
 
 
-Neural Architecture Search
-==========================
+Neural Architecture Search (NAS)
+================================
 
-============== ================ ===============
-      Neural Architecture Search Benchmarks
------------------------------------------------
+.. automodule:: deephyper.benchmarks.nas
+
+============== ================ ========================================
+      Neural Architecture Search Benchmarks ``deephyper.benchmarks.nas``
+------------------------------------------------------------------------
      Name            Type          Description
-============== ================ ===============
- cifar10Nas     Classification   https://www.cs.toronto.edu/~kriz/cifar.html
- linearRegNas   Regression       Generation of points in 1 dimension corresponding to y=x
+============== ================ ========================================
+ ackleyReg      Regression       Generation of points in N dimensions corresponding to y=f(x) where f is https://www.sfu.ca/~ssurjano/ackley.html
+ cifar10        Classification   https://www.cs.toronto.edu/~kriz/cifar.html
+ levyReg        Regression       Generation of points in N dimensions corresponding to y=f(x) where f is https://www.sfu.ca/~ssurjano/levy.html
+ linearReg      Regression       Generation of points in N dimensions corresponding to y=x
  mnistNas       Classification   http://yann.lecun.com/exdb/mnist/
-============== ================ ===============
+ polynome2Reg   Regression       Generation of points in N dimensions corresponding to y=sum(x_i^2)
+============== ================ ========================================

@@ -1,5 +1,5 @@
-Hyperparameter Search
-**********************
+Hyperparameter Search (HPS)
+***************************
 
 .. image:: ../_static/img/search.png
    :scale: 50 %

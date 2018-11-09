@@ -1,7 +1,7 @@
 Evaluators
 ==========
 
-The goal off the evaluator module is to have a set of objects which can helps us to run our task on different environments and with different system settings/properties.
+.. automodule:: deephyper.evaluators
 
 .. image:: ../_static/img/evaluators/evaluators-diag.png
    :scale: 25 %
