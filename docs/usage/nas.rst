@@ -36,7 +36,7 @@ Build custom cells
     :members:
 
 Build custom structures
-======================
+=======================
 
 .. autoclass:: deephyper.search.nas.cell.SequentialStructure
     :members:
