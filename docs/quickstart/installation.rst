@@ -4,25 +4,19 @@ Installation
 Local
 =====
 
-::
+You can run the following commands if you want to install deephyper on your local machine.
 
-    # Creation of a local environment for python
-    pip install --user virtualenv
-    # sometimes it can help :
-    # echo "export PATH=~/.local/bin:$PATH" >> ~/.bashrc
-    # source ~/.bashrc
-    virtualenv deephyper
-    source deephyper/bin/activate
+::
 
     # Cloning repos en installing with pip
     git clone https://github.com/deephyper/deephyper.git
     pip install -e deephyper/
-    git clone git@xgitlab.cels.anl.gov:pbalapra/dl-nas.git
-    pip install -e dl-nas/
 
 
 Theta
 =====
+
+Deephyper can be directly installed as a module on Theta.
 
 ::
 
@@ -44,7 +38,7 @@ Installation
 
     source activate ENV_NAME
     pip install -U Sphinx
-    pip install sphinx_rtd_theme
+    pip install sphinx_bootstrap_theme
 
 Build
 -----

@@ -1,7 +1,7 @@
 Hyperparameter Search (HPS)
 ***************************
 
-.. image:: ../_static/img/search.png
+.. image:: ../../_static/img/search.png
    :scale: 50 %
    :alt: search
    :align: center
@@ -98,7 +98,7 @@ To print the parameters of a search just run ``python search_script.py --help``.
 Asynchronous Model-Base Search (AMBS)
 =====================================
 
-You can download deephyper paper :download:`here <../downloads/deephyper_final.pdf>`
+You can download deephyper paper :download:`here <../../downloads/deephyper_final.pdf>`
 
 Environment variable to access the search on Theta: ``DH_AMBS``
 

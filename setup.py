@@ -14,7 +14,9 @@ install_requires = [
     'gym',
     'networkx',
     'mpi4py',
-    'joblib'
+    'joblib',
+    # doc
+    'sphinx_copybutton'
 ]
 
 extras_require = {
