@@ -14,7 +14,7 @@ Problem.add_dim('preprocessing', {
 Problem.add_dim('create_structure', {
     'func': create_structure,
     'kwargs': {
-        'num_cells': 2
+        'num_cells': 5
     }
 })
 Problem.add_dim('hyperparameters', {
