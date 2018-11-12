@@ -8,12 +8,11 @@ from mpi4py import MPI
 
 import deephyper.searches.nas.utils.common.tf_util as U
 from deephyper.searches import util
-from deephyper.searches.nas.agent.utils import (episode_reward_for_final_timestep,
-                                              final_reward_for_all_timesteps,
-                                              traj_segment_generator)
+from deephyper.searches.nas.agent.utils import (final_reward_for_all_timesteps,
+                                                traj_segment_generator)
 from deephyper.searches.nas.utils import logger
 from deephyper.searches.nas.utils.common import (Dataset, explained_variance,
-                                               fmt_row, zipsame)
+                                                 fmt_row, zipsame)
 from deephyper.searches.nas.utils.common.mpi_adam import MpiAdam
 from deephyper.searches.nas.utils.common.mpi_moments import mpi_moments
 from deephyper.searches.nas.utils.logging import JsonMessage as jm
@@ -44,7 +43,8 @@ def learn(env, policy_fn, *,
         max_timesteps=0, max_episodes=0, max_iters=0, max_seconds=0,  # time constraint
         callback=None, # you can do anything in the callback, since it takes locals(), globals()
         adam_epsilon=1e-5,
-        schedule='constant' # annealing for stepsize parameters (epsilon and adam)
+        schedule='constant', # annealing for stepsize parameters (epsilon and adam)
+        reward_rule=final_reward_for_all_timesteps
         ):
     # Setup losses and stuff
     # ----------------------------------------
@@ -90,8 +90,7 @@ def learn(env, policy_fn, *,
     # Prepare for rollouts
     # ----------------------------------------
     seg_gen = traj_segment_generator(pi, env, timesteps_per_actorbatch, stochastic=True,
-        reward_affect_func=final_reward_for_all_timesteps)
-        # reward_affect_func=episode_reward_for_final_timestep)
+        reward_affect_func=reward_rule)
 
     episodes_so_far = 0
     timesteps_so_far = 0

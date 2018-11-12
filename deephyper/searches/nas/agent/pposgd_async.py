@@ -8,82 +8,16 @@ from mpi4py import MPI
 
 import deephyper.searches.nas.utils.common.tf_util as U
 from deephyper.searches import util
+from deephyper.searches.nas.agent.utils import (final_reward_for_all_timesteps,
+                                                traj_segment_generator)
 from deephyper.searches.nas.utils import logger
 from deephyper.searches.nas.utils.common import (Dataset, explained_variance,
-                                               fmt_row, zipsame)
+                                                 fmt_row, zipsame)
 from deephyper.searches.nas.utils.common.mpi_adam_async import MpiAdamAsync
 from deephyper.searches.nas.utils.common.mpi_moments import mpi_moments
 from deephyper.searches.nas.utils.logging import JsonMessage as jm
-from deephyper.searches.nas.agent.utils import episode_reward_for_final_timestep
 
 dh_logger = util.conf_logger('deephyper.searches.nas.agent.pposgd_async')
-
-def traj_segment_generator(pi, env, horizon, stochastic):
-    t = 0
-    ac = env.action_space.sample() # not used, just so we have the datatype
-    new = True # marks if we're on first timestep of an episode
-    ob = env.reset()
-
-    cur_ep_len = 0 # len of current episode
-    ep_rets = [] # returns of completed episodes in this segment
-    ep_lens = [] # lengths of ...
-
-    ts_i2n_ep = {}
-
-    # Initialize history arrays
-    obs = np.array([ob for _ in range(horizon)])
-    rews = np.zeros(horizon, 'float32')
-    vpreds = np.zeros(horizon, 'float32')
-    news = np.zeros(horizon, 'int32')
-    acs = np.array([ac for _ in range(horizon)])
-    prevacs = acs.copy()
-
-    num_evals = 0
-
-    while True:
-        prevac = ac
-        ac, vpred = pi.act(stochastic, ob)
-        # Slight weirdness here because we need value function at time T
-        # before returning segment [0, T-1] so we get the correct
-        # terminal value
-        if t > 0 and t % horizon == 0:
-            while num_evals > 0:
-                results = env.get_rewards_ready()
-                for (cfg, rew) in results:
-                    index = cfg['w']
-                    episode_length = ep_lens[ts_i2n_ep[index]-1]
-                    episode_rew = episode_reward_for_final_timestep(rews, index, rew, episode_length)
-                    num_evals -= 1
-                    ep_rets[ts_i2n_ep[index]-1] = episode_rew
-            ts_i2n_ep = {}
-            data = {"ob" : obs, "rew" : rews, "vpred" : vpreds, "new" : news,
-                    "ac" : acs, "prevac" : prevacs, "nextvpred": vpred * (1 - new),
-                    "ep_rets" : ep_rets, "ep_lens" : ep_lens}
-            yield data
-            # Be careful!!! if you change the downstream algorithm to aggregate
-            # several of these batches, then be sure to do a deepcopy
-            ep_rets = []
-            ep_lens = []
-        i = t % horizon
-        obs[i] = ob
-        vpreds[i] = vpred
-        news[i] = new
-        acs[i] = ac
-        prevacs[i] = prevac
-
-        # observ, reward, episode_over, meta -> {}
-        ob, rew, new, _ = env.step(ac, i, rank=MPI.COMM_WORLD.Get_rank())
-        rews[i] = rew
-
-        cur_ep_len += 1
-        if new:
-            num_evals += 1
-            ts_i2n_ep[i] =  num_evals
-            ep_rets.append(0)
-            ep_lens.append(cur_ep_len)
-            cur_ep_len = 0
-            ob = env.reset()
-        t += 1
 
 def add_vtarg_and_adv(seg, gamma, lam):
     """
@@ -109,7 +43,8 @@ def learn(env, policy_fn, *,
         max_timesteps=0, max_episodes=0, max_iters=0, max_seconds=0,  # time constraint
         callback=None, # you can do anything in the callback, since it takes locals(), globals()
         adam_epsilon=1e-5,
-        schedule='constant' # annealing for stepsize parameters (epsilon and adam)
+        schedule='constant', # annealing for stepsize parameters (epsilon and adam)
+        reward_rule=final_reward_for_all_timesteps
         ):
 
     rank = MPI.COMM_WORLD.Get_rank()
@@ -175,7 +110,7 @@ def learn(env, policy_fn, *,
         # Prepare for rollouts
         # ----------------------------------------
 
-        seg_gen = traj_segment_generator(pi, env, timesteps_per_actorbatch, stochastic=True)
+        seg_gen = traj_segment_generator(pi, env, timesteps_per_actorbatch, stochastic=True, reward_affect_func=reward_rule)
 
         episodes_so_far = 0
         timesteps_so_far = 0

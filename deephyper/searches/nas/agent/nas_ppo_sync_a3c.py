@@ -13,7 +13,7 @@ from  deephyper.searches.nas.utils import bench, logger
 from  deephyper.searches.nas.utils.common import set_global_seeds
 
 
-def train(num_episodes, seed, space, evaluator, num_episodes_per_batch):
+def train(num_episodes, seed, space, evaluator, num_episodes_per_batch, reward_rule):
 
     rank = MPI.COMM_WORLD.Get_rank()
     env_id = rank
@@ -53,6 +53,7 @@ def train(num_episodes, seed, space, evaluator, num_episodes_per_batch):
         optim_batchsize=15,
         gamma=0.99,
         lam=0.95,
-        schedule='linear'
+        schedule='linear',
+        reward_rule=reward_rule
     )
     env.close()
