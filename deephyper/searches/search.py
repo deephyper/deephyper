@@ -22,7 +22,7 @@ class Search:
     Args:
         problem (str):
         run (str):
-        evaluator (str): local or balsam
+        evaluator (str): in ['balsam', 'subprocess', 'processPool', 'threadPool']
     """
     def __init__(self, problem, run, evaluator, **kwargs):
         _args = vars(self.parse_args(''))
@@ -78,6 +78,8 @@ class Search:
             help="Kill evals that take longer than this"
         )
         parser.add_argument('--evaluator',
-            default='local', help="'balsam' or 'local'"
+            default='subprocess',
+            choices=['balsam', 'subprocess', 'processPool', 'threadPool'], 
+            help="The evaluator is an object used to run the model."
         )
         return parser
