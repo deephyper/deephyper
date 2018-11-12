@@ -50,3 +50,10 @@ def linear_():
     b = 1
     minimas = lambda d: [-1 for i in range(d)]
     return p, (a, b), minimas
+
+def saddle_():
+    p = lambda x: saddle(x)
+    a = 50
+    b = -50
+    minimas = lambda d: None
+    return p, (a, b), minimas

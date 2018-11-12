@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from deephyper.benchmarks.benchmark_functions_wrappers import polynome_2
+from deephyper.benchmarks.benchmark_functions_wrappers import saddle_
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -13,7 +13,7 @@ def load_data(dim=10):
     """
     size = 100000
     prop = 0.80
-    f, (a, b), _ = polynome_2()
+    f, (a, b), _ = saddle_()
     d = b - a
     x = np.array([a + np.random.random(dim) * d for i in range(size)])
     y = np.array([[f(v)] for v in x])

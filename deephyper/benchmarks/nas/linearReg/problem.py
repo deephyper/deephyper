@@ -18,10 +18,10 @@ Problem.add_dim('create_structure', {
     }
 })
 Problem.add_dim('hyperparameters', {
-    'batch_size': 64,
-    'learning_rate': 0.1,
+    'batch_size': 100,
+    'learning_rate': 0.01,
     'optimizer': 'adam',
-    'num_epochs': 20,
+    'num_epochs': 100,
     'loss_metric': 'mean_squared_error',
     'test_metric': 'mean_squared_error',
 })

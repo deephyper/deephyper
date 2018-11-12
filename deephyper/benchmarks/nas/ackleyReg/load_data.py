@@ -11,8 +11,8 @@ def load_data(dim=10):
     Generate data for polynome_2 function.
     Returns Tuple of Numpy arrays: `(train_X, train_y), (valid_X, valid_y)`.
     """
-    size = 10000
-    prop = 0.85
+    size = 100000
+    prop = 0.80
     f, (a, b), _ = ackley_()
     d = b - a
     x = np.array([a + np.random.random(dim) * d for i in range(size)])
