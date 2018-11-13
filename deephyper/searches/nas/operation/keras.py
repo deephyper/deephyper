@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow import keras
+import numpy as np
 
 from deephyper.searches.nas.operation.basic import Operation
 
@@ -71,7 +72,7 @@ class Dropout(Operation):
 
     def __call__(self, inputs, **kwargs):
         inpt = inputs[0]
-        out = keras.layers.Dropout(rate=self.rate)(inpt, training=kwargs.get('train'))
+        out = keras.layers.Dropout(rate=self.rate)(inpt)
         return out
 
 
@@ -85,4 +86,4 @@ dropout_ops = [Dropout(0.),
 
 class Identity(Operation):
     def __call__(self, inpt, **kwargs):
-        return inpt
+        return inpt[0]

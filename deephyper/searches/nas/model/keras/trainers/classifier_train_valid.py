@@ -1,18 +1,14 @@
 import tensorflow as tf
 import numpy as np
 
-from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import KFold
-from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import Pipeline
-
 import deephyper.searches.nas.model.arch as a
 import deephyper.searches.nas.model.train_utils as U
 from deephyper.searches import util
+from deephyper.searches.nas.utils._logging import JsonMessage as jm
 
 logger = util.conf_logger('deephyper.model.trainer')
 
-class KerasTrainerRegressorKfold:
+class KerasTrainerClassifierTrainValid:
     def __init__(self, config, model):
         self.config = config
         self.model = model
@@ -28,18 +24,16 @@ class KerasTrainerRegressorKfold:
         self.learning_rate = self.config_hp[a.learning_rate]
         self.num_epochs = self.config_hp[a.num_epochs]
 
-        # DATA loading
-        self.data_X = None
-        self.data_Y = None
-        self.train_size = None
-        self.load_data()
+        self.test_metric = None
 
-        # DATA preprocessing
-        self.preprocessing_func = None
-        if self.config.get('preprocessing'):
-            self.preprocessing_func = self.config['preprocessing']['func']
-        self.preprocessor = None
-        # self.preprocess_data()
+        # DATA loading
+        self.train_X = None
+        self.train_Y = None
+        self.valid_X = None
+        self.valid_Y = None
+        self.train_size = None
+        self.valid_size = None
+        self.load_data()
 
         # Dataset
         self.dataset_train = None
@@ -47,8 +41,6 @@ class KerasTrainerRegressorKfold:
 
         self.dataset_valid = None
         self.set_dataset_valid()
-
-        self.set_early_stopping()
 
         self.model_compile()
 
@@ -63,54 +55,28 @@ class KerasTrainerRegressorKfold:
 
     def load_data(self):
         logger.debug('load_data')
-        train_X = self.config[a.data][a.train_X]
-        train_Y = self.config[a.data][a.train_Y]
-        valid_X = self.config[a.data][a.valid_X]
-        valid_Y = self.config[a.data][a.valid_Y]
-        self.data_X = np.concatenate((train_X, valid_X), axis=0)
-        self.data_Y = np.concatenate((train_Y, valid_Y), axis=0)
-        self.train_size = np.shape(self.data_X)[0]
-
-    def preprocess_data(self):
-        assert self.preprocessor is None, 'You can only preprocess the data one time.'
-
-        if self.preprocessing_func:
-            logger.debug('preprocess_data')
-            data_train = np.concatenate((self.train_X, self.train_y), axis=1)
-            data_valid = np.concatenate((self.valid_X, self.valid_y), axis=1)
-            data = np.concatenate((data_train, data_valid), axis=0)
-            self.preprocessor = self.preprocessing_func(data)
-
-            t_X_shp = np.shape(self.train_X)
-
-            preproc_data = self.preprocessor.fit_transform(data)
-
-            self.train_X = preproc_data[:t_X_shp[0], :t_X_shp[1]]
-            self.train_y = preproc_data[:t_X_shp[0], t_X_shp[1]:]
-            self.valid_X = preproc_data[t_X_shp[0]:, :t_X_shp[1]]
-            self.valid_y = preproc_data[t_X_shp[0]:, t_X_shp[1]:]
-        else:
-            logger.debug('no preprocessing function')
+        self.train_X = self.config[a.data][a.train_X]
+        self.train_Y = self.config[a.data][a.train_Y]
+        self.valid_X = self.config[a.data][a.valid_X]
+        self.valid_Y = self.config[a.data][a.valid_Y]
+        self.train_size = np.shape(self.train_X)[0]
+        self.valid_size = np.shape(self.valid_X)[0]
 
     def set_dataset_train(self):
         self.dataset_train = tf.data.Dataset.from_tensor_slices((self.train_X,
-            self.train_y))
+            self.train_Y))
         self.dataset_train = self.dataset_train.batch(self.batch_size)
         self.dataset_train = self.dataset_train.repeat()
 
     def set_dataset_valid(self):
-        self.dataset_valid = tf.data.Dataset.from_tensor_slices((self.valid_X, self.valid_y))
+        self.dataset_valid = tf.data.Dataset.from_tensor_slices((self.valid_X, self.valid_Y))
         self.dataset_valid = self.dataset_valid.batch(self.batch_size).repeat()
-
-    def set_early_stopping(self):
-        if not self.regression:
-            earlystop = tf.keras.callbacks.EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=5, verbose=1, mode='auto')
-            self.callbacks.append(earlystop)
 
     def model_compile(self):
         optimizer_fn = U.selectOptimizer_keras(self.optimizer_name)
 
-        self.optimizer = optimizer_fn(lr=self.learning_rate, decay=0.0)
+        decay_rate = self.learning_rate / self.num_epochs
+        self.optimizer = optimizer_fn(lr=self.learning_rate, decay=decay_rate)
 
         self.model.compile(
             optimizer=self.optimizer,
@@ -118,18 +84,23 @@ class KerasTrainerRegressorKfold:
             metrics=self.metrics_name)
 
     def train(self):
-        # steps_per_epoch = self.train_size // self.batch_size
-        # self.model_info = self.model.fit(
-        #     self.dataset_train,
-        #     epochs=1,
-        #     steps_per_epoch=steps_per_epoch)
+        train_steps_per_epoch = self.train_size // self.batch_size
+        valid_steps_per_epoch = self.valid_size // self.batch_size
 
-        # self.model.predict(self.data)
+        max_acc = 0
+        for i in range(self.num_epochs):
+            self.model.fit(
+                self.dataset_train,
+                epochs=1,
+                steps_per_epoch=train_steps_per_epoch,
+                callbacks=self.callbacks
+            )
 
-        estimators = []
-        estimators.append(('standardize', StandardScaler()))
+            valid_info = self.model.evaluate(self.dataset_valid, steps=valid_steps_per_epoch)
 
-        estimators.append(('model', tf.keras.wrappers.scikit_learn.KerasRegressor(build_fn=lambda: self.model, epochs=10, batch_size=self.batch_size, verbose=1)))
-        pipeline = Pipeline(estimators)
-        kfold = KFold(n_splits=10, random_state=2018)
-        results = cross_val_score(pipeline, self.train_X, self.train_y, cv=kfold)
+            valid_loss, valid_acc = valid_info[0], valid_info[1]*100
+
+            max_acc = max(max_acc, valid_acc)
+            logger.info(jm(epoch=i, validation_loss=valid_loss, validation_acc=float(valid_acc)))
+        logger.info(jm(type='result', acc=float(max_acc)))
+        return max_acc

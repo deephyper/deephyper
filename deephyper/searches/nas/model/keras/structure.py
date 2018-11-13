@@ -132,7 +132,7 @@ class KerasStructure(Structure):
         node.set_op(0)
         self.output = node
 
-    def create_model(self, train):
+    def create_model(self, activation=None):
         """
         Create the tensors corresponding to the structure.
 
@@ -143,8 +143,8 @@ class KerasStructure(Structure):
             The output tensor.
         """
 
-        output_tensor = create_tensor_aux(self.graph, self.output, train=train)
-        output_tensor = keras.layers.Dense(self.output_shape[0])(output_tensor)
+        output_tensor = create_tensor_aux(self.graph, self.output)
+        output_tensor = keras.layers.Dense(self.output_shape[0], activation=activation)(output_tensor)
         input_tensor = self.input_node._tensor
         return keras.Model(inputs=input_tensor, outputs=output_tensor)
 

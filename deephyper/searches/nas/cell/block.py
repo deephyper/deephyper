@@ -89,7 +89,7 @@ class Block:
         output_tensors = [create_tensor_aux(graph, n, train=train) for n in self.outputs]
         return output_tensors
 
-def create_tensor_aux(g, n, train):
+def create_tensor_aux(g, n, train=None):
     """Recursive function to create the tensors from the graph.
 
     Args:

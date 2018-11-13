@@ -13,8 +13,11 @@ loss_metrics['sequence_loss_by_example'] = 'sequence_loss_by_example'
 
 test_metrics = OrderedDict()
 test_metrics['mean_absolute_error'] = mean_absolute_error
+test_metrics['mae'] = test_metrics['mean_absolute_error']
 test_metrics['mean_squared_error'] = mean_squared_error
+test_metrics['mse'] = test_metrics['mean_squared_error']
 test_metrics['accuracy'] = lambda preds, labels: 100.0 * np.sum(np.argmax(preds, 1) == np.argmax(labels, 1)) / preds.shape[0]
+test_metrics['acc'] = test_metrics['accuracy']
 test_metrics['perplexity'] = 'perplexity'
 
 optimizers = OrderedDict()
