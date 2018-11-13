@@ -1,6 +1,15 @@
 Neural Architecture Search (NAS)
 ********************************
 
+
+Structure
+=========
+
+.. _what-is-structure:
+
+What is a Structure ?
+---------------------
+
 .. WARNING::
     If you want to output the dot files of graphs that you are creating with the nas api please install pygraphviz: ``pip install pygrapviz``
 
@@ -22,6 +31,15 @@ In the previous figure we have a choice of operations for a very simple structur
     :align: center
 
 In this structure we have only 1 cell which contains only 1 block. This block contains 2 nodes, the first one represents the creation of a connection (N1_2), the second one represent the creation of a multi layer Perceptron (N2_3).
+
+TODO
+
+.. _create-new-structure:
+
+Create a new Structure
+----------------------
+
+TODO
 
 Build custom cells
 ==================

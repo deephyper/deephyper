@@ -1,6 +1,6 @@
 from deephyper.benchmarks import Problem
 from deephyper.benchmarks.nas.linearReg.load_data import load_data
-from deephyper.searches.nas.contrib.anl_mlp_2 import create_structure
+from deephyper.searches.nas.contrib.anl_mlp_2_keras import create_structure
 from deephyper.searches.nas.model.preprocessing import stdscaler
 
 # We create our Problem object with the Problem class, you don't have to name your Problem object 'Problem' it can be any name you want. You can also define different problems in the same module.
@@ -11,7 +11,7 @@ Problem.add_dim('regression', True)
 
 # You define how to load your data by giving a 'load_data' function. This function will return your data set following this interface: (train_X, train_y), (valid_X, valid_y). You can also add a 'kwargs' key with arguments for the load_data function.
 Problem.add_dim('load_data', {
-    'func': load_data
+    'func': load_data,
 })
 
 # OPTIONAL : You define a preprocessing function which will be applied on your data before training generated models. This preprocessing function use sklearn preprocessors api.
@@ -32,9 +32,10 @@ Problem.add_dim('hyperparameters', {
     'batch_size': 100,
     'learning_rate': 0.01,
     'optimizer': 'adam',
-    'num_epochs': 100,
+    'num_epochs': 2,
     'loss_metric': 'mean_squared_error',
-    'test_metric': 'mean_squared_error',
+    'metrics': ['mean_squared_error'],
+    'n_split_kfold': 10
 })
 
 # Just to print your problem, to test its definition and imports in the current python environment.

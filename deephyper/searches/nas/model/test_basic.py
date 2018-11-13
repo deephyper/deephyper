@@ -10,19 +10,12 @@ import numpy as np
 import tensorflow as tf
 
 import deephyper.searches.nas.model.arch as a
-# from deephyper.benchmarks.candleNT3Nas.problem import Problem
-# from deephyper.benchmarks.candleTC1Nas.problem import Problem
-# from deephyper.benchmarks.mnist1DNas.problem import Problem
-from deephyper.benchmarks.polynome2RegNas.problem import Problem
+from deephyper.benchmarks.nas.linearReg.problem import Problem
 from deephyper.searches import util
 from deephyper.searches.nas.model.trainer import BasicTrainer
-# from deephyper.benchmarks.linearRegNas.problem import Problem
-# from deephyper.benchmarks.ackleyRegNas.problem import Problem
 from deephyper.searches.nas.run.nas_structure_raw import run
 
 t1 = time.time()
-
-
 
 
 logger = util.conf_logger('deephyper.searches.nas.model.test_basic')

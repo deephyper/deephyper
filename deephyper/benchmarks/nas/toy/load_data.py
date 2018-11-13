@@ -14,7 +14,7 @@ def load_data(dim=10):
     Return:
         Tuple of Numpy arrays: ``(train_X, train_y), (valid_X, valid_y)``.
     """
-    size = 100000
+    size = 1000
     prop = 0.80
     f, (a, b), _ = linear_()
     d = b - a

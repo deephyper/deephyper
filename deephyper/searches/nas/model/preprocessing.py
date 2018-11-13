@@ -1,12 +1,12 @@
 import numpy as np
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.preprocessing import StandardScaler
 
 
 def stdscaler(data):
     """
     Return:
-        preprocessor, preproc_data:
+        preprocessor:
     """
     preprocessor = Pipeline([
         ('stdscaler', StandardScaler()),

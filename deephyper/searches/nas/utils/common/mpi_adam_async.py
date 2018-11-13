@@ -6,7 +6,7 @@ from mpi4py import MPI
 
 import deephyper.searches.nas.utils.common.tf_util as U
 from deephyper.searches import util
-from deephyper.searches.nas.utils.logging import JsonMessage as jm
+from deephyper.searches.nas.utils._logging import JsonMessage as jm
 
 TAG_UPDATE_START = 1
 TAG_UPDATE_DONE  = 2

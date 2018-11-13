@@ -15,7 +15,7 @@ from deephyper.searches.nas.utils.common import (Dataset, explained_variance,
                                                  fmt_row, zipsame)
 from deephyper.searches.nas.utils.common.mpi_adam import MpiAdam
 from deephyper.searches.nas.utils.common.mpi_moments import mpi_moments
-from deephyper.searches.nas.utils.logging import JsonMessage as jm
+from deephyper.searches.nas.utils._logging import JsonMessage as jm
 
 dh_logger = util.conf_logger('deephyper.searches.nas.agent.pposgd_sync')
 

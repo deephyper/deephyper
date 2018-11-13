@@ -11,7 +11,7 @@ from deephyper.searches.nas.envs import NasEnv
 from deephyper.searches.nas.utils import bench, logger
 from deephyper.searches.nas.utils.common import set_global_seeds
 from deephyper.searches import util
-from deephyper.searches.nas.utils.logging import JsonMessage as jm
+from deephyper.searches.nas.utils._logging import JsonMessage as jm
 
 dh_logger = util.conf_logger('deephyper.searches.nas.agent.nas_random')
 

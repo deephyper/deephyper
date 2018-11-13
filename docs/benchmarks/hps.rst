@@ -23,6 +23,8 @@ Hyper Parameters Search (HPS)
  rosen30
 ============== ================ =====================================
 
+.. _create-new-hps-problem:
+
 Create a new HPS problem
 ========================
 

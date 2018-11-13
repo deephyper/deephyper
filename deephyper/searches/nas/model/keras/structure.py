@@ -1,12 +1,12 @@
 import networkx as nx
+from tensorflow import keras
 
-from deephyper.searches.nas.cell.cell import Cell
+from deephyper.searches.nas.model.keras.cell import Cell
 from deephyper.searches.nas.cell.block import Block
 from deephyper.searches.nas.cell.node import Node
 from deephyper.searches.nas.cell.block import create_tensor_aux
-from deephyper.searches.nas.operation.basic import (Add, Concat, Connect,
-                                                  Constant, Incr, Merge,
-                                                  Tensor)
+from deephyper.searches.nas.operation.basic import (Connect, Tensor)
+from deephyper.searches.nas.operation.keras import Concatenate
 
 
 class Structure:
@@ -21,20 +21,24 @@ class Structure:
             except:
                 pass
 
-class SequentialStructure(Structure):
-    def __init__(self, inputs, merge_mode='concat_flat'):
+class KerasStructure(Structure):
+    def __init__(self, input_shape, output_shape):
         """
         Create a new Sequential Structure.
 
         Args:
-            inputs (list(Node)):
-            merge_mode (str): 'concat_flat' or 'concat_2d'
+            inputs (tuple):
         """
         self.graph = nx.DiGraph()
-        self.inputs = inputs
+
+        self.input_node = Node('Input', [])
+        self.input_node.add_op(Tensor(keras.layers.Input(input_shape)))
+        self.input_node.set_op(0)
+
+        self.output_shape = output_shape
         self.output = None
+
         self.struct = []
-        self.merge_mode = merge_mode
 
     def __len__(self):
         return len(self.struct)
@@ -95,7 +99,7 @@ class SequentialStructure(Structure):
             func (function): a function that return a cell with one argument list of input nodes.
             num (int): number of hidden state with which the new cell can connect or None means all previous hidden states
         """
-        possible_inputs = [self.inputs[0]]
+        possible_inputs = [self.input_node]
         possible_inputs.extend([c.output for c in self.struct])
         if len(self.struct) > 0:
             if num is None:
@@ -113,7 +117,6 @@ class SequentialStructure(Structure):
         Args:
             indexes (list): element of list can be float in [0, 1] or int.
         """
-        merge_mode = self.merge_mode
         cursor = 0
         for c in self.struct:
             num_nodes = c.num_nodes()
@@ -125,14 +128,11 @@ class SequentialStructure(Structure):
 
         output_nodes = get_output_nodes(self.graph)
         node = Node('Structure_Output')
-        if merge_mode == 'concat_flat':
-            node.add_op(Merge(self.graph, node, output_nodes, axis=1))
-        elif merge_mode == 'concat_2d':
-            node.add_op(Concat(self.graph, node, output_nodes, axis=3, last=True))
+        node.add_op(Concatenate(self.graph, node, output_nodes))
         node.set_op(0)
         self.output = node
 
-    def create_tensor(self, train):
+    def create_model(self, train):
         """
         Create the tensors corresponding to the structure.
 
@@ -142,7 +142,11 @@ class SequentialStructure(Structure):
         Return:
             The output tensor.
         """
-        return create_tensor_aux(self.graph, self.output, train=train)
+
+        output_tensor = create_tensor_aux(self.graph, self.output, train=train)
+        output_tensor = keras.layers.Dense(self.output_shape[0])(output_tensor)
+        input_tensor = self.input_node._tensor
+        return keras.Model(inputs=input_tensor, outputs=output_tensor)
 
 def get_output_nodes(graph):
     """
@@ -159,7 +163,7 @@ def get_output_nodes(graph):
     return output_nodes
 
 
-def create_sequential_structure(input_tensor, create_cell, num_cells):
+def create_seq_struct_full_skipco(input_shape, output_shape, create_cell, num_cells):
     """
         Create a SequentialStructure object.
 
@@ -170,41 +174,11 @@ def create_sequential_structure(input_tensor, create_cell, num_cells):
 
         Return: SequentialStructure object.
     """
-    input_node = Node('Input')
-    input_node.add_op(Tensor(input_tensor))
-    input_node.set_op(0)
-    inputs = [input_node]
 
-    network = SequentialStructure(inputs)
+    network = KerasStructure(input_shape, output_shape)
+    input_node = network.input_node
 
-    func = lambda: create_cell(inputs)
-    network.add_cell_f(func)
-
-    func = lambda x: create_cell(x)
-    for i in range(num_cells-1):
-        network.add_cell_f(func, num=2)
-
-    return network
-
-def create_seq_struct_full_skipco(input_tensor, create_cell, num_cells):
-    """
-        Create a SequentialStructure object.
-
-        Args:
-            input_tensor (tensor): a tensorflow tensor object
-            create_cell (function): function that create a cell, take one argument (inputs: list(None))
-            num_cells (int): number of cells in the sequential structure
-
-        Return: SequentialStructure object.
-    """
-    input_node = Node('Input')
-    input_node.add_op(Tensor(input_tensor))
-    input_node.set_op(0)
-    inputs = [input_node]
-
-    network = SequentialStructure(inputs)
-
-    func = lambda: create_cell(inputs)
+    func = lambda: create_cell([input_node])
     network.add_cell_f(func)
 
     func = lambda x: create_cell(x)
@@ -213,41 +187,81 @@ def create_seq_struct_full_skipco(input_tensor, create_cell, num_cells):
 
     return network
 
-def test_sequential_structure_mlp():
-    import os
+def create_dense_cell_type2(input_nodes):
     import tensorflow as tf
-    import random
-    from nas.cell.cell import create_dense_cell
+    from deephyper.searches.nas.operation.basic import Connect
+    from deephyper.searches.nas.operation.keras import Dense, Identity, dropout_ops
+    """MLP type 2
 
-    input_node = Node('Input')
-    input_node.add_op(Constant([[1., 1., 1.], [2., 2., 2.]]))
-    input_node.set_op(0)
-    inputs = [input_node]
+    Args:
+        input_nodes (list(Node)): possible inputs of the current cell.
 
-    network = SequentialStructure(inputs)
+    Returns:
+        Cell: a Cell instance.
+    """
+    cell = Cell(input_nodes)
 
-    func = lambda: create_dense_cell(inputs)
-    network.add_cell_f(func)
+    # first node of block
+    n1 = Node('N1')
+    for inpt in input_nodes:
+        n1.add_op(Connect(cell.graph, inpt, n1))
 
-    func = lambda x: create_dense_cell(x)
-    for i in range(1):
-        network.add_cell_f(func, num=1)
+    # second node of block
+    mlp_op_list = list()
+    mlp_op_list.append(Identity())
+    mlp_op_list.append(Dense(5, tf.nn.relu))
+    mlp_op_list.append(Dense(10, tf.nn.relu))
+    mlp_op_list.append(Dense(20, tf.nn.relu))
+    mlp_op_list.append(Dense(40, tf.nn.relu))
+    mlp_op_list.append(Dense(80, tf.nn.relu))
+    mlp_op_list.append(Dense(160, tf.nn.relu))
+    mlp_op_list.append(Dense(320, tf.nn.relu))
+    n2 = Node('N2')
+    for op in mlp_op_list:
+        n2.add_op(op)
+
+    # third
+    n3 = Node('N3')
+    drop_ops = []
+    drop_ops.extend(dropout_ops)
+    for op in drop_ops:
+        n3.add_op(op)
+
+    # 1 Blocks
+    block1 = Block()
+    block1.add_node(n1)
+    block1.add_node(n2)
+    block1.add_node(n3)
+
+    block1.add_edge(n1, n2)
+    block1.add_edge(n2, n3)
+
+    cell.add_block(block1)
+
+    cell.set_outputs()
+    return cell
+
+def test_keras_structure():
+    import tensorflow as tf
+    import numpy as np
+    from random import random
+
+    input_tensor = tf.keras.Input(shape=(3,))
+
+    structure = create_seq_struct_full_skipco(input_tensor, create_dense_cell_type2, 5)
+    ops = [random() for _ in range(structure.num_nodes)]
+    print(f'ops: {ops}')
+    print(f'num ops: {len(ops)}')
+
+    structure.set_ops(ops)
+    structure.draw_graphviz('test_keras.dot')
+    model = structure.create_model(train=True)
+
+    data = np.random.random((1000, 3))
+    result = model.predict(data, batch_size=32)
+    print(result)
 
 
-    num_nodes = network.num_nodes_cell(0)[0]
-    network.set_ops([random.random() for _ in range(num_nodes)]*network.num_cells)
-
-    here = os.path.dirname(os.path.abspath(__file__))
-    network.draw_graphviz(here+'/test.dot')
-
-    outputs = network.create_tensor()
-    init = tf.global_variables_initializer()
-
-    with tf.Session() as sess:
-        sess.run(init)
-        res = sess.run(outputs)
-        print(f'res: {res}')
 
 if __name__ == '__main__':
-    # test_sequential_structure()
-    test_sequential_structure_mlp()
+    test_keras_structure()

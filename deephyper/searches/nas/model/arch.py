@@ -28,6 +28,7 @@ num_epochs = 'num_epochs'
 patience = 'patience'
 eval_freq = 'eval_freq'
 loss_metric = 'loss_metric'
+metrics = 'metrics'
 test_metric = 'test_metric'
 text_input = 'text_input'
 
