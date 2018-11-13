@@ -1,8 +1,12 @@
+import tensorflow as tf
+
 from deephyper.searches.nas.cell.mlp import create_dense_cell_type2
 from deephyper.searches.nas.cell.structure import create_seq_struct_full_skipco
 
 
-def create_structure(input_tensor, num_cells):
+def create_structure(input_tensor=None, num_cells=2):
+    if input_tensor is None:
+        input_tensor = tf.constant([0., 0.], dtype=tf.float32)
     return create_seq_struct_full_skipco(input_tensor, create_dense_cell_type2, num_cells)
 
 if __name__ == '__main__':

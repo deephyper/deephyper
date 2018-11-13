@@ -27,7 +27,6 @@ def train(num_episodes, seed, space, evaluator, num_episodes_per_batch, reward_r
 
     # MAKE ENV_NAS
     structure = space['create_structure']['func'](
-        tf.constant([[1., 1.]]),
         **space['create_structure']['kwargs']
     )
 
