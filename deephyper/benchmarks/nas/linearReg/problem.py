@@ -23,7 +23,7 @@ Problem.add_dim('preprocessing', {
 Problem.add_dim('create_structure', {
     'func': create_structure,
     'kwargs': {
-        'num_cells': 2
+        'num_cells': 5
     }
 })
 
@@ -32,7 +32,7 @@ Problem.add_dim('hyperparameters', {
     'batch_size': 100,
     'learning_rate': 0.01,
     'optimizer': 'adam',
-    'num_epochs': 100,
+    'num_epochs': 50,
     'loss_metric': 'mean_squared_error',
     'test_metric': 'mean_squared_error',
 })
