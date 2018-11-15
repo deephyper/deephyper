@@ -23,6 +23,10 @@ class Node:
         self._index = index
         self._tensor = None
 
+    @property
+    def id(self):
+        return self._num
+
     def __str__(self):
         if self._index != None:
             return f'{self.name}_{self._num}[{str(self._ops[self._index])}]'
@@ -36,6 +40,9 @@ class Node:
         return len(self._ops)
 
     def set_op(self, index):
+        self.get_op(index).is_set()
+
+    def get_op(self, index):
         assert type(index) is float or type(index) is int, f'found type is : {type(index)}'
         if type(index) is float:
             assert 0. <= index and index <= 1.
@@ -43,7 +50,7 @@ class Node:
         else:
             assert 0 <= index and index < len(self._ops), f'len self._ops: {len(self._ops)}, index: {index}'
             self._index = index
-        self._ops[self._index].is_set()
+        return self._ops[self._index]
 
     def create_tensor(self, inputs=None, train=True):
         assert self._index != None
@@ -55,6 +62,9 @@ class Node:
             else:
                 self._tensor = self._ops[self._index](inputs, train=train)
         return self._tensor
+
+    def get_ops(self):
+        return self._ops
 
 if __name__ == '__main__':
     n = Node()

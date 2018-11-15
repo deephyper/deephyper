@@ -22,14 +22,23 @@ class Cell:
         self.graph = nx.DiGraph()
         self.graph.add_nodes_from(inputs)
 
+    @property
     def num_nodes(self):
-        '''
-            Return int the number of nodes of this cell.
-        '''
+        """
+        Return:
+            int the number of nodes of this cell.
+        """
         n = 0
         for b in self.blocks:
             n += b.num_nodes()
         return n
+
+    @property
+    def action_nodes(self):
+        l = []
+        for b in self.blocks:
+            l.extend(b.action_nodes)
+        return l
 
     def set_outputs(self):
         '''

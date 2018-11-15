@@ -9,12 +9,15 @@ class Block:
 
     def __init__(self):
         self.graph = nx.DiGraph()
-        self.labels = {}
         self.outputs = []
         self.inputs = []
 
     def num_nodes(self):
         return len(self.graph.nodes)
+
+    @property
+    def action_nodes(self):
+        return self.graph.nodes
 
     def set_ops(self, indexes):
         middle_nodes = list(self.graph.nodes)
@@ -26,15 +29,12 @@ class Block:
         cursor = 0
         for n in self.inputs:
             n.set_op(indexes[cursor])
-            self.labels[n] = str(n)
             cursor += 1
         for n in middle_nodes:
             n.set_op(indexes[cursor])
-            self.labels[n] = str(n)
             cursor += 1
         for n in self.outputs:
             n.set_op(indexes[cursor])
-            self.labels[n] = str(n)
             cursor += 1
 
     def add_node(self, node):
@@ -42,7 +42,6 @@ class Block:
         assert not node in self.graph.nodes
 
         self.graph.add_node(node)
-        self.labels[node] = str(node)
 
         self.outputs.append(node)
         self.inputs.append(node)

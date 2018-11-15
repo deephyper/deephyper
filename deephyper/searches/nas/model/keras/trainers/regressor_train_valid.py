@@ -34,6 +34,8 @@ class KerasTrainerRegressorTrainValid:
         self.valid_Y = None
         self.train_size = None
         self.valid_size = None
+        self.train_steps_per_epoch = None
+        self.valid_steps_per_epoch = None
         self.load_data()
 
         # DATA preprocessing
@@ -52,12 +54,9 @@ class KerasTrainerRegressorTrainValid:
 
         self.model_compile()
 
-        # PATIENCE
-        if a.patience in self.config_hp:
-            self.patience = self.config_hp[a.patience]
-        else:
-            self.patience =  int(self.train_size/self.batch_size * self.num_epochs/5.)
-
+        self.train_history = {
+            f'{self.metrics_name[0]}_valid': list(),
+        }
         # Test on validation after each epoch
         logger.debug('[PARAM] KerasTrainer instantiated')
 
@@ -69,6 +68,8 @@ class KerasTrainerRegressorTrainValid:
         self.valid_Y = self.config[a.data][a.valid_Y]
         self.train_size = np.shape(self.train_X)[0]
         self.valid_size = np.shape(self.valid_X)[0]
+        self.train_steps_per_epoch = self.train_size // self.batch_size
+        self.valid_steps_per_epoch = self.valid_size // self.batch_size
 
     def preprocess_data(self):
         assert self.preprocessor is None, 'You can only preprocess the data one time.'
@@ -113,33 +114,48 @@ class KerasTrainerRegressorTrainValid:
             loss=self.loss_metric_name,
             metrics=self.metrics_name)
 
-    def train(self):
-        train_steps_per_epoch = self.train_size // self.batch_size
-        valid_steps_per_epoch = self.valid_size // self.batch_size
+    def predict(self, dataset='valid'):
+        assert dataset == 'valid' or dataset == 'train'
+        if dataset == 'valid':
+            y_pred = self.model.predict(self.dataset_valid, steps=self.valid_steps_per_epoch)
+            data_X, data_Y = self.valid_X, self.valid_Y
+        else:
+            y_pred = self.model.predict(self.dataset_train,
+            steps=self.valid_steps_per_epoch)
+
+        if self.preprocessing_func:
+            val_pred = np.concatenate((data_X, y_pred), axis=1)
+            val_orig = np.concatenate((data_X, data_Y), axis=1)
+            val_pred_trans = self.preprocessor.inverse_transform(val_pred)
+            val_orig_trans = self.preprocessor.inverse_transform(val_orig)
+            shp_X = np.shape(data_X)
+            y_orig = val_orig_trans[:, shp_X[1]:]
+            y_pred  = val_pred_trans[:, shp_X[1]:]
+        else:
+            y_orig = self.valid_Y
+
+        return y_orig, y_pred
+
+    def train(self, num_epochs=None):
+        num_epochs = self.num_epochs if num_epochs is None else num_epochs
 
         min_mse = math.inf
-        for i in range(self.num_epochs):
+        for i in range(num_epochs):
             self.model.fit(
                 self.dataset_train,
                 epochs=1,
-                steps_per_epoch=train_steps_per_epoch,
+                steps_per_epoch=self.train_steps_per_epoch,
                 callbacks=self.callbacks
             )
 
-            y_pred = self.model.predict(self.dataset_valid, steps=valid_steps_per_epoch)
+            y_orig, y_pred = self.predict()
 
-            if self.preprocessing_func:
-                val_pred = np.concatenate((self.valid_X, y_pred), axis=1)
-                val_orig = np.concatenate((self.valid_X, self.valid_Y), axis=1)
-                val_pred_trans = self.preprocessor.inverse_transform(val_pred)
-                val_orig_trans = self.preprocessor.inverse_transform(val_orig)
-                shp_X = np.shape(self.valid_X)
-                y_orig = val_orig_trans[:, shp_X[1]:]
-                y_pred  = val_pred_trans[:, shp_X[1]:]
-            else:
-                y_orig = self.valid_Y
             unnormalize_mse = mean_squared_error(y_orig, y_pred)
+
+            self.train_history[f'{self.metrics_name[0]}_valid'] = unnormalize_mse
+
             min_mse = min(min_mse, unnormalize_mse)
             logger.info(jm(epoch=i, validation_mse=float(unnormalize_mse)))
+
         logger.info(jm(type='result', mse=float(min_mse)))
         return min_mse

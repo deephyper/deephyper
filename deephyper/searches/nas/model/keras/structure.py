@@ -31,26 +31,22 @@ class KerasStructure(Structure):
         """
         self.graph = nx.DiGraph()
 
-        self.input_node = Node('Input', [])
+        self.input_node = Node('Input')
         self.input_node.add_op(Tensor(keras.layers.Input(input_shape)))
         self.input_node.set_op(0)
 
-        self.output_shape = output_shape
-        self.output = None
+        self.__output_shape = output_shape
+        self.output_node = None
 
         self.struct = []
+
+        self.map_sh2int = {}
 
     def __len__(self):
         return len(self.struct)
 
     def __getitem__(self, sliced):
         return self.struct[sliced]
-
-    def append(self, cell):
-        """
-        Append a cell to the structure.
-        """
-        self.struct.append(cell)
 
     @property
     def max_num_ops(self):
@@ -110,6 +106,16 @@ class KerasStructure(Structure):
             cell = func()
         self.struct.append(cell)
 
+        # hash
+        action_nodes = cell.action_nodes
+        for an in action_nodes:
+            ops = an.get_ops()
+            for o in ops:
+                str_hash = str(o)
+                if not (str_hash in self.map_sh2int):
+                    self.map_sh2int[str_hash] = len(self.map_sh2int)+1
+
+
     def set_ops(self, indexes):
         """
         Set the operations for each node of each cell of the structure.
@@ -119,7 +125,7 @@ class KerasStructure(Structure):
         """
         cursor = 0
         for c in self.struct:
-            num_nodes = c.num_nodes()
+            num_nodes = c.num_nodes
             c.set_ops(indexes[cursor:cursor+num_nodes])
             cursor += num_nodes
 
@@ -130,7 +136,7 @@ class KerasStructure(Structure):
         node = Node('Structure_Output')
         node.add_op(Concatenate(self.graph, node, output_nodes))
         node.set_op(0)
-        self.output = node
+        self.output_node = node
 
     def create_model(self, activation=None):
         """
@@ -143,10 +149,34 @@ class KerasStructure(Structure):
             The output tensor.
         """
 
-        output_tensor = create_tensor_aux(self.graph, self.output)
-        output_tensor = keras.layers.Dense(self.output_shape[0], activation=activation)(output_tensor)
+        output_tensor = create_tensor_aux(self.graph, self.output_node)
+        output_tensor = keras.layers.Dense(self.__output_shape[0], activation=activation)(output_tensor)
         input_tensor = self.input_node._tensor
         return keras.Model(inputs=input_tensor, outputs=output_tensor)
+
+    def get_hash(self, node_index, index):
+        """Get the hash representation of a given operation for this structure.
+
+        Args:
+            node_index (int): index of the nodes in the structure.
+            index (int,float): index of the operation in the node.
+
+        Returns:
+            list(int): the hash of the operation as a list of int.
+        """
+
+        cursor = 0
+        for c in self.struct:
+            for n in c.action_nodes:
+                if cursor == node_index:
+                    str_hash = str(n.get_op(index))
+                    int_hash = self.map_sh2int[str_hash]
+                    b = bin(int_hash)[2:]
+                    b = '0'*(len(bin(len(self.map_sh2int))[2:]) - len(b)) + b
+                    b = [int(e) for e in b]
+                    return b
+                cursor += 1
+
 
 def get_output_nodes(graph):
     """
@@ -246,9 +276,8 @@ def test_keras_structure():
     import numpy as np
     from random import random
 
-    input_tensor = tf.keras.Input(shape=(3,))
 
-    structure = create_seq_struct_full_skipco(input_tensor, create_dense_cell_type2, 5)
+    structure = create_seq_struct_full_skipco((3,), (2,), 5)
     ops = [random() for _ in range(structure.num_nodes)]
     print(f'ops: {ops}')
     print(f'num ops: {len(ops)}')

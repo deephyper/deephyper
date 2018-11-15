@@ -67,6 +67,9 @@ class Connect(Operation):
         self.n1 = n1
         self.n2 = n2
 
+    def __str__(self):
+        return f'{type(self).__name__}_{self.n1.id}->{self.n2.id}'
+
     def is_set(self):
         """Set the connection in the networkx graph.
         """
