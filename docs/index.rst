@@ -20,23 +20,23 @@ Deephyper - a high level deep learning framework
    :maxdepth: 2
    :caption: Benchmarks
 
-   benchmarks/index
-   benchmarks/hps
-   benchmarks/nas
+   benchmark/index
+   benchmark/hps
+   benchmark/nas
 
 .. toctree::
    :maxdepth: 2
    :caption: Evaluators
 
-   evaluators/index
+   evaluator/index
 
 .. toctree::
    :maxdepth: 2
    :caption: Searches
 
-   searches/index
-   searches/hps/index
-   searches/nas/index
+   search/index
+   search/hps/index
+   search/nas/index
 
 
 .. toctree::

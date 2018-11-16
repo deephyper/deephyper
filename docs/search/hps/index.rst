@@ -10,7 +10,7 @@ An hyperparameter search use a problem definition which contain the characterist
 
 ::
 
-    >>> from deephyper.benchmarks import HpProblem
+    >>> from deephyper.benchmark import HpProblem
     >>> Problem = HpProblem()
     >>> Problem.add_dim('nunits', (10, 20), 10)
     >>> print(Problem)
@@ -92,7 +92,7 @@ Now if you want a search with the previous problem and model. Let's suppose that
     python ambs.py --problem package_name.problem.Problem --run package_name.mnist_mlp.run
 
 
-All searches can be used directly with the command line or inside an other python file.
+All search can be used directly with the command line or inside an other python file.
 To print the parameters of a search just run ``python search_script.py --help``. For example with AMBS run ``python ambs.py --help``.
 
 Asynchronous Model-Base Search (AMBS)
@@ -125,5 +125,5 @@ Arguments of AMBS :
     * ``PI`` :
     * ``gp_hedge`` : (default)
 
-.. autoclass:: deephyper.searches.hps.ambs.AMBS
+.. autoclass:: deephyper.search.hps.ambs.AMBS
   :members:

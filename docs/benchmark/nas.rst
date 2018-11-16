@@ -2,7 +2,7 @@ Neural Architecture Search (NAS)
 ********************************
 
 ============== ================ ========================================
-      Neural Architecture Search Benchmarks ``deephyper.benchmarks.nas``
+      Neural Architecture Search Benchmarks ``deephyper.benchmark.nas``
 ------------------------------------------------------------------------
      Name            Type          Description
 ============== ================ ========================================
@@ -22,18 +22,18 @@ Neural Architecture Search (NAS)
 Create a new NAS problem
 ========================
 
-.. automodule:: deephyper.benchmarks.nas
+.. automodule:: deephyper.benchmark.nas
 
 Problem
 -------
-Let's take the problem of our most simple benchmark as an example ``deephyper.benchmarks.nas.levyReg.problem``.
+Let's take the problem of our most simple benchmark as an example ``deephyper.benchmark.nas.levyReg.problem``.
 
-.. literalinclude:: ../../deephyper/benchmarks/nas/linearReg/problem.py
+.. literalinclude:: ../../deephyper/benchmark/nas/linearReg/problem.py
 
 Load Data
 ---------
 
-.. literalinclude:: ../../deephyper/benchmarks/nas/linearReg/load_data.py
+.. literalinclude:: ../../deephyper/benchmark/nas/linearReg/load_data.py
 
 Preprocessing
 -------------
@@ -59,19 +59,19 @@ Structure
 
 
 
-Here is the structure used for the ```deephyper.benchmarks.nas.linearReg`` benchmark.
+Here is the structure used for the ```deephyper.benchmark.nas.linearReg`` benchmark.
 
 ::
 
-    from deephyper.searches.nas.cell.mlp import create_dense_cell_type2
-    from deephyper.searches.nas.cell.structure import create_seq_struct_full_skipco
+    from deephyper.search.nas.cell.mlp import create_dense_cell_type2
+    from deephyper.search.nas.cell.structure import create_seq_struct_full_skipco
 
 
     def create_structure(input_tensor, num_cells):
         return create_seq_struct_full_skipco(input_tensor, create_dense_cell_type2, num_cells)
 
 
-.. figure:: ../_static/img/benchmarks/nas/anl_mlp_2_a.png
+.. figure:: ../_static/img/benchmark/nas/anl_mlp_2_a.png
    :scale: 100 %
    :alt: anl_mlp_2
    :align: center
@@ -79,14 +79,14 @@ Here is the structure used for the ```deephyper.benchmarks.nas.linearReg`` bench
    A first example of graph generated with ``anl_mlp_2.create_structure``.
 
 
-.. figure:: ../_static/img/benchmarks/nas/anl_mlp_2_b.png
+.. figure:: ../_static/img/benchmark/nas/anl_mlp_2_b.png
    :scale: 100 %
    :alt: anl_mlp_2
    :align: center
 
    A second example of graph generated with ``anl_mlp_2.create_structure``.
 
-.. figure:: ../_static/img/benchmarks/nas/anl_mlp_2_c.png
+.. figure:: ../_static/img/benchmark/nas/anl_mlp_2_c.png
    :scale: 100 %
    :alt: anl_mlp_2
    :align: center

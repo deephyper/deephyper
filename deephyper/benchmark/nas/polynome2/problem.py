@@ -1,7 +1,7 @@
 from deephyper.benchmark import Problem
-from deephyper.benchmark.nas.dixonpriceReg.load_data import load_data
-from deephyper.search.nas.contrib.anl_mlp_2_keras import create_structure
-from deephyper.search.nas.model.preprocessing import stdscaler
+from deephyper.benchmark.nas.polynome2.load_data import load_data
+from deephyper.search.nas.model.baseline.anl_mlp_2_keras import create_structure
+from deephyper.search.nas.model.preprocessing import minmaxstdscaler
 
 # We create our Problem object with the Problem class, you don't have to name your Problem object 'Problem' it can be any name you want. You can also define different problems in the same module.
 Problem = Problem()
@@ -16,7 +16,7 @@ Problem.add_dim('load_data', {
 
 # OPTIONAL : You define a preprocessing function which will be applied on your data before training generated models. This preprocessing function use sklearn preprocessors api.
 Problem.add_dim('preprocessing', {
-    'func': stdscaler
+    'func': minmaxstdscaler
 })
 
 # You define the create structure function. This function will return an object following the Structure interface. You can also have kwargs arguments such as 'num_cells' for this function.

@@ -1,10 +1,10 @@
 Hyper Parameters Search (HPS)
 *****************************
 
-.. automodule:: deephyper.benchmarks.hps
+.. automodule:: deephyper.benchmark.hps
 
 ============== ================ =====================================
-      Hyper Parameters Search Benchmarks ``deephyper.benchmarks.hps``
+      Hyper Parameters Search Benchmarks ``deephyper.benchmark.hps``
 ---------------------------------------------------------------------
      Name            Type                    Description
 ============== ================ =====================================
@@ -47,7 +47,7 @@ For example if we want to create an hyper parameter search problem for Mnist dat
 
 ::
 
-    from deephyper.benchmarks import HpProblem
+    from deephyper.benchmark import HpProblem
 
     Problem = HpProblem()
     Problem.add_dim(p_name='num_n_l1', p_space=[i for i in range(1, 30)], p_default=15)
