@@ -26,7 +26,7 @@ Deephyper can be directly installed as a module on Theta.
 Cooley
 ======
 
-    TODO
+    .. todo:: installation on Cooley
 
 Contribute to documentation
 ===========================

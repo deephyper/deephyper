@@ -22,6 +22,9 @@ LAUNCHER_NODES = int(os.environ.get('BALSAM_LAUNCHER_NODES', 1))
 WORKERS_PER_NODE = int(os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
 
 class NasPPOSyncA3C(Search):
+    """Neural Architecture search using proximal policy gradient with synchronous optimization.
+    """
+
     def __init__(self, problem, run, evaluator, **kwargs):
         super().__init__(problem, run, evaluator, **kwargs)
         # set in super : self.problem

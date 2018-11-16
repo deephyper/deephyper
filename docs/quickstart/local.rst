@@ -31,7 +31,7 @@ Now you can run AMBS with custom arguments :
 Python
 ------
 
-TODO
+.. todo:: use hps inside python
 
 Neural Architecture Search
 ==========================
@@ -47,4 +47,4 @@ Command Line
 Python
 ------
 
-TODO
+.. todo:: use nas inside python

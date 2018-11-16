@@ -1,8 +1,30 @@
 Space
 *****
 
+.. toctree::
+   :maxdepth: 2
+
+   op/index
+
+Node
+====
+
+.. autoclass:: deephyper.search.nas.model.space.node.Node
+
+Block
+=====
+
+.. autoclass:: deephyper.search.nas.model.space.block.Block
+
+Cell
+====
+
+.. autoclass:: deephyper.search.nas.model.space.cell.Cell
+
 Structure
 =========
+
+.. autoclass:: deephyper.search.nas.model.space.structure.KerasStructure
 
 .. _what-is-structure:
 
@@ -31,11 +53,11 @@ In the previous figure we have a choice of operations for a very simple structur
 
 In this structure we have only 1 cell which contains only 1 block. This block contains 2 nodes, the first one represents the creation of a connection (N1_2), the second one represent the creation of a multi layer Perceptron (N2_3).
 
-TODO
+.. todo:: end what is a structure
 
 .. _create-new-structure:
 
 Create a new Structure
 ----------------------
 
-TODO
+.. todo:: how to create a new structure

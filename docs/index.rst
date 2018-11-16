@@ -52,3 +52,8 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+Doc todo list
+=============
+
+.. todolist::

@@ -10,17 +10,21 @@ Create a new NAS problem
 
 Problem
 -------
-Let's take the problem of our most simple benchmark as an example ``deephyper.benchmark.nas.levyReg.problem``.
+Let's take the problem of our most simple benchmark as an example ``deephyper.benchmark.nas.linearReg.problem``.
 
 .. literalinclude:: ../../deephyper/benchmark/nas/linearReg/problem.py
 
 Load Data
 ---------
 
+A ``load_data`` function returns the data of your problem following the interface: ``(train_X, train_Y), (valid_X, valid_Y)``.
+
 .. literalinclude:: ../../deephyper/benchmark/nas/linearReg/load_data.py
 
 Preprocessing
 -------------
+
+A preprocessing function is returning an object folling the same interface as `scikit-learn preprocessors <https://scikit-learn.org/stable/modules/preprocessing.html>`_.
 
 ::
 
@@ -28,7 +32,7 @@ Preprocessing
     from sklearn.preprocessing import StandardScaler
 
 
-    def stdscaler(data):
+    def stdscaler():
         """
         Return:
             preprocessor:

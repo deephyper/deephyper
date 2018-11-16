@@ -3,26 +3,6 @@ Hyper Parameters Search (HPS)
 
 .. automodule:: deephyper.benchmark.hps
 
-============== ================ =====================================
-      Hyper Parameters Search Benchmarks ``deephyper.benchmark.hps``
----------------------------------------------------------------------
-     Name            Type                    Description
-============== ================ =====================================
- b1
- b2
- b3
- capsule
- cifar10cnn     Classification   https://www.cs.toronto.edu/~kriz/cifar.html
- dummy1
- dummy2
- gcn
- mnistcnn       Classification   http://yann.lecun.com/exdb/mnist/
- mnistmlp       Classification   http://yann.lecun.com/exdb/mnist/
- rosen2
- rosen10
- rosen30
-============== ================ =====================================
-
 .. _create-new-hps-problem:
 
 Create a new HPS problem
@@ -72,3 +52,26 @@ quick workaround is to explicitly add the problem folder to `sys.path` at the to
     here = os.path.dirname(os.path.abspath(__file__))
     sys.path.insert(0, here)
     # import user modules below here
+
+Available benchmarks
+====================
+
+============== ================ =====================================
+      Hyper Parameters Search Benchmarks ``deephyper.benchmark.hps``
+---------------------------------------------------------------------
+     Name            Type                    Description
+============== ================ =====================================
+ b1
+ b2
+ b3
+ capsule
+ cifar10cnn     Classification   https://www.cs.toronto.edu/~kriz/cifar.html
+ dummy1
+ dummy2
+ gcn
+ mnistcnn       Classification   http://yann.lecun.com/exdb/mnist/
+ mnistmlp       Classification   http://yann.lecun.com/exdb/mnist/
+ rosen2
+ rosen10
+ rosen30
+============== ================ =====================================
