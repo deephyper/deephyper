@@ -1,7 +1,7 @@
 import signal
 import random
 
-from deephyper.search.hps.optimizers import GAOptimizer
+from deephyper.search.hps.optimizer import GAOptimizer
 from deephyper.search import Search
 from deephyper.search import util
 

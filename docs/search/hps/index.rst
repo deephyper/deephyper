@@ -1,6 +1,11 @@
 Hyperparameter Search (HPS)
 ***************************
 
+.. toctree::
+   :maxdepth: 2
+
+   optimizer/index
+
 .. image:: ../../_static/img/search.png
    :scale: 50 %
    :alt: search
@@ -98,32 +103,15 @@ To print the parameters of a search just run ``python search_script.py --help``.
 Asynchronous Model-Base Search (AMBS)
 =====================================
 
-You can download deephyper paper :download:`here <../../downloads/deephyper_final.pdf>`
+You can download the deephyper paper :download:`here <../../downloads/deephyper_final.pdf>`
 
 Environment variable to access the search on Theta: ``DH_AMBS``
 
-Arguments of AMBS :
+.. automodule:: deephyper.search.hps.ambs
+   :members:
 
-* ``learner``
+Genetic Algorithm (GA)
+======================
 
-    * ``RF`` : Random Forest (default)
-    * ``ET`` : Extra Trees
-    * ``GBRT`` : Gradient Boosting Regression Trees
-    * ``DUMMY`` :
-    * ``GP`` : Gaussian process
-
-* ``liar-strategy``
-
-    * ``cl_max`` : (default)
-    * ``cl_min`` :
-    * ``cl_mean`` :
-
-* ``acq-func`` : Acquisition function
-
-    * ``LCB`` :
-    * ``EI`` :
-    * ``PI`` :
-    * ``gp_hedge`` : (default)
-
-.. autoclass:: deephyper.search.hps.ambs.AMBS
-  :members:
+.. automodule:: deephyper.search.hps.ga
+   :members:

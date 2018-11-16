@@ -1,6 +1,9 @@
 Running on Theta
 ****************
 
+Hyperparameter Search
+=====================
+
 First we are going to run a search on b2 benchmark.
 
 ::
@@ -27,3 +30,6 @@ First we are going to run a search on b2 benchmark.
 
 
 Now if you want to look at the logs, go to ``testdb/data/TEST``. You'll see one directory prefixed with ``test``. Inside this directory you will find the logs of you search. All the other directories prefixed with ``task`` correspond to the logs of your ``--run`` function, here the run function is corresponding to the training of a neural network.
+
+Neural Architecture Search
+==========================
