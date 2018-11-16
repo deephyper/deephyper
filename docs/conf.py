@@ -97,7 +97,8 @@ html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 # documentation.
 #
 html_theme_options = {
-    'bootswatch_theme': "cosmo",
+    # 'bootswatch_theme': "cosmo",
+    'bootswatch_theme': "paper",
     'navbar_links': [
         ("Github", "https://github.com/deephyper/deephyper", True)
     ],
@@ -210,4 +211,4 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 todo_include_todos = True
 
 # makes sphinx do a mock import of mpi4py so it’s not broken when you try to do auto-docs and import mpi4py
-autodoc_mock_imports = ["mpi4py", "balsam", "django", "skopt", "deap"]
+autodoc_mock_imports = ["mpi4py", "balsam", "django", "skopt", "deap", "joblib"]
