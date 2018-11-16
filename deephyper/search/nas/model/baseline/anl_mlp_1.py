@@ -4,6 +4,7 @@ from deephyper.search.nas.model.space.op.basic import Connect
 from deephyper.search.nas.model.space.op.op1d import Dense, dropout_ops, Identity
 
 from deephyper.search.nas.model.space.node import Node
+from deephyper.search.nas.model.space.block import Block
 from deephyper.search.nas.model.space.cell import Cell
 
 from deephyper.search.nas.cell.structure import create_seq_structure
