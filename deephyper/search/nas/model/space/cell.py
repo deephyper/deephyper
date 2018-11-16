@@ -2,7 +2,7 @@ import networkx as nx
 
 from deephyper.search.nas.model.space.node import Node
 from deephyper.search.nas.model.space.block import Block
-from deephyper.search.nas.model.space.op.keras import Concatenate
+from deephyper.search.nas.model.space.op.op1d import Concatenate
 
 
 class Cell:
@@ -50,10 +50,11 @@ class Cell:
         stacked_nodes = []
         for b in self.blocks:
             stacked_nodes.extend(b.outputs)
-        op = Concatenate(self.graph, output_node, stacked_nodes)
 
+        op = Concatenate(self.graph, output_node, stacked_nodes)
         output_node.add_op(op)
         output_node.set_op(0)
+
         self.output = output_node
 
     def set_inputs(self, inputs):

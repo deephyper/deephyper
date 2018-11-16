@@ -87,9 +87,9 @@ dropout_ops = [Dropout(0.),
                Dropout(0.6)]
 
 class Identity(Operation):
-    def __call__(self, inpt, **kwargs):
+    def __call__(self, inputs, **kwargs):
         assert len(inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when 1 is required.'
-        return inpt[0]
+        return inputs[0]
 
 
 class Conv1D(Operation):
