@@ -23,7 +23,7 @@ import tensorflow as tf
 
 
 class Dataset(object):
-  """Abstract class for cnn benchmarks dataset."""
+  """Abstract class for cnn benchmark dataset."""
 
   def __init__(self, name, data_dir=None):
     self.name = name

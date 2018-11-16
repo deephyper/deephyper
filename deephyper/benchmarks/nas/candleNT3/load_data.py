@@ -10,7 +10,7 @@ import numpy as np, pandas as pd
 from sklearn.preprocessing import MaxAbsScaler
 from keras.utils import np_utils
 
-from deephyper.benchmarks.candleNT3Nas import data_utils
+from deephyper.benchmark.nas.candleNT3 import data_utils
 
 from time import time
 
@@ -28,7 +28,7 @@ def load_data():
     #    dest = ram_path
 
     gParameters = {
-        'data_url': 'ftp://ftp.mcs.anl.gov/pub/candle/public/benchmarks/Pilot1/normal-tumor/',
+        'data_url': 'ftp://ftp.mcs.anl.gov/pub/candle/public/benchmark/Pilot1/normal-tumor/',
         'test_data': 'nt_test2.csv',
         'train_data': 'nt_train2.csv'
     }
@@ -36,7 +36,7 @@ def load_data():
     file_train = gParameters['train_data']
     file_test = gParameters['test_data']
     url = gParameters['data_url']
-    
+
     print(f'dest get_file: {dest}')
     train_path = data_utils.get_file(file_train, url + file_train, cache_subdir=dest)
     test_path = data_utils.get_file(file_test, url + file_test, cache_subdir=dest)

@@ -6,7 +6,7 @@
 from collections import OrderedDict
 from nas.cell.structure import create_sequential_structure
 from nas.cell.mlp import create_dense_cell_example
-from deephyper.benchmarks.candleNT3Nas.load_data import load_data
+from deephyper.benchmark.candleNT3Nas.load_data import load_data
 
 class Problem:
     def __init__(self):

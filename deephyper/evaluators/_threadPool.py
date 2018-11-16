@@ -4,7 +4,7 @@ from concurrent.futures import wait as _futures_wait
 from concurrent.futures import CancelledError
 import logging
 import os
-from deephyper.evaluators import evaluate
+from deephyper.evaluator import evaluate
 logger = logging.getLogger(__name__)
 WaitResult = namedtuple('WaitResult', ['active', 'done', 'failed', 'cancelled'])
 

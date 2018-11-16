@@ -16,7 +16,7 @@ Output dimensions: 1 (growth percentage)
 * Notes on data balance: original data imbalanced with many drugs that have little inhibition effect
 
 #### Expected Outcomes
-* Regression. Predict percent growth for any NCI-60 cell line and drug combination 
+* Regression. Predict percent growth for any NCI-60 cell line and drug combination
 * Dimension: 1 scalar value corresponding to the percent growth for a given drug concentration. Output range: [-100, 100]
 
 #### Evaluation Metrics
@@ -35,7 +35,7 @@ $ python p1b3_baseline_keras2.py
 ```
 
 #### Example output
-With the default parameters, running the benchmark takes about two days (training takes ~2 hours/epoch on K80). 
+With the default parameters, running the benchmark takes about two days (training takes ~2 hours/epoch on K80).
 ```
 Using TensorFlow backend.
 Args: Namespace(activation='relu', batch_normalization=False, batch_size=100, category_cutoffs=[0.0], cell_features=['expression'], conv=[0, 0, 0], dense=[1000, 500, 100, 50], drop=0.1, drug_features=['descriptors'], epochs=20, feature_subsample=0, locally_connected=False, logfile=None, loss='mse', max_logconc=-4.0, min_logconc=-5.0, optimizer='sgd', pool=10, save='save', scaling='std', scramble=False, subsample='naive_balancing', test_cell_split=0.15, test_steps=0, train_steps=0, val_split=0.2, val_steps=0, verbose=False, workers=1)
@@ -128,7 +128,7 @@ Input features shapes:
   drug_SMILES_latent: (292,)
 Total input dimensions: 40037
 ```
-The `--conv 10 10 1 5 5 1` parameter adds 2 convolution layers to the default 4-layer (1000-500-100-50) dense network. The first 3-tuple (10, 10, 1) denotes a convolution layer with 10 filters of kernel length 10 and stride 1; the second convolution layer has 5 filters with length 5 and stride 1. 
+The `--conv 10 10 1 5 5 1` parameter adds 2 convolution layers to the default 4-layer (1000-500-100-50) dense network. The first 3-tuple (10, 10, 1) denotes a convolution layer with 10 filters of kernel length 10 and stride 1; the second convolution layer has 5 filters with length 5 and stride 1.
 
 #### Run a toy version of the benchmark
 ```
@@ -140,13 +140,13 @@ This will take only minutes to run and can be used to test the environment setup
 ```
 python p1b3_baseline_keras2.py --conv 10 10 1 --pool 100 --locally_connected --optimizer adam --batch_normalization --batch_size 64
 ```
-This example adds a locally-connected layer to the MLP and changes the optimizer and batch size. The locally connected layer is a convolution layer with unshared weights, so it tends to increase the number of parameters dramatically. Here we use a pooling size of 100 to reduce the parameters. This example also adds a batch normalization layer between any core layer and its activation. Batch normalization is known to speed up training in some settings. 
+This example adds a locally-connected layer to the MLP and changes the optimizer and batch size. The locally connected layer is a convolution layer with unshared weights, so it tends to increase the number of parameters dramatically. Here we use a pooling size of 100 to reduce the parameters. This example also adds a batch normalization layer between any core layer and its activation. Batch normalization is known to speed up training in some settings.
 
 
 ### Preliminary performance
-Some of the best validation loss values we have seen are in the 0.04-0.06 range, which roughly corresponds to about 20-25% percent growth error per data point. We are running hyperparameter searches. 
+Some of the best validation loss values we have seen are in the 0.04-0.06 range, which roughly corresponds to about 20-25% percent growth error per data point. We are running hyperparameter search.
 
-During model training, a log file records the history of various metrics and the model with the best validation loss is saved in HDF5. Here are some examples of error distribution plots that are created whenever the model is improved. 
+During model training, a log file records the history of various metrics and the model with the best validation loss is saved in HDF5. Here are some examples of error distribution plots that are created whenever the model is improved.
 
 ![Histogram of errors: Random vs Epoch 1](https://raw.githubusercontent.com/ECP-CANDLE/Benchmarks/master/Pilot1/P1B3/images/histo_It0.png)
 

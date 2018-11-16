@@ -1,5 +1,5 @@
 [Global_Params]
-data_url = 'ftp://ftp.mcs.anl.gov/pub/candle/public/benchmarks/Pilot1/normal-tumor/'
+data_url = 'ftp://ftp.mcs.anl.gov/pub/candle/public/benchmark/Pilot1/normal-tumor/'
 train_data = 'nt_train2.csv'
 test_data = 'nt_test2.csv'
 model_name = 'nt3'

@@ -1,10 +1,10 @@
 """Regression benchmark for polynome2
 """
 
-from deephyper.searches.nas.contrib.anl_mlp_2 import create_structure
-from deephyper.searches.nas.model.preprocessing import stdscaler
-from deephyper.benchmarks import Problem
-from deephyper.benchmarks.nas.polynome2Reg.load_data import load_data
+from deephyper.search.nas.contrib.anl_mlp_2 import create_structure
+from deephyper.search.nas.model.preprocessing import stdscaler
+from deephyper.benchmark import Problem
+from deephyper.benchmark.nas.polynome2Reg.load_data import load_data
 
 Problem = Problem()
 Problem.add_dim('regression', True)

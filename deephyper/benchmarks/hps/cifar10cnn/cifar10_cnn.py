@@ -8,13 +8,13 @@ top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
 sys.path.append(top)
 BNAME = os.path.splitext(os.path.basename(__file__))[0]
 
-from deephyper.benchmarks import util 
+from deephyper.benchmark import util
 
 timer = util.Timer()
 timer.start('module loading')
 
 import keras
-from deephyper.benchmarks.cifar10cnn.load_data import load_data
+from deephyper.benchmark.cifar10cnn.load_data import load_data
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
@@ -22,10 +22,10 @@ from keras.layers import Conv2D, MaxPooling2D
 import os
 
 from keras.callbacks import EarlyStopping
-from deephyper.benchmarks.util import TerminateOnTimeOut
+from deephyper.benchmark.util import TerminateOnTimeOut
 
 from keras import layers
-from deephyper.benchmarks import keras_cmdline
+from deephyper.benchmark import keras_cmdline
 from keras.models import load_model
 import hashlib
 import pickle
@@ -41,7 +41,7 @@ def run(param_dict):
     param_dict = keras_cmdline.fill_missing_defaults(augment_parser, param_dict)
     optimizer = keras_cmdline.return_optimizer(param_dict)
     pprint(param_dict)
-    
+
     timer.start('stage in')
     if param_dict['data_source']:
         data_source = param_dict['data_source']
@@ -96,7 +96,7 @@ def run(param_dict):
 
     if model is None:
         model = Sequential()
-        
+
         model.add(Conv2D(F1_UNITS, (F1_SIZE, F1_SIZE), padding='same',
                         input_shape=x_train.shape[1:]))
         model.add(Activation(ACTIVATION))
@@ -126,7 +126,7 @@ def run(param_dict):
     x_train /= 255
     x_test /= 255
     timer.end()
-    
+
     #earlystop = EarlyStopping(monitor='val_acc', min_delta=0.0001, patience=50, verbose=1, mode='auto')
     timeout_monitor = TerminateOnTimeOut(TIMEOUT)
     callbacks_list = [timeout_monitor]
@@ -160,17 +160,17 @@ def run(param_dict):
                             initial_epoch=initial_epoch,
                             callbacks=callbacks_list,
                             steps_per_epoch=steps_per_epoch, verbose=1,
-                            validation_data=datagen.flow(x_test, y_test, batch_size=BATCH_SIZE), 
+                            validation_data=datagen.flow(x_test, y_test, batch_size=BATCH_SIZE),
                             validation_steps=10,
                             workers=1)
                             #validation_split=0.30,
-                            #validation_data=(x_test, y_test), 
+                            #validation_data=(x_test, y_test),
     timer.end()
 
     score = model.evaluate(x_test, y_test, verbose=0)
     print('Test loss:', score[0])
     print('Test accuracy:', score[1])
-       
+
     if model_path:
         timer.start('model save')
         model.save(model_path)
@@ -207,7 +207,7 @@ def augment_parser(parser):
     parser.add_argument('--nunits', action='store', dest='nunits',
                         nargs='?', const=2, type=int, default='512',
                         help='number of units in FC layer')
-    parser.add_argument('--dropout2', type=float, default=0.5, 
+    parser.add_argument('--dropout2', type=float, default=0.5,
                         help='dropout after FC layer')
 
     return parser

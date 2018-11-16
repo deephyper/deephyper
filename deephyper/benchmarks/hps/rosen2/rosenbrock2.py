@@ -12,7 +12,7 @@ top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
 sys.path.append(top)
 BNAME = os.path.splitext(os.path.basename(__file__))[0]
 
-from deephyper.benchmarks import util
+from deephyper.benchmark import util
 
 def run(param_dict):
     x = [param_dict[f'x{i}'] for i in range(1, 1+NDIM)]

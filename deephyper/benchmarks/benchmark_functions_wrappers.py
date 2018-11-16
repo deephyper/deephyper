@@ -1,4 +1,4 @@
-from deephyper.benchmarks.benchmark_functions import *
+from deephyper.benchmark.benchmark_functions import *
 
 def griewank_():
     max_griewank = lambda v: -griewank(v)

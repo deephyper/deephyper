@@ -13,14 +13,14 @@ import sys
 import numpy as np, pandas as pd
 from sklearn.preprocessing import MaxAbsScaler
 from keras.utils import np_utils
-from deephyper.benchmarks.candleNT3Nas import data_utils
+from deephyper.benchmark.candleNT3Nas import data_utils
 
 
 
 def load_data(dest = None):
     if not dest: dest = 'DATA'
     gParameters = {
-        'data_url': 'ftp://ftp.mcs.anl.gov/pub/candle/public/benchmarks/Pilot1/normal-tumor/',
+        'data_url': 'ftp://ftp.mcs.anl.gov/pub/candle/public/benchmark/Pilot1/normal-tumor/',
         'test_data': 'nt_test2.csv',
         'train_data': 'nt_train2.csv'
     }

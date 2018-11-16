@@ -8,7 +8,7 @@ top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
 sys.path.append(top)
 BNAME = os.path.splitext(os.path.basename(__file__))[0]
 
-from deephyper.benchmarks import util, keras_cmdline
+from deephyper.benchmark import util, keras_cmdline
 
 timer = util.Timer()
 timer.start('module loading')
@@ -30,7 +30,7 @@ def linear(x, a, b):
 def run(param_dict):
     param_dict = keras_cmdline.fill_missing_defaults(augment_parser, param_dict)
     pprint(param_dict)
-    
+
     timer.start('stage in')
     if param_dict['data_source']:
         data_source = param_dict['data_source']
@@ -40,7 +40,7 @@ def run(param_dict):
 
     paths = util.stage_in(['dataset'], source=data_source, dest=param_dict['stage_in_destination'])
     path = paths['dataset']
-    
+
     data = np.loadtxt(path)
     training_x = data[:,0]
     training_y = data[:,1]
@@ -54,7 +54,7 @@ def run(param_dict):
         print("converting epochs to int:", epochs)
         epochs = int(epochs)
     lr = param_dict['lr']
-    
+
     model_path = param_dict['model_path']
     model_mda_path = None
     model = None

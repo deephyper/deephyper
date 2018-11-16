@@ -10,7 +10,7 @@ from balsam.launcher.async import FutureTask
 from balsam.launcher.async import wait as balsam_wait
 from balsam.core.models import ApplicationDefinition as AppDef
 
-from deephyper.evaluators import Evaluator
+from deephyper.evaluator import Evaluator
 logger = logging.getLogger(__name__)
 
 LAUNCHER_NODES = int(os.environ.get('BALSAM_LAUNCHER_NODES', 1))

@@ -1,6 +1,6 @@
 /**
  * @fileoverview Combines all components needed to display a line chart for
- * benchmarks.
+ * benchmark.
  * @param {string} title Graph title.
  * @param {string} yLabel Label to use for the y-axis.
  * @param {Plottable.Scale} xScale X-scale for the graph.

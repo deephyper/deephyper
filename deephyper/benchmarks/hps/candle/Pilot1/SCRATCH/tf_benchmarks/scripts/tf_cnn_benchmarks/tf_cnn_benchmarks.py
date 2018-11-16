@@ -191,7 +191,7 @@ tf.flags.DEFINE_integer('save_model_secs', 0,
                         checkpoints""")
 tf.flags.DEFINE_string('train_dir', None,
                        """Path to session checkpoints.""")
-tf.flags.DEFINE_string('eval_dir', '/tmp/tf_cnn_benchmarks/eval',
+tf.flags.DEFINE_string('eval_dir', '/tmp/tf_cnn_benchmark/eval',
                        """Directory where to write eval event logs.""")
 tf.flags.DEFINE_string('pretrain_dir', None,
                        """Path to pretrained session checkpoints.""")
@@ -1035,7 +1035,7 @@ class BenchmarkCNN(object):
       log_fn('total images/sec: %.2f' % images_per_sec)
       log_fn('-' * 64)
       if is_chief:
-        store_benchmarks({'total_images_per_sec': images_per_sec})
+        store_benchmark({'total_images_per_sec': images_per_sec})
       # Save the model checkpoint.
       if FLAGS.train_dir is not None and is_chief:
         checkpoint_path = os.path.join(FLAGS.train_dir, 'model.ckpt')
@@ -1315,7 +1315,7 @@ class BenchmarkCNN(object):
       return tf.group(*queue_ops)
 
 
-def store_benchmarks(names_to_values):
+def store_benchmark(names_to_values):
   if FLAGS.result_storage:
     benchmark_storage.store_benchmark(names_to_values, FLAGS.result_storage)
 

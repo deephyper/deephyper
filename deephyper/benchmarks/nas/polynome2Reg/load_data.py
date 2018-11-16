@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from deephyper.benchmarks.benchmark_functions_wrappers import polynome_2
+from deephyper.benchmark.benchmark_functions_wrappers import polynome_2
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 

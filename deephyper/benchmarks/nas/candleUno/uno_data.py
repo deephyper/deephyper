@@ -27,8 +27,8 @@ global_cache = {}
 
 SEED = 2018
 
-P1B3_URL = 'http://ftp.mcs.anl.gov/pub/candle/public/benchmarks/P1B3/'
-DATA_URL = 'http://ftp.mcs.anl.gov/pub/candle/public/benchmarks/Pilot1/combo/'
+P1B3_URL = 'http://ftp.mcs.anl.gov/pub/candle/public/benchmark/P1B3/'
+DATA_URL = 'http://ftp.mcs.anl.gov/pub/candle/public/benchmark/Pilot1/combo/'
 
 logger = logging.getLogger(__name__)
 

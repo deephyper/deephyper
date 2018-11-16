@@ -65,12 +65,12 @@ top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
 sys.path.append(top)
 BNAME = os.path.splitext(os.path.basename(__file__))[0]
 
-from deephyper.benchmarks import util 
+from deephyper.benchmark import util
 
 timer = util.Timer()
 timer.start('module loading')
 
-from deephyper.benchmarks.util import TerminateOnTimeOut
+from deephyper.benchmark.util import TerminateOnTimeOut
 from functools import reduce
 import re
 import tarfile
@@ -86,7 +86,7 @@ from keras.preprocessing.sequence import pad_sequences
 
 from keras import layers
 
-from deephyper.benchmarks import keras_cmdline
+from deephyper.benchmark import keras_cmdline
 from keras.models import load_model
 from keras.callbacks import EarlyStopping
 
@@ -181,7 +181,7 @@ def run(param_dict):
     DROPOUT = param_dict['dropout']
     ACTIVATION = param_dict['activation']
     TIMEOUT = param_dict['timeout']
-    
+
     if param_dict['rnn_type'] == 'GRU':
         RNN = layers.GRU
     elif param_dict['rnn_type'] == 'SimpleRNN':
@@ -198,7 +198,7 @@ def run(param_dict):
                                                                EMBED_HIDDEN_SIZE,
                                                                SENT_HIDDEN_SIZE,
                                                                QUERY_HIDDEN_SIZE))
-    
+
     # Default QA1 with 1000 samples
     # challenge = 'tasks_1-20_v1-2/en/qa1_single-supporting-fact_{}.txt'
     # QA1 with 10,000 samples
@@ -289,19 +289,19 @@ def run(param_dict):
     callbacks_list = [timeout_monitor]
     timer.start('model training')
     print('Training')
-    model.fit([x, xq], y, callbacks=callbacks_list, batch_size=BATCH_SIZE, initial_epoch=initial_epoch, 
+    model.fit([x, xq], y, callbacks=callbacks_list, batch_size=BATCH_SIZE, initial_epoch=initial_epoch,
                 epochs=EPOCHS, validation_split=0.30)
     timer.end()
     loss, acc = model.evaluate([tx, txq], ty, batch_size=BATCH_SIZE)
     print('Test loss / test accuracy = {:.4f} / {:.4f}'.format(loss, acc))
     print('OUTPUT:', -acc)
-    
+
     if model_path:
         timer.start('model save')
-        model.save(model_path)  
+        model.save(model_path)
         util.save_meta_data(param_dict, model_mda_path)
         timer.end()
-    
+
     return -acc
 
 
@@ -322,7 +322,7 @@ def augment_parser(parser):
 
     parser.add_argument('--query_hidden_size', action='store', dest='query_hidden_size',
                         nargs='?', const=2, type=int, default='100',
-                        help='number of epochs')                        
+                        help='number of epochs')
 
     return parser
 

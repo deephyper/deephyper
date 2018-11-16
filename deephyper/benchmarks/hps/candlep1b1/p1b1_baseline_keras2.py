@@ -7,7 +7,7 @@ top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
 sys.path.append(top)
 BNAME = os.path.splitext(os.path.basename(__file__))[0]
 
-from deephyper.benchmarks import util 
+from deephyper.benchmark import util
 
 timer = util.Timer()
 timer.start('module loading')
@@ -33,7 +33,7 @@ import hashlib
 import pickle
 timer.end()
 
-from deephyper.benchmarks import keras_cmdline
+from deephyper.benchmark import keras_cmdline
 
 import warnings
 with warnings.catch_warnings():
@@ -244,7 +244,7 @@ def run(params):
     # Construct extension to save model
     ext = p1b1.extension_from_parameters(params, '.keras')
     prefix = '{}{}'.format(params['save'], ext)
-    
+
     logfile = params['logfile'] if params['logfile'] else prefix+'.log'
     verify_path(logfile)
     logger = set_up_logger(logfile, params['verbose'])
@@ -479,10 +479,10 @@ def run(params):
                         callbacks=callbacks,
                         validation_data=(val_inputs, val_outputs))
 
-    model.save(model_name)                                                                                                                                         
+    model.save(model_name)
     save_meta_data(args.__dict__, model_mda_name)
-    
-    
+
+
 
 
     if params['cp']:
@@ -500,7 +500,7 @@ def run(params):
     print('Test score:', score[0])
     print('Test accuracy:', score[1])
     print('OUTPUT:', -score[1])
- 
+
     if params['tsne']:
         tsne = TSNE(n_components=2, random_state=seed)
         x_test_encoded_tsne = tsne.fit_transform(x_test_encoded)
@@ -521,7 +521,7 @@ def run(params):
 #                        choices=['constant', 'uniform', 'normal', 'glorot_uniform', 'lecun_uniform', 'lecun_normal', 'he_normal'])
 #    parser.add_argument("--alpha_dropout", action='store_true',
 #                        help="use AlphaDropout instead of regular Dropout")
-#                        
+#
 #    return parser
 
 if __name__ == '__main__':

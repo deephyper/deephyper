@@ -1,7 +1,7 @@
 import os
 from tensorflow.examples.tutorials.mnist import input_data
 import numpy as np
-from deephyper.benchmarks.benchmark_functions_wrappers import linear_
+from deephyper.benchmark.benchmark_functions_wrappers import linear_
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 

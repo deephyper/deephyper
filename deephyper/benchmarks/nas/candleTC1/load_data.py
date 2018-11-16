@@ -13,7 +13,7 @@ import sys
 import numpy as np, pandas as pd
 from sklearn.preprocessing import MaxAbsScaler
 from keras.utils import np_utils
-from deephyper.benchmarks.candleTC1Nas import data_utils
+from deephyper.benchmark.candleTC1Nas import data_utils
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -21,7 +21,7 @@ def load_data():
     dest = HERE+'/DATA'
     print(f'dest: {dest}')
 
-    gParameters = {'shuffle': True, 'verbose': False, 'conv': [128, 20, 1, 128, 10, 1], 'run_id': 'RUN.000', 'epochs': 400, 'alpha_dropout': False, 'out_act': 'softmax', 'logfile': None, 'dense': [200, 20], 'feature_subsample': 0, 'save': '.', 'data_url': 'ftp://ftp.mcs.anl.gov/pub/candle/public/benchmarks/Pilot1/type-class/', 'optimizer': 'sgd', 'timeout': -1, 'activation': 'relu', 'batch_size': 20, 'metrics': 'accuracy', 'gpus': [], 'train_bool': True, 'pool': [1, 10], 'loss': 'categorical_crossentropy', 'datatype': 'numpy.float32', 'drop': 0.1, 'config_file': '/Users/dipendra/Projects/Benchmarks/Pilot1/TC1/tc1_default_model.txt', 'test_data': 'type_18_300_test.csv', 'classes': 36, 'experiment_id': 'EXP.000', 'model_name': 'tc1', 'train_data': 'type_18_300_train.csv'}
+    gParameters = {'shuffle': True, 'verbose': False, 'conv': [128, 20, 1, 128, 10, 1], 'run_id': 'RUN.000', 'epochs': 400, 'alpha_dropout': False, 'out_act': 'softmax', 'logfile': None, 'dense': [200, 20], 'feature_subsample': 0, 'save': '.', 'data_url': 'ftp://ftp.mcs.anl.gov/pub/candle/public/benchmark/Pilot1/type-class/', 'optimizer': 'sgd', 'timeout': -1, 'activation': 'relu', 'batch_size': 20, 'metrics': 'accuracy', 'gpus': [], 'train_bool': True, 'pool': [1, 10], 'loss': 'categorical_crossentropy', 'datatype': 'numpy.float32', 'drop': 0.1, 'config_file': '/Users/dipendra/Projects/Benchmarks/Pilot1/TC1/tc1_default_model.txt', 'test_data': 'type_18_300_test.csv', 'classes': 36, 'experiment_id': 'EXP.000', 'model_name': 'tc1', 'train_data': 'type_18_300_train.csv'}
 
     file_train = gParameters['train_data']
     file_test = gParameters['test_data']

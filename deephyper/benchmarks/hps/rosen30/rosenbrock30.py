@@ -11,11 +11,11 @@ top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
 sys.path.append(top)
 BNAME = os.path.splitext(os.path.basename(__file__))[0]
 
-from deephyper.benchmarks import util
+from deephyper.benchmark import util
 
 def run(param_dict):
     x = [param_dict[f'x{i}'] for i in range(1, 1+NDIM)]
-    assert len(x) == NDIM, f'{x} has wrong dimension {len(x)}' 
+    assert len(x) == NDIM, f'{x} has wrong dimension {len(x)}'
     assert all(type(xi) in [float,float64] for xi in x), f'Not all floats: {[type(xi) for xi in x]}'
     pprint(x)
 

@@ -8,7 +8,7 @@ top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
 sys.path.append(top)
 BNAME = os.path.splitext(os.path.basename(__file__))[0]
 
-from deephyper.benchmarks import util 
+from deephyper.benchmark import util
 
 timer = util.Timer()
 timer.start('module loading')
@@ -21,15 +21,15 @@ import os
 
 
 from keras.callbacks import EarlyStopping
-from deephyper.benchmarks.util import TerminateOnTimeOut
+from deephyper.benchmark.util import TerminateOnTimeOut
 
 
 from keras import layers
-from deephyper.benchmarks import keras_cmdline
+from deephyper.benchmark import keras_cmdline
 from keras.models import load_model
 import hashlib
 import pickle
-from deephyper.benchmarks.mnistmlp.load_data import load_data
+from deephyper.benchmark.mnistmlp.load_data import load_data
 
 from numpy.random import seed
 from tensorflow import set_random_seed
@@ -42,7 +42,7 @@ def run(param_dict):
     param_dict = keras_cmdline.fill_missing_defaults(augment_parser, param_dict)
     optimizer = keras_cmdline.return_optimizer(param_dict)
     pprint(param_dict)
-    
+
     timer.start('stage in')
     if param_dict['data_source']:
         data_source = param_dict['data_source']
@@ -54,7 +54,7 @@ def run(param_dict):
         origin=os.path.join(data_source, 'mnist.npz'),
         dest=param_dict['stage_in_destination']
     )
-    
+
     timer.end()
 
     num_classes = 10
@@ -126,10 +126,10 @@ def run(param_dict):
     score = model.evaluate(x_test, y_test, verbose=0)
     print('Test loss:', score[0])
     print('Test accuracy:', score[1])
-    
+
     if model_path:
         timer.start('model save')
-        model.save(model_path)  
+        model.save(model_path)
         util.save_meta_data(param_dict, model_mda_path)
         timer.end()
 

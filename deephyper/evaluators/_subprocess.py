@@ -3,7 +3,7 @@ import logging
 import subprocess
 import time
 
-from deephyper.evaluators import evaluate
+from deephyper.evaluator import evaluate
 
 logger = logging.getLogger(__name__)
 

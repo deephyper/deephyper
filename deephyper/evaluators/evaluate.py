@@ -11,7 +11,7 @@ import sys
 import time
 import types
 
-from deephyper.evaluators import runner
+from deephyper.evaluator import runner
 logger = logging.getLogger(__name__)
 
 class Encoder(json.JSONEncoder):
@@ -39,16 +39,16 @@ class Evaluator:
     def create(run_function, cache_key=None, method='balsam'):
         assert method in ['balsam', 'subprocess', 'processPool', 'threadPool']
         if method == "balsam":
-            from deephyper.evaluators._balsam import BalsamEvaluator
+            from deephyper.evaluator._balsam import BalsamEvaluator
             Eval = BalsamEvaluator
         elif method == "subprocess":
-            from deephyper.evaluators._subprocess import SubprocessEvaluator
+            from deephyper.evaluator._subprocess import SubprocessEvaluator
             Eval = SubprocessEvaluator
         elif method == "processPool":
-            from deephyper.evaluators._processPool import ProcessPoolEvaluator
+            from deephyper.evaluator._processPool import ProcessPoolEvaluator
             Eval = ProcessPoolEvaluator
         else:
-            from deephyper.evaluators._threadPool import ThreadPoolEvaluator
+            from deephyper.evaluator._threadPool import ThreadPoolEvaluator
             Eval = ThreadPoolEvaluator
 
         return Eval(run_function, cache_key=cache_key)

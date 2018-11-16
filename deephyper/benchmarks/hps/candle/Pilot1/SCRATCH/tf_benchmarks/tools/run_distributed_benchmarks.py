@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Builds docker images and runs benchmarks from benchmark_configs.yml file.
+"""Builds docker images and runs benchmark from benchmark_configs.yml file.
 
 This script should only be run from opensource repository.
 """
@@ -30,7 +30,7 @@ import kubectl_util
 import yaml
 
 
-_DOCKER_IMAGE_PATTERN = 'gcr.io/tensorflow-testing/benchmarks/%s'
+_DOCKER_IMAGE_PATTERN = 'gcr.io/tensorflow-testing/benchmark/%s'
 _OUTPUT_FILE_ENV_VAR = 'TF_DIST_BENCHMARK_RESULTS_FILE'
 _TEST_NAME_ENV_VAR = 'TF_DIST_BENCHMARK_NAME'
 _PORT = 5000
@@ -99,10 +99,10 @@ def _BuildAndPushDockerImage(
 
 def _GetMostRecentDockerImageFromGcloud(docker_image):
   """Get most recent <docker_image>:tag for this docker_image.
- 
+
   Args:
     docker_image: (string) docker image on Google Cloud.
-  
+
   Returns:
     docker_image:tag if at least one tag was found for docker_image.
     Otherwise, returns None.
@@ -112,15 +112,15 @@ def _GetMostRecentDockerImageFromGcloud(docker_image):
        docker_image, '--limit=1', '--format=value(tags[0])'])
   tag = tag.strip()
   if not tag:
-    return None 
+    return None
   return '%s:%s' % (docker_image, tag)
- 
+
 
 def get_gpu_volume_mounts():
   """Get volume specs to add to Kubernetes config.
 
   Returns:
-    Volume specs in the format: volume_name: (hostPath, podPath). 
+    Volume specs in the format: volume_name: (hostPath, podPath).
   """
   volume_specs = {}
 
@@ -146,11 +146,11 @@ def main():
   # Create directories to store kubernetes yaml configs in.
   if not os.path.isdir(FLAGS.config_output_file_dir):
     os.makedirs(FLAGS.config_output_file_dir)
-  # Keeps track of already built docker images in case multiple benchmarks
+  # Keeps track of already built docker images in case multiple benchmark
   # use the same docker image.
   benchmark_name_to_docker_image = {}
 
-  # TODO(annarev): run benchmarks in parallel instead of sequentially.
+  # TODO(annarev): run benchmark in parallel instead of sequentially.
   for config in configs:
     name = _ConvertToValidName(str(config['benchmark_name']))
     if name in benchmark_name_to_docker_image:
@@ -221,7 +221,7 @@ if __name__ == '__main__':
            'will be set to the directory containing a docker file.')
   parser.add_argument(
       '--build_docker_image', type='bool', nargs='?', const=True, default=True,
-      help='Whether to build a new docker image or try to use existing one.') 
+      help='Whether to build a new docker image or try to use existing one.')
   parser.add_argument(
       '--store_docker_image_in_gcloud', type='bool', nargs='?', const=True,
       default=False, help='Push docker images to google cloud.')

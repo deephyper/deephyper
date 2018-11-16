@@ -27,7 +27,7 @@ sys.path.append(lib_path)
 lib_path2 = os.path.abspath(os.path.join(file_path, '..', '..', 'common'))
 sys.path.append(lib_path2)
 
-from deephyper.benchmarks.candleP1B3Nas import p1_common
+from deephyper.benchmark.candleP1B3Nas import p1_common
 
 
 logger = logging.getLogger(__name__)
@@ -493,7 +493,7 @@ def load_dose_response(path, seed, dtype, min_logconc=-5., max_logconc=-5., subs
     return df
 
 def stage_data():
-    server = 'http://ftp.mcs.anl.gov/pub/candle/public/benchmarks/P1B3/'
+    server = 'http://ftp.mcs.anl.gov/pub/candle/public/benchmark/P1B3/'
 
     cell_expr_path = p1_common.get_p1_file(server+'P1B3_cellline_expressions.tsv')
     cell_mrna_path = p1_common.get_p1_file(server+'P1B3_cellline_mirna.tsv')

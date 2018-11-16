@@ -7,7 +7,7 @@ top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
 sys.path.append(top)
 BNAME = os.path.splitext(os.path.basename(__file__))[0]
 
-from deephyper.benchmarks import util
+from deephyper.benchmark import util
 
 timer = util.Timer()
 timer.start('module loading')
@@ -23,9 +23,9 @@ import hashlib
 import pickle
 from keras.models import load_model
 
-from deephyper.benchmarks import keras_cmdline 
+from deephyper.benchmark import keras_cmdline
 from keras.callbacks import EarlyStopping
-from deephyper.benchmarks.util import TerminateOnTimeOut
+from deephyper.benchmark.util import TerminateOnTimeOut
 from numpy.random import seed
 from tensorflow import set_random_seed
 timer.end()
@@ -55,7 +55,7 @@ def run(param_dict):
     #FILTER = 'localpool'  # 'chebyshev'
     #MAX_DEGREE = 2  # maximum polynomial degree
     #SYM_NORM = True  # symmetric (True) vs. left-only (False) normalization
-    
+
     PATIENCE = 10  # early stopping patience
 
     # Get data
@@ -186,7 +186,7 @@ def run(param_dict):
             count = 0
         else:
             count = count+1
-        
+
         if count >= patience:
             print('Early stopping')
             break
@@ -204,10 +204,10 @@ def run(param_dict):
         "accuracy= {:.4f}".format(test_acc[0]))
     print('===Validation accuracy:', test_acc[0])
     print('OUTPUT:', -test_acc[0])
-    
+
     if model_path:
         timer.start('model save')
-        model.save(model_path)  
+        model.save(model_path)
         util.save_meta_data(param_dict, model_mda_path)
         timer.end()
 

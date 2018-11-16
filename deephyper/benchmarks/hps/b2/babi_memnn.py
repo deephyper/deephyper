@@ -22,12 +22,12 @@ top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
 sys.path.append(top)
 BNAME = os.path.splitext(os.path.basename(__file__))[0]
 
-from deephyper.benchmarks import util 
+from deephyper.benchmark import util
 
 timer = util.Timer()
 timer.start('module loading')
 
-from deephyper.benchmarks.util import TerminateOnTimeOut
+from deephyper.benchmark.util import TerminateOnTimeOut
 print("using python:", sys.executable)
 print("using deephyper lib:", os.path.abspath(util.__file__))
 print("importing keras...")
@@ -44,7 +44,7 @@ import numpy as np
 import re
 
 from keras import layers
-from deephyper.benchmarks import keras_cmdline
+from deephyper.benchmark import keras_cmdline
 import hashlib
 import pickle
 print("using keras:", layers.__path__)
@@ -122,14 +122,14 @@ def vectorize_stories(data, word_idx, story_maxlen, query_maxlen):
     return (pad_sequences(inputs, maxlen=story_maxlen),
             pad_sequences(queries, maxlen=query_maxlen),
             np.array(answers))
-    
+
 
 def run(param_dict):
     param_dict = keras_cmdline.fill_missing_defaults(augment_parser, param_dict)
     optimizer = keras_cmdline.return_optimizer(param_dict)
     print("Param Dict for b2 run:")
     pprint(param_dict)
-    
+
     challenges = {
         # QA1 with 10,000 samples
         'single_supporting_fact_10k': 'tasks_1-20_v1-2/en-10k/qa1_single-supporting-fact_{}.txt',
@@ -138,7 +138,7 @@ def run(param_dict):
     }
     challenge_type = 'single_supporting_fact_10k'
     challenge = challenges[challenge_type]
-    
+
     timer.start('stage in')
     if param_dict.get('data_source'):
         data_source = param_dict['data_source']
@@ -221,7 +221,7 @@ def run(param_dict):
     else:
         RNN = layers.LSTM
 
-    
+
     model_path = param_dict.get('model_path','')
     model_mda_path = None
     model = None
@@ -306,25 +306,25 @@ def run(param_dict):
 
     timer.start('model training')
 
-    train_history = model.fit([inputs_train, queries_train], answers_train, callbacks=callbacks_list, 
+    train_history = model.fit([inputs_train, queries_train], answers_train, callbacks=callbacks_list,
                                 batch_size=BATCH_SIZE, initial_epoch=initial_epoch, epochs=EPOCHS, validation_split=0.30) #, validation_data=([inputs_test, queries_test], answers_test))
     timer.end()
-    
+
     score = model.evaluate([inputs_test, queries_test], answers_test, batch_size=BATCH_SIZE)
     print('===Validation loss:', score[0])
     print('===Validation accuracy:', score[1])
     print('OUTPUT:', -score[1])
 
-    
+
     #train_loss = train_history.history['loss']
     #val_acc = train_history.history['val_acc']
     #print('===Train loss:', train_loss[-1])
     #print('===Validation accuracy:', val_acc[-1])
     #print('OUTPUT:', -val_acc[-1])
-    
+
     if model_path:
         timer.start('model save')
-        model.save(model_path)  
+        model.save(model_path)
         util.save_meta_data(param_dict, model_mda_path)
         timer.end()
     return -score[1]

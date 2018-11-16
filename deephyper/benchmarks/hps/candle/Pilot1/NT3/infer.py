@@ -24,7 +24,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, MaxAbsScaler
 
 TIMEOUT=3600 # in sec; set this to -1 for no timeoutA
- 
+
 # needed to find libs in ../common and ../../common
 file_path = os.path.dirname(os.path.realpath(__file__))
 lib_path = os.path.abspath(os.path.join(file_path, '..', 'common'))
@@ -78,7 +78,7 @@ model_name = 'nt3'
 optimizer = 'sgd'
 loss = 'categorical_crossentropy'
 metrics = 'accuracy'
-data_url = 'ftp://ftp.mcs.anl.gov/pub/candle/public/benchmarks/Pilot1/normal-tumor/'
+data_url = 'ftp://ftp.mcs.anl.gov/pub/candle/public/benchmark/Pilot1/normal-tumor/'
 train_data = 'nt_train2.csv'
 test_data = 'nt_test2.csv'
 classes=2

@@ -8,7 +8,7 @@ Neural Architecture Search models are following a generic workflow. This is why 
 
 The basic generic function which is used in our package to run a model for NAS is
 
-.. autofunction:: deephyper.searches.nas.run.nas_structure_raw.run
+.. autofunction:: deephyper.search.nas.run.nas_structure_raw.run
 
 All the items are linked by a problem definition.
 """

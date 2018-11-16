@@ -9,13 +9,13 @@ top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
 sys.path.append(top)
 BNAME = os.path.splitext(os.path.basename(__file__))[0]
 
-from deephyper.benchmarks import util 
+from deephyper.benchmark import util
 
 timer = util.Timer()
 timer.start('module loading')
 import keras
 from keras import backend as K
-from deephyper.benchmarks.mnistcnn.load_data import load_data
+from deephyper.benchmark.mnistcnn.load_data import load_data
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
@@ -23,11 +23,11 @@ from keras.layers import Conv2D, MaxPooling2D
 import os
 
 from keras.callbacks import EarlyStopping
-from deephyper.benchmarks.util import TerminateOnTimeOut
+from deephyper.benchmark.util import TerminateOnTimeOut
 
 
 from keras import layers
-from deephyper.benchmarks import keras_cmdline
+from deephyper.benchmark import keras_cmdline
 from keras.models import load_model
 import hashlib
 import pickle
@@ -43,7 +43,7 @@ def run(param_dict):
     param_dict = keras_cmdline.fill_missing_defaults(augment_parser, param_dict)
     optimizer = keras_cmdline.return_optimizer(param_dict)
     pprint(param_dict)
-    
+
     timer.start('stage in')
     if param_dict['data_source']:
         data_source = param_dict['data_source']
@@ -148,7 +148,7 @@ def run(param_dict):
                         batch_size=BATCH_SIZE,
                         epochs=EPOCHS,
                         initial_epoch=initial_epoch,
-                        verbose=1, 
+                        verbose=1,
                         callbacks=callbacks_list,
                         validation_split = 0.3)
                         #validation_data=(x_test, y_test))
@@ -156,10 +156,10 @@ def run(param_dict):
     score = model.evaluate(x_test, y_test, verbose=0)
     print('Test loss:', score[0])
     print('Test accuracy:', score[1])
-       
+
     if model_path:
         timer.start('model save')
-        model.save(model_path)  
+        model.save(model_path)
         util.save_meta_data(param_dict, model_mda_path)
         timer.end()
 
@@ -193,7 +193,7 @@ def augment_parser(parser):
     parser.add_argument('--nunits', action='store', dest='nunits',
                         nargs='?', const=2, type=int, default='512',
                         help='number of units in FC layer')
-    parser.add_argument('--dropout2', type=float, default=0.5, 
+    parser.add_argument('--dropout2', type=float, default=0.5,
                         help='dropout after FC layer')
 
     return parser

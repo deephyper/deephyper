@@ -1,6 +1,6 @@
 import argparse
 from keras.optimizers import SGD, RMSprop, Adagrad, Adadelta, Adam, Adamax, Nadam
-from deephyper.benchmarks import util
+from deephyper.benchmark import util
 
 def create_parser():
     'command line parser for keras'

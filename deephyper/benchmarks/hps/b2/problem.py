@@ -1,4 +1,4 @@
-from deephyper.benchmarks import HpProblem
+from deephyper.benchmark import HpProblem
 
 Problem = HpProblem()
 Problem.add_dim('epochs', (5,30), default=5)

@@ -1,8 +1,8 @@
 # TODO : not ready
 
-from deephyper.searches.nas.contrib.google_nas_net import create_structure
-from deephyper.benchmarks.nas.mnist2D.load_data import load_data
-from deephyper.benchmarks import Problem
+from deephyper.search.nas.contrib.google_nas_net import create_structure
+from deephyper.benchmark.nas.mnist2D.load_data import load_data
+from deephyper.benchmark import Problem
 
 Problem = Problem()
 Problem.add_dim('regression', False)

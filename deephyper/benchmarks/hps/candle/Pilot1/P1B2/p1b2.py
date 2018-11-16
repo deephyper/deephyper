@@ -23,7 +23,7 @@ sys.path.append(lib_path2)
 
 import p1_common
 
-url_p1b2 = 'http://ftp.mcs.anl.gov/pub/candle/public/benchmarks/P1B2/'
+url_p1b2 = 'http://ftp.mcs.anl.gov/pub/candle/public/benchmark/P1B2/'
 file_train = 'P1B2.train.csv'
 file_test = 'P1B2.test.csv'
 

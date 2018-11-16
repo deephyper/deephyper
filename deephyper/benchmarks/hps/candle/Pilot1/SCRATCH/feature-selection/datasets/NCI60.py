@@ -21,7 +21,7 @@ from data_utils import get_file
 global_cache = {}
 
 SEED = 2017
-P1B3_URL = 'http://ftp.mcs.anl.gov/pub/candle/public/benchmarks/P1B3/'
+P1B3_URL = 'http://ftp.mcs.anl.gov/pub/candle/public/benchmark/P1B3/'
 
 
 def impute_and_scale(df, scaling='std'):

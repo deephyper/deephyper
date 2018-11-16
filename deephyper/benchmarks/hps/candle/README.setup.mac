@@ -19,42 +19,41 @@ conda install -c anaconda hdf5=1.8.17
 conda install -c anaconda theano
 conda install -c conda-forge keras=2
 
-# Install additional modules for Pilot2 benchmarks
+# Install additional modules for Pilot2 benchmark
 conda install -c conda-forge opencv
 conda install -c conda-forge tqdm
 conda update -c conda-forge numpy
 
-# Download the source files for the benchmarks
-git clone https://github.com/ECP-Candle/benchmarks
+# Download the source files for the benchmark
+git clone https://github.com/ECP-Candle/benchmark
 
-# Run the Pilot1 benchmarks
-pushd benchmarks/Pilot1/P1B1/
-python p1b1_baseline_keras2.py 
+# Run the Pilot1 benchmark
+pushd benchmark/Pilot1/P1B1/
+python p1b1_baseline_keras2.py
 popd
 
-pushd benchmarks/Pilot1/P1B2/
+pushd benchmark/Pilot1/P1B2/
 python p1b2_baseline_keras2.py
 popd
 
-pushd benchmarks/Pilot1/P1B3/
+pushd benchmark/Pilot1/P1B3/
 python p1b3_baseline_keras2.py
 popd
 
-# Run the Pilot2 benchmarks
-pushd benchmarks/Pilot2/P2B1/
+# Run the Pilot2 benchmark
+pushd benchmark/Pilot2/P2B1/
 python p2b1_baseline_keras1.py
 popd
 
-pushd benchmarks/Pilot2/P2B2/
+pushd benchmark/Pilot2/P2B2/
 python p2b2_baseline_keras1.py
 popd
 
-# Run the Pilot3 benchmarks
-pushd benchmarks/Pilot3/P3B1/
+# Run the Pilot3 benchmark
+pushd benchmark/Pilot3/P3B1/
 python p3b1_baseline_keras2.py
 popd
 
-pushd benchmarks/Pilot3/P3B2/
+pushd benchmark/Pilot3/P3B2/
 python p3b2_baseline_keras2.py
-popd 
-
+popd

@@ -12,9 +12,9 @@ import sys
 import numpy as np
 
 
-from deephyper.benchmarks.candleP1B3Nas import p1b3
-from deephyper.benchmarks.candleP1B3Nas import p1_common
-from deephyper.benchmarks.candleP1B3Nas import p1_common_keras
+from deephyper.benchmark.candleP1B3Nas import p1b3
+from deephyper.benchmark.candleP1B3Nas import p1_common
+from deephyper.benchmark.candleP1B3Nas import p1_common_keras
 
 def get_p1b3_parser():
     parser = argparse.ArgumentParser(prog='p1b3_baseline',

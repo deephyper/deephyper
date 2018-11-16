@@ -20,7 +20,7 @@ top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
 sys.path.append(top)
 BNAME = os.path.splitext(os.path.basename(__file__))[0]
 
-from deephyper.benchmarks import util 
+from deephyper.benchmark import util
 timer = util.Timer()
 timer.start('module loading')
 
@@ -32,14 +32,14 @@ from keras.models import Model
 from keras.layers import *
 from keras.preprocessing.image import ImageDataGenerator
 from keras.callbacks import EarlyStopping
-from deephyper.benchmarks.util import TerminateOnTimeOut
+from deephyper.benchmark.util import TerminateOnTimeOut
 import sys
 import os
 import time
 import hashlib
 
-from deephyper.benchmarks.capsule.load_data import load_data
-from deephyper.benchmarks import keras_cmdline 
+from deephyper.benchmark.capsule.load_data import load_data
+from deephyper.benchmark import keras_cmdline
 from numpy.random import seed
 from tensorflow import set_random_seed
 timer.end()
@@ -195,7 +195,7 @@ def run(param_dict):
 
 
     num_classes = 10
-    
+
     timer.start('stage in')
     if param_dict['data_source']:
         data_source = param_dict['data_source']
@@ -217,7 +217,7 @@ def run(param_dict):
     x_test /= 255
     y_train = utils.to_categorical(y_train, num_classes)
     y_test = utils.to_categorical(y_test, num_classes)
-    
+
     model_path = param_dict['model_path']
     model_mda_path = None
     model = None
@@ -231,7 +231,7 @@ def run(param_dict):
                           'share_weights' : SHARE_WEIGHTS,
                           'margin_loss': margin_loss
                          }
-        savedModel = util.resume_from_disk(BNAME, param_dict, 
+        savedModel = util.resume_from_disk(BNAME, param_dict,
                        data_dir=model_path, custom_objects=custom_objects)
         model_mda_path = savedModel.model_mda_path
         model_path = savedModel.model_path
@@ -319,14 +319,14 @@ def run(param_dict):
             initial_epoch=initial_epoch,
             #validation_split=0.10,
             #validation_data=(x_test, y_test),
-            validation_data=datagen.flow(x_test, y_test, batch_size=BATCH_SIZE), 
+            validation_data=datagen.flow(x_test, y_test, batch_size=BATCH_SIZE),
             validation_steps=10,
             workers=1)
-    
+
     timer.end()
     if model_path:
         timer.start('model save')
-        model.save(model_path)  
+        model.save(model_path)
         util.save_meta_data(param_dict, model_mda_path)
         timer.end()
 

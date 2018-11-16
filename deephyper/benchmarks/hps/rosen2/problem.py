@@ -1,5 +1,5 @@
 import random
-from deephyper.benchmarks import HpProblem
+from deephyper.benchmark import HpProblem
 NDIM = 2
 
 

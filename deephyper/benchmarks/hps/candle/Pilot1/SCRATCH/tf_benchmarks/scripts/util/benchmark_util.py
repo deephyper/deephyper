@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Provides helper functions for distributed benchmarks running on Jenkins."""
+"""Provides helper functions for distributed benchmark running on Jenkins."""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function

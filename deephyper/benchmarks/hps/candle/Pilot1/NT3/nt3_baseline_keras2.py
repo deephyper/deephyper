@@ -21,7 +21,7 @@ from keras.callbacks import ModelCheckpoint, CSVLogger, ReduceLROnPlateau
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, MaxAbsScaler
 
-TIMEOUT=3600 # in sec; set this to -1 for no timeout 
+TIMEOUT=3600 # in sec; set this to -1 for no timeout
 file_path = os.path.dirname(os.path.realpath(__file__))
 lib_path = os.path.abspath(os.path.join(file_path, '..', 'common'))
 sys.path.append(lib_path)
@@ -58,7 +58,7 @@ def load_meta_data(filename):
         data = pickle.load(handle)
     return data
 
-#url_nt3 = 'ftp://ftp.mcs.anl.gov/pub/candle/public/benchmarks/Pilot1/normal-tumor/'
+#url_nt3 = 'ftp://ftp.mcs.anl.gov/pub/candle/public/benchmark/Pilot1/normal-tumor/'
 #file_train = 'nt_train2.csv'
 #file_test = 'nt_test2.csv'
 
@@ -286,21 +286,21 @@ def run(gParameters):
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10, verbose=1, mode='auto', epsilon=0.0001, cooldown=0, min_lr=0)
         #candleRemoteMonitor = CandleRemoteMonitor(params=gParameters)
     timeoutMonitor = TerminateOnTimeOut(TIMEOUT)
-    
+
     history = model.fit(X_train, Y_train,
                     batch_size=gParameters['batch_size'],
                     initial_epoch=initial_epoch, epochs=gParameters['epochs'],
                     verbose=1,
                     validation_data=(X_test, Y_test),
                     callbacks = [reduce_lr, timeoutMonitor])
-    model.save(model_name)                                                                                                                                         
+    model.save(model_name)
     save_meta_data(args.__dict__, model_mda_name)
-    
+
     score = model.evaluate(X_test, Y_test, verbose=0)
     print('Test score:', score[0])
     print('Test accuracy:', score[1])
     print('OUTPUT:', -score[1])
-    
+
     if False:
         print('Test score:', score[0])
         print('Test accuracy:', score[1])

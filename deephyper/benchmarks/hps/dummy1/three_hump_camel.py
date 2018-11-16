@@ -8,7 +8,7 @@ top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
 sys.path.append(top)
 BNAME = os.path.splitext(os.path.basename(__file__))[0]
 
-from deephyper.benchmarks import util 
+from deephyper.benchmark import util
 
 timer = util.Timer()
 
@@ -19,7 +19,7 @@ def run(param_dict):
     penalty = param_dict['penalty']
 
     result = 2*x**2 - 1.05*x**4 + (1./6.)*x**6 + x*y + y**2
-    if penalty == 'yes': 
+    if penalty == 'yes':
         result += 2.0
 
     timer.end()

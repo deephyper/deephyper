@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Base model configuration for CNN benchmarks."""
+"""Base model configuration for CNN benchmark."""
 
 
 class Model(object):
-  """Base model configuration for CNN benchmarks."""
+  """Base model configuration for CNN benchmark."""
 
   def __init__(self,
                model,

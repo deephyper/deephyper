@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Model configurations for CNN benchmarks.
+"""Model configurations for CNN benchmark.
 """
 
 import alexnet_model

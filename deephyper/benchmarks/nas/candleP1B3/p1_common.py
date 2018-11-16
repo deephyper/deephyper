@@ -15,7 +15,7 @@ file_path = os.path.dirname(os.path.realpath(__file__))
 lib_path = os.path.abspath(os.path.join(file_path, '..', '..', 'common'))
 sys.path.append(lib_path)
 
-from deephyper.benchmarks.candleP1B3Nas.data_utils import get_file
+from deephyper.benchmark.candleP1B3Nas.data_utils import get_file
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 

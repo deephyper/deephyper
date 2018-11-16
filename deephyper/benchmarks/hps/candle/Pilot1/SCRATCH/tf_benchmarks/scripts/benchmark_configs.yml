@@ -25,7 +25,7 @@
 #   (currently only supporting <= 1).
 # docker_file: (required) docker file to build a docker image for.
 #   Path to the docker file should be relative to Jenkins build folder.
-#   'benchmarks' github repo will be cloned to 'benchmarks' folder.
+#   'benchmark' github repo will be cloned to 'benchmark' folder.
 #
 # Example:
 # - benchmark_name: "benchmark_alexnet"
@@ -33,7 +33,7 @@
 #     data_format: "NHWC"
 #   worker_count: 1
 #   ps_count: 2
-#   docker_file: "benchmarks/models/Dockerfile.alexnet_distributed_test"
+#   docker_file: "benchmark/models/Dockerfile.alexnet_distributed_test"
 
 - benchmark_name: "tf_cnn_benchmark_resnet50"
   args:
@@ -43,4 +43,4 @@
   worker_count: 2
   ps_count: 2
   gpus_per_machine: 1
-  docker_file: "benchmarks/scripts/Dockerfile.tf_cnn_benchmarks"
+  docker_file: "benchmark/scripts/Dockerfile.tf_cnn_benchmark"

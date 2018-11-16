@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Utilities for CNN benchmarks."""
+"""Utilities for CNN benchmark."""
 
 import tensorflow as tf
 
@@ -27,4 +27,3 @@ def tensorflow_version_tuple():
 def tensorflow_version():
   vt = tensorflow_version_tuple()
   return vt[0] * 1000 + vt[1]
-

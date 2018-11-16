@@ -21,7 +21,7 @@ def load_data(dest=None):
     origin = 'https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz'
     dest = HERE+'/DATA'
     if dest is None:
-        dest = '/projects/datascience/regele/deephyper/benchmarks/cifar10Nas/DATA'
+        dest = '/projects/datascience/regele/deephyper/benchmark/cifar10Nas/DATA'
     else:
         dest = os.path.abspath(os.path.expanduser(dest))
 

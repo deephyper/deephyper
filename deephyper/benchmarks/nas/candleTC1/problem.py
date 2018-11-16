@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
 from nas.contrib.anl_mlp_2 import create_structure
-from deephyper.benchmarks.candleTC1Nas.load_data import load_data
+from deephyper.benchmark.candleTC1Nas.load_data import load_data
 
 class Problem:
     def __init__(self):

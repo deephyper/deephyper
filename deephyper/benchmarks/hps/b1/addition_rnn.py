@@ -33,18 +33,18 @@ top = os.path.dirname(os.path.dirname(os.path.dirname(here)))
 sys.path.append(top)
 BNAME = os.path.splitext(os.path.basename(__file__))[0]
 
-from deephyper.benchmarks import util
+from deephyper.benchmark import util
 
 timer = util.Timer()
 timer.start('module loading')
 
-from deephyper.benchmarks.util import TerminateOnTimeOut
+from deephyper.benchmark.util import TerminateOnTimeOut
 import numpy as np
 from six.moves import range
 from keras.models import Sequential
 from keras import layers
 from keras.models import load_model
-from deephyper.benchmarks import keras_cmdline
+from deephyper.benchmark import keras_cmdline
 from keras.callbacks import EarlyStopping
 from numpy.random import seed
 from tensorflow import set_random_seed

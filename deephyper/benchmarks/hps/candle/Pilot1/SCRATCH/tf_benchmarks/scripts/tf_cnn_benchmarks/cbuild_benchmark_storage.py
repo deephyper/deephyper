@@ -16,7 +16,7 @@
 
 Datastore client is initialized from current environment.
 Data is stored using the format defined in:
-  https://github.com/tensorflow/tensorflow/blob/master/tensorflow/tools/test/upload_test_benchmarks_index.yaml
+  https://github.com/tensorflow/tensorflow/blob/master/tensorflow/tools/test/upload_test_benchmark_index.yaml
 """
 from datetime import datetime
 import json
@@ -51,7 +51,7 @@ def upload_to_benchmark_datastore(data, test_name=None, start_time=None):
       test_name = os.environ[_TEST_NAME_ENV_VAR]
     else:
       raise ValueError(
-          'No test name passed in for benchmarks. '
+          'No test name passed in for benchmark. '
           'Either pass a test_name to upload_to_benchmark_datastore or '
           'set %s environment variable.' % _TEST_NAME_ENV_VAR)
   test_name = unicode(test_name)
