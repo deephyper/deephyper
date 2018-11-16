@@ -1,6 +1,6 @@
 from deephyper.benchmark import Problem
 from deephyper.benchmark.nas.toy.load_data_reg import load_data
-from deephyper.search.nas.contrib.anl_mlp_2_keras import create_structure
+from deephyper.search.nas.contrib.anl_mlp_2 import create_structure
 from deephyper.search.nas.model.preprocessing import stdscaler
 
 # We create our Problem object with the Problem class, you don't have to name your Problem object 'Problem' it can be any name you want. You can also define different problems in the same module.
