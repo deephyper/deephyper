@@ -63,7 +63,7 @@ class KerasStructure(Structure):
         """
         n = 0
         for c in self.struct:
-            n += c.num_nodes()
+            n += c.num_nodes
         return n
 
     def num_nodes_cell(self, i=None):

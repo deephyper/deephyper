@@ -6,6 +6,12 @@
 Deephyper - a high level deep learning framework
 ************************************************
 
+.. image:: _static/logo.png
+   :scale: 20%
+   :alt: logo
+   :align: center
+
+
 .. automodule:: deephyper
 
 .. toctree::
@@ -44,6 +50,7 @@ Deephyper - a high level deep learning framework
    :caption: User Guide
 
    usage/workflow
+   tests
 
 
 Indices and tables

@@ -86,7 +86,7 @@ def traj_segment_generator(env, horizon):
 def train(num_episodes, seed, space, evaluator, num_episodes_per_batch):
 
     rank = MPI.COMM_WORLD.Get_rank()
-    if rank != 0: # rank zero simule the use of a parameter server
+    if rank == 0: # rank zero simule the use of a parameter server
         pass
     else:
         workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank() if seed is not None else None
