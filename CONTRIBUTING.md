@@ -22,7 +22,7 @@ The documentation is made with Sphinx and the following extensions are used :
  Extensions
 ---------------------------
  Name | Description
----------------------------
+------ | --------------------
  autodoc | automatically insert docstrings from modules
  napoleon | inline code documentation
  doctest | automatically test code snippets in doctest blocks
@@ -33,7 +33,6 @@ The documentation is made with Sphinx and the following extensions are used :
  ifconfig | conditional inclusion of content based on config values
  viewcode | include links to the source code of documented Python objects
  githubpages | create .nojekyll file to publish the document on GitHub pages
----------------------------
 
 
 Sphinx uses reStructuredText files, click on this [link](https://pythonhosted.org/an_example_pypi_project/sphinx.html) if you want to have an overview of the corresponding syntax and mechanism.
