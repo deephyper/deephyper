@@ -1,13 +1,13 @@
 import tensorflow as tf
 
-from deephyper.search.nas.model.space.op.basic import Connect
-from deephyper.search.nas.model.space.op.op1d import Dense, dropout_ops, Identity
-
-from deephyper.search.nas.model.space.node import Node
+from deephyper.search.nas.model.baseline.util.struct import create_seq_struct
 from deephyper.search.nas.model.space.block import Block
 from deephyper.search.nas.model.space.cell import Cell
+from deephyper.search.nas.model.space.node import Node
+from deephyper.search.nas.model.space.op.basic import Connect
+from deephyper.search.nas.model.space.op.op1d import (Dense, Identity,
+                                                      dropout_ops)
 
-from deephyper.search.nas.cell.structure import create_seq_structure
 
 def create_dense_cell_type1(input_nodes):
     """Dense type 1
@@ -83,5 +83,9 @@ def create_dense_cell_type1(input_nodes):
     cell.set_outputs()
     return cell
 
-def create_structure(input_tensor, num_cells):
-    return create_seq_structure(input_tensor, create_dense_cell_type1, num_cells)
+def create_structure(input_shape=(2,), output_shape=(1,), num_cells=2):
+    return create_seq_struct(
+        input_shape,
+        output_shape,
+        create_dense_cell_type1,
+        num_cells)

@@ -60,7 +60,11 @@ Data/
 logdir
 *.html
 *.png
+*.jpg
 *.h5
+*.gv
+*.pdf
+*log*
 
 # Sphinx documentation
 _build/

@@ -66,13 +66,3 @@ def create_structure(input_shape=(2,), output_shape=(1,), num_cells=2):
         output_shape,
         create_dense_cell_type2,
         num_cells)
-
-def test_1():
-    from random import random
-    structure = create_structure((10,), (1,), 10)
-    ops = [random() for i in range(structure.num_nodes)]
-    structure.set_ops(ops)
-    structure.draw_graphviz('graph.dot')
-
-if __name__ == '__main__':
-    test_1()

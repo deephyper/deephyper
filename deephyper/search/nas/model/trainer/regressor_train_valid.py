@@ -69,7 +69,11 @@ class TrainerRegressorTrainValid:
         self.train_size = np.shape(self.train_X)[0]
         self.valid_size = np.shape(self.valid_X)[0]
         self.train_steps_per_epoch = self.train_size // self.batch_size
+        if self.train_steps_per_epoch * self.batch_size < self.train_size:
+            self.train_steps_per_epoch += 1
         self.valid_steps_per_epoch = self.valid_size // self.batch_size
+        if self.valid_steps_per_epoch * self.batch_size < self.valid_size:
+            self.valid_steps_per_epoch += 1
 
     def preprocess_data(self):
         assert self.preprocessor is None, 'You can only preprocess the data one time.'
@@ -121,7 +125,7 @@ class TrainerRegressorTrainValid:
             data_X, data_Y = self.valid_X, self.valid_Y
         else:
             y_pred = self.model.predict(self.dataset_train,
-            steps=self.valid_steps_per_epoch)
+            steps=self.train_steps_per_epoch)
 
         if self.preprocessing_func:
             val_pred = np.concatenate((data_X, y_pred), axis=1)

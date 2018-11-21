@@ -7,10 +7,11 @@ from mpi4py import MPI
 import deephyper.search.nas.utils.common.tf_util as U
 from deephyper.evaluator import Evaluator
 from deephyper.search.nas.agent import pposgd_sync
-from deephyper.search.nas.agent.policy import lstm
-from deephyper.search.nas.envs import MathEnv
+from deephyper.search.nas.agent.policy import lstm, mlp, lstm_reset
+from deephyper.search.nas.env import MathEnv
 from deephyper.search.nas.utils import bench, logger
 from deephyper.search.nas.utils.common import set_global_seeds
+from deephyper.search.nas.agent.utils import episode_reward_for_final_timestep
 
 
 def train(num_episodes, seed, evaluator, num_episodes_per_batch):
@@ -32,7 +33,8 @@ def train(num_episodes, seed, evaluator, num_episodes_per_batch):
     env = MathEnv(evaluator)
 
     def policy_fn(name, ob_space, ac_space): #pylint: disable=W0613
-        return lstm.LstmPolicy(name=name, ob_space=ob_space, ac_space=ac_space, num_units=32)
+        return lstm_reset.LstmPolicy(name=name, ob_space=ob_space, ac_space=ac_space, num_units=64)
+        # return mlp.MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space, hid_size=64, num_hid_layers=2)
 
     pposgd_sync.learn(env, policy_fn,
         max_timesteps=int(num_timesteps),
@@ -42,14 +44,15 @@ def train(num_episodes, seed, evaluator, num_episodes_per_batch):
         optim_epochs=4,
         optim_stepsize=1e-3,
         optim_batchsize=15,
-        gamma=0.99,
-        lam=0.95,
-        schedule='linear'
+        gamma=0.99, # 0.99
+        lam=0.95, # 0.95
+        schedule='linear',
+        reward_rule=episode_reward_for_final_timestep
     )
     env.close()
 
 def key(d):
-    return json.dumps(dict(arch_seq=d['x']))
+    return json.dumps(dict(arch_seq=d['arch_seq']))
 
 def main():
     from deephyper.search.nas.agent.run_func_math import run_func
