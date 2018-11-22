@@ -1,6 +1,28 @@
 What is DeepHyper?
 ---------------------
 
+Directory structure
+-------------------
+```
+benchmarks
+    directory for test problems
+evaluator
+    directory for evaluators (specific objects which help us to abstract task submission)
+search
+    directory for search applications
+```
+
+Install instructions
+-------------------
+
+Install deephyper in a virtual environment.
+
+```
+cd deephyper
+pip install -e .
+```
+
+
 How do I learn more?
 --------------------
 
