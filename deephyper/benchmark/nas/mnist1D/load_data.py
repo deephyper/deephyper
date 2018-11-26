@@ -4,7 +4,7 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-np.seed(2018)
+np.random.seed(2018)
 
 def load_data(prop=0.1):
     """Loads the MNIST dataset.
