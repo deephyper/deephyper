@@ -24,8 +24,6 @@ class TrainerClassifierTrainValid:
         self.learning_rate = self.config_hp[a.learning_rate]
         self.num_epochs = self.config_hp[a.num_epochs]
 
-        self.test_metric = None
-
         # DATA loading
         self.train_X = None
         self.train_Y = None
@@ -33,6 +31,8 @@ class TrainerClassifierTrainValid:
         self.valid_Y = None
         self.train_size = None
         self.valid_size = None
+        self.train_steps_per_epoch = None
+        self.valid_steps_per_epoch = None
         self.load_data()
 
         # Dataset
@@ -43,12 +43,6 @@ class TrainerClassifierTrainValid:
         self.set_dataset_valid()
 
         self.model_compile()
-
-        # PATIENCE
-        if a.patience in self.config_hp:
-            self.patience = self.config_hp[a.patience]
-        else:
-            self.patience =  int(self.train_size/self.batch_size * self.num_epochs/5.)
 
         # Test on validation after each epoch
         logger.debug('[PARAM] KerasTrainer instantiated')
@@ -61,12 +55,17 @@ class TrainerClassifierTrainValid:
         self.valid_Y = self.config[a.data][a.valid_Y]
         self.train_size = np.shape(self.train_X)[0]
         self.valid_size = np.shape(self.valid_X)[0]
+        self.train_steps_per_epoch = self.train_size // self.batch_size
+        if self.train_steps_per_epoch * self.batch_size < self.train_size:
+            self.train_steps_per_epoch += 1
+        self.valid_steps_per_epoch = self.valid_size // self.batch_size
+        if self.valid_steps_per_epoch * self.batch_size < self.valid_size:
+            self.valid_steps_per_epoch += 1
 
     def set_dataset_train(self):
         self.dataset_train = tf.data.Dataset.from_tensor_slices((self.train_X,
             self.train_Y))
-        self.dataset_train = self.dataset_train.batch(self.batch_size)
-        self.dataset_train = self.dataset_train.repeat()
+        self.dataset_train = self.dataset_train.batch(self.batch_size).repeat()
 
     def set_dataset_valid(self):
         self.dataset_valid = tf.data.Dataset.from_tensor_slices((self.valid_X, self.valid_Y))
@@ -78,25 +77,38 @@ class TrainerClassifierTrainValid:
         decay_rate = self.learning_rate / self.num_epochs
         self.optimizer = optimizer_fn(lr=self.learning_rate, decay=decay_rate)
 
+        print('compile')
+        print('optimizer: ', self.optimizer)
+        print('loss: ', self.loss_metric_name)
+        print('metrics: ', self.metrics_name)
         self.model.compile(
             optimizer=self.optimizer,
             loss=self.loss_metric_name,
             metrics=self.metrics_name)
 
-    def train(self):
-        train_steps_per_epoch = self.train_size // self.batch_size
-        valid_steps_per_epoch = self.valid_size // self.batch_size
+    def predict(self, dataset='valid'):
+        assert dataset == 'valid' or dataset == 'train'
+        if dataset == 'valid':
+            y_pred = self.model.predict(self.dataset_valid, steps=self.valid_steps_per_epoch)
+        else:
+            y_pred = self.model.predict(self.dataset_train,
+            steps=self.train_steps_per_epoch)
 
+        y_orig = self.valid_Y
+
+        return y_orig, y_pred
+
+    def train(self):
         max_acc = 0
         for i in range(self.num_epochs):
             self.model.fit(
                 self.dataset_train,
                 epochs=1,
-                steps_per_epoch=train_steps_per_epoch,
+                steps_per_epoch=self.train_steps_per_epoch,
                 callbacks=self.callbacks
             )
 
-            valid_info = self.model.evaluate(self.dataset_valid, steps=valid_steps_per_epoch)
+            valid_info = self.model.evaluate(self.dataset_valid, steps=self.valid_steps_per_epoch)
 
             valid_loss, valid_acc = valid_info[0], valid_info[1]*100
 

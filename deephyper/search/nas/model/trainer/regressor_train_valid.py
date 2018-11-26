@@ -99,15 +99,13 @@ class TrainerRegressorTrainValid:
     def set_dataset_train(self):
         self.dataset_train = tf.data.Dataset.from_tensor_slices((self.train_X,
             self.train_Y))
-        self.dataset_train = self.dataset_train.batch(self.batch_size)
-        self.dataset_train = self.dataset_train.repeat()
+        self.dataset_train = self.dataset_train.batch(self.batch_size).repeat()
 
     def set_dataset_valid(self):
         self.dataset_valid = tf.data.Dataset.from_tensor_slices((self.valid_X, self.valid_Y))
         self.dataset_valid = self.dataset_valid.batch(self.batch_size).repeat()
 
     def model_compile(self):
-
         optimizer_fn = U.selectOptimizer_keras(self.optimizer_name)
 
         decay_rate = self.learning_rate / self.num_epochs
