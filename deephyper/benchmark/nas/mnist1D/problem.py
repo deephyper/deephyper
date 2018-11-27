@@ -13,7 +13,7 @@ Problem.add_dim('load_data', {
 Problem.add_dim('create_structure', {
     'func': create_structure,
     'kwargs': {
-        'num_cells': 1
+        'num_cells': 5
     }
 })
 
