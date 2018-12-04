@@ -69,9 +69,9 @@ list above.
 
 # Acknowledgements 
 
-* U.S. Department of Energy 2018 Early Career Award funded by the Advanced Scientific Computing Research program within the DOE Office of Science (2018--Present)
+* Scalable Data-Efficient Learning for Scientific Domains, U.S. Department of Energy 2018 Early Career Award funded by the Advanced Scientific Computing Research program within the DOE Office of Science (2018--Present)
 * Argonne Leadership Computing Facility (2018--Present)
-* SLIK-D: Scalable Machine Learning Infrastructures for Knowledge Discovery, Argonne Computing, Environment and Life Sciences Laboratory Directed Research and Development Program (2016--2018)
+* SLIK-D: Scalable Machine Learning Infrastructures for Knowledge Discovery, Argonne Computing, Environment and Life Sciences (CELS) Laboratory Directed Research and Development (LRDR) Program (2016--2018)
 
 # Copyright and license
 
