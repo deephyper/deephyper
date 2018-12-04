@@ -1,3 +1,4 @@
+![Alt text](docs/images/deephyper.png?raw=true "DeepHyper")
 # What is DeepHyper?
 
 DeepHyper is a Python package and infrastructure that targets
@@ -7,7 +8,7 @@ benchmarks, a collection of extensible and diverse
 set of DL hyperparameter search problems; search, a set
 of search algorithms for DL hyperparameter search; and
 evaluators, a common interface for evaluating hyperparameter
-configurations on HPC platforms
+configurations on HPC platforms.
 
 # Documentation
 
@@ -65,12 +66,10 @@ Patches are much appreciated on the software itself as well as documentation.
 Optionally, please include in your first patch a credit for yourself in the
 list above.
 
-We are friendly and welcoming of diversity on all dimensions.
-
 # Acknowledgements 
 
-* U.S. Department of Energy 2018 Early Career Award funded by the Advanced Scientific Computing Research program within the DOE Office of Science (2018--)
-* Argonne Leadership Computing Facility (2018--)
+* U.S. Department of Energy 2018 Early Career Award funded by the Advanced Scientific Computing Research program within the DOE Office of Science (2018--Present)
+* Argonne Leadership Computing Facility (2018--Present)
 * SLIK-D: Scalable Machine Learning Infrastructures for Knowledge Discovery, Argonne Computing, Environment and Life Sciences Laboratory Directed Research and Development Program (2016--2018)
 
 # Copyright and license
