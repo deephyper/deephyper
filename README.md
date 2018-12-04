@@ -1,6 +1,5 @@
-<p align="center">
 ![Alt text](docs/images/deephyper.png?raw=true "DeepHyper")
-</p>
+
 # What is DeepHyper?
 
 DeepHyper is a Python package and infrastructure that targets
@@ -77,3 +76,4 @@ list above.
 # Copyright and license
 
 TBD
+
