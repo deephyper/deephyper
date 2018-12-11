@@ -1,8 +1,8 @@
 Benchmarks
 **********
 
-Benchmarks are here for you to test the performance of different search algorithm and reproduce our results. They can also help you to test your installation of deephyper or
-discover the many parameters of a search. In deephyper we have two different kind of benchmarks. The first type is `hyper parameters search` benchmarks and the second type is  `neural architecture search` benchmarks. To see a full explanation about the different kind of search please refer to the following page `Search <search.html>`_ . To access the benchmarks from python just use ``deephyper.benchmarks.name``.
+Benchmarks are here for you to test the performance of different search algorithms and reproduce our results. They can also help you to test your installation of deephyper or
+discover the many parameters of a search. In deephyper we have two different kinds of benchmarks. The first type is `hyper parameters search` benchmarks and the second type is  `neural architecture search` benchmarks. To see a full explanation about the different kinds of search please refer to the following page `Search <search.html>`_ . To access the benchmarks from python just use ``deephyper.benchmarks.name``.
 
 Hyper Parameters Search (HPS)
 =============================
@@ -55,9 +55,9 @@ For example if we want to create an hyper parameter search problem for Mnist dat
     Problem.add_dim(p_name='num_n_l1', p_space=[i for i in range(1, 30)], p_default=15)
 
 
-and that's it, we just defined a problem with one dimension 'num_n_l1' where we are going to search the best number of neurons for the first dense layer.
+and that's it, we just defined a problem with one dimension 'num_n_l1' where we are going to search for the best number of neurons for the first dense layer.
 
-Now we need to define how to run hour mnist model while taking in account this 'num_n_l1' parameter chosen by the search. Let's take an basic example from Keras documentation with a small modification to use the 'num_n_l1' parameter :
+Now we need to define how to run our mnist model while taking into account this 'num_n_l1' parameter chosen by the search. Let's take a basic example from Keras documentation with a small modification to use the 'num_n_l1' parameter :
 
 
 ::
