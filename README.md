@@ -5,8 +5,7 @@
 DeepHyper is a Python package and infrastructure that targets
 experimental research in DL search methods, scalability, and
 portability across HPC systems. It comprises three modules:
-benchmarks, a collection of extensible and diverse
-set of DL hyperparameter search problems; search, a set
+benchmarks, a collection of extensible and diverse DL hyperparameter search problems; search, a set
 of search algorithms for DL hyperparameter search; and
 evaluators, a common interface for evaluating hyperparameter
 configurations on HPC platforms.
