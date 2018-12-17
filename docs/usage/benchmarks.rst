@@ -41,9 +41,10 @@ For HPS a benchmark is defined by a problem definition and a function that runs 
 
 The problem contains the parameters you want to search over. They are defined
 by their name, their space and a default value for the starting point. Deephyper recognizes three types of parameters :
+
 - continuous
-- discrete ordinal (for instance integers)
-- discrete non-ordinal (for instance a list of tokens)
+- discrete ordinal (for instance integers)  
+- discrete non-ordinal (for instance a list of tokens)  
 For example if we want to create an hyper parameter search problem for Mnist dataset :
 
 
