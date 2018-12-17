@@ -6,7 +6,7 @@ Hyper Parameter Search
    :alt: search
    :align: center
 
-All searches can be used directly with the command line or inside an other python file.
+All searches can be used directly with the command line or inside another python file.
 To print the parameters of a search just run ``python search_script.py --help``. For example with AMBS run ``python ambs.py --help``.
 
 Asynchronous Model-Base Search (AMBS)
