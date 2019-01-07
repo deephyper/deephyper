@@ -40,22 +40,31 @@ class Cell:
             l.extend(b.action_nodes)
         return l
 
-    def set_outputs(self):
-        '''
-            Set the output rule for the cell.
-            Args:
-                - kind: 'stack', 'concat'
-        '''
-        output_node = Node(f'Cell_{self.num}_Output')
-        stacked_nodes = []
-        for b in self.blocks:
-            stacked_nodes.extend(b.outputs)
+    def set_outputs(self, node=None):
+        """Set output node of the current cell.
+            node (Node, optional): Defaults to None will create a Concatenation node for the last axis.
+        """
+        if node is None:
+            output_node = Node(f'Cell_{self.num}_Output')
+            stacked_nodes = self.get_blocks_output()
 
-        op = Concatenate(self.graph, output_node, stacked_nodes)
-        output_node.add_op(op)
-        output_node.set_op(0)
-
+            op = Concatenate(self.graph, output_node, stacked_nodes)
+            output_node.add_op(op)
+            output_node.set_op(0)
+        else:
+            output_node = node
         self.output = output_node
+
+    def get_blocks_output(self):
+        """Get outputs of all blocks of current cell.
+
+        Returns:
+            list(Node): outputs of blocks of the current cell.
+        """
+        l = []
+        for b in self.blocks:
+           l.extend(b.outputs)
+        return l
 
     def set_inputs(self, inputs):
         '''
