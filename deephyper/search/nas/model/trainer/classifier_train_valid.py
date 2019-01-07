@@ -98,9 +98,11 @@ class TrainerClassifierTrainValid:
 
         return y_orig, y_pred
 
-    def train(self):
+    def train(self, num_epochs=None):
+        num_epochs = self.num_epochs if num_epochs is None else num_epochs
+
         max_acc = 0
-        for i in range(self.num_epochs):
+        for i in range(num_epochs):
             self.model.fit(
                 self.dataset_train,
                 epochs=1,

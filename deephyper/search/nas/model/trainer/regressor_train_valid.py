@@ -116,7 +116,7 @@ class TrainerRegressorTrainValid:
             loss=self.loss_metric_name,
             metrics=self.metrics_name)
 
-    def predict(self, dataset='valid'):
+    def predict(self, dataset='valid', keep_normalize=False):
         assert dataset == 'valid' or dataset == 'train'
         if dataset == 'valid':
             y_pred = self.model.predict(self.dataset_valid, steps=self.valid_steps_per_epoch)
@@ -125,7 +125,7 @@ class TrainerRegressorTrainValid:
             y_pred = self.model.predict(self.dataset_train,
             steps=self.train_steps_per_epoch)
 
-        if self.preprocessing_func:
+        if self.preprocessing_func and not keep_normalize:
             val_pred = np.concatenate((data_X, y_pred), axis=1)
             val_orig = np.concatenate((data_X, data_Y), axis=1)
             val_pred_trans = self.preprocessor.inverse_transform(val_pred)
