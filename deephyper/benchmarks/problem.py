@@ -48,7 +48,7 @@ class HpProblem(Problem):
         Args:
             p_name (str): name of the parameter/dimension.
             p_space (Object): space corresponding to the new dimension.
-            default (): default value of the new dimension, it must be compatible with the p_space given.
+            default: default value of the new dimension, it must be compatible with the ``p_space`` given.
         """
         assert type(p_name) is str, f'p_name must be str type, got {type(p_name)} !'
         assert type(p_space) is tuple or type(p_space) is list, f'p_space must be tuple or list type, got {type(p_space)} !'
