@@ -45,6 +45,7 @@ by their name, their space and a default value for the starting point. Deephyper
 - continuous
 - discrete ordinal (for instance integers)  
 - discrete non-ordinal (for instance a list of tokens)  
+
 For example if we want to create an hyper parameter search problem for Mnist dataset :
 
 
