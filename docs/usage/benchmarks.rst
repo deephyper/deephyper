@@ -1,8 +1,8 @@
 Benchmarks
 **********
 
-Benchmarks are here for you to test the performance of different search algorithm and reproduce our results. They can also help you to test your installation of deephyper or
-discover the many parameters of a search. In deephyper we have two different kind of benchmarks. The first type is `hyper parameters search` benchmarks and the second type is  `neural architecture search` benchmarks. To see a full explanation about the different kind of search please refer to the following page `Search <search.html>`_ . To access the benchmarks from python just use ``deephyper.benchmarks.name``.
+Benchmarks are here for you to test the performance of different search algorithms and reproduce our results. They can also help you to test your installation of deephyper or
+discover the many parameters of a search. In deephyper we have two different kinds of benchmarks. The first type is `hyper parameters search` benchmarks and the second type is  `neural architecture search` benchmarks. To see a full explanation about the different kinds of search please refer to the following page `Search <search.html>`_ . To access the benchmarks from python just use ``deephyper.benchmarks.name``.
 
 Hyper Parameters Search (HPS)
 =============================
@@ -41,9 +41,10 @@ For HPS a benchmark is defined by a problem definition and a function that runs 
 
 The problem contains the parameters you want to search over. They are defined
 by their name, their space and a default value for the starting point. Deephyper recognizes three types of parameters :
+
 - continuous
-- discrete ordinal (for instance integers)
-- discrete non-ordinal (for instance a list of tokens)
+- discrete ordinal (for instance integers)  
+- discrete non-ordinal (for instance a list of tokens)  
 For example if we want to create an hyper parameter search problem for Mnist dataset :
 
 
@@ -55,9 +56,9 @@ For example if we want to create an hyper parameter search problem for Mnist dat
     Problem.add_dim(p_name='num_n_l1', p_space=[i for i in range(1, 30)], p_default=15)
 
 
-and that's it, we just defined a problem with one dimension 'num_n_l1' where we are going to search the best number of neurons for the first dense layer.
+and that's it, we just defined a problem with one dimension 'num_n_l1' where we are going to search for the best number of neurons for the first dense layer.
 
-Now we need to define how to run hour mnist model while taking in account this 'num_n_l1' parameter chosen by the search. Let's take an basic example from Keras documentation with a small modification to use the 'num_n_l1' parameter :
+Now we need to define how to run our mnist model while taking into account this 'num_n_l1' parameter chosen by the search. Let's take a basic example from Keras documentation with a small modification to use the 'num_n_l1' parameter :
 
 
 ::
@@ -136,6 +137,7 @@ To ensure that modules located alongside the `model_run.py` script are always im
 quick workaround is to explicitly add the problem folder to `sys.path` at the top of the script
 
 ::
+
     import os
     import sys
     here = os.path.dirname(os.path.abspath(__file__))
