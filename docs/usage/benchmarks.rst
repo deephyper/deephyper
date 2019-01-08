@@ -5,15 +5,19 @@ Benchmarks are here for you to test the performance of different search algorith
 discover the many parameters of a search. In deephyper we have two different kinds of benchmarks. The first type is `hyper parameters search` benchmarks and the second type is  `neural architecture search` benchmarks. To see a full explanation about the different kinds of search please refer to the following page `Search <search.html>`_ . To access the benchmarks from python just use ``deephyper.benchmarks.name``.
 
 Problem
-*******
+=======
 
 This class describes the most generic aspect of a problem. Basically we are using a python ``dict`` and adding key-values.
 
 .. autoclass:: deephyper.benchmarks.problem.Problem
    :members:
 
-Hyper Parameters Search (HPS)
+Hyperparameter Search Problem
 =============================
+Use this class to define a hyperparameter search problem.
+
+.. autoclass:: deephyper.benchmarks.problem.HpProblem
+   :members:
 
 ============== ================ ===============
       Hyper Parameters Search Benchmarks
