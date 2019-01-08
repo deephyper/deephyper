@@ -57,6 +57,8 @@ class HpProblem(Problem):
 
     @property
     def starting_point(self):
+        """Starting point of the search space.
+        """
         return (self.__def_values.values())
 
     @property
