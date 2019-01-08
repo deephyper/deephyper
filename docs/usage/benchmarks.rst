@@ -19,6 +19,9 @@ Use this class to define a hyperparameter search problem.
 .. autoclass:: deephyper.benchmarks.problem.HpProblem
    :members:
 
+Available Benchmarks
+====================
+
 ============== ================ ===============
       Hyper Parameters Search Benchmarks
 -----------------------------------------------
@@ -39,8 +42,8 @@ Use this class to define a hyperparameter search problem.
  rosen30
 ============== ================ ===============
 
-How to create a benchmark HPS
------------------------------
+How to create a new HPS problem
+===============================
 
 For HPS a benchmark is defined by a problem definition and a function that runs the model.
 
