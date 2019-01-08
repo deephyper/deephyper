@@ -1,3 +1,29 @@
+"""Asynchronous Model-Based Search.
+
+Arguments of AMBS :
+* ``learner``
+
+    * ``RF`` : Random Forest (default)
+    * ``ET`` : Extra Trees
+    * ``GBRT`` : Gradient Boosting Regression Trees
+    * ``DUMMY`` :
+    * ``GP`` : Gaussian process
+
+* ``liar-strategy``
+
+    * ``cl_max`` : (default)
+    * ``cl_min`` :
+    * ``cl_mean`` :
+
+* ``acq-func`` : Acquisition function
+
+    * ``LCB`` :
+    * ``EI`` :
+    * ``PI`` :
+    * ``gp_hedge`` : (default)
+"""
+
+
 import signal
 
 from deephyper.search.optimizers import Optimizer
