@@ -31,6 +31,7 @@ release = u'0.1'
 
 # -- General configuration ---------------------------------------------------
 
+autodoc_mock_imports = ['balsam', 'django']
 # If your documentation needs a minimal Sphinx version, state it here.
 #
 # needs_sphinx = '1.0'

@@ -4,6 +4,11 @@ Workflow
 On local computer
 =================
 
+TODO (see Quick Start for now)
+
+
+
+
 On super computer (Theta/Cooley)
 ================================
 

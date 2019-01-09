@@ -4,8 +4,23 @@ Benchmarks
 Benchmarks are here for you to test the performance of different search algorithms and reproduce our results. They can also help you to test your installation of deephyper or
 discover the many parameters of a search. In deephyper we have two different kinds of benchmarks. The first type is `hyper parameters search` benchmarks and the second type is  `neural architecture search` benchmarks. To see a full explanation about the different kinds of search please refer to the following page `Search <search.html>`_ . To access the benchmarks from python just use ``deephyper.benchmarks.name``.
 
-Hyper Parameters Search (HPS)
+Problem
+=======
+
+This class describes the most generic aspect of a problem. Basically we are using a python ``dict`` and adding key-values.
+
+.. autoclass:: deephyper.benchmarks.problem.Problem
+   :members:
+
+Hyperparameter Search Problem
 =============================
+Use this class to define a hyperparameter search problem.
+
+.. autoclass:: deephyper.benchmarks.problem.HpProblem
+   :members:
+
+Available Benchmarks
+====================
 
 ============== ================ ===============
       Hyper Parameters Search Benchmarks
@@ -27,8 +42,8 @@ Hyper Parameters Search (HPS)
  rosen30
 ============== ================ ===============
 
-How to create a benchmark HPS
------------------------------
+How to create a new HPS problem
+===============================
 
 For HPS a benchmark is defined by a problem definition and a function that runs the model.
 
@@ -45,6 +60,7 @@ by their name, their space and a default value for the starting point. Deephyper
 - continuous
 - discrete ordinal (for instance integers)  
 - discrete non-ordinal (for instance a list of tokens)  
+
 For example if we want to create an hyper parameter search problem for Mnist dataset :
 
 
