@@ -2,7 +2,7 @@ import numpy as np
 
 from mpi4py import MPI
 
-def final_reward_for_all_timesteps(reward_list, index_final_timestep, reward, episode_length):
+def reward_for_all_timesteps(reward_list, index_final_timestep, reward, episode_length):
     """
     Args:
         reward_list (list): list of length (episode_length) * number_of_episodes
@@ -18,7 +18,7 @@ def final_reward_for_all_timesteps(reward_list, index_final_timestep, reward, ep
         reward_list[index_final_timestep-i] = reward
     return episode_reward
 
-def episode_reward_for_final_timestep(reward_list, index_final_timestep, reward, episode_length):
+def reward_for_final_timestep(reward_list, index_final_timestep, reward, episode_length):
     """
     Args:
         reward_list (list): list of length (episode_length) * number_of_episodes
@@ -33,6 +33,23 @@ def episode_reward_for_final_timestep(reward_list, index_final_timestep, reward,
     for i in range(1, episode_length):
         reward_list[index_final_timestep-i] = 0
     reward_list[index_final_timestep] = reward
+    return episode_reward
+
+def reward_with_discounted_factor(reward_list, index_final_timestep, reward, episode_length, discounted_factor=0.98):
+    """
+    Args:
+        reward_list (list): list of length (episode_length) * number_of_episodes
+        index_final_timestep (int): index of final timestep of current episode in reward_list
+        reward (float): reward corresponding to the current episode
+        episode_length (int): length of the current episode
+
+    Return:
+        Reward of current episode.
+    """
+    episode_reward = reward
+    for i in range(0, episode_length):
+        reward_list[index_final_timestep-i] = reward
+        reward = reward*discounted_factor
     return episode_reward
 
 
@@ -112,8 +129,9 @@ def traj_segment_generator_ph(pi, env, horizon, stochastic, reward_affect_func):
     ac = env.action_space.sample() # not used, just so we have the datatype
     new = True # marks if we're on first timestep of an episode
     ob = env.reset()
-    c_vf, h_vf = np.zeros([1]+list(pi.input_c_vf.get_shape()[1:])), np.zeros([1]+list(pi.input_h_vf.get_shape()[1:]))
-    c_pol, h_pol = np.zeros([1]+list(pi.input_c_pol.get_shape()[1:])), np.zeros([1]+list(pi.input_h_pol.get_shape()[1:]))
+    np.random.seed(2019)
+    c_vf, h_vf = np.random.rand(*tuple([1]+list(pi.input_c_vf.get_shape()[1:]))), np.random.rand(*tuple([1]+list(pi.input_h_vf.get_shape()[1:])))
+    c_pol, h_pol = np.random.rand(*tuple([1]+list(pi.input_c_pol.get_shape()[1:]))), np.random.rand(*tuple([1]+list(pi.input_h_pol.get_shape()[1:])))
 
     cur_ep_ret = 0 # return in current episode
     cur_ep_len = 0 # len of current episode

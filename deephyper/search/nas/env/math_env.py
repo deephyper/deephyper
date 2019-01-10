@@ -32,7 +32,6 @@ class MathEnv(gym.Env):
         self.action_buffer.append(action)
 
         if len(self.action_buffer) < self.num_timesteps:
-            # new_episode = len(self.action_buffer) == 1
             terminal = False
             reward = 0
             # self._state = np.array([float(action)])
@@ -42,7 +41,6 @@ class MathEnv(gym.Env):
 
         conv_action = [arr[act] for act, arr in zip(self.action_buffer, VALS)]
 
-        # new_episode = False
         terminal = True
         self._state = np.array([1.])
         cfg = {}

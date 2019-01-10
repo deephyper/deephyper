@@ -1,3 +1,5 @@
+import multiprocessing as mp
+
 import time
 from collections import deque
 from pprint import pformat
@@ -8,14 +10,14 @@ from mpi4py import MPI
 
 import deephyper.search.nas.utils.common.tf_util as U
 from deephyper.search import util
-from deephyper.search.nas.agent.utils import (final_reward_for_all_timesteps,
-                                                traj_segment_generator)
+from deephyper.search.nas.agent.utils import (reward_for_final_timestep,
+                                              traj_segment_generator_ph)
 from deephyper.search.nas.utils import logger
+from deephyper.search.nas.utils._logging import JsonMessage as jm
 from deephyper.search.nas.utils.common import (Dataset, explained_variance,
-                                                 fmt_row, zipsame)
+                                               fmt_row, zipsame)
 from deephyper.search.nas.utils.common.mpi_adam import MpiAdam
 from deephyper.search.nas.utils.common.mpi_moments import mpi_moments
-from deephyper.search.nas.utils._logging import JsonMessage as jm
 
 dh_logger = util.conf_logger('deephyper.search.nas.agent.pposgd_sync')
 
@@ -40,11 +42,11 @@ def learn(env, policy_fn, *,
         clip_param, entcoeff, # clipping parameter epsilon, entropy coeff
         optim_epochs, optim_stepsize, optim_batchsize,# optimization hypers
         gamma, lam, # advantage estimation
-        max_timesteps=0, max_episodes=0, max_iters=0, max_seconds=0,  # time constraint
+        max_timesteps=0,  # time constraint
         callback=None, # you can do anything in the callback, since it takes locals(), globals()
         adam_epsilon=1e-5,
         schedule='constant', # annealing for stepsize parameters (epsilon and adam)
-        reward_rule=final_reward_for_all_timesteps
+        reward_rule=reward_for_final_timestep
         ):
 
     # Setup losses and stuff
@@ -60,6 +62,10 @@ def learn(env, policy_fn, *,
     clip_param = clip_param * lrmult # Annealed cliping parameter epislon
 
     ob = U.get_placeholder_cached(name="ob")
+    input_c_vf = U.get_placeholder_cached(name="c_vf")
+    input_h_vf = U.get_placeholder_cached(name="h_vf")
+    input_c_pol = U.get_placeholder_cached(name="c_pol")
+    input_h_pol = U.get_placeholder_cached(name="h_pol")
     ac = pi.pdtype.sample_placeholder([None])
 
     kloldnew = oldpi.pd.kl(pi.pd)
@@ -78,19 +84,21 @@ def learn(env, policy_fn, *,
     loss_names = ["pol_surr", "pol_entpen", "vf_loss", "kl", "ent"]
 
     var_list = pi.get_trainable_variables()
-    lossandgrad = U.function([ob, ac, atarg, ret, lrmult], losses + [U.flatgrad(total_loss, var_list)])
+    lossandgrad = U.function(
+        [ob, ac, atarg, ret, lrmult, input_c_vf, input_h_vf, input_c_pol, input_h_pol],
+        losses + [U.flatgrad(total_loss, var_list)])
     adam = MpiAdam(var_list, epsilon=adam_epsilon)
 
     assign_old_eq_new = U.function([],[], updates=[tf.assign(oldv, newv)
         for (oldv, newv) in zipsame(oldpi.get_variables(), pi.get_variables())])
-    compute_losses = U.function([ob, ac, atarg, ret, lrmult], losses)
+    compute_losses = U.function([ob, ac, atarg, ret, lrmult, input_c_vf, input_h_vf, input_c_pol, input_h_pol], losses)
 
     U.initialize()
     adam.sync()
 
     # Prepare for rollouts
     # ----------------------------------------
-    seg_gen = traj_segment_generator(pi, env, timesteps_per_actorbatch, stochastic=True,
+    seg_gen = traj_segment_generator_ph(pi, env, timesteps_per_actorbatch, stochastic=True,
         reward_affect_func=reward_rule)
 
     episodes_so_far = 0
@@ -100,18 +108,11 @@ def learn(env, policy_fn, *,
     lenbuffer = deque(maxlen=100) # rolling buffer for episode lengths
     rewbuffer = deque(maxlen=100) # rolling buffer for episode rewards
 
-    cond = sum([max_iters>0, max_timesteps>0, max_episodes>0, max_seconds>0])
-    assert cond==1, f"Only one time constraint permitted: cond={cond}, max_iters={max_iters}, max_timesteps={max_timesteps}, max_episodes={max_episodes}, max_seconds={max_seconds}"
+    assert max_timesteps > 0, f"The number of timesteps should be > 0 but is {max_timesteps}"
 
     while True:
         if callback: callback(locals(), globals())
         if max_timesteps and timesteps_so_far >= max_timesteps:
-            break
-        elif max_episodes and episodes_so_far >= max_episodes:
-            break
-        elif max_iters and iters_so_far >= max_iters:
-            break
-        elif max_seconds and time.time() - tstart >= max_seconds:
             break
 
         if schedule == 'constant':
@@ -129,9 +130,13 @@ def learn(env, policy_fn, *,
 
         # ob, ac, atarg, ret, td1ret = map(np.concatenate, (obs, acs, atargs, rets, td1rets))
         ob, ac, atarg, tdlamret = seg["ob"], seg["ac"], seg["adv"], seg["tdlamret"]
+        c_vf = np.squeeze(np.array([c for c, _ in seg["hs_vf"]]))
+        h_vf = np.squeeze(np.array([h for _, h in seg["hs_vf"]]))
+        c_pol = np.squeeze(np.array([c for c, _ in seg["hs_pol"]]))
+        h_pol = np.squeeze(np.array([h for _, h in seg["hs_pol"]]))
         vpredbefore = seg["vpred"] # predicted value function before udpate
         atarg = (atarg - atarg.mean()) / atarg.std() # standardized advantage function estimate
-        d = Dataset(dict(ob=ob, ac=ac, atarg=atarg, vtarg=tdlamret), shuffle=not pi.recurrent)
+        d = Dataset(dict(ob=ob, ac=ac, atarg=atarg, vtarg=tdlamret, c_vf=c_vf, h_vf=h_vf, c_pol=c_pol, h_pol=h_pol), shuffle=not pi.recurrent)
         # optim_batchsize = optim_batchsize or ob.shape[0]
         optim_batchsize = ob.shape[0]
 
@@ -143,17 +148,40 @@ def learn(env, policy_fn, *,
         # Here we do a bunch of optimization epochs over the data
         for _ in range(optim_epochs):
             losses = [] # list of tuples, each of which gives the loss for a minibatch
+            gradients = []
             for batch in d.iterate_once(optim_batchsize):
-                *newlosses, g = lossandgrad(batch["ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
-                adam.update(g, optim_stepsize * cur_lrmult)
-                losses.append(newlosses)
+                for i in range(len(batch["ob"])):
+                    *newlosses, g = lossandgrad(
+                        batch["ob"][i:i+1],
+                        batch["ac"][i:i+1],
+                        batch["atarg"][i:i+1],
+                        batch["vtarg"][i:i+1],
+                        cur_lrmult,
+                        batch["c_vf"][i:i+1],
+                        batch["h_vf"][i:i+1],
+                        batch["c_pol"][i:i+1],
+                        batch["h_pol"][i:i+1])
+                    losses.append(newlosses)
+                    gradients.append(g)
+            g = np.array(gradients).sum(0)
+            adam.update(g, optim_stepsize * cur_lrmult)
             logger.log(fmt_row(13, np.mean(losses, axis=0)))
 
         logger.log("Evaluating losses...")
         losses = []
         for batch in d.iterate_once(optim_batchsize):
-            newlosses = compute_losses(batch["ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
-            losses.append(newlosses)
+            for i in range(len(batch["ob"])):
+                newlosses = compute_losses(
+                    batch["ob"][i:i+1],
+                    batch["ac"][i:i+1],
+                    batch["atarg"][i:i+1],
+                    batch["vtarg"][i:i+1],
+                    cur_lrmult,
+                    batch["c_vf"][i:i+1],
+                    batch["h_vf"][i:i+1],
+                    batch["c_pol"][i:i+1],
+                    batch["h_pol"][i:i+1])
+                losses.append(newlosses)
         meanlosses,_,_ = mpi_moments(losses, axis=0)
         logger.log(fmt_row(13, meanlosses))
         for (lossval, name) in zipsame(meanlosses, loss_names):
