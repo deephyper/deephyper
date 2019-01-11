@@ -36,6 +36,7 @@ REQUIRED = [
     'mpi4py>=3.0.0',
     'joblib',
     # doc
+    'sphinx_bootstrap_theme',
     'sphinx_copybutton'
 ]
 

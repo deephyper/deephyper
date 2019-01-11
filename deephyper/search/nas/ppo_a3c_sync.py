@@ -9,7 +9,7 @@ from deephyper.search import util, Search
 
 from deephyper.search.nas.agent import nas_ppo_sync_a3c
 
-logger = util.conf_logger('deephyper.search.nas.nas_a3c_sync')
+logger = util.conf_logger('deephyper.search.nas.ppo_a3c_sync')
 
 def print_logs(runner):
     logger.debug('num_episodes = {}'.format(runner.global_episode))

@@ -42,7 +42,7 @@ Command Line
 ::
 
     cd deephyper/deephyper/search/nas
-    python nas_a3c_sync.py --problem deephyper.benchmark.nas.mnist1D.problem.Problem --run deephyper.search.nas.model.run.alpha.run
+    python ppo_a3c_sync.py --problem deephyper.benchmark.nas.mnist1D.problem.Problem --run deephyper.search.nas.model.run.alpha.run
 
 Python
 ------
