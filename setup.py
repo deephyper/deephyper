@@ -10,6 +10,7 @@ install_requires = [
     'tensorflow',
     'keras',
     'deap', # GA search
+    'numpy'
 ]
 
 extras_require = {
