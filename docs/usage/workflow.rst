@@ -4,6 +4,11 @@ Workflow
 On local computer
 =================
 
+TODO (see Quick Start for now)
+
+
+
+
 On super computer (Theta/Cooley)
 ================================
 
@@ -37,14 +42,14 @@ Now you can start or connect to the balsam database with
 
     source balsamactivate DB_NAME
 
-Before running a search you need to create an balsam application corresponding to the executable. Inside deephyper we provide different applications. For exemple AMBS search, you can access it through the environment variable ``DH_AMBS``.
+Before running a search you need to create an balsam application corresponding to the executable. Inside deephyper we provide different applications. For example, you can access AMBS search through the environment variable ``DH_AMBS``.
 
 ::
 
     balsam app --name APPLICATION_NAME --exec EXECUTABLE_PATH
 
 
-To see what are you available balsam applications do
+To see your available balsam applications do
 
 ::
 
@@ -69,4 +74,4 @@ You can finally run your search on Theta with
 
     balsam submit-launch -q QUEUE_NAME -n NUMBER_OF_NODES -t TIME_IN_MINUTES -A PROJECT_NAME --job-mode serial --wf-filter WORKFLOW_NAME
 
-This last command submit the theta job to the queue for you. The workflow is always an optional parameter. If you don't give a workflow filter the balsam launcher will start all available jobs inside the database.
+This last command submits the theta job to the queue for you. The workflow is always an optional parameter. If you don't give a workflow filter the balsam launcher will start all available jobs inside the database.

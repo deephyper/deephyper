@@ -18,7 +18,7 @@ class BalsamEvaluator(Evaluator):
     """Evaluator using balsam software.
 
     Documentation to balsam : https://balsam.readthedocs.io
-    This class help us to run task on HPC systems with more flexibility and ease of use.
+    This class helps us to run task on HPC systems with more flexibility and ease of use.
 
     Args:
         run_function (func): takes one parameter of type dict and returns a scalar value.

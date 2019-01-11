@@ -17,7 +17,7 @@ NAS A3C (PPO) Asynchronous
    :alt: nas a3c ppo Synchronous
    :align: center
 
-.. automodule:: deephyper.search.nas.nas_a3c_async
+.. automodule:: deephyper.search.nas.ppo_a3c_async
    :members:
 
 Run locally
@@ -39,7 +39,7 @@ NAS A3C (PPO) Synchronous
    :alt: nas a3c ppo Synchronous
    :align: center
 
-.. automodule:: deephyper.search.nas.nas_a3c_sync
+.. automodule:: deephyper.search.nas.ppo_a3c_sync
    :members:
 
 
@@ -60,5 +60,5 @@ It is important to use the subprocess evaluator.
 NAS Random
 ==========
 
-.. automodule:: deephyper.search.nas.nas_random
+.. automodule:: deephyper.search.nas.random
    :members:
