@@ -11,6 +11,8 @@ from shutil import rmtree
 
 from setuptools import find_packages, setup, Command
 
+on_rtd = os.environ.get('READTHEDOCS') == 'True'
+
 # Package meta-data.
 NAME = 'deephyper'
 DESCRIPTION = 'Scalable asynchronous neural architecture and hyperparameter search for deep neural networks.'
@@ -33,9 +35,11 @@ REQUIRED = [
     # nas
     'gym',
     'networkx',
-    'mpi4py',
     'joblib'
 ]
+
+if not on_rtd:
+    REQUIRED.append('mpi4py>=3.0.0')
 
 # What packages are optional?
 EXTRAS = {
