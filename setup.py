@@ -18,7 +18,7 @@ extras_require = {
 
 setup(
     name='Deephyper',
-    version='0.1dev',
+    version='0.0.3',
     packages=['deephyper',],
     license='',
     long_description=open('README.md').read(),
