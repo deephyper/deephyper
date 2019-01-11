@@ -148,7 +148,9 @@ class KerasStructure(Structure):
         """
 
         output_tensor = create_tensor_aux(self.graph, self.output_node)
+        print('input of output layer shape: ', output_tensor.get_shape())
         output_tensor = keras.layers.Dense(self.__output_shape[0], activation=activation)(output_tensor)
+        print('output of output layer shape: ', output_tensor.get_shape())
         input_tensor = self.input_node._tensor
         return keras.Model(inputs=input_tensor, outputs=output_tensor)
 
@@ -189,28 +191,3 @@ def get_output_nodes(graph):
         if len(list(graph.successors(n))) == 0:
             output_nodes.append(n)
     return output_nodes
-
-
-def test_keras_structure():
-    import tensorflow as tf
-    import numpy as np
-    from random import random
-
-
-    structure = create_seq_struct_full_skipco((3,), (2,), create_dense_cell_type2, 5)
-    ops = [random() for _ in range(structure.num_nodes)]
-    print(f'ops: {ops}')
-    print(f'num ops: {len(ops)}')
-
-    structure.set_ops(ops)
-    structure.draw_graphviz('test_keras.dot')
-    model = structure.create_model()
-
-    data = np.random.random((1000, 3))
-    result = model.predict(data, batch_size=32)
-    print(result)
-
-
-
-if __name__ == '__main__':
-    test_keras_structure()

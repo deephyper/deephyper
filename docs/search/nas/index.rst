@@ -43,12 +43,18 @@ NAS A3C (PPO) Synchronous
    :members:
 
 
-With n agent where n = np because all the agent are going to be synchronized with the first agent.
+::
+
+    python -m deephyper.search.nas.nas_a3c_sync --evaluator subprocess --problem 'deephyper.benchmark.nas.linearReg.problem.Problem' --run 'deephyper.search.nas.model.run.alpha.run'
+
+or with MPI to launch n agents, where n = np because all the agent are
+ going to be synchronized with the first agent:
 
 ::
 
     mpirun -np 2 python nas_a3c_async.py --problem deephyper.benchmark.nas.mnist1D.problem.Problem --run deephyper.search.nas.model.run.alpha.run --evaluator subprocess
 
+It is important to use the subprocess evaluator.
 
 
 NAS Random

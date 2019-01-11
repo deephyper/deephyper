@@ -18,7 +18,7 @@ Problem.add_dim('create_structure', {
 })
 
 Problem.add_dim('hyperparameters', {
-    'batch_size': 100,
+    'batch_size': 128,
     'learning_rate': 0.01,
     'optimizer': 'adam',
     'num_epochs': 10,

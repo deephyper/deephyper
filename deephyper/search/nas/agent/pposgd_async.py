@@ -8,14 +8,14 @@ from mpi4py import MPI
 
 import deephyper.search.nas.utils.common.tf_util as U
 from deephyper.search import util
-from deephyper.search.nas.agent.utils import (final_reward_for_all_timesteps,
-                                                traj_segment_generator)
+from deephyper.search.nas.agent.utils import (reward_for_final_timestep,
+                                              traj_segment_generator)
 from deephyper.search.nas.utils import logger
+from deephyper.search.nas.utils._logging import JsonMessage as jm
 from deephyper.search.nas.utils.common import (Dataset, explained_variance,
-                                                 fmt_row, zipsame)
+                                               fmt_row, zipsame)
 from deephyper.search.nas.utils.common.mpi_adam_async import MpiAdamAsync
 from deephyper.search.nas.utils.common.mpi_moments import mpi_moments
-from deephyper.search.nas.utils._logging import JsonMessage as jm
 
 dh_logger = util.conf_logger('deephyper.search.nas.agent.pposgd_async')
 
@@ -44,7 +44,7 @@ def learn(env, policy_fn, *,
         callback=None, # you can do anything in the callback, since it takes locals(), globals()
         adam_epsilon=1e-5,
         schedule='constant', # annealing for stepsize parameters (epsilon and adam)
-        reward_rule=final_reward_for_all_timesteps
+        reward_rule=reward_for_final_timestep
         ):
 
     rank = MPI.COMM_WORLD.Get_rank()

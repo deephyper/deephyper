@@ -115,7 +115,7 @@ class Conv1D(Operation):
     def __call__(self, inputs, **kwargs):
         assert len(inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when only 1 is required.'
         inpt = inputs[0]
-        print('shape input: ', inpt.get_shape())
+        print(f'{str(self)} shape input: ', inpt.get_shape())
         if len(inpt.get_shape()) == 2:
             out = keras.layers.Reshape((inpt.get_shape()[1], 1))(inpt)
         else:
@@ -125,7 +125,7 @@ class Conv1D(Operation):
             kernel_size=self.filter_size,
             strides=self.strides,
             padding=self.padding)(out)
-        print('shape out: ', out.get_shape())
+        print(f'{str(self)} shape out: ', out.get_shape())
         return out
 
 
