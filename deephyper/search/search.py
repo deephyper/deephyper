@@ -2,7 +2,7 @@ import argparse
 from pprint import pformat
 import logging
 from deephyper.search import util
-from deephyper.evaluators import Evaluator
+from deephyper.evaluator import Evaluator
 
 logger = logging.getLogger(__name__)
 
@@ -15,14 +15,14 @@ class Search:
     """Abstract representation of a black box optimization search.
 
     A search comprises 3 main objects: a problem, a run function and an evaluator:
-        The `problem` class defines the optimization problem, providing details like the search domain.  (You can find many kind of problems in `deephyper.benchmarks`)
+        The `problem` class defines the optimization problem, providing details like the search domain.  (You can find many kind of problems in `deephyper.benchmark`)
         The `run` function executes the black box function/model and returns the objective value which is to be optimized.
         The `evaluator` abstracts the run time environment (local, supercomputer...etc) in which run functions are executed.
 
     Args:
         problem (str):
         run (str):
-        evaluator (str): in ['balsam', 'local']
+        evaluator (str): in ['balsam', 'subprocess', 'processPool', 'threadPool']
     """
     def __init__(self, problem, run, evaluator, **kwargs):
         _args = vars(self.parse_args(''))
@@ -59,10 +59,10 @@ class Search:
     def _base_parser():
         parser = argparse.ArgumentParser()
         parser.add_argument("--problem",
-            default="deephyper.benchmarks.rosen2.problem.Problem"
+            default="deephyper.benchmark.rosen2.problem.Problem"
         )
         parser.add_argument("--run",
-            default="deephyper.benchmarks.rosen2.rosenbrock2.run"
+            default="deephyper.benchmark.rosen2.rosenbrock2.run"
         )
         parser.add_argument("--backend",
             default='tensorflow',
@@ -78,6 +78,8 @@ class Search:
             help="Kill evals that take longer than this"
         )
         parser.add_argument('--evaluator',
-            default='local', help="'balsam' or 'local'"
+            default='subprocess',
+            choices=['balsam', 'subprocess', 'processPool', 'threadPool'],
+            help="The evaluator is an object used to run the model."
         )
         return parser

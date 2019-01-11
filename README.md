@@ -17,17 +17,19 @@ Deephyper documentation is on : [ReadTheDocs](https://deephyper.readthedocs.io)
 # Directory structure
 
 ```
-benchmarks
-    directory for test problems
-evaluator
-    directory for evaluators (specific objects which help us to abstract task submission)
-search
+benchmarks/
+    directory for problems
+experiments/
+    directory for saving the running the experiments and storing the results
+search/
     directory for search applications
+    hps/
+        hyperparameter search applications
+    nas/
+        neural architecture search applications
 ```
 
 # Install instructions
-
-It's better to install deephyper in a virtual environment.
 
 ```
 cd deephyper
@@ -66,7 +68,7 @@ Patches are much appreciated on the software itself as well as documentation.
 Optionally, please include in your first patch a credit for yourself in the
 list above.
 
-# Acknowledgements 
+# Acknowledgements
 
 * Scalable Data-Efficient Learning for Scientific Domains, U.S. Department of Energy 2018 Early Career Award funded by the Advanced Scientific Computing Research program within the DOE Office of Science (2018--Present)
 * Argonne Leadership Computing Facility (2018--Present)
