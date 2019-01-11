@@ -33,16 +33,21 @@ REQUIRED = [
     # nas
     'gym',
     'networkx',
-    'mpi4py>=3.0.0',
-    'joblib',
-    # doc
-    'sphinx_bootstrap_theme',
-    'sphinx_copybutton'
+    'mpi4py',
+    'joblib'
 ]
 
 # What packages are optional?
 EXTRAS = {
     # 'fancy feature': ['django'],
+    'tests': [
+        'pytest',
+    ],
+    'docs': [
+        'sphinx',
+        'sphinx_bootstrap_theme',
+        'sphinx_copybutton'
+    ]
 }
 
 # The rest you shouldn't have to touch too much :)
