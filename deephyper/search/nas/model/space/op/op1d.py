@@ -110,10 +110,65 @@ class Conv1D(Operation):
         self.padding = padding
 
     def __str__(self):
-        return f'Conv1D_{self.filter_size}_{self.num_filters}'
+        return f'{type(self).__name__}_{self.filter_size}_{self.num_filters}'
 
     def __call__(self, inputs, **kwargs):
-        assert len(inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when 1 is required.'
+        assert len(inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when only 1 is required.'
         inpt = inputs[0]
-        out = keras.layers.Conv1D(filters=self.num_filters, kernel_size=self.filter_size, strides=self.strides, padding=self.padding)(inpt)
+        print(f'{str(self)} shape input: ', inpt.get_shape())
+        if len(inpt.get_shape()) == 2:
+            out = keras.layers.Reshape((inpt.get_shape()[1], 1))(inpt)
+        else:
+            out = inpt
+        out = keras.layers.Conv1D(
+            filters=self.num_filters,
+            kernel_size=self.filter_size,
+            strides=self.strides,
+            padding=self.padding)(out)
+        print(f'{str(self)} shape out: ', out.get_shape())
+        return out
+
+
+class MaxPooling1D(Operation):
+    """MaxPooling over one dimension.
+
+    Args:
+        pool_size ([type]): [description]
+        strides (int, optional): Defaults to 1. [description]
+        padding (str, optional): Defaults to 'valid'. [description]
+        data_format (str, optional): Defaults to 'channels_last'. [description]
+    """
+    def __init__(self, pool_size, strides=1, padding='valid', data_format='channels_last'):
+        self.pool_size = pool_size
+        self.strides = strides
+        self.padding = padding
+        self.data_format = data_format
+
+    def __str__(self):
+        return f'{type(self).__name__}_{self.pool_size}_{self.padding}'
+
+    def __call__(self, inputs, **kwargs):
+        assert len(inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when only 1 is required.'
+        out = keras.layers.MaxPooling1D(
+            pool_size=self.pool_size,
+            strides=self.strides,
+            padding=self.padding,
+            data_format=self.data_format
+        )
+        return out
+
+class Flatten(Operation):
+    """Flatten operation.
+
+    Args:
+        data_format (str, optional): Defaults to None.
+    """
+    def __init__(self, data_format=None):
+        self.data_format = data_format
+
+    def __call__(self, inputs, **kwargs):
+        assert len(inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when only 1 is required.'
+        out = keras.layers.Flatten(
+            data_format=self.data_format
+        )
         return out

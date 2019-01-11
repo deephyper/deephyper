@@ -7,7 +7,7 @@ from mpi4py import MPI
 import deephyper.search.nas.utils.common.tf_util as U
 from deephyper.evaluator import Evaluator
 from deephyper.search.nas.agent import pposgd_sync
-from deephyper.search.nas.agent.policy import lstm
+from deephyper.search.nas.agent.policy import lstm_ph
 from deephyper.search.nas.env import NasEnv
 from  deephyper.search.nas.utils import bench, logger
 from  deephyper.search.nas.utils.common import set_global_seeds
@@ -16,7 +16,7 @@ from  deephyper.search.nas.utils.common import set_global_seeds
 def train(num_episodes, seed, space, evaluator, num_episodes_per_batch, reward_rule):
 
     rank = MPI.COMM_WORLD.Get_rank()
-    env_id = rank
+
     sess = U.single_threaded_session()
     sess.__enter__()
     if rank == 0:
@@ -38,9 +38,7 @@ def train(num_episodes, seed, space, evaluator, num_episodes_per_batch, reward_r
     env = NasEnv(space, evaluator, structure)
 
     def policy_fn(name, ob_space, ac_space): #pylint: disable=W0613
-        return lstm.LstmPolicy(name=name, ob_space=ob_space, ac_space=ac_space,
-            num_units=32)
-
+        return lstm_ph.LstmPolicy(name=name, ob_space=ob_space, ac_space=ac_space, num_units=32)
 
     pposgd_sync.learn(env, policy_fn,
         max_timesteps=num_timesteps,

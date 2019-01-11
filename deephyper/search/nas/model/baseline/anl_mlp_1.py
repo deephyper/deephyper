@@ -1,13 +1,14 @@
 import tensorflow as tf
 
-from deephyper.search.nas.model.space.op.basic import Connect
-from deephyper.search.nas.model.space.op.op1d import Dense, dropout_ops, Identity
-
-from deephyper.search.nas.model.space.node import Node
+from deephyper.search.nas.model.baseline.util.struct import create_seq_struct
+from deephyper.search.nas.model.baseline.util.struct import create_struct_full_skipco
 from deephyper.search.nas.model.space.block import Block
 from deephyper.search.nas.model.space.cell import Cell
+from deephyper.search.nas.model.space.node import Node
+from deephyper.search.nas.model.space.op.basic import Connect
+from deephyper.search.nas.model.space.op.op1d import (Dense, Identity,
+                                                      dropout_ops)
 
-from deephyper.search.nas.cell.structure import create_seq_structure
 
 def create_dense_cell_type1(input_nodes):
     """Dense type 1
@@ -41,47 +42,32 @@ def create_dense_cell_type1(input_nodes):
 
         # third node of block
         n3 = Node('N3')
-        for op in mlp_op_list:
-            n3.add_op(op)
-
-        # fourth node of block
-        n4 = Node('N4')
-        for op in mlp_op_list:
-            n4.add_op(op)
-
-        # fifth
-        n5 = Node('N5')
         for op in dropout_ops:
-            n5.add_op(op)
+            n3.add_op(op)
 
         # 5 Blocks
         block = Block()
         block.add_node(n1)
         block.add_node(n2)
         block.add_node(n3)
-        block.add_node(n4)
-        block.add_node(n5)
 
         block.add_edge(n1, n2)
         block.add_edge(n2, n3)
-        block.add_edge(n3, n4)
-        block.add_edge(n4, n5)
         return block
 
     block1 = create_block()
     block2 = create_block()
-    block3 = create_block()
-    block4 = create_block()
-    block5 = create_block()
 
     cell.add_block(block1)
     cell.add_block(block2)
-    cell.add_block(block3)
-    cell.add_block(block4)
-    cell.add_block(block5)
 
     cell.set_outputs()
     return cell
 
-def create_structure(input_tensor, num_cells):
-    return create_seq_structure(input_tensor, create_dense_cell_type1, num_cells)
+def create_structure(input_shape=(2,), output_shape=(1,), num_cells=2):
+    # return create_seq_struct(
+    return create_struct_full_skipco(
+        input_shape,
+        output_shape,
+        create_dense_cell_type1,
+        num_cells)

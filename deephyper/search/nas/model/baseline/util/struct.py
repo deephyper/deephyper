@@ -45,7 +45,7 @@ def create_seq_struct(input_shape, output_shape, create_cell, num_cells):
     network.add_cell_f(func)
 
     func = lambda x: create_cell(x)
-    for i in range(num_cells-1):
+    for _ in range(num_cells-1):
         network.add_cell_f(func, num=1)
 
     return network

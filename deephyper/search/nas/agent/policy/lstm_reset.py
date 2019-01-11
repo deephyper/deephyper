@@ -8,7 +8,7 @@ from  deephyper.search.nas.utils.common.mpi_running_mean_std import \
 
 
 class LstmPolicy(object):
-    recurrent = True
+    recurrent = False
     def __init__(self, name, *args, **kwargs):
         with tf.variable_scope(name):
             self._init(*args, **kwargs)
@@ -17,10 +17,11 @@ class LstmPolicy(object):
     def _init(self, ob_space, ac_space, num_units, gaussian_fixed_var=True, async_update=False):
         assert isinstance(ob_space, gym.spaces.Box)
 
-        self.pdtype = pdtype = make_pdtype(ac_space) # pd: probability distribution
+        self.pdtype = pdtype = make_pdtype(ac_space)
         sequence_length = None
 
         ob = U.get_placeholder(name="ob", dtype=tf.float32, shape=[sequence_length] + list(ob_space.shape))
+
         full_path_is_done = tf.get_variable("full_path_is_done", dtype=tf.bool,
                 initializer=True, trainable=False)
 
@@ -37,16 +38,22 @@ class LstmPolicy(object):
                 initializer=U.normc_initializer(1.0))
 
             init_lstm_state = lstm.zero_state(1, dtype=tf.float32)
+            init_t = tf.get_variable('init_t', dtype=tf.float32, initializer=init_lstm_state, trainable=False)
+
             v_lstm_state = tf.get_variable("v_lstm_state", dtype=tf.float32,
                 initializer=init_lstm_state, trainable=False)
+
             ba_state = tf.get_variable("ba_state", dtype=tf.float32,
                 initializer=init_lstm_state, trainable=False)
+
             assign_ba_state = tf.cond(full_path_is_done,
-                lambda: tf.assign(ba_state, v_lstm_state), # TRUE
+                lambda: tf.assign(ba_state, init_t), # TRUE
                 lambda: tf.assign(ba_state, ba_state)) # FALSE
+
             lstm_state = tf.cond(tf.equal(tf.shape(ob)[0], 1),
                 lambda: v_lstm_state,
                 lambda: ba_state)
+
             assign_fpid = tf.assign(full_path_is_done, tf.math.greater(tf.shape(ob)[0], 1))
 
             with tf.control_dependencies([assign_ba_state]):
@@ -71,16 +78,22 @@ class LstmPolicy(object):
                 state_is_tuple=False)
 
             init_lstm_state = lstm.zero_state(1, dtype=tf.float32)
+            init_t = tf.get_variable('init_t', dtype=tf.float32, initializer=init_lstm_state, trainable=False)
+
             v_lstm_state = tf.get_variable("v_lstm_state", dtype=tf.float32,
                 initializer=init_lstm_state, trainable=False)
+
             ba_state = tf.get_variable("ba_state", dtype=tf.float32,
                 initializer=init_lstm_state, trainable=False)
+
             assign_ba_state = tf.cond(full_path_is_done,
-                lambda: tf.assign(ba_state, v_lstm_state), # TRUE
+                lambda: tf.assign(ba_state, init_t), # TRUE
                 lambda: tf.assign(ba_state, ba_state)) # FALSE
+
             lstm_state = tf.cond(tf.equal(tf.shape(ob)[0], 1),
                 lambda: v_lstm_state,
                 lambda: ba_state)
+
             assign_fpid = tf.assign(full_path_is_done, tf.math.greater(tf.shape(ob)[0], 1))
 
             with tf.control_dependencies([assign_ba_state]):

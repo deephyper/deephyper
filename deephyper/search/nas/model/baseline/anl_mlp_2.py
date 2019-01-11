@@ -21,7 +21,7 @@ def create_dense_cell_type2(input_nodes):
     cell = Cell(input_nodes)
 
     # first node of block
-    n1 = Node('N1')
+    n1 = Node('N_0')
     for inpt in input_nodes:
         n1.add_op(Connect(cell.graph, inpt, n1))
 
@@ -35,12 +35,12 @@ def create_dense_cell_type2(input_nodes):
     mlp_op_list.append(Dense(80, tf.nn.relu))
     mlp_op_list.append(Dense(160, tf.nn.relu))
     mlp_op_list.append(Dense(320, tf.nn.relu))
-    n2 = Node('N2')
+    n2 = Node('N_1')
     for op in mlp_op_list:
         n2.add_op(op)
 
     # third
-    n3 = Node('N3')
+    n3 = Node('N_2')
     drop_ops = []
     drop_ops.extend(dropout_ops)
     for op in drop_ops:
@@ -66,13 +66,3 @@ def create_structure(input_shape=(2,), output_shape=(1,), num_cells=2):
         output_shape,
         create_dense_cell_type2,
         num_cells)
-
-def test_1():
-    from random import random
-    structure = create_structure((10,), (1,), 10)
-    ops = [random() for i in range(structure.num_nodes)]
-    structure.set_ops(ops)
-    structure.draw_graphviz('graph.dot')
-
-if __name__ == '__main__':
-    test_1()

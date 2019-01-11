@@ -77,17 +77,22 @@ class Optimizer:
         return [self.to_dict(x) for x in XX]
 
     def tell(self, xy_data):
-        assert isinstance(xy_data, list)
+        assert isinstance(xy_data, list), f"where type(xy_data)=={type(xy_data)}"
         maxval = max(self._optimizer.yi) if self._optimizer.yi else 0.0
         for x,y in xy_data:
             key = tuple(x[k] for k in self.space)
-            assert key in self.evals
+            assert key in self.evals, f"where key=={key} and self.evals=={self.evals}"
             logger.debug(f'tell: {x} --> {key}: evaluated objective: {y}')
             self.evals[key] = (y if y < float_info.max else maxval)
 
         self._optimizer.Xi = []
         self._optimizer.yi = []
         XX, YY = self._xy_from_dict()
-        assert len(XX) == len(YY) == self.counter
+        assert len(XX) == len(YY) == self.counter, (
+            f"where len(XX)=={len(XX)},"
+            f"len(YY)=={len(YY)}, self.counter=={self.counter}")
         self._optimizer.tell(XX, YY)
-        assert len(self._optimizer.Xi) == len(self._optimizer.yi) == self.counter
+        assert len(self._optimizer.Xi) == len(self._optimizer.yi) == self.counter, (
+            f"where len(self._optimizer.Xi)=={len(self._optimizer.Xi)}, "
+            f"len(self._optimizer.yi)=={len(self._optimizer.yi)},"
+            f"self.counter=={self.counter}")

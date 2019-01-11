@@ -69,7 +69,11 @@ class TrainerRegressorTrainValid:
         self.train_size = np.shape(self.train_X)[0]
         self.valid_size = np.shape(self.valid_X)[0]
         self.train_steps_per_epoch = self.train_size // self.batch_size
+        if self.train_steps_per_epoch * self.batch_size < self.train_size:
+            self.train_steps_per_epoch += 1
         self.valid_steps_per_epoch = self.valid_size // self.batch_size
+        if self.valid_steps_per_epoch * self.batch_size < self.valid_size:
+            self.valid_steps_per_epoch += 1
 
     def preprocess_data(self):
         assert self.preprocessor is None, 'You can only preprocess the data one time.'
@@ -95,15 +99,13 @@ class TrainerRegressorTrainValid:
     def set_dataset_train(self):
         self.dataset_train = tf.data.Dataset.from_tensor_slices((self.train_X,
             self.train_Y))
-        self.dataset_train = self.dataset_train.batch(self.batch_size)
-        self.dataset_train = self.dataset_train.repeat()
+        self.dataset_train = self.dataset_train.batch(self.batch_size).repeat()
 
     def set_dataset_valid(self):
         self.dataset_valid = tf.data.Dataset.from_tensor_slices((self.valid_X, self.valid_Y))
         self.dataset_valid = self.dataset_valid.batch(self.batch_size).repeat()
 
     def model_compile(self):
-
         optimizer_fn = U.selectOptimizer_keras(self.optimizer_name)
 
         decay_rate = self.learning_rate / self.num_epochs
@@ -114,16 +116,16 @@ class TrainerRegressorTrainValid:
             loss=self.loss_metric_name,
             metrics=self.metrics_name)
 
-    def predict(self, dataset='valid'):
+    def predict(self, dataset='valid', keep_normalize=False):
         assert dataset == 'valid' or dataset == 'train'
         if dataset == 'valid':
             y_pred = self.model.predict(self.dataset_valid, steps=self.valid_steps_per_epoch)
             data_X, data_Y = self.valid_X, self.valid_Y
         else:
             y_pred = self.model.predict(self.dataset_train,
-            steps=self.valid_steps_per_epoch)
+            steps=self.train_steps_per_epoch)
 
-        if self.preprocessing_func:
+        if self.preprocessing_func and not keep_normalize:
             val_pred = np.concatenate((data_X, y_pred), axis=1)
             val_orig = np.concatenate((data_X, data_Y), axis=1)
             val_pred_trans = self.preprocessor.inverse_transform(val_pred)

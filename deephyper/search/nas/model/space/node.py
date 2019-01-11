@@ -29,9 +29,9 @@ class Node:
 
     def __str__(self):
         if self._index != None:
-            return f'{self.name}_{self._num}[{str(self._ops[self._index])}]'
+            return f'{self.name}({self._num})[{str(self._ops[self._index])}]'
         else:
-            return f'{self.name}_{self._num}'
+            return f'{self.name}({self._num})'
 
     def add_op(self, op):
         self._ops.append(op)
@@ -43,8 +43,8 @@ class Node:
         self.get_op(index).is_set()
 
     def get_op(self, index):
-        assert type(index) is float or type(index) is int, f'found type is : {type(index)}'
-        if type(index) is float:
+        assert 'float' in str(type(index)) or type(index) is int, f'found type is : {type(index)}'
+        if 'float' in str(type(index)):
             assert 0. <= index and index <= 1.
             self._index = int(int((index * (len(self._ops) - 1) + 0.5) * 10) / 10)
         else:
