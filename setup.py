@@ -1,4 +1,4 @@
-from distutils.core import setup
+from setuptools import setup
 
 
 # pip3 install -U Sphinx
