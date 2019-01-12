@@ -1,7 +1,8 @@
 <p align="center">
-![Alt text](docs/images/deephyper.png?raw=true "DeepHyper")
 <img src="docs/images/deephyper.png">
 </p>
+
+![Alt text](docs/images/deephyper.png?raw=true "DeepHyper")
 
 # What is DeepHyper?
 
