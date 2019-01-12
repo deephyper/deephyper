@@ -2,8 +2,6 @@
 <img src="docs/images/deephyper.png">
 </p>
 
-![Alt text](docs/images/deephyper.png?raw=true "DeepHyper")
-
 # What is DeepHyper?
 
 DeepHyper is a Python package and infrastructure that targets
