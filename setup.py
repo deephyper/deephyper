@@ -40,6 +40,8 @@ REQUIRED = [
 
 if not on_rtd:
     REQUIRED.append('mpi4py>=3.0.0')
+else:
+    REQUIRED.append('sphinx_bootstrap_theme')
 
 # What packages are optional?
 EXTRAS = {
