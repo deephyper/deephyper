@@ -1,5 +1,7 @@
 ![Alt text](docs/images/deephyper.png?raw=true "DeepHyper")
 
+[![Documentation Status](https://readthedocs.org/projects/deephyper/badge/?version=latest)](https://deephyper.readthedocs.io/en/latest/?badge=latest)
+
 # What is DeepHyper?
 
 DeepHyper is a Python package and infrastructure that targets
