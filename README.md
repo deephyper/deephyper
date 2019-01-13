@@ -1,5 +1,5 @@
 <p align="center">
-<img src="docs/images/deephyper.png">
+<img src="docs/_static/logo/medium.png">
 </p>
 
 [![Documentation Status](https://readthedocs.org/projects/deephyper/badge/?version=latest)](https://deephyper.readthedocs.io/en/latest/?badge=latest)

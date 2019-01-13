@@ -14,8 +14,11 @@
 #
 import os
 import sys
-import sphinx_bootstrap_theme
+
 sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('_static'))
+
+import sphinx_bootstrap_theme
 
 
 # -- Project information -----------------------------------------------------
@@ -97,7 +100,7 @@ html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-html_logo = "images/deephyper.png"
+html_logo = "_static/logo/medium.png"
 html_theme_options = {
     # 'bootswatch_theme': "cosmo",
     'bootswatch_theme': "paper",
