@@ -10,7 +10,7 @@ DeepHyper
 Scalable Asynchronous Neural Architecture and Hyperparameter Search for Deep Neural Networks
 --------------------------------------------------------------------------------------------
 
-.. image:: logo/medium.png
+.. image:: _static/logo/medium.png
    :scale: 100%
    :alt: logo
    :align: center

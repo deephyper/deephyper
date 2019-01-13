@@ -27,14 +27,17 @@ copyright = u'2018, Argonne'
 author = u'Argonne'
 
 # The short X.Y version
-version = u'0.0.4'
+about = {}
+with open(f'../deephyper/__version__.py') as f:
+        exec(f.read(), about)
+
+version = about['__version__']
 # The full version, including alpha/beta/rc tags
-release = u'alpha v0.0.4'
+release = f'alpha v{about["__version__"]}'
 
 
 # -- General configuration ---------------------------------------------------
 
-autodoc_mock_imports = ['balsam', 'django', 'mpi4py']
 # If your documentation needs a minimal Sphinx version, state it here.
 #
 # needs_sphinx = '1.0'
@@ -99,7 +102,7 @@ html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-html_logo = "logo/medium.png"
+html_logo = "_static/logo/medium.png"
 html_theme_options = {
     # 'bootswatch_theme': "cosmo",
     'bootswatch_theme': "paper",
