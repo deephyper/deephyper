@@ -3,11 +3,15 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Deephyper - a high level deep learning framework
-************************************************
+*********
+DeepHyper
+*********
 
-.. image:: _static/logo.png
-   :scale: 20%
+Scalable Asynchronous Neural Architecture and Hyperparameter Search for Deep Neural Networks
+--------------------------------------------------------------------------------------------
+
+.. image:: _static/deephyper.png
+   :scale: 100%
    :alt: logo
    :align: center
 

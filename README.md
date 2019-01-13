@@ -1,16 +1,20 @@
-![Alt text](docs/images/deephyper.png?raw=true "DeepHyper")
+<p align="center">
+<img src="docs/images/deephyper.png">
+</p>
 
 [![Documentation Status](https://readthedocs.org/projects/deephyper/badge/?version=latest)](https://deephyper.readthedocs.io/en/latest/?badge=latest)
 
 # What is DeepHyper?
 
-DeepHyper is a Python package and infrastructure that targets
-experimental research in DL search methods, scalability, and
-portability across HPC systems. It comprises three modules:
-benchmarks, a collection of extensible and diverse DL hyperparameter search problems; search, a set
-of search algorithms for DL hyperparameter search; and
-evaluators, a common interface for evaluating hyperparameter
-configurations on HPC platforms.
+DeepHyper is a Python package that comprises two components: 1) Neural architecture search is an approach 
+for automatically searching for high-performing the deep neural network architecture. 2) Hyperparameter search 
+is an approach for automatically searching for high-performing hyperparameters for a given deep neural network. 
+DeepHyper provides an infrastructure that targets experimental research in neural architecture and hyperparameter 
+search methods, scalability, and portability across HPC systems. It comprises three modules: benchmarks, a collection 
+of extensible and diverse DL hyperparameter search problems; 
+search, a set of search algorithms for DL hyperparameter search; and
+evaluators, a common interface for evaluating hyperparameter configurations 
+on HPC platforms.
 
 # Documentation
 
