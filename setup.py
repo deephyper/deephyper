@@ -41,7 +41,9 @@ REQUIRED = [
 if not on_rtd:
     REQUIRED.append('mpi4py>=3.0.0')
 else:
+    REQUIRED.append('Sphinx>=1.8.2')
     REQUIRED.append('sphinx_bootstrap_theme')
+    REQUIRED.append('sphinx_copybutton')
 
 # What packages are optional?
 EXTRAS = {
@@ -50,7 +52,7 @@ EXTRAS = {
         'pytest',
     ],
     'docs': [
-        'Sphinx==1.8.2',
+        'Sphinx>=1.8.2',
         'sphinx_bootstrap_theme',
         'sphinx_copybutton'
     ]
