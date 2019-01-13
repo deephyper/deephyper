@@ -48,7 +48,7 @@ EXTRAS = {
         'pytest',
     ],
     'docs': [
-        'sphinx',
+        'Sphinx==1.8.2',
         'sphinx_bootstrap_theme',
         'sphinx_copybutton'
     ]
