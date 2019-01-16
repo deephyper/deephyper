@@ -49,7 +49,7 @@ cd deephyper/
 pip install -e .
 ```
 
-if you want to install deephyper with tests and documentation packages:
+if you want to install deephyper with test and documentation packages:
 ```
 # From Pypi
 pip install 'deephyper[tests,docs]'
@@ -105,7 +105,7 @@ Patches are much appreciated on the software itself as well as documentation.
 Optionally, please include in your first patch a credit for yourself in the
 list above.
 
-The DeepHyper Team uses git-flow to organize the development: [Git-Flow cheatsheet](https://danielkummer.github.io/git-flow-cheatsheet/)
+The DeepHyper Team uses git-flow to organize the development: [Git-Flow cheatsheet](https://danielkummer.github.io/git-flow-cheatsheet/). For tests we are using: [Pytest](https://docs.pytest.org/en/latest/).
 
 # Acknowledgements
 
