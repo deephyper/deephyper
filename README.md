@@ -23,12 +23,12 @@ Deephyper documentation is on : [ReadTheDocs](https://deephyper.readthedocs.io)
 # Directory structure
 
 ```
-benchmarks/
-    directory for problems
-experiments/
-    directory for saving the running the experiments and storing the results
+benchmark/
+    a set of problems for hyperparameter or neural architecture search which the user can use to compare our different search algorithms or as examples to build their own problems.
+evaluator/
+    a set of objects which help to run search on different systems and for different cases such as quick and light experiments or long and heavy runs.
 search/
-    directory for search applications
+    a set of algorithms for hyperparameter and neural architecture search. You will also find a modular way to define new search algorithms and specific sub modules for hyperparameter or neural architecture search.
     hps/
         hyperparameter search applications
     nas/
@@ -37,15 +37,46 @@ search/
 
 # Install instructions
 
+From pip:
 ```
-cd deephyper
+pip install deephyper
+```
+
+From github:
+```
+git clone https://github.com/deephyper/deephyper.git
+cd deephyper/
 pip install -e .
 ```
+
+if you want to install deephyper with tests and documentation packages:
+```
+# From Pypi
+pip install 'deephyper[tests,docs]'
+
+# From github
+git clone https://github.com/deephyper/deephyper.git
+cd deephyper/
+pip install -e '.[tests,docs]'
+```
+
 # How do I learn more?
 
 * Documentation: https://deephyper.readthedocs.io
 
 * GitHub repository: https://github.com/deephyper/deephyper
+
+# Quickstart
+
+## Hyperparameter Search (HPS)
+```
+python -m deephyper.search.hps.ambs --problem deephyper.benchmark.hps.b2.problem.Problem --run deephyper.benchmark.hps.b2.babi_memnn.run
+```
+
+## Neural Architecture Search (NAS)
+```
+python -m deephyper.search.nas.ppo_a3c_sync --problem deephyper.benchmark.nas.mnist1D.problem.Problem --run deephyper.search.nas.model.run.alpha.run
+```
 
 # Who is responsible?
 
@@ -73,6 +104,8 @@ Questions, comments, feature requests, bug reports, etc. can be directed to:
 Patches are much appreciated on the software itself as well as documentation.
 Optionally, please include in your first patch a credit for yourself in the
 list above.
+
+The DeepHyper Team uses git-flow to organize the development: [Git-Flow cheatsheet](https://danielkummer.github.io/git-flow-cheatsheet/)
 
 # Acknowledgements
 
