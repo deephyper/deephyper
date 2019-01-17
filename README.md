@@ -70,7 +70,7 @@ pip install -e '.[tests,docs]'
 
 ## Hyperparameter Search (HPS)
 ```
-python -m deephyper.search.hps.ambs --problem deephyper.benchmark.hps.b2.problem.Problem --run deephyper.benchmark.hps.b2.babi_memnn.run
+python -m deephyper.search.hps.ambs --problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run
 ```
 
 ## Neural Architecture Search (NAS)
