@@ -9,24 +9,17 @@ Hyperparameter search
 Command Line
 ------------
 
-Assuming you have installed deephyper on your local environment.
+Assuming you have installed deephyper on your local environment we will show you how to run an asynchronous model-based search (AMBS) on a benchmark included within deephyper. To print the arguments of a search like AMBS just run:
 
 ::
 
-    cd deephyper/deephyper/search/hps
-    python ambs.py
+    python -m deephyper.search.hps.ambs --help
 
-This is going to run an asynchronous model-based search (AMBS) with default parameters. To print the arguments of a search like AMBS just run :
-
-::
-
-    python ambs.py --help
-
-Now you can run AMBS with custom arguments :
+Now you can run AMBS with custom arguments:
 
 ::
 
-    python ambs.py --problem deephyper.benchmark.hps.b2.problem.Problem --run deephyper.benchmark.hps.b2.babi_memnn.run
+    python -m deephyper.search.hps.ambs --problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run
 
 Python
 ------
@@ -41,8 +34,7 @@ Command Line
 
 ::
 
-    cd deephyper/deephyper/search/nas
-    python ppo_a3c_sync.py --problem deephyper.benchmark.nas.mnist1D.problem.Problem --run deephyper.search.nas.model.run.alpha.run
+    python -m deephyper.search.nas.ppo_a3c_sync --problem deephyper.benchmark.nas.mnist1D.problem.Problem --run deephyper.search.nas.model.run.alpha.run
 
 Python
 ------

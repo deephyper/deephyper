@@ -11,6 +11,8 @@ from shutil import rmtree
 
 from setuptools import find_packages, setup, Command
 
+on_rtd = os.environ.get('READTHEDOCS') == 'True'
+
 # Package meta-data.
 NAME = 'deephyper'
 DESCRIPTION = 'Scalable asynchronous neural architecture and hyperparameter search for deep neural networks.'
@@ -33,16 +35,27 @@ REQUIRED = [
     # nas
     'gym',
     'networkx',
-    'mpi4py>=3.0.0',
-    'joblib',
-    # doc
-    'sphinx_bootstrap_theme',
-    'sphinx_copybutton'
+    'joblib'
 ]
+
+if not on_rtd:
+    REQUIRED.append('mpi4py>=3.0.0')
+else:
+    REQUIRED.append('Sphinx>=1.8.2')
+    REQUIRED.append('sphinx_bootstrap_theme')
+    REQUIRED.append('sphinx_copybutton')
 
 # What packages are optional?
 EXTRAS = {
     # 'fancy feature': ['django'],
+    'tests': [
+        'pytest',
+    ],
+    'docs': [
+        'Sphinx>=1.8.2',
+        'sphinx_bootstrap_theme',
+        'sphinx_copybutton'
+    ]
 }
 
 # The rest you shouldn't have to touch too much :)
@@ -105,6 +118,61 @@ class UploadCommand(Command):
 
         sys.exit()
 
+class TestUploadCommand(Command):
+    """Support setup.py upload."""
+
+    description = 'Build and publish the package.'
+    user_options = []
+
+    @staticmethod
+    def status(s):
+        """Prints things in bold."""
+        print('\033[1m{0}\033[0m'.format(s))
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        try:
+            self.status('Removing previous builds…')
+            rmtree(os.path.join(here, 'dist'))
+        except OSError:
+            pass
+
+        self.status('Building Source and Wheel (universal) distribution…')
+        os.system('{0} setup.py sdist bdist_wheel --universal'.format(sys.executable))
+
+        self.status('Uploading the package to PyPI via Twine…')
+        os.system('twine upload --repository-url https://test.pypi.org/legacy/ dist/*')
+
+        sys.exit()
+
+class TestInstallCommand(Command):
+    """Support setup.py testinstall"""
+
+    description = 'Install deephyper from Test Pypi.'
+    user_options = []
+
+    @staticmethod
+    def status(s):
+        """Prints things in bold."""
+        print('\033[1m{0}\033[0m'.format(s))
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        self.status('Downloading the package from Test PyPI and installing it')
+        os.system('pip install --index-url https://test.pypi.org/simple/ deephyper')
+
+        sys.exit()
+
 
 # Where the magic happens:
 setup(
@@ -117,10 +185,9 @@ setup(
     author_email=EMAIL,
     python_requires=REQUIRES_PYTHON,
     url=URL,
-    # packages=find_packages(exclude=('tests',)),
+    packages=find_packages(exclude=('tests',)),
     # If your package is a single module, use this instead of 'packages':
-    py_modules=['deephyper'],
-
+    # py_modules=['deephyper'],
     # entry_points={
     #     'console_scripts': ['mycli=mymodule:cli'],
     # },
@@ -134,12 +201,13 @@ setup(
         # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
         'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: BSD License',
-        'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6'
     ],
     # $ setup.py publish support.
     cmdclass={
         'upload': UploadCommand,
+        'testupload': TestUploadCommand,
+        'testinstall': TestInstallCommand
     },
 )
