@@ -22,7 +22,7 @@ First we are going to run a search on b2 benchmark.
     balsam ls apps
 
     # Create a new job and Print jobs referenced
-    balsam job --name test --application AMBS --workflow TEST --args '--evaluator balsam --problem deephyper.benchmark.b2.problem.Problem --run deephyper.benchmark.b2.babi_memnn.run'
+    balsam job --name test --application AMBS --workflow TEST --args '--evaluator balsam --problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run'
     balsam ls jobs
 
     # Submit a Theta job that will run the balsam job corresponding to the search
