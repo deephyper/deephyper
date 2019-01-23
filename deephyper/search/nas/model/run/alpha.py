@@ -24,7 +24,7 @@ def run(config):
     print('[PARAM] Data loaded')
 
     # Set data shape
-    input_shape = list(np.shape(t_X))[1:]
+    input_shape = [np.shape(itX)[1:] for itX in t_X] # interested in shape of data not in length
     output_shape = list(np.shape(t_y))[1:]
 
     config['data'] = {

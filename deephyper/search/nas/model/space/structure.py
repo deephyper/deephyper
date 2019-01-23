@@ -21,17 +21,31 @@ class Structure:
 
 class KerasStructure(Structure):
     def __init__(self, input_shape, output_shape):
-        """
-        Create a new Sequential Structure.
+        """A KerasSructure represent a search space of networks.
 
-        Args:
-            inputs (tuple):
+        Arguments:
+            input_shape {list(tuple(int))} -- list of shapes of all inputs
+            output_shape {tuple(int)} -- shape of output
         """
+
         self.graph = nx.DiGraph()
 
-        self.input_node = Node('Input')
-        self.input_node.add_op(Tensor(keras.layers.Input(input_shape)))
-        self.input_node.set_op(0)
+        if type(input_shape) is tuple:
+            print('-- ONE INPUT TENSOR --')
+            # we have only one input tensor here
+            self.input_nodes = [Node('Input')]
+            self.input_nodes[0].add_op(Tensor(keras.layers.Input(input_shape, name="input_0")))
+            self.input_nodes[0].set_op(0)
+        elif type(input_shape) is list and all(map(lambda x: type(x) is tuple, input_shape)):
+            # we have a list of input tensors here
+            self.input_nodes = list()
+            for i in range(len(input_shape)):
+                inode = Node(f'Input_{i}')
+                inode.add_op(Tensor(keras.layers.Input(input_shape[i], name=f"input_{i}")))
+                inode.set_op(0)
+                self.input_nodes.append(inode)
+        else:
+            raise RuntimeError(f"input_shape must be either of type 'tuple' or 'list(tuple)' but is of type '{type(input_shape)}'!")
 
         self.__output_shape = output_shape
         self.output_node = None
@@ -93,7 +107,7 @@ class KerasStructure(Structure):
             func (function): a function that return a cell with one argument list of input nodes.
             num (int): number of hidden state with which the new cell can connect or None means all previous hidden states
         """
-        possible_inputs = [self.input_node]
+        possible_inputs = self.input_nodes[:] # it's very important to use a copy of the list
         possible_inputs.extend([c.output for c in self.struct])
         if len(self.struct) > 0:
             if num is None:
@@ -151,8 +165,11 @@ class KerasStructure(Structure):
         print('input of output layer shape: ', output_tensor.get_shape())
         output_tensor = keras.layers.Dense(self.__output_shape[0], activation=activation)(output_tensor)
         print('output of output layer shape: ', output_tensor.get_shape())
-        input_tensor = self.input_node._tensor
-        return keras.Model(inputs=input_tensor, outputs=output_tensor)
+        # input_tensor = self.input_node._tensor
+        print('-> Input Nodes: ', self.input_nodes)
+        input_tensors = [inode._tensor for inode in self.input_nodes]
+        print('-> Input Tensors: ', input_tensors)
+        return keras.Model(inputs=input_tensors, outputs=output_tensor)
 
     def get_hash(self, node_index, index):
         """Get the hash representation of a given operation for this structure.

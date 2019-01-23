@@ -1,12 +1,14 @@
 import tensorflow as tf
 
+from deephyper.search.nas.model.baseline.util.struct import (create_seq_struct,
+                                                             create_struct_full_skipco)
 from deephyper.search.nas.model.space.block import Block
 from deephyper.search.nas.model.space.cell import Cell
 from deephyper.search.nas.model.space.node import Node
 from deephyper.search.nas.model.space.op.basic import Connect
-from deephyper.search.nas.model.space.op.op1d import (Dense, Identity, Conv1D,
+from deephyper.search.nas.model.space.op.op1d import (Conv1D, Dense, Identity,
+                                                      MaxPooling1D,
                                                       dropout_ops)
-from deephyper.search.nas.model.baseline.util.struct import create_seq_struct
 
 
 def create_cell_1(input_nodes):
@@ -29,13 +31,18 @@ def create_cell_1(input_nodes):
         # second node of block
         n2 = Node('N2')
         n2.add_op(Conv1D(filter_size=5, num_filters=2))
+        n2.add_op(Conv1D(filter_size=5, num_filters=3))
 
+        n3 = Node('N3')
+        n3.add_op(MaxPooling1D(pool_size=3, padding='same'))
 
         block = Block()
         block.add_node(n1)
         block.add_node(n2)
+        block.add_node(n3)
 
         block.add_edge(n1, n2)
+        block.add_edge(n2, n3)
         return block
 
     block1 = create_conv_block(input_nodes)
@@ -48,7 +55,7 @@ def create_cell_1(input_nodes):
     return cell
 
 def create_structure(input_shape=(2,), output_shape=(1,), num_cells=2):
-    return create_seq_struct(
+    return create_struct_full_skipco(
         input_shape,
         output_shape,
         create_cell_1,
