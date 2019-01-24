@@ -69,3 +69,13 @@ def selectOptimizer_keras(name):
         raise RuntimeError('"{0}" is not a defined optimizer for keras.'.format(name))
     else:
         return optimizers_keras[name]
+
+def check_data_config(data_dict):
+    gen_keys = ["train_gen", "train_size", "valid_gen", "valid_size", "types", "shapes"]
+    ndarray_keys = ["train_X", "train_Y", "valid_X", "valid_Y"]
+    if all([k in data_dict.keys() for k in gen_keys]):
+        return "gen"
+    elif all([k in data_dict.keys() for k in ndarray_keys]):
+        return "ndarray"
+    else:
+        raise RuntimeError('Wrong data config...')

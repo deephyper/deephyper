@@ -1,5 +1,4 @@
 import os
-from tensorflow.examples.tutorials.mnist import input_data
 import numpy as np
 from deephyper.benchmark.benchmark_functions_wrappers import linear_
 
