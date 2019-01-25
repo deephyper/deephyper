@@ -12,6 +12,7 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
+on_theta = 'theta' in os.environ.get('HOST')
 
 # Package meta-data.
 NAME = 'deephyper'
@@ -38,7 +39,9 @@ REQUIRED = [
     'joblib'
 ]
 
-if not on_rtd:
+if on_theta:
+    REQUIRED.append('mpi4py') #we want to use the default mpi4py from cray environment
+elif not on_rtd:
     REQUIRED.append('mpi4py>=3.0.0')
 else:
     REQUIRED.append('Sphinx>=1.8.2')

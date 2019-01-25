@@ -4,7 +4,7 @@ def test_create_structure():
     from deephyper.search.nas.model.baseline.anl_conv_mlp_1 import create_structure
     from tensorflow.keras.utils import plot_model
 
-    structure = create_structure((100, 1), (10,), 10)
+    structure = create_structure((100, 1), (9,), 10)
     assert type(structure) is KerasStructure
 
     ops = [random() for i in range(structure.num_nodes)]
@@ -14,7 +14,7 @@ def test_create_structure():
     model = structure.create_model()
 
     model = structure.create_model()
-    plot_model(model, to_file='graph_anl_conv_mlp_1_test.png')
+    plot_model(model, to_file='graph_anl_conv_mlp_1_test.png', show_shapes=True)
 
     import numpy as np
     from math import sin

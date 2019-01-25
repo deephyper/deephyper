@@ -26,6 +26,9 @@ class Search:
     """
     def __init__(self, problem, run, evaluator, **kwargs):
         _args = vars(self.parse_args(''))
+        kwargs['problem'] = problem
+        kwargs['run'] = run
+        kwargs['evaluator'] = evaluator
         _args.update(kwargs)
         self.args = Namespace(**_args)
         self.problem = util.generic_loader(problem, 'Problem')

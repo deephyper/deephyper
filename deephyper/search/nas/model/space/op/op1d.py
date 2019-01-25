@@ -149,12 +149,13 @@ class MaxPooling1D(Operation):
 
     def __call__(self, inputs, **kwargs):
         assert len(inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when only 1 is required.'
+        inpt = inputs[0]
         out = keras.layers.MaxPooling1D(
             pool_size=self.pool_size,
             strides=self.strides,
             padding=self.padding,
             data_format=self.data_format
-        )
+        )(inpt)
         return out
 
 class Flatten(Operation):
@@ -168,7 +169,8 @@ class Flatten(Operation):
 
     def __call__(self, inputs, **kwargs):
         assert len(inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when only 1 is required.'
+        inpt = inputs[0]
         out = keras.layers.Flatten(
             data_format=self.data_format
-        )
+        )(inpt)
         return out
