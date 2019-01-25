@@ -12,7 +12,7 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
-on_theta = 'theta' in os.environ.get('HOST')
+on_theta = type(os.environ.get('HOST')) is str and 'theta' in os.environ.get('HOST')
 
 # Package meta-data.
 NAME = 'deephyper'
