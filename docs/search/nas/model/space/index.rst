@@ -61,8 +61,8 @@ Visual example
 The following figure is an example of structure which is defined in order to search over fully connected networks. This structure is defined with 2 cells. Each cell contains 1 block. Each block contains 3 nodes. The first node will create a $$ Connect $$ operation in order to choose the input of the current block. The second node will choose an operation of kind :math:`Dense(x, y)` where :math:`x` is the number of units in a :math:`Dense` layer and :math:`y` is a string which represents an activation function. A :math:`Dense` layer means that we are doing this operation: :math:`f_{activation}(WX + B)` where :math:`W \in \mathcal{M}_{m,n}(\mathbb{R})` is a matrix of parameters called weights, :math:`X \in \mathbb{R}^n` is a vector of inputs and :math:`B \in \mathbb{R}^m` is a vector of parameters called bias.
 
 
-.. figure:: ../../../../_static/img/nas/ex1_dense_structure.png
-   :scale: 34 %
+.. figure:: ex1_dense_structure.png
+   :scale: 55 %
    :alt: example_dense_structure
    :align: center
 
