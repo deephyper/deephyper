@@ -4,13 +4,40 @@ Installation
 Local
 =====
 
+User installation
+-----------------
+
 You can run the following commands if you want to install deephyper on your local machine.
 
+From Pypi:
 ::
 
-    # Cloning repos en installing with pip
+    pip install deephyper
+
+From github:
+::
+
     git clone https://github.com/deephyper/deephyper.git
-    pip install -e deephyper/
+    cd deephyper/
+    pip install -e .
+
+Contributor installation
+------------------------
+
+If you want to install deephyper with test and documentation packages.
+
+From pypi:
+::
+
+    pip install 'deephyper[tests,docs]'
+
+From github:
+::
+
+    git clone https://github.com/deephyper/deephyper.git
+    cd deephyper/
+    pip install -e '.[tests,docs]'
+
 
 
 Theta
@@ -30,15 +57,6 @@ Cooley
 
 Contribute to documentation
 ===========================
-
-Installation
-------------
-
-::
-
-    source activate ENV_NAME
-    pip install -U Sphinx
-    pip install sphinx_bootstrap_theme
 
 Build
 -----

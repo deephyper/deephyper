@@ -60,5 +60,5 @@ It is important to use the subprocess evaluator.
 NAS Random
 ==========
 
-.. automodule:: deephyper.search.nas.random
+.. automodule:: deephyper.search.nas.nas_random
    :members:

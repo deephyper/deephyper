@@ -4,19 +4,15 @@ import numpy as np
 import tensorflow as tf
 from deephyper.benchmark.benchmark_functions_wrappers import linear_
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-
 np.random.seed(2018)
 
-def load_data(dim=10):
+def load_data(dim=10, size=100):
     """
     Generate data for linear function -sum(x_i).
 
     Return:
         Tuple of Numpy arrays: ``(train_X, train_y), (valid_X, valid_y)``.
     """
-    # size = 100000
-    size = 100
     prop = 0.80
     f, (a, b), _ = linear_()
     d = b - a

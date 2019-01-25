@@ -2,8 +2,6 @@ import os
 import numpy as np
 from deephyper.benchmark.benchmark_functions_wrappers import linear_
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-
 np.random.seed(2018)
 
 def load_data(dim=10):
