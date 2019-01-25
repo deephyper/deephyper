@@ -40,8 +40,11 @@ From github:
 
 
 
+Argonne Leadership Computing Facility
+=====================================
+
 Theta
-=====
+-----
 
 Deephyper can be directly installed as a module on Theta.
 
@@ -51,7 +54,7 @@ Deephyper can be directly installed as a module on Theta.
 
 
 Cooley
-======
+------
 
     .. todo:: installation on Cooley
 

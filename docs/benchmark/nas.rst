@@ -60,7 +60,7 @@ Here is the structure used for the ```deephyper.benchmark.nas.linearReg`` benchm
 
 
 .. figure:: ../_static/img/benchmark/nas/anl_mlp_2_a.png
-   :scale: 100 %
+   :scale: 34 %
    :alt: anl_mlp_2
    :align: center
 
@@ -68,20 +68,22 @@ Here is the structure used for the ```deephyper.benchmark.nas.linearReg`` benchm
 
 
 .. figure:: ../_static/img/benchmark/nas/anl_mlp_2_b.png
-   :scale: 100 %
+   :scale: 34 %
    :alt: anl_mlp_2
    :align: center
 
    A second example of graph generated with ``anl_mlp_2.create_structure``.
 
 .. figure:: ../_static/img/benchmark/nas/anl_mlp_2_c.png
-   :scale: 100 %
+   :scale: 34 %
    :alt: anl_mlp_2
    :align: center
 
    A last example of graph generated with ``anl_mlp_2.create_structure``.
 
 See :ref:`what-is-structure` for more details
+
+.. _available-nas-benchmarks:
 
 Available benchmarks
 ====================
