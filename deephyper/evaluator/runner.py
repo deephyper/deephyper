@@ -22,12 +22,14 @@ def load_module(name, path):
     return mod
 
 if __name__ == "__main__":
-    modulePath = sys.argv[1]
-    moduleName = sys.argv[2]
+    argv_cp = sys.argv[:]
+    sys.argv = sys.argv[:1]
+    modulePath = argv_cp[1]
+    moduleName = argv_cp[2]
     module = load_module(moduleName, modulePath)
 
-    funcName = sys.argv[3]
-    args = sys.argv[4]
+    funcName = argv_cp[3]
+    args = argv_cp[4]
     d = json.loads(args)
     func = getattr(module, funcName)
 
