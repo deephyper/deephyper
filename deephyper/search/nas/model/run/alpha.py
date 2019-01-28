@@ -53,7 +53,8 @@ def run(config):
     else:
         raise RuntimeError(f'Data returned by load_data function are of an unsupported type: {type(data)}')
 
-
+    logger.info(f'input_shape: {input_shape}')
+    logger.info(f'output_shape: {output_shape}')
     structure = config['create_structure']['func'](input_shape, output_shape, **config['create_structure']['kwargs'])
     arch_seq = config['arch_seq']
     structure.set_ops(arch_seq)

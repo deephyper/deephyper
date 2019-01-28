@@ -134,7 +134,7 @@ class TrainerRegressorTrainValid:
             raise RuntimeError('You can only preprocess data one time.')
 
         if self.preprocessing_func:
-            logger.debug('preprocess_data')
+            logger.debug(f'preprocess_data with: {str(self.preprocessing_func)}')
 
             data_train = np.concatenate((*self.train_X, self.train_Y), axis=1)
             data_valid = np.concatenate((*self.valid_X, self.valid_Y), axis=1)
