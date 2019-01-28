@@ -56,10 +56,10 @@ class NasPPOAsyncA3C(Search):
         parser.add_argument('--num-episodes', type=int, default=None,
                             help='maximum number of episodes')
         parser.add_argument('--reward-rule', type=str,
-            default='final_reward_for_all_timesteps',
+            default='reward_for_final_timestep',
             choices=[
-                'final_reward_for_all_timesteps',
-                'episode_reward_for_final_timestep'
+                'reward_for_all_timesteps',
+                'reward_for_final_timestep'
             ],
             help='A function which describe how to spread the episodic reward on all timesteps of the corresponding episode.')
         return parser
