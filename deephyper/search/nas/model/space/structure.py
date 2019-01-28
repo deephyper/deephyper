@@ -31,7 +31,6 @@ class KerasStructure(Structure):
         self.graph = nx.DiGraph()
 
         if type(input_shape) is tuple:
-            print('-- ONE INPUT TENSOR --')
             # we have only one input tensor here
             self.input_nodes = [Node('Input')]
             self.input_nodes[0].add_op(Tensor(keras.layers.Input(input_shape, name="input_0")))
@@ -163,6 +162,7 @@ class KerasStructure(Structure):
 
         output_tensor = create_tensor_aux(self.graph, self.output_node)
         print('input of output layer shape: ', output_tensor.get_shape())
+        output_tensor = keras.layers.Flatten()(output_tensor)
         output_tensor = keras.layers.Dense(self.__output_shape[0], activation=activation)(output_tensor)
         print('output of output layer shape: ', output_tensor.get_shape())
         # input_tensor = self.input_node._tensor

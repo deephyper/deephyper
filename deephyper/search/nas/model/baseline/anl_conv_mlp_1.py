@@ -28,13 +28,18 @@ def create_cell_1(input_nodes):
         for inpt in input_nodes:
             n1.add_op(Connect(cell.graph, inpt, n1))
 
+        def create_conv_node(name):
+            n = Node(name)
+            n.add_op(Identity())
+            n.add_op(Conv1D(filter_size=5, num_filters=2))
+            n.add_op(Conv1D(filter_size=5, num_filters=3))
+            n.add_op(MaxPooling1D(pool_size=3, padding='same'))
+            n.add_op(MaxPooling1D(pool_size=5, padding='same'))
+            return n
         # second node of block
-        n2 = Node('N2')
-        n2.add_op(Conv1D(filter_size=5, num_filters=2))
-        n2.add_op(Conv1D(filter_size=5, num_filters=3))
+        n2 = create_conv_node('N2')
 
-        n3 = Node('N3')
-        n3.add_op(MaxPooling1D(pool_size=3, padding='same'))
+        n3 = create_conv_node('N3')
 
         block = Block()
         block.add_node(n1)
@@ -46,10 +51,12 @@ def create_cell_1(input_nodes):
         return block
 
     block1 = create_conv_block(input_nodes)
-    # block2 = create_conv_block(input_nodes)
+    block2 = create_conv_block(input_nodes)
+    block3 = create_conv_block(input_nodes)
 
     cell.add_block(block1)
-    # cell.add_block(block2)
+    cell.add_block(block2)
+    cell.add_block(block3)
 
     cell.set_outputs()
     return cell

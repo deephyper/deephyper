@@ -27,10 +27,14 @@ class Timer:
 
 def conf_logger(name):
     global masterLogger
+    from mpi4py import MPI
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+
     if (masterLogger == None):
         masterLogger = logging.getLogger('deephyper')
 
-        handler = logging.FileHandler('deephyper.log')
+        handler = logging.FileHandler(f'deephyper-{rank}.log')
         formatter = logging.Formatter(
             '%(asctime)s|%(process)d|%(levelname)s|%(name)s:%(lineno)s] %(message)s',
             "%Y-%m-%d %H:%M:%S"

@@ -25,6 +25,22 @@ class Concatenate(Operation):
                 self.graph.add_edge(n, self.node)
 
     def __call__(self, values, **kwargs):
+        # zeros padding
+        if len(values) > 1:
+            len_shp = len(values[0].get_shape())
+            if all(map(lambda x: len(x.get_shape())==len_shp, values)):
+                if len_shp == 3:
+                    max_len = max(map(lambda x: int(x.get_shape()[1]), values))
+                    paddings = map(lambda x: max_len - int(x.get_shape()[1]), values)
+                    for i, (p, v) in enumerate(zip(paddings, values)):
+                        lp = p // 2
+                        rp = p - lp
+                        values[i] = keras.layers.ZeroPadding1D(padding=(lp, rp))(v)
+                # if len_shp == 2 nothing to do
+            else:
+                raise RuntimeError('All inputs of concatenation operation should have same shape length!')
+
+        # concatenation
         if len(values) > 1:
             out = keras.layers.Concatenate(axis=-1)(values)
         else:
@@ -115,7 +131,6 @@ class Conv1D(Operation):
     def __call__(self, inputs, **kwargs):
         assert len(inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when only 1 is required.'
         inpt = inputs[0]
-        print(f'{str(self)} shape input: ', inpt.get_shape())
         if len(inpt.get_shape()) == 2:
             out = keras.layers.Reshape((inpt.get_shape()[1], 1))(inpt)
         else:
@@ -125,7 +140,6 @@ class Conv1D(Operation):
             kernel_size=self.filter_size,
             strides=self.strides,
             padding=self.padding)(out)
-        print(f'{str(self)} shape out: ', out.get_shape())
         return out
 
 
@@ -150,12 +164,16 @@ class MaxPooling1D(Operation):
     def __call__(self, inputs, **kwargs):
         assert len(inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when only 1 is required.'
         inpt = inputs[0]
+        if len(inpt.get_shape()) == 2:
+            out = keras.layers.Reshape((inpt.get_shape()[1], 1))(inpt)
+        else:
+            out = inpt
         out = keras.layers.MaxPooling1D(
             pool_size=self.pool_size,
             strides=self.strides,
             padding=self.padding,
             data_format=self.data_format
-        )(inpt)
+        )(out)
         return out
 
 class Flatten(Operation):

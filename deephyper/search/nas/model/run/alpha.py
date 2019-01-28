@@ -22,15 +22,23 @@ def run(config):
     kwargs = config['load_data'].get('kwargs')
     # (t_X, t_y), (v_X, v_y) = load_data() if kwargs is None else load_data(**kwargs)
     data = load_data() if kwargs is None else load_data(**kwargs)
-    print('[PARAM] Data loaded')
+    logger.info('[PARAM] Data loaded')
 
     # Set data shape
-    if type(data) is list or type(data) is np.ndarray:
+    if type(data) is tuple:
+        if len(data) != 2:
+            raise RuntimeError(f'Loaded data are tuple, should ((training_input, training_output), (validation_input, validation_output)) but length=={len(data)}')
         (t_X, t_y), (v_X, v_y) = data
-        if type(data) is list:
+        if type(t_X) is np.ndarray and  type(t_y) is np.ndarray and \
+            type(v_X) is np.ndarray and type(v_y) is np.ndarray:
+            logger.info('-- -- >< A')
             input_shape = np.shape(t_X)[1:]
-        else:
+        elif type(t_X) is list and type(t_y) is np.ndarray and \
+            type(v_X) is list and type(v_y) is np.ndarray:
+            logger.info('-- -- >< B')
             input_shape = [np.shape(itX)[1:] for itX in t_X] # interested in shape of data not in length
+        else:
+            raise RuntimeError(f'Data returned by load_data function are of a wrong type: type(t_X)=={type(t_X)},  type(t_y)=={type(t_y)}, type(v_X)=={type(v_X)}, type(v_y)=={type(v_y)}')
         output_shape = np.shape(t_y)[1:]
         config['data'] = {
             'train_X': t_X,
@@ -43,7 +51,7 @@ def run(config):
         input_shape = [data['shapes'][0][f'input_{i}'] for i in range(len(data['shapes'][0]))]
         output_shape = data['shapes'][1]
     else:
-        raise RuntimeError(f'data return by load_data function are of an unsupported type: {type(t_X)}')
+        raise RuntimeError(f'Data returned by load_data function are of an unsupported type: {type(data)}')
 
 
     structure = config['create_structure']['func'](input_shape, output_shape, **config['create_structure']['kwargs'])
