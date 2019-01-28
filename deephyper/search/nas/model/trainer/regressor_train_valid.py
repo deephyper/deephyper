@@ -189,7 +189,7 @@ class TrainerRegressorTrainValid:
     def model_compile(self):
         optimizer_fn = U.selectOptimizer_keras(self.optimizer_name)
 
-        decay_rate = self.learning_rate / self.num_epochs
+        decay_rate = self.learning_rate / self.num_epochs if self.num_epochs > 0 else 1.
         self.optimizer = optimizer_fn(lr=self.learning_rate, decay=decay_rate)
 
         self.model.compile(
@@ -232,23 +232,32 @@ class TrainerRegressorTrainValid:
     def train(self, num_epochs=None):
         num_epochs = self.num_epochs if num_epochs is None else num_epochs
 
-        min_mse = math.inf
-        for i in range(num_epochs):
-            self.model.fit(
-                self.dataset_train,
-                epochs=1,
-                steps_per_epoch=self.train_steps_per_epoch,
-                callbacks=self.callbacks
-            )
+        if num_epochs > 0:
+            min_mse = math.inf
+            for i in range(num_epochs):
+                self.model.fit(
+                    self.dataset_train,
+                    epochs=1,
+                    steps_per_epoch=self.train_steps_per_epoch,
+                    callbacks=self.callbacks
+                )
 
+                y_orig, y_pred = self.predict()
+
+                unnormalize_mse = mean_squared_error(y_orig, y_pred)
+
+                self.train_history[f'{self.metrics_name[0]}_valid'] = unnormalize_mse
+
+                min_mse = min(min_mse, unnormalize_mse)
+                logger.info(jm(epoch=i, validation_mse=float(unnormalize_mse)))
+
+            logger.info(jm(type='result', mse=float(min_mse)))
+            return min_mse
+        elif num_epochs == 0:
             y_orig, y_pred = self.predict()
 
             unnormalize_mse = mean_squared_error(y_orig, y_pred)
-
-            self.train_history[f'{self.metrics_name[0]}_valid'] = unnormalize_mse
-
-            min_mse = min(min_mse, unnormalize_mse)
             logger.info(jm(epoch=i, validation_mse=float(unnormalize_mse)))
-
-        logger.info(jm(type='result', mse=float(min_mse)))
-        return min_mse
+            logger.info(jm(type='result', mse=float(unnormalize_mse)))
+        else:
+            raise RuntimeError(f'Number of epochs should be >= 0: {num_epochs}')
