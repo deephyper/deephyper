@@ -59,6 +59,7 @@ def run(config):
     arch_seq = config['arch_seq']
     structure.set_ops(arch_seq)
 
+    model_created = False
     if config['regression']:
         if config.get('preprocessing') is not None:
             preprocessing = util.load_attr_from(config['preprocessing']['func'])
@@ -66,11 +67,25 @@ def run(config):
         else:
             config['preprocessing'] = None
 
-        model = structure.create_model()
-        trainer = TrainerRegressorTrainValid(config=config, model=model)
+        try:
+            model = structure.create_model()
+            model_created = True
+        except:
+            model_created = False
+        if model_created:
+            trainer = TrainerRegressorTrainValid(config=config, model=model)
     else:
-        model = structure.create_model(activation='softmax')
-        trainer = TrainerClassifierTrainValid(config=config, model=model)
+        try:
+            model = structure.create_model(activation='softmax')
+            model_created = True
+        except:
+            model_created = False
+        if model_created:
+            trainer = TrainerClassifierTrainValid(config=config, model=model)
 
-    result = -trainer.train() if config['regression'] else trainer.train()
+    if model_created:
+        result = -trainer.train() if config['regression'] else trainer.train()
+    else:
+        # penalising actions if model cannot be created
+        result = -10**10 if config['regression'] else -1.0
     return result
