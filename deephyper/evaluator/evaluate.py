@@ -121,7 +121,11 @@ class Evaluator:
         y = sys.float_info.max
         for line in run_stdout.split('\n'):
             if "DH-OUTPUT:" in line.upper():
-                y = float(line.split()[-1])
+                try:
+                    y = float(line.split()[-1])
+                except ValueError as e:
+                    logger.exception("Could not parse DH-OUTPUT line:\n"+line)
+                    y = sys.float_info.max
                 break
         if isnan(y): y = sys.float_info.max
         return y
