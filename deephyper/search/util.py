@@ -34,7 +34,8 @@ def conf_logger(name):
     if (masterLogger == None):
         masterLogger = logging.getLogger('deephyper')
 
-        handler = logging.FileHandler(f'deephyper-{rank}.log')
+        # handler = logging.FileHandler(f'deephyper-{rank}.log') # debug
+        handler = logging.FileHandler('deephyper.log')
         formatter = logging.Formatter(
             '%(asctime)s|%(process)d|%(levelname)s|%(name)s:%(lineno)s] %(message)s',
             "%Y-%m-%d %H:%M:%S"
