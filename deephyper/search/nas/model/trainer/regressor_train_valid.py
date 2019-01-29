@@ -257,7 +257,7 @@ class TrainerRegressorTrainValid:
             y_orig, y_pred = self.predict()
 
             unnormalize_mse = mean_squared_error(y_orig, y_pred)
-            logger.info(jm(epoch=i, validation_mse=float(unnormalize_mse)))
+            logger.info(jm(epoch=0, validation_mse=float(unnormalize_mse)))
             logger.info(jm(type='result', mse=float(unnormalize_mse)))
         else:
             raise RuntimeError(f'Number of epochs should be >= 0: {num_epochs}')
