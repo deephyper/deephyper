@@ -28,7 +28,11 @@ class Concatenate(Operation):
         # zeros padding
         if len(values) > 1:
             len_shp = len(values[0].get_shape())
-            if all(map(lambda x: len(x.get_shape())==len_shp, values)):
+            if all(map(lambda x: len(x.get_shape())==len_shp or len(x.get_shape())==(len_shp-1), values)):
+                for i, v in enumerate(values):
+                    if len(v.get_shape()) < len_shp:
+                        # values[i] = tf.expand_dims(v, -1)
+                        values[i] = keras.layers.Reshape((*tuple(v.get_shape()[1:]), 1))(v)
                 if len_shp == 3:
                     max_len = max(map(lambda x: int(x.get_shape()[1]), values))
                     paddings = map(lambda x: max_len - int(x.get_shape()[1]), values)
