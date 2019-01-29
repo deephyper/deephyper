@@ -14,7 +14,7 @@ timer = util.Timer()
 timer.start('module loading')
 
 import keras
-from deephyper.benchmark.cifar10cnn.load_data import load_data
+from deephyper.benchmark.hps.cifar10cnn.load_data import load_data
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten

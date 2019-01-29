@@ -27,6 +27,8 @@ class Search:
     def __init__(self, problem, run, evaluator, **kwargs):
         _args = vars(self.parse_args(''))
         _args.update(kwargs)
+        _args['problem'] = problem
+        _args['run'] = run
         self.args = Namespace(**_args)
         self.problem = util.generic_loader(problem, 'Problem')
         self.run_func = util.generic_loader(run, 'run')
@@ -59,10 +61,10 @@ class Search:
     def _base_parser():
         parser = argparse.ArgumentParser()
         parser.add_argument("--problem",
-            default="deephyper.benchmark.rosen2.problem.Problem"
+            default="deephyper.benchmark.hps.rosen2.problem.Problem"
         )
         parser.add_argument("--run",
-            default="deephyper.benchmark.rosen2.rosenbrock2.run"
+            default="deephyper.benchmark.hps.rosen2.rosenbrock2.run"
         )
         parser.add_argument("--backend",
             default='tensorflow',
