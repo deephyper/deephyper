@@ -27,9 +27,9 @@ class Timer:
 
 def conf_logger(name):
     global masterLogger
-    from mpi4py import MPI
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
+    # from mpi4py import MPI
+    # comm = MPI.COMM_WORLD
+    # rank = comm.Get_rank()
 
     if (masterLogger == None):
         masterLogger = logging.getLogger('deephyper')

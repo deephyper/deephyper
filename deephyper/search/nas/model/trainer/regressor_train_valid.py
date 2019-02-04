@@ -1,7 +1,6 @@
 import tensorflow as tf
 import numpy as np
 import math
-from itertools import tee
 from sklearn.metrics import mean_squared_error
 
 import deephyper.search.nas.model.arch as a

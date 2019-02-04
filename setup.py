@@ -13,6 +13,7 @@ from setuptools import find_packages, setup, Command
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 on_theta = type(os.environ.get('HOST')) is str and 'theta' in os.environ.get('HOST')
+on_gpu = type(os.environ.get('DH_GPU')) is str and 'true' == os.environ.get('DH_GPU')
 
 # Package meta-data.
 NAME = 'deephyper'
@@ -41,8 +42,14 @@ REQUIRED = [
 
 if on_theta:
     REQUIRED.append('mpi4py') #we want to use the default mpi4py from cray environment
-elif not on_rtd:
+elif not on_rtd and not on_gpu:
     REQUIRED.append('mpi4py>=3.0.0')
+elif on_gpu:
+    # remove
+    REQUIRED.remove('tensorflow>=1.11.0')
+    # add
+    REQUIRED.append('tensorflow-gpu')
+    REQUIRED.append('mpi4py')
 else:
     REQUIRED.append('Sphinx>=1.8.2')
     REQUIRED.append('sphinx_bootstrap_theme')
@@ -50,7 +57,6 @@ else:
 
 # What packages are optional?
 EXTRAS = {
-    # 'fancy feature': ['django'],
     'tests': [
         'pytest',
     ],
