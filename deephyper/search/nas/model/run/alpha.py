@@ -59,14 +59,14 @@ def run(config):
     arch_seq = config['arch_seq']
     structure.set_ops(arch_seq)
 
+    if config.get('preprocessing') is not None:
+        preprocessing = util.load_attr_from(config['preprocessing']['func'])
+        config['preprocessing']['func'] = preprocessing
+    else:
+        config['preprocessing'] = None
+
     model_created = False
     if config['regression']:
-        if config.get('preprocessing') is not None:
-            preprocessing = util.load_attr_from(config['preprocessing']['func'])
-            config['preprocessing']['func'] = preprocessing
-        else:
-            config['preprocessing'] = None
-
         try:
             model = structure.create_model()
             model_created = True
