@@ -27,11 +27,11 @@ class Concatenate(Operation):
     def __call__(self, values, **kwargs):
         # zeros padding
         if len(values) > 1:
-            len_shp = len(values[0].get_shape())
-            if all(map(lambda x: len(x.get_shape())==len_shp or len(x.get_shape())==(len_shp-1), values)):
+            len_shp = max([len(x.get_shape()) for x in values])
+            if all(map(lambda x: len(x.get_shape())==len_shp or \
+                len(x.get_shape())==(len_shp-1), values)):
                 for i, v in enumerate(values):
                     if len(v.get_shape()) < len_shp:
-                        # values[i] = tf.expand_dims(v, -1)
                         values[i] = keras.layers.Reshape((*tuple(v.get_shape()[1:]), 1))(v)
                 if len_shp == 3:
                     max_len = max(map(lambda x: int(x.get_shape()[1]), values))
@@ -42,7 +42,10 @@ class Concatenate(Operation):
                         values[i] = keras.layers.ZeroPadding1D(padding=(lp, rp))(v)
                 # if len_shp == 2 nothing to do
             else:
-                raise RuntimeError('All inputs of concatenation operation should have same shape length!')
+                raise RuntimeError(
+                    f'All inputs of concatenation operation should have same shape length:\n'
+                    f'number_of_inputs=={len(values)}\n'
+                    f'shape_of_inputs=={[str(x.get_shape()) for x in values]}')
 
         # concatenation
         if len(values) > 1:
