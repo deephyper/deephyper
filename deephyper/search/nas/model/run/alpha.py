@@ -1,4 +1,5 @@
 from random import random
+import traceback
 
 import numpy as np
 from tensorflow import keras
@@ -72,6 +73,8 @@ def run(config):
             model_created = True
         except:
             model_created = False
+            print('Error: Model creation failed...')
+            print(traceback.format_exc())
         if model_created:
             trainer = TrainerRegressorTrainValid(config=config, model=model)
     else:
@@ -80,6 +83,8 @@ def run(config):
             model_created = True
         except:
             model_created = False
+            print('Error: Model creation failed...')
+            print(traceback.format_exc())
         if model_created:
             trainer = TrainerClassifierTrainValid(config=config, model=model)
 
