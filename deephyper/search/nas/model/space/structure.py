@@ -17,7 +17,7 @@ class Structure:
             try:
                 nx.nx_agraph.write_dot(self.graph, f)
             except:
-                pass
+                print('Error: can\'t create graphviz file...')
 
 class KerasStructure(Structure):
     def __init__(self, input_shape, output_shape):

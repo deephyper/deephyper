@@ -6,7 +6,7 @@ from multiprocessing import Pipe, Array, Process
 import numpy as np
 from . import VecEnv, CloudpickleWrapper
 import ctypes
-from  deephyper.search.nas.utils.import logger
+from  deephyper.search.nas.utils import logger
 
 from .util import dict_to_obs, obs_space_info, obs_to_dict
 

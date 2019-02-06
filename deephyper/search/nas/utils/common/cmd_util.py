@@ -10,7 +10,7 @@ except ImportError:
 
 import gym
 from gym.wrappers import FlattenDictWrapper
-from  deephyper.search.nas.utils.import logger
+from  deephyper.search.nas.utils import logger
 from  deephyper.search.nas.utils.bench import Monitor
 from  deephyper.search.nas.utils.common import set_global_seeds
 from  deephyper.search.nas.utils.common.atari_wrappers import make_atari, wrap_deepmind
