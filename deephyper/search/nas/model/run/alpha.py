@@ -22,7 +22,7 @@ def run(config):
     # Loading data
     kwargs = config['load_data'].get('kwargs')
     data = load_data() if kwargs is None else load_data(**kwargs)
-    logger.info('[PARAM] Data loaded')
+    logger.info(f'Data loaded with kwargs: {kwargs}')
 
     # Set data shape
     if type(data) is tuple:
@@ -55,6 +55,7 @@ def run(config):
     logger.info(f'output_shape: {output_shape}')
     structure = config['create_structure']['func'](input_shape, output_shape, **config['create_structure']['kwargs'])
     arch_seq = config['arch_seq']
+    logger.info(f'actions list: {arch_seq}')
     structure.set_ops(arch_seq)
 
     if config.get('preprocessing') is not None:
@@ -70,8 +71,8 @@ def run(config):
             model_created = True
         except:
             model_created = False
-            print('Error: Model creation failed...')
-            print(traceback.format_exc())
+            logger.info('Error: Model creation failed...')
+            logger.info(traceback.format_exc())
         if model_created:
             trainer = TrainerRegressorTrainValid(config=config, model=model)
     else:
@@ -80,8 +81,8 @@ def run(config):
             model_created = True
         except:
             model_created = False
-            print('Error: Model creation failed...')
-            print(traceback.format_exc())
+            logger.info('Error: Model creation failed...')
+            logger.info(traceback.format_exc())
         if model_created:
             trainer = TrainerClassifierTrainValid(config=config, model=model)
 
