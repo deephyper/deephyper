@@ -90,5 +90,5 @@ def run(config):
         result = -trainer.train() if config['regression'] else trainer.train()
     else:
         # penalising actions if model cannot be created
-        result = -10**10 if config['regression'] else -1.0
+        result = np.finfo('float32').min if config['regression'] else -1.0
     return result
