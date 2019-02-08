@@ -87,7 +87,7 @@ def run(config):
             trainer = TrainerClassifierTrainValid(config=config, model=model)
 
     if model_created:
-        result = -trainer.train() if config['regression'] else trainer.train()
+        result = -np.log(trainer.train()) if config['regression'] else trainer.train()
     else:
         # penalising actions if model cannot be created
         result = np.finfo('float32').min if config['regression'] else -1.0
