@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import math
+import traceback
 from sklearn.metrics import mean_squared_error
 
 import deephyper.search.nas.model.arch as a
@@ -30,7 +31,13 @@ class TrainerRegressorTrainValid(TrainerTrainValid):
 
                 y_orig, y_pred = self.predict()
 
-                unnormalize_mse = mean_squared_error(y_orig, y_pred)
+                try:
+                    unnormalize_mse = mean_squared_error(y_orig, y_pred)
+                except ValueError as err:
+                    logger.error(traceback.format_exc())
+                    unnormalize_mse = np.finfo('float32').max
+                except:
+                    raise
 
                 self.train_history[f'{self.metrics_name[0]}_valid'] = unnormalize_mse
 
@@ -42,7 +49,14 @@ class TrainerRegressorTrainValid(TrainerTrainValid):
         elif num_epochs == 0:
             y_orig, y_pred = self.predict()
 
-            unnormalize_mse = mean_squared_error(y_orig, y_pred)
+            try:
+                unnormalize_mse = mean_squared_error(y_orig, y_pred)
+            except ValueError as err:
+                logger.error(traceback.format_exc())
+                unnormalize_mse = np.finfo('float32').max
+            except:
+                raise
+
             logger.info(jm(epoch=0, validation_mse=float(unnormalize_mse)))
             logger.info(jm(type='result', mse=float(unnormalize_mse)))
             return unnormalize_mse
