@@ -18,22 +18,7 @@ on HPC platforms.
 
 # Documentation
 
-Deephyper documentation is on : [ReadTheDocs](https://deephyper.readthedocs.io)
-
-# Directory structure
-
-```
-benchmark/
-    a set of problems for hyperparameter or neural architecture search which the user can use to compare our different search algorithms or as examples to build their own problems.
-evaluator/
-    a set of objects which help to run search on different systems and for different cases such as quick and light experiments or long and heavy runs.
-search/
-    a set of algorithms for hyperparameter and neural architecture search. You will also find a modular way to define new search algorithms and specific sub modules for hyperparameter or neural architecture search.
-hps/
-        hyperparameter search applications
-nas/
-        neural architecture search applications
-```
+Deephyper documentation is on [ReadTheDocs](https://deephyper.readthedocs.io)
 
 # Install instructions
 
@@ -59,6 +44,22 @@ git clone https://github.com/deephyper/deephyper.git
 cd deephyper/
 pip install -e '.[tests,docs]'
 ```
+
+# Directory structure
+
+```
+benchmark/
+    a set of problems for hyperparameter or neural architecture search which the user can use to compare our different search algorithms or as examples to build their own problems.
+evaluator/
+    a set of objects which help to run search on different systems and for different cases such as quick and light experiments or long and heavy runs.
+search/
+    a set of algorithms for hyperparameter and neural architecture search. You will also find a modular way to define new search algorithms and specific sub modules for hyperparameter or neural architecture search.
+hps/
+        hyperparameter search applications
+nas/
+        neural architecture search applications
+```
+
 
 # How do I learn more?
 
