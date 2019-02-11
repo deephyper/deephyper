@@ -97,6 +97,5 @@ def run(config):
         result = res
     else:
         # penalising actions if model cannot be created
-        # result = np.finfo('float32').min if config['regression'] else -1.0
         result = -1
     return result
