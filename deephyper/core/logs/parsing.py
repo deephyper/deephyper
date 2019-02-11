@@ -125,7 +125,7 @@ def main():
             print('Workload has been computed successfuly!')
 
 
-    with open(HERE+'/json/'+data['fig']+'.json', 'w') as fjson:
+    with open(data['fig']+'.json', 'w') as fjson:
         print(f'Create json file: {data["fig"]+".json"}')
         json.dump(data, fjson, indent=2)
     print('Json dumped!')
