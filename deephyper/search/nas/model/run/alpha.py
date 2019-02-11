@@ -89,7 +89,12 @@ def run(config):
     if model_created:
         # 0 < reward regression < 105
         # 0 < reward classification < 100
-        result = -np.log(trainer.train()) + np.log(np.finfo('float32').max) if config['regression'] else trainer.train()
+        res = trainer.train()
+        if config['regression']:
+            if res < np.finfo('float32').min:
+                res = np.finfo('float32').min
+            res = - np.log(res) + np.log(np.finfo('float32').max)
+        result = res
     else:
         # penalising actions if model cannot be created
         # result = np.finfo('float32').min if config['regression'] else -1.0
