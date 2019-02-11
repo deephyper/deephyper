@@ -6,8 +6,7 @@
 
 # What is DeepHyper?
 
-DeepHyper is a automated machine learning (AutoML) package for deep neural networks. It comprises two components: 
-1) Neural architecture search is an approach for automatically searching for high-performing the deep neural network 
+DeepHyper is a automated machine learning (AutoML) package for deep neural networks. It comprises two components: 1) Neural architecture search is an approach for automatically searching for high-performing the deep neural network 
 architecture. 2) Hyperparameter search is an approach for automatically searching for high-performing hyperparameters 
 for a given deep neural network. DeepHyper provides an infrastructure that targets experimental research in neural architecture 
 and hyperparameter search methods, scalability, and portability across HPC systems. It comprises three modules: 
