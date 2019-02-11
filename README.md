@@ -80,7 +80,7 @@ python -m deephyper.search.nas.ppo_a3c_sync --problem deephyper.benchmark.nas.mn
 
 # Who is responsible?
 
-The core DeepHyper team is at Argonne National Laboratory:
+Currently, the core DeepHyper team is at Argonne National Laboratory:
 
 * Prasanna Balaprakash <pbalapra@anl.gov>, Lead and founder
 * Romain Egele <regele@anl.gov>
@@ -115,5 +115,8 @@ The DeepHyper Team uses git-flow to organize the development: [Git-Flow cheatshe
 
 # Copyright and license
 
-TBD
+Copyright © 2019, UChicago Argonne, LLC
 
+DeepHyper is distributed under the terms of BSD License. 
+
+Argonne Patent & Intellectual Property File Number: SF-19-007
