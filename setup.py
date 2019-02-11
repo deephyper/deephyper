@@ -40,8 +40,14 @@ REQUIRED = [
     'joblib'
 ]
 
-if on_theta:
+# external sources
+DP_LINKS = list()
+
+if on_theta: # --system-site-packages
     REQUIRED.append('mpi4py') #we want to use the default mpi4py from cray environment
+
+    REQUIRED.append('balsam')
+    DP_LINKS.append('https://github.com/balsam-alcf/balsam/tree/master#egg=balsam-0.2')
 elif not on_rtd and not on_gpu:
     REQUIRED.append('mpi4py>=3.0.0')
 elif on_gpu:
@@ -202,6 +208,7 @@ setup(
     # },
     install_requires=REQUIRED,
     extras_require=EXTRAS,
+    dependency_links=DP_LINKS,
     include_package_data=True,
     license='BSD',
     classifiers=[

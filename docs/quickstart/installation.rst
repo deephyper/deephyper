@@ -43,14 +43,46 @@ From github:
 Argonne Leadership Computing Facility
 =====================================
 
-Theta
------
+Theta - User
+------------
 
-Deephyper can be directly installed as a module on Theta.
+When you are a user deephyper can be directly installed as a module on Theta.
 
 ::
 
     module load deephyper
+
+Theta - Developer
+-----------------
+
+::
+
+    # load cray python
+    module load cray-python/3.6.1.1
+
+    # check which python/pip is used, it should be python/pip from cray-python
+    # if it's not you can unload other modules and verify your PATH
+    which python
+    which pip
+
+    # install virtualenv for python in your HOME directory
+    pip install --user virtualenv
+
+    # create a virtualenv
+    ~/.local/bin/virtualenv deep
+
+    # activate the freshly created environment
+    ~/deep/bin/activate ~/deep
+    # to activate your virtualenv quickly in the future, you can define an alias in your .bashrc such as:
+    # alias act="~/deep/bin/activate ~/deep"
+
+
+    # install deephyper
+    git clone https://github.com/deephyper/deephyper.git
+    cd deephyper/
+    # switching to develop branch
+    git checkout develop
+    pip install -e setup.py
 
 
 Cooley
