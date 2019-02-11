@@ -96,7 +96,7 @@ Modules, patches (code, documentation, etc.) contributed by:
 
 # Citing DeepHyper
 
-If you are referencing DeepHyper in a publication, please cite the following paper:
+If you are referencing DeepHyper in a publication, please cite the following papers:
 
  * P. Balaprakash, M. Salim, T. Uram, V. Vishwanath, and S. M. Wild. **DeepHyper: Asynchronous Hyperparameter Search for Deep Neural Networks**. 
     In 25th IEEE International Conference on High Performance Computing, Data, and Analytics. IEEE, 2018. 
