@@ -117,6 +117,7 @@ The DeepHyper Team uses git-flow to organize the development: [Git-Flow cheatshe
 
 Copyright © 2019, UChicago Argonne, LLC
 
-DeepHyper is distributed under the terms of BSD License. 
+DeepHyper is distributed under the terms of BSD License. See [LICENSE](https://github.com/deephyper/deephyper/blob/master/LICENSE.md)
 
 Argonne Patent & Intellectual Property File Number: SF-19-007
+
