@@ -1,0 +1,10 @@
+# .readthedocs.yml
+
+build:
+    image: latest
+
+python:
+    version: 3.6
+    setup_install: true
+    extra_requirements:
+        - docs

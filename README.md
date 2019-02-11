@@ -1,22 +1,119 @@
+<p align="center">
+<img src="docs/_static/logo/medium.png">
+</p>
+
+[![Documentation Status](https://readthedocs.org/projects/deephyper/badge/?version=latest)](https://deephyper.readthedocs.io/en/latest/?badge=latest)
+
+# What is DeepHyper?
+
+DeepHyper is a Python package that comprises two components: 1) Neural architecture search is an approach
+for automatically searching for high-performing the deep neural network architecture. 2) Hyperparameter search
+is an approach for automatically searching for high-performing hyperparameters for a given deep neural network.
+DeepHyper provides an infrastructure that targets experimental research in neural architecture and hyperparameter
+search methods, scalability, and portability across HPC systems. It comprises three modules: benchmarks, a collection
+of extensible and diverse DL hyperparameter search problems;
+search, a set of search algorithms for DL hyperparameter search; and
+evaluators, a common interface for evaluating hyperparameter configurations
+on HPC platforms.
+
 # Documentation
 
 Deephyper documentation is on : [ReadTheDocs](https://deephyper.readthedocs.io)
 
 # Directory structure
+
 ```
-benchmarks
-    directory for test problems
-evaluator
-    directory for evaluators (specific objects which help us to abstract task submission)
-search
-    directory for search applications
+benchmark/
+    a set of problems for hyperparameter or neural architecture search which the user can use to compare our different search algorithms or as examples to build their own problems.
+evaluator/
+    a set of objects which help to run search on different systems and for different cases such as quick and light experiments or long and heavy runs.
+search/
+    a set of algorithms for hyperparameter and neural architecture search. You will also find a modular way to define new search algorithms and specific sub modules for hyperparameter or neural architecture search.
+    hps/
+        hyperparameter search applications
+    nas/
+        neural architecture search applications
 ```
 
 # Install instructions
 
-It's better to install deephyper in a virtual environment.
-
+From pip:
 ```
-cd deephyper
+pip install deephyper
+```
+
+From github:
+```
+git clone https://github.com/deephyper/deephyper.git
+cd deephyper/
 pip install -e .
 ```
+
+if you want to install deephyper with test and documentation packages:
+```
+# From Pypi
+pip install 'deephyper[tests,docs]'
+
+# From github
+git clone https://github.com/deephyper/deephyper.git
+cd deephyper/
+pip install -e '.[tests,docs]'
+```
+
+# How do I learn more?
+
+* Documentation: https://deephyper.readthedocs.io
+
+* GitHub repository: https://github.com/deephyper/deephyper
+
+# Quickstart
+
+## Hyperparameter Search (HPS)
+```
+python -m deephyper.search.hps.ambs --problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run
+```
+
+## Neural Architecture Search (NAS)
+```
+python -m deephyper.search.nas.ppo_a3c_sync --problem deephyper.benchmark.nas.mnist1D.problem.Problem --run deephyper.search.nas.model.run.alpha.run
+```
+
+# Who is responsible?
+
+The core DeepHyper team is at Argonne National Laboratory:
+
+* Prasanna Balaprakash <pbalapra@anl.gov>, Lead and founder
+* Romain Egele <regele@anl.gov>
+* Misha Salim <msalim@anl.gov>
+* Venkat Vishwanath <venkat@anl.gov>
+* Stefan Wild <wild@anl.gov>
+
+Modules, patches (code, documentation, etc.) contributed by:
+
+* Elise Jennings <ejennings@anl.gov>
+* Dipendra Kumar Jha <dipendrajha2018@u.northwestern.edu>
+
+# How can I participate?
+
+Questions, comments, feature requests, bug reports, etc. can be directed to:
+
+* Our mailing list: *deephyper@groups.io* or https://groups.io/g/deephyper
+
+* Issues on GitHub
+
+Patches are much appreciated on the software itself as well as documentation.
+Optionally, please include in your first patch a credit for yourself in the
+list above.
+
+The DeepHyper Team uses git-flow to organize the development: [Git-Flow cheatsheet](https://danielkummer.github.io/git-flow-cheatsheet/). For tests we are using: [Pytest](https://docs.pytest.org/en/latest/).
+
+# Acknowledgements
+
+* Scalable Data-Efficient Learning for Scientific Domains, U.S. Department of Energy 2018 Early Career Award funded by the Advanced Scientific Computing Research program within the DOE Office of Science (2018--Present)
+* Argonne Leadership Computing Facility (2018--Present)
+* SLIK-D: Scalable Machine Learning Infrastructures for Knowledge Discovery, Argonne Computing, Environment and Life Sciences (CELS) Laboratory Directed Research and Development (LDRD) Program (2016--2018)
+
+# Copyright and license
+
+TBD
+
