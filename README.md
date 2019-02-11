@@ -6,14 +6,14 @@
 
 # What is DeepHyper?
 
-DeepHyper is a Python package that comprises two components: 1) Neural architecture search is an approach
-for automatically searching for high-performing the deep neural network architecture. 2) Hyperparameter search
-is an approach for automatically searching for high-performing hyperparameters for a given deep neural network.
-DeepHyper provides an infrastructure that targets experimental research in neural architecture and hyperparameter
-search methods, scalability, and portability across HPC systems. It comprises three modules: benchmarks, a collection
-of extensible and diverse DL hyperparameter search problems;
-search, a set of search algorithms for DL hyperparameter search; and
-evaluators, a common interface for evaluating hyperparameter configurations
+DeepHyper is a automated machine learning (AutoML) package for deep neural networks. It comprises two components: 
+1) Neural architecture search is an approach for automatically searching for high-performing the deep neural network 
+architecture. 2) Hyperparameter search is an approach for automatically searching for high-performing hyperparameters 
+for a given deep neural network. DeepHyper provides an infrastructure that targets experimental research in neural architecture 
+and hyperparameter search methods, scalability, and portability across HPC systems. It comprises three modules: 
+benchmarks, a collection of extensible and diverse benchmark problems;
+search, a set of search algorithms for neural architecture search and hyperparameter search; 
+and evaluators, a common interface for evaluating hyperparameter configurations
 on HPC platforms.
 
 # Documentation
@@ -101,7 +101,7 @@ If you are referencing DeepHyper in a publication, please cite the following pap
 
  * P. Balaprakash, M. Salim, T. Uram, V. Vishwanath, and S. M. Wild. **DeepHyper: Asynchronous Hyperparameter Search for Deep Neural Networks**. 
     In 25th IEEE International Conference on High Performance Computing, Data, and Analytics. IEEE, 2018. 
- * R. Egele, D. Jha, P. Balaprakash, M. Salim, V. Vishwanath, and S. M. Wild. **Scalable Reinforcement-Learning-Based Neural Architecture Search for Scientific and Engineering Applications**. In 34th International Conference on High Performance Computing, 2019.
+ <!-- * R. Egele, D. Jha, P. Balaprakash, M. Salim, V. Vishwanath, and S. M. Wild. **Scalable Reinforcement-Learning-Based Neural Architecture Search for Scientific and Engineering Applications**. In 34th International Conference on High Performance Computing, 2019. -->
 
 # How can I participate?
 
