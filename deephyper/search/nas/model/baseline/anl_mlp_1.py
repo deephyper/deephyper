@@ -45,7 +45,6 @@ def create_dense_cell_type1(input_nodes):
         for op in dropout_ops:
             n3.add_op(op)
 
-        # 5 Blocks
         block = Block()
         block.add_node(n1)
         block.add_node(n2)
@@ -55,6 +54,7 @@ def create_dense_cell_type1(input_nodes):
         block.add_edge(n2, n3)
         return block
 
+    # 2 Blocks per cell
     block1 = create_block()
     block2 = create_block()
 
