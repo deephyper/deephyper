@@ -29,14 +29,8 @@ You can run the following command to print all the applications available in you
 
     balsam ls apps
 
-Now that AMBS is an accessible balsam application you can create the master job of your search:
-::
-
-    balsam job --name test --application AMBS --workflow TEST --args '--problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run'
-
-Similarly as we did with balsam applications you can now print all available balsam jobs with the following command:
-::
-
+    # Create a new job and Print jobs referenced
+    balsam job --name test --application AMBS --workflow TEST --args '--evaluator balsam --problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run'
     balsam ls jobs
 
 
