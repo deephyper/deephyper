@@ -63,17 +63,6 @@ Available benchmarks
 ---------------------------------------------------------------------
      Name            Type                    Description
 ============== ================ =====================================
- b1
- b2
- b3
- capsule
- cifar10cnn     Classification   https://www.cs.toronto.edu/~kriz/cifar.html
- dummy1
- dummy2
- gcn
- mnistcnn       Classification   http://yann.lecun.com/exdb/mnist/
  mnistmlp       Classification   http://yann.lecun.com/exdb/mnist/
- rosen2
- rosen10
- rosen30
+ polynome2      Dummy
 ============== ================ =====================================
