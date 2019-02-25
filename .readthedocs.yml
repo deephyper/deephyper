@@ -1,10 +1,18 @@
 # .readthedocs.yml
 
+version: 2
+
 build:
     image: latest
 
 python:
     version: 3.6
-    setup_install: true
-    extra_requirements:
-        - docs
+    install:
+        - method: pip
+            path: .
+            extra_requirements: docs
+    system_packages: true
+
+sphinx:
+  builder: html
+  configuration: conf.py
