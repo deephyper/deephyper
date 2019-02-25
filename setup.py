@@ -58,7 +58,7 @@ elif on_gpu:
     REQUIRED.append('mpi4py')
 else:
     REQUIRED.append('Sphinx>=1.8.2')
-    REQUIRED.append('sphinx_bootstrap_theme')
+    REQUIRED.append('sphinx_rtd_theme')
     REQUIRED.append('sphinx_copybutton')
 
 # What packages are optional?
