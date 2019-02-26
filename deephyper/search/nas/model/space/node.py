@@ -54,8 +54,7 @@ class Node:
 
     def create_tensor(self, inputs=None, train=True):
         assert self._index != None
-        # with tf.variable_scope(self.__str__().split('[')[0].lower()):
-        # TODO !!!!! but not working for now
+
         if self._tensor is None:
             if inputs == None:
                 self._tensor = self._ops[self._index](train=train)
