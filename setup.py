@@ -210,13 +210,12 @@ setup(
     extras_require=EXTRAS,
     dependency_links=DP_LINKS,
     include_package_data=True,
-    license='BSD',
+    license='ANL',
     classifiers=[
         # Trove classifiers
         # https://pypi.org/classifiers/
         # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
         'Development Status :: 3 - Alpha',
-        'License :: OSI Approved :: BSD License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6'
@@ -227,4 +226,9 @@ setup(
         'testupload': TestUploadCommand,
         'testinstall': TestInstallCommand
     },
+    entry_points = {
+        'console_scripts': [
+            'deephyper-parse=deephyper.core.logs.parsing:main',
+            ],
+    }
 )
