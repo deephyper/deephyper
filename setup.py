@@ -228,7 +228,7 @@ setup(
     },
     entry_points = {
         'console_scripts': [
-            'deephyper-parse=deephyper.core.logs.parsing:main',
+            'deephyper-analytics=deephyper.core.logs.analytics:main'
             ],
     }
 )

@@ -1,7 +1,8 @@
-import json
-import sys
-import os
+import argparse
 import datetime
+import json
+import os
+import sys
 from shutil import copyfile
 
 try:
@@ -80,18 +81,19 @@ def parsing(f, data):
 
         line = f.readline()
 
-def main():
 
-    if len(sys.argv) == 1:
-        print(
-            f' -- HELP -- \n'
-            f'The parsing script takes only 1 argument: the relative path to the log file.\n'
-            f'If you want to compute the workload data with \'balsam\' you should specify a path starting at least from the workload parent directory,\n'
-            f'eg. \'nas_exp1/nas_exp1_ue28s2k0/deephyper.log\'\n'
-            f'where \'nas_exp1\' is the workload.')
-        return
-    else:
-        path = sys.argv[1]
+
+def add_subparser(subparsers):
+    subparser_name = 'parse'
+    function_to_call = main
+
+    parser_parse = subparsers.add_parser(subparser_name, help='Tool to parse "deephyper.log" and produce a JSON file.')
+    parser_parse.add_argument('path', type=str, help=
+            f'The parsing script takes only 1 argument: the relative path to the log file. If you want to compute the workload data with \'balsam\' you should specify a path starting at least from the workload parent directory, eg. \'nas_exp1/nas_exp1_ue28s2k0/deephyper.log\' where \'nas_exp1\' is the workload.')
+
+    return subparser_name, function_to_call
+
+def main(path, *args, **kwargs):
     print(f'Path to deephyper.log file: {path}')
 
     data = dict()
