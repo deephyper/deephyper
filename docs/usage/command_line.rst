@@ -4,6 +4,8 @@ Command Line
 Analytics
 =========
 
+The Analytics command line is a set of tools which has been created to help you analyse deephyper data.
+
 ::
 
     $ deephyper-analytics --help
@@ -23,6 +25,8 @@ Analytics
 Parsing
 -------
 
+The parsing tool helps you to parse the ``deephyper.log`` file of your master job. For now this tool is used for neural architecture search logs.
+
 ::
 
     $ deephyper-analytics parse -h
@@ -40,10 +44,27 @@ Parsing
     optional arguments:
     -h, --help  show this help message and exit
 
+::
+
+    $ deephyper-analytics parse ../nasdb/data/combo_async_exp4/combo_async_exp4_b0c432c7/deephyper.log
+    Module: 'balsam' has been loaded successfully!
+    Path to deephyper.log file: ../nasdb/data/combo_async_exp4/combo_async_exp4_b0c432c7/deephyper.log
+    File has been opened
+    File closed
+    Computing workload!
+    Workload has been computed successfuly!
+    Create json file: combo_async_exp4_2019-02-28_08.json
+    Json dumped!
+    len raw_rewards: 5731
+    len max_rewards: 5731
+    len id_worker  : 5731
+    len arch_seq   : 5731
+
 Json
 ----
 
 ::
+
     $ deephyper-analytics json -h
     usage: deephyper-analytics json [-h] {best} ...
 
