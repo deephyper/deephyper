@@ -53,9 +53,17 @@ def run(config):
 
     logger.info(f'input_shape: {input_shape}')
     logger.info(f'output_shape: {output_shape}')
-    structure = config['create_structure']['func'](input_shape, output_shape, **config['create_structure']['kwargs'])
+
+    cs_kwargs = config['create_structure'].get('kwargs')
+    if cs_kwargs is None:
+        structure = config['create_structure']['func'](input_shape, output_shape)
+    else:
+        structure = config['create_structure']['func'](input_shape, output_shape, **cs_kwargs)
+
     arch_seq = config['arch_seq']
+
     logger.info(f'actions list: {arch_seq}')
+
     structure.set_ops(arch_seq)
 
     if config.get('preprocessing') is not None:
