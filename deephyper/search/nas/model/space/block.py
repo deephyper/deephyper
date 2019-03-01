@@ -1,6 +1,6 @@
 import networkx as nx
 
-from deephyper.search.nas.model.space.node import Node
+from deephyper.search.nas.model.space.node import Node, VariableNode
 
 
 class Block:
@@ -9,47 +9,104 @@ class Block:
 
     def __init__(self):
         self.graph = nx.DiGraph()
-        self.outputs = []
-        self.inputs = []
+        self.outputs = list()
+        self.inputs = list()
 
     def num_nodes(self):
-        return len(self.graph.nodes)
+        """Indicate the number of VariableNodes of the current Block.
+
+        Returns:
+            int: number of VariableNodes of the current Block.
+        """
+
+        return len(list(filter(lambda n: isinstance(n, VariableNode), self.nodes)))
 
     @property
     def action_nodes(self):
-        return self.graph.nodes
+        """Return the list of VariableNodes in the current Block.
+
+        Returns:
+            list(VariableNode): list of VariableNodes of the current Block.
+        """
+
+        return filter(lambda n: isinstance(n, VariableNode), self.nodes)
+
+    @property
+    def nodes(self):
+        """Nodes of the current Block.
+
+        Returns:
+            iterator: nodes of the current Block.
+        """
+
+        return list(self.graph.nodes)
 
     def set_ops(self, indexes):
-        middle_nodes = list(self.graph.nodes)
+        """Set operations of VariableNodes of the current Block.
+
+        Args:
+            indexes (list): list of absolute (int) or relative (float) indexes to set operations of VariableNodes of the current Block.
+
+        Raises:
+            RuntimeError: ...
+        """
+
+
+        # nodes which are not inputs neither outputs
+        mnodes = self.nodes
         for n in self.outputs:
-            middle_nodes.remove(n)
+            mnodes.remove(n)
         for n in self.inputs:
-            middle_nodes.remove(n)
-        assert len(indexes) == len(self.inputs) + len(self.outputs) + len(middle_nodes), (f'len(indexes): {len(indexes)} == len(self.inputs): {len(self.inputs)} + len(self.outputs): {len(self.outputs)} + len(middle_nodes): {len(middle_nodes)}')
+            mnodes.remove(n)
+        variable_mnodes = list(filter(lambda n: isinstance(n, VariableNode),
+            mnodes))
+
+        variable_inputs = list(filter(lambda n: isinstance(n, VariableNode), self.inputs))
+        variable_ouputs = list(filter(lambda n: isinstance(n, VariableNode), self.outputs))
+
+        # number of VariableNodes in current Block
+        nvariable_nodes = len(variable_inputs) + len(variable_mnodes) + len(variable_mnodes)
+
+        if len(indexes) != nvariable_nodes:
+            print(variable_inputs)
+            print(variable_mnodes)
+            print(variable_ouputs)
+            raise RuntimeError(f'len(indexes) == {len(indexes)} when it should be {nvariable_nodes}')
+
         cursor = 0
-        for n in self.inputs:
+        for n in variable_inputs:
             n.set_op(indexes[cursor])
             cursor += 1
-        for n in middle_nodes:
+        for n in variable_mnodes:
             n.set_op(indexes[cursor])
             cursor += 1
-        for n in self.outputs:
+        for n in variable_ouputs:
             n.set_op(indexes[cursor])
             cursor += 1
 
     def add_node(self, node):
-        assert isinstance(node, Node)
-        assert not node in self.graph.nodes
+        """Add a new node to the current Block.
+
+        Args:
+            node (Node): the node to add to the current Block.
+
+        Raises:
+            RuntimeError: if the node to add is not an instance of Node .
+            RuntimeError: if the node to add has already been added to the Block.
+        """
+
+        if not isinstance(node, Node):
+            raise RuntimeError(f'node argument should be an instance of Node!')
+        if node in self.nodes:
+            raise RuntimeError(f'Node: {node} has already been added to the Block!')
 
         self.graph.add_node(node)
 
         self.outputs.append(node)
         self.inputs.append(node)
 
-        return node
-
     def add_edge(self, node1, node2):
-        '''Create a new edge in the block graph.
+        """Create a new edge in the block graph.
 
         The edge created corresponds to : node1 -> node2.
 
@@ -59,7 +116,7 @@ class Block:
 
         Return:
             (bool) True if the edge was successfully created, False if not.
-        '''
+        """
         assert isinstance(node1, Node)
         assert isinstance(node2, Node)
 
@@ -76,36 +133,14 @@ class Block:
             return True
 
     def max_num_ops(self):
+        """Return the maximum number of operations for a VariableNode in current Block.
+
+        Returns:
+            int: maximum number of operations for a VariableNode in current Block.
+        """
+
         mx = 0
-        for n in list(self.graph.nodes):
-            mx = max(mx, n.num_ops())
+        for n in filter(lambda n: isinstance(n, VariableNode), self.nodes):
+            mx = max(mx, n.num_ops)
         return mx
 
-    def create_tensor(self, graph=None, train=True):
-        assert len(self.outputs) > 0
-        if graph is None:
-            graph = self.graph
-        output_tensors = [create_tensor_aux(graph, n, train=train) for n in self.outputs]
-        return output_tensors
-
-def create_tensor_aux(g, n, train=None):
-    """Recursive function to create the tensors from the graph.
-
-    Args:
-        g (nx.DiGraph): a graph
-        n (nx.Node): a node
-        train (bool): True if the network is built for training, False if the network is built for validation/testing (for example False will deactivate Dropout).
-
-    Return:
-        the tensor represented by n.
-    """
-
-    if n._tensor != None:
-        output_tensor = n._tensor
-    else:
-        pred = list(g.predecessors(n))
-        if len(pred) == 0:
-            output_tensor = n.create_tensor(train=train)
-        else:
-            output_tensor = n.create_tensor([create_tensor_aux(g, s_i, train=train) for s_i in pred], train=train)
-    return output_tensor

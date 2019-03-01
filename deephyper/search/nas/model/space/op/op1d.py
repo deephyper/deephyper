@@ -61,62 +61,7 @@ class Concatenate(Operation):
             out = values[0]
         return out
 
-class Add(Operation):
-    """Add operation.
 
-    Args:
-        graph:
-        node (Node): current_node of the operation
-        stacked_nodes (list(Node)): nodes to concatenate
-        axis (int): axis to concatenate
-    """
-    def __init__(self, graph=None, node=None, stacked_nodes=None, axis=-1):
-        self.graph = graph
-        self.node = node
-        self.stacked_nodes = stacked_nodes
-        self.axis = axis
-
-    def is_set(self):
-        if self.stacked_nodes is not None:
-            for n in self.stacked_nodes:
-                self.graph.add_edge(n, self.node)
-
-    def __call__(self, values, **kwargs):
-        values = values[:]
-        max_len_shp = max([len(x.get_shape()) for x in values])
-
-        # zeros padding
-        if len(values) > 1:
-
-            for i, v in enumerate(values):
-
-                if len(v.get_shape()) < max_len_shp:
-                    values[i] = keras.layers.Reshape(
-                        (*tuple(v.get_shape()[1:]),
-                        *tuple(1 for i in range(max_len_shp - len(v.get_shape())))
-                        ))(v)
-
-            max_dim_i = lambda i: max(map(lambda x: int(x.get_shape()[i]), values))
-            max_dims = [None] + list(map(max_dim_i, range(1, max_len_shp)))
-
-            paddings_dim_i = lambda i: list(map(lambda x: max_dims[i] - int(x.get_shape()[i]), values))
-            paddings_dim = list(map(paddings_dim_i, range(1, max_len_shp)))
-
-            for i in range(len(values)):
-                paddings = list()
-                for j in range(len(paddings_dim)):
-                    p = paddings_dim[j][i]
-                    lp = p // 2
-                    rp = p - lp
-                    paddings.append([lp, rp])
-                values[i] = deeplayers.Padding(paddings)(values[i])
-
-        # concatenation
-        if len(values) > 1:
-            out = keras.layers.Add()(values)
-        else:
-            out = values[0]
-        return out
 
 class Dense(Operation):
     """Multi Layer Perceptron operation.
@@ -131,16 +76,19 @@ class Dense(Operation):
     def __init__(self, units, activation):
         self.units = units
         self.activation = activation
+        self._layer = None
 
     def __str__(self):
         return f'Dense_{self.units}_{self.activation.__name__}'
 
-    def __call__(self, inputs, **kwargs):
+    def __call__(self, inputs, *args, **kwargs):
         assert len(inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when 1 is required.'
-        out = keras.layers.Dense(
+        if self._layer is None: # reuse mechanism
+            self._layer = keras.layers.Dense(
             units=self.units,
             activation=self.activation,
-            kernel_initializer=tf.initializers.random_uniform())(inputs[0])
+            kernel_initializer=tf.initializers.random_uniform())
+        out = self._layer(inputs[0])
         return out
 
 
@@ -195,6 +143,7 @@ class Conv1D(Operation):
         self.num_filters = num_filters
         self.strides = strides
         self.padding = padding
+        self._layer = None
 
     def __str__(self):
         return f'{type(self).__name__}_{self.filter_size}_{self.num_filters}'
@@ -206,11 +155,13 @@ class Conv1D(Operation):
             out = keras.layers.Reshape((inpt.get_shape()[1], 1))(inpt)
         else:
             out = inpt
-        out = keras.layers.Conv1D(
+        if self._layer is None: # reuse mechanism
+            self._layer = keras.layers.Conv1D(
             filters=self.num_filters,
             kernel_size=self.filter_size,
             strides=self.strides,
-            padding=self.padding)(out)
+            padding=self.padding)
+        out = self._layer(out)
         return out
 
 

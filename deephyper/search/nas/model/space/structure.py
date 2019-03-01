@@ -2,8 +2,8 @@ import networkx as nx
 from tensorflow import keras
 
 from deephyper.search.nas.model.space.cell import Cell
-from deephyper.search.nas.model.space.block import Block, create_tensor_aux
-from deephyper.search.nas.model.space.node import Node
+from deephyper.search.nas.model.space.block import Block
+from deephyper.search.nas.model.space.node import Node, ConstantNode
 from deephyper.search.nas.model.space.op.basic import Connect, Tensor
 from deephyper.search.nas.model.space.op.op1d import Concatenate
 
@@ -32,16 +32,15 @@ class KerasStructure(Structure):
 
         if type(input_shape) is tuple:
             # we have only one input tensor here
-            self.input_nodes = [Node('Input')]
-            self.input_nodes[0].add_op(Tensor(keras.layers.Input(input_shape, name="input_0")))
-            self.input_nodes[0].set_op(0)
+            op = Tensor(keras.layers.Input(input_shape, name="input_0"))
+            self.input_nodes = [ConstantNode(op=op, name='Input_0')]
+
         elif type(input_shape) is list and all(map(lambda x: type(x) is tuple, input_shape)):
             # we have a list of input tensors here
             self.input_nodes = list()
             for i in range(len(input_shape)):
-                inode = Node(f'Input_{i}')
-                inode.add_op(Tensor(keras.layers.Input(input_shape[i], name=f"input_{i}")))
-                inode.set_op(0)
+                op = Tensor(keras.layers.Input(input_shape[i], name=f"input_{i}"))
+                inode = ConstantNode(op=op, name=f'Input_{i}')
                 self.input_nodes.append(inode)
         else:
             raise RuntimeError(f"input_shape must be either of type 'tuple' or 'list(tuple)' but is of type '{type(input_shape)}'!")
@@ -61,30 +60,32 @@ class KerasStructure(Structure):
 
     @property
     def max_num_ops(self):
+        """Returns the maximum number of operations of nodes of blocks of cells of struct.
+
+        Returns:
+            int: maximum number of Operations for a VariableNode in the current Structure.
         """
-        Return the maximum number of operations of nodes of blocks of cells of struct.
-        """
-        mx = 0
-        for c in self.struct:
-            mx = max(mx, c.max_num_ops())
-        return mx
+
+        return max([c.max_num_ops() for c in self.struct] + [0])
 
     @property
     def num_nodes(self):
+        """Returns the number of VariableNodes in the current Structure.
+
+        Returns:
+            int: number of VariableNodes in the current Structure.
         """
-        Return: the number of nodes which correspond to the number of operations to set.
-        """
-        n = 0
-        for c in self.struct:
-            n += c.num_nodes
-        return n
+
+        return sum([c.num_nodes for c in self.struct] + [0])
+
 
     def num_nodes_cell(self, i=None):
-        """
+        """Returns the number of VariableNodes in Cells.
         Args:
             i (int): index of cell i in self.struct
 
-        Return: the number of nodes in cell i or the list of number of nodes for each cell
+        Returns:
+            list(int): the number of nodes in cell i or the list of number of nodes for each cell.
         """
         if i != None:
             return [self.struct[i].num_nodes()]
@@ -93,14 +94,16 @@ class KerasStructure(Structure):
 
     @property
     def num_cells(self):
+        """Returns the number of Cells in the current Structure.
+
+        Returns:
+            int: number of Cells in the current Structure.
         """
-        Return: the number of cell in the Structure.
-        """
+
         return len(self.struct)
 
     def add_cell_f(self, func, num=1):
-        """
-        Add a new cell in the structure.
+        """Add a new cell in the structure.
 
         Args:
             func (function): a function that return a cell with one argument list of input nodes.
@@ -120,19 +123,20 @@ class KerasStructure(Structure):
         # hash
         action_nodes = cell.action_nodes
         for an in action_nodes:
-            ops = an.get_ops()
+            ops = an.ops
             for o in ops:
                 str_hash = str(o)
                 if not (str_hash in self.map_sh2int):
                     self.map_sh2int[str_hash] = len(self.map_sh2int)+1
 
 
-    def set_ops(self, indexes):
+    def set_ops(self, indexes, output_node=None):
         """
         Set the operations for each node of each cell of the structure.
 
         Args:
             indexes (list): element of list can be float in [0, 1] or int.
+            output_node (ConstantNode): the output node of the Structure.
         """
         cursor = 0
         for c in self.struct:
@@ -144,19 +148,18 @@ class KerasStructure(Structure):
             self.graph.add_edges_from(c.graph.edges())
 
         output_nodes = get_output_nodes(self.graph)
-        node = Node('Structure_Output')
-        node.add_op(Concatenate(self.graph, node, output_nodes))
-        node.set_op(0)
+        node = ConstantNode(name='Structure_Output')
+        node.set_op(Concatenate(self.graph, node, output_nodes))
         self.output_node = node
 
+
     def create_model(self, activation=None):
-        """
-        Create the tensors corresponding to the structure.
+        """Create the tensors corresponding to the structure.
 
         Args:
             train (bool): True if the network is built for training, False if the network is built for validation/testing (for example False will deactivate Dropout).
 
-        Return:
+        Returns:
             The output tensor.
         """
 
@@ -208,3 +211,25 @@ def get_output_nodes(graph):
         if len(list(graph.successors(n))) == 0:
             output_nodes.append(n)
     return output_nodes
+
+def create_tensor_aux(g, n, train=None):
+    """Recursive function to create the tensors from the graph.
+
+    Args:
+        g (nx.DiGraph): a graph
+        n (nx.Node): a node
+        train (bool): True if the network is built for training, False if the network is built for validation/testing (for example False will deactivate Dropout).
+
+    Return:
+        the tensor represented by n.
+    """
+
+    if n._tensor != None:
+        output_tensor = n._tensor
+    else:
+        pred = list(g.predecessors(n))
+        if len(pred) == 0:
+            output_tensor = n.create_tensor(train=train)
+        else:
+            output_tensor = n.create_tensor([create_tensor_aux(g, s_i, train=train) for s_i in pred], train=train)
+    return output_tensor
