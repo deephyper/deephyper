@@ -165,6 +165,8 @@ class KerasStructure(Structure):
 
         output_tensor = create_tensor_aux(self.graph, self.output_node)
         print('input of output layer shape: ', output_tensor.get_shape())
+        print('input of output layer tensor: ', output_tensor)
+        print('self.output_node: ', self.output_node)
         output_tensor = keras.layers.Flatten()(output_tensor)
         output_tensor = keras.layers.Dense(self.__output_shape[0], activation=activation)(output_tensor)
         print('output of output layer shape: ', output_tensor.get_shape())

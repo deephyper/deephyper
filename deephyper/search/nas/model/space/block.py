@@ -57,7 +57,8 @@ class Block:
         for n in self.outputs:
             mnodes.remove(n)
         for n in self.inputs:
-            mnodes.remove(n)
+            if n in mnodes:
+                mnodes.remove(n)
         variable_mnodes = list(filter(lambda n: isinstance(n, VariableNode),
             mnodes))
 
@@ -65,7 +66,7 @@ class Block:
         variable_ouputs = list(filter(lambda n: isinstance(n, VariableNode), self.outputs))
 
         # number of VariableNodes in current Block
-        nvariable_nodes = len(variable_inputs) + len(variable_mnodes) + len(variable_mnodes)
+        nvariable_nodes =len(list(filter(lambda n: isinstance(n, VariableNode), self.nodes)))
 
         if len(indexes) != nvariable_nodes:
             print(variable_inputs)
@@ -81,8 +82,9 @@ class Block:
             n.set_op(indexes[cursor])
             cursor += 1
         for n in variable_ouputs:
-            n.set_op(indexes[cursor])
-            cursor += 1
+            if not n in variable_inputs:
+                n.set_op(indexes[cursor])
+                cursor += 1
 
     def add_node(self, node):
         """Add a new node to the current Block.

@@ -1,4 +1,5 @@
 import tensorflow as tf
+from tensorflow import keras
 import numpy as np
 import math
 from sklearn.metrics import mean_squared_error
@@ -195,6 +196,10 @@ class TrainerTrainValid:
             optimizer=self.optimizer,
             loss=self.loss_metric_name,
             metrics=self.metrics_name)
+    
+    def add_callback(self, cb):
+        assert isinstance(cb, keras.callbacks.Callback)
+        self.callbacks.append(cb)
 
     def predict(self, dataset='valid', keep_normalize=False):
 
