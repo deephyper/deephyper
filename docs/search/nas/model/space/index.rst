@@ -15,7 +15,7 @@ Nodes
 VariableNode
 ------------
 
-A ``VariableNode`` represent a node of our structure with a set of possible operations. It means the agent will have to act to choose one of these operations.
+A ``VariableNode`` represents a node of our structure with a set of possible operations. It means the agent will have to act to choose one of these operations.
 
 ::
 
@@ -45,6 +45,18 @@ A ``VariableNode`` represent a node of our structure with a set of possible oper
 
 ConstantNode
 ------------
+
+A ``ConstantNode`` represents a node of our structure with a fixed operation. It means the agent will not make any new decision for this node. The common use case for this node is to add a tensor in the graph.
+
+::
+
+    >>> import tensorflow as tf
+    >>> from deephyper.search.nas.model.space.node import ConstantNode
+    >>> from deephyper.search.nas.model.space.op.op1d import Dense
+    >>> cnode = ConstantNode(op=Dense(units=100, activation=tf.nn.relu), name='CNode1')
+    >>> str(cnode)
+    'CNode1(2)(Constant[Dense_100_relu])'
+
 
 .. autoclass:: deephyper.search.nas.model.space.node.ConstantNode
 
