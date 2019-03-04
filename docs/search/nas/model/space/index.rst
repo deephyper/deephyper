@@ -7,14 +7,49 @@ Space
    layers/index
    op/index
 
-Node
-====
+Nodes
+=====
 
 .. autoclass:: deephyper.search.nas.model.space.node.Node
 
+VariableNode
+------------
+
+A ``VariableNode`` represent a node of our structure with a set of possible operations. It means the agent will have to act to choose one of these operations.
+
+::
+
+    >>> import tensorflow as tf
+    >>> from deephyper.search.nas.model.space.node import VariableNode
+    >>> vnode = VariableNode("VNode1")
+    >>> from deephyper.search.nas.model.space.op.op1d import Dense
+    >>> vnode.add_op(Dense(
+    ... units=10,
+    ... activation=tf.nn.relu))
+    >>> vnode.num_ops
+    1
+    >>> vnode.add_op(Dense(
+    ... units=1000,
+    ... activation=tf.nn.tanh))
+    >>> vnode.num_ops
+    2
+    >>> vnode.set_op(0)
+    >>> vnode.op.units
+    100
+    >>> str(vnode)
+    'VNode1(1)(Variable[Dense_100_relu])'
+
+
+
 .. autoclass:: deephyper.search.nas.model.space.node.VariableNode
 
+ConstantNode
+------------
+
 .. autoclass:: deephyper.search.nas.model.space.node.ConstantNode
+
+MirrorNode
+----------
 
 .. autoclass:: deephyper.search.nas.model.space.node.MirrorNode
 
