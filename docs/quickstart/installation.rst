@@ -21,6 +21,8 @@ From github:
     cd deephyper/
     pip install -e .
 
+.. todo:: install deephyper on GPU
+
 Contributor installation
 ------------------------
 

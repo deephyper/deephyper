@@ -4,12 +4,19 @@ Space
 .. toctree::
    :maxdepth: 2
 
+   layers/index
    op/index
 
 Node
 ====
 
 .. autoclass:: deephyper.search.nas.model.space.node.Node
+
+.. autoclass:: deephyper.search.nas.model.space.node.VariableNode
+
+.. autoclass:: deephyper.search.nas.model.space.node.ConstantNode
+
+.. autoclass:: deephyper.search.nas.model.space.node.MirrorNode
 
 Block
 =====
