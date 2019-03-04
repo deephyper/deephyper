@@ -42,9 +42,9 @@ A preprocessing function is returning an object folling the same interface as `s
         ])
         return preprocessor
 
+
 Structure
 ---------
-
 
 
 Here is the structure used for the ```deephyper.benchmark.nas.linearReg`` benchmark.
@@ -84,6 +84,33 @@ Here is the structure used for the ```deephyper.benchmark.nas.linearReg`` benchm
 See :ref:`what-is-structure` for more details
 
 .. _available-nas-benchmarks:
+
+Create a new NAS problem with multiple inputs
+=============================================
+
+With numpy array for load_data:
+
+Problem
+-------
+
+.. literalinclude:: ../../deephyper/benchmark/nas/linearRegMultiInputs/problem.py
+
+Load Data
+---------
+
+.. literalinclude:: ../../deephyper/benchmark/nas/linearRegMultiInputs/problem.py
+
+With generators:
+
+Problem
+-------
+
+.. literalinclude:: ../../deephyper/benchmark/nas/linearRegMultiInputsGen/problem.py
+
+Load Data
+---------
+
+.. literalinclude:: ../../deephyper/benchmark/nas/linearRegMultiInputsGen/problem.py
 
 Available benchmarks
 ====================
