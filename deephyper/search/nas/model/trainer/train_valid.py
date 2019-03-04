@@ -24,7 +24,7 @@ class TrainerTrainValid:
         self.config_hp = self.config[a.hyperparameters]
         self.optimizer_name = self.config_hp[a.optimizer]
         self.loss_metric_name = self.config_hp[a.loss_metric]
-        self.metrics_name = self.config_hp[a.metrics]
+        self.metrics_name = [U.selectMetric(m) for m in self.config_hp[a.metrics]]
         self.batch_size = self.config_hp[a.batch_size]
         self.learning_rate = self.config_hp[a.learning_rate]
         self.num_epochs = self.config_hp[a.num_epochs]

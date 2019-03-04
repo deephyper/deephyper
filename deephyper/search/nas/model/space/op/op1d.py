@@ -91,9 +91,6 @@ class Dense(Operation):
             units=self.units,
             activation=self.activation,
             **self.kwargs,
-            # kernel_regularizer=keras.regularizers.l2(0.01),
-            # activity_regularizer=keras.regularizers.l1(0.01),
-            # kernel_initializer=tf.initializers.random_uniform(),
             )
         out = self._layer(inputs[0])
         return out

@@ -39,7 +39,7 @@ class TrainerRegressorTrainValid(TrainerTrainValid):
                 except:
                     raise
 
-                self.train_history[f'{self.metrics_name[0]}_valid'] = unnormalize_mse
+                # self.train_history[f'{self.metrics_name[0]}_valid'] = unnormalize_mse
 
                 min_mse = min(min_mse, unnormalize_mse)
                 logger.info(jm(epoch=i, validation_mse=float(unnormalize_mse)))

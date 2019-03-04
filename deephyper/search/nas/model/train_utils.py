@@ -79,3 +79,36 @@ def check_data_config(data_dict):
         return "ndarray"
     else:
         raise RuntimeError('Wrong data config...')
+
+
+# Metrics with tensors
+
+def r2(y_true, y_pred):
+    SS_res =  tf.keras.backend.sum(tf.keras.backend.square(y_true - y_pred))
+    SS_tot = tf.keras.backend.sum(tf.keras.backend.square(y_true - tf.keras.backend.mean(y_true)))
+    return (1 - SS_res/(SS_tot + tf.keras.backend.epsilon()))
+
+def mae(y_true, y_pred):
+    return tf.keras.metrics.mean_absolute_error(y_true, y_pred)
+
+def mse(y_true, y_pred):
+    return tf.keras.metrics.mean_squared_error(y_true, y_pred)
+
+def acc(y_true, y_pred):
+    return tf.keras.metrics.categorical_accuracy(y_true, y_pred)
+
+metrics = OrderedDict()
+metrics['mean_absolute_error'] = metrics['mae'] = mae
+metrics['r2'] = r2
+
+def selectMetric(name):
+    '''
+      Return the metric defined by name.
+    '''
+    if (metrics.get(name) == None):
+        return name # supposing it is referenced in keras metrics
+    else:
+        return metrics[name]
+
+
+
