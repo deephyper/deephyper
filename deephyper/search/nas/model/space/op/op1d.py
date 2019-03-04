@@ -69,13 +69,16 @@ class Dense(Operation):
     Help you to create a perceptron with n layers, m units per layer and an activation function.
 
     Args:
-        layers (int): number of layers.
         units (int): number of units per layer.
         activation: an activation function from tensorflow.
     """
-    def __init__(self, units, activation):
+    def __init__(self, units, activation, *args, **kwargs):
+        # Layer args
         self.units = units
         self.activation = activation
+        self.kwargs = kwargs
+
+        # Reuse arg
         self._layer = None
 
     def __str__(self):
@@ -87,7 +90,11 @@ class Dense(Operation):
             self._layer = keras.layers.Dense(
             units=self.units,
             activation=self.activation,
-            kernel_initializer=tf.initializers.random_uniform())
+            **self.kwargs,
+            # kernel_regularizer=keras.regularizers.l2(0.01),
+            # activity_regularizer=keras.regularizers.l1(0.01),
+            # kernel_initializer=tf.initializers.random_uniform(),
+            )
         out = self._layer(inputs[0])
         return out
 
