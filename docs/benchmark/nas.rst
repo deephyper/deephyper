@@ -98,7 +98,7 @@ Problem
 Load Data
 ---------
 
-.. literalinclude:: ../../deephyper/benchmark/nas/linearRegMultiInputs/problem.py
+.. literalinclude:: ../../deephyper/benchmark/nas/linearRegMultiInputs/load_data.py
 
 With generators:
 
@@ -110,7 +110,7 @@ Problem
 Load Data
 ---------
 
-.. literalinclude:: ../../deephyper/benchmark/nas/linearRegMultiInputsGen/problem.py
+.. literalinclude:: ../../deephyper/benchmark/nas/linearRegMultiInputsGen/load_data.py
 
 Available benchmarks
 ====================
