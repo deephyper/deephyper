@@ -26,9 +26,11 @@ def train(num_episodes, seed, space, evaluator, num_episodes_per_batch, reward_r
     set_global_seeds(workerseed)
 
     # MAKE ENV_NAS
-    structure = space['create_structure']['func'](
-        **space['create_structure']['kwargs']
-    )
+    cs_kwargs = space['create_structure'].get('kwargs')
+    if cs_kwargs is None:
+        structure = space['create_structure']['func']()
+    else:
+        structure = space['create_structure']['func'](**cs_kwargs)
 
     num_nodes = structure.num_nodes
     timesteps_per_actorbatch = num_nodes * num_episodes_per_batch
