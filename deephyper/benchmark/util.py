@@ -33,7 +33,7 @@ class Timer:
 
 def extension_from_parameters(param_dict):
     EXCLUDE_PARAMS = ['epochs', 'model_path', 'data_source',
-                      'stage_in_destination', 'version', 
+                      'stage_in_destination', 'version',
                       'backend']
     extension = ''
     for key in sorted(param_dict):
@@ -50,7 +50,7 @@ def load_meta_data(filename):
     with open(filename, 'rb') as handle:
         data = pickle.load(handle)
     return data
-    
+
 def resume_from_disk(benchmark_name, param_dict, data_dir='', custom_objects={}):
     from keras.models import load_model
     SavedModel = namedtuple('SavedModel', ['model', 'model_path',
@@ -128,21 +128,21 @@ class TerminateOnTimeOut(Callback):
                 #print('TimeoutRuntime: %2.3fs, Maxtime: %2.3fs' % (run_in_sec, self.timeout_in_sec))
                 self.model.stop_training = True
                 #if self.validation_data is not None:
-                #    x, y = self.validation_data[0], self.validation_data[1]  
+                #    x, y = self.validation_data[0], self.validation_data[1]
                 #    loss, acc = self.model.evaluate(x,y)
                 #    #print(self.model.history.keys())
 
 
 def numpy_dict_cache(cache_loc):
     def _cache(data_loader):
-        def wrapper():
+        def wrapper(*args, **kwargs):
             if os.path.exists(cache_loc):
                 logger.debug("Reading data from cache")
-                with open(cache_loc, 'rb') as fp: 
+                with open(cache_loc, 'rb') as fp:
                     return {k: arr for k,arr in np.load(fp).items()}
             else:
                 logger.debug("Data not cached; invoking user data loader")
-                data = data_loader()
+                data = data_loader(*args, **kwargs)
                 with open(cache_loc, 'wb') as fp: np.savez(fp, **data)
                 return data
         return wrapper
