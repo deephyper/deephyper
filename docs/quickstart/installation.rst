@@ -108,7 +108,7 @@ Contribute to documentation
 Build
 -----
 
-To build the documentation you just need to be in the ``deephyper/doc`` folder and run ``make html`` assuming you have MakeFile installed on your computer. Then you can see the build documentation inside the ``doc/_build`` folder just by opening the ``index.html`` file with your web browser.
+To build the documentation you just need to be in the ``deephyper/docs`` folder and run ``make html`` assuming you have MakeFile installed on your computer. Then you can see the build documentation inside the ``doc/s_build`` folder just by opening the ``index.html`` file with your web browser.
 
 Useful informations
 -------------------
