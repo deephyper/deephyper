@@ -41,6 +41,6 @@ class StopIfUnfeasible(tf.keras.callbacks.Callback):
         self.avr_batch_time = sum(self.timing) / len(self.timing)
         self.estimate_training_time = self.avr_batch_time * self.steps
 
-        if self.estimate_training_time > self.time_limit:
+        if self.estimate_training_time > self.time_limit and len(self.timing) >= 20:
             self.stopped = True
             self.model.stop_training = True
