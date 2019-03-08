@@ -34,7 +34,7 @@ def test_create_structure():
     print(f'shape(y): {np.shape(y)}')
 
     total_parameters = number_parameters()
-    print('toal_parameters: ', total_parameters)
+    print('total_parameters: ', total_parameters)
 
     # assert np.shape(y) == (1, 1), f'Wrong output shape {np.shape(y)} should be {(1, 1)}'
 
