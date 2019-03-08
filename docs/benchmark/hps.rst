@@ -39,13 +39,14 @@ the search.
 
 
 .. WARNING::
-    When designing a new optimization experiment, keep in mind `model_run.py`
+    When designing a new optimization experiment, keep in mind ``model_run.py``
     must be runnable from an arbitrary working directory. This means that Python
-    modules simply located in the same directory as the `model_run.py` will not be
-    part of the default Python import path, and importing them will cause an `ImportError`!
+    modules simply located in the same directory as the ``model_run.py`` will not be
+    part of the default Python import path, and importing them will cause an ``ImportError``!
 
-To ensure that modules located alongside the `model_run.py` script are always importable, a
-quick workaround is to explicitly add the problem folder to `sys.path` at the top of the script
+To ensure that modules located alongside the ``model_run.py`` script are
+always importable, a quick workaround is to explicitly add the problem
+folder to ``sys.path`` at the top of the script:
 
 ::
 
