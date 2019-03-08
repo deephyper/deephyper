@@ -55,7 +55,7 @@ Scalable Asynchronous Neural Architecture and Hyperparameter Search for Deep Neu
 
    usage/workflow
    usage/command_line
-   tests
+   tests_link
 
 
 Indices and tables

@@ -1,6 +1,7 @@
 from random import random
 
 import numpy as np
+import pytest
 from tensorflow.keras.utils import plot_model
 
 from deephyper.search import util
@@ -8,6 +9,7 @@ from deephyper.search.nas.model.trainer.regressor_train_valid import \
     TrainerRegressorTrainValid
 
 
+@pytest.mark.slow
 def test_trainer_regressor_train_valid_with_one_input():
     from deephyper.benchmark.nas.linearReg.problem import Problem
     config = Problem.space
@@ -52,7 +54,7 @@ def test_trainer_regressor_train_valid_with_one_input():
     trainer = TrainerRegressorTrainValid(config=config, model=model)
 
     trainer.train()
-
+@pytest.mark.slow
 def test_trainer_regressor_train_valid_with_multiple_ndarray_inputs():
     from deephyper.benchmark.nas.linearRegMultiInputs.problem import Problem
     config = Problem.space
@@ -97,7 +99,7 @@ def test_trainer_regressor_train_valid_with_multiple_ndarray_inputs():
     trainer = TrainerRegressorTrainValid(config=config, model=model)
 
     trainer.train()
-
+@pytest.mark.slow
 def test_trainer_regressor_train_valid_with_multiple_generator_inputs():
     from deephyper.benchmark.nas.linearRegMultiInputsGen.problem import Problem
     config = Problem.space
