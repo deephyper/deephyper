@@ -35,6 +35,9 @@ def train(num_episodes, seed, space, evaluator, num_episodes_per_batch, reward_r
     num_nodes = structure.num_nodes
     timesteps_per_actorbatch = num_nodes * num_episodes_per_batch
     num_timesteps = timesteps_per_actorbatch * num_episodes
+    print('num_nodes: ', num_nodes)
+    print('timesteps_per_actorbatch: ', timesteps_per_actorbatch)
+    print('num_episodes_per_batch: ', num_episodes_per_batch)
 
     env = NasEnv(space, evaluator, structure)
 
