@@ -70,18 +70,6 @@ class Cell:
            b_outputs.extend(b.outputs)
         return b_outputs
 
-    def set_inputs(self, inputs):
-        """
-        Remove the previous inputs from the graph if set then add the new inputs.
-
-        Args:
-            inputs list(Node): possible inputs of the cell
-        """
-
-        self.graph.remove_nodes_from(self.inputs)
-        self.inputs = inputs
-        self.graph.add_nodes_from(inputs)
-
     def add_block(self, block):
         """Add a new Block object to the Cell.
 

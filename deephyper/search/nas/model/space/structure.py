@@ -118,6 +118,10 @@ class KerasStructure(Structure):
                 cell = func(possible_inputs[len(possible_inputs)-num:])
         else:
             cell = func()
+
+        self.add_cell(cell)
+
+    def add_cell(self, cell):
         self.struct.append(cell)
 
         # hash
@@ -233,5 +237,12 @@ def create_tensor_aux(g, n, train=None):
         if len(pred) == 0:
             output_tensor = n.create_tensor(train=train)
         else:
-            output_tensor = n.create_tensor([create_tensor_aux(g, s_i, train=train) for s_i in pred], train=train)
+            tensor_list = list()
+            for s_i in pred:
+                tmp = create_tensor_aux(g, s_i, train=train)
+                if type(tmp) is list:
+                    tensor_list.extend(tmp)
+                else:
+                    tensor_list.append(tmp)
+            output_tensor = n.create_tensor(tensor_list, train=train)
     return output_tensor

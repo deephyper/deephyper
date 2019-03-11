@@ -21,7 +21,6 @@ class Operation:
     def is_set(self):
         """Preprocess the current operation.
         """
-        pass
 
 
 class Tensor(Operation):
@@ -30,7 +29,6 @@ class Tensor(Operation):
 
     def __call__(self, *args, **kwargs):
         return self.tensor
-
 
 class Connect(Operation):
     """Connection node.
@@ -48,15 +46,31 @@ class Connect(Operation):
         self.n2 = n2
 
     def __str__(self):
-        return f'{type(self).__name__}_{self.n1.id}->{self.n2.id}'
+        if type(self.n1) is list:
+            if len(self.n1) > 0:
+                ids = str(self.n1[0].id)
+                for n in self.n1[1:]:
+                    ids += ',' + str(n.id)
+            else:
+                ids = 'None'
+        else:
+            ids = self.n1.id
+        return f'{type(self).__name__}_{ids}->{self.n2.id}'
 
     def is_set(self):
         """Set the connection in the networkx graph.
         """
-        self.graph.add_edge(self.n1, self.n2)
+        if type(self.n1) is list:
+            for n in self.n1:
+                self.graph.add_edge(n, self.n2)
+        else:
+            self.graph.add_edge(self.n1, self.n2)
 
     def __call__(self, value, *args, **kwargs):
-        return value[0]
+        if type(self.n1) is list:
+            return value
+        else:
+            return value[0] if len(value) > 0 else value
 
 
 class AddByPadding(Operation):

@@ -9,7 +9,6 @@ from deephyper.evaluator import Evaluator
 from deephyper.search.nas.agent import pposgd_async
 from deephyper.search.nas.agent.policy import lstm
 from deephyper.search.nas.env import NasEnv
-#from  deephyper.search.nas.utils import bench #, logger
 from  deephyper.search.nas.utils.common import set_global_seeds
 
 

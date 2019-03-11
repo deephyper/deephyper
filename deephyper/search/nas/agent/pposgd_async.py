@@ -10,7 +10,6 @@ import deephyper.search.nas.utils.common.tf_util as U
 from deephyper.search import util
 from deephyper.search.nas.agent.utils import (reward_for_final_timestep,
                                               traj_segment_generator)
-#from deephyper.search.nas.utils import logger
 from deephyper.search.nas.utils._logging import JsonMessage as jm
 from deephyper.search.nas.utils.common import (Dataset, explained_variance,
                                                fmt_row, zipsame)
