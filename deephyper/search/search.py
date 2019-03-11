@@ -62,10 +62,10 @@ class Search:
     def _base_parser():
         parser = argparse.ArgumentParser()
         parser.add_argument("--problem",
-            default="deephyper.benchmark.rosen2.problem.Problem"
+            default="deephyper.benchmark.hps.polynome2.Problem"
         )
         parser.add_argument("--run",
-            default="deephyper.benchmark.rosen2.rosenbrock2.run"
+            default="deephyper.benchmark.hps.polynome2.run"
         )
         parser.add_argument("--backend",
             default='tensorflow',

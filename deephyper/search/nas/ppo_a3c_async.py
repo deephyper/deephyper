@@ -38,6 +38,13 @@ class NasPPOAsyncA3C(Search):
         self.num_episodes = kwargs.get('num_episodes')
         if self.num_episodes is None:
             self.num_episodes = math.inf
+        self.clip_param = kwargs.get('clip_param')
+        self.entcoeff = kwargs.get('entcoeff')
+        self.optim_epochs = kwargs.get('optim_epochs')
+        self.optim_stepsize = kwargs.get('optim_stepsize')
+        self.optim_batch_size = kwargs.get('optim_batchsize')
+        self.gamma = kwargs.get('gamma')
+        self.lam = kwargs.get('lam')
 
         self.reward_rule = util.load_attr_from('deephyper.search.nas.agent.utils.'+kwargs['reward_rule'])
 
@@ -62,6 +69,13 @@ class NasPPOAsyncA3C(Search):
                 'reward_for_final_timestep'
             ],
             help='A function which describe how to spread the episodic reward on all timesteps of the corresponding episode.')
+        parser.add_argument('--clip-param', type=float, default=0.2)
+        parser.add_argument('--entcoeff', type=float, default=0.01)
+        parser.add_argument('--optim-epochs', type=int, default=4)
+        parser.add_argument('--optim-stepsize', type=float, default=1e-3)
+        parser.add_argument('--optim-batchsize', type=int, default=None)
+        parser.add_argument('--gamma', type=float, default=0.99)
+        parser.add_argument('--lam', type=float, default=0.95)
         return parser
 
     def main(self):
@@ -86,7 +100,14 @@ class NasPPOAsyncA3C(Search):
             space=self.problem.space,
             evaluator=self.evaluator,
             num_episodes_per_batch=num_episodes_per_batch,
-            reward_rule=self.reward_rule
+            reward_rule=self.reward_rule,
+            clip_param=self.clip_param,
+            entcoeff=self.entcoeff,
+            optim_epochs=self.optim_epochs,
+            optim_stepsize=self.optim_stepsize,
+            optim_batchsize=self.optim_batch_size,
+            gamma=self.gamma,
+            lam=self.lam
         )
 
 if __name__ == "__main__":
