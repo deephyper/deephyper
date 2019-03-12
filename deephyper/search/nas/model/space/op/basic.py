@@ -79,7 +79,7 @@ class AddByPadding(Operation):
     Args:
         graph:
         node (Node): current_node of the operation
-        stacked_nodes (list(Node)): nodes to concatenate
+        stacked_nodes (list(Node)): nodes to add
         axis (int): axis to concatenate
     """
     def __init__(self, graph=None, node=None, stacked_nodes=None, axis=-1):

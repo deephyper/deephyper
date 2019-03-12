@@ -18,15 +18,25 @@ class Structure:
                 nx.nx_agraph.write_dot(self.graph, f)
             except:
                 print('Error: can\'t create graphviz file...')
-
-class KerasStructure(Structure):
-    def __init__(self, input_shape, output_shape):
-        """A KerasSructure represent a search space of networks.
+"""A KerasSructure represent a search space of networks.
 
         Arguments:
             input_shape {list(tuple(int))} -- list of shapes of all inputs
             output_shape {tuple(int)} -- shape of output
         """
+class KerasStructure(Structure):
+    def __init__(self, input_shape, output_shape, output_op=None, *args, **kwargs):
+        """A KerasStructure represents a search space of neural networks.
+
+        Args:
+            input_shape (list(tuple(int))): list of shapes of all inputs
+            output_shape (tuple(int)): shape of output
+            output_op (Operation): operation which merges outputs of cells
+
+        Raises:
+            RuntimeError: [description]
+        """
+
 
         self.graph = nx.DiGraph()
 
@@ -47,6 +57,7 @@ class KerasStructure(Structure):
 
         self.__output_shape = output_shape
         self.output_node = None
+        self.output_op = Concatenate if output_op is None else output_op
 
         self.struct = []
 
@@ -134,7 +145,7 @@ class KerasStructure(Structure):
                     self.map_sh2int[str_hash] = len(self.map_sh2int)+1
 
 
-    def set_ops(self, indexes, output_node=None):
+    def set_ops(self, indexes):
         """
         Set the operations for each node of each cell of the structure.
 
@@ -153,7 +164,7 @@ class KerasStructure(Structure):
 
         output_nodes = get_output_nodes(self.graph)
         node = ConstantNode(name='Structure_Output')
-        node.set_op(Concatenate(self.graph, node, output_nodes))
+        node.set_op(self.output_op(self.graph, node, output_nodes))
         self.output_node = node
 
 
