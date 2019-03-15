@@ -108,7 +108,7 @@ class Dropout(Operation):
         self.rate = rate
 
     def __str__(self):
-        return f'Dropout({int((1.-self.rate)*100)})'
+        return f'Dropout({self.rate})'
 
     def __call__(self, inputs, **kwargs):
         assert len(inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when 1 is required.'
