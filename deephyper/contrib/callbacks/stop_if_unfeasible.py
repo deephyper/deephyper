@@ -4,11 +4,12 @@ import tensorflow as tf
 
 
 class StopIfUnfeasible(tf.keras.callbacks.Callback):
-    def __init__(self, time_limit=600):
+    def __init__(self, time_limit=600, patience=20):
         super().__init__()
         self.time_limit = time_limit
         self.timing = list()
         self.stopped = False # boolean set to True if the model training has been stopped due to time_limit condition
+        self.patience = patience
 
     def set_params(self, params):
         self.params = params
@@ -39,8 +40,8 @@ class StopIfUnfeasible(tf.keras.callbacks.Callback):
         """
         self.timing[-1] = time.time() - self.timing[-1]
         self.avr_batch_time = sum(self.timing) / len(self.timing)
-        self.estimate_training_time = self.avr_batch_time * self.steps
+        self.estimate_training_time = sum(self.timing) + self.avr_batch_time * (self.steps-len(self.timing))
 
-        if self.estimate_training_time > self.time_limit and len(self.timing) >= 20:
+        if len(self.timing) >= self.patience and self.estimate_training_time > self.time_limit:
             self.stopped = True
             self.model.stop_training = True

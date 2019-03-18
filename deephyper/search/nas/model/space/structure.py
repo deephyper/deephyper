@@ -18,12 +18,8 @@ class Structure:
                 nx.nx_agraph.write_dot(self.graph, f)
             except:
                 print('Error: can\'t create graphviz file...')
-"""A KerasSructure represent a search space of networks.
 
-        Arguments:
-            input_shape {list(tuple(int))} -- list of shapes of all inputs
-            output_shape {tuple(int)} -- shape of output
-        """
+
 class KerasStructure(Structure):
     def __init__(self, input_shape, output_shape, output_op=None, *args, **kwargs):
         """A KerasStructure represents a search space of neural networks.
