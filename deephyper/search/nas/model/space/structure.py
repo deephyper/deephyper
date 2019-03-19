@@ -178,7 +178,8 @@ class KerasStructure(Structure):
         print('input of output layer shape: ', output_tensor.get_shape())
         print('input of output layer tensor: ', output_tensor)
         print('self.output_node: ', self.output_node)
-        output_tensor = keras.layers.Flatten()(output_tensor)
+        if len(output_tensor.get_shape()) > 2:
+            output_tensor = keras.layers.Flatten()(output_tensor)
         output_tensor = keras.layers.Dense(self.__output_shape[0], activation=activation)(output_tensor)
         print('output of output layer shape: ', output_tensor.get_shape())
         # input_tensor = self.input_node._tensor
