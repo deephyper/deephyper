@@ -81,7 +81,7 @@ Activate this freshly created virtual environment:
 
     source deephyper-dev-env/bin/activate
 
-To activate your virtualenv easier in the future you can define an alias in your ``~/.bashrc`` such as ``alias act="~/deep/bin/activate ~/deep"``. Now you will clone deephyper sources and install it with ``pip``:
+To activate your virtualenv easier in the future you can define an alias in your ``~/.bashrc`` such as ``alias act="source ~/deephyper-dev-env/bin/activate"``. Now you will clone deephyper sources and install it with ``pip``:
 
 ::
 
