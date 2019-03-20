@@ -17,9 +17,8 @@ def get_session_conf():
     os.environ['KMP_BLOCKTIME'] = '0'
     os.environ['KMP_AFFINITY'] = 'granularity=fine,compact,1,0'
 
-    if not(os.environ.get('OMP_NUM_THREADS') is None):
-        session_conf = tf.ConfigProto(
-                intra_op_parallelism_threads=int(os.environ['OMP_NUM_THREADS'])
+    session_conf = tf.ConfigProto(
+                intra_op_parallelism_threads=62
                 )
 
     return session_conf
