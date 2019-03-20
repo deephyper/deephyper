@@ -19,8 +19,7 @@ def get_session_conf():
     return session_conf
 
 def set_perf_settings_for_keras():
-/projects/datascience/regele/deephyper/deephyper/contrib/perf
-theta_tools.py
+    """Set a session with performance setting for keras backend.
     """
     session_conf = get_session_conf()
     session = tf.Session(config=session_conf)
