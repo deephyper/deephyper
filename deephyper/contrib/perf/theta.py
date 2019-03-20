@@ -1,5 +1,5 @@
 import os
-import tensorflow as tfA
+import tensorflow as tf
 from tensorflow.keras import backend as K
 
 def get_session_conf():
