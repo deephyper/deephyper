@@ -74,7 +74,7 @@ Create a virtual environment for your deephyper installation as a developer:
 
 ::
 
-    python -m venv deephyper-dev-env
+    python -m venv --system-site-packages deephyper-dev-env
 
 Activate this freshly created virtual environment:
 ::
