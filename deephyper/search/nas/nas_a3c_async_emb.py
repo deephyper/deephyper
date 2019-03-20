@@ -24,13 +24,15 @@ WORKERS_PER_NODE = int(os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
 
 class NasPPOAsyncA3C(Search):
     def __init__(self, problem, run, evaluator, **kwargs):
-        super().__init__(problem, run, evaluator, **kwargs)
+        self.rank = MPI.COMM_WORLD.Get_rank()
+        if self.rank == 0:
+            super().__init__(problem, run, evaluator, cache_key=key, **kwargs)
+        MPI.COMM_WORLD.Barrier()
+        if self.rank != 0:
+            super().__init__(problem, run, evaluator, cache_key=key, **kwargs)
         # set in super : self.problem
         # set in super : self.run_func
         # set in super : self.evaluator
-        self.evaluator = Evaluator.create(self.run_func,
-                                          cache_key=key,
-                                          method=evaluator)
 
         self.num_episodes = kwargs.get('num_episodes')
         if self.num_episodes is None:
@@ -43,7 +45,6 @@ class NasPPOAsyncA3C(Search):
         logger.debug(f'evaluator: {type(self.evaluator)}')
 
         self.num_agents = MPI.COMM_WORLD.Get_size() - 1 # one is  the parameter server
-        self.rank = MPI.COMM_WORLD.Get_rank()
 
         logger.debug(f'num_agents: {self.num_agents}')
         logger.debug(f'rank: {self.rank}')
