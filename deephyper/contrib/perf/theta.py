@@ -21,8 +21,9 @@ def get_session_conf():
 def set_perf_settings_for_keras():
     """Set a session with performance setting for keras backend.
     """
-    session_conf = get_session_conf()
-    session = tf.Session(config=session_conf)
-    K.set_session(session)
+    if 'theta' in os.environ.get('HOST'):
+        session_conf = get_session_conf()
+        session = tf.Session(config=session_conf)
+        K.set_session(session)
 
 
