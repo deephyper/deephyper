@@ -49,6 +49,8 @@ def learn(env, policy_fn, *,
         reward_rule=reward_for_final_timestep
         ):
 
+    rank = MPI.COMM_WORLD.Get_rank()
+
     # Setup losses and stuff
     # ----------------------------------------
     ob_space = env.observation_space
@@ -98,8 +100,8 @@ def learn(env, policy_fn, *,
 
     # Prepare for rollouts
     # ----------------------------------------
-    seg_gen = traj_segment_generator_ph(pi, env, timesteps_per_actorbatch, stochastic=True,
-        reward_affect_func=reward_rule)
+    seg_gen = traj_segment_generator_ph(pi, env, timesteps_per_actorbatch,
+        stochastic=True, reward_affect_func=reward_rule)
 
     episodes_so_far = 0
     timesteps_so_far = 0
@@ -125,7 +127,7 @@ def learn(env, policy_fn, *,
         logger.log("********** Iteration %i ************"%iters_so_far)
 
         seg = seg_gen.__next__()
-        # dh_logger.info(jm(type='seg', rank=MPI.COMM_WORLD.Get_rank(), **seg))
+        dh_logger.info(jm(type='seg', rank=rank, **seg))
         add_vtarg_and_adv(seg, gamma, lam)
 
         # ob, ac, atarg, ret, td1ret = map(np.concatenate, (obs, acs, atargs, rets, td1rets))
