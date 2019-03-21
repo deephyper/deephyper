@@ -121,7 +121,8 @@ class AddByPadding(Operation):
                     lp = p // 2
                     rp = p - lp
                     paddings.append([lp, rp])
-                values[i] = deeplayers.Padding(paddings)(values[i])
+                if sum(map(sum,paddings)) != 0:
+                    values[i] = deeplayers.Padding(paddings)(values[i])
 
         # concatenation
         if len(values) > 1:

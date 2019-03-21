@@ -5,7 +5,7 @@ from deephyper.search.nas.model.space.cell import Cell
 from deephyper.search.nas.model.space.block import Block
 from deephyper.search.nas.model.space.node import Node, ConstantNode
 from deephyper.search.nas.model.space.op.basic import Connect, Tensor
-from deephyper.search.nas.model.space.op.op1d import Concatenate
+from deephyper.search.nas.model.space.op.op1d import Concatenate, Identity
 
 
 class Structure:
@@ -159,8 +159,13 @@ class KerasStructure(Structure):
             self.graph.add_edges_from(c.graph.edges())
 
         output_nodes = get_output_nodes(self.graph)
-        node = ConstantNode(name='Structure_Output')
-        node.set_op(self.output_op(self.graph, node, output_nodes))
+        if len(output_nodes) == 1:
+            node = ConstantNode(op=Identity(), name='Structure_Output')
+            self.graph.add_node(node)
+            self.graph.add_edge(output_nodes[0], node)
+        else:
+            node = ConstantNode(name='Structure_Output')
+            node.set_op(self.output_op(self.graph, node, output_nodes))
         self.output_node = node
 
 
