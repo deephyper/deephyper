@@ -2,6 +2,7 @@ from collections import namedtuple, defaultdict
 import logging
 import subprocess
 import time
+import sys
 
 from deephyper.evaluator import evaluate
 
@@ -22,6 +23,10 @@ class PopenFuture:
         retcode = self.proc.poll()
         if retcode is None:
             self._state = 'active'
+            stdout, _ = self.proc.communicate()
+            tmp_res = self._parse(stdout)
+            if tmp_res != sys.float_info.max:
+                self._result = tmp_res
         elif retcode == 0:
             self._state = 'done'
         else:
