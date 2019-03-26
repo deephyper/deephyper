@@ -68,7 +68,7 @@ class NasPPOSyncA3C(Search):
         # Settings
         #num_parallel = self.evaluator.num_workers - 4 #balsam launcher & controller of search for cooley
         # num_nodes = self.evaluator.num_workers - 1 #balsam launcher & controller of search for theta
-        num_nodes = LAUNCHER_NODES * WORKERS_PER_NODE - 1 # balsam launcher
+        num_nodes = LAUNCHER_NODES * WORKERS_PER_NODE
         if num_nodes > self.num_agents:
             num_episodes_per_batch = (num_nodes-self.num_agents)//self.num_agents
         else:
