@@ -67,10 +67,7 @@ class Connect(Operation):
             self.graph.add_edge(self.n1, self.n2)
 
     def __call__(self, value, *args, **kwargs):
-        if not(type(self.n1) is list):
-            return value
-        else:
-            return value[0] if len(value) > 0 else value
+        return value
 
 
 class AddByPadding(Operation):
