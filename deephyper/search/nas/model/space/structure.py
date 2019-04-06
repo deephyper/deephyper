@@ -1,5 +1,6 @@
 import networkx as nx
 from tensorflow import keras
+from tensorflow.python.keras.utils.vis_utils import model_to_dot
 
 from deephyper.search.nas.model.space.cell import Cell
 from deephyper.search.nas.model.space.block import Block
@@ -59,6 +60,8 @@ class KerasStructure(Structure):
 
         self.map_sh2int = {}
 
+        self._model = None
+
     def __len__(self):
         """Number of cells of the structure.
 
@@ -87,15 +90,16 @@ class KerasStructure(Structure):
 
     @property
     def depth(self):
-        if self.output_node is None:
-            raise RuntimeError("Can't compute depth of model without setting operations.")
+        if self._model is None:
+            raise RuntimeError("Can't compute depth of model without creating a model.")
         return len(self.longest_path)
 
     @property
     def longest_path(self):
-        if self.output_node is None:
-            raise RuntimeError("Can't compute longest path of model without setting operations.")
-        return nx.algorithms.dag.dag_longest_path(self.graph)
+        if self._model is None:
+            raise RuntimeError("Can't compute longest path of model without creating a model.")
+        nx_graph = nx.drawing.nx_pydot.from_pydot(model_to_dot(self._model))
+        return nx.algorithms.dag.dag_longest_path(nx_graph)
 
 
     @property
@@ -213,17 +217,18 @@ class KerasStructure(Structure):
         """
 
         output_tensor = create_tensor_aux(self.graph, self.output_node)
-        print('input of output layer shape: ', output_tensor.get_shape())
-        print('input of output layer tensor: ', output_tensor)
-        print('self.output_node: ', self.output_node)
+        # print('input of output layer shape: ', output_tensor.get_shape())
+        # print('input of output layer tensor: ', output_tensor)
+        # print('self.output_node: ', self.output_node)
         if len(output_tensor.get_shape()) > 2:
             output_tensor = keras.layers.Flatten()(output_tensor)
         output_tensor = keras.layers.Dense(self.__output_shape[0], activation=activation)(output_tensor)
-        print('output of output layer shape: ', output_tensor.get_shape())
+        # print('output of output layer shape: ', output_tensor.get_shape())
         # input_tensor = self.input_node._tensor
-        print('-> Input Nodes: ', self.input_nodes)
+        # print('-> Input Nodes: ', self.input_nodes)
         input_tensors = [inode._tensor for inode in self.input_nodes]
-        print('-> Input Tensors: ', input_tensors)
+        # print('-> Input Tensors: ', input_tensors)
+        self._model = keras.Model(inputs=input_tensors, outputs=output_tensor)
         return keras.Model(inputs=input_tensors, outputs=output_tensor)
 
     def get_hash(self, node_index, index):
