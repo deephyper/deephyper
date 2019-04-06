@@ -23,6 +23,20 @@ class Cell:
         self.graph.add_nodes_from(inputs)
 
     @property
+    def size(self):
+        """Search space size
+        """
+        s = 0
+        for b in self.blocks:
+            b_s = b.size
+            if b_s != 0:
+                if s == 0:
+                    s = b_s
+                else:
+                    s *= b_s
+        return s
+
+    @property
     def num_nodes(self):
         """Number of VariableNodes current cell.
 

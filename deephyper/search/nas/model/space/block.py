@@ -32,6 +32,18 @@ class Block:
         return filter(lambda n: isinstance(n, VariableNode), self.nodes)
 
     @property
+    def size(self):
+        s = 0
+        for vn in self.action_nodes:
+            vn_s = vn.num_ops
+            if vn_s != 0:
+                if s == 0:
+                    s = vn_s
+                else:
+                    s *= vn_s
+        return s
+
+    @property
     def nodes(self):
         """Nodes of the current Block.
 

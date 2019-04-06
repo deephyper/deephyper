@@ -60,10 +60,43 @@ class KerasStructure(Structure):
         self.map_sh2int = {}
 
     def __len__(self):
+        """Number of cells of the structure.
+
+        Returns:
+            int: number of cells of the structure.
+        """
+
         return len(self.struct)
 
     def __getitem__(self, sliced):
         return self.struct[sliced]
+
+    @property
+    def size(self):
+        """Size of the search space define by the structure
+        """
+        s = 0
+        for c in self.struct:
+            c_s = c.size
+            if c_s != 0:
+                if s == 0:
+                    s = c_s
+                else:
+                    s *= c_s
+        return s
+
+    @property
+    def depth(self):
+        if self.output_node is None:
+            raise RuntimeError("Can't compute depth of model without setting operations.")
+        return len(self.longest_path)
+
+    @property
+    def longest_path(self):
+        if self.output_node is None:
+            raise RuntimeError("Can't compute longest path of model without setting operations.")
+        return nx.algorithms.dag.dag_longest_path(self.graph)
+
 
     @property
     def max_num_ops(self):
