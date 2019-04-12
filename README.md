@@ -5,7 +5,7 @@
 ![GitHub tag (latest by date)](https://img.shields.io/github/tag-date/deephyper/deephyper.svg?label=version)
 [![Documentation Status](https://readthedocs.org/projects/deephyper/badge/?version=latest)](https://deephyper.readthedocs.io/en/latest/?badge=latest)
 ![PyPI - License](https://img.shields.io/pypi/l/deephyper.svg)
-![PyPI - Downloads](https://img.shields.io/pypi/dm/deephyper.svg)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/deephyper.svg?label=Pypi%20downloads)
 
 # What is DeepHyper?
 
