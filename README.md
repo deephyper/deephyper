@@ -3,6 +3,7 @@
 </p>
 
 [![Documentation Status](https://readthedocs.org/projects/deephyper/badge/?version=latest)](https://deephyper.readthedocs.io/en/latest/?badge=latest)
+![PyPI - License](https://img.shields.io/pypi/l/deephyper.svg)
 
 # What is DeepHyper?
 
