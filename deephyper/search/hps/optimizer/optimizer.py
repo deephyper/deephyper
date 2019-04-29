@@ -49,17 +49,20 @@ class Optimizer:
     def _ask(self):
         x = self._optimizer.ask()
         y = self._get_lie()
-        self._optimizer.tell(x,y)
-        self.evals[tuple(x)] = y
-        logger.debug(f'_ask: {x} lie: {y}')
+        key = tuple(x)
+        if key not in self.evals:
+            self.counter += 1
+            self._optimizer.tell(x,y)
+            self.evals[key] = y
+            logger.debug(f'_ask: {x} lie: {y}')
+        else:
+            logger.debug(f'Duplicate _ask: {x} lie: {y}')
         return self.to_dict(x)
 
     def ask(self, n_points=None, batch_size=20):
         if n_points is None:
-            self.counter += 1
             return self._ask()
         else:
-            self.counter += n_points
             batch = []
             for i in range(n_points):
                 batch.append(self._ask())
@@ -73,7 +76,6 @@ class Optimizer:
         XX = self._optimizer.ask(n_points=n_points)
         for x in XX:
             self.evals[tuple(x)] = 0.0
-        self.counter += n_points
         return [self.to_dict(x) for x in XX]
 
     def tell(self, xy_data):
