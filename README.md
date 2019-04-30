@@ -2,38 +2,24 @@
 <img src="docs/_static/logo/medium.png">
 </p>
 
+![GitHub tag (latest by date)](https://img.shields.io/github/tag-date/deephyper/deephyper.svg?label=version)
 [![Documentation Status](https://readthedocs.org/projects/deephyper/badge/?version=latest)](https://deephyper.readthedocs.io/en/latest/?badge=latest)
+![PyPI - License](https://img.shields.io/pypi/l/deephyper.svg)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/deephyper.svg?label=Pypi%20downloads)
 
 # What is DeepHyper?
 
-DeepHyper is a Python package that comprises two components: 1) Neural architecture search is an approach
-for automatically searching for high-performing the deep neural network architecture. 2) Hyperparameter search
-is an approach for automatically searching for high-performing hyperparameters for a given deep neural network.
-DeepHyper provides an infrastructure that targets experimental research in neural architecture and hyperparameter
-search methods, scalability, and portability across HPC systems. It comprises three modules: benchmarks, a collection
-of extensible and diverse DL hyperparameter search problems;
-search, a set of search algorithms for DL hyperparameter search; and
-evaluators, a common interface for evaluating hyperparameter configurations
+DeepHyper is an automated machine learning ([AutoML](https://en.wikipedia.org/wiki/Automated_machine_learning)) package for deep neural networks. It comprises two components: 1) Neural architecture search is an approach for automatically searching for high-performing the deep neural network 
+architecture. 2) Hyperparameter search is an approach for automatically searching for high-performing hyperparameters for a given deep neural network. DeepHyper provides an infrastructure that targets experimental research in neural architecture 
+and hyperparameter search methods, scalability, and portability across HPC systems. It comprises three modules: 
+benchmarks, a collection of extensible and diverse benchmark problems;
+search, a set of search algorithms for neural architecture search and hyperparameter search; 
+and evaluators, a common interface for evaluating hyperparameter configurations
 on HPC platforms.
 
 # Documentation
 
-Deephyper documentation is on : [ReadTheDocs](https://deephyper.readthedocs.io)
-
-# Directory structure
-
-```
-benchmark/
-    a set of problems for hyperparameter or neural architecture search which the user can use to compare our different search algorithms or as examples to build their own problems.
-evaluator/
-    a set of objects which help to run search on different systems and for different cases such as quick and light experiments or long and heavy runs.
-search/
-    a set of algorithms for hyperparameter and neural architecture search. You will also find a modular way to define new search algorithms and specific sub modules for hyperparameter or neural architecture search.
-    hps/
-        hyperparameter search applications
-    nas/
-        neural architecture search applications
-```
+Deephyper documentation is on [ReadTheDocs](https://deephyper.readthedocs.io)
 
 # Install instructions
 
@@ -60,6 +46,22 @@ cd deephyper/
 pip install -e '.[tests,docs]'
 ```
 
+# Directory structure
+
+```
+benchmark/
+    a set of problems for hyperparameter or neural architecture search which the user can use to compare our different search algorithms or as examples to build their own problems.
+evaluator/
+    a set of objects which help to run search on different systems and for different cases such as quick and light experiments or long and heavy runs.
+search/
+    a set of algorithms for hyperparameter and neural architecture search. You will also find a modular way to define new search algorithms and specific sub modules for hyperparameter or neural architecture search.
+hps/
+        hyperparameter search applications
+nas/
+        neural architecture search applications
+```
+
+
 # How do I learn more?
 
 * Documentation: https://deephyper.readthedocs.io
@@ -80,7 +82,7 @@ python -m deephyper.search.nas.ppo_a3c_sync --problem deephyper.benchmark.nas.mn
 
 # Who is responsible?
 
-The core DeepHyper team is at Argonne National Laboratory:
+Currently, the core DeepHyper team is at Argonne National Laboratory:
 
 * Prasanna Balaprakash <pbalapra@anl.gov>, Lead and founder
 * Romain Egele <regele@anl.gov>
@@ -92,6 +94,15 @@ Modules, patches (code, documentation, etc.) contributed by:
 
 * Elise Jennings <ejennings@anl.gov>
 * Dipendra Kumar Jha <dipendrajha2018@u.northwestern.edu>
+
+
+# Citing DeepHyper
+
+If you are referencing DeepHyper in a publication, please cite the following papers:
+
+ * P. Balaprakash, M. Salim, T. Uram, V. Vishwanath, and S. M. Wild. **DeepHyper: Asynchronous Hyperparameter Search for Deep Neural Networks**. 
+    In 25th IEEE International Conference on High Performance Computing, Data, and Analytics. IEEE, 2018. 
+ <!-- * R. Egele, D. Jha, P. Balaprakash, M. Salim, V. Vishwanath, and S. M. Wild. **Scalable Reinforcement-Learning-Based Neural Architecture Search for Scientific and Engineering Applications**. In 34th International Conference on High Performance Computing, 2019. -->
 
 # How can I participate?
 
@@ -115,5 +126,9 @@ The DeepHyper Team uses git-flow to organize the development: [Git-Flow cheatshe
 
 # Copyright and license
 
-TBD
+Copyright © 2019, UChicago Argonne, LLC
+
+DeepHyper is distributed under the terms of BSD License. See [LICENSE](https://github.com/deephyper/deephyper/blob/master/LICENSE.md)
+
+Argonne Patent & Intellectual Property File Number: SF-19-007
 
