@@ -33,6 +33,8 @@ class Search:
         kwargs['run'] = run
         kwargs['evaluator'] = evaluator
         _args.update(kwargs)
+        _args['problem'] = problem
+        _args['run'] = run
         self.args = Namespace(**_args)
         self.problem = util.generic_loader(problem, 'Problem')
         self.run_func = util.generic_loader(run, 'run')

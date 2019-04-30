@@ -2,10 +2,12 @@ import logging
 import subprocess
 import time
 from collections import defaultdict, namedtuple
+import sys
 
 from deephyper.evaluator.evaluate import Evaluator
 
 logger = logging.getLogger(__name__)
+
 
 class PopenFuture:
     FAIL_RETURN_VALUE = Evaluator.FAIL_RETURN_VALUE
@@ -18,10 +20,15 @@ class PopenFuture:
         self._parse = parse_fxn
 
     def _poll(self):
-        if not self._state == 'active': return
+        if not self._state == 'active':
+            return
         retcode = self.proc.poll()
         if retcode is None:
             self._state = 'active'
+            stdout, _ = self.proc.communicate()
+            tmp_res = self._parse(stdout)
+            if tmp_res != sys.float_info.max:
+                self._result = tmp_res
         elif retcode == 0:
             self._state = 'done'
         else:
@@ -42,8 +49,10 @@ class PopenFuture:
 
     def cancel(self):
         self.proc.kill()
-        try: self.proc.communicate()
-        except ValueError: pass
+        try:
+            self.proc.communicate()
+        except ValueError:
+            pass
         self._state = 'cancelled'
 
     @property
@@ -66,6 +75,7 @@ class PopenFuture:
         self._poll()
         return self._state == 'cancelled'
 
+
 class SubprocessEvaluator(Evaluator):
     """Evaluator using subprocess.
 
@@ -75,11 +85,14 @@ class SubprocessEvaluator(Evaluator):
             run_function (func): takes one parameter of type dict and returns a scalar value.
             cache_key (func): takes one parameter of type dict and returns a hashable type, used as the key for caching evaluations. Multiple inputs that map to the same hashable key will only be evaluated once. If ``None``, then cache_key defaults to a lossless (identity) encoding of the input dict.
     """
-    WaitResult = namedtuple('WaitResult', ['active', 'done', 'failed', 'cancelled'])
+    WaitResult = namedtuple(
+        'WaitResult', ['active', 'done', 'failed', 'cancelled'])
+
     def __init__(self, run_function, cache_key=None):
         super().__init__(run_function, cache_key)
         self.num_workers = self.WORKERS_PER_NODE
-        logger.info(f"Subprocess Evaluator will execute {self._run_function.__name__}() from module {self._run_function.__module__}")
+        logger.info(
+            f"Subprocess Evaluator will execute {self._run_function.__name__}() from module {self._run_function.__module__}")
 
     def _args(self, x):
         exe = self._runner_executable
@@ -95,11 +108,11 @@ class SubprocessEvaluator(Evaluator):
     @staticmethod
     def _timer(timeout):
         if timeout is None:
-            return lambda : True
+            return lambda: True
         else:
             timeout = max(float(timeout), 0.01)
             start = time.time()
-            return lambda : (time.time()-start) < timeout
+            return lambda: (time.time()-start) < timeout
 
     def wait(self, futures, timeout=None, return_when='ANY_COMPLETED'):
         assert return_when.strip() in ['ANY_COMPLETED', 'ALL_COMPLETED']
@@ -109,8 +122,10 @@ class SubprocessEvaluator(Evaluator):
         active_futures = [f for f in futures if f.active]
         time_isLeft = self._timer(timeout)
 
-        if waitall: can_exit = lambda : len(active_futures) == 0
-        else: can_exit = lambda : len(active_futures) < num_futures
+        if waitall:
+            def can_exit(): return len(active_futures) == 0
+        else:
+            def can_exit(): return len(active_futures) < num_futures
 
         while time_isLeft():
             if can_exit():
@@ -121,10 +136,11 @@ class SubprocessEvaluator(Evaluator):
 
         if not can_exit():
             raise TimeoutError(f'{timeout} sec timeout expired while '
-            f'waiting on {len(futures)} tasks until {return_when}')
+                               f'waiting on {len(futures)} tasks until {return_when}')
 
         results = defaultdict(list)
-        for f in futures: results[f._state].append(f)
+        for f in futures:
+            results[f._state].append(f)
         return self.WaitResult(
             active=results['active'],
             done=results['done'],
