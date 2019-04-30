@@ -1,14 +1,14 @@
-from collections import namedtuple, defaultdict
 import logging
 import subprocess
 import time
+from collections import defaultdict, namedtuple
 
-from deephyper.evaluator import evaluate
+from deephyper.evaluator.evaluate import Evaluator
 
 logger = logging.getLogger(__name__)
 
 class PopenFuture:
-    FAIL_RETURN_VALUE = evaluate.Evaluator.FAIL_RETURN_VALUE
+    FAIL_RETURN_VALUE = Evaluator.FAIL_RETURN_VALUE
 
     def __init__(self, args, parse_fxn):
         self.proc = subprocess.Popen(args, shell=True, stdout=subprocess.PIPE,
@@ -66,7 +66,7 @@ class PopenFuture:
         self._poll()
         return self._state == 'cancelled'
 
-class SubprocessEvaluator(evaluate.Evaluator):
+class SubprocessEvaluator(Evaluator):
     """Evaluator using subprocess.
 
         The ``SubprocessEvaluator`` use the ``subprocess`` package. The generated processes have a fresh memory independant from their parent process. All the imports are going to be repeated.

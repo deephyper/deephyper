@@ -2,14 +2,16 @@ import argparse
 from pprint import pformat
 import logging
 from deephyper.search import util
-from deephyper.evaluator import Evaluator
+from deephyper.evaluator.evaluate import Evaluator
 
 logger = logging.getLogger(__name__)
 
+
 class Namespace:
     def __init__(self, **kwargs):
-        for k,v in kwargs.items():
+        for k, v in kwargs.items():
             self.__dict__[k] = v
+
 
 class Search:
     """Abstract representation of a black box optimization search.
@@ -24,6 +26,7 @@ class Search:
         run (str):
         evaluator (str): in ['balsam', 'subprocess', 'processPool', 'threadPool']
     """
+
     def __init__(self, problem, run, evaluator, **kwargs):
         _args = vars(self.parse_args(''))
         kwargs['problem'] = problem
@@ -37,11 +40,13 @@ class Search:
         if kwargs.get('cache_key') is None:
             self.evaluator = Evaluator.create(self.run_func, method=evaluator)
         else:
-            self.evaluator = Evaluator.create(self.run_func, method=evaluator, cache_key=kwargs['cache_key'])
+            self.evaluator = Evaluator.create(
+                self.run_func, method=evaluator, cache_key=kwargs['cache_key'])
         self.num_workers = self.evaluator.num_workers
 
         logger.info(f'Options: '+pformat(self.args.__dict__, indent=4))
-        logger.info('Hyperparameter space definition: '+pformat(self.problem.space, indent=4))
+        logger.info('Hyperparameter space definition: ' +
+                    pformat(self.problem.space, indent=4))
         logger.info(f'Created {self.args.evaluator} evaluator')
         logger.info(f'Evaluator: num_workers is {self.num_workers}')
 
@@ -65,27 +70,28 @@ class Search:
     def _base_parser():
         parser = argparse.ArgumentParser()
         parser.add_argument("--problem",
-            default="deephyper.benchmark.hps.polynome2.Problem"
-        )
+                            default="deephyper.benchmark.hps.polynome2.Problem"
+                            )
         parser.add_argument("--run",
-            default="deephyper.benchmark.hps.polynome2.run"
-        )
+                            default="deephyper.benchmark.hps.polynome2.run"
+                            )
         parser.add_argument("--backend",
-            default='tensorflow',
-            help="Keras backend module name"
-        )
+                            default='tensorflow',
+                            help="Keras backend module name"
+                            )
         parser.add_argument('--max-evals',
-            type=int, default=100,
-            help='maximum number of evaluations'
-        )
+                            type=int, default=100,
+                            help='maximum number of evaluations'
+                            )
         parser.add_argument('--eval-timeout-minutes',
-            type=int,
-            default=4096,
-            help="Kill evals that take longer than this"
-        )
+                            type=int,
+                            default=4096,
+                            help="Kill evals that take longer than this"
+                            )
         parser.add_argument('--evaluator',
-            default='subprocess',
-            choices=['balsam', 'subprocess', 'processPool', 'threadPool'],
-            help="The evaluator is an object used to run the model."
-        )
+                            default='subprocess',
+                            choices=['balsam', 'subprocess',
+                                     'processPool', 'threadPool'],
+                            help="The evaluator is an object used to run the model."
+                            )
         return parser
