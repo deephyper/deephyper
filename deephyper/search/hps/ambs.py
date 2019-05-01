@@ -33,7 +33,7 @@ from deephyper.search import util
 logger = util.conf_logger('deephyper.search.hps.ambs')
 
 SERVICE_PERIOD = 2          # Delay (seconds) between main loop iterations
-CHECKPOINT_INTERVAL = 10    # How many jobs to complete between optimizer checkpoints
+CHECKPOINT_INTERVAL = 1    # How many jobs to complete between optimizer checkpoints
 EXIT_FLAG = False
 
 def on_exit(signum, stack):
