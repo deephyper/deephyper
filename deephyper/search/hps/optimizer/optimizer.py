@@ -74,8 +74,6 @@ class Optimizer:
 
     def ask_initial(self, n_points):
         XX = self._optimizer.ask(n_points=n_points)
-        for x in XX:
-            self.evals[tuple(x)] = 0.0
         return [self.to_dict(x) for x in XX]
 
     def tell(self, xy_data):
