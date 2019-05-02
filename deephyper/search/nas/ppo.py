@@ -1,6 +1,5 @@
 import os
 
-from deephyper.search import util
 from deephyper.search.nas.nas_search import NeuralArchitectureSearch
 from deephyper.evaluator._balsam import BalsamEvaluator  # TODO: async kw
 
@@ -8,9 +7,6 @@ try:
     from mpi4py import MPI
 except ImportError:
     MPI = None
-
-
-dhlogger = util.conf_logger('deephyper.search.nas.nas_search')
 
 
 class Ppo(NeuralArchitectureSearch):
@@ -30,8 +26,6 @@ class Ppo(NeuralArchitectureSearch):
                 nenvs = free_workers // nagents
             else:
                 nenvs = 1
-
-        dhlogger.info(f'nenvs: {nenvs}')
 
         super().__init__(problem, run, evaluator,
                          alg="ppo2",

@@ -70,6 +70,9 @@ class NeuralArchitectureSearch(Search):
 
         dhlogger.info(f'evaluator: {type(self.evaluator)}')
         dhlogger.info(f'rank: {self.rank}')
+        dhlogger.info(f'alg: {alg}')
+        dhlogger.info(f'network: {network}')
+        dhlogger.info(f'num_envs_per_agent: {num_envs}')
 
         self.alg = alg
         self.network = network
