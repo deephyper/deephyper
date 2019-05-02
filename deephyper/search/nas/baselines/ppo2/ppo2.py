@@ -141,7 +141,6 @@ def learn(*, network, env, total_timesteps, eval_env=None, seed=None, nsteps=128
     # for update in range(1, nupdates + 1):
     update = 1
     while True:
-        print(f'update n°{update}')
         if not math.isnan(nupdates) and update >= nupdates:
             break
         assert nbatch % nminibatches == 0
