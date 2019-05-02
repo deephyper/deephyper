@@ -1,7 +1,7 @@
 import os
 
 from deephyper.search.nas.nas_search import NeuralArchitectureSearch
-# from deephyper.evaluator._balsam import BalsamEvaluator # TODO: async kw
+from deephyper.evaluator._balsam import BalsamEvaluator  # TODO: async kw
 
 try:
     from mpi4py import MPI
@@ -18,8 +18,7 @@ class Ppo(NeuralArchitectureSearch):
             nenvs = 1
         else:
             nranks = MPI.COMM_WORLD.Get_size()
-            # if isinstance(evaluator, BalsamEvaluator): # TODO: async kw
-            if False:
+            if isinstance(evaluator, BalsamEvaluator):  # TODO: async kw
                 nagents = nranks  # No parameter server here
                 n_free_nodes = LAUNCHER_NODES - nranks  # Number of free nodes
                 free_workers = n_free_nodes * WORKERS_PER_NODE  # Number of free workers
