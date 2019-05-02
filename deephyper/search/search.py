@@ -70,7 +70,7 @@ class Search:
 
     @staticmethod
     def _base_parser():
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(conflict_handler='resolve')
         parser.add_argument("--problem",
                             default="deephyper.benchmark.hps.polynome2.Problem"
                             )

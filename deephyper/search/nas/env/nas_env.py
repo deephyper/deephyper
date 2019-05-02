@@ -13,7 +13,8 @@ class NasEnv(gym.Env):
         self.evaluator = evaluator
 
         num_actions = self.structure.max_num_ops
-        self.observation_space = spaces.Box(low=-0, high=num_actions, shape=(1,), dtype=np.float32)
+        self.observation_space = spaces.Box(
+            low=-0, high=num_actions, shape=(1,), dtype=np.float32)
         self.action_space = spaces.Discrete(self.structure.max_num_ops)
 
         self._state = np.array([1.])
@@ -41,7 +42,7 @@ class NasEnv(gym.Env):
         cfg = self.space.copy()
         cfg['arch_seq'] = list(conv_action)
         cfg['w'] = index
-        if rank != None:
+        if rank is not None:
             cfg['rank'] = rank
 
         self.evaluator.add_eval(cfg)

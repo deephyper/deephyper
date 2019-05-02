@@ -18,11 +18,13 @@ from deephyper.search.nas.utils.common.mpi_moments import mpi_moments
 
 dh_logger = util.conf_logger('deephyper.search.nas.agent.pposgd_async')
 
+
 def add_vtarg_and_adv(seg, gamma, lam):
     """
     Compute target value using TD(lambda) estimator, and advantage with GAE(lambda)
     """
-    new = np.append(seg["new"], 0) # last element is only used for last vtarg, but we already zeroed it if last new = 1
+    new = np.append(
+        seg["new"], 0)  # last element is only used for last vtarg, but we already zeroed it if last new = 1
     vpred = np.append(seg["vpred"], seg["nextvpred"])
     T = len(seg["rew"])
     seg["adv"] = gaelam = np.empty(T, 'float32')
@@ -34,17 +36,19 @@ def add_vtarg_and_adv(seg, gamma, lam):
         gaelam[t] = lastgaelam = delta + gamma * lam * nonterminal * lastgaelam
     seg["tdlamret"] = seg["adv"] + seg["vpred"]
 
+
 def learn(env, policy_fn, *,
-        timesteps_per_actorbatch, # timesteps per actor per update
-        clip_param, entcoeff, # clipping parameter epsilon, entropy coeff
-        optim_epochs, optim_stepsize, optim_batchsize,# optimization hypers
-        gamma, lam, # advantage estimation
-        max_timesteps=0, max_episodes=0, max_iters=0, max_seconds=0,  # time constraint
-        callback=None, # you can do anything in the callback, since it takes locals(), globals()
-        adam_epsilon=1e-5,
-        schedule='constant', # annealing for stepsize parameters (epsilon and adam)
-        reward_rule=reward_for_final_timestep
-        ):
+          timesteps_per_actorbatch,  # timesteps per actor per update
+          clip_param, entcoeff,  # clipping parameter epsilon, entropy coeff
+          optim_epochs, optim_stepsize, optim_batchsize,  # optimization hypers
+          gamma, lam,  # advantage estimation
+          max_timesteps=0, max_episodes=0, max_iters=0, max_seconds=0,  # time constraint
+          callback=None,  # you can do anything in the callback, since it takes locals(), globals()
+          adam_epsilon=1e-5,
+          # annealing for stepsize parameters (epsilon and adam)
+          schedule='constant',
+          reward_rule=reward_for_final_timestep
+          ):
 
     rank = MPI.COMM_WORLD.Get_rank()
 
@@ -52,13 +56,16 @@ def learn(env, policy_fn, *,
     # ----------------------------------------
     ob_space = env.observation_space
     ac_space = env.action_space
-    pi = policy_fn("pi", ob_space, ac_space) # Construct network for new policy
-    oldpi = policy_fn("oldpi", ob_space, ac_space) # Network for old policy
-    atarg = tf.placeholder(dtype=tf.float32, shape=[None]) # Target advantage function (if applicable)
-    ret = tf.placeholder(dtype=tf.float32, shape=[None]) # Empirical return
+    # Construct network for new policy
+    pi = policy_fn("pi", ob_space, ac_space)
+    oldpi = policy_fn("oldpi", ob_space, ac_space)  # Network for old policy
+    # Target advantage function (if applicable)
+    atarg = tf.placeholder(dtype=tf.float32, shape=[None])
+    ret = tf.placeholder(dtype=tf.float32, shape=[None])  # Empirical return
 
-    lrmult = tf.placeholder(name='lrmult', dtype=tf.float32, shape=[]) # learning rate multiplier, updated with schedule
-    clip_param = clip_param * lrmult # Annealed cliping parameter epislon
+    # learning rate multiplier, updated with schedule
+    lrmult = tf.placeholder(name='lrmult', dtype=tf.float32, shape=[])
+    clip_param = clip_param * lrmult  # Annealed cliping parameter epislon
 
     ob = U.get_placeholder_cached(name="ob")
     ac = pi.pdtype.sample_placeholder([None])
@@ -69,21 +76,23 @@ def learn(env, policy_fn, *,
     meanent = tf.reduce_mean(ent)
     pol_entpen = (-entcoeff) * meanent
 
-    ratio = tf.exp(pi.pd.logp(ac) - oldpi.pd.logp(ac)) # pnew / pold
-    surr1 = ratio * atarg # surrogate from conservative policy iteration
-    surr2 = tf.clip_by_value(ratio, 1.0 - clip_param, 1.0 + clip_param) * atarg #
-    pol_surr = - tf.reduce_mean(tf.minimum(surr1, surr2)) # PPO's pessimistic surrogate (L^CLIP)
+    ratio = tf.exp(pi.pd.logp(ac) - oldpi.pd.logp(ac))  # pnew / pold
+    surr1 = ratio * atarg  # surrogate from conservative policy iteration
+    surr2 = tf.clip_by_value(ratio, 1.0 - clip_param, 1.0 + clip_param) * atarg
+    # PPO's pessimistic surrogate (L^CLIP)
+    pol_surr = - tf.reduce_mean(tf.minimum(surr1, surr2))
     vf_loss = tf.reduce_mean(tf.square(pi.vpred - ret))
     total_loss = pol_surr + pol_entpen + vf_loss
     losses = [pol_surr, pol_entpen, vf_loss, meankl, meanent]
     loss_names = ["pol_surr", "pol_entpen", "vf_loss", "kl", "ent"]
 
     var_list = pi.get_trainable_variables()
-    lossandgrad = U.function([ob, ac, atarg, ret, lrmult], losses + [U.flatgrad(total_loss, var_list)])
+    lossandgrad = U.function(
+        [ob, ac, atarg, ret, lrmult], losses + [U.flatgrad(total_loss, var_list)])
     adam = MpiAdamAsync(var_list, epsilon=adam_epsilon)
 
-    assign_old_eq_new = U.function([],[], updates=[tf.assign(oldv, newv)
-        for (oldv, newv) in zipsame(oldpi.get_variables(), pi.get_variables())])
+    assign_old_eq_new = U.function([], [], updates=[tf.assign(oldv, newv)
+                                                    for (oldv, newv) in zipsame(oldpi.get_variables(), pi.get_variables())])
     compute_losses = U.function([ob, ac, atarg, ret, lrmult], losses)
 
     U.initialize()
@@ -94,9 +103,10 @@ def learn(env, policy_fn, *,
     ##
     t2 = time.time()
     t = t2 - t1
-    dh_logger.info(jm(type='adam.sync', rank=rank, duration=t, start_time=t1, end_time=t2))
+    dh_logger.info(jm(type='adam.sync', rank=rank,
+                      duration=t, start_time=t1, end_time=t2))
 
-    if rank == 0: # ZERO is the parameter server
+    if rank == 0:  # ZERO is the parameter server
         while True:
             t1 = time.time()
             ## BEGIN - TIMING ##
@@ -104,25 +114,29 @@ def learn(env, policy_fn, *,
             ## END - TIMING ##
             t2 = time.time()
             t = t2 - t1
-            dh_logger.info(jm(type='adam.master_update', rank=rank, duration=t, rank_worker_source=rank_worker_source, start_time=t1, end_time=t2))
+            dh_logger.info(jm(type='adam.master_update', rank=rank, duration=t,
+                              rank_worker_source=rank_worker_source, start_time=t1, end_time=t2))
     else:
         # Prepare for rollouts
         # ----------------------------------------
 
-        seg_gen = traj_segment_generator(pi, env, timesteps_per_actorbatch, stochastic=True, reward_affect_func=reward_rule)
+        seg_gen = traj_segment_generator(
+            pi, env, timesteps_per_actorbatch, stochastic=True, reward_affect_func=reward_rule)
 
         episodes_so_far = 0
         timesteps_so_far = 0
         iters_so_far = 0
         tstart = time.time()
-        lenbuffer = deque(maxlen=100) # rolling buffer for episode lengths
-        rewbuffer = deque(maxlen=100) # rolling buffer for episode rewards
+        lenbuffer = deque(maxlen=100)  # rolling buffer for episode lengths
+        rewbuffer = deque(maxlen=100)  # rolling buffer for episode rewards
 
-        cond = sum([max_iters>0, max_timesteps>0, max_episodes>0, max_seconds>0])
-        assert cond==1, f"Only one time constraint permitted: cond={cond}, max_iters={max_iters}, max_timesteps={max_timesteps}, max_episodes={max_episodes}, max_seconds={max_seconds}"
+        cond = sum([max_iters > 0, max_timesteps > 0,
+                    max_episodes > 0, max_seconds > 0])
+        assert cond == 1, f"Only one time constraint permitted: cond={cond}, max_iters={max_iters}, max_timesteps={max_timesteps}, max_episodes={max_episodes}, max_seconds={max_seconds}"
 
         while True:
-            if callback: callback(locals(), globals())
+            if callback:
+                callback(locals(), globals())
             if max_timesteps and timesteps_so_far >= max_timesteps:
                 break
             elif max_episodes and episodes_so_far >= max_episodes:
@@ -135,7 +149,8 @@ def learn(env, policy_fn, *,
             if schedule == 'constant':
                 cur_lrmult = 1.0
             elif schedule == 'linear':
-                cur_lrmult =  max(1.0 - float(timesteps_so_far) / max_timesteps, 0)
+                cur_lrmult = max(
+                    1.0 - float(timesteps_so_far) / max_timesteps, 0)
             else:
                 raise NotImplementedError
 
@@ -147,29 +162,35 @@ def learn(env, policy_fn, *,
             ## END - TIMING ##
             t2 = time.time()
             t = t2 - t1
-            dh_logger.info(jm(type='batch_computation', rank=rank, duration=t, start_time=t1, end_time=t2))
+            dh_logger.info(jm(type='batch_computation', rank=rank,
+                              duration=t, start_time=t1, end_time=t2))
             dh_logger.info(jm(type='seg', rank=rank, **seg))
 
             add_vtarg_and_adv(seg, gamma, lam)
 
             # ob, ac, atarg, ret, td1ret = map(np.concatenate, (obs, acs, atargs, rets, td1rets))
             ob, ac, atarg, tdlamret = seg["ob"], seg["ac"], seg["adv"], seg["tdlamret"]
-            vpredbefore = seg["vpred"] # predicted value function before udpate
-            atarg = (atarg - atarg.mean()) / atarg.std() # standardized advantage function estimate
-            d = Dataset(dict(ob=ob, ac=ac, atarg=atarg, vtarg=tdlamret), shuffle=not pi.recurrent)
+            # predicted value function before udpate
+            vpredbefore = seg["vpred"]
+            # standardized advantage function estimate
+            atarg = (atarg - atarg.mean()) / atarg.std()
+            d = Dataset(dict(ob=ob, ac=ac, atarg=atarg,
+                             vtarg=tdlamret), shuffle=not pi.recurrent)
             # optim_batchsize = optim_batchsize or ob.shape[0]
             optim_batchsize = ob.shape[0]
 
-            if hasattr(pi, "ob_rms"): pi.ob_rms.update(ob) # update running mean/std for policy
+            if hasattr(pi, "ob_rms"):
+                pi.ob_rms.update(ob)  # update running mean/std for policy
 
-            assign_old_eq_new() # set old parameter values to new parameter values
+            assign_old_eq_new()  # set old parameter values to new parameter values
             dh_logger.info(f"Rank={rank}: Optimizing...")
 
             # Here we do a bunch of optimization epochs over the data
             for _ in range(optim_epochs):
-                losses = [] # list of tuples, each of which gives the loss for a minibatch
+                losses = []  # list of tuples, each of which gives the loss for a minibatch
                 for batch in d.iterate_once(optim_batchsize):
-                    *newlosses, g = lossandgrad(batch["ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
+                    *newlosses, g = lossandgrad(
+                        batch["ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
 
                     t1 = time.time()
                     ## BEGIN - TIMING ##
@@ -177,16 +198,18 @@ def learn(env, policy_fn, *,
                     ## END - TIMING ##
                     t2 = time.time()
                     t = t2 - t1
-                    dh_logger.info(jm(type='adam.worker_update', rank=rank, duration=t, start_time=t1, end_time=t2))
+                    dh_logger.info(
+                        jm(type='adam.worker_update', rank=rank, duration=t, start_time=t1, end_time=t2))
 
                     losses.append(newlosses)
 
             dh_logger.info(f"Rank={rank}: Evaluating losses...")
             losses = []
             for batch in d.iterate_once(optim_batchsize):
-                newlosses = compute_losses(batch["ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
+                newlosses = compute_losses(
+                    batch["ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
                 losses.append(newlosses)
-            meanlosses,_,_ = mpi_moments(losses, axis=0, use_mpi=False)
+            meanlosses, _, _ = mpi_moments(losses, axis=0, use_mpi=False)
 
             lens = seg["ep_lens"]
             rews = seg["ep_rets"]
@@ -196,6 +219,7 @@ def learn(env, policy_fn, *,
             iters_so_far += 1
 
         return pi
+
 
 def flatten_lists(listoflists):
     return [el for list_ in listoflists for el in list_]
