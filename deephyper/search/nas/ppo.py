@@ -27,8 +27,6 @@ class Ppo(NeuralArchitectureSearch):
             else:
                 nenvs = 1
 
-        network = 'ppo_lstm'
-
         super().__init__(problem, run, evaluator,
                          alg="ppo2",
                          network=network,

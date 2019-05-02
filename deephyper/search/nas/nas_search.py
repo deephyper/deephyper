@@ -85,7 +85,7 @@ class NeuralArchitectureSearch(Search):
                             )
         parser.add_argument('--max-evals', type=int, default=10,
                             help='maximum number of evaluations.')
-        parser.add_argument('--network', type=str, default='lstm',
+        parser.add_argument('--network', type=str, default='ppo_lstm',
                             help='Policy network.')
         return parser
 
