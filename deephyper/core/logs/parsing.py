@@ -65,7 +65,7 @@ def parseline_arch_seq(line, data):
         i_end += 1
     l = []
     for i in range(i_sta, i_end+1):
-        l.append(float(line[i].replace('[', '').replace(',', '').replace(']', '')))
+        l.append(float(line[i].replace('[', '').replace(',', '').replace(']', '').replace('}', '')))
     data['arch_seq'].append(l)
 
 def parsing(f, data):
@@ -75,7 +75,10 @@ def parsing(f, data):
         if "y:" in line:
             parseline_reward(line, data)
             parseline_arch_seq(line, data)
-            parseline_id_worker(line, data)
+            try:
+                parseline_id_worker(line, data)
+            except:
+                pass
         elif ">>>" in line:
             parseline_json(line, data)
 
