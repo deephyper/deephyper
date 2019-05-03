@@ -39,4 +39,3 @@ nbf.write(nb, 'test.ipynb')
 
 # Executing notebook
 os.popen("jupyter nbconvert --execute --inplace test.ipynb")
-#os.popen("jupyter nbconvert --to notebook --execute test.ipynb")
