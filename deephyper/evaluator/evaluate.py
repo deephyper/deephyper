@@ -179,7 +179,9 @@ class Evaluator:
             self.finished_evals[uid] = y
         for (key, uid, x) in zip(keys, uids, to_read):
             y = self.finished_evals[uid]
-            logger.info(f"x: {x} y: {y}")
+            # same printing required in get_finished_evals because of logs parsing
+            x = self.decode(key)
+            logger.info(f"Requested eval x: {x} y: {y}")
             try:
                 self.requested_evals.remove(key)
             except ValueError:
@@ -208,7 +210,7 @@ class Evaluator:
                 self.requested_evals.remove(key)
                 x = self.decode(key)
                 y = self.finished_evals[uid]
-                logger.debug(f"Requested eval x: {x} y: {y}")
+                logger.info(f"Requested eval x: {x} y: {y}")
                 yield (x, y)
 
     @property
