@@ -88,7 +88,7 @@ class NeuralArchitectureSearch(Search):
                             )
         parser.add_argument("--run",
                             type=str,
-                            help="Run function to use for evaluations."
+                            help="Run function to use for evaluations.",
                             default="deephyper.search.nas.model.run.quick",
                             )
         parser.add_argument('--max-evals',
