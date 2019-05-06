@@ -21,7 +21,7 @@ def create_parser():
     name, func = json.add_subparser(subparsers)
     mapping[name] = func
 
-    # plots
+    # plots signle
     name, func = single.add_subparser(subparsers)
     mapping[name] = func
 

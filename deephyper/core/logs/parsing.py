@@ -46,7 +46,7 @@ def parseline_json(line, data):
     if data.get(info['type']) == None:
         data[info['type']] = list()
     value = info['type']
-    info['timestamp'] = date
+    info['timestamp'] = date[:10] + ' ' + date[10:]
     info.pop('type')
     data[value].append(info)
 

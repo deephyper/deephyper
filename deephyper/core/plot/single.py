@@ -22,9 +22,9 @@ def add_subparser(subparsers):
     function_to_call = main
 
     parser_parse = subparsers.add_parser(
-        subparser_name, help='Tool to generate analytics on a single NAS experiment.')
+        subparser_name, help='Tool to generate analytics on a single NAS experiment (jupyter notebook).')
     parser_parse.add_argument(
-        'path', type=str, help=f'A Json file generated with "deephyper-analytics json".')
+        'path', type=str, help=f'A Json file generated with "deephyper-analytics parse".')
 
     return subparser_name, function_to_call
 
