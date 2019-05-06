@@ -101,12 +101,12 @@ class NeuralArchitectureSearch(Search):
         else:
             logger.configure(format_strs=[])
 
-        train(space=self.space,
-              evaluator=self.evaluator,
-              alg=self.alg,
-              network=self.network,
-              num_evals=self.num_evals,
-              num_envs=self.num_envs_per_agent)
+        self.train(space=self.space,
+                   evaluator=self.evaluator,
+                   alg=self.alg,
+                   network=self.network,
+                   num_evals=self.num_evals,
+                   num_envs=self.num_envs_per_agent)
 
     def train(self, space, evaluator, alg, network, num_evals, num_envs):
         """Function to train ours agents.
