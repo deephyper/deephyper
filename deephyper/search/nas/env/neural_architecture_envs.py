@@ -83,12 +83,13 @@ class NeuralArchitectureVecEnv(VecEnv):
                     'r': r,
                     'l': self.num_actions_per_env
                 } for r in rews}]  # TODO
-            self.reset()
 
             self.stats['rewards'] = rews
             self.stats['arch_seq'] = self.action_buffers
 
             dhlogger.info(jm(type='env_stats', **self.stats))
+
+            self.reset()
 
         return np.stack(obs), np.array(rews), np.array(dones), infos
 
