@@ -1,7 +1,7 @@
 import os
 
 
-from deephyper.search.nas.nas_search import NeuralArchitectureSearch
+from deephyper.search.nas import NeuralArchitectureSearch
 
 try:
     from mpi4py import MPI

@@ -113,7 +113,6 @@ class Evaluator:
             self.stats['num_cache_used'] += 1
             logger.info(f"UID: {uid} already evaluated; skipping execution")
         else:
-            self.key_stats[key]['eval_duration'] = time.time()
             future = self._eval_exec(x)
             logger.info(f"Submitted new eval of {x}")
             future.uid = uid
