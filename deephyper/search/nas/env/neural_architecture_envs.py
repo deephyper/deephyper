@@ -76,8 +76,6 @@ class NeuralArchitectureVecEnv(VecEnv):
                 self.stats['batch_computation']
             self.stats['num_cache_used'] = self.evaluator.stats['num_cache_used']
 
-            dhlogger.info(jm(type='env_stats', **self.stats))
-
             rews = [rew for cfg, rew in results]
             dones = [True for _ in rews]
             infos = [{
@@ -86,6 +84,11 @@ class NeuralArchitectureVecEnv(VecEnv):
                     'l': self.num_actions_per_env
                 } for r in rews}]  # TODO
             self.reset()
+
+            self.stats['rewards'] = rews
+            self.stats['arch_seq'] = self.action_buffers
+
+            dhlogger.info(jm(type='env_stats', **self.stats))
 
         return np.stack(obs), np.array(rews), np.array(dones), infos
 

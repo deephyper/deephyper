@@ -62,7 +62,7 @@ class Ppo(NeuralArchitectureSearch):
                             default=10,
                             help="Number of optimization steps to do per epochs. Basicaly it means the number of time you want to use learning data.")
         parser.add_argument('--max-evals', type=int, default=1e10,
-                            help='maximum number of evaluations.')
+                            help='maximum number of learning update.')
         parser.add_argument('--network', type=str, default='ppo_lstm_128',
                             choices=[
                                 'ppo_lstm_128',

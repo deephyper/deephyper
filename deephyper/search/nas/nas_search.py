@@ -82,14 +82,22 @@ class NeuralArchitectureSearch(Search):
     @staticmethod
     def _extend_parser(parser):
         parser.add_argument("--problem",
+                            type=str,
+                            help="Problem to use for the search.",
                             default="deephyper.benchmark.nas.linearReg.Problem",
                             )
         parser.add_argument("--run",
+                            type=str,
+                            help="Run function to use for evaluations."
                             default="deephyper.search.nas.model.run.quick",
                             )
-        parser.add_argument('--max-evals', type=int, default=10,
+        parser.add_argument('--max-evals',
+                            type=int,
+                            default=10,
                             help='maximum number of evaluations.')
-        parser.add_argument('--network', type=str, default='ppo_lstm',
+        parser.add_argument('--network',
+                            type=str,
+                            default='ppo_lstm',
                             choices=['ppo_lstm'],
                             help='Policy-Value network.')
         return parser
