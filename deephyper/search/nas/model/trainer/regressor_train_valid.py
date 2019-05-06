@@ -12,6 +12,7 @@ from deephyper.search.nas.model.trainer.train_valid import TrainerTrainValid
 
 logger = util.conf_logger('deephyper.model.trainer')
 
+
 class TrainerRegressorTrainValid(TrainerTrainValid):
     def __init__(self, config, model):
         super().__init__(config, model)
@@ -20,7 +21,7 @@ class TrainerRegressorTrainValid(TrainerTrainValid):
         num_epochs = self.num_epochs if num_epochs is None else num_epochs
 
         if num_epochs > 0:
-            min_mse = math.inf
+            max_rmetric = -math.inf
             for i in range(num_epochs):
                 self.model.fit(
                     self.dataset_train,
@@ -32,33 +33,40 @@ class TrainerRegressorTrainValid(TrainerTrainValid):
                 y_orig, y_pred = self.predict()
 
                 try:
-                    unnormalize_mse = mean_squared_error(y_orig, y_pred)
+                    unnormalize_rmetric = sess.run(self.reward_metric_op, {
+                        self.y_true_ph: y_orig,
+                        self.y_pred_ph: y_pred
+                    })
                 except ValueError as err:
                     logger.error(traceback.format_exc())
-                    unnormalize_mse = np.finfo('float32').max
+                    unnormalize_rmetric = np.finfo('float32').min
                 except:
                     raise
 
-                # self.train_history[f'{self.metrics_name[0]}_valid'] = unnormalize_mse
+                max_rmetric = min(max_rmetric, unnormalize_rmetric)
+                logger.info(
+                    jm(epoch=i, rmetric=float(unnormalize_rmetric)))
 
-                min_mse = min(min_mse, unnormalize_mse)
-                logger.info(jm(epoch=i, validation_mse=float(unnormalize_mse)))
+            logger.info(jm(type='result', rmetric=float(max_rmetric)))
+            return max_rmetric
 
-            logger.info(jm(type='result', mse=float(min_mse)))
-            return min_mse
         elif num_epochs == 0:
             y_orig, y_pred = self.predict()
 
             try:
-                unnormalize_mse = mean_squared_error(y_orig, y_pred)
+                unnormalize_rmetric = sess.run(self.reward_metric_op, {
+                    self.y_true_ph: y_orig,
+                    self.y_pred_ph: y_pred
+                })
             except ValueError as err:
                 logger.error(traceback.format_exc())
-                unnormalize_mse = np.finfo('float32').max
+                unnormalize_rmetric = np.finfo('float32').min
             except:
                 raise
 
-            logger.info(jm(epoch=0, validation_mse=float(unnormalize_mse)))
-            logger.info(jm(type='result', mse=float(unnormalize_mse)))
-            return unnormalize_mse
+            logger.info(jm(epoch=0, rmetric=float(unnormalize_rmetric)))
+            logger.info(jm(type='result', rmetric=float(unnormalize_rmetric)))
+            return unnormalize_rmetric
         else:
-            raise RuntimeError(f'Number of epochs should be >= 0: {num_epochs}')
+            raise RuntimeError(
+                f'Number of epochs should be >= 0: {num_epochs}')

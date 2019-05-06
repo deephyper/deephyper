@@ -11,11 +11,13 @@ from deephyper.search.nas.utils._logging import JsonMessage as jm
 
 logger = util.conf_logger('deephyper.model.trainer')
 
+
 class TrainerTrainValid:
     def __init__(self, config, model):
         self.cname = self.__class__.__name__
 
         self.config = config
+        self.sess = keras.backend.get_session()
         self.model = model
         self.callbacks = []
 
@@ -24,7 +26,8 @@ class TrainerTrainValid:
         self.config_hp = self.config[a.hyperparameters]
         self.optimizer_name = self.config_hp[a.optimizer]
         self.loss_metric_name = self.config_hp[a.loss_metric]
-        self.metrics_name = [U.selectMetric(m) for m in self.config_hp[a.metrics]]
+        self.metrics_name = [U.selectMetric(m)
+                             for m in self.config_hp[a.metrics]]
         self.batch_size = self.config_hp[a.batch_size]
         self.learning_rate = self.config_hp[a.learning_rate]
         self.num_epochs = self.config_hp[a.num_epochs]
@@ -53,6 +56,19 @@ class TrainerTrainValid:
 
         self.model_compile()
 
+        self.y_true_ph = tf.placeholder(
+            dtype=tf.float32,
+            shape=(None, None),
+            name='y_true'
+        )
+        self.y_pred_ph = tf.placeholder(
+            dtype=tf.float32,
+            shape=(None, None),
+            name='y_pred'
+        )
+        self.reward_metric_op = U.selectMetric(
+            self.config_hp['reward'])(self.y_true_ph, self.y_pred_ph)
+
         self.train_history = {
             f'{self.metrics_name[0]}_valid': list(),
         }
@@ -69,7 +85,8 @@ class TrainerTrainValid:
         elif self.data_config_type == 'ndarray':
             self.load_data_ndarray()
         else:
-            raise RuntimeError(f"Data config is not supported by this Trainer: '{data_config_type}'!")
+            raise RuntimeError(
+                f"Data config is not supported by this Trainer: '{data_config_type}'!")
 
         # prepare number of steps for training and validation
         self.train_steps_per_epoch = self.train_size // self.batch_size
@@ -91,40 +108,44 @@ class TrainerTrainValid:
     def load_data_ndarray(self):
         # check data type
         if not type(self.config[a.data][a.train_Y]) is np.ndarray:
-            raise RuntimeError(f"train_Y data should be of type np.ndarray when type true type is: {type(self.config[a.data][a.train_Y])}")
+            raise RuntimeError(
+                f"train_Y data should be of type np.ndarray when type true type is: {type(self.config[a.data][a.train_Y])}")
         self.train_Y = self.config[a.data][a.train_Y]
 
         if not type(self.config[a.data][a.valid_Y]) is np.ndarray:
-            raise RuntimeError(f"valid_Y data should be of type np.ndarray when type true type is: {type(self.config[a.data][a.valid_Y])}")
+            raise RuntimeError(
+                f"valid_Y data should be of type np.ndarray when type true type is: {type(self.config[a.data][a.valid_Y])}")
         self.valid_Y = self.config[a.data][a.valid_Y]
 
         if type(self.config[a.data][a.train_X]) is np.ndarray and \
-            type(self.config[a.data][a.valid_X]) is np.ndarray:
+                type(self.config[a.data][a.valid_X]) is np.ndarray:
             self.train_X = [self.config[a.data][a.train_X]]
             self.valid_X = [self.config[a.data][a.valid_X]]
         elif type(self.config[a.data][a.train_X]) is list and \
-            type(self.config[a.data][a.valid_X]) is list:
-            f = lambda x: type(x) is np.ndarray
+                type(self.config[a.data][a.valid_X]) is list:
+            def f(x): return type(x) is np.ndarray
             if not all(map(f, self.config[a.data][a.train_X])) or \
-                not all(map(f, self.config[a.data][a.valid_X])):
-                raise RuntimeError(f"all inputs data should be of type np.ndarray !")
+                    not all(map(f, self.config[a.data][a.valid_X])):
+                raise RuntimeError(
+                    f"all inputs data should be of type np.ndarray !")
             self.train_X = self.config[a.data][a.train_X]
             self.valid_X = self.config[a.data][a.valid_X]
         else:
-            raise RuntimeError(f"Data are of an unsupported type and should be of same type: type(self.config['data']['train_X'])=={type(self.config[a.data])} and type(self.config['data']['valid_X'])=={type(self.config[a.data][a.valid_X])} !")
+            raise RuntimeError(
+                f"Data are of an unsupported type and should be of same type: type(self.config['data']['train_X'])=={type(self.config[a.data])} and type(self.config['data']['valid_X'])=={type(self.config[a.data][a.valid_X])} !")
 
         logger.debug(f'{self.cname}: {len(self.train_X)} inputs')
 
         # check data length
         self.train_size = np.shape(self.train_X[0])[0]
         if not all(map(lambda x: np.shape(x)[0] == self.train_size, self.train_X)):
-            raise RuntimeError(f'All training inputs data should have same length!')
+            raise RuntimeError(
+                f'All training inputs data should have same length!')
 
         self.valid_size = np.shape(self.valid_X[0])[0]
         if not all(map(lambda x: np.shape(x)[0] == self.valid_size, self.valid_X)):
-            raise RuntimeError(f'All validation inputs data should have same length!')
-
-
+            raise RuntimeError(
+                f'All validation inputs data should have same length!')
 
     def preprocess_data(self):
         if self.data_config_type == "gen":
@@ -134,7 +155,8 @@ class TrainerTrainValid:
             raise RuntimeError('You can only preprocess data one time.')
 
         if self.preprocessing_func:
-            logger.debug(f'preprocess_data with: {str(self.preprocessing_func)}')
+            logger.debug(
+                f'preprocess_data with: {str(self.preprocessing_func)}')
 
             data_train = np.concatenate((*self.train_X, self.train_Y), axis=1)
             data_valid = np.concatenate((*self.valid_X, self.valid_Y), axis=1)
@@ -163,33 +185,34 @@ class TrainerTrainValid:
     def set_dataset_train(self):
         if self.data_config_type == "ndarray":
             self.dataset_train = tf.data.Dataset.from_tensor_slices((
-                { f'input_{i}':tX for i, tX in enumerate(self.train_X) },
+                {f'input_{i}': tX for i, tX in enumerate(self.train_X)},
                 self.train_Y))
-        else: # self.data_config_type == "gen"
+        else:  # self.data_config_type == "gen"
             self.dataset_train = tf.data.Dataset.from_generator(self.train_gen,
-                output_types=self.data_types,
-                output_shapes=({
-                   f'input_{i}': tf.TensorShape([*self.data_shapes[0][f'input_{i}']]) for i in range(len(self.data_shapes[0]))
-                }, tf.TensorShape([*self.data_shapes[1]])))
+                                                                output_types=self.data_types,
+                                                                output_shapes=({
+                                                                    f'input_{i}': tf.TensorShape([*self.data_shapes[0][f'input_{i}']]) for i in range(len(self.data_shapes[0]))
+                                                                }, tf.TensorShape([*self.data_shapes[1]])))
         self.dataset_train = self.dataset_train.batch(self.batch_size).repeat()
 
     def set_dataset_valid(self):
         if self.data_config_type == "ndarray":
             self.dataset_valid = tf.data.Dataset.from_tensor_slices((
-                { f'input_{i}':vX for i, vX in enumerate(self.valid_X) },
+                {f'input_{i}': vX for i, vX in enumerate(self.valid_X)},
                 self.valid_Y))
         else:
             self.dataset_valid = tf.data.Dataset.from_generator(self.valid_gen,
-                output_types=self.data_types,
-                output_shapes=({
-                   f'input_{i}': tf.TensorShape([*self.data_shapes[0][f'input_{i}']]) for i in range(len(self.data_shapes[0]))
-                }, tf.TensorShape([*self.data_shapes[1]])))
+                                                                output_types=self.data_types,
+                                                                output_shapes=({
+                                                                    f'input_{i}': tf.TensorShape([*self.data_shapes[0][f'input_{i}']]) for i in range(len(self.data_shapes[0]))
+                                                                }, tf.TensorShape([*self.data_shapes[1]])))
         self.dataset_valid = self.dataset_valid.batch(self.batch_size).repeat()
 
     def model_compile(self):
         optimizer_fn = U.selectOptimizer_keras(self.optimizer_name)
 
-        decay_rate = self.learning_rate / self.num_epochs if self.num_epochs > 0 else 1.
+        decay_rate = self.learning_rate / \
+            self.num_epochs if self.num_epochs > 0 else 1.
         self.optimizer = optimizer_fn(lr=self.learning_rate, decay=decay_rate)
 
         self.model.compile(
@@ -204,19 +227,21 @@ class TrainerTrainValid:
     def predict(self, dataset='valid', keep_normalize=False):
 
         if not(dataset == 'valid' or dataset == 'train'):
-            raise RuntimeError("dataset parameter should be equal to: 'valid' or 'train'")
+            raise RuntimeError(
+                "dataset parameter should be equal to: 'valid' or 'train'")
 
         if dataset == 'valid':
-            y_pred = self.model.predict(self.dataset_valid, steps=self.valid_steps_per_epoch)
-        else: # dataset == 'train'
+            y_pred = self.model.predict(
+                self.dataset_valid, steps=self.valid_steps_per_epoch)
+        else:  # dataset == 'train'
             y_pred = self.model.predict(self.dataset_train,
-            steps=self.train_steps_per_epoch)
+                                        steps=self.train_steps_per_epoch)
 
         if self.preprocessing_func and not keep_normalize and \
-            not self.data_config_type == "gen":
+                not self.data_config_type == "gen":
             if dataset == 'valid':
                 data_X, data_Y = self.valid_X, self.valid_Y
-            else: # dataset == 'train'
+            else:  # dataset == 'train'
                 data_X, data_Y = self.train_X, self.train_Y
             val_pred = np.concatenate((*data_X, y_pred), axis=1)
             val_orig = np.concatenate((*data_X, data_Y), axis=1)
@@ -234,4 +259,55 @@ class TrainerTrainValid:
         return y_orig, y_pred
 
     def train(self, num_epochs=None):
-        raise NotImplementedError
+        num_epochs = self.num_epochs if num_epochs is None else num_epochs
+
+        if num_epochs > 0:
+            max_rmetric = -math.inf
+            for i in range(num_epochs):
+                self.model.fit(
+                    self.dataset_train,
+                    epochs=1,
+                    steps_per_epoch=self.train_steps_per_epoch,
+                    callbacks=self.callbacks
+                )
+
+                y_orig, y_pred = self.predict()
+
+                try:
+                    unnormalize_rmetric = sess.run(self.reward_metric_op, {
+                        self.y_true_ph: y_orig,
+                        self.y_pred_ph: y_pred
+                    })
+                except ValueError as err:
+                    logger.error(traceback.format_exc())
+                    unnormalize_rmetric = np.finfo('float32').min
+                except:
+                    raise
+
+                max_rmetric = min(max_rmetric, unnormalize_rmetric)
+                logger.info(
+                    jm(epoch=i, rmetric=float(unnormalize_rmetric)))
+
+            logger.info(jm(type='result', rmetric=float(max_rmetric)))
+            return max_rmetric
+
+        elif num_epochs == 0:
+            y_orig, y_pred = self.predict()
+
+            try:
+                unnormalize_rmetric = sess.run(self.reward_metric_op, {
+                    self.y_true_ph: y_orig,
+                    self.y_pred_ph: y_pred
+                })
+            except ValueError as err:
+                logger.error(traceback.format_exc())
+                unnormalize_rmetric = np.finfo('float32').min
+            except:
+                raise
+
+            logger.info(jm(epoch=0, rmetric=float(unnormalize_rmetric)))
+            logger.info(jm(type='result', rmetric=float(unnormalize_rmetric)))
+            return unnormalize_rmetric
+        else:
+            raise RuntimeError(
+                f'Number of epochs should be >= 0: {num_epochs}')
