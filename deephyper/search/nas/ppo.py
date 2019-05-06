@@ -1,5 +1,6 @@
 import os
 
+
 from deephyper.search.nas.nas_search import NeuralArchitectureSearch
 
 try:
