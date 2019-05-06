@@ -32,6 +32,36 @@ def ppo_lstm(num_units=128, layer_norm=False):
     return RNN(network_fn, memory_size=num_units * 2)
 
 
+@register("ppo_lstm_128")
+def ppo_lstm_128():
+    return ppo_lstm(num_units=128)
+
+
+@register("ppo_lnlstm_128")
+def ppo_lnlstm_128():
+    return ppo_lstm(num_units=128, layer_norm=True)
+
+
+@register("ppo_lstm_64")
+def ppo_lstm_64():
+    return ppo_lstm(num_units=64)
+
+
+@register("ppo_lnlstm_64")
+def ppo_lnlstm_64():
+    return ppo_lstm(num_units=64, layer_norm=True)
+
+
+@register("ppo_lstm_32")
+def ppo_lstm_32():
+    return ppo_lstm(num_units=32)
+
+
+@register("ppo_lnlstm_32")
+def ppo_lnlstm_32():
+    return ppo_lstm(num_units=32, layer_norm=True)
+
+
 @register("ppo_cnn_lstm")
 def ppo_cnn_lstm(num_units=128, layer_norm=False, **conv_kwargs):
     def network_fn(input, mask, state):

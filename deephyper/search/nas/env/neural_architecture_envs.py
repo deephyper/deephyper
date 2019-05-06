@@ -1,9 +1,14 @@
-import numpy as np
+import time
 
 import gym
+import numpy as np
 from gym import spaces
 
+from deephyper.search import util
 from deephyper.search.nas.baselines.common.vec_env import VecEnv
+from deephyper.search.nas.utils._logging import JsonMessage as jm
+
+dhlogger = util.conf_logger('deephyper.search.nas.neural_architecture_envs')
 
 
 class NeuralArchitectureVecEnv(VecEnv):
@@ -31,6 +36,7 @@ class NeuralArchitectureVecEnv(VecEnv):
         self.states = np.stack([np.array([1.]) for _ in range(self.num_envs)])
         self.num_actions_per_env = self.structure.num_nodes
         self.eval_uids = []
+        self.stats = {}
 
     def step_async(self, actions):
         assert len(actions) == self.num_envs
@@ -49,6 +55,8 @@ class NeuralArchitectureVecEnv(VecEnv):
                 cfg['arch_seq'] = list(conv_action)
                 self.eval_uids.append(cfg)
 
+            self.stats['batch_computation'] = time.time()
+
             self.evaluator.add_eval_batch(self.eval_uids)
 
     def step_wait(self):
@@ -61,8 +69,14 @@ class NeuralArchitectureVecEnv(VecEnv):
             dones = [False for _ in self.action_buffers]
             infos = {}
         else:
-            # Waiting results from balsam
+            # Waiting results from balsam, blocking instruction
             results = self.evaluator.await_evals(self.eval_uids)
+
+            self.stats['batch_computation'] = time.time() - \
+                self.stats['batch_computation']
+            self.stats['num_cache_used'] = self.evaluator.stats['num_cache_used']
+
+            dhlogger.info(jm(type='env_stats', **self.stats))
 
             rews = [rew for cfg, rew in results]
             dones = [True for _ in rews]

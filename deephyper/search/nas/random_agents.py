@@ -26,7 +26,7 @@ LAUNCHER_NODES = int(os.environ.get('BALSAM_LAUNCHER_NODES', 1))
 WORKERS_PER_NODE = int(os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
 
 
-class NasRandom(Search):
+class RandomAgents(Search):
     """Neural Architecture search using random search.
     """
 
@@ -57,9 +57,6 @@ class NasRandom(Search):
         return parser
 
     def main(self):
-         # Settings
-        # num_parallel = self.evaluator.num_workers - 4 #balsam launcher & controller of search for cooley
-        # num_nodes = self.evaluator.num_workers - 1 #balsam launcher & controller of search for theta
         num_nodes = LAUNCHER_NODES * WORKERS_PER_NODE  # balsam launcher
         if num_nodes > self.num_agents:
             num_episodes_per_batch = (

@@ -67,6 +67,10 @@ class Evaluator:
         self.requested_evals = []  # keys
         self.key_uid_map = {}  # map keys to uids
 
+        self.stats = {
+            'num_cache_used': 0
+        }
+
         self.transaction_context = dummy_context
         self._start_sec = time.time()
         self.elapsed_times = {}
@@ -106,6 +110,7 @@ class Evaluator:
         self.requested_evals.append(key)
         uid = self._gen_uid(x)
         if uid in self.key_uid_map.values():
+            self.stats['num_cache_used'] += 1
             logger.info(f"UID: {uid} already evaluated; skipping execution")
         else:
             future = self._eval_exec(x)

@@ -36,18 +36,19 @@ class NeuralArchitectureSearch(Search):
 
     def __init__(self, problem, run, evaluator,  alg, network, num_envs,
                  **kwargs):
-        """[summary]
+        """Represents different kind of RL algorithms working with NAS.
 
         Args:
-            problem ([type]): [description]
-            run ([type]): [description]
-            evaluator ([type]): [description]
-            alg ([type]): [description]
-            network ([type]): [description]
-            num_envs ([type]): number of environments per agent to run in
+            problem (Problem): problem instance to use.
+            run (function): function to use for evaluations.
+            evaluator ([Evaluator): evaluator to use.
+            alg (str): algorithm to use among ['ppo2',].
+            network (str/function): policy network.
+            num_envs (int): number of environments per agent to run in
                 parallel, it corresponds to the number of evaluation per
                 batch per agent.
         """
+        self.kwargs = kwargs
         if MPI is None:
             self.rank = 0
             super().__init__(problem, run, evaluator, cache_key=key, **kwargs)
@@ -89,7 +90,8 @@ class NeuralArchitectureSearch(Search):
         parser.add_argument('--max-evals', type=int, default=10,
                             help='maximum number of evaluations.')
         parser.add_argument('--network', type=str, default='ppo_lstm',
-                            help='Policy network.')
+                            choices=['ppo_lstm'],
+                            help='Policy-Value network.')
         return parser
 
     def main(self):
@@ -106,41 +108,43 @@ class NeuralArchitectureSearch(Search):
               num_evals=self.num_evals,
               num_envs=self.num_envs_per_agent)
 
+    def train(self, space, evaluator, alg, network, num_evals, num_envs):
+        """Function to train ours agents.
 
-def train(space, evaluator, alg, network, num_evals, num_envs):
-    """Function to train ours agents.
+        Args:
+            space (dict): space of the search (i.e. params dict)
+            evaluator (Evaluator): evaluator we are using for the search.
+            alg (str): TODO
+            network (str): TODO
+            num_evals (int): number of evaluations to run. (i.e. number of
+                episodes for NAS)
 
-    Args:
-        space (dict): space of the search (i.e. params dict)
-        evaluator (Evaluator): evaluator we are using for the search.
-        alg (str): TODO
-        network (str): TODO
-        num_evals (int): number of evaluations to run. (i.e. number of
-            episodes for NAS)
+        Returns:
+            [type]: [description]
+        """
 
-    Returns:
-        [type]: [description]
-    """
+        seed = 2019
 
-    seed = 2019
+        learn = get_learn_function(alg)
+        alg_kwargs = get_learn_function_defaults(alg)
+        for k in self.kwargs:
+            if k in alg_kwargs:
+                alg_kwargs[k] = self.kwargs[k]
 
-    learn = get_learn_function(alg)
-    alg_kwargs = get_learn_function_defaults(alg)
+        env = build_env(num_envs, space, evaluator)
+        total_timesteps = num_evals * env.num_actions_per_env
 
-    env = build_env(num_envs, space, evaluator)
-    total_timesteps = num_evals * env.num_actions_per_env
+        alg_kwargs['network'] = network
+        alg_kwargs['nsteps'] = env.num_actions_per_env
 
-    alg_kwargs['network'] = network
-    alg_kwargs['nsteps'] = env.num_actions_per_env
+        model = learn(
+            env=env,
+            seed=seed,
+            total_timesteps=total_timesteps,
+            **alg_kwargs
+        )
 
-    model = learn(
-        env=env,
-        seed=seed,
-        total_timesteps=total_timesteps,
-        **alg_kwargs
-    )
-
-    return model, env
+        return model, env
 
 
 def build_env(num_envs, space, evaluator):
@@ -192,3 +196,9 @@ def get_learn_function_defaults(alg):
     except (ImportError, AttributeError):
         kwargs = {}
     return kwargs
+
+
+if __name__ == '__main__':
+    kwargs = get_learn_function_defaults('ppo2')
+    from pprint import pprint
+    pprint(kwargs)
