@@ -6,7 +6,8 @@ import sys
 from shutil import copyfile
 
 try:
-    from balsam.core.models import (BalsamJob, process_job_times, utilization_report)
+    from balsam.core.models import (
+        BalsamJob, process_job_times, utilization_report)
     BALSAM_EXIST = True
     print('Module: \'balsam\' has been loaded successfully!')
 except ModuleNotFoundError as err:
@@ -15,7 +16,9 @@ except ModuleNotFoundError as err:
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-now = '_'.join(str(datetime.datetime.now(datetime.timezone.utc)).split(":")[0].split(" "))
+now = '_'.join(str(datetime.datetime.now(
+    datetime.timezone.utc)).split(":")[0].split(" "))
+
 
 def get_workload(wf_name):
     qs = BalsamJob.objects.filter(workflow=wf_name)
@@ -34,6 +37,7 @@ def max_list(l):
         rl.append(mx)
     return rl
 
+
 def parseline_json(line, data):
     line = "".join(line)
     date = line.split('|')[0]
@@ -50,6 +54,7 @@ def parseline_json(line, data):
 def parseline_reward(line, data):
     data['raw_rewards'].append(float(line[-1]))
 
+
 def parseline_id_worker(line, data):
     i = line.index("'w':") + 1
     id_int = int(line[i][:-1])
@@ -58,6 +63,7 @@ def parseline_id_worker(line, data):
     id_int = int(line[i][:-1])
     data['rank'].append(id_int)
 
+
 def parseline_arch_seq(line, data):
     i_sta = line.index("'arch_seq':") + 1
     i_end = i_sta
@@ -65,8 +71,10 @@ def parseline_arch_seq(line, data):
         i_end += 1
     l = []
     for i in range(i_sta, i_end+1):
-        l.append(float(line[i].replace('[', '').replace(',', '').replace(']', '').replace('}', '')))
+        l.append(float(line[i].replace('[', '').replace(
+            ',', '').replace(']', '').replace('}', '')))
     data['arch_seq'].append(l)
+
 
 def parsing(f, data):
     line = f.readline()
@@ -85,16 +93,16 @@ def parsing(f, data):
         line = f.readline()
 
 
-
 def add_subparser(subparsers):
     subparser_name = 'parse'
     function_to_call = main
 
-    parser_parse = subparsers.add_parser(subparser_name, help='Tool to parse "deephyper.log" and produce a JSON file.')
-    parser_parse.add_argument('path', type=str, help=
-            f'The parsing script takes only 1 argument: the relative path to the log file. If you want to compute the workload data with \'balsam\' you should specify a path starting at least from the workload parent directory, eg. \'nas_exp1/nas_exp1_ue28s2k0/deephyper.log\' where \'nas_exp1\' is the workload.')
+    parser_parse = subparsers.add_parser(
+        subparser_name, help='Tool to parse "deephyper.log" and produce a JSON file.')
+    parser_parse.add_argument('path', type=str, help=f'The parsing script takes only 1 argument: the relative path to the log file. If you want to compute the workload data with \'balsam\' you should specify a path starting at least from the workload parent directory, eg. \'nas_exp1/nas_exp1_ue28s2k0/deephyper.log\' where \'nas_exp1\' is the workload.')
 
     return subparser_name, function_to_call
+
 
 def main(path, *args, **kwargs):
     print(f'Path to deephyper.log file: {path}')
@@ -129,7 +137,6 @@ def main(path, *args, **kwargs):
         else:
             print('Workload has been computed successfuly!')
 
-
     with open(data['fig']+'.json', 'w') as fjson:
         print(f'Create json file: {data["fig"]+".json"}')
         json.dump(data, fjson, indent=2)
@@ -139,6 +146,3 @@ def main(path, *args, **kwargs):
     print(f'len max_rewards: {len(data["max_rewards"])}')
     print(f'len id_worker  : {len(data["id_worker"])}')
     print(f'len arch_seq   : {len(data["arch_seq"])}')
-
-if __name__ == '__main__':
-    main()

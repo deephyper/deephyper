@@ -2,9 +2,12 @@ import argparse
 import sys
 
 from deephyper.core.logs import parsing, json
+from deephyper.core.plot import single
+
 
 def create_parser():
-    parser = argparse.ArgumentParser(description='Run some analytics for deephyper.')
+    parser = argparse.ArgumentParser(
+        description='Run some analytics for deephyper.')
 
     subparsers = parser.add_subparsers(help='Kind of analytics.')
 
@@ -18,6 +21,10 @@ def create_parser():
     name, func = json.add_subparser(subparsers)
     mapping[name] = func
 
+    # plots
+    name, func = single.add_subparser(subparsers)
+    mapping[name] = func
+
     return parser, mapping
 
 
@@ -27,4 +34,3 @@ def main():
     args = parser.parse_args()
 
     mapping[sys.argv[1]](**vars(args))
-
