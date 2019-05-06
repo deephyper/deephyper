@@ -35,6 +35,7 @@ class Ppo(NeuralArchitectureSearch):
 
     @staticmethod
     def _extend_parser(parser):
+        NeuralArchitectureSearch._extend_parser(parser)
         parser.add_argument("--cliprange",
                             type=float,
                             default=0.2,
