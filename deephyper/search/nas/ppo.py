@@ -32,6 +32,41 @@ class Ppo(NeuralArchitectureSearch):
                          num_envs=nenvs,
                          **kwargs)
 
+    @staticmethod
+    def _extend_parser(parser):
+        parser.add_argument("--cliprange",
+                            type=float,
+                            default=0.2,
+                            help="Clipping parameter of PPO."
+                            )
+        parser.add_argument("--ent-coef",
+                            type=float,
+                            default=0.0,
+                            help="Entropy parameter for PPO. Adding entropy helps to avoid convergence to a local optimum. To increase the entropy parameter is to increase exploration."
+                            )
+        parser.add_argument("--gamma",
+                            type=float,
+                            default=0.99,
+                            help="Gamma parameter for advantage function in RL.")
+        parser.add_argument("-lam",
+                            type=float,
+                            default=0.95,
+                            help="Lambda parameter for advantage function in RL.")
+        parser.add_argument("--nminibatches",
+                            type=int,
+                            default=1,
+                            help="Number of minibatches per environments. Here it's directly the number of batch of architectures.")
+        parser.add_argument("--noptepochs",
+                            type=int,
+                            default=10,
+                            help="Number of optimization steps to do per epochs. Basicaly it means the number of time you want to use learning data.")
+        parser.add_argument('--max-evals', type=int, default=1e10,
+                            help='maximum number of evaluations.')
+        parser.add_argument('--network', type=str, default='ppo_lstm',
+                            choices=['ppo_lstm'],
+                            help='Policy-Value network.')
+        return parser
+
 
 if __name__ == "__main__":
     args = Ppo.parse_args()
