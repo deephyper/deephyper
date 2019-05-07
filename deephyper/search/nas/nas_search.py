@@ -58,12 +58,19 @@ class NeuralArchitectureSearch(Search):
                 type='start_infos',
                 alg=alg,
                 network=network,
-                num_envs_per_agent=num_envs))
+                num_envs_per_agent=num_envs
+                nagents=1))
             self.rank = 0
             super().__init__(problem, run, evaluator, cache_key=key, **kwargs)
         else:
             self.rank = MPI.COMM_WORLD.Get_rank()
             if self.rank == 0:
+                dhlogger.info(jm(
+                    type='start_infos',
+                    alg=alg,
+                    network=network,
+                    num_envs_per_agent=num_envs
+                    nagents=MPI.COMM_WORLD.Get_size()))
                 super().__init__(problem, run, evaluator, cache_key=key,
                                  **kwargs)
             MPI.COMM_WORLD.Barrier()
