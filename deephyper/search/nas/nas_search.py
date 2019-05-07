@@ -53,13 +53,24 @@ class NeuralArchitectureSearch(Search):
         """
 
         self.kwargs = kwargs
+
+        if evaluator == 'balsam':  # TODO: async is a kw
+            balsam_launcher_nodes = int(
+                os.environ.get('BALSAM_LAUNCHER_NODES', 1))
+            deephyper_workers_per_node = int(
+                os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
+            nworkers = balsam_launcher_nodes * deephyper_workers_per_node
+        else:
+            nworkers = None
+
         if MPI is None:
             dhlogger.info(jm(
                 type='start_infos',
                 alg=alg,
                 network=network,
-                num_envs_per_agent=num_envs
-                nagents=1))
+                num_envs_per_agent=num_envs,
+                nagents=1,
+                nworkers=nworkers))
             self.rank = 0
             super().__init__(problem, run, evaluator, cache_key=key, **kwargs)
         else:
@@ -69,8 +80,9 @@ class NeuralArchitectureSearch(Search):
                     type='start_infos',
                     alg=alg,
                     network=network,
-                    num_envs_per_agent=num_envs
-                    nagents=MPI.COMM_WORLD.Get_size()))
+                    num_envs_per_agent=num_envs,
+                    nagents=MPI.COMM_WORLD.Get_size(),
+                    nworkers=nworkers))
                 super().__init__(problem, run, evaluator, cache_key=key,
                                  **kwargs)
             MPI.COMM_WORLD.Barrier()
