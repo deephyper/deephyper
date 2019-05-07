@@ -8,6 +8,11 @@ from deephyper.search import util
 from deephyper.search.nas.baselines.common.vec_env import VecEnv
 from deephyper.search.nas.utils._logging import JsonMessage as jm
 
+try:
+    from mpi4py import MPI
+except ImportError:
+    MPI = None
+
 dhlogger = util.conf_logger(
     'deephyper.search.nas.env.neural_architecture_envs')
 
@@ -76,6 +81,8 @@ class NeuralArchitectureVecEnv(VecEnv):
             self.stats['batch_computation'] = time.time() - \
                 self.stats['batch_computation']
             self.stats['num_cache_used'] = self.evaluator.stats['num_cache_used']
+            self.stats['rank'] = MPI.COMM_WORLD.Get_rank(
+            ) if MPI is not None else 0
 
             rews = [rew for cfg, rew in results]
             dones = [True for _ in rews]
