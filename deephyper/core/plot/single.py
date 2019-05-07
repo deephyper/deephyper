@@ -1,3 +1,14 @@
+"""Deephyper analytics - single study documentation
+
+usage:
+
+::
+
+    $ deephyper-analytics parse ppo_test/ppo_test_382DS/deephyper.log
+    $ deephyper-analytics single ppo_test_2019-05-07_14.json
+
+"""
+
 import os
 import argparse
 from deephyper.core.plot.jn_loader import NbEdit

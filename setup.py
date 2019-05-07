@@ -72,7 +72,7 @@ EXTRAS = {
     ],
     'docs': [
         'Sphinx>=1.8.2',
-        'sphinx_bootstrap_theme',
+        'sphinx_rtd_theme',
         'sphinx_copybutton'
     ],
     'analytics': [
