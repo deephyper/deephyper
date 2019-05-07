@@ -29,15 +29,6 @@ def get_workload(wf_name):
     return times, num_running
 
 
-def max_list(l):
-    rl = [l[0]]
-    mx = l[0]
-    for i in range(1, len(l)):
-        mx = max(mx, l[i])
-        rl.append(mx)
-    return rl
-
-
 def parseline_json(line, data):
     line = "".join(line)
     date = line.split('|')[0]
@@ -53,15 +44,6 @@ def parseline_json(line, data):
 
 def parseline_reward(line, data):
     data['raw_rewards'].append(float(line[-1]))
-
-
-def parseline_id_worker(line, data):
-    i = line.index("'w':") + 1
-    id_int = int(line[i][:-1])
-    data['id_worker'].append(id_int)
-    i = line.index("'rank':") + 1
-    id_int = int(line[i][:-1])
-    data['rank'].append(id_int)
 
 
 def parseline_arch_seq(line, data):
@@ -83,10 +65,6 @@ def parsing(f, data):
         if "y:" in line:
             parseline_reward(line, data)
             parseline_arch_seq(line, data)
-            try:
-                parseline_id_worker(line, data)
-            except:
-                pass
         elif ">>>" in line:
             parseline_json(line, data)
 
@@ -116,15 +94,11 @@ def main(path, *args, **kwargs):
         data['fig'] = 'data_' + now
 
     data['raw_rewards'] = list()
-    data['max_rewards'] = list()
     data['arch_seq'] = list()
-    data['id_worker'] = list()
-    data['rank'] = list()
 
     with open(path, 'r') as flog:
         print('File has been opened')
         parsing(flog, data)
-        data['max_rewards'] = max_list(data['raw_rewards'])
     print('File closed')
 
     if BALSAM_EXIST and workload_in_path:
@@ -143,6 +117,4 @@ def main(path, *args, **kwargs):
     print('Json dumped!')
 
     print(f'len raw_rewards: {len(data["raw_rewards"])}')
-    print(f'len max_rewards: {len(data["max_rewards"])}')
-    print(f'len id_worker  : {len(data["id_worker"])}')
     print(f'len arch_seq   : {len(data["arch_seq"])}')
