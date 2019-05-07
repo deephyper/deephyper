@@ -8,6 +8,7 @@ from importlib import import_module
 
 
 from deephyper.search import Search, util
+from deephyper.evaluator.evaluate import Encoder
 from deephyper.search.nas.baselines import logger
 from deephyper.search.nas.baselines.common.cmd_util import (common_arg_parser,
                                                             make_env,
@@ -71,7 +72,8 @@ class NeuralArchitectureSearch(Search):
                 network=network,
                 num_envs_per_agent=num_envs,
                 nagents=1,
-                nworkers=nworkers))
+                nworkers=nworkers,
+                encoded_space=json.dumps(problem.space, cls=Encoder)))
             self.rank = 0
             super().__init__(problem, run, evaluator, cache_key=key, **kwargs)
         else:
@@ -83,7 +85,8 @@ class NeuralArchitectureSearch(Search):
                     network=network,
                     num_envs_per_agent=num_envs,
                     nagents=MPI.COMM_WORLD.Get_size(),
-                    nworkers=nworkers))
+                    nworkers=nworkers,
+                    encoded_space=json.dumps(problem.space, cls=Encoder)))
                 super().__init__(problem, run, evaluator, cache_key=key,
                                  **kwargs)
             MPI.COMM_WORLD.Barrier()
