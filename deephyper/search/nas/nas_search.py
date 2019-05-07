@@ -51,15 +51,14 @@ class NeuralArchitectureSearch(Search):
                 parallel, it corresponds to the number of evaluation per
                 batch per agent.
         """
-        dhlogger.info(jm(
-            type='start_infos',
-            time=datetime.datetime.fromtimestamp(
-                time.time()).strftime('%Y-%m-%d %H:%M:%S'),
-            alg=alg,
-            network=network,
-            num_envs_per_agent=num_envs))
+
         self.kwargs = kwargs
         if MPI is None:
+            dhlogger.info(jm(
+                type='start_infos',
+                alg=alg,
+                network=network,
+                num_envs_per_agent=num_envs))
             self.rank = 0
             super().__init__(problem, run, evaluator, cache_key=key, **kwargs)
         else:
