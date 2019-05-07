@@ -8,7 +8,8 @@ from deephyper.search import util
 from deephyper.search.nas.baselines.common.vec_env import VecEnv
 from deephyper.search.nas.utils._logging import JsonMessage as jm
 
-dhlogger = util.conf_logger('deephyper.search.nas.neural_architecture_envs')
+dhlogger = util.conf_logger(
+    'deephyper.search.nas.env.neural_architecture_envs')
 
 
 class NeuralArchitectureVecEnv(VecEnv):
