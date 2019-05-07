@@ -1,6 +1,8 @@
 import json
 import math
 import sys
+import time
+import datetime
 from importlib import import_module
 
 
@@ -18,6 +20,7 @@ from deephyper.search.nas.baselines.common.vec_env.vec_video_recorder import \
     VecVideoRecorder
 from deephyper.search.nas.env.neural_architecture_envs import \
     NeuralArchitectureVecEnv
+from deephyper.search.nas.utils._logging import JsonMessage as jm
 
 try:
     from mpi4py import MPI
@@ -48,6 +51,13 @@ class NeuralArchitectureSearch(Search):
                 parallel, it corresponds to the number of evaluation per
                 batch per agent.
         """
+        dhlogger.info(jm(
+            type='start_infos',
+            time=datetime.datetime.fromtimestamp(
+                time.time()).strftime('%Y-%m-%d %H:%M:%S'),
+            alg=alg,
+            network=network,
+            num_envs_per_agent=num_envs))
         self.kwargs = kwargs
         if MPI is None:
             self.rank = 0
