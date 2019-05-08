@@ -83,4 +83,4 @@ Single
 Multi
 -----
 
-.. automodule:: deephyper.core.plots.multi
+.. automodule:: deephyper.core.plot.multi
