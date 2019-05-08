@@ -4,8 +4,9 @@ usage:
 
 ::
 
-    $ deephyper-analytics parse ppo_test/ppo_test_382DS/deephyper.log
-    $ deephyper-analytics single ppo_test_2019-05-07_14.json
+    $ deephyper-analytics parse ppo_test1/ppo_test_382DS/deephyper.log
+    $ deephyper-analytics parse ppo_test2/ppo_test_23HDS/deephyper.log
+    $ deephyper-analytics multi ppo_test1_2019-05-07_14.json ppo_test1_2019-05-07_14.json
 
 """
 
@@ -18,10 +19,26 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 def multi_analytics(path_to_data_file):
     editor = NbEdit(os.path.join(HERE, 'stub/multi_analytics.ipynb'))
+    
+    path_list = list()
+    label_list = list()
+    for i, el in enumerate(path_to_data_file):
+        if ':' in el:
+            label, p = tuple(el.split(':'))
+        else:
+            label, p = str(i), el
+        path_list.append(p)
+        label_list.append(label)
+    
+    text = "\n"
+    for label, p in zip(label_list, path_list):
+        text += f" - {label}:{p}\n"
 
-    editor.edit(0, "{{path_to_data_file}}", str(path_to_data_file))
+    editor.edit(0, "{{path_to_data_file}}", text)
 
-    editor.edit(1, "{{path_to_data_file}}", f"{str(path_to_data_file)}")
+    editor.edit(1, "{{path_to_data_file}}", f"{str(path_list)}")
+    
+    editor.edit(1, "{{labels}}", f"{str(label_list)}")
 
     editor.write()
 
