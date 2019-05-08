@@ -10,6 +10,22 @@ except ImportError:
 
 
 class Ppo(NeuralArchitectureSearch):
+    """Search class to run a proximal policy optimization search. The search is launching as many agents as the number of MPI ranks. Each agent is batch synchronous on a number of DNN evaluations. This number of parallel evaluation is equal for all agents, and automaticaly computed based on the number of available workers when using `evaluator='balsam'`. For other evaluators it will be set to 1.
+
+    Args:
+        problem (str): Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.nas.linearReg.Problem).
+        run (str): Module path to the run function you want to use for the search (e.g. deephyper.search.nas.model.run.quick).
+        evaluator (str): value in ['balsam', 'subprocess', 'processPool', 'threadPool'].
+        network: (str): policy network for the search, value in [
+            'ppo_lstm_128',
+            'ppo_lnlstm_128',
+            'ppo_lstm_64',
+            'ppo_lnlstm_64',
+            'ppo_lstm_32',
+            'ppo_lnlstm_32'
+        ].
+    """
+
     def __init__(self, problem, run, evaluator, network, **kwargs):
         if MPI is None:
             nenvs = 1

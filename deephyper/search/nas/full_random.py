@@ -10,7 +10,7 @@ except ImportError:
 
 
 class Random(Search):
-    """Search class to run a fun random neural architecture search. The search is filling every available nodes as soon as they are detected. The master job is using only 1 MPI rank.
+    """Search class to run a full random neural architecture search. The search is filling every available nodes as soon as they are detected. The master job is using only 1 MPI rank.
 
     Args:
         problem (str): Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.nas.linearReg.Problem).
