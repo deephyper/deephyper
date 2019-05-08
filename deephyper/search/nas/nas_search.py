@@ -38,21 +38,21 @@ def key(d):
 
 
 class NeuralArchitectureSearch(Search):
+    """Represents different kind of RL algorithms working with NAS.
+
+    Args:
+        problem (str): Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.nas.linearReg.Problem).
+        run (str): Module path to the run function you want to use for the search (e.g. deephyper.search.nas.model.run.quick).
+        evaluator (str): value in ['balsam', 'subprocess', 'processPool', 'threadPool'].
+        alg (str): algorithm to use among ['ppo2',].
+        network (str/function): policy network.
+        num_envs (int): number of environments per agent to run in
+            parallel, it corresponds to the number of evaluation per
+            batch per agent.
+    """
 
     def __init__(self, problem, run, evaluator,  alg, network, num_envs,
                  **kwargs):
-        """Represents different kind of RL algorithms working with NAS.
-
-        Args:
-            problem (Problem): problem instance to use.
-            run (function): function to use for evaluations.
-            evaluator ([Evaluator): evaluator to use.
-            alg (str): algorithm to use among ['ppo2',].
-            network (str/function): policy network.
-            num_envs (int): number of environments per agent to run in
-                parallel, it corresponds to the number of evaluation per
-                batch per agent.
-        """
 
         self.kwargs = kwargs
 
@@ -115,17 +115,17 @@ class NeuralArchitectureSearch(Search):
     def _extend_parser(parser):
         parser.add_argument("--problem",
                             type=str,
-                            help="Problem to use for the search.",
                             default="deephyper.benchmark.nas.linearReg.Problem",
+                            help="Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.nas.linearReg.Problem)."
                             )
         parser.add_argument("--run",
                             type=str,
-                            help="Run function to use for evaluations.",
                             default="deephyper.search.nas.model.run.quick",
+                            help="Module path to the run function you want to use for the search (e.g. deephyper.search.nas.model.run.quick)."
                             )
         parser.add_argument('--max-evals',
                             type=int,
-                            default=10,
+                            default=1e10,
                             help='maximum number of evaluations.')
         parser.add_argument('--network',
                             type=str,

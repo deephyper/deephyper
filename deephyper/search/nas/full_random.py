@@ -10,7 +10,16 @@ except ImportError:
 
 
 class Random(Search):
+    """Search class to run a fun random neural architecture search. The search is filling every available nodes as soon as they are detected. The master job is using only 1 MPI rank.
+
+    Args:
+        problem (str): Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.nas.linearReg.Problem).
+        run (str): Module path to the run function you want to use for the search (e.g. deephyper.search.nas.model.run.quick).
+        evaluator (str): value in ['balsam', 'subprocess', 'processPool', 'threadPool'].
+    """
+
     def __init__(self, problem, run, evaluator, **kwargs):
+
         if MPI is None:
             self.free_workers = 1
         else:
@@ -32,9 +41,11 @@ class Random(Search):
     def _extend_parser(parser):
         parser.add_argument("--problem",
                             default="deephyper.benchmark.nas.linearReg.Problem",
+                            help="Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.nas.linearReg.Problem)."
                             )
         parser.add_argument("--run",
                             default="deephyper.search.nas.model.run.quick",
+                            help="Module path to the run function you want to use for the search (e.g. deephyper.search.nas.model.run.quick)."
                             )
         parser.add_argument('--max-evals', type=int, default=1e10,
                             help='maximum number of evaluations.')

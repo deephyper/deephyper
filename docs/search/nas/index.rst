@@ -8,6 +8,10 @@ Neural Architecture Search (NAS)
    env/index
    model/index
 
+
+.. autoclass:: deephyper.search.nas.NeuralArchitectureSearch
+   :members:
+
 NAS (PPO) Asynchronous
 ======================
 
