@@ -66,7 +66,7 @@ class Ppo(NeuralArchitectureSearch):
                             type=float,
                             default=0.99,
                             help="Gamma parameter for advantage function in RL.")
-        parser.add_argument("-lam",
+        parser.add_argument("--lam",
                             type=float,
                             default=0.95,
                             help="Lambda parameter for advantage function in RL.")
