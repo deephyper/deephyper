@@ -23,7 +23,7 @@ class Ppo(NeuralArchitectureSearch):
             'ppo_lnlstm_64',
             'ppo_lstm_32',
             'ppo_lnlstm_32'
-        ].
+            ].
     """
 
     def __init__(self, problem, run, evaluator, network, **kwargs):
