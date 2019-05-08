@@ -2,7 +2,7 @@ import argparse
 import sys
 
 from deephyper.core.logs import parsing, json
-from deephyper.core.plot import single
+from deephyper.core.plot import single, multi
 
 
 def create_parser():
@@ -21,8 +21,12 @@ def create_parser():
     name, func = json.add_subparser(subparsers)
     mapping[name] = func
 
-    # plots signle
+    # plots single
     name, func = single.add_subparser(subparsers)
+    mapping[name] = func
+
+    # plots multi
+    name, func = multi.add_subparser(subparsers)
     mapping[name] = func
 
     return parser, mapping
