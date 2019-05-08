@@ -6,14 +6,14 @@ build:
     image: latest
 
 python:
-    version: 3.6
-    install:
-        - method: pip
-            path: .
-            extra_requirements:
-                - docs
-    system_packages: true
+   version: 3.6
+   install:
+      - method: pip
+        path: .
+        extra_requirements:
+            - docs
+   system_packages: true
 
 sphinx:
-    builder: html
-    configuration: docs/conf.py
+   builder: html
+   configuration: docs/conf.py
