@@ -11,7 +11,7 @@ Neural Architecture Search (NAS)
 NAS (PPO) Asynchronous
 ======================
 
-.. automodule:: deephyper.search.nas.ppo
+.. autoclass:: deephyper.search.nas.ppo.Ppo
    :members:
 
 Run locally
@@ -27,5 +27,5 @@ With n agent where n = np - 1, because 1 mpi process is used for the parameter s
 NAS Full Random
 ===============
 
-.. automodule:: deephyper.search.nas.full_random
+.. autoclass:: deephyper.search.nas.full_random.Random
    :members:
