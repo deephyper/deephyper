@@ -14,5 +14,5 @@ python:
     system_packages: true
 
 sphinx:
-  builder: html
-  configuration: docs/conf.py
+    builder: html
+    configuration: docs/conf.py
