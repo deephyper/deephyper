@@ -66,6 +66,8 @@ class NeuralArchitectureSearch(Search):
             nworkers = None
 
         if MPI is None:
+            self.rank = 0
+            super().__init__(problem, run, evaluator, cache_key=key, **kwargs)
             dhlogger.info(jm(
                 type='start_infos',
                 alg=alg,
@@ -73,12 +75,12 @@ class NeuralArchitectureSearch(Search):
                 num_envs_per_agent=num_envs,
                 nagents=1,
                 nworkers=nworkers,
-                encoded_space=json.dumps(problem.space, cls=Encoder)))
-            self.rank = 0
-            super().__init__(problem, run, evaluator, cache_key=key, **kwargs)
+                encoded_space=json.dumps(self.problem.space, cls=Encoder)))
         else:
             self.rank = MPI.COMM_WORLD.Get_rank()
             if self.rank == 0:
+                super().__init__(problem, run, evaluator, cache_key=key,
+                                 **kwargs)
                 dhlogger.info(jm(
                     type='start_infos',
                     alg=alg,
@@ -86,9 +88,7 @@ class NeuralArchitectureSearch(Search):
                     num_envs_per_agent=num_envs,
                     nagents=MPI.COMM_WORLD.Get_size(),
                     nworkers=nworkers,
-                    encoded_space=json.dumps(problem.space, cls=Encoder)))
-                super().__init__(problem, run, evaluator, cache_key=key,
-                                 **kwargs)
+                    encoded_space=json.dumps(self.problem.space, cls=Encoder)))
             MPI.COMM_WORLD.Barrier()
             if self.rank != 0:
                 super().__init__(problem, run, evaluator, cache_key=key,
