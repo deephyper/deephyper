@@ -79,3 +79,8 @@ Single
 ------
 
 .. automodule:: deephyper.core.plot.single
+
+Multi
+-----
+
+.. automodule:: deephyper.core.plots.multi

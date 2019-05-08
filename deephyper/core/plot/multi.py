@@ -1,4 +1,4 @@
-"""Deephyper analytics - single study documentation
+"""Deephyper analytics - multi study documentation
 
 usage:
 
@@ -19,7 +19,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 def multi_analytics(path_to_data_file):
     editor = NbEdit(os.path.join(HERE, 'stub/multi_analytics.ipynb'))
-    
+
     path_list = list()
     label_list = list()
     for i, el in enumerate(path_to_data_file):
@@ -29,7 +29,7 @@ def multi_analytics(path_to_data_file):
             label, p = str(i), el
         path_list.append(p)
         label_list.append(label)
-    
+
     text = "\n"
     for label, p in zip(label_list, path_list):
         text += f" - {label}:{p}\n"
@@ -37,7 +37,7 @@ def multi_analytics(path_to_data_file):
     editor.edit(0, "{{path_to_data_file}}", text)
 
     editor.edit(1, "{{path_to_data_file}}", f"{str(path_list)}")
-    
+
     editor.edit(1, "{{labels}}", f"{str(label_list)}")
 
     editor.write()
