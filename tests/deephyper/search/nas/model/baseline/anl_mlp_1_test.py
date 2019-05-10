@@ -8,7 +8,7 @@ def test_create_structure():
 
     ops = [random() for i in range(structure.num_nodes)]
     structure.set_ops(ops)
-    structure.draw_graphviz('graph_anl_mlp_1_test.dot')
+    # structure.draw_graphviz('graph_anl_mlp_1_test.dot')
 
     model = structure.create_model()
 
@@ -17,3 +17,6 @@ def test_create_structure():
     y = model.predict(x)
 
     assert np.shape(y) == (1, 1), f'Wrong output shape {np.shape(y)} should be {(1, 1)}'
+
+if __name__ == '__main__':
+    test_create_structure()

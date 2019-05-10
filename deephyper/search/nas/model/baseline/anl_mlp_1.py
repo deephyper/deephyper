@@ -4,7 +4,7 @@ from deephyper.search.nas.model.baseline.util.struct import create_seq_struct
 from deephyper.search.nas.model.baseline.util.struct import create_struct_full_skipco
 from deephyper.search.nas.model.space.block import Block
 from deephyper.search.nas.model.space.cell import Cell
-from deephyper.search.nas.model.space.node import Node
+from deephyper.search.nas.model.space.node import VariableNode
 from deephyper.search.nas.model.space.op.basic import Connect
 from deephyper.search.nas.model.space.op.op1d import (Dense, Identity,
                                                       dropout_ops)
@@ -23,7 +23,7 @@ def create_dense_cell_type1(input_nodes):
 
     def create_block():
         # first node of block
-        n1 = Node('N1')
+        n1 = VariableNode('N1')
         for inpt in input_nodes:
             n1.add_op(Connect(cell.graph, inpt, n1))
 
@@ -36,16 +36,15 @@ def create_dense_cell_type1(input_nodes):
         mlp_op_list.append(Dense(10, tf.nn.tanh))
         mlp_op_list.append(Dense(20, tf.nn.relu))
         mlp_op_list.append(Dense(20, tf.nn.tanh))
-        n2 = Node('N2')
+        n2 = VariableNode('N2')
         for op in mlp_op_list:
             n2.add_op(op)
 
         # third node of block
-        n3 = Node('N3')
+        n3 = VariableNode('N3')
         for op in dropout_ops:
             n3.add_op(op)
 
-        # 5 Blocks
         block = Block()
         block.add_node(n1)
         block.add_node(n2)
@@ -55,6 +54,7 @@ def create_dense_cell_type1(input_nodes):
         block.add_edge(n2, n3)
         return block
 
+    # 2 Blocks per cell
     block1 = create_block()
     block2 = create_block()
 

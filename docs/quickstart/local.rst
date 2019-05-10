@@ -24,7 +24,7 @@ Now you can run AMBS with custom arguments:
 Python
 ------
 
-.. todo:: use hps inside python
+You can also use our hyperparameter searches directly from a python file by importing its corresponding class, for more details see :ref:`SearchDH`.
 
 Neural Architecture Search
 ==========================
@@ -39,4 +39,4 @@ Command Line
 Python
 ------
 
-.. todo:: use nas inside python
+You can also use our hyperparameter searches directly from a python file by importing its corresponding class, for more details see :ref:`SearchDH`.

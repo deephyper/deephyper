@@ -4,10 +4,5 @@ The ``Search`` class is abstract and has different subclasses such as: ``deephyp
 """
 
 from deephyper.search.search import Search
-# from deephyper.search.hps.ambs import AMBS
-# from deephyper.search.hps.ga import GA
-# from deephyper.search.nas.ppo_a3c_sync import NasPPOSyncA3C
-# from deephyper.search.nas.ppo_a3c_async import NasPPOAsyncA3C
-# from deephyper.search.nas.random import NasRandom
 
-__all__ = ['Search'] #, 'AMBS', 'GA', 'NasPPOSyncA3C', 'NasPPOAsyncA3C', 'NasRandom']
+__all__ = ['Search']

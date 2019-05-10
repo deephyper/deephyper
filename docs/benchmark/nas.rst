@@ -42,9 +42,9 @@ A preprocessing function is returning an object folling the same interface as `s
         ])
         return preprocessor
 
+
 Structure
 ---------
-
 
 
 Here is the structure used for the ```deephyper.benchmark.nas.linearReg`` benchmark.
@@ -60,7 +60,7 @@ Here is the structure used for the ```deephyper.benchmark.nas.linearReg`` benchm
 
 
 .. figure:: ../_static/img/benchmark/nas/anl_mlp_2_a.png
-   :scale: 100 %
+   :scale: 34 %
    :alt: anl_mlp_2
    :align: center
 
@@ -68,20 +68,49 @@ Here is the structure used for the ```deephyper.benchmark.nas.linearReg`` benchm
 
 
 .. figure:: ../_static/img/benchmark/nas/anl_mlp_2_b.png
-   :scale: 100 %
+   :scale: 34 %
    :alt: anl_mlp_2
    :align: center
 
    A second example of graph generated with ``anl_mlp_2.create_structure``.
 
 .. figure:: ../_static/img/benchmark/nas/anl_mlp_2_c.png
-   :scale: 100 %
+   :scale: 34 %
    :alt: anl_mlp_2
    :align: center
 
    A last example of graph generated with ``anl_mlp_2.create_structure``.
 
 See :ref:`what-is-structure` for more details
+
+.. _available-nas-benchmarks:
+
+Create a new NAS problem with multiple inputs
+=============================================
+
+With numpy array for load_data:
+
+Problem
+-------
+
+.. literalinclude:: ../../deephyper/benchmark/nas/linearRegMultiInputs/problem.py
+
+Load Data
+---------
+
+.. literalinclude:: ../../deephyper/benchmark/nas/linearRegMultiInputs/load_data.py
+
+With generators:
+
+Problem
+-------
+
+.. literalinclude:: ../../deephyper/benchmark/nas/linearRegMultiInputsGen/problem.py
+
+Load Data
+---------
+
+.. literalinclude:: ../../deephyper/benchmark/nas/linearRegMultiInputsGen/load_data.py
 
 Available benchmarks
 ====================

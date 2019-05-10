@@ -1,17 +1,19 @@
-from keras.utils.data_utils import get_file
-import numpy as np
+import os
+from keras.datasets import mnist
 
-def load_data(origin, dest):
+def load_data():
     """Loads the MNIST dataset.
     Returns Tuple of Numpy arrays: `(x_train, y_train), (x_test, y_test)`.
     """
-    path = get_file('mnist.npz',
-                    origin='file://'+origin,
-                    cache_subdir=dest,
-                    file_hash='8a61469f7ea1b51cbae51d4f78837e45'
-                   )
-    f = np.load(path)
-    x_train, y_train = f['x_train'], f['y_train']
-    x_test, y_test = f['x_test'], f['y_test']
-    f.close()
+    here = os.path.dirname(os.path.abspath(__file__))
+    directory = os.path.join(here, "DATA")
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    dest = os.path.join(here, 'DATA', 'mnist.npz')
+
+    (x_train, y_train), (x_test, y_test) = mnist.load_data(dest)
     return (x_train, y_train), (x_test, y_test)
+
+if __name__ == '__main__':
+    load_data()

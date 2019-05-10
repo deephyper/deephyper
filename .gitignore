@@ -166,6 +166,8 @@ logdir
 *.gv
 *.pdf
 *log*
+!deephyper/core/logs
 
 # Sphinx documentation
 _build/
+!_templates/*

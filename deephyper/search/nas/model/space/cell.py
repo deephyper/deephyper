@@ -1,6 +1,6 @@
 import networkx as nx
 
-from deephyper.search.nas.model.space.node import Node
+from deephyper.search.nas.model.space.node import Node, ConstantNode
 from deephyper.search.nas.model.space.block import Block
 from deephyper.search.nas.model.space.op.op1d import Concatenate
 
@@ -23,34 +23,51 @@ class Cell:
         self.graph.add_nodes_from(inputs)
 
     @property
-    def num_nodes(self):
+    def size(self):
+        """Search space size
         """
-        Return:
-            int the number of nodes of this cell.
-        """
-        n = 0
+        s = 0
         for b in self.blocks:
-            n += b.num_nodes()
-        return n
+            b_s = b.size
+            if b_s != 0:
+                if s == 0:
+                    s = b_s
+                else:
+                    s *= b_s
+        return s
+
+    @property
+    def num_nodes(self):
+        """Number of VariableNodes current cell.
+
+        Return:
+            int: the number of VariableNodes of current Cell.
+        """
+        return sum([b.num_nodes() for b in self.blocks]+[0])
 
     @property
     def action_nodes(self):
-        l = []
+        """Return the list of VariableNodes of current Cell.
+
+        Returns:
+            list(VariableNode): list of VariableNodes of current Cell.
+        """
+
+        var_nodes = []
         for b in self.blocks:
-            l.extend(b.action_nodes)
-        return l
+            var_nodes.extend(b.action_nodes)
+        return var_nodes
 
     def set_outputs(self, node=None):
         """Set output node of the current cell.
             node (Node, optional): Defaults to None will create a Concatenation node for the last axis.
         """
+
         if node is None:
-            output_node = Node(f'Cell_{self.num}_Output')
             stacked_nodes = self.get_blocks_output()
 
-            op = Concatenate(self.graph, output_node, stacked_nodes)
-            output_node.add_op(op)
-            output_node.set_op(0)
+            output_node = ConstantNode(name=f'Cell_{self.num}_Output')
+            output_node.set_op(Concatenate(self.graph, output_node, stacked_nodes))
         else:
             output_node = node
         self.output = output_node
@@ -61,51 +78,30 @@ class Cell:
         Returns:
             list(Node): outputs of blocks of the current cell.
         """
-        l = []
+
+        b_outputs = []
         for b in self.blocks:
-           l.extend(b.outputs)
-        return l
-
-    def set_inputs(self, inputs):
-        '''
-        Remove the previous inputs from the graph if set then add the new inputs.
-
-        Args:
-            inputs list(Node): possible inputs of the cell
-        '''
-        self.graph.remove_nodes_from(self.inputs)
-        self.inputs = inputs
-        self.graph.add_nodes_from(inputs)
+           b_outputs.extend(b.outputs)
+        return b_outputs
 
     def add_block(self, block):
-        '''
-            Add a new Block object to the Cell.
-            Args:
-                - block: Block the new block to add to the Cell
-        '''
-        assert not block in self.blocks
+        """Add a new Block object to the Cell.
+
+        Args:
+            block (Block): Block the new block to add to the current Cell.
+        """
+        if block in self.blocks:
+            raise RuntimeError(f"The block has already been added to the current Cell(id={self.num}).")
+
         self.blocks.append(block)
 
     def max_num_ops(self):
-        '''
-            Return the maximum number of operations of nodes of blocks of cell.
-        '''
-        mx = 0
-        for b in self.blocks:
-            mx = max(mx, b.max_num_ops())
-        return mx
+        """Return the maximum number of operations for a VariableNode in current Cell.
 
-    def add_edge(self, node1, node2):
-        assert isinstance(node1, Node)
-        assert isinstance(node2, Node)
-
-        self.graph.add_edge(node1, node2)
-
-        if not(nx.is_directed_acyclic_graph(self.graph)):
-            self.graph.remove_edge(node1, node2)
-            return False
-        else:
-            return True
+        Returns:
+            int: maximum number of operations for a VariableNode in current Cell.
+        """
+        return max(map(lambda b: b.max_num_ops(), self.blocks))
 
     def set_ops(self, indexes):
         cursor = 0
@@ -116,11 +112,3 @@ class Cell:
 
             self.graph.add_nodes_from(b.graph.nodes())
             self.graph.add_edges_from(b.graph.edges())
-
-    def create_tensor(self, graph=None, train=True):
-        if graph is None:
-            graph = self.graph
-        output_tensors = []
-        for b in self.blocks:
-            output_tensors.extend(b.create_tensor(graph, train=train))
-        return self.output.create_tensor(output_tensors, train=train)

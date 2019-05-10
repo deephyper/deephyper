@@ -1,14 +1,15 @@
-from collections import namedtuple
-from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import wait as _futures_wait
-from concurrent.futures import CancelledError
 import logging
 import os
-from deephyper.evaluator import evaluate
+from collections import namedtuple
+from concurrent.futures import CancelledError, ThreadPoolExecutor
+from concurrent.futures import wait as _futures_wait
+
+from deephyper.evaluator.evaluate import Evaluator
+
 logger = logging.getLogger(__name__)
 WaitResult = namedtuple('WaitResult', ['active', 'done', 'failed', 'cancelled'])
 
-class ThreadPoolEvaluator(evaluate.Evaluator):
+class ThreadPoolEvaluator(Evaluator):
     """Evaluator using ThreadPoolExecutor.
 
     The ``ThreadPoolEvaluator`` use the ``concurrent.futures.ThreadPoolExecutor`` class. The processes share memory and they are forked from the mother process so imports done before are done repeated. Be carefull if your ``run_function`` is loading an package such as tensorflow it can hang. If your ``run_function`` is very fast this evaluator can be faster than ``ProcessPoolEvaluator``.
@@ -45,7 +46,7 @@ class ThreadPoolEvaluator(evaluate.Evaluator):
                 cancelled.append(res)
             except Exception as e:
                 logger.exception("Eval exception:")
-                res.set_result(evaluate.Evaluator.FAIL_RETURN_VALUE)
+                res.set_result(Evaluator.FAIL_RETURN_VALUE)
                 res.set_exception(None)
                 failed.append(res)
             else:

@@ -1,2 +1,0 @@
-git clone https://github.com/tkipf/keras-gcn.git
-python setup.py install

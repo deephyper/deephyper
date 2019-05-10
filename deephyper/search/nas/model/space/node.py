@@ -1,41 +1,69 @@
-import tensorflow as tf
-
-from deephyper.search.nas.model.space.op.basic import Connect
-
 
 class Node:
-    """This class represents a node of a graph.
+    """This class represents a node of a graph
 
     Args:
         name (str): node name.
-        ops (list): possible operations of node.
-        index (int): index corresponding to the operation choosen for this node among the possible operations
     """
 
+    # Number of 'Node' instances created
     num = 0
 
-    def __init__(self, name='', ops=[], index=None):
+    def __init__(self, name='', *args, **kwargs):
         Node.num += 1
         self._num = Node.num
-        self.name = name
-        self._ops = ops[:]
-        assert index is None or (0 <= index and index < len(self._ops))
-        self._index = index
         self._tensor = None
+        self.name = name
+
+    def __str__(self):
+        return f'{self.name}({self._num})'
 
     @property
     def id(self):
         return self._num
 
+    @property
+    def op(self):
+        raise NotImplementedError
+
+    def create_tensor(self, *args, **kwargs):
+        raise NotImplementedError
+
+class OperationNode(Node):
+    def __init__(self, name='', *args, **kwargs):
+        return super().__init__(name=name, *args, **kwargs)
+
+    def create_tensor(self, inputs=None, train=True, *args, **kwargs):
+        if self._tensor is None:
+            if inputs == None:
+                self._tensor = self.op(train=train)
+            else:
+                self._tensor = self.op(inputs, train=train)
+        return self._tensor
+
+class VariableNode(OperationNode):
+    """This class represents a node of a graph where you have multiple possible operations.
+
+    Args:
+        name (str): node name.
+    """
+
+
+    def __init__(self, name=''):
+        super().__init__(name=name)
+        self._ops = list()
+        self._index = None
+
     def __str__(self):
         if self._index != None:
-            return f'{self.name}({self._num})[{str(self._ops[self._index])}]'
+            return f'{super().__str__()}(Variable[{str(self.op)}])'
         else:
-            return f'{self.name}({self._num})'
+            return f'{super().__str__()}(Variable)'
 
     def add_op(self, op):
         self._ops.append(op)
 
+    @property
     def num_ops(self):
         return len(self._ops)
 
@@ -50,21 +78,54 @@ class Node:
         else:
             assert 0 <= index and index < len(self._ops), f'len self._ops: {len(self._ops)}, index: {index}'
             self._index = index
-        return self._ops[self._index]
+        return self.op
 
-    def create_tensor(self, inputs=None, train=True):
-        assert self._index != None
-        # with tf.variable_scope(self.__str__().split('[')[0].lower()):
-        # TODO !!!!! but not working for now
-        if self._tensor is None:
-            if inputs == None:
-                self._tensor = self._ops[self._index](train=train)
-            else:
-                self._tensor = self._ops[self._index](inputs, train=train)
-        return self._tensor
+    @property
+    def op(self):
+        if len(self._ops) == 0:
+            raise RuntimeError('This VariableNode doesn\'t have any operation yet.')
+        elif self._index is None:
+            raise RuntimeError('This VariableNode doesn\'t have any set operation, please use "set_op(index)" if you want to set one')
+        else:
+            return self._ops[self._index]
 
-    def get_ops(self):
+    @property
+    def ops(self):
         return self._ops
 
-if __name__ == '__main__':
-    n = Node()
+class ConstantNode(OperationNode):
+    """A ConstantNode is a node which has a fixed operation.
+
+    Arguments:
+        op (Operation): operation of the ConstantNode.
+    """
+    def __init__(self, op=None, name='', *args, **kwargs):
+        super().__init__(name=name)
+        if not op is None:
+            op.is_set() # set operation
+        self._op = op
+
+    def set_op(self, op):
+        op.is_set()
+        self._op = op
+
+    def __str__(self):
+        return f'{super().__str__()}(Constant[{str(self.op)}])'
+
+    @property
+    def op(self):
+        return self._op
+
+class MirrorNode(OperationNode):
+    """A MirrorNode is a node which reuse an other, it enable the reuse of keras layers. This node will not add operations to choose.
+
+    Arguments:
+        node {Node} -- [description]
+    """
+    def __init__(self, node):
+        super().__init__(name=f"Mirror[{str(node)}]")
+        self._node = node
+
+    @property
+    def op(self):
+        return self._node.op

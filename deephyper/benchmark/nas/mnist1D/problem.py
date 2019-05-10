@@ -18,8 +18,8 @@ Problem.add_dim('create_structure', {
 })
 
 Problem.add_dim('hyperparameters', {
-    'batch_size': 128,
-    'learning_rate': 0.01,
+    'batch_size': 64,
+    'learning_rate': 0.0001,
     'optimizer': 'adam',
     'num_epochs': 10,
     'loss_metric': 'categorical_crossentropy',

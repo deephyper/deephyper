@@ -5,7 +5,8 @@ def create_struct_full_skipco(input_shape, output_shape, create_cell, num_cells)
         Create a SequentialStructure object.
 
         Args:
-            input_tensor (tensor): a tensorflow tensor object
+            input_shape (tuple): shape of input tensor
+            output_shape (tuple): shape of output tensor
             create_cell (function): function that create a cell, take one argument (inputs: list(None))
             num_cells (int): number of cells in the sequential structure
 
@@ -14,9 +15,9 @@ def create_struct_full_skipco(input_shape, output_shape, create_cell, num_cells)
     """
 
     network = KerasStructure(input_shape, output_shape)
-    input_node = network.input_node
+    input_nodes = network.input_nodes
 
-    func = lambda: create_cell([input_node])
+    func = lambda: create_cell(input_nodes)
     network.add_cell_f(func)
 
     func = lambda x: create_cell(x)
@@ -39,9 +40,9 @@ def create_seq_struct(input_shape, output_shape, create_cell, num_cells):
     """
 
     network = KerasStructure(input_shape, output_shape)
-    input_node = network.input_node
+    input_nodes = network.input_nodes
 
-    func = lambda: create_cell([input_node])
+    func = lambda: create_cell(input_nodes)
     network.add_cell_f(func)
 
     func = lambda x: create_cell(x)
