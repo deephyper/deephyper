@@ -75,8 +75,10 @@ class NeuralArchitectureVecEnv(VecEnv):
             dones = [False for _ in self.action_buffers]
             infos = {}
         else:
-            # Waiting results from balsam, blocking instruction
-            results = self.evaluator.await_evals(self.eval_uids)
+            # Waiting results from balsam
+            results = self.evaluator.await_evals(
+                self.eval_uids)  # Not blocking
+            rews = [rew for cfg, rew in results]  # Blocking generator
 
             self.stats['batch_computation'] = time.time() - \
                 self.stats['batch_computation']
@@ -84,7 +86,6 @@ class NeuralArchitectureVecEnv(VecEnv):
             self.stats['rank'] = MPI.COMM_WORLD.Get_rank(
             ) if MPI is not None else 0
 
-            rews = [rew for cfg, rew in results]
             dones = [True for _ in rews]
             infos = [{
                 'episode': {
