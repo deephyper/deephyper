@@ -65,11 +65,11 @@ class Ppo(NeuralArchitectureSearch):
         parser.add_argument("--gamma",
                             type=float,
                             default=0.99,
-                            help="Gamma parameter for advantage function in RL.")
+                            help="Gamma parameter for advantage function in RL, discounting factor for rewards.")
         parser.add_argument("--lam",
                             type=float,
                             default=0.95,
-                            help="Lambda parameter for advantage function in RL.")
+                            help="Lambda parameter for advantage function in RL, advantage estimation discounting factor (lambda in the paper).")
         parser.add_argument("--nminibatches",
                             type=int,
                             default=1,
