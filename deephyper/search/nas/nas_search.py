@@ -1,10 +1,14 @@
 import json
 import math
 import sys
+import os
+import time
+import datetime
 from importlib import import_module
 
 
 from deephyper.search import Search, util
+from deephyper.evaluator.evaluate import Encoder
 from deephyper.search.nas.baselines import logger
 from deephyper.search.nas.baselines.common.cmd_util import (common_arg_parser,
                                                             make_env,
@@ -18,6 +22,7 @@ from deephyper.search.nas.baselines.common.vec_env.vec_video_recorder import \
     VecVideoRecorder
 from deephyper.search.nas.env.neural_architecture_envs import \
     NeuralArchitectureVecEnv
+from deephyper.search.nas.utils._logging import JsonMessage as jm
 
 try:
     from mpi4py import MPI
@@ -33,30 +38,57 @@ def key(d):
 
 
 class NeuralArchitectureSearch(Search):
+    """Represents different kind of RL algorithms working with NAS.
+
+    Args:
+        problem (str): Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.nas.linearReg.Problem).
+        run (str): Module path to the run function you want to use for the search (e.g. deephyper.search.nas.model.run.quick).
+        evaluator (str): value in ['balsam', 'subprocess', 'processPool', 'threadPool'].
+        alg (str): algorithm to use among ['ppo2',].
+        network (str/function): policy network.
+        num_envs (int): number of environments per agent to run in
+            parallel, it corresponds to the number of evaluation per
+            batch per agent.
+    """
 
     def __init__(self, problem, run, evaluator,  alg, network, num_envs,
                  **kwargs):
-        """Represents different kind of RL algorithms working with NAS.
 
-        Args:
-            problem (Problem): problem instance to use.
-            run (function): function to use for evaluations.
-            evaluator ([Evaluator): evaluator to use.
-            alg (str): algorithm to use among ['ppo2',].
-            network (str/function): policy network.
-            num_envs (int): number of environments per agent to run in
-                parallel, it corresponds to the number of evaluation per
-                batch per agent.
-        """
         self.kwargs = kwargs
+
+        if evaluator == 'balsam':  # TODO: async is a kw
+            balsam_launcher_nodes = int(
+                os.environ.get('BALSAM_LAUNCHER_NODES', 1))
+            deephyper_workers_per_node = int(
+                os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
+            nworkers = balsam_launcher_nodes * deephyper_workers_per_node
+        else:
+            nworkers = None
+
         if MPI is None:
             self.rank = 0
             super().__init__(problem, run, evaluator, cache_key=key, **kwargs)
+            dhlogger.info(jm(
+                type='start_infos',
+                alg=alg,
+                network=network,
+                num_envs_per_agent=num_envs,
+                nagents=1,
+                nworkers=nworkers,
+                encoded_space=json.dumps(self.problem.space, cls=Encoder)))
         else:
             self.rank = MPI.COMM_WORLD.Get_rank()
             if self.rank == 0:
                 super().__init__(problem, run, evaluator, cache_key=key,
                                  **kwargs)
+                dhlogger.info(jm(
+                    type='start_infos',
+                    alg=alg,
+                    network=network,
+                    num_envs_per_agent=num_envs,
+                    nagents=MPI.COMM_WORLD.Get_size(),
+                    nworkers=nworkers,
+                    encoded_space=json.dumps(self.problem.space, cls=Encoder)))
             MPI.COMM_WORLD.Barrier()
             if self.rank != 0:
                 super().__init__(problem, run, evaluator, cache_key=key,
@@ -83,17 +115,17 @@ class NeuralArchitectureSearch(Search):
     def _extend_parser(parser):
         parser.add_argument("--problem",
                             type=str,
-                            help="Problem to use for the search.",
                             default="deephyper.benchmark.nas.linearReg.Problem",
+                            help="Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.nas.linearReg.Problem)."
                             )
         parser.add_argument("--run",
                             type=str,
-                            help="Run function to use for evaluations."
                             default="deephyper.search.nas.model.run.quick",
+                            help="Module path to the run function you want to use for the search (e.g. deephyper.search.nas.model.run.quick)."
                             )
         parser.add_argument('--max-evals',
                             type=int,
-                            default=10,
+                            default=1e10,
                             help='maximum number of evaluations.')
         parser.add_argument('--network',
                             type=str,

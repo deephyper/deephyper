@@ -1,9 +1,9 @@
 from sys import float_info
 from skopt import Optimizer as SkOptimizer
 from numpy import inf
-import logging
+from deephyper.search import util
 
-logger = logging.getLogger(__name__)
+logger = util.conf_logger('deephyper.search.hps.optimizer.optimizer')
 
 class Optimizer:
     SEED = 12345
@@ -75,7 +75,12 @@ class Optimizer:
     def ask_initial(self, n_points):
         XX = self._optimizer.ask(n_points=n_points)
         for x in XX:
-            self.evals[tuple(x)] = 0.0
+            y = self._get_lie()
+            key = tuple(x)
+            if key not in self.evals:
+                self.counter += 1
+                self._optimizer.tell(x,y)
+                self.evals[key] = y
         return [self.to_dict(x) for x in XX]
 
     def tell(self, xy_data):

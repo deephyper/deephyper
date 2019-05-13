@@ -1,4 +1,6 @@
-Environment
+Environments
 ************
 
-.. automodule:: deephyper.search.nas.env
+.. autoclass:: deephyper.search.nas.env.nas_env
+
+.. autoclass:: deephyper.search.nas.env.neural_architecture_envs

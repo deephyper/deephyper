@@ -8,7 +8,13 @@ from deephyper.search import util
 from deephyper.search.nas.baselines.common.vec_env import VecEnv
 from deephyper.search.nas.utils._logging import JsonMessage as jm
 
-dhlogger = util.conf_logger('deephyper.search.nas.neural_architecture_envs')
+try:
+    from mpi4py import MPI
+except ImportError:
+    MPI = None
+
+dhlogger = util.conf_logger(
+    'deephyper.search.nas.env.neural_architecture_envs')
 
 
 class NeuralArchitectureVecEnv(VecEnv):
@@ -69,26 +75,30 @@ class NeuralArchitectureVecEnv(VecEnv):
             dones = [False for _ in self.action_buffers]
             infos = {}
         else:
-            # Waiting results from balsam, blocking instruction
-            results = self.evaluator.await_evals(self.eval_uids)
+            # Waiting results from balsam
+            results = self.evaluator.await_evals(
+                self.eval_uids)  # Not blocking
+            rews = [rew for cfg, rew in results]  # Blocking generator
 
             self.stats['batch_computation'] = time.time() - \
                 self.stats['batch_computation']
             self.stats['num_cache_used'] = self.evaluator.stats['num_cache_used']
+            self.stats['rank'] = MPI.COMM_WORLD.Get_rank(
+            ) if MPI is not None else 0
 
-            rews = [rew for cfg, rew in results]
             dones = [True for _ in rews]
             infos = [{
                 'episode': {
                     'r': r,
                     'l': self.num_actions_per_env
                 } for r in rews}]  # TODO
-            self.reset()
 
             self.stats['rewards'] = rews
             self.stats['arch_seq'] = self.action_buffers
 
             dhlogger.info(jm(type='env_stats', **self.stats))
+
+            self.reset()
 
         return np.stack(obs), np.array(rews), np.array(dones), infos
 

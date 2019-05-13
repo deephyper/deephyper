@@ -12,8 +12,10 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
-on_theta = type(os.environ.get('HOST')) is str and 'theta' in os.environ.get('HOST')
-on_gpu = type(os.environ.get('DH_GPU')) is str and 'true' == os.environ.get('DH_GPU')
+on_theta = type(os.environ.get('HOST')
+                ) is str and 'theta' in os.environ.get('HOST')
+on_gpu = type(os.environ.get('DH_GPU')
+              ) is str and 'true' == os.environ.get('DH_GPU')
 
 # Package meta-data.
 NAME = 'deephyper'
@@ -33,7 +35,7 @@ REQUIRED = [
     'tqdm',
     'tensorflow>=1.11.0',
     'keras',
-    'deap', # GA search
+    'deap',  # GA search
     # nas
     'gym',
     'networkx',
@@ -43,11 +45,13 @@ REQUIRED = [
 # external sources
 DP_LINKS = list()
 
-if on_theta: # --system-site-packages
-    REQUIRED.append('mpi4py') #we want to use the default mpi4py from cray environment
+if on_theta:  # --system-site-packages
+    # we want to use the default mpi4py from cray environment
+    REQUIRED.append('mpi4py')
 
     REQUIRED.append('balsam')
-    DP_LINKS.append('https://github.com/balsam-alcf/balsam/tree/master#egg=balsam-0.2')
+    DP_LINKS.append(
+        'https://github.com/balsam-alcf/balsam/tree/master#egg=balsam-0.2')
 elif not on_rtd and not on_gpu:
     REQUIRED.append('mpi4py>=3.0.0')
 elif on_gpu:
@@ -68,8 +72,12 @@ EXTRAS = {
     ],
     'docs': [
         'Sphinx>=1.8.2',
-        'sphinx_bootstrap_theme',
+        'sphinx_rtd_theme',
         'sphinx_copybutton'
+    ],
+    'analytics': [
+        'jupyter',
+        'jupyter_contrib_nbextensions'
     ]
 }
 
@@ -122,7 +130,8 @@ class UploadCommand(Command):
             pass
 
         self.status('Building Source and Wheel (universal) distribution…')
-        os.system('{0} setup.py sdist bdist_wheel --universal'.format(sys.executable))
+        os.system(
+            '{0} setup.py sdist bdist_wheel --universal'.format(sys.executable))
 
         self.status('Uploading the package to PyPI via Twine…')
         os.system('twine upload dist/*')
@@ -132,6 +141,7 @@ class UploadCommand(Command):
         # os.system('git push --tags')
 
         sys.exit()
+
 
 class TestUploadCommand(Command):
     """Support setup.py upload."""
@@ -158,12 +168,15 @@ class TestUploadCommand(Command):
             pass
 
         self.status('Building Source and Wheel (universal) distribution…')
-        os.system('{0} setup.py sdist bdist_wheel --universal'.format(sys.executable))
+        os.system(
+            '{0} setup.py sdist bdist_wheel --universal'.format(sys.executable))
 
         self.status('Uploading the package to PyPI via Twine…')
-        os.system('twine upload --repository-url https://test.pypi.org/legacy/ dist/*')
+        os.system(
+            'twine upload --repository-url https://test.pypi.org/legacy/ dist/*')
 
         sys.exit()
+
 
 class TestInstallCommand(Command):
     """Support setup.py testinstall"""
@@ -226,9 +239,9 @@ setup(
         'testupload': TestUploadCommand,
         'testinstall': TestInstallCommand
     },
-    entry_points = {
+    entry_points={
         'console_scripts': [
             'deephyper-analytics=deephyper.core.logs.analytics:main'
-            ],
+        ],
     }
 )

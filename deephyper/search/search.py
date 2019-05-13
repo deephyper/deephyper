@@ -22,9 +22,9 @@ class Search:
         The `evaluator` abstracts the run time environment (local, supercomputer...etc) in which run functions are executed.
 
     Args:
-        problem (str):
-        run (str):
-        evaluator (str): in ['balsam', 'subprocess', 'processPool', 'threadPool']
+        problem (str): Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.hps.polynome2.Problem).
+        run (str): Module path to the run function you want to use for the search (e.g. deephyper.benchmark.hps.polynome2.run).
+        evaluator (str): value in ['balsam', 'subprocess', 'processPool', 'threadPool'].
     """
 
     def __init__(self, problem, run, evaluator, **kwargs):
@@ -72,10 +72,12 @@ class Search:
     def _base_parser():
         parser = argparse.ArgumentParser(conflict_handler='resolve')
         parser.add_argument("--problem",
-                            default="deephyper.benchmark.hps.polynome2.Problem"
+                            default="deephyper.benchmark.hps.polynome2.Problem",
+                            help="Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.hps.polynome2.Problem)."
                             )
         parser.add_argument("--run",
-                            default="deephyper.benchmark.hps.polynome2.run"
+                            default="deephyper.benchmark.hps.polynome2.run",
+                            help="Module path to the run function you want to use for the search (e.g. deephyper.benchmark.hps.polynome2.run)."
                             )
         parser.add_argument("--backend",
                             default='tensorflow',

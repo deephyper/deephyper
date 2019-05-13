@@ -75,3 +75,12 @@ Json
     optional arguments:
     -h, --help  show this help message and exit
 
+Single
+------
+
+.. automodule:: deephyper.core.plot.single
+
+Multi
+-----
+
+.. automodule:: deephyper.core.plot.multi

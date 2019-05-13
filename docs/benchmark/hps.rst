@@ -56,8 +56,10 @@ folder to ``sys.path`` at the top of the script:
     sys.path.insert(0, here)
     # import user modules below here
 
-Available benchmarks
-====================
+.. _available-hps-benchmarks:
+
+Available HPS benchmarks
+========================
 
 ============== ================ =====================================
       Hyper Parameters Search Benchmarks ``deephyper.benchmark.hps``
