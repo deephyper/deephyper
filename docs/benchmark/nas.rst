@@ -83,7 +83,6 @@ Here is the structure used for the ```deephyper.benchmark.nas.linearReg`` benchm
 
 See :ref:`what-is-structure` for more details
 
-.. _available-nas-benchmarks:
 
 Create a new NAS problem with multiple inputs
 =============================================
@@ -112,8 +111,10 @@ Load Data
 
 .. literalinclude:: ../../deephyper/benchmark/nas/linearRegMultiInputsGen/load_data.py
 
-Available benchmarks
-====================
+.. _available-nas-benchmarks:
+
+Available NAS benchmarks
+========================
 
 ============== ================ ========================================
       Neural Architecture Search Benchmarks ``deephyper.benchmark.nas``
