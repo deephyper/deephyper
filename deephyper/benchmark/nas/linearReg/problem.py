@@ -1,6 +1,7 @@
 from deephyper.benchmark import Problem
 from deephyper.benchmark.nas.linearReg.load_data import load_data
-from deephyper.search.nas.model.baseline.anl_mlp_2 import create_structure
+# from deephyper.search.nas.model.baseline.anl_mlp_2 import create_structure
+from deephyper.search.nas.model.baseline.struct_trainer_test import create_structure
 from deephyper.search.nas.model.preprocessing import minmaxstdscaler
 
 # We create our Problem object with the Problem class, you don't have to name your Problem object 'Problem' it can be any name you want. You can also define different problems in the same module.
@@ -23,18 +24,19 @@ Problem.add_dim('preprocessing', {
 Problem.add_dim('create_structure', {
     'func': create_structure,
     'kwargs': {
-        'num_cells': 5
+        'num_cells': 1
     }
 })
 
 # You define the hyperparameters used to train your generated models during the search.
 Problem.add_dim('hyperparameters', {
     'batch_size': 100,
-    'learning_rate': 0.01,
+    'learning_rate': 0.1,
     'optimizer': 'adam',
-    'num_epochs': 10, #50,
-    'loss_metric': 'mean_squared_error',
-    'metrics': ['mean_squared_error']
+    'num_epochs': 10,  # 50,
+    'loss_metric': 'mse',
+    'metrics': ['mse'],
+    'reward': 'r2'
 })
 
 # Just to print your problem, to test its definition and imports in the current python environment.

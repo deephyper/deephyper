@@ -22,18 +22,18 @@ class Structure:
 
 
 class KerasStructure(Structure):
+    """A KerasStructure represents a search space of neural networks.
+
+    Args:
+        input_shape (list(tuple(int))): list of shapes of all inputs.
+        output_shape (tuple(int)): shape of output.
+        output_op (Operation): operation which merges outputs of cells.
+
+    Raises:
+        RuntimeError: [description]
+    """
+
     def __init__(self, input_shape, output_shape, output_op=None, *args, **kwargs):
-        """A KerasStructure represents a search space of neural networks.
-
-        Args:
-            input_shape (list(tuple(int))): list of shapes of all inputs
-            output_shape (tuple(int)): shape of output
-            output_op (Operation): operation which merges outputs of cells
-
-        Raises:
-            RuntimeError: [description]
-        """
-
 
         self.graph = nx.DiGraph()
 
@@ -46,11 +46,13 @@ class KerasStructure(Structure):
             # we have a list of input tensors here
             self.input_nodes = list()
             for i in range(len(input_shape)):
-                op = Tensor(keras.layers.Input(input_shape[i], name=f"input_{i}"))
+                op = Tensor(keras.layers.Input(
+                    input_shape[i], name=f"input_{i}"))
                 inode = ConstantNode(op=op, name=f'Input_{i}')
                 self.input_nodes.append(inode)
         else:
-            raise RuntimeError(f"input_shape must be either of type 'tuple' or 'list(tuple)' but is of type '{type(input_shape)}'!")
+            raise RuntimeError(
+                f"input_shape must be either of type 'tuple' or 'list(tuple)' but is of type '{type(input_shape)}'!")
 
         self.__output_shape = output_shape
         self.output_node = None
@@ -91,16 +93,17 @@ class KerasStructure(Structure):
     @property
     def depth(self):
         if self._model is None:
-            raise RuntimeError("Can't compute depth of model without creating a model.")
+            raise RuntimeError(
+                "Can't compute depth of model without creating a model.")
         return len(self.longest_path)
 
     @property
     def longest_path(self):
         if self._model is None:
-            raise RuntimeError("Can't compute longest path of model without creating a model.")
+            raise RuntimeError(
+                "Can't compute longest path of model without creating a model.")
         nx_graph = nx.drawing.nx_pydot.from_pydot(model_to_dot(self._model))
         return nx.algorithms.dag.dag_longest_path(nx_graph)
-
 
     @property
     def max_num_ops(self):
@@ -121,7 +124,6 @@ class KerasStructure(Structure):
         """
 
         return sum([c.num_nodes for c in self.struct] + [0])
-
 
     def num_nodes_cell(self, i=None):
         """Returns the number of VariableNodes in Cells.
@@ -153,7 +155,8 @@ class KerasStructure(Structure):
             func (function): a function that return a cell with one argument list of input nodes.
             num (int): number of hidden state with which the new cell can connect or None means all previous hidden states
         """
-        possible_inputs = self.input_nodes[:] # it's very important to use a copy of the list
+        possible_inputs = self.input_nodes[:
+                                           ]  # it's very important to use a copy of the list
         possible_inputs.extend([c.output for c in self.struct])
         if len(self.struct) > 0:
             if num is None:
@@ -176,7 +179,6 @@ class KerasStructure(Structure):
                 str_hash = str(o)
                 if not (str_hash in self.map_sh2int):
                     self.map_sh2int[str_hash] = len(self.map_sh2int)+1
-
 
     def set_ops(self, indexes):
         """
@@ -205,7 +207,6 @@ class KerasStructure(Structure):
             node.set_op(self.output_op(self.graph, node, output_nodes))
         self.output_node = node
 
-
     def create_model(self, activation=None):
         """Create the tensors corresponding to the structure.
 
@@ -217,18 +218,15 @@ class KerasStructure(Structure):
         """
 
         output_tensor = create_tensor_aux(self.graph, self.output_node)
-        # print('input of output layer shape: ', output_tensor.get_shape())
-        # print('input of output layer tensor: ', output_tensor)
-        # print('self.output_node: ', self.output_node)
         if len(output_tensor.get_shape()) > 2:
             output_tensor = keras.layers.Flatten()(output_tensor)
-        output_tensor = keras.layers.Dense(self.__output_shape[0], activation=activation)(output_tensor)
-        # print('output of output layer shape: ', output_tensor.get_shape())
-        # input_tensor = self.input_node._tensor
-        # print('-> Input Nodes: ', self.input_nodes)
+        output_tensor = keras.layers.Dense(
+            self.__output_shape[0], activation=activation)(output_tensor)
+
         input_tensors = [inode._tensor for inode in self.input_nodes]
-        # print('-> Input Tensors: ', input_tensors)
+
         self._model = keras.Model(inputs=input_tensors, outputs=output_tensor)
+
         return keras.Model(inputs=input_tensors, outputs=output_tensor)
 
     def get_hash(self, node_index, index):
@@ -268,6 +266,7 @@ def get_output_nodes(graph):
         if len(list(graph.successors(n))) == 0:
             output_nodes.append(n)
     return output_nodes
+
 
 def create_tensor_aux(g, n, train=None):
     """Recursive function to create the tensors from the graph.

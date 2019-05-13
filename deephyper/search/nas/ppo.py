@@ -59,7 +59,7 @@ class Ppo(NeuralArchitectureSearch):
                             )
         parser.add_argument("--ent-coef",
                             type=float,
-                            default=0.0,
+                            default=0.01,
                             help="Entropy parameter for PPO. Adding entropy helps to avoid convergence to a local optimum. To increase the entropy parameter is to increase exploration."
                             )
         parser.add_argument("--gamma",

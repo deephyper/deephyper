@@ -60,6 +60,7 @@ def create_dense_cell_type2(input_nodes):
     cell.set_outputs()
     return cell
 
+
 def create_structure(input_shape=(2,), output_shape=(1,), num_cells=2):
     return create_struct_full_skipco(
         input_shape,

@@ -12,6 +12,7 @@ from deephyper.search.nas.model.trainer.regressor_train_valid import \
 
 logger = util.conf_logger('deephyper.search.nas.run')
 
+
 def run(config):
     # load functions
     load_data = util.load_attr_from(config['load_data']['func'])
@@ -27,16 +28,19 @@ def run(config):
     # Set data shape
     if type(data) is tuple:
         if len(data) != 2:
-            raise RuntimeError(f'Loaded data are tuple, should ((training_input, training_output), (validation_input, validation_output)) but length=={len(data)}')
+            raise RuntimeError(
+                f'Loaded data are tuple, should ((training_input, training_output), (validation_input, validation_output)) but length=={len(data)}')
         (t_X, t_y), (v_X, v_y) = data
-        if type(t_X) is np.ndarray and  type(t_y) is np.ndarray and \
-            type(v_X) is np.ndarray and type(v_y) is np.ndarray:
+        if type(t_X) is np.ndarray and type(t_y) is np.ndarray and \
+                type(v_X) is np.ndarray and type(v_y) is np.ndarray:
             input_shape = np.shape(t_X)[1:]
         elif type(t_X) is list and type(t_y) is np.ndarray and \
-            type(v_X) is list and type(v_y) is np.ndarray:
-            input_shape = [np.shape(itX)[1:] for itX in t_X] # interested in shape of data not in length
+                type(v_X) is list and type(v_y) is np.ndarray:
+            # interested in shape of data not in length
+            input_shape = [np.shape(itX)[1:] for itX in t_X]
         else:
-            raise RuntimeError(f'Data returned by load_data function are of a wrong type: type(t_X)=={type(t_X)},  type(t_y)=={type(t_y)}, type(v_X)=={type(v_X)}, type(v_y)=={type(v_y)}')
+            raise RuntimeError(
+                f'Data returned by load_data function are of a wrong type: type(t_X)=={type(t_X)},  type(t_y)=={type(t_y)}, type(v_X)=={type(v_X)}, type(v_y)=={type(v_y)}')
         output_shape = np.shape(t_y)[1:]
         config['data'] = {
             'train_X': t_X,
@@ -46,19 +50,23 @@ def run(config):
         }
     elif type(data) is dict:
         config['data'] = data
-        input_shape = [data['shapes'][0][f'input_{i}'] for i in range(len(data['shapes'][0]))]
+        input_shape = [data['shapes'][0][f'input_{i}']
+                       for i in range(len(data['shapes'][0]))]
         output_shape = data['shapes'][1]
     else:
-        raise RuntimeError(f'Data returned by load_data function are of an unsupported type: {type(data)}')
+        raise RuntimeError(
+            f'Data returned by load_data function are of an unsupported type: {type(data)}')
 
     logger.info(f'input_shape: {input_shape}')
     logger.info(f'output_shape: {output_shape}')
 
     cs_kwargs = config['create_structure'].get('kwargs')
     if cs_kwargs is None:
-        structure = config['create_structure']['func'](input_shape, output_shape)
+        structure = config['create_structure']['func'](
+            input_shape, output_shape)
     else:
-        structure = config['create_structure']['func'](input_shape, output_shape, **cs_kwargs)
+        structure = config['create_structure']['func'](
+            input_shape, output_shape, **cs_kwargs)
 
     arch_seq = config['arch_seq']
 
@@ -95,14 +103,7 @@ def run(config):
             trainer = TrainerClassifierTrainValid(config=config, model=model)
 
     if model_created:
-        # 0 < reward regression < 105
-        # 0 < reward classification < 100
-        res = trainer.train()
-        if config['regression']:
-            if res < np.finfo('float32').min:
-                res = np.finfo('float32').min
-            res = - np.log(res) + np.log(np.finfo('float32').max)
-        result = res
+        result = trainer.train()
     else:
         # penalising actions if model cannot be created
         result = -1
