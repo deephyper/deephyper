@@ -1,5 +1,5 @@
-Space
-*****
+Search space
+************
 
 .. toctree::
    :maxdepth: 2
@@ -11,6 +11,7 @@ Nodes
 =====
 
 .. autoclass:: deephyper.search.nas.model.space.node.Node
+    :members:
 
 VariableNode
 ------------
@@ -42,6 +43,7 @@ A ``VariableNode`` represents a node of our structure with a set of possible ope
 
 
 .. autoclass:: deephyper.search.nas.model.space.node.VariableNode
+    :members:
 
 ConstantNode
 ------------
@@ -59,26 +61,31 @@ A ``ConstantNode`` represents a node of our structure with a fixed operation. It
 
 
 .. autoclass:: deephyper.search.nas.model.space.node.ConstantNode
+    :members:
 
 MirrorNode
 ----------
 
 .. autoclass:: deephyper.search.nas.model.space.node.MirrorNode
+    :members:
 
 Block
 =====
 
 .. autoclass:: deephyper.search.nas.model.space.block.Block
+    :members:
 
 Cell
 ====
 
 .. autoclass:: deephyper.search.nas.model.space.cell.Cell
+    :members:
 
 Structure
 =========
 
 .. autoclass:: deephyper.search.nas.model.space.structure.KerasStructure
+    :members:
 
 .. _what-is-structure:
 
