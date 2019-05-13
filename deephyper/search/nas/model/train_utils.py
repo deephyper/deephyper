@@ -125,3 +125,32 @@ def selectMetric(name):
         return name  # supposing it is referenced in keras metrics
     else:
         return metrics[name]
+
+
+# Reward metrics
+
+def racc(y_true, y_pred):
+    return tf.reduce_mean(tf.keras.metrics.categorical_accuracy(y_true, y_pred))
+
+
+def rmse(y_true, y_pred):
+    return -mse(y_true, y_pred)
+
+
+def rmae(y_true, y_pred):
+    return -mae(y_true, y_pred)
+
+
+rmetrics = OrderedDict()
+rmetrics['acc'] = racc
+rmetrics['r2'] = r2
+rmetrics['mse'] = rmse
+rmetrics['mae'] = rmae
+
+
+def selectRewardMetric(name):
+    if (rmetrics.get(name) == None):
+        raise RuntimeError(
+            f'"{name}" is not a defined reward metric.')
+    else:
+        return rmetrics[name]

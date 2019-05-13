@@ -34,7 +34,7 @@ Command Line
 
 ::
 
-    python -m deephyper.search.nas.ppo_a3c_sync --problem deephyper.benchmark.nas.mnist1D.problem.Problem --run deephyper.search.nas.model.run.alpha.run
+    python -m deephyper.search.nas.ppo --problem deephyper.benchmark.nas.mnist1D.problem.Problem --run deephyper.search.nas.model.run.alpha.run
 
 Python
 ------

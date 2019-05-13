@@ -66,7 +66,7 @@ class TrainerTrainValid:
             shape=(None, None),
             name='y_pred'
         )
-        self.reward_metric_op = U.selectMetric(
+        self.reward_metric_op = U.selectRewardMetric(
             self.config_hp['reward'])(self.y_true_ph, self.y_pred_ph)
 
         self.train_history = {
@@ -274,17 +274,19 @@ class TrainerTrainValid:
                 y_orig, y_pred = self.predict()
 
                 try:
-                    unnormalize_rmetric = sess.run(self.reward_metric_op, {
+                    unnormalize_rmetric = self.sess.run(self.reward_metric_op, {
                         self.y_true_ph: y_orig,
                         self.y_pred_ph: y_pred
                     })
+                    if len(np.shape(unnormalize_rmetric)) > 1:
+                        unnormalize_rmetric = np.mean(unnormalize_rmetric)
                 except ValueError as err:
                     logger.error(traceback.format_exc())
                     unnormalize_rmetric = np.finfo('float32').min
                 except:
                     raise
 
-                max_rmetric = min(max_rmetric, unnormalize_rmetric)
+                max_rmetric = max(max_rmetric, unnormalize_rmetric)
                 logger.info(
                     jm(epoch=i, rmetric=float(unnormalize_rmetric)))
 
@@ -295,10 +297,12 @@ class TrainerTrainValid:
             y_orig, y_pred = self.predict()
 
             try:
-                unnormalize_rmetric = sess.run(self.reward_metric_op, {
+                unnormalize_rmetric = self.sess.run(self.reward_metric_op, {
                     self.y_true_ph: y_orig,
                     self.y_pred_ph: y_pred
                 })
+                if len(np.shape(unnormalize_rmetric)) > 1:
+                    unnormalize_rmetric = np.mean(unnormalize_rmetric)
             except ValueError as err:
                 logger.error(traceback.format_exc())
                 unnormalize_rmetric = np.finfo('float32').min

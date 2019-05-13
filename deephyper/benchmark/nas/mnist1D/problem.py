@@ -23,7 +23,8 @@ Problem.add_dim('hyperparameters', {
     'optimizer': 'adam',
     'num_epochs': 10,
     'loss_metric': 'categorical_crossentropy',
-    'metrics': ['acc']
+    'metrics': ['acc'],
+    'reward': 'acc'
 })
 
 
