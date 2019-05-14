@@ -106,7 +106,8 @@ def main(path, *args, **kwargs):
             print('Computing workload!')
             times, num_running = get_workload(path.split('/')[-3])
             data['workload'] = dict(times=times, num_running=num_running)
-        except:
+        except Exception as e:
+            print('Exception: ', e)
             print('Failed to compute workload!...')
         else:
             print('Workload has been computed successfuly!')
