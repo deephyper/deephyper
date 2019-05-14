@@ -16,8 +16,10 @@ Nodes
 VariableNode
 ------------
 
-A ``VariableNode`` represents a node of our structure with a set of possible operations. It means the agent will have to act to choose one of these operations.
+.. autoclass:: deephyper.search.nas.model.space.node.VariableNode
+    :members:
 
+Example:
 ::
 
     >>> import tensorflow as tf
@@ -42,14 +44,16 @@ A ``VariableNode`` represents a node of our structure with a set of possible ope
 
 
 
-.. autoclass:: deephyper.search.nas.model.space.node.VariableNode
-    :members:
+
 
 ConstantNode
 ------------
 
-A ``ConstantNode`` represents a node of our structure with a fixed operation. It means the agent will not make any new decision for this node. The common use case for this node is to add a tensor in the graph.
+.. autoclass:: deephyper.search.nas.model.space.node.ConstantNode
+    :members:
 
+
+Example:
 ::
 
     >>> import tensorflow as tf
@@ -60,8 +64,6 @@ A ``ConstantNode`` represents a node of our structure with a fixed operation. It
     'CNode1(2)(Constant[Dense_100_relu])'
 
 
-.. autoclass:: deephyper.search.nas.model.space.node.ConstantNode
-    :members:
 
 MirrorNode
 ----------
@@ -138,7 +140,7 @@ The following code shows functions in python to create the previous example stru
     from deephyper.search.nas.model.baseline.util.struct import create_struct_full_skipco
     from deephyper.search.nas.model.space.block import Block
     from deephyper.search.nas.model.space.cell import Cell
-    from deephyper.search.nas.model.space.node import Node
+    from deephyper.search.nas.model.space.node import VariableNode
     from deephyper.search.nas.model.space.op.basic import Connect
     from deephyper.search.nas.model.space.op.op1d import (Dense, Identity,
                                                       Dropout)
@@ -148,7 +150,7 @@ The following code shows functions in python to create the previous example stru
         """Dense type 1
 
         Args:
-            input_nodes (list(Node)): possible inputs of the current cell.
+            input_nodes (list(VariableNode)): possible inputs of the current cell.
 
         Returns:
             Cell: a Cell instance.
@@ -157,7 +159,7 @@ The following code shows functions in python to create the previous example stru
 
         def create_block():
             # creation of node N_0
-            n0 = Node('N_0')
+            n0 = VariableNode('N_0')
             for inpt in input_nodes:
                 n0.add_op(Connect(cell.graph, inpt, n0))
 
@@ -172,7 +174,7 @@ The following code shows functions in python to create the previous example stru
                 Dense(20, tf.nn.tanh)
             ]
             # creation of node N_1
-            n1 = Node('N_1')
+            n1 = VariableNode('N_1')
             for op in mlp_op_list:
                 n1add_op(op)
 
@@ -187,7 +189,7 @@ The following code shows functions in python to create the previous example stru
                 Dropout(0.6)
             ]
             # creation of node N_2
-            n2 = Node('N_2')
+            n2 = VariableNode('N_2')
             for op in dropout_ops:
                 n2.add_op(op)
 

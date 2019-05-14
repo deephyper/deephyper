@@ -44,7 +44,7 @@ class OperationNode(Node):
 
 
 class VariableNode(OperationNode):
-    """This class represents a node of a graph where you have multiple possible operations.
+    """This class represents a node of a graph where you have a set of possible operations. It means the agent will have to act to choose one of these operations.
 
     Args:
         name (str): node name.
@@ -111,10 +111,11 @@ class VariableNode(OperationNode):
 
 
 class ConstantNode(OperationNode):
-    """A ConstantNode is a node which has a fixed operation.
+    """A ConstantNode represents a node with a fixed operation. It means the agent will not make any new decision for this node. The common use case for this node is to add a tensor in the graph.
 
-    Arguments:
-        op (Operation): operation of the ConstantNode.
+    Args:
+        op (Operation, optional): [description]. Defaults to None.
+        name (str, optional): [description]. Defaults to ''.
     """
 
     def __init__(self, op=None, name='', *args, **kwargs):
