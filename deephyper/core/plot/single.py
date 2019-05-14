@@ -19,6 +19,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 def single_analytics(path_to_data_file):
     editor = NbEdit(os.path.join(HERE, 'stub/single_analytics.ipynb'))
 
+    venv_name = os.environ.get('VIRTUAL_ENV').split('/')[-1]
+    editor.setkernel(venv_name)
+
     editor.edit(0, "{{path_to_data_file}}", path_to_data_file)
 
     editor.edit(1, "{{path_to_data_file}}", f"'{path_to_data_file}'")

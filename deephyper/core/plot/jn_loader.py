@@ -13,6 +13,9 @@ class NbEdit:
             self.nb = nbf.read(fp, 4)
         self.path_to_save = path_to_save
 
+    def setkernel(self, name):
+        self.nb['metadata']['kernel_info']['name'] = name
+
     def edit(self, n_cell, old, new):
         self.nb['cells'][n_cell]['source'] = self.nb['cells'][n_cell]['source'].replace(
             old, new)
