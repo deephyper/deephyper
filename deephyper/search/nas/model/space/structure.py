@@ -1,3 +1,5 @@
+from collections.abc import Iterable
+
 import networkx as nx
 from tensorflow import keras
 from tensorflow.python.keras.utils.vis_utils import model_to_dot
@@ -251,6 +253,34 @@ class KerasStructure(Structure):
                     b = [int(e) for e in b]
                     return b
                 cursor += 1
+
+    def denormalize(self, indexes):
+        """Denormalize a sequence of normalized indexes to get a sequence of absolute indexes. Useful when you want to compare the number of different architectures.
+
+        Args:
+            indexes (Iterable): a sequence of normalized indexes.
+
+        Returns:
+            list: A list of absolute indexes corresponding to operations choosen with relative indexes of `indexes`.
+        """
+        assert isinstance(indexes, Iterable)
+
+        # Denormalized list
+        den_list = []
+
+        # Init for loop
+        cursor = 0
+
+        # Loop
+        for c in self.struct:
+            num_nodes = c.num_nodes
+            sub_list = c.denormalize(indexes[cursor:cursor+num_nodes])
+
+            # Go next iter
+            den_list.extend(sub_list)
+            cursor += num_nodes
+
+        return den_list
 
 
 def get_output_nodes(graph):
