@@ -14,7 +14,11 @@ class NbEdit:
         self.path_to_save = path_to_save
 
     def setkernel(self, name):
-        self.nb['metadata']['kernel_info']['name'] = name
+        self.nb['metadata']['kernelspec'] = {
+                    "name": name,
+                    "display_name": f"Python {name}",
+                    "language": "python"
+                  }
 
     def edit(self, n_cell, old, new):
         self.nb['cells'][n_cell]['source'] = self.nb['cells'][n_cell]['source'].replace(
@@ -28,4 +32,4 @@ class NbEdit:
     def execute(self):
         """Execute jupyter notebook to generate plots for instance.
         """
-        os.popen(f"jupyter nbconvert --execute --inplace {self.path_to_save}")
+        #os.popen(f"jupyter nbconvert --execute --inplace {self.path_to_save}")
