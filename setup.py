@@ -28,7 +28,6 @@ VERSION = None
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    # 'requests', 'maya', 'records',
     'numpy',
     'scikit-optimize',
     'scikit-learn',
@@ -39,7 +38,8 @@ REQUIRED = [
     # nas
     'gym',
     'networkx',
-    'joblib'
+    'joblib',
+    'pydot'
 ]
 
 # external sources
