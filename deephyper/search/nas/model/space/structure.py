@@ -309,20 +309,22 @@ def create_tensor_aux(g, n, train=None):
     Return:
         the tensor represented by n.
     """
-
-    if n._tensor != None:
-        output_tensor = n._tensor
-    else:
-        pred = list(g.predecessors(n))
-        if len(pred) == 0:
-            output_tensor = n.create_tensor(train=train)
+    try:
+        if n._tensor != None:
+            output_tensor = n._tensor
         else:
-            tensor_list = list()
-            for s_i in pred:
-                tmp = create_tensor_aux(g, s_i, train=train)
-                if type(tmp) is list:
-                    tensor_list.extend(tmp)
-                else:
-                    tensor_list.append(tmp)
-            output_tensor = n.create_tensor(tensor_list, train=train)
-    return output_tensor
+            pred = list(g.predecessors(n))
+            if len(pred) == 0:
+                output_tensor = n.create_tensor(train=train)
+            else:
+                tensor_list = list()
+                for s_i in pred:
+                    tmp = create_tensor_aux(g, s_i, train=train)
+                    if type(tmp) is list:
+                        tensor_list.extend(tmp)
+                    else:
+                        tensor_list.append(tmp)
+                output_tensor = n.create_tensor(tensor_list, train=train)
+        return output_tensor
+    except TypeError:
+        raise RuntimeError(f'Failed to build tensors from :{n}')
