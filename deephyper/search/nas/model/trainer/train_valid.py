@@ -69,8 +69,8 @@ class TrainerTrainValid:
         self.reward_metric_op = U.selectRewardMetric(
             self.config_hp['reward'])(self.y_true_ph, self.y_pred_ph)
 
-        self.train_history = {
-            f'{self.metrics_name[0]}_valid': list(),
+        self.train_history = {  # TODO: fill the history
+            f'{name}_valid': list() for name in self.metrics_name
         }
         # Test on validation after each epoch
         logger.debug('[PARAM] KerasTrainer instantiated')
@@ -278,8 +278,9 @@ class TrainerTrainValid:
                         self.y_true_ph: y_orig,
                         self.y_pred_ph: y_pred
                     })
-                    if len(np.shape(unnormalize_rmetric)) > 1:
-                        unnormalize_rmetric = np.mean(unnormalize_rmetric)
+                    #print('unormalize_rmetric: ', unnormalize_rmetric)
+                    if len(np.shape(unnormalize_rmetric)) != 0:
+                        raise RuntimeError('Reward should be a scalar')
                 except ValueError as err:
                     logger.error(traceback.format_exc())
                     unnormalize_rmetric = np.finfo('float32').min
@@ -301,8 +302,8 @@ class TrainerTrainValid:
                     self.y_true_ph: y_orig,
                     self.y_pred_ph: y_pred
                 })
-                if len(np.shape(unnormalize_rmetric)) > 1:
-                    unnormalize_rmetric = np.mean(unnormalize_rmetric)
+                if len(np.shape(unnormalize_rmetric)) != 0:
+                    raise RuntimeError('Reward should be a scalar')
             except ValueError as err:
                 logger.error(traceback.format_exc())
                 unnormalize_rmetric = np.finfo('float32').min
