@@ -132,3 +132,12 @@ class Cell:
             den_list.extend(sub_list)
             cursor += num_nodes
         return den_list
+
+    def add_edge(self, n1, n2):
+        """Add a connection from n1 to n2 in the current cell graph.
+
+        Args:
+            n1 (Node): start node.
+            n2 (Node): end node.
+        """
+        self.graph.add_edge(n1, n2)
