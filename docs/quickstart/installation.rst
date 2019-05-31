@@ -65,7 +65,8 @@ Load the miniconda module which is using Intel optimized wheels for some of the 
 Load the balsam module:
 ::
 
-    module load balsam
+    module load balsam/0.3
+
 
 Create a virtual environment for your deephyper installation as a developer:
 ::

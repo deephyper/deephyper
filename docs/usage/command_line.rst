@@ -1,14 +1,13 @@
-Command Line
-************
-
 Analytics
-=========
+*********
 
 The Analytics command line is a set of tools which has been created to help you analyse deephyper data.
 
+.. highlight:: console
+
 ::
 
-    $ deephyper-analytics --help
+    [BalsamDB: testdb] (dh-opt) dhuser $ deephyper-analytics --help
     usage: deephyper-analytics [-h] {parse,json} ...
 
     Run some analytics for deephyper.
@@ -22,14 +21,14 @@ The Analytics command line is a set of tools which has been created to help you 
     -h, --help    show this help message and exit
 
 
-Parsing
--------
+Parsing logs
+============
 
 The parsing tool helps you to parse the ``deephyper.log`` file of your master job. For now this tool is used for neural architecture search logs.
 
 ::
 
-    $ deephyper-analytics parse -h
+    [BalsamDB: testdb] (dh-opt) dhuser $ deephyper-analytics parse -h
     Module: 'balsam' was not found!
     usage: deephyper-analytics parse [-h] path
 
@@ -46,7 +45,7 @@ The parsing tool helps you to parse the ``deephyper.log`` file of your master jo
 
 ::
 
-    $ deephyper-analytics parse ../nasdb/data/combo_async_exp4/combo_async_exp4_b0c432c7/deephyper.log
+    [BalsamDB: testdb] (dh-opt) dhuser $ deephyper-analytics parse ../nasdb/data/combo_async_exp4/combo_async_exp4_b0c432c7/deephyper.log
     Module: 'balsam' has been loaded successfully!
     Path to deephyper.log file: ../nasdb/data/combo_async_exp4/combo_async_exp4_b0c432c7/deephyper.log
     File has been opened
@@ -60,12 +59,12 @@ The parsing tool helps you to parse the ``deephyper.log`` file of your master jo
     len id_worker  : 5731
     len arch_seq   : 5731
 
-Json
-----
+Transformations from JSON file
+==============================
 
 ::
 
-    $ deephyper-analytics json -h
+    [BalsamDB: testdb] (dh-opt) dhuser $ deephyper-analytics json -h
     usage: deephyper-analytics json [-h] {best} ...
 
     positional arguments:
@@ -75,12 +74,12 @@ Json
     optional arguments:
     -h, --help  show this help message and exit
 
-Single
-------
+Single study
+============
 
 .. automodule:: deephyper.core.plot.single
 
-Multi
------
+Multiple study
+==============
 
 .. automodule:: deephyper.core.plot.multi

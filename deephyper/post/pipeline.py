@@ -133,11 +133,12 @@ def train(config):
         trainer.post_train()
         hist = trainer.post_train_history
 
-        t = time()
-        for _ in range(10):
-            trainer.predict()
-        t = time() - t
-        hist['predict_time'] = t
+        # Timing of prediction for validation dataset
+        t = time()  # ! TIMING - START
+        trainer.predict()
+        hist['val_predict_time'] = time() - t  # ! TIMING - END
+
+        hist['n_parameters'] = model.count_params()
 
         print(hist)
         with open(f'post_training_hist_{config["id"]}.json', 'w') as f:

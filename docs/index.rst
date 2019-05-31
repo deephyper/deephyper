@@ -51,10 +51,11 @@ Scalable Asynchronous Neural Architecture and Hyperparameter Search for Deep Neu
 
 .. toctree::
    :maxdepth: 2
-   :caption: User Guide
+   :caption: Tools
 
    usage/workflow
    usage/command_line
+   usage/post_training
    tests_link
 
 

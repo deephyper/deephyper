@@ -1,3 +1,14 @@
+"""
+The module ``deephyper.post.train`` aims to run post-training using an already defined Problem and the results of a finished search (e.g. list of best architectures).
+
+::
+
+    [BalsamDB: testdb] (dh-opt) dhuser $ balsam app --name POST --exe deephyper/deephyper/post/train.py
+    [BalsamDB: testdb] (dh-opt) dhuser $ deephyper-analytics json best -n 50 -p /projects/datascience/regele/experiments/cfd/cls_mlp_turb/exp_0/cls_mlp_turb_exp_0_2019-05-25_15.json
+    [BalsamDB: testdb] (dh-opt) dhuser $ balsam job --name post_cls_0 --workflow post_cls_0 --app POST --args '--evaluator balsam --problem cfdpb.cls_mlp_turbulence.problem_0.Problem --fbest /projects/datascience/regele/cfdpb/cfdpb/cls_mlp_turbulence/exp/exp_0/best_archs.json'
+    [BalsamDB: testdb] (dh-opt) dhuser $ balsam submit-launch -n 8 -q debug-cache-quad -t 60 -A datascience --job-mode mpi --wf-filter post_cls_0
+"""
+
 import argparse
 import json
 import logging
