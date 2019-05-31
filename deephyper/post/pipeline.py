@@ -146,8 +146,3 @@ def train(config):
         return min(hist['val_loss'])
     else:
         return sys.float_info.max
-
-    # # serialize weights to HDF5
-    # # model.save_weights("model_weights.h5")
-    # model.save("model.h5")
-    # print("Saved model weight to disk: model.h5")
