@@ -1,6 +1,52 @@
 from pprint import pformat
 from collections import OrderedDict
 
+# ! Exceptions
+
+
+class SpaceDimNameMismatch(RuntimeError):
+    """"When 2 set of keys are not corresponding for a given Problem.
+    """
+
+    def __init__(self, ref, space):
+        self.ref, self.space = ref, space
+
+    def __str__(self):
+        return f'Some reference\'s dimensions doesn\'t exist in this space: {filter(lambda k: k in self.space, self.ref.keys())}'
+
+
+class SpaceNumDimMismatch(RuntimeError):
+    """When 2 set of keys doesn't have the same number of keys for a given
+    Problem."""
+
+    def __init__(self, ref, space):
+        self.ref, self.space = ref, space
+
+    def __str__(self):
+        return f'The reference has {len(self.ref)} dimensions when the space has {len(self.space)}. Both should have the same number of dimensions.'
+
+
+class SpaceDimNameOfWrongType(Exception):
+    """When a dimension name of the space is not a string."""
+
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return f"Dimension name: '{self.value}' is of type == {type(self.value)} when should be 'str'!"
+
+
+class SpaceDimValueOfWrongType(Exception):
+    """When a dimension value of the space is not a string."""
+
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return f"Dimension value: '{self.value}' is of type == {type(self.value)} when should be either 'tuple' or 'list'!"
+
+# ! Problems
+
 
 class Problem:
     """Representation of a problem.
@@ -29,7 +75,10 @@ class Problem:
 
     @property
     def space(self):
-        return self.__space.copy()
+        dims = list(self.__space.keys())
+        dims.sort()
+        space = OrderedDict(**{d: self.__space[d] for d in dims})
+        return space
 
 
 class HpProblem(Problem):
@@ -37,36 +86,45 @@ class HpProblem(Problem):
 
     def __init__(self):
         super().__init__()
-        self.__def_values = OrderedDict()
-        # ! To check that all dimensions will have the same number of default values
-        self.num_starting_points = None
+        # * starting points
+        self.references = []
 
     def __repr__(self):
         prob = super().__repr__()
-        start = f'{pformat({k:v for k,v in self.starting_point_asdict.items()})}'
+        start = f'{pformat({k:v for k,v in enumerate(self.starting_point_asdict)})}'
         return prob + '\n\nStarting Point\n' + start
 
-    def add_dim(self, p_name, p_space, default=None):
+    def add_dim(self, p_name, p_space):
         """Add a dimension to the search space.
 
         Args:
             p_name (str): name of the parameter/dimension.
             p_space (Object): space corresponding to the new dimension.
-            default: default value of the new dimension, it must be compatible with the ``p_space`` given.
         """
-        assert type(
-            p_name) is str, f'p_name must be str type, got {type(p_name)} !'
-        assert type(p_space) is tuple or type(
-            p_space) is list, f'p_space must be tuple or list type, got {type(p_space)} !'
+        if not type(p_name) is str:
+            raise SpaceDimNameOfWrongType(p_name)
+
+        if not type(p_space) is tuple \
+                and not type(p_space) is list:
+            raise SpaceDimValueOfWrongType(p_space)
+
         super().add_dim(p_name, p_space)
-        if self.num_starting_points is None \
-                or len(default) == self.num_starting_points:
-            if type(default) is list:
-                self.num_starting_points == len(default)
-        else:
-            raise RuntimeError(
-                'All dimensions should have the same number of default values, otherwise starting points cannot be built!')
-        self.__def_values[p_name] = default
+
+    def add_reference(self, **dims):
+        """Add a new starting point to the problem.
+
+        Raises:
+            RuntimeError: if one key of the 'dims' argument doesn't exist in the space.
+        """
+        space = self.space
+
+        if len(dims) != len(space):
+            raise SpaceNumDimMismatch(dims, space)
+
+        if not all(d in space for d in dims):
+            raise SpaceDimNameMismatch(dims, space)
+
+        self.references.append([dims[d] for d in space])
 
     @property
     def starting_point(self):
@@ -75,15 +133,8 @@ class HpProblem(Problem):
         Returns:
             list(list): list of starting points where each point is a list a values.
         """
-        if sum(map(lambda v: type(v) is list, self.__def_values.values())):
-            res = [[] for _ in range(len(self.__def_values.values()[0]))]
-            for k in self.__def_values:
-                for i, v in enumerate(self.__def_values[k]):
-                    res[i].append(v)
-            return res
-        else:
-            return [self.__def_values.values()]
+        return self.references
 
     @property
     def starting_point_asdict(self):
-        return self.__def_values
+        return [{k: v for k, v in zip(list(self.space.keys()), p)} for p in self.references]
