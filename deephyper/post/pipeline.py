@@ -130,8 +130,10 @@ def train(config):
         trainer.callbacks.append(ModelCheckpoint(
             f'best_model_{config["id"]}.h5',
             **default_cfg['model_checkpoint']))
-        trainer.post_train()
-        hist = trainer.post_train_history
+
+        t = time()  # ! TIMING - START
+        hist = trainer.post_train().post_train_history
+        hist['training_time'] = time() - t  # ! TIMING - END
 
         # Timing of prediction for validation dataset
         t = time()  # ! TIMING - START
