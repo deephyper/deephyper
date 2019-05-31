@@ -19,7 +19,6 @@ import sphinx_rtd_theme
 sys.path.insert(0, os.path.abspath('..'))
 
 
-
 # -- Project information -----------------------------------------------------
 
 project = u'DeepHyper'
@@ -29,7 +28,7 @@ author = u'Argonne'
 # The short X.Y version
 about = {}
 with open(f'../deephyper/__version__.py') as f:
-        exec(f.read(), about)
+    exec(f.read(), about)
 
 version = about['__version__']
 # The full version, including alpha/beta/rc tags
@@ -227,4 +226,5 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 todo_include_todos = True
 
 # makes sphinx do a mock import of mpi4py so it’s not broken when you try to do auto-docs and import mpi4py
-autodoc_mock_imports = ["mpi4py", "balsam", "django", "skopt", "deap", "joblib"]
+autodoc_mock_imports = ["mpi4py", "balsam",
+                        "django", "skopt", "deap", "joblib", "sklearn"]
