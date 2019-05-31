@@ -226,5 +226,5 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 todo_include_todos = True
 
 # makes sphinx do a mock import of mpi4py so it’s not broken when you try to do auto-docs and import mpi4py
-autodoc_mock_imports = ["mpi4py", "balsam",
+autodoc_mock_imports = ["mpi4py", "balsam", "nbformat",
                         "django", "skopt", "deap", "joblib", "sklearn"]
