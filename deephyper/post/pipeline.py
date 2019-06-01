@@ -132,7 +132,8 @@ def train(config):
             **default_cfg['model_checkpoint']))
 
         t = time()  # ! TIMING - START
-        hist = trainer.post_train().post_train_history
+        trainer.post_train()
+        hist = trainer.post_train_history
         hist['training_time'] = time() - t  # ! TIMING - END
 
         # Timing of prediction for validation dataset
