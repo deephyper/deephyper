@@ -131,10 +131,15 @@ class HpProblem(Problem):
         """Starting point(s) of the search space.
 
         Returns:
-            list(list): list of starting points where each point is a list a values.
+            list(list): list of starting points where each point is a list of values. Values are indexed in the same order as the order of creation of space's dimensions.
         """
         return self.references
 
     @property
     def starting_point_asdict(self):
+        """Starting point(s) of the search space.
+
+        Returns:
+            list(dict): list of starting points where each point is a dict of values. Each key are correspnding to dimensions of the space.
+        """
         return [{k: v for k, v in zip(list(self.space.keys()), p)} for p in self.references]

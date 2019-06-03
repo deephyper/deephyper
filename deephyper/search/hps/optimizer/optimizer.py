@@ -5,21 +5,26 @@ from deephyper.search import util
 
 logger = util.conf_logger('deephyper.search.hps.optimizer.optimizer')
 
+
 class Optimizer:
     SEED = 12345
     KAPPA = 1.96
 
     def __init__(self, problem, num_workers, args):
-        assert args.learner in ["RF", "ET", "GBRT", "GP", "DUMMY"], f"Unknown scikit-optimize base_estimator: {args.learner}"
+        assert args.learner in ["RF", "ET", "GBRT", "GP",
+                                "DUMMY"], f"Unknown scikit-optimize base_estimator: {args.learner}"
 
         self.space = problem.space
-        n_init = inf if args.learner=='DUMMY' else num_workers
+        # queue of remaining starting points
+        self.starting_points = problem.starting_point
+        n_init = inf if args.learner == 'DUMMY' else max(
+            num_workers, len(self.starting_points))
         self._optimizer = SkOptimizer(
             self.space.values(),
             base_estimator=args.learner,
             acq_optimizer='sampling',
             acq_func=args.acq_func,
-            acq_func_kwargs={'kappa':self.KAPPA},
+            acq_func_kwargs={'kappa': self.KAPPA},
             random_state=self.SEED,
             n_initial_points=n_init
         )
@@ -28,7 +33,8 @@ class Optimizer:
         self.strategy = args.liar_strategy
         self.evals = {}
         self.counter = 0
-        logger.info("Using skopt.Optimizer with %s base_estimator" % args.learner)
+        logger.info("Using skopt.Optimizer with %s base_estimator" %
+                    args.learner)
 
     def _get_lie(self):
         if self.strategy == "cl_min":
@@ -36,7 +42,7 @@ class Optimizer:
         elif self.strategy == "cl_mean":
             return self._optimizer.yi.mean() if self._optimizer.yi else 0.0
         else:
-            return  max(self._optimizer.yi) if self._optimizer.yi else 0.0
+            return max(self._optimizer.yi) if self._optimizer.yi else 0.0
 
     def _xy_from_dict(self):
         XX = list(self.evals.keys())
@@ -44,15 +50,18 @@ class Optimizer:
         return XX, YY
 
     def to_dict(self, x):
-        return {k:v for k,v in zip(self.space, x)}
+        return {k: v for k, v in zip(self.space, x)}
 
     def _ask(self):
-        x = self._optimizer.ask()
+        if len(self.starting_points) > 0:
+            x = self.starting_points.pop()
+        else:
+            x = self._optimizer.ask()
         y = self._get_lie()
         key = tuple(x)
         if key not in self.evals:
             self.counter += 1
-            self._optimizer.tell(x,y)
+            self._optimizer.tell(x, y)
             self.evals[key] = y
             logger.debug(f'_ask: {x} lie: {y}')
         else:
@@ -73,20 +82,27 @@ class Optimizer:
                 yield batch
 
     def ask_initial(self, n_points):
-        XX = self._optimizer.ask(n_points=n_points)
+        if len(self.starting_points) > 0:
+            XX = [self.starting_points.pop() for i in range(
+                min(n_points, len(self.starting_points)))]
+            if len(XX) < n_points:
+                XX += self._optimizer.ask(n_points=n_points-len(XX))
+        else:
+            XX = self._optimizer.ask(n_points=n_points)
         for x in XX:
             y = self._get_lie()
             key = tuple(x)
             if key not in self.evals:
                 self.counter += 1
-                self._optimizer.tell(x,y)
+                self._optimizer.tell(x, y)
                 self.evals[key] = y
         return [self.to_dict(x) for x in XX]
 
     def tell(self, xy_data):
-        assert isinstance(xy_data, list), f"where type(xy_data)=={type(xy_data)}"
+        assert isinstance(
+            xy_data, list), f"where type(xy_data)=={type(xy_data)}"
         maxval = max(self._optimizer.yi) if self._optimizer.yi else 0.0
-        for x,y in xy_data:
+        for x, y in xy_data:
             key = tuple(x[k] for k in self.space)
             assert key in self.evals, f"where key=={key} and self.evals=={self.evals}"
             logger.debug(f'tell: {x} --> {key}: evaluated objective: {y}')
