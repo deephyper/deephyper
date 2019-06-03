@@ -32,7 +32,7 @@ REQUIRED = [
     'scikit-optimize',
     'scikit-learn',
     'tqdm',
-    'tensorflow>=1.11.0',
+    'tensorflow==1.13.1',
     'keras',
     'deap',  # GA search
     # nas
@@ -48,17 +48,14 @@ DP_LINKS = list()
 if on_theta:  # --system-site-packages
     # we want to use the default mpi4py from cray environment
     REQUIRED.append('mpi4py')
-
-    REQUIRED.append('balsam')
-    DP_LINKS.append(
-        'https://github.com/balsam-alcf/balsam/tree/master#egg=balsam-0.2')
+    REQUIRED.append('balsam-flow==0.3.5')
 elif not on_rtd and not on_gpu:
     REQUIRED.append('mpi4py>=3.0.0')
 elif on_gpu:
     # remove
-    REQUIRED.remove('tensorflow>=1.11.0')
+    REQUIRED.remove('tensorflow==1.13.1')
     # add
-    REQUIRED.append('tensorflow-gpu')
+    REQUIRED.append('tensorflow-gpu==1.13.1')
     REQUIRED.append('mpi4py')
 else:
     REQUIRED.append('Sphinx>=1.8.2')
@@ -216,9 +213,6 @@ setup(
     packages=find_packages(exclude=('tests',)),
     # If your package is a single module, use this instead of 'packages':
     # py_modules=['deephyper'],
-    # entry_points={
-    #     'console_scripts': ['mycli=mymodule:cli'],
-    # },
     install_requires=REQUIRED,
     extras_require=EXTRAS,
     dependency_links=DP_LINKS,
