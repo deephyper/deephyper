@@ -2,8 +2,9 @@ import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 
-from deephyper.search.nas.model.space.op.basic import Operation
+from deephyper.search.nas.model.space.op import Operation
 import deephyper.search.nas.model.space.layers as deeplayers
+
 
 class Concatenate(Operation):
     """Concatenate operation.
@@ -14,6 +15,7 @@ class Concatenate(Operation):
         stacked_nodes (list(Node)): nodes to concatenate
         axis (int): axis to concatenate
     """
+
     def __init__(self, graph=None, node=None, stacked_nodes=None, axis=-1):
         self.graph = graph
         self.node = node
@@ -29,24 +31,29 @@ class Concatenate(Operation):
         len_shp = max([len(x.get_shape()) for x in values])
 
         if len_shp > 3:
-            raise RuntimeError('This concatenation is for 2D or 3D tensors only when a {len_shp}D is passed!')
+            raise RuntimeError(
+                'This concatenation is for 2D or 3D tensors only when a {len_shp}D is passed!')
 
         # zeros padding
         if len(values) > 1:
 
-
-            if all(map(lambda x: len(x.get_shape())==len_shp or \
-                len(x.get_shape())==(len_shp-1), values)): # all tensors should have same number of dimensions 2d or 3d, but we can also accept a mix of 2d en 3d tensors
-                for i, v in enumerate(values): # we have a mix of 2d and 3d tensors so we are expanding 2d tensors to be 3d with last_dim==1
+            if all(map(lambda x: len(x.get_shape()) == len_shp or
+                       len(x.get_shape()) == (len_shp-1), values)):  # all tensors should have same number of dimensions 2d or 3d, but we can also accept a mix of 2d en 3d tensors
+                # we have a mix of 2d and 3d tensors so we are expanding 2d tensors to be 3d with last_dim==1
+                for i, v in enumerate(values):
                     if len(v.get_shape()) < len_shp:
-                        values[i] = keras.layers.Reshape((*tuple(v.get_shape()[1:]), 1))(v)
-                if len_shp == 3: # for 3d tensors concatenation is applied along last dim (axis=-1), so we are applying a zero padding to make 2nd dimensions (ie. shape()[1]) equals
+                        values[i] = keras.layers.Reshape(
+                            (*tuple(v.get_shape()[1:]), 1))(v)
+                # for 3d tensors concatenation is applied along last dim (axis=-1), so we are applying a zero padding to make 2nd dimensions (ie. shape()[1]) equals
+                if len_shp == 3:
                     max_len = max(map(lambda x: int(x.get_shape()[1]), values))
-                    paddings = map(lambda x: max_len - int(x.get_shape()[1]), values)
+                    paddings = map(lambda x: max_len -
+                                   int(x.get_shape()[1]), values)
                     for i, (p, v) in enumerate(zip(paddings, values)):
                         lp = p // 2
                         rp = p - lp
-                        values[i] = keras.layers.ZeroPadding1D(padding=(lp, rp))(v)
+                        values[i] = keras.layers.ZeroPadding1D(
+                            padding=(lp, rp))(v)
                 # elif len_shp == 2 nothing to do
             else:
                 raise RuntimeError(
@@ -62,7 +69,6 @@ class Concatenate(Operation):
         return out
 
 
-
 class Dense(Operation):
     """Multi Layer Perceptron operation.
 
@@ -72,6 +78,7 @@ class Dense(Operation):
         units (int): number of units per layer.
         activation: an activation function from tensorflow.
     """
+
     def __init__(self, units, activation=None, *args, **kwargs):
         # Layer args
         self.units = units
@@ -90,12 +97,13 @@ class Dense(Operation):
             return f'Dense_{self.units}_{self.activation.__name__}'
 
     def __call__(self, inputs, *args, **kwargs):
-        assert len(inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when 1 is required.'
-        if self._layer is None: # reuse mechanism
+        assert len(
+            inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when 1 is required.'
+        if self._layer is None:  # reuse mechanism
             self._layer = keras.layers.Dense(
-            units=self.units,
-            activation=self.activation,
-            **self.kwargs,
+                units=self.units,
+                activation=self.activation,
+                **self.kwargs,
             )
         out = self._layer(inputs[0])
         return out
@@ -109,6 +117,7 @@ class Dropout(Operation):
     Args:
         rate (float): rate of deactivated inputs.
     """
+
     def __init__(self, rate):
         self.rate = rate
 
@@ -116,7 +125,8 @@ class Dropout(Operation):
         return f'Dropout({self.rate})'
 
     def __call__(self, inputs, **kwargs):
-        assert len(inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when 1 is required.'
+        assert len(
+            inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when 1 is required.'
         inpt = inputs[0]
         out = keras.layers.Dropout(rate=self.rate)(inpt)
         return out
@@ -130,9 +140,11 @@ dropout_ops = [Dropout(0.),
                Dropout(0.5),
                Dropout(0.6)]
 
+
 class Identity(Operation):
     def __call__(self, inputs, **kwargs):
-        assert len(inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when 1 is required.'
+        assert len(
+            inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when 1 is required.'
         return inputs[0]
 
 
@@ -147,6 +159,7 @@ class Conv1D(Operation):
         strides (int):
         padding (str): 'same' or 'valid'
     """
+
     def __init__(self, filter_size, num_filters=1, strides=1, padding='same'):
         self.filter_size = filter_size
         self.num_filters = num_filters
@@ -158,18 +171,19 @@ class Conv1D(Operation):
         return f'{type(self).__name__}_{self.filter_size}_{self.num_filters}'
 
     def __call__(self, inputs, **kwargs):
-        assert len(inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when only 1 is required.'
+        assert len(
+            inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when only 1 is required.'
         inpt = inputs[0]
         if len(inpt.get_shape()) == 2:
             out = keras.layers.Reshape((inpt.get_shape()[1], 1))(inpt)
         else:
             out = inpt
-        if self._layer is None: # reuse mechanism
+        if self._layer is None:  # reuse mechanism
             self._layer = keras.layers.Conv1D(
-            filters=self.num_filters,
-            kernel_size=self.filter_size,
-            strides=self.strides,
-            padding=self.padding)
+                filters=self.num_filters,
+                kernel_size=self.filter_size,
+                strides=self.strides,
+                padding=self.padding)
         out = self._layer(out)
         return out
 
@@ -183,6 +197,7 @@ class MaxPooling1D(Operation):
         padding (str, optional): Defaults to 'valid'. [description]
         data_format (str, optional): Defaults to 'channels_last'. [description]
     """
+
     def __init__(self, pool_size, strides=1, padding='valid', data_format='channels_last'):
         self.pool_size = pool_size
         self.strides = strides
@@ -193,7 +208,8 @@ class MaxPooling1D(Operation):
         return f'{type(self).__name__}_{self.pool_size}_{self.padding}'
 
     def __call__(self, inputs, **kwargs):
-        assert len(inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when only 1 is required.'
+        assert len(
+            inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when only 1 is required.'
         inpt = inputs[0]
         if len(inpt.get_shape()) == 2:
             out = keras.layers.Reshape((inpt.get_shape()[1], 1))(inpt)
@@ -207,17 +223,20 @@ class MaxPooling1D(Operation):
         )(out)
         return out
 
+
 class Flatten(Operation):
     """Flatten operation.
 
     Args:
         data_format (str, optional): Defaults to None.
     """
+
     def __init__(self, data_format=None):
         self.data_format = data_format
 
     def __call__(self, inputs, **kwargs):
-        assert len(inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when only 1 is required.'
+        assert len(
+            inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when only 1 is required.'
         inpt = inputs[0]
         if len(inpt.get_shape()) == 2:
             out = inpt
@@ -227,12 +246,14 @@ class Flatten(Operation):
             )(inpt)
         return out
 
+
 class Activation(Operation):
     """Activation function operation.
 
     Args:
         activation (callable): an activation function
     """
+
     def __init__(self, activation=None, *args, **kwargs):
         self.activation = activation
         self._layer = None

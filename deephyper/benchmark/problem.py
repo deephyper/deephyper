@@ -4,7 +4,7 @@ from collections import OrderedDict
 # ! Exceptions
 
 
-class SpaceDimNameMismatch(RuntimeError):
+class SpaceDimNameMismatch(Exception):
     """"When 2 set of keys are not corresponding for a given Problem.
     """
 
@@ -15,7 +15,7 @@ class SpaceDimNameMismatch(RuntimeError):
         return f'Some reference\'s dimensions doesn\'t exist in this space: {filter(lambda k: k in self.space, self.ref.keys())}'
 
 
-class SpaceNumDimMismatch(RuntimeError):
+class SpaceNumDimMismatch(Exception):
     """When 2 set of keys doesn't have the same number of keys for a given
     Problem."""
 
@@ -45,7 +45,7 @@ class SpaceDimValueOfWrongType(Exception):
     def __str__(self):
         return f"Dimension value: '{self.value}' is of type == {type(self.value)} when should be either 'tuple' or 'list'!"
 
-# ! Problems
+# ! Classes
 
 
 class Problem:
