@@ -45,7 +45,7 @@ class Evaluator:
 
     @staticmethod
     def create(run_function, cache_key=None, method='balsam'):
-        assert method in ['balsam', 'subprocess', 'processPool', 'threadPool']
+        assert method in ['balsam', 'subprocess', 'processPool', 'threadPool', '__mpiPool']
         if method == "balsam":
             from deephyper.evaluator._balsam import BalsamEvaluator
             Eval = BalsamEvaluator
@@ -55,9 +55,12 @@ class Evaluator:
         elif method == "processPool":
             from deephyper.evaluator._processPool import ProcessPoolEvaluator
             Eval = ProcessPoolEvaluator
-        else:
+        elif method == "threadPool":
             from deephyper.evaluator._threadPool import ThreadPoolEvaluator
             Eval = ThreadPoolEvaluator
+        elif method == "__mpiPool":
+            from deephyper.evaluator._mpiWorkerPool import MPIWorkerPool
+            Eval = MPIWorkerPool
 
         return Eval(run_function, cache_key=cache_key)
 
