@@ -57,8 +57,6 @@ class TrainerTrainValid:
         self.dataset_valid = None
         self.set_dataset_valid()
 
-        self.model_compile()
-
         self.y_true_ph = tf.placeholder(
             dtype=tf.float32,
             shape=(None, None),
@@ -69,8 +67,11 @@ class TrainerTrainValid:
             shape=(None, None),
             name='y_pred'
         )
-        self.reward_metric_op = U.selectRewardMetric(
-            self.config_hp['reward'])(self.y_true_ph, self.y_pred_ph)
+
+        self.reward_metric = U.selectRewardMetric(self.config_hp['reward'])
+        self.reward_metric_op = self.reward_metric(self.y_true_ph, self.y_pred_ph)
+
+        self.model_compile()
 
         self.train_history = None
         self.init_history()
@@ -228,7 +229,7 @@ class TrainerTrainValid:
         self.model.compile(
             optimizer=self.optimizer,
             loss=self.loss_metric_name,
-            metrics=self.metrics_name + [self.config_hp['reward']])
+            metrics=self.metrics_name)# + [self.reward_metric])
 
     def add_callback(self, cb):
         assert isinstance(cb, keras.callbacks.Callback)
@@ -298,7 +299,6 @@ class TrainerTrainValid:
                         self.y_true_ph: y_orig,
                         self.y_pred_ph: y_pred
                     })
-                    # print('unormalize_rmetric: ', unnormalize_rmetric)
                     if len(np.shape(unnormalize_rmetric)) != 0:
                         raise RuntimeError('Reward should be a scalar')
                     else:
