@@ -6,6 +6,7 @@ import gym
 from collections import defaultdict
 import tensorflow as tf
 import numpy as np
+import os
 
 from deephyper.search.nas.baselines.common.vec_env import VecFrameStack, VecNormalize, VecEnv
 from deephyper.search.nas.baselines.common.vec_env.vec_video_recorder import VecVideoRecorder
@@ -208,9 +209,9 @@ def main(args):
 
     if MPI is None or MPI.COMM_WORLD.Get_rank() == 0:
         rank = 0
-        logger.configure()
+        logger.configure(dir=os.getcwd())
     else:
-        logger.configure(format_strs=[])
+        logger.configure(dir=os.getcwd(), format_strs=[])
         rank = MPI.COMM_WORLD.Get_rank()
 
     model, env = train(args, extra_args)
