@@ -27,6 +27,12 @@ Scalable Asynchronous Neural Architecture and Hyperparameter Search for Deep Neu
    quickstart/theta
 
 .. toctree::
+    :maxdepth: 2
+    :caption: Tutorials
+
+    tutorials/hps
+
+.. toctree::
    :maxdepth: 2
    :caption: Benchmarks
 

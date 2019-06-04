@@ -5,7 +5,7 @@ from collections import OrderedDict
 
 
 class SpaceDimNameMismatch(Exception):
-    """"When 2 set of keys are not corresponding for a given Problem.
+    """"Raised when 2 set of keys are not corresponding for a given Problem.
     """
 
     def __init__(self, ref, space):
@@ -16,7 +16,7 @@ class SpaceDimNameMismatch(Exception):
 
 
 class SpaceNumDimMismatch(Exception):
-    """When 2 set of keys doesn't have the same number of keys for a given
+    """Raised when 2 set of keys doesn't have the same number of keys for a given
     Problem."""
 
     def __init__(self, ref, space):
@@ -27,7 +27,7 @@ class SpaceNumDimMismatch(Exception):
 
 
 class SpaceDimNameOfWrongType(Exception):
-    """When a dimension name of the space is not a string."""
+    """Raised when a dimension name of the space is not a string."""
 
     def __init__(self, value):
         self.value = value
@@ -37,13 +37,25 @@ class SpaceDimNameOfWrongType(Exception):
 
 
 class SpaceDimValueOfWrongType(Exception):
-    """When a dimension value of the space is not a string."""
+    """Raised when a dimension value of the space is not a string."""
 
     def __init__(self, value):
         self.value = value
 
     def __str__(self):
         return f"Dimension value: '{self.value}' is of type == {type(self.value)} when should be either 'tuple' or 'list'!"
+
+
+class SpaceDimValueNotInSpace(Exception):
+    """Raised when a dimension value of the space is in the coresponding dimension's space."""
+
+    def __init__(self, value, name_dim, space_dim):
+        self.value = value
+        self.name_dim = name_dim
+        self.space_dim = space_dim
+
+    def __str__(self):
+        return f"Dimension value: '{self.value}' is not in dim['{self.name_dim}':{self.space_dim}!"
 
 # ! Classes
 
@@ -99,7 +111,7 @@ class HpProblem(Problem):
 
         Args:
             p_name (str): name of the parameter/dimension.
-            p_space (Object): space corresponding to the new dimension.
+            p_space (tuple(int, int) or tuple(float, float) or list(Object,)): space corresponding to the new dimension.
         """
         if not type(p_name) is str:
             raise SpaceDimNameOfWrongType(p_name)
@@ -113,18 +125,31 @@ class HpProblem(Problem):
     def add_reference(self, **dims):
         """Add a new starting point to the problem.
 
+        Args:
+            **dims:
+
         Raises:
-            RuntimeError: if one key of the 'dims' argument doesn't exist in the space.
+            SpaceNumDimMismatch: Raised when 2 set of keys doesn't have the same number of keys for a given Problem.
+            SpaceDimNameMismatch: Raised when 2 set of keys are not corresponding for a given Problem.
+            SpaceDimValueNotInSpace: Raised when a dimension value of the space is in the coresponding dimension's space.
         """
-        space = self.space
 
-        if len(dims) != len(space):
-            raise SpaceNumDimMismatch(dims, space)
+        if len(dims) != len(self.space):
+            raise SpaceNumDimMismatch(dims, self.space)
 
-        if not all(d in space for d in dims):
-            raise SpaceDimNameMismatch(dims, space)
+        if not all(d in self.space for d in dims):
+            raise SpaceDimNameMismatch(dims, self.space)
 
-        self.references.append([dims[d] for d in space])
+        for dim, value in zip(dims, dims.values()):
+            if type(self.space[dim]) is list:
+                if not value in self.space[dim]:
+                    raise SpaceDimValueNotInSpace(value, dim, self.space[dim])
+            else:  # * type(self.space[dim]) is tuple
+                if value < self.space[dim][0] \
+                        or value > self.space[dim][1]:
+                    raise SpaceDimValueNotInSpace(value, dim, self.space[dim])
+
+        self.references.append([dims[d] for d in self.space])
 
     @property
     def starting_point(self):
