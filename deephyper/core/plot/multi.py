@@ -18,7 +18,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def multi_analytics(path_to_data_file):
-    editor = NbEdit(os.path.join(HERE, 'stub/multi_analytics.ipynb'))
+    editor = NbEdit(os.path.join(HERE, 'stub/multi_analytics.ipynb'),
+    path_to_save="dh-analytics-multi.ipynb")
 
     path_list = list()
     label_list = list()

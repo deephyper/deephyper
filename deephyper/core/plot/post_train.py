@@ -16,7 +16,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def post_train_analytics(path_to_data_folder):
-    editor = NbEdit(os.path.join(HERE, 'stub/post_train.ipynb'))
+    editor = NbEdit(os.path.join(HERE, 'stub/post_train.ipynb'), path_to_save="dh-analytics-post.ipynb")
 
     venv_name = os.environ.get('VIRTUAL_ENV').split('/')[-1]
     editor.setkernel(venv_name)
