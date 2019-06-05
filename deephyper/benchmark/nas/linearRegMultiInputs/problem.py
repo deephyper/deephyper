@@ -32,9 +32,10 @@ Problem.add_dim('hyperparameters', {
     'batch_size': 100,
     'learning_rate': 0.01,
     'optimizer': 'adam',
-    'num_epochs': 10, #50,
-    'loss_metric': 'mean_squared_error',
-    'metrics': ['mean_squared_error']
+    'num_epochs': 10,  # 50,
+    'loss_metric': 'mse',
+    'metrics': ['mse'],
+    'reward': 'r2'
 })
 
 # Just to print your problem, to test its definition and imports in the current python environment.

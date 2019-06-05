@@ -1,3 +1,5 @@
+import json
+import sys
 from random import random
 
 import numpy as np
@@ -14,6 +16,8 @@ def test_trainer_regressor_train_valid_with_one_input():
     from deephyper.benchmark.nas.linearReg.problem import Problem
     config = Problem.space
 
+    config['hyperparameters']['num_epochs'] = 2
+
     # load functions
     load_data = util.load_attr_from(config['load_data']['func'])
     config['load_data']['func'] = load_data
@@ -26,7 +30,7 @@ def test_trainer_regressor_train_valid_with_one_input():
 
     print('[PARAM] Data loaded')
     # Set data shape
-    input_shape = np.shape(tX)[1:]# interested in shape of data not in length
+    input_shape = np.shape(tX)[1:]  # interested in shape of data not in length
     output_shape = np.shape(ty)[1:]
 
     config['data'] = {
@@ -36,7 +40,8 @@ def test_trainer_regressor_train_valid_with_one_input():
         'valid_Y': vy
     }
 
-    structure = config['create_structure']['func'](input_shape, output_shape, **config['create_structure']['kwargs'])
+    structure = config['create_structure']['func'](
+        input_shape, output_shape, **config['create_structure']['kwargs'])
     arch_seq = [random() for i in range(structure.num_nodes)]
     print('arch_seq: ', arch_seq)
     structure.set_ops(arch_seq)
@@ -49,15 +54,21 @@ def test_trainer_regressor_train_valid_with_one_input():
         config['preprocessing'] = None
 
     model = structure.create_model()
-    plot_model(model, to_file='trainer_keras_regressor_test.png', show_shapes=True)
+    plot_model(model, to_file='trainer_keras_regressor_test.png',
+               show_shapes=True)
 
     trainer = TrainerRegressorTrainValid(config=config, model=model)
 
-    trainer.train()
+    res = trainer.train()
+    assert res != sys.float_info.max
+
+
 @pytest.mark.slow
 def test_trainer_regressor_train_valid_with_multiple_ndarray_inputs():
     from deephyper.benchmark.nas.linearRegMultiInputs.problem import Problem
     config = Problem.space
+
+    config['hyperparameters']['num_epochs'] = 2
 
     # load functions
     load_data = util.load_attr_from(config['load_data']['func'])
@@ -71,7 +82,8 @@ def test_trainer_regressor_train_valid_with_multiple_ndarray_inputs():
 
     print('[PARAM] Data loaded')
     # Set data shape
-    input_shape = [np.shape(itX)[1:] for itX in tX] # interested in shape of data not in length
+    # interested in shape of data not in length
+    input_shape = [np.shape(itX)[1:] for itX in tX]
     output_shape = list(np.shape(ty))[1:]
 
     config['data'] = {
@@ -81,7 +93,8 @@ def test_trainer_regressor_train_valid_with_multiple_ndarray_inputs():
         'valid_Y': vy
     }
 
-    structure = config['create_structure']['func'](input_shape, output_shape, **config['create_structure']['kwargs'])
+    structure = config['create_structure']['func'](
+        input_shape, output_shape, **config['create_structure']['kwargs'])
     arch_seq = [random() for i in range(structure.num_nodes)]
     print('arch_seq: ', arch_seq)
     structure.set_ops(arch_seq)
@@ -94,15 +107,21 @@ def test_trainer_regressor_train_valid_with_multiple_ndarray_inputs():
         config['preprocessing'] = None
 
     model = structure.create_model()
-    plot_model(model, to_file='trainer_keras_regressor_test.png', show_shapes=True)
+    plot_model(model, to_file='trainer_keras_regressor_test.png',
+               show_shapes=True)
 
     trainer = TrainerRegressorTrainValid(config=config, model=model)
 
-    trainer.train()
+    res = trainer.train()
+    assert res != sys.float_info.max
+
+
 @pytest.mark.slow
 def test_trainer_regressor_train_valid_with_multiple_generator_inputs():
     from deephyper.benchmark.nas.linearRegMultiInputsGen.problem import Problem
     config = Problem.space
+
+    config['hyperparameters']['num_epochs'] = 2
 
     # load functions
     load_data = util.load_attr_from(config['load_data']['func'])
@@ -118,11 +137,12 @@ def test_trainer_regressor_train_valid_with_multiple_generator_inputs():
 
     # Set data shape
     config['data'] = data
-    input_shape = [data['shapes'][0][f'input_{i}'] for i in range(len(data['shapes'][0]))]
+    input_shape = [data['shapes'][0][f'input_{i}']
+                   for i in range(len(data['shapes'][0]))]
     output_shape = data['shapes'][1]
 
-
-    structure = config['create_structure']['func'](input_shape, output_shape, **config['create_structure']['kwargs'])
+    structure = config['create_structure']['func'](
+        input_shape, output_shape, **config['create_structure']['kwargs'])
     arch_seq = [random() for i in range(structure.num_nodes)]
     print('arch_seq: ', arch_seq)
     structure.set_ops(arch_seq)
@@ -135,11 +155,14 @@ def test_trainer_regressor_train_valid_with_multiple_generator_inputs():
         config['preprocessing'] = None
 
     model = structure.create_model()
-    plot_model(model, to_file='trainer_keras_regressor_test.png', show_shapes=True)
+    plot_model(model, to_file='trainer_keras_regressor_test.png',
+               show_shapes=True)
 
     trainer = TrainerRegressorTrainValid(config=config, model=model)
 
-    trainer.train()
+    res = trainer.train()
+    assert res != sys.float_info.max
+
 
 if __name__ == '__main__':
     # test_trainer_regressor_train_valid_with_one_input()

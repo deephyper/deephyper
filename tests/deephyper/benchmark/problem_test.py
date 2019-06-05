@@ -2,7 +2,8 @@ import pytest
 
 from deephyper.benchmark.problem import (SpaceDimNameMismatch,
                                          SpaceDimNameOfWrongType,
-                                         SpaceNumDimMismatch)
+                                         SpaceNumDimMismatch,
+                                         SpaceDimValueNotInSpace)
 
 
 @pytest.mark.incremental
@@ -81,3 +82,27 @@ class TestHpProblem:
         pb.add_dim(p_name='dim0', p_space=(-10, 10))
         with pytest.raises(SpaceDimNameMismatch):
             pb.add_reference(dim1=0)
+
+    def test_add_references_not_in_space_def(self):
+        from deephyper.benchmark.problem import HpProblem
+        pb = HpProblem()
+        pb.add_dim(p_name='dim0', p_space=(-10, 10))
+        pb.add_dim(p_name='dim1', p_space=(-10.0, 10.0))
+        pb.add_dim(p_name='dim2', p_space=['a', 'b'])
+
+        with pytest.raises(SpaceDimValueNotInSpace):
+            pb.add_reference(dim0=-11, dim1=0.0, dim2='a')
+
+        with pytest.raises(SpaceDimValueNotInSpace):
+            pb.add_reference(dim0=11, dim1=0.0, dim2='a')
+
+        with pytest.raises(SpaceDimValueNotInSpace):
+            pb.add_reference(dim0=0, dim1=-11.0, dim2='a')
+
+        with pytest.raises(SpaceDimValueNotInSpace):
+            pb.add_reference(dim0=0, dim1=11.0, dim2='a')
+
+        with pytest.raises(SpaceDimValueNotInSpace):
+            pb.add_reference(dim0=0, dim1=0.0, dim2='c')
+
+        pb.add_reference(dim0=0, dim1=0.0, dim2='a')
