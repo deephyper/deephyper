@@ -5,6 +5,8 @@ import logging
 from importlib import import_module
 from traceback import print_exception
 
+from deephyper.core.exceptions.loading import GenericLoaderError
+
 masterLogger = None
 LOG_LEVEL = os.environ.get('DEEPHYPER_LOG_LEVEL', 'DEBUG')
 LOG_LEVEL = getattr(logging, LOG_LEVEL)
@@ -114,26 +116,13 @@ def load_from_file(fname, attribute):
     module = import_module(module_name)
     return getattr(module, attribute)
 
-# ! Exception
-
-
-class GenericLoaderError(Exception):
-    """Raised when the generic_loader function is failing.
-    """
-
-    def __init__(self, str_value):
-        self.str_value = str_value
-
-    def __str__(self):
-        return f"The target '{self.str_value}' cannot be imported because it's neither a python script nor a python module."
-
 
 def generic_loader(target, attribute):
     """Load attribute from target module
 
     Args:
         target (str or Object): either path to python file, or dotted Python package name.
-        attribute (str): name of the attribute to load from the target module
+        attribute (str): name of the attribute to load from the target module.
 
     Raises:
         GenericLoaderError: Raised when the generic_loader function is failing.

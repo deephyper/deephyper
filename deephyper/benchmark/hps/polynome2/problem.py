@@ -12,7 +12,7 @@ num_dim = 10
 for i in range(num_dim):
     Problem.add_dim(f'e{i}', (-10, 10))
 
-Problem.add_reference(**{f'e{i}': 0 for i in range(num_dim)})
+Problem.add_starting_point(**{f'e{i}': 0 for i in range(num_dim)})
 
 # Definition of the function which runs the model
 

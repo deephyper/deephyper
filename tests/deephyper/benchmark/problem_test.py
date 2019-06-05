@@ -67,23 +67,23 @@ class TestHpProblem:
         from deephyper.benchmark.problem import HpProblem
         pb = HpProblem()
         pb.add_dim(p_name='dim0', p_space=(-10, 10))
-        pb.add_reference(dim0=0)
+        pb.add_starting_point(dim0=0)
 
-    def test_add_references_with_too_many_dim(self):
+    def test_add_starting_points_with_too_many_dim(self):
         from deephyper.benchmark.problem import HpProblem
         pb = HpProblem()
         pb.add_dim(p_name='dim0', p_space=(-10, 10))
         with pytest.raises(SpaceNumDimMismatch):
-            pb.add_reference(dim0=0, dim1=2)
+            pb.add_starting_point(dim0=0, dim1=2)
 
-    def test_add_references_with_wrong_name(self):
+    def test_add_starting_points_with_wrong_name(self):
         from deephyper.benchmark.problem import HpProblem
         pb = HpProblem()
         pb.add_dim(p_name='dim0', p_space=(-10, 10))
         with pytest.raises(SpaceDimNameMismatch):
-            pb.add_reference(dim1=0)
+            pb.add_starting_point(dim1=0)
 
-    def test_add_references_not_in_space_def(self):
+    def test_add_starting_points_not_in_space_def(self):
         from deephyper.benchmark.problem import HpProblem
         pb = HpProblem()
         pb.add_dim(p_name='dim0', p_space=(-10, 10))
@@ -91,18 +91,18 @@ class TestHpProblem:
         pb.add_dim(p_name='dim2', p_space=['a', 'b'])
 
         with pytest.raises(SpaceDimValueNotInSpace):
-            pb.add_reference(dim0=-11, dim1=0.0, dim2='a')
+            pb.add_starting_point(dim0=-11, dim1=0.0, dim2='a')
 
         with pytest.raises(SpaceDimValueNotInSpace):
-            pb.add_reference(dim0=11, dim1=0.0, dim2='a')
+            pb.add_starting_point(dim0=11, dim1=0.0, dim2='a')
 
         with pytest.raises(SpaceDimValueNotInSpace):
-            pb.add_reference(dim0=0, dim1=-11.0, dim2='a')
+            pb.add_starting_point(dim0=0, dim1=-11.0, dim2='a')
 
         with pytest.raises(SpaceDimValueNotInSpace):
-            pb.add_reference(dim0=0, dim1=11.0, dim2='a')
+            pb.add_starting_point(dim0=0, dim1=11.0, dim2='a')
 
         with pytest.raises(SpaceDimValueNotInSpace):
-            pb.add_reference(dim0=0, dim1=0.0, dim2='c')
+            pb.add_starting_point(dim0=0, dim1=0.0, dim2='c')
 
-        pb.add_reference(dim0=0, dim1=0.0, dim2='a')
+        pb.add_starting_point(dim0=0, dim1=0.0, dim2='a')

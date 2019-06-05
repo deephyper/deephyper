@@ -11,7 +11,7 @@ Problem.add_dim('dropout_l1', (0.0, 1.0))
 Problem.add_dim('dropout_l2', (0.0, 1.0))
 
 
-Problem.add_reference(
+Problem.add_starting_point(
     epochs=5,
     nunits_l1=1,
     nunits_l2=2,
