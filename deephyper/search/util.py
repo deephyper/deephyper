@@ -5,9 +5,12 @@ import logging
 from importlib import import_module
 from traceback import print_exception
 
+from deephyper.core.exceptions.loading import GenericLoaderError
+
 masterLogger = None
 LOG_LEVEL = os.environ.get('DEEPHYPER_LOG_LEVEL', 'DEBUG')
 LOG_LEVEL = getattr(logging, LOG_LEVEL)
+
 
 class Timer:
     def __init__(self):
@@ -24,6 +27,7 @@ class Timer:
         else:
             print(f"TIMER {name}: {elapsed:.4f} seconds")
             del self.timings[name]
+
 
 def conf_logger(name):
     global masterLogger
@@ -47,12 +51,13 @@ def conf_logger(name):
 
     def log_uncaught_exceptions(exctype, value, tb):
         masterLogger.exception('Uncaught exception:',
-                exc_info=(exctype,value,tb)
-        )
+                               exc_info=(exctype, value, tb)
+                               )
         sys.stderr.write(f"Uncaught exception {exctype}: {value}")
         print_exception(exctype, value, tb)
     sys.excepthook = log_uncaught_exceptions
     return logging.getLogger(name)
+
 
 class DelayTimer:
     def __init__(self, max_minutes=None, period=2):
@@ -68,7 +73,7 @@ class DelayTimer:
         seconds = round(seconds, 2)
         minutes, seconds = divmod(seconds, 60)
         hours, minutes = divmod(minutes, 60)
-        return "%02d:%02d:%02.2f" % (hours,minutes,seconds)
+        return "%02d:%02d:%02.2f" % (hours, minutes, seconds)
 
     def __iter__(self):
         start = time.time()
@@ -87,6 +92,7 @@ class DelayTimer:
                 nexttime = now + tosleep + self.period
                 time.sleep(tosleep)
 
+
 def load_attr_from(str_full_module):
     """
         Args:
@@ -102,6 +108,7 @@ def load_attr_from(str_full_module):
     else:
         return str_full_module
 
+
 def load_from_file(fname, attribute):
     dirname, basename = os.path.split(fname)
     sys.path.insert(0, dirname)
@@ -109,17 +116,29 @@ def load_from_file(fname, attribute):
     module = import_module(module_name)
     return getattr(module, attribute)
 
+
 def generic_loader(target, attribute):
-    '''Load attribute from target module
+    """Load attribute from target module
+
     Args:
-        - target: either path to python file, or dotted Python package name
-        - attribute: name of the attribute to load from the target module
-    '''
+        target (str or Object): either path to python file, or dotted Python package name.
+        attribute (str): name of the attribute to load from the target module.
+
+    Raises:
+        GenericLoaderError: Raised when the generic_loader function is failing.
+
+    Returns:
+        Object: the loaded attribute.
+    """
     # assert attribute in ['Problem', 'run']
     if not isinstance(target, str):
         return target
-    if os.path.isfile(os.path.abspath(target)):
-        target_file = os.path.abspath(target)
-        return load_from_file(target_file, attribute)
-    else:
-        return load_attr_from(target)
+
+    try:
+        if os.path.isfile(os.path.abspath(target)):
+            target_file = os.path.abspath(target)
+            return load_from_file(target_file, attribute)
+        else:
+            return load_attr_from(target)
+    except ValueError:
+        raise GenericLoaderError(target)

@@ -155,3 +155,12 @@ def train(config):
         return min(hist['val_loss'])
     else:
         return sys.float_info.max
+
+
+if __name__ == '__main__':
+    from naspb.pblp.problem_baseline import Problem
+
+    config = Problem.space
+    config['arch_seq'] = []
+    config['id'] = 0
+    train(config)
