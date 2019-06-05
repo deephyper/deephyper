@@ -120,11 +120,19 @@ metrics['accuracy'] = metrics['acc'] = acc
 
 
 def selectMetric(name):
-    '''
-      Return the metric defined by name.
-    '''
+    """Return the metric defined by name.
+
+    Args:
+        name ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
     if (metrics.get(name) == None):
-        return name  # supposing it is referenced in keras metrics
+        try:
+            return util.load_attr_from(name)
+        except:
+            return name  # supposing it is referenced in keras metrics
     else:
         return metrics[name]
 

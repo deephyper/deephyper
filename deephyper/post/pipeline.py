@@ -101,6 +101,12 @@ def train(config):
     structure.draw_graphviz(f'structure_{config["id"]}.dot')
     logger.info('Model operations set.')
 
+    if config.get('preprocessing') is not None:
+        preprocessing = util.load_attr_from(config['preprocessing']['func'])
+        config['preprocessing']['func'] = preprocessing
+    else:
+        config['preprocessing'] = None
+
     model_created = False
     if config['regression']:
         try:
