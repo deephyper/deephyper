@@ -19,18 +19,28 @@ class MPIWorker():
         self.run_func = util.generic_loader(run, 'run')
         self.evaluator = Evaluator.create(self.run_func, method=evaluator)
 
-    def _exec_eval(self, x):
+    def get_num_internal_workers(self):
+        return self.evaluator.num_workers
+
+    def exec(self, x):
+        print(f"Worker {MPI.COMM_WORLD.Get_rank()} executing {x}")
         self.evaluator.add_eval(x)
         for (x,y) in self.evaluator.get_finished_evals():
             return y
 
     def run(self):
         while(True):
-            exec_info = comm.recv(source=0, tag=0)
-            if('exit' in exec_info):
+            status = MPI.Status()
+            cmd_info = comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
+            tag = status.Get_tag()
+            cmd = cmd_info['cmd']
+            if(cmd == 'exit'):
                 break
-            y = self._exec_eval(exec_info['args'])
-            comm.send(y, dest=0, tag=0)
+            args = cmd_info.get('args',[])
+            kwargs = cmd_info.get('kwargs', dict())
+            func = getattr(self, cmd)
+            y = func(*args, **kwargs)
+            comm.send(y, dest=0, tag=tag)
 
 class MPIManager():
 
