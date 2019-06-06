@@ -44,7 +44,7 @@ class Evaluator:
     assert os.path.isfile(PYTHON_EXE)
 
     @staticmethod
-    def create(run_function, cache_key=None, method='balsam'):
+    def create(run_function, cache_key=None, method='balsam', **kwargs):
         assert method in ['balsam', 'subprocess', 'processPool', 'threadPool', '__mpiPool']
         if method == "balsam":
             from deephyper.evaluator._balsam import BalsamEvaluator
@@ -62,7 +62,7 @@ class Evaluator:
             from deephyper.evaluator._mpiWorkerPool import MPIWorkerPool
             Eval = MPIWorkerPool
 
-        return Eval(run_function, cache_key=cache_key)
+        return Eval(run_function, cache_key=cache_key, **kwargs)
 
     def __init__(self, run_function, cache_key=None):
         self.pending_evals = {}  # uid --> Future

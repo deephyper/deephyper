@@ -40,10 +40,10 @@ class Search:
         self.run_func = util.generic_loader(run, 'run')
         logger.info('Evaluator will execute the function: '+run)
         if kwargs.get('cache_key') is None:
-            self.evaluator = Evaluator.create(self.run_func, method=evaluator)
+            self.evaluator = Evaluator.create(self.run_func, method=evaluator, **kwargs)
         else:
             self.evaluator = Evaluator.create(
-                self.run_func, method=evaluator, cache_key=kwargs['cache_key'])
+                self.run_func, method=evaluator, cache_key=kwargs['cache_key'], **kwargs)
         self.num_workers = self.evaluator.num_workers
 
         logger.info(f'Options: '+pformat(self.args.__dict__, indent=4))
