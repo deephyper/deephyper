@@ -93,17 +93,17 @@ class MPIWorkerPool(Evaluator):
         unposted = [f for f in futures if not f.posted]
 
         if(len(posted) == 0):
-            newly_posted, unposted = _try_posting(unposted)
+            newly_posted, unposted = self._try_posting(unposted)
             posted.extend(newly_posted)
 
         if(return_when == 'ALL_COMPLETED'):
-            while(len(posted) > 0 and len(unposted) > 0):
+            while(len(posted) > 0 or len(unposted) > 0):
                 results = MPI.Request.waitall([ f.request for f in posted ])
                 for r, f in zip(results, posted):
                     f.set_result(r)
                     self.avail_workers.append(f.worker)
                 done.extend(posted)
-                posted, unposted = _try_posting(unposted)
+                posted, unposted = self._try_posting(unposted)
         else:
             one_completed = False
             for f in posted:
