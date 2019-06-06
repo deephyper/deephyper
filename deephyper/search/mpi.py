@@ -23,7 +23,6 @@ class MPIWorker():
         return self.evaluator.num_workers
 
     def exec(self, x):
-        print(f"Worker {MPI.COMM_WORLD.Get_rank()} executing {x}")
         self.evaluator.add_eval(x)
         for (x,y) in self.evaluator.get_finished_evals():
             return y
