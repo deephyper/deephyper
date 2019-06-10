@@ -176,19 +176,21 @@ Now you can run AMBS with custom arguments.
 The python package way
 ----------------------
 
-::
+This method is used when the *problem* and *run* are installed in the current
+python environment. With ``setuptools`` you can easily create a new package
+and install it in your current python environment::
 
-    (dh-opt) dhuser $ python -m deephyper.search.hps.ambs --problem deephyper.benchmark.hps.mnistmlp.problem.Problem --run deephyper.benchmark.hps.mnistmlp.mnist_mlp.run
+    python -m deephyper.search.hps.ambs --problem deephyper.benchmark.hps.mnistmlp.problem.Problem --run deephyper.benchmark.hps.mnistmlp.mnist_mlp.run
 
 .. note::
-    ``deephyper.benchmark.hps.mnistmlp.problem.Problem`` and ``deephyper.benchmark.hps.mnistmlp.mnist_mlp.run`` are python imports. Where ``Problem`` and ``run`` are attributes. This is working because the package ``deephyper`` is installed in ``dh-opt`` virtual environment.
+    ``deephyper.benchmark.hps.mnistmlp.problem.Problem`` and ``deephyper.benchmark.hps.mnistmlp.mnist_mlp.run`` are python imports. Where ``Problem`` and ``run`` are attributes. This is working because the package ``deephyper`` is installed in ``dh-opt`` our current virtual environment.
 
 The python script way
 ---------------------
 
 ::
 
-    (dh-opt) dhuser $ python -m deephyper.search.hps.ambs --problem deephyper/benchmark/hps/mnistmlp-script/problem.py --run deephyper/benchmark/hps/mnistmlp-script/mnist_mlp.py
+    python -m deephyper.search.hps.ambs --problem deephyper/benchmark/hps/mnistmlp-script/problem.py --run deephyper/benchmark/hps/mnistmlp-script/mnist_mlp.py
 
 .. note::
     When using a path to a python script for the ``--problem`` and ``--run`` argument. This is assuming that there is a ``Problem`` attribute in the *problem* script and a
@@ -201,72 +203,102 @@ Run an Hyperparameter Search on Theta
 Now we are going to run an *AMBS* search on ``deephyper.benchmark.hps.mnistmlp``
 benchmark. In order to achieve this goal we first have to load the deephyper module
 on Theta. This module is bringing deephyper in you current environment but also the
-cray python distribution and the balsam software:
-::
+cray python distribution and the balsam software::
 
-    dhuser $ module load deephyper
+    module load deephyper
 
 .. note::
     You might put this ``module load deephyper`` in your ``~/.bashrc`` if you want to use
     *deephyper* in every new terminals.
 
-Then you can create a new postgress database in the current directory, this database is used by the balsam software:
-::
+Then you can create a new postgress database in the current directory, this
+database is used by the balsam software::
 
-    dhuser $ balsam init testdb
+    balsam init testdb
 
 .. note::
     To see a list of accessible databses do ``balsam which``.
 
-Once the database has been created you can start it, or link to it if it is already running:
-::
+Once the database has been created you can start it, or link to it if it is
+already running::
 
-    dhuser $ source balsamactivate testdb
-    [BalsamDB: testdb] dhuser $
+    source balsamactivate testdb
 
-The database is now running, let's now create our first balsam application in order to run an Asynchronous Model-Based Search (AMBS):
-
-
-::
+The database is now running, let's now create our first balsam application
+in order to run an Asynchronous Model-Based Search (AMBS)::
 
     [BalsamDB: testdb] dhuser $ balsam app --name AMBS --exec 'python -m deephyper.search.hps.ambs'
 
 .. WARNING::
     The ``python`` has to be the python interpretor where *deephyper* is currently installed. If I am using a virtual environment such as ``dh-opt`` the *exec* argument should be something like ``~/dh-opt/bin/python -m deephyper.search.hps.ambs``.
 
-You can run the following command to print all the applications available in your current balsam environment:
-::
+You can run the following command to print all the applications available in
+your current balsam environment::
 
-    [BalsamDB: testdb] dhuser $ balsam ls apps
+    balsam ls apps
 
 .. note::
     If you want to see more informations about your apps use the ``--verb`` argument.
 
-Now you can create a new job:
-    [BalsamDB: testdb] dhuser $ balsam job --name test --application AMBS --workflow TEST --args '--evaluator balsam --problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run'
+Now you can create a new job::
+
+    balsam job --name test --application AMBS --workflow TEST --args '--evaluator balsam --problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run'
 
 .. note::
     Each balsam job creates a directory starting by its *name* then *pk* (primary key, a database id) located at ``testdb/data/$workflow/``. The created directory will be the working directory (``$PWD``) of the job.
 
-You can check the configuration of your jobs by using ``balsam ls``:
-::
+You can check the configuration of your jobs by using ``balsam ls``::
 
-    [BalsamDB: testdb] dhuser $ balsam ls jobs --name test
+    balsam ls jobs --name test
 
 .. note::
     If you want to see more informations about your apps use the ``--verb`` argument. So that you can see the full command line which will be run for to start the job.
 
+Define your ``PROJECT_NAME``, for us it is ``datascience``::
 
-Finally you can submit a cobalt job to Theta:
-::
+    export PROJECT_NAME=datascience
 
-    [BalsamDB: testdb] dhuser $ balsam submit-launch -n 128 -q default -t 180 -A $PROJECT_NAME --job-mode serial --wf-filter TEST
+Finally you can submit a cobalt job to Theta::
+
+    balsam submit-launch -n 128 -q default -t 180 -A $PROJECT_NAME --job-mode serial --wf-filter TEST
 
 
-Now if you want to look at the logs, go to ``testdb/data/TEST``. You'll see one directory prefixed with ``test``. Inside this directory you will find the logs of you search. All the other directories prefixed with ``task`` correspond to the logs of your ``--run`` function, here the run function is corresponding to the training of a neural network.
+Now if you want to look at the logs, go to ``testdb/data/TEST``. You'll see
+one directory prefixed with ``test``. Inside this directory you will find the
+logs of you search. All the other directories prefixed with ``task`` correspond
+to the logs of your ``--run`` function, here the run function is corresponding
+to the training of a neural network.
 
 .. note::
-    The ``--wf-filter $workflow`` arguments tell to balsam to only execute jobs with this *workflow*. If you don't specify this filter balsam will pull and start all available jobs in the database. The ``-n``, ``-q``, ``-t`` and ``-A`` are Cobalt arguments, hence if you want to start a job in a debug queue you can do:
-    ::
+    The ``--wf-filter $workflow`` arguments tell to balsam to only execute jobs with this *workflow*. If you don't specify this filter balsam will pull and start all available jobs in the database. The ``-n``, ``-q``, ``-t`` and ``-A`` are Cobalt arguments, hence if you want to start a job in a debug queue you can do::
 
-        [BalsamDB: testdb] dhuser $ balsam submit-launch -n 8 -q debug-cache-quad -t 30 -A $PROJECT_NAME --job-mode serial --wf-filter TEST
+        balsam submit-launch -n 8 -q debug-cache-quad -t 30 -A $PROJECT_NAME --job-mode serial --wf-filter TEST
+
+
+Run an Hyperparameter Search on Cooley
+======================================
+
+On Cooley two GPUs are available per node. By default one evaluation per node
+will be executed which means you can use 2 GPUs for one model. If you want to
+use 1 GPU per evaluation with deephyper please follow these steps.
+
+.. note::
+    It means 2 evaluations per node will happened in parallel. In sum you will have twice the number of deephyper workers.
+
+#. Use the Cooley Job template of Balsam
+
+::
+
+    vim ~/.balsam/settings.json
+
+The following default settings are expected
+
+.. literalinclude:: balsam_settings_example.json
+    :linenos:
+    :caption: Balsam settings
+    :name: balsam-settings-json
+
+and set ``JOB_TEMPLATE`` to ``job-templates/cooley.cobaltscheduler.tmpl``.
+
+#. then add the line ``export DEEPHYPER_WORKERS_PER_NODE=2`` to the job
+template ``job-templates/cooley.cobaltscheduler.tmpl``.

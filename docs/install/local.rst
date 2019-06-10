@@ -1,106 +1,40 @@
-Installation
-************
-
-Local
-=====
+Local installation
+******************
 
 User installation
------------------
+=================
 
-You can run the following commands if you want to install deephyper on your local machine.
+You can run the following commands if you want to install deephyper on
+your local machine.
 
-From Pypi:
-::
+From Pypi::
 
     pip install deephyper
 
-From github:
-::
+.. note::
+
+    If you want to use ``tensorflow-gpu`` assuming you already have cuda installed. Just do ``DH_GPU=true pip install -e .``
+
+From github::
 
     git clone https://github.com/deephyper/deephyper.git
     cd deephyper/
     pip install -e .
 
-.. todo:: install deephyper on GPU
-
-Contributor installation
-------------------------
+Developer installation
+======================
 
 If you want to install deephyper with test and documentation packages.
 
-From pypi:
-::
+From pypi::
 
     pip install 'deephyper[tests,docs]'
 
-From github:
-::
+From github::
 
     git clone https://github.com/deephyper/deephyper.git
     cd deephyper/
     pip install -e '.[tests,docs]'
-
-
-
-Argonne Leadership Computing Facility
-=====================================
-
-Theta - User
-------------
-
-When you are a user deephyper can be directly installed as a module on Theta.
-
-::
-
-    module load deephyper
-
-Theta - Developer
------------------
-
-Load the miniconda module which is using Intel optimized wheels for some of the dependencies we need:
-::
-
-    module load miniconda-3.6/conda-4.5.12
-
-Load the balsam module:
-::
-
-    module load balsam/0.3
-
-
-Create a virtual environment for your deephyper installation as a developer:
-::
-
-    mkdir deephyper-dev-env
-
-::
-
-    python -m venv --system-site-packages deephyper-dev-env
-
-Activate this freshly created virtual environment:
-::
-
-    source deephyper-dev-env/bin/activate
-
-To activate your virtualenv easier in the future you can define an alias in your ``~/.bashrc`` such as ``alias act="source ~/deephyper-dev-env/bin/activate"``. Now you will clone deephyper sources and install it with ``pip``:
-
-::
-
-    git clone https://github.com/deephyper/deephyper.git
-
-::
-
-    cd deephyper/
-
-
-Switch to the develop branch:
-::
-
-    git checkout develop
-
-::
-
-    pip install -e .
 
 
 Contribute to documentation
@@ -138,4 +72,3 @@ Sphinx uses reStructuredText files, click on this `link <https://pythonhosted.or
 
 .. WARNING::
     Our documentation try to take part of the inline documentation in the code to auto-generate documentation from it. For that reason we highly recommend you to follow specific rules when writing inline documentation : https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html.
-
