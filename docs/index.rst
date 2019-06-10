@@ -22,9 +22,16 @@ Scalable Asynchronous Neural Architecture and Hyperparameter Search for Deep Neu
    :maxdepth: 2
    :caption: Quick Start
 
-   quickstart/installation
    quickstart/local
    quickstart/theta
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Installation
+
+    install/local
+    install/cooley
+    install/theta
 
 .. toctree::
     :maxdepth: 2
