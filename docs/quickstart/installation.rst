@@ -103,6 +103,97 @@ Switch to the develop branch:
     pip install -e .
 
 
+Cooley - user
+-------------
+
+Install Postgresql
+
+::
+
+    wget http://get.enterprisedb.com/postgresql/postgresql-9.6.13-4-linux-x64-binaries.tar.gz
+
+::
+
+    tar -xvf postgresql-9.6.13-4-linux-x64-binaries.tar.gz
+
+::
+
+    echo "export PATH=$PWD/pgsql/bin:$PATH" >> ~/.bashrc; source ~/.bashrc
+
+::
+
+    pg_ctl --version
+
+
+Install conda
+
+::
+
+    wget https://repo.anaconda.com/archive/Anaconda3-2019.03-Linux-x86_64.sh
+
+::
+
+    chmod +x Anaconda3-2019.03-Linux-x86_64.sh
+
+::
+    sh Anaconda3
+
+.. note::
+
+    It is better to use your project folder because of bigger disk space.
+
+    ::
+
+        Anaconda3 will now be installed into this location:
+        /home/regele/anaconda3
+
+        - Press ENTER to confirm the location
+        - Press CTRL-C to abort the installation
+        - Or specify a different location below
+
+        [/home/regele/anaconda3] >>> /projects/datascience/regele
+
+::
+
+    export LD_LIBRARY_PATH=/soft/visualization/cuda-10.0/lib64:$LD_LIBRARY_PATH
+
+::
+
+    echo "export DH_GPU=true" >> ~/.bashrc; source ~/.bashrc
+
+
+::
+
+    conda create -n dh-env python=3.6
+
+::
+
+    source activate dh-env
+
+::
+
+    pip install deephyper
+
+::
+
+    pip install tensorflow==1.13.1 tensorflow-gpu==1.13.1
+
+
+.. WARNING::
+
+    ::
+
+        # Theta Specific
+        if [[ $HOSTNAME = *"theta"* ]];
+        then
+            source ~/.bashrc_theta
+        # Cooley Specific
+        else
+            source ~/.bashrc_cooley
+        fi
+
+
+
 Contribute to documentation
 ===========================
 

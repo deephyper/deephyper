@@ -52,9 +52,6 @@ if on_theta:  # --system-site-packages
 elif not on_rtd and not on_gpu:
     REQUIRED.append('mpi4py>=3.0.0')
 elif on_gpu:
-    # remove
-    REQUIRED.remove('tensorflow==1.13.1')
-    # add
     REQUIRED.append('tensorflow-gpu==1.13.1')
     REQUIRED.append('mpi4py')
 else:

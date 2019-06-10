@@ -270,3 +270,29 @@ Now if you want to look at the logs, go to ``testdb/data/TEST``. You'll see one 
     ::
 
         [BalsamDB: testdb] dhuser $ balsam submit-launch -n 8 -q debug-cache-quad -t 30 -A $PROJECT_NAME --job-mode serial --wf-filter TEST
+
+
+Run an Hyperparameter Search on Cooley
+======================================
+
+On Cooley two GPUs are available per node. If you want to use 1 GPU per evaluation with deephyper please follow these steps.
+
+.. note::
+    It means 2 evaluations per node will happened in parallel. In sum you will have twice the number of deephyper workers.
+
+1. Use the Cooley Job template of Balsam
+
+::
+
+    vim ~/.balsam/settings.json
+
+The following default settings are expected
+
+.. literalinclude:: balsam_settings_example.json
+    :linenos:
+    :caption: Balsam settings
+    :name: balsam-settings-json
+
+and set ``JOB_TEMPLATE`` to ``job-templates/cooley.cobaltscheduler.tmpl``.
+
+2. then add the line ``export DEEPHYPER_WORKERS_PER_NODE=2`` to the job template ``job-templates/cooley.cobaltscheduler.tmpl``.
