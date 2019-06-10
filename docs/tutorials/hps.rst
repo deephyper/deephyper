@@ -270,10 +270,9 @@ to the logs of your ``--run`` function, here the run function is corresponding
 to the training of a neural network.
 
 .. note::
-    The ``--wf-filter $workflow`` arguments tell to balsam to only execute jobs with this *workflow*. If you don't specify this filter balsam will pull and start all available jobs in the database. The ``-n``, ``-q``, ``-t`` and ``-A`` are Cobalt arguments, hence if you want to start a job in a debug queue you can do:
-    ::
+    The ``--wf-filter $workflow`` arguments tell to balsam to only execute jobs with this *workflow*. If you don't specify this filter balsam will pull and start all available jobs in the database. The ``-n``, ``-q``, ``-t`` and ``-A`` are Cobalt arguments, hence if you want to start a job in a debug queue you can do::
 
-        [BalsamDB: testdb] dhuser $ balsam submit-launch -n 8 -q debug-cache-quad -t 30 -A $PROJECT_NAME --job-mode serial --wf-filter TEST
+        balsam submit-launch -n 8 -q debug-cache-quad -t 30 -A $PROJECT_NAME --job-mode serial --wf-filter TEST
 
 
 Run an Hyperparameter Search on Cooley
