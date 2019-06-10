@@ -64,40 +64,22 @@ By Hand
     pg_ctl --version
 
 
-2. **Now install conda**
+2. **Get anaconda from SoftEnv**::
 
-* Download the software::
+    soft add +anaconda3-4.0.0
 
-    wget https://repo.anaconda.com/archive/Anaconda3-2019.03-Linux-x86_64.sh
+3. **Get cuda from SoftEnv**::
 
-* Add execute rights to the installation script::
-
-    chmod +x Anaconda3-2019.03-Linux-x86_64.sh
-
-* Run the installation script::
-
-    sh Anaconda3-2019.03-Linux-x86_64.sh
+    soft add +cuda-10.0
 
 .. note::
 
-    It is better to use your project folder because of bigger disk space.
+    Now you may add the following to your ``~/.soft``::
 
-    ::
-
-        Anaconda3 will now be installed into this location:
-        /home/regele/anaconda3
-
-        - Press ENTER to confirm the location
-        - Press CTRL-C to abort the installation
-        - Or specify a different location below
-
-        [/home/regele/anaconda3] >>> /projects/datascience/regele
-
-3. **Get cuda library**
-
-* Add the cuda lib to your environment::
-
-    export LD_LIBRARY_PATH=/soft/visualization/cuda-10.0/lib64:$LD_LIBRARY_PATH
+        # ~/.soft
+        +cuda-10.0
+        +anaconda3-4.0.0
+        @default
 
 4. **Install deephyper**
 
