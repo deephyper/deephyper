@@ -280,7 +280,7 @@ On Cooley two GPUs are available per node. If you want to use 1 GPU per evaluati
 .. note::
     It means 2 evaluations per node will happened in parallel. In sum you will have twice the number of deephyper workers.
 
-1. Use the Cooley Job template of Balsam
+#. Use the Cooley Job template of Balsam
 
 ::
 
@@ -295,4 +295,4 @@ The following default settings are expected
 
 and set ``JOB_TEMPLATE`` to ``job-templates/cooley.cobaltscheduler.tmpl``.
 
-2. then add the line ``export DEEPHYPER_WORKERS_PER_NODE=2`` to the job template ``job-templates/cooley.cobaltscheduler.tmpl``.
+#. then add the line ``export DEEPHYPER_WORKERS_PER_NODE=2`` to the job template ``job-templates/cooley.cobaltscheduler.tmpl``.
