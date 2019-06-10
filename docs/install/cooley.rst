@@ -42,11 +42,6 @@ Cooley installation
 
 4. **Install deephyper**
 
-* Specify youo want the deephyper-gpu installation::
-
-    echo "export DH_GPU=true" >> ~/.bashrc; source ~/.bashrc
-
-
 * Create a new conda environment::
 
     conda create -n dh-env python=3.6
@@ -57,7 +52,7 @@ Cooley installation
 
 * Install deephyper from pypi::
 
-    pip install deephyper
+    DH_GPU=true pip install deephyper
 
 
 .. WARNING::
