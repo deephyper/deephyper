@@ -5,60 +5,17 @@ import networkx as nx
 from tensorflow import keras
 from tensorflow.python.keras.utils.vis_utils import model_to_dot
 
-from deephyper.search.nas.model.space.node import Node, ConstantNode, VariableNode
+from deephyper.core.exceptions.nas.struct import (InputShapeOfWrongType,
+                                                  NodeAlreadyAdded,
+                                                  StructureHasACycle,
+                                                  WrongSequenceToSetOperations,
+                                                  WrongOutputShape)
+from deephyper.search.nas.model.space.node import (ConstantNode, Node,
+                                                   VariableNode)
 from deephyper.search.nas.model.space.op.basic import Connect, Tensor
-from deephyper.search.nas.model.space.op.op1d import Identity
 from deephyper.search.nas.model.space.op.merge import Concatenate
-
+from deephyper.search.nas.model.space.op.op1d import Identity
 from deephyper.search.nas.model.space.struct import NxStructure
-
-# ! Exceptions
-
-
-class WrongSequenceToSetOperations(Exception):
-    """Raised when a sequence of actions is not of the same lenght as the number of variable nodes of the structure."""
-
-    def __init__(self, sequence_given, sequence_valid):
-        self.sequence_given = sequence_given
-        self.sequence_valid = sequence_valid
-
-    def __str__(self):
-        return f"Wrong sequence given: '{self.sequence_given}' of length {len(self.sequence_given)} when a valid sequence should be of length {len(self.sequence_valid)}"
-
-
-class StructureHasACycle(Exception):
-    """Raised when a structure is containing a cycle."""
-
-    def __init__(self, msg):
-        self.msg = msg
-
-    def __str__(self):
-        return self.msg
-
-
-class InputShapeOfWrongType(Exception):
-    """Raised when an input shape of a structure is of a wrong type.
-    """
-
-    def __init__(self, input_shape):
-        self.input_shape = input_shape
-
-    def __str__(self):
-        f"input_shape must be either a 'tuple' or a 'list(tuple)' but it is of type '{type(self.input_shape)}'!"
-
-
-class NodeAlreadyAdded(Exception):
-    """Raised when a node has already been added in a structure.
-    """
-
-    def __init__(self, node):
-        self.node = node
-
-    def __str__(self):
-        return f"The node '{str(self.node)}' has already been added to the structure."
-
-
-# ! Classes
 
 
 class DirectStructure(NxStructure):
@@ -69,7 +26,7 @@ class DirectStructure(NxStructure):
         output_shape (tuple(int)): shape of output.
 
     Raises:
-        RuntimeError: [description]
+        InputShapeOfWrongType: [description]
     """
 
     def __init__(self, input_shape, output_shape, *args, **kwargs):
@@ -95,7 +52,7 @@ class DirectStructure(NxStructure):
         for node in self.input_nodes:
             self.graph.add_node(node)
 
-        self.__output_shape = output_shape
+        self.output_shape = output_shape
         self.output_node = None
 
         self._model = None
@@ -230,7 +187,7 @@ class DirectStructure(NxStructure):
         for op_i, node in zip(indexes, self.variable_nodes):
             node.set_op(op_i)
 
-        output_nodes = get_output_nodes(self.graph)
+        output_nodes = self.get_output_nodes()
 
         self.output_node = self.set_output_node(self.graph, output_nodes)
 
@@ -263,11 +220,9 @@ class DirectStructure(NxStructure):
             The output tensor.
         """
 
-        output_tensor = create_tensor_aux(self.graph, self.output_node)
-        if len(output_tensor.get_shape()) > 2:
-            output_tensor = keras.layers.Flatten()(output_tensor)
-        output_tensor = keras.layers.Dense(
-            self.__output_shape[0], activation=activation)(output_tensor)
+        output_tensor = self.create_tensor_aux(self.graph, self.output_node)
+        if output_tensor.get_shape()[1:] != self.output_shape:
+            raise WrongOutputShape(output_tensor, self.output_shape)
 
         input_tensors = [inode._tensor for inode in self.input_nodes]
 
@@ -292,50 +247,3 @@ class DirectStructure(NxStructure):
                 indexes, list(self.variable_nodes))
 
         return [vnode.denormalize(op_i) for op_i, vnode in zip(indexes, self.variable_nodes)]
-
-
-def get_output_nodes(graph):
-    """Get nodes of 'graph' without successors.
-    Args:
-        graph: (nx.Digraph)
-
-    Return: the nodes without successors of a DiGraph.
-    """
-    nodes = list(graph.nodes())
-    output_nodes = []
-    for n in nodes:
-        if len(list(graph.successors(n))) == 0:
-            output_nodes.append(n)
-    return output_nodes
-
-
-def create_tensor_aux(g, n, train=None):
-    """Recursive function to create the tensors from the graph.
-
-    Args:
-        g (nx.DiGraph): a graph
-        n (nx.Node): a node
-        train (bool): True if the network is built for training, False if the network is built for validation/testing (for example False will deactivate Dropout).
-
-    Return:
-        the tensor represented by n.
-    """
-    try:
-        if n._tensor != None:
-            output_tensor = n._tensor
-        else:
-            pred = list(g.predecessors(n))
-            if len(pred) == 0:
-                output_tensor = n.create_tensor(train=train)
-            else:
-                tensor_list = list()
-                for s_i in pred:
-                    tmp = create_tensor_aux(g, s_i, train=train)
-                    if type(tmp) is list:
-                        tensor_list.extend(tmp)
-                    else:
-                        tensor_list.append(tmp)
-                output_tensor = n.create_tensor(tensor_list, train=train)
-        return output_tensor
-    except TypeError:
-        raise RuntimeError(f'Failed to build tensors from :{n}')
