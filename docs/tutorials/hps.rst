@@ -8,12 +8,8 @@ Create & Run an Hyperparameter Search Problem
 Create the Problem & the model to run
 =====================================
 
-The python package way
-----------------------
-
-For HPS a benchmark is defined by a problem definition and a function that runs the model.
-
-::
+For HPS a benchmark is defined by a problem definition and a function
+that runs the model::
 
       deephyper/.../problem_folder/
             __init__.py
@@ -79,8 +75,9 @@ and that's it, we just defined a problem with 8 dimensions: ``activation_l1,
 activation_l2, batch_size, dropout_l1, dropout_l2, epochs, nunits_l1,
 nunits_l2``. Now the problem is defined the next step is to define a function
 which will run our Mnist model while taking in account the parameters chosen by
-the search. This function is returning an objective scalar value which is minimized by
-the hyperparameter search algorithm. For our Mnist problem we want to maximize the accuracy so the return value is ``return -score[1]``.
+the search. This function is returning an objective scalar value which is
+minimized by the hyperparameter search algorithm. For our Mnist problem we want
+to maximize the accuracy so the return value is ``return -score[1]``.
 
 
 .. literalinclude:: ../../deephyper/benchmark/hps/mnistmlp/mnist_mlp.py
@@ -122,16 +119,16 @@ the hyperparameter search algorithm. For our Mnist problem we want to maximize t
         :caption: deephyper/benchmark/hps/mnistmlp-script/mnist_mlp.py
         :name: benchmark-hps-mnistmlp-script-mnist_mlp-py
 
-Assuming you have installed ``deephyper`` in your environment we will show you
-how to run an asynchronous model-based search (AMBS) on a benchmark included
-within deephyper. To print the arguments of a search like AMBS just run:
-
-
 .. highlight:: console
 
-::
+Assuming you have installed ``deephyper`` in your environment we will show you
+how to run an asynchronous model-based search (AMBS) on a benchmark included
+within deephyper. To print the arguments of a search like AMBS just run::
 
-    (dh-opt) dhuser $ python -m deephyper.search.hps.ambs --help
+    python -m deephyper.search.hps.ambs --help
+
+The expected output is::
+
     usage: ambs.py [-h] [--problem PROBLEM] [--run RUN] [--backend BACKEND]
                [--max-evals MAX_EVALS]
                [--eval-timeout-minutes EVAL_TIMEOUT_MINUTES]
@@ -201,9 +198,9 @@ Run an Hyperparameter Search on Theta
 =====================================
 
 Now we are going to run an *AMBS* search on ``deephyper.benchmark.hps.mnistmlp``
-benchmark. In order to achieve this goal we first have to load the deephyper module
-on Theta. This module is bringing deephyper in you current environment but also the
-cray python distribution and the balsam software::
+benchmark. In order to achieve this goal we first have to load the deephyper
+module on Theta. This module is bringing deephyper in you current environment
+but also the cray python distribution and the balsam software::
 
     module load deephyper
 
