@@ -93,11 +93,16 @@ def check_data_config(data_dict):
 
 # Metrics with tensors
 
+# def r2(y_true, y_pred):
+#     SS_res = tf.keras.backend.sum(tf.keras.backend.square(y_true - y_pred))
+#     SS_tot = tf.keras.backend.sum(tf.keras.backend.square(
+#         y_true - tf.keras.backend.mean(y_true)))
+#     return (1 - SS_res/(SS_tot + tf.keras.backend.epsilon()))
+
 def r2(y_true, y_pred):
-    SS_res = tf.keras.backend.sum(tf.keras.backend.square(y_true - y_pred))
-    SS_tot = tf.keras.backend.sum(tf.keras.backend.square(
-        y_true - tf.keras.backend.mean(y_true)))
-    return (1 - SS_res/(SS_tot + tf.keras.backend.epsilon()))
+    from sklearn.metrics import r2_score
+    res = tf.py_func(r2_score, [y_true, y_pred], tf.float64)
+    return res
 
 
 def mae(y_true, y_pred):
