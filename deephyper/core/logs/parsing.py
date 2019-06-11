@@ -8,11 +8,15 @@ from shutil import copyfile
 try:
     from balsam.core.models import (
         BalsamJob, process_job_times, utilization_report)
-    BALSAM_EXIST = True
-    print('Module: \'balsam\' has been loaded successfully!')
+    if os.environ.get("BALSAM_SPHINX_DOC_BUILD_ONLY") == "TRUE":
+        BALSAM_EXIST = False
+        print('Module: \'balsam\' module was found but not connected to a databse.')
+    else:
+        BALSAM_EXIST = True
+        print('Module: \'balsam\' module was found and connected to a databse.')
 except ModuleNotFoundError as err:
     BALSAM_EXIST = False
-    print('Module: \'balsam\' was not found!')
+    print('Module: \'balsam\' module was not found!')
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
