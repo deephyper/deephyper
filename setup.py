@@ -69,7 +69,10 @@ EXTRAS = {
     ],
     'analytics': [
         'jupyter',
-        'jupyter_contrib_nbextensions'
+        'jupyter_contrib_nbextensions>=0.5.1',
+        'pandas>=0.24.2,
+        'seaborn>=0.9.0',
+        'matplotlib>=3.0.3'
     ]
 }
 
