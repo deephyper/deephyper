@@ -37,7 +37,7 @@ def create_parser():
     name, func = post_train.add_subparser(subparsers)
     mapping[name] = func
 
-    # plots post-training
+    # plots hps
     name, func = hps.add_subparser(subparsers)
     mapping[name] = func
 
