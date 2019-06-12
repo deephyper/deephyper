@@ -59,7 +59,7 @@ class Optimizer:
 
     def _xy_from_dict(self):
         XX = list(self.evals.keys())
-        YY = [self.evals[x] for x in XX]
+        YY = [-self.evals[x] for x in XX]
         return XX, YY
 
     def to_dict(self, x):
