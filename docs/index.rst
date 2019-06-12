@@ -3,12 +3,11 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-*********
 DeepHyper
 *********
 
 Scalable Asynchronous Neural Architecture and Hyperparameter Search for Deep Neural Networks
---------------------------------------------------------------------------------------------
+============================================================================================
 
 .. image:: _static/logo/medium.png
    :scale: 100%
@@ -19,13 +18,6 @@ Scalable Asynchronous Neural Architecture and Hyperparameter Search for Deep Neu
 .. automodule:: deephyper
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Quick Start
-
-   quickstart/local
-   quickstart/theta
-
-.. toctree::
     :maxdepth: 2
     :caption: Installation
 
@@ -34,10 +26,18 @@ Scalable Asynchronous Neural Architecture and Hyperparameter Search for Deep Neu
     install/theta
 
 .. toctree::
+   :maxdepth: 2
+   :caption: Run a search
+
+   run/local
+   run/theta
+
+.. toctree::
     :maxdepth: 2
     :caption: Tutorials
 
     tutorials/hps
+    tutorials/restart
 
 .. toctree::
    :maxdepth: 2
@@ -78,8 +78,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-Doc todo list
-=============
-
-.. todolist::

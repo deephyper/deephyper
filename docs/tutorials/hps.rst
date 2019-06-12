@@ -1,7 +1,7 @@
 .. _create-new-hps-problem:
 
-Create & Run an Hyperparameter Search Problem
-*********************************************
+How to Create/Run a new HPS Problem?
+************************************
 
 .. automodule:: deephyper.benchmark.hps
 
@@ -159,8 +159,6 @@ The expected output is::
     --acq-func {LCB,EI,PI,gp_hedge}
                             Acquisition function type
 
-.. note::
-    ``dh-opt`` is a virtual environment where deephyper is installed.
 
 Run an Hyperparameter Search locally
 ====================================
@@ -198,15 +196,10 @@ Run an Hyperparameter Search on Theta
 =====================================
 
 Now we are going to run an *AMBS* search on ``deephyper.benchmark.hps.mnistmlp``
-benchmark. In order to achieve this goal we first have to load the deephyper
-module on Theta. This module is bringing deephyper in you current environment
-but also the cray python distribution and the balsam software::
+benchmark.
 
-    module load deephyper
-
-.. note::
-    You might put this ``module load deephyper`` in your ``~/.bashrc`` if you want to use
-    *deephyper* in every new terminals.
+.. WARNING::
+    We are assuming *deephyper* is already installed on Theta. If not please go to :ref:`theta-user-installation`.
 
 Then you can create a new postgress database in the current directory, this
 database is used by the balsam software::
@@ -214,9 +207,11 @@ database is used by the balsam software::
     balsam init testdb
 
 .. note::
-    To see a list of accessible databses do ``balsam which``.
+    To see a list of accessible databses do::
 
-Once the database has been created you can start it, or link to it if it is
+        balsam which
+
+Once the database has been created you can start it or link to it if it is
 already running::
 
     source balsamactivate testdb
@@ -235,7 +230,9 @@ your current balsam environment::
     balsam ls apps
 
 .. note::
-    If you want to see more informations about your apps use the ``--verb`` argument.
+    If you want to see more information about your apps use the ``--verb`` argument. You can also configure the ``BALSAM_LS_FIELDS`` env var such as::
+
+        export BALSAM_LS_FIELDS=TODO
 
 Now you can create a new job::
 
@@ -249,7 +246,7 @@ You can check the configuration of your jobs by using ``balsam ls``::
     balsam ls jobs --name test
 
 .. note::
-    If you want to see more informations about your apps use the ``--verb`` argument. So that you can see the full command line which will be run for to start the job.
+    If you want to see more information about your apps use the ``--verb`` argument. So that you can see the full command line which will be run to start the job. It can be useful to check the good python interpretor is used.
 
 Define your ``PROJECT_NAME``, for us it is ``datascience``::
 
@@ -267,9 +264,20 @@ to the logs of your ``--run`` function, here the run function is corresponding
 to the training of a neural network.
 
 .. note::
+
+    In case of failure the job *state* will be set to ``FAILED`` in the balsam database (do ``balsam ls jobs`` to see jobs states). To find why the job failed you can look at the ``testdb/data/TEST/test_$jobid`` or at the ``testdb/logs`` folder.
+
+
+.. note::
     The ``--wf-filter $workflow`` arguments tell to balsam to only execute jobs with this *workflow*. If you don't specify this filter balsam will pull and start all available jobs in the database. The ``-n``, ``-q``, ``-t`` and ``-A`` are Cobalt arguments, hence if you want to start a job in a debug queue you can do::
 
         balsam submit-launch -n 8 -q debug-cache-quad -t 30 -A $PROJECT_NAME --job-mode serial --wf-filter TEST
+
+    The ``balsam submit-launch`` command generates a cobalt script using a Jinja template located at ``~/.balsam/job-templates/theta.cobaltscheduler.tmpl``. You can edit this template if required.
+
+.. note::
+
+    The ``--job-mode serial`` will use one compute node for a launcher to start jobs on 1 compute node. This feature help to reduce overhead and limits of the ``aprun`` command. Hence with AMBS 1 compute node will be used by the search and 1 compute nodes will be used by the launcher which means you can't ask less than 3 nodes in the debug queue.
 
 
 Run an Hyperparameter Search on Cooley
@@ -282,9 +290,7 @@ use 1 GPU per evaluation with deephyper please follow these steps.
 .. note::
     It means 2 evaluations per node will happened in parallel. In sum you will have twice the number of deephyper workers.
 
-#. Use the Cooley Job template of Balsam
-
-::
+1. Use the Cooley Job template of Balsam::
 
     vim ~/.balsam/settings.json
 
@@ -297,5 +303,7 @@ The following default settings are expected
 
 and set ``JOB_TEMPLATE`` to ``job-templates/cooley.cobaltscheduler.tmpl``.
 
-#. then add the line ``export DEEPHYPER_WORKERS_PER_NODE=2`` to the job
-template ``job-templates/cooley.cobaltscheduler.tmpl``.
+2. then add the line ``export DEEPHYPER_WORKERS_PER_NODE=2`` to the job
+template::
+
+    vim ~/.balsam/job-templates/cooley.cobaltscheduler.tmpl

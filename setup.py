@@ -57,7 +57,6 @@ elif on_gpu:
 else:
     REQUIRED.append('Sphinx>=1.8.2')
     REQUIRED.append('sphinx_rtd_theme')
-    REQUIRED.append('sphinx_copybutton')
 
 # What packages are optional?
 EXTRAS = {
