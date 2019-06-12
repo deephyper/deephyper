@@ -2,6 +2,7 @@ from sys import float_info
 from skopt import Optimizer as SkOptimizer
 from numpy import inf
 from deephyper.search import util
+from deephyper.benchmark import HpProblem
 
 logger = util.conf_logger('deephyper.search.hps.optimizer.optimizer')
 
@@ -20,6 +21,7 @@ class Optimizer:
             structure = self.space['create_structure']['func']()
         else:
             structure = self.space['create_structure']['func'](**cs_kwargs)
+
         # // queue of remaining starting points
         # // self.starting_points = problem.starting_point
         n_init = inf if args.learner == 'DUMMY' else num_workers

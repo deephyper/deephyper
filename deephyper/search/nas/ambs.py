@@ -120,7 +120,7 @@ class AMBNeuralArchitectureSearch(Search):
                 chkpoint_counter = 0
 
         logger.info('Hyperopt driver finishing')
-        self.evaluator.dump_evals()
+        self.evaluator.dump_evals(saved_key='arch_seq')
 
 
 if __name__ == "__main__":
