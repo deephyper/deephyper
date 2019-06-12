@@ -164,10 +164,10 @@ class DirectStructure(NxStructure):
 
     @property
     def variable_nodes(self):
-        """List of VariableNodes of the structure.
+        """Iterator of VariableNodes of the structure.
 
         Returns:
-            (list(VariableNode)): list of VariablesNodes of the structure.
+            (Iterator(VariableNode)): generator of VariablesNodes of the structure.
         """
         return filter(lambda n: isinstance(n, VariableNode), self.nodes)
 
