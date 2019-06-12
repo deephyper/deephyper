@@ -37,7 +37,7 @@ Scalable Asynchronous Neural Architecture and Hyperparameter Search for Deep Neu
     :caption: Tutorials
 
     tutorials/hps
-    tutorials/restart
+    tutorials/job_management
 
 .. toctree::
    :maxdepth: 2

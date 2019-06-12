@@ -1,5 +1,5 @@
-How to restart a job with Balsam?
-*********************************
+How to manage your Balsam jobs?
+*******************************
 
 Let's say we just ran the problem from the previous tutorial
 :ref:`create-new-nas-problem`.
