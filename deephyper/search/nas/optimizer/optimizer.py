@@ -116,7 +116,7 @@ class Optimizer:
             xy_data, list), f"where type(xy_data)=={type(xy_data)}"
         maxval = max(self._optimizer.yi) if self._optimizer.yi else 0.0
         for x, y in xy_data:
-            key = tuple(x[k] for k in self.space)
+            key = tuple(x['arch_seq'])
             assert key in self.evals, f"where key=={key} and self.evals=={self.evals}"
             logger.debug(f'tell: {x} --> {key}: evaluated objective: {y}')
             self.evals[key] = (y if y < float_info.max else maxval)
