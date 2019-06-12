@@ -22,6 +22,9 @@ Scalable Asynchronous Neural Architecture and Hyperparameter Search for Deep Neu
     :caption: Installation
 
     install/local
+    install/documentation
+    install/tests
+    install/analytics
     install/cooley
     install/theta
 

@@ -219,7 +219,7 @@ already running::
 The database is now running, let's now create our first balsam application
 in order to run an Asynchronous Model-Based Search (AMBS)::
 
-    [BalsamDB: testdb] dhuser $ balsam app --name AMBS --exec 'python -m deephyper.search.hps.ambs'
+    balsam app --name AMBS --exec 'python -m deephyper.search.hps.ambs'
 
 .. WARNING::
     The ``python`` has to be the python interpretor where *deephyper* is currently installed. If I am using a virtual environment such as ``dh-opt`` the *exec* argument should be something like ``~/dh-opt/bin/python -m deephyper.search.hps.ambs``.
@@ -230,9 +230,11 @@ your current balsam environment::
     balsam ls apps
 
 .. note::
-    If you want to see more information about your apps use the ``--verb`` argument. You can also configure the ``BALSAM_LS_FIELDS`` env var such as::
+    If you want to see more information about your apps use the ``--verb`` argument. You can also configure the ``BALSAM_LS_FIELDS`` env var such to print more columns::
 
-        export BALSAM_LS_FIELDS=TODO
+        export BALSAM_LS_FIELDS=num_nodes:args
+
+    If you want to looked at other informations while doing ``balsam ls jobs``.
 
 Now you can create a new job::
 
@@ -307,3 +309,450 @@ and set ``JOB_TEMPLATE`` to ``job-templates/cooley.cobaltscheduler.tmpl``.
 template::
 
     vim ~/.balsam/job-templates/cooley.cobaltscheduler.tmpl
+
+
+
+Analytics for hyperparameter search study
+=========================================
+
+Command line::
+
+    deephyper-analytics hps -p ../../database/testdb/data/TEST/test_de03094c/results.csv -n mynotebook
+
+The a jupyter notebook named ``mynotebook`` is created. This notebook is containing following information.
+
+**path to data file**:
+/lus/theta-fs0/projects/datascience/regele/database/testdb/data/TEST/test\_de03094c/results.csv
+
+for customization please see:
+https://matplotlib.org/api/matplotlib\_configuration\_api.html
+
+Setup & Data loading
+--------------------
+
+.. code:: ipython3
+
+    path_to_data_file = '/lus/theta-fs0/projects/datascience/regele/database/testdb/data/TEST/test_de03094c/results.csv'
+
+.. code:: ipython3
+
+    import matplotlib
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
+    import seaborn as sns
+    from pprint import pprint
+    from datetime import datetime
+    from tqdm import tqdm
+    from IPython.display import display, Markdown
+
+    width = 15
+    height = 10
+
+    matplotlib.rcParams.update({
+        'font.size': 22,
+        'figure.figsize': (width, height),
+        'figure.facecolor': 'white',
+        'savefig.dpi': 72,
+        'figure.subplot.bottom': 0.125,
+        'figure.edgecolor': 'white',
+        'xtick.labelsize': 20,
+        'ytick.labelsize': 20})
+
+    df = pd.read_csv(path_to_data_file)
+
+    display(Markdown(f'The search did _{df.count()[0]}_ **evaluations**.'))
+
+    df.head()
+
+
+
+The search did *100* **evaluations**.
+
+
+
+
+.. raw:: html
+
+    <div>
+    <style scoped>
+        .dataframe tbody tr th:only-of-type {
+            vertical-align: middle;
+        }
+
+        .dataframe tbody tr th {
+            vertical-align: top;
+        }
+
+        .dataframe thead th {
+            text-align: right;
+        }
+    </style>
+    <table border="1" class="dataframe">
+      <thead>
+        <tr style="text-align: right;">
+          <th></th>
+          <th>e0</th>
+          <th>e1</th>
+          <th>e2</th>
+          <th>e3</th>
+          <th>e4</th>
+          <th>e5</th>
+          <th>e6</th>
+          <th>e7</th>
+          <th>e8</th>
+          <th>e9</th>
+          <th>objective</th>
+          <th>elapsed_sec</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>0</th>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0.0</td>
+          <td>11.184441</td>
+        </tr>
+        <tr>
+          <th>1</th>
+          <td>2</td>
+          <td>6</td>
+          <td>1</td>
+          <td>-4</td>
+          <td>0</td>
+          <td>-9</td>
+          <td>10</td>
+          <td>-7</td>
+          <td>-6</td>
+          <td>-7</td>
+          <td>-372.0</td>
+          <td>19.994919</td>
+        </tr>
+        <tr>
+          <th>2</th>
+          <td>7</td>
+          <td>4</td>
+          <td>-7</td>
+          <td>-1</td>
+          <td>5</td>
+          <td>1</td>
+          <td>-7</td>
+          <td>-8</td>
+          <td>3</td>
+          <td>-5</td>
+          <td>-288.0</td>
+          <td>30.865721</td>
+        </tr>
+        <tr>
+          <th>3</th>
+          <td>-7</td>
+          <td>-7</td>
+          <td>-7</td>
+          <td>0</td>
+          <td>8</td>
+          <td>-8</td>
+          <td>7</td>
+          <td>-2</td>
+          <td>-1</td>
+          <td>7</td>
+          <td>-378.0</td>
+          <td>39.709885</td>
+        </tr>
+        <tr>
+          <th>4</th>
+          <td>10</td>
+          <td>-4</td>
+          <td>3</td>
+          <td>0</td>
+          <td>-1</td>
+          <td>9</td>
+          <td>-4</td>
+          <td>3</td>
+          <td>-5</td>
+          <td>6</td>
+          <td>-293.0</td>
+          <td>47.566237</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+
+
+Statistical summary
+-------------------
+
+.. code:: ipython3
+
+    df.describe()
+
+
+
+
+.. raw:: html
+
+    <div>
+    <style scoped>
+        .dataframe tbody tr th:only-of-type {
+            vertical-align: middle;
+        }
+
+        .dataframe tbody tr th {
+            vertical-align: top;
+        }
+
+        .dataframe thead th {
+            text-align: right;
+        }
+    </style>
+    <table border="1" class="dataframe">
+      <thead>
+        <tr style="text-align: right;">
+          <th></th>
+          <th>e0</th>
+          <th>e1</th>
+          <th>e2</th>
+          <th>e3</th>
+          <th>e4</th>
+          <th>e5</th>
+          <th>e6</th>
+          <th>e7</th>
+          <th>e8</th>
+          <th>e9</th>
+          <th>objective</th>
+          <th>elapsed_sec</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>count</th>
+          <td>100.000000</td>
+          <td>100.000000</td>
+          <td>100.000000</td>
+          <td>100.000000</td>
+          <td>100.00000</td>
+          <td>100.000000</td>
+          <td>100.000000</td>
+          <td>100.000000</td>
+          <td>100.000000</td>
+          <td>100.000000</td>
+          <td>100.000000</td>
+          <td>100.000000</td>
+        </tr>
+        <tr>
+          <th>mean</th>
+          <td>1.420000</td>
+          <td>1.310000</td>
+          <td>7.230000</td>
+          <td>6.350000</td>
+          <td>-2.02000</td>
+          <td>-5.210000</td>
+          <td>-3.630000</td>
+          <td>0.900000</td>
+          <td>-1.730000</td>
+          <td>-1.660000</td>
+          <td>-537.500000</td>
+          <td>471.458348</td>
+        </tr>
+        <tr>
+          <th>std</th>
+          <td>6.828609</td>
+          <td>6.820491</td>
+          <td>4.133761</td>
+          <td>3.531603</td>
+          <td>6.79123</td>
+          <td>5.948083</td>
+          <td>6.700905</td>
+          <td>6.658328</td>
+          <td>6.313134</td>
+          <td>7.800829</td>
+          <td>113.437252</td>
+          <td>275.053601</td>
+        </tr>
+        <tr>
+          <th>min</th>
+          <td>-10.000000</td>
+          <td>-10.000000</td>
+          <td>-9.000000</td>
+          <td>-4.000000</td>
+          <td>-10.00000</td>
+          <td>-10.000000</td>
+          <td>-10.000000</td>
+          <td>-10.000000</td>
+          <td>-10.000000</td>
+          <td>-10.000000</td>
+          <td>-745.000000</td>
+          <td>11.184441</td>
+        </tr>
+        <tr>
+          <th>25%</th>
+          <td>-6.000000</td>
+          <td>-5.000000</td>
+          <td>7.000000</td>
+          <td>5.000000</td>
+          <td>-8.00000</td>
+          <td>-10.000000</td>
+          <td>-9.000000</td>
+          <td>-6.000000</td>
+          <td>-7.250000</td>
+          <td>-8.250000</td>
+          <td>-609.000000</td>
+          <td>234.737772</td>
+        </tr>
+        <tr>
+          <th>50%</th>
+          <td>4.000000</td>
+          <td>2.500000</td>
+          <td>9.000000</td>
+          <td>7.000000</td>
+          <td>-4.00000</td>
+          <td>-8.000000</td>
+          <td>-7.000000</td>
+          <td>1.000000</td>
+          <td>-2.500000</td>
+          <td>-5.500000</td>
+          <td>-556.500000</td>
+          <td>469.074218</td>
+        </tr>
+        <tr>
+          <th>75%</th>
+          <td>7.000000</td>
+          <td>8.000000</td>
+          <td>10.000000</td>
+          <td>9.000000</td>
+          <td>4.00000</td>
+          <td>-1.000000</td>
+          <td>1.000000</td>
+          <td>7.000000</td>
+          <td>4.000000</td>
+          <td>7.250000</td>
+          <td>-475.250000</td>
+          <td>705.137182</td>
+        </tr>
+        <tr>
+          <th>max</th>
+          <td>10.000000</td>
+          <td>10.000000</td>
+          <td>10.000000</td>
+          <td>10.000000</td>
+          <td>10.00000</td>
+          <td>10.000000</td>
+          <td>10.000000</td>
+          <td>10.000000</td>
+          <td>10.000000</td>
+          <td>10.000000</td>
+          <td>0.000000</td>
+          <td>946.477097</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+
+
+Search trajectory
+-----------------
+
+.. code:: ipython3
+
+    plt.plot(df.elapsed_sec, df.objective)
+    plt.ylabel('Objective')
+    plt.xlabel('Time (s.)')
+    plt.xlim(0)
+    plt.grid()
+    plt.show()
+
+
+
+.. image:: output_6_0.png
+
+
+Pairplots
+---------
+
+.. code:: ipython3
+
+    not_include = ['elapsed_sec']
+    sns.pairplot(df.loc[:, filter(lambda n: n not in not_include, df.columns)],
+                    diag_kind="kde", markers="+",
+                    plot_kws=dict(s=50, edgecolor="b", linewidth=1),
+                    diag_kws=dict(shade=True))
+    plt.show()
+
+
+
+.. image:: output_8_0.png
+
+
+.. code:: ipython3
+
+    corr = df.loc[:, filter(lambda n: n not in not_include, df.columns)].corr()
+    sns.heatmap(corr, xticklabels=corr.columns, yticklabels=corr.columns, cmap=sns.diverging_palette(220, 10, as_cmap=True))
+    plt.show()
+
+
+
+.. image:: output_9_0.png
+
+
+Best objective
+--------------
+
+.. code:: ipython3
+
+    i_min = df.objective.idxmin()
+    df.iloc[i_min]
+
+
+
+
+.. parsed-literal::
+
+    e0              -9.000000
+    e1             -10.000000
+    e2               9.000000
+    e3               5.000000
+    e4               8.000000
+    e5               8.000000
+    e6             -10.000000
+    e7              10.000000
+    e8              -9.000000
+    e9              -7.000000
+    objective     -745.000000
+    elapsed_sec    820.493988
+    Name: 86, dtype: float64
+
+
+
+.. code:: ipython3
+
+    dict(df.iloc[i_min])
+
+
+
+
+.. parsed-literal::
+
+    {'e0': -9.0,
+     'e1': -10.0,
+     'e2': 9.0,
+     'e3': 5.0,
+     'e4': 8.0,
+     'e5': 8.0,
+     'e6': -10.0,
+     'e7': 10.0,
+     'e8': -9.0,
+     'e9': -7.0,
+     'objective': -745.0,
+     'elapsed_sec': 820.4939877986908}
+
+

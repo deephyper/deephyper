@@ -5,21 +5,34 @@ The Analytics command line is a set of tools which has been created to help you 
 
 .. highlight:: console
 
-::
+Let's look at the help menu of ``deephyper-analytics``::
 
-    [BalsamDB: testdb] (dh-opt) dhuser $ deephyper-analytics --help
-    usage: deephyper-analytics [-h] {parse,json} ...
+    deephyper-analytics --help
+
+The following output is expected::
+
+    Module: 'balsam' module was found and connected to a databse.
+    usage: deephyper-analytics [-h] {parse,json,single,multi,post,hps} ...
 
     Run some analytics for deephyper.
 
     positional arguments:
-    {parse,json}  Kind of analytics.
-        parse       Tool to parse "deephyper.log" and produce a JSON file.
-        json        Tool to analyse a JSON file produced by the "parse" tool.
+    {parse,json,single,multi,post,hps}
+                            Kind of analytics.
+        parse               Tool to parse "deephyper.log" and produce a JSON file.
+        json                Tool to analyse a JSON file produced by the "parse"
+                            tool.
+        single              Tool to generate analytics on a single NAS experiment
+                            (jupyter notebook).
+        multi               Tool to generate analytics from multiple NAS
+                            experiment (jupyter notebook).
+        post                Tool to generate analytics from a post-training
+                            experiment (jupyter notebook).
+        hps                 Tool to generate analytics on a single HPS experiment
+                            (jupyter notebook).
 
-    optional arguments:
-    -h, --help    show this help message and exit
 
+.. automodule:: deephyper.core.plot.hps
 
 Parsing logs
 ============
@@ -71,8 +84,6 @@ Transformations from JSON file
     {best}      Kind of analytics.
         best      Select the best n architectures and save them into a JSON file.
 
-    optional arguments:
-    -h, --help  show this help message and exit
 
 Single study
 ============
