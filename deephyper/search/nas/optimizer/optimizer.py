@@ -29,7 +29,7 @@ class Optimizer:
         self.starting_points = []  # ! EMPTY for now TODO
 
         # Building search space for SkOptimizer
-        skopt_space = [(0, vnode.num_ops)
+        skopt_space = [(0, vnode.num_ops-1)
                        for vnode in structure.variable_nodes]
 
         self._optimizer = SkOptimizer(
