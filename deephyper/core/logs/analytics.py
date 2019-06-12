@@ -1,12 +1,11 @@
+from deephyper.core.plot import single, multi, post_train, hps
+from deephyper.core.logs import parsing, json
 import argparse
 import sys
 import os
 # ! Check if a balsam db is connected or not
 if os.environ.get("BALSAM_DB_PATH") is None:
     os.environ["BALSAM_SPHINX_DOC_BUILD_ONLY"] = "TRUE"
-
-from deephyper.core.logs import parsing, json
-from deephyper.core.plot import single, multi, post_train
 
 
 def create_parser():
@@ -35,6 +34,10 @@ def create_parser():
 
     # plots post-training
     name, func = post_train.add_subparser(subparsers)
+    mapping[name] = func
+
+    # plots post-training
+    name, func = hps.add_subparser(subparsers)
     mapping[name] = func
 
     return parser, mapping
