@@ -26,8 +26,11 @@ def hps_analytics(path_to_data_file, nb_name='dh-analytics-hps'):
     editor = NbEdit(os.path.join(HERE, 'stub/hps_analytics.ipynb'),
                     path_to_save=f"{nb_name}.ipynb")
 
-    venv_name = os.environ.get('VIRTUAL_ENV').split('/')[-1]
-    editor.setkernel(venv_name)
+    try:
+        venv_name = os.environ.get('VIRTUAL_ENV').split('/')[-1]
+        editor.setkernel(venv_name)
+    except Exception:
+        pass
 
     editor.edit(0, "{{path_to_data_file}}", path_to_data_file)
 
