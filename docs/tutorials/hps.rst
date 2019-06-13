@@ -1,7 +1,7 @@
 .. _create-new-hps-problem:
 
-How to Create/Run a new HPS Problem?
-************************************
+Creating a new hyperparameter search problem
+********************************************
 
 .. automodule:: deephyper.benchmark.hps
 
@@ -14,8 +14,9 @@ that runs the model::
       deephyper/.../problem_folder/
             __init__.py
             problem.py
-            model_run.py
             load_data.py
+            model_run.py
+
 
 The problem contains the parameters you want to search over. They are defined
 by their name, their space and a default value for the starting point.
