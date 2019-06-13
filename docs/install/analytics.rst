@@ -1,5 +1,5 @@
-Analytics installation
-**********************
+Analytics
+*********
 
 Local
 =====

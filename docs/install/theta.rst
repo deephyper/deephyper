@@ -1,12 +1,17 @@
-Theta installation
-******************
+Theta
+******
+
+`Theta <https://www.alcf.anl.gov/theta>`_ is a 11.69 petaflops system based on the second-generation Intel Xeon Phi processor at Argonne Leadership Computing Facility (ALCF). 
+It serves as a stepping stone to the ALCF's next leadership-class supercomputer, Aurora. 
+Theta is a massively parallel, many-core system based on Intel processors and interconnect technology, a new memory architecture, 
+and a Lustre-based parallel file system, all integrated by Cray’s HPC software stack.
 
 .. _theta-user-installation:
 
 User installation
 =================
 
-When you are a user deephyper can be directly installed as a module on Theta.
+DeepHyper is already installed in Theta and can be directly loaded as a module as follows.
 
 ::
 
@@ -15,7 +20,7 @@ When you are a user deephyper can be directly installed as a module on Theta.
 .. note::
     You might put
     ``module load deephyper`` in your ``~/.bashrc`` if you want to use
-    *deephyper* in all new session.
+    *DeepHyper* in all new session.
 
 Developer installation
 ======================

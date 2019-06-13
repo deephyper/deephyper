@@ -3,11 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-DeepHyper
-*********
-
-Scalable Asynchronous Neural Architecture and Hyperparameter Search for Deep Neural Networks
-============================================================================================
+DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neural Networks
+=======================================================================================================
 
 .. image:: _static/logo/medium.png
    :scale: 100%
@@ -17,20 +14,20 @@ Scalable Asynchronous Neural Architecture and Hyperparameter Search for Deep Neu
 
 .. automodule:: deephyper
 
+
 .. toctree::
     :maxdepth: 2
     :caption: Installation
 
     install/local
-    install/documentation
-    install/tests
-    install/analytics
-    install/cooley
     install/theta
+    install/cooley
+    install/analytics
+    install/documentation
 
 .. toctree::
    :maxdepth: 2
-   :caption: Run a search
+   :caption: Running search
 
    run/local
    run/theta
