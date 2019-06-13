@@ -116,7 +116,7 @@ class AMBNeuralArchitectureSearch(Search):
                 for batch in self.optimizer.ask(n_points=len(results)):
                     self.evaluator.add_eval_batch(batch)
             if chkpoint_counter >= CHECKPOINT_INTERVAL:
-                self.evaluator.dump_evals()
+                self.evaluator.dump_evals(saved_key='arch_seq')
                 chkpoint_counter = 0
 
         logger.info('Hyperopt driver finishing')
