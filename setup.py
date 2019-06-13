@@ -139,7 +139,7 @@ class UploadCommand(Command):
 
 
 class TestUploadCommand(Command):
-    """Support setup.py upload."""
+    """Support setup.py testupload."""
 
     description = 'Build and publish the package.'
     user_options = []
