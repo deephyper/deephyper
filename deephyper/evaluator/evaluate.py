@@ -227,20 +227,26 @@ class Evaluator:
         logger.debug(f"{num_evals} pending evals; {self.num_workers} workers")
         return max(self.num_workers - num_evals, 0)
 
-    def dump_evals(self):
+    def dump_evals(self, saved_key=None):
         if not self.finished_evals:
             return
 
-        with open('results.json', 'w') as fp:
-            json.dump(self.finished_evals, fp, indent=4,
-                      sort_keys=True, cls=Encoder)
+        if saved_key is None:
+            with open('results.json', 'w') as fp:
+                json.dump(self.finished_evals, fp, indent=4,
+                          sort_keys=True, cls=Encoder)
 
         resultsList = []
 
         for key, uid in self.key_uid_map.items():
             if uid not in self.finished_evals:
                 continue
-            result = self.decode(key)
+
+            if saved_key is None:
+                result = self.decode(key)
+            else:
+                result = {str(i): v for i, v in enumerate(
+                    self.decode(key)[saved_key])}
             result['objective'] = self.finished_evals[uid]
             result['elapsed_sec'] = self.elapsed_times[uid]
             resultsList.append(result)

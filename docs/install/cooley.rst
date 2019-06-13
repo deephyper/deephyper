@@ -59,7 +59,7 @@ Cooley
 
 
 .. WARNING::
-
+    The same ``.bashrc`` is used both on Theta and Cooley. Hence adding a ``module load`` instruction to the ``.bashrc`` will not work on Cooley. In order to solve this issue you can add a specific statement to your ``.bashrc`` file and create separate *bashrc* files for Theta and Cooley and use them as follows.
     ::
 
         # Theta Specific
