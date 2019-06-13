@@ -3,8 +3,12 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+*********
+DeepHyper
+*********
+
 DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neural Networks
-=======================================================================================================
+==========================================================================================
 
 .. image:: _static/logo/medium.png
    :scale: 100%
