@@ -12,19 +12,6 @@ that runs the model::
             model_run.py
             problem.py
 
-The ``Problem``defined in ``problem.py`` contains the parameters you want to search over. They are defined
-by their name, their space and a default value for the starting point.
-DeepHyper is using the `Skopt <https://scikit-optimize.github.io/optimizer/index.html>`_,
-hence it recognizes three types of parameters:
-
-- a (lower_bound, upper_bound) tuple (for Real or Integer dimensions),
-- a (lower_bound, upper_bound, "prior") tuple (for Real dimensions),
-- as a list of categories (for Categorical dimensions)
-.. note::
-    Many starting points can be defined with ``Problem.add_starting_point(**dims)``. All starting points will be evaluated before generating other evaluations. The starting
-    point help the user to bring actual knowledge of the current search space. For
-    instance if you know a good set of hyperparameter for your current models.
-
 For this tutorial we will work on a regression experiment. We will start by defining how to load data generated from a polynome function. Then we will set up a function to run our learning model as well as returning the objective we want to maximize (i.e. it will be :math:`R^2` for our regression). In a third part we will define our search space. Finally we will run our experiment and study its results. Let's start and create a new directory for our ``polynome2`` experiment:
 
 .. code-block:: console
@@ -147,36 +134,141 @@ Let's now modify our previous :ref:`polynome2-model_run_step_0`. The ``run`` fun
 Define your search space
 ========================
 
+The model is now accepting 3 tunnable parameters: ``units, activation, lr``. Let's define a search space for these parameters. Create a ``problem.py`` file:
+
+.. code-block:: console
+    :linenos:
+
+    touch problem.py
+
+The ``Problem``defined in ``problem.py`` contains the parameters you want to search over. They are defined by their name, their space. DeepHyper is using the `Skopt package <https://scikit-optimize.github.io/optimizer/index.html>`_, hence it recognizes three types of parameters:
+
+- a (lower_bound, upper_bound) tuple (for Real or Integer dimensions),
+- a (lower_bound, upper_bound, "prior") tuple (for Real dimensions),
+- as a list of categories (for Categorical dimensions)
+
+You can also add starting points to your problem if you already now good points in your search space. Just use the ``add_starting_point(...)`` method.
+
+.. note::
+    Many starting points can be defined with ``Problem.add_starting_point(**dims)``. All starting points will be evaluated before generating other evaluations. The starting
+    point help the user to bring actual knowledge of the current search space. For
+    instance if you know a good set of hyperparameter for your current models.
+
 .. literalinclude:: polynome2/problem_step_1.py
     :linenos:
     :caption: polynome2/problem_step_1.py
     :name: polynome2-problem-step-1
 
-.. code-block:: console
-    :caption: [Out]
-
-    Problem
-    {'num_units': (1, 100)}
-
-    Starting Point
-    {0: {'num_units': 10}}
+You can look at the representation of your problem:
 
 .. code-block:: console
     :caption: bash
 
-    python -m deephyper.search.hps.ambs --problem problem.py --run model_run_step_1.py
+    python problem.py
+
+The expected output is:
+
+.. code-block:: console
+    :caption: [Out]
+
+    Problem
+    { 'activation': [None, 'relu', 'sigmoid', 'tanh'],
+    'lr': (0.0001, 1.0),
+    'units': (1, 100)}
+
+    Starting Point
+    {0: {'activation': None, 'lr': 0.01, 'units': 10}}
+
+
+Run the search locally
+======================
+
+Everything is ready to run. Let's remember the structure of our experiment::
+
+      problem_folder/
+            load_data.py
+            model_run.py
+            problem.py
+
+All these pieces have now been tested one by one, locally and we are sure they are working. Let's try out an Asynchronous Model Based Search. On your local machine do:
+
+.. code-block:: console
+    :caption: bash
+
+    python -m deephyper.search.hps.ambs --problem problem.py --run model_run.py
+
+.. note::
+
+    In order to run DeepHyper locally and on other systems we are using :ref:`evaluators`. For local evaluations we use the :ref:`subprocess-evaluator`.
+
+.. WARNING::
+
+    When a path to python scripts is given to ``--problem, --run`` arguments you have to make sure that the problem script contains a ``Problem`` attribute and the run script contains a ``run`` attribute. An other way to use these arguments is to give a python import path such as ``mypackage.mymodule.myattribute``, where ``myattribute`` should be an ``HpProblem`` instance for the problem argument and it should be a Callable object with one parameter for the run argument. In order to do so ``mypackage`` should be installed in your current python environment. A package structure look like:
+
+    .. code-block:: console
+
+        myfolder/
+            setup.py
+            mypackage/
+                __init__.py
+                mymodule.py
+
+    Where ``setup.py`` contains the following:
+
+    .. code-block:: python3
+        :caption: setup.py
+
+        from setuptools import setup
+
+        setup(
+        name = 'mypackage',
+        packages = ['mypackage'],
+        install_requires=[],)
+
+    To install ``mypackage`` just do:
+
+    .. code-block:: console
+        :caption: bash
+
+        cd myfolder
+
+    Then:
+
+    .. code-block:: console
+        :caption: bash
+
+        python setup.py install
+
+Now the search is done. You should find the following files in your current folder:
+
+.. code-block:: console
+
+    deephyper.log
+    results.csv
+    results.json
+
+Let's use the ``deephyper-analytics` command line to see what are these results looking like:
 
 .. include:: polynome2/dh-analytics-hps.rst
+
+Run the search at ALCF
+======================
+
+Now let's run the search on an HPC system such as Theta or Cooley. First create a Balsam database:
 
 .. code-block:: console
     :caption: bash
 
     balsam init polydb
 
+Start and connect to the ``polydb`` database:
+
 .. code-block:: console
     :caption: bash
 
     source balsamactivate polydb
+
+Create a Balsam ``AMBS`` application:
 
 .. code-block:: console
     :caption: bash
@@ -231,10 +323,12 @@ Define your search space
 
     Confirm adding job to DB [y/n]: y
 
+Submit the search to the Cobalt scheduler:
+
 .. code-block:: console
     :caption: bash
 
-    balsam submit-launch -n 6 -q debug-flat-quad -t 60 -A datascience --job-mode serial --wf-filter step_2
+    balsam submit-launch -n 4 -q debug-cache-quad -t 60 -A datascience --job-mode serial --wf-filter step_2
 
 .. code-block:: console
     :caption: [Out]
@@ -252,3 +346,4 @@ Define your search space
         'wall_minutes': 60,
         'wf_filter': 'step_2'}
 
+Now the search is done. You will find results at ``polydb/data/step_2/step_2_575dba96``.

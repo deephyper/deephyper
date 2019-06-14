@@ -10,3 +10,6 @@ Problem.add_starting_point(
     units=10,
     activation=None,
     lr=0.01)
+
+if __name__ == '__main__':
+    print(Problem)
