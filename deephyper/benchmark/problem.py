@@ -38,7 +38,8 @@ class Problem:
 
 
 class HpProblem(Problem):
-    """Problem specification for Hyperparameter Optimization"""
+    """Problem specification for Hyperparameter Optimization
+    """
 
     def __init__(self):
         super().__init__()
@@ -52,6 +53,16 @@ class HpProblem(Problem):
 
     def add_dim(self, p_name, p_space):
         """Add a dimension to the search space.
+
+        >>> from deephyper.benchmark import HpProblem
+        >>> Problem = HpProblem()
+        >>> Problem.add_dim('nunits', (10, 20))
+        >>> Problem
+        Problem
+        {'nunits': (10, 20)}
+        <BLANKLINE>
+        Starting Point
+        {}
 
         Args:
             p_name (str): name of the parameter/dimension.
@@ -68,6 +79,17 @@ class HpProblem(Problem):
 
     def add_starting_point(self, **dims):
         """Add a new starting point to the problem.
+
+        >>> from deephyper.benchmark import HpProblem
+        >>> Problem = HpProblem()
+        >>> Problem.add_dim('nunits', (10, 20))
+        >>> Problem.add_starting_point(nunits=10)
+        >>> Problem
+        Problem
+        {'nunits': (10, 20)}
+        <BLANKLINE>
+        Starting Point
+        {0: {'nunits': 10}}
 
         Args:
             **dims:
