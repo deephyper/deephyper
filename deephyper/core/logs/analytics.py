@@ -1,5 +1,6 @@
-from deephyper.core.plot import hps, multi, post_train, single
+
 from deephyper.core.logs import json, parsing
+from deephyper.core.plot import hps, multi, post_train, single
 import argparse
 import os
 import sys
