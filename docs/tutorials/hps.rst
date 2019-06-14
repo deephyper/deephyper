@@ -273,6 +273,11 @@ And run the script:
 
     python model_run.py
 
+.. code-block:: console
+    :caption: [Out]
+
+    objective:  0.47821942329406736
+
 .. image:: polynome2/model_step_1_val_r2.png
 
 Run the search at ALCF
