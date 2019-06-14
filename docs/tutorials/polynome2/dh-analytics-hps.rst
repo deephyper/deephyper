@@ -25,29 +25,29 @@ Setup & Data loading
     from datetime import datetime
     from tqdm import tqdm
     from IPython.display import display, Markdown
-
-    width = 15
-    height = 10
-
+    
+    width = 21
+    height = 13
+    
     matplotlib.rcParams.update({
-        'font.size': 22,
-        'figure.figsize': (width, height),
-        'figure.facecolor': 'white',
-        'savefig.dpi': 72,
-        'figure.subplot.bottom': 0.125,
+        'font.size': 21,
+        'figure.figsize': (width, height), 
+        'figure.facecolor': 'white', 
+        'savefig.dpi': 72, 
+        'figure.subplot.bottom': 0.125, 
         'figure.edgecolor': 'white',
-        'xtick.labelsize': 20,
-        'ytick.labelsize': 20})
-
+        'xtick.labelsize': 21,
+        'ytick.labelsize': 21})
+    
     df = pd.read_csv(path_to_data_file)
-
+    
     display(Markdown(f'The search did _{df.count()[0]}_ **evaluations**.'))
-
+    
     df.head()
 
 
 
-The search did *15* **evaluations**.
+The search did *11* **evaluations**.
 
 
 
@@ -59,11 +59,11 @@ The search did *15* **evaluations**.
         .dataframe tbody tr th:only-of-type {
             vertical-align: middle;
         }
-
+    
         .dataframe tbody tr th {
             vertical-align: top;
         }
-
+    
         .dataframe thead th {
             text-align: right;
         }
@@ -72,7 +72,9 @@ The search did *15* **evaluations**.
       <thead>
         <tr style="text-align: right;">
           <th></th>
-          <th>num_units</th>
+          <th>activation</th>
+          <th>lr</th>
+          <th>units</th>
           <th>objective</th>
           <th>elapsed_sec</th>
         </tr>
@@ -80,33 +82,43 @@ The search did *15* **evaluations**.
       <tbody>
         <tr>
           <th>0</th>
+          <td>NaN</td>
+          <td>0.010000</td>
           <td>10</td>
-          <td>0.000225</td>
-          <td>8.074761</td>
+          <td>-21.173921</td>
+          <td>4.653887</td>
         </tr>
         <tr>
           <th>1</th>
-          <td>61</td>
-          <td>0.981812</td>
-          <td>85.334238</td>
+          <td>sigmoid</td>
+          <td>0.210479</td>
+          <td>78</td>
+          <td>-36.701882</td>
+          <td>7.543147</td>
         </tr>
         <tr>
           <th>2</th>
-          <td>43</td>
-          <td>0.961050</td>
-          <td>159.153082</td>
+          <td>sigmoid</td>
+          <td>0.849683</td>
+          <td>18</td>
+          <td>-6.476073</td>
+          <td>10.631713</td>
         </tr>
         <tr>
           <th>3</th>
-          <td>1</td>
-          <td>-2.439434</td>
-          <td>172.763155</td>
+          <td>tanh</td>
+          <td>0.951716</td>
+          <td>19</td>
+          <td>-2.160431</td>
+          <td>14.833839</td>
         </tr>
         <tr>
           <th>4</th>
-          <td>35</td>
-          <td>0.891610</td>
-          <td>241.104031</td>
+          <td>sigmoid</td>
+          <td>0.898754</td>
+          <td>74</td>
+          <td>-17.889413</td>
+          <td>17.690615</td>
         </tr>
       </tbody>
     </table>
@@ -131,11 +143,11 @@ Statistical summary
         .dataframe tbody tr th:only-of-type {
             vertical-align: middle;
         }
-
+    
         .dataframe tbody tr th {
             vertical-align: top;
         }
-
+    
         .dataframe thead th {
             text-align: right;
         }
@@ -144,7 +156,8 @@ Statistical summary
       <thead>
         <tr style="text-align: right;">
           <th></th>
-          <th>num_units</th>
+          <th>lr</th>
+          <th>units</th>
           <th>objective</th>
           <th>elapsed_sec</th>
         </tr>
@@ -152,51 +165,59 @@ Statistical summary
       <tbody>
         <tr>
           <th>count</th>
-          <td>15.00000</td>
-          <td>15.000000</td>
-          <td>15.000000</td>
+          <td>100.000000</td>
+          <td>100.000000</td>
+          <td>100.000000</td>
+          <td>100.000000</td>
         </tr>
         <tr>
           <th>mean</th>
-          <td>65.00000</td>
-          <td>0.682333</td>
-          <td>451.246124</td>
+          <td>0.898362</td>
+          <td>70.640000</td>
+          <td>-1.354364</td>
+          <td>157.664431</td>
         </tr>
         <tr>
           <th>std</th>
-          <td>31.59792</td>
-          <td>0.899678</td>
-          <td>293.341006</td>
+          <td>0.115579</td>
+          <td>27.161143</td>
+          <td>4.706961</td>
+          <td>91.122479</td>
         </tr>
         <tr>
           <th>min</th>
-          <td>1.00000</td>
-          <td>-2.439434</td>
-          <td>8.074761</td>
+          <td>0.010000</td>
+          <td>3.000000</td>
+          <td>-36.701882</td>
+          <td>4.653887</td>
         </tr>
         <tr>
           <th>25%</th>
-          <td>46.00000</td>
-          <td>0.968106</td>
-          <td>206.933593</td>
+          <td>0.903279</td>
+          <td>56.500000</td>
+          <td>-0.704031</td>
+          <td>79.181544</td>
         </tr>
         <tr>
           <th>50%</th>
-          <td>82.00000</td>
-          <td>0.984586</td>
-          <td>423.426936</td>
+          <td>0.909080</td>
+          <td>80.500000</td>
+          <td>-0.230069</td>
+          <td>155.298424</td>
         </tr>
         <tr>
           <th>75%</th>
-          <td>90.50000</td>
-          <td>0.985981</td>
-          <td>686.575820</td>
+          <td>0.920159</td>
+          <td>90.250000</td>
+          <td>-0.059919</td>
+          <td>236.167535</td>
         </tr>
         <tr>
           <th>max</th>
-          <td>95.00000</td>
-          <td>0.986564</td>
-          <td>924.619735</td>
+          <td>0.995871</td>
+          <td>100.000000</td>
+          <td>0.731502</td>
+          <td>318.685226</td>
         </tr>
       </tbody>
     </table>
@@ -218,7 +239,7 @@ Search trajectory
 
 
 
-.. image:: polynome2/output_6_0.png
+.. image:: output_6_0.png
 
 
 Pairplots
@@ -234,14 +255,8 @@ Pairplots
     plt.show()
 
 
-.. parsed-literal::
 
-    /anaconda3/lib/python3.7/site-packages/scipy/stats/stats.py:1713: FutureWarning: Using a non-tuple sequence for multidimensional indexing is deprecated; use `arr[tuple(seq)]` instead of `arr[seq]`. In the future this will be interpreted as an array index, `arr[np.array(seq)]`, which will result either in an error or a different result.
-      return np.add.reduce(sorted[indexer] * weights, axis=axis) / sumval
-
-
-
-.. image:: polynome2/output_8_1.png
+.. image:: output_8_0.png
 
 
 .. code:: ipython3
@@ -252,7 +267,7 @@ Pairplots
 
 
 
-.. image:: polynome2/output_9_0.png
+.. image:: output_9_0.png
 
 
 Best objective
@@ -268,24 +283,28 @@ Best objective
 
 .. parsed-literal::
 
-    num_units       90.000000
-    objective        0.986564
-    elapsed_sec    924.619735
-    Name: 14, dtype: float64
+    activation         relu
+    lr             0.900066
+    units               100
+    objective      0.731502
+    elapsed_sec     314.882
+    Name: 98, dtype: object
 
 
 
 .. code:: ipython3
 
-    dict(df.iloc[i_min])
+    dict(df.iloc[i_max])
 
 
 
 
 .. parsed-literal::
 
-    {'num_units': 1.0,
-     'objective': -2.4394338798522948,
-     'elapsed_sec': 172.7631549835205}
+    {'activation': 'relu',
+     'lr': 0.9000663121003312,
+     'units': 100,
+     'objective': 0.7315017685890198,
+     'elapsed_sec': 314.88191103935236}
 
 

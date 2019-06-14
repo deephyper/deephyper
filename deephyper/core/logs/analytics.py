@@ -1,13 +1,10 @@
 
-from deephyper.core.logs import json, parsing
-from deephyper.core.plot import hps, multi, post_train, single
 import argparse
 import os
 import sys
 
-# ! Check if a balsam db is connected or not
-if os.environ.get("BALSAM_DB_PATH") is None:
-    os.environ["BALSAM_SPHINX_DOC_BUILD_ONLY"] = "TRUE"
+from deephyper.core.logs import json, parsing
+from deephyper.core.plot import hps, multi, post_train, single
 
 
 def create_parser():

@@ -6,6 +6,7 @@ Gets to 98.40% test accuracy after 20 epochs
 
 from __future__ import print_function
 
+from load_data import load_data
 from keras.optimizers import RMSprop
 from keras.models import Sequential
 from keras.layers import Dense, Dropout
@@ -16,7 +17,6 @@ import os
 import sys
 here = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, here)
-from load_data import load_data
 
 
 def run(param_dict):
@@ -65,7 +65,7 @@ def run(param_dict):
     score = model.evaluate(x_test, y_test, verbose=0)
     print('Test loss:', score[0])
     print('Test accuracy:', score[1])
-    return -score[1]
+    return score[1]
 
 
 if __name__ == "__main__":

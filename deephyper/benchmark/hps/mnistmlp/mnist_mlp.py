@@ -61,7 +61,7 @@ def run(param_dict):
     score = model.evaluate(x_test, y_test, verbose=0)
     print('Test loss:', score[0])
     print('Test accuracy:', score[1])
-    return -score[1]
+    return score[1]
 
 
 if __name__ == "__main__":

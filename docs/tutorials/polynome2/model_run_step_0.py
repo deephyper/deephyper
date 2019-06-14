@@ -18,7 +18,7 @@ def r2(y_pred, y_true):
     return (1 - SS_res/(SS_tot + K.epsilon()))
 
 
-def run(point):
+def run():
     (x_train, y_train), (x_test, y_test) = load_data()
 
     model = Sequential()
@@ -46,5 +46,5 @@ def run(point):
 
 
 if __name__ == '__main__':
-    res = run({})
-    print('res: ', res)
+    objective = run()
+    print('objective: ', objective)

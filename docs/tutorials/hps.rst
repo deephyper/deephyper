@@ -3,59 +3,67 @@
 Create a new HPS Problem
 ************************
 
-Create the Problem & the model to run
-=====================================
 
-
-
-
-For HPS a benchmark is defined by a problem definition and a function
+For HPS a new experiment is defined by a problem definition and a function
 that runs the model::
 
-      deephyper/.../problem_folder/
-            __init__.py
+      problem_folder/
             problem.py
             model_run.py
             load_data.py
 
-The problem contains the parameters you want to search over. They are defined
+The ``Problem``defined in ``problem.py`` contains the parameters you want to search over. They are defined
 by their name, their space and a default value for the starting point.
-Deephyper is using the `Skopt <https://scikit-optimize.github.io/optimizer/index.html>`_,
+DeepHyper is using the `Skopt <https://scikit-optimize.github.io/optimizer/index.html>`_,
 hence it recognizes three types of parameters:
 
 - a (lower_bound, upper_bound) tuple (for Real or Integer dimensions),
 - a (lower_bound, upper_bound, "prior") tuple (for Real dimensions),
 - as a list of categories (for Categorical dimensions)
-
-For example if we want to create an hyperparameter search problem for Mnist
-with a given starting point:
-
 .. note::
     Many starting points can be defined with ``Problem.add_starting_point(**dims)``. All starting points will be evaluated before generating other evaluations. The starting
     point help the user to bring actual knowledge of the current search space. For
     instance if you know a good set of hyperparameter for your current models.
 
-Create a new directory::
+For this tutorial we will work on a regression experiment. We will start by defining how to load data generated from a polynome function. Then we will set up a function to run our learning model as well as returning the objective we want to maximize (i.e. it will be :math:`R^2` for our regression). In a third part we will define our search space. Finally we will run our experiment and study its results. Let's start and create a new directory for our ``polynome2`` experiment:
+
+.. code-block:: console
+    :caption: bash
 
     mkdir polynome2
 
-Go to this directory::
+Then go to this directory:
+
+.. code-block:: console
+    :caption: bash
 
     cd polynome2
 
-We will start by creating a function to generate our data. Create a ``load_data.py`` file::
+Load your data
+==============
+
+Now we can define a function to generate our data. It is a good practice to do it in a specific file, hence we can create a ``load_data.py`` file:
+
+.. code-block:: console
+    :caption: bash
 
     touch load_data.py
+
+We are generating data from a function :math:`f` where :math:`X \in [a, b]^n`  such as :math:`f(X) = -\sum_{i=0}^{n-1} {x_i ^2}`:
 
 .. literalinclude:: polynome2/load_data.py
     :linenos:
     :caption: polynome2/load_data.py
     :name: polynome2-load_data
 
+You are encouraged to test localy your ``load_data``. For example you can run it and look at the shape of your data:
+
 .. code-block:: console
     :caption: bash
 
     python load_data.py
+
+The expected output is:
 
 .. code-block:: python
     :caption: [Out]
@@ -65,13 +73,19 @@ We will start by creating a function to generate our data. Create a ``load_data.
     test_X shape: (2000, 10)
     test_y shape: (2000, 1)
 
-Then we will define how to run our machine learning model. Create a ``model_run_step_0.py`` file::
+Run our model
+=============
 
-    touch model_run_step_0.py
+Now we can define how to run our machine learning model. In order to do so create a ``model_run.py`` file:
+
+.. code-block:: console
+    :caption: bash
+
+    touch model_run.py
 
 .. literalinclude:: polynome2/model_run_step_0.py
     :linenos:
-    :caption: polynome2/model_run_step_0.py
+    :caption: polynome2/model_run.py
     :name: polynome2-model_run_step_0
 
 
