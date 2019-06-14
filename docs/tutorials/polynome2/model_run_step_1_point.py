@@ -1,3 +1,4 @@
+
 import numpy as np
 import keras.backend as K
 import keras
@@ -22,18 +23,20 @@ def r2(y_pred, y_true):
 HISTORY = None
 
 
-def run():
+def run(point):
     global HISTORY
     (x_train, y_train), (x_test, y_test) = load_data()
 
     model = Sequential()
-    model.add(Dense(10, activation='relu',
-                    input_shape=tuple(np.shape(x_train)[1:])))
+    model.add(Dense(
+        point['units'],
+        activation=point['activation'],
+        input_shape=tuple(np.shape(x_train)[1:])))
     model.add(Dense(1))
 
     model.summary()
 
-    model.compile(loss='mse', optimizer=RMSprop(), metrics=[r2])
+    model.compile(loss='mse', optimizer=RMSprop(lr=point['lr']), metrics=[r2])
 
     history = model.fit(x_train, y_train,
                         batch_size=64,
@@ -53,7 +56,12 @@ def run():
 
 
 if __name__ == '__main__':
-    objective = run()
+    point = {
+        'activation': 'relu',
+        'lr': 0.8820413612862609,
+        'units': 21
+    }
+    objective = run(point)
     print('objective: ', objective)
     import matplotlib.pyplot as plt
     plt.plot(HISTORY['val_r2'])
