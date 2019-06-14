@@ -247,7 +247,7 @@ Now the search is done. You should find the following files in your current fold
     results.csv
     results.json
 
-Let's use the ``deephyper-analytics` command line to see what are these results looking like:
+Let's use the ``deephyper-analytics`` command line to see what are these results looking like:
 
 .. include:: polynome2/dh-analytics-hps.rst
 
