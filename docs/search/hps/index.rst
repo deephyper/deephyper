@@ -17,13 +17,13 @@ An hyperparameter search use a problem definition which contain the characterist
 
     >>> from deephyper.benchmark import HpProblem
     >>> Problem = HpProblem()
-    >>> Problem.add_dim('nunits', (10, 20), 10)
+    >>> Problem.add_dim('nunits', (10, 20))
     >>> print(Problem)
     Problem
     {'nunits': (10, 20)}
-
+    <BLANKLINE>
     Starting Point
-    {'nunits': 10}
+    {}
 
 So the function which runs the model will receive a dictionary like ``{'nunits': 10}`` but the value of each key will change depending on the choices of the search. Let's see how to define a simple run function for a multi-layer Perceptron model training on mnist data.
 

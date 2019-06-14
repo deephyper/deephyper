@@ -38,9 +38,9 @@ Example:
     2
     >>> vnode.set_op(0)
     >>> vnode.op.units
-    100
+    10
     >>> str(vnode)
-    'VNode1(1)(Variable[Dense_100_relu])'
+    'VNode1(1)(Variable[Dense_10_relu])'
 
 
 
