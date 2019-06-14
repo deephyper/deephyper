@@ -8,9 +8,9 @@ For HPS a new experiment is defined by a problem definition and a function
 that runs the model::
 
       problem_folder/
-            problem.py
-            model_run.py
             load_data.py
+            model_run.py
+            problem.py
 
 The ``Problem``defined in ``problem.py`` contains the parameters you want to search over. They are defined
 by their name, their space and a default value for the starting point.
@@ -56,7 +56,7 @@ We are generating data from a function :math:`f` where :math:`X \in [a, b]^n`  s
     :caption: polynome2/load_data.py
     :name: polynome2-load_data
 
-You are encouraged to test localy your ``load_data``. For example you can run it and look at the shape of your data:
+You are encouraged to test localy your ``load_data`` function. For example you can run it and take a look at the shape of your data:
 
 .. code-block:: console
     :caption: bash
@@ -73,8 +73,8 @@ The expected output is:
     test_X shape: (2000, 10)
     test_y shape: (2000, 1)
 
-Run our model
-=============
+Define your model
+=================
 
 Now we can define how to run our machine learning model. In order to do so create a ``model_run.py`` file:
 
@@ -83,11 +83,41 @@ Now we can define how to run our machine learning model. In order to do so creat
 
     touch model_run.py
 
+Let's now write a first draft of our model without any hyperparameter tunning:
+
 .. literalinclude:: polynome2/model_run_step_0.py
     :linenos:
-    :caption: polynome2/model_run.py
+    :caption: Step 0: polynome2/model_run.py
     :name: polynome2-model_run_step_0
 
+.. note::
+
+    Adding an ``EarlyStopping(...)`` callback is a good idea to stop the training of your model as soon as it is stopping to improve.
+
+    .. code-block:: python3
+
+        ...
+        callbacks=[EarlyStopping(
+                            monitor='val_r2',
+                            mode='max',
+                            verbose=1,
+                            patience=10
+                        )]
+        ...
+
+Let's train this model and look at its performance:
+
+.. code-block:: console
+    :caption: bash
+
+    python model_run.py
+
+.. code-block:: console
+    :caption: [Out]
+
+    objective: -0.00040728187561035154
+
+.. image:: polynome2/model_step_0_val_r2.png
 
 .. WARNING::
     When designing a new optimization experiment, keep in mind ``model_run.py``
@@ -107,10 +137,15 @@ Now we can define how to run our machine learning model. In order to do so creat
         here = os.path.dirname(os.path.abspath(__file__))
         sys.path.insert(0, here)
 
+Let's now modify our previous :ref:`polynome2-model_run_step_0`. The ``run`` function will be used with DeepHyper and a ``point`` parameter will be passed to this function. The ``point`` is a ``dict`` where each key is a dimension of our search space. For our model we want to tune the number of units of our Dense layer (i.e. ``point['units']``), the activation function of our Dense layer (i.e. ``point['activation']) and the learning of our optimizer (i.e. ``point['lr']``). Now look at :ref:`polynome2-model_run_step_1` and find this modifications:
+
 .. literalinclude:: polynome2/model_run_step_1.py
     :linenos:
-    :caption: polynome2/model_run_step_1.py
+    :caption: Step 1: polynome2/model_run.py
     :name: polynome2-model_run_step_1
+
+Define your search space
+========================
 
 .. literalinclude:: polynome2/problem_step_1.py
     :linenos:
@@ -132,39 +167,6 @@ Now we can define how to run our machine learning model. In order to do so creat
     python -m deephyper.search.hps.ambs --problem problem.py --run model_run_step_1.py
 
 .. include:: polynome2/dh-analytics-hps.rst
-
-.. literalinclude:: polynome2/model_run_step_2.py
-    :linenos:
-    :caption: polynome2/model_run_step_2.py
-    :name: polynome2-model_run_step_2
-
-.. literalinclude:: polynome2/problem_step_2.py
-    :linenos:
-    :caption: polynome2/problem_step_2.py
-    :name: polynome2-problem-step-2
-
-.. code-block:: console
-    :caption: [Out]
-
-    Problem
-    { 'activation_l1': [None, 'relu', 'sigmoid', 'tanh'],
-    'activation_l2': [None, 'relu', 'sigmoid', 'tanh'],
-    'batch_size': (32, 512),
-    'dropout_l1': (0.0, 1.0),
-    'dropout_l2': (0.0, 1.0),
-    'lr': (0.0001, 1.0),
-    'units_l1': (1, 100),
-    'units_l2': (1, 100)}
-
-    Starting Point
-    {0: {'activation_l1': None,
-        'activation_l2': None,
-        'batch_size': 64,
-        'dropout_l1': 0.1,
-        'dropout_l2': 0.1,
-        'lr': 0.01,
-        'units_l1': 10,
-        'units_l2': 10}}
 
 .. code-block:: console
     :caption: bash

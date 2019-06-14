@@ -25,29 +25,29 @@ Setup & Data loading
     from datetime import datetime
     from tqdm import tqdm
     from IPython.display import display, Markdown
-    
+
     width = 21
     height = 13
-    
+
     matplotlib.rcParams.update({
         'font.size': 21,
-        'figure.figsize': (width, height), 
-        'figure.facecolor': 'white', 
-        'savefig.dpi': 72, 
-        'figure.subplot.bottom': 0.125, 
+        'figure.figsize': (width, height),
+        'figure.facecolor': 'white',
+        'savefig.dpi': 72,
+        'figure.subplot.bottom': 0.125,
         'figure.edgecolor': 'white',
         'xtick.labelsize': 21,
         'ytick.labelsize': 21})
-    
+
     df = pd.read_csv(path_to_data_file)
-    
+
     display(Markdown(f'The search did _{df.count()[0]}_ **evaluations**.'))
-    
+
     df.head()
 
 
 
-The search did *11* **evaluations**.
+The search did *88* **evaluations**.
 
 
 
@@ -59,11 +59,11 @@ The search did *11* **evaluations**.
         .dataframe tbody tr th:only-of-type {
             vertical-align: middle;
         }
-    
+
         .dataframe tbody tr th {
             vertical-align: top;
         }
-    
+
         .dataframe thead th {
             text-align: right;
         }
@@ -85,40 +85,40 @@ The search did *11* **evaluations**.
           <td>NaN</td>
           <td>0.010000</td>
           <td>10</td>
-          <td>-21.173921</td>
-          <td>4.653887</td>
+          <td>-67.720345</td>
+          <td>4.683628</td>
         </tr>
         <tr>
           <th>1</th>
           <td>sigmoid</td>
           <td>0.210479</td>
           <td>78</td>
-          <td>-36.701882</td>
-          <td>7.543147</td>
+          <td>-47.973845</td>
+          <td>7.850657</td>
         </tr>
         <tr>
           <th>2</th>
           <td>sigmoid</td>
           <td>0.849683</td>
           <td>18</td>
-          <td>-6.476073</td>
-          <td>10.631713</td>
+          <td>-7.910984</td>
+          <td>11.379633</td>
         </tr>
         <tr>
           <th>3</th>
           <td>tanh</td>
           <td>0.951716</td>
           <td>19</td>
-          <td>-2.160431</td>
-          <td>14.833839</td>
+          <td>-2.596602</td>
+          <td>16.031375</td>
         </tr>
         <tr>
           <th>4</th>
           <td>sigmoid</td>
           <td>0.898754</td>
           <td>74</td>
-          <td>-17.889413</td>
-          <td>17.690615</td>
+          <td>-21.409714</td>
+          <td>19.312386</td>
         </tr>
       </tbody>
     </table>
@@ -143,11 +143,11 @@ Statistical summary
         .dataframe tbody tr th:only-of-type {
             vertical-align: middle;
         }
-    
+
         .dataframe tbody tr th {
             vertical-align: top;
         }
-    
+
         .dataframe thead th {
             text-align: right;
         }
@@ -166,58 +166,58 @@ Statistical summary
         <tr>
           <th>count</th>
           <td>100.000000</td>
-          <td>100.000000</td>
+          <td>100.00000</td>
           <td>100.000000</td>
           <td>100.000000</td>
         </tr>
         <tr>
           <th>mean</th>
-          <td>0.898362</td>
-          <td>70.640000</td>
-          <td>-1.354364</td>
-          <td>157.664431</td>
+          <td>0.861301</td>
+          <td>13.12000</td>
+          <td>-3.468272</td>
+          <td>188.652953</td>
         </tr>
         <tr>
           <th>std</th>
-          <td>0.115579</td>
-          <td>27.161143</td>
-          <td>4.706961</td>
-          <td>91.122479</td>
+          <td>0.112005</td>
+          <td>10.78746</td>
+          <td>11.586969</td>
+          <td>116.032871</td>
         </tr>
         <tr>
           <th>min</th>
           <td>0.010000</td>
-          <td>3.000000</td>
-          <td>-36.701882</td>
-          <td>4.653887</td>
+          <td>1.00000</td>
+          <td>-74.376173</td>
+          <td>4.683628</td>
         </tr>
         <tr>
           <th>25%</th>
-          <td>0.903279</td>
-          <td>56.500000</td>
-          <td>-0.704031</td>
-          <td>79.181544</td>
+          <td>0.861376</td>
+          <td>7.75000</td>
+          <td>-2.011465</td>
+          <td>87.576996</td>
         </tr>
         <tr>
           <th>50%</th>
-          <td>0.909080</td>
-          <td>80.500000</td>
-          <td>-0.230069</td>
-          <td>155.298424</td>
+          <td>0.871134</td>
+          <td>11.50000</td>
+          <td>-0.092576</td>
+          <td>178.604464</td>
         </tr>
         <tr>
           <th>75%</th>
-          <td>0.920159</td>
-          <td>90.250000</td>
-          <td>-0.059919</td>
-          <td>236.167535</td>
+          <td>0.876806</td>
+          <td>15.00000</td>
+          <td>0.494384</td>
+          <td>288.718287</td>
         </tr>
         <tr>
           <th>max</th>
-          <td>0.995871</td>
-          <td>100.000000</td>
-          <td>0.731502</td>
-          <td>318.685226</td>
+          <td>0.997793</td>
+          <td>78.00000</td>
+          <td>0.746590</td>
+          <td>399.764441</td>
         </tr>
       </tbody>
     </table>
@@ -239,7 +239,7 @@ Search trajectory
 
 
 
-.. image:: output_6_0.png
+.. image:: polynome2/output_6_0.png
 
 
 Pairplots
@@ -256,7 +256,7 @@ Pairplots
 
 
 
-.. image:: output_8_0.png
+.. image:: polynome2/output_8_0.png
 
 
 .. code:: ipython3
@@ -267,7 +267,7 @@ Pairplots
 
 
 
-.. image:: output_9_0.png
+.. image:: polynome2/output_9_0.png
 
 
 Best objective
@@ -284,10 +284,10 @@ Best objective
 .. parsed-literal::
 
     activation         relu
-    lr             0.900066
-    units               100
-    objective      0.731502
-    elapsed_sec     314.882
+    lr             0.882041
+    units                21
+    objective       0.74659
+    elapsed_sec     394.818
     Name: 98, dtype: object
 
 
@@ -302,9 +302,9 @@ Best objective
 .. parsed-literal::
 
     {'activation': 'relu',
-     'lr': 0.9000663121003312,
-     'units': 100,
-     'objective': 0.7315017685890198,
-     'elapsed_sec': 314.88191103935236}
+     'lr': 0.8820413612862609,
+     'units': 21,
+     'objective': 0.7465898108482361,
+     'elapsed_sec': 394.81818103790283}
 
 
