@@ -7,7 +7,7 @@ def load_data(dim=10, a=-50, b=50, prop=0.80, size=10000):
     """Generate a random distribution of data for polynome_2 function: SUM(X**2) where "**" is an element wise operator in the continuous range [a, b].
 
     Args:
-        dim (int): size of input vector foro the polynome_2 function.
+        dim (int): size of input vector for the polynome_2 function.
         a (int): minimum bound for all X dimensions.
         b (int): maximum bound for all X dimensions.
         prop (float): a value between [0., 1.] indicating how to split data between training set and testing set. `prop` corresponds to the ratio of data in training set. `1.-prop` corresponds to the amount of data in testing set.
