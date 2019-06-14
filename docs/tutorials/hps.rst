@@ -1,49 +1,51 @@
 .. _create-new-hps-problem:
 
-Create a new HPS Problem
-************************
+Create a new hyperparameter search problem
+******************************************
 
 
-For HPS a new experiment is defined by a problem definition and a function
-that runs the model::
+A  hyperparaemter search (HPS) problem can be defined using three files with a HPS problem directory::
 
-      problem_folder/
+      hps_problem_directory/
             load_data.py
             model_run.py
             problem.py
 
-For this tutorial we will work on a regression experiment. We will start by defining how to load data generated from a polynome function. Then we will set up a function to run our learning model as well as returning the objective we want to maximize (i.e. it will be :math:`R^2` for our regression). In a third part we will define our search space. Finally we will run our experiment and study its results. Let's start and create a new directory for our ``polynome2`` experiment:
+
+We will illustrate the HPS problem definition using a regression example. We will use polynome function to generate training and test data 
+and run a HPS to tune the hyperparameters of a simple neural network. 
+
+
+
+
+Create a problem directory
+========================
+First, we will create a hps_problem_directory ``polynome2``.
 
 .. code-block:: console
     :caption: bash
 
     mkdir polynome2
-
-Then go to this directory:
-
-.. code-block:: console
-    :caption: bash
-
     cd polynome2
 
-Load your data
-==============
+Create load_data.py
+===================
 
-Now we can define a function to generate our data. It is a good practice to do it in a specific file, hence we can create a ``load_data.py`` file:
+Second, we will create ``load_data.py`` file that loads and returns the training and testing data.
 
 .. code-block:: console
     :caption: bash
 
     touch load_data.py
 
-We are generating data from a function :math:`f` where :math:`X \in [a, b]^n`  such as :math:`f(X) = -\sum_{i=0}^{n-1} {x_i ^2}`:
+We will generate data from a function :math:`f` where :math:`X \in [a, b]^n`  such as :math:`f(X) = -\sum_{i=0}^{n-1} {x_i ^2}`:
 
 .. literalinclude:: polynome2/load_data.py
     :linenos:
     :caption: polynome2/load_data.py
     :name: polynome2-load_data
 
-You are encouraged to test localy your ``load_data`` function. For example you can run it and take a look at the shape of your data:
+Test the ``load_data`` function:
 
 .. code-block:: console
     :caption: bash
@@ -60,17 +62,18 @@ The expected output is:
     test_X shape: (2000, 10)
     test_y shape: (2000, 1)
 
-Define your model
-=================
+Create model_run.py
+===================
 
-Now we can define how to run our machine learning model. In order to do so create a ``model_run.py`` file:
+Third, we will create ``model_run.py`` that contains the code for the neural network. 
+We will use Keras for the neural network definition. 
 
 .. code-block:: console
     :caption: bash
 
     touch model_run.py
 
-Let's now write a first draft of our model without any hyperparameter tunning:
+We will create a neural network model and run it as a standalone to make sure the model runs without any error:
 
 .. literalinclude:: polynome2/model_run_step_0.py
     :linenos:
@@ -92,7 +95,7 @@ Let's now write a first draft of our model without any hyperparameter tunning:
                         )]
         ...
 
-Let's train this model and look at its performance:
+Train this model and look at it accuracy:
 
 .. code-block:: console
     :caption: bash
@@ -107,10 +110,11 @@ Let's train this model and look at its performance:
 .. image:: polynome2/model_step_0_val_r2.png
 
 .. WARNING::
-    When designing a new optimization experiment, keep in mind ``model_run.py``
-    must be runnable from an arbitrary working directory. This means that Python
+    When defining a new HPS problem, ``model_run.py``
+    must be runnable from any arbitrary working directory. This means that Python
     modules simply located in the same directory as the ``model_run.py`` will not be
-    part of the default Python import path, and importing them will cause an ``ImportError``! For example in :ref:`polynome2-model_run_step_0` we are doing ``import load_data``.
+    part of the default Python import path, and importing them will cause an ``ImportError``! 
+    For example in :ref:`polynome2-model_run_step_0` we are doing ``import load_data``.
 
     To ensure that modules located alongside the ``model_run.py`` script are
     always importable, a quick workaround is to explicitly add the problem
@@ -124,7 +128,10 @@ Let's train this model and look at its performance:
         here = os.path.dirname(os.path.abspath(__file__))
         sys.path.insert(0, here)
 
-Let's now modify our previous :ref:`polynome2-model_run_step_0`. The ``run`` function will be used with DeepHyper and a ``point`` parameter will be passed to this function. The ``point`` is a ``dict`` where each key is a dimension of our search space. For our model we want to tune the number of units of our Dense layer (i.e. ``point['units']``), the activation function of our Dense layer (i.e. ``point['activation']) and the learning of our optimizer (i.e. ``point['lr']``). Now look at :ref:`polynome2-model_run_step_1` and find this modifications:
+Let's now modify our previous :ref:`polynome2-model_run_step_0`. The ``run`` function will be used with DeepHyper and a ``point`` parameter will be passed to this function. 
+The ``point`` is a ``dict`` where each key is a dimension of our search space. For our model we want to tune the number of units of our Dense layer (i.e. ``point['units']``), 
+the activation function of our Dense layer (i.e. ``point['activation']) and the learning of our optimizer (i.e. ``point['lr']``). Now look at :ref:`polynome2-model_run_step_1` and 
+find this modifications:
 
 .. literalinclude:: polynome2/model_run_step_1.py
     :linenos:
