@@ -1,6 +1,7 @@
 
 Deephyper analytics - hyperparameter search study
--------------------------------------------------
+=================================================
+
 
 **path to data file**: /Users/romainegele/polynome2/results.csv
 

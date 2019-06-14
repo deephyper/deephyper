@@ -163,7 +163,7 @@ You can also add starting points to your problem if you already now good points 
 
 .. literalinclude:: polynome2/problem_step_1.py
     :linenos:
-    :caption: polynome2/problem_step_1.py
+    :caption: polynome2/problem.py
     :name: polynome2-problem-step-1
 
 You can look at the representation of your problem:
@@ -228,9 +228,9 @@ All these pieces have now been tested one by one, locally and we are sure they a
         from setuptools import setup
 
         setup(
-        name = 'mypackage',
-        packages = ['mypackage'],
-        install_requires=[],)
+        name='mypackage',
+        packages=['mypackage'],
+        install_requires=[])
 
     To install ``mypackage`` just do:
 
@@ -254,9 +254,38 @@ Now the search is done. You should find the following files in your current fold
     results.csv
     results.json
 
-Let's use the ``deephyper-analytics` command line to see what are these results looking like:
+Let's use the ``deephyper-analytics`` command line to see what are these results looking like:
 
 .. include:: polynome2/dh-analytics-hps.rst
+
+Let's look at the best candidate the search found which is::
+
+    point = {
+        'activation': 'relu',
+        'lr': 0.8820413612862609,
+        'units': 21
+    }
+
+Just pass this ``point`` to your run function
+
+.. literalinclude:: polynome2/model_run_step_1_point.py
+    :linenos:
+    :caption: Step 1: polynome2/model_run.py
+    :name: polynome2-model_run_step_1_point
+
+And run the script:
+
+.. code-block:: console
+    :caption: bash
+
+    python model_run.py
+
+.. code-block:: console
+    :caption: [Out]
+
+    objective:  0.47821942329406736
+
+.. image:: polynome2/model_step_1_val_r2.png
 
 Run the search at ALCF
 ======================

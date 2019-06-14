@@ -64,5 +64,7 @@ if __name__ == '__main__':
     print('objective: ', objective)
     import matplotlib.pyplot as plt
     plt.plot(HISTORY['val_r2'])
+    plt.xlabel('Epochs')
+    plt.ylabel('Objective: $R^2$')
     plt.grid()
     plt.show()
