@@ -19,51 +19,11 @@ VariableNode
 .. autoclass:: deephyper.search.nas.model.space.node.VariableNode
     :members:
 
-Example:
-::
-
-    >>> import tensorflow as tf
-    >>> from deephyper.search.nas.model.space.node import VariableNode
-    >>> vnode = VariableNode("VNode1")
-    >>> from deephyper.search.nas.model.space.op.op1d import Dense
-    >>> vnode.add_op(Dense(
-    ... units=10,
-    ... activation=tf.nn.relu))
-    >>> vnode.num_ops
-    1
-    >>> vnode.add_op(Dense(
-    ... units=1000,
-    ... activation=tf.nn.tanh))
-    >>> vnode.num_ops
-    2
-    >>> vnode.set_op(0)
-    >>> vnode.op.units
-    10
-    >>> str(vnode)
-    'VNode1(1)(Variable[Dense_10_relu])'
-
-
-
-
-
 ConstantNode
 ------------
 
 .. autoclass:: deephyper.search.nas.model.space.node.ConstantNode
     :members:
-
-
-Example:
-::
-
-    >>> import tensorflow as tf
-    >>> from deephyper.search.nas.model.space.node import ConstantNode
-    >>> from deephyper.search.nas.model.space.op.op1d import Dense
-    >>> cnode = ConstantNode(op=Dense(units=100, activation=tf.nn.relu), name='CNode1')
-    >>> str(cnode)
-    'CNode1(2)(Constant[Dense_100_relu])'
-
-
 
 MirrorNode
 ----------
