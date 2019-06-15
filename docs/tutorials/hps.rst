@@ -258,11 +258,12 @@ After the search is over, you will find the following files in your current fold
     results.csv
     results.json
 
-We will use the ``deephyper-analytics`` command line tool to investigate the results:
 
 .. include:: polynome2/dh-analytics-hps.rst
 
-Let's look at the best poit the search found::
+We will use the ``deephyper-analytics`` command line tool to investigate the results:
+
+Let us look at the best point the search found::
 
     point = {
         'activation': 'relu',
