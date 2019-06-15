@@ -73,7 +73,7 @@ We will use Keras for the neural network definition.
 
     touch model_run.py
 
-We will create a neural network model and run it as a standalone to make sure the model runs without any error:
+We will create a neural network model and run it to make sure that the model runs without any error:
 
 .. literalinclude:: polynome2/model_run_step_0.py
     :linenos:
@@ -82,7 +82,7 @@ We will create a neural network model and run it as a standalone to make sure th
 
 .. note::
 
-    Adding an ``EarlyStopping(...)`` callback is a good idea to stop the training of your model as soon as it is stopping to improve.
+    Adding an ``EarlyStopping(...)`` callback is a good idea to stop the training of your model as soon as it is stops to improve.
 
     .. code-block:: python3
 
@@ -109,11 +109,11 @@ Train this model and look at it accuracy:
 
 .. image:: polynome2/model_step_0_val_r2.png
 
-.. WARNING::
+.. note::
     When defining a new HPS problem, ``model_run.py``
     must be runnable from any arbitrary working directory. This means that Python
     modules simply located in the same directory as the ``model_run.py`` will not be
-    part of the default Python import path, and importing them will cause an ``ImportError``! 
+    part of the default Python import path, and importing them will cause an ``ImportError``.
     For example in :ref:`polynome2-model_run_step_0` we are doing ``import load_data``.
 
     To ensure that modules located alongside the ``model_run.py`` script are
@@ -128,39 +128,40 @@ Train this model and look at it accuracy:
         here = os.path.dirname(os.path.abspath(__file__))
         sys.path.insert(0, here)
 
-Let's now modify our previous :ref:`polynome2-model_run_step_0`. The ``run`` function will be used with DeepHyper and a ``point`` parameter will be passed to this function. 
-The ``point`` is a ``dict`` where each key is a dimension of our search space. For our model we want to tune the number of units of our Dense layer (i.e. ``point['units']``), 
-the activation function of our Dense layer (i.e. ``point['activation']) and the learning of our optimizer (i.e. ``point['lr']``). Now look at :ref:`polynome2-model_run_step_1` and 
-find this modifications:
+Next, we modify :ref:`polynome2-model_run_step_0` for HPS with DeepHyper. The ``run`` function will be used by DeepHyper and a ``point`` Python dictionary will be passed 
+to this function. 
+In the ``point`` dictionary, each key is a hyperparameter. 
+The tunable hyperparameters are the number of units of the Dense layer (i.e. ``point['units']``), 
+the activation function of the Dense layer (i.e. ``point['activation'])``, and 
+the learning rate of the optimizer (i.e. ``point['lr']``). 
+These modifications are given in :ref:`polynome2-model_run_step_1`:
 
 .. literalinclude:: polynome2/model_run_step_1.py
     :linenos:
     :caption: Step 1: polynome2/model_run.py
     :name: polynome2-model_run_step_1
 
-Define your search space
-========================
+Create problem.py
+==================
 
-The model is now accepting 3 tunnable parameters: ``units, activation, lr``. Let's define a search space for these parameters. Create a ``problem.py`` file:
+The ``run`` function in ``model_run.py`` accepts arguments: ``units, activation, and lr``. 
+Next, we will define the ranges for the hyperparameters using ``problem.py`` file.
+Each hyperparameter range is defined using the following notation. 
+The integer and real hyperparameter range is given by a tuple (lower_bound, upper_bound).
+The categorical or nonordinal hyperparameter range is given by a list of possible values.
 
 .. code-block:: console
     :linenos:
 
     touch problem.py
 
-The ``Problem``defined in ``problem.py`` contains the parameters you want to search over. They are defined by their name, their space. DeepHyper is using the `Skopt package <https://scikit-optimize.github.io/optimizer/index.html>`_, hence it recognizes three types of parameters:
-
-- a (lower_bound, upper_bound) tuple (for Real or Integer dimensions),
-- a (lower_bound, upper_bound, "prior") tuple (for Real dimensions),
-- as a list of categories (for Categorical dimensions)
-
-You can also add starting points to your problem if you already now good points in your search space. Just use the ``add_starting_point(...)`` method.
+You can also add starting points to your problem if you already know good starting points in the search space. 
+Just use the ``add_starting_point(...)`` method.
 
 .. note::
-    Many starting points can be defined with ``Problem.add_starting_point(**dims)``. All starting points will be evaluated before generating other evaluations. The starting
-    point help the user to bring actual knowledge of the current search space. For
-    instance if you know a good set of hyperparameter for your current models.
-
+    Several starting points can be defined with ``Problem.add_starting_point(**dims)``. 
+    All starting points will be evaluated before generating other evaluations. 
+    
 .. literalinclude:: polynome2/problem_step_1.py
     :linenos:
     :caption: polynome2/problem.py
@@ -187,8 +188,8 @@ The expected output is:
     {0: {'activation': None, 'lr': 0.01, 'units': 10}}
 
 
-Run the search locally
-======================
+Running the search locally
+==========================
 
 Everything is ready to run. Let's remember the structure of our experiment::
 
@@ -197,7 +198,7 @@ Everything is ready to run. Let's remember the structure of our experiment::
             model_run.py
             problem.py
 
-All these pieces have now been tested one by one, locally and we are sure they are working. Let's try out an Asynchronous Model Based Search. On your local machine do:
+All the three files have been tested one by one on the local machine. Next, we will run asynchronous model-based search (AMBS). 
 
 .. code-block:: console
     :caption: bash
@@ -210,7 +211,10 @@ All these pieces have now been tested one by one, locally and we are sure they a
 
 .. WARNING::
 
-    When a path to python scripts is given to ``--problem, --run`` arguments you have to make sure that the problem script contains a ``Problem`` attribute and the run script contains a ``run`` attribute. An other way to use these arguments is to give a python import path such as ``mypackage.mymodule.myattribute``, where ``myattribute`` should be an ``HpProblem`` instance for the problem argument and it should be a Callable object with one parameter for the run argument. In order to do so ``mypackage`` should be installed in your current python environment. A package structure look like:
+    When a path to python scripts is given to ``--problem, --run`` arguments you have to make sure that the problem script contains a ``Problem`` attribute and the run script contains a ``run`` attribute. 
+    Another way to use these arguments is to give a python import path such as ``mypackage.mymodule.myattribute``, where ``myattribute`` should be an ``HpProblem`` instance for the problem argument and 
+    it should be a callable object with one parameter for the run argument. In order to do so ``mypackage`` should be installed in your current python environment. 
+    A package structure look like:
 
     .. code-block:: console
 
@@ -220,7 +224,7 @@ All these pieces have now been tested one by one, locally and we are sure they a
                 __init__.py
                 mymodule.py
 
-    Where ``setup.py`` contains the following:
+    where ``setup.py`` contains the following:
 
     .. code-block:: python3
         :caption: setup.py
@@ -246,7 +250,7 @@ All these pieces have now been tested one by one, locally and we are sure they a
 
         python setup.py install
 
-Now the search is done. You should find the following files in your current folder:
+After the search is over, you will find the following files in your current folder:
 
 .. code-block:: console
 
@@ -254,11 +258,11 @@ Now the search is done. You should find the following files in your current fold
     results.csv
     results.json
 
-Let's use the ``deephyper-analytics`` command line to see what are these results looking like:
+We will use the ``deephyper-analytics`` command line tool to investigate the results:
 
 .. include:: polynome2/dh-analytics-hps.rst
 
-Let's look at the best candidate the search found which is::
+Let's look at the best poit the search found::
 
     point = {
         'activation': 'relu',
@@ -287,8 +291,8 @@ And run the script:
 
 .. image:: polynome2/model_step_1_val_r2.png
 
-Run the search at ALCF
-======================
+Running the search on ALCF's Theta and Cooley
+==============================================
 
 Now let's run the search on an HPC system such as Theta or Cooley. First create a Balsam database:
 
