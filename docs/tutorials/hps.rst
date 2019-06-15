@@ -261,9 +261,8 @@ After the search is over, you will find the following files in your current fold
 
 .. include:: polynome2/dh-analytics-hps.rst
 
-We will use the ``deephyper-analytics`` command line tool to investigate the results:
 
-Let us look at the best point the search found::
+The best point the search found::
 
     point = {
         'activation': 'relu',

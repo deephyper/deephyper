@@ -1,6 +1,8 @@
 
-Deephyper analytics - hyperparameter search study
-=================================================
+Deephyper analytics
+===================
+
+We will use the ``deephyper-analytics`` command line tool to investigate the results:
 
 
 **path to data file**: /Users/romainegele/polynome2/results.csv
@@ -8,7 +10,7 @@ Deephyper analytics - hyperparameter search study
 for customization please see:
 https://matplotlib.org/api/matplotlib\_configuration\_api.html
 
-Setup & Data loading
+Setup & data loading
 --------------------
 
 .. code:: ipython3
