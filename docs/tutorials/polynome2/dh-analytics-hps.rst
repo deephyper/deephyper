@@ -2,8 +2,27 @@
 Deephyper analytics
 ===================
 
-We will use the ``deephyper-analytics`` command line tool to investigate the results:
+We will use the ``deephyper-analytics`` command line tool to investigate the results.
 
+.. note::
+
+  See the :ref:`analytics-local-install` installation instructions of ``deephyper-analytics``.
+
+Run:
+
+.. code-block:: console
+    :caption: bash
+
+    deephyper-analytics hps -p results.csv
+
+Then start ``jupyter``:
+
+.. code-block:: console
+    :caption: bash
+
+    jupyter notebook
+
+Open the ``dh-analytics-hps`` notebook and run it:
 
 **path to data file**: /Users/romainegele/polynome2/results.csv
 

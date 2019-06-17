@@ -1,6 +1,8 @@
 Analytics
 *********
 
+.. _analytics-local-install:
+
 Local
 =====
 

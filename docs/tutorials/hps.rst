@@ -12,8 +12,8 @@ A  hyperparaemter search (HPS) problem can be defined using three files with a H
             problem.py
 
 
-We will illustrate the HPS problem definition using a regression example. We will use polynome function to generate training and test data 
-and run a HPS to tune the hyperparameters of a simple neural network. 
+We will illustrate the HPS problem definition using a regression example. We will use polynome function to generate training and test data
+and run a HPS to tune the hyperparameters of a simple neural network.
 
 
 
@@ -65,8 +65,8 @@ The expected output is:
 Create model_run.py
 ===================
 
-Third, we will create ``model_run.py`` that contains the code for the neural network. 
-We will use Keras for the neural network definition. 
+Third, we will create ``model_run.py`` that contains the code for the neural network.
+We will use Keras for the neural network definition.
 
 .. code-block:: console
     :caption: bash
@@ -128,12 +128,12 @@ Train this model and look at it accuracy:
         here = os.path.dirname(os.path.abspath(__file__))
         sys.path.insert(0, here)
 
-Next, we modify :ref:`polynome2-model_run_step_0` for HPS with DeepHyper. The ``run`` function will be used by DeepHyper and a ``point`` Python dictionary will be passed 
-to this function. 
-In the ``point`` dictionary, each key is a hyperparameter. 
-The tunable hyperparameters are the number of units of the Dense layer (i.e. ``point['units']``), 
-the activation function of the Dense layer (i.e. ``point['activation'])``, and 
-the learning rate of the optimizer (i.e. ``point['lr']``). 
+Next, we modify :ref:`polynome2-model_run_step_0` for HPS with DeepHyper. The ``run`` function will be used by DeepHyper and a ``point`` Python dictionary will be passed
+to this function.
+In the ``point`` dictionary, each key is a hyperparameter.
+The tunable hyperparameters are the number of units of the Dense layer (i.e. ``point['units']``),
+the activation function of the Dense layer (i.e. ``point['activation'])``, and
+the learning rate of the optimizer (i.e. ``point['lr']``).
 These modifications are given in :ref:`polynome2-model_run_step_1`:
 
 .. literalinclude:: polynome2/model_run_step_1.py
@@ -144,9 +144,9 @@ These modifications are given in :ref:`polynome2-model_run_step_1`:
 Create problem.py
 ==================
 
-The ``run`` function in ``model_run.py`` accepts arguments: ``units, activation, and lr``. 
+The ``run`` function in ``model_run.py`` accepts arguments: ``units, activation, and lr``.
 Next, we will define the ranges for the hyperparameters using ``problem.py`` file.
-Each hyperparameter range is defined using the following notation. 
+Each hyperparameter range is defined using the following notation.
 The integer and real hyperparameter range is given by a tuple (lower_bound, upper_bound).
 The categorical or nonordinal hyperparameter range is given by a list of possible values.
 
@@ -155,13 +155,13 @@ The categorical or nonordinal hyperparameter range is given by a list of possibl
 
     touch problem.py
 
-You can also add starting points to your problem if you already know good starting points in the search space. 
+You can also add starting points to your problem if you already know good starting points in the search space.
 Just use the ``add_starting_point(...)`` method.
 
 .. note::
-    Several starting points can be defined with ``Problem.add_starting_point(**dims)``. 
-    All starting points will be evaluated before generating other evaluations. 
-    
+    Several starting points can be defined with ``Problem.add_starting_point(**dims)``.
+    All starting points will be evaluated before generating other evaluations.
+
 .. literalinclude:: polynome2/problem_step_1.py
     :linenos:
     :caption: polynome2/problem.py
@@ -193,12 +193,12 @@ Running the search locally
 
 Everything is ready to run. Let's remember the structure of our experiment::
 
-      problem_folder/
+      polynome2/
             load_data.py
             model_run.py
             problem.py
 
-All the three files have been tested one by one on the local machine. Next, we will run asynchronous model-based search (AMBS). 
+All the three files have been tested one by one on the local machine. Next, we will run asynchronous model-based search (AMBS).
 
 .. code-block:: console
     :caption: bash
@@ -211,9 +211,9 @@ All the three files have been tested one by one on the local machine. Next, we w
 
 .. WARNING::
 
-    When a path to python scripts is given to ``--problem, --run`` arguments you have to make sure that the problem script contains a ``Problem`` attribute and the run script contains a ``run`` attribute. 
-    Another way to use these arguments is to give a python import path such as ``mypackage.mymodule.myattribute``, where ``myattribute`` should be an ``HpProblem`` instance for the problem argument and 
-    it should be a callable object with one parameter for the run argument. In order to do so ``mypackage`` should be installed in your current python environment. 
+    When a path to python scripts is given to ``--problem, --run`` arguments you have to make sure that the problem script contains a ``Problem`` attribute and the run script contains a ``run`` attribute.
+    Another way to use these arguments is to give a python import path such as ``mypackage.mymodule.myattribute``, where ``myattribute`` should be an ``HpProblem`` instance for the problem argument and
+    it should be a callable object with one parameter for the run argument. In order to do so ``mypackage`` should be installed in your current python environment.
     A package structure look like:
 
     .. code-block:: console
