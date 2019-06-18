@@ -35,6 +35,7 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
 
     tutorials/hps
     tutorials/job_management
+    tutorials/nas
 
 .. toctree::
    :maxdepth: 2
