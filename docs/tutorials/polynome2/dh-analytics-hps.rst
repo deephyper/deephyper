@@ -24,7 +24,7 @@ Then start ``jupyter``:
 
 Open the ``dh-analytics-hps`` notebook and run it:
 
-**path to data file**: /Users/romainegele/polynome2/results.csv
+**path to data file**: polynome2/results.csv
 
 for customization please see:
 https://matplotlib.org/api/matplotlib\_configuration\_api.html
@@ -34,7 +34,7 @@ Setup & data loading
 
 .. code:: ipython3
 
-    path_to_data_file = '/Users/romainegele/polynome2/results.csv'
+    path_to_data_file = 'polynome2/results.csv'
 
 .. code:: ipython3
 
