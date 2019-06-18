@@ -1,8 +1,10 @@
+
 import argparse
+import os
 import sys
 
-from deephyper.core.logs import parsing, json
-from deephyper.core.plot import single, multi
+from deephyper.core.logs import json, parsing
+from deephyper.core.plot import hps, multi, post_train, single
 
 
 def create_parser():
@@ -27,6 +29,14 @@ def create_parser():
 
     # plots multi
     name, func = multi.add_subparser(subparsers)
+    mapping[name] = func
+
+    # plots post-training
+    name, func = post_train.add_subparser(subparsers)
+    mapping[name] = func
+
+    # plots hps
+    name, func = hps.add_subparser(subparsers)
     mapping[name] = func
 
     return parser, mapping

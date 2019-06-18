@@ -18,9 +18,13 @@ dhlogger = util.conf_logger(
 
 
 class NeuralArchitectureVecEnv(VecEnv):
-    """Multiple environment neural architecture generation.
+    """Multiple environments neural architecture generation. One environment corresponds to one deep neural network architecture.
 
-    One environment corresponds to one deep neural network architecture.
+    Args:
+            num_envs (int): number of environments to run in parallel.
+            space (dict): neural architecture search space from the Problem.
+            evaluator (Evaluator): evaluator to use to evaluate deep neural networks generated.
+            structure (KerasStructure): structure to build deep neural networks.
     """
 
     def __init__(self, num_envs, space, evaluator, structure):

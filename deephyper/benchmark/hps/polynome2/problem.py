@@ -10,17 +10,21 @@ Problem = HpProblem()
 
 num_dim = 10
 for i in range(num_dim):
-    Problem.add_dim(f'e{i}', (-10, 10), i)
+    Problem.add_dim(f'e{i}', (-10, 10))
 
+Problem.add_starting_point(**{f'e{i}': 0 for i in range(num_dim)})
 
 # Definition of the function which runs the model
+
+
 def run(param_dict):
     f, (a, b), _ = polynome_2()
 
     num_dim = 10
     x = np.array([param_dict[f'e{i}'] for i in range(num_dim)])
 
-    return f(x) # the objective
+    return f(x)  # the objective
+
 
 if __name__ == '__main__':
     print(Problem)

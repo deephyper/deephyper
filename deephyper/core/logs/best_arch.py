@@ -18,9 +18,18 @@ def process_archseq(data, number):
     l.sort(reverse=True, key=lambda x: x[0])
     print(f'arch seq shape: {np.shape(np.array(arch_seq))}')
 
-    rewards = [l[i][0] for i in range(number)]
-    index_list = [l[i][1] for i in range(number)]
-    best_archs = [l[i][2] for i in range(number)]
+    i = 0
+    best_archs = list()
+    rewards = list()
+    index_list = list()
+    while i < len(l) \
+            and len(best_archs) < number:
+        reward, index, arch = l[i]
+        if all([arch != e for e in best_archs]):
+                best_archs.append(arch)
+                rewards.append(reward)
+                index_list.append(index)
+        i += 1
 
     data_best_arch = dict(rewards=rewards, arch_seq=best_archs, index=index_list)
     with open('best_archs.json', 'w') as f:

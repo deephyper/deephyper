@@ -4,6 +4,8 @@ import numpy as np
 import tensorflow as tf
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
+from deephyper.search import util
+
 loss_metrics = OrderedDict()
 loss_metrics['mean_absolute_error'] = lambda x, y: tf.reduce_mean(tf.abs(x-y))
 loss_metrics['mean_squared_error'] = tf.losses.mean_squared_error
@@ -91,11 +93,16 @@ def check_data_config(data_dict):
 
 # Metrics with tensors
 
+# def r2(y_true, y_pred):
+#     SS_res = tf.keras.backend.sum(tf.keras.backend.square(y_true - y_pred))
+#     SS_tot = tf.keras.backend.sum(tf.keras.backend.square(
+#         y_true - tf.keras.backend.mean(y_true)))
+#     return (1 - SS_res/(SS_tot + tf.keras.backend.epsilon()))
+
 def r2(y_true, y_pred):
-    SS_res = tf.keras.backend.sum(tf.keras.backend.square(y_true - y_pred))
-    SS_tot = tf.keras.backend.sum(tf.keras.backend.square(
-        y_true - tf.keras.backend.mean(y_true)))
-    return (1 - SS_res/(SS_tot + tf.keras.backend.epsilon()))
+    from sklearn.metrics import r2_score
+    res = tf.py_func(r2_score, [y_true, y_pred], tf.float64)
+    return res
 
 
 def mae(y_true, y_pred):
@@ -118,11 +125,19 @@ metrics['accuracy'] = metrics['acc'] = acc
 
 
 def selectMetric(name):
-    '''
-      Return the metric defined by name.
-    '''
+    """Return the metric defined by name.
+
+    Args:
+        name ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
     if (metrics.get(name) == None):
-        return name  # supposing it is referenced in keras metrics
+        try:
+            return util.load_attr_from(name)
+        except:
+            return name  # supposing it is referenced in keras metrics
     else:
         return metrics[name]
 
@@ -134,11 +149,11 @@ def racc(y_true, y_pred):
 
 
 def rmse(y_true, y_pred):
-    return -mse(y_true, y_pred)
+    return -tf.reduce_mean(mse(y_true, y_pred))
 
 
 def rmae(y_true, y_pred):
-    return -mae(y_true, y_pred)
+    return -tf.reduce_mean(mae(y_true, y_pred))
 
 
 rmetrics = OrderedDict()
@@ -150,7 +165,10 @@ rmetrics['mae'] = rmae
 
 def selectRewardMetric(name):
     if (rmetrics.get(name) == None):
-        raise RuntimeError(
-            f'"{name}" is not a defined reward metric.')
+        try:
+            return util.load_attr_from(name)
+        except:
+            raise RuntimeError(
+                f'"{name}" is not a defined reward metric and cannot be imported.')
     else:
         return rmetrics[name]

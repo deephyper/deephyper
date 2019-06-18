@@ -63,7 +63,6 @@ class Block:
             RuntimeError: ...
         """
 
-
         # nodes which are not inputs neither outputs
         mnodes = self.nodes
         for n in self.outputs:
@@ -71,20 +70,21 @@ class Block:
         for n in self.inputs:
             if n in mnodes:
                 mnodes.remove(n)
-        variable_mnodes = list(filter(lambda n: isinstance(n, VariableNode),
-            mnodes))
 
-        variable_inputs = list(filter(lambda n: isinstance(n, VariableNode), self.inputs))
-        variable_ouputs = list(filter(lambda n: isinstance(n, VariableNode), self.outputs))
+        variable_mnodes = list(
+            filter(lambda n: isinstance(n, VariableNode), mnodes))
+        variable_inputs = list(
+            filter(lambda n: isinstance(n, VariableNode), self.inputs))
+        variable_ouputs = list(
+            filter(lambda n: isinstance(n, VariableNode), self.outputs))
 
         # number of VariableNodes in current Block
-        nvariable_nodes =len(list(filter(lambda n: isinstance(n, VariableNode), self.nodes)))
+        nvariable_nodes = len(
+            list(filter(lambda n: isinstance(n, VariableNode), self.nodes)))
 
         if len(indexes) != nvariable_nodes:
-            print(variable_inputs)
-            print(variable_mnodes)
-            print(variable_ouputs)
-            raise RuntimeError(f'len(indexes) == {len(indexes)} when it should be {nvariable_nodes}')
+            raise RuntimeError(
+                f'len(indexes) == {len(indexes)} when it should be {nvariable_nodes}')
 
         cursor = 0
         for n in variable_inputs:
@@ -94,9 +94,59 @@ class Block:
             n.set_op(indexes[cursor])
             cursor += 1
         for n in variable_ouputs:
+            # Important if there is only one variable nodes
             if not n in variable_inputs:
                 n.set_op(indexes[cursor])
                 cursor += 1
+
+    def denormalize(self, indexes):
+        """Denormalize a sequence of normalized indexes to get a sequence of absolute indexes. Useful when you want to compare the number of different architectures.
+
+        Args:
+            indexes (Iterable): a sequence of normalized indexes.
+
+        Returns:
+            list: A list of absolute indexes corresponding to operations choosen with relative indexes of `indexes`.
+        """
+        den_list = []
+
+        # nodes which are not inputs neither outputs
+        mnodes = self.nodes
+        for n in self.outputs:
+            mnodes.remove(n)
+        for n in self.inputs:
+            if n in mnodes:
+                mnodes.remove(n)
+
+        variable_mnodes = list(
+            filter(lambda n: isinstance(n, VariableNode), mnodes))
+        variable_inputs = list(
+            filter(lambda n: isinstance(n, VariableNode), self.inputs))
+        variable_ouputs = list(
+            filter(lambda n: isinstance(n, VariableNode), self.outputs))
+
+        # number of VariableNodes in current Block
+        nvariable_nodes = len(
+            list(filter(lambda n: isinstance(n, VariableNode), self.nodes)))
+
+        if len(indexes) != nvariable_nodes:
+            raise RuntimeError(
+                f'len(indexes) == {len(indexes)} when it should be {nvariable_nodes}')
+
+        cursor = 0
+        for n in variable_inputs:
+            den_list.append(n.denormalize(indexes[cursor]))
+            cursor += 1
+        for n in variable_mnodes:
+            den_list.append(n.denormalize(indexes[cursor]))
+            cursor += 1
+        for n in variable_ouputs:
+            # Important if there is only one variable nodes
+            if not n in variable_inputs:
+                den_list.append(n.denormalize(indexes[cursor]))
+                cursor += 1
+
+        return den_list
 
     def add_node(self, node):
         """Add a new node to the current Block.
@@ -112,7 +162,8 @@ class Block:
         if not isinstance(node, Node):
             raise RuntimeError(f'node argument should be an instance of Node!')
         if node in self.nodes:
-            raise RuntimeError(f'Node: {node} has already been added to the Block!')
+            raise RuntimeError(
+                f'Node: {node} has already been added to the Block!')
 
         self.graph.add_node(node)
 
@@ -157,4 +208,3 @@ class Block:
         for n in filter(lambda n: isinstance(n, VariableNode), self.nodes):
             mx = max(mx, n.num_ops)
         return mx
-

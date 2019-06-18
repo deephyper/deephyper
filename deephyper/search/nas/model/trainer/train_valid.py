@@ -1,8 +1,11 @@
-import tensorflow as tf
-from tensorflow import keras
-import numpy as np
 import math
+import time
+import traceback
+
+import numpy as np
+import tensorflow as tf
 from sklearn.metrics import mean_squared_error
+from tensorflow import keras
 
 import deephyper.search.nas.model.arch as a
 import deephyper.search.nas.model.train_utils as U
@@ -54,8 +57,6 @@ class TrainerTrainValid:
         self.dataset_valid = None
         self.set_dataset_valid()
 
-        self.model_compile()
-
         self.y_true_ph = tf.placeholder(
             dtype=tf.float32,
             shape=(None, None),
@@ -66,14 +67,24 @@ class TrainerTrainValid:
             shape=(None, None),
             name='y_pred'
         )
-        self.reward_metric_op = U.selectRewardMetric(
-            self.config_hp['reward'])(self.y_true_ph, self.y_pred_ph)
 
-        self.train_history = {
-            f'{self.metrics_name[0]}_valid': list(),
-        }
+        self.reward_metric = U.selectRewardMetric(self.config_hp['reward'])
+        self.reward_metric_op = self.reward_metric(self.y_true_ph, self.y_pred_ph)
+
+        self.model_compile()
+
+        self.train_history = None
+        self.init_history()
+
         # Test on validation after each epoch
         logger.debug('[PARAM] KerasTrainer instantiated')
+
+    def init_history(self):
+        self.train_history = {name if type(
+            name) is str else name.__name__: list() for name in self.metrics_name}
+        self.train_history['loss'] = list()
+        self.train_history['rmetric'] = list()
+        self.train_history['n_parameters'] = self.model.count_params()
 
     def load_data(self):
         logger.debug('load_data')
@@ -218,7 +229,7 @@ class TrainerTrainValid:
         self.model.compile(
             optimizer=self.optimizer,
             loss=self.loss_metric_name,
-            metrics=self.metrics_name)
+            metrics=self.metrics_name)# + [self.reward_metric])
 
     def add_callback(self, cb):
         assert isinstance(cb, keras.callbacks.Callback)
@@ -261,15 +272,25 @@ class TrainerTrainValid:
     def train(self, num_epochs=None):
         num_epochs = self.num_epochs if num_epochs is None else num_epochs
 
+        self.init_history()
+
         if num_epochs > 0:
             max_rmetric = -math.inf
+
+            time_start_training = time.time()  # TIMING
+
             for i in range(num_epochs):
-                self.model.fit(
+                history = self.model.fit(
                     self.dataset_train,
                     epochs=1,
                     steps_per_epoch=self.train_steps_per_epoch,
-                    callbacks=self.callbacks
+                    callbacks=self.callbacks,
+                    # validation_data=self.dataset_valid,
+                    # validation_steps=self.valid_steps_per_epoch
                 )
+
+                for k in history.history:
+                    self.train_history[k].append(history.history[k][0])
 
                 y_orig, y_pred = self.predict()
 
@@ -278,8 +299,11 @@ class TrainerTrainValid:
                         self.y_true_ph: y_orig,
                         self.y_pred_ph: y_pred
                     })
-                    if len(np.shape(unnormalize_rmetric)) > 1:
-                        unnormalize_rmetric = np.mean(unnormalize_rmetric)
+                    if len(np.shape(unnormalize_rmetric)) != 0:
+                        raise RuntimeError('Reward should be a scalar')
+                    else:
+                        self.train_history['rmetric'].append(
+                            unnormalize_rmetric)
                 except ValueError as err:
                     logger.error(traceback.format_exc())
                     unnormalize_rmetric = np.finfo('float32').min
@@ -289,6 +313,10 @@ class TrainerTrainValid:
                 max_rmetric = max(max_rmetric, unnormalize_rmetric)
                 logger.info(
                     jm(epoch=i, rmetric=float(unnormalize_rmetric)))
+
+            time_end_training = time.time()  # TIMING
+            self.train_history['training_time'] = time_end_training - \
+                time_start_training
 
             logger.info(jm(type='result', rmetric=float(max_rmetric)))
             return max_rmetric
@@ -301,8 +329,8 @@ class TrainerTrainValid:
                     self.y_true_ph: y_orig,
                     self.y_pred_ph: y_pred
                 })
-                if len(np.shape(unnormalize_rmetric)) > 1:
-                    unnormalize_rmetric = np.mean(unnormalize_rmetric)
+                if len(np.shape(unnormalize_rmetric)) != 0:
+                    raise RuntimeError('Reward should be a scalar')
             except ValueError as err:
                 logger.error(traceback.format_exc())
                 unnormalize_rmetric = np.finfo('float32').min
@@ -315,3 +343,22 @@ class TrainerTrainValid:
         else:
             raise RuntimeError(
                 f'Number of epochs should be >= 0: {num_epochs}')
+
+    def post_train(self, num_epochs=None):
+        """Run a post-training procedure.
+
+        Args:
+            num_epochs (int, optional): Number of epochs to run. If none, num_epochs will be equal to the num_epochs defined in the config dict used to create an instance of this class. Defaults to None.
+        """
+        num_epochs = self.num_epochs if num_epochs is None else num_epochs
+
+        h_cb = self.model.fit(
+            self.dataset_train,
+            epochs=num_epochs,
+            steps_per_epoch=self.train_steps_per_epoch,
+            callbacks=self.callbacks,
+            validation_data=self.dataset_valid,
+            validation_steps=self.valid_steps_per_epoch
+        )
+
+        self.post_train_history = h_cb.history

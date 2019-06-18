@@ -1,35 +1,47 @@
-Command Line
-************
-
 Analytics
-=========
+*********
 
 The Analytics command line is a set of tools which has been created to help you analyse deephyper data.
 
-::
+.. highlight:: console
 
-    $ deephyper-analytics --help
-    usage: deephyper-analytics [-h] {parse,json} ...
+Let's look at the help menu of ``deephyper-analytics``::
+
+    deephyper-analytics --help
+
+The following output is expected::
+
+    Module: 'balsam' module was found and connected to a databse.
+    usage: deephyper-analytics [-h] {parse,json,single,multi,post,hps} ...
 
     Run some analytics for deephyper.
 
     positional arguments:
-    {parse,json}  Kind of analytics.
-        parse       Tool to parse "deephyper.log" and produce a JSON file.
-        json        Tool to analyse a JSON file produced by the "parse" tool.
+    {parse,json,single,multi,post,hps}
+                            Kind of analytics.
+        parse               Tool to parse "deephyper.log" and produce a JSON file.
+        json                Tool to analyse a JSON file produced by the "parse"
+                            tool.
+        single              Tool to generate analytics on a single NAS experiment
+                            (jupyter notebook).
+        multi               Tool to generate analytics from multiple NAS
+                            experiment (jupyter notebook).
+        post                Tool to generate analytics from a post-training
+                            experiment (jupyter notebook).
+        hps                 Tool to generate analytics on a single HPS experiment
+                            (jupyter notebook).
 
-    optional arguments:
-    -h, --help    show this help message and exit
 
+.. automodule:: deephyper.core.plot.hps
 
-Parsing
--------
+Parsing logs
+============
 
 The parsing tool helps you to parse the ``deephyper.log`` file of your master job. For now this tool is used for neural architecture search logs.
 
 ::
 
-    $ deephyper-analytics parse -h
+    [BalsamDB: testdb] (dh-opt) dhuser $ deephyper-analytics parse -h
     Module: 'balsam' was not found!
     usage: deephyper-analytics parse [-h] path
 
@@ -46,7 +58,7 @@ The parsing tool helps you to parse the ``deephyper.log`` file of your master jo
 
 ::
 
-    $ deephyper-analytics parse ../nasdb/data/combo_async_exp4/combo_async_exp4_b0c432c7/deephyper.log
+    [BalsamDB: testdb] (dh-opt) dhuser $ deephyper-analytics parse ../nasdb/data/combo_async_exp4/combo_async_exp4_b0c432c7/deephyper.log
     Module: 'balsam' has been loaded successfully!
     Path to deephyper.log file: ../nasdb/data/combo_async_exp4/combo_async_exp4_b0c432c7/deephyper.log
     File has been opened
@@ -60,27 +72,25 @@ The parsing tool helps you to parse the ``deephyper.log`` file of your master jo
     len id_worker  : 5731
     len arch_seq   : 5731
 
-Json
-----
+Transformations from JSON file
+==============================
 
 ::
 
-    $ deephyper-analytics json -h
+    [BalsamDB: testdb] (dh-opt) dhuser $ deephyper-analytics json -h
     usage: deephyper-analytics json [-h] {best} ...
 
     positional arguments:
     {best}      Kind of analytics.
         best      Select the best n architectures and save them into a JSON file.
 
-    optional arguments:
-    -h, --help  show this help message and exit
 
-Single
-------
+Single study
+============
 
 .. automodule:: deephyper.core.plot.single
 
-Multi
------
+Multiple study
+==============
 
 .. automodule:: deephyper.core.plot.multi

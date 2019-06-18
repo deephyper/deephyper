@@ -1,7 +1,7 @@
 Algorithms
 **********
 
-.. autoclass:: deephyper.search.nas.NeuralArchitectureSearch
+.. autoclass:: deephyper.search.nas.nas_search.NeuralArchitectureSearch
    :members:
 
 NAS (PPO) Asynchronous

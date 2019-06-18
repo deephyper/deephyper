@@ -1,5 +1,8 @@
-from pprint import pformat
 from collections import OrderedDict
+from pprint import pformat
+
+from deephyper.core.exceptions.problem import *
+
 
 class Problem:
     """Representation of a problem.
@@ -28,39 +31,106 @@ class Problem:
 
     @property
     def space(self):
-        return self.__space.copy()
+        dims = list(self.__space.keys())
+        dims.sort()
+        space = OrderedDict(**{d: self.__space[d] for d in dims})
+        return space
+
 
 class HpProblem(Problem):
-    """Problem specification for Hyperparameter Optimization"""
+    """Problem specification for Hyperparameter Optimization
+    """
 
     def __init__(self):
         super().__init__()
-        self.__def_values = OrderedDict()
+        # * starting points
+        self.references = []
 
     def __repr__(self):
         prob = super().__repr__()
-        start = f'{pformat({k:v for k,v in self.starting_point_asdict.items()})}'
+        start = f'{pformat({k:v for k,v in enumerate(self.starting_point_asdict)})}'
         return prob + '\n\nStarting Point\n' + start
 
-    def add_dim(self, p_name, p_space, default=None):
+    def add_dim(self, p_name, p_space):
         """Add a dimension to the search space.
+
+        >>> from deephyper.benchmark import HpProblem
+        >>> Problem = HpProblem()
+        >>> Problem.add_dim('nunits', (10, 20))
+        >>> Problem
+        Problem
+        {'nunits': (10, 20)}
+        <BLANKLINE>
+        Starting Point
+        {}
 
         Args:
             p_name (str): name of the parameter/dimension.
-            p_space (Object): space corresponding to the new dimension.
-            default: default value of the new dimension, it must be compatible with the ``p_space`` given.
+            p_space (tuple(int, int) or tuple(float, float) or list(Object,)): space corresponding to the new dimension.
         """
-        assert type(p_name) is str, f'p_name must be str type, got {type(p_name)} !'
-        assert type(p_space) is tuple or type(p_space) is list, f'p_space must be tuple or list type, got {type(p_space)} !'
+        if not type(p_name) is str:
+            raise SpaceDimNameOfWrongType(p_name)
+
+        if not type(p_space) is tuple \
+                and not type(p_space) is list:
+            raise SpaceDimValueOfWrongType(p_space)
+
         super().add_dim(p_name, p_space)
-        self.__def_values[p_name] = default
+
+    def add_starting_point(self, **dims):
+        """Add a new starting point to the problem.
+
+        >>> from deephyper.benchmark import HpProblem
+        >>> Problem = HpProblem()
+        >>> Problem.add_dim('nunits', (10, 20))
+        >>> Problem.add_starting_point(nunits=10)
+        >>> Problem
+        Problem
+        {'nunits': (10, 20)}
+        <BLANKLINE>
+        Starting Point
+        {0: {'nunits': 10}}
+
+        Args:
+            **dims:
+
+        Raises:
+            SpaceNumDimMismatch: Raised when 2 set of keys doesn't have the same number of keys for a given Problem.
+            SpaceDimNameMismatch: Raised when 2 set of keys are not corresponding for a given Problem.
+            SpaceDimValueNotInSpace: Raised when a dimension value of the space is in the coresponding dimension's space.
+        """
+
+        if len(dims) != len(self.space):
+            raise SpaceNumDimMismatch(dims, self.space)
+
+        if not all(d in self.space for d in dims):
+            raise SpaceDimNameMismatch(dims, self.space)
+
+        for dim, value in zip(dims, dims.values()):
+            if type(self.space[dim]) is list:
+                if not value in self.space[dim]:
+                    raise SpaceDimValueNotInSpace(value, dim, self.space[dim])
+            else:  # * type(self.space[dim]) is tuple
+                if value < self.space[dim][0] \
+                        or value > self.space[dim][1]:
+                    raise SpaceDimValueNotInSpace(value, dim, self.space[dim])
+
+        self.references.append([dims[d] for d in self.space])
 
     @property
     def starting_point(self):
-        """Starting point of the search space.
+        """Starting point(s) of the search space.
+
+        Returns:
+            list(list): list of starting points where each point is a list of values. Values are indexed in the same order as the order of creation of space's dimensions.
         """
-        return (self.__def_values.values())
+        return self.references
 
     @property
     def starting_point_asdict(self):
-        return self.__def_values
+        """Starting point(s) of the search space.
+
+        Returns:
+            list(dict): list of starting points where each point is a dict of values. Each key are correspnding to dimensions of the space.
+        """
+        return [{k: v for k, v in zip(list(self.space.keys()), p)} for p in self.references]

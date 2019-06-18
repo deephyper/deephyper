@@ -1,3 +1,5 @@
+from collections.abc import Iterable
+
 import networkx as nx
 from tensorflow import keras
 from tensorflow.python.keras.utils.vis_utils import model_to_dot
@@ -252,6 +254,34 @@ class KerasStructure(Structure):
                     return b
                 cursor += 1
 
+    def denormalize(self, indexes):
+        """Denormalize a sequence of normalized indexes to get a sequence of absolute indexes. Useful when you want to compare the number of different architectures.
+
+        Args:
+            indexes (Iterable): a sequence of normalized indexes.
+
+        Returns:
+            list: A list of absolute indexes corresponding to operations choosen with relative indexes of `indexes`.
+        """
+        assert isinstance(indexes, Iterable)
+
+        # Denormalized list
+        den_list = []
+
+        # Init for loop
+        cursor = 0
+
+        # Loop
+        for c in self.struct:
+            num_nodes = c.num_nodes
+            sub_list = c.denormalize(indexes[cursor:cursor+num_nodes])
+
+            # Go next iter
+            den_list.extend(sub_list)
+            cursor += num_nodes
+
+        return den_list
+
 
 def get_output_nodes(graph):
     """
@@ -279,20 +309,22 @@ def create_tensor_aux(g, n, train=None):
     Return:
         the tensor represented by n.
     """
-
-    if n._tensor != None:
-        output_tensor = n._tensor
-    else:
-        pred = list(g.predecessors(n))
-        if len(pred) == 0:
-            output_tensor = n.create_tensor(train=train)
+    try:
+        if n._tensor != None:
+            output_tensor = n._tensor
         else:
-            tensor_list = list()
-            for s_i in pred:
-                tmp = create_tensor_aux(g, s_i, train=train)
-                if type(tmp) is list:
-                    tensor_list.extend(tmp)
-                else:
-                    tensor_list.append(tmp)
-            output_tensor = n.create_tensor(tensor_list, train=train)
-    return output_tensor
+            pred = list(g.predecessors(n))
+            if len(pred) == 0:
+                output_tensor = n.create_tensor(train=train)
+            else:
+                tensor_list = list()
+                for s_i in pred:
+                    tmp = create_tensor_aux(g, s_i, train=train)
+                    if type(tmp) is list:
+                        tensor_list.extend(tmp)
+                    else:
+                        tensor_list.append(tmp)
+                output_tensor = n.create_tensor(tensor_list, train=train)
+        return output_tensor
+    except TypeError:
+        raise RuntimeError(f'Failed to build tensors from :{n}')

@@ -1,5 +1,8 @@
-Introduction
-************
+.. _evaluators:
+
+**********
+Evaluators
+**********
 
 .. automodule:: deephyper.evaluator
 
@@ -8,27 +11,30 @@ Introduction
    :alt: evaluator diag
    :align: center
 
+.. _balsam-evaluator:
 
 BalsamEvaluator
-***************
+===============
 
 .. autoclass:: deephyper.evaluator._balsam.BalsamEvaluator
 
 
+.. _subprocess-evaluator:
+
 SubprocessEvaluator
-*******************
+===================
 
 .. autoclass:: deephyper.evaluator._subprocess.SubprocessEvaluator
 
 
 ProcessPoolEvaluator
-********************
+====================
 
 .. autoclass:: deephyper.evaluator._processPool.ProcessPoolEvaluator
 
 
 ThreadPoolEvaluator
-*******************
+===================
 
 .. autoclass:: deephyper.evaluator._threadPool.ThreadPoolEvaluator
 

@@ -29,9 +29,10 @@ class Node:
     def create_tensor(self, *args, **kwargs):
         raise NotImplementedError
 
+
 class OperationNode(Node):
     def __init__(self, name='', *args, **kwargs):
-        return super().__init__(name=name, *args, **kwargs)
+        super().__init__(name=name, *args, **kwargs)
 
     def create_tensor(self, inputs=None, train=True, *args, **kwargs):
         if self._tensor is None:
@@ -41,13 +42,33 @@ class OperationNode(Node):
                 self._tensor = self.op(inputs, train=train)
         return self._tensor
 
+
 class VariableNode(OperationNode):
-    """This class represents a node of a graph where you have multiple possible operations.
+    """This class represents a node of a graph where you have a set of possible operations. It means the agent will have to act to choose one of these operations.
+
+    >>> import tensorflow as tf
+    >>> from deephyper.search.nas.model.space.node import VariableNode
+    >>> vnode = VariableNode("VNode1")
+    >>> from deephyper.search.nas.model.space.op.op1d import Dense
+    >>> vnode.add_op(Dense(
+    ... units=10,
+    ... activation=tf.nn.relu))
+    >>> vnode.num_ops
+    1
+    >>> vnode.add_op(Dense(
+    ... units=1000,
+    ... activation=tf.nn.tanh))
+    >>> vnode.num_ops
+    2
+    >>> vnode.set_op(0)
+    >>> vnode.op.units
+    10
+    >>> str(vnode)
+    'VNode1(1)(Variable[Dense_10_relu])'
 
     Args:
         name (str): node name.
     """
-
 
     def __init__(self, name=''):
         super().__init__(name=name)
@@ -71,21 +92,36 @@ class VariableNode(OperationNode):
         self.get_op(index).is_set()
 
     def get_op(self, index):
-        assert 'float' in str(type(index)) or type(index) is int, f'found type is : {type(index)}'
+        assert 'float' in str(type(index)) or type(
+            index) is int, f'found type is : {type(index)}'
         if 'float' in str(type(index)):
-            assert 0. <= index and index <= 1.
-            self._index = int(int((index * (len(self._ops) - 1) + 0.5) * 10) / 10)
+            self._index = self.denormalize(index)
         else:
-            assert 0 <= index and index < len(self._ops), f'len self._ops: {len(self._ops)}, index: {index}'
+            assert 0 <= index and index < len(
+                self._ops), f'len self._ops: {len(self._ops)}, index: {index}'
             self._index = index
         return self.op
+
+    def denormalize(self, index):
+        """Denormalize a normalized index to get an absolute indexes. Useful when you want to compare the number of different architectures.
+
+        Args:
+            indexes (float): a normalized index.
+
+        Returns:
+            int: An absolute indexes corresponding to the operation choosen with the relative index of `index`.
+        """
+        assert 0. <= index and index <= 1.
+        return int(int((index * (len(self._ops) - 1) + 0.5) * 10) / 10)
 
     @property
     def op(self):
         if len(self._ops) == 0:
-            raise RuntimeError('This VariableNode doesn\'t have any operation yet.')
+            raise RuntimeError(
+                'This VariableNode doesn\'t have any operation yet.')
         elif self._index is None:
-            raise RuntimeError('This VariableNode doesn\'t have any set operation, please use "set_op(index)" if you want to set one')
+            raise RuntimeError(
+                'This VariableNode doesn\'t have any set operation, please use "set_op(index)" if you want to set one')
         else:
             return self._ops[self._index]
 
@@ -93,16 +129,26 @@ class VariableNode(OperationNode):
     def ops(self):
         return self._ops
 
-class ConstantNode(OperationNode):
-    """A ConstantNode is a node which has a fixed operation.
 
-    Arguments:
-        op (Operation): operation of the ConstantNode.
+class ConstantNode(OperationNode):
+    """A ConstantNode represents a node with a fixed operation. It means the agent will not make any new decision for this node. The common use case for this node is to add a tensor in the graph.
+
+    >>> import tensorflow as tf
+    >>> from deephyper.search.nas.model.space.node import ConstantNode
+    >>> from deephyper.search.nas.model.space.op.op1d import Dense
+    >>> cnode = ConstantNode(op=Dense(units=100, activation=tf.nn.relu), name='CNode1')
+    >>> str(cnode)
+    'CNode1(2)(Constant[Dense_100_relu])'
+
+    Args:
+        op (Operation, optional): [description]. Defaults to None.
+        name (str, optional): [description]. Defaults to ''.
     """
+
     def __init__(self, op=None, name='', *args, **kwargs):
         super().__init__(name=name)
         if not op is None:
-            op.is_set() # set operation
+            op.is_set()  # set operation
         self._op = op
 
     def set_op(self, op):
@@ -116,12 +162,14 @@ class ConstantNode(OperationNode):
     def op(self):
         return self._op
 
+
 class MirrorNode(OperationNode):
     """A MirrorNode is a node which reuse an other, it enable the reuse of keras layers. This node will not add operations to choose.
 
     Arguments:
         node {Node} -- [description]
     """
+
     def __init__(self, node):
         super().__init__(name=f"Mirror[{str(node)}]")
         self._node = node

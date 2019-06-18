@@ -7,8 +7,8 @@
 DeepHyper
 *********
 
-Scalable Asynchronous Neural Architecture and Hyperparameter Search for Deep Neural Networks
---------------------------------------------------------------------------------------------
+DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neural Networks
+==========================================================================================
 
 .. image:: _static/logo/medium.png
    :scale: 100%
@@ -18,13 +18,30 @@ Scalable Asynchronous Neural Architecture and Hyperparameter Search for Deep Neu
 
 .. automodule:: deephyper
 
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Installation
+
+    install/local
+    install/theta
+    install/cooley
+    install/analytics
+    install/documentation
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Getting started
+
+    tutorials/hps
+    tutorials/job_management
+
 .. toctree::
    :maxdepth: 2
-   :caption: Quick Start
+   :caption: Running search
 
-   quickstart/installation
-   quickstart/local
-   quickstart/theta
+   run/local
+   run/theta
 
 .. toctree::
    :maxdepth: 2
@@ -51,10 +68,11 @@ Scalable Asynchronous Neural Architecture and Hyperparameter Search for Deep Neu
 
 .. toctree::
    :maxdepth: 2
-   :caption: User Guide
+   :caption: Tools
 
    usage/workflow
    usage/command_line
+   usage/post_training
    tests_link
 
 
@@ -64,8 +82,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-Doc todo list
-=============
-
-.. todolist::

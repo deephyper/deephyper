@@ -39,17 +39,19 @@ def run(param_dict):
     y_test = keras.utils.to_categorical(y_test, num_classes)
 
     model = Sequential()
-    model.add(Dense(param_dict['nunits_l1'], activation=param_dict['activation_l1'], input_shape=(784,)))
+    model.add(Dense(
+        param_dict['nunits_l1'], activation=param_dict['activation_l1'], input_shape=(784,)))
     model.add(Dropout(param_dict['dropout_l1']))
-    model.add(Dense(param_dict['nunits_l2'], activation=param_dict['activation_l2']))
+    model.add(Dense(param_dict['nunits_l2'],
+                    activation=param_dict['activation_l2']))
     model.add(Dropout(param_dict['dropout_l2']))
     model.add(Dense(num_classes, activation='softmax'))
 
     model.summary()
 
     model.compile(loss='categorical_crossentropy',
-                optimizer=RMSprop(),
-                metrics=['accuracy'])
+                  optimizer=RMSprop(),
+                  metrics=['accuracy'])
 
     history = model.fit(x_train, y_train,
                         batch_size=param_dict['batch_size'],
@@ -59,10 +61,10 @@ def run(param_dict):
     score = model.evaluate(x_test, y_test, verbose=0)
     print('Test loss:', score[0])
     print('Test accuracy:', score[1])
-    return -score[1]
+    return score[1]
 
 
 if __name__ == "__main__":
     from deephyper.benchmark.hps.mnistmlp.problem import Problem
-    param_dict = Problem.starting_point_asdict
+    param_dict = Problem.starting_point_asdict[0]
     run(param_dict)

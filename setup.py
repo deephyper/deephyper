@@ -28,18 +28,18 @@ VERSION = None
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    # 'requests', 'maya', 'records',
     'numpy',
     'scikit-optimize',
     'scikit-learn',
     'tqdm',
-    'tensorflow>=1.11.0',
+    'tensorflow==1.13.1',
     'keras',
     'deap',  # GA search
     # nas
     'gym',
     'networkx',
-    'joblib'
+    'joblib',
+    'pydot'
 ]
 
 # external sources
@@ -48,22 +48,15 @@ DP_LINKS = list()
 if on_theta:  # --system-site-packages
     # we want to use the default mpi4py from cray environment
     REQUIRED.append('mpi4py')
-
-    REQUIRED.append('balsam')
-    DP_LINKS.append(
-        'https://github.com/balsam-alcf/balsam/tree/master#egg=balsam-0.2')
+    REQUIRED.append('balsam-flow==0.3.5')
 elif not on_rtd and not on_gpu:
     REQUIRED.append('mpi4py>=3.0.0')
 elif on_gpu:
-    # remove
-    REQUIRED.remove('tensorflow>=1.11.0')
-    # add
-    REQUIRED.append('tensorflow-gpu')
+    REQUIRED.append('tensorflow-gpu==1.13.1')
     REQUIRED.append('mpi4py')
 else:
     REQUIRED.append('Sphinx>=1.8.2')
     REQUIRED.append('sphinx_rtd_theme')
-    REQUIRED.append('sphinx_copybutton')
 
 # What packages are optional?
 EXTRAS = {
@@ -73,11 +66,13 @@ EXTRAS = {
     'docs': [
         'Sphinx>=1.8.2',
         'sphinx_rtd_theme',
-        'sphinx_copybutton'
     ],
     'analytics': [
         'jupyter',
-        'jupyter_contrib_nbextensions'
+        'jupyter_contrib_nbextensions>=0.5.1',
+        'pandas>=0.24.2',
+        'seaborn>=0.9.0',
+        'matplotlib>=3.0.3'
     ]
 }
 
@@ -144,7 +139,7 @@ class UploadCommand(Command):
 
 
 class TestUploadCommand(Command):
-    """Support setup.py upload."""
+    """Support setup.py testupload."""
 
     description = 'Build and publish the package.'
     user_options = []
@@ -216,9 +211,6 @@ setup(
     packages=find_packages(exclude=('tests',)),
     # If your package is a single module, use this instead of 'packages':
     # py_modules=['deephyper'],
-    # entry_points={
-    #     'console_scripts': ['mycli=mymodule:cli'],
-    # },
     install_requires=REQUIRED,
     extras_require=EXTRAS,
     dependency_links=DP_LINKS,

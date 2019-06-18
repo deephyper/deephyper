@@ -67,7 +67,8 @@ class Cell:
             stacked_nodes = self.get_blocks_output()
 
             output_node = ConstantNode(name=f'Cell_{self.num}_Output')
-            output_node.set_op(Concatenate(self.graph, output_node, stacked_nodes))
+            output_node.set_op(Concatenate(
+                self.graph, output_node, stacked_nodes))
         else:
             output_node = node
         self.output = output_node
@@ -81,7 +82,7 @@ class Cell:
 
         b_outputs = []
         for b in self.blocks:
-           b_outputs.extend(b.outputs)
+            b_outputs.extend(b.outputs)
         return b_outputs
 
     def add_block(self, block):
@@ -91,7 +92,8 @@ class Cell:
             block (Block): Block the new block to add to the current Cell.
         """
         if block in self.blocks:
-            raise RuntimeError(f"The block has already been added to the current Cell(id={self.num}).")
+            raise RuntimeError(
+                f"The block has already been added to the current Cell(id={self.num}).")
 
         self.blocks.append(block)
 
@@ -112,3 +114,30 @@ class Cell:
 
             self.graph.add_nodes_from(b.graph.nodes())
             self.graph.add_edges_from(b.graph.edges())
+
+    def denormalize(self, indexes):
+        """Denormalize a sequence of normalized indexes to get a sequence of absolute indexes. Useful when you want to compare the number of different architectures.
+
+        Args:
+            indexes (Iterable): a sequence of normalized indexes.
+
+        Returns:
+            list: A list of absolute indexes corresponding to operations choosen with relative indexes of `indexes`.
+        """
+        den_list = []
+        cursor = 0
+        for b in self.blocks:
+            num_nodes = b.num_nodes()
+            sub_list = b.denormalize(indexes[cursor:cursor+num_nodes])
+            den_list.extend(sub_list)
+            cursor += num_nodes
+        return den_list
+
+    def add_edge(self, n1, n2):
+        """Add a connection from n1 to n2 in the current cell graph.
+
+        Args:
+            n1 (Node): start node.
+            n2 (Node): end node.
+        """
+        self.graph.add_edge(n1, n2)

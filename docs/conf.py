@@ -19,7 +19,6 @@ import sphinx_rtd_theme
 sys.path.insert(0, os.path.abspath('..'))
 
 
-
 # -- Project information -----------------------------------------------------
 
 project = u'DeepHyper'
@@ -29,11 +28,15 @@ author = u'Argonne'
 # The short X.Y version
 about = {}
 with open(f'../deephyper/__version__.py') as f:
-        exec(f.read(), about)
+    exec(f.read(), about)
 
 version = about['__version__']
+
 # The full version, including alpha/beta/rc tags
-release = f'alpha v{about["__version__"]}'
+if about["__version__"] == '':
+    release = f'v{about["__version__"]}'
+else:
+    release = f'v{about["__version__"]}-{about["__version_suffix__"]}'
 
 
 # -- General configuration ---------------------------------------------------
@@ -56,8 +59,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
     'sphinx.ext.napoleon',
-    'sphinx.ext.autosummary',
-    'sphinx_copybutton'
+    'sphinx.ext.autosummary'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -124,6 +126,7 @@ html_theme_options = {
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -227,4 +230,12 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 todo_include_todos = True
 
 # makes sphinx do a mock import of mpi4py so it’s not broken when you try to do auto-docs and import mpi4py
-autodoc_mock_imports = ["mpi4py", "balsam", "django", "skopt", "deap", "joblib"]
+autodoc_mock_imports = ["mpi4py", "balsam", "nbformat",
+                        "django", "skopt", "deap", "joblib", "sklearn"]
+
+
+def setup(app):
+    app.add_stylesheet('custom.css')
+    app.add_javascript("custom.js")
+    app.add_javascript(
+        "https://cdn.jsdelivr.net/npm/clipboard@1/dist/clipboard.min.js")

@@ -8,7 +8,8 @@ def add_subparser(subparsers):
     subparsers = parser.add_subparsers(help='Kind of analytics.')
 
     # best architectures
-    subparser = subparsers.add_parser('best', help='Select the best n architectures and save them into a JSON file.')
+    subparser = subparsers.add_parser('best',
+        help='Select the best n architectures and save them into a JSON file.')
     subparser.add_argument('-n', '--number', type=int,
         help='number of best architecture to select.')
     subparser.add_argument('-p', '--path', type=str,
