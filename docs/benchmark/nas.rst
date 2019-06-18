@@ -3,6 +3,8 @@
 Available NAS benchmarks
 ************************
 
+.. automodule:: deephyper.benchmark.nas
+
 ============== ================ ========================================
       Neural Architecture Search Benchmarks ``deephyper.benchmark.nas``
 ------------------------------------------------------------------------
