@@ -1,12 +1,9 @@
-Hyper Parameters Search (HPS)
-*****************************
-
-.. automodule:: deephyper.benchmark.hps
-
 .. _available-hps-benchmarks:
 
 Available HPS benchmarks
-========================
+************************
+
+.. automodule:: deephyper.benchmark.hps
 
 ============== ================ =====================================
       Hyper Parameters Search Benchmarks ``deephyper.benchmark.hps``
