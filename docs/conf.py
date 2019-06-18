@@ -31,8 +31,12 @@ with open(f'../deephyper/__version__.py') as f:
     exec(f.read(), about)
 
 version = about['__version__']
+
 # The full version, including alpha/beta/rc tags
-release = f'alpha v{about["__version__"]}'
+if about["__version__"] == '':
+    release = f'v{about["__version__"]}'
+else:
+    release = f'v{about["__version__"]}-{about["__version_suffix__"]}'
 
 
 # -- General configuration ---------------------------------------------------
@@ -229,7 +233,9 @@ todo_include_todos = True
 autodoc_mock_imports = ["mpi4py", "balsam", "nbformat",
                         "django", "skopt", "deap", "joblib", "sklearn"]
 
+
 def setup(app):
     app.add_stylesheet('custom.css')
     app.add_javascript("custom.js")
-    app.add_javascript("https://cdn.jsdelivr.net/npm/clipboard@1/dist/clipboard.min.js")
+    app.add_javascript(
+        "https://cdn.jsdelivr.net/npm/clipboard@1/dist/clipboard.min.js")
