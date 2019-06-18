@@ -27,7 +27,6 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
     install/theta
     install/cooley
     install/analytics
-    install/documentation
 
 .. toctree::
     :maxdepth: 2
