@@ -8,16 +8,21 @@ Create a post-training Balsam application:
 
     balsam app --name POST --exe "$(which python) -m deephyper.post.train"
 
-Collect a list of 50 best architectures
+Collect a list of 50 best architectures:
+
 .. code-block:: console
     :caption: bash
 
     deephyper-analytics json best -n 50 -p /projects/datascience/regele/experiments/cfd/cls_mlp_turb/exp_0/cls_mlp_turb_exp_0_2019-05-25_15.json
 
+Create a Balsam job to run your post-training using the previously created list of best architectures:
+
 .. code-block:: console
     :caption: bash
 
     balsam job --name post_cls_0 --workflow post_cls_0 --app POST --args '--evaluator balsam --problem cfdpb.cls_mlp_turbulence.problem_0.Problem --fbest /projects/datascience/regele/cfdpb/cfdpb/cls_mlp_turbulence/exp/exp_0/best_archs.json'
+
+Submit a Theta job:
 
 .. code-block:: console
     :caption: bash
