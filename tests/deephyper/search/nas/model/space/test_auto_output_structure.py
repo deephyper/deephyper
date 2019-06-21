@@ -24,7 +24,7 @@ class TestAutoOutputStructure:
 
         struct.set_ops([0])
 
-        falias = 'test_direct_structure'
+        falias = 'test_auto_output_structure'
         struct.draw_graphviz(f'{falias}.dot')
 
         model = struct.create_model()
@@ -50,7 +50,7 @@ class TestAutoOutputStructure:
 
         struct.set_ops([0, 0])
 
-        falias = 'test_direct_structure'
+        falias = 'test_auto_output_structure'
         struct.draw_graphviz(f'{falias}.dot')
 
         model = struct.create_model()
@@ -66,7 +66,7 @@ class TestAutoOutputStructure:
 
         struct.set_ops([])
 
-        falias = 'test_direct_structure'
+        falias = 'test_auto_output_structure'
         struct.draw_graphviz(f'{falias}.dot')
 
         model = struct.create_model()

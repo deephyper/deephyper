@@ -21,6 +21,20 @@ from deephyper.search.nas.model.space.struct import NxStructure
 class DirectStructure(NxStructure):
     """A DirectStructure represents a search space of neural networks.
 
+    >>> from tensorflow.keras.utils import plot_model
+    >>> from deephyper.search.nas.model.space.struct import DirectStructure
+    >>> from deephyper.search.nas.model.space.node import VariableNode, ConstantNode
+    >>> from deephyper.search.nas.model.space.op.op1d import Dense
+    >>> struct = DirectStructure((5, ), (1, ))
+    >>> vnode = VariableNode()
+    >>> struct.connect(struct.input_nodes[0], vnode)
+    >>> vnode.add_op(Dense(10))
+    >>> vnode.add_op(Dense(20))
+    >>> output_node = ConstantNode(op=Dense(1))
+    >>> struct.connect(vnode, output_node)
+    >>> struct.set_ops([0])
+    >>> model = struct.create_model()
+
     Args:
         input_shape (list(tuple(int))): list of shapes of all inputs.
         output_shape (tuple(int)): shape of output.
