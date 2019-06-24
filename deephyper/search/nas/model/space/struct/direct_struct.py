@@ -224,14 +224,11 @@ class DirectStructure(NxStructure):
             node.set_op(Concatenate(self, node, output_nodes))
         return node
 
-    def create_model(self, activation=None):
+    def create_model(self):
         """Create the tensors corresponding to the structure.
 
-        Args:
-            train (bool): True if the network is built for training, False if the network is built for validation/testing (for example False will deactivate Dropout).
-
         Returns:
-            The output tensor.
+            A keras.Model for the current structure with the corresponding set of operations.
         """
 
         output_tensor = self.create_tensor_aux(self.graph, self.output_node)

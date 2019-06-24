@@ -28,15 +28,20 @@ class AutoOutputStructure(DirectStructure):
         InputShapeOfWrongType: [description]
     """
 
-    def create_model(self, activation=None):
-        """Create the tensors corresponding to the structure.
+    def __init__(self, input_shape, output_shape, regression: bool, *args, **kwargs):
+        super().__init__(input_shape, output_shape)
+        self.regression = regression
 
-        Args:
-            train (bool): True if the network is built for training, False if the network is built for validation/testing (for example False will deactivate Dropout).
+    def create_model(self):
+        """Create the tensors corresponding to the structure.
 
         Returns:
             The output tensor.
         """
+        if self.regression:
+            activation = None
+        else:
+            activation = 'softmax'
 
         output_tensor = self.create_tensor_aux(self.graph, self.output_node)
         if len(output_tensor.get_shape()) > 2:

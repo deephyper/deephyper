@@ -56,3 +56,71 @@ class SpaceDimValueNotInSpace(DeephyperError):
 
     def __str__(self):
         return f"Dimension value: '{self.value}' is not in dim['{self.name_dim}':{self.space_dim}!"
+
+
+class SearchSpaceBuilderIsNotCallable(DeephyperError):
+    """Raised when a search space builder is not a callable."""
+
+    def __init__(self, parameter):
+        self.parameter = parameter
+
+    def __str__(self):
+        raise f"The search space builder {self.parameter} should be a callable when it is not!"
+
+
+class SearchSpaceBuilderMissingParameter(DeephyperError):
+    """Raised when a missing parameter is detected in a callable which creates a Structure.
+
+        Args:
+            missing_parameter (str): name of the missing parameter.
+    """
+
+    def __init__(self, missing_parameter):
+        self.missing_parameter = missing_parameter
+
+    def __str__(self):
+        return f"The callable which creates a Structure is missing a '{self.missing_parameter}' parameter!"
+
+
+class SearchSpaceBuilderMissingDefaultParameter(DeephyperError):
+    """Raised when a parameter of a search space builder is missing a default value."""
+
+    def __init__(self, parameter):
+        self.parameter = parameter
+
+    def __str__(self):
+        return f"The parameter {self.parameter} must have a default value!"
+
+
+class ProblemPreprocessingIsNotCallable(DeephyperError):
+    """Raised when the preprocessing parameter is not callable."""
+
+    def __init__(self, parameter):
+        self.parameter = parameter
+
+    def __str__(self):
+        return f"The parameter {self.parameter} must be a callable."
+
+
+class ProblemKindAlreadySet(DeephyperError):
+    """Raised when the problem kind (regression|classification) has already been set and the user is trying to change it."""
+
+    def __init__(self, problem):
+        self.problem = problem
+
+    def __str__(self):
+        if self.problem.space['regression']:
+            kind = 'regression'
+        else:
+            kind = 'classification'
+        return f"The problem kind has already been set to: '{kind}', you cannot change it."
+
+
+class ProblemLoadDataIsNotCallable(DeephyperError):
+    """Raised when the load_data parameter is not callable."""
+
+    def __init__(self, parameter):
+        self.parameter = parameter
+
+    def __str__(self):
+        return f"The parameter {self.parameter} must be a callable."
