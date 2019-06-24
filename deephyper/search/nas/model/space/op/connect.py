@@ -29,7 +29,7 @@ class Connect(Operation):
             ids = self.n1.id
         return f'{type(self).__name__}_{ids}->{self.n2.id}'
 
-    def is_set(self):
+    def init(self):
         """Set the connection in the structur graph from [n1] -> n2.
         """
         if type(self.n1) is list:

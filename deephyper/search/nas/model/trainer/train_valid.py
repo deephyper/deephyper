@@ -67,10 +67,7 @@ class TrainerTrainValid:
         logger.debug('[PARAM] KerasTrainer instantiated')
 
     def init_history(self):
-        self.train_history = {name if type(
-            name) is str else name.__name__: list() for name in self.metrics_name}
-        self.train_history['loss'] = list()
-        self.train_history['rmetric'] = list()
+        self.train_history = dict()
         self.train_history['n_parameters'] = self.model.count_params()
 
     def load_data(self):

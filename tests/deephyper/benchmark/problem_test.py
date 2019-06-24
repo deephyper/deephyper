@@ -119,12 +119,12 @@ class TestNaProblem:
     def test_create(self):
         from deephyper.benchmark.problem import NaProblem
 
-        NaProblem(True)
+        NaProblem()
 
     def test_search_space(self):
         from deephyper.benchmark.problem import NaProblem
 
-        pb = NaProblem(True)
+        pb = NaProblem()
 
         with pytest.raises(SearchSpaceBuilderIsNotCallable):
             pb.search_space(func='a')
@@ -150,7 +150,7 @@ class TestNaProblem:
         from deephyper.benchmark import NaProblem
         from deephyper.search.nas.model.preprocessing import minmaxstdscaler
 
-        pb = NaProblem(True)
+        pb = NaProblem()
 
         def load_data(prop):
             return ([[10]], [1]), ([10], [1])

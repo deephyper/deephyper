@@ -12,7 +12,7 @@ from deephyper.core.exceptions.nas.struct import (InputShapeOfWrongType,
                                                   WrongOutputShape)
 from deephyper.search.nas.model.space.node import (ConstantNode, Node,
                                                    VariableNode)
-from deephyper.search.nas.model.space.op.basic import Connect, Tensor
+from deephyper.search.nas.model.space.op.basic import Tensor
 from deephyper.search.nas.model.space.op.merge import Concatenate
 from deephyper.search.nas.model.space.op.op1d import Identity
 from deephyper.search.nas.model.space.struct import NxStructure

@@ -145,14 +145,12 @@ class NaProblem(Problem):
         regression (bool): if ``True`` the problem is defined as a ``regression`` problem, if ``False`` the problem is defined as a ``classification`` problem.
     """
 
-    def __init__(self, regression: bool):
+    def __init__(self):
         super().__init__()
 
-        self._space['regression'] = regression
         self._space['metrics'] = list()
 
     def __repr__(self):
-        kind = 'REGRESSION' if self._space['regression'] else 'CLASSIFICATION'
 
         preprocessing = None if self._space.get(
             'preprocessing') is None else module_location(self._space['preprocessing']['func'])
@@ -170,7 +168,7 @@ class NaProblem(Problem):
         if not type(objective) is str:
             objective = module_location(objective)
 
-        out = (f"Problem is a {kind}:\n"
+        out = (f"Problem is:\n"
                f"    - search space   : {module_location(self._space['create_structure']['func'])}\n"
                f"    - data loading   : {module_location(self._space['load_data']['func'])}\n"
                f"    - preprocessing  : {preprocessing}\n"

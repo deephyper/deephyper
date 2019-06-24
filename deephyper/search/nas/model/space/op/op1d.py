@@ -1,73 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
-import numpy as np
 
 from deephyper.search.nas.model.space.op import Operation
-import deephyper.search.nas.model.space.layers as deeplayers
-
-
-class Concatenate(Operation):
-    """Concatenate operation.
-
-    Args:
-        graph:
-        node (Node): current_node of the operation
-        stacked_nodes (list(Node)): nodes to concatenate
-        axis (int): axis to concatenate
-    """
-
-    def __init__(self, graph=None, node=None, stacked_nodes=None, axis=-1):
-        self.graph = graph
-        self.node = node
-        self.stacked_nodes = stacked_nodes
-        self.axis = axis
-
-    def is_set(self):
-        if self.stacked_nodes is not None:
-            for n in self.stacked_nodes:
-                self.graph.add_edge(n, self.node)
-
-    def __call__(self, values, **kwargs):
-        len_shp = max([len(x.get_shape()) for x in values])
-
-        if len_shp > 3:
-            raise RuntimeError(
-                'This concatenation is for 2D or 3D tensors only when a {len_shp}D is passed!')
-
-        # zeros padding
-        if len(values) > 1:
-
-            if all(map(lambda x: len(x.get_shape()) == len_shp or
-                       len(x.get_shape()) == (len_shp-1), values)):  # all tensors should have same number of dimensions 2d or 3d, but we can also accept a mix of 2d en 3d tensors
-                # we have a mix of 2d and 3d tensors so we are expanding 2d tensors to be 3d with last_dim==1
-                for i, v in enumerate(values):
-                    if len(v.get_shape()) < len_shp:
-                        values[i] = keras.layers.Reshape(
-                            (*tuple(v.get_shape()[1:]), 1))(v)
-                # for 3d tensors concatenation is applied along last dim (axis=-1), so we are applying a zero padding to make 2nd dimensions (ie. shape()[1]) equals
-                if len_shp == 3:
-                    max_len = max(map(lambda x: int(x.get_shape()[1]), values))
-                    paddings = map(lambda x: max_len -
-                                   int(x.get_shape()[1]), values)
-                    for i, (p, v) in enumerate(zip(paddings, values)):
-                        lp = p // 2
-                        rp = p - lp
-                        values[i] = keras.layers.ZeroPadding1D(
-                            padding=(lp, rp))(v)
-                # elif len_shp == 2 nothing to do
-            else:
-                raise RuntimeError(
-                    f'All inputs of concatenation operation should have same shape length:\n'
-                    f'number_of_inputs=={len(values)}\n'
-                    f'shape_of_inputs=={[str(x.get_shape()) for x in values]}')
-
-        # concatenation
-        if len(values) > 1:
-            out = keras.layers.Concatenate(axis=-1)(values)
-        else:
-            out = values[0]
-        return out
-
 
 class Dense(Operation):
     """Multi Layer Perceptron operation.
@@ -120,16 +54,10 @@ class Dropout(Operation):
 
     def __init__(self, rate):
         self.rate = rate
+        super().__init__(layer=keras.layers.Dropout(rate=self.rate))
 
     def __str__(self):
         return f'Dropout({self.rate})'
-
-    def __call__(self, inputs, **kwargs):
-        assert len(
-            inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when 1 is required.'
-        inpt = inputs[0]
-        out = keras.layers.Dropout(rate=self.rate)(inpt)
-        return out
 
 
 dropout_ops = [Dropout(0.),
@@ -142,6 +70,9 @@ dropout_ops = [Dropout(0.),
 
 
 class Identity(Operation):
+    def __init__(self):
+        pass
+
     def __call__(self, inputs, **kwargs):
         assert len(
             inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when 1 is required.'
