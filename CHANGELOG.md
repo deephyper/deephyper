@@ -9,8 +9,8 @@
 >>> from deephyper.search.nas.model.space.struct import AutoOutputStructure
 >>> from deephyper.search.nas.model.space.node import VariableNode
 >>> from deephyper.search.nas.model.space.op.op1d import Operation
->>> VariableNode()
->>> vnode1.add_op(Operation(layer=tf.keras.layers.Dense(10)))
+>>> vnode = VariableNode()
+>>> vnode.add_op(Operation(layer=tf.keras.layers.Dense(10)))
 ```
 
 * `TrainerTrainValid` now has a default callback: `tf.keras.callbacks.CSVLogger(...)`
