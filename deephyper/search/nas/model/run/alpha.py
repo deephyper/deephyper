@@ -89,7 +89,10 @@ def run(config):
 
     if model_created:
         trainer = TrainerTrainValid(config=config, model=model)
-        history = trainer.train()
+
+        last_only = '__last' in config['objective']
+        with_pred = not type(config['objective']) is str
+        history = trainer.train(with_pred=with_pred, last_only=last_only)
 
         result = compute_objective(config['objective'], history)
     else:

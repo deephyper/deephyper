@@ -18,11 +18,12 @@ from deephyper.search.nas.model.space.struct import DirectStructure
 
 
 class AutoOutputStructure(DirectStructure):
-    """A DirectStructure represents a search space of neural networks.
+    """An AutoOutputStructure represents a search space of neural networks.
 
     Args:
         input_shape (list(tuple(int))): list of shapes of all inputs.
         output_shape (tuple(int)): shape of output.
+        regression (bool): if ``True`` the output will be a simple ``tf.keras.layers.Dense(output_shape[0])`` layer as the output layer. if ``False`` the output will be ``tf.keras.layers.Dense(output_shape[0], activation='softmax').
 
     Raises:
         InputShapeOfWrongType: [description]

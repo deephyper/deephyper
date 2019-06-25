@@ -177,7 +177,7 @@ class TrainerTrainValid:
                 acc += shp[1]
             self.valid_Y = preproc_data[dt_shp[0]:, acc:]
         else:
-            logger.debug('no preprocessing function')
+            logger.info('no preprocessing function')
 
     def set_dataset_train(self):
         if self.data_config_type == "ndarray":
@@ -255,7 +255,20 @@ class TrainerTrainValid:
 
         return y_orig, y_pred
 
-    def train(self, num_epochs=None):
+    def train(self, num_epochs: int=None, with_pred: bool=False, last_only: bool=False):
+        """Train the model.
+
+        Args:
+            num_epochs (int, optional): override the num_epochs passed to init the Trainer. Defaults to None, will use the num_epochs passed to init the Trainer.
+            with_pred (bool, optional): will compute a prediction after the training and will add ('y_true', 'y_pred') to the output history. Defaults to False, will skip it (use it to save compute time).
+            last_only (bool, optional): will compute metrics after the last epoch only. Defaults to False, will compute metrics after each training epoch (use it to save compute time).
+
+        Raises:
+            RuntimeError: raised when the ``num_epochs < 0``.
+
+        Returns:
+            dict: a dictionnary corresponding to the training.
+        """
         num_epochs = self.num_epochs if num_epochs is None else num_epochs
 
         self.init_history()
@@ -264,14 +277,33 @@ class TrainerTrainValid:
 
             time_start_training = time.time()  # TIMING
 
-            history = self.model.fit( # TODO: logger
-                self.dataset_train,
-                epochs=num_epochs,
-                steps_per_epoch=self.train_steps_per_epoch,
-                callbacks=self.callbacks,
-                validation_data=self.dataset_valid,
-                validation_steps=self.valid_steps_per_epoch
-            )
+            if not last_only:
+                logger.info('Trainer is computing metrics on validation after each training epoch.')
+                history = self.model.fit(
+                    self.dataset_train,
+                    epochs=num_epochs,
+                    steps_per_epoch=self.train_steps_per_epoch,
+                    callbacks=self.callbacks,
+                    validation_data=self.dataset_valid,
+                    validation_steps=self.valid_steps_per_epoch
+                )
+            else:
+                logger.info('Trainer is computing metrics on validation after the last training epoch.')
+                if num_epochs > 1:
+                    self.model.fit(
+                        self.dataset_train,
+                        epochs=num_epochs-1,
+                        steps_per_epoch=self.train_steps_per_epoch,
+                        callbacks=self.callbacks,
+                    )
+                history = self.model.fit(
+                    self.dataset_train,
+                    epochs=1,
+                    steps_per_epoch=self.train_steps_per_epoch,
+                    callbacks=self.callbacks,
+                    validation_data=self.dataset_valid,
+                    validation_steps=self.valid_steps_per_epoch
+                )
 
             time_end_training = time.time()  # TIMING
             self.train_history['training_time'] = time_end_training - \
@@ -284,10 +316,11 @@ class TrainerTrainValid:
             raise RuntimeError(
                 f'Trainer: number of epochs should be >= 0: {num_epochs}')
 
-        y_true, y_pred= self.predict()
+        if  with_pred:
+            y_true, y_pred= self.predict()
 
-        self.train_history['y_true'] = y_true
-        self.train_history['y_pred'] = y_pred
+            self.train_history['y_true'] = y_true
+            self.train_history['y_pred'] = y_pred
 
         return self.train_history
 
