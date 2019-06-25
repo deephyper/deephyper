@@ -1,15 +1,7 @@
-.. _available-hps-benchmarks:
+Hyperparameter Search Problem
+*****************************
 
-Available HPS benchmarks
-************************
+Use this class to define a hyperparameter search problem, see :ref:`create-new-hps-problem` for more details.
 
-.. automodule:: deephyper.benchmark.hps
-
-============== ================ =====================================
-      Hyper Parameters Search Benchmarks ``deephyper.benchmark.hps``
----------------------------------------------------------------------
-     Name            Type                    Description
-============== ================ =====================================
- mnistmlp       Classification   http://yann.lecun.com/exdb/mnist/
- polynome2      Dummy
-============== ================ =====================================
+.. autoclass:: deephyper.benchmark.problem.HpProblem
+   :members:

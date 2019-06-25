@@ -1,21 +1,43 @@
-Introduction
-************
+********************
+Available benchmarks
+********************
 
 .. automodule:: deephyper.benchmark
 
-Problem
-*******
+.. _available-hps-benchmarks:
 
-This class describe the most generic aspect of a problem. Basically we are using a python ``dict`` and adding key-values. It is mostly used for neural architecture search problems, see :ref:`create-new-nas-problem` for more details.
+Available HPS benchmarks
+========================
 
-.. autoclass:: deephyper.benchmark.problem.Problem
-   :members:
+.. automodule:: deephyper.benchmark.hps
 
+============== ================ =====================================
+      Hyper Parameters Search Benchmarks ``deephyper.benchmark.hps``
+---------------------------------------------------------------------
+     Name            Type                    Description
+============== ================ =====================================
+ mnistmlp       Classification   http://yann.lecun.com/exdb/mnist/
+ polynome2      Dummy
+============== ================ =====================================
 
-Hyperparameter Search Problem
-*****************************
+.. _available-nas-benchmarks:
 
-Use this class to define a hyperparameter search problem, see :ref:`create-new-hps-problem` for more details.
+Available NAS benchmarks
+========================
 
-.. autoclass:: deephyper.benchmark.problem.HpProblem
-   :members:
+.. automodule:: deephyper.benchmark.nas
+
+============== ================ ========================================
+      Neural Architecture Search Benchmarks ``deephyper.benchmark.nas``
+------------------------------------------------------------------------
+     Name            Type          Description
+============== ================ ========================================
+ ackleyReg      Regression       Generation of points in N dimensions corresponding to y=f(x) where f is https://www.sfu.ca/~ssurjano/ackley.html
+ cifar10        Classification   https://www.cs.toronto.edu/~kriz/cifar.html
+ dixonpriceReg  Regression       https://www.sfu.ca/~ssurjano/dixonpr.html
+ levyReg        Regression       Generation of points in N dimensions corresponding to y=f(x) where f is https://www.sfu.ca/~ssurjano/levy.html
+ linearReg      Regression       Generation of points in N dimensions corresponding to y=x
+ mnistNas       Classification   http://yann.lecun.com/exdb/mnist/
+ polynome2Reg   Regression       Generation of points in N dimensions corresponding to y=sum(x_i^2)
+ saddleReg      Regression       https://en.wikipedia.org/wiki/Saddle_point
+============== ================ ========================================
