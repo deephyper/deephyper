@@ -1,0 +1,1 @@
+from deephyper.core.cli.cli import main
