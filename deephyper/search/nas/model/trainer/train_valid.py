@@ -23,7 +23,7 @@ class TrainerTrainValid:
         self.sess = keras.backend.get_session()
         self.model = model
         self.callbacks = [
-            keras.callbacks.CSVLogger('training.csv')
+            keras.callbacks.CSVLogger('training.csv', append=True)
         ]
 
         self.data = self.config[a.data]
