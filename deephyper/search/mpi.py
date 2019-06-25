@@ -40,8 +40,8 @@ class MPIWorker():
     def exec(self, x):
         """Adds the evaluation of a new point and waits for the result
         of the evaluation to be available, to return it."""
-        self.evaluator.add_eval(x)
-        for (x,y) in self.evaluator.get_finished_evals():
+        uid = self.evaluator.add_eval(x)
+        for (x,y) in self.evaluator.await_evals([x]):
             return y
 
     def run(self):
