@@ -6,7 +6,6 @@
 
 ```
 >>> import tensorflow as tf
->>> from deephyper.search.nas.model.space.struct import AutoOutputStructure
 >>> from deephyper.search.nas.model.space.node import VariableNode
 >>> from deephyper.search.nas.model.space.op.op1d import Operation
 >>> vnode = VariableNode()

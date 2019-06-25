@@ -8,8 +8,13 @@ import deephyper.search.nas.model.space.layers as deeplayers
 class Operation:
     """Interface of an operation.
 
+    >>> import tensorflow as tf
+    >>> from deephyper.search.nas.model.space.op.op1d import Operation
+    >>> Operation(layer=tf.keras.layers.Dense(10))
+    Dense
+
     Args:
-        layer (Layer): a ``tensorflow.keras`` layer.
+        layer (Layer): a ``tensorflow.keras.layers.Layer``.
     """
 
     def __init__(self, layer: Layer):

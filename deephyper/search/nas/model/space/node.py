@@ -18,7 +18,7 @@ class Node:
         self.name = name
 
     def __str__(self):
-        return f'{self.name}({self._num})'
+        return f'{self.name}[id={self._num}]'
 
     @property
     def id(self):
@@ -75,7 +75,7 @@ class VariableNode(OperationNode):
     >>> vnode.op.units
     10
     >>> str(vnode)
-    'VNode1(1)(Variable[Dense_10_relu])'
+    'VNode1[id=1](Variable[Dense_10_relu])'
 
     Args:
         name (str): node name.
@@ -90,7 +90,7 @@ class VariableNode(OperationNode):
         if self._index != None:
             return f'{super().__str__()}(Variable[{str(self.op)}])'
         else:
-            return f'{super().__str__()}(Variable)'
+            return f'{super().__str__()}(Variable[?])'
 
     def add_op(self, op):
         self._ops.append(self.verify_operation(op))
@@ -149,7 +149,7 @@ class ConstantNode(OperationNode):
     >>> from deephyper.search.nas.model.space.op.op1d import Dense
     >>> cnode = ConstantNode(op=Dense(units=100, activation=tf.nn.relu), name='CNode1')
     >>> str(cnode)
-    'CNode1(2)(Constant[Dense_100_relu])'
+    'CNode1[id=2](Constant[Dense_100_relu])'
 
     Args:
         op (Operation, optional): [description]. Defaults to None.
