@@ -200,10 +200,10 @@ class Evaluator:
                 pass
             yield (x, y)
 
-    def get_finished_evals(self):
+    def get_finished_evals(self, timeout=0.5):
         futures = self.pending_evals.values()
         try:
-            waitRes = self.wait(futures, timeout=0.5,
+            waitRes = self.wait(futures, timeout=timeout,
                                 return_when='ANY_COMPLETED')
         except TimeoutError:
             pass

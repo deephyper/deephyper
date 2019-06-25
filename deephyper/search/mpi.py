@@ -32,38 +32,40 @@ class MPIWorker():
         self.run_func = util.generic_loader(run, 'run')
         self.evaluator = Evaluator.create(self.run_func, method=evaluator)
 
-    def get_num_internal_workers(self):
-        """Returns the number of workers in the local evaluator
-        (not the number of MPIWorkers in the MPI communicator!)."""
-        return self.evaluator.num_workers
-
-    def exec(self, x):
-        """Adds the evaluation of a new point and waits for the result
-        of the evaluation to be available, to return it."""
+    def _exec(self, x):
+        """Adds the evaluation of a new point and return its uid."""
         uid = self.evaluator.add_eval(x)
-        for (x,y) in self.evaluator.await_evals([x]):
-            return y
+        return uid
 
     def run(self):
         """Runs the main loop of the MPI worker."""
-        # TODO: right now the MPIWorker can only receive one point to
-        # evaluate and cannot use the number of workers in the evaluator.
-        # This is because "exec" is blocking until the result is available.
+        pending_uids = dict()
+        request = None
         while(True):
-            status = MPI.Status()
-            cmd_info = comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
-            # cmd_info is a dictionary with a key "cmd" that is the name
-            # of a member function to call, and "args" and "kwargs" keys
-            # correspond to the args and kwargs to pass to this function.
-            tag = status.Get_tag()
-            cmd = cmd_info['cmd']
-            if(cmd == 'exit'):
-                break
-            args = cmd_info.get('args',[])
-            kwargs = cmd_info.get('kwargs', dict())
-            func = getattr(self, cmd)
-            y = func(*args, **kwargs)
-            comm.send(y, dest=0, tag=tag)
+            # Try receiving something from MPIManager
+            if(request is None):
+                request = comm.irecv(source=0, tag=MPI.ANY_TAG)
+            if(len(pending_uids) == 0):
+                status = MPI.Status()
+                completed, cmd_info = True, MPI.Request.wait(request, status=status)
+            else:
+                completed, cmd_info = MPI.Request.test(request, status=status)
+
+            if(completed): # Something was received
+                tag = status.Get_tag()
+                cmd = cmd_info['cmd']
+                if(cmd == 'exit'):
+                    break
+                if(cmd == 'exec'):
+                    args = cmd_info.get('args',[])
+                    kwargs = cmd_info.get('kwargs', dict())
+                    uid = self._exec(*args, **kwargs)
+                    pending_uids[uid] = tag
+                request = None
+            elif(len(pending_uids) != 0): # Nothing was received and there are pending requests
+                for (x,y) in self.evaluator.get_finished_evals(timeout=0.1):
+                    uid = self.evaluator.encode(x)
+                    self.comm.send(y, dest=0, tag=pending_uids.pop(uid))
 
 class MPIManager():
     """The MPIManager class is instanciated in rank 0 of the provided MPI

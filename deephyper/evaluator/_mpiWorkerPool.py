@@ -40,6 +40,11 @@ class MPIFuture():
         """Returns the worker to which the request was posted."""
         return self._worker
 
+    @property
+    def tag(self):
+        """Returns the tag used for this request."""
+        return self._tag
+
     def result(self):
         """Returns the result of the request. This method will
         fail if set_result wasn't called before to set the result."""
@@ -94,9 +99,10 @@ class MPIWorkerPool(Evaluator):
         else:
             self.comm = comm
         self.num_workers = self.comm.Get_size()-1
-        # TODO: technically we should take into account that each MPIWorker has
-        # multiple workers internally and can receive multiple requests.
-        self.avail_workers = [ x+1 for x in range(0, self.num_workers) ]
+        self.avail_workers = []
+        for tag in range(0, self.WORKERS_PER_NODE):
+            for rank in range(0, self.num_workers):
+                self.avail_workers.append((rank+1, tag+1))
         funcName = self._run_function.__name__
         moduleName = self._run_function.__module__
         self.appName = '.'.join((moduleName, funcName))
@@ -110,8 +116,8 @@ class MPIWorkerPool(Evaluator):
         now_unposted = []
         for f in unposted:
             if(len(self.avail_workers) > 0):
-                worker = self.avail_workers.pop()
-                f.post(self.comm, worker, 0)
+                worker, tag = self.avail_workers.pop()
+                f.post(self.comm, worker, tag)
                 now_posted.append(f)
             else:
                 now_unposted.append(f)
@@ -125,8 +131,8 @@ class MPIWorkerPool(Evaluator):
         cmd = {'cmd': 'exec', 'args': [x] }
         future = MPIFuture(cmd)
         if(len(self.avail_workers) > 0):
-            worker = self.avail_workers.pop()
-            future.post(self.comm, worker, 0)
+            worker, tag = self.avail_workers.pop()
+            future.post(self.comm, worker, tag)
         return future
 
     def wait(self, futures, timeout=None, return_when='ANY_COMPLETED'):
@@ -147,7 +153,7 @@ class MPIWorkerPool(Evaluator):
             while(len(posted) > 0 or len(unposted) > 0):
                 MPIFuture.waitall(posted)
                 for f in posted:
-                    self.avail_workers.append(f.worker)
+                    self.avail_workers.append((f.worker, f.tag))
                 done.extend(posted)
                 posted, unposted = self._try_posting(unposted)
         else:  # return_when ==  'ANY_COMPLETED'
@@ -166,7 +172,7 @@ class MPIWorkerPool(Evaluator):
                         p.post(self.comm, worker=f.worker, tag=f.tag)
                         active.append(p)
                     else:
-                        self.avail_workers.append(f.worker)
+                        self.avail_workers.append((f.worker, f.tag))
                 else:
                     active.append(f)
             if not one_completed: # we need to call waitany
@@ -177,7 +183,7 @@ class MPIWorkerPool(Evaluator):
                     p.post(self.comm, worker=f.worker, tag=f.tag)
                     active.append(p)
                 else:
-                    self.avail_workers.append(f.worker)
+                    self.avail_workers.append((f.worker, f.tag))
             for f in unposted:
                 active.append(f)
 
