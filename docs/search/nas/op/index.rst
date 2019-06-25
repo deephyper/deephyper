@@ -8,13 +8,11 @@ Operations
 Operation 1D (Input is vector)
 ==============================
 
+.. autoclass:: deephyper.search.nas.model.space.op.op1d.Identity
+
 .. autoclass:: deephyper.search.nas.model.space.op.op1d.Dense
 
-.. autoclass:: deephyper.search.nas.model.space.op.op1d.Concatenate
-
 .. autoclass:: deephyper.search.nas.model.space.op.op1d.Dropout
-
-.. autoclass:: deephyper.search.nas.model.space.op.op1d.Identity
 
 .. autoclass:: deephyper.search.nas.model.space.op.op1d.Conv1D
 
@@ -23,14 +21,13 @@ Operation 1D (Input is vector)
 .. autoclass:: deephyper.search.nas.model.space.op.op1d.Flatten
 
 
+Merge Operations
+================
+
+.. autoclass:: deephyper.search.nas.model.space.op.merge.Concatenate
+
+.. autoclass:: deephyper.search.nas.model.space.op.merge.AddByPadding
+
 Define a new Operation
 ======================
 
-Fixed input data flow
----------------------
-
-.. todo:: define a new Operation with fixed input data flow
-
-Dynamic input data flow
-
-.. todo:: define a new Operation with dynamic input data flow

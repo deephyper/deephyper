@@ -107,7 +107,6 @@ html_logo = "_static/logo/medium.png"
 
 html_theme_options = {
     'analytics_id': 'UA-133225914-1',
-    # 'github_url': 'https://github.com/deephyper/deephyper',
     'logo_only': True,
     'display_version': True,
     'prev_next_buttons_location': 'bottom',
@@ -233,6 +232,8 @@ todo_include_todos = True
 autodoc_mock_imports = ["mpi4py", "balsam", "nbformat",
                         "django", "skopt", "deap", "joblib", "sklearn"]
 
+# Remove <BLANKLINE>
+trim_doctest_flags = True
 
 def setup(app):
     app.add_stylesheet('custom.css')

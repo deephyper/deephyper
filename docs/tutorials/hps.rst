@@ -19,7 +19,7 @@ and run a HPS to tune the hyperparameters of a simple neural network.
 
 
 Create a problem directory
-========================
+==========================
 First, we will create a hps_problem_directory ``polynome2``.
 
 .. code-block:: console

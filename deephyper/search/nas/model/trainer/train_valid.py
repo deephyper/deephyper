@@ -28,12 +28,13 @@ class TrainerTrainValid:
 
         self.config_hp = self.config[a.hyperparameters]
         self.optimizer_name = self.config_hp[a.optimizer]
-        self.loss_metric_name = self.config_hp[a.loss_metric]
-        self.metrics_name = [U.selectMetric(m)
-                             for m in self.config_hp[a.metrics]]
         self.batch_size = self.config_hp[a.batch_size]
         self.learning_rate = self.config_hp[a.learning_rate]
         self.num_epochs = self.config_hp[a.num_epochs]
+
+        self.loss_metric_name = self.config[a.loss_metric]
+        self.metrics_name = [U.selectMetric(m)
+                             for m in self.config[a.metrics]]
 
         # DATA loading
         self.data_config_type = None
@@ -57,20 +58,6 @@ class TrainerTrainValid:
         self.dataset_valid = None
         self.set_dataset_valid()
 
-        self.y_true_ph = tf.placeholder(
-            dtype=tf.float32,
-            shape=(None, None),
-            name='y_true'
-        )
-        self.y_pred_ph = tf.placeholder(
-            dtype=tf.float32,
-            shape=(None, None),
-            name='y_pred'
-        )
-
-        self.reward_metric = U.selectRewardMetric(self.config_hp['reward'])
-        self.reward_metric_op = self.reward_metric(self.y_true_ph, self.y_pred_ph)
-
         self.model_compile()
 
         self.train_history = None
@@ -80,10 +67,7 @@ class TrainerTrainValid:
         logger.debug('[PARAM] KerasTrainer instantiated')
 
     def init_history(self):
-        self.train_history = {name if type(
-            name) is str else name.__name__: list() for name in self.metrics_name}
-        self.train_history['loss'] = list()
-        self.train_history['rmetric'] = list()
+        self.train_history = dict()
         self.train_history['n_parameters'] = self.model.count_params()
 
     def load_data(self):
@@ -97,7 +81,7 @@ class TrainerTrainValid:
             self.load_data_ndarray()
         else:
             raise RuntimeError(
-                f"Data config is not supported by this Trainer: '{data_config_type}'!")
+                f"Data config is not supported by this Trainer: '{self.data_config_type}'!")
 
         # prepare number of steps for training and validation
         self.train_steps_per_epoch = self.train_size // self.batch_size
@@ -229,7 +213,7 @@ class TrainerTrainValid:
         self.model.compile(
             optimizer=self.optimizer,
             loss=self.loss_metric_name,
-            metrics=self.metrics_name)# + [self.reward_metric])
+            metrics=self.metrics_name)
 
     def add_callback(self, cb):
         assert isinstance(cb, keras.callbacks.Callback)
@@ -275,74 +259,35 @@ class TrainerTrainValid:
         self.init_history()
 
         if num_epochs > 0:
-            max_rmetric = -math.inf
 
             time_start_training = time.time()  # TIMING
 
-            for i in range(num_epochs):
-                history = self.model.fit(
-                    self.dataset_train,
-                    epochs=1,
-                    steps_per_epoch=self.train_steps_per_epoch,
-                    callbacks=self.callbacks,
-                    # validation_data=self.dataset_valid,
-                    # validation_steps=self.valid_steps_per_epoch
-                )
-
-                for k in history.history:
-                    self.train_history[k].append(history.history[k][0])
-
-                y_orig, y_pred = self.predict()
-
-                try:
-                    unnormalize_rmetric = self.sess.run(self.reward_metric_op, {
-                        self.y_true_ph: y_orig,
-                        self.y_pred_ph: y_pred
-                    })
-                    if len(np.shape(unnormalize_rmetric)) != 0:
-                        raise RuntimeError('Reward should be a scalar')
-                    else:
-                        self.train_history['rmetric'].append(
-                            unnormalize_rmetric)
-                except ValueError as err:
-                    logger.error(traceback.format_exc())
-                    unnormalize_rmetric = np.finfo('float32').min
-                except:
-                    raise
-
-                max_rmetric = max(max_rmetric, unnormalize_rmetric)
-                logger.info(
-                    jm(epoch=i, rmetric=float(unnormalize_rmetric)))
+            history = self.model.fit( # TODO: logger
+                self.dataset_train,
+                epochs=num_epochs,
+                steps_per_epoch=self.train_steps_per_epoch,
+                callbacks=self.callbacks,
+                validation_data=self.dataset_valid,
+                validation_steps=self.valid_steps_per_epoch
+            )
 
             time_end_training = time.time()  # TIMING
             self.train_history['training_time'] = time_end_training - \
                 time_start_training
 
-            logger.info(jm(type='result', rmetric=float(max_rmetric)))
-            return max_rmetric
+            self.train_history.update(history.history)
 
-        elif num_epochs == 0:
-            y_orig, y_pred = self.predict()
+        elif num_epochs < 0:
 
-            try:
-                unnormalize_rmetric = self.sess.run(self.reward_metric_op, {
-                    self.y_true_ph: y_orig,
-                    self.y_pred_ph: y_pred
-                })
-                if len(np.shape(unnormalize_rmetric)) != 0:
-                    raise RuntimeError('Reward should be a scalar')
-            except ValueError as err:
-                logger.error(traceback.format_exc())
-                unnormalize_rmetric = np.finfo('float32').min
-            except:
-                raise
-
-            logger.info(jm(epoch=0, rmetric=float(unnormalize_rmetric)))
-            logger.info(jm(type='result', rmetric=float(unnormalize_rmetric)))
-            return unnormalize_rmetric
-        else:
             raise RuntimeError(
-                f'Number of epochs should be >= 0: {num_epochs}')
+                f'Trainer: number of epochs should be >= 0: {num_epochs}')
+
+        y_true, y_pred= self.predict()
+
+        self.train_history['y_true'] = y_true
+        self.train_history['y_pred'] = y_pred
+
+        return self.train_history
 
     def post_train(self, num_epochs=None):
         """Run a post-training procedure.

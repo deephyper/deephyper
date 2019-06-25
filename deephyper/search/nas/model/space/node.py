@@ -1,3 +1,5 @@
+from tensorflow.keras.layers import Layer
+from deephyper.search.nas.model.space.op.basic import Operation
 
 class Node:
     """This class represents a node of a graph
@@ -28,6 +30,15 @@ class Node:
 
     def create_tensor(self, *args, **kwargs):
         raise NotImplementedError
+
+    @staticmethod
+    def verify_operation(op):
+        if isinstance(op, Operation):
+            return op
+        elif isinstance(op, Layer):
+            return Operation(op)
+        else:
+            raise RuntimeError(f'Can\'t add this operation \'{op.__name__}\'. An operation should be either of type Operation or Layer when is of type: {type(op)}')
 
 
 class OperationNode(Node):
@@ -82,14 +93,14 @@ class VariableNode(OperationNode):
             return f'{super().__str__()}(Variable)'
 
     def add_op(self, op):
-        self._ops.append(op)
+        self._ops.append(self.verify_operation(op))
 
     @property
     def num_ops(self):
         return len(self._ops)
 
     def set_op(self, index):
-        self.get_op(index).is_set()
+        self.get_op(index).init()
 
     def get_op(self, index):
         assert 'float' in str(type(index)) or type(
@@ -148,11 +159,12 @@ class ConstantNode(OperationNode):
     def __init__(self, op=None, name='', *args, **kwargs):
         super().__init__(name=name)
         if not op is None:
-            op.is_set()  # set operation
+            op.init()  # set operation
         self._op = op
 
     def set_op(self, op):
-        op.is_set()
+        op = self.verify_operation(op)
+        op.init()
         self._op = op
 
     def __str__(self):

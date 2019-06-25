@@ -21,7 +21,7 @@ class Concatenate(Operation):
         self.stacked_nodes = stacked_nodes
         self.axis = axis
 
-    def is_set(self):
+    def init(self):
         if self.stacked_nodes is not None:
             for n in self.stacked_nodes:
                 self.struct.connect(n, self.node)
@@ -84,7 +84,7 @@ class AddByPadding(Operation):
         self.stacked_nodes = stacked_nodes
         self.axis = axis
 
-    def is_set(self):
+    def init(self):
         if self.stacked_nodes is not None:
             for n in self.stacked_nodes:
                 self.struct.connect(n, self.node)

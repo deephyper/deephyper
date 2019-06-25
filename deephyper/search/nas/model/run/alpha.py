@@ -5,10 +5,8 @@ import numpy as np
 from tensorflow import keras
 
 from deephyper.search import util
-from deephyper.search.nas.model.trainer.classifier_train_valid import \
-    TrainerClassifierTrainValid
-from deephyper.search.nas.model.trainer.regressor_train_valid import \
-    TrainerRegressorTrainValid
+
+from deephyper.search.nas.model.trainer.train_valid import TrainerTrainValid
 
 logger = util.conf_logger('deephyper.search.nas.run')
 
@@ -81,30 +79,37 @@ def run(config):
         config['preprocessing'] = None
 
     model_created = False
-    if config['regression']:
-        try:
-            model = structure.create_model()
-            model_created = True
-        except:
-            model_created = False
-            logger.info('Error: Model creation failed...')
-            logger.info(traceback.format_exc())
-        if model_created:
-            trainer = TrainerRegressorTrainValid(config=config, model=model)
-    else:
-        try:
-            model = structure.create_model(activation='softmax')
-            model_created = True
-        except:
-            model_created = False
-            logger.info('Error: Model creation failed...')
-            logger.info(traceback.format_exc())
-        if model_created:
-            trainer = TrainerClassifierTrainValid(config=config, model=model)
+    try:
+        model = structure.create_model()
+        model_created = True
+    except:
+        model_created = False
+        logger.info('Error: Model creation failed...')
+        logger.info(traceback.format_exc())
 
     if model_created:
-        result = trainer.train()
+        trainer = TrainerTrainValid(config=config, model=model)
+        history = trainer.train()
+
+        result = compute_objective(config['objective'], history)
     else:
         # penalising actions if model cannot be created
         result = -1
+
     return result
+
+
+def compute_objective(cfg, history):
+    if '__' in cfg or cfg in history:
+        split_cfg = cfg.split('__')
+        kind = split_cfg[1] if len(split_cfg) > 1 else 'last'
+        mname = split_cfg[0]
+        if kind == 'min':
+            return min(history[mname])
+        elif kind == 'max':
+            return max(history[mname])
+        else: # 'last' or else
+            return history[mname][-1]
+    else:
+        func = util.load_attr_from(cfg)
+        return func(history)

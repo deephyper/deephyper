@@ -8,11 +8,11 @@ class TestAutoOutputStructure:
 
     def test_create(self):
         from deephyper.search.nas.model.space.struct import AutoOutputStructure
-        struct = AutoOutputStructure((5, ), (1, ))
+        struct = AutoOutputStructure((5, ), (1, ), regression=True)
 
     def test_create_one_vnode(self):
         from deephyper.search.nas.model.space.struct import AutoOutputStructure
-        struct = AutoOutputStructure((5, ), (1, ))
+        struct = AutoOutputStructure((5, ), (1, ), regression=True)
 
         from deephyper.search.nas.model.space.node import VariableNode
         vnode = VariableNode()
@@ -36,7 +36,7 @@ class TestAutoOutputStructure:
         from deephyper.search.nas.model.space.struct import AutoOutputStructure
         from deephyper.search.nas.model.space.node import VariableNode
         from deephyper.search.nas.model.space.op.op1d import Dense
-        struct = AutoOutputStructure((5, ), (1, ))
+        struct = AutoOutputStructure((5, ), (1, ), regression=True)
 
         vnode1 = VariableNode()
         struct.connect(struct.input_nodes[0], vnode1)
@@ -62,7 +62,7 @@ class TestAutoOutputStructure:
         from deephyper.search.nas.model.space.struct import AutoOutputStructure
         from deephyper.search.nas.model.space.node import VariableNode
         from deephyper.search.nas.model.space.op.op1d import Dense
-        struct = AutoOutputStructure([(5, ), (5, )], (1, ))
+        struct = AutoOutputStructure([(5, ), (5, )], (1, ), regression=True)
 
         struct.set_ops([])
 

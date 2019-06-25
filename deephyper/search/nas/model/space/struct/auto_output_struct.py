@@ -11,7 +11,7 @@ from deephyper.core.exceptions.nas.struct import (InputShapeOfWrongType,
                                                   WrongSequenceToSetOperations)
 from deephyper.search.nas.model.space.node import (ConstantNode, Node,
                                                    VariableNode)
-from deephyper.search.nas.model.space.op.basic import Connect, Tensor
+from deephyper.search.nas.model.space.op.basic import Tensor
 from deephyper.search.nas.model.space.op.merge import Concatenate
 from deephyper.search.nas.model.space.op.op1d import Identity
 from deephyper.search.nas.model.space.struct import DirectStructure
@@ -28,15 +28,20 @@ class AutoOutputStructure(DirectStructure):
         InputShapeOfWrongType: [description]
     """
 
-    def create_model(self, activation=None):
-        """Create the tensors corresponding to the structure.
+    def __init__(self, input_shape, output_shape, regression: bool, *args, **kwargs):
+        super().__init__(input_shape, output_shape)
+        self.regression = regression
 
-        Args:
-            train (bool): True if the network is built for training, False if the network is built for validation/testing (for example False will deactivate Dropout).
+    def create_model(self):
+        """Create the tensors corresponding to the structure.
 
         Returns:
             The output tensor.
         """
+        if self.regression:
+            activation = None
+        else:
+            activation = 'softmax'
 
         output_tensor = self.create_tensor_aux(self.graph, self.output_node)
         if len(output_tensor.get_shape()) > 2:

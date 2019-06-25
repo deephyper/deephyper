@@ -2,7 +2,7 @@ import networkx as nx
 
 from deephyper.search.nas.model.space.node import Node, ConstantNode
 from deephyper.search.nas.model.space.block import Block
-from deephyper.search.nas.model.space.op.op1d import Concatenate
+from deephyper.search.nas.model.space.op.merge import Concatenate
 
 
 class Cell:

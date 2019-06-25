@@ -1,32 +1,28 @@
-from deephyper.search.nas.model.baseline.anl_mlp_2 import create_structure
+from deephyper.benchmark import NaProblem
 from deephyper.benchmark.nas.mnist1D.load_data import load_data
-from deephyper.benchmark import Problem
+from deephyper.search.nas.model.baseline.simple import create_structure
+from deephyper.search.nas.model.preprocessing import minmaxstdscaler
 
-Problem = Problem()
+Problem = NaProblem(regression=False)
 
-Problem.add_dim('regression', False)
+Problem.load_data(load_data)
 
-Problem.add_dim('load_data', {
-    'func': load_data
-})
+Problem.search_space(create_structure)
 
-Problem.add_dim('create_structure', {
-    'func': create_structure,
-    'kwargs': {
-        'num_cells': 5
-    }
-})
+Problem.hyperparameters(
+    batch_size=100,
+    learning_rate=0.1,
+    optimizer='adam',
+    num_epochs=10,
+)
 
-Problem.add_dim('hyperparameters', {
-    'batch_size': 64,
-    'learning_rate': 0.0001,
-    'optimizer': 'adam',
-    'num_epochs': 10,
-    'loss_metric': 'categorical_crossentropy',
-    'metrics': ['acc'],
-    'reward': 'acc'
-})
+Problem.loss('categorical_crossentropy')
+
+Problem.metrics(['acc'])
+
+Problem.objective('val_acc')
 
 
+# Just to print your problem, to test its definition and imports in the current python environment.
 if __name__ == '__main__':
     print(Problem)
