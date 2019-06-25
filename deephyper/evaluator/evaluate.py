@@ -121,11 +121,15 @@ class Evaluator:
             future.uid = uid
             self.pending_evals[uid] = future
         self.key_uid_map[key] = uid
+        return uid
 
     def add_eval_batch(self, XX):
+        uids = []
         with self.transaction_context():
             for x in XX:
-                self.add_eval(x)
+                uid = self.add_eval(x)
+                uids.append(uid)
+        return uids
 
     def _eval_exec(self, x):
         raise NotImplementedError
