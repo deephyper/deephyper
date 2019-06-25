@@ -2,7 +2,7 @@
 
 ## New features
 
-* Create a new Operation` from `tensorflow.keras.layers`:
+* Create a new `Operation` from `tensorflow.keras.layers`:
 
 ```
 >>> import tensorflow as tf
@@ -12,3 +12,5 @@
 >>> VariableNode()
 >>> vnode1.add_op(Operation(layer=tf.keras.layers.Dense(10)))
 ```
+
+* `TrainerTrainValid` now has a default callback: `tf.keras.callbacks.CSVLogger(...)`
