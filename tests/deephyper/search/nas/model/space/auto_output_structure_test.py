@@ -8,7 +8,7 @@ class TestAutoOutputStructure:
 
     def test_create(self):
         from deephyper.search.nas.model.space.struct import AutoOutputStructure
-        struct = AutoOutputStructure((5, ), (1, ), regression=True)
+        AutoOutputStructure((5, ), (1, ), regression=True)
 
     def test_create_one_vnode(self):
         from deephyper.search.nas.model.space.struct import AutoOutputStructure

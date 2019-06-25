@@ -7,8 +7,8 @@ import pytest
 from tensorflow.keras.utils import plot_model
 
 from deephyper.search import util
-from deephyper.search.nas.model.trainer.regressor_train_valid import \
-    TrainerRegressorTrainValid
+from deephyper.search.nas.model.trainer.train_valid import \
+    TrainerTrainValid
 
 
 @pytest.mark.slow
@@ -57,7 +57,7 @@ def test_trainer_regressor_train_valid_with_one_input():
     plot_model(model, to_file='trainer_keras_regressor_test.png',
                show_shapes=True)
 
-    trainer = TrainerRegressorTrainValid(config=config, model=model)
+    trainer = TrainerTrainValid(config=config, model=model)
 
     res = trainer.train()
     assert res != sys.float_info.max
@@ -110,7 +110,7 @@ def test_trainer_regressor_train_valid_with_multiple_ndarray_inputs():
     plot_model(model, to_file='trainer_keras_regressor_test.png',
                show_shapes=True)
 
-    trainer = TrainerRegressorTrainValid(config=config, model=model)
+    trainer = TrainerTrainValid(config=config, model=model)
 
     res = trainer.train()
     assert res != sys.float_info.max
@@ -158,7 +158,7 @@ def test_trainer_regressor_train_valid_with_multiple_generator_inputs():
     plot_model(model, to_file='trainer_keras_regressor_test.png',
                show_shapes=True)
 
-    trainer = TrainerRegressorTrainValid(config=config, model=model)
+    trainer = TrainerTrainValid(config=config, model=model)
 
     res = trainer.train()
     assert res != sys.float_info.max

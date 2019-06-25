@@ -9,7 +9,7 @@ class TestDirectStructure:
 
     def test_create(self):
         from deephyper.search.nas.model.space.struct import DirectStructure
-        struct = DirectStructure((5, ), (1, ))
+        DirectStructure((5, ), (1, ))
 
     def test_create_one_vnode(self):
         from deephyper.search.nas.model.space.struct import DirectStructure
