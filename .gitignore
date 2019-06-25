@@ -167,6 +167,7 @@ logdir
 *.pdf
 *log*
 !deephyper/core/logs
+!CHANGELOG.md
 
 # Sphinx documentation
 _build/
