@@ -10,10 +10,7 @@ from tensorflow.keras.models import load_model
 
 from deephyper.evaluator import Encoder
 from deephyper.search import util
-from deephyper.search.nas.model.trainer.classifier_train_valid import \
-    TrainerClassifierTrainValid
-from deephyper.search.nas.model.trainer.regressor_train_valid import \
-    TrainerRegressorTrainValid
+from deephyper.search.nas.model.trainer.train_valid import TrainerTrainValid
 
 logger = util.conf_logger(__name__)
 
@@ -113,27 +110,16 @@ def train(config):
         config['preprocessing'] = None
 
     model_created = False
-    if config['regression']:
-        try:
-            model = structure.create_model()
-            model_created = True
-        except:
-            model_created = False
-            logger.error('Model creation failed...')
-            logger.error(traceback.format_exc())
-        if model_created:
-            trainer = TrainerRegressorTrainValid(config=config, model=model)
-    else:
-        try:
-            model = structure.create_model(
-                activation='softmax')
-            model_created = True
-        except:
-            model_created = False
-            logger.error('Model creation failed...')
-            logger.error(traceback.format_exc())
-        if model_created:
-            trainer = TrainerClassifierTrainValid(config=config, model=model)
+    try:
+        model = structure.create_model()
+        model_created = True
+    except:
+        model_created = False
+        logger.info('Error: Model creation failed...')
+        logger.info(traceback.format_exc())
+
+    if model_created:
+        trainer = TrainerTrainValid(config=config, model=model)
 
     if model_created:
         trainer.callbacks.append(EarlyStopping(
