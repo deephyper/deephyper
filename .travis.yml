@@ -19,7 +19,9 @@ git:
 cache:
   apt: true
 
-
+before_install:
+# We need GraphViz to draw figures of graphs and lattices:
+  - sudo apt-get install graphviz
 install:
   - pip install -e '.[docs,tests]'
 
