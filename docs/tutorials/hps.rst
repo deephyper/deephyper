@@ -331,7 +331,7 @@ Add a Balsam job to the ``polydb`` database:
 .. code-block:: console
     :caption: bash
     
-    balsam job --name step_2 --workflow step_2 --app AMBS --args "--evaluator balsam --problem $PWD/polynome2/problem_step_2.py --run $PWD/polynome2/model_run_step_2.py"
+    balsam job --name step_2 --workflow step_2 --app AMBS --args "--evaluator balsam --problem $PWD/polynome2/problem.py --run $PWD/polynome2/model_run.py"
 
 .. code-block:: console
     :caption: [Out]
@@ -357,7 +357,7 @@ Add a Balsam job to the ``polydb`` database:
     node_packing_count:             1
     environ_vars:
     application:                    AMBS
-    args:                           --evaluator balsam --problem /projects/datascience/regele/polynome2/problem_step_2.py --run /projects/datascience/regele/polynome2/model_run_step_2.py
+    args:                           --evaluator balsam --problem /projects/datascience/regele/polynome2/problem.py --run /projects/datascience/regele/polynome2/model_run.py
     user_workdir:
     wait_for_parents:               True
     post_error_handler:             False
@@ -366,7 +366,7 @@ Add a Balsam job to the ``polydb`` database:
     state:                          CREATED
     queued_launch_id:               None
     data:                           {}
-    *** Executed command:         /lus/theta-fs0/projects/datascience/regele/dh-opt/bin/python -m deephyper.search.hps.ambs --evaluator balsam --problem /projects/datascience/regele/polynome2/problem_step_2.py --run /projects/datascience/regele/polynome2/model_run_step_2.py
+    *** Executed command:         /lus/theta-fs0/projects/datascience/regele/dh-opt/bin/python -m deephyper.search.hps.ambs --evaluator balsam --problem /projects/datascience/regele/polynome2/problem.py --run /projects/datascience/regele/polynome2/model_run.py
     *** Working directory:        /lus/theta-fs0/projects/datascience/regele/polydb/data/step_2/step_2_575dba96
 
     Confirm adding job to DB [y/n]: y
