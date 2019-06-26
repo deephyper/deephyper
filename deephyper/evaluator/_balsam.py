@@ -28,7 +28,7 @@ class BalsamEvaluator(Evaluator):
         cache_key (func): takes one parameter of type dict and returns a hashable type, used as the key for caching evaluations. Multiple inputs that map to the same hashable key will only be evaluated once. If ``None``, then cache_key defaults to a lossless (identity) encoding of the input dict.
     """
 
-    def __init__(self, run_function, cache_key=None):
+    def __init__(self, run_function, cache_key=None, **kwargs):
         super().__init__(run_function, cache_key)
         self.id_key_map = {}
         self.num_workers = max(1, LAUNCHER_NODES*self.WORKERS_PER_NODE - 2)
