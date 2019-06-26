@@ -326,8 +326,16 @@ Create a Balsam ``AMBS`` application:
     Preprocess:
     Postprocess:
 
+Add a Balsam job to the ``polydb`` database:
+
+.. code-block:: console
+    :caption: bash
+    
     balsam job --name step_2 --workflow step_2 --app AMBS --args "--evaluator balsam --problem $PWD/polynome2/problem_step_2.py --run $PWD/polynome2/model_run_step_2.py"
 
+.. code-block:: console
+    :caption: [Out]
+    
     BalsamJob 575dba96-c9ec-4015-921c-abcb1f261fce
     ----------------------------------------------
     workflow:                       step_2
