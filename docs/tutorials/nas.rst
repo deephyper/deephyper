@@ -5,11 +5,11 @@ Create a new neural architecture search problem
 
 A  neural architecture search (NAS) problem can be defined using four files with a NAS problem directory with a python package::
 
-    nas_experiments/
+    nas_problems/
         setup.py
-        naspb/
+        nas_problems/
         __init__.py
-        nas_problem_directory/
+        myproblem/
             load_data.py
             structure.py
             preprocessing.py
@@ -21,70 +21,19 @@ We will illustrate the NAS problem definition using a regression example. We wil
 Create a python package
 =======================
 
-Create a folder:
+Init a new nas python package:
 
 .. code-block:: console
     :caption: bash
 
-    mkdir nas_experiments
+    deephyper nas-init --new-pckg nas_problems --new-pb polynome2
 
-Go to this folder:
-
-.. code-block:: console
-    :caption: bash
-
-    cd nas_experiments
-
-Create the python package folder:
+Go to the problem ``polynome2`` folder:
 
 .. code-block:: console
     :caption: bash
 
-    mkdir naspb
-
-Create an ``__init__.py`` file in ``nas_experiments/naspb/``:
-
-.. code-block:: console
-    :caption: bash
-
-    touch naspb/__init__.py
-
-Then create an other file ``setup.py`` in ``nas_experiments/`:
-
-.. code-block:: console
-    :caption: bash
-
-    vim setup.py
-
-Add the following in ``nas_experiments/setup/py``:
-
-.. code-block:: console
-    :caption: nas_experiments/setup.py
-
-    from setuptools import setup
-
-    setup(
-    name='naspb',
-    packages=['naspb'],
-    install_requires=[])
-
-Install the python package in you environment:
-
-.. code-block:: console
-    :caption: bash
-
-    python setup.py install
-
-Create a
-Create a problem directory
-==========================
-First, we will create a hps_problem_directory ``polynome2``.
-
-.. code-block:: console
-    :caption: bash
-
-    mkdir polynome2
-    cd polynome2
+    cd nas_problems/nas_problems/polynome2
 
 Create load_data.py
 ===================
@@ -120,110 +69,35 @@ The expected output is:
     test_X shape: (2000, 10)
     test_y shape: (2000, 1)
 
-Create model_run.py
+Create structure.py
 ===================
 
-Third, we will create ``model_run.py`` that contains the code for the neural network.
+Third, we will create ``structure.py`` that contains the code for the neural network.
 We will use Keras for the neural network definition.
 
 .. code-block:: console
     :caption: bash
 
-    touch model_run.py
+    vim structure.py
 
-We will create a neural network model and run it to make sure that the model runs without any error:
-
-.. literalinclude:: polynome2/model_run_step_0.py
+.. literalinclude:: polynome2_nas/structure.py
     :linenos:
-    :caption: Step 0: polynome2/model_run.py
-    :name: polynome2-model_run_step_0
+    :caption: polynome2/structure.py
+    :name: polynome2-structure
 
-.. note::
-
-    Adding an ``EarlyStopping(...)`` callback is a good idea to stop the training of your model as soon as it is stops to improve.
-
-    .. code-block:: python3
-
-        ...
-        callbacks=[EarlyStopping(
-                            monitor='val_r2',
-                            mode='max',
-                            verbose=1,
-                            patience=10
-                        )]
-        ...
-
-Train this model and look at it accuracy:
-
-.. code-block:: console
-    :caption: bash
-
-    python model_run.py
-
-.. code-block:: console
-    :caption: [Out]
-
-    objective: -0.00040728187561035154
-
-.. image:: polynome2/model_step_0_val_r2.png
-
-.. note::
-    When defining a new HPS problem, ``model_run.py``
-    must be runnable from any arbitrary working directory. This means that Python
-    modules simply located in the same directory as the ``model_run.py`` will not be
-    part of the default Python import path, and importing them will cause an ``ImportError``.
-    For example in :ref:`polynome2-model_run_step_0` we are doing ``import load_data``.
-
-    To ensure that modules located alongside the ``model_run.py`` script are
-    always importable, a quick workaround is to explicitly add the problem
-    folder to ``sys.path`` at the top of the script:
-
-    .. code-block:: python
-        :linenos:
-
-        import os
-        import sys
-        here = os.path.dirname(os.path.abspath(__file__))
-        sys.path.insert(0, here)
-
-Next, we modify :ref:`polynome2-model_run_step_0` for HPS with DeepHyper. The ``run`` function will be used by DeepHyper and a ``point`` Python dictionary will be passed
-to this function.
-In the ``point`` dictionary, each key is a hyperparameter.
-The tunable hyperparameters are the number of units of the Dense layer (i.e. ``point['units']``),
-the activation function of the Dense layer (i.e. ``point['activation'])``, and
-the learning rate of the optimizer (i.e. ``point['lr']``).
-These modifications are given in :ref:`polynome2-model_run_step_1`:
-
-.. literalinclude:: polynome2/model_run_step_1.py
-    :linenos:
-    :caption: Step 1: polynome2/model_run.py
-    :name: polynome2-model_run_step_1
 
 Create problem.py
 ==================
 
-The ``run`` function in ``model_run.py`` accepts arguments: ``units, activation, and lr``.
-Next, we will define the ranges for the hyperparameters using ``problem.py`` file.
-Each hyperparameter range is defined using the following notation.
-The integer and real hyperparameter range is given by a tuple (lower_bound, upper_bound).
-The categorical or nonordinal hyperparameter range is given by a list of possible values.
-
 .. code-block:: console
+    :caption: bash
+
+    vim problem.py
+
+.. literalinclude:: polynome2_nas/problem.py
     :linenos:
-
-    touch problem.py
-
-You can also add starting points to your problem if you already know good starting points in the search space.
-Just use the ``add_starting_point(...)`` method.
-
-.. note::
-    Several starting points can be defined with ``Problem.add_starting_point(**dims)``.
-    All starting points will be evaluated before generating other evaluations.
-
-.. literalinclude:: polynome2/problem_step_1.py
-    :linenos:
-    :caption: polynome2/problem.py
-    :name: polynome2-problem-step-1
+    :caption: polynome2_nas/problem.py
+    :name: polynome2-nas-problem
 
 You can look at the representation of your problem:
 
@@ -237,13 +111,7 @@ The expected output is:
 .. code-block:: console
     :caption: [Out]
 
-    Problem
-    { 'activation': [None, 'relu', 'sigmoid', 'tanh'],
-    'lr': (0.0001, 1.0),
-    'units': (1, 100)}
-
-    Starting Point
-    {0: {'activation': None, 'lr': 0.01, 'units': 10}}
+    Problem...
 
 
 Running the search locally
@@ -261,7 +129,7 @@ All the three files have been tested one by one on the local machine. Next, we w
 .. code-block:: console
     :caption: bash
 
-    python -m deephyper.search.hps.ambs --problem problem.py --run model_run.py
+    python -m deephyper.search.nas.ppo --problem nas_problems.polynome2.problem.Problem --run deephyper.search.nas.model.run.alpha.run
 
 .. note::
 

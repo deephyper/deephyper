@@ -159,6 +159,7 @@ class ConstantNode(OperationNode):
     def __init__(self, op=None, name='', *args, **kwargs):
         super().__init__(name=name)
         if not op is None:
+            op = self.verify_operation(op)
             op.init()  # set operation
         self._op = op
 
