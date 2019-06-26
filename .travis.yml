@@ -1,1 +1,10 @@
 language: python
+python:
+  - "3.6"
+install:
+  - pip install -e '.[docs,tests]'
+script: ./run_tests.sh
+branches:
+  only:
+  - master
+  - develop

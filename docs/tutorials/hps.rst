@@ -4,7 +4,7 @@ Create a new hyperparameter search problem
 ******************************************
 
 
-A  hyperparaemter search (HPS) problem can be defined using three files with a HPS problem directory::
+A  hyperparameter search (HPS) problem can be defined using three files with a HPS problem directory::
 
       hps_problem_directory/
             load_data.py
