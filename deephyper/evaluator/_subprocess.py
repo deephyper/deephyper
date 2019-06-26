@@ -91,7 +91,7 @@ class SubprocessEvaluator(Evaluator):
     WaitResult = namedtuple(
         'WaitResult', ['active', 'done', 'failed', 'cancelled'])
 
-    def __init__(self, run_function, cache_key=None):
+    def __init__(self, run_function, cache_key=None, **kwargs):
         super().__init__(run_function, cache_key)
         self.num_workers = self.WORKERS_PER_NODE
         logger.info(
