@@ -4,7 +4,7 @@ from deephyper.benchmark import NaProblem
 
 Problem = NaProblem()
 
-Problem.load_data(load_data, size=1e4)
+Problem.load_data(load_data, size=1000)
 
 Problem.search_space(create_structure)
 
@@ -23,7 +23,7 @@ Problem.objective('val_r2__last')
 
 Problem.post_training(
     num_epochs=60,
-    metrics=['mse', 'r2'],
+    metrics=['r2'],
     model_checkpoint={
         'monitor': 'val_r2',
         'mode': 'max',

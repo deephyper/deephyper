@@ -125,7 +125,20 @@ The expected output is:
 .. code-block:: console
     :caption: [Out]
 
-    Problem...
+    Problem is:
+        - search space   : nas_problems.polynome2.structure.create_structure
+        - data loading   : nas_problems.polynome2.load_data.load_data
+        - preprocessing  : nas_problems.polynome2.preprocessing.minmaxstdscaler
+        - hyperparameters:
+            * batch_size: 128
+            * learning_rate: 0.001
+            * optimizer: rmsprop
+            * num_epochs: 5
+        - loss           : mse
+        - metrics        :
+            * r2
+        - objective      : val_r2__last
+        - post-training  : None
 
 
 Running the search locally
@@ -145,7 +158,7 @@ All the three files have been tested one by one on the local machine. Next, we w
 .. code-block:: console
     :caption: bash
 
-    python -m deephyper.search.nas.ppo --problem nas_problems.polynome2.problem.Problem --run deephyper.search.nas.model.run.alpha.run
+    python -m deephyper.search.nas.ppo --problem nas_problems.polynome2.problem.Problem
 
 .. note::
 
@@ -197,7 +210,7 @@ Create a Balsam ``PPO`` application:
 .. code-block:: console
     :caption: bash
 
-    balsam job --name poly_exp --workflow poly_exp --app PPO --num_nodes 2 --args "--evaluator balsam nas_problems.polynome2.problem.Problem --run deephyper.search.nas.model.run.alpha.run"
+    balsam job --name poly_exp --workflow poly_exp --app PPO --num_nodes 2 --args "--evaluator balsam nas_problems.polynome2.problem.Problem"
 
 .. code-block:: console
     :caption: [Out]
@@ -242,7 +255,7 @@ Submit the search to the Cobalt scheduler:
 .. code-block:: console
     :caption: bash
 
-    balsam submit-launch -n 4 -q debug-cache-quad -t 60 -A datascience --job-mode serial --wf-filter step_2
+    balsam submit-launch -n 4 -q debug-cache-quad -t 60 -A datascience --job-mode mpi --wf-filter poly_exp
 
 .. code-block:: console
     :caption: [Out]

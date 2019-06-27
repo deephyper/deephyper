@@ -6,7 +6,7 @@ from nas_problems.polynome2.structure import create_structure
 
 Problem = NaProblem()
 
-Problem.load_data(load_data, size=1e4)
+Problem.load_data(load_data, size=1000)
 
 Problem.preprocessing(minmaxstdscaler)
 
