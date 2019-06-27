@@ -106,7 +106,7 @@ def run(config):
 
 
 def compute_objective(cfg, history):
-    if '__' in cfg or cfg in history:
+    if not '.' in cfg and '__' in cfg or cfg in history:
         split_cfg = cfg.split('__')
         kind = split_cfg[1] if len(split_cfg) > 1 else 'last'
         mname = split_cfg[0]
