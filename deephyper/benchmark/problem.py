@@ -179,8 +179,8 @@ class NaProblem(Problem):
         metrics = "".join(
             [f"\n        * {m}" for m in self._space['metrics']])
 
-        post = None if self._space.get('posttraining') is None else pformat(
-            self._space['posttraining'])
+        post = None if self._space.get('post_train') is None else "".join(
+            [f"\n        * {k}: {self._space['post_train'][k]}" for k in self._space['post_train']])
 
         objective = self._space['objective']
         if not type(objective) is str:
