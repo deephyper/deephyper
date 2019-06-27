@@ -90,8 +90,11 @@ def run(config):
     if model_created:
         trainer = TrainerTrainValid(config=config, model=model)
 
-        last_only = '__last' in config['objective']
-        with_pred = not type(config['objective']) is str
+        last_only = '__last' in config['objective'] \
+            or '__last' in config['objective'].__name__
+        with_pred = not type(config['objective']) is str \
+            and 'with_pred' in config['objective'].__name__
+
         history = trainer.train(with_pred=with_pred, last_only=last_only)
 
         result = compute_objective(config['objective'], history)

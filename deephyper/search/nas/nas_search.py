@@ -120,8 +120,8 @@ class NeuralArchitectureSearch(Search):
                             )
         parser.add_argument("--run",
                             type=str,
-                            default="deephyper.search.nas.model.run.quick",
-                            help="Module path to the run function you want to use for the search (e.g. deephyper.search.nas.model.run.quick)."
+                            default="deephyper.search.nas.model.run.alpha.run",
+                            help="Module path to the run function you want to use for the search (e.g. deephyper.search.nas.model.run.alpha.run)."
                             )
         parser.add_argument('--max-evals',
                             type=int,
