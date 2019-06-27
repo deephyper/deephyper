@@ -141,6 +141,24 @@ class HpProblem(Problem):
 class NaProblem(Problem):
     """A Neural Architecture Problem specification for Neural Architecture Search.
 
+    >>> from deephyper.benchmark import NaProblem
+    >>> from deephyper.benchmark.nas.linearReg.load_data import load_data
+    >>> from deephyper.search.nas.model.baseline.simple import create_structure
+    >>> from deephyper.search.nas.model.preprocessing import minmaxstdscaler
+    >>> Problem = NaProblem()
+    >>> Problem.load_data(load_data)
+    >>> Problem.preprocessing(minmaxstdscaler)
+    >>> Problem.search_space(create_structure)
+    >>> Problem.hyperparameters(
+    ...     batch_size=100,
+    ...     learning_rate=0.1,
+    ...     optimizer='adam',
+    ...     num_epochs=10,
+    ... )
+    >>> Problem.loss('mse')
+    >>> Problem.metrics(['r2'])
+    >>> Problem.objective('val_r2')
+
     Args:
         regression (bool): if ``True`` the problem is defined as a ``regression`` problem, if ``False`` the problem is defined as a ``classification`` problem.
     """
@@ -194,7 +212,7 @@ class NaProblem(Problem):
         """Set a search space for neural architecture search.
 
         Args:
-            func (Callable): an object which has to be a callable and which is returning a ``Structure`` instance.
+            func (callable): an object which has to be a callable and which is returning a ``Structure`` instance.
 
         Raises:
             SearchSpaceBuilderIsNotCallable: raised when the ``func`` parameter is not a callable.
@@ -248,7 +266,7 @@ class NaProblem(Problem):
         """Define the loss used to train generated architectures.
 
         Args:
-            loss (str): a string indicating a specific loss function.
+            loss (str|callable): a string indicating a specific loss function.
         """
         if not type(loss) is str and \
                 not callable(loss):
@@ -266,26 +284,84 @@ class NaProblem(Problem):
 
         self._space['metrics'] = metrics
 
+    def check_objective(self, objective):
+
+        if not type(objective) is str and not callable(objective):
+            raise WrongProblemObjective(objective)
+        elif type(objective) is str:
+            list_suffix = ['__min', '__max', '__last']
+            for suffix in list_suffix:
+                if suffix in objective:
+                    objective = objective.replace(suffix, '')
+                    break # only one suffix autorized
+            objective = objective.replace('val_', '')
+            possible_names = list()
+            for val in ['loss'] + self._space['metrics']:
+                if callable(val):
+                    possible_names.append(val.__name__)
+                else:
+                    possible_names.append(val)
+            if not(objective in possible_names):
+                raise WrongProblemObjective(objective)
+
     def objective(self, objective):
         """Define the objective you want to maximize for the search.
 
         Args:
-            objective (str|callable): if (str) then it should be a defined metrics. if (callable) it should return a scalar value (i.e. float) and it will take a dictionnary parameter.
+            objective (str|callable): The objective will be maximized. If ``objective`` is str`` then it should be either 'loss' or a defined metric. You can use the ``'val_'`` prefix when you want to select the objective on the validation set. You can use one of ``['__min', '__max', '__last']`` which respectively means you want to select the min, max or last value among all epochs. Using '__last' will save a consequent compute time because the evaluation will not compute metrics on validation set for all epochs but the last. If ``objective`` is callable it should return a scalar value (i.e. float) and it will take a ``dict`` parameter. The ``dict`` will contain keys corresponding to loss and metrics such as ``['loss', 'val_loss', 'r2', 'val_r2]``, it will also contains ``'n_parameters'`` which corresponds to the number of trainable parameters of the current model, ``'training_time'`` which corresponds to the time required to train the model. If this callable has a '__last' suffix then the evaluation will only compute validation loss/metrics for the last epoch. If this callable has contains 'with_pred' in its name then the `dict`will have two other keys ``['y_pred', 'y_true']`` where ``'y_pred`` corresponds to prediction of the model on validation set and ``'y_true'`` corresponds to real prediction.
+        Raise:
+            WrongProblemObjective: raised when the objective is of a wrong definition.
         """
-        if not type(objective) is str and \
-                not callable(objective):
-            raise RuntimeError(
-                'The objective should be of type (str|callable) when it\'s of type {type(objective)!}')
+        if not self._space.get('loss') is None and not self._space.get('metrics') is None:
+            self.check_objective(objective)
+        else:
+            raise NaProblemError('.loss and .metrics should be defined before .objective!')
 
         self._space['objective'] = objective
 
-    def post_training(self, num_epochs: int, metrics: list, model_checkpoint, early_stopping):
-        self.add_dim('post_train', {
+    def post_training(self, num_epochs: int, metrics: list, model_checkpoint: dict, early_stopping: dict):
+        """Choose settings to run a post-training.
+
+        Args:
+            num_epochs (int): the number of post-training epochs.
+            metrics (list): list of post-training metrics.
+            model_checkpoint (dict): ``tensorflow.keras.callbacks.ModelCheckpoint`` settings.
+
+                * ``'filepath'``: string, path to save the model file.
+
+                * ``monitor``: quantity to monitor.
+
+                * ``verbose``: verbosity mode, 0 or 1.
+
+                * ``save_best_only``: if ``save_best_only=True``, the latest best model according to the quantity monitored will not be overwritten.
+
+                * ``save_weights_only``: if True, then only the model's weights will be saved (``model.save_weights(filepath)``), else the full model is saved (``model.save(filepath)``).
+
+                * ``mode``: one of {auto, min, max}. If ``save_best_only=True``, the decision to overwrite the current save file is made based on either the maximization or the minimization of the monitored quantity. For ``val_acc``, this should be ``max``, for `val_loss` this should be ``min``, etc. In ``auto`` mode, the direction is automatically inferred from the name of the monitored quantity.
+
+                * ``period``: Interval (number of epochs) between checkpoints.
+
+            early_stopping (dict): ``tensorflow.keras.callbacks.EarlyStopping`` settings.
+
+                * ``monitor``: quantity to be monitored.
+
+                * ``min_delta``: minimum change in the monitored quantity to qualify as an improvement, i.e. an absolute change of less than min_delta, will count as no improvement.
+
+                * ``patience``: number of epochs with no improvement after which training will be stopped.
+
+                * ``verbose``: verbosity mode.
+
+                * ``mode``: one of ``{'auto', 'min', 'max'}``. In min mode, training will stop when the quantity monitored has stopped decreasing; in max mode it will stop when the quantity monitored has stopped increasing; in auto mode, the direction is automatically inferred from the name of the monitored quantity.
+
+                * ``baseline``: Baseline value for the monitored quantity to reach. Training will stop if the model doesn't show improvement over the baseline. restore_best_weights: whether to restore model weights from the epoch with the best value of the monitored quantity. If False, the model weights obtained at the last step of training are used.
+
+        """
+        self._space['post_train'] = {
             'num_epochs': num_epochs,
             'metrics': metrics,
             'model_checkpoint': model_checkpoint,
             'early_stopping': early_stopping
-        })
+        }
 
 def module_location(attr):
     return f'{attr.__module__}.{attr.__name__}'

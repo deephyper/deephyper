@@ -6,7 +6,9 @@ from deephyper.benchmark.problem import (SpaceDimNameMismatch,
                                          SpaceDimValueNotInSpace,
                                          SearchSpaceBuilderMissingParameter,
                                          SearchSpaceBuilderIsNotCallable,
-                                         SearchSpaceBuilderMissingDefaultParameter)
+                                         SearchSpaceBuilderMissingDefaultParameter,
+                                         NaProblemError,
+                                         WrongProblemObjective)
 
 
 @pytest.mark.incremental
@@ -172,7 +174,20 @@ class TestNaProblem:
             loss_metric='mse',
         )
 
-        pb.objective('r2')
+        with pytest.raises(NaProblemError):
+            pb.objective('r2')
+
+        pb.loss('mse')
+        pb.metrics(['r2'])
+
+        possible_objective = ['loss', 'val_loss', 'r2', 'val_r2']
+        for obj in possible_objective:
+            pb.objective(obj)
+
+        wrong_objective = ['mse', 'wrong', 'r2__last__max', 'val_mse']
+        for obj in wrong_objective:
+            with pytest.raises(WrongProblemObjective):
+                pb.objective(obj)
 
         pb.post_training(
             num_epochs=2000,
