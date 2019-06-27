@@ -102,8 +102,12 @@ def compute_objective(objective, history):
 
 
 def preproc_trainer(config):
-    last_only = '__last' in config['objective'] \
-        or '__last' in config['objective'].__name__
+
+    if type(config['objective']) is str:
+        last_only = '__last' in config['objective']
+    else: # should be callable
+        last_only = '__last' in config['objective'].__name__
+
     with_pred = not type(config['objective']) is str \
         and 'with_pred' in config['objective'].__name__
     return last_only, with_pred
