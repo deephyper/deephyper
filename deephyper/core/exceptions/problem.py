@@ -58,7 +58,17 @@ class SpaceDimValueNotInSpace(DeephyperError):
         return f"Dimension value: '{self.value}' is not in dim['{self.name_dim}':{self.space_dim}!"
 
 
-class SearchSpaceBuilderIsNotCallable(DeephyperError):
+# ! NaProblemErrors
+
+class NaProblemError(DeephyperError):
+    """Raise when an error occurs in a NaProblem instance."""
+    def __init__(self, msg: str):
+        self.msg = msg
+
+    def __str__(self):
+        return self.msg
+
+class SearchSpaceBuilderIsNotCallable(NaProblemError):
     """Raised when a search space builder is not a callable."""
 
     def __init__(self, parameter):
@@ -68,7 +78,7 @@ class SearchSpaceBuilderIsNotCallable(DeephyperError):
         raise f"The search space builder {self.parameter} should be a callable when it is not!"
 
 
-class SearchSpaceBuilderMissingParameter(DeephyperError):
+class SearchSpaceBuilderMissingParameter(NaProblemError):
     """Raised when a missing parameter is detected in a callable which creates a Structure.
 
         Args:
@@ -82,7 +92,7 @@ class SearchSpaceBuilderMissingParameter(DeephyperError):
         return f"The callable which creates a Structure is missing a '{self.missing_parameter}' parameter!"
 
 
-class SearchSpaceBuilderMissingDefaultParameter(DeephyperError):
+class SearchSpaceBuilderMissingDefaultParameter(NaProblemError):
     """Raised when a parameter of a search space builder is missing a default value."""
 
     def __init__(self, parameter):
@@ -92,7 +102,7 @@ class SearchSpaceBuilderMissingDefaultParameter(DeephyperError):
         return f"The parameter {self.parameter} must have a default value!"
 
 
-class ProblemPreprocessingIsNotCallable(DeephyperError):
+class ProblemPreprocessingIsNotCallable(NaProblemError):
     """Raised when the preprocessing parameter is not callable."""
 
     def __init__(self, parameter):
@@ -102,21 +112,9 @@ class ProblemPreprocessingIsNotCallable(DeephyperError):
         return f"The parameter {self.parameter} must be a callable."
 
 
-class ProblemKindAlreadySet(DeephyperError):
-    """Raised when the problem kind (regression|classification) has already been set and the user is trying to change it."""
-
-    def __init__(self, problem):
-        self.problem = problem
-
-    def __str__(self):
-        if self.problem.space['regression']:
-            kind = 'regression'
-        else:
-            kind = 'classification'
-        return f"The problem kind has already been set to: '{kind}', you cannot change it."
 
 
-class ProblemLoadDataIsNotCallable(DeephyperError):
+class ProblemLoadDataIsNotCallable(NaProblemError):
     """Raised when the load_data parameter is not callable."""
 
     def __init__(self, parameter):
@@ -124,3 +122,12 @@ class ProblemLoadDataIsNotCallable(DeephyperError):
 
     def __str__(self):
         return f"The parameter {self.parameter} must be a callable."
+
+class WrongProblemObjective(NaProblemError):
+    """Raised when the objective parameter is neither a callable nor a string."""
+
+    def __init__(self, objective):
+        self.objective = objective
+
+    def __str__(self):
+        return str(self.objective)

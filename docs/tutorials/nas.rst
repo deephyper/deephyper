@@ -8,12 +8,13 @@ A  neural architecture search (NAS) problem can be defined using four files with
     nas_problems/
         setup.py
         nas_problems/
-        __init__.py
-        myproblem/
-            load_data.py
-            structure.py
-            preprocessing.py
-            problem.py
+            __init__.py
+            myproblem/
+                __init__.py
+                load_data.py
+                preprocessing.py
+                problem.py
+                structure.py
 
 
 We will illustrate the NAS problem definition using a regression example. We will use polynome function to generate training and test data and run a NAS to find the best architecture for this experiment.
@@ -69,6 +70,19 @@ The expected output is:
     test_X shape: (2000, 10)
     test_y shape: (2000, 1)
 
+Create preprocessing.py
+=======================
+
+.. code-block:: console
+    :caption: bash
+
+    vim preprocessing.py
+
+.. literalinclude:: polynome2_nas/preprocessing.py
+    :linenos:
+    :caption: polynome2/preprocessing.py
+    :name: polynome2-preprocessing
+
 Create structure.py
 ===================
 
@@ -119,10 +133,12 @@ Running the search locally
 
 Everything is ready to run. Let's remember the structure of our experiment::
 
-      polynome2/
-            load_data.py
-            model_run.py
-            problem.py
+    polynome2/
+        __init__.py
+        load_data.py
+        preprocessing.py
+        problem.py
+        structure.py
 
 All the three files have been tested one by one on the local machine. Next, we will run asynchronous model-based search (AMBS).
 
@@ -135,87 +151,13 @@ All the three files have been tested one by one on the local machine. Next, we w
 
     In order to run DeepHyper locally and on other systems we are using :ref:`evaluators`. For local evaluations we use the :ref:`subprocess-evaluator`.
 
-.. WARNING::
-
-    When a path to python scripts is given to ``--problem, --run`` arguments you have to make sure that the problem script contains a ``Problem`` attribute and the run script contains a ``run`` attribute.
-    Another way to use these arguments is to give a python import path such as ``mypackage.mymodule.myattribute``, where ``myattribute`` should be an ``HpProblem`` instance for the problem argument and
-    it should be a callable object with one parameter for the run argument. In order to do so ``mypackage`` should be installed in your current python environment.
-    A package structure look like:
-
-    .. code-block:: console
-
-        myfolder/
-            setup.py
-            mypackage/
-                __init__.py
-                mymodule.py
-
-    where ``setup.py`` contains the following:
-
-    .. code-block:: python3
-        :caption: setup.py
-
-        from setuptools import setup
-
-        setup(
-        name='mypackage',
-        packages=['mypackage'],
-        install_requires=[])
-
-    To install ``mypackage`` just do:
-
-    .. code-block:: console
-        :caption: bash
-
-        cd myfolder
-
-    Then:
-
-    .. code-block:: console
-        :caption: bash
-
-        python setup.py install
 
 After the search is over, you will find the following files in your current folder:
 
 .. code-block:: console
 
     deephyper.log
-    results.csv
-    results.json
 
-
-.. include:: polynome2/dh-analytics-hps.rst
-
-
-The best point the search found::
-
-    point = {
-        'activation': 'relu',
-        'lr': 0.8820413612862609,
-        'units': 21
-    }
-
-Just pass this ``point`` to your run function
-
-.. literalinclude:: polynome2/model_run_step_1_point.py
-    :linenos:
-    :caption: Step 1: polynome2/model_run.py
-    :name: polynome2-model_run_step_1_point
-
-And run the script:
-
-.. code-block:: console
-    :caption: bash
-
-    python model_run.py
-
-.. code-block:: console
-    :caption: [Out]
-
-    objective:  0.47821942329406736
-
-.. image:: polynome2/model_step_1_val_r2.png
 
 Running the search on ALCF's Theta and Cooley
 ==============================================
@@ -234,12 +176,12 @@ Start and connect to the ``polydb`` database:
 
     source balsamactivate polydb
 
-Create a Balsam ``AMBS`` application:
+Create a Balsam ``PPO`` application:
 
 .. code-block:: console
     :caption: bash
 
-    balsam app --name AMBS --exe "$(which python) -m deephyper.search.hps.ambs"
+    balsam app --name PPO --exe "$(which python) -m deephyper.search.nas.ppo"
 
 .. code-block:: console
     :caption: [Out]
@@ -248,16 +190,22 @@ Create a Balsam ``AMBS`` application:
     -----------------------------
     Name:           AMBS
     Description:
-    Executable:     /lus/theta-fs0/projects/datascience/regele/dh-opt/bin/python -m deephyper.search.hps.ambs
+    Executable:     /lus/theta-fs0/projects/datascience/regele/dh-opt/bin/python -m deephyper.search.nas.ppo
     Preprocess:
     Postprocess:
 
-    balsam job --name step_2 --workflow step_2 --app AMBS --args "--evaluator balsam --problem $PWD/polynome2/problem_step_2.py --run $PWD/polynome2/model_run_step_2.py"
+.. code-block:: console
+    :caption: bash
+
+    balsam job --name poly_exp --workflow poly_exp --app PPO --num_nodes 2 --args "--evaluator balsam nas_problems.polynome2.problem.Problem --run deephyper.search.nas.model.run.alpha.run"
+
+.. code-block:: console
+    :caption: [Out]
 
     BalsamJob 575dba96-c9ec-4015-921c-abcb1f261fce
     ----------------------------------------------
-    workflow:                       step_2
-    name:                           step_2
+    workflow:                       poly_exp
+    name:                           poly_exp
     description:
     lock:
     parents:                        []

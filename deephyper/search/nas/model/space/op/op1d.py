@@ -59,16 +59,6 @@ class Dropout(Operation):
     def __str__(self):
         return f'Dropout({self.rate})'
 
-
-dropout_ops = [Dropout(0.),
-               Dropout(0.1),
-               Dropout(0.2),
-               Dropout(0.3),
-               Dropout(0.4),
-               Dropout(0.5),
-               Dropout(0.6)]
-
-
 class Identity(Operation):
     def __init__(self):
         pass

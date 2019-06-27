@@ -4,29 +4,30 @@ Tests
 For automatic tests in deephyper we choosed to use the pytest framework: `pytest official website <https://docs.pytest.org/en/latest/index.html>`_.
 
 
-Install Pytest
-==============
+Install
+=======
 
 ::
 
-    pip install -U pytest
+    pip install -e '.[tests,docs]'
 
 Run Tests
 =========
 
 This is the basic and simplest command line to run test.
-All test marked as ``@pytest.mark.slow`` will be skipped.
-
-::
+All test marked as ``@pytest.mark.slow`` will be skipped::
 
     cd deephyper/tests/
     pytest
 
-If you want to run tests marked as ``@pytest.mark.slow``:
-
-::
+If you want to run tests marked as ``@pytest.mark.slow``::
 
     pytest --runslow
+
+You can also run doctest tests::
+
+    cd deephyper/docs/
+    make doctest
 
 Incremental Tests
 =================

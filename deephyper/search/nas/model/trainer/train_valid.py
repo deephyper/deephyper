@@ -217,10 +217,6 @@ class TrainerTrainValid:
             loss=self.loss_metric_name,
             metrics=self.metrics_name)
 
-    def add_callback(self, cb):
-        assert isinstance(cb, keras.callbacks.Callback)
-        self.callbacks.append(cb)
-
     def predict(self, dataset='valid', keep_normalize=False):
 
         if not(dataset == 'valid' or dataset == 'train'):
@@ -323,22 +319,3 @@ class TrainerTrainValid:
             self.train_history['y_pred'] = y_pred
 
         return self.train_history
-
-    def post_train(self, num_epochs=None):
-        """Run a post-training procedure.
-
-        Args:
-            num_epochs (int, optional): Number of epochs to run. If none, num_epochs will be equal to the num_epochs defined in the config dict used to create an instance of this class. Defaults to None.
-        """
-        num_epochs = self.num_epochs if num_epochs is None else num_epochs
-
-        h_cb = self.model.fit(
-            self.dataset_train,
-            epochs=num_epochs,
-            steps_per_epoch=self.train_steps_per_epoch,
-            callbacks=self.callbacks,
-            validation_data=self.dataset_valid,
-            validation_steps=self.valid_steps_per_epoch
-        )
-
-        self.post_train_history = h_cb.history
