@@ -24,6 +24,7 @@ before_install:
   - sudo apt-get install graphviz
 install:
   - pip install -e '.[docs,tests]'
+  - pip install codecov
 
 script:
   - ./run_tests.sh
