@@ -123,7 +123,7 @@ class VariableNode(OperationNode):
             int: An absolute indexes corresponding to the operation choosen with the relative index of `index`.
         """
         assert 0. <= index and index <= 1.
-        return int(int((index * (len(self._ops) - 1) + 0.5) * 10) / 10)
+        return int(index * len(self._ops))
 
     @property
     def op(self):
