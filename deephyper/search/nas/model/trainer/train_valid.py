@@ -217,8 +217,19 @@ class TrainerTrainValid:
             loss=self.loss_metric_name,
             metrics=self.metrics_name)
 
-    def predict(self, dataset='valid', keep_normalize=False):
+    def predict(self, dataset: str='valid', keep_normalize: bool=False) -> tuple:
+        """[summary]
 
+        Args:
+            dataset (str, optional): 'valid' or 'train'. Defaults to 'valid'.
+            keep_normalize (bool, optional): if False then the preprocessing will be reversed after prediction. if True nothing will be reversed. Defaults to False.
+
+        Raises:
+            RuntimeError: [description]
+
+        Returns:
+            tuple: (y_true, y_pred)
+        """
         if not(dataset == 'valid' or dataset == 'train'):
             raise RuntimeError(
                 "dataset parameter should be equal to: 'valid' or 'train'")
@@ -250,6 +261,22 @@ class TrainerTrainValid:
                 y_orig = np.array([e[-1] for e in gen])
 
         return y_orig, y_pred
+
+    def evaluate(self, dataset='train'):
+        """Evaluate the performance of your model for the same configuration.
+
+        Args:
+            dataset (str, optional): must be "train" or "valid". If "train" then metrics will be evaluated on the training dataset. If "valid" then metrics will be evaluated on the "validation" dataset. Defaults to 'train'.
+
+        Returns:
+            list: a list of scalar values corresponding do config loss & metrics.
+        """
+        if dataset == 'train':
+            return self.model.evaluate(self.dataset_train,
+                        steps=self.train_steps_per_epoch)
+        else:
+            return self.model.evaluate(self.dataset_valid,
+                        steps=self.valid_steps_per_epoch)
 
     def train(self, num_epochs: int=None, with_pred: bool=False, last_only: bool=False):
         """Train the model.
