@@ -36,7 +36,7 @@ class Encoder(json.JSONEncoder):
 
 
 class Evaluator:
-    FAIL_RETURN_VALUE = sys.float_info.max
+    FAIL_RETURN_VALUE = sys.float_info.min
     PYTHON_EXE = os.environ.get('DEEPHYPER_PYTHON_BACKEND', sys.executable)
     WORKERS_PER_NODE = int(os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
     KERAS_BACKEND = os.environ.get('KERAS_BACKEND', 'tensorflow')

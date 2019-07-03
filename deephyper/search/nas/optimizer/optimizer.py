@@ -1,5 +1,6 @@
 from sys import float_info
 from skopt import Optimizer as SkOptimizer
+from skopt.learning import RandomForestRegressor
 from numpy import inf
 from deephyper.search import util
 from deephyper.benchmark import HpProblem
@@ -14,6 +15,10 @@ class Optimizer:
     def __init__(self, problem, num_workers, args):
         assert args.learner in ["RF", "ET", "GBRT", "GP",
                                 "DUMMY"], f"Unknown scikit-optimize base_estimator: {args.learner}"
+        if args.learner == "RF":
+            base_estimator = RandomForestRegressor(n_jobs=-1)
+        else:
+            base_estimator = args.learner
 
         self.space = problem.space
         cs_kwargs = self.space['create_structure'].get('kwargs')
@@ -34,7 +39,7 @@ class Optimizer:
 
         self._optimizer = SkOptimizer(
             skopt_space,  # TODO
-            base_estimator=args.learner,
+            base_estimator=base_estimator,
             acq_optimizer='sampling',
             acq_func=args.acq_func,
             acq_func_kwargs={'kappa': self.KAPPA},
