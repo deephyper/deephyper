@@ -112,9 +112,8 @@ class AMBNeuralArchitectureSearch(Search):
                 # ! slow. We get better performance when ask is batched. The RF is
                 # ! constantly re-fitting during the call to ask. So it becomes slow
                 # ! when there are a large number of workers.
-                # for batch in self.optimizer.ask(n_points=len(results)):
-                batch = self.optimizer.ask(n_points=len(results))
-                self.evaluator.add_eval_batch(batch)
+                for batch in self.optimizer.ask(n_points=len(results)):
+                    self.evaluator.add_eval_batch(batch)
             if chkpoint_counter >= CHECKPOINT_INTERVAL:
                 self.evaluator.dump_evals(saved_key='arch_seq')
                 chkpoint_counter = 0
