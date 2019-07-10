@@ -1,7 +1,8 @@
 from sys import float_info
 from skopt import Optimizer as SkOptimizer
-from skopt.learning import RandomForestRegressor
-from numpy import inf
+from skopt.learning import RandomForestRegressor, ExtraTreesRegressor, GradientBoostingQuantileRegressor
+#from numpy import inf
+import numpy as np
 from deephyper.search import util
 from deephyper.benchmark import HpProblem
 
@@ -16,7 +17,11 @@ class Optimizer:
         assert args.learner in ["RF", "ET", "GBRT", "GP",
                                 "DUMMY"], f"Unknown scikit-optimize base_estimator: {args.learner}"
         if args.learner == "RF":
-            base_estimator = RandomForestRegressor(n_jobs=-1, warm_start=True)
+            base_estimator = RandomForestRegressor(n_jobs=-1)
+        elif args.learner == "ET":
+            base_estimator = ExtraTreesRegressor(n_jobs=-1)
+        elif args.learner == "GBRT":
+            base_estimator = GradientBoostingQuantileRegressor(n_jobs=-1)
         else:
             base_estimator = args.learner
 
@@ -29,7 +34,7 @@ class Optimizer:
 
         # // queue of remaining starting points
         # // self.starting_points = problem.starting_point
-        n_init = inf if args.learner == 'DUMMY' else num_workers
+        n_init = np.inf if args.learner == 'DUMMY' else num_workers
 
         self.starting_points = []  # ! EMPTY for now TODO
 
@@ -58,8 +63,8 @@ class Optimizer:
         if self.strategy == "cl_min":
             return min(self._optimizer.yi) if self._optimizer.yi else 0.0
         elif self.strategy == "cl_mean":
-            return self._optimizer.yi.mean() if self._optimizer.yi else 0.0
-        else:
+            return np.mean(self._optimizer.yi) if self._optimizer.yi else 0.0
+        else: # self.strategy == "cl_max"
             return max(self._optimizer.yi) if self._optimizer.yi else 0.0
 
     def _xy_from_dict(self):
@@ -72,34 +77,76 @@ class Optimizer:
         cfg['arch_seq'] = list(x)
         return cfg
 
-    def _ask(self):
-        if len(self.starting_points) > 0:
-            x = self.starting_points.pop()
-        else:
+    # def _ask(self):
+    #     if len(self.starting_points) > 0:
+    #         x = self.starting_points.pop()
+    #     else:
+    #         x = self._optimizer.ask()
+    #     y = self._get_lie()
+    #     key = tuple(x)
+    #     if key not in self.evals:
+    #         self.counter += 1
+    #         self._optimizer.tell(x, y)
+    #         self.evals[key] = y
+    #         logger.debug(f'_ask: {x} lie: {y}')
+    #     else:
+    #         logger.debug(f'Duplicate _ask: {x} lie: {y}')
+    #     return self.to_dict(x)
+
+    def _ask(self, n_points=None):
+        if n_points is None:
             x = self._optimizer.ask()
-        y = self._get_lie()
-        key = tuple(x)
-        if key not in self.evals:
-            self.counter += 1
-            self._optimizer.tell(x, y)
-            self.evals[key] = y
-            logger.debug(f'_ask: {x} lie: {y}')
+            y = self._get_lie()
+            key = tuple(x)
+            if key not in self.evals:
+                self.counter += 1
+                self._optimizer.tell(x, y)
+                self.evals[key] = y
+                logger.debug(f'_ask: {x} lie: {y}')
+            else:
+                logger.debug(f'Duplicate _ask: {x} lie: {y}')
+            return self.to_dict(x)
         else:
-            logger.debug(f'Duplicate _ask: {x} lie: {y}')
-        return self.to_dict(x)
+            x_list = self._optimizer.ask(n_points=n_points)
+            lie = self._get_lie()
+            self.counter += 1 if n_points is None else n_points
+            dict_list = list()
+            for x in x_list:
+                key = tuple(x)
+                if key not in self.evals:
+                    self.evals[key] = lie
+                    logger.debug(f'_ask: {x} lie: {lie}')
+                else:
+                    logger.debug(f'Duplicate _ask: {x} lie: {lie}')
+                dict_list.append(self.to_dict(x))
+            return dict_list
+
+    # def ask(self, n_points=None, batch_size=20):
+    #     if n_points is None:
+    #         return self._ask()
+    #     else:
+    #         batch = []
+    #         for _ in range(n_points):
+    #             batch.extend(self._ask())
+    #             if len(batch) == batch_size:
+    #                 yield batch
+    #                 batch = []
+    #         if batch:
+    #             yield batch
 
     def ask(self, n_points=None, batch_size=20):
         if n_points is None:
             return self._ask()
         else:
-            batch = []
-            for i in range(n_points):
-                batch.append(self._ask())
-                if len(batch) == batch_size:
-                    yield batch
-                    batch = []
-            if batch:
-                yield batch
+            return self._ask(n_points=n_points)
+            # batch = []
+            # for _ in range(n_points):
+            #     batch.extend(self._ask())
+            #     if len(batch) == batch_size:
+            #         yield batch
+            #         batch = []
+            # if batch:
+            #     yield batch
 
     def ask_initial(self, n_points):
         if len(self.starting_points) > 0:
@@ -121,12 +168,12 @@ class Optimizer:
     def tell(self, xy_data):
         assert isinstance(
             xy_data, list), f"where type(xy_data)=={type(xy_data)}"
-        maxval = max(self._optimizer.yi) if self._optimizer.yi else 0.0
+        minval = min(self._optimizer.yi) if self._optimizer.yi else 0.0
         for x, y in xy_data:
             key = tuple(x['arch_seq'])
             assert key in self.evals, f"where key=={key} and self.evals=={self.evals}"
             logger.debug(f'tell: {x} --> {key}: evaluated objective: {y}')
-            self.evals[key] = (y if y < float_info.max else maxval)
+            self.evals[key] = (y if y > float_info.min else minval)
 
         self._optimizer.Xi = []
         self._optimizer.yi = []
