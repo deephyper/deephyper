@@ -16,7 +16,7 @@ class Optimizer:
         assert args.learner in ["RF", "ET", "GBRT", "GP",
                                 "DUMMY"], f"Unknown scikit-optimize base_estimator: {args.learner}"
         if args.learner == "RF":
-            base_estimator = RandomForestRegressor(n_jobs=-1)
+            base_estimator = RandomForestRegressor(n_jobs=-1, warm_start=True)
         else:
             base_estimator = args.learner
 
@@ -38,7 +38,7 @@ class Optimizer:
                        for vnode in structure.variable_nodes]
 
         self._optimizer = SkOptimizer(
-            skopt_space,  # TODO
+            skopt_space,
             base_estimator=base_estimator,
             acq_optimizer='sampling',
             acq_func=args.acq_func,

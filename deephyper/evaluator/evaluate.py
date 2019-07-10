@@ -102,7 +102,8 @@ class Evaluator:
         return time.time() - self._start_sec
 
     def decode(self, key):
-        '''from JSON string to x (list)'''
+        """from JSON string to x (list)
+        """
         x = json.loads(key)
         if not isinstance(x, dict):
             raise ValueError(f'Expected dict, but got {type(x)}')

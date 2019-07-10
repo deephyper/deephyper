@@ -1,6 +1,7 @@
 """Asynchronous Model-Based Search.
 
-Arguments of AMBS :
+Arguments of AMBS:
+
 * ``learner``
 
     * ``RF`` : Random Forest (default)
