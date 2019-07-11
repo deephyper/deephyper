@@ -1,29 +1,3 @@
-"""Asynchronous Model-Based Search.
-
-Arguments of AMBS :
-* ``learner``
-
-    * ``RF`` : Random Forest (default)
-    * ``ET`` : Extra Trees
-    * ``GBRT`` : Gradient Boosting Regression Trees
-    * ``DUMMY`` :
-    * ``GP`` : Gaussian process
-
-* ``liar-strategy``
-
-    * ``cl_max`` : (default)
-    * ``cl_min`` :
-    * ``cl_mean`` :
-
-* ``acq-func`` : Acquisition function
-
-    * ``LCB`` :
-    * ``EI`` :
-    * ``PI`` :
-    * ``gp_hedge`` : (default)
-"""
-
-
 import signal
 import json
 
@@ -48,6 +22,31 @@ def key(d):
 
 
 class AMBNeuralArchitectureSearch(Search):
+    """Asynchronous Model-Based Search.
+
+    Arguments of AMBS:
+
+    * ``learner``
+
+        * ``RF`` : Random Forest (default)
+        * ``ET`` : Extra Trees
+        * ``GBRT`` : Gradient Boosting Regression Trees
+        * ``DUMMY`` :
+        * ``GP`` : Gaussian process
+
+    * ``liar-strategy``
+
+        * ``cl_max`` : (default)
+        * ``cl_min`` :
+        * ``cl_mean`` :
+
+    * ``acq-func`` : Acquisition function
+
+        * ``LCB`` :
+        * ``EI`` :
+        * ``PI`` :
+        * ``gp_hedge`` : (default)
+    """
     def __init__(self, problem, run, evaluator, cache_key=key, **kwargs):
         super().__init__(problem, run, evaluator, **kwargs)
         logger.info("Initializing AMBS")
@@ -62,8 +61,8 @@ class AMBNeuralArchitectureSearch(Search):
                             )
         parser.add_argument("--run",
                             type=str,
-                            default="deephyper.search.nas.model.run.quick",
-                            help="Module path to the run function you want to use for the search (e.g. deephyper.search.nas.model.run.quick)."
+                            default="deephyper.search.nas.model.run.alpha.run",
+                            help="Module path to the run function you want to use for the search (e.g. deephyper.search.nas.model.run.alpha.run)."
                             )
         parser.add_argument('--max-evals',
                             type=int,
@@ -75,7 +74,7 @@ class AMBNeuralArchitectureSearch(Search):
                             help='type of learner (surrogate model)'
                             )
         parser.add_argument('--liar-strategy',
-                            default="cl_max",
+                            default="cl_min",
                             choices=["cl_min", "cl_mean", "cl_max"],
                             help='Constant liar strategy'
                             )

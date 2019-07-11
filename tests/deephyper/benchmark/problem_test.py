@@ -3,7 +3,12 @@ import pytest
 from deephyper.benchmark.problem import (SpaceDimNameMismatch,
                                          SpaceDimNameOfWrongType,
                                          SpaceNumDimMismatch,
-                                         SpaceDimValueNotInSpace)
+                                         SpaceDimValueNotInSpace,
+                                         SearchSpaceBuilderMissingParameter,
+                                         SearchSpaceBuilderIsNotCallable,
+                                         SearchSpaceBuilderMissingDefaultParameter,
+                                         NaProblemError,
+                                         WrongProblemObjective)
 
 
 @pytest.mark.incremental
@@ -106,3 +111,96 @@ class TestHpProblem:
             pb.add_starting_point(dim0=0, dim1=0.0, dim2='c')
 
         pb.add_starting_point(dim0=0, dim1=0.0, dim2='a')
+
+
+@pytest.mark.incremental
+class TestNaProblem:
+    def test_import(self):
+        from deephyper.benchmark.problem import NaProblem
+
+    def test_create(self):
+        from deephyper.benchmark.problem import NaProblem
+
+        NaProblem()
+
+    def test_search_space(self):
+        from deephyper.benchmark.problem import NaProblem
+
+        pb = NaProblem()
+
+        with pytest.raises(SearchSpaceBuilderIsNotCallable):
+            pb.search_space(func='a')
+
+        def dummy(a, b):
+            return
+
+        with pytest.raises(SearchSpaceBuilderMissingParameter):
+            pb.search_space(func=dummy)
+
+        def dummy(input_shape, output_shape):
+            return
+
+        with pytest.raises(SearchSpaceBuilderMissingDefaultParameter):
+            pb.search_space(func=dummy)
+
+        def dummy(input_shape=(1,), output_shape=(1,)):
+            return
+
+        pb.search_space(func=dummy)
+
+    def test_full_problem(self):
+        from deephyper.benchmark import NaProblem
+        from deephyper.search.nas.model.preprocessing import minmaxstdscaler
+
+        pb = NaProblem()
+
+        def load_data(prop):
+            return ([[10]], [1]), ([10], [1])
+
+        pb.load_data(load_data, prop=1.)
+
+        pb.preprocessing(minmaxstdscaler)
+
+        def search_space(input_shape=(1,), output_shape=(1,)):
+            return
+
+        pb.search_space(search_space)
+
+        pb.hyperparameters(
+            batch_size=64,
+            learning_rate=0.001,
+            optimizer='adam',
+            num_epochs=10,
+            loss_metric='mse',
+        )
+
+        with pytest.raises(NaProblemError):
+            pb.objective('r2')
+
+        pb.loss('mse')
+        pb.metrics(['r2'])
+
+        possible_objective = ['loss', 'val_loss', 'r2', 'val_r2']
+        for obj in possible_objective:
+            pb.objective(obj)
+
+        wrong_objective = ['mse', 'wrong', 'r2__last__max', 'val_mse']
+        for obj in wrong_objective:
+            with pytest.raises(WrongProblemObjective):
+                pb.objective(obj)
+
+        pb.post_training(
+            num_epochs=2000,
+            metrics=['mse', 'r2'],
+            model_checkpoint={
+                'monitor': 'val_r2',
+                'mode': 'max',
+                'save_best_only': True,
+                'verbose': 1
+            },
+            early_stopping={
+                'monitor': 'val_r2',
+                'mode': 'max',
+                'verbose': 1,
+                'patience': 50
+            })

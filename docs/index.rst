@@ -45,7 +45,7 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
 
 .. toctree::
    :maxdepth: 2
-   :caption: Benchmarks
+   :caption: Benchmarks & Problems
 
    benchmark/index
    benchmark/hps

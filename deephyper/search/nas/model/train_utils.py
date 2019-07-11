@@ -6,67 +6,11 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 from deephyper.search import util
 
-loss_metrics = OrderedDict()
-loss_metrics['mean_absolute_error'] = lambda x, y: tf.reduce_mean(tf.abs(x-y))
-loss_metrics['mean_squared_error'] = tf.losses.mean_squared_error
-loss_metrics['sigmoid_cross_entropy'] = tf.losses.sigmoid_cross_entropy
-loss_metrics['mean_softmax_cross_entropy'] = lambda la, lo: tf.reduce_mean(
-    tf.nn.softmax_cross_entropy_with_logits(logits=lo, labels=la))
-loss_metrics['sequence_loss_by_example'] = 'sequence_loss_by_example'
-
-test_metrics = OrderedDict()
-test_metrics['mean_absolute_error'] = mean_absolute_error
-test_metrics['mae'] = test_metrics['mean_absolute_error']
-test_metrics['mean_squared_error'] = mean_squared_error
-test_metrics['mse'] = test_metrics['mean_squared_error']
-test_metrics['accuracy'] = lambda preds, labels: 100.0 * \
-    np.sum(np.argmax(preds, 1) == np.argmax(labels, 1)) / preds.shape[0]
-test_metrics['acc'] = test_metrics['accuracy']
-test_metrics['perplexity'] = 'perplexity'
-
-optimizers = OrderedDict()
-optimizers['sgd'] = tf.train.GradientDescentOptimizer
-optimizers['rmsprop'] = tf.train.RMSPropOptimizer
-optimizers['adagrad'] = tf.train.AdagradOptimizer
-optimizers['adam'] = tf.train.AdamOptimizer
-optimizers['momentum'] = lambda x: tf.train.MomentumOptimizer(x, momentum=0.9)
-
 optimizers_keras = OrderedDict()
 optimizers_keras['sgd'] = tf.keras.optimizers.SGD
 optimizers_keras['rmsprop'] = tf.keras.optimizers.RMSprop
 optimizers_keras['adagrad'] = tf.keras.optimizers.Adagrad
 optimizers_keras['adam'] = tf.keras.optimizers.Adam
-
-
-def selectTestMetric(name):
-    '''
-      Return the test_metric defined by name.
-    '''
-    if (test_metrics.get(name) == None):
-        raise RuntimeError('"{0}" is not a defined test_metric.'.format(name))
-    else:
-        return test_metrics[name]
-
-
-def selectLossMetric(name):
-    '''
-      Return the loss_metric defined by name.
-    '''
-    if (loss_metrics.get(name) == None):
-        raise RuntimeError('"{0}" is not a defined loss_metric.'.format(name))
-    else:
-        return loss_metrics[name]
-
-
-def selectOptimizer(name):
-    '''
-      Return the optimizer defined by name.
-    '''
-    if (optimizers.get(name) == None):
-        raise RuntimeError('"{0}" is not a defined optimizer.'.format(name))
-    else:
-        return optimizers[name]
-
 
 def selectOptimizer_keras(name):
     '''
@@ -93,16 +37,16 @@ def check_data_config(data_dict):
 
 # Metrics with tensors
 
-# def r2(y_true, y_pred):
-#     SS_res = tf.keras.backend.sum(tf.keras.backend.square(y_true - y_pred))
-#     SS_tot = tf.keras.backend.sum(tf.keras.backend.square(
-#         y_true - tf.keras.backend.mean(y_true)))
-#     return (1 - SS_res/(SS_tot + tf.keras.backend.epsilon()))
-
 def r2(y_true, y_pred):
-    from sklearn.metrics import r2_score
-    res = tf.py_func(r2_score, [y_true, y_pred], tf.float64)
-    return res
+    SS_res = tf.keras.backend.sum(tf.keras.backend.square(y_true - y_pred))
+    SS_tot = tf.keras.backend.sum(tf.keras.backend.square(
+        y_true - tf.keras.backend.mean(y_true)))
+    return (1 - SS_res/(SS_tot + tf.keras.backend.epsilon()))
+
+# def r2(y_true, y_pred):
+#     from sklearn.metrics import r2_score
+#     res = tf.py_func(r2_score, [y_true, y_pred], tf.float64)
+#     return res
 
 
 def mae(y_true, y_pred):
@@ -142,33 +86,3 @@ def selectMetric(name):
         return metrics[name]
 
 
-# Reward metrics
-
-def racc(y_true, y_pred):
-    return tf.reduce_mean(tf.keras.metrics.categorical_accuracy(y_true, y_pred))
-
-
-def rmse(y_true, y_pred):
-    return -tf.reduce_mean(mse(y_true, y_pred))
-
-
-def rmae(y_true, y_pred):
-    return -tf.reduce_mean(mae(y_true, y_pred))
-
-
-rmetrics = OrderedDict()
-rmetrics['acc'] = racc
-rmetrics['r2'] = r2
-rmetrics['mse'] = rmse
-rmetrics['mae'] = rmae
-
-
-def selectRewardMetric(name):
-    if (rmetrics.get(name) == None):
-        try:
-            return util.load_attr_from(name)
-        except:
-            raise RuntimeError(
-                f'"{name}" is not a defined reward metric and cannot be imported.')
-    else:
-        return rmetrics[name]

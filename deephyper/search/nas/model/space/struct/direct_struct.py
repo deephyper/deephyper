@@ -12,7 +12,7 @@ from deephyper.core.exceptions.nas.struct import (InputShapeOfWrongType,
                                                   WrongOutputShape)
 from deephyper.search.nas.model.space.node import (ConstantNode, Node,
                                                    VariableNode)
-from deephyper.search.nas.model.space.op.basic import Connect, Tensor
+from deephyper.search.nas.model.space.op.basic import Tensor
 from deephyper.search.nas.model.space.op.merge import Concatenate
 from deephyper.search.nas.model.space.op.op1d import Identity
 from deephyper.search.nas.model.space.struct import NxStructure
@@ -20,6 +20,20 @@ from deephyper.search.nas.model.space.struct import NxStructure
 
 class DirectStructure(NxStructure):
     """A DirectStructure represents a search space of neural networks.
+
+    >>> from tensorflow.keras.utils import plot_model
+    >>> from deephyper.search.nas.model.space.struct import DirectStructure
+    >>> from deephyper.search.nas.model.space.node import VariableNode, ConstantNode
+    >>> from deephyper.search.nas.model.space.op.op1d import Dense
+    >>> struct = DirectStructure((5, ), (1, ))
+    >>> vnode = VariableNode()
+    >>> struct.connect(struct.input_nodes[0], vnode)
+    >>> vnode.add_op(Dense(10))
+    >>> vnode.add_op(Dense(20))
+    >>> output_node = ConstantNode(op=Dense(1))
+    >>> struct.connect(vnode, output_node)
+    >>> struct.set_ops([0])
+    >>> model = struct.create_model()
 
     Args:
         input_shape (list(tuple(int))): list of shapes of all inputs.
@@ -210,14 +224,11 @@ class DirectStructure(NxStructure):
             node.set_op(Concatenate(self, node, output_nodes))
         return node
 
-    def create_model(self, activation=None):
+    def create_model(self):
         """Create the tensors corresponding to the structure.
 
-        Args:
-            train (bool): True if the network is built for training, False if the network is built for validation/testing (for example False will deactivate Dropout).
-
         Returns:
-            The output tensor.
+            A keras.Model for the current structure with the corresponding set of operations.
         """
 
         output_tensor = self.create_tensor_aux(self.graph, self.output_node)

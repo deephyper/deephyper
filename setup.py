@@ -39,7 +39,8 @@ REQUIRED = [
     'gym',
     'networkx',
     'joblib',
-    'pydot'
+    'pydot',
+    'balsam-flow==0.3.5',
 ]
 
 # external sources
@@ -48,7 +49,6 @@ DP_LINKS = list()
 if on_theta:  # --system-site-packages
     # we want to use the default mpi4py from cray environment
     REQUIRED.append('mpi4py')
-    REQUIRED.append('balsam-flow==0.3.5')
 elif not on_rtd and not on_gpu:
     REQUIRED.append('mpi4py>=3.0.0')
 elif on_gpu:
@@ -233,6 +233,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'deephyper=deephyper.core.cli:main',
             'deephyper-analytics=deephyper.core.logs.analytics:main'
         ],
     }

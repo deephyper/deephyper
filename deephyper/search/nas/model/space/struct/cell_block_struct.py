@@ -7,8 +7,9 @@ from tensorflow.python.keras.utils.vis_utils import model_to_dot
 from deephyper.search.nas.model.space.cell import Cell
 from deephyper.search.nas.model.space.block import Block
 from deephyper.search.nas.model.space.node import Node, ConstantNode
-from deephyper.search.nas.model.space.op.basic import Connect, Tensor
-from deephyper.search.nas.model.space.op.op1d import Concatenate, Identity
+from deephyper.search.nas.model.space.op.basic import Tensor
+from deephyper.search.nas.model.space.op.merge import Concatenate
+from deephyper.search.nas.model.space.op.op1d import Identity
 from deephyper.search.nas.model.space.struct import NxStructure
 
 
@@ -187,7 +188,7 @@ class CellBlockStructure(NxStructure):
             self.graph.add_nodes_from(c.graph.nodes())
             self.graph.add_edges_from(c.graph.edges())
 
-        output_nodes = get_output_nodes(self.graph)
+        output_nodes = self.get_output_nodes()
         if len(output_nodes) == 1:
             node = ConstantNode(op=Identity(), name='Structure_Output')
             self.graph.add_node(node)
@@ -207,7 +208,7 @@ class CellBlockStructure(NxStructure):
             The output tensor.
         """
 
-        output_tensor = create_tensor_aux(self.graph, self.output_node)
+        output_tensor = self.create_tensor_aux(self.graph, self.output_node)
         if len(output_tensor.get_shape()) > 2:
             output_tensor = keras.layers.Flatten()(output_tensor)
         output_tensor = keras.layers.Dense(
@@ -269,50 +270,3 @@ class CellBlockStructure(NxStructure):
             cursor += num_nodes
 
         return den_list
-
-
-def get_output_nodes(graph):
-    """
-    Args:
-        graph: (nx.Digraph)
-
-    Return: the nodes without successors of a DiGraph.
-    """
-    nodes = list(graph.nodes())
-    output_nodes = []
-    for n in nodes:
-        if len(list(graph.successors(n))) == 0:
-            output_nodes.append(n)
-    return output_nodes
-
-
-def create_tensor_aux(g, n, train=None):
-    """Recursive function to create the tensors from the graph.
-
-    Args:
-        g (nx.DiGraph): a graph
-        n (nx.Node): a node
-        train (bool): True if the network is built for training, False if the network is built for validation/testing (for example False will deactivate Dropout).
-
-    Return:
-        the tensor represented by n.
-    """
-    try:
-        if n._tensor != None:
-            output_tensor = n._tensor
-        else:
-            pred = list(g.predecessors(n))
-            if len(pred) == 0:
-                output_tensor = n.create_tensor(train=train)
-            else:
-                tensor_list = list()
-                for s_i in pred:
-                    tmp = create_tensor_aux(g, s_i, train=train)
-                    if type(tmp) is list:
-                        tensor_list.extend(tmp)
-                    else:
-                        tensor_list.append(tmp)
-                output_tensor = n.create_tensor(tensor_list, train=train)
-        return output_tensor
-    except TypeError:
-        raise RuntimeError(f'Failed to build tensors from :{n}')

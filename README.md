@@ -3,17 +3,18 @@
 </p>
 
 ![GitHub tag (latest by date)](https://img.shields.io/github/tag-date/deephyper/deephyper.svg?label=version)
+[![Build Status](https://travis-ci.com/deephyper/deephyper.svg?branch=develop)](https://travis-ci.com/deephyper/deephyper)
 [![Documentation Status](https://readthedocs.org/projects/deephyper/badge/?version=latest)](https://deephyper.readthedocs.io/en/latest/?badge=latest)
 ![PyPI - License](https://img.shields.io/pypi/l/deephyper.svg)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/deephyper.svg?label=Pypi%20downloads)
 
 # What is DeepHyper?
 
-DeepHyper is an automated machine learning ([AutoML](https://en.wikipedia.org/wiki/Automated_machine_learning)) package for deep neural networks. It comprises two components: 1) Neural architecture search is an approach for automatically searching for high-performing the deep neural network 
-architecture. 2) Hyperparameter search is an approach for automatically searching for high-performing hyperparameters for a given deep neural network. DeepHyper provides an infrastructure that targets experimental research in neural architecture 
-and hyperparameter search methods, scalability, and portability across HPC systems. It comprises three modules: 
+DeepHyper is an automated machine learning ([AutoML](https://en.wikipedia.org/wiki/Automated_machine_learning)) package for deep neural networks. It comprises two components: 1) Neural architecture search is an approach for automatically searching for high-performing the deep neural network
+architecture. 2) Hyperparameter search is an approach for automatically searching for high-performing hyperparameters for a given deep neural network. DeepHyper provides an infrastructure that targets experimental research in neural architecture
+and hyperparameter search methods, scalability, and portability across HPC systems. It comprises three modules:
 benchmarks, a collection of extensible and diverse benchmark problems;
-search, a set of search algorithms for neural architecture search and hyperparameter search; 
+search, a set of search algorithms for neural architecture search and hyperparameter search;
 and evaluators, a common interface for evaluating hyperparameter configurations
 on HPC platforms.
 
@@ -100,8 +101,8 @@ Modules, patches (code, documentation, etc.) contributed by:
 
 If you are referencing DeepHyper in a publication, please cite the following papers:
 
- * P. Balaprakash, M. Salim, T. Uram, V. Vishwanath, and S. M. Wild. **DeepHyper: Asynchronous Hyperparameter Search for Deep Neural Networks**. 
-    In 25th IEEE International Conference on High Performance Computing, Data, and Analytics. IEEE, 2018. 
+ * P. Balaprakash, M. Salim, T. Uram, V. Vishwanath, and S. M. Wild. **DeepHyper: Asynchronous Hyperparameter Search for Deep Neural Networks**.
+    In 25th IEEE International Conference on High Performance Computing, Data, and Analytics. IEEE, 2018.
  <!-- * R. Egele, D. Jha, P. Balaprakash, M. Salim, V. Vishwanath, and S. M. Wild. **Scalable Reinforcement-Learning-Based Neural Architecture Search for Scientific and Engineering Applications**. In 34th International Conference on High Performance Computing, 2019. -->
 
 # How can I participate?

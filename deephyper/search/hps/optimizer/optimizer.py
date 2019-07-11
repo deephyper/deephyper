@@ -1,5 +1,6 @@
 from sys import float_info
 from skopt import Optimizer as SkOptimizer
+from skopt.learning import RandomForestRegressor, ExtraTreesRegressor, GradientBoostingQuantileRegressor
 from numpy import inf
 from deephyper.search import util
 
@@ -13,6 +14,15 @@ class Optimizer:
     def __init__(self, problem, num_workers, args):
         assert args.learner in ["RF", "ET", "GBRT", "GP",
                                 "DUMMY"], f"Unknown scikit-optimize base_estimator: {args.learner}"
+
+        if args.learner == "RF":
+            base_estimator = RandomForestRegressor(n_jobs=-1)
+        elif args.learner == "ET":
+            base_estimator = ExtraTreesRegressor(n_jobs=-1)
+        elif args.learner == "GBRT":
+            base_estimator = GradientBoostingQuantileRegressor(n_jobs=-1)
+        else:
+            base_estimator = args.learner
 
         self.space = problem.space
         # queue of remaining starting points

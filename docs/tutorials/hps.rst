@@ -4,7 +4,7 @@ Create a new hyperparameter search problem
 ******************************************
 
 
-A  hyperparaemter search (HPS) problem can be defined using three files with a HPS problem directory::
+A  hyperparameter search (HPS) problem can be defined using three files with a HPS problem directory::
 
       hps_problem_directory/
             load_data.py
@@ -19,7 +19,7 @@ and run a HPS to tune the hyperparameters of a simple neural network.
 
 
 Create a problem directory
-========================
+==========================
 First, we will create a hps_problem_directory ``polynome2``.
 
 .. code-block:: console

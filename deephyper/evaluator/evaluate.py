@@ -36,7 +36,7 @@ class Encoder(json.JSONEncoder):
 
 
 class Evaluator:
-    FAIL_RETURN_VALUE = sys.float_info.max
+    FAIL_RETURN_VALUE = sys.float_info.min
     PYTHON_EXE = os.environ.get('DEEPHYPER_PYTHON_BACKEND', sys.executable)
     WORKERS_PER_NODE = int(os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
     KERAS_BACKEND = os.environ.get('KERAS_BACKEND', 'tensorflow')
@@ -44,8 +44,8 @@ class Evaluator:
     assert os.path.isfile(PYTHON_EXE)
 
     @staticmethod
-    def create(run_function, cache_key=None, method='balsam'):
-        assert method in ['balsam', 'subprocess', 'processPool', 'threadPool']
+    def create(run_function, cache_key=None, method='balsam', **kwargs):
+        assert method in ['balsam', 'subprocess', 'processPool', 'threadPool', '__mpiPool']
         if method == "balsam":
             from deephyper.evaluator._balsam import BalsamEvaluator
             Eval = BalsamEvaluator
@@ -55,11 +55,14 @@ class Evaluator:
         elif method == "processPool":
             from deephyper.evaluator._processPool import ProcessPoolEvaluator
             Eval = ProcessPoolEvaluator
-        else:
+        elif method == "threadPool":
             from deephyper.evaluator._threadPool import ThreadPoolEvaluator
             Eval = ThreadPoolEvaluator
+        elif method == "__mpiPool":
+            from deephyper.evaluator._mpiWorkerPool import MPIWorkerPool
+            Eval = MPIWorkerPool
 
-        return Eval(run_function, cache_key=cache_key)
+        return Eval(run_function, cache_key=cache_key, **kwargs)
 
     def __init__(self, run_function, cache_key=None):
         self.pending_evals = {}  # uid --> Future
@@ -99,7 +102,8 @@ class Evaluator:
         return time.time() - self._start_sec
 
     def decode(self, key):
-        '''from JSON string to x (list)'''
+        """from JSON string to x (list)
+        """
         x = json.loads(key)
         if not isinstance(x, dict):
             raise ValueError(f'Expected dict, but got {type(x)}')
@@ -118,11 +122,15 @@ class Evaluator:
             future.uid = uid
             self.pending_evals[uid] = future
         self.key_uid_map[key] = uid
+        return uid
 
     def add_eval_batch(self, XX):
+        uids = []
         with self.transaction_context():
             for x in XX:
-                self.add_eval(x)
+                uid = self.add_eval(x)
+                uids.append(uid)
+        return uids
 
     def _eval_exec(self, x):
         raise NotImplementedError
@@ -193,10 +201,10 @@ class Evaluator:
                 pass
             yield (x, y)
 
-    def get_finished_evals(self):
+    def get_finished_evals(self, timeout=0.5):
         futures = self.pending_evals.values()
         try:
-            waitRes = self.wait(futures, timeout=0.5,
+            waitRes = self.wait(futures, timeout=timeout,
                                 return_when='ANY_COMPLETED')
         except TimeoutError:
             pass

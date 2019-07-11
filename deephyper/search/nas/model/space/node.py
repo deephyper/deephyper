@@ -1,3 +1,5 @@
+from tensorflow.keras.layers import Layer
+from deephyper.search.nas.model.space.op.basic import Operation
 
 class Node:
     """This class represents a node of a graph
@@ -16,7 +18,7 @@ class Node:
         self.name = name
 
     def __str__(self):
-        return f'{self.name}({self._num})'
+        return f'{self.name}[id={self._num}]'
 
     @property
     def id(self):
@@ -28,6 +30,15 @@ class Node:
 
     def create_tensor(self, *args, **kwargs):
         raise NotImplementedError
+
+    @staticmethod
+    def verify_operation(op):
+        if isinstance(op, Operation):
+            return op
+        elif isinstance(op, Layer):
+            return Operation(op)
+        else:
+            raise RuntimeError(f'Can\'t add this operation \'{op.__name__}\'. An operation should be either of type Operation or Layer when is of type: {type(op)}')
 
 
 class OperationNode(Node):
@@ -63,8 +74,6 @@ class VariableNode(OperationNode):
     >>> vnode.set_op(0)
     >>> vnode.op.units
     10
-    >>> str(vnode)
-    'VNode1(1)(Variable[Dense_10_relu])'
 
     Args:
         name (str): node name.
@@ -79,17 +88,17 @@ class VariableNode(OperationNode):
         if self._index != None:
             return f'{super().__str__()}(Variable[{str(self.op)}])'
         else:
-            return f'{super().__str__()}(Variable)'
+            return f'{super().__str__()}(Variable[?])'
 
     def add_op(self, op):
-        self._ops.append(op)
+        self._ops.append(self.verify_operation(op))
 
     @property
     def num_ops(self):
         return len(self._ops)
 
     def set_op(self, index):
-        self.get_op(index).is_set()
+        self.get_op(index).init()
 
     def get_op(self, index):
         assert 'float' in str(type(index)) or type(
@@ -112,7 +121,7 @@ class VariableNode(OperationNode):
             int: An absolute indexes corresponding to the operation choosen with the relative index of `index`.
         """
         assert 0. <= index and index <= 1.
-        return int(int((index * (len(self._ops) - 1) + 0.5) * 10) / 10)
+        return int(index * len(self._ops))
 
     @property
     def op(self):
@@ -137,8 +146,6 @@ class ConstantNode(OperationNode):
     >>> from deephyper.search.nas.model.space.node import ConstantNode
     >>> from deephyper.search.nas.model.space.op.op1d import Dense
     >>> cnode = ConstantNode(op=Dense(units=100, activation=tf.nn.relu), name='CNode1')
-    >>> str(cnode)
-    'CNode1(2)(Constant[Dense_100_relu])'
 
     Args:
         op (Operation, optional): [description]. Defaults to None.
@@ -148,11 +155,13 @@ class ConstantNode(OperationNode):
     def __init__(self, op=None, name='', *args, **kwargs):
         super().__init__(name=name)
         if not op is None:
-            op.is_set()  # set operation
+            op = self.verify_operation(op)
+            op.init()  # set operation
         self._op = op
 
     def set_op(self, op):
-        op.is_set()
+        op = self.verify_operation(op)
+        op.init()
         self._op = op
 
     def __str__(self):

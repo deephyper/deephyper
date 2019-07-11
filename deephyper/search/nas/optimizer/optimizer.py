@@ -1,6 +1,8 @@
 from sys import float_info
 from skopt import Optimizer as SkOptimizer
-from numpy import inf
+from skopt.learning import RandomForestRegressor, ExtraTreesRegressor, GradientBoostingQuantileRegressor
+#from numpy import inf
+import numpy as np
 from deephyper.search import util
 from deephyper.benchmark import HpProblem
 
@@ -14,6 +16,14 @@ class Optimizer:
     def __init__(self, problem, num_workers, args):
         assert args.learner in ["RF", "ET", "GBRT", "GP",
                                 "DUMMY"], f"Unknown scikit-optimize base_estimator: {args.learner}"
+        if args.learner == "RF":
+            base_estimator = RandomForestRegressor(n_jobs=-1)
+        elif args.learner == "ET":
+            base_estimator = ExtraTreesRegressor(n_jobs=-1)
+        elif args.learner == "GBRT":
+            base_estimator = GradientBoostingQuantileRegressor(n_jobs=-1)
+        else:
+            base_estimator = args.learner
 
         self.space = problem.space
         cs_kwargs = self.space['create_structure'].get('kwargs')
@@ -24,7 +34,7 @@ class Optimizer:
 
         # // queue of remaining starting points
         # // self.starting_points = problem.starting_point
-        n_init = inf if args.learner == 'DUMMY' else num_workers
+        n_init = np.inf if args.learner == 'DUMMY' else num_workers
 
         self.starting_points = []  # ! EMPTY for now TODO
 
@@ -33,8 +43,8 @@ class Optimizer:
                        for vnode in structure.variable_nodes]
 
         self._optimizer = SkOptimizer(
-            skopt_space,  # TODO
-            base_estimator=args.learner,
+            skopt_space,
+            base_estimator=base_estimator,
             acq_optimizer='sampling',
             acq_func=args.acq_func,
             acq_func_kwargs={'kappa': self.KAPPA},
@@ -53,8 +63,8 @@ class Optimizer:
         if self.strategy == "cl_min":
             return min(self._optimizer.yi) if self._optimizer.yi else 0.0
         elif self.strategy == "cl_mean":
-            return self._optimizer.yi.mean() if self._optimizer.yi else 0.0
-        else:
+            return np.mean(self._optimizer.yi) if self._optimizer.yi else 0.0
+        else: # self.strategy == "cl_max"
             return max(self._optimizer.yi) if self._optimizer.yi else 0.0
 
     def _xy_from_dict(self):
@@ -88,7 +98,7 @@ class Optimizer:
             return self._ask()
         else:
             batch = []
-            for i in range(n_points):
+            for _ in range(n_points):
                 batch.append(self._ask())
                 if len(batch) == batch_size:
                     yield batch
@@ -116,12 +126,12 @@ class Optimizer:
     def tell(self, xy_data):
         assert isinstance(
             xy_data, list), f"where type(xy_data)=={type(xy_data)}"
-        maxval = max(self._optimizer.yi) if self._optimizer.yi else 0.0
+        minval = min(self._optimizer.yi) if self._optimizer.yi else 0.0
         for x, y in xy_data:
             key = tuple(x['arch_seq'])
             assert key in self.evals, f"where key=={key} and self.evals=={self.evals}"
             logger.debug(f'tell: {x} --> {key}: evaluated objective: {y}')
-            self.evals[key] = (y if y < float_info.max else maxval)
+            self.evals[key] = (y if y > float_info.min else minval)
 
         self._optimizer.Xi = []
         self._optimizer.yi = []

@@ -11,32 +11,38 @@ from deephyper.core.exceptions.nas.struct import (InputShapeOfWrongType,
                                                   WrongSequenceToSetOperations)
 from deephyper.search.nas.model.space.node import (ConstantNode, Node,
                                                    VariableNode)
-from deephyper.search.nas.model.space.op.basic import Connect, Tensor
+from deephyper.search.nas.model.space.op.basic import Tensor
 from deephyper.search.nas.model.space.op.merge import Concatenate
 from deephyper.search.nas.model.space.op.op1d import Identity
 from deephyper.search.nas.model.space.struct import DirectStructure
 
 
 class AutoOutputStructure(DirectStructure):
-    """A DirectStructure represents a search space of neural networks.
+    """An AutoOutputStructure represents a search space of neural networks.
 
     Args:
         input_shape (list(tuple(int))): list of shapes of all inputs.
         output_shape (tuple(int)): shape of output.
+        regression (bool): if ``True`` the output will be a simple ``tf.keras.layers.Dense(output_shape[0])`` layer as the output layer. if ``False`` the output will be ``tf.keras.layers.Dense(output_shape[0], activation='softmax').
 
     Raises:
         InputShapeOfWrongType: [description]
     """
 
-    def create_model(self, activation=None):
-        """Create the tensors corresponding to the structure.
+    def __init__(self, input_shape, output_shape, regression: bool, *args, **kwargs):
+        super().__init__(input_shape, output_shape)
+        self.regression = regression
 
-        Args:
-            train (bool): True if the network is built for training, False if the network is built for validation/testing (for example False will deactivate Dropout).
+    def create_model(self):
+        """Create the tensors corresponding to the structure.
 
         Returns:
             The output tensor.
         """
+        if self.regression:
+            activation = None
+        else:
+            activation = 'softmax'
 
         output_tensor = self.create_tensor_aux(self.graph, self.output_node)
         if len(output_tensor.get_shape()) > 2:
