@@ -46,6 +46,9 @@ REQUIRED = [
 # external sources
 DP_LINKS = list()
 
+if on_rtd:
+    REQUIRED.remove('balsam-flow==0.3.5')
+
 if on_theta:  # --system-site-packages
     # we want to use the default mpi4py from cray environment
     REQUIRED.append('mpi4py')
