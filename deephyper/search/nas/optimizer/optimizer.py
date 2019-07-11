@@ -47,7 +47,7 @@ class Optimizer:
             base_estimator=base_estimator,
             acq_optimizer='sampling',
             acq_func=args.acq_func,
-            acq_func_kwargs={'kappa': self.KAPPA, 'n_jobs':-1},
+            acq_func_kwargs={'kappa': self.KAPPA},
             random_state=self.SEED,
             n_initial_points=n_init
         )
@@ -99,7 +99,7 @@ class Optimizer:
         else:
             batch = []
             for _ in range(n_points):
-                batch.extend(self._ask())
+                batch.append(self._ask())
                 if len(batch) == batch_size:
                     yield batch
                     batch = []
