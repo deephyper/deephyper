@@ -4,9 +4,9 @@ Basic test for Evaluator : 'local' or 'balsam'.
 import os
 import unittest
 os.environ['DEEPHYPER_WORKERS_PER_NODE'] = '4'
-from deephyper.evaluator import Evaluator
-from deephyper.evaluator.test_functions import run, key
-from deephyper.evaluator.test_utils import stop_launcher_processes
+from deephyper.evaluator.evaluate import Evaluator
+from .test_functions import run, key
+from .test_utils import stop_launcher_processes
 
 from balsam.core.models import BalsamJob
 from django.core.management import call_command

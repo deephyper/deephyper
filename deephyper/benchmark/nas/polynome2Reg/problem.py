@@ -1,5 +1,5 @@
 from deephyper.benchmark import NaProblem
-from deephyper.benchmark.nas.polynome2.load_data import load_data
+from deephyper.benchmark.nas.polynome2Reg.load_data import load_data
 from deephyper.search.nas.model.baseline.simple import create_structure
 from deephyper.search.nas.model.preprocessing import minmaxstdscaler
 

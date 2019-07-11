@@ -74,8 +74,6 @@ class VariableNode(OperationNode):
     >>> vnode.set_op(0)
     >>> vnode.op.units
     10
-    >>> str(vnode)
-    'VNode1[id=1](Variable[Dense_10_relu])'
 
     Args:
         name (str): node name.
@@ -148,8 +146,6 @@ class ConstantNode(OperationNode):
     >>> from deephyper.search.nas.model.space.node import ConstantNode
     >>> from deephyper.search.nas.model.space.op.op1d import Dense
     >>> cnode = ConstantNode(op=Dense(units=100, activation=tf.nn.relu), name='CNode1')
-    >>> str(cnode)
-    'CNode1[id=2](Constant[Dense_100_relu])'
 
     Args:
         op (Operation, optional): [description]. Defaults to None.

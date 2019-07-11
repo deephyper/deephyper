@@ -6,7 +6,7 @@ Learn more about different kind of convolution : https://towardsdatascience.com/
 
 import tensorflow as tf
 
-from deephyper.search.nas.operation.basic import Operation
+from deephyper.search.nas.model.space.op import Operation
 
 
 class IdentityConv2D(Operation):
