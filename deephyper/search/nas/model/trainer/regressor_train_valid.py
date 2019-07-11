@@ -7,7 +7,7 @@ from sklearn.metrics import mean_squared_error
 import deephyper.search.nas.model.arch as a
 import deephyper.search.nas.model.train_utils as U
 from deephyper.search import util
-from deephyper.search.nas.utils._logging import JsonMessage as jm
+from deephyper.core.logs.logging import JsonMessage as jm
 from deephyper.search.nas.model.trainer.train_valid import TrainerTrainValid
 
 logger = util.conf_logger('deephyper.model.trainer')

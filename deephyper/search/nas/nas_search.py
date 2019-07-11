@@ -22,7 +22,7 @@ from deephyper.search.nas.baselines.common.vec_env.vec_video_recorder import \
     VecVideoRecorder
 from deephyper.search.nas.env.neural_architecture_envs import \
     NeuralArchitectureVecEnv
-from deephyper.search.nas.utils._logging import JsonMessage as jm
+from deephyper.core.logs.logging import JsonMessage as jm
 
 try:
     from mpi4py import MPI
