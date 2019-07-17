@@ -2,14 +2,18 @@ import os
 import collections
 import random
 import numpy as np
+import time
 
-from deephyper.search import Search
+from deephyper.search import Search, util
+from deephyper.core.logs.logging import JsonMessage as jm
 
 try:
     from mpi4py import MPI
 except ImportError:
     MPI = None
 
+dhlogger = util.conf_logger(
+    'deephyper.search.nas.regevo')
 
 class RegularizedEvolution(Search):
     """Regularized evolution.
@@ -93,6 +97,10 @@ class RegularizedEvolution(Search):
 
             if len(new_results) > 0:
                 population.extend(new_results)
+                stats = {
+                    'num_cache_used': self.evaluator.stats['num_cache_used'],
+                }
+                dhlogger.info(jm(type='env_stats', **stats))
                 self.evaluator.dump_evals(saved_key='arch_seq')
 
                 num_received = len(new_results)
