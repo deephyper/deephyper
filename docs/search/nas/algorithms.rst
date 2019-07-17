@@ -1,14 +1,14 @@
 Algorithms
 **********
 
-.. autoclass:: deephyper.search.nas.nas_search.NeuralArchitectureSearch
-   :members:
+.. autoclass:: deephyper.search.nas.rl.ReinforcementLearningSearch
+    :members:
 
 NAS (PPO) Asynchronous
 ======================
 
 .. autoclass:: deephyper.search.nas.ppo.Ppo
-   :members:
+    :members:
 
 Run locally
 -----------
@@ -26,6 +26,11 @@ With MPI (i.e. several agents):
 
     $ mpirun -np 2 python -m deephyper.search.nas.ppo --problem deephyper.benchmark.nas.mnist1D.Problem --run deephyper.search.nas.model.run.alpha.run
 
+Asynchronous Model Based Neural Architecture Search (AMBNAS)
+============================================================
+
+.. autoclass:: deephyper.search.nas.ambs.AMBNeuralArchitectureSearch
+    :memeber:
 
 NAS Full Random
 ===============
