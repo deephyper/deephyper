@@ -51,15 +51,16 @@ def parseline_reward(line, data):
 
 
 def parseline_arch_seq(line, data):
-    i_sta = line.index("'arch_seq':") + 1
-    i_end = i_sta
-    while not ']' in line[i_end]:
-        i_end += 1
-    l = []
-    for i in range(i_sta, i_end+1):
-        l.append(float(line[i].replace('[', '').replace(
-            ',', '').replace(']', '').replace('}', '')))
-    data['arch_seq'].append(l)
+    if "'arch_seq':" in line:
+        i_sta = line.index("'arch_seq':") + 1
+        i_end = i_sta
+        while not ']' in line[i_end]:
+            i_end += 1
+        l = []
+        for i in range(i_sta, i_end+1):
+            l.append(float(line[i].replace('[', '').replace(
+                ',', '').replace(']', '').replace('}', '')))
+        data['arch_seq'].append(l)
 
 
 def parsing(f, data):
