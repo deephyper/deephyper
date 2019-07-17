@@ -74,7 +74,7 @@ class AMBNeuralArchitectureSearch(Search):
                             help='type of learner (surrogate model)'
                             )
         parser.add_argument('--liar-strategy',
-                            default="cl_min",
+                            default="cl_max",
                             choices=["cl_min", "cl_mean", "cl_max"],
                             help='Constant liar strategy'
                             )

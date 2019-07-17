@@ -55,7 +55,7 @@ class SpaceDimValueNotInSpace(DeephyperError):
         self.space_dim = space_dim
 
     def __str__(self):
-        return f"Dimension value: '{self.value}' is not in dim['{self.name_dim}':{self.space_dim}!"
+        return f"Dimension value: '{self.value}' is not in dim['{self.name_dim}':{self.space_dim}]!"
 
 
 # ! NaProblemErrors

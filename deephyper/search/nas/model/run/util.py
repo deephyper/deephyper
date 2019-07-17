@@ -59,6 +59,9 @@ def setup_data(config):
         raise RuntimeError(
             f'Data returned by load_data function are of an unsupported type: {type(data)}')
 
+    if output_shape == (): # basicaly means data with shape=(num_elements) == (num_elements, 1)
+        output_shape = (1,)
+
     logger.info(f'input_shape: {input_shape}')
     logger.info(f'output_shape: {output_shape}')
 
