@@ -47,12 +47,12 @@ class AMBS(Search):
     def __init__(self, problem, run, evaluator, **kwargs):
         super().__init__(problem, run, evaluator, **kwargs)
         logger.info("Initializing AMBS")
-        self.optimizer = Optimizer(self.problem, self.num_workers, self.args)
+        self.optimizer = Optimizer(self.problem, self.num_workers, **kwargs)
 
     @staticmethod
     def _extend_parser(parser):
-        parser.add_argument('--learner',
-                            default='RF',
+        parser.add_argument("--learner",
+                            default="RF",
                             choices=["RF", "ET", "GBRT", "DUMMY", "GP"],
                             help='type of learner (surrogate model)'
                             )
@@ -66,6 +66,8 @@ class AMBS(Search):
                             choices=["LCB", "EI", "PI", "gp_hedge"],
                             help='Acquisition function type'
                             )
+        parser.add_argument('--n-jobs', type=int, default=1,
+                            help="number of cores to use for the 'learner', if n_jobs=-1 then it will use all cores available.")
         return parser
 
     def main(self):
