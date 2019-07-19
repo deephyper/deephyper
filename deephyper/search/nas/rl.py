@@ -30,14 +30,14 @@ except ImportError:
     MPI = None
 
 
-dhlogger = util.conf_logger('deephyper.search.nas.nas_search')
+dhlogger = util.conf_logger('deephyper.search.nas.rl')
 
 
 def key(d):
     return json.dumps(dict(arch_seq=d['arch_seq']))
 
 
-class NeuralArchitectureSearch(Search):
+class ReinforcementLearningSearch(Search):
     """Represents different kind of RL algorithms working with NAS.
 
     Args:

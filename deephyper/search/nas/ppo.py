@@ -1,7 +1,7 @@
 import os
 
 
-from deephyper.search.nas.nas_search import NeuralArchitectureSearch
+from deephyper.search.nas.rl import ReinforcementLearningSearch
 
 try:
     from mpi4py import MPI
@@ -9,7 +9,7 @@ except ImportError:
     MPI = None
 
 
-class Ppo(NeuralArchitectureSearch):
+class Ppo(ReinforcementLearningSearch):
     """Search class to run a proximal policy optimization search. The search is launching as many agents as the number of MPI ranks. Each agent is batch synchronous on a number of DNN evaluations. This number of parallel evaluation is equal for all agents, and automaticaly computed based on the number of available workers when using `evaluator='balsam'`. For other evaluators it will be set to 1.
 
     Args:
@@ -51,7 +51,7 @@ class Ppo(NeuralArchitectureSearch):
 
     @staticmethod
     def _extend_parser(parser):
-        NeuralArchitectureSearch._extend_parser(parser)
+        ReinforcementLearningSearch._extend_parser(parser)
         parser.add_argument("--cliprange",
                             type=float,
                             default=0.2,

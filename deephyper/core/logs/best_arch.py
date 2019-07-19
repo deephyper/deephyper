@@ -7,7 +7,7 @@ from math import inf
 def process_f(file):
     with open(file, 'r') as f:
         data = json.load(f)
-    print(f'json keys: {list(data.keys())}')
+    print(f'Json keys are: {list(data.keys())}')
     return data
 
 def process_archseq(data, number):
@@ -16,7 +16,9 @@ def process_archseq(data, number):
 
     l = list(zip(raw_rewards, list(range(len(raw_rewards))), arch_seq))
     l.sort(reverse=True, key=lambda x: x[0])
-    print(f'arch seq shape: {np.shape(np.array(arch_seq))}')
+    shape = np.shape(np.array(arch_seq))
+    print(f'Json contains: {shape[0]} architecture sequences.')
+    print(f'Sequences length is {shape[1]}.')
 
     i = 0
     best_archs = list()
@@ -36,6 +38,6 @@ def process_archseq(data, number):
         json.dump(data_best_arch, f, indent=4)
 
 def main(path, number, *args, **kwargs):
-    print(f'processing: {path}')
+    print(f'Processing: {path}, to collect top {number} best architectures.')
     data = process_f(path)
     process_archseq(data, number)

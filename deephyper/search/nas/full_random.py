@@ -44,8 +44,8 @@ class Random(Search):
                             help="Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.nas.linearReg.Problem)."
                             )
         parser.add_argument("--run",
-                            default="deephyper.search.nas.model.run.quick",
-                            help="Module path to the run function you want to use for the search (e.g. deephyper.search.nas.model.run.quick)."
+                            default="deephyper.search.nas.model.run.alpha.run",
+                            help="Module path to the run function you want to use for the search (e.g. deephyper.search.nas.model.run.alpha.run)."
                             )
         parser.add_argument('--max-evals', type=int, default=1e10,
                             help='maximum number of evaluations.')
