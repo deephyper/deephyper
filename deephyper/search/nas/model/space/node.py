@@ -48,7 +48,10 @@ class OperationNode(Node):
     def create_tensor(self, inputs=None, train=True, *args, **kwargs):
         if self._tensor is None:
             if inputs == None:
-                self._tensor = self.op(train=train)
+                try:
+                    self._tensor = self.op(train=train)
+                except TypeError:
+                    raise RuntimeError(f'Verify if node: "{self}" has incoming connexions!')
             else:
                 self._tensor = self.op(inputs, train=train)
         return self._tensor
@@ -115,13 +118,16 @@ class VariableNode(OperationNode):
         """Denormalize a normalized index to get an absolute indexes. Useful when you want to compare the number of different architectures.
 
         Args:
-            indexes (float): a normalized index.
+            indexes (float|int): a normalized index.
 
         Returns:
             int: An absolute indexes corresponding to the operation choosen with the relative index of `index`.
         """
-        assert 0. <= index and index <= 1.
-        return int(index * len(self._ops))
+        if type(index) is int:
+            return index
+        else:
+            assert 0. <= index and index <= 1.
+            return int(index * len(self._ops))
 
     @property
     def op(self):

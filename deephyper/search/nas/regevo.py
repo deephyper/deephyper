@@ -3,9 +3,12 @@ import collections
 import random
 import numpy as np
 import time
+import json
 
 from deephyper.search import Search, util
 from deephyper.core.logs.logging import JsonMessage as jm
+from deephyper.evaluator.evaluate import Encoder
+
 
 try:
     from mpi4py import MPI
@@ -14,6 +17,9 @@ except ImportError:
 
 dhlogger = util.conf_logger(
     'deephyper.search.nas.regevo')
+
+def key(d):
+    return json.dumps(dict(arch_seq=d['arch_seq']), cls=Encoder)
 
 class RegularizedEvolution(Search):
     """Regularized evolution.
@@ -43,7 +49,15 @@ class RegularizedEvolution(Search):
             else:
                 self.free_workers = 1
 
-        super().__init__(problem, run, evaluator, **kwargs)
+        super().__init__(problem, run, evaluator, cache_key=key, **kwargs)
+
+        dhlogger.info(jm(
+            type='start_infos',
+            alg='aging-evolution',
+            num_envs_per_agent=1,
+            nworkers=self.free_workers,
+            encoded_space=json.dumps(self.problem.space, cls=Encoder)
+            ))
 
         # Setup
         self.pb_dict = self.problem.space
@@ -106,8 +120,10 @@ class RegularizedEvolution(Search):
                 num_received = len(new_results)
                 num_evals_done += num_received
 
+                # If the population is big enough evolve the population
                 if len(population) == self.population_size:
                     children_batch = []
+                    # For each new parent/result we create a child from it
                     for _ in range(len(new_results)):
                         # select_sample
                         indexes = np.random.choice(self.population_size, self.sample_size, replace=False)
@@ -115,17 +131,20 @@ class RegularizedEvolution(Search):
                         # select_parent
                         parent = self.select_parent(sample)
                         # copy_mutate_parent
-                        children_batch.append(self.copy_mutate_arch(parent))
+                        child = self.copy_mutate_arch(parent)
+                        # add child to batch
+                        children_batch.append(child)
                     # submit_childs
-                    self.evaluator.add_eval_batch(children_batch)
-                else:
+                    if len(new_results) > 0:
+                        self.evaluator.add_eval_batch(children_batch)
+                else: # If the population is too small keep increasing it
                     self.evaluator.add_eval_batch(self.gen_random_batch(size=len(new_results)))
 
-    def select_parent(self, sample: list):
+    def select_parent(self, sample: list) -> list:
         cfg, _ = max(sample, key=lambda x: x[1])
         return cfg['arch_seq']
 
-    def gen_random_batch(self, size):
+    def gen_random_batch(self, size: int) -> list:
         batch = []
         for _ in range(size):
             cfg = self.pb_dict.copy()
@@ -133,74 +152,33 @@ class RegularizedEvolution(Search):
             batch.append(cfg)
         return batch
 
-    def random_architecture(self):
+    def random_architecture(self) -> list:
         return [np.random.choice(b+1) for (_,b) in self.space_list]
 
-    def copy_mutate_arch(self, parent_arch):
+    def copy_mutate_arch(self, parent_arch: list) -> dict:
+        """
+        # ! Time performance is critical because called sequentialy
+
+        Args:
+            parent_arch (list(int)): [description]
+
+        Returns:
+            dict: [description]
+
+        """
         i = np.random.choice(len(parent_arch))
         child_arch = parent_arch[:]
-        child_arch[i] = np.random.choice(self.space_list[i][1]+1)
+
+        range_upper_bound = self.space_list[i][1]
+        elements = [j for j in range(range_upper_bound+1) if j != child_arch[i]]
+
+        # The mutation has to create a different architecture!
+        sample = np.random.choice(elements, 1)[0]
+
+        child_arch[i] = sample
         cfg = self.pb_dict.copy()
         cfg['arch_seq'] = child_arch
         return cfg
-
-    def regularized_evolution(self, cycles, population_size, sample_size):
-        """Algorithm for regularized evolution (i.e. aging evolution).
-
-        Follows "Algorithm 1" in Real et al. "Regularized Evolution for Image
-        Classifier Architecture Search".
-
-        Args:
-            cycles: the number of cycles the algorithm should run for.
-            population_size: the number of individuals to keep in the population.
-            sample_size: the number of individuals that should participate in each
-                tournament.
-
-        Returns:
-            history: a list of `Model` instances, representing all the models computed
-                during the evolution experiment.
-        """
-        population = collections.deque()
-        history = []  # Not used by the algorithm, only used to report results.
-
-        # Initialize the population with random models.
-        while len(population) < population_size:
-            model = Model()
-            model.arch = self.random_architecture()
-            model.accuracy = train_and_eval(model.arch)
-            population.append(model)
-            history.append(model)
-
-        # Carry out evolution in cycles. Each cycle produces a model and removes
-        # another.
-        while len(history) < cycles:
-            # Sample randomly chosen models from the current population.
-            sample = []
-            while len(sample) < sample_size:
-                # Inefficient, but written this way for clarity. In the case of neural
-                # nets, the efficiency of this line is irrelevant because training neural
-                # nets is the rate-determining step.
-                candidate = random.choice(list(population))
-                sample.append(candidate)
-
-            # The parent is the best model in the sample.
-            parent = max(sample, key=lambda i: i.accuracy)
-
-            # Create the child model and store it.
-            child_arch = self.mutate_arch(parent_arch)
-            child.accuracy = train_and_eval(child.arch)
-            population.append(child)
-            history.append(child)
-
-            # Remove the oldest model.
-            population.popleft()
-
-        return history
-
-class Model:
-    def __init__(self, arch, accuracy):
-        self.arch = arch
-        self.accuracy = accuracy
 
 
 if __name__ == "__main__":
