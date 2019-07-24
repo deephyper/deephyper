@@ -221,7 +221,7 @@ class DirectStructure(NxStructure):
             graph.add_edge(output_nodes[0], node)
         else:
             node = ConstantNode(name='Structure_Output')
-            node.set_op(Concatenate(self, node, output_nodes))
+            node.set_op(Concatenate(self, output_nodes))
         return node
 
     def create_model(self):

@@ -84,7 +84,7 @@ class TestDirectStructure:
         struct = DirectStructure([(5, ), (5, )], (1, ))
 
         merge = ConstantNode()
-        merge.set_op(Concatenate(struct, merge, struct.input_nodes))
+        merge.set_op(Concatenate(struct, struct.input_nodes))
 
         vnode1 = VariableNode()
         struct.connect(merge, vnode1)
