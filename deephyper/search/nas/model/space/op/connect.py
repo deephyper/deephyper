@@ -8,35 +8,38 @@ class Connect(Operation):
 
     Args:
         graph (nx.DiGraph): a graph
-        n1 (Node): starting node
-        n2 (Node): arrival node
+        source_node (Node): source
     """
 
-    def __init__(self, struct, n1, n2, *args, **kwargs):
+    def __init__(self, struct, source_node, *args, **kwargs):
         self.struct = struct
-        self.n1 = n1
-        self.n2 = n2
+        self.source_node = source_node
+        self.destin_node = None
 
     def __str__(self):
-        if type(self.n1) is list:
-            if len(self.n1) > 0:
-                ids = str(self.n1[0].id)
-                for n in self.n1[1:]:
+        if type(self.source_node) is list:
+            if len(self.source_node) > 0:
+                ids = str(self.source_node[0].id)
+                for n in self.source_node[1:]:
                     ids += ',' + str(n.id)
             else:
                 ids = 'None'
         else:
-            ids = self.n1.id
-        return f'{type(self).__name__}_{ids}->{self.n2.id}'
+            ids = self.source_node.id
+        if self.destin_node is None:
+            return f'{type(self).__name__}_{ids}->?'
+        else:
+            return f'{type(self).__name__}_{ids}->{self.destin_node.id}'
 
-    def init(self):
+    def init(self, current_node):
         """Set the connection in the structur graph from [n1] -> n2.
         """
-        if type(self.n1) is list:
-            for n in self.n1:
-                self.struct.connect(n, self.n2)
+        self.destin_node = current_node
+        if type(self.source_node) is list:
+            for n in self.source_node:
+                self.struct.connect(n, self.destin_node)
         else:
-            self.struct.connect(self.n1, self.n2)
+            self.struct.connect(self.source_node, self.destin_node)
 
     def __call__(self, value, *args, **kwargs):
         return value

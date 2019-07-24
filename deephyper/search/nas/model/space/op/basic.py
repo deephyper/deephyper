@@ -44,7 +44,7 @@ class Operation:
             out = self._layer(tensors)
         return out
 
-    def init(self):
+    def init(self, current_node):
         """Preprocess the current operation.
         """
 

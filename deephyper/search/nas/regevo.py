@@ -2,18 +2,11 @@ import os
 import collections
 import random
 import numpy as np
-import time
 import json
 
 from deephyper.search import Search, util
 from deephyper.core.logs.logging import JsonMessage as jm
 from deephyper.evaluator.evaluate import Encoder
-
-
-try:
-    from mpi4py import MPI
-except ImportError:
-    MPI = None
 
 dhlogger = util.conf_logger(
     'deephyper.search.nas.regevo')
@@ -32,29 +25,24 @@ class RegularizedEvolution(Search):
         evaluator (str): value in ['balsam', 'subprocess', 'processPool', 'threadPool'].
     """
 
-    def __init__(self, problem, run, evaluator, **kwargs):
+    def __init__(self, problem, run, evaluator, population_size=100, sample_size=10, **kwargs):
 
-        if MPI is None:
-            self.free_workers = 1
+        if evaluator == 'balsam':  # TODO: async is a kw
+            balsam_launcher_nodes = int(
+                os.environ.get('BALSAM_LAUNCHER_NODES', 1))
+            deephyper_workers_per_node = int(
+                os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
+            n_free_nodes = balsam_launcher_nodes - 1  # Number of free nodes
+            self.free_workers = n_free_nodes * \
+                deephyper_workers_per_node  # Number of free workers
         else:
-            nranks = MPI.COMM_WORLD.Get_size()
-            if evaluator == 'balsam':  # TODO: async is a kw
-                balsam_launcher_nodes = int(
-                    os.environ.get('BALSAM_LAUNCHER_NODES', 1))
-                deephyper_workers_per_node = int(
-                    os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
-                n_free_nodes = balsam_launcher_nodes - nranks  # Number of free nodes
-                self.free_workers = n_free_nodes * \
-                    deephyper_workers_per_node  # Number of free workers
-            else:
-                self.free_workers = 1
+            self.free_workers = 1
 
         super().__init__(problem, run, evaluator, cache_key=key, **kwargs)
 
         dhlogger.info(jm(
             type='start_infos',
             alg='aging-evolution',
-            num_envs_per_agent=1,
             nworkers=self.free_workers,
             encoded_space=json.dumps(self.problem.space, cls=Encoder)
             ))
@@ -68,9 +56,8 @@ class RegularizedEvolution(Search):
             structure = self.pb_dict['create_structure']['func'](**cs_kwargs)
 
         self.space_list = [(0, vnode.num_ops-1) for vnode in structure.variable_nodes]
-        self.population_size = self.args.population_size
-        # self.cycles = self.args.cycles
-        self.sample_size = self.args.sample_size
+        self.population_size = population_size
+        self.sample_size = sample_size
 
     @staticmethod
     def _extend_parser(parser):
@@ -103,7 +90,7 @@ class RegularizedEvolution(Search):
 
 
         # Main loop
-        while num_evals_done < self.args.max_evals:
+        while num_evals_done < self.max_evals:
 
             # Collecting finished evaluations
             new_results = list(self.evaluator.get_finished_evals())

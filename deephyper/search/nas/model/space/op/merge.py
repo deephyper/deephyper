@@ -10,18 +10,19 @@ class Concatenate(Operation):
 
     Args:
         graph:
-        node (Node): current_node of the operation
+        node (Node):
         stacked_nodes (list(Node)): nodes to concatenate
         axis (int): axis to concatenate
     """
 
-    def __init__(self, struct, node=None, stacked_nodes=None, axis=-1):
+    def __init__(self, struct, stacked_nodes=None, axis=-1):
         self.struct = struct
-        self.node = node
+        self.node = None # current_node of the operation
         self.stacked_nodes = stacked_nodes
         self.axis = axis
 
-    def init(self):
+    def init(self, current_node):
+        self.node = current_node
         if self.stacked_nodes is not None:
             for n in self.stacked_nodes:
                 self.struct.connect(n, self.node)
@@ -78,13 +79,14 @@ class AddByPadding(Operation):
         axis (int): axis to concatenate
     """
 
-    def __init__(self, struct=None, node=None, stacked_nodes=None, axis=-1):
+    def __init__(self, struct=None, stacked_nodes=None, axis=-1):
         self.struct = struct
-        self.node = node
+        self.node = None # current_node of the operation
         self.stacked_nodes = stacked_nodes
         self.axis = axis
 
-    def init(self):
+    def init(self, current_node):
+        self.node = current_node
         if self.stacked_nodes is not None:
             for n in self.stacked_nodes:
                 self.struct.connect(n, self.node)

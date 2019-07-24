@@ -101,7 +101,7 @@ class VariableNode(OperationNode):
         return len(self._ops)
 
     def set_op(self, index):
-        self.get_op(index).init()
+        self.get_op(index).init(self)
 
     def get_op(self, index):
         assert 'float' in str(type(index)) or type(
@@ -162,12 +162,12 @@ class ConstantNode(OperationNode):
         super().__init__(name=name)
         if not op is None:
             op = self.verify_operation(op)
-            op.init()  # set operation
+            op.init(self)  # set operation
         self._op = op
 
     def set_op(self, op):
         op = self.verify_operation(op)
-        op.init()
+        op.init(self)
         self._op = op
 
     def __str__(self):

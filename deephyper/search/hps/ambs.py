@@ -85,7 +85,7 @@ class AMBS(Search):
             results = list(self.evaluator.get_finished_evals())
             num_evals += len(results)
             chkpoint_counter += len(results)
-            if EXIT_FLAG or num_evals >= self.args.max_evals:
+            if EXIT_FLAG or num_evals >= self.max_evals:
                 break
             if results:
                 logger.info(

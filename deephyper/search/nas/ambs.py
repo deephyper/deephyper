@@ -1,11 +1,14 @@
-import signal
 import json
+import os
+import signal
 
+from deephyper.core.logs.logging import JsonMessage as jm
+from deephyper.evaluator.evaluate import Encoder
+from deephyper.search import Search, util
 from deephyper.search.nas.optimizer import Optimizer
-from deephyper.search import Search
-from deephyper.search import util
 
-logger = util.conf_logger('deephyper.search.nas.ambs')
+dhlogger = util.conf_logger(
+    'deephyper.search.nas.ambs')
 
 SERVICE_PERIOD = 2          # Delay (seconds) between main loop iterations
 CHECKPOINT_INTERVAL = 1    # How many jobs to complete between optimizer checkpoints
@@ -18,8 +21,7 @@ def on_exit(signum, stack):
 
 
 def key(d):
-    return json.dumps(dict(arch_seq=d['arch_seq']))
-
+    return json.dumps(dict(arch_seq=d['arch_seq']), cls=Encoder)
 
 class AMBNeuralArchitectureSearch(Search):
     """Asynchronous Model-Based Search.
@@ -49,7 +51,26 @@ class AMBNeuralArchitectureSearch(Search):
     """
     def __init__(self, problem, run, evaluator, cache_key=key, **kwargs):
         super().__init__(problem, run, evaluator, **kwargs)
-        logger.info("Initializing AMBS")
+
+        if evaluator == 'balsam':  # TODO: async is a kw
+            balsam_launcher_nodes = int(
+                os.environ.get('BALSAM_LAUNCHER_NODES', 1))
+            deephyper_workers_per_node = int(
+                os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
+            n_free_nodes = balsam_launcher_nodes - 1  # Number of free nodes
+            self.free_workers = n_free_nodes * \
+                deephyper_workers_per_node  # Number of free workers
+        else:
+            self.free_workers = 1
+
+        dhlogger.info(jm(
+            type='start_infos',
+            alg='ambs-nas',
+            nworkers=self.free_workers,
+            encoded_space=json.dumps(self.problem.space, cls=Encoder)
+            ))
+
+        dhlogger.info("Initializing AMBS")
         self.optimizer = Optimizer(self.problem, self.num_workers, self.args)
 
     @staticmethod
@@ -90,23 +111,23 @@ class AMBNeuralArchitectureSearch(Search):
         chkpoint_counter = 0
         num_evals = 0
 
-        logger.info(f"Generating {self.num_workers} initial points...")
+        dhlogger.info(f"Generating {self.num_workers} initial points...")
         XX = self.optimizer.ask_initial(n_points=self.num_workers)
         self.evaluator.add_eval_batch(XX)
 
         # MAIN LOOP
         for elapsed_str in timer:
-            logger.info(f"Elapsed time: {elapsed_str}")
+            dhlogger.info(f"Elapsed time: {elapsed_str}")
             results = list(self.evaluator.get_finished_evals())
             num_evals += len(results)
             chkpoint_counter += len(results)
-            if EXIT_FLAG or num_evals >= self.args.max_evals:
+            if EXIT_FLAG or num_evals >= self.max_evals:
                 break
             if results:
-                logger.info(
+                dhlogger.info(
                     f"Refitting model with batch of {len(results)} evals")
                 self.optimizer.tell(results)
-                logger.info(
+                dhlogger.info(
                     f"Drawing {len(results)} points with strategy {self.optimizer.strategy}")
                 # ! 'ask' is written as a generator because asking for a large batch is
                 # ! slow. We get better performance when ask is batched. The RF is
@@ -118,7 +139,7 @@ class AMBNeuralArchitectureSearch(Search):
                 self.evaluator.dump_evals(saved_key='arch_seq')
                 chkpoint_counter = 0
 
-        logger.info('Hyperopt driver finishing')
+        dhlogger.info('Hyperopt driver finishing')
         self.evaluator.dump_evals(saved_key='arch_seq')
 
 

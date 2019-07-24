@@ -1,8 +1,6 @@
 import json
 import math
-import sys
 import os
-import time
 import datetime
 from importlib import import_module
 
@@ -10,16 +8,6 @@ from importlib import import_module
 from deephyper.search import Search, util
 from deephyper.evaluator.evaluate import Encoder
 from deephyper.search.nas.baselines import logger
-from deephyper.search.nas.baselines.common.cmd_util import (common_arg_parser,
-                                                            make_env,
-                                                            make_vec_env,
-                                                            parse_unknown_args)
-from deephyper.search.nas.baselines.common.tf_util import get_session
-from deephyper.search.nas.baselines.common.vec_env import (VecEnv,
-                                                           VecFrameStack,
-                                                           VecNormalize)
-from deephyper.search.nas.baselines.common.vec_env.vec_video_recorder import \
-    VecVideoRecorder
 from deephyper.search.nas.env.neural_architecture_envs import \
     NeuralArchitectureVecEnv
 from deephyper.core.logs.logging import JsonMessage as jm

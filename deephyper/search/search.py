@@ -27,11 +27,12 @@ class Search:
         evaluator (str): value in ['balsam', 'subprocess', 'processPool', 'threadPool'].
     """
 
-    def __init__(self, problem, run, evaluator, **kwargs):
+    def __init__(self, problem, run, evaluator, max_evals=100, **kwargs):
         _args = vars(self.parse_args(''))
         kwargs['problem'] = problem
         kwargs['run'] = run
         kwargs['evaluator'] = evaluator
+        kwargs['max_evals'] = max_evals # * For retro compatibility
         _args.update(kwargs)
 
         self.args = Namespace(**kwargs)
@@ -41,11 +42,12 @@ class Search:
         self.evaluator = Evaluator.create(
                 self.run_func, method=evaluator, **kwargs)
         self.num_workers = self.evaluator.num_workers
+        self.max_evals = max_evals
 
         logger.info(f'Options: '+pformat(self.args.__dict__, indent=4))
         logger.info('Hyperparameter space definition: ' +
                     pformat(self.problem.space, indent=4))
-        logger.info(f'Created {self.args.evaluator} evaluator')
+        logger.info(f'Created {evaluator} evaluator')
         logger.info(f'Evaluator: num_workers is {self.num_workers}')
 
     def main(self):

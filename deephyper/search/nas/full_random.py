@@ -1,14 +1,13 @@
 import os
+import json
 from random import random
 
-from deephyper.search import Search
+from deephyper.search import Search, util
+from deephyper.core.logs.logging import JsonMessage as jm
+from deephyper.evaluator.evaluate import Encoder
 
-try:
-    from mpi4py import MPI
-except ImportError:
-    MPI = None
-
-
+dhlogger = util.conf_logger(
+    'deephyper.search.nas.full_random')
 class Random(Search):
     """Search class to run a full random neural architecture search. The search is filling every available nodes as soon as they are detected. The master job is using only 1 MPI rank.
 
@@ -20,22 +19,25 @@ class Random(Search):
 
     def __init__(self, problem, run, evaluator, **kwargs):
 
-        if MPI is None:
-            self.free_workers = 1
-        else:
-            nranks = MPI.COMM_WORLD.Get_size()
-            if evaluator == 'balsam':  # TODO: async is a kw
-                balsam_launcher_nodes = int(
-                    os.environ.get('BALSAM_LAUNCHER_NODES', 1))
-                deephyper_workers_per_node = int(
-                    os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
-                n_free_nodes = balsam_launcher_nodes - nranks  # Number of free nodes
-                self.free_workers = n_free_nodes * \
-                    deephyper_workers_per_node  # Number of free workers
-            else:
-                self.free_workers = 1
-
         super().__init__(problem, run, evaluator, **kwargs)
+
+        if evaluator == 'balsam':
+            balsam_launcher_nodes = int(
+                os.environ.get('BALSAM_LAUNCHER_NODES', 1))
+            deephyper_workers_per_node = int(
+                os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
+            n_free_nodes = balsam_launcher_nodes - 1  # Number of free nodes
+            self.free_workers = n_free_nodes * \
+                deephyper_workers_per_node  # Number of free workers
+        else:
+            self.free_workers = 1
+
+        dhlogger.info(jm(
+            type='start_infos',
+            alg='ambs-nas',
+            nworkers=self.free_workers,
+            encoded_space=json.dumps(self.problem.space, cls=Encoder)
+            ))
 
     @staticmethod
     def _extend_parser(parser):
@@ -79,7 +81,7 @@ class Random(Search):
         self.evaluator.add_eval_batch(gen_batch(size=available_workers))
 
         # Main loop
-        while num_evals_done < self.args.max_evals:
+        while num_evals_done < self.max_evals:
             results = self.evaluator.get_finished_evals()
 
             num_received = num_evals_done
