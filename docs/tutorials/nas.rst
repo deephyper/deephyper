@@ -14,7 +14,7 @@ A  neural architecture search (NAS) problem can be defined using four files with
                 load_data.py
                 preprocessing.py
                 problem.py
-                structure.py
+                architecture.py
 
 
 We will illustrate the NAS problem definition using a regression example. We will use polynome function to generate training and test data and run a NAS to find the best architecture for this experiment.
@@ -83,7 +83,7 @@ Create preprocessing.py
     :caption: polynome2/preprocessing.py
     :name: polynome2-preprocessing
 
-Create structure.py
+Create architecture.py
 ===================
 
 Third, we will create ``structure.py`` that contains the code for the neural network.
@@ -92,7 +92,7 @@ We will use Keras for the neural network definition.
 .. code-block:: console
     :caption: bash
 
-    vim structure.py
+    vim architecture.py
 
 .. literalinclude:: polynome2_nas/structure.py
     :linenos:
@@ -144,14 +144,14 @@ The expected output is:
 Running the search locally
 ==========================
 
-Everything is ready to run. Let's remember the structure of our experiment::
+Everything is ready to run. Let's remember the architecture of our experiment::
 
     polynome2/
         __init__.py
         load_data.py
         preprocessing.py
         problem.py
-        structure.py
+        architecture.py
 
 All the three files have been tested one by one on the local machine. Next, we will run asynchronous model-based search (AMBS).
 

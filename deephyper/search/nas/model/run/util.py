@@ -73,15 +73,15 @@ def setup_structure(config, input_shape, output_shape):
     create_structure = config['create_structure']['func']
     cs_kwargs = config['create_structure'].get('kwargs')
     if cs_kwargs is None:
-        structure = create_structure(input_shape, output_shape)
+        architecture = create_structure(input_shape, output_shape)
     else:
-        structure = create_structure(input_shape, output_shape, **cs_kwargs)
+        architecture = create_structure(input_shape, output_shape, **cs_kwargs)
 
     arch_seq = config['arch_seq']
     logger.info(f'actions list: {arch_seq}')
-    structure.set_ops(arch_seq)
+    architecture.set_ops(arch_seq)
 
-    return structure
+    return architecture
 
 
 def compute_objective(objective, history):

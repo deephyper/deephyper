@@ -1,19 +1,19 @@
 import pytest
-from deephyper.core.exceptions.nas.struct import WrongOutputShape
+from deephyper.core.exceptions.nas.architecture import WrongOutputShape
 
 
 @pytest.mark.incremental
-class TestDirectStructure:
+class TestKArchitecture:
     def test_import(self):
-        from deephyper.search.nas.model.space.struct import DirectStructure
+        from deephyper.search.nas.model.space.architecture import KArchitecture
 
     def test_create(self):
-        from deephyper.search.nas.model.space.struct import DirectStructure
-        DirectStructure((5, ), (1, ))
+        from deephyper.search.nas.model.space.architecture import KArchitecture
+        KArchitecture((5, ), (1, ))
 
     def test_create_one_vnode(self):
-        from deephyper.search.nas.model.space.struct import DirectStructure
-        struct = DirectStructure((5, ), (1, ))
+        from deephyper.search.nas.model.space.architecture import KArchitecture
+        struct = KArchitecture((5, ), (1, ))
 
         from deephyper.search.nas.model.space.node import VariableNode
         vnode = VariableNode()
@@ -25,7 +25,7 @@ class TestDirectStructure:
 
         struct.set_ops([0])
 
-        falias = 'test_direct_structure'
+        falias = 'test_keras_architectureure'
         struct.draw_graphviz(f'{falias}.dot')
 
         model = struct.create_model()
@@ -34,8 +34,8 @@ class TestDirectStructure:
         plot_model(model, to_file=f'{falias}.png', show_shapes=True)
 
     def test_create_one_vnode_with_wrong_output_shape(self):
-        from deephyper.search.nas.model.space.struct import DirectStructure
-        struct = DirectStructure((5, ), (1, ))
+        from deephyper.search.nas.model.space.architecture import KArchitecture
+        struct = KArchitecture((5, ), (1, ))
 
         from deephyper.search.nas.model.space.node import VariableNode
         vnode = VariableNode()
@@ -51,10 +51,10 @@ class TestDirectStructure:
             struct.create_model()
 
     def test_create_more_nodes(self):
-        from deephyper.search.nas.model.space.struct import DirectStructure
+        from deephyper.search.nas.model.space.architecture import KArchitecture
         from deephyper.search.nas.model.space.node import VariableNode
         from deephyper.search.nas.model.space.op.op1d import Dense
-        struct = DirectStructure((5, ), (1, ))
+        struct = KArchitecture((5, ), (1, ))
 
         vnode1 = VariableNode()
         struct.connect(struct.input_nodes[0], vnode1)
@@ -68,7 +68,7 @@ class TestDirectStructure:
 
         struct.set_ops([0, 0])
 
-        falias = 'test_direct_structure'
+        falias = 'test_keras_architectureure'
         struct.draw_graphviz(f'{falias}.dot')
 
         model = struct.create_model()
@@ -77,11 +77,11 @@ class TestDirectStructure:
         plot_model(model, to_file=f'{falias}.png', show_shapes=True)
 
     def test_create_multiple_inputs_with_one_vnode(self):
-        from deephyper.search.nas.model.space.struct import DirectStructure
+        from deephyper.search.nas.model.space.architecture import KArchitecture
         from deephyper.search.nas.model.space.node import VariableNode, ConstantNode
         from deephyper.search.nas.model.space.op.op1d import Dense
         from deephyper.search.nas.model.space.op.merge import Concatenate
-        struct = DirectStructure([(5, ), (5, )], (1, ))
+        struct = KArchitecture([(5, ), (5, )], (1, ))
 
         merge = ConstantNode()
         merge.set_op(Concatenate(struct, struct.input_nodes))
@@ -96,10 +96,10 @@ class TestDirectStructure:
         struct.create_model()
 
     def test_create_multiple_inputs_with_wrong_output_shape(self):
-        from deephyper.search.nas.model.space.struct import DirectStructure
+        from deephyper.search.nas.model.space.architecture import KArchitecture
         from deephyper.search.nas.model.space.node import VariableNode
         from deephyper.search.nas.model.space.op.op1d import Dense
-        struct = DirectStructure([(5, ), (5, )], (1, ))
+        struct = KArchitecture([(5, ), (5, )], (1, ))
 
         struct.set_ops([])
 

@@ -15,8 +15,8 @@ class Concatenate(Operation):
         axis (int): axis to concatenate
     """
 
-    def __init__(self, struct, stacked_nodes=None, axis=-1):
-        self.struct = struct
+    def __init__(self, architecture, stacked_nodes=None, axis=-1):
+        self.architecture = architecture
         self.node = None # current_node of the operation
         self.stacked_nodes = stacked_nodes
         self.axis = axis
@@ -25,7 +25,7 @@ class Concatenate(Operation):
         self.node = current_node
         if self.stacked_nodes is not None:
             for n in self.stacked_nodes:
-                self.struct.connect(n, self.node)
+                self.architecture.connect(n, self.node)
 
     def __call__(self, values, **kwargs):
         len_shp = max([len(x.get_shape()) for x in values])
@@ -79,8 +79,8 @@ class AddByPadding(Operation):
         axis (int): axis to concatenate
     """
 
-    def __init__(self, struct=None, stacked_nodes=None, axis=-1):
-        self.struct = struct
+    def __init__(self, architecture=None, stacked_nodes=None, axis=-1):
+        self = architecture
         self.node = None # current_node of the operation
         self.stacked_nodes = stacked_nodes
         self.axis = axis
@@ -89,7 +89,7 @@ class AddByPadding(Operation):
         self.node = current_node
         if self.stacked_nodes is not None:
             for n in self.stacked_nodes:
-                self.struct.connect(n, self.node)
+                self.architecture.connect(n, self.node)
 
     def __call__(self, values, **kwargs):
         values = values[:]

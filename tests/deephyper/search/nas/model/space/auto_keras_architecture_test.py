@@ -2,17 +2,17 @@ import pytest
 
 
 @pytest.mark.incremental
-class TestAutoOutputStructure:
+class TestAutoKArchitecture:
     def test_import(self):
-        from deephyper.search.nas.model.space.struct import AutoOutputStructure
+        from deephyper.search.nas.model.space.architecture import AutoKArchitecture
 
     def test_create(self):
-        from deephyper.search.nas.model.space.struct import AutoOutputStructure
-        AutoOutputStructure((5, ), (1, ), regression=True)
+        from deephyper.search.nas.model.space.architecture import AutoKArchitecture
+        AutoKArchitecture((5, ), (1, ), regression=True)
 
     def test_create_one_vnode(self):
-        from deephyper.search.nas.model.space.struct import AutoOutputStructure
-        struct = AutoOutputStructure((5, ), (1, ), regression=True)
+        from deephyper.search.nas.model.space.architecture import AutoKArchitecture
+        struct = AutoKArchitecture((5, ), (1, ), regression=True)
 
         from deephyper.search.nas.model.space.node import VariableNode
         vnode = VariableNode()
@@ -24,7 +24,7 @@ class TestAutoOutputStructure:
 
         struct.set_ops([0])
 
-        falias = 'test_auto_output_structure'
+        falias = 'test_auto_keras_architectureure'
         struct.draw_graphviz(f'{falias}.dot')
 
         model = struct.create_model()
@@ -33,10 +33,10 @@ class TestAutoOutputStructure:
         plot_model(model, to_file=f'{falias}.png', show_shapes=True)
 
     def test_create_more_nodes(self):
-        from deephyper.search.nas.model.space.struct import AutoOutputStructure
+        from deephyper.search.nas.model.space.architecture import AutoKArchitecture
         from deephyper.search.nas.model.space.node import VariableNode
         from deephyper.search.nas.model.space.op.op1d import Dense
-        struct = AutoOutputStructure((5, ), (1, ), regression=True)
+        struct = AutoKArchitecture((5, ), (1, ), regression=True)
 
         vnode1 = VariableNode()
         struct.connect(struct.input_nodes[0], vnode1)
@@ -50,7 +50,7 @@ class TestAutoOutputStructure:
 
         struct.set_ops([0, 0])
 
-        falias = 'test_auto_output_structure'
+        falias = 'test_auto_keras_architectureure'
         struct.draw_graphviz(f'{falias}.dot')
 
         model = struct.create_model()
@@ -59,14 +59,14 @@ class TestAutoOutputStructure:
         plot_model(model, to_file=f'{falias}.png', show_shapes=True)
 
     def test_create_multiple_inputs(self):
-        from deephyper.search.nas.model.space.struct import AutoOutputStructure
+        from deephyper.search.nas.model.space.architecture import AutoKArchitecture
         from deephyper.search.nas.model.space.node import VariableNode
         from deephyper.search.nas.model.space.op.op1d import Dense
-        struct = AutoOutputStructure([(5, ), (5, )], (1, ), regression=True)
+        struct = AutoKArchitecture([(5, ), (5, )], (1, ), regression=True)
 
         struct.set_ops([])
 
-        falias = 'test_auto_output_structure'
+        falias = 'test_auto_keras_architectureure'
         struct.draw_graphviz(f'{falias}.dot')
 
         model = struct.create_model()

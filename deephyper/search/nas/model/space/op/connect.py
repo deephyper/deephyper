@@ -11,8 +11,8 @@ class Connect(Operation):
         source_node (Node): source
     """
 
-    def __init__(self, struct, source_node, *args, **kwargs):
-        self.struct = struct
+    def __init__(self, architecture, source_node, *args, **kwargs):
+        self.architecture = architecture
         self.source_node = source_node
         self.destin_node = None
 
@@ -32,14 +32,14 @@ class Connect(Operation):
             return f'{type(self).__name__}_{ids}->{self.destin_node.id}'
 
     def init(self, current_node):
-        """Set the connection in the structur graph from [n1] -> n2.
+        """Set the connection in the architecture graph from [n1] -> n2.
         """
         self.destin_node = current_node
         if type(self.source_node) is list:
             for n in self.source_node:
-                self.struct.connect(n, self.destin_node)
+                self.architecture.connect(n, self.destin_node)
         else:
-            self.struct.connect(self.source_node, self.destin_node)
+            self.architecture.connect(self.source_node, self.destin_node)
 
     def __call__(self, value, *args, **kwargs):
         return value

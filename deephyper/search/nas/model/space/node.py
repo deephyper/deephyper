@@ -1,4 +1,4 @@
-from tensorflow.keras.layers import Layer
+from tensorflow import keras
 from deephyper.search.nas.model.space.op.basic import Operation
 
 class Node:
@@ -35,10 +35,10 @@ class Node:
     def verify_operation(op):
         if isinstance(op, Operation):
             return op
-        elif isinstance(op, Layer):
+        elif isinstance(op, keras.layers.Layer):
             return Operation(op)
         else:
-            raise RuntimeError(f'Can\'t add this operation \'{op.__name__}\'. An operation should be either of type Operation or Layer when is of type: {type(op)}')
+            raise RuntimeError(f'Can\'t add this operation \'{op.__name__}\'. An operation should be either of type Operation or keras.layers.Layer when is of type: {type(op)}')
 
 
 class OperationNode(Node):
@@ -162,6 +162,7 @@ class ConstantNode(OperationNode):
         super().__init__(name=name)
         if not op is None:
             op = self.verify_operation(op)
+            print(op)
             op.init(self)  # set operation
         self._op = op
 

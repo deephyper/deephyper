@@ -1,10 +1,10 @@
 import tensorflow as tf
-from deephyper.search.nas.model.space.struct import AutoOutputStructure
+from deephyper.search.nas.model.space.architecture import AutoKArchitecture
 from deephyper.search.nas.model.space.node import VariableNode
 
 
 def create_structure(input_shape=(10,), output_shape=(1,), **kwargs):
-    struct = AutoOutputStructure(input_shape, output_shape, regression=True)
+    struct = AutoKArchitecture(input_shape, output_shape, regression=True)
 
     vnode = VariableNode()
     for num_units in range(1, 11):

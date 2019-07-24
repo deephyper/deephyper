@@ -191,7 +191,7 @@ The expected output is:
 Running the search locally
 ==========================
 
-Everything is ready to run. Let's remember the structure of our experiment::
+Everything is ready to run. Let's remember the architecture of our experiment::
 
       polynome2/
             load_data.py
@@ -214,7 +214,7 @@ All the three files have been tested one by one on the local machine. Next, we w
     When a path to python scripts is given to ``--problem, --run`` arguments you have to make sure that the problem script contains a ``Problem`` attribute and the run script contains a ``run`` attribute.
     Another way to use these arguments is to give a python import path such as ``mypackage.mymodule.myattribute``, where ``myattribute`` should be an ``HpProblem`` instance for the problem argument and
     it should be a callable object with one parameter for the run argument. In order to do so ``mypackage`` should be installed in your current python environment.
-    A package structure look like:
+    A package architecture look like:
 
     .. code-block:: console
 
@@ -330,12 +330,12 @@ Add a Balsam job to the ``polydb`` database:
 
 .. code-block:: console
     :caption: bash
-    
+
     balsam job --name step_2 --workflow step_2 --app AMBS --args "--evaluator balsam --problem $PWD/polynome2/problem.py --run $PWD/polynome2/model_run.py"
 
 .. code-block:: console
     :caption: [Out]
-    
+
     BalsamJob 575dba96-c9ec-4015-921c-abcb1f261fce
     ----------------------------------------------
     workflow:                       step_2

@@ -1,9 +1,4 @@
-import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras.layers import Layer
-
-import deephyper.search.nas.model.space.layers as deeplayers
-
 
 class Operation:
     """Interface of an operation.
@@ -17,8 +12,8 @@ class Operation:
         layer (Layer): a ``tensorflow.keras.layers.Layer``.
     """
 
-    def __init__(self, layer: Layer):
-        assert isinstance(layer, Layer)
+    def __init__(self, layer: keras.layers.Layer):
+        assert isinstance(layer, keras.layers.Layer)
         self._layer = layer
 
     def __str__(self):

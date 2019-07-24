@@ -59,11 +59,11 @@ class Random(Search):
         space = self.problem.space
         cs_kwargs = space['create_structure'].get('kwargs')
         if cs_kwargs is None:
-            structure = space['create_structure']['func']()
+            architecture = space['create_structure']['func']()
         else:
-            structure = space['create_structure']['func'](**cs_kwargs)
+            architecture = space['create_structure']['func'](**cs_kwargs)
 
-        len_arch = structure.max_num_ops
+        len_arch = architecture.max_num_ops
         def gen_arch(): return [random() for _ in range(len_arch)]
 
         num_evals_done = 0

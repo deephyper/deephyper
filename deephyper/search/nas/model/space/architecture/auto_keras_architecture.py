@@ -5,7 +5,7 @@ import networkx as nx
 from tensorflow import keras
 from tensorflow.python.keras.utils.vis_utils import model_to_dot
 
-from deephyper.core.exceptions.nas.struct import (InputShapeOfWrongType,
+from deephyper.core.exceptions.nas.architecture import (InputShapeOfWrongType,
                                                   NodeAlreadyAdded,
                                                   StructureHasACycle,
                                                   WrongSequenceToSetOperations)
@@ -14,11 +14,11 @@ from deephyper.search.nas.model.space.node import (ConstantNode, Node,
 from deephyper.search.nas.model.space.op.basic import Tensor
 from deephyper.search.nas.model.space.op.merge import Concatenate
 from deephyper.search.nas.model.space.op.op1d import Identity
-from deephyper.search.nas.model.space.struct import DirectStructure
+from deephyper.search.nas.model.space.architecture import KArchitecture
 
 
-class AutoOutputStructure(DirectStructure):
-    """An AutoOutputStructure represents a search space of neural networks.
+class AutoKArchitecture(KArchitecture):
+    """An AutoKArchitecture represents a search space of neural networks.
 
     Args:
         input_shape (list(tuple(int))): list of shapes of all inputs.
@@ -34,7 +34,7 @@ class AutoOutputStructure(DirectStructure):
         self.regression = regression
 
     def create_model(self):
-        """Create the tensors corresponding to the structure.
+        """Create the tensors corresponding to the architecture.
 
         Returns:
             The output tensor.

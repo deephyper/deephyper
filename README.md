@@ -47,7 +47,7 @@ cd deephyper/
 pip install -e '.[tests,docs]'
 ```
 
-# Directory structure
+# Directory architecture
 
 ```
 benchmark/

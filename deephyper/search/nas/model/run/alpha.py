@@ -16,11 +16,11 @@ def run(config):
 
     input_shape, output_shape = setup_data(config)
 
-    structure = setup_structure(config, input_shape, output_shape)
+    architecture = setup_structure(config, input_shape, output_shape)
 
     model_created = False
     try:
-        model = structure.create_model()
+        model = architecture.create_model()
         model_created = True
     except:
         logger.info('Error: Model creation failed...')

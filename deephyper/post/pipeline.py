@@ -50,13 +50,13 @@ def train(config):
 
     input_shape, output_shape = setup_data(config)
 
-    structure = setup_structure(config, input_shape, output_shape)
-    structure.draw_graphviz(f'structure_{config["id"]}.dot')
+    architecture = setup_structure(config, input_shape, output_shape)
+    architecture.draw_graphviz(f'structure_{config["id"]}.dot')
     logger.info('Model operations set.')
 
     model_created = False
     try:
-        model = structure.create_model()
+        model = architecture.create_model()
         model_created = True
     except:
         model_created = False

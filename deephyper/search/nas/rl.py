@@ -189,11 +189,11 @@ def build_env(num_envs, space, evaluator):
     assert num_envs >= 1, f'num_envs={num_envs}'
     cs_kwargs = space['create_structure'].get('kwargs')
     if cs_kwargs is None:
-        structure = space['create_structure']['func']()
+        architecture = space['create_structure']['func']()
     else:
-        structure = space['create_structure']['func'](**cs_kwargs)
+        architecture = space['create_structure']['func'](**cs_kwargs)
     env = NeuralArchitectureVecEnv(num_envs, space, evaluator,
-                                   structure)
+                                   architecture)
     return env
 
 

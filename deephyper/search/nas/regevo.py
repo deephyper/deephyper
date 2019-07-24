@@ -51,11 +51,11 @@ class RegularizedEvolution(Search):
         self.pb_dict = self.problem.space
         cs_kwargs = self.pb_dict['create_structure'].get('kwargs')
         if cs_kwargs is None:
-            structure = self.pb_dict['create_structure']['func']()
+            architecture = self.pb_dict['create_structure']['func']()
         else:
-            structure = self.pb_dict['create_structure']['func'](**cs_kwargs)
+            architecture = self.pb_dict['create_structure']['func'](**cs_kwargs)
 
-        self.space_list = [(0, vnode.num_ops-1) for vnode in structure.variable_nodes]
+        self.space_list = [(0, vnode.num_ops-1) for vnode in architecture.variable_nodes]
         self.population_size = population_size
         self.sample_size = sample_size
 

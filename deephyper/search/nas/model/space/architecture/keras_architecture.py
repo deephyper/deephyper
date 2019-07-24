@@ -5,7 +5,7 @@ import networkx as nx
 from tensorflow import keras
 from tensorflow.python.keras.utils.vis_utils import model_to_dot
 
-from deephyper.core.exceptions.nas.struct import (InputShapeOfWrongType,
+from deephyper.core.exceptions.nas.architecture import (InputShapeOfWrongType,
                                                   NodeAlreadyAdded,
                                                   StructureHasACycle,
                                                   WrongSequenceToSetOperations,
@@ -15,17 +15,17 @@ from deephyper.search.nas.model.space.node import (ConstantNode, Node,
 from deephyper.search.nas.model.space.op.basic import Tensor
 from deephyper.search.nas.model.space.op.merge import Concatenate
 from deephyper.search.nas.model.space.op.op1d import Identity
-from deephyper.search.nas.model.space.struct import NxStructure
+from deephyper.search.nas.model.space.architecture import NxArchitecture
 
 
-class DirectStructure(NxStructure):
-    """A DirectStructure represents a search space of neural networks.
+class KArchitecture(NxArchitecture):
+    """A KArchitecture represents a search space of neural networks.
 
     >>> from tensorflow.keras.utils import plot_model
-    >>> from deephyper.search.nas.model.space.struct import DirectStructure
+    >>> from deephyper.search.nas.model.space.architecture import KArchitecture
     >>> from deephyper.search.nas.model.space.node import VariableNode, ConstantNode
     >>> from deephyper.search.nas.model.space.op.op1d import Dense
-    >>> struct = DirectStructure((5, ), (1, ))
+    >>> struct = KArchitecture((5, ), (1, ))
     >>> vnode = VariableNode()
     >>> struct.connect(struct.input_nodes[0], vnode)
     >>> vnode.add_op(Dense(10))
@@ -71,78 +71,6 @@ class DirectStructure(NxStructure):
 
         self._model = None
 
-    def __len__(self):
-        """Number of VariableNodes in the current structure.
-
-        Returns:
-            int: number of variable nodes in the current structure.
-        """
-
-        return len(self.nodes)
-
-    @property
-    def nodes(self):
-        """Nodes of the current DirectStructure.
-
-        Returns:
-            iterator: nodes of the current DirectStructure.
-        """
-
-        return list(self.graph.nodes)
-
-    def add_node(self, node):
-        """Add a new node to the structure.
-
-        Args:
-            node (Node): node to add to the structure.
-
-        Raises:
-            TypeError: if 'node' is not an instance of Node.
-            NodeAlreadyAdded: if 'node' has already been added to the structure.
-        """
-
-        if not isinstance(node, Node):
-            raise TypeError(f"'node' argument should be an instance of Node!")
-
-        if node in self.nodes:
-            raise NodeAlreadyAdded(node)
-
-        self.graph.add_node(node)
-
-    def connect(self, node1, node2):
-        """Create a new connection in the DirectStructure graph.
-
-        The edge created corresponds to : node1 -> node2.
-
-        Args:
-            node1 (Node)
-            node2 (Node)
-
-        Raise:
-            StructureHasACycle: if the new edge is creating a cycle.
-        """
-        assert isinstance(node1, Node)
-        assert isinstance(node2, Node)
-
-        self.graph.add_edge(node1, node2)
-
-        if not(nx.is_directed_acyclic_graph(self.graph)):
-            raise StructureHasACycle(
-                f'the connection between {node1} -> {node2} is creating a cycle in the structure\'s graph.')
-
-    @property
-    def size(self):
-        """Size of the search space define by the structure
-        """
-        s = 0
-        for n in filter(lambda n: isinstance(n, VariableNode), self.nodes):
-            if n.num_ops != 0:
-                if s == 0:
-                    s = n.num_ops
-                else:
-                    s *= n.num_ops
-        return s
-
     @property
     def depth(self):
         if self._model is None:
@@ -158,35 +86,9 @@ class DirectStructure(NxStructure):
         nx_graph = nx.drawing.nx_pydot.from_pydot(model_to_dot(self._model))
         return nx.algorithms.dag.dag_longest_path(nx_graph)
 
-    @property
-    def max_num_ops(self):
-        """Returns the maximum number of operations accross all VariableNodes of the struct.
-
-        Returns:
-            int: maximum number of Operations for a VariableNode in the current Structure.
-        """
-        return max(map(lambda n: n.num_ops, self.variable_nodes))
-
-    @property
-    def num_nodes(self):
-        """Returns the number of VariableNodes in the current Structure.
-
-        Returns:
-            int: number of VariableNodes in the current Structure.
-        """
-        return len(list(self.variable_nodes))
-
-    @property
-    def variable_nodes(self):
-        """Iterator of VariableNodes of the structure.
-
-        Returns:
-            (Iterator(VariableNode)): generator of VariablesNodes of the structure.
-        """
-        return filter(lambda n: isinstance(n, VariableNode), self.nodes)
 
     def set_ops(self, indexes):
-        """Set the operations for each node of each cell of the structure.
+        """Set the operations for each node of each cell of the architecture.
 
         Args:
             indexes (list):  element of list can be float in [0, 1] or int.
@@ -206,14 +108,14 @@ class DirectStructure(NxStructure):
         self.output_node = self.set_output_node(self.graph, output_nodes)
 
     def set_output_node(self, graph, output_nodes):
-        """Set the output node of the structure.
+        """Set the output node of the architecture.
 
         Args:
-            graph (nx.DiGraph): graph of the structure.
-            output_nodes (Node): nodes of the current structure without successors.
+            graph (nx.DiGraph): graph of the architecture.
+            output_nodes (Node): nodes of the current architecture without successors.
 
         Returns:
-            Node: output node of the structure.
+            Node: output node of the architecture.
         """
         if len(output_nodes) == 1:
             node = ConstantNode(op=Identity(), name='Structure_Output')
@@ -221,14 +123,16 @@ class DirectStructure(NxStructure):
             graph.add_edge(output_nodes[0], node)
         else:
             node = ConstantNode(name='Structure_Output')
-            node.set_op(Concatenate(self, output_nodes))
+            op = Concatenate(self, output_nodes)
+            print(op.stacked_nodes)
+            node.set_op(op=op)
         return node
 
     def create_model(self):
-        """Create the tensors corresponding to the structure.
+        """Create the tensors corresponding to the architecture.
 
         Returns:
-            A keras.Model for the current structure with the corresponding set of operations.
+            A keras.Model for the current architecture with the corresponding set of operations.
         """
 
         output_tensor = self.create_tensor_aux(self.graph, self.output_node)
@@ -240,21 +144,3 @@ class DirectStructure(NxStructure):
         self._model = keras.Model(inputs=input_tensors, outputs=output_tensor)
 
         return keras.Model(inputs=input_tensors, outputs=output_tensor)
-
-    def denormalize(self, indexes):
-        """Denormalize a sequence of normalized indexes to get a sequence of absolute indexes. Useful when you want to compare the number of different architectures.
-
-        Args:
-            indexes (Iterable): a sequence of normalized indexes.
-
-        Returns:
-            list: A list of absolute indexes corresponding to operations choosen with relative indexes of `indexes`.
-        """
-        assert isinstance(
-            indexes, Iterable), 'Wrong argument, "indexes" should be of Iterable.'
-
-        if len(indexes) != self.num_nodes:
-            raise WrongSequenceToSetOperations(
-                indexes, list(self.variable_nodes))
-
-        return [vnode.denormalize(op_i) for op_i, vnode in zip(indexes, self.variable_nodes)]

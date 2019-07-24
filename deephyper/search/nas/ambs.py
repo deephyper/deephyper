@@ -5,7 +5,7 @@ import signal
 from deephyper.core.logs.logging import JsonMessage as jm
 from deephyper.evaluator.evaluate import Encoder
 from deephyper.search import Search, util
-from deephyper.search.nas.optimizer import Optimizer
+from .optimizer import Optimizer
 
 dhlogger = util.conf_logger(
     'deephyper.search.nas.ambs')

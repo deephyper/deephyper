@@ -1,12 +1,12 @@
 from nas_problems.polynome2.load_data import load_data
-from nas_problems.polynome2.structure import create_structure
+from nas_problems.polynome2.architecture import create_architecture
 from deephyper.benchmark import NaProblem
 
 Problem = NaProblem()
 
 Problem.load_data(load_data, size=1000)
 
-Problem.search_space(create_structure)
+Problem.search_space(create_architecture)
 
 Problem.hyperparameters(
     batch_size=128,

@@ -10,10 +10,10 @@ from deephyper.search.nas.model.space.node import Node, ConstantNode
 from deephyper.search.nas.model.space.op.basic import Tensor
 from deephyper.search.nas.model.space.op.merge import Concatenate
 from deephyper.search.nas.model.space.op.op1d import Identity
-from deephyper.search.nas.model.space.struct import NxStructure
+from deephyper.search.nas.model.space.architecture import NxArchitecture
 
 
-class CellBlockStructure(NxStructure):
+class CellBlockStructure(NxArchitecture):
     """A KerasStructure represents a search space of neural networks.
 
     Args:
@@ -49,17 +49,17 @@ class CellBlockStructure(NxStructure):
         self.output_node = None
         self.output_op = Concatenate if output_op is None else output_op
 
-        self.struct = []
+        self = []
 
         self.map_sh2int = {}
 
         self._model = None
 
     def __len__(self):
-        """Number of cells of the structure.
+        """Number of cells of the architecture.
 
         Returns:
-            int: number of cells of the structure.
+            int: number of cells of the architecture.
         """
 
         return len(self.struct)
@@ -69,7 +69,7 @@ class CellBlockStructure(NxStructure):
 
     @property
     def size(self):
-        """Size of the search space define by the structure
+        """Size of the search space define by the architecture
         """
         s = 0
         for c in self.struct:
@@ -140,7 +140,7 @@ class CellBlockStructure(NxStructure):
         return len(self.struct)
 
     def add_cell_f(self, func, num=1):
-        """Add a new cell in the structure.
+        """Add a new cell in the architecture.
 
         Args:
             func (function): a function that return a cell with one argument list of input nodes.
@@ -173,7 +173,7 @@ class CellBlockStructure(NxStructure):
 
     def set_ops(self, indexes):
         """
-        Set the operations for each node of each cell of the structure.
+        Set the operations for each node of each cell of the architecture.
 
         Args:
             indexes (list): element of list can be float in [0, 1] or int.
@@ -199,7 +199,7 @@ class CellBlockStructure(NxStructure):
         self.output_node = node
 
     def create_model(self, activation=None):
-        """Create the tensors corresponding to the structure.
+        """Create the tensors corresponding to the architecture.
 
         Args:
             train (bool): True if the network is built for training, False if the network is built for validation/testing (for example False will deactivate Dropout).
@@ -221,10 +221,10 @@ class CellBlockStructure(NxStructure):
         return keras.Model(inputs=input_tensors, outputs=output_tensor)
 
     def get_hash(self, node_index, index):
-        """Get the hash representation of a given operation for this structure.
+        """Get the hash representation of a given operation for this architecture.
 
         Args:
-            node_index (int): index of the nodes in the structure.
+            node_index (int): index of the nodes in the architecture.
             index (int,float): index of the operation in the node.
 
         Returns:
