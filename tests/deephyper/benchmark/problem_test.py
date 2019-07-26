@@ -192,15 +192,17 @@ class TestNaProblem:
         pb.post_training(
             num_epochs=2000,
             metrics=['mse', 'r2'],
-            model_checkpoint={
-                'monitor': 'val_r2',
-                'mode': 'max',
-                'save_best_only': True,
-                'verbose': 1
-            },
-            early_stopping={
-                'monitor': 'val_r2',
-                'mode': 'max',
-                'verbose': 1,
-                'patience': 50
-            })
+            callbacks=dict(
+                ModelCheckpoint={
+                    'monitor': 'val_r2',
+                    'mode': 'max',
+                    'save_best_only': True,
+                    'verbose': 1
+                },
+                EarlyStopping={
+                    'monitor': 'val_r2',
+                    'mode': 'max',
+                    'verbose': 1,
+                    'patience': 50
+                })
+        )
