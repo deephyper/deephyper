@@ -1,7 +1,7 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Layer
+from tensorflow import keras
 
-class Padding(Layer):
+class Padding(keras.layers.Layer):
 
     """Multi-dimensions padding layer.
 
@@ -31,7 +31,7 @@ class Padding(Layer):
 
     def get_config(self):
         config = {
-            'padding': self.padding,
+            'padding': self.padding[1:],
             'mode': self.mode,
             'constant_values': self.constant_values
             }

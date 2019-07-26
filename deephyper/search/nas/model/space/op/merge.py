@@ -70,19 +70,20 @@ class Concatenate(Operation):
 
 
 class AddByPadding(Operation):
-    """Add operation.
+    """Add operation. If tensor are of different shapes a padding will be applied before adding them.
 
     Args:
-        graph:
-        node (Node): current_node of the operation
-        stacked_nodes (list(Node)): nodes to add
-        axis (int): axis to concatenate
+        architecture (KArchitecture): [description]. Defaults to None.
+        activation ([type], optional): Activation function to apply after adding ('relu', tanh', 'sigmoid'...). Defaults to None.
+        stacked_nodes (list(Node)): nodes to add.
+        axis (int): axis to concatenate.
     """
 
-    def __init__(self, architecture=None, stacked_nodes=None, axis=-1):
-        self = architecture
+    def __init__(self, architecture, stacked_nodes=None, activation=None, axis=-1):
+        self.architecture = architecture
         self.node = None # current_node of the operation
         self.stacked_nodes = stacked_nodes
+        self.activation = activation
         self.axis = axis
 
     def init(self, current_node):
@@ -127,6 +128,8 @@ class AddByPadding(Operation):
         # concatenation
         if len(values) > 1:
             out = keras.layers.Add()(values)
+            if self.activation is not None:
+                out = keras.layers.Activation(self.activation)(out)
         else:
             out = values[0]
         return out

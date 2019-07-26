@@ -110,7 +110,7 @@ class VariableNode(OperationNode):
             self._index = self.denormalize(index)
         else:
             assert 0 <= index and index < len(
-                self._ops), f'len self._ops: {len(self._ops)}, index: {index}'
+                self._ops), f'Number of possible operations is: {len(self._ops)}, but index given is: {index} (index starts from 0)!'
             self._index = index
         return self.op
 
@@ -162,7 +162,6 @@ class ConstantNode(OperationNode):
         super().__init__(name=name)
         if not op is None:
             op = self.verify_operation(op)
-            print(op)
             op.init(self)  # set operation
         self._op = op
 
