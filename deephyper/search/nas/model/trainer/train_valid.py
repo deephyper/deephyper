@@ -15,6 +15,8 @@ from deephyper.core.logs.logging import JsonMessage as jm
 logger = util.conf_logger('deephyper.model.trainer')
 
 
+
+
 class TrainerTrainValid:
     def __init__(self, config, model):
         self.cname = self.__class__.__name__
@@ -33,10 +35,10 @@ class TrainerTrainValid:
         self.batch_size = self.config_hp[a.batch_size]
         self.learning_rate = self.config_hp[a.learning_rate]
         self.num_epochs = self.config_hp[a.num_epochs]
+        self.verbose = self.config_hp.get('verbose', 1)
 
         self.loss_metric_name = self.config[a.loss_metric]
-        self.metrics_name = [U.selectMetric(m)
-                             for m in self.config[a.metrics]]
+        self.metrics_name = [U.selectMetric(m) for m in self.config[a.metrics]]
 
         # DATA loading
         self.data_config_type = None
@@ -304,6 +306,7 @@ class TrainerTrainValid:
                 logger.info('Trainer is computing metrics on validation after each training epoch.')
                 history = self.model.fit(
                     self.dataset_train,
+                    verbose=self.verbose,
                     epochs=num_epochs,
                     steps_per_epoch=self.train_steps_per_epoch,
                     callbacks=self.callbacks,
@@ -315,6 +318,7 @@ class TrainerTrainValid:
                 if num_epochs > 1:
                     self.model.fit(
                         self.dataset_train,
+                        verbose=self.verbose,
                         epochs=num_epochs-1,
                         steps_per_epoch=self.train_steps_per_epoch,
                         callbacks=self.callbacks,
@@ -322,6 +326,7 @@ class TrainerTrainValid:
                 history = self.model.fit(
                     self.dataset_train,
                     epochs=1,
+                    verbose=self.verbose,
                     steps_per_epoch=self.train_steps_per_epoch,
                     callbacks=self.callbacks,
                     validation_data=self.dataset_valid,

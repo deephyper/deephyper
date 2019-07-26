@@ -1,11 +1,9 @@
 import json
-import sys
 import traceback
 from time import time
 
 import numpy as np
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
-from tensorflow.keras.models import load_model
+from tensorflow import keras
 
 from deephyper.evaluator import Encoder
 from deephyper.search import util
@@ -14,18 +12,29 @@ from deephyper.search.nas.model.trainer.train_valid import TrainerTrainValid
 
 logger = util.conf_logger(__name__)
 
-default_cfg = {
-    'model_checkpoint': dict(
+default_callbacks_config = {
+    'ModelCheckpoint': dict(
         monitor='val_loss',
         mode='min',
         save_best_only=True,
-        verbose=1
+        verbose=1,
+        filepath="best_model.h5",
+        save_weights_only=False
     ),
-    'early_stopping': dict(
+    'EarlyStopping': dict(
         monitor='val_loss',
         mode='min',
         verbose=1,
         patience=50
+    ),
+    'TensorBoard': dict(
+        logdir='',
+        histogram_freq=0,
+        batch_size=32,
+        write_graph=False,
+        write_grads=False,
+        write_images=False,
+        update_freq='epoch'
     )
 }
 
@@ -39,12 +48,6 @@ def train(config):
                   config['post_train'].keys())
     for k in keys:
         config['hyperparameters'][k] = config['post_train'][k]
-
-    # override default callbacks configs with post_train configs
-    keys = filter(lambda k: k in default_cfg,
-                  config['post_train'].keys())
-    for k in keys:
-        default_cfg[k] = config['post_train'][k]
 
     load_config(config)
 
@@ -63,15 +66,32 @@ def train(config):
         logger.info('Error: Model creation failed...')
         logger.info(traceback.format_exc())
 
-    if model_created:
-        trainer = TrainerTrainValid(config=config, model=model)
+
 
     if model_created:
-        trainer.callbacks.append(EarlyStopping(
-            **default_cfg['early_stopping']))
-        trainer.callbacks.append(ModelCheckpoint(
-            f'best_model_{config["id"]}.h5',
-            **default_cfg['model_checkpoint']))
+        # model.load_weights(default_cfg['model_checkpoint']['filepath'])
+
+        # Setup callbacks
+        callbacks = []
+        callbacks_config = config['post_train'].get('callbacks')
+        if callbacks_config is not None:
+            for cb_name, cb_conf in callbacks_config.items():
+                if cb_name in default_callbacks_config:
+                    default_callbacks_config[cb_name].update(cb_conf)
+
+                    if cb_name == 'ModelCheckpoint':
+                        default_callbacks_config[cb_name]['filepath'] =  f'best_model_{config["id"]}.h5'
+
+                    Callback = getattr(keras.callbacks, cb_name)
+                    callbacks.append(Callback(**default_callbacks_config[cb_name]))
+
+                    logger.info(f'Adding new callback {type(Callback).__name__} with config: {default_callbacks_config[cb_name]}!')
+
+                else:
+                    logger.error(f"'{cb_name}' is not an accepted callback!")
+
+        trainer = TrainerTrainValid(config=config, model=model)
+        trainer.callbacks.extend(callbacks)
 
         json_fname = f'post_training_hist_{config["id"]}.json'
         # to log the number of trainable parameters before running training

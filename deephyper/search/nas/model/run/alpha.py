@@ -1,6 +1,7 @@
 import traceback
 
 import numpy as np
+from tensorflow import keras
 
 from deephyper.search import util
 from deephyper.search.nas.model.run.util import (compute_objective,
@@ -10,6 +11,25 @@ from deephyper.search.nas.model.trainer.train_valid import TrainerTrainValid
 
 logger = util.conf_logger('deephyper.search.nas.run')
 
+# Default callbacks parameters
+default_callbacks_config = {
+    'EarlyStopping': dict(
+        monitor='val_loss',
+        min_delta=0,
+        mode='min',
+        verbose=0,
+        patience=0,
+    ),
+    'TensorBoard': dict(
+        log_dir='',
+        histogram_freq=0,
+        batch_size=32,
+        write_graph=False,
+        write_grads=False,
+        write_images=False,
+        update_freq='epoch'
+    )
+}
 
 def run(config):
     load_config(config)
@@ -27,9 +47,34 @@ def run(config):
         logger.info(traceback.format_exc())
 
     if model_created:
+
+        # Setup callbacks
+        callbacks = []
+        cb_requires_valid = False # Callbacks requires validation data
+        callbacks_config = config['hyperparameters'].get('callbacks')
+        if callbacks_config is not None:
+            for cb_name, cb_conf in callbacks_config.items():
+                if cb_name in default_callbacks_config:
+                    default_callbacks_config[cb_name].update(cb_conf)
+
+                    # Special dynamic parameters for callbacks
+                    if cb_name == 'ModelCheckpoint':
+                        default_callbacks_config[cb_name]['filepath'] =  f'best_model_{config["id"]}.h5'
+
+                    # Import and create corresponding callback
+                    Callback = getattr(keras.callbacks, cb_name)
+                    callbacks.append(Callback(**default_callbacks_config[cb_name]))
+
+                    if cb_name in ['EarlyStopping']:
+                        cb_requires_valid = 'val' in cb_conf['monitor'].split('_')
+                else:
+                    logger.error(f"'{cb_name}' is not an accepted callback!")
+
         trainer = TrainerTrainValid(config=config, model=model)
+        trainer.callbacks.extend(callbacks)
 
         last_only, with_pred = preproc_trainer(config)
+        last_only = last_only and not cb_requires_valid
 
         history = trainer.train(with_pred=with_pred, last_only=last_only)
 
