@@ -64,7 +64,7 @@ class Ppo(ReinforcementLearningSearch):
                             )
         parser.add_argument("--gamma",
                             type=float,
-                            default=1.,
+                            default=1., # sparse rewards
                             help="Gamma parameter for advantage function in RL, discounting factor for rewards.")
         parser.add_argument("--lam",
                             type=float,
@@ -80,7 +80,7 @@ class Ppo(ReinforcementLearningSearch):
                             help="Number of optimization steps to do per epochs. Basicaly it means the number of time you want to use learning data.")
         parser.add_argument('--max-evals', type=int, default=1e10,
                             help='maximum number of learning update.')
-        parser.add_argument('--network', type=str, default='ppo_lstm_128',
+        parser.add_argument('--network', type=str, default='ppo_lnlstm_128',
                             choices=[
                                 'ppo_lstm_128',
                                 'ppo_lnlstm_128',
