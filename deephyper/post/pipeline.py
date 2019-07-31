@@ -28,7 +28,7 @@ default_callbacks_config = {
         patience=50
     ),
     'TensorBoard': dict(
-        logdir='',
+        log_dir='',
         histogram_freq=0,
         batch_size=32,
         write_graph=False,
