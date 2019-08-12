@@ -140,5 +140,5 @@ def generic_loader(target, attribute):
             return load_from_file(target_file, attribute)
         else:
             return load_attr_from(target)
-    except ValueError:
+    except (ValueError, ModuleNotFoundError):
         raise GenericLoaderError(target)

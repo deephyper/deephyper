@@ -24,7 +24,8 @@ class Search:
     Args:
         problem (str): Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.hps.polynome2.Problem).
         run (str): Module path to the run function you want to use for the search (e.g. deephyper.benchmark.hps.polynome2.run).
-        evaluator (str): value in ['balsam', 'subprocess', 'processPool', 'threadPool'].
+        evaluator (str): value in ['balsam', 'ray',  'subprocess', 'processPool', 'threadPool'].
+        max_evals (int): the maximum number of evaluations to run. The exact behavior related to this parameter can vary in different search.
     """
 
     def __init__(self, problem, run, evaluator, max_evals=100, **kwargs):
@@ -38,9 +39,8 @@ class Search:
         self.args = Namespace(**kwargs)
         self.problem = util.generic_loader(problem, 'Problem')
         self.run_func = util.generic_loader(run, 'run')
-        logger.info('Evaluator will execute the function: '+run)
-        self.evaluator = Evaluator.create(
-                self.run_func, method=evaluator, **kwargs)
+        logger.info(f'Evaluator will execute the function: {run}')
+        self.evaluator = Evaluator.create(self.run_func, method=evaluator, **kwargs)
         self.num_workers = self.evaluator.num_workers
         self.max_evals = max_evals
 
@@ -52,6 +52,7 @@ class Search:
 
     def main(self):
         raise NotImplementedError
+
 
     @classmethod
     def parse_args(cls, arg_str=None):
@@ -92,8 +93,17 @@ class Search:
                             )
         parser.add_argument('--evaluator',
                             default='subprocess',
-                            choices=['balsam', 'subprocess',
-                                     'processPool', 'threadPool'],
-                            help="The evaluator is an object used to run the model."
+                            choices=[
+                                'balsam',
+                                'ray',
+                                'subprocess',
+                                'processPool',
+                                'threadPool',
+                            ],
+                            help="The evaluator is an object used to evaluate models."
                             )
+        parser.add_argument('--redis-address',
+                                default=None,
+                                help='This parameter is mandatory when using evaluator==ray. It reference the "IP:PORT" redis address for the RAY-driver to connect on the RAY-head.'
+                                )
         return parser

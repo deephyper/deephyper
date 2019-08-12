@@ -13,10 +13,20 @@ Evaluators
 
 .. _balsam-evaluator:
 
+Evaluator
+=========
+
+.. autoclass:: deephyper.evaluator.evaluate.Evaluator
+
 BalsamEvaluator
 ===============
 
 .. autoclass:: deephyper.evaluator._balsam.BalsamEvaluator
+
+RayEvaluator
+=============
+
+.. autoclass:: deephyper.evaluator.ray_evaluator.RayEvaluator
 
 
 .. _subprocess-evaluator:
