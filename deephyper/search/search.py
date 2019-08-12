@@ -28,7 +28,7 @@ class Search:
         max_evals (int): the maximum number of evaluations to run. The exact behavior related to this parameter can vary in different search.
     """
 
-    def __init__(self, problem, run, evaluator, max_evals=100, **kwargs):
+    def __init__(self, problem: str, run: str, evaluator: str, max_evals: int=100, **kwargs):
         _args = vars(self.parse_args(''))
         kwargs['problem'] = problem
         kwargs['run'] = run
@@ -53,23 +53,33 @@ class Search:
     def main(self):
         raise NotImplementedError
 
+    @classmethod
+    def get_parser(cls, parser=None) -> argparse.ArgumentParser:
+        """Return the fully extended parser.
+
+        Returns:
+            ArgumentParser: the fully extended parser.
+        """
+        base_parser = cls._base_parser(parser)
+        parser = cls._extend_parser(base_parser)
+        return parser
 
     @classmethod
-    def parse_args(cls, arg_str=None):
-        base_parser = cls._base_parser()
-        parser = cls._extend_parser(base_parser)
+    def parse_args(cls, arg_str=None) -> None:
+        parser = cls.get_parser()
         if arg_str is not None:
             return parser.parse_args(arg_str)
         else:
             return parser.parse_args()
 
     @staticmethod
-    def _extend_parser(base_parser):
+    def _extend_parser(base_parser) -> argparse.ArgumentParser:
         raise NotImplementedError
 
     @staticmethod
-    def _base_parser():
-        parser = argparse.ArgumentParser(conflict_handler='resolve')
+    def _base_parser(parser=None) -> argparse.ArgumentParser:
+        if parser is None:
+            parser = argparse.ArgumentParser(conflict_handler='resolve')
         parser.add_argument("--problem",
                             default="deephyper.benchmark.hps.polynome2.Problem",
                             help="Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.hps.polynome2.Problem)."

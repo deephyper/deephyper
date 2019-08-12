@@ -36,7 +36,7 @@ class GA(Search):
                             help='number of individuals per worker')
         return parser
 
-    def run(self):
+    def main(self):
         # opt = GAOptimizer(cfg)
         # evaluator = evaluate.create_evaluator(cfg)
         logger.info(f"Starting new run")

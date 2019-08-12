@@ -3,14 +3,14 @@ import os
 import sys
 
 def add_subparser(subparsers):
-    subparser_name = 'nas-init'
+    subparser_name = 'hps-init'
     function_to_call = main
 
     subparser = subparsers.add_parser(
-        subparser_name, help='Tool to init a neural architecture search package or a neural architecture search problem folder.')
+        subparser_name, help='Tool to init an hyper-parameter search package or an hyper-parameter search problem folder.')
 
-    subparser.add_argument('--new-pckg', type=str, help='Name of the new neural architecture package to create.')
-    subparser.add_argument('--new-pb', type=str, help='Name of the new neural architecture search folder to create.')
+    subparser.add_argument('--new-pckg', type=str, help='Name of the new hyper-parameter search package to create.')
+    subparser.add_argument('--new-pb', type=str, help='Name of the new hyper-parameter search folder to create.')
 
     subparser.set_defaults(func=function_to_call)
 
@@ -21,8 +21,8 @@ def main(new_pckg, new_pb, *args, **kwargs):
         '__init__.py',
         'problem.py',
         'load_data.py',
-        'preprocessing.py',
-        'structure.py']
+        'run.py',
+    ]
 
     if not new_pckg is None:
         path = new_pckg
@@ -64,7 +64,7 @@ def main(new_pckg, new_pb, *args, **kwargs):
                     with open(file_path, 'w') as fp:
                         print(f'create file: {file_path}')
                         if fname == 'problem.py':
-                            fp.write('from deephyper.benchmark import NaProblem\n')
+                            fp.write('from deephyper.benchmark import HpProblem\n')
     else:
         if not new_pb is None:
             path = os.path.join(os.getcwd(), new_pb)
