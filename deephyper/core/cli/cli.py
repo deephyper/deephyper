@@ -32,7 +32,7 @@ def main():
 
     args = parser.parse_args()
 
-    # try:
-    args.func(**vars(args))
-    # except AttributeError:
-    #     parser.print_help()
+    try:
+        args.func(**vars(args))
+    except AttributeError:
+         parser.print_help()

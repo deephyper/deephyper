@@ -38,7 +38,7 @@ REQUIRED = [
     # nas
     'gym',
     'networkx',
-    'joblib',
+    'joblib>=0.10.3',
     'pydot',
     'balsam-flow==0.3.5',
     'ray==0.7.2',
