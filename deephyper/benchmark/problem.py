@@ -8,13 +8,11 @@ from deephyper.core.exceptions.problem import *
 
 class Problem:
     """Representation of a problem.
-
-    Attribute:
-        space (OrderedDict): represents the search space of the problem.
     """
 
-    def __init__(self):
+    def __init__(self, seed=None, **kwargs):
         self._space = OrderedDict()
+        self.seed = seed
 
     def __str__(self):
         return repr(self)
@@ -43,8 +41,8 @@ class HpProblem(Problem):
     """Problem specification for Hyperparameter Optimization
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, seed=None, **kwargs):
+        super().__init__(seed=seed, **kwargs)
         # * starting points
         self.references = []
 
@@ -163,8 +161,8 @@ class NaProblem(Problem):
         regression (bool): if ``True`` the problem is defined as a ``regression`` problem, if ``False`` the problem is defined as a ``classification`` problem.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, seed=None, **kwargs):
+        super().__init__(seed=seed, **kwargs)
 
         self._space['metrics'] = list()
         self._space['hyperparameters'] = dict(verbose=1)
@@ -187,15 +185,15 @@ class NaProblem(Problem):
         if not type(objective) is str:
             objective = module_location(objective)
 
-        out = (f"Problem is:\n"
-               f"    - search space   : {module_location(self._space['create_structure']['func'])}\n"
-               f"    - data loading   : {module_location(self._space['load_data']['func'])}\n"
-               f"    - preprocessing  : {preprocessing}\n"
-               f"    - hyperparameters: {hps}\n"
-               f"    - loss           : {self._space['loss']}\n"
-               f"    - metrics        : {metrics}\n"
-               f"    - objective      : {objective}\n"
-               f"    - post-training  : {post}")
+        out = ( f"Problem is:\n"
+                f"    - search space   : {module_location(self._space['create_structure']['func'])}\n"
+                f"    - data loading   : {module_location(self._space['load_data']['func'])}\n"
+                f"    - preprocessing  : {preprocessing}\n"
+                f"    - hyperparameters: {hps}\n"
+                f"    - loss           : {self._space['loss']}\n"
+                f"    - metrics        : {metrics}\n"
+                f"    - objective      : {objective}\n"
+                f"    - post-training  : {post}")
 
         return out
 
@@ -364,6 +362,12 @@ class NaProblem(Problem):
             'metrics': metrics,
             'callbacks': callbacks
         }
+
+    @property
+    def space(self):
+        space = super().space
+        space['seed'] = self.seed
+        return space
 
 def module_location(attr):
     return f'{attr.__module__}.{attr.__name__}'

@@ -4,6 +4,7 @@ import os
 import datetime
 from importlib import import_module
 
+import tensorflow as tf
 
 from deephyper.search import Search, util
 from deephyper.evaluator.evaluate import Encoder
@@ -58,6 +59,7 @@ class ReinforcementLearningSearch(Search):
             super().__init__(problem, run, evaluator, cache_key=key, **kwargs)
             dhlogger.info(jm(
                 type='start_infos',
+                seed=self.problem.seed,
                 alg=alg,
                 network=network,
                 num_envs_per_agent=num_envs,
@@ -71,6 +73,7 @@ class ReinforcementLearningSearch(Search):
                                  **kwargs)
                 dhlogger.info(jm(
                     type='start_infos',
+                    seed=self.problem.seed,
                     alg=alg,
                     network=network,
                     num_envs_per_agent=num_envs,
@@ -83,7 +86,10 @@ class ReinforcementLearningSearch(Search):
                                  **kwargs)
         # set in super : self.problem, self.run_func, self.evaluator
 
-        self.num_evals = kwargs.get('max_evals')
+        if self.problem.seed is not None:
+            tf.random.set_random_seed(self.problem.seed)
+
+        self.num_evals = self.max_evals
         if self.num_evals is None:
             self.num_evals = math.inf
 
@@ -129,12 +135,12 @@ class ReinforcementLearningSearch(Search):
         else:
             logger.configure(format_strs=[])
 
-        self.train(space=self.space,
-                   evaluator=self.evaluator,
-                   alg=self.alg,
-                   network=self.network,
-                   num_evals=self.num_evals,
-                   num_envs=self.num_envs_per_agent)
+        self.train( space=self.space,
+                    evaluator=self.evaluator,
+                    alg=self.alg,
+                    network=self.network,
+                    num_evals=self.num_evals,
+                    num_envs=self.num_envs_per_agent)
 
     def train(self, space, evaluator, alg, network, num_evals, num_envs):
         """Function to train ours agents.
@@ -151,7 +157,7 @@ class ReinforcementLearningSearch(Search):
             [type]: [description]
         """
 
-        seed = 2019
+        seed = self.problem.seed
 
         learn = get_learn_function(alg)
         alg_kwargs = get_learn_function_defaults(alg)

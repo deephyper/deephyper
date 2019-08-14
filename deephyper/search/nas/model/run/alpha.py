@@ -1,6 +1,7 @@
 import traceback
 
 import numpy as np
+import tensorflow as tf
 from tensorflow import keras
 
 from deephyper.search import util
@@ -32,6 +33,11 @@ default_callbacks_config = {
 }
 
 def run(config):
+    seed = config['seed']
+    if seed is not None:
+        np.random.seed(seed)
+        tf.random.set_random_seed(seed)
+
     load_config(config)
 
     input_shape, output_shape = setup_data(config)

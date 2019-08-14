@@ -1,8 +1,13 @@
 import argparse
 from pprint import pformat
 import logging
+
+import numpy as np
+
 from deephyper.search import util
 from deephyper.evaluator.evaluate import Evaluator
+
+
 
 logger = logging.getLogger(__name__)
 
@@ -28,21 +33,26 @@ class Search:
         max_evals (int): the maximum number of evaluations to run. The exact behavior related to this parameter can vary in different search.
     """
 
-    def __init__(self, problem: str, run: str, evaluator: str, max_evals: int=100, **kwargs):
+    def __init__(self, problem: str, run: str, evaluator: str, max_evals: int=100, seed: int=None, **kwargs):
         _args = vars(self.parse_args(''))
         kwargs['problem'] = problem
         kwargs['run'] = run
         kwargs['evaluator'] = evaluator
         kwargs['max_evals'] = max_evals # * For retro compatibility
+        kwargs['seed'] = seed
         _args.update(kwargs)
 
         self.args = Namespace(**kwargs)
         self.problem = util.generic_loader(problem, 'Problem')
+        self.problem.seed = seed
         self.run_func = util.generic_loader(run, 'run')
         logger.info(f'Evaluator will execute the function: {run}')
         self.evaluator = Evaluator.create(self.run_func, method=evaluator, **kwargs)
         self.num_workers = self.evaluator.num_workers
         self.max_evals = max_evals
+
+        # set the random seed
+        np.random.seed(self.problem.seed)
 
         logger.info(f'Options: '+pformat(self.args.__dict__, indent=4))
         logger.info('Hyperparameter space definition: ' +
@@ -116,4 +126,7 @@ class Search:
                                 default=None,
                                 help='This parameter is mandatory when using evaluator==ray. It reference the "IP:PORT" redis address for the RAY-driver to connect on the RAY-head.'
                                 )
+        parser.add_argument('--seed',
+                            default=None,
+                            help='Random seed used.')
         return parser
