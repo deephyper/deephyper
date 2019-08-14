@@ -25,7 +25,7 @@ def banner(message, color='HEADER'):
     header = '*'*(len(message) + 4)
     msg = f' {header}\n   {message}\n {header}'
     if sys.stdout.isatty():
-        print(bcolors.get(color), msg, bcolors["ENDC"])
+        print(bcolors.get(color), msg, bcolors["ENDC"], sep='')
     else:
         print(msg)
 
