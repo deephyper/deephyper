@@ -11,6 +11,23 @@ masterLogger = None
 LOG_LEVEL = os.environ.get('DEEPHYPER_LOG_LEVEL', 'DEBUG')
 LOG_LEVEL = getattr(logging, LOG_LEVEL)
 
+def banner(message, color='HEADER'):
+    bcolors = {
+        "HEADER" : '\033[95m',
+        "OKBLUE" : '\033[94m',
+        "OKGREEN" : '\033[92m',
+        "WARNING" : '\033[93m',
+        "FAIL" : '\033[91m',
+        "ENDC" : '\033[0m',
+        "BOLD" : '\033[1m',
+        "UNDERLINE" : '\033[4m',
+    }
+    header = '*'*(len(message) + 4)
+    msg = f' {header}\n   {message}\n {header}'
+    if sys.stdout.isatty():
+        print(bcolors.get(color), msg, bcolors["ENDC"], sep='')
+    else:
+        print(msg)
 
 class Timer:
     def __init__(self):

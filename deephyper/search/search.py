@@ -47,7 +47,10 @@ class Search:
         if seed != None:
             self.problem.seed = seed
         self.run_func = util.generic_loader(run, 'run')
-        logger.info(f'Evaluator will execute the function: {run}')
+        notice = f'Maximizing the return value of function: {run}'
+        logger.info(notice)
+        util.banner(notice)
+
         self.evaluator = Evaluator.create(self.run_func, method=evaluator, **kwargs)
         self.num_workers = self.evaluator.num_workers
         self.max_evals = max_evals
