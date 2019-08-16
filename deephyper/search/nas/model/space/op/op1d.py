@@ -30,12 +30,13 @@ class Dense(Operation):
         else:
             return f'Dense_{self.units}_{self.activation.__name__}'
 
-    def __call__(self, inputs, *args, **kwargs):
+    def __call__(self, inputs, seed=None, **kwargs):
         assert len(
             inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when 1 is required.'
         if self._layer is None:  # reuse mechanism
             self._layer = keras.layers.Dense(
                 units=self.units,
+                kernel_initializer=tf.keras.initializers.glorot_uniform(seed=seed),
                 **self.kwargs,
             )
 

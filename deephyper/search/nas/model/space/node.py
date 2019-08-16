@@ -46,11 +46,11 @@ class OperationNode(Node):
     def __init__(self, name='', *args, **kwargs):
         super().__init__(name=name, *args, **kwargs)
 
-    def create_tensor(self, inputs=None, train=True, *args, **kwargs):
+    def create_tensor(self, inputs=None, train=True, seed=None, **kwargs):
         if self._tensor is None:
             if inputs == None:
                 try:
-                    self._tensor = self.op(train=train)
+                    self._tensor = self.op(train=train, seed=None)
                 except TypeError:
                     raise RuntimeError(f'Verify if node: "{self}" has incoming connexions!')
             else:

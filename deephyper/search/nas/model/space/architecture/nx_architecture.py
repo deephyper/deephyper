@@ -14,8 +14,9 @@ class NxArchitecture:
     """A NxArchitecture is an architecture based on a networkx graph.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, seed=None, **kwargs):
         self.graph = nx.DiGraph()
+        self.seed = seed
 
     def draw_graphviz(self, path):
         with open(path, 'w') as f:
@@ -154,8 +155,7 @@ class NxArchitecture:
                 output_nodes.append(n)
         return output_nodes
 
-    @staticmethod
-    def create_tensor_aux(g, n, train=None):
+    def create_tensor_aux(self, g, n, train=None):
         """Recursive function to create the tensors from the graph.
 
         Args:
@@ -172,17 +172,16 @@ class NxArchitecture:
             else:
                 pred = list(g.predecessors(n))
                 if len(pred) == 0:
-                    output_tensor = n.create_tensor(train=train)
+                    output_tensor = n.create_tensor(train=train, seed=self.seed)
                 else:
                     tensor_list = list()
                     for s_i in pred:
-                        tmp = NxArchitecture.create_tensor_aux(
-                            g, s_i, train=train)
+                        tmp = self.create_tensor_aux(g, s_i, train=train)
                         if type(tmp) is list:
                             tensor_list.extend(tmp)
                         else:
                             tensor_list.append(tmp)
-                    output_tensor = n.create_tensor(tensor_list, train=train)
+                    output_tensor = n.create_tensor(tensor_list, train=train, seed=self.seed)
             return output_tensor
         except TypeError:
             raise RuntimeError(f'Failed to build tensors from :{n}')

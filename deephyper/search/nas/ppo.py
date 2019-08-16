@@ -26,7 +26,8 @@ class Ppo(ReinforcementLearningSearch):
             ].
     """
 
-    def __init__(self, problem, run, evaluator, network, **kwargs):
+    def __init__(self, problem, run, evaluator, network, nenvs=None, **kwargs):
+
         if MPI is None:
             nenvs = 1
         else:
@@ -90,6 +91,10 @@ class Ppo(ReinforcementLearningSearch):
                                 'ppo_lnlstm_32'
                             ],
                             help='Policy-Value network.')
+        parser.add_argument('--nenvs',
+                            type=int,
+                            default=None,
+                            help="Number of parallel environments to use.")
         return parser
 
 

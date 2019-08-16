@@ -2,6 +2,7 @@ import csv
 from collections import OrderedDict
 from contextlib import suppress as dummy_context
 from math import isnan
+import numpy as np
 from numpy import integer, floating, ndarray
 import json
 import uuid
@@ -140,6 +141,9 @@ class Evaluator:
         return x
 
     def add_eval(self, x):
+        if x.get('seed') is not None: # numpy seed fixed in Search.__init__
+            x['seed'] = np.random.randint(10**10)
+
         key = self.encode(x)
         self.requested_evals.append(key)
         uid = self._gen_uid(x)

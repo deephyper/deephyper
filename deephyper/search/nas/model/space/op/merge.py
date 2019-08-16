@@ -156,7 +156,7 @@ class AddByProjecting(Operation):
             for n in self.stacked_nodes:
                 self.architecture.connect(n, self.node)
 
-    def __call__(self, values, **kwargs):
+    def __call__(self, values, seed=None, **kwargs):
         values = values[:]
         max_len_shp = max([len(x.get_shape()) for x in values])
 
@@ -171,16 +171,14 @@ class AddByProjecting(Operation):
                             *tuple(1 for i in range(max_len_shp - len(v.get_shape())))
                         ))(v)
 
-            # def max_dim_i(i): return max(
-            #     map(lambda x: int(x.get_shape()[i]), values))
-
-            # proj_size = max_dim_i(1)
-
             proj_size = values[0].get_shape()[1]
 
             for i in range(len(values)):
                 if values[i].get_shape()[1] != proj_size:
-                    values[i] = tf.keras.layers.Dense(units=proj_size)(values[i])
+                    values[i] = tf.keras.layers.Dense(
+                        units=proj_size,
+                        kernel_initializer=tf.keras.initializers.glorot_uniform(seed=seed)
+                        )(values[i])
 
         # concatenation
         if len(values) > 1:

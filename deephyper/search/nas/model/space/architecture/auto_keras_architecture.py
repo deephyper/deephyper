@@ -2,6 +2,7 @@ from collections.abc import Iterable
 from functools import reduce
 
 import networkx as nx
+import tensorflow as tf
 from tensorflow import keras
 from tensorflow.python.keras.utils.vis_utils import model_to_dot
 
@@ -45,10 +46,13 @@ class AutoKArchitecture(KArchitecture):
             activation = 'softmax'
 
         output_tensor = self.create_tensor_aux(self.graph, self.output_node)
+
         if len(output_tensor.get_shape()) > 2:
             output_tensor = keras.layers.Flatten()(output_tensor)
+
         output_tensor = keras.layers.Dense(
-            self.output_shape[0], activation=activation)(output_tensor)
+            self.output_shape[0], activation=activation,
+            kernel_initializer=tf.keras.initializers.glorot_uniform(seed=self.seed))(output_tensor)
 
         input_tensors = [inode._tensor for inode in self.input_nodes]
 

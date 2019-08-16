@@ -53,7 +53,7 @@ def setup_data(config):
     elif type(data) is dict:
         config['data'] = data
         input_shape = [data['shapes'][0][f'input_{i}']
-                       for i in range(len(data['shapes'][0]))]
+                        for i in range(len(data['shapes'][0]))]
         output_shape = data['shapes'][1]
     else:
         raise RuntimeError(
@@ -68,14 +68,14 @@ def setup_data(config):
     return input_shape, output_shape
 
 
-def setup_structure(config, input_shape, output_shape):
+def setup_structure(config, input_shape, output_shape, seed):
 
     create_structure = config['create_structure']['func']
     cs_kwargs = config['create_structure'].get('kwargs')
     if cs_kwargs is None:
-        architecture = create_structure(input_shape, output_shape)
+        architecture = create_structure(input_shape, output_shape, seed=seed)
     else:
-        architecture = create_structure(input_shape, output_shape, **cs_kwargs)
+        architecture = create_structure(input_shape, output_shape, seed=seed, **cs_kwargs)
 
     arch_seq = config['arch_seq']
     logger.info(f'actions list: {arch_seq}')

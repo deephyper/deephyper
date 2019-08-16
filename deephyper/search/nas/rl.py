@@ -52,7 +52,7 @@ class ReinforcementLearningSearch(Search):
                 os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
             nworkers = balsam_launcher_nodes * deephyper_workers_per_node
         else:
-            nworkers = None
+            nworkers = 1
 
         if MPI is None:
             self.rank = 0
@@ -139,7 +139,7 @@ class ReinforcementLearningSearch(Search):
                     evaluator=self.evaluator,
                     alg=self.alg,
                     network=self.network,
-                    num_evals=self.num_evals,
+                    num_evals=self.num_evals+1,
                     num_envs=self.num_envs_per_agent)
 
     def train(self, space, evaluator, alg, network, num_evals, num_envs):

@@ -25,7 +25,7 @@ class Operation:
         else:
             return type(self).__name__
 
-    def __call__(self, tensors: list, *args, **kwargs):
+    def __call__(self, tensors: list, seed: int=None, **kwargs):
         """
         Args:
             tensors (list): a list of incoming tensors.

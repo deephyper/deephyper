@@ -42,7 +42,7 @@ def run(config):
 
     input_shape, output_shape = setup_data(config)
 
-    architecture = setup_structure(config, input_shape, output_shape)
+    architecture = setup_structure(config, input_shape, output_shape, seed=seed)
 
     model_created = False
     try:
