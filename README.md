@@ -72,13 +72,15 @@ nas/
 # Quickstart
 
 ## Hyperparameter Search (HPS)
+
 ```
-python -m deephyper.search.hps.ambs --problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run
+deephyper hps ambs --evaluator ray --problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run --n-jobs 1
 ```
 
 ## Neural Architecture Search (NAS)
+
 ```
-python -m deephyper.search.nas.ppo_a3c_sync --problem deephyper.benchmark.nas.mnist1D.problem.Problem --run deephyper.search.nas.model.run.alpha.run
+deephyper nas ambs --evaluator ray --problem deephyper.benchmark.nas.polynome2Reg.Problem --n-jobs 1
 ```
 
 # Who is responsible?
