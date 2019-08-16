@@ -74,13 +74,14 @@ def create_problem_folder(new_pb, pb_files):
             file_path = os.path.join(path, fname)
             with open(file_path, 'w') as fnew:
                 print(f'create file: {file_path}')
+                tmpl_name = fname.split('.')[0]+".tmpl"
                 if fname == 'problem.py':
-                    fnew.write(render(fname,
+                    fnew.write(render(tmpl_name,
                         pckg=pckg_name,
                         pb_folder=new_pb,
                     ))
                 else:
-                    fnew.write(render(fname))
+                    fnew.write(render(tmpl_name))
 
 from jinja2 import Environment, PackageLoader
 
