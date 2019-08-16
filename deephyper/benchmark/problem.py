@@ -186,6 +186,7 @@ class NaProblem(Problem):
             objective = module_location(objective)
 
         out = ( f"Problem is:\n"
+                f" * SEED = {self.seed} *\n"
                 f"    - search space   : {module_location(self._space['create_structure']['func'])}\n"
                 f"    - data loading   : {module_location(self._space['load_data']['func'])}\n"
                 f"    - preprocessing  : {preprocessing}\n"

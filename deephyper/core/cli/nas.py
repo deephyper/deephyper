@@ -37,6 +37,6 @@ def main(**kwargs):
         on_exit = load_attr_from(f'{search_obj.__module__}.on_exit')
         signal.signal(signal.SIGINT, on_exit)
         signal.signal(signal.SIGTERM, on_exit)
-    except AttributeError as e: # on_exit is not defined
-        raise e
+    except AttributeError: # on_exit is not defined
+        print('This search doesn\'t have an exiting procedure...')
     search_obj.main()

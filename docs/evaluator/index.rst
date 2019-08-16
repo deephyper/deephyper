@@ -11,17 +11,20 @@ Evaluators
    :alt: evaluator diag
    :align: center
 
-.. _balsam-evaluator:
 
 Evaluator
 =========
 
 .. autoclass:: deephyper.evaluator.evaluate.Evaluator
 
+.. _balsam-evaluator:
+
 BalsamEvaluator
 ===============
 
 .. autoclass:: deephyper.evaluator._balsam.BalsamEvaluator
+
+.. _ray-evaluator:
 
 RayEvaluator
 =============

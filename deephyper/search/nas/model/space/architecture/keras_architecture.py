@@ -124,7 +124,6 @@ class KArchitecture(NxArchitecture):
         else:
             node = ConstantNode(name='Structure_Output')
             op = Concatenate(self, output_nodes)
-            print(op.stacked_nodes)
             node.set_op(op=op)
         return node
 

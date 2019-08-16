@@ -1,6 +1,5 @@
 import os
 import collections
-import random
 import numpy as np
 import json
 
@@ -73,9 +72,7 @@ class RegularizedEvolution(Search):
                             help="maximum number of evaluations.")
         parser.add_argument("--population-size", type=int, default=100,
                             help="the number of individuals to keep in the population.")
-        # parser.add_argument("--cycles", type=int, default=1e10,
-        #                     hel='the number of cycles the algorithm should run for.')
-        parser.add_argument("--sample-size", type=int, default=10,
+        parser.add_argument("--sample-size", type=int, default=20,
                             help="the number of individuals that should participate in each tournament.")
         return parser
 

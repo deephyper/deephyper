@@ -1,5 +1,5 @@
-Search space
-************
+Architecture space
+******************
 
 .. toctree::
    :maxdepth: 2
@@ -31,8 +31,17 @@ MirrorNode
 .. autoclass:: deephyper.search.nas.model.space.node.MirrorNode
     :members:
 
+MimeNode
+--------
+
+.. autoclass:: deephyper.search.nas.model.space.node.MimeNode
+    :members:
+
 Architecture
 ============
 
 .. autoclass:: deephyper.search.nas.model.space.architecture.KArchitecture
+    :members:
+
+.. autoclass:: deephyer.search.nas.model.space.architecture.AutoKArchitecture
     :members:

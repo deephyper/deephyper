@@ -12,7 +12,6 @@ A  neural architecture search (NAS) problem can be defined using four files with
             myproblem/
                 __init__.py
                 load_data.py
-                preprocessing.py
                 problem.py
                 architecture.py
 
@@ -70,19 +69,6 @@ The expected output is:
     test_X shape: (2000, 10)
     test_y shape: (2000, 1)
 
-Create preprocessing.py
-=======================
-
-.. code-block:: console
-    :caption: bash
-
-    vim preprocessing.py
-
-.. literalinclude:: polynome2_nas/preprocessing.py
-    :linenos:
-    :caption: polynome2/preprocessing.py
-    :name: polynome2-preprocessing
-
 Create architecture.py
 ===================
 
@@ -94,10 +80,10 @@ We will use Keras for the neural network definition.
 
     vim architecture.py
 
-.. literalinclude:: polynome2_nas/structure.py
+.. literalinclude:: polynome2_nas/architecture.py
     :linenos:
-    :caption: polynome2/structure.py
-    :name: polynome2-structure
+    :caption: polynome2/architecture.py
+    :name: polynome2-architecture
 
 
 Create problem.py
@@ -126,14 +112,17 @@ The expected output is:
     :caption: [Out]
 
     Problem is:
-        - search space   : nas_problems.polynome2.structure.create_structure
+    * SEED = 2019 *
+        - search space   : nas_problems.polynome2.architecture.create_search_space
         - data loading   : nas_problems.polynome2.load_data.load_data
-        - preprocessing  : nas_problems.polynome2.preprocessing.minmaxstdscaler
+        - preprocessing  : deephyper.search.nas.model.preprocessing.minmaxstdscaler
         - hyperparameters:
-            * batch_size: 128
-            * learning_rate: 0.001
-            * optimizer: rmsprop
-            * num_epochs: 5
+            * verbose: 1
+            * batch_size: 32
+            * learning_rate: 0.01
+            * optimizer: adam
+            * num_epochs: 20
+            * callbacks: {'EarlyStopping': {'monitor': 'val_r2', 'mode': 'max', 'verbose': 0, 'patience': 5}}
         - loss           : mse
         - metrics        :
             * r2
@@ -149,7 +138,6 @@ Everything is ready to run. Let's remember the architecture of our experiment::
     polynome2/
         __init__.py
         load_data.py
-        preprocessing.py
         problem.py
         architecture.py
 
@@ -158,11 +146,11 @@ All the three files have been tested one by one on the local machine. Next, we w
 .. code-block:: console
     :caption: bash
 
-    python -m deephyper.search.nas.ppo --problem nas_problems.polynome2.problem.Problem
+    deephyper nas ambs --evaluator ray --problem nas_problems.polynome2.problem.Problem
 
 .. note::
 
-    In order to run DeepHyper locally and on other systems we are using :ref:`evaluators`. For local evaluations we use the :ref:`subprocess-evaluator`.
+    In order to run DeepHyper locally and on other systems we are using :ref:`evaluators`. For local evaluations we can use the :ref:`ray-evaluator` or the :ref:`subprocess-evaluator`.
 
 
 After the search is over, you will find the following files in your current folder:
@@ -170,6 +158,22 @@ After the search is over, you will find the following files in your current fold
 .. code-block:: console
 
     deephyper.log
+
+You can now use ``deephyper-analytics`` to plot some information about the search
+
+.. code-block:: console
+    :caption: bash
+
+    deephyper-analytics parse deephyper.log
+
+A JSON file should have been generated. We will now create a juyter notebook (replace ``$MY_JSON_FILE`` by the name of the json file created with ``parse``:
+
+.. code-block:: console
+    :caption: bash
+
+    deephyper-analytics single -p $MY_JSON_FILE
+
+    jupyter notebook dh-analytics-single.ipynb
 
 
 Running the search on ALCF's Theta and Cooley

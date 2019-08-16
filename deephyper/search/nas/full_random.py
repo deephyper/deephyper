@@ -1,6 +1,6 @@
 import os
 import json
-from random import random
+from random import random, seed
 
 from deephyper.search import Search, util
 from deephyper.core.logs.logging import JsonMessage as jm
@@ -20,6 +20,8 @@ class Random(Search):
     def __init__(self, problem, run, evaluator, **kwargs):
 
         super().__init__(problem, run, evaluator, **kwargs)
+
+        seed(self.problem.seed)
 
         if evaluator == 'balsam':
             balsam_launcher_nodes = int(
@@ -63,7 +65,7 @@ class Random(Search):
         else:
             architecture = space['create_structure']['func'](**cs_kwargs)
 
-        len_arch = architecture.max_num_ops
+        len_arch = architecture.num_nodes
         def gen_arch(): return [random() for _ in range(len_arch)]
 
         num_evals_done = 0

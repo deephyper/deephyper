@@ -71,7 +71,7 @@ class AMBNeuralArchitectureSearch(Search):
             ))
 
         dhlogger.info("Initializing AMBS")
-        self.optimizer = Optimizer(self.problem, self.num_workers, self.args)
+        self.optimizer = Optimizer(self.problem, self.num_workers, **kwargs)
 
     @staticmethod
     def _extend_parser(parser):
@@ -104,6 +104,10 @@ class AMBNeuralArchitectureSearch(Search):
                             choices=["LCB", "EI", "PI", "gp_hedge"],
                             help='Acquisition function type'
                             )
+        parser.add_argument('--n-jobs',
+                            default=-1,
+                            type=int,
+                            help='Number of processes to use for learner.')
         return parser
 
     def main(self):

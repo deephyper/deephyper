@@ -36,10 +36,12 @@ class Dense(Operation):
         if self._layer is None:  # reuse mechanism
             self._layer = keras.layers.Dense(
                 units=self.units,
-                activation=self.activation,
                 **self.kwargs,
             )
+
         out = self._layer(inputs[0])
+        if self.activation is not None: # better for visualisation
+            out = keras.layers.Activation(activation=self.activation)(out)
         return out
 
 

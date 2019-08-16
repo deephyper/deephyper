@@ -44,7 +44,8 @@ class Search:
 
         self.args = Namespace(**kwargs)
         self.problem = util.generic_loader(problem, 'Problem')
-        self.problem.seed = seed
+        if seed != None:
+            self.problem.seed = seed
         self.run_func = util.generic_loader(run, 'run')
         logger.info(f'Evaluator will execute the function: {run}')
         self.evaluator = Evaluator.create(self.run_func, method=evaluator, **kwargs)

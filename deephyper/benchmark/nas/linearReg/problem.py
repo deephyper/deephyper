@@ -3,7 +3,7 @@ from deephyper.benchmark.nas.linearReg.load_data import load_data
 from deephyper.search.nas.model.baseline.simple_deep import create_structure
 from deephyper.search.nas.model.preprocessing import minmaxstdscaler
 
-Problem = NaProblem()
+Problem = NaProblem(seed=2019)
 
 Problem.load_data(load_data)
 
@@ -15,7 +15,7 @@ Problem.hyperparameters(
     batch_size=100,
     learning_rate=0.1,
     optimizer='adam',
-    num_epochs=10,
+    num_epochs=1,
 )
 
 Problem.loss('mse')

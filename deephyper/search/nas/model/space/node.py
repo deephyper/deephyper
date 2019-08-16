@@ -1,5 +1,6 @@
 from tensorflow import keras
 from deephyper.search.nas.model.space.op.basic import Operation
+from deephyper.core.exceptions import DeephyperRuntimeError
 
 class Node:
     """This class represents a node of a graph
@@ -192,3 +193,34 @@ class MirrorNode(OperationNode):
     @property
     def op(self):
         return self._node.op
+
+
+class MimeNode(OperationNode):
+    """A MimeNode is a node which reuse an the choice made for an VariableNode, it enable the definition of a Cell based architecture. This node reuse the operation from the mimed VariableNode but only the choice made.
+
+    Args:
+        node (VariableNode): the VariableNode to mime.
+    """
+    def __init__(self, node):
+        super().__init__(name=f"Mime[{str(node)}]")
+        self.node = node
+        self._ops = list()
+
+    def add_op(self, op):
+        self._ops.append(self.verify_operation(op))
+
+    @property
+    def num_ops(self):
+        return len(self._ops)
+
+    @property
+    def op(self):
+        if self.num_ops != self.node.num_ops:
+            raise DeephyperRuntimeError(f'{str(self)} and {str(self.node)} should have the same number of opertions, when {str(self)} has {self.num_ops} and {str(self.node)} has {self.node.num_ops}!')
+        else:
+            return self._ops[self.node._index]
+
+    @property
+    def ops(self):
+        return self._ops
+

@@ -42,6 +42,7 @@ REQUIRED = [
     'pydot',
     'balsam-flow==0.3.5',
     'ray==0.7.2',
+    'Jinja2'
 ]
 
 # external sources

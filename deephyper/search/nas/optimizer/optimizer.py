@@ -13,17 +13,16 @@ class Optimizer:
     SEED = 12345
     KAPPA = 1.96
 
-    def __init__(self, problem, num_workers, args):
-        assert args.learner in ["RF", "ET", "GBRT", "GP",
-                                "DUMMY"], f"Unknown scikit-optimize base_estimator: {args.learner}"
-        if args.learner == "RF":
-            base_estimator = RandomForestRegressor(n_jobs=-1)
-        elif args.learner == "ET":
-            base_estimator = ExtraTreesRegressor(n_jobs=-1)
-        elif args.learner == "GBRT":
-            base_estimator = GradientBoostingQuantileRegressor(n_jobs=-1)
+    def __init__(self, problem, num_workers, learner='RF', acq_func='gp_hedge', liar_strategy='cl_max', n_jobs=-1, **kwargs):
+        assert learner in ["RF", "ET", "GBRT", "GP", "DUMMY"], f"Unknown scikit-optimize base_estimator: {learner}"
+        if learner == "RF":
+            base_estimator = RandomForestRegressor(n_jobs=n_jobs)
+        elif learner == "ET":
+            base_estimator = ExtraTreesRegressor(n_jobs=n_jobs)
+        elif learner == "GBRT":
+            base_estimator = GradientBoostingQuantileRegressor(n_jobs=n_jobs)
         else:
-            base_estimator = args.learner
+            base_estimator = learner
 
         self.space = problem.space
         cs_kwargs = self.space['create_structure'].get('kwargs')
@@ -34,7 +33,7 @@ class Optimizer:
 
         # // queue of remaining starting points
         # // self.starting_points = problem.starting_point
-        n_init = np.inf if args.learner == 'DUMMY' else num_workers
+        n_init = np.inf if learner == 'DUMMY' else num_workers
 
         self.starting_points = []  # ! EMPTY for now TODO
 
@@ -46,18 +45,17 @@ class Optimizer:
             skopt_space,
             base_estimator=base_estimator,
             acq_optimizer='sampling',
-            acq_func=args.acq_func,
+            acq_func=acq_func,
             acq_func_kwargs={'kappa': self.KAPPA},
             random_state=self.SEED,
             n_initial_points=n_init
         )
 
-        assert args.liar_strategy in "cl_min cl_mean cl_max".split()
-        self.strategy = args.liar_strategy
+        assert liar_strategy in "cl_min cl_mean cl_max".split()
+        self.strategy = liar_strategy
         self.evals = {}
         self.counter = 0
-        logger.info("Using skopt.Optimizer with %s base_estimator" %
-                    args.learner)
+        logger.info("Using skopt.Optimizer with %s base_estimator" % learner)
 
     def _get_lie(self):
         if self.strategy == "cl_min":
