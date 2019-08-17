@@ -3,6 +3,7 @@ import traceback
 from time import time
 
 import numpy as np
+import tensorflow as tf
 from tensorflow import keras
 
 from deephyper.evaluator import Encoder
@@ -40,6 +41,10 @@ default_callbacks_config = {
 
 
 def train(config):
+    seed = config['seed']
+    if seed is not None:
+        np.random.seed(seed)
+        tf.random.set_random_seed(seed)
 
     # Pre-settings
 
@@ -53,7 +58,7 @@ def train(config):
 
     input_shape, output_shape = setup_data(config)
 
-    architecture = setup_structure(config, input_shape, output_shape)
+    architecture = setup_structure(config, input_shape, output_shape, seed=seed)
     architecture.draw_graphviz(f'structure_{config["id"]}.dot')
     logger.info('Model operations set.')
 
