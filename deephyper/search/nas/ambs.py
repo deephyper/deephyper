@@ -20,9 +20,6 @@ def on_exit(signum, stack):
     EXIT_FLAG = True
 
 
-def key(d):
-    return json.dumps(dict(arch_seq=d['arch_seq']), cls=Encoder)
-
 class AMBNeuralArchitectureSearch(Search):
     """Asynchronous Model-Based Search.
 
@@ -49,7 +46,7 @@ class AMBNeuralArchitectureSearch(Search):
         * ``PI`` :
         * ``gp_hedge`` : (default)
     """
-    def __init__(self, problem, run, evaluator, cache_key=key, **kwargs):
+    def __init__(self, problem, run, evaluator, **kwargs):
         super().__init__(problem, run, evaluator, **kwargs)
 
         if evaluator == 'balsam':  # TODO: async is a kw

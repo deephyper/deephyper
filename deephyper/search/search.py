@@ -133,4 +133,7 @@ class Search:
         parser.add_argument('--seed',
                             default=None,
                             help='Random seed used.')
+        parser.add_argument('--cache-key',
+                            default='uuid',
+                            help='Cache policy.')
         return parser

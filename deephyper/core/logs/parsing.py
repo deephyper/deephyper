@@ -74,7 +74,7 @@ def parsing(f, data):
             parseline_arch_seq(line, data)
             line = " ".join(line)
             date = line.split('|')[0]
-            data['timestamp'] = date
+            data['timestamps'].append(date)
         elif ">>>" in line:
             parseline_json(line, data)
 

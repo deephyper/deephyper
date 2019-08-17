@@ -62,6 +62,7 @@ class Evaluator:
         self.finished_evals = OrderedDict()  # uid --> scalar
         self.requested_evals = []  # keys
         self.key_uid_map = {}  # map keys to uids
+        self.uid_key_map = {}  # map uids to keys
 
         self.stats = {
             'num_cache_used': 0
@@ -155,6 +156,7 @@ class Evaluator:
             logger.info(f"Submitted new eval of {x}")
             future.uid = uid
             self.pending_evals[uid] = future
+            self.uid_key_map[uid] = key
         self.key_uid_map[key] = uid
         return uid
 
@@ -179,7 +181,7 @@ class Evaluator:
             if "DH-OUTPUT:" in line.upper():
                 try:
                     y = float(line.split()[-1])
-                except ValueError as e:
+                except ValueError:
                     logger.exception("Could not parse DH-OUTPUT line:\n"+line)
                     y = sys.float_info.max
                 break
@@ -199,18 +201,17 @@ class Evaluator:
                                 funcName))
         return runner_exec
 
-    def await_evals(self, to_read, timeout=None):
+    def await_evals(self, uids, timeout=None):
         """Waiting for a collection of tasks.
 
         Args:
-            to_read (list(uid)): the list of X values that we are waiting to finish.
+            uids (list(uid)): the list of X values that we are waiting to finish.
             timeout (float, optional): waiting time if a float, or infinite waiting time if None
 
         Returns:
             list: list of results from awaited task.
         """
-        keys = list(map(self.encode, to_read))
-        uids = [self._gen_uid(x) for x in to_read]
+        keys = [self.uid_key_map[uid] for uid in uids]
         futures = {uid: self.pending_evals[uid]
                     for uid in set(uids) if uid in self.pending_evals}
         logger.info(f"Waiting on {len(futures)} evals to finish...")
@@ -224,7 +225,7 @@ class Evaluator:
             self.elapsed_times[uid] = self._elapsed_sec()
             del self.pending_evals[uid]
             self.finished_evals[uid] = y
-        for (key, uid, x) in zip(keys, uids, to_read):
+        for (key, uid) in zip(keys, uids):
             y = self.finished_evals[uid]
             # same printing required in get_finished_evals because of logs parsing
             x = self.decode(key)

@@ -22,10 +22,6 @@ except ImportError:
 dhlogger = util.conf_logger('deephyper.search.nas.rl')
 
 
-def key(d):
-    return json.dumps(dict(arch_seq=d['arch_seq']))
-
-
 class ReinforcementLearningSearch(Search):
     """Represents different kind of RL algorithms working with NAS.
 
@@ -38,6 +34,7 @@ class ReinforcementLearningSearch(Search):
         num_envs (int): number of environments per agent to run in
             parallel, it corresponds to the number of evaluation per
             batch per agent.
+        cache_key (str): ...
     """
 
     def __init__(self, problem, run, evaluator,  alg, network, num_envs,
@@ -56,7 +53,7 @@ class ReinforcementLearningSearch(Search):
 
         if MPI is None:
             self.rank = 0
-            super().__init__(problem, run, evaluator, cache_key=key, **kwargs)
+            super().__init__(problem, run, evaluator, **kwargs)
             dhlogger.info(jm(
                 type='start_infos',
                 seed=self.problem.seed,
@@ -69,8 +66,7 @@ class ReinforcementLearningSearch(Search):
         else:
             self.rank = MPI.COMM_WORLD.Get_rank()
             if self.rank == 0:
-                super().__init__(problem, run, evaluator, cache_key=key,
-                                 **kwargs)
+                super().__init__(problem, run, evaluator, **kwargs)
                 dhlogger.info(jm(
                     type='start_infos',
                     seed=self.problem.seed,
@@ -82,8 +78,7 @@ class ReinforcementLearningSearch(Search):
                     encoded_space=json.dumps(self.problem.space, cls=Encoder)))
             MPI.COMM_WORLD.Barrier()
             if self.rank != 0:
-                super().__init__(problem, run, evaluator, cache_key=key,
-                                 **kwargs)
+                super().__init__(problem, run, evaluator, **kwargs)
         # set in super : self.problem, self.run_func, self.evaluator
 
         if self.problem.seed is not None:

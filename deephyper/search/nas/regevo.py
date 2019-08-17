@@ -10,8 +10,8 @@ from deephyper.evaluator.evaluate import Encoder
 dhlogger = util.conf_logger(
     'deephyper.search.nas.regevo')
 
-def key(d):
-    return json.dumps(dict(arch_seq=d['arch_seq']), cls=Encoder)
+# def key(d):
+#     return json.dumps(dict(arch_seq=d['arch_seq']), cls=Encoder)
 
 class RegularizedEvolution(Search):
     """Regularized evolution.
@@ -37,7 +37,7 @@ class RegularizedEvolution(Search):
         else:
             self.free_workers = 1
 
-        super().__init__(problem, run, evaluator, cache_key=key, **kwargs)
+        super().__init__(problem, run, evaluator, **kwargs)
 
         dhlogger.info(jm(
             type='start_infos',

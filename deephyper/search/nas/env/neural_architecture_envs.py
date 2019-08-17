@@ -57,21 +57,22 @@ class NeuralArchitectureVecEnv(VecEnv):
 
         # Submitting evals to balsam when whole sequences are ready
         if len(self.action_buffers[0]) == self.num_actions_per_env:
+            XX = []
             for i in range(len(actions)):
                 conv_action = np.array(self.action_buffers[i]) / \
                     self.structure.max_num_ops
 
                 cfg = self.space.copy()
                 cfg['arch_seq'] = list(conv_action)
-                self.eval_uids.append(cfg)
+                XX.append(cfg)
 
             self.stats['batch_computation'] = time.time()
 
-            self.evaluator.add_eval_batch(self.eval_uids)
+            self.eval_uids = self.evaluator.add_eval_batch(XX)
 
     def step_wait(self):
         obs = [np.array([float(action_seq[-1])])
-               for action_seq in self.action_buffers]
+                for action_seq in self.action_buffers]
 
         if len(self.action_buffers[0]) < self.num_actions_per_env:
             # Results are already known here...

@@ -45,10 +45,10 @@ class Ppo(ReinforcementLearningSearch):
                 nenvs = 1
 
         super().__init__(problem, run, evaluator,
-                         alg="ppo2",
-                         network=network,
-                         num_envs=nenvs,
-                         **kwargs)
+                            alg="ppo2",
+                            network=network,
+                            num_envs=nenvs,
+                            **kwargs)
 
     @staticmethod
     def _extend_parser(parser):
