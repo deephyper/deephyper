@@ -63,6 +63,7 @@ class Evaluator:
         self.requested_evals = []  # keys
         self.key_uid_map = {}  # map keys to uids
         self.uid_key_map = {}  # map uids to keys
+        self.seed_high = 2**32 # exclusive
 
         self.stats = {
             'num_cache_used': 0
@@ -143,7 +144,7 @@ class Evaluator:
 
     def add_eval(self, x):
         if x.get('seed') is not None: # numpy seed fixed in Search.__init__
-            x['seed'] = np.random.randint(0, 2**32) # must be between (0, 2**32-1)
+            x['seed'] = np.random.randint(0, self.seed_high) # must be between (0, 2**32-1)
 
         key = self.encode(x)
         self.requested_evals.append(key)
