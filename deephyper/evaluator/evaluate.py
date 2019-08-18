@@ -143,7 +143,7 @@ class Evaluator:
 
     def add_eval(self, x):
         if x.get('seed') is not None: # numpy seed fixed in Search.__init__
-            x['seed'] = np.random.randint(10**10)
+            x['seed'] = np.random.randint(0, 2**32) # must be between (0, 2**32-1)
 
         key = self.encode(x)
         self.requested_evals.append(key)
