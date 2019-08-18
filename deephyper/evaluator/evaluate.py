@@ -48,7 +48,7 @@ class Evaluator:
             DeephyperRuntimeError: raised if the `cache_key` parameter is not None, a callable or equal to 'uuid'.
             DeephyperRuntimeError: raised if the `run_function` parameter is from the`__main__` module.
     """
-    FAIL_RETURN_VALUE = sys.float_info.min
+    FAIL_RETURN_VALUE = -sys.float_info.max
     PYTHON_EXE = os.environ.get('DEEPHYPER_PYTHON_BACKEND', sys.executable)
     WORKERS_PER_NODE = int(os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
     KERAS_BACKEND = os.environ.get('KERAS_BACKEND', 'tensorflow')
