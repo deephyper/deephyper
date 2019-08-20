@@ -34,18 +34,17 @@ class Search:
     """
 
     def __init__(self, problem: str, run: str, evaluator: str, max_evals: int=100, seed: int=None, **kwargs):
-        _args = vars(self.parse_args(''))
         kwargs['problem'] = problem
         kwargs['run'] = run
         kwargs['evaluator'] = evaluator
         kwargs['max_evals'] = max_evals # * For retro compatibility
         kwargs['seed'] = seed
-        _args.update(kwargs)
 
-        self.args = Namespace(**kwargs)
         self.problem = util.generic_loader(problem, 'Problem')
-        if seed != None:
+        if self.problem.seed == None:
             self.problem.seed = seed
+        else:
+            kwargs['seed'] = self.problem.seed
         self.run_func = util.generic_loader(run, 'run')
         notice = f'Maximizing the return value of function: {run}'
         logger.info(notice)
@@ -58,7 +57,7 @@ class Search:
         # set the random seed
         np.random.seed(self.problem.seed)
 
-        logger.info(f'Options: '+pformat(self.args.__dict__, indent=4))
+        logger.info(f'Options: '+pformat(kwargs, indent=4))
         logger.info('Hyperparameter space definition: ' +
                     pformat(self.problem.space, indent=4))
         logger.info(f'Created {evaluator} evaluator')

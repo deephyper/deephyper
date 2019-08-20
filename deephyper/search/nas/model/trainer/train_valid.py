@@ -1,6 +1,7 @@
 import math
 import time
 import traceback
+from inspect import signature
 
 import numpy as np
 import tensorflow as tf
@@ -31,9 +32,10 @@ class TrainerTrainValid:
         self.data = self.config[a.data]
 
         self.config_hp = self.config[a.hyperparameters]
-        self.optimizer_name = self.config_hp[a.optimizer]
-        self.batch_size = self.config_hp[a.batch_size]
-        self.learning_rate = self.config_hp[a.learning_rate]
+        self.optimizer_name = self.config_hp.get(a.optimizer, 'adam')
+        self.optimizer_eps = self.config_hp.get('epsilon', None)
+        self.batch_size = self.config_hp.get(a.batch_size, 32)
+        self.learning_rate = self.config_hp.get(a.learning_rate, 1e-3)
         self.num_epochs = self.config_hp[a.num_epochs]
         self.verbose = self.config_hp.get('verbose', 1)
 
@@ -212,7 +214,11 @@ class TrainerTrainValid:
 
         decay_rate = self.learning_rate / \
             self.num_epochs if self.num_epochs > 0 else 1.
-        self.optimizer = optimizer_fn(lr=self.learning_rate, decay=decay_rate)
+
+        if 'epsilon' in signature(optimizer_fn).parameters:
+            self.optimizer = optimizer_fn(lr=self.learning_rate, decay=decay_rate, epsilon=self.optimizer_eps)
+        else:
+            self.optimizer = optimizer_fn(lr=self.learning_rate, decay=decay_rate)
 
         self.model.compile(
             optimizer=self.optimizer,

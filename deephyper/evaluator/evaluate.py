@@ -56,13 +56,15 @@ class Evaluator:
     assert os.path.isfile(PYTHON_EXE)
 
 
-    def __init__(self, run_function, cache_key=None, encoder=Encoder, **kwargs):
+    def __init__(self, run_function, cache_key=None, encoder=Encoder,
+        seed=None, **kwargs):
         self.encoder = encoder # dict --> uuid
         self.pending_evals = {}  # uid --> Future
         self.finished_evals = OrderedDict()  # uid --> scalar
         self.requested_evals = []  # keys
         self.key_uid_map = {}  # map keys to uids
         self.uid_key_map = {}  # map uids to keys
+        self.seed = seed
         self.seed_high = 2**32 # exclusive
 
         self.stats = {
@@ -143,7 +145,7 @@ class Evaluator:
         return x
 
     def add_eval(self, x):
-        if x.get('seed') is not None: # numpy seed fixed in Search.__init__
+        if x.get('seed') is not None or self.seed is not None: # numpy seed fixed in Search.__init__
             x['seed'] = np.random.randint(0, self.seed_high) # must be between (0, 2**32-1)
 
         key = self.encode(x)
@@ -274,11 +276,6 @@ class Evaluator:
     def dump_evals(self, saved_key=None):
         if not self.finished_evals:
             return
-
-        if saved_key is None:
-            with open('results.json', 'w') as fp:
-                json.dump(self.finished_evals, fp, indent=4,
-                        sort_keys=True, cls=Encoder)
 
         resultsList = []
 
