@@ -213,12 +213,20 @@ class TrainerTrainValid:
         optimizer_fn = U.selectOptimizer_keras(self.optimizer_name)
 
         decay_rate = self.learning_rate / \
-            self.num_epochs if self.num_epochs > 0 else 1.
+            self.num_epochs if self.num_epochs > 0 else 1
 
-        if 'epsilon' in signature(optimizer_fn).parameters:
-            self.optimizer = optimizer_fn(lr=self.learning_rate, decay=decay_rate, epsilon=self.optimizer_eps)
-        else:
-            self.optimizer = optimizer_fn(lr=self.learning_rate, decay=decay_rate)
+        opti_parameters = signature(optimizer_fn).parameters
+        params = {}
+        if 'lr' in opti_parameters:
+            params['lr'] = self.learning_rate
+        if 'epsilon' in opti_parameters:
+            params['epsilon'] = self.optimizer_eps
+        if 'decay' in opti_parameters:
+            decay_rate = self.learning_rate / \
+                self.num_epochs if self.num_epochs > 0 else 1
+            params['decay'] = decay_rate
+        self.optimizer = optimizer_fn(**params)
+
 
         self.model.compile(
             optimizer=self.optimizer,
