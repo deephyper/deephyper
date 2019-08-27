@@ -32,7 +32,7 @@ REQUIRED = [
     'scikit-optimize',
     'scikit-learn',
     'tqdm',
-    'tensorflow==1.13.1',
+    'tensorflow==1.14.0',
     'keras',
     'deap',  # GA search
     # nas

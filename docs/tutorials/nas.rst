@@ -3,7 +3,7 @@
 Create a new neural architecture search problem
 ***********************************************
 
-A  neural architecture search (NAS) problem can be defined using four files with a NAS problem directory with a python package::
+A  neural architecture search (NAS) problem can be defined using three files with a NAS problem directory within a python package::
 
     nas_problems/
         setup.py
@@ -38,14 +38,10 @@ Go to the problem ``polynome2`` folder:
 Create load_data.py
 ===================
 
-Second, we will create ``load_data.py`` file that loads and returns the training and testing data.
-
-.. code-block:: console
-    :caption: bash
-
-    touch load_data.py
-
-We will generate data from a function :math:`f` where :math:`X \in [a, b]^n`  such as :math:`f(X) = -\sum_{i=0}^{n-1} {x_i ^2}`:
+Fist, we will look at the ``load_data.py`` file that loads and returns the
+training and testing data. The ``load_data`` function generates data from
+a function :math:`f` where :math:`X \in [a, b]^n`  such as
+:math:`f(X) = -\sum_{i=0}^{n-1} {x_i ^2}`:
 
 .. literalinclude:: polynome2/load_data.py
     :linenos:
@@ -70,15 +66,10 @@ The expected output is:
     test_y shape: (2000, 1)
 
 Create architecture.py
-===================
+======================
 
-Third, we will create ``structure.py`` that contains the code for the neural network.
-We will use Keras for the neural network definition.
-
-.. code-block:: console
-    :caption: bash
-
-    vim architecture.py
+Then, we will take a look at ``architecture.py`` which contains the code for
+the neural network architecture definition.
 
 .. literalinclude:: polynome2_nas/architecture.py
     :linenos:
@@ -89,10 +80,8 @@ We will use Keras for the neural network definition.
 Create problem.py
 ==================
 
-.. code-block:: console
-    :caption: bash
-
-    vim problem.py
+Now, we will take a look at ``problem.py`` which contains the code for the
+problem definition.
 
 .. literalinclude:: polynome2_nas/problem.py
     :linenos:
@@ -141,12 +130,13 @@ Everything is ready to run. Let's remember the architecture of our experiment::
         problem.py
         architecture.py
 
-All the three files have been tested one by one on the local machine. Next, we will run asynchronous model-based search (AMBS).
+Each of these files have been tested one by one on the local machine.
+Next, we will run a random search (RDM).
 
 .. code-block:: console
     :caption: bash
 
-    deephyper nas ambs --evaluator ray --problem nas_problems.polynome2.problem.Problem
+    deephyper nas random --evaluator ray --problem nas_problems.polynome2.problem.Problem
 
 .. note::
 
@@ -205,7 +195,7 @@ Create a Balsam ``PPO`` application:
 
     Application 1:
     -----------------------------
-    Name:           AMBS
+    Name:           PPO
     Description:
     Executable:     /lus/theta-fs0/projects/datascience/regele/dh-opt/bin/python -m deephyper.search.nas.ppo
     Preprocess:
@@ -231,7 +221,7 @@ Create a Balsam ``PPO`` application:
     stage_out_files:
     stage_out_url:
     wall_time_minutes:              1
-    num_nodes:                      1
+    num_nodes:                      2
     coschedule_num_nodes:           0
     ranks_per_node:                 1
     cpu_affinity:                   none
@@ -239,8 +229,8 @@ Create a Balsam ``PPO`` application:
     threads_per_core:               1
     node_packing_count:             1
     environ_vars:
-    application:                    AMBS
-    args:                           --evaluator balsam --problem /projects/datascience/regele/polynome2/problem_step_2.py --run /projects/datascience/regele/polynome2/model_run_step_2.py
+    application:                    PPO
+    args:                           --evaluator balsam nas_problems.polynome2.problem.Problem
     user_workdir:
     wait_for_parents:               True
     post_error_handler:             False
@@ -249,8 +239,8 @@ Create a Balsam ``PPO`` application:
     state:                          CREATED
     queued_launch_id:               None
     data:                           {}
-    *** Executed command:         /lus/theta-fs0/projects/datascience/regele/dh-opt/bin/python -m deephyper.search.hps.ambs --evaluator balsam --problem /projects/datascience/regele/polynome2/problem_step_2.py --run /projects/datascience/regele/polynome2/model_run_step_2.py
-    *** Working directory:        /lus/theta-fs0/projects/datascience/regele/polydb/data/step_2/step_2_575dba96
+    *** Executed command:         /lus/theta-fs0/projects/datascience/regele/dh-opt/bin/python -m deephyper.search.nas.ppo --evaluator balsam nas_problems.polynome2.problem.Problem
+    *** Working directory:        /lus/theta-fs0/projects/datascience/regele/polydb/data/poly_exp/poly_exp_575dba96
 
     Confirm adding job to DB [y/n]: y
 
@@ -259,7 +249,7 @@ Submit the search to the Cobalt scheduler:
 .. code-block:: console
     :caption: bash
 
-    balsam submit-launch -n 4 -q debug-cache-quad -t 60 -A datascience --job-mode mpi --wf-filter poly_exp
+    balsam submit-launch -n 6 -q debug-cache-quad -t 60 -A datascience --job-mode mpi --wf-filter poly_exp
 
 .. code-block:: console
     :caption: [Out]
@@ -275,6 +265,6 @@ Submit the search to the Cobalt scheduler:
         'scheduler_id': 347124,
         'state': 'submitted',
         'wall_minutes': 60,
-        'wf_filter': 'step_2'}
+        'wf_filter': 'poly_exp'}
 
-Now the search is done. You will find results at ``polydb/data/step_2/step_2_575dba96``.
+Now the search is done. You will find results at ``polydb/data/poly_exp/poly_exp_575dba96``.
