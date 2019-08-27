@@ -115,7 +115,7 @@ class Search:
                             help="Kill evals that take longer than this"
                             )
         parser.add_argument('--evaluator',
-                            default='subprocess',
+                            default='ray',
                             choices=[
                                 'balsam',
                                 'ray',
