@@ -5,11 +5,13 @@ from time import time
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
+import tensorflow.keras.backend as K
 
 from deephyper.evaluator import Encoder
 from deephyper.search import util
 from deephyper.search.nas.model.run.util import load_config, setup_data, setup_structure, compute_objective
 from deephyper.search.nas.model.trainer.train_valid import TrainerTrainValid
+from deephyper.contrib.callbacks.beholder import BeholderCB
 
 logger = util.conf_logger(__name__)
 
@@ -35,7 +37,8 @@ default_callbacks_config = {
         write_graph=False,
         write_grads=False,
         write_images=False,
-        update_freq='epoch'
+        update_freq='epoch',
+        beholder=False
     )
 }
 
@@ -46,11 +49,13 @@ def train(config):
         np.random.seed(seed)
         tf.random.set_random_seed(seed)
 
-    # Pre-settings
+    # Pre-settings: particularly import for BeholderCB to work
+    sess = tf.Session()
+    K.set_session(sess)
 
     # override hyperparameters with post_train hyperparameters
     keys = filter(lambda k: k in config['hyperparameters'],
-                  config['post_train'].keys())
+                    config['post_train'].keys())
     for k in keys:
         config['hyperparameters'][k] = config['post_train'][k]
 
@@ -72,7 +77,6 @@ def train(config):
         logger.info(traceback.format_exc())
 
 
-
     if model_created:
         # model.load_weights(default_cfg['model_checkpoint']['filepath'])
 
@@ -86,6 +90,15 @@ def train(config):
 
                     if cb_name == 'ModelCheckpoint':
                         default_callbacks_config[cb_name]['filepath'] =  f'best_model_{config["id"]}.h5'
+                    elif cb_name == 'TensorBoard':
+                        if default_callbacks_config[cb_name]['beholder']:
+                            callbacks.append(
+                                BeholderCB(
+                                    logdir=default_callbacks_config[cb_name]['log_dir'],
+                                    sess=sess
+                                )
+                            )
+                            default_callbacks_config[cb_name].pop('beholder')
 
                     Callback = getattr(keras.callbacks, cb_name)
                     callbacks.append(Callback(**default_callbacks_config[cb_name]))
@@ -97,6 +110,7 @@ def train(config):
 
         trainer = TrainerTrainValid(config=config, model=model)
         trainer.callbacks.extend(callbacks)
+
 
         json_fname = f'post_training_hist_{config["id"]}.json'
         # to log the number of trainable parameters before running training
