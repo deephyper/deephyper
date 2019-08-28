@@ -53,17 +53,25 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
 
 .. toctree::
     :maxdepth: 2
-    :caption: Evaluators
+    :caption: Software
 
     evaluator/index
+    search/index
 
 .. toctree::
     :maxdepth: 2
-    :caption: Searches
+    :caption: Hyperparameter Search
 
-    search/index
     search/hps/index
-    search/nas/index
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Neural Architecture Search
+
+    search/nas/algorithms
+    search/nas/environments
+    search/nas/search_space
+    search/nas/training_pipeline
 
 
 .. toctree::

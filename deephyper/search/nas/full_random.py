@@ -2,13 +2,13 @@ import os
 import json
 from random import random, seed
 
-from deephyper.search import Search, util
+from deephyper.search import util
+from deephyper.search.nas import NeuralArchitectureSearch
 from deephyper.core.logs.logging import JsonMessage as jm
 from deephyper.evaluator.evaluate import Encoder
 
-dhlogger = util.conf_logger(
-    'deephyper.search.nas.full_random')
-class Random(Search):
+dhlogger = util.conf_logger('deephyper.search.nas.full_random')
+class Random(NeuralArchitectureSearch):
     """Search class to run a full random neural architecture search. The search is filling every available nodes as soon as they are detected. The master job is using only 1 MPI rank.
 
     Args:
@@ -19,7 +19,7 @@ class Random(Search):
 
     def __init__(self, problem, run, evaluator, **kwargs):
 
-        super().__init__(problem, run, evaluator, **kwargs)
+        super().__init__(problem=problem, run=run, evaluator=evaluator, **kwargs)
 
         seed(self.problem.seed)
 
@@ -36,23 +36,14 @@ class Random(Search):
 
         dhlogger.info(jm(
             type='start_infos',
-            alg='ambs-nas',
+            alg='random',
             nworkers=self.free_workers,
             encoded_space=json.dumps(self.problem.space, cls=Encoder)
-            ))
+        ))
 
     @staticmethod
     def _extend_parser(parser):
-        parser.add_argument("--problem",
-                            default="deephyper.benchmark.nas.linearReg.Problem",
-                            help="Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.nas.linearReg.Problem)."
-                            )
-        parser.add_argument("--run",
-                            default="deephyper.search.nas.model.run.alpha.run",
-                            help="Module path to the run function you want to use for the search (e.g. deephyper.search.nas.model.run.alpha.run)."
-                            )
-        parser.add_argument('--max-evals', type=int, default=1e10,
-                            help='maximum number of evaluations.')
+        NeuralArchitectureSearch._extend_parser(parser)
         return parser
 
     def main(self):

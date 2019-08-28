@@ -94,19 +94,17 @@ class Search:
         if parser is None:
             parser = argparse.ArgumentParser(conflict_handler='resolve')
         parser.add_argument("--problem",
-                            default="deephyper.benchmark.hps.polynome2.Problem",
-                            help="Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.hps.polynome2.Problem)."
+                            help="Module path to the Problem instance you want to use for the search."
                             )
         parser.add_argument("--run",
-                            default="deephyper.benchmark.hps.polynome2.run",
-                            help="Module path to the run function you want to use for the search (e.g. deephyper.benchmark.hps.polynome2.run)."
+                            help="Module path to the run function you want to use for the search."
                             )
         parser.add_argument("--backend",
                             default='tensorflow',
                             help="Keras backend module name"
                             )
         parser.add_argument('--max-evals',
-                            type=int, default=100,
+                            type=int, default=1000000,
                             help='maximum number of evaluations'
                             )
         parser.add_argument('--eval-timeout-minutes',

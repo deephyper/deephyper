@@ -3,7 +3,9 @@ import collections
 import numpy as np
 import json
 
-from deephyper.search import Search, util
+from deephyper.search import util
+from deephyper.search.nas import NeuralArchitectureSearch
+from deephyper.core.parser import add_arguments_from_signature
 from deephyper.core.logs.logging import JsonMessage as jm
 from deephyper.evaluator.evaluate import Encoder
 
@@ -13,7 +15,7 @@ dhlogger = util.conf_logger(
 # def key(d):
 #     return json.dumps(dict(arch_seq=d['arch_seq']), cls=Encoder)
 
-class RegularizedEvolution(Search):
+class RegularizedEvolution(NeuralArchitectureSearch):
     """Regularized evolution.
 
     https://arxiv.org/abs/1802.01548
@@ -22,9 +24,14 @@ class RegularizedEvolution(Search):
         problem (str): Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.nas.linearReg.Problem).
         run (str): Module path to the run function you want to use for the search (e.g. deephyper.search.nas.model.run.quick).
         evaluator (str): value in ['balsam', 'subprocess', 'processPool', 'threadPool'].
+        population_size (int, optional): the number of individuals to keep in the population. Defaults to 100.
+        sample_size (int, optional): the number of individuals that should participate in each tournament. Defaults to 10.
     """
 
-    def __init__(self, problem, run, evaluator, population_size=100, sample_size=10, **kwargs):
+    def __init__(self, problem, run, evaluator,
+        population_size=100,
+        sample_size=10,
+        **kwargs):
 
         if evaluator == 'balsam':  # TODO: async is a kw
             balsam_launcher_nodes = int(
@@ -37,7 +44,7 @@ class RegularizedEvolution(Search):
         else:
             self.free_workers = 1
 
-        super().__init__(problem, run, evaluator, **kwargs)
+        super().__init__(problem=problem, run=run, evaluator=evaluator, **kwargs)
 
         dhlogger.info(jm(
             type='start_infos',
@@ -60,20 +67,8 @@ class RegularizedEvolution(Search):
 
     @staticmethod
     def _extend_parser(parser):
-        parser.add_argument("--problem",
-                            default="deephyper.benchmark.nas.linearReg.Problem",
-                            help="Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.nas.linearReg.Problem)."
-                            )
-        parser.add_argument("--run",
-                            default="deephyper.search.nas.model.run.alpha.run",
-                            help="Module path to the run function you want to use for the search (e.g. deephyper.search.nas.model.run.alpha.run)."
-                            )
-        parser.add_argument("--max-evals", type=int, default=1e10,
-                            help="maximum number of evaluations.")
-        parser.add_argument("--population-size", type=int, default=100,
-                            help="the number of individuals to keep in the population.")
-        parser.add_argument("--sample-size", type=int, default=20,
-                            help="the number of individuals that should participate in each tournament.")
+        NeuralArchitectureSearch._extend_parser(parser)
+        add_arguments_from_signature(parser, RegularizedEvolution)
         return parser
 
     def main(self):

@@ -4,11 +4,11 @@ import signal
 
 from deephyper.core.logs.logging import JsonMessage as jm
 from deephyper.evaluator.evaluate import Encoder
-from deephyper.search import Search, util
-from .optimizer import Optimizer
+from deephyper.search import util
+from deephyper.search.nas import NeuralArchitectureSearch
+from deephyper.search.nas.optimizer import Optimizer
 
-dhlogger = util.conf_logger(
-    'deephyper.search.nas.ambs')
+dhlogger = util.conf_logger('deephyper.search.nas.ambs')
 
 SERVICE_PERIOD = 2          # Delay (seconds) between main loop iterations
 CHECKPOINT_INTERVAL = 1    # How many jobs to complete between optimizer checkpoints
@@ -20,34 +20,26 @@ def on_exit(signum, stack):
     EXIT_FLAG = True
 
 
-class AMBNeuralArchitectureSearch(Search):
+class AMBNeuralArchitectureSearch(NeuralArchitectureSearch):
     """Asynchronous Model-Based Search.
 
-    Arguments of AMBS:
-
-    * ``learner``
-
-        * ``RF`` : Random Forest (default)
-        * ``ET`` : Extra Trees
-        * ``GBRT`` : Gradient Boosting Regression Trees
-        * ``DUMMY`` :
-        * ``GP`` : Gaussian process
-
-    * ``liar-strategy``
-
-        * ``cl_max`` : (default)
-        * ``cl_min`` :
-        * ``cl_mean`` :
-
-    * ``acq-func`` : Acquisition function
-
-        * ``LCB`` :
-        * ``EI`` :
-        * ``PI`` :
-        * ``gp_hedge`` : (default)
+    Args:
+        problem ([type]): [description]
+        run ([type]): [description]
+        evaluator ([type]): [description]
+        learner (str, optional): Choices are ["RF", "ET", "GBRT", "DUMMY", "GP"]. ``RF`` is Random Forest, ``ET`` is Extra Trees, ``GBRT`` is Gradient Boosting Regression Trees, ``DUMMY`` is random, ``GP`` is Gaussian process. Defaults to "RF".
+        liar_strategy (str, optional): ["cl_max", "cl_min", "cl_mean"]. Defaults to "cl_max".
+        acq_func (str, optional): Acquisition function, choices are ["gp_hedge", "LCB", "EI", "PI"]. Defaults to "gp_hedge".
+        n_jobs (int, optional): Number of parallel jobs to distribute the learner. Defaults to -1, means as many as the number of logical cores.
     """
-    def __init__(self, problem, run, evaluator, **kwargs):
-        super().__init__(problem, run, evaluator, **kwargs)
+    def __init__(self, problem, run, evaluator,
+                learner="RF",
+                liar_strategy="cl_max",
+                acq_func="gp_hedge",
+                n_jobs=-1,
+                **kwargs):
+
+        super().__init__(problem=problem, run=run, evaluator=evaluator, **kwargs)
 
         if evaluator == 'balsam':  # TODO: async is a kw
             balsam_launcher_nodes = int(
@@ -68,24 +60,11 @@ class AMBNeuralArchitectureSearch(Search):
             ))
 
         dhlogger.info("Initializing AMBS")
-        self.optimizer = Optimizer(self.problem, self.num_workers, **kwargs)
+        self.optimizer = Optimizer(self.problem, self.num_workers, learner=learner, liar_strategy=liar_strategy, acq_func=acq_func, n_jobs=n_jobs, **kwargs)
 
     @staticmethod
     def _extend_parser(parser):
-        parser.add_argument("--problem",
-                            type=str,
-                            default="deephyper.benchmark.nas.linearReg.Problem",
-                            help="Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.nas.linearReg.Problem)."
-                            )
-        parser.add_argument("--run",
-                            type=str,
-                            default="deephyper.search.nas.model.run.alpha.run",
-                            help="Module path to the run function you want to use for the search (e.g. deephyper.search.nas.model.run.alpha.run)."
-                            )
-        parser.add_argument('--max-evals',
-                            type=int,
-                            default=1e10,
-                            help='maximum number of evaluations.')
+        NeuralArchitectureSearch._extend_parser(parser)
         parser.add_argument('--learner',
                             default='RF',
                             choices=["RF", "ET", "GBRT", "DUMMY", "GP"],

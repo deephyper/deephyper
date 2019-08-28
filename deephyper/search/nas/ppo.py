@@ -1,6 +1,6 @@
 import os
 
-
+from deephyper.core.parser import add_arguments_from_signature
 from deephyper.search.nas.rl import ReinforcementLearningSearch
 
 try:
@@ -14,8 +14,14 @@ class Ppo(ReinforcementLearningSearch):
 
     Args:
         problem (str): Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.nas.linearReg.Problem).
-        run (str): Module path to the run function you want to use for the search (e.g. deephyper.search.nas.model.run.quick).
-        evaluator (str): value in ['balsam', 'subprocess', 'processPool', 'threadPool'].
+        run (str): Module path to the run function you want to use for the search (e.g. deephyper.search.nas.model.run.alpha.run).
+        evaluator (str): value in ['balsam', 'ray', 'subprocess', 'processPool', 'threadPool']. Default to 'ray'.
+        cliprange (float, optional): Clipping parameter of PPO. Defaults to 0.2.
+        ent_coef (float, optional): Entropy parameter for PPO. Adding entropy helps to avoid convergence to a local optimum. To increase the entropy parameter is to increase exploration. Defaults to 0.01.
+        gamma (float, optional): Gamma parameter for advantage function in RL, discounting factor for rewards. Defaults to 1.0.
+        lam (float, optional): Lambda parameter for advantage function in RL, advantage estimation discounting factor (lambda in the paper). Defaults to 0.95.
+        nminibatches (int, optional): Number of minibatches per environments. Here it's directly the number of batch of architectures. Defaults to 1.
+        noptepochs (int, optional): Number of optimization steps to do per epochs. Basicaly it means the number of time you want to use learning data. Defaults to 10.
         network: (str): policy network for the search, value in [
             'ppo_lstm_128',
             'ppo_lnlstm_128',
@@ -26,7 +32,15 @@ class Ppo(ReinforcementLearningSearch):
             ].
     """
 
-    def __init__(self, problem, run, evaluator, network, nenvs=None, **kwargs):
+    def __init__(self, problem, run, evaluator,
+        network='ppo_lnlstm_128',
+        cliprange=0.2,
+        ent_coef=0.01,
+        gamma=1.0,
+        lam=0.95,
+        nminibatches=1,
+        noptepochs=10,
+        **kwargs):
 
         if MPI is None:
             nenvs = 1
@@ -44,57 +58,23 @@ class Ppo(ReinforcementLearningSearch):
             else:
                 nenvs = 1
 
-        super().__init__(problem, run, evaluator,
-                            alg="ppo2",
-                            network=network,
-                            num_envs=nenvs,
-                            **kwargs)
+        super().__init__(problem, run,
+            alg="ppo2",
+            num_envs=nenvs,
+            evaluator=evaluator,
+            network=network,
+            cliprange=cliprange,
+            ent_coef=ent_coef,
+            gamma=gamma,
+            lam=lam,
+            nminibatches=nminibatches,
+            noptepochs=noptepochs,
+            **kwargs)
 
     @staticmethod
     def _extend_parser(parser):
         ReinforcementLearningSearch._extend_parser(parser)
-        parser.add_argument("--cliprange",
-                            type=float,
-                            default=0.2,
-                            help="Clipping parameter of PPO."
-                            )
-        parser.add_argument("--ent-coef",
-                            type=float,
-                            default=0.01,
-                            help="Entropy parameter for PPO. Adding entropy helps to avoid convergence to a local optimum. To increase the entropy parameter is to increase exploration."
-                            )
-        parser.add_argument("--gamma",
-                            type=float,
-                            default=1., # sparse rewards
-                            help="Gamma parameter for advantage function in RL, discounting factor for rewards.")
-        parser.add_argument("--lam",
-                            type=float,
-                            default=0.95,
-                            help="Lambda parameter for advantage function in RL, advantage estimation discounting factor (lambda in the paper).")
-        parser.add_argument("--nminibatches",
-                            type=int,
-                            default=1,
-                            help="Number of minibatches per environments. Here it's directly the number of batch of architectures.")
-        parser.add_argument("--noptepochs",
-                            type=int,
-                            default=10,
-                            help="Number of optimization steps to do per epochs. Basicaly it means the number of time you want to use learning data.")
-        parser.add_argument('--max-evals', type=int, default=1e10,
-                            help='maximum number of learning update.')
-        parser.add_argument('--network', type=str, default='ppo_lnlstm_128',
-                            choices=[
-                                'ppo_lstm_128',
-                                'ppo_lnlstm_128',
-                                'ppo_lstm_64',
-                                'ppo_lnlstm_64',
-                                'ppo_lstm_32',
-                                'ppo_lnlstm_32'
-                            ],
-                            help='Policy-Value network.')
-        parser.add_argument('--nenvs',
-                            type=int,
-                            default=None,
-                            help="Number of parallel environments to use.")
+        add_arguments_from_signature(parser, Ppo)
         return parser
 
 

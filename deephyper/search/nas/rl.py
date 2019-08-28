@@ -6,7 +6,8 @@ from importlib import import_module
 
 import tensorflow as tf
 
-from deephyper.search import Search, util
+from deephyper.search import util
+from deephyper.search.nas import NeuralArchitectureSearch
 from deephyper.evaluator.evaluate import Encoder
 from deephyper.search.nas.baselines import logger
 from deephyper.search.nas.env.neural_architecture_envs import \
@@ -22,7 +23,7 @@ except ImportError:
 dhlogger = util.conf_logger('deephyper.search.nas.rl')
 
 
-class ReinforcementLearningSearch(Search):
+class ReinforcementLearningSearch(NeuralArchitectureSearch):
     """Represents different kind of RL algorithms working with NAS.
 
     Args:
@@ -37,8 +38,7 @@ class ReinforcementLearningSearch(Search):
         cache_key (str): ...
     """
 
-    def __init__(self, problem, run, evaluator,  alg, network, num_envs,
-                 **kwargs):
+    def __init__(self, problem, run, evaluator, alg, network, num_envs, **kwargs):
 
         self.kwargs = kwargs
 
@@ -53,7 +53,7 @@ class ReinforcementLearningSearch(Search):
 
         if MPI is None:
             self.rank = 0
-            super().__init__(problem, run, evaluator, **kwargs)
+            super().__init__(problem=problem, run=run, evaluator=evaluator, **kwargs)
             dhlogger.info(jm(
                 type='start_infos',
                 seed=self.problem.seed,
@@ -66,7 +66,7 @@ class ReinforcementLearningSearch(Search):
         else:
             self.rank = MPI.COMM_WORLD.Get_rank()
             if self.rank == 0:
-                super().__init__(problem, run, evaluator, **kwargs)
+                super().__init__(problem=problem, run=run, evaluator=evaluator, **kwargs)
                 dhlogger.info(jm(
                     type='start_infos',
                     seed=self.problem.seed,
@@ -78,7 +78,7 @@ class ReinforcementLearningSearch(Search):
                     encoded_space=json.dumps(self.problem.space, cls=Encoder)))
             MPI.COMM_WORLD.Barrier()
             if self.rank != 0:
-                super().__init__(problem, run, evaluator, **kwargs)
+                super().__init__(problem=problem, run=run, evaluator=evaluator, **kwargs)
         # set in super : self.problem, self.run_func, self.evaluator
 
         if self.problem.seed is not None:
@@ -102,25 +102,7 @@ class ReinforcementLearningSearch(Search):
 
     @staticmethod
     def _extend_parser(parser):
-        parser.add_argument("--problem",
-                            type=str,
-                            default="deephyper.benchmark.nas.linearReg.Problem",
-                            help="Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.nas.linearReg.Problem)."
-                            )
-        parser.add_argument("--run",
-                            type=str,
-                            default="deephyper.search.nas.model.run.alpha.run",
-                            help="Module path to the run function you want to use for the search (e.g. deephyper.search.nas.model.run.alpha.run)."
-                            )
-        parser.add_argument('--max-evals',
-                            type=int,
-                            default=1e10,
-                            help='maximum number of evaluations.')
-        parser.add_argument('--network',
-                            type=str,
-                            default='ppo_lstm',
-                            choices=['ppo_lstm'],
-                            help='Policy-Value network.')
+        NeuralArchitectureSearch._extend_parser(parser)
         return parser
 
     def main(self):
@@ -193,8 +175,7 @@ def build_env(num_envs, space, evaluator):
         architecture = space['create_structure']['func']()
     else:
         architecture = space['create_structure']['func'](**cs_kwargs)
-    env = NeuralArchitectureVecEnv(num_envs, space, evaluator,
-                                   architecture)
+    env = NeuralArchitectureVecEnv(num_envs, space, evaluator, architecture)
     return env
 
 
@@ -225,9 +206,3 @@ def get_learn_function_defaults(alg):
     except (ImportError, AttributeError):
         kwargs = {}
     return kwargs
-
-
-if __name__ == '__main__':
-    kwargs = get_learn_function_defaults('ppo2')
-    from pprint import pprint
-    pprint(kwargs)

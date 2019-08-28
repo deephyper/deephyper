@@ -1,49 +1,56 @@
 Algorithms
 **********
 
-.. autoclass:: deephyper.search.nas.rl.ReinforcementLearningSearch
-    :members:
-
-NAS (PPO) Asynchronous
-======================
+Proximal Policy Optimization
+============================
 
 .. autoclass:: deephyper.search.nas.ppo.Ppo
     :members:
 
-Run locally
------------
+If you want to run the proximal policy optimization search without MPI:
 
-Without MPI:
+.. code-block:: console
+    :caption: bash
 
-::
-
-    $ python -m deephyper.search.nas.ppo --problem deephyper.benchmark.nas.mnist1D.Problem --run deephyper.search.nas.model.run.alpha.run
+    deephyper nas ppo --problem deephyper.benchmark.nas.mnist1D.Problem
 
 
-With MPI (i.e. several agents):
+and with MPI (i.e. several agents):
 
-::
+.. code-block:: console
+    :caption: bash
 
-    $ mpirun -np 2 python -m deephyper.search.nas.ppo --problem deephyper.benchmark.nas.mnist1D.Problem --run deephyper.search.nas.model.run.alpha.run
+    mpirun -np 2 deephyper nas ppo --problem deephyper.benchmark.nas.mnist1D.Problem
+
+Regularized Evolution
+=====================
+
+.. autoclass:: deephyper.search.nas.regevo.RegularizedEvolution
+    :members:
+
+If you want to run the aging evolution search:
+
+.. code-block:: console
+    :caption: bash
+
+    deephyper nas regevo --problem deephyper.benchmark.nas.mnist1D.Problem
+
 
 Asynchronous Model Based Neural Architecture Search (AMBNAS)
 ============================================================
 
 .. autoclass:: deephyper.search.nas.ambs.AMBNeuralArchitectureSearch
-    :memeber:
+    :members:
 
-NAS Full Random
+Random Search
 ===============
 
 .. autoclass:: deephyper.search.nas.full_random.Random
-   :members:
+    :members:
 
+If you want to run the random search:
 
-Run locally
------------
+.. code-block:: console
+    :caption: bash
 
-There isn't any MPI implementation for the full random search.
-
-::
-
-    $ python -m deephyper.search.nas.full_random --problem deephyper.benchmark.nas.linearReg.Problem --run deephyper.search.nas.model.run.alpha.run
+    deephyper nas random --problem deephyper.benchmark.nas.linearReg.Problem

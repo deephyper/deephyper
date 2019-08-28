@@ -7,11 +7,11 @@ from tensorflow import keras
 from tensorflow.python.keras.utils.vis_utils import model_to_dot
 
 from deephyper.core.exceptions.nas.architecture import (InputShapeOfWrongType,
-                                                  NodeAlreadyAdded,
-                                                  StructureHasACycle,
-                                                  WrongSequenceToSetOperations)
+                                                    NodeAlreadyAdded,
+                                                    StructureHasACycle,
+                                                    WrongSequenceToSetOperations)
 from deephyper.search.nas.model.space.node import (ConstantNode, Node,
-                                                   VariableNode)
+                                                    VariableNode)
 from deephyper.search.nas.model.space.op.basic import Tensor
 from deephyper.search.nas.model.space.op.merge import Concatenate
 from deephyper.search.nas.model.space.op.op1d import Identity
@@ -24,7 +24,7 @@ class AutoKArchitecture(KArchitecture):
     Args:
         input_shape (list(tuple(int))): list of shapes of all inputs.
         output_shape (tuple(int)): shape of output.
-        regression (bool): if ``True`` the output will be a simple ``tf.keras.layers.Dense(output_shape[0])`` layer as the output layer. if ``False`` the output will be ``tf.keras.layers.Dense(output_shape[0], activation='softmax').
+        regression (bool): if ``True`` the output will be a simple ``tf.keras.layers.Dense(output_shape[0])`` layer as the output layer. if ``False`` the output will be ``tf.keras.layers.Dense(output_shape[0], activation='softmax')``.
 
     Raises:
         InputShapeOfWrongType: [description]

@@ -43,5 +43,5 @@ Architecture
 .. autoclass:: deephyper.search.nas.model.space.architecture.KArchitecture
     :members:
 
-.. autoclass:: deephyer.search.nas.model.space.architecture.AutoKArchitecture
+.. autoclass:: deephyper.search.nas.model.space.architecture.AutoKArchitecture
     :members:

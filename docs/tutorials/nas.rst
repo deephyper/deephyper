@@ -46,7 +46,7 @@ a function :math:`f` where :math:`X \in [a, b]^n`  such as
 .. literalinclude:: polynome2/load_data.py
     :linenos:
     :caption: polynome2/load_data.py
-    :name: polynome2-load_data
+    :name: polynome2-load_data-nas
 
 Test the ``load_data`` function:
 
