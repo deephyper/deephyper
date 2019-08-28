@@ -1,22 +1,29 @@
 Command line
 ************
 
+For hyperparameter search use ``deephyper hps ...``. If you want to run the
+polynome2 hyperparameter search benchmark with the asynchronous model-based
+search do:
+
 .. code-block:: console
     :caption: bash
 
-    $ deephyper --help
-    usage: deephyper [-h] {nas-init,nas,hps-init,hps} ...
+    deephyper hps ambs --problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run
 
-    DeepHyper command line.
 
-    positional arguments:
-    {nas-init,nas,hps-init,hps}
-        nas-init            Tool to init a neural architecture search package or a
-                            neural architecture search problem folder.
-        nas                 Command line to run neural architecture search.
-        hps-init            Tool to init an hyper-parameter search package or an
-                            hyper-parameter search problem folder.
-        hps                 Command line to run hyper-parameter search.
+For neural architecture search use ``deephyper nas ...``. If you want to run
+the linearReg neural architecture search benchmark with regularized evolution
+do:
 
-    optional arguments:
-    -h, --help            show this help message and exit
+.. code-block:: console
+    :caption: bash
+
+    deephyper nas regevo --problem deephyper.benchmark.nas.linearReg.Problem
+
+If you want to initialize an hyperparameter or neural architecture search
+problem folder you can use ``deephyper hps-init ...`` or
+``deephyper nas-init ...`` respectively.
+
+Use commands such as ``deephyper --help``, ``deephyper nas --help`` or
+``deephyper nas regevo --help`` to find out more about the command line
+interface.
