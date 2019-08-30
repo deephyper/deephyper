@@ -51,4 +51,81 @@ Use the `.. --n-jobs ...` to define how to distribute the learner computation in
 
 ## MimeNode to replicate actions
 
-* MimeNode
+The goal of `MimeNode` is to replicate the action applied on the targeted variable node.
+
+```python
+import tensorflow as tf
+
+from deephyper.search.nas.model.space.node import VariableNode, MimeNode
+from deephyper.search.nas.model.space.op.op1d import Dense
+
+vnode = VariableNode()
+dense_10_op = Dense(10)
+vnode.add_op(dense_10_op)
+vnode.add_op(Dense(20))
+
+mnode = MimeNode(vnode)
+dense_30_op = Dense(30)
+mnode.add_op(dense_30_op)
+mnode.add_op(Dense(40))
+
+# The first operation "Dense(10)" has been choosen
+# for the mimed node: vnode
+vnode.set_op(0)
+
+assert vnode.op == dense_10_op
+
+# mnode is miming the choise made for vnode as you can see
+# the first operation was choosen as well
+assert mnode.op == dense_30_op
+```
+
+## MirrorNode to reuse same operation
+
+The goal of `MirroNode` is to replicate the action applied on the targeted `VariableNode`,
+`ConstantNode` or `MimeNode`.
+
+```python
+import tensorflow as tf
+
+from deephyper.search.nas.model.space.node import VariableNode, MirrorNode
+from deephyper.search.nas.model.space.op.op1d import Dense
+
+vnode = VariableNode()
+dense_10_op = Dense(10)
+vnode.add_op(dense_10_op)
+vnode.add_op(Dense(20))
+
+mnode = MirrorNode(vnode)
+
+# The operation "Dense(10)" is being set for vnode.
+vnode.set_op(0)
+
+# The same operation (i.e. same instance) is now returned by both vnode and mnode.
+assert vnode.op == dense_10_op
+assert mnode.op == dense_10_op
+```
+
+## Tensorboard and Beholder callbacks available for post-training
+
+Tensorboard and Beholder callbacks can now be used during the post-training. Beholder is
+a Tensorboard which enable you to visualize the evolution of the trainable parameters of
+model during the training.
+
+```python
+Problem.post_training(
+    ...
+    callbacks=dict(
+        TensorBoard={
+            'log_dir':'tb_logs',
+            'histogram_freq':1,
+            'batch_size':64,
+            'write_graph':True,
+            'write_grads':True,
+            'write_images':True,
+            'update_freq':'epoch',
+            'beholder': True
+        })
+)
+```
+

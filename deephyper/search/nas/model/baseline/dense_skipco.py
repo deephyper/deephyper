@@ -54,28 +54,3 @@ def create_search_space(input_shape=(10,),
 
 
     return arch
-
-
-def test_create_search_space():
-    """Generate a random neural network from the architecture definition.
-    """
-    from random import random
-    from tensorflow.keras.utils import plot_model
-    import tensorflow as tf
-
-    architecture = create_search_space(num_layers=10)
-    ops = [random() for _ in range(architecture.num_nodes)]
-
-    print(f'This architecture needs {len(ops)} choices to generate a neural network.')
-
-    architecture.set_ops(ops)
-
-    model = architecture.create_model()
-    model.summary()
-
-    plot_model(model, to_file='sampled_neural_network.png', show_shapes=True)
-    print("The sampled_neural_network.png file has been generated.")
-
-
-if __name__ == '__main__':
-    test_create_search_space()
