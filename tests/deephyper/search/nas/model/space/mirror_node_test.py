@@ -1,5 +1,3 @@
-import tensorflow as tf
-
 from deephyper.search.nas.model.space.node import VariableNode, MirrorNode
 from deephyper.search.nas.model.space.op.op1d import Dense
 

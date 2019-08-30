@@ -14,16 +14,17 @@ class Operation:
 
     def __init__(self, layer: keras.layers.Layer):
         assert isinstance(layer, keras.layers.Layer)
+        self.from_keras_layer = True
         self._layer = layer
 
     def __str__(self):
         return self.__repr__()
 
     def __repr__(self):
-        if hasattr(self, '_layer'):
+        if hasattr(self, 'from_keras_layer'):
             return type(self._layer).__name__
         else:
-            return type(self).__name__
+            return str(self)
 
     def __call__(self, tensors: list, seed: int=None, **kwargs):
         """

@@ -153,6 +153,8 @@ class ConstantNode(OperationNode):
     >>> from deephyper.search.nas.model.space.node import ConstantNode
     >>> from deephyper.search.nas.model.space.op.op1d import Dense
     >>> cnode = ConstantNode(op=Dense(units=100, activation=tf.nn.relu), name='CNode1')
+    >>> cnode.op
+    Dense_100_relu
 
     Args:
         op (Operation, optional): [description]. Defaults to None.
@@ -182,11 +184,23 @@ class ConstantNode(OperationNode):
 class MirrorNode(OperationNode):
     """A MirrorNode is a node which reuse an other, it enable the reuse of keras layers. This node will not add operations to choose.
 
-    Arguments:
-        node {Node} -- [description]
-    """
+    Args:
+        node (Node): The targeted node to mirror.
 
+    >>> from deephyper.search.nas.model.space.node import VariableNode, MirrorNode
+    >>> from deephyper.search.nas.model.space.op.op1d import Dense
+    >>> vnode = VariableNode()
+    >>> vnode.add_op(Dense(10))
+    >>> vnode.add_op(Dense(20))
+    >>> mnode = MirrorNode(vnode)
+    >>> vnode.set_op(0)
+    >>> vnode.op
+    Dense_10
+    >>> mnode.op
+    Dense_10
+    """
     def __init__(self, node):
+
         super().__init__(name=f"Mirror[{str(node)}]")
         self._node = node
 
@@ -200,6 +214,20 @@ class MimeNode(OperationNode):
 
     Args:
         node (VariableNode): the VariableNode to mime.
+
+    >>> from deephyper.search.nas.model.space.node import VariableNode, MimeNode
+    >>> from deephyper.search.nas.model.space.op.op1d import Dense
+    >>> vnode = VariableNode()
+    >>> vnode.add_op(Dense(10))
+    >>> vnode.add_op(Dense(20))
+    >>> mnode = MimeNode(vnode)
+    >>> mnode.add_op(Dense(30))
+    >>> mnode.add_op(Dense(40))
+    >>> vnode.set_op(0)
+    >>> vnode.op
+    Dense_10
+    >>> mnode.op
+    Dense_30
     """
     def __init__(self, node):
         super().__init__(name=f"Mime[{str(node)}]")
