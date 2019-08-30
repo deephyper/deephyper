@@ -10,7 +10,7 @@ from deephyper.search import util
 from deephyper.search.nas import NeuralArchitectureSearch
 from deephyper.evaluator.evaluate import Encoder
 from deephyper.search.nas.baselines import logger
-from deephyper.search.nas.env.neural_search_space_envs import \
+from deephyper.search.nas.env.neural_architecture_envs import \
     NeuralArchitectureVecEnv
 from deephyper.core.logs.logging import JsonMessage as jm
 

@@ -1,6 +1,8 @@
 from tensorflow import keras
-from deephyper.search.nas.model.space.op.basic import Operation
-from deephyper.core.exceptions import DeephyperRuntimeError
+
+from .....core.exceptions import DeephyperRuntimeError
+from .op.basic import Operation
+
 
 class Node:
     """This class represents a node of a graph
@@ -251,4 +253,3 @@ class MimeNode(OperationNode):
     @property
     def ops(self):
         return self._ops
-

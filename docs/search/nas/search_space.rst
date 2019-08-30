@@ -1,11 +1,11 @@
-Architecture space
-******************
+Search space
+************
 
 .. toctree::
-   :maxdepth: 2
+    :maxdepth: 2
 
-   layers/index
-   op/index
+    layers/index
+    op/index
 
 Nodes
 =====
@@ -37,7 +37,7 @@ MimeNode
 .. autoclass:: deephyper.search.nas.model.space.node.MimeNode
     :members:
 
-Architecture
+Search Space
 ============
 
 .. autoclass:: deephyper.search.nas.model.space.KSearchSpace

@@ -1,6 +1,6 @@
-from deephyper.search.nas.model.space.nx_search_space import NxSearchSpace
-from deephyper.search.nas.model.space.keras_search_space import KSearchSpace
-from deephyper.search.nas.model.space.auto_keras_search_space import AutoKSearchSpace
+from .nx_search_space import NxSearchSpace
+from .keras_search_space import KSearchSpace
+from .auto_keras_search_space import AutoKSearchSpace
 
 __all__ = [
     'NxSearchSpace',

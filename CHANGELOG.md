@@ -27,7 +27,7 @@ Use commands such as `deephyper --help`, `deephyper nas --help` or `deephyper na
 ```python
 >>> import tensorflow as tf
 >>> from deephyper.search.nas.model.space.node import VariableNode
->>> from deephyper.search.nas.model.space.op.op1d import Operation
+>>> from deephyper.search.nas.model.space.op import Operation
 >>> vnode = VariableNode()
 >>> vnode.add_op(Operation(layer=tf.keras.layers.Dense(10)))
 ```

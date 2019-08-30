@@ -1,5 +1,5 @@
 Environments
 ************
 
-.. autoclass:: deephyper.search.nas.env.neural_search_space_envs.NeuralArchitectureVecEnv
+.. autoclass:: deephyper.search.nas.env.neural_architecture_envs.NeuralArchitectureVecEnv
     :members:
