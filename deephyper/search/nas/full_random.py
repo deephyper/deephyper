@@ -50,13 +50,13 @@ class Random(NeuralArchitectureSearch):
 
         # Setup
         space = self.problem.space
-        cs_kwargs = space['create_architecture'].get('kwargs')
+        cs_kwargs = space['create_search_space'].get('kwargs')
         if cs_kwargs is None:
-            architecture = space['create_architecture']['func']()
+            search_space = space['create_search_space']['func']()
         else:
-            architecture = space['create_architecture']['func'](**cs_kwargs)
+            search_space = space['create_search_space']['func'](**cs_kwargs)
 
-        len_arch = architecture.num_nodes
+        len_arch = search_space.num_nodes
         def gen_arch(): return [random() for _ in range(len_arch)]
 
         num_evals_done = 0

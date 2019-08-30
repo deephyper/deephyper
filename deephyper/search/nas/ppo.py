@@ -20,7 +20,7 @@ class Ppo(ReinforcementLearningSearch):
         ent_coef (float, optional): Entropy parameter for PPO. Adding entropy helps to avoid convergence to a local optimum. To increase the entropy parameter is to increase exploration. Defaults to 0.01.
         gamma (float, optional): Gamma parameter for advantage function in RL, discounting factor for rewards. Defaults to 1.0.
         lam (float, optional): Lambda parameter for advantage function in RL, advantage estimation discounting factor (lambda in the paper). Defaults to 0.95.
-        nminibatches (int, optional): Number of minibatches per environments. Here it's directly the number of batch of architectures. Defaults to 1.
+        nminibatches (int, optional): Number of minibatches per environments. Here it's directly the number of batch of search_spaces. Defaults to 1.
         noptepochs (int, optional): Number of optimization steps to do per epochs. Basicaly it means the number of time you want to use learning data. Defaults to 10.
         network: (str): policy network for the search, value in [
             'ppo_lstm_128',

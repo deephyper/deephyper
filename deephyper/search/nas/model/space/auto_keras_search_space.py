@@ -6,20 +6,20 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.python.keras.utils.vis_utils import model_to_dot
 
-from deephyper.core.exceptions.nas.architecture import (InputShapeOfWrongType,
-                                                    NodeAlreadyAdded,
-                                                    StructureHasACycle,
-                                                    WrongSequenceToSetOperations)
-from deephyper.search.nas.model.space.node import (ConstantNode, Node,
-                                                    VariableNode)
-from deephyper.search.nas.model.space.op.basic import Tensor
-from deephyper.search.nas.model.space.op.merge import Concatenate
-from deephyper.search.nas.model.space.op.op1d import Identity
-from deephyper.search.nas.model.space.architecture import KArchitecture
+from deephyper.core.exceptions.nas.space import (InputShapeOfWrongType,
+                                                 NodeAlreadyAdded,
+                                                 StructureHasACycle,
+                                                 WrongSequenceToSetOperations)
+
+from . import KSearchSpace
+from .node import ConstantNode, Node, VariableNode
+from .op.basic import Tensor
+from .op.merge import Concatenate
+from .op.op1d import Identity
 
 
-class AutoKArchitecture(KArchitecture):
-    """An AutoKArchitecture represents a search space of neural networks.
+class AutoKSearchSpace(KSearchSpace):
+    """An AutoKSearchSpace represents a search space of neural networks.
 
     Args:
         input_shape (list(tuple(int))): list of shapes of all inputs.
@@ -35,7 +35,7 @@ class AutoKArchitecture(KArchitecture):
         self.regression = regression
 
     def create_model(self):
-        """Create the tensors corresponding to the architecture.
+        """Create the tensors corresponding to the search_space.
 
         Returns:
             The output tensor.

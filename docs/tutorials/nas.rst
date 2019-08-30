@@ -13,10 +13,10 @@ A  neural architecture search (NAS) problem can be defined using three files wit
                 __init__.py
                 load_data.py
                 problem.py
-                architecture.py
+                search_space.py
 
 
-We will illustrate the NAS problem definition using a regression example. We will use polynome function to generate training and test data and run a NAS to find the best architecture for this experiment.
+We will illustrate the NAS problem definition using a regression example. We will use polynome function to generate training and test data and run a NAS to find the best search_space for this experiment.
 
 Create a python package
 =======================
@@ -65,16 +65,16 @@ The expected output is:
     test_X shape: (2000, 10)
     test_y shape: (2000, 1)
 
-Create architecture.py
+Create search_space.py
 ======================
 
-Then, we will take a look at ``architecture.py`` which contains the code for
-the neural network architecture definition.
+Then, we will take a look at ``search_space.py`` which contains the code for
+the neural network search_space definition.
 
-.. literalinclude:: polynome2_nas/architecture.py
+.. literalinclude:: polynome2_nas/search_space.py
     :linenos:
-    :caption: polynome2/architecture.py
-    :name: polynome2-architecture
+    :caption: polynome2/search_space.py
+    :name: polynome2-search_space
 
 
 Create problem.py
@@ -102,7 +102,7 @@ The expected output is:
 
     Problem is:
     * SEED = 2019 *
-        - search space   : nas_problems.polynome2.architecture.create_search_space
+        - search space   : nas_problems.polynome2.search_space.create_search_space
         - data loading   : nas_problems.polynome2.load_data.load_data
         - preprocessing  : deephyper.search.nas.model.preprocessing.minmaxstdscaler
         - hyperparameters:
@@ -122,13 +122,13 @@ The expected output is:
 Running the search locally
 ==========================
 
-Everything is ready to run. Let's remember the architecture of our experiment::
+Everything is ready to run. Let's remember the search_space of our experiment::
 
     polynome2/
         __init__.py
         load_data.py
         problem.py
-        architecture.py
+        search_space.py
 
 Each of these files have been tested one by one on the local machine.
 Next, we will run a random search (RDM).

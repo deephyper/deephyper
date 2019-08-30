@@ -82,7 +82,7 @@ Transformations from JSON file
 
     positional arguments:
     {best}      Kind of analytics.
-        best      Select the best n architectures and save them into a JSON file.
+        best      Select the best n search_spaces and save them into a JSON file.
 
 
 Single study

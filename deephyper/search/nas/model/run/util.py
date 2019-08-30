@@ -1,6 +1,7 @@
 import numpy as np
-from deephyper.search import util
-from deephyper.core.exceptions.problem import WrongProblemObjective
+
+from .....core.exceptions.problem import WrongProblemObjective
+from ....search import util
 
 logger = util.conf_logger('deephyper.search.nas.run')
 
@@ -8,8 +9,8 @@ def load_config(config):
     # ! load functions
     config['load_data']['func'] = util.load_attr_from(config['load_data']['func'])
 
-    config['create_architecture']['func'] = util.load_attr_from(
-        config['create_architecture']['func'])
+    config['create_search_space']['func'] = util.load_attr_from(
+        config['create_search_space']['func'])
 
     if not config.get('preprocessing') is None:
         config['preprocessing']['func'] = util.load_attr_from(config['preprocessing']['func'])
@@ -68,20 +69,20 @@ def setup_data(config):
     return input_shape, output_shape
 
 
-def setup_architecture(config, input_shape, output_shape, seed):
+def setup_search_space(config, input_shape, output_shape, seed):
 
-    create_architecture = config['create_architecture']['func']
-    cs_kwargs = config['create_architecture'].get('kwargs')
+    create_search_space = config['create_search_space']['func']
+    cs_kwargs = config['create_search_space'].get('kwargs')
     if cs_kwargs is None:
-        architecture = create_architecture(input_shape, output_shape, seed=seed)
+        search_space = create_search_space(input_shape, output_shape, seed=seed)
     else:
-        architecture = create_architecture(input_shape, output_shape, seed=seed, **cs_kwargs)
+        search_space = create_search_space(input_shape, output_shape, seed=seed, **cs_kwargs)
 
     arch_seq = config['arch_seq']
     logger.info(f'actions list: {arch_seq}')
-    architecture.set_ops(arch_seq)
+    search_space.set_ops(arch_seq)
 
-    return architecture
+    return search_space
 
 
 def compute_objective(objective, history):

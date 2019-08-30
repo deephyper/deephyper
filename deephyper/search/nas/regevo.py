@@ -55,13 +55,13 @@ class RegularizedEvolution(NeuralArchitectureSearch):
 
         # Setup
         self.pb_dict = self.problem.space
-        cs_kwargs = self.pb_dict['create_architecture'].get('kwargs')
+        cs_kwargs = self.pb_dict['create_search_space'].get('kwargs')
         if cs_kwargs is None:
-            architecture = self.pb_dict['create_architecture']['func']()
+            search_space = self.pb_dict['create_search_space']['func']()
         else:
-            architecture = self.pb_dict['create_architecture']['func'](**cs_kwargs)
+            search_space = self.pb_dict['create_search_space']['func'](**cs_kwargs)
 
-        self.space_list = [(0, vnode.num_ops-1) for vnode in architecture.variable_nodes]
+        self.space_list = [(0, vnode.num_ops-1) for vnode in search_space.variable_nodes]
         self.population_size = population_size
         self.sample_size = sample_size
 
@@ -127,11 +127,11 @@ class RegularizedEvolution(NeuralArchitectureSearch):
         batch = []
         for _ in range(size):
             cfg = self.pb_dict.copy()
-            cfg['arch_seq'] = self.random_architecture()
+            cfg['arch_seq'] = self.random_search_space()
             batch.append(cfg)
         return batch
 
-    def random_architecture(self) -> list:
+    def random_search_space(self) -> list:
         return [np.random.choice(b+1) for (_,b) in self.space_list]
 
     def copy_mutate_arch(self, parent_arch: list) -> dict:
@@ -151,7 +151,7 @@ class RegularizedEvolution(NeuralArchitectureSearch):
         range_upper_bound = self.space_list[i][1]
         elements = [j for j in range(range_upper_bound+1) if j != child_arch[i]]
 
-        # The mutation has to create a different architecture!
+        # The mutation has to create a different search_space!
         sample = np.random.choice(elements, 1)[0]
 
         child_arch[i] = sample

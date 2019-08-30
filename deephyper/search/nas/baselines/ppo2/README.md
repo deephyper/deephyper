@@ -12,7 +12,7 @@
     `ppo_cnn_lstm` network.
 - `python -m baselines.run --alg=ppo2 --env=Ant-v2 --num_timesteps=1e6 --network=ppo_lstm --value_network=copy`
     runs on a Mujoco Ant environment with `ppo_lstm` network whose value and policy networks are separated, but have
-    same architecture.
+    same search_space.
 
 ## See Also
 - refer to the repo-wide [README.md](../../README.md#training-models)

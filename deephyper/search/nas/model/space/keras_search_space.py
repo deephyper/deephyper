@@ -5,27 +5,27 @@ import networkx as nx
 from tensorflow import keras
 from tensorflow.python.keras.utils.vis_utils import model_to_dot
 
-from deephyper.core.exceptions.nas.architecture import (InputShapeOfWrongType,
-                                                  NodeAlreadyAdded,
-                                                  StructureHasACycle,
-                                                  WrongSequenceToSetOperations,
-                                                  WrongOutputShape)
+from deephyper.core.exceptions.nas.space import (InputShapeOfWrongType,
+                                                 NodeAlreadyAdded,
+                                                 StructureHasACycle,
+                                                 WrongOutputShape,
+                                                 WrongSequenceToSetOperations)
+from deephyper.search.nas.model.space import NxSearchSpace
 from deephyper.search.nas.model.space.node import (ConstantNode, Node,
                                                    VariableNode)
 from deephyper.search.nas.model.space.op.basic import Tensor
 from deephyper.search.nas.model.space.op.merge import Concatenate
 from deephyper.search.nas.model.space.op.op1d import Identity
-from deephyper.search.nas.model.space.architecture import NxArchitecture
 
 
-class KArchitecture(NxArchitecture):
-    """A KArchitecture represents a search space of neural networks.
+class KSearchSpace(NxSearchSpace):
+    """A KSearchSpace represents a search space of neural networks.
 
     >>> from tensorflow.keras.utils import plot_model
-    >>> from deephyper.search.nas.model.space.architecture import KArchitecture
+    >>> from deephyper.search.nas.model.space import KSearchSpace
     >>> from deephyper.search.nas.model.space.node import VariableNode, ConstantNode
     >>> from deephyper.search.nas.model.space.op.op1d import Dense
-    >>> struct = KArchitecture((5, ), (1, ))
+    >>> struct = KSearchSpace((5, ), (1, ))
     >>> vnode = VariableNode()
     >>> struct.connect(struct.input_nodes[0], vnode)
     >>> vnode.add_op(Dense(10))
@@ -88,7 +88,7 @@ class KArchitecture(NxArchitecture):
 
 
     def set_ops(self, indexes):
-        """Set the operations for each node of each cell of the architecture.
+        """Set the operations for each node of each cell of the search_space.
 
         Args:
             indexes (list):  element of list can be float in [0, 1] or int.
@@ -108,14 +108,14 @@ class KArchitecture(NxArchitecture):
         self.output_node = self.set_output_node(self.graph, output_nodes)
 
     def set_output_node(self, graph, output_nodes):
-        """Set the output node of the architecture.
+        """Set the output node of the search_space.
 
         Args:
-            graph (nx.DiGraph): graph of the architecture.
-            output_nodes (Node): nodes of the current architecture without successors.
+            graph (nx.DiGraph): graph of the search_space.
+            output_nodes (Node): nodes of the current search_space without successors.
 
         Returns:
-            Node: output node of the architecture.
+            Node: output node of the search_space.
         """
         if len(output_nodes) == 1:
             node = ConstantNode(op=Identity(), name='Structure_Output')
@@ -128,10 +128,10 @@ class KArchitecture(NxArchitecture):
         return node
 
     def create_model(self):
-        """Create the tensors corresponding to the architecture.
+        """Create the tensors corresponding to the search_space.
 
         Returns:
-            A keras.Model for the current architecture with the corresponding set of operations.
+            A keras.Model for the current search_space with the corresponding set of operations.
         """
 
         output_tensor = self.create_tensor_aux(self.graph, self.output_node)

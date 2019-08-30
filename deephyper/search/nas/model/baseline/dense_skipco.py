@@ -2,12 +2,12 @@ import collections
 
 import tensorflow as tf
 
-from deephyper.search.nas.model.space.architecture import AutoKArchitecture
-from deephyper.search.nas.model.space.node import ConstantNode, VariableNode
-from deephyper.search.nas.model.space.op.basic import Tensor
-from deephyper.search.nas.model.space.op.connect import Connect
-from deephyper.search.nas.model.space.op.merge import AddByProjecting
-from deephyper.search.nas.model.space.op.op1d import Dense, Identity
+from ..space import AutoKSearchSpace
+from ..space.node import ConstantNode, VariableNode
+from ..space.op.basic import Tensor
+from ..space.op.connect import Connect
+from ..space.op.merge import AddByProjecting
+from ..space.op.op1d import Dense, Identity
 
 
 def add_dense_to_(node):
@@ -24,7 +24,7 @@ def create_search_space(input_shape=(10,),
                         num_layers=10,
                         *args, **kwargs):
 
-    arch = AutoKArchitecture(input_shape, output_shape, regression=True)
+    arch = AutoKSearchSpace(input_shape, output_shape, regression=True)
     source = prev_input = arch.input_nodes[0]
 
     # look over skip connections within a range of the 3 previous nodes

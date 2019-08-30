@@ -3,9 +3,9 @@ import traceback
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-from deephyper.search import util
-from deephyper.search.nas.model.run.alpha import run as run_alpha
 
+from ....search import util
+from .alpha import run as run_alpha
 
 logger = util.conf_logger('deephyper.search.nas.run')
 

@@ -40,8 +40,8 @@ MimeNode
 Architecture
 ============
 
-.. autoclass:: deephyper.search.nas.model.space.architecture.KArchitecture
+.. autoclass:: deephyper.search.nas.model.space.KSearchSpace
     :members:
 
-.. autoclass:: deephyper.search.nas.model.space.architecture.AutoKArchitecture
+.. autoclass:: deephyper.search.nas.model.space.AutoKSearchSpace
     :members:

@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 
-from deephyper.search.nas.model.space.op import Operation
+from . import Operation
 
 class Dense(Operation):
     """Multi Layer Perceptron operation.

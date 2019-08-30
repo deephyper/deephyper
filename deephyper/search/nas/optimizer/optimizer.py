@@ -25,11 +25,11 @@ class Optimizer:
             base_estimator = learner
 
         self.space = problem.space
-        cs_kwargs = self.space['create_architecture'].get('kwargs')
+        cs_kwargs = self.space['create_search_space'].get('kwargs')
         if cs_kwargs is None:
-            architecture = self.space['create_architecture']['func']()
+            search_space = self.space['create_search_space']['func']()
         else:
-            architecture = self.space['create_architecture']['func'](**cs_kwargs)
+            search_space = self.space['create_search_space']['func'](**cs_kwargs)
 
         # // queue of remaining starting points
         # // self.starting_points = problem.starting_point
@@ -39,7 +39,7 @@ class Optimizer:
 
         # Building search space for SkOptimizer
         skopt_space = [(0, vnode.num_ops-1)
-                       for vnode in architecture.variable_nodes]
+                       for vnode in search_space.variable_nodes]
 
         self._optimizer = SkOptimizer(
             skopt_space,

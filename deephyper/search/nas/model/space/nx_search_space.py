@@ -1,7 +1,7 @@
 import networkx as nx
 from collections.abc import Iterable
 
-from deephyper.core.exceptions.nas.architecture import (InputShapeOfWrongType,
+from deephyper.core.exceptions.nas.space import (InputShapeOfWrongType,
                                                   NodeAlreadyAdded,
                                                   StructureHasACycle,
                                                   WrongOutputShape,
@@ -10,8 +10,8 @@ from deephyper.search.nas.model.space.node import (ConstantNode, Node,
                                                    VariableNode)
 
 
-class NxArchitecture:
-    """A NxArchitecture is an architecture based on a networkx graph.
+class NxSearchSpace:
+    """A NxSearchSpace is an search_space based on a networkx graph.
     """
 
     def __init__(self, seed=None, **kwargs):
@@ -26,33 +26,33 @@ class NxArchitecture:
                 print('Error: can\'t create graphviz file...')
 
     def __len__(self):
-        """Number of VariableNodes in the current architecture.
+        """Number of VariableNodes in the current search_space.
 
         Returns:
-            int: number of variable nodes in the current architecture.
+            int: number of variable nodes in the current search_space.
         """
 
         return len(self.nodes)
 
     @property
     def nodes(self):
-        """Nodes of the current KArchitecture.
+        """Nodes of the current KSearchSpace.
 
         Returns:
-            iterator: nodes of the current KArchitecture.
+            iterator: nodes of the current KSearchSpace.
         """
 
         return list(self.graph.nodes)
 
     def add_node(self, node):
-        """Add a new node to the architecture.
+        """Add a new node to the search_space.
 
         Args:
-            node (Node): node to add to the architecture.
+            node (Node): node to add to the search_space.
 
         Raises:
             TypeError: if 'node' is not an instance of Node.
-            NodeAlreadyAdded: if 'node' has already been added to the architecture.
+            NodeAlreadyAdded: if 'node' has already been added to the search_space.
         """
 
         if not isinstance(node, Node):
@@ -64,7 +64,7 @@ class NxArchitecture:
         self.graph.add_node(node)
 
     def connect(self, node1, node2):
-        """Create a new connection in the KArchitecture graph.
+        """Create a new connection in the KSearchSpace graph.
 
         The edge created corresponds to : node1 -> node2.
 
@@ -82,11 +82,11 @@ class NxArchitecture:
 
         if not(nx.is_directed_acyclic_graph(self.graph)):
             raise StructureHasACycle(
-                f'the connection between {node1} -> {node2} is creating a cycle in the architecture\'s graph.')
+                f'the connection between {node1} -> {node2} is creating a cycle in the search_space\'s graph.')
 
     @property
     def size(self):
-        """Size of the search space define by the architecture
+        """Size of the search space define by the search_space
         """
         s = 0
         for n in filter(lambda n: isinstance(n, VariableNode), self.nodes):
@@ -117,15 +117,15 @@ class NxArchitecture:
 
     @property
     def variable_nodes(self):
-        """Iterator of VariableNodes of the architecture.
+        """Iterator of VariableNodes of the search_space.
 
         Returns:
-            (Iterator(VariableNode)): generator of VariablesNodes of the architecture.
+            (Iterator(VariableNode)): generator of VariablesNodes of the search_space.
         """
         return filter(lambda n: isinstance(n, VariableNode), self.nodes)
 
     def denormalize(self, indexes):
-        """Denormalize a sequence of normalized indexes to get a sequence of absolute indexes. Useful when you want to compare the number of different architectures.
+        """Denormalize a sequence of normalized indexes to get a sequence of absolute indexes. Useful when you want to compare the number of different search_spaces.
 
         Args:
             indexes (Iterable): a sequence of normalized indexes.

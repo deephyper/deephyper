@@ -116,7 +116,7 @@ class VariableNode(OperationNode):
         return self.op
 
     def denormalize(self, index):
-        """Denormalize a normalized index to get an absolute indexes. Useful when you want to compare the number of different architectures.
+        """Denormalize a normalized index to get an absolute indexes. Useful when you want to compare the number of different search_spaces.
 
         Args:
             indexes (float|int): a normalized index.
@@ -210,7 +210,7 @@ class MirrorNode(OperationNode):
 
 
 class MimeNode(OperationNode):
-    """A MimeNode is a node which reuse an the choice made for an VariableNode, it enable the definition of a Cell based architecture. This node reuse the operation from the mimed VariableNode but only the choice made.
+    """A MimeNode is a node which reuse an the choice made for an VariableNode, it enable the definition of a Cell based search_space. This node reuse the operation from the mimed VariableNode but only the choice made.
 
     Args:
         node (VariableNode): the VariableNode to mime.

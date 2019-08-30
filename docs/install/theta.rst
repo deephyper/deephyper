@@ -1,9 +1,9 @@
 Theta
 ******
 
-`Theta <https://www.alcf.anl.gov/theta>`_ is a 11.69 petaflops system based on the second-generation Intel Xeon Phi processor at Argonne Leadership Computing Facility (ALCF). 
-It serves as a stepping stone to the ALCF's next leadership-class supercomputer, Aurora. 
-Theta is a massively parallel, many-core system based on Intel processors and interconnect technology, a new memory architecture, 
+`Theta <https://www.alcf.anl.gov/theta>`_ is a 11.69 petaflops system based on the second-generation Intel Xeon Phi processor at Argonne Leadership Computing Facility (ALCF).
+It serves as a stepping stone to the ALCF's next leadership-class supercomputer, Aurora.
+Theta is a massively parallel, many-core system based on Intel processors and interconnect technology, a new memory search_space,
 and a Lustre-based parallel file system, all integrated by Cray’s HPC software stack.
 
 .. _theta-user-installation:

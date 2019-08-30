@@ -2,7 +2,7 @@ import collections
 
 import tensorflow as tf
 
-from deephyper.search.nas.model.space.architecture import AutoKArchitecture
+from deephyper.search.nas.model.space import AutoKSearchSpace
 from deephyper.search.nas.model.space.node import ConstantNode, VariableNode
 from deephyper.search.nas.model.space.op.basic import Tensor
 from deephyper.search.nas.model.space.op.connect import Connect
@@ -24,7 +24,7 @@ def create_search_space(input_shape=(10,),
                         num_layers=10,
                         *args, **kwargs):
 
-    arch = AutoKArchitecture(input_shape, output_shape, regression=True)
+    arch = AutoKSearchSpace(input_shape, output_shape, regression=True)
     source = prev_input = arch.input_nodes[0]
 
     # look over skip connections within a range of the 3 previous nodes
@@ -57,20 +57,20 @@ def create_search_space(input_shape=(10,),
 
 
 def test_create_search_space():
-    """Generate a random neural network from the architecture definition.
+    """Generate a random neural network from the search_space definition.
     """
     from random import random
     from tensorflow.keras.utils import plot_model
     import tensorflow as tf
 
-    architecture = create_search_space(num_layers=10)
-    ops = [random() for _ in range(architecture.num_nodes)]
+    search_space = create_search_space(num_layers=10)
+    ops = [random() for _ in range(search_space.num_nodes)]
 
-    print(f'This architecture needs {len(ops)} choices to generate a neural network.')
+    print(f'This search_space needs {len(ops)} choices to generate a neural network.')
 
-    architecture.set_ops(ops)
+    search_space.set_ops(ops)
 
-    model = architecture.create_model()
+    model = search_space.create_model()
     model.summary()
 
     plot_model(model, to_file='sampled_neural_network.png', show_shapes=True)

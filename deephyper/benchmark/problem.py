@@ -141,12 +141,12 @@ class NaProblem(Problem):
 
     >>> from deephyper.benchmark import NaProblem
     >>> from deephyper.benchmark.nas.linearReg.load_data import load_data
-    >>> from deephyper.search.nas.model.baseline.simple import create_architecture
+    >>> from deephyper.search.nas.model.baseline.simple import create_search_space
     >>> from deephyper.search.nas.model.preprocessing import minmaxstdscaler
     >>> Problem = NaProblem()
     >>> Problem.load_data(load_data)
     >>> Problem.preprocessing(minmaxstdscaler)
-    >>> Problem.search_space(create_architecture)
+    >>> Problem.search_space(create_search_space)
     >>> Problem.hyperparameters(
     ...     batch_size=100,
     ...     learning_rate=0.1,
@@ -187,7 +187,7 @@ class NaProblem(Problem):
 
         out = ( f"Problem is:\n"
                 f" * SEED = {self.seed} *\n"
-                f"    - search space   : {module_location(self._space['create_architecture']['func'])}\n"
+                f"    - search space   : {module_location(self._space['create_search_space']['func'])}\n"
                 f"    - data loading   : {module_location(self._space['load_data']['func'])}\n"
                 f"    - preprocessing  : {preprocessing}\n"
                 f"    - hyperparameters: {hps}\n"
@@ -236,7 +236,7 @@ class NaProblem(Problem):
         if sign_func.parameters['output_shape'].default is inspect._empty:
             raise SearchSpaceBuilderMissingDefaultParameter('output_shape')
 
-        self.add_dim('create_architecture', {
+        self.add_dim('create_search_space', {
             'func': func,
             'kwargs': kwargs
         })
@@ -256,14 +256,14 @@ class NaProblem(Problem):
         })
 
     def hyperparameters(self, **kwargs):
-        """Define hyperparameters used to evaluate generated architectures.
+        """Define hyperparameters used to evaluate generated search_spaces.
         """
         if self._space.get('hyperparameters') is None:
             self._space['hyperparameters'] = dict()
         self._space['hyperparameters'].update(kwargs)
 
     def loss(self, loss):
-        """Define the loss used to train generated architectures.
+        """Define the loss used to train generated search_spaces.
 
         Args:
             loss (str|callable): a string indicating a specific loss function.
@@ -276,7 +276,7 @@ class NaProblem(Problem):
         self._space['loss'] = loss
 
     def metrics(self, metrics: list):
-        """Define a list of metrics for the training of generated architectures.
+        """Define a list of metrics for the training of generated search_spaces.
 
         Args:
             metrics (list(str|callable)): If ``str`` the metric should be defined in Keras or in DeepHyper. If ``callable`` it should take 2 arguments ``(y_pred, y_true)`` which are a prediction and a true value respectively.

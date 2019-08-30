@@ -4,11 +4,10 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 
-from deephyper.search import util
-from deephyper.search.nas.model.run.util import (compute_objective,
-                                                load_config, preproc_trainer,
-                                                setup_data, setup_architecture)
-from deephyper.search.nas.model.trainer.train_valid import TrainerTrainValid
+from ....search import util
+from ..trainer.train_valid import TrainerTrainValid
+from .util import (compute_objective, load_config, preproc_trainer, setup_data,
+                   setup_search_space)
 
 logger = util.conf_logger('deephyper.search.nas.run')
 
@@ -42,11 +41,11 @@ def run(config):
 
     input_shape, output_shape = setup_data(config)
 
-    architecture = setup_architecture(config, input_shape, output_shape, seed=seed)
+    search_space = setup_search_space(config, input_shape, output_shape, seed=seed)
 
     model_created = False
     try:
-        model = architecture.create_model()
+        model = search_space.create_model()
         model_created = True
     except:
         logger.info('Error: Model creation failed...')

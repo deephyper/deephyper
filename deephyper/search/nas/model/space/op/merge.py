@@ -1,8 +1,8 @@
 import tensorflow as tf
 from tensorflow import keras
 
-from deephyper.search.nas.model.space.op import Operation
-import deephyper.search.nas.model.space.layers as deeplayers
+from . import Operation
+from .. import layers as deeplayers
 
 
 class Concatenate(Operation):
@@ -15,8 +15,8 @@ class Concatenate(Operation):
         axis (int): axis to concatenate
     """
 
-    def __init__(self, architecture, stacked_nodes=None, axis=-1):
-        self.architecture = architecture
+    def __init__(self, search_space, stacked_nodes=None, axis=-1):
+        self.search_space = search_space
         self.node = None # current_node of the operation
         self.stacked_nodes = stacked_nodes
         self.axis = axis
@@ -25,7 +25,7 @@ class Concatenate(Operation):
         self.node = current_node
         if self.stacked_nodes is not None:
             for n in self.stacked_nodes:
-                self.architecture.connect(n, self.node)
+                self.search_space.connect(n, self.node)
 
     def __call__(self, values, **kwargs):
         len_shp = max([len(x.get_shape()) for x in values])
@@ -73,14 +73,14 @@ class AddByPadding(Operation):
     """Add operation. If tensor are of different shapes a padding will be applied before adding them.
 
     Args:
-        architecture (KArchitecture): [description]. Defaults to None.
+        search_space (KSearchSpace): [description]. Defaults to None.
         activation ([type], optional): Activation function to apply after adding ('relu', tanh', 'sigmoid'...). Defaults to None.
         stacked_nodes (list(Node)): nodes to add.
         axis (int): axis to concatenate.
     """
 
-    def __init__(self, architecture, stacked_nodes=None, activation=None, axis=-1):
-        self.architecture = architecture
+    def __init__(self, search_space, stacked_nodes=None, activation=None, axis=-1):
+        self.search_space = search_space
         self.node = None # current_node of the operation
         self.stacked_nodes = stacked_nodes
         self.activation = activation
@@ -90,7 +90,7 @@ class AddByPadding(Operation):
         self.node = current_node
         if self.stacked_nodes is not None:
             for n in self.stacked_nodes:
-                self.architecture.connect(n, self.node)
+                self.search_space.connect(n, self.node)
 
     def __call__(self, values, **kwargs):
         values = values[:]
@@ -138,14 +138,14 @@ class AddByProjecting(Operation):
     """Add operation. If tensor are of different shapes a padding will be applied before adding them.
 
     Args:
-        architecture (KArchitecture): [description]. Defaults to None.
+        search_space (KSearchSpace): [description]. Defaults to None.
         activation ([type], optional): Activation function to apply after adding ('relu', tanh', 'sigmoid'...). Defaults to None.
         stacked_nodes (list(Node)): nodes to add.
         axis (int): axis to concatenate.
     """
 
-    def __init__(self, architecture, stacked_nodes=None, activation=None):
-        self.architecture = architecture
+    def __init__(self, search_space, stacked_nodes=None, activation=None):
+        self.search_space = search_space
         self.node = None # current_node of the operation
         self.stacked_nodes = stacked_nodes
         self.activation = activation
@@ -154,7 +154,7 @@ class AddByProjecting(Operation):
         self.node = current_node
         if self.stacked_nodes is not None:
             for n in self.stacked_nodes:
-                self.architecture.connect(n, self.node)
+                self.search_space.connect(n, self.node)
 
     def __call__(self, values, seed=None, **kwargs):
         values = values[:]

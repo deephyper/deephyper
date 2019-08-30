@@ -8,10 +8,10 @@ import tensorflow as tf
 from sklearn.metrics import mean_squared_error
 from tensorflow import keras
 
-import deephyper.search.nas.model.arch as a
-import deephyper.search.nas.model.train_utils as U
-from deephyper.search import util
-from deephyper.core.logs.logging import JsonMessage as jm
+from .....core.logs.logging import JsonMessage as jm
+from .... import util
+from .. import arch as a
+from .. import train_utils as U
 
 logger = util.conf_logger('deephyper.model.trainer')
 

@@ -1,6 +1,6 @@
 # TODO : not ready
 
-from deephyper.search.nas.contrib.google_nas_net import create_architecture
+from deephyper.search.nas.contrib.google_nas_net import create_search_space
 from deephyper.benchmark.nas.mnist2D.load_data import load_data
 from deephyper.benchmark import Problem
 
@@ -9,8 +9,8 @@ Problem.add_dim('regression', False)
 Problem.add_dim('load_data', {
     'func': load_data
 })
-Problem.add_dim('create_architecture', {
-    'func': create_architecture,
+Problem.add_dim('create_search_space', {
+    'func': create_search_space,
     'kwargs': {}
 })
 Problem.add_dim('hyperparameters', {

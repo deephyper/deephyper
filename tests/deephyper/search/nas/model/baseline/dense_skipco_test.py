@@ -1,4 +1,4 @@
-def test_architecture():
+def test_search_space():
     from deephyper.search.nas.model.baseline.dense_skipco import create_search_space
     from random import random
     struct = create_search_space()

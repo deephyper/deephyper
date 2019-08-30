@@ -26,7 +26,7 @@ def main(new_pckg, new_pb, *args, **kwargs):
         '__init__.py',
         'problem.py',
         'load_data.py',
-        'architecture.py']
+        'search_space.py']
 
     if not new_pckg is None:
         path = new_pckg

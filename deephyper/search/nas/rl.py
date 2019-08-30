@@ -10,7 +10,7 @@ from deephyper.search import util
 from deephyper.search.nas import NeuralArchitectureSearch
 from deephyper.evaluator.evaluate import Encoder
 from deephyper.search.nas.baselines import logger
-from deephyper.search.nas.env.neural_architecture_envs import \
+from deephyper.search.nas.env.neural_search_space_envs import \
     NeuralArchitectureVecEnv
 from deephyper.core.logs.logging import JsonMessage as jm
 
@@ -170,12 +170,12 @@ def build_env(num_envs, space, evaluator):
         VecEnv: vectorized environment.
     """
     assert num_envs >= 1, f'num_envs={num_envs}'
-    cs_kwargs = space['create_architecture'].get('kwargs')
+    cs_kwargs = space['create_search_space'].get('kwargs')
     if cs_kwargs is None:
-        architecture = space['create_architecture']['func']()
+        search_space = space['create_search_space']['func']()
     else:
-        architecture = space['create_architecture']['func'](**cs_kwargs)
-    env = NeuralArchitectureVecEnv(num_envs, space, evaluator, architecture)
+        search_space = space['create_search_space']['func'](**cs_kwargs)
+    env = NeuralArchitectureVecEnv(num_envs, space, evaluator, search_space)
     return env
 
 

@@ -36,8 +36,8 @@ def learn(*, network, env, total_timesteps, eval_env=None, seed=None, nsteps=128
     Parameters:
     ----------
 
-    network:                          policy network architecture. Either string (mlp, lstm, lnlstm, cnn_lstm, cnn, cnn_small, conv_only - see baselines.common/models.py for full list)
-                                      specifying the standard network architecture, or a function that takes tensorflow tensor as input and returns
+    network:                          policy network search_space. Either string (mlp, lstm, lnlstm, cnn_lstm, cnn, cnn_small, conv_only - see baselines.common/models.py for full list)
+                                      specifying the standard network search_space, or a function that takes tensorflow tensor as input and returns
                                       tuple (output_tensor, extra_feed) where output tensor is the last network layer output, extra_feed is None for feed-forward
                                       neural nets, and extra_feed is a dictionary describing how to feed state into the network for recurrent neural nets.
                                       See common/models.py/lstm for more details on using recurrent nets in policies
@@ -79,7 +79,7 @@ def learn(*, network, env, total_timesteps, eval_env=None, seed=None, nsteps=128
     load_path: str                    path to load the model from
 
     **network_kwargs:                 keyword arguments to the policy / network builder. See baselines.common/policies.py/build_policy and arguments to a particular type of network
-                                      For instance, 'mlp' network architecture has arguments num_hidden and num_layers.
+                                      For instance, 'mlp' network search_space has arguments num_hidden and num_layers.
     """
 
     set_global_seeds(seed)
