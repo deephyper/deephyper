@@ -8,8 +8,8 @@ def load_config(config):
     # ! load functions
     config['load_data']['func'] = util.load_attr_from(config['load_data']['func'])
 
-    config['create_structure']['func'] = util.load_attr_from(
-        config['create_structure']['func'])
+    config['create_architecture']['func'] = util.load_attr_from(
+        config['create_architecture']['func'])
 
     if not config.get('preprocessing') is None:
         config['preprocessing']['func'] = util.load_attr_from(config['preprocessing']['func'])
@@ -68,14 +68,14 @@ def setup_data(config):
     return input_shape, output_shape
 
 
-def setup_structure(config, input_shape, output_shape, seed):
+def setup_architecture(config, input_shape, output_shape, seed):
 
-    create_structure = config['create_structure']['func']
-    cs_kwargs = config['create_structure'].get('kwargs')
+    create_architecture = config['create_architecture']['func']
+    cs_kwargs = config['create_architecture'].get('kwargs')
     if cs_kwargs is None:
-        architecture = create_structure(input_shape, output_shape, seed=seed)
+        architecture = create_architecture(input_shape, output_shape, seed=seed)
     else:
-        architecture = create_structure(input_shape, output_shape, seed=seed, **cs_kwargs)
+        architecture = create_architecture(input_shape, output_shape, seed=seed, **cs_kwargs)
 
     arch_seq = config['arch_seq']
     logger.info(f'actions list: {arch_seq}')

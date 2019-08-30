@@ -25,11 +25,11 @@ class Optimizer:
             base_estimator = learner
 
         self.space = problem.space
-        cs_kwargs = self.space['create_structure'].get('kwargs')
+        cs_kwargs = self.space['create_architecture'].get('kwargs')
         if cs_kwargs is None:
-            architecture = self.space['create_structure']['func']()
+            architecture = self.space['create_architecture']['func']()
         else:
-            architecture = self.space['create_structure']['func'](**cs_kwargs)
+            architecture = self.space['create_architecture']['func'](**cs_kwargs)
 
         # // queue of remaining starting points
         # // self.starting_points = problem.starting_point

@@ -9,7 +9,7 @@ import tensorflow.keras.backend as K
 
 from deephyper.evaluator import Encoder
 from deephyper.search import util
-from deephyper.search.nas.model.run.util import load_config, setup_data, setup_structure, compute_objective
+from deephyper.search.nas.model.run.util import load_config, setup_data, setup_architecture, compute_objective
 from deephyper.search.nas.model.trainer.train_valid import TrainerTrainValid
 from deephyper.contrib.callbacks.beholder import BeholderCB
 
@@ -63,7 +63,7 @@ def train(config):
 
     input_shape, output_shape = setup_data(config)
 
-    architecture = setup_structure(config, input_shape, output_shape, seed=seed)
+    architecture = setup_architecture(config, input_shape, output_shape, seed=seed)
     architecture.draw_graphviz(f'structure_{config["id"]}.dot')
     logger.info('Model operations set.')
 

@@ -4,7 +4,7 @@ from deephyper.search.nas.model.space.architecture import AutoKArchitecture
 from deephyper.search.nas.model.space.node import VariableNode
 from deephyper.search.nas.model.space.op.op1d import Operation
 
-def test_create_structure(input_shape=(2,), output_shape=(1,), **kwargs):
+def test_create_architecture(input_shape=(2,), output_shape=(1,), **kwargs):
     struct = AutoKArchitecture(input_shape, output_shape, regression=True)
 
     vnode1 = VariableNode()

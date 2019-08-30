@@ -55,11 +55,11 @@ class RegularizedEvolution(NeuralArchitectureSearch):
 
         # Setup
         self.pb_dict = self.problem.space
-        cs_kwargs = self.pb_dict['create_structure'].get('kwargs')
+        cs_kwargs = self.pb_dict['create_architecture'].get('kwargs')
         if cs_kwargs is None:
-            architecture = self.pb_dict['create_structure']['func']()
+            architecture = self.pb_dict['create_architecture']['func']()
         else:
-            architecture = self.pb_dict['create_structure']['func'](**cs_kwargs)
+            architecture = self.pb_dict['create_architecture']['func'](**cs_kwargs)
 
         self.space_list = [(0, vnode.num_ops-1) for vnode in architecture.variable_nodes]
         self.population_size = population_size

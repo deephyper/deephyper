@@ -7,7 +7,7 @@ from tensorflow import keras
 from deephyper.search import util
 from deephyper.search.nas.model.run.util import (compute_objective,
                                                  load_config, preproc_trainer,
-                                                 setup_data, setup_structure)
+                                                 setup_data, setup_architecture)
 from deephyper.search.nas.model.trainer.train_valid import TrainerTrainValid
 
 logger = util.conf_logger('deephyper.search.nas.run')
@@ -42,7 +42,7 @@ def run(config):
 
     input_shape, output_shape = setup_data(config)
 
-    architecture = setup_structure(config, input_shape, output_shape, seed=seed)
+    architecture = setup_architecture(config, input_shape, output_shape, seed=seed)
 
     model_created = False
     try:

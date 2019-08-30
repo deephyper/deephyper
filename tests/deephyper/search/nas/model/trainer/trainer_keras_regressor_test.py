@@ -21,8 +21,8 @@ def test_trainer_regressor_train_valid_with_one_input():
     # load functions
     load_data = util.load_attr_from(config['load_data']['func'])
     config['load_data']['func'] = load_data
-    config['create_structure']['func'] = util.load_attr_from(
-        config['create_structure']['func'])
+    config['create_architecture']['func'] = util.load_attr_from(
+        config['create_architecture']['func'])
 
     # Loading data
     kwargs = config['load_data'].get('kwargs')
@@ -40,8 +40,8 @@ def test_trainer_regressor_train_valid_with_one_input():
         'valid_Y': vy
     }
 
-    architecture = config['create_structure']['func'](
-        input_shape, output_shape, **config['create_structure']['kwargs'])
+    architecture = config['create_architecture']['func'](
+        input_shape, output_shape, **config['create_architecture']['kwargs'])
     arch_seq = [random() for i in range(structure.num_nodes)]
     print('arch_seq: ', arch_seq)
     architecture.set_ops(arch_seq)
@@ -73,8 +73,8 @@ def test_trainer_regressor_train_valid_with_multiple_ndarray_inputs():
     # load functions
     load_data = util.load_attr_from(config['load_data']['func'])
     config['load_data']['func'] = load_data
-    config['create_structure']['func'] = util.load_attr_from(
-        config['create_structure']['func'])
+    config['create_architecture']['func'] = util.load_attr_from(
+        config['create_architecture']['func'])
 
     # Loading data
     kwargs = config['load_data'].get('kwargs')
@@ -93,8 +93,8 @@ def test_trainer_regressor_train_valid_with_multiple_ndarray_inputs():
         'valid_Y': vy
     }
 
-    architecture = config['create_structure']['func'](
-        input_shape, output_shape, **config['create_structure']['kwargs'])
+    architecture = config['create_architecture']['func'](
+        input_shape, output_shape, **config['create_architecture']['kwargs'])
     arch_seq = [random() for i in range(structure.num_nodes)]
     print('arch_seq: ', arch_seq)
     architecture.set_ops(arch_seq)
@@ -126,8 +126,8 @@ def test_trainer_regressor_train_valid_with_multiple_generator_inputs():
     # load functions
     load_data = util.load_attr_from(config['load_data']['func'])
     config['load_data']['func'] = load_data
-    config['create_structure']['func'] = util.load_attr_from(
-        config['create_structure']['func'])
+    config['create_architecture']['func'] = util.load_attr_from(
+        config['create_architecture']['func'])
 
     # Loading data
     kwargs = config['load_data'].get('kwargs')
@@ -141,8 +141,8 @@ def test_trainer_regressor_train_valid_with_multiple_generator_inputs():
                    for i in range(len(data['shapes'][0]))]
     output_shape = data['shapes'][1]
 
-    architecture = config['create_structure']['func'](
-        input_shape, output_shape, **config['create_structure']['kwargs'])
+    architecture = config['create_architecture']['func'](
+        input_shape, output_shape, **config['create_architecture']['kwargs'])
     arch_seq = [random() for i in range(structure.num_nodes)]
     print('arch_seq: ', arch_seq)
     architecture.set_ops(arch_seq)

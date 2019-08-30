@@ -5,7 +5,7 @@ from deephyper.search.nas.model.space.node import VariableNode
 from deephyper.search.nas.model.space.op.op1d import Dense
 
 
-def create_structure(input_shape=(2,), output_shape=(1,), **kwargs):
+def create_architecture(input_shape=(2,), output_shape=(1,), **kwargs):
     struct = AutoKArchitecture(input_shape, output_shape, regression=True)
 
     prev_node = struct.input_nodes[0]
