@@ -24,9 +24,9 @@ class AMBNeuralArchitectureSearch(NeuralArchitectureSearch):
     """Asynchronous Model-Based Search.
 
     Args:
-        problem ([type]): [description]
-        run ([type]): [description]
-        evaluator ([type]): [description]
+        problem (str): python attribute import of the ``NaProblem`` instance (e.g. ``mypackage.mymodule.myproblem``).
+        run (str): python attribute import of the run function (e.g. ``mypackage.mymodule.myrunfunction``).
+        evaluator (str): the name of the evaluator to use.
         learner (str, optional): Choices are ["RF", "ET", "GBRT", "DUMMY", "GP"]. ``RF`` is Random Forest, ``ET`` is Extra Trees, ``GBRT`` is Gradient Boosting Regression Trees, ``DUMMY`` is random, ``GP`` is Gaussian process. Defaults to "RF".
         liar_strategy (str, optional): ["cl_max", "cl_min", "cl_mean"]. Defaults to "cl_max".
         acq_func (str, optional): Acquisition function, choices are ["gp_hedge", "LCB", "EI", "PI"]. Defaults to "gp_hedge".

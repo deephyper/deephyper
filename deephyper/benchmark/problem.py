@@ -152,10 +152,44 @@ class NaProblem(Problem):
     ...     learning_rate=0.1,
     ...     optimizer='adam',
     ...     num_epochs=10,
+    ...     callbacks=dict(
+    ...        EarlyStopping=dict(
+    ...             monitor='val_r2',
+    ...             mode='max',
+    ...             verbose=0,
+    ...             patience=5
+    ...         )
+    ...     )
     ... )
     >>> Problem.loss('mse')
     >>> Problem.metrics(['r2'])
-    >>> Problem.objective('val_r2')
+    >>> Problem.objective('val_r2__last')
+    >>> Problem.post_training(
+    ...        num_epochs=1000,
+    ...        metrics=['r2'],
+    ...        callbacks=dict(
+    ...         ModelCheckpoint={
+    ...             'monitor': 'val_r2',
+    ...             'mode': 'max',
+    ...             'save_best_only': True,
+    ...             'verbose': 1
+    ...         },
+    ...         EarlyStopping={
+    ...             'monitor': 'val_r2',
+    ...             'mode': 'max',
+    ...             'verbose': 1,
+    ...             'patience': 10
+    ...         },
+    ...         TensorBoard={
+    ...             'log_dir':'tb_logs',
+    ...             'histogram_freq':1,
+    ...             'batch_size':64,
+    ...             'write_graph':True,
+    ...             'write_grads':True,
+    ...             'write_images':True,
+    ...             'update_freq':'epoch'
+    ...         })
+    ... )
 
     Args:
         regression (bool): if ``True`` the problem is defined as a ``regression`` problem, if ``False`` the problem is defined as a ``classification`` problem.
