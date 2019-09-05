@@ -2,6 +2,11 @@ import argparse
 import os
 import sys
 
+PKG_ROOT =  os.path.dirname( # deephyper
+            os.path.dirname( # deephyper/core
+            os.path.dirname( # deephyper/core/cli
+                os.path.abspath(__file__))))
+
 def add_subparser(subparsers):
     subparser_name = 'nas-init'
     function_to_call = main
@@ -21,17 +26,16 @@ def main(new_pckg, new_pb, *args, **kwargs):
         '__init__.py',
         'problem.py',
         'load_data.py',
-        'preprocessing.py',
-        'structure.py']
+        'search_space.py']
 
     if not new_pckg is None:
         path = new_pckg
         try:
             os.mkdir(path)
         except OSError:
-            print ("Creation of the directory %s failed" % path)
+            print("Creation of the directory %s failed" % path)
         else:
-            print ("Successfully created the directory %s " % path)
+            print("Successfully created the directory %s " % path)
             with open(os.path.join(path, 'setup.py'), 'w') as fp:
                 fp.write(f"from setuptools import setup\n\nsetup(\n    name='{new_pckg}',\n    packages=['{new_pckg}'],\n    install_requires=[]\n)")
 
@@ -39,43 +43,53 @@ def main(new_pckg, new_pb, *args, **kwargs):
         try:
             os.mkdir(path)
         except OSError:
-            print ("Creation of the directory %s failed" % path)
+            print("Creation of the directory %s failed" % path)
         else:
-            print ("Successfully created the directory %s " % path)
+            print("Successfully created the directory %s " % path)
             with open(os.path.join(path, '__init__.py'), 'w') as fp:
                 pass
 
             path = "/".join(path.split('/')[:-1])
             os.chdir(path)
-            cmd = f'{sys.executable} {"setup.py"} install'
+            cmd = f'pip install -e .'
             os.system(cmd)
 
-        if not new_pb is None:
+        if new_pb is not None:
             os.chdir(new_pckg)
-            path = os.path.join(os.getcwd(), new_pb)
-            try:
-                os.mkdir(path)
-            except OSError:
-                print ("Creation of the directory %s failed" % path)
-            else:
-                print ("Successfully created the directory %s " % path)
-                for fname in pb_files:
-                    file_path = os.path.join(path, fname)
-                    with open(file_path, 'w') as fp:
-                        print(f'create file: {file_path}')
-                        if fname == 'problem.py':
-                            fp.write('from deephyper.benchmark import NaProblem\n')
+            create_problem_folder(new_pb, pb_files)
     else:
-        if not new_pb is None:
-            path = os.path.join(os.getcwd(), new_pb)
-            try:
-                os.mkdir(path)
-            except OSError:
-                print ("Creation of the directory %s failed" % path)
-            else:
-                print ("Successfully created the directory %s " % path)
+        if new_pb is not None:
+            create_problem_folder(new_pb, pb_files)
 
-                for fname in pb_files:
-                    file_path = os.path.join(path, fname)
-                    with open(file_path, 'w') as fp:
-                        print(f'create file: {file_path}')
+def create_problem_folder(new_pb, pb_files):
+    path = os.path.join(os.getcwd(), new_pb)
+    pckg_name = path.split('/')[-2]
+    try:
+        os.mkdir(path)
+    except OSError:
+        print("Creation of the directory %s failed" % path)
+    else:
+        print("Successfully created the directory %s " % path)
+        for fname in pb_files:
+            file_path = os.path.join(path, fname)
+            with open(file_path, 'w') as fnew:
+                print(f'create file: {file_path}')
+                tmpl_name = fname.split('.')[0]+".tmpl"
+                if fname == 'problem.py':
+                    fnew.write(render(tmpl_name,
+                        pckg=pckg_name,
+                        pb_folder=new_pb,
+                    ))
+                else:
+                    fnew.write(render(tmpl_name))
+
+from jinja2 import Environment, PackageLoader
+
+def render(file, **kwargs):
+    env = Environment(loader=PackageLoader('deephyper', 'core/cli/templates'))
+
+    template = env.get_template(file)
+
+    rendering = template.render(**kwargs)
+
+    return rendering

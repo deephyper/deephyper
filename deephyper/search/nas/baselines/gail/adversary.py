@@ -1,6 +1,6 @@
 '''
 Reference: https://github.com/openai/imitation
-I follow the architecture from the official repository
+I follow the search_space from the official repository
 '''
 import tensorflow as tf
 import numpy as np

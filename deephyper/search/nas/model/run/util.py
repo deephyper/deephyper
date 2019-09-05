@@ -1,6 +1,7 @@
 import numpy as np
-from deephyper.search import util
-from deephyper.core.exceptions.problem import WrongProblemObjective
+
+from .....core.exceptions.problem import WrongProblemObjective
+from ....search import util
 
 logger = util.conf_logger('deephyper.search.nas.run')
 
@@ -8,8 +9,8 @@ def load_config(config):
     # ! load functions
     config['load_data']['func'] = util.load_attr_from(config['load_data']['func'])
 
-    config['create_structure']['func'] = util.load_attr_from(
-        config['create_structure']['func'])
+    config['create_search_space']['func'] = util.load_attr_from(
+        config['create_search_space']['func'])
 
     if not config.get('preprocessing') is None:
         config['preprocessing']['func'] = util.load_attr_from(config['preprocessing']['func'])
@@ -53,11 +54,14 @@ def setup_data(config):
     elif type(data) is dict:
         config['data'] = data
         input_shape = [data['shapes'][0][f'input_{i}']
-                       for i in range(len(data['shapes'][0]))]
+                        for i in range(len(data['shapes'][0]))]
         output_shape = data['shapes'][1]
     else:
         raise RuntimeError(
             f'Data returned by load_data function are of an unsupported type: {type(data)}')
+
+    if output_shape == (): # basicaly means data with shape=(num_elements) == (num_elements, 1)
+        output_shape = (1,)
 
     logger.info(f'input_shape: {input_shape}')
     logger.info(f'output_shape: {output_shape}')
@@ -65,20 +69,20 @@ def setup_data(config):
     return input_shape, output_shape
 
 
-def setup_structure(config, input_shape, output_shape):
+def setup_search_space(config, input_shape, output_shape, seed):
 
-    create_structure = config['create_structure']['func']
-    cs_kwargs = config['create_structure'].get('kwargs')
+    create_search_space = config['create_search_space']['func']
+    cs_kwargs = config['create_search_space'].get('kwargs')
     if cs_kwargs is None:
-        structure = create_structure(input_shape, output_shape)
+        search_space = create_search_space(input_shape, output_shape, seed=seed)
     else:
-        structure = create_structure(input_shape, output_shape, **cs_kwargs)
+        search_space = create_search_space(input_shape, output_shape, seed=seed, **cs_kwargs)
 
     arch_seq = config['arch_seq']
     logger.info(f'actions list: {arch_seq}')
-    structure.set_ops(arch_seq)
+    search_space.set_ops(arch_seq)
 
-    return structure
+    return search_space
 
 
 def compute_objective(objective, history):

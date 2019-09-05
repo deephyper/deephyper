@@ -2,9 +2,9 @@
 DeepHyper is a scalable automated machine learning (`AutoML <https://en.wikipedia.org/wiki/Automated_machine_learning>`_) package for developing deep neural networks for scientific applications.
 It comprises two components:
 
-* ``Neural architecture search (NAS)``: It is designed for automatically searching for high-performing the deep neural network architecture.
+* ``Neural architecture search (NAS)``: It is designed for automatically searching for high-performing the deep neural network search_space.
 
-* ``Hyperparameter search (HPS)``: It is designed for automatically searching for high-performing hyperparameters for a given deep neural network architecture.
+* ``Hyperparameter search (HPS)``: It is designed for automatically searching for high-performing hyperparameters for a given deep neural network search_space.
 
 
 DeepHyper provides an infrastructure that targets experimental research in NAS and HPS methods, scalability, and portability across diverse supercomputers.

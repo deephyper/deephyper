@@ -1,9 +1,4 @@
-import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras.layers import Layer
-
-import deephyper.search.nas.model.space.layers as deeplayers
-
 
 class Operation:
     """Interface of an operation.
@@ -17,20 +12,21 @@ class Operation:
         layer (Layer): a ``tensorflow.keras.layers.Layer``.
     """
 
-    def __init__(self, layer: Layer):
-        assert isinstance(layer, Layer)
+    def __init__(self, layer: keras.layers.Layer):
+        assert isinstance(layer, keras.layers.Layer)
+        self.from_keras_layer = True
         self._layer = layer
 
     def __str__(self):
         return self.__repr__()
 
     def __repr__(self):
-        if hasattr(self, '_layer'):
+        if hasattr(self, 'from_keras_layer'):
             return type(self._layer).__name__
         else:
-            return type(self).__name__
+            return str(self)
 
-    def __call__(self, tensors: list, *args, **kwargs):
+    def __call__(self, tensors: list, seed: int=None, **kwargs):
         """
         Args:
             tensors (list): a list of incoming tensors.
@@ -44,7 +40,7 @@ class Operation:
             out = self._layer(tensors)
         return out
 
-    def init(self):
+    def init(self, current_node):
         """Preprocess the current operation.
         """
 

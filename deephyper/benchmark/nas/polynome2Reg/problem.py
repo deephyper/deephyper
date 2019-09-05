@@ -1,6 +1,6 @@
 from deephyper.benchmark import NaProblem
 from deephyper.benchmark.nas.polynome2Reg.load_data import load_data
-from deephyper.search.nas.model.baseline.simple import create_structure
+from deephyper.search.nas.model.baseline.dense_skipco import create_search_space
 from deephyper.search.nas.model.preprocessing import minmaxstdscaler
 
 Problem = NaProblem()
@@ -9,7 +9,7 @@ Problem.load_data(load_data)
 
 Problem.preprocessing(minmaxstdscaler)
 
-Problem.search_space(create_structure)
+Problem.search_space(create_search_space, num_layers=3)
 
 Problem.hyperparameters(
     batch_size=100,

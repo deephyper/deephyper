@@ -135,13 +135,13 @@ def learn(
     **network_kwargs):
 
     '''
-    Main entrypoint for A2C algorithm. Train a policy with given network architecture on a given environment using a2c algorithm.
+    Main entrypoint for A2C algorithm. Train a policy with given network search_space on a given environment using a2c algorithm.
 
     Parameters:
     -----------
 
-    network:            policy network architecture. Either string (mlp, lstm, lnlstm, cnn_lstm, cnn, cnn_small, conv_only - see baselines.common/models.py for full list)
-                        specifying the standard network architecture, or a function that takes tensorflow tensor as input and returns
+    network:            policy network search_space. Either string (mlp, lstm, lnlstm, cnn_lstm, cnn, cnn_small, conv_only - see baselines.common/models.py for full list)
+                        specifying the standard network search_space, or a function that takes tensorflow tensor as input and returns
                         tuple (output_tensor, extra_feed) where output tensor is the last network layer output, extra_feed is None for feed-forward
                         neural nets, and extra_feed is a dictionary describing how to feed state into the network for recurrent neural nets.
                         See baselines.common/policies.py/lstm for more details on using recurrent nets in policies
@@ -177,7 +177,7 @@ def learn(
     log_interval:       int, specifies how frequently the logs are printed out (default: 100)
 
     **network_kwargs:   keyword arguments to the policy / network builder. See baselines.common/policies.py/build_policy and arguments to a particular type of network
-                        For instance, 'mlp' network architecture has arguments num_hidden and num_layers.
+                        For instance, 'mlp' network search_space has arguments num_hidden and num_layers.
 
     '''
 

@@ -1,7 +1,7 @@
 .. deephyper documentation master file, created by
-   sphinx-quickstart on Thu Sep 27 13:32:19 2018.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+    sphinx-quickstart on Thu Sep 27 13:32:19 2018.
+    You can adapt this file completely to your liking, but it should at least
+    contain the root `toctree` directive.
 
 *********
 DeepHyper
@@ -11,9 +11,9 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
 ==========================================================================================
 
 .. image:: _static/logo/medium.png
-   :scale: 100%
-   :alt: logo
-   :align: center
+    :scale: 100%
+    :alt: logo
+    :align: center
 
 
 .. automodule:: deephyper
@@ -33,47 +33,52 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
     :caption: Getting started
 
     tutorials/hps
-    tutorials/job_management
     tutorials/nas
+    tutorials/job_management
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Running search
+    :maxdepth: 2
+    :caption: Running search
 
-   run/local
-   run/theta
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Benchmarks & Problems
-
-   benchmark/index
-   benchmark/hps
-   benchmark/nas
+    run/local
+    run/theta
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Evaluators
+    :maxdepth: 2
+    :caption: Hyperparameter Search
 
-   evaluator/index
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Searches
-
-   search/index
-   search/hps/index
-   search/nas/index
-
+    search/hps/algorithms
+    search/hps/benchmarks
+    search/hps/problem
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Tools
+    :maxdepth: 2
+    :caption: Neural Architecture Search
 
-   usage/workflow
-   usage/command_line
-   usage/post_training
-   tests_link
+    search/nas/algorithms
+    search/nas/benchmarks
+    search/nas/environments
+    search/nas/problem
+    search/nas/search_space
+    search/nas/training_pipeline
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Software
+
+    software/benchmarks
+    software/evaluators
+    software/searches
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Tools
+
+    usage/command_line
+    usage/workflow
+    usage/analytics
+    usage/post_training
+    tests_link
 
 
 Indices and tables

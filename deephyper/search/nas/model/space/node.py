@@ -1,5 +1,8 @@
-from tensorflow.keras.layers import Layer
-from deephyper.search.nas.model.space.op.basic import Operation
+from tensorflow import keras
+
+from .....core.exceptions import DeephyperRuntimeError
+from .op.basic import Operation
+
 
 class Node:
     """This class represents a node of a graph
@@ -35,20 +38,23 @@ class Node:
     def verify_operation(op):
         if isinstance(op, Operation):
             return op
-        elif isinstance(op, Layer):
+        elif isinstance(op, keras.layers.Layer):
             return Operation(op)
         else:
-            raise RuntimeError(f'Can\'t add this operation \'{op.__name__}\'. An operation should be either of type Operation or Layer when is of type: {type(op)}')
+            raise RuntimeError(f'Can\'t add this operation \'{op.__name__}\'. An operation should be either of type Operation or keras.layers.Layer when is of type: {type(op)}')
 
 
 class OperationNode(Node):
     def __init__(self, name='', *args, **kwargs):
         super().__init__(name=name, *args, **kwargs)
 
-    def create_tensor(self, inputs=None, train=True, *args, **kwargs):
+    def create_tensor(self, inputs=None, train=True, seed=None, **kwargs):
         if self._tensor is None:
             if inputs == None:
-                self._tensor = self.op(train=train)
+                try:
+                    self._tensor = self.op(train=train, seed=None)
+                except TypeError:
+                    raise RuntimeError(f'Verify if node: "{self}" has incoming connexions!')
             else:
                 self._tensor = self.op(inputs, train=train)
         return self._tensor
@@ -98,7 +104,7 @@ class VariableNode(OperationNode):
         return len(self._ops)
 
     def set_op(self, index):
-        self.get_op(index).init()
+        self.get_op(index).init(self)
 
     def get_op(self, index):
         assert 'float' in str(type(index)) or type(
@@ -107,21 +113,24 @@ class VariableNode(OperationNode):
             self._index = self.denormalize(index)
         else:
             assert 0 <= index and index < len(
-                self._ops), f'len self._ops: {len(self._ops)}, index: {index}'
+                self._ops), f'Number of possible operations is: {len(self._ops)}, but index given is: {index} (index starts from 0)!'
             self._index = index
         return self.op
 
     def denormalize(self, index):
-        """Denormalize a normalized index to get an absolute indexes. Useful when you want to compare the number of different architectures.
+        """Denormalize a normalized index to get an absolute indexes. Useful when you want to compare the number of different search_spaces.
 
         Args:
-            indexes (float): a normalized index.
+            indexes (float|int): a normalized index.
 
         Returns:
             int: An absolute indexes corresponding to the operation choosen with the relative index of `index`.
         """
-        assert 0. <= index and index <= 1.
-        return int(index * len(self._ops))
+        if type(index) is int:
+            return index
+        else:
+            assert 0. <= index and index <= 1.
+            return int(index * len(self._ops))
 
     @property
     def op(self):
@@ -146,6 +155,8 @@ class ConstantNode(OperationNode):
     >>> from deephyper.search.nas.model.space.node import ConstantNode
     >>> from deephyper.search.nas.model.space.op.op1d import Dense
     >>> cnode = ConstantNode(op=Dense(units=100, activation=tf.nn.relu), name='CNode1')
+    >>> cnode.op
+    Dense_100_relu
 
     Args:
         op (Operation, optional): [description]. Defaults to None.
@@ -156,12 +167,12 @@ class ConstantNode(OperationNode):
         super().__init__(name=name)
         if not op is None:
             op = self.verify_operation(op)
-            op.init()  # set operation
+            op.init(self)  # set operation
         self._op = op
 
     def set_op(self, op):
         op = self.verify_operation(op)
-        op.init()
+        op.init(self)
         self._op = op
 
     def __str__(self):
@@ -175,14 +186,70 @@ class ConstantNode(OperationNode):
 class MirrorNode(OperationNode):
     """A MirrorNode is a node which reuse an other, it enable the reuse of keras layers. This node will not add operations to choose.
 
-    Arguments:
-        node {Node} -- [description]
-    """
+    Args:
+        node (Node): The targeted node to mirror.
 
+    >>> from deephyper.search.nas.model.space.node import VariableNode, MirrorNode
+    >>> from deephyper.search.nas.model.space.op.op1d import Dense
+    >>> vnode = VariableNode()
+    >>> vnode.add_op(Dense(10))
+    >>> vnode.add_op(Dense(20))
+    >>> mnode = MirrorNode(vnode)
+    >>> vnode.set_op(0)
+    >>> vnode.op
+    Dense_10
+    >>> mnode.op
+    Dense_10
+    """
     def __init__(self, node):
+
         super().__init__(name=f"Mirror[{str(node)}]")
         self._node = node
 
     @property
     def op(self):
         return self._node.op
+
+
+class MimeNode(OperationNode):
+    """A MimeNode is a node which reuse an the choice made for an VariableNode, it enable the definition of a Cell based search_space. This node reuse the operation from the mimed VariableNode but only the choice made.
+
+    Args:
+        node (VariableNode): the VariableNode to mime.
+
+    >>> from deephyper.search.nas.model.space.node import VariableNode, MimeNode
+    >>> from deephyper.search.nas.model.space.op.op1d import Dense
+    >>> vnode = VariableNode()
+    >>> vnode.add_op(Dense(10))
+    >>> vnode.add_op(Dense(20))
+    >>> mnode = MimeNode(vnode)
+    >>> mnode.add_op(Dense(30))
+    >>> mnode.add_op(Dense(40))
+    >>> vnode.set_op(0)
+    >>> vnode.op
+    Dense_10
+    >>> mnode.op
+    Dense_30
+    """
+    def __init__(self, node):
+        super().__init__(name=f"Mime[{str(node)}]")
+        self.node = node
+        self._ops = list()
+
+    def add_op(self, op):
+        self._ops.append(self.verify_operation(op))
+
+    @property
+    def num_ops(self):
+        return len(self._ops)
+
+    @property
+    def op(self):
+        if self.num_ops != self.node.num_ops:
+            raise DeephyperRuntimeError(f'{str(self)} and {str(self.node)} should have the same number of opertions, when {str(self)} has {self.num_ops} and {str(self.node)} has {self.node.num_ops}!')
+        else:
+            return self._ops[self.node._index]
+
+    @property
+    def ops(self):
+        return self._ops

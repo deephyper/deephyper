@@ -1,18 +1,21 @@
 import math
 import time
 import traceback
+from inspect import signature
 
 import numpy as np
 import tensorflow as tf
 from sklearn.metrics import mean_squared_error
 from tensorflow import keras
 
-import deephyper.search.nas.model.arch as a
-import deephyper.search.nas.model.train_utils as U
-from deephyper.search import util
-from deephyper.search.nas.utils._logging import JsonMessage as jm
+from .....core.logs.logging import JsonMessage as jm
+from .... import util
+from .. import arch as a
+from .. import train_utils as U
 
 logger = util.conf_logger('deephyper.model.trainer')
+
+
 
 
 class TrainerTrainValid:
@@ -29,14 +32,15 @@ class TrainerTrainValid:
         self.data = self.config[a.data]
 
         self.config_hp = self.config[a.hyperparameters]
-        self.optimizer_name = self.config_hp[a.optimizer]
-        self.batch_size = self.config_hp[a.batch_size]
-        self.learning_rate = self.config_hp[a.learning_rate]
+        self.optimizer_name = self.config_hp.get(a.optimizer, 'adam')
+        self.optimizer_eps = self.config_hp.get('epsilon', None)
+        self.batch_size = self.config_hp.get(a.batch_size, 32)
+        self.learning_rate = self.config_hp.get(a.learning_rate, 1e-3)
         self.num_epochs = self.config_hp[a.num_epochs]
+        self.verbose = self.config_hp.get('verbose', 1)
 
         self.loss_metric_name = self.config[a.loss_metric]
-        self.metrics_name = [U.selectMetric(m)
-                             for m in self.config[a.metrics]]
+        self.metrics_name = [U.selectMetric(m) for m in self.config[a.metrics]]
 
         # DATA loading
         self.data_config_type = None
@@ -209,8 +213,20 @@ class TrainerTrainValid:
         optimizer_fn = U.selectOptimizer_keras(self.optimizer_name)
 
         decay_rate = self.learning_rate / \
-            self.num_epochs if self.num_epochs > 0 else 1.
-        self.optimizer = optimizer_fn(lr=self.learning_rate, decay=decay_rate)
+            self.num_epochs if self.num_epochs > 0 else 1
+
+        opti_parameters = signature(optimizer_fn).parameters
+        params = {}
+        if 'lr' in opti_parameters:
+            params['lr'] = self.learning_rate
+        if 'epsilon' in opti_parameters:
+            params['epsilon'] = self.optimizer_eps
+        if 'decay' in opti_parameters:
+            decay_rate = self.learning_rate / \
+                self.num_epochs if self.num_epochs > 0 else 1
+            params['decay'] = decay_rate
+        self.optimizer = optimizer_fn(**params)
+
 
         self.model.compile(
             optimizer=self.optimizer,
@@ -304,6 +320,7 @@ class TrainerTrainValid:
                 logger.info('Trainer is computing metrics on validation after each training epoch.')
                 history = self.model.fit(
                     self.dataset_train,
+                    verbose=self.verbose,
                     epochs=num_epochs,
                     steps_per_epoch=self.train_steps_per_epoch,
                     callbacks=self.callbacks,
@@ -315,6 +332,7 @@ class TrainerTrainValid:
                 if num_epochs > 1:
                     self.model.fit(
                         self.dataset_train,
+                        verbose=self.verbose,
                         epochs=num_epochs-1,
                         steps_per_epoch=self.train_steps_per_epoch,
                         callbacks=self.callbacks,
@@ -322,6 +340,7 @@ class TrainerTrainValid:
                 history = self.model.fit(
                     self.dataset_train,
                     epochs=1,
+                    verbose=self.verbose,
                     steps_per_epoch=self.train_steps_per_epoch,
                     callbacks=self.callbacks,
                     validation_data=self.dataset_valid,

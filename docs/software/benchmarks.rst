@@ -1,0 +1,4 @@
+Benchmarks
+**********
+
+.. automodule:: deephyper.benchmark

@@ -7,7 +7,7 @@
 
 ## Files
 - `run_atari`: file used to run the algorithm.
-- `policies.py`: contains the different versions of the A2C architecture (MlpPolicy, CNNPolicy, LstmPolicy...).
+- `policies.py`: contains the different versions of the A2C search_space (MlpPolicy, CNNPolicy, LstmPolicy...).
 - `a2c.py`: - Model : class used to initialize the step_model (sampling) and train_model (training)
-	- learn : Main entrypoint for A2C algorithm. Train a policy with given network architecture on a given environment using a2c algorithm.
+	- learn : Main entrypoint for A2C algorithm. Train a policy with given network search_space on a given environment using a2c algorithm.
 - `runner.py`: class used to generates a batch of experiences

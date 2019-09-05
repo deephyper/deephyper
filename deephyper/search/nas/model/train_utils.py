@@ -4,18 +4,21 @@ import numpy as np
 import tensorflow as tf
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
-from deephyper.search import util
+from ... import util
 
 optimizers_keras = OrderedDict()
 optimizers_keras['sgd'] = tf.keras.optimizers.SGD
 optimizers_keras['rmsprop'] = tf.keras.optimizers.RMSprop
 optimizers_keras['adagrad'] = tf.keras.optimizers.Adagrad
 optimizers_keras['adam'] = tf.keras.optimizers.Adam
+optimizers_keras['adadelta'] = tf.keras.optimizers.Adadelta
+optimizers_keras['adamax'] = tf.keras.optimizers.Adamax
+optimizers_keras['nadam'] = tf.keras.optimizers.Nadam
+
 
 def selectOptimizer_keras(name):
-    '''
-      Return the optimizer defined by name.
-    '''
+    """Return the optimizer defined by name.
+    """
     if (optimizers_keras.get(name) == None):
         raise RuntimeError(
             '"{0}" is not a defined optimizer for keras.'.format(name))

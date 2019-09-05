@@ -1,15 +1,14 @@
 import os
-from random import random
+import json
+from random import random, seed
 
-from deephyper.search import Search
+from deephyper.search import util
+from deephyper.search.nas import NeuralArchitectureSearch
+from deephyper.core.logs.logging import JsonMessage as jm
+from deephyper.evaluator.evaluate import Encoder
 
-try:
-    from mpi4py import MPI
-except ImportError:
-    MPI = None
-
-
-class Random(Search):
+dhlogger = util.conf_logger('deephyper.search.nas.full_random')
+class Random(NeuralArchitectureSearch):
     """Search class to run a full random neural architecture search. The search is filling every available nodes as soon as they are detected. The master job is using only 1 MPI rank.
 
     Args:
@@ -20,48 +19,44 @@ class Random(Search):
 
     def __init__(self, problem, run, evaluator, **kwargs):
 
-        if MPI is None:
-            self.free_workers = 1
-        else:
-            nranks = MPI.COMM_WORLD.Get_size()
-            if evaluator == 'balsam':  # TODO: async is a kw
-                balsam_launcher_nodes = int(
-                    os.environ.get('BALSAM_LAUNCHER_NODES', 1))
-                deephyper_workers_per_node = int(
-                    os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
-                n_free_nodes = balsam_launcher_nodes - nranks  # Number of free nodes
-                self.free_workers = n_free_nodes * \
-                    deephyper_workers_per_node  # Number of free workers
-            else:
-                self.free_workers = 1
+        super().__init__(problem=problem, run=run, evaluator=evaluator, **kwargs)
 
-        super().__init__(problem, run, evaluator, **kwargs)
+        seed(self.problem.seed)
+
+        if evaluator == 'balsam':
+            balsam_launcher_nodes = int(
+                os.environ.get('BALSAM_LAUNCHER_NODES', 1))
+            deephyper_workers_per_node = int(
+                os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
+            n_free_nodes = balsam_launcher_nodes - 1  # Number of free nodes
+            self.free_workers = n_free_nodes * \
+                deephyper_workers_per_node  # Number of free workers
+        else:
+            self.free_workers = 1
+
+        dhlogger.info(jm(
+            type='start_infos',
+            alg='random',
+            nworkers=self.free_workers,
+            encoded_space=json.dumps(self.problem.space, cls=Encoder)
+        ))
 
     @staticmethod
     def _extend_parser(parser):
-        parser.add_argument("--problem",
-                            default="deephyper.benchmark.nas.linearReg.Problem",
-                            help="Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.nas.linearReg.Problem)."
-                            )
-        parser.add_argument("--run",
-                            default="deephyper.search.nas.model.run.quick",
-                            help="Module path to the run function you want to use for the search (e.g. deephyper.search.nas.model.run.quick)."
-                            )
-        parser.add_argument('--max-evals', type=int, default=1e10,
-                            help='maximum number of evaluations.')
+        NeuralArchitectureSearch._extend_parser(parser)
         return parser
 
     def main(self):
 
         # Setup
         space = self.problem.space
-        cs_kwargs = space['create_structure'].get('kwargs')
+        cs_kwargs = space['create_search_space'].get('kwargs')
         if cs_kwargs is None:
-            structure = space['create_structure']['func']()
+            search_space = space['create_search_space']['func']()
         else:
-            structure = space['create_structure']['func'](**cs_kwargs)
+            search_space = space['create_search_space']['func'](**cs_kwargs)
 
-        len_arch = structure.max_num_ops
+        len_arch = search_space.num_nodes
         def gen_arch(): return [random() for _ in range(len_arch)]
 
         num_evals_done = 0
@@ -79,7 +74,7 @@ class Random(Search):
         self.evaluator.add_eval_batch(gen_batch(size=available_workers))
 
         # Main loop
-        while num_evals_done < self.args.max_evals:
+        while num_evals_done < self.max_evals:
             results = self.evaluator.get_finished_evals()
 
             num_received = num_evals_done

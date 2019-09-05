@@ -27,7 +27,6 @@ class PopenFuture:
             self._state = 'active'
             stdout, stderr_data = self.proc.communicate()
             print(stdout)
-            print(stderr_data)
             tmp_res = self._parse(stdout)
             if tmp_res != sys.float_info.max:
                 self._result = tmp_res
@@ -42,7 +41,6 @@ class PopenFuture:
         self.proc.wait()
         stdout, stderr_data = self.proc.communicate()
         print(stdout)
-        print(stderr_data)
         if self.done:
             self._result = self._parse(stdout)
         else:

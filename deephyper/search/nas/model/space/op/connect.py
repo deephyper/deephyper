@@ -1,4 +1,4 @@
-from deephyper.search.nas.model.space.op import Operation
+from ..op import Operation
 
 
 class Connect(Operation):
@@ -8,35 +8,38 @@ class Connect(Operation):
 
     Args:
         graph (nx.DiGraph): a graph
-        n1 (Node): starting node
-        n2 (Node): arrival node
+        source_node (Node): source
     """
 
-    def __init__(self, struct, n1, n2, *args, **kwargs):
-        self.struct = struct
-        self.n1 = n1
-        self.n2 = n2
+    def __init__(self, search_space, source_node, *args, **kwargs):
+        self.search_space = search_space
+        self.source_node = source_node
+        self.destin_node = None
 
     def __str__(self):
-        if type(self.n1) is list:
-            if len(self.n1) > 0:
-                ids = str(self.n1[0].id)
-                for n in self.n1[1:]:
+        if type(self.source_node) is list:
+            if len(self.source_node) > 0:
+                ids = str(self.source_node[0].id)
+                for n in self.source_node[1:]:
                     ids += ',' + str(n.id)
             else:
                 ids = 'None'
         else:
-            ids = self.n1.id
-        return f'{type(self).__name__}_{ids}->{self.n2.id}'
-
-    def init(self):
-        """Set the connection in the structur graph from [n1] -> n2.
-        """
-        if type(self.n1) is list:
-            for n in self.n1:
-                self.struct.connect(n, self.n2)
+            ids = self.source_node.id
+        if self.destin_node is None:
+            return f'{type(self).__name__}_{ids}->?'
         else:
-            self.struct.connect(self.n1, self.n2)
+            return f'{type(self).__name__}_{ids}->{self.destin_node.id}'
+
+    def init(self, current_node):
+        """Set the connection in the search_space graph from [n1] -> n2.
+        """
+        self.destin_node = current_node
+        if type(self.source_node) is list:
+            for n in self.source_node:
+                self.search_space.connect(n, self.destin_node)
+        else:
+            self.search_space.connect(self.source_node, self.destin_node)
 
     def __call__(self, value, *args, **kwargs):
         return value

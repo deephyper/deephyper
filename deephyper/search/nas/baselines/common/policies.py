@@ -144,7 +144,7 @@ def build_policy(env, policy_network, value_network=None,  normalize_observation
                 policy_latent, recurrent_tensors = policy_latent
 
                 if recurrent_tensors is not None:
-                    # recurrent architecture, need a few more steps
+                    # recurrent search_space, need a few more steps
                     nenv = nbatch // nsteps
                     assert nenv > 0, 'Bad input for recurrent policy: batch size {} smaller than nsteps {}'.format(nbatch, nsteps)
                     policy_latent, recurrent_tensors = policy_network(encoded_x, nenv)
@@ -162,7 +162,7 @@ def build_policy(env, policy_network, value_network=None,  normalize_observation
                 assert callable(_v_net)
 
             with tf.variable_scope('vf', reuse=tf.AUTO_REUSE):
-                # TODO recurrent architectures are not supported with value_network=copy yet
+                # TODO recurrent search_spaces are not supported with value_network=copy yet
                 vf_latent = _v_net(encoded_x)
 
         policy = PolicyWithValue(

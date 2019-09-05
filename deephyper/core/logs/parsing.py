@@ -51,15 +51,18 @@ def parseline_reward(line, data):
 
 
 def parseline_arch_seq(line, data):
-    i_sta = line.index("'arch_seq':") + 1
-    i_end = i_sta
-    while not ']' in line[i_end]:
-        i_end += 1
-    l = []
-    for i in range(i_sta, i_end+1):
-        l.append(float(line[i].replace('[', '').replace(
-            ',', '').replace(']', '').replace('}', '')))
-    data['arch_seq'].append(l)
+    if "'arch_seq':" in line:
+        i_sta = line.index("'arch_seq':") + 1
+        i_end = i_sta
+        while not ']' in line[i_end]:
+            i_end += 1
+        l = []
+        for i in range(i_sta, i_end+1):
+            value = line[i].replace('[', '').replace(
+                ',', '').replace(']', '').replace('}', '')
+            value = float(value) if "." in value else int(value)
+            l.append(value)
+        data['arch_seq'].append(l)
 
 
 def parsing(f, data):
@@ -69,6 +72,9 @@ def parsing(f, data):
         if "y:" in line:
             parseline_reward(line, data)
             parseline_arch_seq(line, data)
+            line = " ".join(line)
+            date = line.split('|')[0]
+            data['timestamps'].append(date)
         elif ">>>" in line:
             parseline_json(line, data)
 
@@ -99,6 +105,7 @@ def main(path, *args, **kwargs):
 
     data['raw_rewards'] = list()
     data['arch_seq'] = list()
+    data['timestamps'] = list()
 
     with open(path, 'r') as flog:
         print('File has been opened')
@@ -121,5 +128,4 @@ def main(path, *args, **kwargs):
         json.dump(data, fjson, indent=2)
     print('Json dumped!')
 
-    print(f'len raw_rewards: {len(data["raw_rewards"])}')
-    print(f'len arch_seq   : {len(data["arch_seq"])}')
+    print(f'{len(data["raw_rewards"])} evaluations collected, parsing done!')

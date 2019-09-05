@@ -11,7 +11,7 @@
 # What is DeepHyper?
 
 DeepHyper is an automated machine learning ([AutoML](https://en.wikipedia.org/wiki/Automated_machine_learning)) package for deep neural networks. It comprises two components: 1) Neural architecture search is an approach for automatically searching for high-performing the deep neural network
-architecture. 2) Hyperparameter search is an approach for automatically searching for high-performing hyperparameters for a given deep neural network. DeepHyper provides an infrastructure that targets experimental research in neural architecture
+search_space. 2) Hyperparameter search is an approach for automatically searching for high-performing hyperparameters for a given deep neural network. DeepHyper provides an infrastructure that targets experimental research in neural architecture
 and hyperparameter search methods, scalability, and portability across HPC systems. It comprises three modules:
 benchmarks, a collection of extensible and diverse benchmark problems;
 search, a set of search algorithms for neural architecture search and hyperparameter search;
@@ -47,7 +47,7 @@ cd deephyper/
 pip install -e '.[tests,docs]'
 ```
 
-# Directory structure
+# Directory search_space
 
 ```
 benchmark/
@@ -72,13 +72,15 @@ nas/
 # Quickstart
 
 ## Hyperparameter Search (HPS)
+
 ```
-python -m deephyper.search.hps.ambs --problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run
+deephyper hps ambs --evaluator ray --problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run --n-jobs 1
 ```
 
 ## Neural Architecture Search (NAS)
+
 ```
-python -m deephyper.search.nas.ppo_a3c_sync --problem deephyper.benchmark.nas.mnist1D.problem.Problem --run deephyper.search.nas.model.run.alpha.run
+deephyper nas ambs --evaluator ray --problem deephyper.benchmark.nas.polynome2Reg.Problem --n-jobs 1
 ```
 
 # Who is responsible?

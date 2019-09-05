@@ -1,5 +1,5 @@
 """
-The module ``deephyper.post.train`` aims to run post-training using an already defined Problem and the results of a finished search (e.g. list of best architectures).
+The module ``deephyper.post.train`` aims to run post-training using an already defined Problem and the results of a finished search (e.g. list of best search_spaces).
 
 Create a post-training Balsam application:
 
@@ -8,14 +8,14 @@ Create a post-training Balsam application:
 
     balsam app --name POST --exe "$(which python) -m deephyper.post.train"
 
-Collect a list of 50 best architectures:
+Collect a list of 50 best search_spaces:
 
 .. code-block:: console
     :caption: bash
 
     deephyper-analytics json best -n 50 -p /projects/datascience/regele/experiments/cfd/cls_mlp_turb/exp_0/cls_mlp_turb_exp_0_2019-05-25_15.json
 
-Create a Balsam job to run your post-training using the previously created list of best architectures:
+Create a Balsam job to run your post-training using the previously created list of best search_spaces:
 
 .. code-block:: console
     :caption: bash
@@ -59,7 +59,7 @@ class Manager:
 
         Args:
             problem (Problem): problem related to post-training.
-            p_f_best (str): path to the `.json` file containing the list of best architectures.
+            p_f_best (str): path to the `.json` file containing the list of best search_spaces.
             evaluator (str): name of evaluator to use for the post-training.
         """
 
@@ -161,7 +161,7 @@ class Manager:
                             help="Module path to the Problem instance you want to use for the post-training (e.g. deephyper.benchmark.hps.polynome2.Problem)."
                             )
         parser.add_argument("--fbest",
-                            help="Path to the 'json' file containing the list of best architectures. "
+                            help="Path to the 'json' file containing the list of best search_spaces. "
                             )
         parser.add_argument("--backend",
                             default='tensorflow',

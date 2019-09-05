@@ -21,8 +21,8 @@ def test_trainer_regressor_train_valid_with_one_input():
     # load functions
     load_data = util.load_attr_from(config['load_data']['func'])
     config['load_data']['func'] = load_data
-    config['create_structure']['func'] = util.load_attr_from(
-        config['create_structure']['func'])
+    config['create_search_space']['func'] = util.load_attr_from(
+        config['create_search_space']['func'])
 
     # Loading data
     kwargs = config['load_data'].get('kwargs')
@@ -40,12 +40,12 @@ def test_trainer_regressor_train_valid_with_one_input():
         'valid_Y': vy
     }
 
-    structure = config['create_structure']['func'](
-        input_shape, output_shape, **config['create_structure']['kwargs'])
-    arch_seq = [random() for i in range(structure.num_nodes)]
+    search_space = config['create_search_space']['func'](
+        input_shape, output_shape, **config['create_search_space']['kwargs'])
+    arch_seq = [random() for i in range(search_space.num_nodes)]
     print('arch_seq: ', arch_seq)
-    structure.set_ops(arch_seq)
-    structure.draw_graphviz('trainer_keras_regressor_test.dot')
+    search_space.set_ops(arch_seq)
+    search_space.draw_graphviz('trainer_keras_regressor_test.dot')
 
     if config.get('preprocessing') is not None:
         preprocessing = util.load_attr_from(config['preprocessing']['func'])
@@ -53,9 +53,9 @@ def test_trainer_regressor_train_valid_with_one_input():
     else:
         config['preprocessing'] = None
 
-    model = structure.create_model()
+    model = search_space.create_model()
     plot_model(model, to_file='trainer_keras_regressor_test.png',
-               show_shapes=True)
+                show_shapes=True)
 
     trainer = TrainerTrainValid(config=config, model=model)
 
@@ -73,8 +73,8 @@ def test_trainer_regressor_train_valid_with_multiple_ndarray_inputs():
     # load functions
     load_data = util.load_attr_from(config['load_data']['func'])
     config['load_data']['func'] = load_data
-    config['create_structure']['func'] = util.load_attr_from(
-        config['create_structure']['func'])
+    config['create_search_space']['func'] = util.load_attr_from(
+        config['create_search_space']['func'])
 
     # Loading data
     kwargs = config['load_data'].get('kwargs')
@@ -93,12 +93,12 @@ def test_trainer_regressor_train_valid_with_multiple_ndarray_inputs():
         'valid_Y': vy
     }
 
-    structure = config['create_structure']['func'](
-        input_shape, output_shape, **config['create_structure']['kwargs'])
-    arch_seq = [random() for i in range(structure.num_nodes)]
+    search_space = config['create_search_space']['func'](
+        input_shape, output_shape, **config['create_search_space']['kwargs'])
+    arch_seq = [random() for i in range(search_space.num_nodes)]
     print('arch_seq: ', arch_seq)
-    structure.set_ops(arch_seq)
-    structure.draw_graphviz('trainer_keras_regressor_test.dot')
+    search_space.set_ops(arch_seq)
+    search_space.draw_graphviz('trainer_keras_regressor_test.dot')
 
     if config.get('preprocessing') is not None:
         preprocessing = util.load_attr_from(config['preprocessing']['func'])
@@ -106,9 +106,9 @@ def test_trainer_regressor_train_valid_with_multiple_ndarray_inputs():
     else:
         config['preprocessing'] = None
 
-    model = structure.create_model()
+    model = search_space.create_model()
     plot_model(model, to_file='trainer_keras_regressor_test.png',
-               show_shapes=True)
+                show_shapes=True)
 
     trainer = TrainerTrainValid(config=config, model=model)
 
@@ -126,8 +126,8 @@ def test_trainer_regressor_train_valid_with_multiple_generator_inputs():
     # load functions
     load_data = util.load_attr_from(config['load_data']['func'])
     config['load_data']['func'] = load_data
-    config['create_structure']['func'] = util.load_attr_from(
-        config['create_structure']['func'])
+    config['create_search_space']['func'] = util.load_attr_from(
+        config['create_search_space']['func'])
 
     # Loading data
     kwargs = config['load_data'].get('kwargs')
@@ -138,15 +138,15 @@ def test_trainer_regressor_train_valid_with_multiple_generator_inputs():
     # Set data shape
     config['data'] = data
     input_shape = [data['shapes'][0][f'input_{i}']
-                   for i in range(len(data['shapes'][0]))]
+                    for i in range(len(data['shapes'][0]))]
     output_shape = data['shapes'][1]
 
-    structure = config['create_structure']['func'](
-        input_shape, output_shape, **config['create_structure']['kwargs'])
-    arch_seq = [random() for i in range(structure.num_nodes)]
+    search_space = config['create_search_space']['func'](
+        input_shape, output_shape, **config['create_search_space']['kwargs'])
+    arch_seq = [random() for i in range(search_space.num_nodes)]
     print('arch_seq: ', arch_seq)
-    structure.set_ops(arch_seq)
-    structure.draw_graphviz('trainer_keras_regressor_test.dot')
+    search_space.set_ops(arch_seq)
+    search_space.draw_graphviz('trainer_keras_regressor_test.dot')
 
     if config.get('preprocessing') is not None:
         preprocessing = util.load_attr_from(config['preprocessing']['func'])
@@ -154,9 +154,9 @@ def test_trainer_regressor_train_valid_with_multiple_generator_inputs():
     else:
         config['preprocessing'] = None
 
-    model = structure.create_model()
+    model = search_space.create_model()
     plot_model(model, to_file='trainer_keras_regressor_test.png',
-               show_shapes=True)
+                show_shapes=True)
 
     trainer = TrainerTrainValid(config=config, model=model)
 

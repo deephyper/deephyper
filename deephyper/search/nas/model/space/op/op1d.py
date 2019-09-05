@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 
-from deephyper.search.nas.model.space.op import Operation
+from . import Operation
 
 class Dense(Operation):
     """Multi Layer Perceptron operation.
@@ -30,16 +30,19 @@ class Dense(Operation):
         else:
             return f'Dense_{self.units}_{self.activation.__name__}'
 
-    def __call__(self, inputs, *args, **kwargs):
+    def __call__(self, inputs, seed=None, **kwargs):
         assert len(
             inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when 1 is required.'
         if self._layer is None:  # reuse mechanism
             self._layer = keras.layers.Dense(
                 units=self.units,
-                activation=self.activation,
+                kernel_initializer=tf.keras.initializers.glorot_uniform(seed=seed),
                 **self.kwargs,
             )
+
         out = self._layer(inputs[0])
+        if self.activation is not None: # better for visualisation
+            out = keras.layers.Activation(activation=self.activation)(out)
         return out
 
 
