@@ -3,6 +3,8 @@ import argparse
 import os
 import sys
 
+from deephyper.core.cli import mpi4py_mock
+sys.modules['mpi4py'] = mpi4py_mock
 from deephyper.core.cli import hps_init, hps, nas_init, nas
 
 

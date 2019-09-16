@@ -3,5 +3,6 @@ Benchmarks are here for you to test the performance of different search algorith
 """
 
 from deephyper.benchmark.problem import Problem, HpProblem, NaProblem
+from deephyper.benchmark.util import balsamjob_spec, to_encodable
 
-__all__ = ['Problem', 'HpProblem', 'NaProblem']
+__all__ = ['Problem', 'HpProblem', 'NaProblem', 'balsamjob_spec', 'to_encodable']
