@@ -7,8 +7,16 @@ import numpy as np
 from keras.callbacks import Callback
 from datetime import datetime
 import logging
+from functools import wraps
 
 logger = logging.getLogger(__name__)
+
+def balsamjob_spec(run_func):
+    @wraps(run_func)
+    def labelled_run(param_dict):
+        return run_func(param_dict)
+    labelled_run._balsamjob_spec = True
+    return labelled_run
 
 def str2bool(s):
     s = s.lower().strip()
