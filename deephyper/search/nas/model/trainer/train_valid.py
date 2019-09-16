@@ -359,7 +359,10 @@ class TrainerTrainValid:
                 f'Trainer: number of epochs should be >= 0: {num_epochs}')
 
         if  with_pred:
+            time_start_predict = time.time()
             y_true, y_pred= self.predict()
+            time_end_predict = time.time()
+            self.train_history['predict_time'] = time_start_predict - time_end_predict
 
             self.train_history['y_true'] = y_true
             self.train_history['y_pred'] = y_pred
