@@ -98,7 +98,7 @@ def train(config):
                                     sess=sess
                                 )
                             )
-                            default_callbacks_config[cb_name].pop('beholder')
+                        default_callbacks_config[cb_name].pop('beholder')
 
                     Callback = getattr(keras.callbacks, cb_name)
                     callbacks.append(Callback(**default_callbacks_config[cb_name]))
