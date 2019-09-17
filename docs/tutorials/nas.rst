@@ -204,7 +204,7 @@ Create a Balsam ``PPO`` application:
 .. code-block:: console
     :caption: bash
 
-    balsam job --name poly_exp --workflow poly_exp --app PPO --num_nodes 2 --args "--evaluator balsam nas_problems.polynome2.problem.Problem"
+    balsam job --name poly_exp --workflow poly_exp --app PPO --num_nodes 2 --args "--evaluator balsam --problem nas_problems.polynome2.problem.Problem"
 
 .. code-block:: console
     :caption: [Out]
@@ -230,7 +230,7 @@ Create a Balsam ``PPO`` application:
     node_packing_count:             1
     environ_vars:
     application:                    PPO
-    args:                           --evaluator balsam nas_problems.polynome2.problem.Problem
+    args:                           --evaluator balsam --problem nas_problems.polynome2.problem.Problem
     user_workdir:
     wait_for_parents:               True
     post_error_handler:             False
@@ -239,7 +239,7 @@ Create a Balsam ``PPO`` application:
     state:                          CREATED
     queued_launch_id:               None
     data:                           {}
-    *** Executed command:         /lus/theta-fs0/projects/datascience/regele/dh-opt/bin/python -m deephyper.search.nas.ppo --evaluator balsam nas_problems.polynome2.problem.Problem
+    *** Executed command:         /lus/theta-fs0/projects/datascience/regele/dh-opt/bin/python -m deephyper.search.nas.ppo --evaluator balsam --problem nas_problems.polynome2.problem.Problem
     *** Working directory:        /lus/theta-fs0/projects/datascience/regele/polydb/data/poly_exp/poly_exp_575dba96
 
     Confirm adding job to DB [y/n]: y
