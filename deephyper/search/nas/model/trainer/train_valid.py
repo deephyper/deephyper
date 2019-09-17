@@ -9,6 +9,7 @@ from sklearn.metrics import mean_squared_error
 from tensorflow import keras
 
 from .....core.logs.logging import JsonMessage as jm
+from .....core.exceptions import DeephyperRuntimeError
 from .... import util
 from .. import arch as a
 from .. import train_utils as U
@@ -86,7 +87,7 @@ class TrainerTrainValid:
         elif self.data_config_type == 'ndarray':
             self.load_data_ndarray()
         else:
-            raise RuntimeError(
+            raise DeephyperRuntimeError(
                 f"Data config is not supported by this Trainer: '{self.data_config_type}'!")
 
         # prepare number of steps for training and validation
@@ -109,12 +110,12 @@ class TrainerTrainValid:
     def load_data_ndarray(self):
         # check data type
         if not type(self.config[a.data][a.train_Y]) is np.ndarray:
-            raise RuntimeError(
+            raise DeephyperRuntimeError(
                 f"train_Y data should be of type np.ndarray when type true type is: {type(self.config[a.data][a.train_Y])}")
         self.train_Y = self.config[a.data][a.train_Y]
 
         if not type(self.config[a.data][a.valid_Y]) is np.ndarray:
-            raise RuntimeError(
+            raise DeephyperRuntimeError(
                 f"valid_Y data should be of type np.ndarray when type true type is: {type(self.config[a.data][a.valid_Y])}")
         self.valid_Y = self.config[a.data][a.valid_Y]
 
@@ -127,12 +128,12 @@ class TrainerTrainValid:
             def f(x): return type(x) is np.ndarray
             if not all(map(f, self.config[a.data][a.train_X])) or \
                     not all(map(f, self.config[a.data][a.valid_X])):
-                raise RuntimeError(
+                raise DeephyperRuntimeError(
                     f"all inputs data should be of type np.ndarray !")
             self.train_X = self.config[a.data][a.train_X]
             self.valid_X = self.config[a.data][a.valid_X]
         else:
-            raise RuntimeError(
+            raise DeephyperRuntimeError(
                 f"Data are of an unsupported type and should be of same type: type(self.config['data']['train_X'])=={type(self.config[a.data])} and type(self.config['data']['valid_X'])=={type(self.config[a.data][a.valid_X])} !")
 
         logger.debug(f'{self.cname}: {len(self.train_X)} inputs')
@@ -140,12 +141,12 @@ class TrainerTrainValid:
         # check data length
         self.train_size = np.shape(self.train_X[0])[0]
         if not all(map(lambda x: np.shape(x)[0] == self.train_size, self.train_X)):
-            raise RuntimeError(
+            raise DeephyperRuntimeError(
                 f'All training inputs data should have same length!')
 
         self.valid_size = np.shape(self.valid_X[0])[0]
         if not all(map(lambda x: np.shape(x)[0] == self.valid_size, self.valid_X)):
-            raise RuntimeError(
+            raise DeephyperRuntimeError(
                 f'All validation inputs data should have same length!')
 
     def preprocess_data(self):
@@ -153,7 +154,7 @@ class TrainerTrainValid:
             return
 
         if not self.preprocessor is None:
-            raise RuntimeError('You can only preprocess data one time.')
+            raise DeephyperRuntimeError('You can only preprocess data one time.')
 
         if self.preprocessing_func:
             logger.debug(
@@ -241,13 +242,13 @@ class TrainerTrainValid:
             keep_normalize (bool, optional): if False then the preprocessing will be reversed after prediction. if True nothing will be reversed. Defaults to False.
 
         Raises:
-            RuntimeError: [description]
+            DeephyperRuntimeError: [description]
 
         Returns:
             tuple: (y_true, y_pred)
         """
         if not(dataset == 'valid' or dataset == 'train'):
-            raise RuntimeError(
+            raise DeephyperRuntimeError(
                 "dataset parameter should be equal to: 'valid' or 'train'")
 
         if dataset == 'valid':
@@ -303,7 +304,7 @@ class TrainerTrainValid:
             last_only (bool, optional): will compute metrics after the last epoch only. Defaults to False, will compute metrics after each training epoch (use it to save compute time).
 
         Raises:
-            RuntimeError: raised when the ``num_epochs < 0``.
+            DeephyperRuntimeError: raised when the ``num_epochs < 0``.
 
         Returns:
             dict: a dictionnary corresponding to the training.
@@ -355,7 +356,7 @@ class TrainerTrainValid:
 
         elif num_epochs < 0:
 
-            raise RuntimeError(
+            raise DeephyperRuntimeError(
                 f'Trainer: number of epochs should be >= 0: {num_epochs}')
 
         if  with_pred:
