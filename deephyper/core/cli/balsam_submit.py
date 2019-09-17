@@ -29,6 +29,8 @@ def add_subparser(subparsers):
 def main(mode, workflow, problem, run, **kwargs):
     """Create & submit the DH search via Balsam"""
     job = pre_submit(problem, run, workflow)
+    if os.path.exists(problem): problem = os.path.abspath(problem)
+    if os.path.exists(run): run = os.path.abspath(run)
 
     if mode == 'nas':
         print("Creating NAS(PPO) BalsamJob...", end='', flush=True)
@@ -93,8 +95,6 @@ def bootstrap_apps():
 def pre_submit(problem, run, workflow):
     """Validate command line; prepare apps"""
     from balsam.core.models import BalsamJob
-    if os.path.exists(problem): problem = os.path.abspath(problem)
-    if os.path.exists(run): run = os.path.abspath(run)
     validate(problem, run, workflow)
     print("Bootstrapping apps...", end='', flush=True)
     bootstrap_apps()

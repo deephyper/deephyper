@@ -4,8 +4,6 @@ import os
 import sys
 
 from deephyper.core.cli import mpi4py_mock
-from deephyper.core.cli import tensorflow_mock
-from deephyper.core.cli import keras_mock
 sys.modules['mpi4py'] = mpi4py_mock
 from deephyper.core.cli import hps_init, hps, nas_init, nas, balsam_submit
 
