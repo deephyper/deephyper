@@ -1,9 +1,8 @@
-How to manage your Balsam jobs?
-*******************************
+Managing Experiments with Balsam
+**********************************
 
 The Balsam command line
 =======================
-
 
 One way to discover the Balsam command line is to look at its help
 menu by running::

@@ -1,19 +1,28 @@
 .. _create-new-hps-problem:
 
-Create a new hyperparameter search problem
+Hyperparameter Search (HPS)
 ******************************************
 
+Every DeepHyper run requires a `Problem` instance and a `run` callable. The
+`Problem` defines a search domain over which the return value of `run` is
+maximized.
 
-A  hyperparameter search (HPS) problem can be defined using three files with a HPS problem directory::
+
+
+We will illustrate DeepHyper HPS using a regression example. We generate
+synthetic data according to :math:`y = - \mathbf{x}^{T} \mathbf{x}` for random
+:math:`N`-dimensional input vectors :math:`\mathbf{x}`. Our regression model
+is a multilayer perceptron with 1 hidden layer, implemented in Keras.  
+
+With HPS, we can then tune the model parameters to optimize :math:`R^{2}`
+evaluated on a validation data set.
+
+We shall define the HPS problem using three files in a Python package directory::
 
       hps_problem_directory/
             load_data.py
             model_run.py
             problem.py
-
-
-We will illustrate the HPS problem definition using a regression example. We will use polynome function to generate training and test data
-and run a HPS to tune the hyperparameters of a simple neural network.
 
 
 

@@ -24,39 +24,23 @@ it is already running::
 
     source balsamactivate testdb
 
-The database is now running, let's create our first balsam application
-in order to run a Asynchronous Model-Based Search (AMBS)::
+The database is now running. We can submit an Asynchronous Model-Based Search (AMBS)
+run through Balsam as follows::
 
-    balsam app --name AMBS --exec "$(which python) -m deephyper.search.hps.ambs"
+    deephyper balsam-submit hps test -p deephyper.benchmark.hps.polynome2.Problem -r deephyper.benchmark.hps.polynome2.run \ 
+    -t 60 -q debug-cache-quad -n 4 -A datascience -j mpi
 
-You can run the following command to print all the applications available
-in your current balsam environment::
+This creates an AMBS hyperparameter search job for the given `Problem` and `run` arguments.  The parameters on the second line
+indicate: 60 minute wall-time, submission to `debug-cache-quad` queue, running on 4 nodes, charging to `datascience` allocation,
+and using the `mpi` job mode of Balsam. Refer to the Command Line Interface documentation for more information on this command.
 
-    balsam ls apps
-
-Then create a new job::
-
-    balsam job --name test --application AMBS --workflow TEST --args '--evaluator balsam --problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run'
-
-Print jobs referenced in Balsam database::
+You can use `balsam ls` to see the job that was added to the database::
 
     balsam ls jobs
 
-.. note::
-
-    In our case we are setting ``PROJECT_NAME`` to *datascience*::
-
-        export PROJECT_NAME=datascience
-
-Finally you can submit a cobalt job to Theta which will start by running
-your master job named test::
-
-    balsam submit-launch -n 128 -q default -t 180 -A $PROJECT_NAME --job-mode serial --wf-filter TEST
-
-
 Now if you want to look at the logs, go to ``testdb/data/TEST``. You'll see
 one directory prefixed with ``test``. Inside this directory you will find the
-logs of you search. All the other directories prefixed with ``task`` correspond
+logs of your search. All the other directories prefixed with ``task`` correspond
 to the logs of your ``--run`` function, here the run function is corresponding
 to the training of a neural network.
 

@@ -1,6 +1,6 @@
 .. _create-new-nas-problem:
 
-Create a new neural architecture search problem
+Neural Architecture Search (NAS)
 ***********************************************
 
 A  neural architecture search (NAS) problem can be defined using three files with a NAS problem directory within a python package::

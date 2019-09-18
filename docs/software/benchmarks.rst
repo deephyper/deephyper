@@ -1,4 +1,6 @@
-Benchmarks
-**********
+.. _benchmarks:
+
+Benchmarks Package
+********************
 
 .. automodule:: deephyper.benchmark

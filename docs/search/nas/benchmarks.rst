@@ -1,10 +1,10 @@
 Benchmarks
-**********
+==============
 
 .. _available-nas-benchmarks:
 
 Available NAS benchmarks
-========================
+---------------------------
 
 .. automodule:: deephyper.benchmark.nas
 

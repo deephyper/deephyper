@@ -1,7 +1,7 @@
 .. _SearchDH:
 
-Search
-******
+Search Methods
+*****************
 
 .. automodule:: deephyper.search
 

@@ -38,7 +38,7 @@ class Problem:
 
 
 class HpProblem(Problem):
-    """Problem specification for Hyperparameter Optimization
+    """Problem specification for Hyperparameter Search
     """
 
     def __init__(self, seed=None, **kwargs):
