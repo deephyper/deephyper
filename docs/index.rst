@@ -39,6 +39,7 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
     :maxdepth: 2
     :caption: User Guides
 
+    run/newproblem
     run/local
     run/theta
     tutorials/job_management

@@ -20,6 +20,7 @@ def main(mode, name, *args, **kwargs):
     assert os.path.exists('setup.py'), 'No setup.py in current directory'
     assert os.path.exists('.deephyper'), 'Not inside a deephyper project directory'
     assert '/' not in prob_name, f'Problem name must not contain "/"'
+    assert prob_name.isidentifier(), f'{prob_name} is not a valid Python identifier'
 
     os.mkdir(prob_name)
     with open(os.path.join(prob_name, '__init__.py'), 'w') as fp:

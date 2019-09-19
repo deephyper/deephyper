@@ -269,104 +269,73 @@ And run the script:
 Running the search on ALCF's Theta and Cooley
 ==============================================
 
-Now let's run the search on an HPC system such as Theta or Cooley. First create a Balsam database:
+Now let's run the same search, but scale out to run parallel model evaluations
+across the nodes of an HPC system such as Theta or Cooley. First create a Balsam database:
 
 .. code-block:: console
     :caption: bash
 
-    balsam init polydb
+    $ balsam init polydb
 
 Start and connect to the ``polydb`` database:
 
 .. code-block:: console
     :caption: bash
 
-    source balsamactivate polydb
+    $ source balsamactivate polydb
 
-Create a Balsam ``AMBS`` application:
-
-.. code-block:: console
-    :caption: bash
-
-    balsam app --name AMBS --exe "$(which python) -m deephyper.search.hps.ambs"
-
-.. code-block:: console
-    :caption: [Out]
-
-    Application 1:
-    -----------------------------
-    Name:           AMBS
-    Description:
-    Executable:     /lus/theta-fs0/projects/datascience/regele/dh-opt/bin/python -m deephyper.search.hps.ambs
-    Preprocess:
-    Postprocess:
-
-Add a Balsam job to the ``polydb`` database:
+Set up the demo ``polynome2`` problem, as before:
 
 .. code-block:: console
     :caption: bash
 
-    balsam job --name step_2 --workflow step_2 --app AMBS --args "--evaluator balsam --problem $PWD/polynome2/problem.py --run $PWD/polynome2/model_run.py"
+    $ deephyper start-project demo
+    $ cd demo
+    $ deephyper new-problem hps polynome2
 
-.. code-block:: console
-    :caption: [Out]
 
-    BalsamJob 575dba96-c9ec-4015-921c-abcb1f261fce
-    ----------------------------------------------
-    workflow:                       step_2
-    name:                           step_2
-    description:
-    lock:
-    parents:                        []
-    input_files:                    *
-    stage_in_url:
-    stage_out_files:
-    stage_out_url:
-    wall_time_minutes:              1
-    num_nodes:                      1
-    coschedule_num_nodes:           0
-    ranks_per_node:                 1
-    cpu_affinity:                   none
-    threads_per_rank:               1
-    threads_per_core:               1
-    node_packing_count:             1
-    environ_vars:
-    application:                    AMBS
-    args:                           --evaluator balsam --problem /projects/datascience/regele/polynome2/problem.py --run /projects/datascience/regele/polynome2/model_run.py
-    user_workdir:
-    wait_for_parents:               True
-    post_error_handler:             False
-    post_timeout_handler:           False
-    auto_timeout_retry:             True
-    state:                          CREATED
-    queued_launch_id:               None
-    data:                           {}
-    *** Executed command:         /lus/theta-fs0/projects/datascience/regele/dh-opt/bin/python -m deephyper.search.hps.ambs --evaluator balsam --problem /projects/datascience/regele/polynome2/problem.py --run /projects/datascience/regele/polynome2/model_run.py
-    *** Working directory:        /lus/theta-fs0/projects/datascience/regele/polydb/data/step_2/step_2_575dba96
-
-    Confirm adding job to DB [y/n]: y
-
-Submit the search to the Cobalt scheduler:
+Use the ``balsam-submit`` command to set up and dispatch an ``AMBS`` job to the local scheduler:
 
 .. code-block:: console
     :caption: bash
 
-    balsam submit-launch -n 4 -q debug-cache-quad -t 60 -A datascience --job-mode serial --wf-filter step_2
+    $ deephyper balsam-submit hps polynome2_demo -p polynome2.problem.Problem -r polynome2.model_run.run  \
+       -t 30 -q debug-cache-quad -n 4 -A datascience -j mpi
+
 
 .. code-block:: console
     :caption: [Out]
 
-    Submit OK: Qlaunch {   'command': '/lus/theta-fs0/projects/datascience/regele/polydb/qsubmit/qlaunch1.sh',
+    Validating Problem...OK
+    Validating run...OK
+    Bootstrapping apps...OK
+    Creating HPS(AMBS) BalsamJob...OK
+    Performing job submission...
+    Submit OK: Qlaunch {   'command': '/lus/theta-fs0/projects/datascience/msalim/deephyper/deephyper/db/qsubmit/qlaunch12.sh',
         'from_balsam': True,
-        'id': 1,
-        'job_mode': 'serial',
-        'nodes': 6,
+        'id': 12,
+        'job_mode': 'mpi',
+        'nodes': 4,
         'prescheduled_only': False,
         'project': 'datascience',
-        'queue': 'debug-flat-quad',
-        'scheduler_id': 347124,
+        'queue': 'debug-cache-quad',
+        'scheduler_id': 370907,
         'state': 'submitted',
-        'wall_minutes': 60,
-        'wf_filter': 'step_2'}
+        'wall_minutes': 30,
+        'wf_filter': 'test_hps'}
+    **************************************************************************************************************************************
+    Success. The search will run at: /myprojects/deephyper/deephyper/db/data/test_hps/test_hps_2ef063ce
+    **************************************************************************************************************************************
 
-Now the search is done. You will find results at ``polydb/data/step_2/step_2_575dba96``.
+Above, ``balsam-submit`` takes the following arguments:
+
+    1. The first positional argument **mode** is either ``hps`` or ``nas``
+    2. The second positional argument **workflow** must be a unique identifier for the run. An error will be raised if this workflow already exists.
+    3. ``-p Problem`` and ``-r Run`` arguments define the search, as before
+    4. ``-t 60`` indicates the walltime (minutes) of the scheduled job
+    5. ``-n 4`` requests four nodes on which to run the search.  DeepHyper will automatically scale the search out across available nodes.
+    6. ``-q Queue`` and ``-A Project`` pass the name of the job queue and project allocation to the HPC scheduler
+    7. ``-j`` or ``--job-mode`` must be either ``mpi`` or ``serial``.  This controls how Balsam launches your ``model_runs``.
+
+Once the search is done, you will find results in the directory shown in the banner: 
+``/myprojects/deephyper/deephyper/db/data/test_hps/test_hps_2ef063ce``.

@@ -1,30 +1,25 @@
 Running on Theta
 ****************
 
-User
-====
-
 Hyperparameter Search
----------------------
+==========================
 
 First we are going to run a search on ``deephyper.benchmark.hps.polynome2``
 benchmark. In order to achieve this goal we first have to load the deephyper
-module on Theta. This module is bringing deephyper in you current environment
-but also the cray python distribution and the balsam software::
+module on Theta. This module contains a Cray Python 3.6-based virtual environment
+with Balsam and DeepHyper installed.::
 
     module load deephyper
 
-Then you can create a new postgress database in the current directory, this
-database is used by the balsam software::
+Next, create a Balsam database in one of your ``/projects`` subdirectories::
 
     balsam init testdb
 
-Once the database has been created you can start it, or link to it if
-it is already running::
+Once the database has been created you can start (or re-connect to) it::
 
     source balsamactivate testdb
 
-The database is now running. We can submit an Asynchronous Model-Based Search (AMBS)
+The database is now up. We can submit an Asynchronous Model-Based Search (AMBS)
 run through Balsam as follows::
 
     deephyper balsam-submit hps test -p deephyper.benchmark.hps.polynome2.Problem -r deephyper.benchmark.hps.polynome2.run \ 
@@ -45,7 +40,7 @@ to the logs of your ``--run`` function, here the run function is corresponding
 to the training of a neural network.
 
 Neural Architecture Search
---------------------------
+==========================
 
 ::
 

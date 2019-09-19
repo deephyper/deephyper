@@ -1,42 +1,33 @@
 Running locally
 ***************
 
-This section will show you how to run Hyperparameter or neural architecture on your local machine. All search can be run throw command line or using python.
+This section will show you how to run Hyperparameter or neural architecture on your client machine, like a laptop. 
+All searches can be invoked from either the shell or the Python API.
+
+.. note::
+
+    To invoke HPS or NAS from Python, use DeepHyper's ``Search`` API (see :ref:`SearchDH`).
+
+
+.. note::
+
+    You can use the ``--help`` argument to see valid options for any DeepHyper subcommand. For 
+    instance::
+
+        $ deephyper hps ambs --help
 
 Hyperparameter search
 =====================
 
-Command Line
-------------
+Let's run asynchronous model-based search (AMBS) on the ``polynome2`` benchmark installed with DeepHyper: ::
 
-Assuming you have installed deephyper on your local environment we will show you how to run an asynchronous model-based search (AMBS) on a benchmark included within deephyper. To print the arguments of a search like AMBS just run:
+    deephyper hps ambs --problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run
 
-::
 
-    python -m deephyper.search.hps.ambs --help
-
-Now you can run AMBS with custom arguments:
-
-::
-
-    python -m deephyper.search.hps.ambs --problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run
-
-Python
-------
-
-You can also use our hyperparameter searches directly from a python file by importing its corresponding class, for more details see :ref:`SearchDH`.
 
 Neural Architecture Search
 ==========================
 
-Command Line
-------------
-
 ::
 
-    python -m deephyper.search.nas.ppo --problem deephyper.benchmark.nas.mnist1D.problem.Problem --run deephyper.search.nas.model.run.alpha.run
-
-Python
-------
-
-You can also use our hyperparameter searches directly from a python file by importing its corresponding class, for more details see :ref:`SearchDH`.
+    deephyper nas regevo --problem deephyper.benchmark.nas.linearReg.Problem
