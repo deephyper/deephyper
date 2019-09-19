@@ -3,7 +3,7 @@ import os
 import sys
 
 def add_subparser(subparsers):
-    subparser_name = 'startproject'
+    subparser_name = 'start-project'
     function_to_call = main
 
     subparser = subparsers.add_parser(
@@ -20,3 +20,5 @@ def main(path, *args, **kwargs):
         pass
     with open(os.path.join(path, '.deephyper'), 'w') as fp:
         pass
+    os.chdir(path)
+    os.system('pip install -e .')

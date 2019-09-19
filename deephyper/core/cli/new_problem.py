@@ -24,7 +24,6 @@ def main(mode, name, *args, **kwargs):
     os.mkdir(prob_name)
     with open(os.path.join(prob_name, '__init__.py'), 'w') as fp:
         pass
-    os.system(f'pip install -e .')
     render_files(mode, prob_name)
 
 def render_files(mode, prob_name):

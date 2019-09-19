@@ -136,7 +136,7 @@ Next, we will run a random search (RDM).
 .. code-block:: console
     :caption: bash
 
-    deephyper nas random --evaluator ray --problem nas_problems.polynome2.problem.Problem
+    deephyper nas random --evaluator ray --problem nas_polynome2.problem.Problem
 
 .. note::
 

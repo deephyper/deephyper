@@ -3,58 +3,82 @@
 Hyperparameter Search (HPS)
 ******************************************
 
-Every DeepHyper run requires a `Problem` instance and a `run` callable. The
-`Problem` defines a search domain over which the return value of `run` is
-maximized.
+Every DeepHyper search requires at least 2 Python objects as input:
 
+ * ``run``: your "black-box" function returning the objective value to be maximized
+ * ``Problem``: an instance of ``deephyper.benchmarks.Problem`` which defines the search space of input parameters to ``run`` 
 
+These objects are required for both HPS and NAS, but take on a slightly different meaning in the context of NAS.
 
 We will illustrate DeepHyper HPS using a regression example. We generate
 synthetic data according to :math:`y = - \mathbf{x}^{T} \mathbf{x}` for random
 :math:`N`-dimensional input vectors :math:`\mathbf{x}`. Our regression model
 is a multilayer perceptron with 1 hidden layer, implemented in Keras.  
+Using HPS, we will then tune the model hyperparameters to optimize the validation :math:`R^{2}`
+metric.
 
-With HPS, we can then tune the model parameters to optimize :math:`R^{2}`
-evaluated on a validation data set.
+Setting up the problem
+=======================
 
-We shall define the HPS problem using three files in a Python package directory::
+.. note::
+    Be sure to work in a virtual environment where you can easily ``pip install`` new packages.
+    This typically entails using either Anaconda, virtualenv, or Pipenv.
 
-      hps_problem_directory/
-            load_data.py
-            model_run.py
-            problem.py
-
-
-
-
-Create a problem directory
-==========================
-First, we will create a hps_problem_directory ``polynome2``.
+Let's start by creating a new DeepHyper project workspace. This a directory where you will create
+search problem instances that are automatically installed and importable across your Python environment.
 
 .. code-block:: console
     :caption: bash
 
-    mkdir polynome2
-    cd polynome2
+    $ deephyper start-project hps_demo
 
-Create load_data.py
+
+A new ``hps_demo`` directory is created, containing the following files::
+
+      hps_demo/
+            __init__.py
+            setup.py
+
+We can now define DeepHyper search problems inside this directory, using either
+``deephyper new-problem nas {name}`` or ``deephyper new-problem hps {name}`` for NAS
+or HPS, respectively.
+
+Let's set up an HPS problem called ``polynome2`` as follows:
+
+.. code-block:: console
+    :caption: bash
+
+    $ cd hps_demo
+    $ deephyper new-problem hps polynome2
+
+
+A new HPS problem subdirectory should be in place. This is a Python subpackage containing 
+sample code in the files ``__init__.py``, ``load_data.py``, ``model_run.py``, and ``problem.py``.  
+Overall, your project directory should look like::
+      
+      hps_demo/
+            __init__.py
+            setup.py
+            polynome2/
+                __init__.py
+                load_data.py
+                model_run.py
+                problem.py
+
+
+Generating data
 ===================
 
-Second, we will create ``load_data.py`` file that loads and returns the training and testing data.
-
-.. code-block:: console
-    :caption: bash
-
-    touch load_data.py
-
-We will generate data from a function :math:`f` where :math:`X \in [a, b]^n`  such as :math:`f(X) = -\sum_{i=0}^{n-1} {x_i ^2}`:
+The sample ``load_data.py`` will generate the training and validation data for our demo regression problem. 
+While not required by the DeepHyper HPS API, it is helpful to encapsulate data loading and preparation in a separate module.
+This sample generates data from a function :math:`f` where :math:`X \in [a, b]^n`  where :math:`f(X) = -\sum_{i=0}^{n-1} {x_i ^2}`:
 
 .. literalinclude:: polynome2/load_data.py
     :linenos:
     :caption: polynome2/load_data.py
     :name: polynome2-load_data
 
-Test the ``load_data`` function:
+You can test the ``load_data`` function:
 
 .. code-block:: console
     :caption: bash
@@ -71,23 +95,28 @@ The expected output is:
     test_X shape: (2000, 10)
     test_y shape: (2000, 1)
 
-Create model_run.py
+The Keras model
 ===================
 
-Third, we will create ``model_run.py`` that contains the code for the neural network.
-We will use Keras for the neural network definition.
+``model_run.py`` contains the code for the neural network that we will train.
 
-.. code-block:: console
-    :caption: bash
+The model is implemented in the ``run()`` function below. We will provide this function to
+DeepHyper, which will call it to evaluate various hyperparameter settings.
+This function takes a ``point`` argument, which is a dictionary of 
+tunable hyperparameters. In this case, we will tune:
 
-    touch model_run.py
+    * The number of units of the Dense hidden layer (``point['units']``)
+    * The activation function of the Dense layer (``point['activation'])``
+    * The learning rate of the RMSprop optimizer (``point['lr']``).
 
-We will create a neural network model and run it to make sure that the model runs without any error:
+After training, the validation :math:`R^{2}` is returned by the ``run()`` function.  This return value is
+the objective for maximization by the DeepHyper HPS search algorithm.
 
-.. literalinclude:: polynome2/model_run_step_0.py
+.. literalinclude:: polynome2/model_run_step_1.py
     :linenos:
-    :caption: Step 0: polynome2/model_run.py
-    :name: polynome2-model_run_step_0
+    :caption: Step 1: polynome2/model_run.py
+    :name: polynome2-model_run_step_1
+
 
 .. note::
 
@@ -104,7 +133,7 @@ We will create a neural network model and run it to make sure that the model run
                         )]
         ...
 
-Train this model and look at it accuracy:
+We can first train this model to evaluate the baseline accuracy:
 
 .. code-block:: console
     :caption: bash
@@ -118,54 +147,21 @@ Train this model and look at it accuracy:
 
 .. image:: polynome2/model_step_0_val_r2.png
 
-.. note::
-    When defining a new HPS problem, ``model_run.py``
-    must be runnable from any arbitrary working directory. This means that Python
-    modules simply located in the same directory as the ``model_run.py`` will not be
-    part of the default Python import path, and importing them will cause an ``ImportError``.
-    For example in :ref:`polynome2-model_run_step_0` we are doing ``import load_data``.
 
-    To ensure that modules located alongside the ``model_run.py`` script are
-    always importable, a quick workaround is to explicitly add the problem
-    folder to ``sys.path`` at the top of the script:
 
-    .. code-block:: python
-        :linenos:
+Defining the HPS Problem space
+========================================
 
-        import os
-        import sys
-        here = os.path.dirname(os.path.abspath(__file__))
-        sys.path.insert(0, here)
+The ``run`` function in ``model_run.py`` expects a hyperparameter dictionary with three keys: ``units, activation, and lr``.
+We define the acceptable ranges for these hyperparameters with the ``Problem`` object inside ``problem.py`.
+Hyperparameter ranges are defined using the following syntax:
 
-Next, we modify :ref:`polynome2-model_run_step_0` for HPS with DeepHyper. The ``run`` function will be used by DeepHyper and a ``point`` Python dictionary will be passed
-to this function.
-In the ``point`` dictionary, each key is a hyperparameter.
-The tunable hyperparameters are the number of units of the Dense layer (i.e. ``point['units']``),
-the activation function of the Dense layer (i.e. ``point['activation'])``, and
-the learning rate of the optimizer (i.e. ``point['lr']``).
-These modifications are given in :ref:`polynome2-model_run_step_1`:
+    * Discrete integer ranges are generated from a tuple: ``(lower: int, upper: int)``
+    * Continous parameters are generated from a tuple: ``(lower: float, upper: float)``
+    * Categorical or nonordinal hyperparameters ranges can be given as a list of possible values: ``[val1, val2, ...]``
 
-.. literalinclude:: polynome2/model_run_step_1.py
-    :linenos:
-    :caption: Step 1: polynome2/model_run.py
-    :name: polynome2-model_run_step_1
-
-Create problem.py
-==================
-
-The ``run`` function in ``model_run.py`` accepts arguments: ``units, activation, and lr``.
-Next, we will define the ranges for the hyperparameters using ``problem.py`` file.
-Each hyperparameter range is defined using the following notation.
-The integer and real hyperparameter range is given by a tuple (lower_bound, upper_bound).
-The categorical or nonordinal hyperparameter range is given by a list of possible values.
-
-.. code-block:: console
-    :linenos:
-
-    touch problem.py
-
-You can also add starting points to your problem if you already know good starting points in the search space.
-Just use the ``add_starting_point(...)`` method.
+You probably have one or more "reference" sets of hyperparameters that are either hand-crafted or chosen by intuition. 
+To bootstrap the search with these so-called `starting points`, use the ``add_starting_point(...)`` method.
 
 .. note::
     Several starting points can be defined with ``Problem.add_starting_point(**dims)``.
@@ -200,66 +196,36 @@ The expected output is:
 Running the search locally
 ==========================
 
-Everything is ready to run. Let's remember the search_space of our experiment::
+Everything is ready to run. Recall the Python files defining our experiment::
 
       polynome2/
             load_data.py
             model_run.py
             problem.py
 
-All the three files have been tested one by one on the local machine. Next, we will run asynchronous model-based search (AMBS).
+We have tested the syntax in all of these by running them individually. Now, let's put it all together by tuning the
+3 hyperparameters with asynchronous model-based search (AMBS).
 
 .. code-block:: console
     :caption: bash
 
-    python -m deephyper.search.hps.ambs --problem problem.py --run model_run.py
+    deephyper hps ambs --problem polynome2.problem.Problem --run polynome2.model_run.run
 
 .. note::
 
     In order to run DeepHyper locally and on other systems we are using :ref:`evaluators`. For local evaluations we use the :ref:`subprocess-evaluator`.
 
-.. WARNING::
+.. note::
 
-    When a path to python scripts is given to ``--problem, --run`` arguments you have to make sure that the problem script contains a ``Problem`` attribute and the run script contains a ``run`` attribute.
-    Another way to use these arguments is to give a python import path such as ``mypackage.mymodule.myattribute``, where ``myattribute`` should be an ``HpProblem`` instance for the problem argument and
-    it should be a callable object with one parameter for the run argument. In order to do so ``mypackage`` should be installed in your current python environment.
-    A package search_space look like:
+    Alternative to the command line above, paths to the ``problem.py`` and ``model_run.py`` files can be passed as arguments. DeepHyper
+    requires that these modules contain an importable ``Problem`` instance and ``run`` callable, respectively.  It is your responsibility to ensure that any
+    other modules imported in ``problem.py`` or ``model_run.py`` are in the Python import search path.
 
-    .. code-block:: console
+    We strongly recommend using a virtual environment with the ``start-project`` and ``new-problem`` command line tools. This ensures that
+    any helper modules are easily accessible using the syntax ``import problem_name.helper_module``.
 
-        myfolder/
-            setup.py
-            mypackage/
-                __init__.py
-                mymodule.py
 
-    where ``setup.py`` contains the following:
-
-    .. code-block:: python3
-        :caption: setup.py
-
-        from setuptools import setup
-
-        setup(
-        name='mypackage',
-        packages=['mypackage'],
-        install_requires=[])
-
-    To install ``mypackage`` just do:
-
-    .. code-block:: console
-        :caption: bash
-
-        cd myfolder
-
-    Then:
-
-    .. code-block:: console
-        :caption: bash
-
-        python setup.py install
-
-After the search is over, you will find the following files in your current folder:
+After the search is over, you will find the following files in your working directory:
 
 .. code-block:: console
 

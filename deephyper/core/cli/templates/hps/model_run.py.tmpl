@@ -9,7 +9,7 @@ from keras.optimizers import RMSprop
 import os
 import sys
 
-from {{ pckg }}.{{ pb_folder }}.load_data import load_data
+from {{ pb_folder }}.load_data import load_data
 
 def r2(y_pred, y_true):
     SS_res = K.sum(K.square(y_true-y_pred))
