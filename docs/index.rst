@@ -43,6 +43,7 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
     run/local
     run/theta
     tutorials/job_management
+    software/balsamjob.rst
     usage/analytics
     search/nas/nas
     search/hps/hps

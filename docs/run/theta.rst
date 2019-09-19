@@ -1,6 +1,14 @@
 Running on Theta
 ****************
 
+.. note::
+
+    The examples so far assume that your DeepHyper models run in the same Python
+    environment as DeepHyper and each model runs on a single node.  If you need more control over
+    model execution, say, to run containerized models, or to run data-parallel model 
+    training with Horovod, you can hook into the Balsam job controller. See :ref:`balsamjob_spec`
+    for a detailed example.
+
 Hyperparameter Search
 ==========================
 
