@@ -17,7 +17,7 @@ def load_config(config):
     else:
         config['preprocessing'] = None
 
-    if '.' in config['objective']:
+    if type(config['objective']) is str and '.' in config['objective']:
         config['objective'] = util.load_attr_from(config['objective'])
 
 
@@ -86,6 +86,8 @@ def setup_search_space(config, input_shape, output_shape, seed):
 
 
 def compute_objective(objective, history):
+    print('val_r2: ', history['val_r2'][-1])
+    print('time: ', history['predict_time'])
     if type(objective) is str \
         and ('__' in objective or objective in history):
 
