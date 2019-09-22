@@ -15,7 +15,7 @@ from deephyper.contrib.callbacks.beholder import BeholderCB
 
 logger = util.conf_logger(__name__)
 
-default_callbacks_config = {
+CB_CONFIG = {
     'ModelCheckpoint': dict(
         monitor='val_loss',
         mode='min',
@@ -52,6 +52,7 @@ def train(config):
         seeds = [np.random.randint(0, 2**32-1) for _ in range(repeat)]
 
     for rep in range(repeat):
+        default_callbacks_config = CB_CONFIG.copy()
         if seed is not None:
             np.random.seed(seeds[rep])
             tf.random.set_random_seed(seeds[rep])
