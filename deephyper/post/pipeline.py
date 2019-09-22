@@ -1,6 +1,7 @@
 import json
 import traceback
 from time import time
+import copy
 
 import numpy as np
 import tensorflow as tf
@@ -52,7 +53,7 @@ def train(config):
         seeds = [np.random.randint(0, 2**32-1) for _ in range(repeat)]
 
     for rep in range(repeat):
-        default_callbacks_config = CB_CONFIG.deepcopy()
+        default_callbacks_config = copy.deepcopy(CB_CONFIG)
         if seed is not None:
             np.random.seed(seeds[rep])
             tf.random.set_random_seed(seeds[rep])
