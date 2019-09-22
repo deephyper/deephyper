@@ -97,7 +97,7 @@ def train(config):
                         default_callbacks_config[cb_name].update(cb_conf)
 
                         if cb_name == 'ModelCheckpoint':
-                            default_callbacks_config[cb_name]['filepath'] =  f'best_model_{config["id"]}.h5'
+                            default_callbacks_config[cb_name]['filepath'] =  f'best_model_id{config["id"]}_r{rep}.h5'
                         elif cb_name == 'TensorBoard':
                             if default_callbacks_config[cb_name]['beholder']:
                                 callbacks.append(
