@@ -128,6 +128,8 @@ def train(config):
                     fhist = json.load(f)
             except FileNotFoundError:
                 fhist = trainer.train_history
+                for k,v in fhist.items():
+                    fhist[k] = [v]
                 with open(json_fname, 'w') as f:
                     json.dump(fhist, f, cls=Encoder)
 
