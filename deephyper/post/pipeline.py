@@ -53,6 +53,8 @@ def train(config):
         seeds = [np.random.randint(0, 2**32-1) for _ in range(repeat)]
 
     for rep in range(repeat):
+        tf.keras.backend.clear_session()
+
         default_callbacks_config = copy.deepcopy(CB_CONFIG)
         if seed is not None:
             np.random.seed(seeds[rep])
