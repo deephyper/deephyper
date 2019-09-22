@@ -143,7 +143,8 @@ def train(config):
             hist['val_predict_time'] = time() - t  # ! TIMING - END
 
             for k,v in hist.items():
-                fhist[k] = fhist.get(k, []).append(v)
+                fhist[k] = fhist.get(k, [])
+                fhist[k].append(v)
 
             with open(json_fname, 'w') as f:
                 json.dump(fhist, f, cls=Encoder)
