@@ -86,8 +86,6 @@ def setup_search_space(config, input_shape, output_shape, seed):
 
 
 def compute_objective(objective, history):
-    print('val_r2: ', history['val_r2'][-1])
-    print('time: ', history['predict_time'])
     if type(objective) is str \
         and ('__' in objective or objective in history):
 
