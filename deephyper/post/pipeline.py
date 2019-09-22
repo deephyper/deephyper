@@ -52,7 +52,7 @@ def train(config):
         seeds = [np.random.randint(0, 2**32-1) for _ in range(repeat)]
 
     for rep in range(repeat):
-        default_callbacks_config = CB_CONFIG.copy()
+        default_callbacks_config = CB_CONFIG.deepcopy()
         if seed is not None:
             np.random.seed(seeds[rep])
             tf.random.set_random_seed(seeds[rep])
