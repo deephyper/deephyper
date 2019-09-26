@@ -105,7 +105,7 @@ If you are referencing DeepHyper in a publication, please cite the following pap
 
  * P. Balaprakash, M. Salim, T. Uram, V. Vishwanath, and S. M. Wild. **DeepHyper: Asynchronous Hyperparameter Search for Deep Neural Networks**.
     In 25th IEEE International Conference on High Performance Computing, Data, and Analytics. IEEE, 2018.
- <!-- * R. Egele, D. Jha, P. Balaprakash, M. Salim, V. Vishwanath, and S. M. Wild. **Scalable Reinforcement-Learning-Based Neural Architecture Search for Scientific and Engineering Applications**. In 34th International Conference on High Performance Computing, 2019. -->
+ * P. Balaprakash, R. Egele, M. Salim, S. Wild, V. Vishwanath, F. Xia, T. Brettin, and R. Stevens. **Scalable reinforcement-learning-based neural architecture search for cancer deep learning research**.  In SC ’19: IEEE/ACM International Conference on High Performance Computing, Network-ing, Storage and Analysis, 2019.
 
 # How can I participate?
 
@@ -124,7 +124,7 @@ The DeepHyper Team uses git-flow to organize the development: [Git-Flow cheatshe
 # Acknowledgements
 
 * Scalable Data-Efficient Learning for Scientific Domains, U.S. Department of Energy 2018 Early Career Award funded by the Advanced Scientific Computing Research program within the DOE Office of Science (2018--Present)
-* Argonne Leadership Computing Facility (2018--Present)
+* Argonne Leadership Computing Facility: This research used resources of the Argonne Leadership Computing Facility, which is a DOE Office of Science User Facility supported under Contract DE-AC02-06CH11357.
 * SLIK-D: Scalable Machine Learning Infrastructures for Knowledge Discovery, Argonne Computing, Environment and Life Sciences (CELS) Laboratory Directed Research and Development (LDRD) Program (2016--2018)
 
 # Copyright and license
