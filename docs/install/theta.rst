@@ -66,7 +66,10 @@ Developer installation
 
     git checkout develop
 
-8. Install the package::
+8. Install the package (with analytics support)::
 
-    pip install -e .
+    pip install -e .['analytics']
+
+9. Install an ipython kernel for analytics support::
+    python -m ipykernel install --user --name deephyper-dev-env --display-name "Python deephyper-dev-env"
 
