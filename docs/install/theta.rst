@@ -47,7 +47,7 @@ Developer installation
     source deephyper-dev-env/bin/activate
 
 .. note::
-    For a temporary compatibility fix - please upgrade setuptools at this step using ``pip install --upgrade setuptools``
+    For a temporary compatibility fix - please upgrade setuptools at this step using ``"pip install --upgrade setuptools"``
 
 .. note::
     To activate your virtualenv easier in the future you can define an alias
