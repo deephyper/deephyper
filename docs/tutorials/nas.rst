@@ -204,7 +204,7 @@ Create a Balsam ``PPO`` application:
 .. code-block:: console
     :caption: bash
 
-    balsam job --name poly_exp --workflow poly_exp --app PPO --num_nodes 2 --args "--evaluator balsam --problem nas_problems.polynome2.problem.Problem"
+    balsam job --name poly_exp --workflow poly_exp --app PPO --num-nodes 2 --args "--evaluator balsam --problem nas_problems.polynome2.problem.Problem"
 
 .. code-block:: console
     :caption: [Out]
