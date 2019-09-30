@@ -47,16 +47,19 @@ Developer installation
     source deephyper-dev-env/bin/activate
 
 .. note::
+    For a temporary compatibility fix - please upgrade setuptools at this step using `pip install --upgrade setuptools`
+
+.. note::
     To activate your virtualenv easier in the future you can define an alias
     in your ``~/.bashrc`` such as ``alias act="source ~/deephyper-dev-env/bin/activate"``. Now you will clone deephyper sources and install it with ``pip``
 
 5. Clone the deephyper repo::
 
-    git clone https://github.com/deephyper/deephyper.git
+    git clone https://github.com/deephyper/deephyper_repo.git
 
 6. Go to the root directory of the repo::
 
-    cd deephyper/
+    cd deephyper_repo/
 
 
 7. Switch to the develop branch::
