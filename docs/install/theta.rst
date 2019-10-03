@@ -70,8 +70,10 @@ Developer installation
 
     pip install -e .['analytics']
 
+
 9. Install an ipython kernel for analytics support::
     
     pip install ipykernel
+
     python -m ipykernel install --user --name deephyper-dev-env --display-name "Python deephyper-dev-env"
 
