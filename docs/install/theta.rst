@@ -55,7 +55,7 @@ Developer installation
 
 5. Clone the deephyper repo::
 
-    git clone https://github.com/deephyper/deephyper_repo.git
+    git clone https://github.com/deephyper/deephyper.git deephyper_repo/
 
 6. Go to the root directory of the repo::
 
