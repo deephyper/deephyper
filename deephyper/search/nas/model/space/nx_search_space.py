@@ -167,7 +167,7 @@ class NxSearchSpace:
             the tensor represented by n.
         """
         try:
-            if n._tensor != None:
+            if n._tensor is not None:
                 output_tensor = n._tensor
             else:
                 pred = list(g.predecessors(n))

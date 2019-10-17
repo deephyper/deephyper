@@ -24,7 +24,8 @@ class TrainerTrainValid:
         self.cname = self.__class__.__name__
 
         self.config = config
-        self.sess = keras.backend.get_session()
+        # self.sess = keras.backend.get_session()
+        self.sess = tf.compat.v1.keras.backend.get_session()
         self.model = model
         self.callbacks = [
             keras.callbacks.CSVLogger('training.csv', append=True)
