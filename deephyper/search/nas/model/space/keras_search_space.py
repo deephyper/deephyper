@@ -118,13 +118,15 @@ class KSearchSpace(NxSearchSpace):
             Node: output node of the search_space.
         """
         if len(output_nodes) == 1:
-            node = ConstantNode(op=Identity(), name='Structure_Output')
-            graph.add_node(node)
-            graph.add_edge(output_nodes[0], node)
+            # node = ConstantNode(op=Identity(), name='Structure_Output')
+            # graph.add_node(node)
+            # graph.add_edge(output_nodes[0], node)
+            node = output_nodes[0]
         else:
-            node = ConstantNode(name='Structure_Output')
-            op = Concatenate(self, output_nodes)
-            node.set_op(op=op)
+            # node = ConstantNode(name='Structure_Output')
+            # op = Concatenate(self, output_nodes)
+            # node.set_op(op=op)
+            node = output_nodes
         return node
 
     def create_model(self):
@@ -133,13 +135,17 @@ class KSearchSpace(NxSearchSpace):
         Returns:
             A keras.Model for the current search_space with the corresponding set of operations.
         """
+        if type(self.output_node) is list:
+            output_tensors = [self.create_tensor_aux(self.graph, out) for out in self.output_node]
+        else:
+            output_tensors = self.create_tensor_aux(self.graph, self.output_node)
 
-        output_tensor = self.create_tensor_aux(self.graph, self.output_node)
-        if output_tensor.get_shape()[1:] != self.output_shape:
-            raise WrongOutputShape(output_tensor, self.output_shape)
+        for out_T, out_S in zip(output_tensors, self.output_shape):
+            if out_T.get_shape()[1:] != out_S:
+                raise WrongOutputShape(out_T, out_S)
 
         input_tensors = [inode._tensor for inode in self.input_nodes]
 
-        self._model = keras.Model(inputs=input_tensors, outputs=output_tensor)
+        self._model = keras.Model(inputs=input_tensors, outputs=output_tensors)
 
-        return keras.Model(inputs=input_tensors, outputs=output_tensor)
+        return self._model
