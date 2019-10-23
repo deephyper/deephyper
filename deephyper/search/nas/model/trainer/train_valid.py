@@ -41,7 +41,11 @@ class TrainerTrainValid:
         self.verbose = self.config_hp.get('verbose', 1)
 
         self.loss_metric_name = self.config[a.loss_metric]
-        self.metrics_name = [U.selectMetric(m) for m in self.config[a.metrics]]
+        if type(self.config[a.metrics]) is list:
+            self.metrics_name = [U.selectMetric(m) for m in self.config[a.metrics]]
+        else:
+            self.metrics_name = {n:U.selectMetric(m) for n,m in self.config[a.metrics].items()}
+
 
         # DATA loading
         self.data_config_type = None
@@ -109,15 +113,22 @@ class TrainerTrainValid:
 
     def load_data_ndarray(self):
         # check data type
-        if not type(self.config[a.data][a.train_Y]) is np.ndarray:
+        if  type(self.config[a.data][a.train_Y]) is np.ndarray  and \
+            type(self.config[a.data][a.valid_Y]) is np.ndarray:
+            self.train_Y = [self.config[a.data][a.train_Y]]
+            self.valid_Y = [self.config[a.data][a.valid_Y]]
+        elif type(self.config[a.data][a.train_Y]) is list and \
+                type(self.config[a.data][a.valid_Y]) is list:
+            def f(x): return type(x) is np.ndarray
+            if not all(map(f, self.config[a.data][a.train_Y])) or \
+                    not all(map(f, self.config[a.data][a.valid_Y])):
+                raise DeephyperRuntimeError(
+                    f"all outputs data should be of type np.ndarray !")
+            self.train_Y = self.config[a.data][a.train_Y]
+            self.valid_Y = self.config[a.data][a.valid_Y]
+        else:
             raise DeephyperRuntimeError(
-                f"train_Y data should be of type np.ndarray when type true type is: {type(self.config[a.data][a.train_Y])}")
-        self.train_Y = self.config[a.data][a.train_Y]
-
-        if not type(self.config[a.data][a.valid_Y]) is np.ndarray:
-            raise DeephyperRuntimeError(
-                f"valid_Y data should be of type np.ndarray when type true type is: {type(self.config[a.data][a.valid_Y])}")
-        self.valid_Y = self.config[a.data][a.valid_Y]
+                f"Data are of an unsupported type and should be of same type: type(self.config['data']['train_Y'])=={type(self.config[a.data][a.train_Y])} and type(self.config['data']['valid_Y'])=={type(self.config[a.valid_Y][a.valid_X])} !")
 
         if type(self.config[a.data][a.train_X]) is np.ndarray and \
                 type(self.config[a.data][a.valid_X]) is np.ndarray:
@@ -134,7 +145,7 @@ class TrainerTrainValid:
             self.valid_X = self.config[a.data][a.valid_X]
         else:
             raise DeephyperRuntimeError(
-                f"Data are of an unsupported type and should be of same type: type(self.config['data']['train_X'])=={type(self.config[a.data])} and type(self.config['data']['valid_X'])=={type(self.config[a.data][a.valid_X])} !")
+                f"Data are of an unsupported type and should be of same type: type(self.config['data']['train_X'])=={type(self.config[a.data][a.train_X])} and type(self.config['data']['valid_X'])=={type(self.config[a.data][a.valid_X])} !")
 
         logger.debug(f'{self.cname}: {len(self.train_X)} inputs')
 
@@ -188,7 +199,7 @@ class TrainerTrainValid:
         if self.data_config_type == "ndarray":
             self.dataset_train = tf.data.Dataset.from_tensor_slices((
                 {f'input_{i}': tX for i, tX in enumerate(self.train_X)},
-                self.train_Y))
+                {f'output_{i}': tY for i, tY in enumerate(self.train_Y)}))
         else:  # self.data_config_type == "gen"
             self.dataset_train = tf.data.Dataset.from_generator(self.train_gen,
                                                                 output_types=self.data_types,
@@ -201,7 +212,7 @@ class TrainerTrainValid:
         if self.data_config_type == "ndarray":
             self.dataset_valid = tf.data.Dataset.from_tensor_slices((
                 {f'input_{i}': vX for i, vX in enumerate(self.valid_X)},
-                self.valid_Y))
+                {f'output_{i}': vY for i, vY in enumerate(self.valid_Y)}))
         else:
             self.dataset_valid = tf.data.Dataset.from_generator(self.valid_gen,
                                                                 output_types=self.data_types,
@@ -229,10 +240,17 @@ class TrainerTrainValid:
         self.optimizer = optimizer_fn(**params)
 
 
-        self.model.compile(
-            optimizer=self.optimizer,
-            loss=self.loss_metric_name,
-            metrics=self.metrics_name)
+        if type(self.loss_metric_name) is list:
+            self.model.compile(
+                optimizer=self.optimizer,
+                loss=self.loss_metric_name,
+                loss_weights=[1.0 for _ in range(len(self.loss_metric_name))],
+                metrics=self.metrics_name)
+        else:
+            self.model.compile(
+                optimizer=self.optimizer,
+                loss=self.loss_metric_name,
+                metrics=self.metrics_name)
 
     def predict(self, dataset: str='valid', keep_normalize: bool=False) -> tuple:
         """[summary]

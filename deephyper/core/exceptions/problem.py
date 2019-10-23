@@ -126,8 +126,12 @@ class ProblemLoadDataIsNotCallable(NaProblemError):
 class WrongProblemObjective(NaProblemError):
     """Raised when the objective parameter is neither a callable nor a string."""
 
-    def __init__(self, objective):
+    def __init__(self, objective, possible_names=None):
         self.objective = objective
+        self.possible_names = possible_names
 
     def __str__(self):
-        return str(self.objective)
+        output = f"The objective: {str(self.objective)} is not valid."
+        if self.possible_names is not None:
+            output += f" Possible objectives are: {self.possible_names}"
+        return output

@@ -209,8 +209,12 @@ class NaProblem(Problem):
         hps = "".join(
             [f"\n        * {h}: {self._space['hyperparameters'][h]}" for h in self._space['hyperparameters']])
 
-        metrics = "".join(
-            [f"\n        * {m}" for m in self._space['metrics']])
+        if type(self._space['metrics']) is list:
+            metrics = "".join(
+                [f"\n        * {m}" for m in self._space['metrics']])
+        else:
+            metrics = "".join(
+                [f"\n        * {m[0]}: {m[1]}" for m in self._space['metrics'].items()])
 
         post = None if self._space.get('post_train') is None else "".join(
             [f"\n        * {k}: {self._space['post_train'][k]}" for k in self._space['post_train']])
@@ -303,9 +307,10 @@ class NaProblem(Problem):
             loss (str|callable): a string indicating a specific loss function.
         """
         if not type(loss) is str and \
-                not callable(loss):
+                not callable(loss) and \
+                not type(loss) is list:
             raise RuntimeError(
-                f'The loss should be either a str or a callable when it\'s of type {type(loss)}')
+                f'The loss should be either a str, list or a callable when it\'s of type {type(loss)}')
 
         self._space['loss'] = loss
 
@@ -330,13 +335,19 @@ class NaProblem(Problem):
                     break # only one suffix autorized
             objective = objective.replace('val_', '')
             possible_names = list()
-            for val in ['loss'] + self._space['metrics']:
+            if type(self._space['metrics']) is dict:
+                metrics = list(self._space['metrics'].values())
+                for k in self._space['metrics'].keys():
+                    objective = objective.replace(f"{k}_", '')
+            else: # assuming it s a list
+                metrics = self._space['metrics']
+            for val in ['loss'] + metrics:
                 if callable(val):
                     possible_names.append(val.__name__)
                 else:
                     possible_names.append(val)
             if not(objective in possible_names):
-                raise WrongProblemObjective(objective)
+                raise WrongProblemObjective(objective, possible_names)
 
     def objective(self, objective):
         """Define the objective you want to maximize for the search.

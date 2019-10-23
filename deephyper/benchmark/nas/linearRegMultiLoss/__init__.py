@@ -1,1 +1,1 @@
-from deephyper.benchmark.nas.linearReg.problem import Problem
+from .problem import Problem

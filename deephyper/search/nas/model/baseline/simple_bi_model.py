@@ -15,7 +15,8 @@ def create_search_space(input_shape=(100,), output_shape=[(100), (1,)], num_laye
     inp = struct.input_nodes[0]
 
     # auto-encoder
-    units = [128, 64, 32, 16, 8, 16, 32, 64, 128]
+    # units = [128, 64, 32, 16, 8, 16, 32, 64, 128]
+    units = [32, 16, 32]
     prev_node = inp
     d = 1
     for i in range(len(units)):
@@ -34,7 +35,7 @@ def create_search_space(input_shape=(100,), output_shape=[(100), (1,)], num_laye
         struct.connect(prev_node, vnode)
         prev_node = vnode
 
-    out1 = ConstantNode(op=Dense(100))
+    out1 = ConstantNode(op=Dense(100, name='output_1'))
     struct.connect(prev_node, out1)
 
     # regressor
@@ -47,7 +48,7 @@ def create_search_space(input_shape=(100,), output_shape=[(100), (1,)], num_laye
         struct.connect(prev_node, vnode)
         prev_node = vnode
 
-    out2 = ConstantNode(op=Dense(1))
+    out2 = ConstantNode(op=Dense(1, name='output_0'))
     struct.connect(prev_node, out2)
 
 
@@ -59,7 +60,7 @@ def test_create_search_space():
     from tensorflow.keras.utils import plot_model
     import tensorflow as tf
     # seed(10)
-    space = create_search_space(num_layers=5)
+    space = create_search_space(num_layers=2)
 
     ops = [random() for _ in range(space.num_nodes)]
 

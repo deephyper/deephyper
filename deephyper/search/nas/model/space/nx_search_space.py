@@ -1,3 +1,5 @@
+import traceback
+
 import networkx as nx
 from collections.abc import Iterable
 
@@ -20,6 +22,7 @@ class NxSearchSpace:
 
     def draw_graphviz(self, path):
         with open(path, 'w') as f:
+            nx.nx_agraph.write_dot(self.graph, f)
             try:
                 nx.nx_agraph.write_dot(self.graph, f)
             except:

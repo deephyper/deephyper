@@ -35,7 +35,8 @@ def run(config):
     seed = config['seed']
     if seed is not None:
         np.random.seed(seed)
-        tf.random.set_random_seed(seed)
+        tf.compat.v2.random.set_seed(seed)
+        # tf.random.set_random_seed(seed)
 
     load_config(config)
 

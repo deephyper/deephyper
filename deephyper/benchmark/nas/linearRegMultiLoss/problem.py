@@ -1,6 +1,6 @@
 from deephyper.benchmark import NaProblem
 from deephyper.benchmark.nas.linearRegMultiLoss.load_data import load_data
-from deephyper.search.nas.model.baseline.simple_deep import create_search_space
+from deephyper.search.nas.model.baseline.simple_bi_model import create_search_space
 
 from deephyper.search.nas.model.preprocessing import minmaxstdscaler
 
@@ -8,9 +8,9 @@ Problem = NaProblem(seed=2019)
 
 Problem.load_data(load_data)
 
-Problem.preprocessing(minmaxstdscaler)
+# Problem.preprocessing(minmaxstdscaler)
 
-Problem.search_space(create_search_space)
+Problem.search_space(create_search_space, num_layers=2)
 
 Problem.hyperparameters(
     batch_size=100,
@@ -21,9 +21,9 @@ Problem.hyperparameters(
 
 Problem.loss(['mse', 'mse'])
 
-Problem.metrics(['r2'])
+Problem.metrics({'output_0': 'r2'})
 
-Problem.objective('val_r2')
+Problem.objective('val_output_0_r2')
 
 
 # Just to print your problem, to test its definition and imports in the current python environment.

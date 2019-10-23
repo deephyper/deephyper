@@ -37,14 +37,25 @@ def setup_data(config):
         if type(t_X) is np.ndarray and type(t_y) is np.ndarray and \
                 type(v_X) is np.ndarray and type(v_y) is np.ndarray:
             input_shape = np.shape(t_X)[1:]
+            output_shape = np.shape(t_y)[1:]
         elif type(t_X) is list and type(t_y) is np.ndarray and \
                 type(v_X) is list and type(v_y) is np.ndarray:
             # interested in shape of data not in length
             input_shape = [np.shape(itX)[1:] for itX in t_X]
+            output_shape = np.shape(t_y)[1:]
+        elif type(t_X) is np.ndarray and type(t_y) is list and \
+                type(v_X) is np.ndarray and type(v_y) is list:
+            # interested in shape of data not in length
+            input_shape = np.shape(t_X)[1:]
+            output_shape = [np.shape(ity)[1:] for ity in t_y]
+        elif type(t_X) is list and type(t_y) is list and \
+                type(v_X) is list and type(v_y) is list:
+            # interested in shape of data not in length
+            input_shape = [np.shape(itX)[1:] for itX in t_X]
+            output_shape = [np.shape(ity)[1:] for ity in t_y]
         else:
             raise RuntimeError(
                 f'Data returned by load_data function are of a wrong type: type(t_X)=={type(t_X)},  type(t_y)=={type(t_y)}, type(v_X)=={type(v_X)}, type(v_y)=={type(v_y)}')
-        output_shape = np.shape(t_y)[1:]
         config['data'] = {
             'train_X': t_X,
             'train_Y': t_y,
