@@ -10,23 +10,20 @@ Problem.load_data(load_data)
 
 # Problem.preprocessing(minmaxstdscaler)
 
-Problem.search_space(create_search_space, num_layers=2)
+Problem.search_space(create_search_space, num_layers=10)
 
 Problem.hyperparameters(
-    batch_size=100,
-    learning_rate=0.1,
-    optimizer='adam',
-    num_epochs=1,
+    batch_size=100, learning_rate=0.1, optimizer="adam", num_epochs=20
 )
 
-Problem.loss(['mse', 'mse'])
+Problem.loss(["mse", "mse"])
 
-Problem.metrics({'output_0': 'r2'})
+Problem.metrics({"output_0": "r2", "output_1": "r2"})
 
-Problem.objective('val_output_0_r2')
+Problem.objective("val_output_0_r2")
 
 
 # Just to print your problem, to test its definition and imports in the current python environment.
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(Problem)
 

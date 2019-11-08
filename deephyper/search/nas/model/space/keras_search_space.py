@@ -5,14 +5,15 @@ import networkx as nx
 from tensorflow import keras
 from tensorflow.python.keras.utils.vis_utils import model_to_dot
 
-from deephyper.core.exceptions.nas.space import (InputShapeOfWrongType,
-                                                 NodeAlreadyAdded,
-                                                 StructureHasACycle,
-                                                 WrongOutputShape,
-                                                 WrongSequenceToSetOperations)
+from deephyper.core.exceptions.nas.space import (
+    InputShapeOfWrongType,
+    NodeAlreadyAdded,
+    StructureHasACycle,
+    WrongOutputShape,
+    WrongSequenceToSetOperations,
+)
 from deephyper.search.nas.model.space import NxSearchSpace
-from deephyper.search.nas.model.space.node import (ConstantNode, Node,
-                                                   VariableNode)
+from deephyper.search.nas.model.space.node import ConstantNode, Node, VariableNode
 from deephyper.search.nas.model.space.op.basic import Tensor
 from deephyper.search.nas.model.space.op.merge import Concatenate
 from deephyper.search.nas.model.space.op.op1d import Identity
@@ -50,15 +51,16 @@ class KSearchSpace(NxSearchSpace):
         if type(input_shape) is tuple:
             # we have only one input tensor here
             op = Tensor(keras.layers.Input(input_shape, name="input_0"))
-            self.input_nodes = [ConstantNode(op=op, name='Input_0')]
+            self.input_nodes = [ConstantNode(op=op, name="Input_0")]
 
-        elif type(input_shape) is list and all(map(lambda x: type(x) is tuple, input_shape)):
+        elif type(input_shape) is list and all(
+            map(lambda x: type(x) is tuple, input_shape)
+        ):
             # we have a list of input tensors here
             self.input_nodes = list()
             for i in range(len(input_shape)):
-                op = Tensor(keras.layers.Input(
-                    input_shape[i], name=f"input_{i}"))
-                inode = ConstantNode(op=op, name=f'Input_{i}')
+                op = Tensor(keras.layers.Input(input_shape[i], name=f"input_{i}"))
+                inode = ConstantNode(op=op, name=f"Input_{i}")
                 self.input_nodes.append(inode)
         else:
             raise InputShapeOfWrongType(input_shape)
@@ -74,18 +76,17 @@ class KSearchSpace(NxSearchSpace):
     @property
     def depth(self):
         if self._model is None:
-            raise RuntimeError(
-                "Can't compute depth of model without creating a model.")
+            raise RuntimeError("Can't compute depth of model without creating a model.")
         return len(self.longest_path)
 
     @property
     def longest_path(self):
         if self._model is None:
             raise RuntimeError(
-                "Can't compute longest path of model without creating a model.")
+                "Can't compute longest path of model without creating a model."
+            )
         nx_graph = nx.drawing.nx_pydot.from_pydot(model_to_dot(self._model))
         return nx.algorithms.dag.dag_longest_path(nx_graph)
-
 
     def set_ops(self, indexes):
         """Set the operations for each node of each cell of the search_space.
@@ -97,8 +98,7 @@ class KSearchSpace(NxSearchSpace):
             WrongSequenceToSetOperations: raised when 'indexes' is of a wrong length.
         """
         if len(indexes) != len(list(self.variable_nodes)):
-            raise WrongSequenceToSetOperations(
-                indexes, list(self.variable_nodes))
+            raise WrongSequenceToSetOperations(indexes, list(self.variable_nodes))
 
         for op_i, node in zip(indexes, self.variable_nodes):
             node.set_op(op_i)
@@ -136,7 +136,9 @@ class KSearchSpace(NxSearchSpace):
             A keras.Model for the current search_space with the corresponding set of operations.
         """
         if type(self.output_node) is list:
-            output_tensors = [self.create_tensor_aux(self.graph, out) for out in self.output_node]
+            output_tensors = [
+                self.create_tensor_aux(self.graph, out) for out in self.output_node
+            ]
         else:
             output_tensors = self.create_tensor_aux(self.graph, self.output_node)
 

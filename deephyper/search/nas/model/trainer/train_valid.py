@@ -14,9 +14,7 @@ from .... import util
 from .. import arch as a
 from .. import train_utils as U
 
-logger = util.conf_logger('deephyper.model.trainer')
-
-
+logger = util.conf_logger("deephyper.model.trainer")
 
 
 class TrainerTrainValid:
@@ -26,26 +24,25 @@ class TrainerTrainValid:
         self.config = config
         self.sess = tf.compat.v1.keras.backend.get_session()
         self.model = model
-        self.callbacks = [
-            keras.callbacks.CSVLogger('training.csv', append=True)
-        ]
+        self.callbacks = [keras.callbacks.CSVLogger("training.csv", append=True)]
 
         self.data = self.config[a.data]
 
         self.config_hp = self.config[a.hyperparameters]
-        self.optimizer_name = self.config_hp.get(a.optimizer, 'adam')
-        self.optimizer_eps = self.config_hp.get('epsilon', None)
+        self.optimizer_name = self.config_hp.get(a.optimizer, "adam")
+        self.optimizer_eps = self.config_hp.get("epsilon", None)
         self.batch_size = self.config_hp.get(a.batch_size, 32)
         self.learning_rate = self.config_hp.get(a.learning_rate, 1e-3)
         self.num_epochs = self.config_hp[a.num_epochs]
-        self.verbose = self.config_hp.get('verbose', 1)
+        self.verbose = self.config_hp.get("verbose", 1)
 
         self.loss_metric_name = self.config[a.loss_metric]
         if type(self.config[a.metrics]) is list:
             self.metrics_name = [U.selectMetric(m) for m in self.config[a.metrics]]
         else:
-            self.metrics_name = {n:U.selectMetric(m) for n,m in self.config[a.metrics].items()}
-
+            self.metrics_name = {
+                n: U.selectMetric(m) for n, m in self.config[a.metrics].items()
+            }
 
         # DATA loading
         self.data_config_type = None
@@ -57,8 +54,8 @@ class TrainerTrainValid:
 
         # DATA preprocessing
         self.preprocessing_func = None
-        if self.config.get('preprocessing'):
-            self.preprocessing_func = self.config['preprocessing']['func']
+        if self.config.get("preprocessing"):
+            self.preprocessing_func = self.config["preprocessing"]["func"]
         self.preprocessor = None
         self.preprocess_data()
 
@@ -75,24 +72,25 @@ class TrainerTrainValid:
         self.init_history()
 
         # Test on validation after each epoch
-        logger.debug('[PARAM] KerasTrainer instantiated')
+        logger.debug("[PARAM] KerasTrainer instantiated")
 
     def init_history(self):
         self.train_history = dict()
-        self.train_history['n_parameters'] = self.model.count_params()
+        self.train_history["n_parameters"] = self.model.count_params()
 
     def load_data(self):
-        logger.debug('load_data')
+        logger.debug("load_data")
 
         self.data_config_type = U.check_data_config(self.data)
-        logger.debug(f'data config type: {self.data_config_type}')
-        if self.data_config_type == 'gen':
+        logger.debug(f"data config type: {self.data_config_type}")
+        if self.data_config_type == "gen":
             self.load_data_generator()
-        elif self.data_config_type == 'ndarray':
+        elif self.data_config_type == "ndarray":
             self.load_data_ndarray()
         else:
             raise DeephyperRuntimeError(
-                f"Data config is not supported by this Trainer: '{self.data_config_type}'!")
+                f"Data config is not supported by this Trainer: '{self.data_config_type}'!"
+            )
 
         # prepare number of steps for training and validation
         self.train_steps_per_epoch = self.train_size // self.batch_size
@@ -112,147 +110,205 @@ class TrainerTrainValid:
         self.valid_size = self.data["valid_size"]
 
     def load_data_ndarray(self):
+        def f(x):
+            return type(x) is np.ndarray
+
         # check data type
-        if  type(self.config[a.data][a.train_Y]) is np.ndarray  and \
-            type(self.config[a.data][a.valid_Y]) is np.ndarray:
-            self.train_Y = [self.config[a.data][a.train_Y]]
-            self.valid_Y = [self.config[a.data][a.valid_Y]]
-        elif type(self.config[a.data][a.train_Y]) is list and \
-                type(self.config[a.data][a.valid_Y]) is list:
-            def f(x): return type(x) is np.ndarray
-            if not all(map(f, self.config[a.data][a.train_Y])) or \
-                    not all(map(f, self.config[a.data][a.valid_Y])):
-                raise DeephyperRuntimeError(
-                    f"all outputs data should be of type np.ndarray !")
+
+        # Output data
+        if (
+            type(self.config[a.data][a.train_Y]) is np.ndarray
+            and type(self.config[a.data][a.valid_Y]) is np.ndarray
+        ):
             self.train_Y = self.config[a.data][a.train_Y]
             self.valid_Y = self.config[a.data][a.valid_Y]
+        elif (
+            type(self.config[a.data][a.train_Y]) is list
+            and type(self.config[a.data][a.valid_Y]) is list
+        ):
+
+            if not all(map(f, self.config[a.data][a.train_Y])) or not all(
+                map(f, self.config[a.data][a.valid_Y])
+            ):
+                raise DeephyperRuntimeError(
+                    f"all outputs data should be of type np.ndarray !"
+                )
+
+            if (
+                len(self.config[a.data][a.train_Y]) > 1
+                and len(self.config[a.data][a.valid_Y]) > 1
+            ):
+                self.train_Y = self.config[a.data][a.train_Y]
+                self.valid_Y = self.config[a.data][a.valid_Y]
+            else:
+                self.train_Y = self.config[a.data][a.train_Y][0]
+                self.valid_Y = self.config[a.data][a.valid_Y][0]
         else:
             raise DeephyperRuntimeError(
-                f"Data are of an unsupported type and should be of same type: type(self.config['data']['train_Y'])=={type(self.config[a.data][a.train_Y])} and type(self.config['data']['valid_Y'])=={type(self.config[a.valid_Y][a.valid_X])} !")
+                f"Data are of an unsupported type and should be of same type: type(self.config['data']['train_Y'])=={type(self.config[a.data][a.train_Y])} and type(self.config['data']['valid_Y'])=={type(self.config[a.valid_Y][a.valid_X])} !"
+            )
 
-        if type(self.config[a.data][a.train_X]) is np.ndarray and \
-                type(self.config[a.data][a.valid_X]) is np.ndarray:
+        # Input data
+        if (
+            type(self.config[a.data][a.train_X]) is np.ndarray
+            and type(self.config[a.data][a.valid_X]) is np.ndarray
+        ):
             self.train_X = [self.config[a.data][a.train_X]]
             self.valid_X = [self.config[a.data][a.valid_X]]
-        elif type(self.config[a.data][a.train_X]) is list and \
-                type(self.config[a.data][a.valid_X]) is list:
-            def f(x): return type(x) is np.ndarray
-            if not all(map(f, self.config[a.data][a.train_X])) or \
-                    not all(map(f, self.config[a.data][a.valid_X])):
+        elif (
+            type(self.config[a.data][a.train_X]) is list
+            and type(self.config[a.data][a.valid_X]) is list
+        ):
+
+            if not all(map(f, self.config[a.data][a.train_X])) or not all(
+                map(f, self.config[a.data][a.valid_X])
+            ):
                 raise DeephyperRuntimeError(
-                    f"all inputs data should be of type np.ndarray !")
-            self.train_X = self.config[a.data][a.train_X]
-            self.valid_X = self.config[a.data][a.valid_X]
+                    f"all inputs data should be of type np.ndarray !"
+                )
+            if (
+                len(self.config[a.data][a.train_X]) > 1
+                and len(self.config[a.data][a.valid_X]) > 1
+            ):
+                self.train_X = self.config[a.data][a.train_X]
+                self.valid_X = self.config[a.data][a.valid_X]
+            else:
+                self.train_X = self.config[a.data][a.train_X][0]
+                self.valid_X = self.config[a.data][a.valid_X][0]
         else:
             raise DeephyperRuntimeError(
-                f"Data are of an unsupported type and should be of same type: type(self.config['data']['train_X'])=={type(self.config[a.data][a.train_X])} and type(self.config['data']['valid_X'])=={type(self.config[a.data][a.valid_X])} !")
+                f"Data are of an unsupported type and should be of same type: type(self.config['data']['train_X'])=={type(self.config[a.data][a.train_X])} and type(self.config['data']['valid_X'])=={type(self.config[a.data][a.valid_X])} !"
+            )
 
-        logger.debug(f'{self.cname}: {len(self.train_X)} inputs')
+        logger.debug(f"{self.cname}: {len(self.train_X)} inputs")
 
         # check data length
         self.train_size = np.shape(self.train_X[0])[0]
         if not all(map(lambda x: np.shape(x)[0] == self.train_size, self.train_X)):
             raise DeephyperRuntimeError(
-                f'All training inputs data should have same length!')
+                f"All training inputs data should have same length!"
+            )
 
         self.valid_size = np.shape(self.valid_X[0])[0]
         if not all(map(lambda x: np.shape(x)[0] == self.valid_size, self.valid_X)):
             raise DeephyperRuntimeError(
-                f'All validation inputs data should have same length!')
+                f"All validation inputs data should have same length!"
+            )
 
     def preprocess_data(self):
         if self.data_config_type == "gen":
             return
 
         if not self.preprocessor is None:
-            raise DeephyperRuntimeError('You can only preprocess data one time.')
+            raise DeephyperRuntimeError("You can only preprocess data one time.")
 
         if self.preprocessing_func:
-            logger.debug(
-                f'preprocess_data with: {str(self.preprocessing_func)}')
+            logger.debug(f"preprocess_data with: {str(self.preprocessing_func)}")
 
-            data_train = np.concatenate((*self.train_X, self.train_Y), axis=1)
-            data_valid = np.concatenate((*self.valid_X, self.valid_Y), axis=1)
-            data = np.concatenate((data_train, data_valid), axis=0)
-            self.preprocessor = self.preprocessing_func()
+            if len(np.shape(self.train_Y)) == 2:
+                data_train = np.concatenate((*self.train_X, self.train_Y), axis=1)
+                data_valid = np.concatenate((*self.valid_X, self.valid_Y), axis=1)
+                data = np.concatenate((data_train, data_valid), axis=0)
+                self.preprocessor = self.preprocessing_func()
 
-            dt_shp = np.shape(data_train)
-            tX_shp = [np.shape(x) for x in self.train_X]
+                dt_shp = np.shape(data_train)
+                tX_shp = [np.shape(x) for x in self.train_X]
 
-            preproc_data = self.preprocessor.fit_transform(data)
+                preproc_data = self.preprocessor.fit_transform(data)
 
-            acc, self.train_X = 0, list()
-            for shp in tX_shp:
-                self.train_X.append(preproc_data[:dt_shp[0], acc:acc+shp[1]])
-                acc += shp[1]
-            self.train_Y = preproc_data[:dt_shp[0], acc:]
+                acc, self.train_X = 0, list()
+                for shp in tX_shp:
+                    self.train_X.append(preproc_data[: dt_shp[0], acc : acc + shp[1]])
+                    acc += shp[1]
+                self.train_Y = preproc_data[: dt_shp[0], acc:]
 
-            acc, self.valid_X = 0, list()
-            for shp in tX_shp:
-                self.valid_X.append(preproc_data[dt_shp[0]:, acc:acc+shp[1]])
-                acc += shp[1]
-            self.valid_Y = preproc_data[dt_shp[0]:, acc:]
+                acc, self.valid_X = 0, list()
+                for shp in tX_shp:
+                    self.valid_X.append(preproc_data[dt_shp[0] :, acc : acc + shp[1]])
+                    acc += shp[1]
+                self.valid_Y = preproc_data[dt_shp[0] :, acc:]
         else:
-            logger.info('no preprocessing function')
+            logger.info("no preprocessing function")
 
     def set_dataset_train(self):
         if self.data_config_type == "ndarray":
-            self.dataset_train = tf.data.Dataset.from_tensor_slices((
-                {f'input_{i}': tX for i, tX in enumerate(self.train_X)},
-                {f'output_{i}': tY for i, tY in enumerate(self.train_Y)}))
+            if type(self.train_Y) is list:
+                output_mapping = {f"output_{i}": tY for i, tY in enumerate(self.train_Y)}
+            else:
+                output_mapping = self.train_Y
+            self.dataset_train = tf.data.Dataset.from_tensor_slices(
+                ({f"input_{i}": tX for i, tX in enumerate(self.train_X)}, output_mapping)
+            )
         else:  # self.data_config_type == "gen"
-            self.dataset_train = tf.data.Dataset.from_generator(self.train_gen,
-                                                                output_types=self.data_types,
-                                                                output_shapes=({
-                                                                    f'input_{i}': tf.TensorShape([*self.data_shapes[0][f'input_{i}']]) for i in range(len(self.data_shapes[0]))
-                                                                }, tf.TensorShape([*self.data_shapes[1]])))
+            self.dataset_train = tf.data.Dataset.from_generator(
+                self.train_gen,
+                output_types=self.data_types,
+                output_shapes=(
+                    {
+                        f"input_{i}": tf.TensorShape([*self.data_shapes[0][f"input_{i}"]])
+                        for i in range(len(self.data_shapes[0]))
+                    },
+                    tf.TensorShape([*self.data_shapes[1]]),
+                ),
+            )
         self.dataset_train = self.dataset_train.batch(self.batch_size).repeat()
 
     def set_dataset_valid(self):
         if self.data_config_type == "ndarray":
-            self.dataset_valid = tf.data.Dataset.from_tensor_slices((
-                {f'input_{i}': vX for i, vX in enumerate(self.valid_X)},
-                {f'output_{i}': vY for i, vY in enumerate(self.valid_Y)}))
+            if type(self.valid_Y) is list:
+                output_mapping = {f"output_{i}": vY for i, vY in enumerate(self.valid_Y)}
+            else:
+                output_mapping = self.valid_Y
+            self.dataset_valid = tf.data.Dataset.from_tensor_slices(
+                ({f"input_{i}": vX for i, vX in enumerate(self.valid_X)}, output_mapping)
+            )
         else:
-            self.dataset_valid = tf.data.Dataset.from_generator(self.valid_gen,
-                                                                output_types=self.data_types,
-                                                                output_shapes=({
-                                                                    f'input_{i}': tf.TensorShape([*self.data_shapes[0][f'input_{i}']]) for i in range(len(self.data_shapes[0]))
-                                                                }, tf.TensorShape([*self.data_shapes[1]])))
+            self.dataset_valid = tf.data.Dataset.from_generator(
+                self.valid_gen,
+                output_types=self.data_types,
+                output_shapes=(
+                    {
+                        f"input_{i}": tf.TensorShape([*self.data_shapes[0][f"input_{i}"]])
+                        for i in range(len(self.data_shapes[0]))
+                    },
+                    tf.TensorShape([*self.data_shapes[1]]),
+                ),
+            )
         self.dataset_valid = self.dataset_valid.batch(self.batch_size).repeat()
 
     def model_compile(self):
         optimizer_fn = U.selectOptimizer_keras(self.optimizer_name)
 
-        decay_rate = self.learning_rate / \
-            self.num_epochs if self.num_epochs > 0 else 1
+        decay_rate = self.learning_rate / self.num_epochs if self.num_epochs > 0 else 1
 
         opti_parameters = signature(optimizer_fn).parameters
         params = {}
-        if 'lr' in opti_parameters:
-            params['lr'] = self.learning_rate
-        if 'epsilon' in opti_parameters:
-            params['epsilon'] = self.optimizer_eps
-        if 'decay' in opti_parameters:
-            decay_rate = self.learning_rate / \
-                self.num_epochs if self.num_epochs > 0 else 1
-            params['decay'] = decay_rate
+        if "lr" in opti_parameters:
+            params["lr"] = self.learning_rate
+        if "epsilon" in opti_parameters:
+            params["epsilon"] = self.optimizer_eps
+        if "decay" in opti_parameters:
+            decay_rate = (
+                self.learning_rate / self.num_epochs if self.num_epochs > 0 else 1
+            )
+            params["decay"] = decay_rate
         self.optimizer = optimizer_fn(**params)
-
 
         if type(self.loss_metric_name) is list:
             self.model.compile(
                 optimizer=self.optimizer,
                 loss=self.loss_metric_name,
                 loss_weights=[1.0 for _ in range(len(self.loss_metric_name))],
-                metrics=self.metrics_name)
+                metrics=self.metrics_name,
+            )
         else:
             self.model.compile(
                 optimizer=self.optimizer,
                 loss=self.loss_metric_name,
-                metrics=self.metrics_name)
+                metrics=self.metrics_name,
+            )
 
-    def predict(self, dataset: str='valid', keep_normalize: bool=False) -> tuple:
+    def predict(self, dataset: str = "valid", keep_normalize: bool = False) -> tuple:
         """[summary]
 
         Args:
@@ -265,20 +321,26 @@ class TrainerTrainValid:
         Returns:
             tuple: (y_true, y_pred)
         """
-        if not(dataset == 'valid' or dataset == 'train'):
+        if not (dataset == "valid" or dataset == "train"):
             raise DeephyperRuntimeError(
-                "dataset parameter should be equal to: 'valid' or 'train'")
+                "dataset parameter should be equal to: 'valid' or 'train'"
+            )
 
-        if dataset == 'valid':
+        if dataset == "valid":
             y_pred = self.model.predict(
-                self.dataset_valid, steps=self.valid_steps_per_epoch)
+                self.dataset_valid, steps=self.valid_steps_per_epoch
+            )
         else:  # dataset == 'train'
-            y_pred = self.model.predict(self.dataset_train,
-                                        steps=self.train_steps_per_epoch)
+            y_pred = self.model.predict(
+                self.dataset_train, steps=self.train_steps_per_epoch
+            )
 
-        if self.preprocessing_func and not keep_normalize and \
-                not self.data_config_type == "gen":
-            if dataset == 'valid':
+        if (
+            self.preprocessing_func
+            and not keep_normalize
+            and not self.data_config_type == "gen"
+        ):
+            if dataset == "valid":
                 data_X, data_Y = self.valid_X, self.valid_Y
             else:  # dataset == 'train'
                 data_X, data_Y = self.train_X, self.train_Y
@@ -286,8 +348,8 @@ class TrainerTrainValid:
             val_orig = np.concatenate((*data_X, data_Y), axis=1)
             val_pred_trans = self.preprocessor.inverse_transform(val_pred)
             val_orig_trans = self.preprocessor.inverse_transform(val_orig)
-            y_orig = val_orig_trans[:, -np.shape(data_Y)[1]:]
-            y_pred = val_pred_trans[:, -np.shape(data_Y)[1]:]
+            y_orig = val_orig_trans[:, -np.shape(data_Y)[1] :]
+            y_pred = val_pred_trans[:, -np.shape(data_Y)[1] :]
         else:
             if self.data_config_type == "ndarray":
                 y_orig = self.valid_Y if dataset == "valid" else self.train_Y
@@ -297,7 +359,7 @@ class TrainerTrainValid:
 
         return y_orig, y_pred
 
-    def evaluate(self, dataset='train'):
+    def evaluate(self, dataset="train"):
         """Evaluate the performance of your model for the same configuration.
 
         Args:
@@ -306,14 +368,18 @@ class TrainerTrainValid:
         Returns:
             list: a list of scalar values corresponding do config loss & metrics.
         """
-        if dataset == 'train':
-            return self.model.evaluate(self.dataset_train,
-                        steps=self.train_steps_per_epoch)
+        if dataset == "train":
+            return self.model.evaluate(
+                self.dataset_train, steps=self.train_steps_per_epoch
+            )
         else:
-            return self.model.evaluate(self.dataset_valid,
-                        steps=self.valid_steps_per_epoch)
+            return self.model.evaluate(
+                self.dataset_valid, steps=self.valid_steps_per_epoch
+            )
 
-    def train(self, num_epochs: int=None, with_pred: bool=False, last_only: bool=False):
+    def train(
+        self, num_epochs: int = None, with_pred: bool = False, last_only: bool = False
+    ):
         """Train the model.
 
         Args:
@@ -336,7 +402,9 @@ class TrainerTrainValid:
             time_start_training = time.time()  # TIMING
 
             if not last_only:
-                logger.info('Trainer is computing metrics on validation after each training epoch.')
+                logger.info(
+                    "Trainer is computing metrics on validation after each training epoch."
+                )
                 history = self.model.fit(
                     self.dataset_train,
                     verbose=self.verbose,
@@ -344,15 +412,17 @@ class TrainerTrainValid:
                     steps_per_epoch=self.train_steps_per_epoch,
                     callbacks=self.callbacks,
                     validation_data=self.dataset_valid,
-                    validation_steps=self.valid_steps_per_epoch
+                    validation_steps=self.valid_steps_per_epoch,
                 )
             else:
-                logger.info('Trainer is computing metrics on validation after the last training epoch.')
+                logger.info(
+                    "Trainer is computing metrics on validation after the last training epoch."
+                )
                 if num_epochs > 1:
                     self.model.fit(
                         self.dataset_train,
                         verbose=self.verbose,
-                        epochs=num_epochs-1,
+                        epochs=num_epochs - 1,
                         steps_per_epoch=self.train_steps_per_epoch,
                         callbacks=self.callbacks,
                     )
@@ -363,27 +433,27 @@ class TrainerTrainValid:
                     steps_per_epoch=self.train_steps_per_epoch,
                     callbacks=self.callbacks,
                     validation_data=self.dataset_valid,
-                    validation_steps=self.valid_steps_per_epoch
+                    validation_steps=self.valid_steps_per_epoch,
                 )
 
             time_end_training = time.time()  # TIMING
-            self.train_history['training_time'] = time_end_training - \
-                time_start_training
+            self.train_history["training_time"] = time_end_training - time_start_training
 
             self.train_history.update(history.history)
 
         elif num_epochs < 0:
 
             raise DeephyperRuntimeError(
-                f'Trainer: number of epochs should be >= 0: {num_epochs}')
+                f"Trainer: number of epochs should be >= 0: {num_epochs}"
+            )
 
-        if  with_pred:
+        if with_pred:
             time_start_predict = time.time()
-            y_true, y_pred= self.predict(dataset='valid')
+            y_true, y_pred = self.predict(dataset="valid")
             time_end_predict = time.time()
-            self.train_history['val_predict_time'] = time_end_predict - time_start_predict
+            self.train_history["val_predict_time"] = time_end_predict - time_start_predict
 
-            self.train_history['y_true'] = y_true
-            self.train_history['y_pred'] = y_pred
+            self.train_history["y_true"] = y_true
+            self.train_history["y_pred"] = y_pred
 
         return self.train_history

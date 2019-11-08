@@ -1,5 +1,5 @@
 from deephyper.benchmark import NaProblem
-from deephyper.benchmark.nas.linearReg.load_data import load_data
+from deephyper.benchmark.nas.linearRegMultiVar.load_data import load_data
 from deephyper.search.nas.model.baseline.simple_deep import create_search_space
 from deephyper.search.nas.model.preprocessing import minmaxstdscaler
 

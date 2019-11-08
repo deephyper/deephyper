@@ -3,13 +3,14 @@ import traceback
 import networkx as nx
 from collections.abc import Iterable
 
-from deephyper.core.exceptions.nas.space import (InputShapeOfWrongType,
-                                                  NodeAlreadyAdded,
-                                                  StructureHasACycle,
-                                                  WrongOutputShape,
-                                                  WrongSequenceToSetOperations)
-from deephyper.search.nas.model.space.node import (ConstantNode, Node,
-                                                   VariableNode)
+from deephyper.core.exceptions.nas.space import (
+    InputShapeOfWrongType,
+    NodeAlreadyAdded,
+    StructureHasACycle,
+    WrongOutputShape,
+    WrongSequenceToSetOperations,
+)
+from deephyper.search.nas.model.space.node import ConstantNode, Node, VariableNode
 
 
 class NxSearchSpace:
@@ -21,12 +22,12 @@ class NxSearchSpace:
         self.seed = seed
 
     def draw_graphviz(self, path):
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             nx.nx_agraph.write_dot(self.graph, f)
             try:
                 nx.nx_agraph.write_dot(self.graph, f)
             except:
-                print('Error: can\'t create graphviz file...')
+                print("Error: can't create graphviz file...")
 
     def __len__(self):
         """Number of VariableNodes in the current search_space.
@@ -83,9 +84,10 @@ class NxSearchSpace:
 
         self.graph.add_edge(node1, node2)
 
-        if not(nx.is_directed_acyclic_graph(self.graph)):
+        if not (nx.is_directed_acyclic_graph(self.graph)):
             raise StructureHasACycle(
-                f'the connection between {node1} -> {node2} is creating a cycle in the search_space\'s graph.')
+                f"the connection between {node1} -> {node2} is creating a cycle in the search_space's graph."
+            )
 
     @property
     def size(self):
@@ -137,13 +139,15 @@ class NxSearchSpace:
             list: A list of absolute indexes corresponding to operations choosen with relative indexes of `indexes`.
         """
         assert isinstance(
-            indexes, Iterable), 'Wrong argument, "indexes" should be of Iterable.'
+            indexes, Iterable
+        ), 'Wrong argument, "indexes" should be of Iterable.'
 
         if len(indexes) != self.num_nodes:
-            raise WrongSequenceToSetOperations(
-                indexes, list(self.variable_nodes))
+            raise WrongSequenceToSetOperations(indexes, list(self.variable_nodes))
 
-        return [vnode.denormalize(op_i) for op_i, vnode in zip(indexes, self.variable_nodes)]
+        return [
+            vnode.denormalize(op_i) for op_i, vnode in zip(indexes, self.variable_nodes)
+        ]
 
     def get_output_nodes(self):
         """Get nodes of 'graph' without successors.
@@ -184,7 +188,9 @@ class NxSearchSpace:
                             tensor_list.extend(tmp)
                         else:
                             tensor_list.append(tmp)
-                    output_tensor = n.create_tensor(tensor_list, train=train, seed=self.seed)
+                    output_tensor = n.create_tensor(
+                        tensor_list, train=train, seed=self.seed
+                    )
             return output_tensor
         except TypeError:
-            raise RuntimeError(f'Failed to build tensors from :{n}')
+            raise RuntimeError(f"Failed to build tensors from :{n}")
