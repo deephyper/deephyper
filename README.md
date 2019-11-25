@@ -90,6 +90,7 @@ Currently, the core DeepHyper team is at Argonne National Laboratory:
 * Prasanna Balaprakash <pbalapra@anl.gov>, Lead and founder
 * Romain Egele <regele@anl.gov>
 * Misha Salim <msalim@anl.gov>
+* Romit Maulik <rmaulik@anl.gov>
 * Venkat Vishwanath <venkat@anl.gov>
 * Stefan Wild <wild@anl.gov>
 
@@ -105,7 +106,7 @@ If you are referencing DeepHyper in a publication, please cite the following pap
 
  * P. Balaprakash, M. Salim, T. Uram, V. Vishwanath, and S. M. Wild. **DeepHyper: Asynchronous Hyperparameter Search for Deep Neural Networks**.
     In 25th IEEE International Conference on High Performance Computing, Data, and Analytics. IEEE, 2018.
- * P. Balaprakash, R. Egele, M. Salim, S. Wild, V. Vishwanath, F. Xia, T. Brettin, and R. Stevens. **Scalable reinforcement-learning-based neural architecture search for cancer deep learning research**.  In SC ’19: IEEE/ACM International Conference on High Performance Computing, Network-ing, Storage and Analysis, 2019.
+ * P. Balaprakash, R. Egele, M. Salim, S. Wild, V. Vishwanath, F. Xia, T. Brettin, and R. Stevens. **Scalable reinforcement-learning-based neural architecture search for cancer deep learning research**.  In SC ’19: IEEE/ACM International Conference on High Performance Computing, Networking, Storage and Analysis, 2019.
 
 # How can I participate?
 
