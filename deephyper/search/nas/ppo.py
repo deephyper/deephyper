@@ -46,7 +46,7 @@ class Ppo(ReinforcementLearningSearch):
             nenvs = 1
         else:
             nranks = MPI.COMM_WORLD.Get_size()
-            if evaluator == 'balsam':  # TODO: async is a kw
+            if evaluator == 'balsam':
                 balsam_launcher_nodes = int(
                     os.environ.get('BALSAM_LAUNCHER_NODES', 1))
                 deephyper_workers_per_node = int(

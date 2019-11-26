@@ -41,7 +41,7 @@ class AMBNeuralArchitectureSearch(NeuralArchitectureSearch):
 
         super().__init__(problem=problem, run=run, evaluator=evaluator, **kwargs)
 
-        if evaluator == 'balsam':  # TODO: async is a kw
+        if evaluator == 'balsam':
             balsam_launcher_nodes = int(
                 os.environ.get('BALSAM_LAUNCHER_NODES', 1))
             deephyper_workers_per_node = int(
