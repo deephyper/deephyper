@@ -5,8 +5,8 @@ from io import StringIO
 
 from balsam.core.models import ApplicationDefinition as AppDef
 from balsam.launcher import dag
-from balsam.launcher.async import FutureTask
-from balsam.launcher.async import wait as balsam_wait
+from balsam.launcher.futures import FutureTask
+from balsam.launcher.futures import wait as balsam_wait
 
 from deephyper.evaluator.evaluate import Evaluator
 from django.core.exceptions import ObjectDoesNotExist
