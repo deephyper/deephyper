@@ -40,7 +40,7 @@ REQUIRED = [
     'networkx',
     'joblib>=0.10.3',
     'pydot',
-    'balsam-flow==0.3.5',
+    'balsam-flow==0.3.8',
     'ray==0.7.2',
     'Jinja2'
 ]
@@ -49,7 +49,7 @@ REQUIRED = [
 DP_LINKS = list()
 
 if on_rtd:
-    REQUIRED.remove('balsam-flow==0.3.5')
+    REQUIRED.remove('balsam-flow==0.3.8')
 
 if on_theta:  # --system-site-packages
     # we want to use the default mpi4py from cray environment
