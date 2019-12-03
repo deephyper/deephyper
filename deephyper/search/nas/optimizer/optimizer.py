@@ -11,7 +11,6 @@ logger = util.conf_logger('deephyper.search.hps.optimizer.optimizer')
 
 class Optimizer:
     SEED = 12345
-    KAPPA = 1.96
 
     def __init__(self,
                  problem,
