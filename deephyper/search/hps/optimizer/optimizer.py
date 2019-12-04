@@ -10,13 +10,13 @@ logger = util.conf_logger('deephyper.search.hps.optimizer.optimizer')
 
 class Optimizer:
     SEED = 12345
-    KAPPA = 1.96
 
     def __init__(self,
                 problem,
                 num_workers,
                 learner='RF',
                 acq_func='gp_hedge',
+                acq_kappa=1.96,
                 liar_strategy='cl_max',
                 n_jobs=1, **kwargs):
 
@@ -43,7 +43,7 @@ class Optimizer:
             base_estimator=base_estimator,
             acq_optimizer='sampling',
             acq_func=acq_func,
-            acq_func_kwargs={'kappa': self.KAPPA},
+            acq_func_kwargs={'kappa': acq_kappa},
             random_state=self.SEED,
             n_initial_points=n_init
         )
