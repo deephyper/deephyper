@@ -41,7 +41,7 @@ REQUIRED = [
     'joblib>=0.10.3',
     'pydot',
     'balsam-flow==0.3.8',
-    'ray==0.7.2',
+    'ray>=0.7.6',
     'Jinja2'
 ]
 
