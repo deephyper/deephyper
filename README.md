@@ -90,6 +90,7 @@ Currently, the core DeepHyper team is at Argonne National Laboratory:
 * Prasanna Balaprakash <pbalapra@anl.gov>, Lead and founder
 * Romain Egele <regele@anl.gov>
 * Misha Salim <msalim@anl.gov>
+* Romit Maulik <rmaulik@anl.gov>
 * Venkat Vishwanath <venkat@anl.gov>
 * Stefan Wild <wild@anl.gov>
 
