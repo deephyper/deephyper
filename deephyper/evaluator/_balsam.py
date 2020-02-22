@@ -1,7 +1,5 @@
-import json
 import logging
 import os
-from io import StringIO
 
 from balsam.core.models import ApplicationDefinition as AppDef
 from balsam.launcher import dag
@@ -15,7 +13,7 @@ from django.db import transaction
 logger = logging.getLogger(__name__)
 
 LAUNCHER_NODES = int(os.environ.get('BALSAM_LAUNCHER_NODES', 1))
-JOB_MODE = int(os.environ.get('BALSAM_JOB_MODE', 1))
+JOB_MODE = os.environ.get('BALSAM_JOB_MODE', 'mpi')
 
 
 class BalsamEvaluator(Evaluator):
