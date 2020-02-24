@@ -1,5 +1,6 @@
 from tensorflow import keras
 
+
 class Operation:
     """Interface of an operation.
 
@@ -21,12 +22,12 @@ class Operation:
         return self.__repr__()
 
     def __repr__(self):
-        if hasattr(self, 'from_keras_layer'):
+        if hasattr(self, "from_keras_layer"):
             return type(self._layer).__name__
         else:
             return str(self)
 
-    def __call__(self, tensors: list, seed: int=None, **kwargs):
+    def __call__(self, tensors: list, seed: int = None, **kwargs):
         """
         Args:
             tensors (list): a list of incoming tensors.

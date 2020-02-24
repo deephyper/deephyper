@@ -10,7 +10,7 @@ def test_multi_loss():
     config["hyperparameters"]["verbose"] = 1
 
     # Baseline
-    config["arch_seq"] = [1.0] * 13
+    config["arch_seq"] = [1.0] * 19
 
     run(config)
 

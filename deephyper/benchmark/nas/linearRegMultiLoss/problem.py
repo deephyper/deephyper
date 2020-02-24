@@ -16,9 +16,12 @@ Problem.hyperparameters(
     batch_size=100, learning_rate=0.1, optimizer="adam", num_epochs=20
 )
 
-Problem.loss(["mse", "mse"])
+Problem.loss(
+    loss={"output_0": "mse", "output_1": "mse"},
+    weights={"output_0": 0.0, "output_1": 1.0},
+)
 
-Problem.metrics({"output_0": "r2", "output_1": "r2"})
+Problem.metrics({"output_0": ["r2", "mse"], "output_1": "mse"})
 
 Problem.objective("val_output_0_r2")
 

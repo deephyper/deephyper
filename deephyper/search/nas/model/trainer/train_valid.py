@@ -36,13 +36,7 @@ class TrainerTrainValid:
         self.num_epochs = self.config_hp[a.num_epochs]
         self.verbose = self.config_hp.get("verbose", 1)
 
-        self.loss_metric_name = self.config[a.loss_metric]
-        if type(self.config[a.metrics]) is list:
-            self.metrics_name = [U.selectMetric(m) for m in self.config[a.metrics]]
-        else:
-            self.metrics_name = {
-                n: U.selectMetric(m) for n, m in self.config[a.metrics].items()
-            }
+        self.setup_losses_and_metrics()
 
         # DATA loading
         self.data_config_type = None
@@ -72,11 +66,32 @@ class TrainerTrainValid:
         self.init_history()
 
         # Test on validation after each epoch
-        logger.debug("[PARAM] KerasTrainer instantiated")
+        if self.verbose == 1:
+            logger.info("KerasTrainer instantiated")
+            model.summary(print_fn=logger.info)
 
     def init_history(self):
         self.train_history = dict()
         self.train_history["n_parameters"] = self.model.count_params()
+
+    def setup_losses_and_metrics(self):
+        self.loss_metrics = self.config[a.loss_metric]
+        self.loss_weights = self.config.get("loss_weights")
+
+        if self.loss_weights is None and type(self.loss_metrics) is dict:
+            self.loss_weights = [1.0 for _ in range(len(self.loss_metrics))]
+
+        if type(self.config[a.metrics]) is list:
+            self.metrics_name = [U.selectMetric(m) for m in self.config[a.metrics]]
+        else:
+
+            def selectM(metric):
+                if type(metric) is list:
+                    return [U.selectMetric(m_i) for m_i in metric]
+                else:
+                    return U.selectMetric(metric)
+
+            self.metrics_name = {n: selectM(m) for n, m in self.config[a.metrics].items()}
 
     def load_data(self):
         logger.debug("load_data")
@@ -294,17 +309,18 @@ class TrainerTrainValid:
             params["decay"] = decay_rate
         self.optimizer = optimizer_fn(**params)
 
-        if type(self.loss_metric_name) is list:
+        if type(self.loss_metrics) is dict:
             self.model.compile(
                 optimizer=self.optimizer,
-                loss=self.loss_metric_name,
-                loss_weights=[1.0 for _ in range(len(self.loss_metric_name))],
+                loss=self.loss_metrics,
+                loss_weights=self.loss_weights,
+                # loss_weights=[1.0 for _ in range(len(self.loss_metrics))],
                 metrics=self.metrics_name,
             )
         else:
             self.model.compile(
                 optimizer=self.optimizer,
-                loss=self.loss_metric_name,
+                loss=self.loss_metrics,
                 metrics=self.metrics_name,
             )
 

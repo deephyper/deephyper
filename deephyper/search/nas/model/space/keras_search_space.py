@@ -139,15 +139,23 @@ class KSearchSpace(NxSearchSpace):
             output_tensors = [
                 self.create_tensor_aux(self.graph, out) for out in self.output_node
             ]
+
+            for out_T in output_tensors:
+                output_n = int(out_T.name.split("/")[0].split("_")[-1])
+                out_S = self.output_shape[output_n]
+                if out_T.get_shape()[1:] != out_S:
+                    raise WrongOutputShape(out_T, out_S)
+
+            input_tensors = [inode._tensor for inode in self.input_nodes]
+
+            self._model = keras.Model(inputs=input_tensors, outputs=output_tensors)
         else:
             output_tensors = self.create_tensor_aux(self.graph, self.output_node)
+            if output_tensors.get_shape()[1:] != self.output_shape:
+                raise WrongOutputShape(output_tensors, self.output_shape)
 
-        for out_T, out_S in zip(output_tensors, self.output_shape):
-            if out_T.get_shape()[1:] != out_S:
-                raise WrongOutputShape(out_T, out_S)
+            input_tensors = [inode._tensor for inode in self.input_nodes]
 
-        input_tensors = [inode._tensor for inode in self.input_nodes]
-
-        self._model = keras.Model(inputs=input_tensors, outputs=output_tensors)
+            self._model = keras.Model(inputs=input_tensors, outputs=[output_tensors])
 
         return self._model

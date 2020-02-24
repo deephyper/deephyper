@@ -131,7 +131,9 @@ class HpProblem(Problem):
         Returns:
             list(dict): list of starting points where each point is a dict of values. Each key are correspnding to dimensions of the space.
         """
-        return [{k: v for k, v in zip(list(self.space.keys()), p)} for p in self.references]
+        return [
+            {k: v for k, v in zip(list(self.space.keys()), p)} for p in self.references
+        ]
 
 
 class NaProblem(Problem):
@@ -307,24 +309,32 @@ class NaProblem(Problem):
             self._space["hyperparameters"] = dict()
         self._space["hyperparameters"].update(kwargs)
 
-    def loss(self, loss):
+    def loss(self, loss, weights=None):
         """Define the loss used to train generated search_spaces.
 
         Args:
-            loss (str|callable): a string indicating a specific loss function.
+            loss (str|callable|list): a string indicating a specific loss function.
+            weights (list): Optional.
         """
-        if not type(loss) is str and not callable(loss) and not type(loss) is list:
+        if not type(loss) is str and not callable(loss) and not type(loss) is dict:
             raise RuntimeError(
-                f"The loss should be either a str, list or a callable when it's of type {type(loss)}"
+                f"The loss should be either a str, dict or a callable when it's of type {type(loss)}"
+            )
+
+        if type(loss) is dict and weights is not None and len(loss) != len(weights):
+            raise RuntimeError(
+                f"The losses list (len={len(loss)}) and the weights list (len={len(weights)}) should be of same length!"
             )
 
         self._space["loss"] = loss
+        if weights is not None:
+            self._space["loss_weights"] = weights
 
-    def metrics(self, metrics: list):
+    def metrics(self, metrics):
         """Define a list of metrics for the training of generated search_spaces.
 
         Args:
-            metrics (list(str|callable)): If ``str`` the metric should be defined in Keras or in DeepHyper. If ``callable`` it should take 2 arguments ``(y_pred, y_true)`` which are a prediction and a true value respectively.
+            metrics (list(str|callable)|dict): If ``str`` the metric should be defined in Keras or in DeepHyper. If ``callable`` it should take 2 arguments ``(y_pred, y_true)`` which are a prediction and a true value respectively.
         """
 
         self._space["metrics"] = metrics
@@ -333,27 +343,34 @@ class NaProblem(Problem):
 
         if not type(objective) is str and not callable(objective):
             raise WrongProblemObjective(objective)
-        elif type(objective) is str:
-            list_suffix = ["__min", "__max", "__last"]
-            for suffix in list_suffix:
-                if suffix in objective:
-                    objective = objective.replace(suffix, "")
-                    break  # only one suffix autorized
-            objective = objective.replace("val_", "")
-            possible_names = list()
-            if type(self._space["metrics"]) is dict:
-                metrics = list(self._space["metrics"].values())
-                for k in self._space["metrics"].keys():
-                    objective = objective.replace(f"{k}_", "")
-            else:  # assuming it s a list
-                metrics = self._space["metrics"]
-            for val in ["loss"] + metrics:
-                if callable(val):
-                    possible_names.append(val.__name__)
-                else:
-                    possible_names.append(val)
-            if not (objective in possible_names):
-                raise WrongProblemObjective(objective, possible_names)
+
+        # elif type(objective) is str:
+        #     list_suffix = ["__min", "__max", "__last"]
+
+        #     for suffix in list_suffix:
+        #         if suffix in objective:
+        #             objective = objective.replace(suffix, "")
+        #             break  # only one suffix autorized
+
+        #     objective = objective.replace("val_", "")
+        #     possible_names = list()
+
+        #     if type(self._space["metrics"]) is dict:
+        #         metrics = list(self._space["metrics"].values())
+        #         for k in self._space["metrics"].keys():
+        #             objective = objective.replace(f"{k}_", "")
+
+        #     else:  # assuming it s a list
+        #         metrics = self._space["metrics"]
+
+        #     for val in ["loss"] + metrics:
+        #         if callable(val):
+        #             possible_names.append(val.__name__)
+        #         else:
+        #             possible_names.append(val)
+
+        #     if not (objective in possible_names):
+        #         raise WrongProblemObjective(objective, possible_names)
 
     def objective(self, objective):
         """Define the objective you want to maximize for the search.
@@ -366,11 +383,15 @@ class NaProblem(Problem):
         if not self._space.get("loss") is None and not self._space.get("metrics") is None:
             self.check_objective(objective)
         else:
-            raise NaProblemError(".loss and .metrics should be defined before .objective!")
+            raise NaProblemError(
+                ".loss and .metrics should be defined before .objective!"
+            )
 
         self._space["objective"] = objective
 
-    def post_training(self, num_epochs: int, metrics: list, callbacks: dict, repeat: int = 1):
+    def post_training(
+        self, num_epochs: int, metrics: list, callbacks: dict, repeat: int = 1
+    ):
         """Choose settings to run a post-training.
 
         Args:
