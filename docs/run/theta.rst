@@ -53,11 +53,18 @@ your master job named test::
 
     balsam submit-launch -n 128 -q default -t 180 -A $PROJECT_NAME --job-mode serial --wf-filter TEST
 
-If you want to look at the logs, navigate to ``testdb/data/TEST``. You'll see
-one directory prefixed with ``test``. Inside this directory you will find the
-logs of you search. All the other directories prefixed with ``task`` contain the
-individual logs of each evaluation your ``--run`` function. Here, the run function 
-corresponds to the training of a neural network.
+Each Balsam job runs in its own working directory, which is generated from the ``workflow``
+and ``name`` attributes as follows: ``testdb/data/{workflow}/{name}_{id}``. In the context of 
+DeepHyper, we want to follow the output of the search task.
+Navigate to the ``TEST`` workflow directory ``testdb/data/TEST``.  Here, you'll see
+one directory prefixed with ``test`` corresponding to the AMBS application that we named ``test``.
+Inside this directory you will find the DeepHyper search logs.
+
+Each evaluation of the ``--run`` function in the course of a search counts as a separate Balsam job
+prefixed with ``task``.  Therefore, the directories matching ``testdb/data/TEST/task*`` will contain
+the individual logs of each run function evaluation. Here, the run function 
+corresponds to the training of a neural network and returns a suitable fitness metric such as
+the trained model's validation accuracy.
 
 The above specification of Balsam ``--job-mode=serial`` can be used for tasks that **do
 not** use MPI (and hence are restricted to a single node). With the current settings,
