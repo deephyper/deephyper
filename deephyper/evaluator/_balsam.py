@@ -12,6 +12,7 @@ from django.db import transaction
 
 logger = logging.getLogger(__name__)
 
+# TODO(#30): "workers": should searcher be treated equivalently to evaluators?
 LAUNCHER_NODES = int(os.environ.get('BALSAM_LAUNCHER_NODES', 1))
 JOB_MODE = os.environ.get('BALSAM_JOB_MODE', 'mpi')
 
@@ -33,7 +34,7 @@ class BalsamEvaluator(Evaluator):
     def __init__(self, run_function, cache_key=None, **kwargs):
         super().__init__(run_function, cache_key)
         self.id_key_map = {}
-        # reserve 1 DeepHyper worker for learner/search process
+        # reserve 1 DeepHyper worker for searcher process
         if LAUNCHER_NODES == 1:
             # --job-mode=serial edge case where 2 ranks (Master, Worker) are placed on the node
             self.num_workers = self.WORKERS_PER_NODE - 1
