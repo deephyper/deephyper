@@ -2,7 +2,7 @@
 
 Arguments of AMBS:
 
-* ``learner``
+* ``surrogate-model``
 
     * ``RF`` : Random Forest (default)
     * ``ET`` : Extra Trees
@@ -51,10 +51,10 @@ class AMBS(Search):
 
     @staticmethod
     def _extend_parser(parser):
-        parser.add_argument("--learner",
+        parser.add_argument("--surrogate-model",
                             default="RF",
                             choices=["RF", "ET", "GBRT", "DUMMY", "GP"],
-                            help='type of learner (surrogate model)'
+                            help='type of surrogate model (learner)'
                             )
         parser.add_argument('--liar-strategy',
                             default="cl_max",
@@ -69,7 +69,8 @@ class AMBS(Search):
         parser.add_argument('--acq-kappa', type=float, default=1.96,
                             help='Controls how much of the variance in the predicted values should be taken into account. If set to be very high, then we are favouring exploration over exploitation and vice versa. Used when the acquisition is "LCB".')
         parser.add_argument('--n-jobs', type=int, default=1,
-                            help="number of cores to use for the 'learner', if n_jobs=-1 then it will use all cores available.")
+                            # TODO(KGF): slightly inconsistent with nas/ambs.py (cores vs. parallel jobs)
+                            help="number of cores to use for the 'surrogate model' (learner), if n_jobs=-1 then it will use all cores available.")
         return parser
 
     def main(self):

@@ -1,10 +1,10 @@
 from sys import float_info
 from skopt import Optimizer as SkOptimizer
 from skopt.learning import RandomForestRegressor, ExtraTreesRegressor, GradientBoostingQuantileRegressor
-#from numpy import inf
+# from numpy import inf
 import numpy as np
 from deephyper.search import util
-from deephyper.benchmark import HpProblem
+# from deephyper.benchmark import HpProblem
 
 logger = util.conf_logger('deephyper.search.hps.optimizer.optimizer')
 
@@ -15,20 +15,20 @@ class Optimizer:
     def __init__(self,
                  problem,
                  num_workers,
-                 learner='RF',
+                 surrogate_model='RF',
                  acq_func='gp_hedge',
                  acq_kappa=1.96,
                  liar_strategy='cl_max',
                  n_jobs=-1, **kwargs):
-        assert learner in ["RF", "ET", "GBRT", "GP", "DUMMY"], f"Unknown scikit-optimize base_estimator: {learner}"
-        if learner == "RF":
+        assert surrogate_model in ["RF", "ET", "GBRT", "GP", "DUMMY"], f"Unknown scikit-optimize base_estimator: {surrogate_model}"
+        if surrogate_model == "RF":
             base_estimator = RandomForestRegressor(n_jobs=n_jobs)
-        elif learner == "ET":
+        elif surrogate_model == "ET":
             base_estimator = ExtraTreesRegressor(n_jobs=n_jobs)
-        elif learner == "GBRT":
+        elif surrogate_model == "GBRT":
             base_estimator = GradientBoostingQuantileRegressor(n_jobs=n_jobs)
         else:
-            base_estimator = learner
+            base_estimator = surrogate_model
 
         self.space = problem.space
         cs_kwargs = self.space['create_search_space'].get('kwargs')
@@ -39,7 +39,7 @@ class Optimizer:
 
         # // queue of remaining starting points
         # // self.starting_points = problem.starting_point
-        n_init = np.inf if learner == 'DUMMY' else num_workers
+        n_init = np.inf if surrogate_model == 'DUMMY' else num_workers
 
         self.starting_points = []  # ! EMPTY for now TODO
 
@@ -61,14 +61,14 @@ class Optimizer:
         self.strategy = liar_strategy
         self.evals = {}
         self.counter = 0
-        logger.info("Using skopt.Optimizer with %s base_estimator" % learner)
+        logger.info("Using skopt.Optimizer with %s base_estimator" % surrogate_model)
 
     def _get_lie(self):
         if self.strategy == "cl_min":
             return min(self._optimizer.yi) if self._optimizer.yi else 0.0
         elif self.strategy == "cl_mean":
             return np.mean(self._optimizer.yi) if self._optimizer.yi else 0.0
-        else: # self.strategy == "cl_max"
+        else:  # self.strategy == "cl_max"
             return max(self._optimizer.yi) if self._optimizer.yi else 0.0
 
     def _xy_from_dict(self):

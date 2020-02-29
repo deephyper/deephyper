@@ -33,7 +33,7 @@ class Search:
         max_evals (int): the maximum number of evaluations to run. The exact behavior related to this parameter can vary in different search.
     """
 
-    def __init__(self, problem: str, run: str, evaluator: str, max_evals: int=100, seed: int=None, **kwargs):
+    def __init__(self, problem: str, run: str, evaluator: str, max_evals: int=1000000, seed: int=None, **kwargs):
         kwargs['problem'] = problem
         kwargs['run'] = run
         kwargs['evaluator'] = evaluator

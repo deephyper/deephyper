@@ -1,6 +1,7 @@
 from sys import float_info
 from skopt import Optimizer as SkOptimizer
-from skopt.learning import RandomForestRegressor, ExtraTreesRegressor, GradientBoostingQuantileRegressor
+from skopt.learning import (RandomForestRegressor, ExtraTreesRegressor,
+                            GradientBoostingQuantileRegressor)
 import numpy as np
 from numpy import inf
 from deephyper.search import util
@@ -14,28 +15,28 @@ class Optimizer:
     def __init__(self,
                 problem,
                 num_workers,
-                learner='RF',
+                surrogate_model='RF',
                 acq_func='gp_hedge',
                 acq_kappa=1.96,
                 liar_strategy='cl_max',
                 n_jobs=1, **kwargs):
 
-        assert learner in ["RF", "ET", "GBRT", "GP", "DUMMY"], f"Unknown scikit-optimize base_estimator: {learner}"
+        assert surrogate_model in ["RF", "ET", "GBRT", "GP", "DUMMY"], f"Unknown scikit-optimize base_estimator: {surrogate_model}"
 
-        if learner == "RF":
+        if surrogate_model == "RF":
             base_estimator = RandomForestRegressor(n_jobs=n_jobs)
-        elif learner == "ET":
+        elif surrogate_model == "ET":
             base_estimator = ExtraTreesRegressor(n_jobs=n_jobs)
-        elif learner == "GBRT":
+        elif surrogate_model == "GBRT":
             base_estimator = GradientBoostingQuantileRegressor(n_jobs=n_jobs)
         else:
-            base_estimator = learner
+            base_estimator = surrogate_model
 
         self.space = problem.space
         # queue of remaining starting points
         self.starting_points = problem.starting_point
 
-        n_init = inf if learner == 'DUMMY' else max(
+        n_init = inf if surrogate_model == 'DUMMY' else max(
             num_workers, len(self.starting_points))
 
         self._optimizer = SkOptimizer(
@@ -52,7 +53,7 @@ class Optimizer:
         self.strategy = liar_strategy
         self.evals = {}
         self.counter = 0
-        logger.info(f"Using skopt.Optimizer with {learner} base_estimator")
+        logger.info(f"Using skopt.Optimizer with {surrogate_model} base_estimator")
 
     def _get_lie(self):
         if self.strategy == "cl_min":

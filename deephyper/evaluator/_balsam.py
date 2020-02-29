@@ -1,7 +1,5 @@
-import json
 import logging
 import os
-from io import StringIO
 
 from balsam.core.models import ApplicationDefinition as AppDef
 from balsam.launcher import dag
@@ -14,24 +12,42 @@ from django.db import transaction
 
 logger = logging.getLogger(__name__)
 
+# TODO(#30): "workers": should searcher be treated equivalently to evaluators?
 LAUNCHER_NODES = int(os.environ.get('BALSAM_LAUNCHER_NODES', 1))
+JOB_MODE = os.environ.get('BALSAM_JOB_MODE', 'mpi')
 
 
 class BalsamEvaluator(Evaluator):
-    """Evaluator using balsam software.
+    """Evaluator using Balsam software.
 
-    Documentation to balsam : https://balsam.readthedocs.io
+    Documentation to Balsam : https://balsam.readthedocs.io
     This class helps us to run task on HPC systems with more flexibility and ease of use.
 
     Args:
         run_function (func): takes one parameter of type dict and returns a scalar value.
-        cache_key (func): takes one parameter of type dict and returns a hashable type, used as the key for caching evaluations. Multiple inputs that map to the same hashable key will only be evaluated once. If ``None``, then cache_key defaults to a lossless (identity) encoding of the input dict.
+        cache_key (func): takes one parameter of type dict and returns a hashable type,
+            used as the key for caching evaluations. Multiple inputs that map to the same
+            hashable key will only be evaluated once. If ``None``, then cache_key defaults
+            to a lossless (identity) encoding of the input dict.
     """
 
     def __init__(self, run_function, cache_key=None, **kwargs):
         super().__init__(run_function, cache_key)
         self.id_key_map = {}
-        self.num_workers = max(1, LAUNCHER_NODES*self.WORKERS_PER_NODE - 2)
+        # reserve 1 DeepHyper worker for searcher process
+        if LAUNCHER_NODES == 1:
+            # --job-mode=serial edge case where 2 ranks (Master, Worker) are placed on the node
+            self.num_workers = self.WORKERS_PER_NODE - 1
+            # 1 node case for --job-mode=mpi will result in search process occupying
+            # entirety of the only node ---> no evaluator workers (also should have DEEPHYPER_WORKERS_PER_NODE=1)
+        else:
+            if JOB_MODE == 'serial':
+                # MPI ensemble Master rank0 occupies entirety of first node
+                self.num_workers = (LAUNCHER_NODES - 1) * self.WORKERS_PER_NODE - 1
+            if JOB_MODE == 'mpi':
+                # all nodes free, but restricted to 1 job=worker per node
+                assert self.WORKERS_PER_NODE == 1
+                self.num_workers = LAUNCHER_NODES * self.WORKERS_PER_NODE - 1
         logger.info("Balsam Evaluator instantiated")
         logger.debug(f"LAUNCHER_NODES = {LAUNCHER_NODES}")
         logger.debug(f"WORKERS_PER_NODE = {self.WORKERS_PER_NODE}")
@@ -63,7 +79,7 @@ class BalsamEvaluator(Evaluator):
         jobname = f"task{self.counter}"
         args = f"'{self.encode(x)}'"
         envs = f"KERAS_BACKEND={self.KERAS_BACKEND}"
-        #envs = ":".join(f'KERAS_BACKEND={self.KERAS_BACKEND} OMP_NUM_THREADS=62 KMP_BLOCKTIME=0 KMP_AFFINITY=\"granularity=fine,compact,1,0\"'.split())
+        # envs = ":".join(f'KERAS_BACKEND={self.KERAS_BACKEND} OMP_NUM_THREADS=62 KMP_BLOCKTIME=0 KMP_AFFINITY=\"granularity=fine,compact,1,0\"'.split())
         resources = {
             'num_nodes': 1,
             'ranks_per_node': 1,
@@ -97,17 +113,17 @@ class BalsamEvaluator(Evaluator):
     def _on_done(job):  # def _on_done(job, process_data):
         output = job.read_file_in_workdir(f'{job.name}.out')
         # process_data(job)
-        #args = job.args
-        #args = args.replace("\'", "")
+        # args = job.args
+        # args = args.replace("\'", "")
         # with open('test.json', 'w') as f:
         #    f.write(args)
         #
         # with open('test.json', 'r') as f:
         #    args = json.load(f)
         output = Evaluator._parse(output)
-        #job.data['reward'] = output
-        #job.data['arch_seq'] = args['arch_seq']
-        #job.data['id_worker'] = args['w']
+        # job.data['reward'] = output
+        # job.data['arch_seq'] = args['arch_seq']
+        # job.data['id_worker'] = args['w']
         # job.save()
         return output
 

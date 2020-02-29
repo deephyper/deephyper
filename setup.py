@@ -32,7 +32,7 @@ REQUIRED = [
     'scikit-optimize',
     'scikit-learn',
     'tqdm',
-    'tensorflow==1.14.0',
+    'tensorflow>=1.14.0,<2.0.0',
     'keras',
     'deap',  # GA search
     # nas
@@ -49,7 +49,7 @@ REQUIRED = [
 DP_LINKS = list()
 
 if on_rtd:
-    REQUIRED.remove('balsam-flow==0.3.8')
+    REQUIRED.remove('balsam-flow>=0.3.8')
 
 if on_theta:  # --system-site-packages
     # we want to use the default mpi4py from cray environment
@@ -57,7 +57,7 @@ if on_theta:  # --system-site-packages
 elif not on_rtd and not on_gpu:
     REQUIRED.append('mpi4py>=3.0.0')
 elif on_gpu:
-    REQUIRED.append('tensorflow-gpu==1.13.1')
+    REQUIRED.append('tensorflow-gpu>=1.13.1')
     REQUIRED.append('mpi4py')
 else:
     REQUIRED.append('Sphinx>=1.8.2')
@@ -76,7 +76,7 @@ EXTRAS = {
         'jupyter',
         'jupyter_contrib_nbextensions>=0.5.1',
         'pandas>=0.24.2',
-        'seaborn>=0.9.0',
+        'seaborn>=0.9.1',
         'matplotlib>=3.0.3'
     ]
 }
@@ -181,7 +181,7 @@ class TestUploadCommand(Command):
 class TestInstallCommand(Command):
     """Support setup.py testinstall"""
 
-    description = 'Install deephyper from Test Pypi.'
+    description = 'Install deephyper from TestPyPI.'
     user_options = []
 
     @staticmethod
