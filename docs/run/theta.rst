@@ -9,6 +9,12 @@ Running on Theta
     training with Horovod, you can hook into the Balsam job controller. See :ref:`balsamjob_spec`
     for a detailed example.
 
+
+.. note::
+
+    Also make sure not to change any of our workflow names or directory structures as this is crucial for
+    accurate node utilization assessments when using ``deephyper-analytics``.
+
 Hyperparameter Search
 ==========================
 
