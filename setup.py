@@ -30,7 +30,7 @@ REQUIRED = [
     "scikit-optimize",
     "scikit-learn",
     "tqdm",
-    "tensorflow>=1.13.1,<2.0.0"
+    "tensorflow>=1.13.1,<=1.15.2"
     "keras",
     "deap",  # GA search
     # nas
@@ -40,6 +40,7 @@ REQUIRED = [
     'pydot',
     'balsam-flow==0.3.8',
     'ray>=0.7.6',
+    'pandas>=0.24.2',
     'Jinja2'
 ]
 
@@ -71,7 +72,6 @@ EXTRAS = {
     'analytics': [
         'jupyter',
         'jupyter_contrib_nbextensions>=0.5.1',
-        'pandas>=0.24.2',
         'seaborn>=0.9.1',
         'matplotlib>=3.0.3'
     ]
