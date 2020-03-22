@@ -21,8 +21,19 @@ do:
     deephyper nas regevo --problem deephyper.benchmark.nas.linearReg.Problem
 
 If you want to initialize an hyperparameter or neural architecture search
-problem folder you can use ``deephyper hps-init ...`` or
-``deephyper nas-init ...`` respectively.
+project:
+
+.. code-block:: console
+    :caption: bash
+
+    deephyper start-project project_name
+
+If you want to create a nas problem in this project, from the ``project_name`` package:
+
+.. code-block:: console
+    :caption: bash
+
+    deephyper new-problem nas my_problem
 
 Use commands such as ``deephyper --help``, ``deephyper nas --help`` or
 ``deephyper nas regevo --help`` to find out more about the command line
