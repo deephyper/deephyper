@@ -12,7 +12,7 @@ This is easily accomplished with:
     :caption: bash
 
     $ deephyper start-project demo
-    $ cd demo
+    $ cd demo/demo/
     $ deephyper new-problem hps my_problem
 
 This will create a ``my_problem`` package that is globally importable within your
