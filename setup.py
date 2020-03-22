@@ -48,7 +48,7 @@ REQUIRED = [
 DP_LINKS = list()
 
 if on_rtd:
-    REQUIRED.remove('balsam-flow>=0.3.8')
+    REQUIRED.remove('balsam-flow==0.3.8')
 
 if on_theta:  # --system-site-packages
     # we want to use the default mpi4py from cray environment
