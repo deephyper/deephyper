@@ -86,6 +86,6 @@ def run(config):
     else:
         # penalising actions if model cannot be created
         result = -1
-    if result < 0:
+    if result < -10:
         result = -10
     return result
