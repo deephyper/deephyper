@@ -22,7 +22,10 @@ class TrainerTrainValid:
         self.cname = self.__class__.__name__
 
         self.config = config
-        self.sess = tf.compat.v1.keras.backend.get_session()
+        if tf.__version__ == "1.13.1":
+            self.sess = keras.backend.get_session()
+        else:
+            self.sess = tf.compat.v1.keras.backend.get_session()
         self.model = model
         self.callbacks = [keras.callbacks.CSVLogger("training.csv", append=True)]
 

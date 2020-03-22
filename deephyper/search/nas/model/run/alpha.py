@@ -29,8 +29,10 @@ def run(config):
     seed = config["seed"]
     if seed is not None:
         np.random.seed(seed)
-        tf.compat.v2.random.set_seed(seed)
-        # tf.random.set_random_seed(seed)
+        if tf.__version__ == "1.13.1":
+            tf.random.set_random_seed(seed)
+        else:
+            tf.compat.v2.random.set_seed(seed)
 
     load_config(config)
 
@@ -84,5 +86,6 @@ def run(config):
     else:
         # penalising actions if model cannot be created
         result = -1
-
+    if result < 0:
+        result = -10
     return result
