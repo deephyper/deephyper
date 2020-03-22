@@ -16,5 +16,6 @@ def create_search_space(input_shape=(2,), output_shape=(1,), **kwargs):
             vnode.add_op(Dense(i, tf.nn.relu))
 
         struct.connect(prev_node, vnode)
+        prev_node = vnode
 
     return struct

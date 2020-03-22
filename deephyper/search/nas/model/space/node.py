@@ -14,14 +14,14 @@ class Node:
     # Number of 'Node' instances created
     num = 0
 
-    def __init__(self, name='', *args, **kwargs):
+    def __init__(self, name="", *args, **kwargs):
         Node.num += 1
         self._num = Node.num
         self._tensor = None
         self.name = name
 
     def __str__(self):
-        return f'{self.name}[id={self._num}]'
+        return f"{self.name}[id={self._num}]"
 
     @property
     def id(self):
@@ -41,11 +41,13 @@ class Node:
         elif isinstance(op, keras.layers.Layer):
             return Operation(op)
         else:
-            raise RuntimeError(f'Can\'t add this operation \'{op.__name__}\'. An operation should be either of type Operation or keras.layers.Layer when is of type: {type(op)}')
+            raise RuntimeError(
+                f"Can't add this operation '{op.__name__}'. An operation should be either of type Operation or keras.layers.Layer when is of type: {type(op)}"
+            )
 
 
 class OperationNode(Node):
-    def __init__(self, name='', *args, **kwargs):
+    def __init__(self, name="", *args, **kwargs):
         super().__init__(name=name, *args, **kwargs)
 
     def create_tensor(self, inputs=None, train=True, seed=None, **kwargs):
@@ -54,7 +56,9 @@ class OperationNode(Node):
                 try:
                     self._tensor = self.op(train=train, seed=None)
                 except TypeError:
-                    raise RuntimeError(f'Verify if node: "{self}" has incoming connexions!')
+                    raise RuntimeError(
+                        f'Verify if node: "{self}" has incoming connexions!'
+                    )
             else:
                 self._tensor = self.op(inputs, train=train)
         return self._tensor
@@ -85,16 +89,16 @@ class VariableNode(OperationNode):
         name (str): node name.
     """
 
-    def __init__(self, name=''):
+    def __init__(self, name=""):
         super().__init__(name=name)
         self._ops = list()
         self._index = None
 
     def __str__(self):
         if self._index != None:
-            return f'{super().__str__()}(Variable[{str(self.op)}])'
+            return f"{super().__str__()}(Variable[{str(self.op)}])"
         else:
-            return f'{super().__str__()}(Variable[?])'
+            return f"{super().__str__()}(Variable[?])"
 
     def add_op(self, op):
         self._ops.append(self.verify_operation(op))
@@ -107,13 +111,15 @@ class VariableNode(OperationNode):
         self.get_op(index).init(self)
 
     def get_op(self, index):
-        assert 'float' in str(type(index)) or type(
-            index) is int, f'found type is : {type(index)}'
-        if 'float' in str(type(index)):
+        assert (
+            "float" in str(type(index)) or type(index) is int
+        ), f"found type is : {type(index)}"
+        if "float" in str(type(index)):
             self._index = self.denormalize(index)
         else:
             assert 0 <= index and index < len(
-                self._ops), f'Number of possible operations is: {len(self._ops)}, but index given is: {index} (index starts from 0)!'
+                self._ops
+            ), f"Number of possible operations is: {len(self._ops)}, but index given is: {index} (index starts from 0)!"
             self._index = index
         return self.op
 
@@ -129,17 +135,20 @@ class VariableNode(OperationNode):
         if type(index) is int:
             return index
         else:
-            assert 0. <= index and index <= 1.
-            return int(index * len(self._ops))
+            assert 0.0 <= index and index <= 1.0
+            res = int(index * len(self._ops))
+            if index == 1.0:
+                res -= 1
+            return res
 
     @property
     def op(self):
         if len(self._ops) == 0:
-            raise RuntimeError(
-                'This VariableNode doesn\'t have any operation yet.')
+            raise RuntimeError("This VariableNode doesn't have any operation yet.")
         elif self._index is None:
             raise RuntimeError(
-                'This VariableNode doesn\'t have any set operation, please use "set_op(index)" if you want to set one')
+                'This VariableNode doesn\'t have any set operation, please use "set_op(index)" if you want to set one'
+            )
         else:
             return self._ops[self._index]
 
@@ -163,7 +172,7 @@ class ConstantNode(OperationNode):
         name (str, optional): [description]. Defaults to ''.
     """
 
-    def __init__(self, op=None, name='', *args, **kwargs):
+    def __init__(self, op=None, name="", *args, **kwargs):
         super().__init__(name=name)
         if not op is None:
             op = self.verify_operation(op)
@@ -176,7 +185,7 @@ class ConstantNode(OperationNode):
         self._op = op
 
     def __str__(self):
-        return f'{super().__str__()}(Constant[{str(self.op)}])'
+        return f"{super().__str__()}(Constant[{str(self.op)}])"
 
     @property
     def op(self):
@@ -201,6 +210,7 @@ class MirrorNode(OperationNode):
     >>> mnode.op
     Dense_10
     """
+
     def __init__(self, node):
 
         super().__init__(name=f"Mirror[{str(node)}]")
@@ -231,6 +241,7 @@ class MimeNode(OperationNode):
     >>> mnode.op
     Dense_30
     """
+
     def __init__(self, node):
         super().__init__(name=f"Mime[{str(node)}]")
         self.node = node
@@ -246,7 +257,9 @@ class MimeNode(OperationNode):
     @property
     def op(self):
         if self.num_ops != self.node.num_ops:
-            raise DeephyperRuntimeError(f'{str(self)} and {str(self.node)} should have the same number of opertions, when {str(self)} has {self.num_ops} and {str(self.node)} has {self.node.num_ops}!')
+            raise DeephyperRuntimeError(
+                f"{str(self)} and {str(self.node)} should have the same number of opertions, when {str(self)} has {self.num_ops} and {str(self.node)} has {self.node.num_ops}!"
+            )
         else:
             return self._ops[self.node._index]
 
