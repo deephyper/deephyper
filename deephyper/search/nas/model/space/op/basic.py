@@ -25,7 +25,10 @@ class Operation:
         if hasattr(self, "from_keras_layer"):
             return type(self._layer).__name__
         else:
-            return type(self).__name__
+            try:
+                return str(self)
+            except:
+                return type(self).__name__
 
     def __call__(self, tensors: list, seed: int = None, **kwargs):
         """
