@@ -1,8 +1,8 @@
 .. _evaluators:
 
-**********
-Evaluators
-**********
+**********************
+Evaluator Interface
+**********************
 
 .. automodule:: deephyper.evaluator
 

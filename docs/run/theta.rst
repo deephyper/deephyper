@@ -1,67 +1,60 @@
 Running on Theta
 ****************
 
-User
-====
+.. note::
 
-Hyperparameter Search
----------------------
+    The examples so far assume that your DeepHyper models run in the same Python
+    environment as DeepHyper and each model runs on a single node.  If you need more control over
+    model execution, say, to run containerized models, or to run data-parallel model 
+    training with Horovod, you can hook into the Balsam job controller. See :ref:`balsamjob_spec`
+    for a detailed example.
 
-First we are going to run a search on ``deephyper.benchmark.hps.polynome2``
-benchmark. In order to achieve this goal we first have to load the deephyper
-module on Theta. This module is bringing deephyper in you current environment
-but also the cray python distribution and the balsam software::
-
-    module load deephyper
-
-Then you can create a new postgress database in the current directory, this
-database is used by the balsam software::
-
-    balsam init testdb
-
-Once the database has been created you can start it, or link to it if
-it is already running::
-
-    source balsamactivate testdb
-
-The database is now running, let's create our first balsam application
-in order to run a Asynchronous Model-Based Search (AMBS)::
-
-    balsam app --name AMBS --exec "$(which python) -m deephyper.search.hps.ambs"
-
-You can run the following command to print all the applications available
-in your current balsam environment::
-
-    balsam ls apps
-
-Then create a new job::
-
-    balsam job --name test --application AMBS --workflow TEST --args '--evaluator balsam --problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run'
-
-Print jobs referenced in Balsam database::
-
-    balsam ls jobs
 
 .. note::
 
-    In our case we are setting ``PROJECT_NAME`` to *datascience*::
+    Also make sure not to change any of our workflow names or directory structures as this is crucial for
+    accurate node utilization assessments when using ``deephyper-analytics``.
 
-        export PROJECT_NAME=datascience
+Hyperparameter Search
+==========================
 
-Finally you can submit a cobalt job to Theta which will start by running
-your master job named test::
+First we are going to run a search on ``deephyper.benchmark.hps.polynome2``
+benchmark. In order to achieve this goal we first have to load the deephyper
+module on Theta. This module contains a Cray Python 3.6-based virtual environment
+with Balsam and DeepHyper installed.::
 
-    balsam submit-launch -n 128 -q default -t 180 -A $PROJECT_NAME --job-mode serial --wf-filter TEST
+    module load deephyper
 
+Next, create a Balsam database in one of your ``/projects`` subdirectories::
+
+    balsam init testdb
+
+Once the database has been created you can start (or re-connect to) it::
+
+    source balsamactivate testdb
+
+The database is now up. We can submit an Asynchronous Model-Based Search (AMBS)
+run through Balsam as follows::
+
+    deephyper balsam-submit hps test -p deephyper.benchmark.hps.polynome2.Problem -r deephyper.benchmark.hps.polynome2.run \ 
+    -t 60 -q debug-cache-quad -n 4 -A datascience -j mpi
+
+This creates an AMBS hyperparameter search job for the given `Problem` and `run` arguments.  The parameters on the second line
+indicate: 60 minute wall-time, submission to `debug-cache-quad` queue, running on 4 nodes, charging to `datascience` allocation,
+and using the `mpi` job mode of Balsam. Refer to the Command Line Interface documentation for more information on this command.
+
+You can use `balsam ls` to see the job that was added to the database::
+
+    balsam ls jobs
 
 Now if you want to look at the logs, go to ``testdb/data/TEST``. You'll see
 one directory prefixed with ``test``. Inside this directory you will find the
-logs of you search. All the other directories prefixed with ``task`` correspond
+logs of your search. All the other directories prefixed with ``task`` correspond
 to the logs of your ``--run`` function, here the run function is corresponding
 to the training of a neural network.
 
 Neural Architecture Search
---------------------------
+==========================
 
 ::
 
