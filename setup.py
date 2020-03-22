@@ -30,7 +30,6 @@ REQUIRED = [
     "scikit-optimize",
     "scikit-learn",
     "tqdm",
-    # "tensorflow==1.15.2",
     "tensorflow>=1.13.1,<=1.15.2"
     "keras",
     "deap",  # GA search
