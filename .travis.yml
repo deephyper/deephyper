@@ -24,6 +24,7 @@ before_install:
   - sudo apt-get install graphviz
 install:
   - pip install -e '.[docs,tests,analytics]'
+  - pip install tensorflow==1.13.1 keras
   - pip install codecov pytest-cov
 
 script:
