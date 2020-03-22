@@ -83,10 +83,10 @@ class NxSearchSpace:
 
         self.graph.add_edge(node1, node2)
 
-        # if not (nx.is_directed_acyclic_graph(self.graph)):
-        #     raise StructureHasACycle(
-        #         f"the connection between {node1} -> {node2} is creating a cycle in the search_space's graph."
-        #     )
+        if not (nx.is_directed_acyclic_graph(self.graph)):
+            raise StructureHasACycle(
+                f"the connection between {node1} -> {node2} is creating a cycle in the search_space's graph."
+            )
 
     @property
     def size(self):
