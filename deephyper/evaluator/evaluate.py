@@ -50,6 +50,9 @@ class Evaluator:
     """
     FAIL_RETURN_VALUE = -sys.float_info.max
     PYTHON_EXE = os.environ.get('DEEPHYPER_PYTHON_BACKEND', sys.executable)
+    # TODO(#30): DH CLI should handle this kind of dependent parameter.
+    # What if searcher process has surrogate model with --n-jobs>1? May need to reserve
+    # more than 1x DH "worker", if it is more expensive than a "evaluator". See _balsam.py
     WORKERS_PER_NODE = int(os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
     KERAS_BACKEND = os.environ.get('KERAS_BACKEND', 'tensorflow')
     os.environ['KERAS_BACKEND'] = KERAS_BACKEND
@@ -57,7 +60,7 @@ class Evaluator:
 
 
     def __init__(self, run_function, cache_key=None, encoder=Encoder,
-        seed=None, **kwargs):
+                 seed=None, **kwargs):
         self.encoder = encoder # dict --> uuid
         self.pending_evals = {}  # uid --> Future
         self.finished_evals = OrderedDict()  # uid --> scalar

@@ -27,13 +27,13 @@ class AMBNeuralArchitectureSearch(NeuralArchitectureSearch):
         problem (str): python attribute import of the ``NaProblem`` instance (e.g. ``mypackage.mymodule.myproblem``).
         run (str): python attribute import of the run function (e.g. ``mypackage.mymodule.myrunfunction``).
         evaluator (str): the name of the evaluator to use.
-        learner (str, optional): Choices are ["RF", "ET", "GBRT", "DUMMY", "GP"]. ``RF`` is Random Forest, ``ET`` is Extra Trees, ``GBRT`` is Gradient Boosting Regression Trees, ``DUMMY`` is random, ``GP`` is Gaussian process. Defaults to "RF".
+        surrogate_model (str, optional): Choices are ["RF", "ET", "GBRT", "DUMMY", "GP"]. ``RF`` is Random Forest, ``ET`` is Extra Trees, ``GBRT`` is Gradient Boosting Regression Trees, ``DUMMY`` is random, ``GP`` is Gaussian process. Defaults to "RF".
         liar_strategy (str, optional): ["cl_max", "cl_min", "cl_mean"]. Defaults to "cl_max".
         acq_func (str, optional): Acquisition function, choices are ["gp_hedge", "LCB", "EI", "PI"]. Defaults to "gp_hedge".
-        n_jobs (int, optional): Number of parallel jobs to distribute the learner. Defaults to -1, means as many as the number of logical cores.
+        n_jobs (int, optional): Number of parallel jobs to distribute the surrogate model (learner). Defaults to -1, means as many as the number of logical cores.
     """
     def __init__(self, problem, run, evaluator,
-                learner="RF",
+                surrogate_model="RF",
                 liar_strategy="cl_max",
                 acq_func="gp_hedge",
                 n_jobs=-1,
@@ -60,15 +60,15 @@ class AMBNeuralArchitectureSearch(NeuralArchitectureSearch):
             ))
 
         dhlogger.info("Initializing AMBS")
-        self.optimizer = Optimizer(self.problem, self.num_workers, learner=learner, liar_strategy=liar_strategy, acq_func=acq_func, n_jobs=n_jobs, **kwargs)
+        self.optimizer = Optimizer(self.problem, self.num_workers, surrogate_model=surrogate_model, liar_strategy=liar_strategy, acq_func=acq_func, n_jobs=n_jobs, **kwargs)
 
     @staticmethod
     def _extend_parser(parser):
         NeuralArchitectureSearch._extend_parser(parser)
-        parser.add_argument('--learner',
+        parser.add_argument('--surrogate-model',
                             default='RF',
                             choices=["RF", "ET", "GBRT", "DUMMY", "GP"],
-                            help='type of learner (surrogate model)'
+                            help='type of surrogate model (learner)'
                             )
         parser.add_argument('--liar-strategy',
                             default="cl_max",
@@ -80,10 +80,12 @@ class AMBNeuralArchitectureSearch(NeuralArchitectureSearch):
                             choices=["LCB", "EI", "PI", "gp_hedge"],
                             help='Acquisition function type'
                             )
+        parser.add_argument('--acq-kappa', type=float, default=1.96,
+                            help='Controls how much of the variance in the predicted values should be taken into account. If set to be very high, then we are favouring exploration over exploitation and vice versa. Used when the acquisition is "LCB".')
         parser.add_argument('--n-jobs',
                             default=-1,
                             type=int,
-                            help='Number of processes to use for learner.')
+                            help='Number of processes to use for surrogate model (learner).')
         return parser
 
     def main(self):

@@ -84,7 +84,7 @@ class EpisodicLifeEnv(gym.Wrapper):
     def reset(self, **kwargs):
         """Reset only when lives are exhausted.
         This way all states are still reachable even though lives are episodic,
-        and the learner need not know about any of this behind-the-scenes.
+        and the surrogate model (learner) need not know about any of this behind-the-scenes.
         """
         if self.was_real_done:
             obs = self.env.reset(**kwargs)
@@ -247,4 +247,3 @@ def wrap_deepmind(env, episode_life=True, clip_rewards=True, frame_stack=False, 
     if frame_stack:
         env = FrameStack(env, 4)
     return env
-

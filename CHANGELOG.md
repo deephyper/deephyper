@@ -11,10 +11,8 @@ For instance:
 
 ```bash
 deephyper balsam-submit hps test2 -p foo/foo/problem.py -r foo/foo/run.py -t 60 -q debug-cache-quad -n 4 -A datascience -j mpi
- ```
+```
 
 ## Customizing Balsam execution of model runs
 
-In order to directly control how BalsamJobs are created to evaluate each model in DeepHyper, users can provide a *BalsamJob spec*
-in place of the actual run function.  The run function is decorated with `deephyper.benchmarks.balsamjob_spec` and must return a 
-BalsamJob.  It is up to the user to ensure that the necessary App is in place and the objective is parsed correctly.
+In order to directly control how BalsamJobs are created to evaluate each model in DeepHyper, users can provide a *BalsamJob spec* in place of the actual run function.  The run function is decorated with `deephyper.benchmarks.balsamjob_spec` and must return a BalsamJob.  It is up to the user to ensure that the necessary App is in place and the objective is parsed correctly.

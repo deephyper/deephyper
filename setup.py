@@ -30,7 +30,7 @@ REQUIRED = [
     "scikit-optimize",
     "scikit-learn",
     "tqdm",
-    "tensorflow>=1.13.1,<=1.15.2"
+    "tensorflow>=1.13.1,<2.0.0"
     "keras",
     "deap",  # GA search
     # nas
@@ -39,7 +39,7 @@ REQUIRED = [
     'joblib>=0.10.3',
     'pydot',
     'balsam-flow==0.3.8',
-    'ray==0.7.2',
+    'ray>=0.7.6',
     'Jinja2'
 ]
 
@@ -47,7 +47,7 @@ REQUIRED = [
 DP_LINKS = list()
 
 if on_rtd:
-    REQUIRED.remove('balsam-flow==0.3.8')
+    REQUIRED.remove('balsam-flow>=0.3.8')
 
 if on_theta:  # --system-site-packages
     # we want to use the default mpi4py from cray environment
@@ -55,8 +55,8 @@ if on_theta:  # --system-site-packages
 elif not on_rtd and not on_gpu:
     REQUIRED.append("mpi4py>=3.0.0")
 elif on_gpu:
-    REQUIRED.append("tensorflow-gpu==1.13.1")
-    REQUIRED.append("mpi4py")
+    REQUIRED.append('tensorflow-gpu>=1.13.1')
+    REQUIRED.append('mpi4py')
 else:
     REQUIRED.append("Sphinx>=1.8.2")
     REQUIRED.append("sphinx_rtd_theme")
@@ -64,14 +64,17 @@ else:
 # What packages are optional?
 EXTRAS = {
     "tests": ["pytest"],
-    "docs": ["Sphinx>=1.8.2", "sphinx_rtd_theme"],
-    "analytics": [
-        "jupyter",
-        "jupyter_contrib_nbextensions>=0.5.1",
-        "pandas>=0.24.2",
-        "seaborn>=0.9.0",
-        "matplotlib>=3.0.3",
+    'docs': [
+        'Sphinx>=1.8.2',
+        'sphinx_rtd_theme',
     ],
+    'analytics': [
+        'jupyter',
+        'jupyter_contrib_nbextensions>=0.5.1',
+        'pandas>=0.24.2',
+        'seaborn>=0.9.1',
+        'matplotlib>=3.0.3'
+    ]
 }
 
 # The rest you shouldn't have to touch too much :)
@@ -171,7 +174,7 @@ class TestUploadCommand(Command):
 class TestInstallCommand(Command):
     """Support setup.py testinstall"""
 
-    description = "Install deephyper from Test Pypi."
+    description = 'Install deephyper from TestPyPI.'
     user_options = []
 
     @staticmethod
