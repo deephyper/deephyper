@@ -1,6 +1,6 @@
 from deephyper.benchmark import NaProblem
-from {{ pb_folder }}.load_data import load_data
-from {{ pb_folder }}.search_space import create_search_space
+from {{ pckg }}.{{ pb_folder }}.load_data import load_data
+from {{ pckg }}.{{ pb_folder }}.search_space import create_search_space
 from deephyper.search.nas.model.preprocessing import minmaxstdscaler
 
 Problem = NaProblem(seed=2019)
