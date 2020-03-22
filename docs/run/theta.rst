@@ -140,15 +140,46 @@ for more information.
 Neural Architecture Search
 ==========================
 
+There are three main algorithms for effective search over the potentially vast space of neural architectures explorable by NAS. These are through the use of reinforcement learning given by the Proximal Policy Optimization algorithm (henceforth denoted PPO), an evolutionary algorithm (EVO) that encodes neural architectures into gene-like sequences and performs mutations/crossovers to obtain "fitter" networks and a random search that randomly explores this large search space. We can add these algorithms as applications to Balsam. To add them we can use:
+
 ::
 
     balsam app --name PPO --exec "$(which python) -m deephyper.search.nas.ppo"
-
-
-::
-
-    balsam job --name test --workflow TEST --app PPO --num-nodes 11 --args '--evaluator balsam --run deephyper.search.nas.model.run.alpha.run --problem naspb.pblp.problem_skip_co_0.Problem --ent-coef 0.01 --noptepochs 10 --network ppo_lnlstm_128 --gamma 1.0 --lam 0.95 --max-evals 1000000'
+    balsam app --name EVO --exec "$(which python) -m deephyper.search.nas.regevo"
+    balsam app --name RAN --exec "$(which python) -m deephyper.search.nas.full_random"
 
 ::
 
-    balsam submit-launch -n 128 -q default -t 180 -A $PROJECT_NAME --job-mode mpi --wf-filter TEST
+To submit a neural architecture search on theta that uses PPO we can use
+
+::
+
+    balsam job --name ppo_test --workflow ppo_test --app PPO --num-nodes 11 --args '--evaluator balsam --run deephyper.search.nas.model.run.alpha.run --problem naspb.pblp.problem_skip_co_0.Problem --ent-coef 0.01 --noptepochs 10 --network ppo_lnlstm_128 --gamma 1.0 --lam 0.95 --max-evals 1000000'
+
+::
+
+where the ``--num-nodes 11`` argument specifies that there should be 11 agent nodes for PPO (please refer to the details of the PPO algorithm for a greater understanding here). As a default, each agent has an equal number of worker nodes that is decided according to the total number of nodes accessible during the submission of the job. For example if we submit this job as follows:
+
+::
+
+    balsam submit-launch -n 128 -q default -t 180 -A $PROJECT_NAME --job-mode mpi --wf-filter ppo_test
+
+::
+
+we have specified 128 nodes out of which 11 are agents, leaving us with 117 nodes to be equally distributed among the 11 agents. Since the number of free nodes is not perfectly divisible by 11, we are left with a remainder of 7 nodes that are unused while each agent has 10 worker nodes. 
+
+In contrast for EVO, the ``num-nodes`` argument is kept restricted to 1 (for now) since it corresponds to running one evolutionary search with 127 nodes (assuming you have specified 128 nodes in the balsam submission). This looks like
+
+::
+
+    balsam job --name evo_test --workflow evo_test --app EVO --num-nodes 1 --args '--evaluator balsam --run deephyper.search.nas.model.run.alpha.run --problem naspb.pblp.problem_skip_co_0.Problem --max-evals 1000000'
+
+::
+
+and the submission of this job may be called by
+
+::
+
+    balsam submit-launch -n 128 -q default -t 180 -A $PROJECT_NAME --job-mode mpi --wf-filter evo_test
+
+::
