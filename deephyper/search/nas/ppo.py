@@ -32,15 +32,20 @@ class Ppo(ReinforcementLearningSearch):
             ].
     """
 
-    def __init__(self, problem, run, evaluator,
-        network='ppo_lnlstm_128',
+    def __init__(
+        self,
+        problem,
+        run,
+        evaluator,
+        network="ppo_lnlstm_128",
         cliprange=0.2,
         ent_coef=0.01,
         gamma=1.0,
         lam=0.95,
         nminibatches=1,
         noptepochs=10,
-        **kwargs):
+        **kwargs
+    ):
 
         if MPI is None:
             nenvs = 1
@@ -50,15 +55,20 @@ class Ppo(ReinforcementLearningSearch):
                 balsam_launcher_nodes = int(
                     os.environ.get('BALSAM_LAUNCHER_NODES', 1))
                 deephyper_workers_per_node = int(
-                    os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
+                    os.environ.get("DEEPHYPER_WORKERS_PER_NODE", 1)
+                )
                 nagents = nranks  # No parameter server here
                 n_free_nodes = balsam_launcher_nodes - nranks  # Number of free nodes
-                free_workers = n_free_nodes * deephyper_workers_per_node  # Number of free workers
+                free_workers = (
+                    n_free_nodes * deephyper_workers_per_node
+                )  # Number of free workers
                 nenvs = free_workers // nagents
             else:
                 nenvs = 1
 
-        super().__init__(problem, run,
+        super().__init__(
+            problem,
+            run,
             alg="ppo2",
             num_envs=nenvs,
             evaluator=evaluator,
@@ -69,7 +79,8 @@ class Ppo(ReinforcementLearningSearch):
             lam=lam,
             nminibatches=nminibatches,
             noptepochs=noptepochs,
-            **kwargs)
+            **kwargs
+        )
 
     @staticmethod
     def _extend_parser(parser):

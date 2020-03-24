@@ -2,19 +2,20 @@
 DeepHyper is a scalable automated machine learning (`AutoML <https://en.wikipedia.org/wiki/Automated_machine_learning>`_) package for developing deep neural networks for scientific applications.
 It comprises two components:
 
-* ``Neural architecture search (NAS)``: It is designed for automatically searching for high-performing the deep neural network search_space.
+* :ref:`create-new-nas-problem`: fully-automated search for high-performing deep neural network architectures
 
-* ``Hyperparameter search (HPS)``: It is designed for automatically searching for high-performing hyperparameters for a given deep neural network search_space.
+* :ref:`create-new-hps-problem`: optimizing hyperparameters for a given reference model
 
 
 DeepHyper provides an infrastructure that targets experimental research in NAS and HPS methods, scalability, and portability across diverse supercomputers.
 It comprises three modules:
 
-* ``benchmark``: Set of test problems for NAS and HPS that can be used for comparing different search methods. They can serve as examples to build new user-defined problems.
+* :ref:`benchmarks`: Tools for defining NAS and HPS problems, as well as a curated set of sample benchmark problems for judging the efficacy of novel search algorithms.
 
-* ``evaluator``: Set of objects to run NAS and HPS on different target systems (from laptop to supercomputers) covering different use cases (quick/light experiments on laptop for testing and development to large production runs on supercomputers).
+* :ref:`evaluators`: A simple interface for NAS and HPS codes to dispatch model evaluation tasks. Implementations range from `subprocess` for laptop experiments to `ray` and `balsam` for large-scale runs on HPC systems.
 
-* ``search``: Set of search methods for NAS and HPS. It provides a modular way to define new search HPS and NAS search methods and submodules for implementing HPS and NAS.
+* :ref:`SearchDH`: Search methods for NAS and HPS.  By extending the generic `Search` class, one can easily add new NAS or HPS methods to DeepHyper.
+
 
 DeepHyper installation requires **Python 3.6**.
 

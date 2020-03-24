@@ -1,5 +1,5 @@
 Post-Training
-*************
+================
 
 .. highlight:: console
 

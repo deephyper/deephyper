@@ -1,10 +1,10 @@
 Benchmarks
-**********
+==============
 
 .. _available-hps-benchmarks:
 
 Available HPS benchmarks
-========================
+--------------------------
 
 .. automodule:: deephyper.benchmark.hps
 

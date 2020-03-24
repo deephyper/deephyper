@@ -106,7 +106,10 @@ If you are referencing DeepHyper in a publication, please cite the following pap
 
  * P. Balaprakash, M. Salim, T. Uram, V. Vishwanath, and S. M. Wild. **DeepHyper: Asynchronous Hyperparameter Search for Deep Neural Networks**.
     In 25th IEEE International Conference on High Performance Computing, Data, and Analytics. IEEE, 2018.
- * P. Balaprakash, R. Egele, M. Salim, S. Wild, V. Vishwanath, F. Xia, T. Brettin, and R. Stevens. **Scalable reinforcement-learning-based neural architecture search for cancer deep learning research**.  In SC ’19: IEEE/ACM International Conference on High Performance Computing, Networking, Storage and Analysis, 2019.
+ 
+ * P. Balaprakash, R. Egele, M. Salim, S. Wild, V. Vishwanath, F. Xia, T. Brettin, and R. Stevens. **Scalable reinforcement-learning-based neural architecture search for cancer deep learning research**.  In SC ’19:  IEEE/ACM International Conference on High Performance Computing, Network-ing, Storage and Analysis, 2019.
+
+ <!-- * R. Egele, D. Jha, P. Balaprakash, M. Salim, V. Vishwanath, and S. M. Wild. **Scalable Reinforcement-Learning-Based Neural Architecture Search for Scientific and Engineering Applications**. In 34th International Conference on High Performance Computing, 2019. -->
 
 # How can I participate?
 

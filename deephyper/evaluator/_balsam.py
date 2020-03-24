@@ -2,6 +2,7 @@ import logging
 import os
 
 from balsam.core.models import ApplicationDefinition as AppDef
+from balsam.core.models import BalsamJob
 from balsam.launcher import dag
 from balsam.launcher.futures import FutureTask
 from balsam.launcher.futures import wait as balsam_wait
@@ -54,7 +55,10 @@ class BalsamEvaluator(Evaluator):
         logger.debug(f"Total number of workers: {self.num_workers}")
         logger.info(f"Backend runs will use Python: {self.PYTHON_EXE}")
         self._init_app()
-        logger.info(f"Backend runs will execute function: {self.appName}")
+        if not self.run_returns_balsamjob:
+            logger.info(f"Backend runs will execute function: {self.appName}")
+        else:
+            logger.info(f"Function: {self.appName} will directly create BalsamJob run tasks")
         self.transaction_context = transaction.atomic
 
     def wait(self, futures, timeout=None, return_when='ANY_COMPLETED'):
@@ -64,6 +68,13 @@ class BalsamEvaluator(Evaluator):
         funcName = self._run_function.__name__
         moduleName = self._run_function.__module__
         self.appName = '.'.join((moduleName, funcName))
+
+        if hasattr(self._run_function, '_balsamjob_spec'):
+            self.run_returns_balsamjob = True
+            return
+        else:
+            self.run_returns_balsamjob = False
+
         try:
             app = AppDef.objects.get(name=self.appName)
         except ObjectDoesNotExist:
@@ -76,7 +87,22 @@ class BalsamEvaluator(Evaluator):
                 f"BalsamEvaluator will use existing app {self.appName}: {app.executable}")
 
     def _eval_exec(self, x):
-        jobname = f"task{self.counter}"
+        if self.run_returns_balsamjob:
+            task = self._run_function(x)
+        else:
+            task = self._create_balsam_task(x)
+
+        task.name = f"task{self.counter}"
+        wf = dag.current_job.workflow
+        task.workflow = wf if wf is not None else self.appName
+        task.save()
+        logger.debug(f"Created job {task.name}")
+        logger.debug(f"Args: {task.args}")
+        future = FutureTask(task, self._on_done, fail_callback=self._on_fail)
+        future.task_args = task.args
+        return future
+
+    def _create_balsam_task(self, x):
         args = f"'{self.encode(x)}'"
         envs = f"KERAS_BACKEND={self.KERAS_BACKEND}"
         # envs = ":".join(f'KERAS_BACKEND={self.KERAS_BACKEND} OMP_NUM_THREADS=62 KMP_BLOCKTIME=0 KMP_AFFINITY=\"granularity=fine,compact,1,0\"'.split())
@@ -90,28 +116,19 @@ class BalsamEvaluator(Evaluator):
             if key in x:
                 resources[key] = x[key]
 
-        if dag.current_job is not None:
-            wf = dag.current_job.workflow
-        else:
-            wf = self.appName
-        task = dag.add_job(
-            name=jobname,
-            workflow=wf,
+        task = BalsamJob(
             application=self.appName,
             args=args,
             environ_vars=envs,
             **resources
         )
-        logger.debug(f"Created job {jobname}")
-        logger.debug(f"Args: {args}")
-
-        future = FutureTask(task, self._on_done, fail_callback=self._on_fail)
-        future.task_args = args
-        return future
+        return task
 
     @staticmethod
-    def _on_done(job):  # def _on_done(job, process_data):
-        output = job.read_file_in_workdir(f'{job.name}.out')
+    def _on_done(job):
+        if 'dh_objective' in job.data:
+            return job.data['dh_objective']
+        output = job.read_file_in_workdir(f"{job.name}.out")
         # process_data(job)
         # args = job.args
         # args = args.replace("\'", "")

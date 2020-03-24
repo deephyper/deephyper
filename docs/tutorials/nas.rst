@@ -1,6 +1,6 @@
 .. _create-new-nas-problem:
 
-Create a new neural architecture search problem
+Neural Architecture Search (NAS)
 ***********************************************
 
 A  neural architecture search (NAS) problem can be defined using three files with a NAS problem directory within a python package::
@@ -21,14 +21,22 @@ We will illustrate the NAS problem definition using a regression example. We wil
 Create a python package
 =======================
 
-Init a new nas python package:
+Init a new nas project:
 
 .. code-block:: console
     :caption: bash
 
-    deephyper nas-init --new-pckg nas_problems --new-pb polynome2
+    deephyper start-project nas_problems
 
-Go to the problem ``polynome2`` folder:
+The project was created and installed in your current python environment. Then go to the ``nas_problems`` package and create a new problem:
+
+.. code-block:: console
+    :caption: bash
+
+    cd nas_problems/nas_problems/
+    deephyper new-problem nas polynome2
+
+The problem was created. Then go to the problem ``polynome2`` folder:
 
 .. code-block:: console
     :caption: bash
@@ -136,7 +144,7 @@ Next, we will run a random search (RDM).
 .. code-block:: console
     :caption: bash
 
-    deephyper nas random --evaluator ray --problem nas_problems.polynome2.problem.Problem
+    deephyper nas random --evaluator ray --problem nas_polynome2.problem.Problem
 
 .. note::
 
@@ -204,7 +212,7 @@ Create a Balsam ``PPO`` application:
 .. code-block:: console
     :caption: bash
 
-    balsam job --name poly_exp --workflow poly_exp --app PPO --num_nodes 2 --args "--evaluator balsam nas_problems.polynome2.problem.Problem"
+    balsam job --name poly_exp --workflow poly_exp --app PPO --num-nodes 2 --args "--evaluator balsam --problem nas_problems.polynome2.problem.Problem"
 
 .. code-block:: console
     :caption: [Out]
@@ -230,7 +238,7 @@ Create a Balsam ``PPO`` application:
     node_packing_count:             1
     environ_vars:
     application:                    PPO
-    args:                           --evaluator balsam nas_problems.polynome2.problem.Problem
+    args:                           --evaluator balsam --problem nas_problems.polynome2.problem.Problem
     user_workdir:
     wait_for_parents:               True
     post_error_handler:             False
@@ -239,7 +247,7 @@ Create a Balsam ``PPO`` application:
     state:                          CREATED
     queued_launch_id:               None
     data:                           {}
-    *** Executed command:         /lus/theta-fs0/projects/datascience/regele/dh-opt/bin/python -m deephyper.search.nas.ppo --evaluator balsam nas_problems.polynome2.problem.Problem
+    *** Executed command:         /lus/theta-fs0/projects/datascience/regele/dh-opt/bin/python -m deephyper.search.nas.ppo --evaluator balsam --problem nas_problems.polynome2.problem.Problem
     *** Working directory:        /lus/theta-fs0/projects/datascience/regele/polydb/data/poly_exp/poly_exp_575dba96
 
     Confirm adding job to DB [y/n]: y

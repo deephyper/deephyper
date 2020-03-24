@@ -172,3 +172,4 @@ logdir
 # Sphinx documentation
 _build/
 !_templates/*
+Icon

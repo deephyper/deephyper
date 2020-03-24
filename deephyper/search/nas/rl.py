@@ -10,8 +10,7 @@ from deephyper.search import util
 from deephyper.search.nas import NeuralArchitectureSearch
 from deephyper.evaluator.evaluate import Encoder
 from deephyper.search.nas.baselines import logger
-from deephyper.search.nas.env.neural_architecture_envs import \
-    NeuralArchitectureVecEnv
+from deephyper.search.nas.env.neural_architecture_envs import NeuralArchitectureVecEnv
 from deephyper.core.logs.logging import JsonMessage as jm
 
 try:
@@ -20,7 +19,7 @@ except ImportError:
     MPI = None
 
 
-dhlogger = util.conf_logger('deephyper.search.nas.rl')
+dhlogger = util.conf_logger("deephyper.search.nas.rl")
 
 
 class ReinforcementLearningSearch(NeuralArchitectureSearch):
@@ -46,7 +45,8 @@ class ReinforcementLearningSearch(NeuralArchitectureSearch):
             balsam_launcher_nodes = int(
                 os.environ.get('BALSAM_LAUNCHER_NODES', 1))
             deephyper_workers_per_node = int(
-                os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
+                os.environ.get("DEEPHYPER_WORKERS_PER_NODE", 1)
+            )
             nworkers = balsam_launcher_nodes * deephyper_workers_per_node
         else:
             nworkers = 1
@@ -54,28 +54,35 @@ class ReinforcementLearningSearch(NeuralArchitectureSearch):
         if MPI is None:
             self.rank = 0
             super().__init__(problem=problem, run=run, evaluator=evaluator, **kwargs)
-            dhlogger.info(jm(
-                type='start_infos',
-                seed=self.problem.seed,
-                alg=alg,
-                network=network,
-                num_envs_per_agent=num_envs,
-                nagents=1,
-                nworkers=nworkers,
-                encoded_space=json.dumps(self.problem.space, cls=Encoder)))
-        else:
-            self.rank = MPI.COMM_WORLD.Get_rank()
-            if self.rank == 0:
-                super().__init__(problem=problem, run=run, evaluator=evaluator, **kwargs)
-                dhlogger.info(jm(
-                    type='start_infos',
+            dhlogger.info(
+                jm(
+                    type="start_infos",
                     seed=self.problem.seed,
                     alg=alg,
                     network=network,
                     num_envs_per_agent=num_envs,
-                    nagents=MPI.COMM_WORLD.Get_size(),
+                    nagents=1,
                     nworkers=nworkers,
-                    encoded_space=json.dumps(self.problem.space, cls=Encoder)))
+                    encoded_space=json.dumps(self.problem.space, cls=Encoder),
+                )
+            )
+        else:
+            self.rank = MPI.COMM_WORLD.Get_rank()
+            if self.rank == 0:
+                nranks = MPI.COMM_WORLD.Get_size()
+                super().__init__(problem=problem, run=run, evaluator=evaluator, **kwargs)
+                dhlogger.info(
+                    jm(
+                        type="start_infos",
+                        seed=self.problem.seed,
+                        alg=alg,
+                        network=network,
+                        num_envs_per_agent=num_envs,
+                        nagents=nranks,
+                        nworkers=nworkers,
+                        encoded_space=json.dumps(self.problem.space, cls=Encoder),
+                    )
+                )
             MPI.COMM_WORLD.Barrier()
             if self.rank != 0:
                 super().__init__(problem=problem, run=run, evaluator=evaluator, **kwargs)
@@ -90,11 +97,11 @@ class ReinforcementLearningSearch(NeuralArchitectureSearch):
 
         self.space = self.problem.space
 
-        dhlogger.info(f'evaluator: {type(self.evaluator)}')
-        dhlogger.info(f'rank: {self.rank}')
-        dhlogger.info(f'alg: {alg}')
-        dhlogger.info(f'network: {network}')
-        dhlogger.info(f'num_envs_per_agent: {num_envs}')
+        dhlogger.info(f"evaluator: {type(self.evaluator)}")
+        dhlogger.info(f"rank: {self.rank}")
+        dhlogger.info(f"alg: {alg}")
+        dhlogger.info(f"network: {network}")
+        dhlogger.info(f"num_envs_per_agent: {num_envs}")
 
         self.alg = alg
         self.network = network
@@ -112,12 +119,14 @@ class ReinforcementLearningSearch(NeuralArchitectureSearch):
         else:
             logger.configure(format_strs=[])
 
-        self.train( space=self.space,
-                    evaluator=self.evaluator,
-                    alg=self.alg,
-                    network=self.network,
-                    num_evals=self.num_evals+1,
-                    num_envs=self.num_envs_per_agent)
+        self.train(
+            space=self.space,
+            evaluator=self.evaluator,
+            alg=self.alg,
+            network=self.network,
+            num_evals=self.num_evals + 1,
+            num_envs=self.num_envs_per_agent,
+        )
 
     def train(self, space, evaluator, alg, network, num_evals, num_envs):
         """Function to train ours agents.
@@ -145,15 +154,10 @@ class ReinforcementLearningSearch(NeuralArchitectureSearch):
         env = build_env(num_envs, space, evaluator)
         total_timesteps = num_evals * env.num_actions_per_env
 
-        alg_kwargs['network'] = network
-        alg_kwargs['nsteps'] = env.num_actions_per_env
+        alg_kwargs["network"] = network
+        alg_kwargs["nsteps"] = env.num_actions_per_env
 
-        model = learn(
-            env=env,
-            seed=seed,
-            total_timesteps=total_timesteps,
-            **alg_kwargs
-        )
+        model = learn(env=env, seed=seed, total_timesteps=total_timesteps, **alg_kwargs)
 
         return model, env
 
@@ -169,12 +173,12 @@ def build_env(num_envs, space, evaluator):
     Returns:
         VecEnv: vectorized environment.
     """
-    assert num_envs >= 1, f'num_envs={num_envs}'
-    cs_kwargs = space['create_search_space'].get('kwargs')
+    assert num_envs >= 1, f"num_envs={num_envs}"
+    cs_kwargs = space["create_search_space"].get("kwargs")
     if cs_kwargs is None:
-        search_space = space['create_search_space']['func']()
+        search_space = space["create_search_space"]["func"]()
     else:
-        search_space = space['create_search_space']['func'](**cs_kwargs)
+        search_space = space["create_search_space"]["func"](**cs_kwargs)
     env = NeuralArchitectureVecEnv(num_envs, space, evaluator, search_space)
     return env
 
@@ -182,14 +186,16 @@ def build_env(num_envs, space, evaluator):
 def get_alg_module(alg, submodule=None):
     submodule = submodule or alg
     alg_module = import_module(
-        '.'.join(['deephyper.search.nas.baselines', alg, submodule]))
+        ".".join(["deephyper.search.nas.baselines", alg, submodule])
+    )
     try:
         # first try to import the alg module from baselines
         alg_module = import_module(
-            '.'.join(['deephyper.search.nas.baselines', alg, submodule]))
+            ".".join(["deephyper.search.nas.baselines", alg, submodule])
+        )
     except ImportError:
         # then from rl_algs
-        alg_module = import_module('.'.join(['rl_' + 'algs', alg, submodule]))
+        alg_module = import_module(".".join(["rl_" + "algs", alg, submodule]))
 
     return alg_module
 
@@ -199,9 +205,9 @@ def get_learn_function(alg):
 
 
 def get_learn_function_defaults(alg):
-    env_type = 'nas'
+    env_type = "nas"
     try:
-        alg_defaults = get_alg_module(alg, 'defaults')
+        alg_defaults = get_alg_module(alg, "defaults")
         kwargs = getattr(alg_defaults, env_type)()
     except (ImportError, AttributeError):
         kwargs = {}

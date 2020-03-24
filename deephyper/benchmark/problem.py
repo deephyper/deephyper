@@ -18,7 +18,7 @@ class Problem:
         return repr(self)
 
     def __repr__(self):
-        return f'Problem\n{pformat({k:v for k,v in self._space.items()}, indent=2)}'
+        return f"Problem\n{pformat({k:v for k,v in self._space.items()}, indent=2)}"
 
     def add_dim(self, p_name, p_space):
         """Add a dimension to the search space.
@@ -38,7 +38,7 @@ class Problem:
 
 
 class HpProblem(Problem):
-    """Problem specification for Hyperparameter Optimization
+    """Problem specification for Hyperparameter Search
     """
 
     def __init__(self, seed=None, **kwargs):
@@ -48,8 +48,8 @@ class HpProblem(Problem):
 
     def __repr__(self):
         prob = super().__repr__()
-        start = f'{pformat({k:v for k,v in enumerate(self.starting_point_asdict)})}'
-        return prob + '\n\nStarting Point\n' + start
+        start = f"{pformat({k:v for k,v in enumerate(self.starting_point_asdict)})}"
+        return prob + "\n\nStarting Point\n" + start
 
     def add_dim(self, p_name, p_space):
         """Add a dimension to the search space.
@@ -71,8 +71,7 @@ class HpProblem(Problem):
         if not type(p_name) is str:
             raise SpaceDimNameOfWrongType(p_name)
 
-        if not type(p_space) is tuple \
-                and not type(p_space) is list:
+        if not type(p_space) is tuple and not type(p_space) is list:
             raise SpaceDimValueOfWrongType(p_space)
 
         super().add_dim(p_name, p_space)
@@ -111,8 +110,7 @@ class HpProblem(Problem):
                 if not value in self.space[dim]:
                     raise SpaceDimValueNotInSpace(value, dim, self.space[dim])
             else:  # * type(self.space[dim]) is tuple
-                if value < self.space[dim][0] \
-                        or value > self.space[dim][1]:
+                if value < self.space[dim][0] or value > self.space[dim][1]:
                     raise SpaceDimValueNotInSpace(value, dim, self.space[dim])
 
         self.references.append([dims[d] for d in self.space])
@@ -133,7 +131,9 @@ class HpProblem(Problem):
         Returns:
             list(dict): list of starting points where each point is a dict of values. Each key are correspnding to dimensions of the space.
         """
-        return [{k: v for k, v in zip(list(self.space.keys()), p)} for p in self.references]
+        return [
+            {k: v for k, v in zip(list(self.space.keys()), p)} for p in self.references
+        ]
 
 
 class NaProblem(Problem):
@@ -198,37 +198,58 @@ class NaProblem(Problem):
     def __init__(self, seed=None, **kwargs):
         super().__init__(seed=seed, **kwargs)
 
-        self._space['metrics'] = list()
-        self._space['hyperparameters'] = dict(verbose=1)
+        self._space["metrics"] = list()
+        self._space["hyperparameters"] = dict(verbose=1)
 
     def __repr__(self):
 
-        preprocessing = None if self._space.get(
-            'preprocessing') is None else module_location(self._space['preprocessing']['func'])
+        preprocessing = (
+            None
+            if self._space.get("preprocessing") is None
+            else module_location(self._space["preprocessing"]["func"])
+        )
 
         hps = "".join(
-            [f"\n        * {h}: {self._space['hyperparameters'][h]}" for h in self._space['hyperparameters']])
+            [
+                f"\n        * {h}: {self._space['hyperparameters'][h]}"
+                for h in self._space["hyperparameters"]
+            ]
+        )
 
-        metrics = "".join(
-            [f"\n        * {m}" for m in self._space['metrics']])
+        if type(self._space["metrics"]) is list:
+            metrics = "".join([f"\n        * {m}" for m in self._space["metrics"]])
+        else:
+            metrics = "".join(
+                [f"\n        * {m[0]}: {m[1]}" for m in self._space["metrics"].items()]
+            )
 
-        post = None if self._space.get('post_train') is None else "".join(
-            [f"\n        * {k}: {self._space['post_train'][k]}" for k in self._space['post_train']])
+        post = (
+            None
+            if self._space.get("post_train") is None
+            else "".join(
+                [
+                    f"\n        * {k}: {self._space['post_train'][k]}"
+                    for k in self._space["post_train"]
+                ]
+            )
+        )
 
-        objective = self._space['objective']
+        objective = self._space["objective"]
         if not type(objective) is str:
             objective = module_location(objective)
 
-        out = ( f"Problem is:\n"
-                f" * SEED = {self.seed} *\n"
-                f"    - search space   : {module_location(self._space['create_search_space']['func'])}\n"
-                f"    - data loading   : {module_location(self._space['load_data']['func'])}\n"
-                f"    - preprocessing  : {preprocessing}\n"
-                f"    - hyperparameters: {hps}\n"
-                f"    - loss           : {self._space['loss']}\n"
-                f"    - metrics        : {metrics}\n"
-                f"    - objective      : {objective}\n"
-                f"    - post-training  : {post}")
+        out = (
+            f"Problem is:\n"
+            f" * SEED = {self.seed} *\n"
+            f"    - search space   : {module_location(self._space['create_search_space']['func'])}\n"
+            f"    - data loading   : {module_location(self._space['load_data']['func'])}\n"
+            f"    - preprocessing  : {preprocessing}\n"
+            f"    - hyperparameters: {hps}\n"
+            f"    - loss           : {self._space['loss']}\n"
+            f"    - metrics        : {metrics}\n"
+            f"    - objective      : {objective}\n"
+            f"    - post-training  : {post}"
+        )
 
         return out
 
@@ -237,10 +258,7 @@ class NaProblem(Problem):
         if not callable(func):
             raise ProblemLoadDataIsNotCallable(func)
 
-        self.add_dim('load_data', {
-            'func': func,
-            'kwargs': kwargs
-        })
+        self.add_dim("load_data", {"func": func, "kwargs": kwargs})
 
     def search_space(self, func: callable, **kwargs):
         """Set a search space for neural architecture search.
@@ -258,22 +276,19 @@ class NaProblem(Problem):
             raise SearchSpaceBuilderIsNotCallable(func)
 
         sign_func = signature(func)
-        if not 'input_shape' in sign_func.parameters:
-            raise SearchSpaceBuilderMissingParameter('input_shape')
+        if not "input_shape" in sign_func.parameters:
+            raise SearchSpaceBuilderMissingParameter("input_shape")
 
-        if not 'output_shape' in sign_func.parameters:
-            raise SearchSpaceBuilderMissingParameter('output_shape')
+        if not "output_shape" in sign_func.parameters:
+            raise SearchSpaceBuilderMissingParameter("output_shape")
 
-        if isinstance(sign_func.parameters['input_shape'].default, inspect._empty):
-            raise SearchSpaceBuilderMissingDefaultParameter('input_shape')
+        if isinstance(sign_func.parameters["input_shape"].default, inspect._empty):
+            raise SearchSpaceBuilderMissingDefaultParameter("input_shape")
 
-        if sign_func.parameters['output_shape'].default is inspect._empty:
-            raise SearchSpaceBuilderMissingDefaultParameter('output_shape')
+        if sign_func.parameters["output_shape"].default is inspect._empty:
+            raise SearchSpaceBuilderMissingDefaultParameter("output_shape")
 
-        self.add_dim('create_search_space', {
-            'func': func,
-            'kwargs': kwargs
-        })
+        self.add_dim("create_search_space", {"func": func, "kwargs": kwargs})
 
     def preprocessing(self, func: callable):
         """Define how to preprocess your data.
@@ -285,75 +300,98 @@ class NaProblem(Problem):
         if not callable(func):
             raise ProblemPreprocessingIsNotCallable(func)
 
-        super().add_dim('preprocessing', {
-            'func': func
-        })
+        super().add_dim("preprocessing", {"func": func})
 
     def hyperparameters(self, **kwargs):
         """Define hyperparameters used to evaluate generated search_spaces.
         """
-        if self._space.get('hyperparameters') is None:
-            self._space['hyperparameters'] = dict()
-        self._space['hyperparameters'].update(kwargs)
+        if self._space.get("hyperparameters") is None:
+            self._space["hyperparameters"] = dict()
+        self._space["hyperparameters"].update(kwargs)
 
-    def loss(self, loss):
+    def loss(self, loss, weights=None):
         """Define the loss used to train generated search_spaces.
 
         Args:
-            loss (str|callable): a string indicating a specific loss function.
+            loss (str|callable|list): a string indicating a specific loss function.
+            weights (list): Optional.
         """
-        if not type(loss) is str and \
-                not callable(loss):
+        if not type(loss) is str and not callable(loss) and not type(loss) is dict:
             raise RuntimeError(
-                f'The loss should be either a str or a callable when it\'s of type {type(loss)}')
+                f"The loss should be either a str, dict or a callable when it's of type {type(loss)}"
+            )
 
-        self._space['loss'] = loss
+        if type(loss) is dict and weights is not None and len(loss) != len(weights):
+            raise RuntimeError(
+                f"The losses list (len={len(loss)}) and the weights list (len={len(weights)}) should be of same length!"
+            )
 
-    def metrics(self, metrics: list):
+        self._space["loss"] = loss
+        if weights is not None:
+            self._space["loss_weights"] = weights
+
+    def metrics(self, metrics):
         """Define a list of metrics for the training of generated search_spaces.
 
         Args:
-            metrics (list(str|callable)): If ``str`` the metric should be defined in Keras or in DeepHyper. If ``callable`` it should take 2 arguments ``(y_pred, y_true)`` which are a prediction and a true value respectively.
+            metrics (list(str|callable)|dict): If ``str`` the metric should be defined in Keras or in DeepHyper. If ``callable`` it should take 2 arguments ``(y_pred, y_true)`` which are a prediction and a true value respectively.
         """
 
-        self._space['metrics'] = metrics
+        self._space["metrics"] = metrics
 
     def check_objective(self, objective):
 
         if not type(objective) is str and not callable(objective):
             raise WrongProblemObjective(objective)
-        elif type(objective) is str:
-            list_suffix = ['__min', '__max', '__last']
-            for suffix in list_suffix:
-                if suffix in objective:
-                    objective = objective.replace(suffix, '')
-                    break # only one suffix autorized
-            objective = objective.replace('val_', '')
-            possible_names = list()
-            for val in ['loss'] + self._space['metrics']:
-                if callable(val):
-                    possible_names.append(val.__name__)
-                else:
-                    possible_names.append(val)
-            if not(objective in possible_names):
-                raise WrongProblemObjective(objective)
+
+        # elif type(objective) is str:
+        #     list_suffix = ["__min", "__max", "__last"]
+
+        #     for suffix in list_suffix:
+        #         if suffix in objective:
+        #             objective = objective.replace(suffix, "")
+        #             break  # only one suffix autorized
+
+        #     objective = objective.replace("val_", "")
+        #     possible_names = list()
+
+        #     if type(self._space["metrics"]) is dict:
+        #         metrics = list(self._space["metrics"].values())
+        #         for k in self._space["metrics"].keys():
+        #             objective = objective.replace(f"{k}_", "")
+
+        #     else:  # assuming it s a list
+        #         metrics = self._space["metrics"]
+
+        #     for val in ["loss"] + metrics:
+        #         if callable(val):
+        #             possible_names.append(val.__name__)
+        #         else:
+        #             possible_names.append(val)
+
+        #     if not (objective in possible_names):
+        #         raise WrongProblemObjective(objective, possible_names)
 
     def objective(self, objective):
         """Define the objective you want to maximize for the search.
 
         Args:
-            objective (str|callable): The objective will be maximized. If ``objective`` is ``str`` then it should be either 'loss' or a defined metric. You can use the ``'val_'`` prefix when you want to select the objective on the validation set. You can use one of ``['__min', '__max', '__last']`` which respectively means you want to select the min, max or last value among all epochs. Using '__last' will save a consequent compute time because the evaluation will not compute metrics on validation set for all epochs but the last. If ``objective`` is callable it should return a scalar value (i.e. float) and it will take a ``dict`` parameter. The ``dict`` will contain keys corresponding to loss and metrics such as ``['loss', 'val_loss', 'r2', 'val_r2]``, it will also contains ``'n_parameters'`` which corresponds to the number of trainable parameters of the current model, ``'training_time'`` which corresponds to the time required to train the model. If this callable has a ``'__last'`` suffix then the evaluation will only compute validation loss/metrics for the last epoch. If this callable has contains 'with_pred' in its name then the ``dict`` will have two other keys ``['y_pred', 'y_true']`` where ``'y_pred`` corresponds to prediction of the model on validation set and ``'y_true'`` corresponds to real prediction.
+            objective (str|callable): The objective will be maximized. If ``objective`` is ``str`` then it should be either 'loss' or a defined metric. You can use the ``'val_'`` prefix when you want to select the objective on the validation set. You can use one of ``['__min', '__max', '__last']`` which respectively means you want to select the min, max or last value among all epochs. Using '__last' will save a consequent compute time because the evaluation will not compute metrics on validation set for all epochs but the last. If ``objective`` is callable it should return a scalar value (i.e. float) and it will take a ``dict`` parameter. The ``dict`` will contain keys corresponding to loss and metrics such as ``['loss', 'val_loss', 'r2', 'val_r2]``, it will also contains ``'n_parameters'`` which corresponds to the number of trainable parameters of the current model, ``'training_time'`` which corresponds to the time required to train the model, ``'predict_time'`` which corresponds to the time required to make a prediction over the whole validation set. If this callable has a ``'__last'`` suffix then the evaluation will only compute validation loss/metrics for the last epoch. If this callable has contains 'with_pred' in its name then the ``dict`` will have two other keys ``['y_pred', 'y_true']`` where ``'y_pred`` corresponds to prediction of the model on validation set and ``'y_true'`` corresponds to real prediction.
         Raise:
             WrongProblemObjective: raised when the objective is of a wrong definition.
         """
-        if not self._space.get('loss') is None and not self._space.get('metrics') is None:
+        if not self._space.get("loss") is None and not self._space.get("metrics") is None:
             self.check_objective(objective)
         else:
-            raise NaProblemError('.loss and .metrics should be defined before .objective!')
+            raise NaProblemError(
+                ".loss and .metrics should be defined before .objective!"
+            )
 
-        self._space['objective'] = objective
+        self._space["objective"] = objective
 
-    def post_training(self, num_epochs: int, metrics: list, callbacks: dict):
+    def post_training(
+        self, num_epochs: int, metrics: list, callbacks: dict, repeat: int = 1
+    ):
         """Choose settings to run a post-training.
 
         Args:
@@ -390,19 +428,23 @@ class NaProblem(Problem):
                     * ``mode``: one of ``{'auto', 'min', 'max'}``. In min mode, training will stop when the quantity monitored has stopped decreasing; in max mode it will stop when the quantity monitored has stopped increasing; in auto mode, the direction is automatically inferred from the name of the monitored quantity.
 
                     * ``baseline``: Baseline value for the monitored quantity to reach. Training will stop if the model doesn't show improvement over the baseline. restore_best_weights: whether to restore model weights from the epoch with the best value of the monitored quantity. If False, the model weights obtained at the last step of training are used.
+            repeat (int): Number of times to repeat the training. Default to 1.
 
         """
-        self._space['post_train'] = {
-            'num_epochs': num_epochs,
-            'metrics': metrics,
-            'callbacks': callbacks
+        self._space["post_train"] = {
+            "num_epochs": num_epochs,
+            "metrics": metrics,
+            "callbacks": callbacks,
+            "repeat": repeat,
         }
 
     @property
     def space(self):
         space = super().space
-        space['seed'] = self.seed
+        space["seed"] = self.seed
         return space
 
+
 def module_location(attr):
-    return f'{attr.__module__}.{attr.__name__}'
+    return f"{attr.__module__}.{attr.__name__}"
+

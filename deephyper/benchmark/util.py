@@ -1,14 +1,48 @@
 import hashlib
+import json
 import pickle
 from collections import namedtuple
 import time
 import os
+import uuid
+import types
 import numpy as np
+from numpy import integer, floating, ndarray
 from keras.callbacks import Callback
 from datetime import datetime
 import logging
+from functools import wraps
 
 logger = logging.getLogger(__name__)
+
+def balsamjob_spec(run_func):
+    @wraps(run_func)
+    def labelled_run(param_dict):
+        return run_func(param_dict)
+    labelled_run._balsamjob_spec = True
+    return labelled_run
+
+class JSONEncoder(json.JSONEncoder):
+    """
+    Enables JSON dump of numpy data
+    """
+
+    def default(self, obj):
+        if isinstance(obj, uuid.UUID):
+            return obj.hex
+        if isinstance(obj, integer):
+            return int(obj)
+        elif isinstance(obj, floating):
+            return float(obj)
+        elif isinstance(obj, ndarray):
+            return obj.tolist()
+        elif isinstance(obj, types.FunctionType):
+            return f'{obj.__module__}.{obj.__name__}'
+        else:
+            return super(JSONEncoder, self).default(obj)
+
+def to_encodable(d):
+    return json.loads(json.dumps(d, cls=JSONEncoder))
 
 def str2bool(s):
     s = s.lower().strip()

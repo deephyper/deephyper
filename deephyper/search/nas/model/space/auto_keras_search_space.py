@@ -34,6 +34,24 @@ class AutoKSearchSpace(KSearchSpace):
         super().__init__(input_shape, output_shape)
         self.regression = regression
 
+    def set_output_node(self, graph, output_nodes):
+        """Set the output node of the search_space.
+
+        Args:
+            graph (nx.DiGraph): graph of the search_space.
+            output_nodes (Node): nodes of the current search_space without successors.
+
+        Returns:
+            Node: output node of the search_space.
+        """
+        if len(output_nodes) == 1:
+            node = output_nodes[0]
+        else:
+            node = ConstantNode(name='OUTPUT_MERGE')
+            op = Concatenate(self, output_nodes)
+            node.set_op(op=op)
+        return node
+
     def create_model(self):
         """Create the tensors corresponding to the search_space.
 

@@ -10,3 +10,6 @@ def test_search_space():
     from tensorflow.keras.utils import plot_model
 
     plot_model(model, to_file=f'test_dense_skipco.png', show_shapes=True)
+
+if __name__ == "__main__":
+    test_search_space()
