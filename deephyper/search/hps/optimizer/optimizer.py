@@ -1,27 +1,39 @@
 from sys import float_info
 from skopt import Optimizer as SkOptimizer
-from skopt.learning import (RandomForestRegressor, ExtraTreesRegressor,
-                            GradientBoostingQuantileRegressor)
+from skopt.learning import (
+    RandomForestRegressor,
+    ExtraTreesRegressor,
+    GradientBoostingQuantileRegressor,
+)
 import numpy as np
 from numpy import inf
 from deephyper.search import util
 
-logger = util.conf_logger('deephyper.search.hps.optimizer.optimizer')
+logger = util.conf_logger("deephyper.search.hps.optimizer.optimizer")
 
 
 class Optimizer:
     SEED = 12345
 
-    def __init__(self,
-                problem,
-                num_workers,
-                surrogate_model='RF',
-                acq_func='gp_hedge',
-                acq_kappa=1.96,
-                liar_strategy='cl_max',
-                n_jobs=1, **kwargs):
+    def __init__(
+        self,
+        problem,
+        num_workers,
+        surrogate_model="RF",
+        acq_func="gp_hedge",
+        acq_kappa=1.96,
+        liar_strategy="cl_max",
+        n_jobs=1,
+        **kwargs,
+    ):
 
-        assert surrogate_model in ["RF", "ET", "GBRT", "GP", "DUMMY"], f"Unknown scikit-optimize base_estimator: {surrogate_model}"
+        assert surrogate_model in [
+            "RF",
+            "ET",
+            "GBRT",
+            "GP",
+            "DUMMY",
+        ], f"Unknown scikit-optimize base_estimator: {surrogate_model}"
 
         if surrogate_model == "RF":
             base_estimator = RandomForestRegressor(n_jobs=n_jobs)
@@ -36,17 +48,20 @@ class Optimizer:
         # queue of remaining starting points
         self.starting_points = problem.starting_point
 
-        n_init = inf if surrogate_model == 'DUMMY' else max(
-            num_workers, len(self.starting_points))
+        n_init = (
+            inf
+            if surrogate_model == "DUMMY"
+            else max(num_workers, len(self.starting_points))
+        )
 
         self._optimizer = SkOptimizer(
-            self.space.values(),
+            dimensions=self.space,  # self.space.values(),
             base_estimator=base_estimator,
-            acq_optimizer='sampling',
+            acq_optimizer="sampling",
             acq_func=acq_func,
-            acq_func_kwargs={'kappa': acq_kappa},
+            acq_func_kwargs={"kappa": acq_kappa},
             random_state=self.SEED,
-            n_initial_points=n_init
+            n_initial_points=n_init,
         )
 
         assert liar_strategy in "cl_min cl_mean cl_max".split()
@@ -71,6 +86,13 @@ class Optimizer:
     def to_dict(self, x):
         return {k: v for k, v in zip(self.space, x)}
 
+    def to_dict(self, x: list) -> dict:
+        res = {}
+        hps_names = self.space.get_hyperparameter_names()
+        for i in range(len(x)):
+            res[hps_names[i]] = x[i]
+        return res
+
     def _ask(self):
         if len(self.starting_points) > 0:
             x = self.starting_points.pop()
@@ -82,9 +104,9 @@ class Optimizer:
             self.counter += 1
             self._optimizer.tell(x, y)
             self.evals[key] = y
-            logger.debug(f'_ask: {x} lie: {y}')
+            logger.debug(f"_ask: {x} lie: {y}")
         else:
-            logger.debug(f'Duplicate _ask: {x} lie: {y}')
+            logger.debug(f"Duplicate _ask: {x} lie: {y}")
         return self.to_dict(x)
 
     def ask(self, n_points=None, batch_size=20):
@@ -102,10 +124,12 @@ class Optimizer:
 
     def ask_initial(self, n_points):
         if len(self.starting_points) > 0:
-            XX = [self.starting_points.pop() for i in range(
-                min(n_points, len(self.starting_points)))]
+            XX = [
+                self.starting_points.pop()
+                for i in range(min(n_points, len(self.starting_points)))
+            ]
             if len(XX) < n_points:
-                XX += self._optimizer.ask(n_points=n_points-len(XX))
+                XX += self._optimizer.ask(n_points=n_points - len(XX))
         else:
             XX = self._optimizer.ask(n_points=n_points)
         for x in XX:
@@ -118,23 +142,24 @@ class Optimizer:
         return [self.to_dict(x) for x in XX]
 
     def tell(self, xy_data):
-        assert isinstance(
-            xy_data, list), f"where type(xy_data)=={type(xy_data)}"
+        assert isinstance(xy_data, list), f"where type(xy_data)=={type(xy_data)}"
         maxval = min(self._optimizer.yi) if self._optimizer.yi else 0.0
         for x, y in xy_data:
             key = tuple(x[k] for k in self.space)
             assert key in self.evals, f"where key=={key} and self.evals=={self.evals}"
-            logger.debug(f'tell: {x} --> {key}: evaluated objective: {y}')
-            self.evals[key] = (y if y < float_info.max else maxval)
+            logger.debug(f"tell: {x} --> {key}: evaluated objective: {y}")
+            self.evals[key] = y if y < float_info.max else maxval
 
         self._optimizer.Xi = []
         self._optimizer.yi = []
         XX, YY = self._xy_from_dict()
         assert len(XX) == len(YY) == self.counter, (
             f"where len(XX)=={len(XX)},"
-            f"len(YY)=={len(YY)}, self.counter=={self.counter}")
+            f"len(YY)=={len(YY)}, self.counter=={self.counter}"
+        )
         self._optimizer.tell(XX, YY)
         assert len(self._optimizer.Xi) == len(self._optimizer.yi) == self.counter, (
             f"where len(self._optimizer.Xi)=={len(self._optimizer.Xi)}, "
             f"len(self._optimizer.yi)=={len(self._optimizer.yi)},"
-            f"self.counter=={self.counter}")
+            f"self.counter=={self.counter}"
+        )
