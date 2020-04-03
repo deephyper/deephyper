@@ -68,7 +68,10 @@ class BaseProblem:
             start_points = (
                 f"{pformat({k:v for k,v in enumerate(self.starting_point_asdict)})}"
             )
-            return prob + "\n\nStarting Point\n" + start_points
+            prob += "\n\n  Starting Point"
+            prob += "s" if len(self.references) > 1 else ""
+            prob += ":\n" + start_points
+            return prob
 
     def add_dim(self, p_name=None, p_space=None):
         """Deprecated! Add a dimension to the search space.
@@ -78,12 +81,18 @@ class BaseProblem:
             p_space (Object): space corresponding to the new dimension.
         """
 
-        csh_parameter = check_hyperparameter(p_space, p_name)
-        self._space.add_hyperparameter(csh_parameter)
+        return self.add_hyperparameter(p_name, p_space)
 
-    def add_hyperparameter(self, value, name=None):
+    def add_hyperparameter(self, name, value):
         csh_parameter = check_hyperparameter(value, name)
         self._space.add_hyperparameter(csh_parameter)
+        return csh_parameter
+
+    def add_forbidden_clause(self, clause):
+        self._space.add_forbidden_clause(clause)
+
+    def add_condition(self, condition):
+        self._space.add_condition(condition)
 
     @property
     def space(self):
