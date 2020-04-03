@@ -14,8 +14,8 @@ from django.db import transaction
 logger = logging.getLogger(__name__)
 
 # TODO(#30): "workers": should searcher be treated equivalently to evaluators?
-LAUNCHER_NODES = int(os.environ.get('BALSAM_LAUNCHER_NODES', 1))
-JOB_MODE = os.environ.get('BALSAM_JOB_MODE', 'mpi')
+LAUNCHER_NODES = int(os.environ.get("BALSAM_LAUNCHER_NODES", 1))
+JOB_MODE = os.environ.get("BALSAM_JOB_MODE", "mpi")
 
 
 class BalsamEvaluator(Evaluator):
@@ -42,10 +42,10 @@ class BalsamEvaluator(Evaluator):
             # 1 node case for --job-mode=mpi will result in search process occupying
             # entirety of the only node ---> no evaluator workers (also should have DEEPHYPER_WORKERS_PER_NODE=1)
         else:
-            if JOB_MODE == 'serial':
+            if JOB_MODE == "serial":
                 # MPI ensemble Master rank0 occupies entirety of first node
                 self.num_workers = (LAUNCHER_NODES - 1) * self.WORKERS_PER_NODE - 1
-            if JOB_MODE == 'mpi':
+            if JOB_MODE == "mpi":
                 # all nodes free, but restricted to 1 job=worker per node
                 assert self.WORKERS_PER_NODE == 1
                 self.num_workers = LAUNCHER_NODES * self.WORKERS_PER_NODE - 1
@@ -58,18 +58,20 @@ class BalsamEvaluator(Evaluator):
         if not self.run_returns_balsamjob:
             logger.info(f"Backend runs will execute function: {self.appName}")
         else:
-            logger.info(f"Function: {self.appName} will directly create BalsamJob run tasks")
+            logger.info(
+                f"Function: {self.appName} will directly create BalsamJob run tasks"
+            )
         self.transaction_context = transaction.atomic
 
-    def wait(self, futures, timeout=None, return_when='ANY_COMPLETED'):
+    def wait(self, futures, timeout=None, return_when="ANY_COMPLETED"):
         return balsam_wait(futures, timeout=timeout, return_when=return_when)
 
     def _init_app(self):
         funcName = self._run_function.__name__
         moduleName = self._run_function.__module__
-        self.appName = '.'.join((moduleName, funcName))
+        self.appName = ".".join((moduleName, funcName))
 
-        if hasattr(self._run_function, '_balsamjob_spec'):
+        if hasattr(self._run_function, "_balsamjob_spec"):
             self.run_returns_balsamjob = True
             return
         else:
@@ -79,12 +81,14 @@ class BalsamEvaluator(Evaluator):
             app = AppDef.objects.get(name=self.appName)
         except ObjectDoesNotExist:
             logger.info(
-                f"ApplicationDefinition did not exist for {self.appName}; creating new app in BalsamDB")
+                f"ApplicationDefinition did not exist for {self.appName}; creating new app in BalsamDB"
+            )
             app = AppDef(name=self.appName, executable=self._runner_executable)
             app.save()
         else:
             logger.info(
-                f"BalsamEvaluator will use existing app {self.appName}: {app.executable}")
+                f"BalsamEvaluator will use existing app {self.appName}: {app.executable}"
+            )
 
     def _eval_exec(self, x):
         if self.run_returns_balsamjob:
@@ -107,45 +111,29 @@ class BalsamEvaluator(Evaluator):
         envs = f"KERAS_BACKEND={self.KERAS_BACKEND}"
         # envs = ":".join(f'KERAS_BACKEND={self.KERAS_BACKEND} OMP_NUM_THREADS=62 KMP_BLOCKTIME=0 KMP_AFFINITY=\"granularity=fine,compact,1,0\"'.split())
         resources = {
-            'num_nodes': 1,
-            'ranks_per_node': 1,
-            'threads_per_rank': 64,
-            'node_packing_count': self.WORKERS_PER_NODE,
+            "num_nodes": 1,
+            "ranks_per_node": 1,
+            "threads_per_rank": 64,
+            "node_packing_count": self.WORKERS_PER_NODE,
         }
         for key in resources:
             if key in x:
                 resources[key] = x[key]
 
         task = BalsamJob(
-            application=self.appName,
-            args=args,
-            environ_vars=envs,
-            **resources
+            application=self.appName, args=args, environ_vars=envs, **resources
         )
         return task
 
     @staticmethod
     def _on_done(job):
-        if 'dh_objective' in job.data:
-            return job.data['dh_objective']
+        if "dh_objective" in job.data:
+            return job.data["dh_objective"]
         output = job.read_file_in_workdir(f"{job.name}.out")
-        # process_data(job)
-        # args = job.args
-        # args = args.replace("\'", "")
-        # with open('test.json', 'w') as f:
-        #    f.write(args)
-        #
-        # with open('test.json', 'r') as f:
-        #    args = json.load(f)
         output = Evaluator._parse(output)
-        # job.data['reward'] = output
-        # job.data['arch_seq'] = args['arch_seq']
-        # job.data['id_worker'] = args['w']
-        # job.save()
         return output
 
     @staticmethod
     def _on_fail(job):
-        logger.info(
-            f'Task {job.cute_id} failed; setting objective as float_max')
+        logger.info(f"Task {job.cute_id} failed; setting objective as float_max")
         return Evaluator.FAIL_RETURN_VALUE
