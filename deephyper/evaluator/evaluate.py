@@ -81,7 +81,7 @@ class Evaluator:
         self._run_function = run_function
         self.num_workers = 0
 
-        if cache_key is not None:
+        if (cache_key is not None) and (cache_key != "to_dict"):
             if callable(cache_key):
                 self._gen_uid = cache_key
             elif cache_key == "uuid":
