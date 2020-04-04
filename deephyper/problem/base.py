@@ -14,33 +14,43 @@ def check_hyperparameter(parameter, name=None):
     if isinstance(parameter, csh.Hyperparameter):
         return parameter
 
-    if not isinstance(parameter, (list, tuple, np.ndarray, float, int)):
+    if not isinstance(parameter, (list, tuple, np.ndarray)):
         raise ValueError(
-            "Shortcut definition of an hyper-parameter has to be a list, tuple, array, float or int."
+            "Shortcut definition of an hyper-parameter has to be a list, tuple, array."
         )
 
     assert type(name) is str, f"Parameter of value {parameter} is not named!"
 
-    if isinstance(parameter, (int, float)):  # Constant parameter
-        return csh.Constant(name, parameter)
+    # if isinstance(parameter, (int, float)):  # Constant parameter
+    #     return csh.Constant(name, parameter)
 
-    if any([isinstance(p, (str, bool)) or isinstance(p, np.bool_) for p in parameter]):
-        return csh.CategoricalHyperparameter(name, choices=parameter)
+    if type(parameter) is tuple:  # Range of reals or integers
+        if len(parameter) == 2:
+            prior = "uniform"
+        elif len(parameter) == 3:
+            prior = parameter[2]
+            assert prior in [
+                "uniform",
+                "log-uniform",
+            ], f"Prior has to be 'uniform' or 'log-uniform' when {prior} was given for parameter '{name}'"
+            parameter = parameter[:2]
 
-    if len(parameter) == 2:
+        log = prior == "log-uniform"
         if all([isinstance(p, int) for p in parameter]):
             return csh.UniformIntegerHyperparameter(
-                name=name, lower=parameter[0], upper=parameter[1], log=False
+                name=name, lower=parameter[0], upper=parameter[1], log=log
             )
         elif any([isinstance(p, float) for p in parameter]):
             return csh.UniformFloatHyperparameter(
-                name, lower=parameter[0], upper=parameter[1], log=False
+                name=name, lower=parameter[0], upper=parameter[1], log=log
             )
-        else:
-            raise ValueError(
-                f"Invalid dimension {name}: {parameter}. Read the documentation for"
-                f" supported types."
-            )
+    elif type(parameter) is list:  # Categorical
+        if any(
+            [isinstance(p, (str, bool)) or isinstance(p, np.bool_) for p in parameter]
+        ):
+            return csh.CategoricalHyperparameter(name, choices=parameter)
+        elif all([isinstance(p, (int, float)) for p in parameter]):
+            return csh.OrdinalHyperparameter(name, choices=parameter)
 
     raise ValueError(
         f"Invalid dimension {name}: {parameter}. Read the documentation for"
@@ -52,9 +62,17 @@ class BaseProblem:
     """Representation of a problem.
     """
 
-    def __init__(self, seed=None):
-        self.seed = seed
-        self._space = cs.ConfigurationSpace(seed=seed)
+    def __init__(self, config_space=None, seed=42):
+        if config_space is None:
+            self.seed = seed
+            self._space = cs.ConfigurationSpace(seed=seed)
+        else:
+            self._space = config_space
+            if seed is None:
+                self.seed = self._space.random.get_state()[1][0]
+            else:
+                self.seed = seed
+                self._space.seed(seed)
         self.references = []  # starting points
 
     def __str__(self):
