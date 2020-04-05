@@ -149,7 +149,7 @@ class AddByPadding(Operation):
 
 
 class AddByProjecting(Operation):
-    """Add operation. If tensor are of different shapes a padding will be applied before adding them.
+    """Add operation. If tensors are of different shapes a projection will be applied before adding them.
 
     Args:
         search_space (KSearchSpace): [description]. Defaults to None.
@@ -175,7 +175,7 @@ class AddByProjecting(Operation):
         values = values[:]
         max_len_shp = max([len(x.get_shape()) for x in values])
 
-        # zeros padding
+        # projection
         if len(values) > 1:
 
             for i, v in enumerate(values):
