@@ -158,11 +158,12 @@ class AddByProjecting(Operation):
         axis (int): axis to concatenate.
     """
 
-    def __init__(self, search_space, stacked_nodes=None, activation=None):
+    def __init__(self, search_space, stacked_nodes=None, activation=None, axis=-1):
         self.search_space = search_space
-        self.node = None  # current_node of the operation
+        self.node = None # current_node of the operation
         self.stacked_nodes = stacked_nodes
         self.activation = activation
+        self.axis = axis
 
     def init(self, current_node):
         self.node = current_node
@@ -181,22 +182,18 @@ class AddByProjecting(Operation):
 
                 if len(v.get_shape()) < max_len_shp:
                     values[i] = keras.layers.Reshape(
-                        (
-                            *tuple(v.get_shape()[1:]),
-                            *tuple(1 for i in range(max_len_shp - len(v.get_shape()))),
-                        )
-                    )(v)
+                        (*tuple(v.get_shape()[1:]),
+                            *tuple(1 for i in range(max_len_shp - len(v.get_shape())))
+                        ))(v)
 
-            proj_size = values[0].get_shape()[1]
+            proj_size = values[0].get_shape()[self.axis]
 
             for i in range(len(values)):
                 if values[i].get_shape()[1] != proj_size:
                     values[i] = tf.keras.layers.Dense(
                         units=proj_size,
-                        kernel_initializer=tf.keras.initializers.glorot_uniform(
-                            seed=seed
-                        ),
-                    )(values[i])
+                        kernel_initializer=tf.keras.initializers.glorot_uniform(seed=seed)
+                        )(values[i])
 
         # concatenation
         if len(values) > 1:
