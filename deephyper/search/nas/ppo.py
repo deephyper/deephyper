@@ -22,7 +22,7 @@ class Ppo(ReinforcementLearningSearch):
         lam (float, optional): Lambda parameter for advantage function in RL, advantage estimation discounting factor (lambda in the paper). Defaults to 0.95.
         nminibatches (int, optional): Number of minibatches per environments. Here it's directly the number of batch of search_spaces. Defaults to 1.
         noptepochs (int, optional): Number of optimization steps to do per epochs. Basicaly it means the number of time you want to use learning data. Defaults to 10.
-        network: (str): policy network for the search, value in [
+        network (str): policy network for the search, value in [
             'ppo_lstm_128',
             'ppo_lnlstm_128',
             'ppo_lstm_64',
@@ -30,6 +30,7 @@ class Ppo(ReinforcementLearningSearch):
             'ppo_lstm_32',
             'ppo_lnlstm_32'
             ].
+        env (str): Gym environment used among ['NasEnv1', 'NasEnv2'].
     """
 
     def __init__(
@@ -44,6 +45,7 @@ class Ppo(ReinforcementLearningSearch):
         lam=0.95,
         nminibatches=1,
         noptepochs=10,
+        env="NasEnv2",
         **kwargs
     ):
 
@@ -79,6 +81,7 @@ class Ppo(ReinforcementLearningSearch):
             lam=lam,
             nminibatches=nminibatches,
             noptepochs=noptepochs,
+            env=env,
             **kwargs
         )
 

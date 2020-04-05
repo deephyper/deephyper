@@ -21,14 +21,22 @@ We will illustrate the NAS problem definition using a regression example. We wil
 Create a python package
 =======================
 
-Init a new nas python package:
+Init a new nas project:
 
 .. code-block:: console
     :caption: bash
 
-    deephyper nas-init --new-pckg nas_problems --new-pb polynome2
+    deephyper start-project nas_problems
 
-Go to the problem ``polynome2`` folder:
+The project was created and installed in your current python environment. Then go to the ``nas_problems`` package and create a new problem:
+
+.. code-block:: console
+    :caption: bash
+
+    cd nas_problems/nas_problems/
+    deephyper new-problem nas polynome2
+
+The problem was created. Then go to the problem ``polynome2`` folder:
 
 .. code-block:: console
     :caption: bash

@@ -17,8 +17,8 @@ dhlogger = util.conf_logger(
     'deephyper.search.nas.env.neural_architecture_envs')
 
 
-class NeuralArchitectureVecEnv(VecEnv):
-    """Multiple environments neural architecture generation. One environment corresponds to one deep neural network architecture.
+class NasEnv1(VecEnv):
+    """Multiple environments neural architecture generation. One environment corresponds to one deep neural network architecture. The observation space corresponds to the action of previous steps.
 
     Args:
             num_envs (int): number of environments to run in parallel.
@@ -34,11 +34,10 @@ class NeuralArchitectureVecEnv(VecEnv):
         self.structure = structure
         self.evaluator = evaluator
 
-        observation_space = spaces.Box(
-            low=0,
-            high=self.structure.max_num_ops,
-            shape=(1,),
-            dtype=np.float32)
+        observation_space = spaces.Box(low=0,
+                                       high=self.structure.max_num_ops,
+                                       shape=(1,),
+                                       dtype=np.float32)
         action_space = spaces.Discrete(self.structure.max_num_ops)
         super().__init__(num_envs, observation_space, action_space)
 
@@ -112,7 +111,9 @@ class NeuralArchitectureVecEnv(VecEnv):
         return self.step_wait()
 
     def reset(self):
-        self.__init__(self.num_envs, self.space,
-                      self.evaluator, self.structure)
+        self.__init__(self.num_envs,
+                      self.space,
+                      self.evaluator,
+                      self.structure)
         self._states = np.stack([np.array([1.]) for _ in range(self.num_envs)])
         return self._states

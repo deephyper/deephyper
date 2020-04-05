@@ -17,8 +17,10 @@ def add_subparser(subparsers):
 
 def main(mode, name, *args, **kwargs):
     prob_name = name
-    assert os.path.exists('setup.py'), 'No setup.py in current directory'
-    assert os.path.exists('.deephyper'), 'Not inside a deephyper project directory'
+    current_path = os.getcwd()
+    project_path = os.path.dirname(current_path)
+    assert os.path.exists(os.path.join(project_path, 'setup.py')), 'No setup.py in current directory'
+    assert os.path.exists(os.path.join(project_path, '.deephyper')), 'Not inside a deephyper project directory'
     assert '/' not in prob_name, f'Problem name must not contain "/"'
     assert prob_name.isidentifier(), f'{prob_name} is not a valid Python identifier'
 
@@ -29,6 +31,7 @@ def main(mode, name, *args, **kwargs):
 
 def render_files(mode, prob_name):
     package = os.path.basename(os.getcwd())
+    print("package: ", package)
     templates_pattern = os.path.join(
         os.path.dirname(__file__),
         'templates',
