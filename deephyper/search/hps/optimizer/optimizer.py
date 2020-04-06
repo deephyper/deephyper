@@ -83,9 +83,6 @@ class Optimizer:
         YY = [-self.evals[x] for x in XX]  # ! "-" maximizing
         return XX, YY
 
-    def to_dict(self, x):
-        return {k: v for k, v in zip(self.space, x)}
-
     def to_dict(self, x: list) -> dict:
         res = {}
         hps_names = self.space.get_hyperparameter_names()
