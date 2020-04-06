@@ -27,7 +27,8 @@ VERSION = None
 # What packages are required for this module to be executed?
 REQUIRED = [
     "numpy",
-    "git+https://github.com/deephyper/scikit-optimize.git",  # "scikit-optimize",
+    # "scikit-optimize",
+    "scikit-optimize @ git+https://github.com/deephyper/scikit-optimize@dh-0.7.3#egg=scikit-optimize",
     "scikit-learn",
     "tqdm",
     "tensorflow>=1.13.1,<=1.15.2",
@@ -44,9 +45,6 @@ REQUIRED = [
     "Jinja2",
     "ConfigSpace==0.4.12",
 ]
-
-# external sources
-DP_LINKS = list()
 
 if on_rtd:
     REQUIRED.remove("balsam-flow==0.3.8")
@@ -211,7 +209,6 @@ setup(
     # py_modules=['deephyper'],
     install_requires=REQUIRED,
     extras_require=EXTRAS,
-    dependency_links=DP_LINKS,
     include_package_data=True,
     license="ANL",
     classifiers=[
