@@ -1,4 +1,5 @@
 from sys import float_info
+import math
 from skopt import Optimizer as SkOptimizer
 from skopt.learning import (
     RandomForestRegressor,
@@ -10,6 +11,17 @@ from numpy import inf
 from deephyper.search import util
 
 logger = util.conf_logger("deephyper.search.hps.optimizer.optimizer")
+
+
+def isnan(x):
+    if isinstance(x, (str, np.str_)):
+        return False
+    elif isinstance(x, int):
+        return False
+    elif isinstance(x, float):
+        return math.isnan(x)
+    else:
+        return np.isnan(x)
 
 
 class Optimizer:
@@ -79,15 +91,18 @@ class Optimizer:
             return max(self._optimizer.yi) if self._optimizer.yi else 0.0
 
     def _xy_from_dict(self):
-        XX = list(self.evals.keys())
-        YY = [-self.evals[x] for x in XX]  # ! "-" maximizing
+        XX = []
+        for key in self.evals.keys():
+            x = tuple(np.float64("nan") if e == "nan" else e for e in key)
+            XX.append(x)
+        YY = [-self.evals[x] for x in self.evals.keys()]  # ! "-" maximizing
         return XX, YY
 
     def to_dict(self, x: list) -> dict:
         res = {}
         hps_names = self.space.get_hyperparameter_names()
         for i in range(len(x)):
-            res[hps_names[i]] = x[i]
+            res[hps_names[i]] = "nan" if isnan(x[i]) else x[i]
         return res
 
     def _ask(self):
@@ -96,7 +111,7 @@ class Optimizer:
         else:
             x = self._optimizer.ask()
         y = self._get_lie()
-        key = tuple(x)
+        key = tuple(self.to_dict(x).values())
         if key not in self.evals:
             self.counter += 1
             self._optimizer.tell(x, y)
@@ -131,7 +146,7 @@ class Optimizer:
             XX = self._optimizer.ask(n_points=n_points)
         for x in XX:
             y = self._get_lie()
-            key = tuple(x)
+            key = tuple(self.to_dict(x).values())
             if key not in self.evals:
                 self.counter += 1
                 self._optimizer.tell(x, y)
