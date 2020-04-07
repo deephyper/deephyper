@@ -2,14 +2,15 @@ import argparse
 import os
 import sys
 from deephyper.search.util import generic_loader, banner
-from deephyper.benchmark import Problem
+from deephyper.problem.neuralarchitecture import Problem
+from deephyper.problem import BaseProblem
 
 def add_subparser(subparsers):
     subparser_name = 'balsam-submit'
     function_to_call = main
 
     subparser = subparsers.add_parser(
-        subparser_name, 
+        subparser_name,
         help='Create and submit an HPS or NAS job directly via Balsam.')
 
     subparser.add_argument('mode', choices=['nas', 'hps'], help='Type of search')
@@ -59,9 +60,9 @@ def validate(problem, run, workflow):
 
     print("Validating Problem...", end='', flush=True)
     prob = generic_loader(problem, 'Problem')
-    assert isinstance(prob, Problem), f'{prob} is not a Problem instance'
+    assert isinstance(prob, (Problem, BaseProblem), f'{prob} is not a Problem instance'
     print("OK", flush=True)
-    
+
     print("Validating run...", end='', flush=True)
     run = generic_loader(run, 'run')
     assert callable(run), f'{run} must be a a callable'
@@ -76,7 +77,7 @@ def validate(problem, run, workflow):
 
 def bootstrap_apps():
     """Ensure Balsam ApplicationDefinitions are populated"""
-    from balsam.core.models import ApplicationDefinition 
+    from balsam.core.models import ApplicationDefinition
     apps = {
         'AMBS': f'{sys.executable} -m deephyper.search.hps.ambs',
         'PPO': f'{sys.executable} -m deephyper.search.nas.ppo',
