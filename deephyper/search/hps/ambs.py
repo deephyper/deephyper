@@ -45,6 +45,7 @@ def on_exit(signum, stack):
 
 class AMBS(Search):
     def __init__(self, problem, run, evaluator, **kwargs):
+        kwargs["cache_key"] = "to_dict"
         super().__init__(problem, run, evaluator, **kwargs)
         logger.info("Initializing AMBS")
         self.optimizer = Optimizer(self.problem, self.num_workers, **kwargs)
