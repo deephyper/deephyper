@@ -24,3 +24,4 @@ Problem.objective("val_r2")
 if __name__ == "__main__":
     print(Problem)
 
+    model = Problem.get_keras_model([4 for _ in range(20)])
