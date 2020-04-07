@@ -11,4 +11,4 @@ class GenericLoaderError(DeephyperError):
         self.str_value = str_value
 
     def __str__(self):
-        return f"The target '{self.str_value}' cannot be imported because it's neither a python script nor a python module."
+        return f"The target '{self.str_value}' cannot be imported because it's neither a python script (i.e., the path does not exist) nor a python module!"

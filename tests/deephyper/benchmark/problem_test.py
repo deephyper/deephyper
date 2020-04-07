@@ -1,53 +1,12 @@
 import pytest
-
-from deephyper.benchmark.problem import (
-    SpaceDimNameMismatch,
+from deephyper.core.exceptions.problem import (
     SpaceDimNameOfWrongType,
-    SpaceNumDimMismatch,
-    SpaceDimValueNotInSpace,
     SearchSpaceBuilderMissingParameter,
     SearchSpaceBuilderIsNotCallable,
     SearchSpaceBuilderMissingDefaultParameter,
     NaProblemError,
     WrongProblemObjective,
 )
-
-
-@pytest.mark.incremental
-class TestProblem:
-    def test_import(self):
-        from deephyper.benchmark.problem import Problem
-
-    def test_create(self):
-        from deephyper.benchmark.problem import Problem
-
-        pb = Problem()
-
-    def test_add_dim(self):
-        from deephyper.benchmark.problem import Problem
-
-        pb = Problem()
-        pb.add_dim(p_name="dim0", p_space=0)
-
-    def test_space_attr(self):
-        from deephyper.benchmark.problem import Problem
-
-        pb = Problem()
-        assert hasattr(pb, "space")
-
-    def test_dim0_exist_and_has_good_value(self):
-        from deephyper.benchmark.problem import Problem
-
-        pb = Problem()
-        pb.add_dim(p_name="dim0", p_space=0)
-        assert pb.space["dim0"] == 0
-
-    def test_pos_args(self):
-        from deephyper.benchmark.problem import Problem
-
-        pb = Problem()
-        pb.add_dim("dim0", 0)
-        assert pb.space["dim0"] == 0
 
 
 @pytest.mark.incremental
@@ -91,7 +50,7 @@ class TestHpProblem:
 
         pb = HpProblem()
         pb.add_dim(p_name="dim0", p_space=(-10, 10))
-        with pytest.raises(SpaceNumDimMismatch):
+        with pytest.raises(ValueError):
             pb.add_starting_point(dim0=0, dim1=2)
 
     def test_add_starting_points_with_wrong_name(self):
@@ -99,7 +58,7 @@ class TestHpProblem:
 
         pb = HpProblem()
         pb.add_dim(p_name="dim0", p_space=(-10, 10))
-        with pytest.raises(SpaceDimNameMismatch):
+        with pytest.raises(ValueError):
             pb.add_starting_point(dim1=0)
 
     def test_add_starting_points_not_in_space_def(self):
@@ -110,19 +69,19 @@ class TestHpProblem:
         pb.add_dim(p_name="dim1", p_space=(-10.0, 10.0))
         pb.add_dim(p_name="dim2", p_space=["a", "b"])
 
-        with pytest.raises(SpaceDimValueNotInSpace):
+        with pytest.raises(ValueError):
             pb.add_starting_point(dim0=-11, dim1=0.0, dim2="a")
 
-        with pytest.raises(SpaceDimValueNotInSpace):
+        with pytest.raises(ValueError):
             pb.add_starting_point(dim0=11, dim1=0.0, dim2="a")
 
-        with pytest.raises(SpaceDimValueNotInSpace):
+        with pytest.raises(ValueError):
             pb.add_starting_point(dim0=0, dim1=-11.0, dim2="a")
 
-        with pytest.raises(SpaceDimValueNotInSpace):
+        with pytest.raises(ValueError):
             pb.add_starting_point(dim0=0, dim1=11.0, dim2="a")
 
-        with pytest.raises(SpaceDimValueNotInSpace):
+        with pytest.raises(ValueError):
             pb.add_starting_point(dim0=0, dim1=0.0, dim2="c")
 
         pb.add_starting_point(dim0=0, dim1=0.0, dim2="a")
@@ -182,7 +141,11 @@ class TestNaProblem:
         pb.search_space(search_space)
 
         pb.hyperparameters(
-            batch_size=64, learning_rate=0.001, optimizer="adam", num_epochs=10, loss_metric="mse"
+            batch_size=64,
+            learning_rate=0.001,
+            optimizer="adam",
+            num_epochs=10,
+            loss_metric="mse",
         )
 
         with pytest.raises(NaProblemError):
@@ -211,6 +174,11 @@ class TestNaProblem:
                     "save_best_only": True,
                     "verbose": 1,
                 },
-                EarlyStopping={"monitor": "val_r2", "mode": "max", "verbose": 1, "patience": 50},
+                EarlyStopping={
+                    "monitor": "val_r2",
+                    "mode": "max",
+                    "verbose": 1,
+                    "patience": 50,
+                },
             ),
         )
