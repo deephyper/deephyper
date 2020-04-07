@@ -6,8 +6,12 @@ from deephyper.problem import BaseProblem
 # Problem definition
 Problem = BaseProblem()
 
-x_hp = Problem.add_hyperparameter("x", (0, 10))  # or Problem.add_dim("x", (0, 10))
-y_hp = Problem.add_hyperparameter("y", (0, 10))  # or Problem.add_dim("y", (0, 10))
+x_hp = Problem.add_hyperparameter(
+    name="x", value=(0, 10)
+)  # or Problem.add_dim("x", (0, 10))
+y_hp = Problem.add_hyperparameter(
+    name="y", value=(0, 10)
+)  # or Problem.add_dim("y", (0, 10))
 
 not_zero = cs.ForbiddenAndConjunction(
     cs.ForbiddenEqualsClause(x_hp, 0), cs.ForbiddenEqualsClause(y_hp, 0)
