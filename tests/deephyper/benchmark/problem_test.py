@@ -123,7 +123,7 @@ class TestNaProblem:
         pb.search_space(func=dummy)
 
     def test_full_problem(self):
-        from deephyper.benchmark import NaProblem
+        from deephyper.problem import NaProblem
         from deephyper.search.nas.model.preprocessing import minmaxstdscaler
 
         pb = NaProblem()

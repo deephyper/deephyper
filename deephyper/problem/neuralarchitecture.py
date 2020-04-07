@@ -50,7 +50,7 @@ class Problem:
 class NaProblem(Problem):
     """A Neural Architecture Problem specification for Neural Architecture Search.
 
-    >>> from deephyper.benchmark import NaProblem
+    >>> from deephyper.problem import NaProblem
     >>> from deephyper.benchmark.nas.linearReg.load_data import load_data
     >>> from deephyper.search.nas.model.baseline.simple import create_search_space
     >>> from deephyper.search.nas.model.preprocessing import minmaxstdscaler
