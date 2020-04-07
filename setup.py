@@ -44,6 +44,7 @@ REQUIRED = [
     "pandas>=0.24.2",
     "Jinja2",
     "ConfigSpace==0.4.12",
+    "xgboost",
 ]
 
 if on_rtd:
