@@ -1,16 +1,18 @@
-from collections import OrderedDict
-from pprint import pformat
 import inspect
+from collections import OrderedDict
 from inspect import signature
+from pprint import pformat
 
+import tensorflow as tf
+from deephyper.search.nas.model.run.util import setup_data, get_search_space
 from deephyper.core.exceptions.problem import (
-    ProblemLoadDataIsNotCallable,
-    SearchSpaceBuilderIsNotCallable,
-    SearchSpaceBuilderMissingParameter,
-    SearchSpaceBuilderMissingDefaultParameter,
-    ProblemPreprocessingIsNotCallable,
-    WrongProblemObjective,
     NaProblemError,
+    ProblemLoadDataIsNotCallable,
+    ProblemPreprocessingIsNotCallable,
+    SearchSpaceBuilderIsNotCallable,
+    SearchSpaceBuilderMissingDefaultParameter,
+    SearchSpaceBuilderMissingParameter,
+    WrongProblemObjective,
 )
 
 
@@ -352,6 +354,29 @@ class NaProblem(Problem):
         space = super().space
         space["seed"] = self.seed
         return space
+
+    def build_search_space(self):
+        """Build and return a search space object using the infered data shapes after loading data.
+
+        Returns:
+            NxSearchSpace: A search space instance.
+        """
+        config = self._space
+        input_shape, output_shape = setup_data(config)
+
+        search_space = get_search_space(config, input_shape, output_shape, seed=self.seed)
+        return search_space
+
+    def get_keras_model(self, arch_seq: list) -> tf.keras.Model:
+        """Get a keras model object from a set of decisions in the current search space.
+
+        Args:
+            arch_seq (list): a list of int of floats describing a choice of operations for the search space defined in the current problem.
+        """
+        search_space = self.build_search_space()
+        search_space.set_ops(arch_seq)
+        keras_model = search_space.create_model()
+        return keras_model
 
 
 def module_location(attr):
