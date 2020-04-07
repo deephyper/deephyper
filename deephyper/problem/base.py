@@ -7,7 +7,7 @@ import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh
 import numpy as np
 
-from deephyper.core.exceptions.problem import *
+import deephyper.core.exceptions as dh_exceptions
 
 
 def check_hyperparameter(parameter, name=None):
@@ -19,7 +19,8 @@ def check_hyperparameter(parameter, name=None):
             "Shortcut definition of an hyper-parameter has to be a list, tuple, array."
         )
 
-    assert type(name) is str, f"Parameter of value {parameter} is not named!"
+    if not (type(name) is str):
+        raise dh_exceptions.problem.SpaceDimNameOfWrongType(name)
 
     # if isinstance(parameter, (int, float)):  # Constant parameter
     #     return csh.Constant(name, parameter)
@@ -99,9 +100,20 @@ class BaseProblem:
             p_space (Object): space corresponding to the new dimension.
         """
 
-        return self.add_hyperparameter(p_name, p_space)
+        return self.add_hyperparameter(p_space, p_name)
 
-    def add_hyperparameter(self, name, value):
+    def add_hyperparameter(self, value, name: str = None) -> csh.Hyperparameter:
+        """Add an hyperparameter to the search space of the Problem.
+
+        Args:
+            name (str): The name of the hyper-parameter
+            value (tuple or list or ConfigSpace.Hyperparameter): [description]
+
+        Returns:
+            csh.Hyperparameter: a ConfigSpace.Hyperparameter object corresponding to the (name, value).
+        """
+        if not (type(name) is str or name is None):
+            raise dh_exceptions.problem.SpaceDimNameOfWrongType(name)
         csh_parameter = check_hyperparameter(value, name)
         self._space.add_hyperparameter(csh_parameter)
         return csh_parameter
