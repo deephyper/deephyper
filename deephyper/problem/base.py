@@ -129,9 +129,12 @@ class BaseProblem:
         return self._space
 
     def add_starting_point(self, **parameters):
+        self.check_configuration(parameters)
+        self.references.append([parameters[p_name] for p_name in self._space])
+
+    def check_configuration(self, parameters):
         config = cs.Configuration(self._space, parameters)
         self._space.check_configuration(config)
-        self.references.append([parameters[p_name] for p_name in self._space])
 
     @property
     def starting_point(self):
