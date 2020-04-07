@@ -5,7 +5,7 @@ import sys
 
 from deephyper.core.cli import mpi4py_mock
 sys.modules['mpi4py'] = mpi4py_mock
-from deephyper.core.cli import start_project, new_problem 
+from deephyper.core.cli import start_project, new_problem
 from deephyper.core.cli import hps, nas, balsam_submit
 
 
