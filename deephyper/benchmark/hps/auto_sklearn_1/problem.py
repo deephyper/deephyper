@@ -57,7 +57,7 @@ Problem.add_condition(cond_C)
 
 # kernel
 kernel = Problem.add_hyperparameter(
-    name="kernel", value=["linear", "poly", "rbf", "sigmoid", "precomputed"]
+    name="kernel", value=["linear", "poly", "rbf", "sigmoid"]
 )
 
 cond_kernel = cs.EqualsCondition(kernel, classifier, "SVC")

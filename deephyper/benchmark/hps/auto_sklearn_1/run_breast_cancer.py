@@ -12,12 +12,13 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
 
-from load_data import load_data
-from problem import Problem
+from deephyper.benchmark.hps.auto_sklearn_1.load_data_breast_cancer import load_data
+from deephyper.benchmark.hps.auto_sklearn_1.problem import Problem
 
 
 def run(config):
     seed = 42
+    config["random_state"] = seed
 
     X, y = load_data()
     X_train, X_test, y_train, y_test = train_test_split(
@@ -40,14 +41,16 @@ def run(config):
     sig = signature(clf_class)
     clf_allowed_params = list(sig.parameters.keys())
     clf_params = {
-        k: v for k, v in config.items() if k in clf_allowed_params and v != "nan"
+        k: v
+        for k, v in config.items()
+        if k in clf_allowed_params and not (v in ["nan", "NA"])
     }
 
     if "n_jobs" in clf_allowed_params:  # performance parameter
         clf_params["n_jobs"] = 8
 
     try:  # good practice to manage the fail value yourself...
-        clf = clf_class(random_state=seed, **clf_params)
+        clf = clf_class(**clf_params)
 
         clf.fit(X_train, y_train)
 
@@ -62,3 +65,8 @@ def run(config):
         acc = -1.0
 
     return acc
+
+
+# if __name__ == "__main__":
+#     config = {"classifier": "SVC", "C": 0.15776A389354022982, "kernel": "precomputed"}
+#     run(config)
