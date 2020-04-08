@@ -1,7 +1,8 @@
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.datasets import load_digits, load_iris, load_breast_cancer
+from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from deephyper.search.nas.model.preprocessing import minmaxstdscaler
 import numpy as np
 
 
@@ -28,6 +29,7 @@ class BaseClassifierPipeline:
 
     def run(self):
 
+        # loading the data
         try:
             (X_train, X_test), (y_train, y_test) = self.load_data_func()
         except:
@@ -35,6 +37,11 @@ class BaseClassifierPipeline:
             X_train, X_test, y_train, y_test = train_test_split(
                 X, y, test_size=0.33, random_state=self.seed
             )
+
+        # preprocessing the data
+        preproc = minmaxstdscaler()
+        X_train = preproc.fit_transform(X_train)
+        X_test = preproc.transform(X_test)
 
         self.clf.fit(X_train, y_train)
 

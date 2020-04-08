@@ -14,6 +14,7 @@ from xgboost import XGBClassifier
 
 from deephyper.benchmark.hps.auto_sklearn_1.load_data_breast_cancer import load_data
 from deephyper.benchmark.hps.auto_sklearn_1.problem import Problem
+from deephyper.search.nas.model.preprocessing import minmaxstdscaler
 
 
 def run(config):
@@ -24,6 +25,10 @@ def run(config):
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.33, random_state=seed
     )
+
+    preproc = minmaxstdscaler()
+    X_train = preproc.fit_transform(X_train)
+    X_test = preproc.transform(X_test)
 
     mapping = {
         "RandomForest": RandomForestClassifier,
