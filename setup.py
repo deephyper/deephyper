@@ -28,7 +28,7 @@ VERSION = None
 REQUIRED = [
     "numpy",
     # "scikit-optimize",
-    "scikit-optimize @ git+https://github.com/deephyper/scikit-optimize@dh-0.7.3#egg=scikit-optimize",
+    "scikit-optimize @ git+https://github.com/deephyper/scikit-optimize@dh-0.7.4#egg=scikit-optimize",
     "scikit-learn",
     "tqdm",
     "tensorflow>=1.13.1,<=1.15.2",
