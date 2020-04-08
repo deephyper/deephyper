@@ -10,7 +10,7 @@ def test_single_loss():
     config["hyperparameters"]["verbose"] = 1
 
     # Baseline
-    config["arch_seq"] = [0.5] * 20
+    config["arch_seq"] = [0.5] * 10
 
     run(config)
 
