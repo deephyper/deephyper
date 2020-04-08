@@ -1,5 +1,5 @@
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.datasets import load_digits
+from sklearn.datasets import load_digits, load_iris, load_breast_cancer
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 import numpy as np
@@ -19,7 +19,7 @@ class BaseClassifierPipeline:
     def __init__(
         self,
         clf=KNeighborsClassifier(),
-        load_data_func=lambda: load_digits(return_X_y=True),
+        load_data_func=lambda: load_breast_cancer(return_X_y=True),
         seed=42,
     ):
         self.clf = clf
