@@ -14,7 +14,8 @@ class BaseClassifierPipeline:
     >>> from sklearn.datasets import load_digits
     >>> load_data = lambda : load_digits(return_X_y=True)
     >>> baseline_classifier = BaseClassifierPipeline(KNeighborsClassifier(), load_data)
-    >>> baseline_classifier.run()
+    >>> baseline_classifier.run() # doctest:+ELLIPSIS
+    Not Weighted Accuracy:...
     """
 
     def __init__(

@@ -16,7 +16,8 @@ class BaseRegressorPipeline:
     >>> from sklearn.datasets import load_boston
     >>> load_data = lambda : load_boston(return_X_y=True)
     >>> baseline_regressor = BaseRegressorPipeline(RandomForestRegressor(n_jobs=4), load_data)
-    >>> baseline_regressor.run()
+    >>> baseline_regressor.run() # doctest:+ELLIPSIS
+    R2:...
     """
 
     def __init__(
