@@ -57,19 +57,6 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
     software/searches
     tests_link
 
-.. toctree::
-    :maxdepth: 3
-    :caption: API
-
-    api/deephyper.baseline
-    api/deephyper.benchmark
-    api/deephyper.contrib
-    api/deephyper.core
-    api/deephyper.evaluator
-    api/deephyper.post
-    api/deephyper.problem
-    api/deephyper.search
-
 
 Indices and tables
 ==================
