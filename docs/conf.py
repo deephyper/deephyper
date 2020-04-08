@@ -50,8 +50,8 @@ else:
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx.ext.doctest",
-    # 'sphinx.ext.intersphinx',
+    # "sphinx.ext.doctest",
+    "sphinx.ext.intersphinx",
     "sphinx.ext.todo",
     "sphinx.ext.coverage",
     "sphinx.ext.mathjax",
@@ -94,7 +94,7 @@ pygments_style = "sphinx"
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-# html_theme = 'alabaster'
+# html_theme = "alabaster"
 html_theme = "sphinx_rtd_theme"
 # html_theme_path = ["_themes",]
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
@@ -247,4 +247,3 @@ def setup(app):
     app.add_stylesheet("custom.css")
     app.add_javascript("custom.js")
     app.add_javascript("https://cdn.jsdelivr.net/npm/clipboard@1/dist/clipboard.min.js")
-
