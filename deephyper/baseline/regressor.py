@@ -11,11 +11,11 @@ from deephyper.search.nas.model.preprocessing import minmaxstdscaler
 class BaseRegressorPipeline:
     """Baseline regressor to evaluate the problem at stake.
 
-    >>> from sklearn.neighbors import RandomForestRegressor
+    >>> from sklearn.ensemble import RandomForestRegressor
     >>> from deephyper.baseline import BaseRegressorPipeline
     >>> from sklearn.datasets import load_boston
     >>> load_data = lambda : load_boston(return_X_y=True)
-    >>> baseline_regressor = BaseRegressor(RandomForestRegressor(n_jobs=4), load_data)
+    >>> baseline_regressor = BaseRegressorPipeline(RandomForestRegressor(n_jobs=4), load_data)
     >>> baseline_regressor.run()
     """
 

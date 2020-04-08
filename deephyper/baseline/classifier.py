@@ -13,7 +13,7 @@ class BaseClassifierPipeline:
     >>> from deephyper.baseline import BaseClassifierPipeline
     >>> from sklearn.datasets import load_digits
     >>> load_data = lambda : load_digits(return_X_y=True)
-    >>> baseline_classifier = BaseClassifier(KNeighborsClassifier(), load_data)
+    >>> baseline_classifier = BaseClassifierPipeline(KNeighborsClassifier(), load_data)
     >>> baseline_classifier.run()
     """
 
