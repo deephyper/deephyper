@@ -1,3 +1,5 @@
+
+
 import inspect
 from inspect import signature
 from pprint import pprint
@@ -12,12 +14,20 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
 
-from deephyper.benchmark.hps.auto_sklearn_1.load_data_digits import load_data
-from deephyper.benchmark.hps.auto_sklearn_1.problem import Problem
+
 from deephyper.search.nas.model.preprocessing import minmaxstdscaler
 
 
-def run(config):
+def run(config: dict, load_data: callable) -> float:
+    """Run function which can be used for AutoML classification.
+
+    Args:
+        config (dict): [description]
+        load_data (callable): [description]
+
+    Returns:
+        float: [description]
+    """
     seed = 42
     config["random_state"] = seed
 
@@ -70,8 +80,3 @@ def run(config):
         acc = -1.0
 
     return acc
-
-
-# if __name__ == "__main__":
-#     config = {"classifier": "SVC", "C": 0.15776A389354022982, "kernel": "precomputed"}
-#     run(config)
