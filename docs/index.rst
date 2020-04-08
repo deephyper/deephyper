@@ -57,6 +57,10 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
     software/searches
     tests_link
 
+.. .. toctree::
+
+..     api/*
+
 
 Indices and tables
 ==================
