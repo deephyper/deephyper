@@ -98,6 +98,14 @@ class Optimizer:
         YY = [-self.evals[x] for x in self.evals.keys()]  # ! "-" maximizing
         return XX, YY
 
+    def dict_to_xy(self, xy_dict: dict):
+        XX = []
+        for key in xy_dict.keys():
+            x = [np.float64("nan") if e == "nan" else e for e in key]
+            XX.append(x)
+        YY = [-xy_dict[x] for x in xy_dict.keys()]  # ! "-" maximizing
+        return XX, YY
+
     def to_dict(self, x: list) -> dict:
         res = {}
         hps_names = self.space.get_hyperparameter_names()
@@ -155,20 +163,21 @@ class Optimizer:
 
     def tell(self, xy_data):
         assert isinstance(xy_data, list), f"where type(xy_data)=={type(xy_data)}"
-        maxval = min(self._optimizer.yi) if self._optimizer.yi else 0.0
+        minval = min(self._optimizer.yi) if self._optimizer.yi else 0.0
+        xy_dict = {}
         for x, y in xy_data:
             key = tuple(x[k] for k in self.space)
             assert key in self.evals, f"where key=={key} and self.evals=={self.evals}"
             logger.debug(f"tell: {x} --> {key}: evaluated objective: {y}")
-            self.evals[key] = y if y < float_info.max else maxval
+            self.evals[key] = y if y > np.finfo(np.float32).min else minval
+            xy_dict[key] = y if y > np.finfo(np.float32).min else minval
 
-        self._optimizer.Xi = []
-        self._optimizer.yi = []
-        XX, YY = self._xy_from_dict()
-        assert len(XX) == len(YY) == self.counter, (
-            f"where len(XX)=={len(XX)},"
-            f"len(YY)=={len(YY)}, self.counter=={self.counter}"
-        )
+        XX, YY = self.dict_to_xy(xy_dict)
+        new_Xi = [x for x in self._optimizer.Xi if x not in XX]
+        yi_to_remove = [i for i, x in enumerate(self._optimizer.Xi) if x in XX]
+        new_yi = [y for i, y in enumerate(self._optimizer.yi) if i not in yi_to_remove]
+        self._optimizer.Xi = new_Xi
+        self._optimizer.yi = new_yi
         self._optimizer.tell(XX, YY)
         assert len(self._optimizer.Xi) == len(self._optimizer.yi) == self.counter, (
             f"where len(self._optimizer.Xi)=={len(self._optimizer.Xi)}, "
