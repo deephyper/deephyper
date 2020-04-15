@@ -6,14 +6,14 @@ Hyperparameter Search (HPS)
 Every DeepHyper search requires at least 2 Python objects as input:
 
  * ``run``: your "black-box" function returning the objective value to be maximized
- * ``Problem``: an instance of ``deephyper.benchmarks.Problem`` which defines the search space of input parameters to ``run`` 
+ * ``Problem``: an instance of ``deephyper.benchmarks.Problem`` which defines the search space of input parameters to ``run``
 
 These objects are required for both HPS and NAS, but take on a slightly different meaning in the context of NAS.
 
 We will illustrate DeepHyper HPS using a regression example. We generate
 synthetic data according to :math:`y = - \mathbf{x}^{T} \mathbf{x}` for random
 :math:`N`-dimensional input vectors :math:`\mathbf{x}`. Our regression model
-is a multilayer perceptron with 1 hidden layer, implemented in Keras.  
+is a multilayer perceptron with 1 hidden layer, implemented in Keras.
 Using HPS, we will then tune the model hyperparameters to optimize the validation :math:`R^{2}`
 metric.
 
@@ -37,6 +37,7 @@ A new ``hps_demo`` directory is created, containing the following files::
 
       hps_demo/
             __init__.py
+            hps_demo/
             setup.py
 
 We can now define DeepHyper search problems inside this directory, using either
@@ -48,28 +49,29 @@ Let's set up an HPS problem called ``polynome2`` as follows:
 .. code-block:: console
     :caption: bash
 
-    $ cd hps_demo
+    $ cd hps_demo/hps_demo/
     $ deephyper new-problem hps polynome2
 
 
-A new HPS problem subdirectory should be in place. This is a Python subpackage containing 
-sample code in the files ``__init__.py``, ``load_data.py``, ``model_run.py``, and ``problem.py``.  
+A new HPS problem subdirectory should be in place. This is a Python subpackage containing
+sample code in the files ``__init__.py``, ``load_data.py``, ``model_run.py``, and ``problem.py``.
 Overall, your project directory should look like::
-      
+
       hps_demo/
             __init__.py
+            hps_demo/
+                polynome2/
+                    __init__.py
+                    load_data.py
+                    model_run.py
+                    problem.py
             setup.py
-            polynome2/
-                __init__.py
-                load_data.py
-                model_run.py
-                problem.py
 
 
 Generating data
-===================
+===============
 
-The sample ``load_data.py`` will generate the training and validation data for our demo regression problem. 
+The sample ``load_data.py`` will generate the training and validation data for our demo regression problem.
 While not required by the DeepHyper HPS API, it is helpful to encapsulate data loading and preparation in a separate module.
 This sample generates data from a function :math:`f` where :math:`X \in [a, b]^n`  where :math:`f(X) = -\sum_{i=0}^{n-1} {x_i ^2}`:
 
@@ -102,7 +104,7 @@ The Keras model
 
 The model is implemented in the ``run()`` function below. We will provide this function to
 DeepHyper, which will call it to evaluate various hyperparameter settings.
-This function takes a ``point`` argument, which is a dictionary of 
+This function takes a ``point`` argument, which is a dictionary of
 tunable hyperparameters. In this case, we will tune:
 
     * The number of units of the Dense hidden layer (``point['units']``)
@@ -150,7 +152,7 @@ We can first train this model to evaluate the baseline accuracy:
 
 
 Defining the HPS Problem space
-========================================
+==============================
 
 The ``run`` function in ``model_run.py`` expects a hyperparameter dictionary with three keys: ``units, activation, and lr``.
 We define the acceptable ranges for these hyperparameters with the ``Problem`` object inside ``problem.py`.
@@ -160,7 +162,7 @@ Hyperparameter ranges are defined using the following syntax:
     * Continous parameters are generated from a tuple: ``(lower: float, upper: float)``
     * Categorical or nonordinal hyperparameters ranges can be given as a list of possible values: ``[val1, val2, ...]``
 
-You probably have one or more "reference" sets of hyperparameters that are either hand-crafted or chosen by intuition. 
+You probably have one or more "reference" sets of hyperparameters that are either hand-crafted or chosen by intuition.
 To bootstrap the search with these so-called `starting points`, use the ``add_starting_point(...)`` method.
 
 .. note::
@@ -337,13 +339,13 @@ Above, ``balsam-submit`` takes the following arguments:
     6. ``-q Queue`` and ``-A Project`` pass the name of the job queue and project allocation to the HPC scheduler
     7. ``-j`` or ``--job-mode`` must be either ``mpi`` or ``serial``.  This controls how Balsam launches your ``model_runs``.
 
-Once the search is done, you will find results in the directory shown in the banner: 
+Once the search is done, you will find results in the directory shown in the banner:
 ``/myprojects/deephyper/deephyper/db/data/test_hps/test_hps_2ef063ce``.
 
 .. note::
 
     The examples so far assume that your DeepHyper models run in the same Python
     environment as DeepHyper and each model runs on a single node.  If you need more control over
-    model execution, say, to run containerized models, or to run data-parallel model 
+    model execution, say, to run containerized models, or to run data-parallel model
     training with Horovod, you can hook into the Balsam job controller. See :ref:`balsamjob_spec`
     for a detailed example.
