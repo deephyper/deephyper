@@ -1,12 +1,14 @@
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.datasets import load_breast_cancer
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-from deephyper.search.nas.model.preprocessing import minmaxstdscaler
 import numpy as np
+from sklearn.datasets import load_breast_cancer
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+
+from deephyper.baseline.base import BasePipeline
+from deephyper.search.nas.model.preprocessing import minmaxstdscaler
 
 
-class BaseClassifierPipeline:
+class BaseClassifierPipeline(BasePipeline):
     """Baseline classifier to evaluate the problem at stake.
 
     >>> from sklearn.neighbors import KNeighborsClassifier
@@ -15,64 +17,23 @@ class BaseClassifierPipeline:
     >>> load_data = lambda : load_digits(return_X_y=True)
     >>> baseline_classifier = BaseClassifierPipeline(KNeighborsClassifier(), load_data)
     >>> baseline_classifier.run() # doctest:+ELLIPSIS
-    Not Weighted Accuracy (Test set):...
+    accuracy_score on Train:  0.9763779527559056
+    accuracy_score on Test:  0.9574468085106383
     """
 
     def __init__(
         self,
-        clf=KNeighborsClassifier(),
+        clf=KNeighborsClassifier(n_jobs=4),
         load_data_func=lambda: load_breast_cancer(return_X_y=True),
+        preproc=minmaxstdscaler(),
         seed=42,
     ):
-        self.clf = clf
-        self.seed = seed
-        self.load_data_func = load_data_func
-        self.preproc = minmaxstdscaler()
+        super().__init__(
+            clf=clf, load_data_func=load_data_func, preproc=preproc, seed=seed
+        )
 
-    def load_data(self):
-        try:
-            (X_train, y_train), (X_test, y_test) = self.load_data_func()
-        except:
-            X, y = self.load_data_func()
-            X_train, X_test, y_train, y_test = train_test_split(
-                X, y, test_size=0.33, random_state=self.seed
-            )
-
-        return X_train, X_test, y_train, y_test
-
-    def run(self):
-
-        # loading the data
-        X_train, X_test, y_train, y_test = self.load_data()
-
-        # preprocessing the data
-        X_train = self.preproc.fit_transform(X_train)
-        X_test = self.preproc.transform(X_test)
-
-        self.clf.fit(X_train, y_train)
-
-        y_pred = self.clf.predict(X_test)
-        acc_not_weighted = accuracy_score(y_test, y_pred)
-
-        print("Not Weighted Accuracy (Test set): ", acc_not_weighted)
-
-    def evaluate(self, metric):
-
-        X_train, X_test, y_train, y_test = self.load_data()
-
-        X_train = self.preproc.transform(X_train)
-        X_test = self.preproc.transform(X_test)
-
-        y_pred = self.clf.predict(X_train)
-        score_train = metric(y_train, y_pred)
-
-        y_pred = self.clf.predict(X_test)
-        score_test = metric(y_test, y_pred)
-
-        metric_name = metric.__name__
-
-        print(f"{metric_name} on Train: ", score_train)
-        print(f"{metric_name} on Test: ", score_test)
+    def evaluate(self, metric=accuracy_score):
+        return super().evaluate(metric=metric)
 
 
 if __name__ == "__main__":
