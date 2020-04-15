@@ -9,9 +9,9 @@ Baselines Pipelines
 Classifier
 ==========
 
-.. autoclass:: deephyper.baseline.classifier.BaselineClassifierPipeline
+.. autoclass:: deephyper.baseline.classifier.BaseClassifierPipeline
 
 Regressor
 ==========
 
-.. autoclass:: deephyper.baseline.regressor.BaselineRegressorPipeline
+.. autoclass:: deephyper.baseline.regressor.BaseRegressorPipeline
