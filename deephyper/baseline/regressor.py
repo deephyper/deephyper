@@ -18,8 +18,8 @@ class BaseRegressorPipeline(BasePipeline):
     >>> load_data = lambda : load_boston(return_X_y=True)
     >>> baseline_regressor = BaseRegressorPipeline(RandomForestRegressor(n_jobs=4), load_data)
     >>> baseline_regressor.run() # doctest:+ELLIPSIS
-    r2_score on Train:  0.9771919813494517
-    r2_score on Test:  0.8599604939888313
+    r2_score on Train:...
+    r2_score on Test:...
     """
 
     def __init__(

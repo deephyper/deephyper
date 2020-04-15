@@ -17,8 +17,8 @@ class BaseClassifierPipeline(BasePipeline):
     >>> load_data = lambda : load_digits(return_X_y=True)
     >>> baseline_classifier = BaseClassifierPipeline(KNeighborsClassifier(), load_data)
     >>> baseline_classifier.run() # doctest:+ELLIPSIS
-    accuracy_score on Train:  0.9763779527559056
-    accuracy_score on Test:  0.9574468085106383
+    accuracy_score on Train:...
+    accuracy_score on Test:...
     """
 
     def __init__(
