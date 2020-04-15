@@ -1,7 +1,6 @@
 """Inspired from https://scikit-learn.org/stable/auto_examples/classification/plot_classifier_comparison.html
 """
 import ConfigSpace as cs
-import ConfigSpace.hyperparameters as csh
 from deephyper.problem import HpProblem
 
 

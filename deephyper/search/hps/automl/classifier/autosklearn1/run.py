@@ -1,20 +1,11 @@
-
-
 import inspect
 from inspect import signature
 from pprint import pprint
 
-from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
-from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.neural_network import MLPClassifier
-from sklearn.svm import SVC
-from xgboost import XGBClassifier
 
-
+from deephyper.search.hps.automl.classifier import mapping
 from deephyper.search.nas.model.preprocessing import minmaxstdscaler
 
 
@@ -40,15 +31,7 @@ def run(config: dict, load_data: callable) -> float:
     X_train = preproc.fit_transform(X_train)
     X_test = preproc.transform(X_test)
 
-    mapping = {
-        "RandomForest": RandomForestClassifier,
-        "Logistic": LogisticRegression,
-        "AdaBoost": AdaBoostClassifier,
-        "KNeighbors": KNeighborsClassifier,
-        "MLP": MLPClassifier,
-        "SVC": SVC,
-        "XGBoost": XGBClassifier,
-    }
+    mapping = mapping.CLASSIFIERS
 
     clf_class = mapping[config["classifier"]]
 
