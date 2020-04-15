@@ -5,7 +5,7 @@ from pprint import pprint
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
-from deephyper.search.hps.automl.classifier import mapping
+from deephyper.search.hps.automl.classifier.mapping import CLASSIFIERS
 from deephyper.search.nas.model.preprocessing import minmaxstdscaler
 
 
@@ -31,7 +31,7 @@ def run(config: dict, load_data: callable) -> float:
     X_train = preproc.fit_transform(X_train)
     X_test = preproc.transform(X_test)
 
-    mapping = mapping.CLASSIFIERS
+    mapping = CLASSIFIERS
 
     clf_class = mapping[config["classifier"]]
 
