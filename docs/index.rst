@@ -52,6 +52,8 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
     :maxdepth: 3
     :caption: Developer Guides
 
+    software/automl
+    software/baselines
     software/benchmarks
     software/evaluators
     software/searches

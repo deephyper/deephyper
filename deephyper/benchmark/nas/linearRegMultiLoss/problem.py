@@ -1,4 +1,4 @@
-from deephyper.benchmark import NaProblem
+from deephyper.problem import NaProblem
 from deephyper.benchmark.nas.linearRegMultiLoss.load_data import load_data
 from deephyper.search.nas.model.baseline.simple_bi_model import create_search_space
 
@@ -29,4 +29,3 @@ Problem.objective("val_output_0_r2")
 # Just to print your problem, to test its definition and imports in the current python environment.
 if __name__ == "__main__":
     print(Problem)
-

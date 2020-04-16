@@ -76,14 +76,14 @@ metrics["mean_squared_error"] = metrics["mse"] = mse
 metrics["accuracy"] = metrics["acc"] = acc
 
 
-def selectMetric(name):
+def selectMetric(name: str):
     """Return the metric defined by name.
 
     Args:
-        name ([type]): [description]
+        name (str): a string referenced in DeepHyper, one referenced in keras or an attribute name to import.
 
     Returns:
-        [type]: [description]
+        str or callable: a string suppossing it is referenced in the keras framework or a callable taking (y_true, y_pred) as inputs and returning a tensor.
     """
     if metrics.get(name) == None:
         try:
@@ -92,4 +92,3 @@ def selectMetric(name):
             return name  # supposing it is referenced in keras metrics
     else:
         return metrics[name]
-

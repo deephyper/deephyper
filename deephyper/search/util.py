@@ -8,26 +8,28 @@ from traceback import print_exception
 from deephyper.core.exceptions.loading import GenericLoaderError
 
 masterLogger = None
-LOG_LEVEL = os.environ.get('DEEPHYPER_LOG_LEVEL', 'DEBUG')
+LOG_LEVEL = os.environ.get("DEEPHYPER_LOG_LEVEL", "DEBUG")
 LOG_LEVEL = getattr(logging, LOG_LEVEL)
 
-def banner(message, color='HEADER'):
+
+def banner(message, color="HEADER"):
     bcolors = {
-        "HEADER" : '\033[95m',
-        "OKBLUE" : '\033[94m',
-        "OKGREEN" : '\033[92m',
-        "WARNING" : '\033[93m',
-        "FAIL" : '\033[91m',
-        "ENDC" : '\033[0m',
-        "BOLD" : '\033[1m',
-        "UNDERLINE" : '\033[4m',
+        "HEADER": "\033[95m",
+        "OKBLUE": "\033[94m",
+        "OKGREEN": "\033[92m",
+        "WARNING": "\033[93m",
+        "FAIL": "\033[91m",
+        "ENDC": "\033[0m",
+        "BOLD": "\033[1m",
+        "UNDERLINE": "\033[4m",
     }
-    header = '*'*(len(message) + 4)
-    msg = f' {header}\n   {message}\n {header}'
+    header = "*" * (len(message) + 4)
+    msg = f" {header}\n   {message}\n {header}"
     if sys.stdout.isatty():
-        print(bcolors.get(color), msg, bcolors["ENDC"], sep='')
+        print(bcolors.get(color), msg, bcolors["ENDC"], sep="")
     else:
         print(msg)
+
 
 class Timer:
     def __init__(self):
@@ -52,14 +54,14 @@ def conf_logger(name):
     # comm = MPI.COMM_WORLD
     # rank = comm.Get_rank()
 
-    if (masterLogger == None):
-        masterLogger = logging.getLogger('deephyper')
+    if masterLogger == None:
+        masterLogger = logging.getLogger("deephyper")
 
         # handler = logging.FileHandler(f'deephyper-{rank}.log') # debug
-        handler = logging.FileHandler('deephyper.log')
+        handler = logging.FileHandler("deephyper.log")
         formatter = logging.Formatter(
-            '%(asctime)s|%(process)d|%(levelname)s|%(name)s:%(lineno)s] %(message)s',
-            "%Y-%m-%d %H:%M:%S"
+            "%(asctime)s|%(process)d|%(levelname)s|%(name)s:%(lineno)s] %(message)s",
+            "%Y-%m-%d %H:%M:%S",
         )
         handler.setFormatter(formatter)
         masterLogger.addHandler(handler)
@@ -67,11 +69,10 @@ def conf_logger(name):
         masterLogger.info("\n\nLoading Deephyper\n--------------")
 
     def log_uncaught_exceptions(exctype, value, tb):
-        masterLogger.exception('Uncaught exception:',
-                               exc_info=(exctype, value, tb)
-                               )
+        masterLogger.exception("Uncaught exception:", exc_info=(exctype, value, tb))
         sys.stderr.write(f"Uncaught exception {exctype}: {value}")
         print_exception(exctype, value, tb)
+
     sys.excepthook = log_uncaught_exceptions
     return logging.getLogger(name)
 
@@ -79,7 +80,7 @@ def conf_logger(name):
 class DelayTimer:
     def __init__(self, max_minutes=None, period=2):
         if max_minutes is None:
-            max_minutes = float('inf')
+            max_minutes = float("inf")
         self.max_minutes = max_minutes
         self.max_seconds = max_minutes * 60.0
         self.period = period
@@ -117,8 +118,8 @@ def load_attr_from(str_full_module):
         Return: the loaded attribute from a module.
     """
     if type(str_full_module) == str:
-        split_full = str_full_module.split('.')
-        str_module = '.'.join(split_full[:-1])
+        split_full = str_full_module.split(".")
+        str_module = ".".join(split_full[:-1])
         str_attr = split_full[-1]
         module = import_module(str_module)
         return getattr(module, str_attr)
@@ -157,5 +158,5 @@ def generic_loader(target, attribute):
             return load_from_file(target_file, attribute)
         else:
             return load_attr_from(target)
-    except (ValueError, ModuleNotFoundError):
+    except (ValueError, ModuleNotFoundError, TypeError):
         raise GenericLoaderError(target)

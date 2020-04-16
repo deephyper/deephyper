@@ -10,7 +10,7 @@ from deephyper.search import util
 from deephyper.search.nas import NeuralArchitectureSearch
 from deephyper.evaluator.evaluate import Encoder
 from deephyper.search.nas.baselines import logger
-from deephyper.search.nas.env.neural_architecture_envs import NeuralArchitectureVecEnv
+from deephyper.search.nas.envs import NasEnv1, NasEnv2
 from deephyper.core.logs.logging import JsonMessage as jm
 
 try:
@@ -20,6 +20,15 @@ except ImportError:
 
 
 dhlogger = util.conf_logger("deephyper.search.nas.rl")
+
+def get_env_class(env_name):
+    """Return environment class corresponding to environment name"""
+    envs = {
+        "NasEnv1": NasEnv1,
+        "NasEnv2": NasEnv2
+    }
+    assert env_name in envs.keys(), f"Environment '{env_name}' does not exist!"
+    return envs[env_name]
 
 
 class ReinforcementLearningSearch(NeuralArchitectureSearch):
@@ -37,7 +46,7 @@ class ReinforcementLearningSearch(NeuralArchitectureSearch):
         cache_key (str): ...
     """
 
-    def __init__(self, problem, run, evaluator, alg, network, num_envs, **kwargs):
+    def __init__(self, problem, run, evaluator, alg, network, num_envs, env, **kwargs):
 
         self.kwargs = kwargs
 
@@ -106,6 +115,7 @@ class ReinforcementLearningSearch(NeuralArchitectureSearch):
         self.alg = alg
         self.network = network
         self.num_envs_per_agent = num_envs
+        self.env_class = get_env_class(env)
 
     @staticmethod
     def _extend_parser(parser):
@@ -151,7 +161,7 @@ class ReinforcementLearningSearch(NeuralArchitectureSearch):
             if k in alg_kwargs:
                 alg_kwargs[k] = self.kwargs[k]
 
-        env = build_env(num_envs, space, evaluator)
+        env = build_env(num_envs, space, evaluator, self.env_class)
         total_timesteps = num_evals * env.num_actions_per_env
 
         alg_kwargs["network"] = network
@@ -162,7 +172,7 @@ class ReinforcementLearningSearch(NeuralArchitectureSearch):
         return model, env
 
 
-def build_env(num_envs, space, evaluator):
+def build_env(num_envs, space, evaluator, env_class):
     """Build nas environment.
 
     Args:
@@ -179,7 +189,7 @@ def build_env(num_envs, space, evaluator):
         search_space = space["create_search_space"]["func"]()
     else:
         search_space = space["create_search_space"]["func"](**cs_kwargs)
-    env = NeuralArchitectureVecEnv(num_envs, space, evaluator, search_space)
+    env = env_class(num_envs, space, evaluator, search_space)
     return env
 
 

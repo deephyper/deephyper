@@ -1,5 +1,5 @@
-from deephyper.benchmark import NaProblem
 from deephyper.benchmark.nas.linearReg.load_data import load_data
+from deephyper.problem import NaProblem
 from deephyper.search.nas.model.baseline.simple_deep import create_search_space
 from deephyper.search.nas.model.preprocessing import minmaxstdscaler
 
@@ -24,3 +24,4 @@ Problem.objective("val_r2")
 if __name__ == "__main__":
     print(Problem)
 
+    model = Problem.get_keras_model([4 for _ in range(20)])

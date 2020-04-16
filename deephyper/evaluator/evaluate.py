@@ -14,6 +14,7 @@ import types
 
 from deephyper.evaluator import runner
 from deephyper.core.exceptions import DeephyperRuntimeError
+
 logger = logging.getLogger(__name__)
 
 
@@ -32,7 +33,7 @@ class Encoder(json.JSONEncoder):
         elif isinstance(obj, ndarray):
             return obj.tolist()
         elif isinstance(obj, types.FunctionType):
-            return f'{obj.__module__}.{obj.__name__}'
+            return f"{obj.__module__}.{obj.__name__}"
         else:
             return super(Encoder, self).default(obj)
 
@@ -48,31 +49,30 @@ class Evaluator:
             DeephyperRuntimeError: raised if the `cache_key` parameter is not None, a callable or equal to 'uuid'.
             DeephyperRuntimeError: raised if the `run_function` parameter is from the`__main__` module.
     """
-    FAIL_RETURN_VALUE = -sys.float_info.max
-    PYTHON_EXE = os.environ.get('DEEPHYPER_PYTHON_BACKEND', sys.executable)
+
+    FAIL_RETURN_VALUE = np.finfo(np.float32).min
+    PYTHON_EXE = os.environ.get("DEEPHYPER_PYTHON_BACKEND", sys.executable)
     # TODO(#30): DH CLI should handle this kind of dependent parameter.
     # What if searcher process has surrogate model with --n-jobs>1? May need to reserve
     # more than 1x DH "worker", if it is more expensive than a "evaluator". See _balsam.py
-    WORKERS_PER_NODE = int(os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
-    KERAS_BACKEND = os.environ.get('KERAS_BACKEND', 'tensorflow')
-    os.environ['KERAS_BACKEND'] = KERAS_BACKEND
+    WORKERS_PER_NODE = int(os.environ.get("DEEPHYPER_WORKERS_PER_NODE", 1))
+    KERAS_BACKEND = os.environ.get("KERAS_BACKEND", "tensorflow")
+    os.environ["KERAS_BACKEND"] = KERAS_BACKEND
     assert os.path.isfile(PYTHON_EXE)
 
-
-    def __init__(self, run_function, cache_key=None, encoder=Encoder,
-                 seed=None, **kwargs):
-        self.encoder = encoder # dict --> uuid
+    def __init__(
+        self, run_function, cache_key=None, encoder=Encoder, seed=None, **kwargs
+    ):
+        self.encoder = encoder  # dict --> uuid
         self.pending_evals = {}  # uid --> Future
         self.finished_evals = OrderedDict()  # uid --> scalar
         self.requested_evals = []  # keys
         self.key_uid_map = {}  # map keys to uids
         self.uid_key_map = {}  # map uids to keys
         self.seed = seed
-        self.seed_high = 2**32 # exclusive
+        self.seed_high = 2 ** 32  # exclusive
 
-        self.stats = {
-            'num_cache_used': 0
-        }
+        self.stats = {"num_cache_used": 0}
 
         self.transaction_context = dummy_context
         self._start_sec = time.time()
@@ -81,59 +81,74 @@ class Evaluator:
         self._run_function = run_function
         self.num_workers = 0
 
-        if cache_key is not None:
+        if (cache_key is not None) and (cache_key != "to_dict"):
             if callable(cache_key):
                 self._gen_uid = cache_key
-            elif cache_key  == 'uuid':
+            elif cache_key == "uuid":
                 self._gen_uid = lambda d: uuid.uuid4()
             else:
-                raise DeephyperRuntimeError('The "cache_key" parameter of an Evaluator must be a callable!')
+                raise DeephyperRuntimeError(
+                    'The "cache_key" parameter of an Evaluator must be a callable!'
+                )
         else:
             self._gen_uid = lambda d: self.encode(d)
 
         moduleName = self._run_function.__module__
-        if moduleName == '__main__':
-            raise DeephyperRuntimeError(f'Evaluator will not execute function " {run_function.__name__}" because it is in the __main__ module.  Please provide a function imported from an external module!')
-
+        if moduleName == "__main__":
+            raise DeephyperRuntimeError(
+                f'Evaluator will not execute function " {run_function.__name__}" because it is in the __main__ module.  Please provide a function imported from an external module!'
+            )
 
     @staticmethod
-    def create(run_function, cache_key=None, method='subprocess', redis_address=None, **kwargs):
+    def create(
+        run_function, cache_key=None, method="subprocess", redis_address=None, **kwargs
+    ):
         available_methods = [
-            'balsam',
-            'subprocess',
-            'processPool',
-            'threadPool',
-            '__mpiPool',
-            'ray',
-            ]
+            "balsam",
+            "subprocess",
+            "processPool",
+            "threadPool",
+            "__mpiPool",
+            "ray",
+        ]
 
         if not method in available_methods:
-            raise DeephyperRuntimeError(f'The method "{method}" is not a valid method for an Evaluator!')
+            raise DeephyperRuntimeError(
+                f'The method "{method}" is not a valid method for an Evaluator!'
+            )
 
         if method == "balsam":
             from deephyper.evaluator._balsam import BalsamEvaluator
-            Eval = BalsamEvaluator(run_function, cache_key=cache_key,  **kwargs)
+
+            Eval = BalsamEvaluator(run_function, cache_key=cache_key, **kwargs)
         elif method == "subprocess":
             from deephyper.evaluator._subprocess import SubprocessEvaluator
-            Eval = SubprocessEvaluator(run_function, cache_key=cache_key,  **kwargs)
+
+            Eval = SubprocessEvaluator(run_function, cache_key=cache_key, **kwargs)
         elif method == "processPool":
             from deephyper.evaluator._processPool import ProcessPoolEvaluator
-            Eval = ProcessPoolEvaluator(run_function, cache_key=cache_key,  **kwargs)
+
+            Eval = ProcessPoolEvaluator(run_function, cache_key=cache_key, **kwargs)
         elif method == "threadPool":
             from deephyper.evaluator._threadPool import ThreadPoolEvaluator
-            Eval = ThreadPoolEvaluator(run_function, cache_key=cache_key,  **kwargs)
+
+            Eval = ThreadPoolEvaluator(run_function, cache_key=cache_key, **kwargs)
         elif method == "__mpiPool":
             from deephyper.evaluator._mpiWorkerPool import MPIWorkerPool
-            Eval = MPIWorkerPool(run_function, cache_key=cache_key,  **kwargs)
+
+            Eval = MPIWorkerPool(run_function, cache_key=cache_key, **kwargs)
         elif method == "ray":
             from deephyper.evaluator.ray_evaluator import RayEvaluator
-            Eval = RayEvaluator(run_function, cache_key=cache_key, redis_address=redis_address, **kwargs)
+
+            Eval = RayEvaluator(
+                run_function, cache_key=cache_key, redis_address=redis_address, **kwargs
+            )
 
         return Eval
 
     def encode(self, x):
         if not isinstance(x, dict):
-            raise ValueError(f'Expected dict, but got {type(x)}')
+            raise ValueError(f"Expected dict, but got {type(x)}")
         return json.dumps(x, cls=self.encoder)
 
     def _elapsed_sec(self):
@@ -144,18 +159,22 @@ class Evaluator:
         """
         x = json.loads(key)
         if not isinstance(x, dict):
-            raise ValueError(f'Expected dict, but got {type(x)}')
+            raise ValueError(f"Expected dict, but got {type(x)}")
         return x
 
     def add_eval(self, x):
-        if x.get('seed') is not None or self.seed is not None: # numpy seed fixed in Search.__init__
-            x['seed'] = np.random.randint(0, self.seed_high) # must be between (0, 2**32-1)
+        if (
+            x.get("seed") is not None or self.seed is not None
+        ):  # numpy seed fixed in Search.__init__
+            x["seed"] = np.random.randint(
+                0, self.seed_high
+            )  # must be between (0, 2**32-1)
 
         key = self.encode(x)
         self.requested_evals.append(key)
         uid = self._gen_uid(x)
         if uid in self.key_uid_map.values():
-            self.stats['num_cache_used'] += 1
+            self.stats["num_cache_used"] += 1
             logger.info(f"UID: {uid} already evaluated; skipping execution")
         else:
             future = self._eval_exec(x)
@@ -177,34 +196,36 @@ class Evaluator:
     def _eval_exec(self, x):
         raise NotImplementedError
 
-    def wait(self, futures, timeout=None, return_when='ANY_COMPLETED'):
+    def wait(self, futures, timeout=None, return_when="ANY_COMPLETED"):
         raise NotImplementedError
 
     @staticmethod
     def _parse(run_stdout):
-        y = sys.float_info.max
-        for line in run_stdout.split('\n'):
+        fail_return_value = Evaluator.FAIL_RETURN_VALUE
+        y = fail_return_value
+        for line in run_stdout.split("\n"):
             if "DH-OUTPUT:" in line.upper():
                 try:
                     y = float(line.split()[-1])
                 except ValueError:
-                    logger.exception("Could not parse DH-OUTPUT line:\n"+line)
-                    y = sys.float_info.max
+                    logger.exception("Could not parse DH-OUTPUT line:\n" + line)
+                    y = fail_return_value
                 break
         if isnan(y):
-            y = sys.float_info.max
+            y = fail_return_value
         return y
 
     @property
     def _runner_executable(self):
         funcName = self._run_function.__name__
         moduleName = self._run_function.__module__
-        assert moduleName != '__main__'
+        assert moduleName != "__main__"
         module = sys.modules[moduleName]
         modulePath = os.path.dirname(os.path.abspath(module.__file__))
         runnerPath = os.path.abspath(runner.__file__)
-        runner_exec = ' '.join((self.PYTHON_EXE, runnerPath, modulePath, moduleName,
-                                funcName))
+        runner_exec = " ".join(
+            (self.PYTHON_EXE, runnerPath, modulePath, moduleName, funcName)
+        )
         return runner_exec
 
     def await_evals(self, uids, timeout=None):
@@ -218,13 +239,13 @@ class Evaluator:
             list: list of results from awaited task.
         """
         keys = [self.uid_key_map[uid] for uid in uids]
-        futures = {uid: self.pending_evals[uid]
-                    for uid in set(uids) if uid in self.pending_evals}
+        futures = {
+            uid: self.pending_evals[uid] for uid in set(uids) if uid in self.pending_evals
+        }
         logger.info(f"Waiting on {len(futures)} evals to finish...")
 
-        logger.info(f'Blocking on completion of {len(futures)} pending evals')
-        self.wait(futures.values(), timeout=timeout,
-                    return_when='ALL_COMPLETED')
+        logger.info(f"Blocking on completion of {len(futures)} pending evals")
+        self.wait(futures.values(), timeout=timeout, return_when="ALL_COMPLETED")
         # TODO: on TimeoutError, kill the evals that did not finish; return infinity
         for uid in futures:
             y = futures[uid].result()
@@ -245,15 +266,14 @@ class Evaluator:
     def get_finished_evals(self, timeout=0.5):
         futures = self.pending_evals.values()
         try:
-            waitRes = self.wait(futures, timeout=timeout,
-                                return_when='ANY_COMPLETED')
+            waitRes = self.wait(futures, timeout=timeout, return_when="ANY_COMPLETED")
         except TimeoutError:
             pass
         else:
-            for future in (waitRes.done + waitRes.failed):
+            for future in waitRes.done + waitRes.failed:
                 uid = future.uid
                 y = future.result()
-                logger.info(f'New eval finished: {uid} --> {y}')
+                logger.info(f"New eval finished: {uid} --> {y}")
                 self.elapsed_times[uid] = self._elapsed_sec()
                 del self.pending_evals[uid]
                 self.finished_evals[uid] = y
@@ -289,13 +309,12 @@ class Evaluator:
             if saved_key is None:
                 result = self.decode(key)
             else:
-                result = {str(i): v for i, v in enumerate(
-                    self.decode(key)[saved_key])}
-            result['objective'] = self.finished_evals[uid]
-            result['elapsed_sec'] = self.elapsed_times[uid]
+                result = {str(i): v for i, v in enumerate(self.decode(key)[saved_key])}
+            result["objective"] = self.finished_evals[uid]
+            result["elapsed_sec"] = self.elapsed_times[uid]
             resultsList.append(result)
 
-        with open('results.csv', 'w') as fp:
+        with open("results.csv", "w") as fp:
             columns = resultsList[0].keys()
             writer = csv.DictWriter(fp, columns)
             writer.writeheader()

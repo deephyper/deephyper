@@ -1,4 +1,4 @@
-from deephyper.benchmark import NaProblem
+from deephyper.problem import NaProblem
 from nas_problems.polynome2.load_data import load_data
 from nas_problems.polynome2.search_space import create_search_space
 from deephyper.search.nas.model.preprocessing import minmaxstdscaler
@@ -14,25 +14,22 @@ Problem.search_space(create_search_space, num_layers=3)
 Problem.hyperparameters(
     batch_size=32,
     learning_rate=0.01,
-    optimizer='adam',
+    optimizer="adam",
     num_epochs=20,
     callbacks=dict(
         EarlyStopping=dict(
-            monitor='val_r2', # or 'val_acc' ?
-            mode='max',
-            verbose=0,
-            patience=5
+            monitor="val_r2", mode="max", verbose=0, patience=5  # or 'val_acc' ?
         )
-    )
+    ),
 )
 
-Problem.loss('mse') # or 'categorical_crossentropy' ?
+Problem.loss("mse")  # or 'categorical_crossentropy' ?
 
-Problem.metrics(['r2']) # or 'acc' ?
+Problem.metrics(["r2"])  # or 'acc' ?
 
-Problem.objective('val_r2__last') # or 'val_acc__last' ?
+Problem.objective("val_r2__last")  # or 'val_acc__last' ?
 
 
 # Just to print your problem, to test its definition and imports in the current python environment.
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(Problem)

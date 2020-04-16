@@ -14,10 +14,14 @@ sys.path.insert(0, here)
 from load_data import load_data
 
 
-def r2(y_pred, y_true):
-    SS_res = K.sum(K.square(y_true-y_pred))
-    SS_tot = K.sum(K.square(y_true - K.mean(y_true)))
-    return (1 - SS_res/(SS_tot + K.epsilon()))
+def r2(y_true, y_pred):
+    SS_res = keras.backend.sum(keras.backend.square(y_true - y_pred), axis=0)
+    SS_tot = keras.backend.sum(
+        keras.backend.square(y_true - keras.backend.mean(y_true, axis=0)), axis=0
+    )
+    output_scores = 1 - SS_res / (SS_tot + keras.backend.epsilon())
+    r2 = keras.backend.mean(output_scores)
+    return r2
 
 
 HISTORY = None
@@ -25,7 +29,7 @@ HISTORY = None
 
 def run(point):
     global HISTORY
-    (x_train, y_train), (x_test, y_test) = load_data()
+    (x_train, y_train), (x_valid, y_valid) = load_data()
 
     model = Sequential()
     model.add(Dense(
@@ -48,7 +52,7 @@ def run(point):
                             verbose=1,
                             patience=10
                         )],
-                        validation_data=(x_test, y_test))
+                        validation_data=(x_valid, y_valid))
 
     HISTORY = history.history
 
