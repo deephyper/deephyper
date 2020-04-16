@@ -94,8 +94,8 @@ The expected output is:
 
     train_X shape: (8000, 10)
     train_y shape: (8000, 1)
-    test_X shape: (2000, 10)
-    test_y shape: (2000, 1)
+    valid_X shape: (2000, 10)
+    valid_y shape: (2000, 1)
 
 The Keras model
 ===================

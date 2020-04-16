@@ -47,7 +47,7 @@ Create load_data.py
 ===================
 
 Fist, we will look at the ``load_data.py`` file that loads and returns the
-training and testing data. The ``load_data`` function generates data from
+training and validation data. The ``load_data`` function generates data from
 a function :math:`f` where :math:`X \in [a, b]^n`  such as
 :math:`f(X) = -\sum_{i=0}^{n-1} {x_i ^2}`:
 
@@ -70,8 +70,8 @@ The expected output is:
 
     train_X shape: (8000, 10)
     train_y shape: (8000, 1)
-    test_X shape: (2000, 10)
-    test_y shape: (2000, 1)
+    valid_X shape: (2000, 10)
+    valid_y shape: (2000, 1)
 
 Create search_space.py
 ======================
