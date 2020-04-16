@@ -13,12 +13,12 @@ from polynome2.load_data import load_data
 
 
 def r2(y_true, y_pred):
-    SS_res = tf.keras.backend.sum(tf.keras.backend.square(y_true - y_pred), axis=0)
-    SS_tot = tf.keras.backend.sum(
-        tf.keras.backend.square(y_true - tf.keras.backend.mean(y_true, axis=0)), axis=0
+    SS_res = keras.backend.sum(keras.backend.square(y_true - y_pred), axis=0)
+    SS_tot = keras.backend.sum(
+        keras.backend.square(y_true - keras.backend.mean(y_true, axis=0)), axis=0
     )
-    output_scores = 1 - SS_res / (SS_tot + tf.keras.backend.epsilon())
-    r2 = tf.keras.backend.mean(output_scores)
+    output_scores = 1 - SS_res / (SS_tot + keras.backend.epsilon())
+    r2 = keras.backend.mean(output_scores)
     return r2
 
 
@@ -64,4 +64,3 @@ if __name__ == "__main__":
     point = json.loads(sys.argv[1])
     objective = run(point)
     print("DH-OUTPUT:", objective)
-
