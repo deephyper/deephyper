@@ -27,8 +27,8 @@ VERSION = None
 # What packages are required for this module to be executed?
 REQUIRED = [
     "numpy",
-    # "scikit-optimize",
-    "scikit-optimize @ git+https://github.com/deephyper/scikit-optimize@dh-0.7.4#egg=scikit-optimize",
+    "dh-scikit-optimize",
+    # "scikit-optimize @ git+https://github.com/deephyper/scikit-optimize@dh-0.7.4#egg=scikit-optimize",
     "scikit-learn",
     "tqdm",
     "tensorflow>=1.13.1,<=1.15.2",
@@ -67,6 +67,7 @@ else:
 # What packages are optional?
 EXTRAS = {
     "tests": ["pytest"],
+    "dev": ["twine"],
     "docs": ["Sphinx>=1.8.2", "sphinx_rtd_theme"],
     "analytics": [
         "jupyter",
