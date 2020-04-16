@@ -237,6 +237,7 @@ autodoc_mock_imports = [
     "deap",
     "joblib",
     "sklearn",
+    "xgboost",
 ]
 
 # Remove <BLANKLINE>
