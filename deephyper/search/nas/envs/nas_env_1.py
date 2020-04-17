@@ -13,8 +13,7 @@ try:
 except ImportError:
     MPI = None
 
-dhlogger = util.conf_logger(
-    'deephyper.search.nas.env.neural_architecture_envs')
+dhlogger = util.conf_logger("deephyper.search.nas.env.nas_env_1")
 
 
 class NasEnv1(VecEnv):
@@ -34,15 +33,14 @@ class NasEnv1(VecEnv):
         self.structure = structure
         self.evaluator = evaluator
 
-        observation_space = spaces.Box(low=0,
-                                       high=self.structure.max_num_ops,
-                                       shape=(1,),
-                                       dtype=np.float32)
+        observation_space = spaces.Box(
+            low=0, high=self.structure.max_num_ops, shape=(1,), dtype=np.float32
+        )
         action_space = spaces.Discrete(self.structure.max_num_ops)
         super().__init__(num_envs, observation_space, action_space)
 
         self.action_buffers = [[] for _ in range(self.num_envs)]
-        self.states = np.stack([np.array([1.]) for _ in range(self.num_envs)])
+        self.states = np.stack([np.array([1.0]) for _ in range(self.num_envs)])
         self.num_actions_per_env = self.structure.num_nodes
         self.eval_uids = []
         self.stats = {}
@@ -58,20 +56,20 @@ class NasEnv1(VecEnv):
         if len(self.action_buffers[0]) == self.num_actions_per_env:
             XX = []
             for i in range(len(actions)):
-                conv_action = np.array(self.action_buffers[i]) / \
-                    self.structure.max_num_ops
+                conv_action = (
+                    np.array(self.action_buffers[i]) / self.structure.max_num_ops
+                )
 
                 cfg = self.space.copy()
-                cfg['arch_seq'] = list(conv_action)
+                cfg["arch_seq"] = list(conv_action)
                 XX.append(cfg)
 
-            self.stats['batch_computation'] = time.time()
+            self.stats["batch_computation"] = time.time()
 
             self.eval_uids = self.evaluator.add_eval_batch(XX)
 
     def step_wait(self):
-        obs = [np.array([float(action_seq[-1])])
-                for action_seq in self.action_buffers]
+        obs = [np.array([float(action_seq[-1])]) for action_seq in self.action_buffers]
 
         if len(self.action_buffers[0]) < self.num_actions_per_env:
             # Results are already known here...
@@ -80,27 +78,24 @@ class NasEnv1(VecEnv):
             infos = {}
         else:
             # Waiting results from balsam
-            results = self.evaluator.await_evals(
-                self.eval_uids)  # Not blocking
+            results = self.evaluator.await_evals(self.eval_uids)  # Not blocking
             rews = [rew for cfg, rew in results]  # Blocking generator
 
-            self.stats['batch_computation'] = time.time() - \
-                self.stats['batch_computation']
-            self.stats['num_cache_used'] = self.evaluator.stats['num_cache_used']
-            self.stats['rank'] = MPI.COMM_WORLD.Get_rank(
-            ) if MPI is not None else 0
+            self.stats["batch_computation"] = (
+                time.time() - self.stats["batch_computation"]
+            )
+            self.stats["num_cache_used"] = self.evaluator.stats["num_cache_used"]
+            self.stats["rank"] = MPI.COMM_WORLD.Get_rank() if MPI is not None else 0
 
             dones = [True for _ in rews]
-            infos = [{
-                'episode': {
-                    'r': r,
-                    'l': self.num_actions_per_env
-                } for r in rews}]  # TODO
+            infos = [
+                {"episode": {"r": r, "l": self.num_actions_per_env} for r in rews}
+            ]  # TODO
 
-            self.stats['rewards'] = rews
-            self.stats['arch_seq'] = self.action_buffers
+            self.stats["rewards"] = rews
+            self.stats["arch_seq"] = self.action_buffers / self.structure.max_num_ops
 
-            dhlogger.info(jm(type='env_stats', **self.stats))
+            dhlogger.info(jm(type="env_stats", **self.stats))
 
             self.reset()
 
@@ -111,9 +106,6 @@ class NasEnv1(VecEnv):
         return self.step_wait()
 
     def reset(self):
-        self.__init__(self.num_envs,
-                      self.space,
-                      self.evaluator,
-                      self.structure)
-        self._states = np.stack([np.array([1.]) for _ in range(self.num_envs)])
+        self.__init__(self.num_envs, self.space, self.evaluator, self.structure)
+        self._states = np.stack([np.array([1.0]) for _ in range(self.num_envs)])
         return self._states

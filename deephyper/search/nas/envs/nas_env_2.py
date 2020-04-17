@@ -13,7 +13,7 @@ try:
 except ImportError:
     MPI = None
 
-dhlogger = util.conf_logger("deephyper.search.nas.env.neural_architecture_envs")
+dhlogger = util.conf_logger("deephyper.search.nas.env.nas_env_2")
 
 
 class NasEnv2(VecEnv):
@@ -96,7 +96,7 @@ class NasEnv2(VecEnv):
             ]  # TODO
 
             self.stats["rewards"] = rews
-            self.stats["arch_seq"] = self.action_buffers
+            self.stats["arch_seq"] = self.action_buffers / self.structure.max_num_ops
 
             dhlogger.info(jm(type="env_stats", **self.stats))
 
