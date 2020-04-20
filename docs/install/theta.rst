@@ -15,11 +15,15 @@ DeepHyper is already installed in Theta and can be directly loaded as a module a
 
 ::
 
-    module load deephyper
+    module load miniconda-3
+    conda create -p dh-env --clone base
+    conda activate dh-env
+    conda install gxx_linux-64 gcc_linux-64
+    pip install deephyper[analytics]==0.1.5
 
 .. note::
     You might put
-    ``module load deephyper`` in your ``~/.bashrc`` if you want to use
+    ``module load miniconda-3`` in your ``~/.bashrc`` if you want to use
     *DeepHyper* in all new session.
 
 Developer installation
@@ -27,26 +31,18 @@ Developer installation
 
 1. Load the miniconda module::
 
-    module load miniconda-3.6/conda-4.5.12
+    module load miniconda-3
 
 .. note::
-    The miniconda module is using the `Intel channel <https://software.intel.com/en-us/articles/using-intel-distribution-for-python-with-anaconda>`_ which has optimized wheels using
-    MKL/DNN (available on KNL nodes with Xeon Phi CPU) for some packages.
+    The miniconda module is using the `Intel channel <https://software.intel.com/en-us/articles/using-intel-distribution-for-python-with-anaconda>`_ which has optimized wheels using MKL/DNN (available on KNL nodes with Xeon Phi CPU) for some packages.
 
 2. Create a virtual environment for your deephyper installation as a developer::
 
-    python -m venv --system-site-packages deephyper-dev-env
+    conda create -p dh-env --clone base
 
 3. Activate this freshly created virtual environment::
 
-    source deephyper-dev-env/bin/activate
-
-.. note::
-    For a temporary compatibility fix - please upgrade setuptools at this step using ``pip install --upgrade setuptools``.
-
-.. note::
-    To activate your virtualenv easier in the future you can define an alias
-    in your ``~/.bashrc`` such as ``alias act="source ~/deephyper-dev-env/bin/activate"``. Now you will clone deephyper sources and install it with ``pip``
+    conda activate dh-env
 
 4. Clone the deephyper repo::
 
