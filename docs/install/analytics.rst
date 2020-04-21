@@ -3,10 +3,6 @@ Analytics
 
 .. _analytics-local-install:
 
-Local
-=====
-
-
 From Pypi::
 
     pip install 'deephyper[analytics]'
@@ -15,17 +11,15 @@ or from github::
 
     pip install -e '.[analytics]'
 
-Theta
-=====
 
-Analytics are already part of the theta *deephyper* module hence
-you just need to do::
-
-    module load deephyper
-
-Make sure to have a *IPython* kernel using the good python interpretor::
+Then to make DeepHyper accessible in a notebook create a new *IPython* kernel with (before running the command make sure that your virtual environment is activated if you are using one)::
 
     python -m ipykernel install --user --name deephyper --display-name "Python (deephyper)"
+
+Now when you will open a Jupyter notebook the "Python (deephyper)" kernel will be available.
+
+Theta
+=====
 
 Then go to `Theta Jupyter <https://jupyter.alcf.anl.gov/theta>`_ and use
 your regular authentication method. The `Jupyter Hub tutorial <https://www.alcf.anl.gov/user-guides/jupyter-hub>`_
