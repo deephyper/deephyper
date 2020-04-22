@@ -2,8 +2,8 @@ import os
 import sys
 import time
 import logging
-from importlib import import_module
-from traceback import print_exception
+import traceback
+import importlib
 
 from deephyper.core.exceptions.loading import GenericLoaderError
 
@@ -71,7 +71,7 @@ def conf_logger(name):
     def log_uncaught_exceptions(exctype, value, tb):
         masterLogger.exception("Uncaught exception:", exc_info=(exctype, value, tb))
         sys.stderr.write(f"Uncaught exception {exctype}: {value}")
-        print_exception(exctype, value, tb)
+        traceback.print_exception(exctype, value, tb)
 
     sys.excepthook = log_uncaught_exceptions
     return logging.getLogger(name)
@@ -121,7 +121,7 @@ def load_attr_from(str_full_module):
         split_full = str_full_module.split(".")
         str_module = ".".join(split_full[:-1])
         str_attr = split_full[-1]
-        module = import_module(str_module)
+        module = importlib.import_module(str_module)
         return getattr(module, str_attr)
     else:
         return str_full_module
@@ -131,7 +131,7 @@ def load_from_file(fname, attribute):
     dirname, basename = os.path.split(fname)
     sys.path.insert(0, dirname)
     module_name = os.path.splitext(basename)[0]
-    module = import_module(module_name)
+    module = importlib.import_module(module_name)
     return getattr(module, attribute)
 
 
@@ -152,11 +152,19 @@ def generic_loader(target, attribute):
     if not isinstance(target, str):
         return target
 
-    try:
-        if os.path.isfile(os.path.abspath(target)):
-            target_file = os.path.abspath(target)
-            return load_from_file(target_file, attribute)
-        else:
-            return load_attr_from(target)
-    except (ValueError, ModuleNotFoundError, TypeError):
-        raise GenericLoaderError(target)
+    if os.path.isfile(os.path.abspath(target)):
+        target_file = os.path.abspath(target)
+        try:
+            attr = load_from_file(target_file, attribute)
+        except:
+            trace_source = traceback.format_exc()
+            raise GenericLoaderError(target, attribute, trace_source)
+    else:
+        try:
+            attr = load_attr_from(target)
+        except:
+            attribute = target.split(".")[-1]
+            trace_source = traceback.format_exc()
+            raise GenericLoaderError(target, attribute, trace_source)
+
+    return attr

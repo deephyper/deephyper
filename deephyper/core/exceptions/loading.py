@@ -7,8 +7,16 @@ class GenericLoaderError(DeephyperError):
     """Raised when the generic_loader function is failing.
     """
 
-    def __init__(self, str_value):
-        self.str_value = str_value
+    def __init__(self, target, attr, error_source, custom_msg=""):
+        self.target = target
+        self.attr = attr
+        self.error_source = error_source
+        self.custom_msg = custom_msg
 
     def __str__(self):
-        return f"The target '{self.str_value}' cannot be imported because it's neither a python script (i.e., the path does not exist) nor a python module!"
+        error = (
+            f"{self.error_source}\n"
+            f"{self.custom_msg}"
+            f"The attribute '{self.attr}' cannot be importe from '{self.target}'."
+        )
+        return error
