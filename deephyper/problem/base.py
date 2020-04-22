@@ -51,7 +51,7 @@ def check_hyperparameter(parameter, name=None):
         ):
             return csh.CategoricalHyperparameter(name, choices=parameter)
         elif all([isinstance(p, (int, float)) for p in parameter]):
-            return csh.OrdinalHyperparameter(name, choices=parameter)
+            return csh.OrdinalHyperparameter(name, sequence=parameter)
 
     raise ValueError(
         f"Invalid dimension {name}: {parameter}. Read the documentation for"

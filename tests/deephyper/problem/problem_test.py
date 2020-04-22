@@ -24,6 +24,9 @@ class TestHpProblem:
 
         pb = HpProblem()
         pb.add_dim("dim0", (-10, 10))
+        pb.add_dim("dim1", (-10.0, 10.0))
+        pb.add_dim("dim2", [1, 2, 3, 4])
+        pb.add_dim("dim3", ["cat0", 1, "cat2", 2.0])
 
     def test_kwargs(self):
         from deephyper.benchmark.problem import HpProblem
