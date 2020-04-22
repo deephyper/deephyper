@@ -6,7 +6,7 @@ Hyperparameter Search (HPS)
 Every DeepHyper search requires at least 2 Python objects as input:
 
  * ``run``: your "black-box" function returning the objective value to be maximized
- * ``Problem``: an instance of ``deephyper.benchmarks.Problem`` which defines the search space of input parameters to ``run``
+ * ``Problem``: an instance of ``deephyper.problem.BaseProblem`` which defines the search space of input parameters to ``run``
 
 These objects are required for both HPS and NAS, but take on a slightly different meaning in the context of NAS.
 
