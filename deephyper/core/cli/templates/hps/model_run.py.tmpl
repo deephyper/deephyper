@@ -9,7 +9,7 @@ from keras.optimizers import RMSprop
 import os
 import sys
 
-from {{ pb_folder }}.load_data import load_data
+from {{ pckg }}.{{ pb_folder }}.load_data import load_data
 
 def r2(y_true, y_pred):
     SS_res = keras.backend.sum(keras.backend.square(y_true - y_pred), axis=0)
@@ -24,20 +24,23 @@ def r2(y_true, y_pred):
 HISTORY = None
 
 
-def run(point):
+def run(config):
     global HISTORY
     (x_train, y_train), (x_valid, y_valid) = load_data()
 
+    if config['activation'] == 'NA':
+        config['activation'] = None
+
     model = Sequential()
     model.add(Dense(
-        point['units'],
-        activation=point['activation'],
+        config['units'],
+        activation=config['activation'],
         input_shape=tuple(np.shape(x_train)[1:])))
     model.add(Dense(1))
 
     model.summary()
 
-    model.compile(loss='mse', optimizer=RMSprop(lr=point['lr']), metrics=[r2])
+    model.compile(loss='mse', optimizer=RMSprop(lr=config['lr']), metrics=[r2])
 
     history = model.fit(x_train, y_train,
                         batch_size=64,
@@ -57,12 +60,12 @@ def run(point):
 
 
 if __name__ == '__main__':
-    point = {
+    config = {
         'units': 10,
         'activation': 'relu',
         'lr': 0.01
     }
-    objective = run(point)
+    objective = run(config)
     print('objective: ', objective)
     import matplotlib.pyplot as plt
     plt.plot(HISTORY['val_r2'])

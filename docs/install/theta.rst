@@ -19,7 +19,7 @@ DeepHyper is already installed in Theta and can be directly loaded as a module a
     conda create -p dh-env --clone base
     conda activate dh-env
     conda install gxx_linux-64 gcc_linux-64
-    pip install deephyper[analytics]==0.1.6
+    pip install deephyper[analytics]==0.1.7
 
 .. note::
     You might put
