@@ -47,7 +47,7 @@ indicate: 60 minute wall-time, submission to `debug-cache-quad` queue, running o
 and using the `mpi` job mode of Balsam. Refer to the Command Line Interface documentation for more information on this command.
 Create a new job::
 
-You can use `balsam ls` to see the job that was added to the database::
+You can use ``balsam ls`` to see the job that was added to the database::
 
     balsam ls jobs
 
@@ -166,7 +166,7 @@ where the ``--num-nodes 11`` argument specifies that there should be 11 agent no
 
 ::
 
-we have specified 128 nodes out of which 11 are agents, leaving us with 117 nodes to be equally distributed among the 11 agents. Since the number of free nodes is not perfectly divisible by 11, we are left with a remainder of 7 nodes that are unused while each agent has 10 worker nodes. 
+we have specified 128 nodes out of which 11 are agents, leaving us with 117 nodes to be equally distributed among the 11 agents. Since the number of free nodes is not perfectly divisible by 11, we are left with a remainder of 7 nodes that are unused while each agent has 10 worker nodes.
 
 In contrast for EVO, the ``num-nodes`` argument is kept restricted to 1 (for now) since it corresponds to running one evolutionary search with 127 nodes (assuming you have specified 128 nodes in the balsam submission). This looks like
 
