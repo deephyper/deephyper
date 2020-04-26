@@ -6,7 +6,7 @@ Evaluator Interface
 
 .. automodule:: deephyper.evaluator
 
-.. image:: ../_static/img/evaluator/evaluators-diag.png
+.. image:: ../_static/img/software/evaluators/evaluators-diag.png
    :scale: 25 %
    :alt: evaluator diag
    :align: center
