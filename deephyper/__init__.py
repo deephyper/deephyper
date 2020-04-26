@@ -17,7 +17,7 @@ It comprises three modules:
 * :ref:`SearchDH`: Search methods for NAS and HPS.  By extending the generic `Search` class, one can easily add new NAS or HPS methods to DeepHyper.
 
 
-DeepHyper installation requires **Python 3.6**.
+DeepHyper installation requires **Python 3.7**.
 
 """
 import os
