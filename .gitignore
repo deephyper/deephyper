@@ -168,6 +168,7 @@ logdir
 *log*
 !deephyper/core/logs
 !CHANGELOG.md
+*.tfrecord
 
 # Sphinx documentation
 _build/

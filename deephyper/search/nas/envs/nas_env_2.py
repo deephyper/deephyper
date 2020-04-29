@@ -96,7 +96,7 @@ class NasEnv2(VecEnv):
             ]  # TODO
 
             self.stats["rewards"] = rews
-            self.stats["arch_seq"] = self.action_buffers / self.structure.max_num_ops
+            self.stats["arch_seq"] = (np.array(self.action_buffers) / self.structure.max_num_ops).tolist()
 
             dhlogger.info(jm(type="env_stats", **self.stats))
 
