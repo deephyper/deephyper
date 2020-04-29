@@ -6,13 +6,21 @@ from tensorflow import keras
 
 from ....search import util
 from ..trainer.train_valid import TrainerTrainValid
-from .util import compute_objective, load_config, preproc_trainer, setup_data, setup_search_space
+from .util import (
+    compute_objective,
+    load_config,
+    preproc_trainer,
+    setup_data,
+    setup_search_space,
+)
 
 logger = util.conf_logger("deephyper.search.nas.run")
 
 # Default callbacks parameters
 default_callbacks_config = {
-    "EarlyStopping": dict(monitor="val_loss", min_delta=0, mode="min", verbose=0, patience=0),
+    "EarlyStopping": dict(
+        monitor="val_loss", min_delta=0, mode="min", verbose=0, patience=0
+    ),
     "TensorBoard": dict(
         log_dir="",
         histogram_freq=0,
