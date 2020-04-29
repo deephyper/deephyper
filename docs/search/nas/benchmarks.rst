@@ -23,6 +23,4 @@ NAS Benchmarks
 NasBench-101
 ------------
 
-NasBench-101 is a database of trained neural networks corresponding to a specific cell-based search space for convolution neural networks (`Link to the paper <https://arxiv.org/abs/1902.09635>`_).
-
 .. automodule:: deephyper.benchmark.nas.nasbench101
