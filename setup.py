@@ -45,6 +45,7 @@ REQUIRED = [
     "Jinja2",
     "ConfigSpace==0.4.12",
     "xgboost",
+    "horovod"
 ]
 
 if on_rtd:
