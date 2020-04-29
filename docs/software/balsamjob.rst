@@ -114,7 +114,7 @@ to illustrate the concepts of linking DeepHyper to a model running in a complete
 different programming environment. In that case, the most portable way to communicate between
 DeepHyper and the model is via command-line arguments and file I/O.
 
-In case your model runs in Python 3.6, it is straightforward
+In case your model runs in Python 3.7, it is straightforward
 to install Balsam and link to the job database directly from the model execution code.
 Then, models can read parameters and write results **directly to the Balsam database**, using
 the ``data`` attribute of the current job (``balsam.launcher.dag.current_job``).

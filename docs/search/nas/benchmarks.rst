@@ -1,10 +1,7 @@
-Benchmarks
-==============
-
 .. _available-nas-benchmarks:
 
-Available NAS benchmarks
----------------------------
+NAS Benchmarks
+==============
 
 .. automodule:: deephyper.benchmark.nas
 
@@ -22,3 +19,8 @@ Available NAS benchmarks
  polynome2Reg   Regression       Generation of points in N dimensions corresponding to y=sum(x_i^2)
  saddleReg      Regression       https://en.wikipedia.org/wiki/Saddle_point
 ============== ================ ========================================
+
+NasBench-101
+------------
+
+.. automodule:: deephyper.benchmark.nas.nasbench101

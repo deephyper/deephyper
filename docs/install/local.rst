@@ -1,7 +1,7 @@
 Local
 ******
 
-DeepHyper installation requires Python 3.6.
+DeepHyper installation requires Python 3.7.
 
 We recommend creating isolated Python environments on your local machine using ``virtaulenv`` or ``miniconda``.
 

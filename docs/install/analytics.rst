@@ -1,7 +1,7 @@
+.. _analytics-local-install:
+
 Analytics
 *********
-
-.. _analytics-local-install:
 
 From Pypi::
 

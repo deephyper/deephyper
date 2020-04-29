@@ -42,15 +42,16 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
     run/newproblem
     run/local
     run/theta
+    user_guides/choosing_scaling
     tutorials/job_management
-    software/balsamjob.rst
+    software/balsamjob
     usage/analytics
     search/nas/nas
     search/hps/hps
 
 .. toctree::
     :maxdepth: 3
-    :caption: Developer Guides
+    :caption: Software
 
     software/automl
     software/baselines
