@@ -49,30 +49,10 @@ class Ppo(ReinforcementLearningSearch):
         **kwargs
     ):
 
-        if MPI is None:
-            nenvs = 1
-        else:
-            nranks = MPI.COMM_WORLD.Get_size()
-            if evaluator == 'balsam':
-                balsam_launcher_nodes = int(
-                    os.environ.get('BALSAM_LAUNCHER_NODES', 1))
-                deephyper_workers_per_node = int(
-                    os.environ.get("DEEPHYPER_WORKERS_PER_NODE", 1)
-                )
-                nagents = nranks  # No parameter server here
-                n_free_nodes = balsam_launcher_nodes - nranks  # Number of free nodes
-                free_workers = (
-                    n_free_nodes * deephyper_workers_per_node
-                )  # Number of free workers
-                nenvs = free_workers // nagents
-            else:
-                nenvs = 1
-
         super().__init__(
             problem,
             run,
             alg="ppo2",
-            num_envs=nenvs,
             evaluator=evaluator,
             network=network,
             cliprange=cliprange,

@@ -3,9 +3,10 @@ import traceback
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
+import horovod.tensorflow.keras as hvd
 
 from ....search import util
-from ..trainer.train_valid import TrainerTrainValid
+from ..trainer.horovod_trainer import HorovodTrainerTrainValid
 from .util import (
     compute_objective,
     load_config,
@@ -30,7 +31,13 @@ default_callbacks_config = {
         write_images=False,
         update_freq="epoch",
     ),
+    "CSVLogger": dict(
+        filename="training.csv",
+        append=True
+    )
 }
+# Name of Callbacks reserved for root node
+hvd_root_cb = ["ModelCheckpoint", "Tensorboard", "CSVLogger"]
 
 
 def run(config):
@@ -48,6 +55,9 @@ def run(config):
 
     search_space = setup_search_space(config, input_shape, output_shape, seed=seed)
 
+    # Initialize Horovod
+    hvd.init()
+
     model_created = False
     try:
         model = search_space.create_model()
@@ -58,31 +68,39 @@ def run(config):
 
     if model_created:
 
-        # Setup callbacks
+        # Setup callbacks only
         callbacks = []
         cb_requires_valid = False  # Callbacks requires validation data
         callbacks_config = config["hyperparameters"].get("callbacks")
         if callbacks_config is not None:
             for cb_name, cb_conf in callbacks_config.items():
                 if cb_name in default_callbacks_config:
-                    default_callbacks_config[cb_name].update(cb_conf)
+                    # cb_bame in hvd_root_cb implies hvd.rank() == 0
+                    if not(cb_name in hvd_root_cb) or hvd.rank() == 0:
+                        default_callbacks_config[cb_name].update(cb_conf)
 
-                    # Special dynamic parameters for callbacks
-                    if cb_name == "ModelCheckpoint":
-                        default_callbacks_config[cb_name][
-                            "filepath"
-                        ] = f'best_model_{config["id"]}.h5'
+                        # Special dynamic parameters for callbacks
+                        if cb_name == "ModelCheckpoint":
+                            default_callbacks_config[cb_name][
+                                "filepath"
+                            ] = f'best_model_{config["id"]}.h5'
 
-                    # Import and create corresponding callback
-                    Callback = getattr(keras.callbacks, cb_name)
-                    callbacks.append(Callback(**default_callbacks_config[cb_name]))
+                        # Import and create corresponding callback
+                        Callback = getattr(keras.callbacks, cb_name)
+                        callbacks.append(Callback(**default_callbacks_config[cb_name]))
 
-                    if cb_name in ["EarlyStopping"]:
-                        cb_requires_valid = "val" in cb_conf["monitor"].split("_")
+                        if cb_name in ["EarlyStopping"]:
+                            cb_requires_valid = "val" in cb_conf["monitor"].split("_")
                 else:
                     logger.error(f"'{cb_name}' is not an accepted callback!")
 
-        trainer = TrainerTrainValid(config=config, model=model)
+        trainer = HorovodTrainerTrainValid(config=config, model=model)
+        callbacks.append(
+            # Horovod: broadcast initial variable states from rank 0 to all other processes.
+            # This is necessary to ensure consistent initialization of all workers when
+            # training is started with random weights or restored from a checkpoint.
+            hvd.callbacks.BroadcastGlobalVariablesCallback(0)
+        )
         trainer.callbacks.extend(callbacks)
 
         last_only, with_pred = preproc_trainer(config)

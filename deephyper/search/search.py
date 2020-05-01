@@ -8,7 +8,6 @@ from deephyper.search import util
 from deephyper.evaluator.evaluate import Evaluator
 
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -33,35 +32,47 @@ class Search:
         max_evals (int): the maximum number of evaluations to run. The exact behavior related to this parameter can vary in different search.
     """
 
-    def __init__(self, problem: str, run: str, evaluator: str, max_evals: int=1000000, seed: int=None, **kwargs):
-        kwargs['problem'] = problem
-        kwargs['run'] = run
-        kwargs['evaluator'] = evaluator
-        kwargs['max_evals'] = max_evals # * For retro compatibility
-        kwargs['seed'] = seed
+    def __init__(
+        self,
+        problem: str,
+        run: str,
+        evaluator: str,
+        max_evals: int = 1000000,
+        seed: int = None,
+        num_nodes_master: int=1,
+        **kwargs,
+    ):
+        kwargs["problem"] = problem
+        kwargs["run"] = run
+        kwargs["evaluator"] = evaluator
+        kwargs["max_evals"] = max_evals  # * For retro compatibility
+        kwargs["seed"] = seed
 
-        self.problem = util.generic_loader(problem, 'Problem')
+        # Loading problem instance and run function
+        self.problem = util.generic_loader(problem, "Problem")
         if self.problem.seed == None:
             self.problem.seed = seed
         else:
-            kwargs['seed'] = self.problem.seed
-        self.run_func = util.generic_loader(run, 'run')
-        notice = f'Maximizing the return value of function: {run}'
+            kwargs["seed"] = self.problem.seed
+        self.run_func = util.generic_loader(run, "run")
+
+        notice = f"Maximizing the return value of function: {run}"
         logger.info(notice)
         util.banner(notice)
 
-        self.evaluator = Evaluator.create(self.run_func, method=evaluator, **kwargs)
+        self.evaluator = Evaluator.create(self.run_func, method=evaluator, num_nodes_master=num_nodes_master, **kwargs)
         self.num_workers = self.evaluator.num_workers
         self.max_evals = max_evals
 
         # set the random seed
         np.random.seed(self.problem.seed)
 
-        logger.info(f'Options: '+pformat(kwargs, indent=4))
-        logger.info('Hyperparameter space definition: ' +
-                    pformat(self.problem.space, indent=4))
-        logger.info(f'Created {evaluator} evaluator')
-        logger.info(f'Evaluator: num_workers is {self.num_workers}')
+        logger.info(f"Options: " + pformat(kwargs, indent=4))
+        logger.info(
+            "Hyperparameter space definition: " + pformat(self.problem.space, indent=4)
+        )
+        logger.info(f"Created {evaluator} evaluator")
+        logger.info(f"Evaluator: num_workers is {self.num_workers}")
 
     def main(self):
         raise NotImplementedError
@@ -92,45 +103,66 @@ class Search:
     @staticmethod
     def _base_parser(parser=None) -> argparse.ArgumentParser:
         if parser is None:
-            parser = argparse.ArgumentParser(conflict_handler='resolve')
-        parser.add_argument("--problem",
-                            help="Module path to the Problem instance you want to use for the search."
-                            )
-        parser.add_argument("--run",
-                            help="Module path to the run function you want to use for the search."
-                            )
-        parser.add_argument("--backend",
-                            default='tensorflow',
-                            help="Keras backend module name"
-                            )
-        parser.add_argument('--max-evals',
-                            type=int, default=1000000,
-                            help='maximum number of evaluations'
-                            )
-        parser.add_argument('--eval-timeout-minutes',
-                            type=int,
-                            default=4096,
-                            help="Kill evals that take longer than this"
-                            )
-        parser.add_argument('--evaluator',
-                            default='ray',
-                            choices=[
-                                'balsam',
-                                'ray',
-                                'subprocess',
-                                'processPool',
-                                'threadPool',
-                            ],
-                            help="The evaluator is an object used to evaluate models."
-                            )
-        parser.add_argument('--redis-address',
-                                default=None,
-                                help='This parameter is mandatory when using evaluator==ray. It reference the "IP:PORT" redis address for the RAY-driver to connect on the RAY-head.'
-                                )
-        parser.add_argument('--seed',
-                            default=None,
-                            help='Random seed used.')
-        parser.add_argument('--cache-key',
-                            default='uuid',
-                            help='Cache policy.')
+            parser = argparse.ArgumentParser(conflict_handler="resolve")
+        parser.add_argument(
+            "--problem",
+            help="Module path to the Problem instance you want to use for the search.",
+        )
+        parser.add_argument(
+            "--run",
+            help="Module path to the run function you want to use for the search.",
+        )
+        parser.add_argument(
+            "--backend", default="tensorflow", help="Keras backend module name"
+        )
+        parser.add_argument(
+            "--max-evals", type=int, default=1000000, help="maximum number of evaluations"
+        )
+        parser.add_argument(
+            "--eval-timeout-minutes",
+            type=int,
+            default=4096,
+            help="Kill evals that take longer than this",
+        )
+        parser.add_argument(
+            "--evaluator",
+            default="ray",
+            choices=["balsam", "ray", "subprocess", "processPool", "threadPool"],
+            help="The evaluator is an object used to evaluate models.",
+        )
+        parser.add_argument(
+            "--redis-address",
+            default=None,
+            help='This parameter is mandatory when using evaluator==ray. It reference the "IP:PORT" redis address for the RAY-driver to connect on the RAY-head.',
+        )
+        parser.add_argument("--seed", default=None, help="Random seed used.")
+        parser.add_argument(
+            "--cache-key",
+            default="uuid",
+            choices=["uuid", "to_dict"],
+            help="Cache policy.",
+        )
+        parser.add_argument(
+            "--num-ranks-per-node",
+            default=1,
+            type=int,
+            help="Number of ranks per nodes for each evaluation. Only valid if evaluator==balsam and balsam job-mode is 'mpi'.",
+        )
+        parser.add_argument(
+            "--num-evals-per-node",
+            default=1,
+            type=int,
+            help="Number of evaluations performed on each node. Only valid if evaluator==balsam and balsam job-mode is 'serial'."
+        )
+        parser.add_argument(
+            "--num-nodes-per-eval",
+            default=1,
+            type=int,
+            help="Number of nodes used for each evaluation. This Parameter is usefull when using data-parallelism or model-parallism with evaluator==balsam and balsam job-mode is 'mpi'.",
+        )
+        parser.add_argument(
+            "--num-threads-per-rank",
+            default=64,
+            type=int,
+            help="Number of threads per MPI rank. Only valid if evaluator==balsam and balsam job-mode is 'mpi'.")
         return parser

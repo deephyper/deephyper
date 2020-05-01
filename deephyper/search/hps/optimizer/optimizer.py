@@ -1,15 +1,17 @@
-from sys import float_info
-import math
 import functools
-from skopt import Optimizer as SkOptimizer
-from skopt.learning import (
-    RandomForestRegressor,
-    ExtraTreesRegressor,
-    GradientBoostingQuantileRegressor,
-)
+import math
+from sys import float_info
+
 import numpy as np
 from numpy import inf
+
 from deephyper.search import util
+from skopt import Optimizer as SkOptimizer
+from skopt.learning import (
+    ExtraTreesRegressor,
+    GradientBoostingQuantileRegressor,
+    RandomForestRegressor,
+)
 
 logger = util.conf_logger("deephyper.search.hps.optimizer.optimizer")
 
@@ -92,7 +94,7 @@ class Optimizer:
         )
 
         self._optimizer = SkOptimizer(
-            dimensions=self.space,  # self.space.values(),
+            dimensions=self.space,
             base_estimator=base_estimator,
             acq_optimizer="sampling",
             acq_func=acq_func,
@@ -176,14 +178,12 @@ class Optimizer:
             if len(XX) < n_points:
                 XX += self._optimizer.ask(n_points=n_points - len(XX))
         else:
-            # print("HERE 3")
             XX = self._optimizer.ask(n_points=n_points)
         for x in XX:
             y = self._get_lie()
             x = [convert2np(xi) for xi in x]
             key = tuple(self.to_dict(x).values())
             if key not in self.evals:
-                # print("HERE 2")
                 self.counter += 1
                 self._optimizer.tell(x, y)
                 self.evals[key] = y
@@ -201,7 +201,7 @@ class Optimizer:
             xy_dict[key] = y if y > np.finfo(np.float32).min else minval
 
         XX, YY = self.dict_to_xy(xy_dict)
-        # print("XX: ", XX)
+
         selection = [
             (xi, yi)
             for xi, yi in zip(self._optimizer.Xi, self._optimizer.yi)
@@ -209,20 +209,14 @@ class Optimizer:
                 any([equal_list(xi, x) for x in XX])
             )  # all([diff(xi, x) for x in XX])
         ]
-        # for xi, yi in zip(self._optimizer.Xi, self._optimizer.yi):
-        #     for x in XX:
-        #         print("+ ", xi, x, equal_list(xi, x))
-        #         types = zip([type(e) for e in xi], [type(e) for e in x])
-        #         for a, b in types:
-        #             print("    ", a, b)
+
         new_Xi, new_yi = list(zip(*selection)) if len(selection) > 0 else ([], [])
         new_Xi, new_yi = list(new_Xi), list(new_yi)
-        # print("Xi: ", self._optimizer.Xi)
-        # print("new_Xi: ", new_Xi)
-        # print(new_yi)
+
         self._optimizer.Xi = new_Xi
         self._optimizer.yi = new_yi
         self._optimizer.tell(XX, YY)
+
         assert len(self._optimizer.Xi) == len(self._optimizer.yi) == self.counter, (
             f"where len(self._optimizer.Xi)=={len(self._optimizer.Xi)}, "
             f"len(self._optimizer.yi)=={len(self._optimizer.yi)},"

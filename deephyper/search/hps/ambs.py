@@ -48,7 +48,7 @@ class AMBS(Search):
         kwargs["cache_key"] = "to_dict"
         super().__init__(problem, run, evaluator, **kwargs)
         logger.info("Initializing AMBS")
-        self.optimizer = Optimizer(self.problem, self.num_workers, **kwargs)
+        self.optimizer = Optimizer(self.problem, self.evaluator.num_workers, **kwargs)
 
     @staticmethod
     def _extend_parser(parser):
@@ -80,7 +80,6 @@ class AMBS(Search):
             "--n-jobs",
             type=int,
             default=1,
-            # TODO(KGF): slightly inconsistent with nas/ambs.py (cores vs. parallel jobs)
             help="number of cores to use for the 'surrogate model' (learner), if n_jobs=-1 then it will use all cores available.",
         )
         return parser
@@ -90,8 +89,8 @@ class AMBS(Search):
         chkpoint_counter = 0
         num_evals = 0
 
-        logger.info(f"Generating {self.num_workers} initial points...")
-        XX = self.optimizer.ask_initial(n_points=self.num_workers)
+        logger.info(f"Generating {self.evaluator.num_workers} initial points...")
+        XX = self.optimizer.ask_initial(n_points=self.evaluator.num_workers)
         self.evaluator.add_eval_batch(XX)
 
         # MAIN LOOP

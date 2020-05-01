@@ -28,7 +28,6 @@ VERSION = None
 REQUIRED = [
     "numpy",
     "dh-scikit-optimize",
-    # "scikit-optimize @ git+https://github.com/deephyper/scikit-optimize@dh-0.7.4#egg=scikit-optimize",
     "scikit-learn",
     "tqdm",
     "tensorflow>=1.13.1,<=1.15.2",
@@ -45,6 +44,7 @@ REQUIRED = [
     "Jinja2",
     "ConfigSpace==0.4.12",
     "xgboost",
+    "horovod",
 ]
 
 if on_rtd:
