@@ -4,7 +4,7 @@ Data Parallelism
 The `Horovod software <https://github.com/horovod/horovod>`_ is used to do data parallel traininig with deep neural neworks. Data parallelism consists in spliting the original dataset in multiple parts and then performing an distributed computation of gradients as shown in the following image.
 
 .. image:: ../_static/img/user_guides/data_parallelism/data-parallelism.png
-   :scale: 50 %
+   :scale: 100 %
    :alt: data parallelism with horovod
    :align: center
 

@@ -239,7 +239,6 @@ autodoc_mock_imports = [
     "sklearn",
     "xgboost",
     "horovod",
-    "tensorflow",
 ]
 
 # Remove <BLANKLINE>
