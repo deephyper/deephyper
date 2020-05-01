@@ -49,6 +49,7 @@ REQUIRED = [
 
 if on_rtd:
     REQUIRED.remove("balsam-flow==0.3.8")
+    REQUIRED.remove("horovod")
 
 if on_theta:  # --system-site-packages
     # we want to use the default mpi4py from cray environment
