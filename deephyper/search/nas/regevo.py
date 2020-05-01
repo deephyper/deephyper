@@ -9,11 +9,11 @@ from deephyper.core.parser import add_arguments_from_signature
 from deephyper.core.logs.logging import JsonMessage as jm
 from deephyper.evaluator.evaluate import Encoder
 
-dhlogger = util.conf_logger(
-    'deephyper.search.nas.regevo')
+dhlogger = util.conf_logger("deephyper.search.nas.regevo")
 
 # def key(d):
 #     return json.dumps(dict(arch_seq=d['arch_seq']), cls=Encoder)
+
 
 class RegularizedEvolution(NeuralArchitectureSearch):
     """Regularized evolution.
@@ -28,40 +28,34 @@ class RegularizedEvolution(NeuralArchitectureSearch):
         sample_size (int, optional): the number of individuals that should participate in each tournament. Defaults to 10.
     """
 
-    def __init__(self, problem, run, evaluator,
-        population_size=100,
-        sample_size=10,
-        **kwargs):
-
-        if evaluator == 'balsam':
-            balsam_launcher_nodes = int(
-                os.environ.get('BALSAM_LAUNCHER_NODES', 1))
-            deephyper_workers_per_node = int(
-                os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
-            n_free_nodes = balsam_launcher_nodes - 1  # Number of free nodes
-            self.free_workers = n_free_nodes * \
-                deephyper_workers_per_node  # Number of free workers
-        else:
-            self.free_workers = 1
+    def __init__(
+        self, problem, run, evaluator, population_size=100, sample_size=10, **kwargs
+    ):
 
         super().__init__(problem=problem, run=run, evaluator=evaluator, **kwargs)
 
-        dhlogger.info(jm(
-            type='start_infos',
-            alg='aging-evolution',
-            nworkers=self.free_workers,
-            encoded_space=json.dumps(self.problem.space, cls=Encoder)
-            ))
+        self.free_workers = self.evaluator.num_workers
+
+        dhlogger.info(
+            jm(
+                type="start_infos",
+                alg="aging-evolution",
+                nworkers=self.evaluator.num_workers,
+                encoded_space=json.dumps(self.problem.space, cls=Encoder),
+            )
+        )
 
         # Setup
         self.pb_dict = self.problem.space
-        cs_kwargs = self.pb_dict['create_search_space'].get('kwargs')
+        cs_kwargs = self.pb_dict["create_search_space"].get("kwargs")
         if cs_kwargs is None:
-            search_space = self.pb_dict['create_search_space']['func']()
+            search_space = self.pb_dict["create_search_space"]["func"]()
         else:
-            search_space = self.pb_dict['create_search_space']['func'](**cs_kwargs)
+            search_space = self.pb_dict["create_search_space"]["func"](**cs_kwargs)
 
-        self.space_list = [(0, vnode.num_ops-1) for vnode in search_space.variable_nodes]
+        self.space_list = [
+            (0, vnode.num_ops - 1) for vnode in search_space.variable_nodes
+        ]
         self.population_size = population_size
         self.sample_size = sample_size
 
@@ -80,21 +74,17 @@ class RegularizedEvolution(NeuralArchitectureSearch):
         # Filling available nodes at start
         self.evaluator.add_eval_batch(self.gen_random_batch(size=self.free_workers))
 
-
         # Main loop
         while num_evals_done < self.max_evals:
 
             # Collecting finished evaluations
             new_results = list(self.evaluator.get_finished_evals())
 
-
             if len(new_results) > 0:
                 population.extend(new_results)
-                stats = {
-                    'num_cache_used': self.evaluator.stats['num_cache_used'],
-                }
-                dhlogger.info(jm(type='env_stats', **stats))
-                self.evaluator.dump_evals(saved_key='arch_seq')
+                stats = {"num_cache_used": self.evaluator.stats["num_cache_used"]}
+                dhlogger.info(jm(type="env_stats", **stats))
+                self.evaluator.dump_evals(saved_key="arch_seq")
 
                 num_received = len(new_results)
                 num_evals_done += num_received
@@ -105,7 +95,9 @@ class RegularizedEvolution(NeuralArchitectureSearch):
                     # For each new parent/result we create a child from it
                     for _ in range(len(new_results)):
                         # select_sample
-                        indexes = np.random.choice(self.population_size, self.sample_size, replace=False)
+                        indexes = np.random.choice(
+                            self.population_size, self.sample_size, replace=False
+                        )
                         sample = [population[i] for i in indexes]
                         # select_parent
                         parent = self.select_parent(sample)
@@ -116,23 +108,25 @@ class RegularizedEvolution(NeuralArchitectureSearch):
                     # submit_childs
                     if len(new_results) > 0:
                         self.evaluator.add_eval_batch(children_batch)
-                else: # If the population is too small keep increasing it
-                    self.evaluator.add_eval_batch(self.gen_random_batch(size=len(new_results)))
+                else:  # If the population is too small keep increasing it
+                    self.evaluator.add_eval_batch(
+                        self.gen_random_batch(size=len(new_results))
+                    )
 
     def select_parent(self, sample: list) -> list:
         cfg, _ = max(sample, key=lambda x: x[1])
-        return cfg['arch_seq']
+        return cfg["arch_seq"]
 
     def gen_random_batch(self, size: int) -> list:
         batch = []
         for _ in range(size):
             cfg = self.pb_dict.copy()
-            cfg['arch_seq'] = self.random_search_space()
+            cfg["arch_seq"] = self.random_search_space()
             batch.append(cfg)
         return batch
 
     def random_search_space(self) -> list:
-        return [np.random.choice(b+1) for (_,b) in self.space_list]
+        return [np.random.choice(b + 1) for (_, b) in self.space_list]
 
     def copy_mutate_arch(self, parent_arch: list) -> dict:
         """
@@ -149,14 +143,14 @@ class RegularizedEvolution(NeuralArchitectureSearch):
         child_arch = parent_arch[:]
 
         range_upper_bound = self.space_list[i][1]
-        elements = [j for j in range(range_upper_bound+1) if j != child_arch[i]]
+        elements = [j for j in range(range_upper_bound + 1) if j != child_arch[i]]
 
         # The mutation has to create a different search_space!
         sample = np.random.choice(elements, 1)[0]
 
         child_arch[i] = sample
         cfg = self.pb_dict.copy()
-        cfg['arch_seq'] = child_arch
+        cfg["arch_seq"] = child_arch
         return cfg
 
 

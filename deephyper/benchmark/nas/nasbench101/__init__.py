@@ -9,7 +9,11 @@ Or, if you want to Download the dataset only with models evaluated for 108 epoch
 
     sh download_only108.sh
 
-An example usage with the regularized evolution search is::
+An example usage with the regularized evolution search if you used ``download_only108.sh``::
 
-    python -m deephyper.search.nas.regevo --problem deephyper.benchmark.nas.nasbench101.problem.Problem --evaluator threadPool --run deephyper.benchmark.nas.nasbench101.run.run --max-evals 10000
+    python -m deephyper.search.nas.regevo --problem deephyper.benchmark.nas.nasbench101.problem.Problem --evaluator threadPool --run deephyper.benchmark.nas.nasbench101.run_only108.run --max-evals 1000
+
+Or, if you used ``download_full.sh``::
+
+    python -m deephyper.search.nas.regevo --problem deephyper.benchmark.nas.nasbench101.problem.Problem --evaluator threadPool --run deephyper.benchmark.nas.nasbench101.run_full.run --max-evals 1000
 """

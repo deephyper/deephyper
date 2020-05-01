@@ -21,12 +21,10 @@ except ImportError:
 
 dhlogger = util.conf_logger("deephyper.search.nas.rl")
 
+
 def get_env_class(env_name):
     """Return environment class corresponding to environment name"""
-    envs = {
-        "NasEnv1": NasEnv1,
-        "NasEnv2": NasEnv2
-    }
+    envs = {"NasEnv1": NasEnv1, "NasEnv2": NasEnv2}
     assert env_name in envs.keys(), f"Environment '{env_name}' does not exist!"
     return envs[env_name]
 
@@ -40,62 +38,54 @@ class ReinforcementLearningSearch(NeuralArchitectureSearch):
         evaluator (str): value in ['balsam', 'subprocess', 'processPool', 'threadPool'].
         alg (str): algorithm to use among ['ppo2',].
         network (str/function): policy network.
-        num_envs (int): number of environments per agent to run in
-            parallel, it corresponds to the number of evaluation per
-            batch per agent.
         cache_key (str): ...
     """
 
-    def __init__(self, problem, run, evaluator, alg, network, num_envs, env, **kwargs):
+    def __init__(self, problem, run, evaluator, alg, network, env, **kwargs):
 
         self.kwargs = kwargs
 
-        if evaluator == 'balsam':
-            balsam_launcher_nodes = int(
-                os.environ.get('BALSAM_LAUNCHER_NODES', 1))
-            deephyper_workers_per_node = int(
-                os.environ.get("DEEPHYPER_WORKERS_PER_NODE", 1)
-            )
-            nworkers = balsam_launcher_nodes * deephyper_workers_per_node
-        else:
-            nworkers = 1
+        # It is assumed here that one agent is using one node
+        self.num_agents = 1 if MPI is None else MPI.COMM_WORLD.Get_size()
+        self.rank = 0 if MPI is None else MPI.COMM_WORLD.Get_rank()
 
-        if MPI is None:
-            self.rank = 0
-            super().__init__(problem=problem, run=run, evaluator=evaluator, **kwargs)
+        if MPI is None or MPI.COMM_WORLD.Get_rank() == 0:
+            super().__init__(
+                problem=problem,
+                run=run,
+                evaluator=evaluator,
+                num_nodes_master=self.num_agents,
+                **kwargs,
+            )  # create self.evaluator
+
+        MPI.COMM_WORLD.Barrier()  # Creating the app first in rank 0 only
+
+        if self.rank != 0:
+            super().__init__(
+                problem=problem,
+                run=run,
+                evaluator=evaluator,
+                num_nodes_master=self.num_agents,
+                **kwargs,
+            )
+        # Set in super : self.problem, self.run_func, self.evaluator
+
+        # Number of parallel environments per agent
+        self.num_envs_per_agent = self.evaluator.num_workers // self.num_agents
+
+        if MPI is None or MPI.COMM_WORLD.Get_rank() == 0:
             dhlogger.info(
                 jm(
                     type="start_infos",
                     seed=self.problem.seed,
                     alg=alg,
                     network=network,
-                    num_envs_per_agent=num_envs,
+                    num_envs_per_agent=self.num_envs_per_agent,
                     nagents=1,
-                    nworkers=nworkers,
+                    nworkers=self.evaluator.num_workers,
                     encoded_space=json.dumps(self.problem.space, cls=Encoder),
                 )
             )
-        else:
-            self.rank = MPI.COMM_WORLD.Get_rank()
-            if self.rank == 0:
-                nranks = MPI.COMM_WORLD.Get_size()
-                super().__init__(problem=problem, run=run, evaluator=evaluator, **kwargs)
-                dhlogger.info(
-                    jm(
-                        type="start_infos",
-                        seed=self.problem.seed,
-                        alg=alg,
-                        network=network,
-                        num_envs_per_agent=num_envs,
-                        nagents=nranks,
-                        nworkers=nworkers,
-                        encoded_space=json.dumps(self.problem.space, cls=Encoder),
-                    )
-                )
-            MPI.COMM_WORLD.Barrier()
-            if self.rank != 0:
-                super().__init__(problem=problem, run=run, evaluator=evaluator, **kwargs)
-        # set in super : self.problem, self.run_func, self.evaluator
 
         if self.problem.seed is not None:
             tf.random.set_random_seed(self.problem.seed)
@@ -110,11 +100,10 @@ class ReinforcementLearningSearch(NeuralArchitectureSearch):
         dhlogger.info(f"rank: {self.rank}")
         dhlogger.info(f"alg: {alg}")
         dhlogger.info(f"network: {network}")
-        dhlogger.info(f"num_envs_per_agent: {num_envs}")
+        dhlogger.info(f"num_envs_per_agent: {self.num_envs_per_agent}")
 
         self.alg = alg
         self.network = network
-        self.num_envs_per_agent = num_envs
         self.env_class = get_env_class(env)
 
     @staticmethod

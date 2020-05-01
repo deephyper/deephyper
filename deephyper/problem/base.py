@@ -164,14 +164,8 @@ def test_base_problem():
     pb = BaseProblem(42)
     pb.add_hyperparameter(alpha)
     pb.add_hyperparameter(beta)
-    pb.add_
 
     print(pb)
-    # point = pb.space.sample_configuration()
-    # for e, v in dict(point).items():
-    #     print(e, v)
-    # #for e in pb.space:
-    # #   print(e)
 
 
 if __name__ == "__main__":

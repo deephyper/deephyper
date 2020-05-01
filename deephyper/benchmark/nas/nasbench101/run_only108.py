@@ -5,8 +5,7 @@ from nasbench import api
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 # # Use nasbench_full.tfrecord for full dataset (run download command above).
-# data_file = os.path.join(HERE, "nasbench_only108.tfrecord")
-data_file = os.path.join(HERE, "nasbench_full.tfrecord")
+data_file = os.path.join(HERE, "nasbench_only108.tfrecord")
 nasbench = api.NASBench(data_file)
 
 def run(config):

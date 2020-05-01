@@ -30,28 +30,41 @@ class BalsamEvaluator(Evaluator):
             used as the key for caching evaluations. Multiple inputs that map to the same
             hashable key will only be evaluated once. If ``None``, then cache_key defaults
             to a lossless (identity) encoding of the input dict.
+        num_nodes_per_eval (int):
     """
 
-    def __init__(self, run_function, cache_key=None, **kwargs):
+    def __init__(self, run_function, cache_key=None, num_nodes_master=1, num_nodes_per_eval=1, num_ranks_per_node=1, num_evals_per_node=1, num_threads_per_rank=64, **kwargs):
         super().__init__(run_function, cache_key)
         self.id_key_map = {}
+
+        # Attributes related to scaling policy
+        self.num_nodes_master = num_nodes_master
+        self.num_nodes_per_eval = num_nodes_per_eval
+        self.num_ranks_per_node = num_ranks_per_node
+        self.num_evals_per_node = num_evals_per_node
+        self.num_threads_per_rank = num_threads_per_rank
+
         # reserve 1 DeepHyper worker for searcher process
         if LAUNCHER_NODES == 1:
             # --job-mode=serial edge case where 2 ranks (Master, Worker) are placed on the node
-            self.num_workers = self.WORKERS_PER_NODE - 1
+            self.num_workers = self.num_evals_per_node - 1
             # 1 node case for --job-mode=mpi will result in search process occupying
             # entirety of the only node ---> no evaluator workers (also should have DEEPHYPER_WORKERS_PER_NODE=1)
         else:
             if JOB_MODE == "serial":
                 # MPI ensemble Master rank0 occupies entirety of first node
-                self.num_workers = (LAUNCHER_NODES - 1) * self.WORKERS_PER_NODE - 1
+                assert self.num_nodes_master == 1, f"num_nodes_master=={self.num_nodes_master} when it should be 1 because job-mode is 'serial'."
+                self.num_workers = (LAUNCHER_NODES - 1) * self.num_evals_per_node - self.num_nodes_master
             if JOB_MODE == "mpi":
                 # all nodes free, but restricted to 1 job=worker per node
-                assert self.WORKERS_PER_NODE == 1
-                self.num_workers = LAUNCHER_NODES * self.WORKERS_PER_NODE - 1
+                self.num_workers = LAUNCHER_NODES - self.num_nodes_master
+                self.num_workers //= self.num_nodes_per_eval
+        assert self.num_workers > 0, f"The number of workers is {self.num_workers} when it shoud be > 0."
+
         logger.info("Balsam Evaluator instantiated")
         logger.debug(f"LAUNCHER_NODES = {LAUNCHER_NODES}")
-        logger.debug(f"WORKERS_PER_NODE = {self.WORKERS_PER_NODE}")
+        logger.debug(f"WORKERS_PER_NODE = {self.num_evals_per_node}")
+        logger.debug(f"NUM_NODES_PER_EVAL = {self.num_nodes_per_eval}")
         logger.debug(f"Total number of workers: {self.num_workers}")
         logger.info(f"Backend runs will use Python: {self.PYTHON_EXE}")
         self._init_app()
@@ -109,13 +122,13 @@ class BalsamEvaluator(Evaluator):
     def _create_balsam_task(self, x):
         args = f"'{self.encode(x)}'"
         envs = f"KERAS_BACKEND={self.KERAS_BACKEND}"
-        # envs = ":".join(f'KERAS_BACKEND={self.KERAS_BACKEND} OMP_NUM_THREADS=62 KMP_BLOCKTIME=0 KMP_AFFINITY=\"granularity=fine,compact,1,0\"'.split())
         resources = {
-            "num_nodes": 1,
-            "ranks_per_node": 1,
-            "threads_per_rank": 64,
-            "node_packing_count": self.WORKERS_PER_NODE,
+            "num_nodes": self.num_nodes_per_eval,
+            "ranks_per_node": self.num_ranks_per_node,
+            "threads_per_rank": self.num_threads_per_rank,
+            "node_packing_count": self.num_evals_per_node
         }
+
         for key in resources:
             if key in x:
                 resources[key] = x[key]
@@ -135,5 +148,5 @@ class BalsamEvaluator(Evaluator):
 
     @staticmethod
     def _on_fail(job):
-        logger.info(f"Task {job.cute_id} failed; setting objective as float_max")
+        logger.info(f"Task {job.cute_id} failed; setting objective as float_min")
         return Evaluator.FAIL_RETURN_VALUE
