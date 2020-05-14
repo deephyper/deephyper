@@ -25,7 +25,7 @@ def create_search_space(
     Returns:
         AutoKSearchSpace: A search space object based on tf.keras implementations.
     """
-    ss = AutoKSearchSpace(input_shape, output_shape, regression=True)
+    ss = AutoKSearchSpace(input_shape, output_shape, regression=regression)
 
     prev_node = ss.input_nodes[0]
 
