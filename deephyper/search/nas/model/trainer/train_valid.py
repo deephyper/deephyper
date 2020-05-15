@@ -27,7 +27,7 @@ class TrainerTrainValid:
         else:
             self.sess = tf.compat.v1.keras.backend.get_session()
         self.model = model
-        self.callbacks = [keras.callbacks.CSVLogger("training.csv", append=True)]
+        self.callbacks = []
 
         self.data = self.config[a.data]
 
@@ -38,6 +38,7 @@ class TrainerTrainValid:
         self.learning_rate = self.config_hp.get(a.learning_rate, 1e-3)
         self.num_epochs = self.config_hp[a.num_epochs]
         self.verbose = self.config_hp.get("verbose", 1)
+        # self.balanced = self.config_hp.get("balanced", False)
 
         self.setup_losses_and_metrics()
 
@@ -317,7 +318,6 @@ class TrainerTrainValid:
                 optimizer=self.optimizer,
                 loss=self.loss_metrics,
                 loss_weights=self.loss_weights,
-                # loss_weights=[1.0 for _ in range(len(self.loss_metrics))],
                 metrics=self.metrics_name,
             )
         else:

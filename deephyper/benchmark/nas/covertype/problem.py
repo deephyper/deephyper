@@ -13,7 +13,12 @@ Problem.load_data(load_data)
 Problem.search_space(create_search_space, num_layers=10, regression=False)
 
 Problem.hyperparameters(
-    batch_size=512, learning_rate=0.01, optimizer="adam", num_epochs=50, verbose=0
+    batch_size=512,
+    learning_rate=0.01,
+    optimizer="adam",
+    num_epochs=50,
+    verbose=0,
+    callbacks=dict(CSVExtendedLogger=dict()),
 )
 
 Problem.loss("categorical_crossentropy")

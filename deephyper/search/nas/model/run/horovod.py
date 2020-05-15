@@ -5,6 +5,7 @@ import tensorflow as tf
 from tensorflow import keras
 import horovod.tensorflow.keras as hvd
 
+from .....contrib.callbacks import import_callback
 from ....search import util
 from ..trainer.horovod_trainer import HorovodTrainerTrainValid
 from .util import (
@@ -31,13 +32,11 @@ default_callbacks_config = {
         write_images=False,
         update_freq="epoch",
     ),
-    "CSVLogger": dict(
-        filename="training.csv",
-        append=True
-    )
+    "CSVLogger": dict(filename="training.csv", append=True),
+    "CSVExtendedLogger": dict(filename="training.csv", append=True),
 }
 # Name of Callbacks reserved for root node
-hvd_root_cb = ["ModelCheckpoint", "Tensorboard", "CSVLogger"]
+hvd_root_cb = ["ModelCheckpoint", "Tensorboard", "CSVLogger", "CSVExtendedLogger"]
 
 
 def run(config):
@@ -76,7 +75,7 @@ def run(config):
             for cb_name, cb_conf in callbacks_config.items():
                 if cb_name in default_callbacks_config:
                     # cb_bame in hvd_root_cb implies hvd.rank() == 0
-                    if not(cb_name in hvd_root_cb) or hvd.rank() == 0:
+                    if not (cb_name in hvd_root_cb) or hvd.rank() == 0:
                         default_callbacks_config[cb_name].update(cb_conf)
 
                         # Special dynamic parameters for callbacks
@@ -86,7 +85,7 @@ def run(config):
                             ] = f'best_model_{config["id"]}.h5'
 
                         # Import and create corresponding callback
-                        Callback = getattr(keras.callbacks, cb_name)
+                        Callback = import_callback(cb_name)
                         callbacks.append(Callback(**default_callbacks_config[cb_name]))
 
                         if cb_name in ["EarlyStopping"]:
