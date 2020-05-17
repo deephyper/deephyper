@@ -2,8 +2,10 @@ from sklearn import preprocessing
 import numpy as np
 
 from deephyper.benchmark.datasets import covertype
+from deephyper.benchmark.datasets.util import cache_load_data
 
 
+@cache_load_data("/dev/shm/covertype.npz")
 def load_data():
 
     (X_train, y_train), (X_valid, y_valid), _ = covertype.load_data(seed=42)
@@ -17,18 +19,6 @@ def load_data():
     print(f"X_valid shape: {np.shape(X_valid)}")
     print(f"y_valid shape: {np.shape(y_valid)}")
     return (X_train, y_train), (X_valid, y_valid)
-
-
-def balanced_acc(y_true, y_pred):
-    cw = [
-        0.3929159,
-        0.29221019,
-        2.3239212,
-        29.31505002,
-        8.97601266,
-        4.79652788,
-        4.02543524,
-    ]
 
 
 def test_baseline():
