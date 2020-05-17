@@ -27,6 +27,7 @@ class HorovodTrainerTrainValid:
             self.sess = keras.backend.get_session()
         else:
             if os.environ.get("OMP_NUM_THREADS", None) is not None:
+                logger.debug(f"OMP_NUM_THREADS is {os.environ.get('OMP_NUM_THREADS')}")
                 sess_config = tf.ConfigProto()
                 sess_config.intra_op_parallelism_threads = os.environ.get(
                     "OMP_NUM_THREADS"
