@@ -137,11 +137,12 @@ class BalsamEvaluator(Evaluator):
 
     def _create_balsam_task(self, x):
         args = f"'{self.encode(x)}'"
-        envs = f"KERAS_BACKEND={self.KERAS_BACKEND}:KMP_BLOCK_TIME=0:OMP_NUM_THREADS=128:HOROVOD_TIMELINE=timeline.json"
+        envs = f"KERAS_BACKEND={self.KERAS_BACKEND}:KMP_BLOCK_TIME=0:HOROVOD_TIMELINE=timeline.json"
         resources = {
             "num_nodes": self.num_nodes_per_eval,
             "ranks_per_node": self.num_ranks_per_node,
             "threads_per_rank": self.num_threads_per_rank,
+            "threads_per_core": 2,
             "node_packing_count": self.num_evals_per_node,
             "cpu_affinity": "depth",
         }

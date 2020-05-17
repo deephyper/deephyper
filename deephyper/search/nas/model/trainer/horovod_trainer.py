@@ -28,8 +28,10 @@ class HorovodTrainerTrainValid:
         else:
             if os.environ.get("OMP_NUM_THREADS", None) is not None:
                 sess_config = tf.ConfigProto()
-                sess_config.intra_op_parallelism_threads = 128
-                sess_config.intra_op_parallelism_threads = 2
+                sess_config.intra_op_parallelism_threads = os.environ.get(
+                    "OMP_NUM_THREADS"
+                )
+                sess_config.inter_op_parallelism_threads = 2
                 session = tf.Session(config=sess_config)
                 tf.compat.v1.keras.backend.set_session(session)
             self.sess = tf.compat.v1.keras.backend.get_session()
