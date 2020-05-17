@@ -6,7 +6,7 @@ from deephyper.benchmark.datasets.util import cache_load_data
 
 
 @cache_load_data("/dev/shm/covertype.npz")
-def load_data():
+def load_data_cache():
 
     (X_train, y_train), (X_valid, y_valid), _ = covertype.load_data(seed=42)
     preprocessor = preprocessing.OneHotEncoder()
@@ -56,6 +56,10 @@ def test_baseline():
         return bacc
 
     baseline_classifier.evaluate(balanced_acc)
+
+
+def load_data():
+    return load_data_cache()
 
 
 if __name__ == "__main__":
