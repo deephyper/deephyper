@@ -15,7 +15,7 @@ from .... import util
 from .. import arch as a
 from .. import train_utils as U
 
-logger = util.conf_logger("deephyper.model.trainer")
+logger = util.conf_logger(__name__)
 
 
 class HorovodTrainerTrainValid:
@@ -29,8 +29,8 @@ class HorovodTrainerTrainValid:
             if os.environ.get("OMP_NUM_THREADS", None) is not None:
                 logger.debug(f"OMP_NUM_THREADS is {os.environ.get('OMP_NUM_THREADS')}")
                 sess_config = tf.ConfigProto()
-                sess_config.intra_op_parallelism_threads = os.environ.get(
-                    "OMP_NUM_THREADS"
+                sess_config.intra_op_parallelism_threads = int(
+                    os.environ.get("OMP_NUM_THREADS")
                 )
                 sess_config.inter_op_parallelism_threads = 2
                 session = tf.Session(config=sess_config)
