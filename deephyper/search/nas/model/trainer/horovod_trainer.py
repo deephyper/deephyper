@@ -1,4 +1,5 @@
 import math
+import os
 import time
 import traceback
 from inspect import signature
@@ -25,6 +26,12 @@ class HorovodTrainerTrainValid:
         if tf.__version__ == "1.13.1":
             self.sess = keras.backend.get_session()
         else:
+            if os.environ.get("OMP_NUM_THREADS", None) is not None:
+                sess_config = tf.ConfigProto()
+                sess_config.intra_op_parallelism_threads = 128
+                sess_config.intra_op_parallelism_threads = 2
+                session = tf.Session(config=sess_config)
+                tf.compat.v1.keras.backend.set_session(session)
             self.sess = tf.compat.v1.keras.backend.get_session()
         self.model = model
         self.callbacks = []
@@ -37,7 +44,11 @@ class HorovodTrainerTrainValid:
         self.batch_size = self.config_hp.get(a.batch_size, 32)
         self.learning_rate = self.config_hp.get(a.learning_rate, 1e-3) * hvd.size()
         self.num_epochs = self.config_hp[a.num_epochs]
-        self.verbose = self.config_hp.get("verbose", 1) if self.config_hp.get("verbose", 1) and hvd.rank() == 0 else 0
+        self.verbose = (
+            self.config_hp.get("verbose", 1)
+            if self.config_hp.get("verbose", 1) and hvd.rank() == 0
+            else 0
+        )
 
         self.setup_losses_and_metrics()
 

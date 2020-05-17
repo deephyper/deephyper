@@ -1,7 +1,7 @@
 import traceback
 import os
 
-os.environ["HOROVOD_TIMELINE"] = os.path.join(os.getcwd(), "timeline.json")
+# os.environ["HOROVOD_TIMELINE"] = os.path.join(os.getcwd(), "timeline.json")
 
 import numpy as np
 import tensorflow as tf
