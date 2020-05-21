@@ -3,7 +3,7 @@ from collections import OrderedDict
 from contextlib import suppress as dummy_context
 from math import isnan
 import numpy as np
-from numpy import integer, floating, ndarray
+from numpy import integer, floating, ndarray, bool_
 import json
 import uuid
 import logging
@@ -30,6 +30,8 @@ class Encoder(json.JSONEncoder):
             return int(obj)
         elif isinstance(obj, floating):
             return float(obj)
+        elif isinstance(obj, bool_):
+            return bool(obj)
         elif isinstance(obj, ndarray):
             return obj.tolist()
         elif isinstance(obj, types.FunctionType):
