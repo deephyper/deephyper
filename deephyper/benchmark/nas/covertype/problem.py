@@ -1,3 +1,7 @@
+"""
+deephyper nas random --evaluator subprocess --problem deephyper.benchmark.nas.covertype.problem.Problem --max-evals 10
+"""
+
 from deephyper.benchmark.nas.covertype.load_data import load_data
 from deephyper.problem import NaProblem
 from deephyper.search.nas.model.baseline.dense_skipco import create_search_space
@@ -16,7 +20,7 @@ Problem.hyperparameters(
     batch_size=512,
     learning_rate=0.01,
     optimizer="adam",
-    num_epochs=50,
+    num_epochs=1,  # 50,
     verbose=0,
     callbacks=dict(CSVExtendedLogger=dict()),
 )

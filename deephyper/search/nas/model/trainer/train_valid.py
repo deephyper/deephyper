@@ -28,12 +28,12 @@ class TrainerTrainValid:
         else:
             if os.environ.get("OMP_NUM_THREADS", None) is not None:
                 logger.debug(f"OMP_NUM_THREADS is {os.environ.get('OMP_NUM_THREADS')}")
-                sess_config = tf.ConfigProto()
+                sess_config = tf.compat.v1.ConfigProto()
                 sess_config.intra_op_parallelism_threads = int(
                     os.environ.get("OMP_NUM_THREADS")
                 )
                 sess_config.inter_op_parallelism_threads = 2
-                session = tf.Session(config=sess_config)
+                session = tf.compat.v1.Session(config=sess_config)
                 tf.compat.v1.keras.backend.set_session(session)
             self.sess = tf.compat.v1.keras.backend.get_session()
         self.model = model

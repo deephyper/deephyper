@@ -25,7 +25,9 @@ def test_baseline():
     """Test data with RandomForest
 
     accuracy_score on Train:  1.0
-    accuracy_score on Test:  0.9416247606296025
+    accuracy_score on Test:  0.9408463203126216
+    balanced_acc on Train:  1.0
+    balanced_acc on Test:  0.877023562682862
     """
     from sklearn.ensemble import RandomForestClassifier
     from deephyper.baseline import BaseClassifierPipeline
@@ -63,5 +65,5 @@ def load_data():
 
 
 if __name__ == "__main__":
-    load_data()
-    # test_baseline()
+    # load_data()
+    test_baseline()
