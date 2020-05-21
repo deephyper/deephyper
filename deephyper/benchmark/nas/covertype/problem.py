@@ -1,6 +1,10 @@
+<<<<<<< HEAD
 """
 deephyper nas random --evaluator subprocess --problem deephyper.benchmark.nas.covertype.problem.Problem --max-evals 10
 """
+=======
+import traceback
+>>>>>>> a4aa4b2b0f72752c670f2a21bc4f2ded538831ff
 
 from deephyper.benchmark.nas.covertype.load_data import load_data
 from deephyper.problem import NaProblem
@@ -20,7 +24,7 @@ Problem.hyperparameters(
     batch_size=512,
     learning_rate=0.01,
     optimizer="adam",
-    num_epochs=1,  # 50,
+    num_epochs=1, #50,
     verbose=0,
     callbacks=dict(CSVExtendedLogger=dict()),
 )
@@ -46,6 +50,7 @@ def bacc_with_pred(infos):
         sw = np.array([cw[class_ - 1] for class_ in y_true])
         bacc = metrics.accuracy_score(y_true, y_pred, sample_weight=sw)
     except:
+        traceback.print_exc()
         bacc = -1
     return bacc
 

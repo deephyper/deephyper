@@ -362,8 +362,11 @@ class HorovodTrainerTrainValid:
             )
 
         if dataset == "valid":
+            valid_steps = self.valid_size // self.batch_size
+            if valid_steps * self.batch_size < self.valid_size:
+                valid_steps += 1
             y_pred = self.model.predict(
-                self.dataset_valid, steps=self.valid_steps_per_epoch
+                self.dataset_valid, steps=valid_steps
             )
         else:  # dataset == 'train'
             y_pred = self.model.predict(
