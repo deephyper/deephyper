@@ -89,12 +89,6 @@ def run(config):
                     if not (cb_name in hvd_root_cb) or hvd.rank() == 0:
                         default_callbacks_config[cb_name].update(cb_conf)
 
-                        # Special dynamic parameters for callbacks
-                        if cb_name == "ModelCheckpoint":
-                            default_callbacks_config[cb_name][
-                                "filepath"
-                            ] = f'best_model_{config["id"]}.h5'
-
                         # Import and create corresponding callback
                         Callback = import_callback(cb_name)
                         callbacks.append(Callback(**default_callbacks_config[cb_name]))
