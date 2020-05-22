@@ -22,6 +22,14 @@ default_callbacks_config = {
     "EarlyStopping": dict(
         monitor="val_loss", min_delta=0, mode="min", verbose=0, patience=0
     ),
+    "ModelCheckpoint": dict(
+        monitor="val_loss",
+        mode="min",
+        save_best_only=True,
+        verbose=1,
+        filepath="model.h5",
+        save_weights_only=False,
+    ),
     "TensorBoard": dict(
         log_dir="",
         histogram_freq=0,

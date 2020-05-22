@@ -3,17 +3,24 @@ import numpy as np
 
 from deephyper.benchmark.datasets import covertype
 from deephyper.benchmark.datasets.util import cache_load_data
+from deephyper.search.nas.model.preprocessing import minmaxstdscaler
 
 
 @cache_load_data("/dev/shm/covertype.npz")
 def load_data_cache():
 
     (X_train, y_train), (X_valid, y_valid), _ = covertype.load_data(seed=42)
-    preprocessor = preprocessing.OneHotEncoder()
+
+    prepro_output = preprocessing.OneHotEncoder()
     y_train = y_train.reshape(-1, 1)
     y_valid = y_valid.reshape(-1, 1)
-    y_train = preprocessor.fit_transform(y_train).toarray()
-    y_valid = preprocessor.transform(y_valid).toarray()
+    y_train = prepro_output.fit_transform(y_train).toarray()
+    y_valid = prepro_output.transform(y_valid).toarray()
+
+    prepro_input = minmaxstdscaler()
+    X_train = prepro_input.fit_transform(X_train)
+    X_valid = prepro_input.transform(X_valid)
+
     print(f"X_train shape: {np.shape(X_train)}")
     print(f"y_train shape: {np.shape(y_train)}")
     print(f"X_valid shape: {np.shape(X_valid)}")
@@ -65,5 +72,5 @@ def load_data():
 
 
 if __name__ == "__main__":
-    # load_data()
-    test_baseline()
+    load_data()
+    # test_baseline()
