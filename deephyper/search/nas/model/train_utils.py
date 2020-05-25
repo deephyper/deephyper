@@ -39,14 +39,6 @@ def check_data_config(data_dict):
 # Metrics with tensors
 
 
-# def r2(y_true, y_pred):
-#     SS_res = tf.keras.backend.sum(tf.keras.backend.square(y_true - y_pred))
-#     SS_tot = tf.keras.backend.sum(
-#         tf.keras.backend.square(y_true - tf.keras.backend.mean(y_true))
-#     )
-#     return 1 - SS_res / (SS_tot + tf.keras.backend.epsilon())
-
-
 def r2(y_true, y_pred):
     SS_res = tf.keras.backend.sum(tf.keras.backend.square(y_true - y_pred), axis=0)
     SS_tot = tf.keras.backend.sum(
