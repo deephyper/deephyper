@@ -211,7 +211,7 @@ We have tested the syntax in all of these by running them individually. Now, let
 .. code-block:: console
     :caption: bash
 
-    deephyper hps ambs --problem polynome2.problem.Problem --run polynome2.model_run.run
+    deephyper hps ambs --problem hps_demo.polynome2.problem.Problem --run hps_demo.polynome2.model_run.run
 
 .. note::
 
@@ -291,8 +291,8 @@ Set up the demo ``polynome2`` problem, as before:
 .. code-block:: console
     :caption: bash
 
-    $ deephyper start-project demo
-    $ cd demo
+    $ deephyper start-project hps_demo
+    $ cd hps_demo/hps_demo/
     $ deephyper new-problem hps polynome2
 
 
@@ -301,7 +301,7 @@ Use the ``balsam-submit`` command to set up and dispatch an ``AMBS`` job to the 
 .. code-block:: console
     :caption: bash
 
-    $ deephyper balsam-submit hps polynome2_demo -p polynome2.problem.Problem -r polynome2.model_run.run  \
+    $ deephyper balsam-submit hps polynome2_demo -p hps_demo.polynome2.problem.Problem -r hps_demo.polynome2.model_run.run  \
        -t 30 -q debug-cache-quad -n 4 -A datascience -j mpi
 
 
