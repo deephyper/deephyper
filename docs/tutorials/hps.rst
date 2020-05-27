@@ -36,8 +36,8 @@ search problem instances that are automatically installed and importable across 
 A new ``hps_demo`` directory is created, containing the following files::
 
       hps_demo/
-            __init__.py
             hps_demo/
+                __init__.py
             setup.py
 
 We can now define DeepHyper search problems inside this directory, using either
@@ -58,8 +58,8 @@ sample code in the files ``__init__.py``, ``load_data.py``, ``model_run.py``, an
 Overall, your project directory should look like::
 
       hps_demo/
-            __init__.py
             hps_demo/
+                __init__.py
                 polynome2/
                     __init__.py
                     load_data.py
@@ -201,6 +201,7 @@ Running the search locally
 Everything is ready to run. Recall the Python files defining our experiment::
 
       polynome2/
+            __init__.py
             load_data.py
             model_run.py
             problem.py
