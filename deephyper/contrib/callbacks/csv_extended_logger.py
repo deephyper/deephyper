@@ -56,7 +56,9 @@ class CSVExtendedLogger(tf.keras.callbacks.Callback):
         self.timestamp = time.time()
 
     def on_epoch_end(self, epoch, logs=None):
-        duration = time.time() - self.timestamp  # duration of curent epoch
+        timestamp = time.time()
+        duration = timestamp - self.timestamp  # duration of curent epoch
+
         logs = logs or {}
 
         def handle_value(k):
@@ -80,7 +82,7 @@ class CSVExtendedLogger(tf.keras.callbacks.Callback):
             class CustomDialect(csv.excel):
                 delimiter = self.sep
 
-            fieldnames = ["epoch", "duration"] + self.keys
+            fieldnames = ["epoch", "timestamp", "duration"] + self.keys
             if six.PY2:
                 fieldnames = [unicode(x) for x in fieldnames]
 
@@ -90,7 +92,9 @@ class CSVExtendedLogger(tf.keras.callbacks.Callback):
             if self.append_header:
                 self.writer.writeheader()
 
-        row_dict = collections.OrderedDict({"epoch": epoch, "duration": duration})
+        row_dict = collections.OrderedDict(
+            {"epoch": epoch, "timestamp": timestamp, "duration": duration}
+        )
         row_dict.update((key, handle_value(logs[key])) for key in self.keys)
         self.writer.writerow(row_dict)
         self.csv_file.flush()

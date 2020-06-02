@@ -7,7 +7,8 @@ from inspect import signature
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-import horovod.tensorflow.keras as hvd
+import horovod.tensorflow.keras as keras_hvd
+import horovod.tensorflow as tf_hvd
 
 from .....core.logs.logging import JsonMessage as jm
 from .....core.exceptions import DeephyperRuntimeError
@@ -45,11 +46,13 @@ class HorovodTrainerTrainValid:
         self.optimizer_name = self.config_hp.get(a.optimizer, "adam")
         self.optimizer_eps = self.config_hp.get("epsilon", None)
         self.batch_size = self.config_hp.get(a.batch_size, 32)
-        self.learning_rate = self.config_hp.get(a.learning_rate, 1e-3) * hvd.size()
+
+        self.learning_rate = self.config_hp.get(a.learning_rate, 1e-3)
+
         self.num_epochs = self.config_hp[a.num_epochs]
         self.verbose = (
             self.config_hp.get("verbose", 1)
-            if self.config_hp.get("verbose", 1) and hvd.rank() == 0
+            if self.config_hp.get("verbose", 1) and keras_hvd.rank() == 0
             else 0
         )
 
@@ -132,8 +135,8 @@ class HorovodTrainerTrainValid:
         if self.valid_steps_per_epoch * self.batch_size < self.valid_size:
             self.valid_steps_per_epoch += 1
 
-        self.train_steps_per_epoch //= hvd.size()
-        self.valid_steps_per_epoch //= hvd.size()
+        self.train_steps_per_epoch //= keras_hvd.size()
+        self.valid_steps_per_epoch //= keras_hvd.size()
 
     def load_data_generator(self):
         self.train_gen = self.data["train_gen"]
@@ -286,7 +289,17 @@ class HorovodTrainerTrainValid:
                     tf.TensorShape([*self.data_shapes[1]]),
                 ),
             )
-        self.dataset_train = self.dataset_train.batch(self.batch_size).repeat()
+
+        self.dataset_train = self.dataset_train.shard(
+            num_shards=tf_hvd.size(), index=tf_hvd.rank()
+        )
+
+        self.dataset_train = self.dataset_train.shuffle(
+            self.train_size // tf_hvd.size(), reshuffle_each_iteration=True
+        )
+
+        self.dataset_train = self.dataset_train.batch(self.batch_size)
+        self.dataset_train = self.dataset_train.repeat()
 
     def set_dataset_valid(self):
         if self.data_config_type == "ndarray":
@@ -327,7 +340,12 @@ class HorovodTrainerTrainValid:
                 self.learning_rate / self.num_epochs if self.num_epochs > 0 else 1
             )
             params["decay"] = decay_rate
-        self.optimizer = hvd.DistributedOptimizer(optimizer_fn(**params))
+
+        self.optimizer = keras_hvd.DistributedOptimizer(optimizer_fn(**params))
+
+        self.optimizer = keras_hvd.DistributedOptimizer(
+            optimizer_fn(lr=self.learning_rate)
+        )
 
         if type(self.loss_metrics) is dict:
             self.model.compile(
@@ -365,9 +383,7 @@ class HorovodTrainerTrainValid:
             valid_steps = self.valid_size // self.batch_size
             if valid_steps * self.batch_size < self.valid_size:
                 valid_steps += 1
-            y_pred = self.model.predict(
-                self.dataset_valid, steps=valid_steps
-            )
+            y_pred = self.model.predict(self.dataset_valid, steps=valid_steps)
         else:  # dataset == 'train'
             y_pred = self.model.predict(
                 self.dataset_train, steps=self.train_steps_per_epoch
