@@ -7,8 +7,7 @@ from inspect import signature
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-import horovod.tensorflow.keras as keras_hvd
-import horovod.tensorflow as tf_hvd
+import horovod.tensorflow.keras as hvd
 
 from .....core.logs.logging import JsonMessage as jm
 from .....core.exceptions import DeephyperRuntimeError
@@ -52,7 +51,7 @@ class HorovodTrainerTrainValid:
         self.num_epochs = self.config_hp[a.num_epochs]
         self.verbose = (
             self.config_hp.get("verbose", 1)
-            if self.config_hp.get("verbose", 1) and keras_hvd.rank() == 0
+            if self.config_hp.get("verbose", 1) and hvd.rank() == 0
             else 0
         )
 
@@ -135,8 +134,8 @@ class HorovodTrainerTrainValid:
         if self.valid_steps_per_epoch * self.batch_size < self.valid_size:
             self.valid_steps_per_epoch += 1
 
-        self.train_steps_per_epoch //= keras_hvd.size()
-        self.valid_steps_per_epoch //= keras_hvd.size()
+        self.train_steps_per_epoch //= hvd.size()
+        self.valid_steps_per_epoch //= hvd.size()
 
     def load_data_generator(self):
         self.train_gen = self.data["train_gen"]
@@ -291,11 +290,11 @@ class HorovodTrainerTrainValid:
             )
 
         self.dataset_train = self.dataset_train.shard(
-            num_shards=tf_hvd.size(), index=tf_hvd.rank()
+            num_shards=hvd.size(), index=hvd.rank()
         )
 
         self.dataset_train = self.dataset_train.shuffle(
-            self.train_size // tf_hvd.size(), reshuffle_each_iteration=True
+            self.train_size // hvd.size(), reshuffle_each_iteration=True
         )
 
         self.dataset_train = self.dataset_train.batch(self.batch_size)
@@ -341,11 +340,7 @@ class HorovodTrainerTrainValid:
             )
             params["decay"] = decay_rate
 
-        self.optimizer = keras_hvd.DistributedOptimizer(optimizer_fn(**params))
-
-        self.optimizer = keras_hvd.DistributedOptimizer(
-            optimizer_fn(lr=self.learning_rate)
-        )
+        self.optimizer = hvd.DistributedOptimizer(optimizer_fn(**params))
 
         if type(self.loss_metrics) is dict:
             self.model.compile(
