@@ -3,11 +3,12 @@ import collections
 import tensorflow as tf
 
 from ..space import AutoKSearchSpace
-from ..space.node import ConstantNode, VariableNode
+from ..space.node import ConstantNode, VariableNode, MimeNode
 from ..space.op.basic import Tensor
 from ..space.op.connect import Connect
 from ..space.op.merge import AddByProjecting
 from ..space.op.op1d import Dense, Identity
+from .....contrib.layers.evonorm import EvoNormS01D
 
 
 def swish(x):
@@ -24,7 +25,13 @@ def add_dense_to_(node):
 
 
 def create_search_space(
-    input_shape=(10,), output_shape=(7,), num_layers=10, regression=True, *args, **kwargs
+    input_shape=(10,),
+    output_shape=(7,),
+    num_layers=10,
+    regression=True,
+    bn=False,
+    *args,
+    **kwargs
 ):
 
     arch = AutoKSearchSpace(input_shape, output_shape, regression=regression)
@@ -32,6 +39,8 @@ def create_search_space(
 
     # look over skip connections within a range of the 3 previous nodes
     anchor_points = collections.deque([source], maxlen=3)
+
+    cbn_init = False
 
     for _ in range(num_layers):
         vnode = VariableNode()
@@ -51,8 +60,24 @@ def create_search_space(
             skipco.add_op(Connect(arch, anchor))
             arch.connect(skipco, cmerge)
 
+        if bn:
+
+            if not cbn_init:
+                cbn = _cbn = VariableNode()
+                cbn_init = True
+            else:
+                cbn = MimeNode(_cbn)
+
+            cbn.add_op(Identity())
+            cbn.add_op(tf.keras.layers.BatchNormalization())
+            cbn.add_op(EvoNormS01D())
+            arch.connect(cmerge, cbn)
+
+            prev_input = cbn
+        else:
+            prev_input = cmerge
+
         # ! for next iter
-        prev_input = cmerge
         anchor_points.append(prev_input)
 
     return arch
