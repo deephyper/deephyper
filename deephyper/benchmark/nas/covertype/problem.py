@@ -12,14 +12,13 @@ Problem.load_data(load_data)
 
 # Problem.preprocessing(minmaxstdscaler)
 
-Problem.search_space(create_search_space, num_layers=10, regression=False)
+Problem.search_space(create_search_space, num_layers=10, regression=False, bn=True)
 
 Problem.hyperparameters(
     batch_size=256,
     learning_rate=0.001,
     optimizer="adam",
-    # num_epochs=10,  # 50,
-    num_epochs=20,
+    num_epochs=10,
     verbose=0,
     callbacks=dict(CSVExtendedLogger=dict()),
 )
@@ -29,8 +28,8 @@ Problem.loss("categorical_crossentropy")
 Problem.metrics(["acc"])
 
 
-def alc(infos: dict) -> float:
-    return sum(infos["val_acc"])
+# def alc(infos: dict) -> float:
+#     return sum(infos["val_acc"])
 
 
 # def bacc_with_pred(infos):
@@ -54,7 +53,7 @@ def alc(infos: dict) -> float:
 #     return bacc
 
 
-Problem.objective(alc)
+Problem.objective("val_acc__last")
 
 
 # Just to print your problem, to test its definition and imports in the current python environment.
