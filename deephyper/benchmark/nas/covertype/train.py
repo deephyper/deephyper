@@ -13,7 +13,6 @@ config = Problem.space
 config["arch_seq"] = [
     16,
     0,
-    1,  # bn
     11,
     0,
     0,

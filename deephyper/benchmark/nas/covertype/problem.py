@@ -12,13 +12,13 @@ Problem.load_data(load_data)
 
 # Problem.preprocessing(minmaxstdscaler)
 
-Problem.search_space(create_search_space, num_layers=10, regression=False, bn=True)
+Problem.search_space(create_search_space, num_layers=10, regression=False, bn=False)
 
 Problem.hyperparameters(
     batch_size=256,
     learning_rate=0.001,
     optimizer="adam",
-    num_epochs=10,
+    num_epochs=50,
     verbose=0,
     callbacks=dict(CSVExtendedLogger=dict()),
 )
@@ -53,7 +53,7 @@ Problem.metrics(["acc"])
 #     return bacc
 
 
-Problem.objective("val_acc__last")
+Problem.objective("val_acc")
 
 
 # Just to print your problem, to test its definition and imports in the current python environment.
