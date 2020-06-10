@@ -102,6 +102,12 @@ def run(config):
             # Note: This callback must be in the list before the ReduceLROnPlateau,
             # TensorBoard or other metrics-based callbacks.
             hvd.callbacks.MetricAverageCallback(),
+            # Horovod: using `lr = 1.0 * hvd.size()` from the very beginning leads to worse final
+            # accuracy. Scale the learning rate `lr = 1.0` ---> `lr = 1.0 * hvd.size()` during
+            # the first five epochs. See https://arxiv.org/abs/1706.02677 for details.
+            hvd.callbacks.LearningRateWarmupCallback(
+                warmup_epochs=5, initial_lr=learning_rate, verbose=1
+            ),
         ]
         cb_requires_valid = False  # Callbacks requires validation data
         callbacks_config = config[a.hyperparameters].get(a.callbacks, {})
