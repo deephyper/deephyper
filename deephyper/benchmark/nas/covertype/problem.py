@@ -16,7 +16,7 @@ Problem.search_space(create_search_space, num_layers=10, regression=False, bn=Fa
 
 Problem.hyperparameters(
     batch_size=256,
-    learning_rate=0.001,
+    learning_rate=0.01,
     optimizer="adam",
     num_epochs=100,
     verbose=0,

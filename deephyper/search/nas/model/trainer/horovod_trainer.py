@@ -334,11 +334,11 @@ class HorovodTrainerTrainValid:
             params["lr"] = self.learning_rate
         if "epsilon" in opti_parameters:
             params["epsilon"] = self.optimizer_eps
-        if "decay" in opti_parameters:
-            decay_rate = (
-                self.learning_rate / self.num_epochs if self.num_epochs > 0 else 1
-            )
-            params["decay"] = decay_rate
+        # if "decay" in opti_parameters:
+        #     decay_rate = (
+        #         self.learning_rate / self.num_epochs if self.num_epochs > 0 else 1
+        #     )
+        #     params["decay"] = decay_rate
 
         self.optimizer = hvd.DistributedOptimizer(optimizer_fn(**params))
 
