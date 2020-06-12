@@ -1,3 +1,8 @@
+"""
+Example command line::
+
+    deephyper hps ambs --evaluator subprocess --problem deephyper.search.hps.automl.regressor.autosklearn1.Problem --run deephyper.benchmark.nas.covertype.problem_hps.run
+"""
 import os
 import numpy as np
 
