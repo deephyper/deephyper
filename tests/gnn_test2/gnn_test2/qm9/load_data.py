@@ -47,7 +47,7 @@ def load_data_qm9():
     print(f"X_test shape: {np.shape(X_test)}")
     print(f"E_test shape: {np.shape(E_test)}")
     print(f"y_test shape: {np.shape(y_test)}")
-    return ((X_train, A_train, E_train), y_train), ((X_test, A_test, E_test), y_test)
+    return ([X_train, A_train, E_train], y_train), ([X_test, A_test, E_test], y_test)
 
 
 if __name__ == '__main__':

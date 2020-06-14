@@ -7,51 +7,52 @@ from deephyper.search.nas.model.space.node import ConstantNode, VariableNode
 from deephyper.search.nas.model.space.op.basic import Tensor
 from deephyper.search.nas.model.space.op.connect import Connect
 from deephyper.search.nas.model.space.op.merge import AddByProjecting
-from deephyper.search.nas.model.space.op.op1d import Dense, Identity
+from deephyper.search.nas.model.space.op.op1d import Dense, Identity, Flatten
+from deephyper.search.nas.model.space.op.gnn import EdgeConditionedConv2, GlobalAvgPool2
 
 
-def add_dense_to_(node):
-    node.add_op(Identity()) # we do not want to create a layer in this case
-
-    activations = [None, tf.nn.relu, tf.nn.tanh, tf.nn.sigmoid]
-    for units in range(16, 97, 16):
+def add_gcn_to_(node):
+    activations = [tf.nn.relu, tf.nn.tanh, tf.nn.sigmoid]
+    for channels in range(16, 49, 16):
         for activation in activations:
-            node.add_op(Dense(units=units, activation=activation))
+            node.add_op(EdgeConditionedConv2(channels=channels, activation=activation, use_bias=False))
+    return
 
 
-def create_search_space(input_shape=(10,),
-                        output_shape=(7,),
-                        num_layers=10,
+def create_search_space(input_shape=None,
+                        output_shape=None,
+                        num_layers=1,
                         *args, **kwargs):
-
+    if output_shape is None:
+        output_shape = (1,)
+    if input_shape is None:
+        input_shape = [(8, 4), (8, 8), (8, 8, 3)]
     arch = AutoKSearchSpace(input_shape, output_shape, regression=True)
-    source = prev_input = arch.input_nodes[0]
+    prev_input = arch.input_nodes[0]
+    prev_input1 = arch.input_nodes[1]
+    prev_input2 = arch.input_nodes[2]
 
-    # look over skip connections within a range of the 3 previous nodes
-    anchor_points = collections.deque([source], maxlen=3)
+    vnode = VariableNode()
+    add_gcn_to_(vnode)
+    arch.connect(prev_input, vnode)
+    arch.connect(prev_input1, vnode)
+    arch.connect(prev_input2, vnode)
+    prev_input = vnode
 
-    for _ in range(num_layers):
-        vnode = VariableNode()
-        add_dense_to_(vnode)
+    vnode2 = VariableNode()
+    add_gcn_to_(vnode2)
+    arch.connect(prev_input, vnode2)
+    arch.connect(prev_input1, vnode2)
+    arch.connect(prev_input2, vnode2)
+    prev_input = vnode2
 
-        arch.connect(prev_input, vnode)
+    pnode = VariableNode()
+    pnode.add_op(GlobalAvgPool2())
+    arch.connect(prev_input, pnode)
+    prev_input = pnode
 
-        # * Cell output
-        cell_output = vnode
-
-        cmerge = ConstantNode()
-        cmerge.set_op(AddByProjecting(arch, [cell_output], activation='relu'))
-
-        for anchor in anchor_points:
-            skipco = VariableNode()
-            skipco.add_op(Tensor([]))
-            skipco.add_op(Connect(arch, anchor))
-            arch.connect(skipco, cmerge)
-
-        # ! for next iter
-        prev_input = cmerge
-        anchor_points.append(prev_input)
-
+    cmerge = ConstantNode()
+    cmerge.set_op(AddByProjecting(arch, [prev_input], activation="relu"))
 
     return arch
 
@@ -61,7 +62,6 @@ def test_create_search_space():
     """
     from random import random
     from tensorflow.keras.utils import plot_model
-    import tensorflow as tf
 
     search_space = create_search_space(num_layers=10)
     ops = [random() for _ in range(search_space.num_nodes)]
@@ -76,6 +76,14 @@ def test_create_search_space():
     plot_model(model, to_file='sampled_neural_network.png', show_shapes=True)
     print("The sampled_neural_network.png file has been generated.")
 
+    from gnn_test2.qm9.load_data import load_data_qm9
+    ([X_train, A_train, E_train], y_train), ([X_test, A_test, E_test], y_test) = load_data_qm9()
+    model.compile(loss="mse", optimizer="adam")
+    model.fit([X_train, A_train, E_train], y_train,
+              validation_data=([X_test, A_test, E_test], y_test),
+              epochs=200)
+
 
 if __name__ == '__main__':
     test_create_search_space()
+    print()

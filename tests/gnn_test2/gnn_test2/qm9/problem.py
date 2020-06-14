@@ -1,15 +1,15 @@
 from deephyper.problem import NaProblem
-from gnn_test2.qm9.load_data import load_data
+from gnn_test2.qm9.load_data import load_data_qm9
 from gnn_test2.qm9.search_space import create_search_space
 from deephyper.search.nas.model.preprocessing import minmaxstdscaler
 
 Problem = NaProblem(seed=2019)
 
-Problem.load_data(load_data)
+Problem.load_data(load_data_qm9)
 
-Problem.preprocessing(minmaxstdscaler)
+# Problem.preprocessing(minmaxstdscaler)
 
-Problem.search_space(create_search_space, num_layers=3)
+Problem.search_space(create_search_space, num_layers=2)
 
 Problem.hyperparameters(
     batch_size=32,
@@ -19,7 +19,7 @@ Problem.hyperparameters(
     callbacks=dict(
         EarlyStopping=dict(
             monitor='val_r2', # or 'val_acc' ?
-            mode='max',
+            mode='min',
             verbose=0,
             patience=5
         )
