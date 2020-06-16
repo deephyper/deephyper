@@ -1,6 +1,6 @@
-import numpy as np
 from spektral.datasets import qm9
 from spektral.utils import label_to_one_hot
+import numpy as np
 from sklearn.model_selection import train_test_split
 
 np.random.seed(2018)

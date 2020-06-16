@@ -81,7 +81,7 @@ def test_create_search_space():
     model.compile(loss="mse", optimizer="adam")
     model.fit([X_train, A_train, E_train], y_train,
               validation_data=([X_test, A_test, E_test], y_test),
-              epochs=200)
+              epochs=20)
 
 
 if __name__ == '__main__':
