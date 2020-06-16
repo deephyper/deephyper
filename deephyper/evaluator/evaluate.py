@@ -294,7 +294,13 @@ class Evaluator:
         logger.debug(f"{num_evals} pending evals; {self.num_workers} workers")
         return max(self.num_workers - num_evals, 0)
 
-    def dump_evals(self, saved_key=None):
+    def convert_for_csv(self, val):
+        if type(val) is list:
+            return str(val)
+        else:
+            return val
+
+    def dump_evals(self, saved_key: str = None, saved_keys: list = None):
         if not self.finished_evals:
             return
 
@@ -304,10 +310,16 @@ class Evaluator:
             if uid not in self.finished_evals:
                 continue
 
-            if saved_key is None:
+            if saved_key is None and saved_keys is None:
                 result = self.decode(key)
-            else:
+            elif type(saved_key) is str:
                 result = {str(i): v for i, v in enumerate(self.decode(key)[saved_key])}
+            elif type(saved_keys) is list:
+                decoded_key = self.decode(key)
+                result = {k: self.convert_for_csv(decoded_key[k]) for k in saved_keys}
+            elif callable(saved_keys):
+                decoded_key = self.decode(key)
+                result = saved_keys(decoded_key)
             result["objective"] = self.finished_evals[uid]
             result["elapsed_sec"] = self.elapsed_times[uid]
             resultsList.append(result)
