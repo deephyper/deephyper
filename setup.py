@@ -27,7 +27,8 @@ VERSION = None
 # What packages are required for this module to be executed?
 REQUIRED = [
     "numpy",
-    "dh-scikit-optimize",
+    # "dh-scikit-optimize",
+    "scikit-optimize",
     "scikit-learn",
     "tqdm",
     "tensorflow>=1.13.1,<=1.15.2",
