@@ -15,19 +15,10 @@ def load_data():
     max_atom = 31  # maximum atoms in the molecule
 
     # define directories
-    if os.path.exists(r"/mnt/"):
-        DATA_DIR = r"/mnt/d/machinelearning2/ANL/archive/gnn/Data/Train_Data/Total_Data.pkl"
-        TRAIN_DIR = r"/mnt/d/machinelearning2/ANL/archive/gnn/Data/Train_Data/Train_Keys.txt"
-        VALID_DIR = r"/mnt/d/machinelearning2/ANL/archive/gnn/Data/Train_Data/Valid_Keys.txt"
-        TEST_DATA_DIR = r"/mnt/d/machinelearning2/ANL/archive/gnn/Data/Test_Data/Test_Data.pkl"
-        TEST_DIR = r"/mnt/d/machinelearning2/ANL/archive/gnn/Data/Test_Data/Test_Keys.txt"
-    elif os.path.exists(r"D:\\machinelearning2\\"):
-        DATA_DIR = r"D:\\machinelearning2\\ANL\\archive\\gnn\\Data\\Train_Data\\Total_Data.pkl"
-        TRAIN_DIR = r"D:\\machinelearning2\\ANL\\archive\\gnn\\Data\\Train_Data\\Train_Keys.txt"
-        VALID_DIR = r"D:\\machinelearning2\\ANL\\archive\\gnn\\Data\\Train_Data\\Valid_Keys.txt"
-        TEST_DATA_DIR = r"D:\\machinelearning2\\ANL\\archive\\gnn\\Data\\Test_Data\\Test_Data.pkl"
-        TEST_DIR = r"D:\\machinelearning2\\ANL\\archive\\gnn\\Data\\Test_Data\\Test_Keys.txt"
-        PLOT_DIR = r"D:\\plots\\anl\\protonation\\"
+    if os.path.exists(r"/mnt/d/machinelearning2"):
+        DATA_DIR = r"/mnt/d/machinelearning2/ANL/deephyper/tests/protonation/protonation/gnnproton/"
+    else:
+        DATA_DIR = r'/blues/gpfs/home/shengli.jiang/deephyper/tests/protonation/protonation/gnnproton/'
 
     # data_dict = load_dict(name=DATA_DIR)
     # train, valid = load_data_split(TRAIN_DIR, VALID_DIR)
@@ -43,7 +34,8 @@ def load_data():
     #     pickle.dump([A_train, X_train, E_train, m_train, y_train], handle)
     #     pickle.dump([A_valid, X_valid, E_valid, m_valid, y_valid], handle)
 
-    with open("./protonation_data.pickle", "rb") as handle:
+
+    with open(DATA_DIR+"./protonation_data.pickle", "rb") as handle:
         [A_train, X_train, E_train, m_train, y_train] = pickle.load(handle)
         [A_valid, X_valid, E_valid, m_valid, y_valid] = pickle.load(handle)
     print(f"================ Load Data ================")

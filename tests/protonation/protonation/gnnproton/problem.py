@@ -23,7 +23,7 @@ Problem.hyperparameters(
     batch_size=32,
     learning_rate=0.001,
     optimizer='adam',
-    num_epochs=20,
+    num_epochs=2,
     callbacks=dict(
         EarlyStopping=dict(
             monitor='val_mse',  # or 'val_acc' ?
