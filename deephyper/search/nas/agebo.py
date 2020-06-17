@@ -20,7 +20,7 @@ dhlogger = util.conf_logger("deephyper.search.nas.agebo")
 #     return json.dumps(dict(arch_seq=d['arch_seq']), cls=Encoder)
 
 
-class ExtendedRegularizedEvolution(RegularizedEvolution):
+class AgeBO(RegularizedEvolution):
     """Regularized evolution.
 
     https://arxiv.org/abs/1802.01548
@@ -62,11 +62,6 @@ class ExtendedRegularizedEvolution(RegularizedEvolution):
         self.hp_space.append(self.problem.space["hyperparameters"]["learning_rate"][:2])
         self.hp_space.append(self.problem.space["hyperparameters"]["batch_size"][:2])
 
-        self.init_hp = {
-            "learning_rate": self.problem.space["hyperparameters"]["learning_rate"][2],
-            "batch_size": self.problem.space["hyperparameters"]["batch_size"][2],
-        }
-
         # if surrogate_model == "RF":
         #     base_estimator = RandomForestRegressor(n_jobs=n_jobs)
         # elif surrogate_model == "ET":
@@ -78,11 +73,10 @@ class ExtendedRegularizedEvolution(RegularizedEvolution):
 
         # Initialize opitmizer of hyperparameter space
         # acq_func_kwargs = {"xi": 0.000001, "kappa": 0.001}
-        self.prop_advised = 0.5
-        self.n_initial_points = int(self.free_workers * self.prop_advised)
+        self.n_initial_points = self.free_workers
         self.hp_opt = SkOptimizer(
             dimensions=self.hp_space,
-            base_estimator=GradientBoostingQuantileRegressor(n_jobs=n_jobs),
+            base_estimator=GradientBoostingQuantileRegressor(n_jobs=8),
             acq_func="gp_hedge",
             acq_optimizer="sampling",
             n_initial_points=self.n_initial_points,  # Half Random - Half advised
@@ -92,7 +86,7 @@ class ExtendedRegularizedEvolution(RegularizedEvolution):
     @staticmethod
     def _extend_parser(parser):
         RegularizedEvolution._extend_parser(parser)
-        add_arguments_from_signature(parser, ExtendedRegularizedEvolution)
+        add_arguments_from_signature(parser, AgeBO)
         return parser
 
     def saved_keys(self, val: dict):
@@ -106,16 +100,10 @@ class ExtendedRegularizedEvolution(RegularizedEvolution):
     def main(self):
 
         num_evals_done = 0
-        # num_cyles_done = 0
         population = collections.deque(maxlen=self.population_size)
 
-        # best_y = 0  #! dum value
-        # patience_limit_best_y = 50
-
         # Filling available nodes at start
-        self.evaluator.add_eval_batch(
-            self.gen_random_batch(size=self.free_workers, prop=self.prop_advised)
-        )
+        self.evaluator.add_eval_batch(self.gen_random_batch(size=self.free_workers))
 
         # Main loop
         while num_evals_done < self.max_evals:
@@ -194,25 +182,15 @@ class ExtendedRegularizedEvolution(RegularizedEvolution):
         cfg, _ = max(sample, key=lambda x: x[1])
         return cfg["arch_seq"]
 
-    def gen_random_batch(self, size: int, prop: float = 1.0, hps: list = None) -> list:
+    def gen_random_batch(self, size: int, hps: list = None) -> list:
         batch = []
         if hps is None:
-            n_random = int(size * prop)
-            for _ in range(n_random):
+            points = self.hp_opt.ask(n_points=size)
+            for point in points:
                 cfg = self.pb_dict.copy()
                 # hyperparameters
-                point = self.hp_opt.ask(n_points=1)[0]
                 cfg["hyperparameters"]["learning_rate"] = point[0]
                 cfg["hyperparameters"]["batch_size"] = point[1]
-
-                # architecture dna
-                cfg["arch_seq"] = self.random_search_space()
-                batch.append(cfg)
-            for _ in range(size - n_random):
-                cfg = self.pb_dict.copy()
-                # hyperparameters
-                cfg["hyperparameters"]["learning_rate"] = self.init_hp["learning_rate"]
-                cfg["hyperparameters"]["batch_size"] = self.init_hp["batch_size"]
 
                 # architecture dna
                 cfg["arch_seq"] = self.random_search_space()
@@ -260,6 +238,6 @@ class ExtendedRegularizedEvolution(RegularizedEvolution):
 
 
 if __name__ == "__main__":
-    args = ExtendedRegularizedEvolution.parse_args()
-    search = ExtendedRegularizedEvolution(**vars(args))
+    args = AgeBO.parse_args()
+    search = AgeBO(**vars(args))
     search.main()
