@@ -8,8 +8,12 @@ from deephyper.search.nas.model.preprocessing import minmaxstdscaler
 
 @cache_load_data("/dev/shm/covertype.npz")
 def load_data_cache():
+    # Random state
+    random_state = np.random.RandomState(seed=42)
 
-    (X_train, y_train), (X_valid, y_valid), _ = covertype.load_data(seed=42)
+    (X_train, y_train), (X_valid, y_valid), _ = covertype.load_data(
+        random_state=random_state
+    )
 
     prepro_output = preprocessing.OneHotEncoder()
     y_train = y_train.reshape(-1, 1)
@@ -28,6 +32,10 @@ def load_data_cache():
     return (X_train, y_train), (X_valid, y_valid)
 
 
+def load_data():
+    return load_data_cache()
+
+
 def test_baseline():
     """Test data with RandomForest
 
@@ -42,7 +50,7 @@ def test_baseline():
     from sklearn import metrics
 
     def load_data():
-        train, valid, _ = covertype.load_data(seed=42)
+        train, valid, _ = covertype.load_data(random_state=42)
         return train, valid
 
     train, valid = load_data()
@@ -65,10 +73,6 @@ def test_baseline():
         return bacc
 
     baseline_classifier.evaluate(balanced_acc)
-
-
-def load_data():
-    return load_data_cache()
 
 
 if __name__ == "__main__":
