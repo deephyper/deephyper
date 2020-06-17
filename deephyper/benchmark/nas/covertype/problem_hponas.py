@@ -15,7 +15,7 @@ Problem.hyperparameters(
     batch_size=(128, 2048),
     learning_rate=(0.001, 0.1),
     optimizer="adam",
-    num_epochs=50,
+    num_epochs=10,
     verbose=0,
     callbacks=dict(CSVExtendedLogger=dict()),
 )
