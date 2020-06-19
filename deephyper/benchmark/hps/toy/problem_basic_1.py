@@ -1,3 +1,10 @@
+"""
+Hyperparameter optimization problem to try forbidden clauses by directly using ConfigSpace.
+
+Example command line::
+
+    deephyper hps ambs --evaluator threadPool --problem deephyper.benchmark.hps.toy.problem_basic_1.Problem --run deephyper.benchmark.hps.toy.problem_basic_1.run --max-evals 100 --acq-kappa 0.001
+"""
 import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh
 import numpy as np
@@ -11,11 +18,6 @@ y_hp = csh.UniformIntegerHyperparameter(name="y", lower=0, upper=10, log=False)
 
 config_space.add_hyperparameters([x_hp, y_hp])
 
-not_zero = cs.ForbiddenAndConjunction(
-    cs.ForbiddenEqualsClause(x_hp, 0), cs.ForbiddenEqualsClause(y_hp, 0)
-)
-
-config_space.add_forbidden_clause(not_zero)
 
 # Problem definition
 Problem = BaseProblem(config_space)
@@ -30,7 +32,7 @@ def run(param_dict):
     x = param_dict["x"]
     y = param_dict["y"]
 
-    res = np.log(1 / (y + x))
+    res = x + y
 
     return res  # the objective
 
