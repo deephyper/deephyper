@@ -12,8 +12,9 @@ Problem.load_data(load_data)
 
 
 def my_loss_fn(y_true, y_pred):
+    y_true = tf.math.abs(y_true)
     num_non_zero = tf.cast(tf.math.count_nonzero(y_true), tf.float32)
-    custom_loss = tf.div(tf.reduce_sum(tf.squared_difference(y_true, y_pred)), num_non_zero)
+    custom_loss = tf.div(tf.reduce_mean(tf.squared_difference(y_true, y_pred)), num_non_zero)
     return custom_loss
 
 
@@ -23,10 +24,10 @@ Problem.hyperparameters(
     batch_size=32,
     learning_rate=0.001,
     optimizer='adam',
-    num_epochs=2,
+    num_epochs=10,
     callbacks=dict(
         EarlyStopping=dict(
-            monitor='val_mse',  # or 'val_acc' ?
+            monitor='val_loss',  # or 'val_acc' ?
             mode='min',
             verbose=0,
             patience=5
@@ -36,9 +37,9 @@ Problem.hyperparameters(
 
 Problem.loss(my_loss_fn)  # or 'categorical_crossentropy' ?
 
-Problem.metrics(['mse'])  # or 'acc' ?
+Problem.metrics(['mse', 'mae', 'po', 'por2'])  # or 'acc' ?
 
-Problem.objective('val_mse__last')  # or 'val_acc__last' ?
+Problem.objective('val_po')  # or 'val_acc__last' ?
 
 # Just to print your problem, to test its definition and imports in the current python environment.
 if __name__ == '__main__':

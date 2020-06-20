@@ -152,7 +152,7 @@ def create_search_space(input_shape=None,
     prev_input = fnode
 
     onode = ConstantNode()
-    onode.set_op(Dense(output_shape[0]))
+    onode.set_op(Dense(output_shape[0], activation='relu'))
     arch.connect(prev_input, onode)
     prev_input = onode
 
@@ -189,12 +189,12 @@ def test_create_search_space():
     plot_model(model, to_file='sampled_neural_network.png', show_shapes=True)
     print("The sampled_neural_network.png file has been generated.")
 
-    from protonation.gnnproton.load_data import load_data
-    ([X_train, A_train, E_train, m_train], y_train), ([X_valid, A_valid, E_valid, m_valid], y_valid) = load_data()
-    model.compile(loss="mse", optimizer="adam")
-    model.fit([X_train, A_train, E_train, m_train], y_train,
-              validation_data=([X_valid, A_valid, E_valid, m_valid], y_valid),
-              epochs=20)
+#    from protonation.gnnproton.load_data import load_data
+#    ([X_train, A_train, E_train, m_train], y_train), ([X_valid, A_valid, E_valid, m_valid], y_valid) = load_data()
+#    model.compile(loss="mse", optimizer="adam")
+#    model.fit([X_train, A_train, E_train, m_train], y_train,
+#              validation_data=([X_valid, A_valid, E_valid, m_valid], y_valid),
+#              epochs=20)
 
 
 if __name__ == '__main__':

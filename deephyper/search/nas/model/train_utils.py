@@ -69,11 +69,35 @@ def acc(y_true, y_pred):
     return tf.keras.metrics.categorical_accuracy(y_true, y_pred)
 
 
+# BRUCEEDIT
+def por2(y_true, y_pred):
+    zero = tf.constant(0, dtype=tf.float32)
+    where = tf.not_equal(y_true, zero)
+    total_error = tf.reduce_sum(tf.square(tf.subtract(tf.boolean_mask(y_true, where),
+                                                      tf.reduce_mean(tf.boolean_mask(y_true, where)))))
+    unexplained_error = tf.reduce_sum(tf.square(tf.subtract(tf.boolean_mask(y_true, where),
+                                                            tf.boolean_mask(y_pred, where))))
+    Prot_R_squared = tf.subtract(1.0, tf.div(unexplained_error, total_error))
+
+    return Prot_R_squared
+
+
+def po(y_true, y_pred):
+    y_true = tf.math.abs(y_true)
+    num_non_zero = tf.cast(tf.math.count_nonzero(y_true), tf.float32)
+    custom_loss = tf.div(tf.reduce_mean(tf.squared_difference(y_true, y_pred)), num_non_zero)
+    return -custom_loss
+
+
 metrics = OrderedDict()
 metrics["mean_absolute_error"] = metrics["mae"] = mae
 metrics["r2"] = r2
 metrics["mean_squared_error"] = metrics["mse"] = mse
 metrics["accuracy"] = metrics["acc"] = acc
+
+#BRUCEEDIT
+metrics["po"] = po
+metrics["por2"] = por2
 
 
 def selectMetric(name: str):
