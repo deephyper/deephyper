@@ -1,6 +1,7 @@
 import collections
 import json
 import os
+import copy
 
 # import ConfigSpace as cs
 import numpy as np
@@ -60,7 +61,7 @@ class AgeBO(RegularizedEvolution):
 
         self.hp_space = []
         self.hp_space.append(self.problem.space["hyperparameters"]["learning_rate"][:2])
-        self.hp_space.append(self.problem.space["hyperparameters"]["batch_size"][:2])
+        # self.hp_space.append(self.problem.space["hyperparameters"]["batch_size"][:2])
 
         # if surrogate_model == "RF":
         #     base_estimator = RandomForestRegressor(n_jobs=n_jobs)
@@ -76,7 +77,7 @@ class AgeBO(RegularizedEvolution):
         self.n_initial_points = self.free_workers
         self.hp_opt = SkOptimizer(
             dimensions=self.hp_space,
-            base_estimator=GradientBoostingQuantileRegressor(n_jobs=8),
+            base_estimator="GBRT",  # GradientBoostingQuantileRegressor(n_jobs=8),
             acq_func="gp_hedge",
             acq_optimizer="sampling",
             n_initial_points=self.n_initial_points,  # Half Random - Half advised
@@ -146,7 +147,8 @@ class AgeBO(RegularizedEvolution):
                         # collect infos for hp optimization
                         new_i_hps = new_results[new_i][0]["hyperparameters"]
                         new_i_y = new_results[new_i][1]
-                        hp_new_i = [new_i_hps["learning_rate"], new_i_hps["batch_size"]]
+                        # hp_new_i = [new_i_hps["learning_rate"], new_i_hps["batch_size"]]
+                        hp_new_i = [new_i_hps["learning_rate"]]
                         hp_results_X.append(hp_new_i)
                         hp_results_y.append(-new_i_y)
 
@@ -155,7 +157,7 @@ class AgeBO(RegularizedEvolution):
 
                     for hps, child in zip(new_hps, children_batch):
                         child["hyperparameters"]["learning_rate"] = hps[0]
-                        child["hyperparameters"]["batch_size"] = hps[1]
+                        # child["hyperparameters"]["batch_size"] = hps[1]
 
                     # submit_childs
                     if len(new_results) > 0:
@@ -167,7 +169,8 @@ class AgeBO(RegularizedEvolution):
 
                         new_i_hps = new_results[new_i][0]["hyperparameters"]
                         new_i_y = new_results[new_i][1]
-                        hp_new_i = [new_i_hps["learning_rate"], new_i_hps["batch_size"]]
+                        # hp_new_i = [new_i_hps["learning_rate"], new_i_hps["batch_size"]]
+                        hp_new_i = [new_i_hps["learning_rate"]]
                         hp_results_X.append(hp_new_i)
                         hp_results_y.append(-new_i_y)
 
@@ -178,6 +181,19 @@ class AgeBO(RegularizedEvolution):
 
                     self.evaluator.add_eval_batch(new_batch)
 
+    # def ask(self, n_points=None, batch_size=20):
+    #     if n_points is None:
+    #         return self._ask()
+    #     else:
+    #         batch = []
+    #         for _ in range(n_points):
+    #             batch.append(self._ask())
+    #             if len(batch) == batch_size:
+    #                 yield batch
+    #                 batch = []
+    #         if batch:
+    #             yield batch
+
     def select_parent(self, sample: list) -> list:
         cfg, _ = max(sample, key=lambda x: x[1])
         return cfg["arch_seq"]
@@ -187,10 +203,12 @@ class AgeBO(RegularizedEvolution):
         if hps is None:
             points = self.hp_opt.ask(n_points=size)
             for point in points:
-                cfg = self.pb_dict.copy()
+                #! DeepCopy is critical for nested lists or dicts
+                cfg = copy.deepcopy(self.pb_dict)
+
                 # hyperparameters
                 cfg["hyperparameters"]["learning_rate"] = point[0]
-                cfg["hyperparameters"]["batch_size"] = point[1]
+                # cfg["hyperparameters"]["batch_size"] = point[1]
 
                 # architecture dna
                 cfg["arch_seq"] = self.random_search_space()
@@ -198,10 +216,12 @@ class AgeBO(RegularizedEvolution):
         else:  # passed hps are used
             assert size == len(hps)
             for point in hps:
-                cfg = self.pb_dict.copy()
+                #! DeepCopy is critical for nested lists or dicts
+                cfg = copy.deepcopy(self.pb_dict)
+
                 # hyperparameters
                 cfg["hyperparameters"]["learning_rate"] = point[0]
-                cfg["hyperparameters"]["batch_size"] = point[1]
+                # cfg["hyperparameters"]["batch_size"] = point[1]
 
                 # architecture dna
                 cfg["arch_seq"] = self.random_search_space()
@@ -216,10 +236,10 @@ class AgeBO(RegularizedEvolution):
         # ! Time performance is critical because called sequentialy
 
         Args:
-            parent_arch (list(int)): [description]
+            parent_arch (list(int)): embedding of the parent's architecture.
 
         Returns:
-            dict: [description]
+            dict: embedding of the mutated architecture of the child.
 
         """
         i = np.random.choice(len(parent_arch))
