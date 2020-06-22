@@ -76,6 +76,14 @@ class AMBS(Search):
             default=1.96,
             help='Controls how much of the variance in the predicted values should be taken into account. If set to be very high, then we are favouring exploration over exploitation and vice versa. Used when the acquisition is "LCB".',
         )
+
+        parser.add_argument(
+            "--acq-xi",
+            type=float,
+            default=0.01,
+            help='Controls how much improvement one wants over the previous best values. If set to be very high, then we are favouring exploration over exploitation and vice versa. Used when the acquisition is "EI", "PI".',
+        )
+
         parser.add_argument(
             "--n-jobs",
             type=int,

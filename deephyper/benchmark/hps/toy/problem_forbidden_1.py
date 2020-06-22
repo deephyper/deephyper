@@ -1,7 +1,10 @@
+"""
+Hyperparameter optimization problem to try forbidden clauses.
+"""
 import numpy as np
 
-from deephyper.problem import config_space as cs
 from deephyper.problem import BaseProblem
+from deephyper.problem import config_space as cs
 
 # Problem definition
 Problem = BaseProblem()

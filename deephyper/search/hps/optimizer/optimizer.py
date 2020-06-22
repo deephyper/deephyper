@@ -61,6 +61,7 @@ class Optimizer:
         surrogate_model="RF",
         acq_func="gp_hedge",
         acq_kappa=1.96,
+        acq_xi=None,
         liar_strategy="cl_max",
         n_jobs=1,
         **kwargs,
@@ -93,12 +94,19 @@ class Optimizer:
             else max(num_workers, len(self.starting_points))
         )
 
+        # Set acq_func_kwargs parameters
+        acq_func_kwargs = {}
+        if type(acq_kappa) is float:
+            acq_func_kwargs["kappa"] = acq_kappa
+        if type(acq_xi) is float:
+            acq_func_kwargs["xi"] = acq_xi
+
         self._optimizer = SkOptimizer(
             dimensions=self.space,
             base_estimator=base_estimator,
             acq_optimizer="sampling",
             acq_func=acq_func,
-            acq_func_kwargs={"kappa": acq_kappa},
+            acq_func_kwargs=acq_func_kwargs,
             random_state=self.SEED,
             n_initial_points=n_init,
         )
