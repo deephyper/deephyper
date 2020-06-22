@@ -15,7 +15,7 @@ deephyper.evaluator.evaluate module
 deephyper.evaluator.ray\_evaluator module
 -----------------------------------------
 
-.. automodule:: deephyper.evaluator.ray_evaluator
+.. automodule:: deephyper.evaluator._ray_evaluator
    :members:
    :undoc-members:
    :show-inheritance:

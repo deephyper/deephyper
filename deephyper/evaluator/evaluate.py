@@ -59,7 +59,13 @@ class Evaluator:
     assert os.path.isfile(PYTHON_EXE)
 
     def __init__(
-        self, run_function, cache_key=None, encoder=Encoder, seed=None, **kwargs
+        self,
+        run_function,
+        cache_key=None,
+        encoder=Encoder,
+        seed=None,
+        num_workers=None,
+        **kwargs,
     ):
         self.encoder = encoder  # dict --> uuid
         self.pending_evals = {}  # uid --> Future
@@ -77,7 +83,7 @@ class Evaluator:
         self.elapsed_times = {}
 
         self._run_function = run_function
-        self.num_workers = 0
+        self.num_workers = num_workers
 
         if (cache_key is not None) and (cache_key != "to_dict"):
             if callable(cache_key):
@@ -99,7 +105,12 @@ class Evaluator:
 
     @staticmethod
     def create(
-        run_function, cache_key=None, method="subprocess", redis_address=None, **kwargs
+        run_function,
+        cache_key=None,
+        method="subprocess",
+        redis_address=None,
+        num_workers=None,
+        **kwargs,
     ):
         available_methods = [
             "balsam",
@@ -136,11 +147,15 @@ class Evaluator:
 
             Eval = MPIWorkerPool(run_function, cache_key=cache_key, **kwargs)
         elif method == "ray":
-            from deephyper.evaluator.ray_evaluator import RayEvaluator
+            from deephyper.evaluator._ray_evaluator import RayEvaluator
 
             Eval = RayEvaluator(
                 run_function, cache_key=cache_key, redis_address=redis_address, **kwargs
             )
+
+        # Override the number of workers if passed as an argument
+        if not (num_workers is None) and type(num_workers) is int:
+            Eval.num_workers = num_workers
 
         return Eval
 
