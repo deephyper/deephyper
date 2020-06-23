@@ -10,6 +10,8 @@ from deephyper.search.nas.model.run.horovod import run
 
 config = Problem.space
 
+config["hyperparameters"]["num_epochs"] = 100
+
 config["arch_seq"] = [
     16,
     0,
