@@ -312,10 +312,19 @@ class TrainerTrainValid:
 
         opti_parameters = signature(optimizer_fn).parameters
         params = {}
+
         if "lr" in opti_parameters:
             params["lr"] = self.learning_rate
+        elif "learning_rate" in opti_parameters:
+            params["learning_rate"] = self.learning_rate
+        else:
+            raise DeephyperRuntimeError(
+                f"The learning_rate parameter is not found amoung optimiser arguments: {opti_parameters}"
+            )
+
         if "epsilon" in opti_parameters:
             params["epsilon"] = self.optimizer_eps
+
         if "decay" in opti_parameters:
             decay_rate = (
                 self.learning_rate / self.num_epochs if self.num_epochs > 0 else 1

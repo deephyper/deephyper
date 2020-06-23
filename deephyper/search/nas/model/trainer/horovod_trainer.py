@@ -36,6 +36,7 @@ class HorovodTrainerTrainValid:
                 session = tf.Session(config=sess_config)
                 tf.compat.v1.keras.backend.set_session(session)
             self.sess = tf.compat.v1.keras.backend.get_session()
+
         self.model = model
         self.callbacks = []
 
@@ -330,10 +331,20 @@ class HorovodTrainerTrainValid:
 
         opti_parameters = signature(optimizer_fn).parameters
         params = {}
+
+        # "lr" and "learning_rate" is checked depending if Keras or Tensorflow optimizer is used
         if "lr" in opti_parameters:
             params["lr"] = self.learning_rate
+        elif "learning_rate" in opti_parameters:
+            params["learning_rate"] = self.learning_rate
+        else:
+            raise DeephyperRuntimeError(
+                f"The learning_rate parameter is not found amoung optimiser arguments: {opti_parameters}"
+            )
+
         if "epsilon" in opti_parameters:
             params["epsilon"] = self.optimizer_eps
+
         # if "decay" in opti_parameters:
         #     decay_rate = (
         #         self.learning_rate / self.num_epochs if self.num_epochs > 0 else 1
