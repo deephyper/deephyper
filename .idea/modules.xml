@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/deephyper.iml" filepath="$PROJECT_DIR$/.idea/deephyper.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../protonation/.idea/protonation.iml" filepath="$PROJECT_DIR$/../protonation/.idea/protonation.iml" />
       <module fileurl="file://$PROJECT_DIR$/../spektral/.idea/spektral.iml" filepath="$PROJECT_DIR$/../spektral/.idea/spektral.iml" />
     </modules>
   </component>

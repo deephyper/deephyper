@@ -89,6 +89,13 @@ def po(y_true, y_pred):
     return -custom_loss
 
 
+def poloss(y_true, y_pred):
+    y_true = tf.math.abs(y_true)
+    num_non_zero = tf.cast(tf.math.count_nonzero(y_true), tf.float32)
+    custom_loss = tf.div(tf.reduce_mean(tf.squared_difference(y_true, y_pred)), num_non_zero)
+    return custom_loss
+
+
 metrics = OrderedDict()
 metrics["mean_absolute_error"] = metrics["mae"] = mae
 metrics["r2"] = r2
@@ -98,6 +105,7 @@ metrics["accuracy"] = metrics["acc"] = acc
 #BRUCEEDIT
 metrics["po"] = po
 metrics["por2"] = por2
+metrics["poloss"] = poloss
 
 
 def selectMetric(name: str):

@@ -68,7 +68,7 @@ class Evaluator:
         self.key_uid_map = {}  # map keys to uids
         self.uid_key_map = {}  # map uids to keys
         self.seed = seed
-        self.seed_high = 2 ** 32  # exclusive
+        self.seed_high = 2 ** 32  # exclusive #BRUCEEDIT
 
         self.stats = {"num_cache_used": 0}
 

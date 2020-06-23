@@ -5,6 +5,7 @@
     <orderEntry type="jdk" jdkName="3.7 @ Ubuntu" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="spektral" />
+    <orderEntry type="module" module-name="protonation" />
   </component>
   <component name="PackageRequirementsSettings">
     <option name="requirementsPath" value="" />
