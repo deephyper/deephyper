@@ -19,7 +19,7 @@ def adjacency_list_to_array(adjacency_list):
     return adjacency_array
 
 
-def load_data(zero_padding=True, split='stratified'):
+def load_qm7(zero_padding=True, split='stratified'):
     """
     Load qm7 dataset from .mat file. Max atom 23.
     Check details here: http://quantum-machine.org/datasets/

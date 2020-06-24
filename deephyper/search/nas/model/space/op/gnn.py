@@ -1,8 +1,9 @@
 import spektral
-import tensorflow
+import tensorflow as tf
 from . import Operation
+# TODO: add graph gathering, graph batch normalization
 
-
+# SELF DEFINED
 class Apply1DMask(Operation):
     def __init__(self):
         pass
@@ -26,6 +27,82 @@ class GraphIdentity(Operation):
         return inputs[0]
 
 
+class GraphMaxPool(Operation):
+    """
+    A GraphPool gathers data from local neighborhoods of a graph.
+    This layer does a max-pooling over the feature vectors of atoms in a
+    neighborhood. You can think of this layer as analogous to a max-pooling layer
+    for 2D convolutions but which operates on graphs instead.
+
+    Adapted from: https://github.com/deepchem/deepchem/blob/master/deepchem/models/layers.py
+    """
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+
+    def __str__(self):
+        return f"GraphMaxPool"
+
+    def __call__(self, inputs, **kwargs):
+        X = inputs[0]  # Node features (batch_size, max_atom, n_features)
+        A = inputs[1]  # Adjacency matrix (batch_size, max_atom, max_atom)
+
+        # If tf 1.15, can use tf.repeat, <= 1.14 tf.keras.backend.repeat_elements
+        X_shape = X.get_shape().as_list()  # [batch_size, max_atom, n_features]
+        X_expand = tf.expand_dims(X, 1)  # [batch_size, 1, max_atom, n_features]
+        X_expand = tf.keras.backend.repeat_elements(X_expand, X_shape[1],
+                                                    axis=1) # [batch_size, max_atom, max_atom, n_features]
+
+        A_expand = tf.expand_dims(A, 3)  # [batch_size, max_atom, max_atom, 1]
+        A_expand = tf.keras.backend.repeat_elements(A_expand, X_shape[2],
+                                                    axis=3)  # [batch_size, max_atom, max_atom, n_features]
+        out_expand = tf.multiply(X_expand, A_expand)  # [batch_size, max_atom, max_atom, n_features]
+
+        return tf.reduce_max(out_expand, axis=1)  # [batch_size, max_atom, n_features]
+
+
+class GraphGather(Operation):
+    """
+    A GraphGather layer pools node-level feature vectors to create a graph feature vector.
+    Many graph convolutional networks manipulate feature vectors per
+    graph-node. For a molecule for example, each node might represent an
+    atom, and the network would manipulate atomic feature vectors that
+    summarize the local chemistry of the atom. However, at the end of
+    the application, we will likely want to work with a molecule level
+    feature representation. The `GraphGather` layer creates a graph level
+    feature vector by combining all the node-level feature vectors.
+
+    Adapted from: https://github.com/deepchem/deepchem/blob/master/deepchem/models/layers.py
+    """
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+
+    def __str__(self):
+        return f"GraphGather"
+
+    def __call__(self, inputs, **kwargs):
+        # Node features (batch_size, max_atom, n_features)
+        return tf.reduce_sum(inputs, axis=1)  # [batch_size, n_features]
+
+
+class GraphBatchNorm(Operation):
+    """
+    Normalize the activations of the previous layer at each batch, i.e. applies a transformation that maintains the mean
+    activation close to 0 and the activation standard deviation close to 1.
+    """
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+
+    def __str__(self):
+        return f"GraphBatchNorm"
+
+    def __call__(self, inputs, **kwargs):
+        # Node features (batch_size, max_atom, n_features)
+        out = tf.keras.layers.BatchNormalization()(inputs) # (batch_size, max_atom, n_features)
+        return out
+
+
+
+# FROM SPEKTRAL
 class GraphConv2(Operation):
     def __init__(self, channels, activation=None, use_bias=True,
                  bias_initializer='zeros',
@@ -530,7 +607,7 @@ class GlobalAvgPool2(Operation):
         out = spektral.layers.GlobalAvgPool(**self.kwargs)(inputs)
 
         if out.get_shape()[-2].value is None and len(out.get_shape()) is 3:
-            out = tensorflow.transpose(out, perm=[1, 0, 2])
+            out = tf.transpose(out, perm=[1, 0, 2])
 
         print(f"Output Tensor shape: {out.get_shape()} \n")
         return out
@@ -549,7 +626,7 @@ class GlobalMaxPool2(Operation):
         out = spektral.layers.GlobalMaxPool(**self.kwargs)(inputs)
 
         if out.get_shape()[-2].value is None and len(out.get_shape()) is 3:
-            out = tensorflow.transpose(out, perm=[1, 0, 2])
+            out = tf.transpose(out, perm=[1, 0, 2])
 
         print(f"Output Tensor shape: {out.get_shape()} \n")
         return out
@@ -567,7 +644,7 @@ class GlobalSumPool2(Operation):
 
         out = spektral.layers.GlobalSumPool(**self.kwargs)(inputs)
         if out.get_shape()[-2].value is None and len(out.get_shape()) is 3:
-            out = tensorflow.transpose(out, perm=[1, 0, 2])
+            out = tf.transpose(out, perm=[1, 0, 2])
 
         print(f"Output Tensor shape: {out.get_shape()} \n")
         return out
@@ -605,7 +682,7 @@ class GlobalAttentionPool2(Operation):
 
         out = spektral.layers.GlobalSumPool(**self.kwargs)(inputs)
         if out.get_shape()[-2].value is None and len(out.get_shape()) is 3:
-            out = tensorflow.transpose(out, perm=[1, 0, 2])
+            out = tf.transpose(out, perm=[1, 0, 2])
 
         print(f"Output Tensor shape: {out.get_shape()} \n")
         return out
