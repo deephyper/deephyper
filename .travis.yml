@@ -1,7 +1,7 @@
 language: python
 
 python:
-  - "3.6"
+  - "3.7"
 
 os: linux
 
@@ -24,7 +24,7 @@ before_install:
   - sudo apt-get install graphviz
 install:
   - pip install -e '.[docs,tests,analytics]'
-  - pip install tensorflow==1.13.1 keras
+  - pip install tensorflow==1.15.2
   - pip install codecov pytest-cov
 
 script:
