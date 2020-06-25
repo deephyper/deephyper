@@ -32,7 +32,8 @@ def load_qm7(zero_padding=True, split='stratified'):
     """
     print("Loading QM7 Dataset (takes about 1 minute)...")
     qm7_tasks, (train_dataset, valid_dataset, test_dataset), transformers = load_qm7_from_mat(featurizer='GraphConv',
-                                                                                              split=split)
+                                                                                              split=split,
+                                                                                              move_mean=True)
     MAX_ATOM = 23
     N_FEAT = 75
     X_train, X_valid, X_test = [], [], []

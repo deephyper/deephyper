@@ -6,6 +6,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="spektral" />
     <orderEntry type="module" module-name="protonation" />
+    <orderEntry type="module" module-name="qm7" />
   </component>
   <component name="PackageRequirementsSettings">
     <option name="requirementsPath" value="" />

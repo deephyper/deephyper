@@ -20,27 +20,27 @@ def add_gcn_to_(node):
 
     """
     node.add_op(GraphIdentity())
-    activations = [tf.nn.relu, tf.nn.tanh, tf.nn.sigmoid]
+    activations = [tf.nn.relu, tf.nn.tanh]
 
-    for channels in range(16, 49, 16):
+    for channels in [16, 32]:
         for activation in activations:
             node.add_op(EdgeConditionedConv2(channels=channels, activation=activation))
     return
 
 
-def add_global_pool_to_(node):
-    """
-    Function to add operations to graph global pooling variable node
-    Args:
-        node: node object
-
-    Returns:
-
-    """
-    node.add_op(GlobalMaxPool2())
-    node.add_op(GlobalAvgPool2())
-    node.add_op(GlobalSumPool2())
-    return
+# def add_global_pool_to_(node):
+#     """
+#     Function to add operations to graph global pooling variable node
+#     Args:
+#         node: node object
+#
+#     Returns:
+#
+#     """
+#     node.add_op(GlobalMaxPool2())
+#     node.add_op(GlobalAvgPool2())
+#     node.add_op(GlobalSumPool2())
+#     return
 
 
 def add_dense_to_(node):
@@ -54,8 +54,8 @@ def add_dense_to_(node):
     """
     node.add_op(Identity())
 
-    activations = [tf.nn.relu, tf.nn.tanh, tf.nn.sigmoid]
-    for units in range(16, 49, 16):
+    activations = [tf.nn.relu, tf.nn.tanh]
+    for units in [16, 32]:
         for activation in activations:
             node.add_op(Dense(units=units, activation=activation))
     return
@@ -63,8 +63,8 @@ def add_dense_to_(node):
 
 def create_search_space(input_shape=None,
                         output_shape=(31, ),
-                        num_gcn_layers=3,
-                        num_dense_layers=3,
+                        num_gcn_layers=2,
+                        num_dense_layers=1,
                         *args, **kwargs):
     """
     A function to create keras search sapce
@@ -89,7 +89,7 @@ def create_search_space(input_shape=None,
     prev_input3 = arch.input_nodes[3]
 
     # look over skip connections within a range of the 3 previous nodes
-    anchor_points = collections.deque([source], maxlen=3)
+    anchor_points = collections.deque([source], maxlen=2)
 
     count_gcn_layers = 0
     count_dense_layers = 0
@@ -114,8 +114,8 @@ def create_search_space(input_shape=None,
         anchor_points.append(prev_input)
         count_gcn_layers += 1
 
-    vnode2 = VariableNode()
-    add_global_pool_to_(vnode2)
+    vnode2 = ConstantNode()
+    vnode2.set_op(GlobalMaxPool2())
     arch.connect(prev_input, vnode2)
 
     cell_output = vnode2
@@ -124,7 +124,7 @@ def create_search_space(input_shape=None,
 
     source2 = prev_input = cmerge
     # look over skip connections within a range of the 3 previous nodes
-    anchor_points2 = collections.deque([source2], maxlen=3)
+    anchor_points2 = collections.deque([source2], maxlen=2)
 
     for _ in range(num_dense_layers):
         vnode3 = VariableNode()
@@ -175,8 +175,8 @@ def test_create_search_space():
 
     search_space = create_search_space(input_shape=[(31, 23), (31, 31), (31, 31, 6), (31, )],
                                        output_shape=(31, ),
-                                       num_gcn_layers=3,
-                                       num_dense_layers=3)
+                                       num_gcn_layers=2,
+                                       num_dense_layers=1)
     ops = [random() for _ in range(search_space.num_nodes)]
 
     print(f'This search_space needs {len(ops)} choices to generate a neural network.')
@@ -188,13 +188,29 @@ def test_create_search_space():
 
     plot_model(model, to_file='sampled_neural_network.png', show_shapes=True)
     print("The sampled_neural_network.png file has been generated.")
-
-#    from protonation.gnnproton.load_data import load_data
-#    ([X_train, A_train, E_train, m_train], y_train), ([X_valid, A_valid, E_valid, m_valid], y_valid) = load_data()
-#    model.compile(loss="mse", optimizer="adam")
-#    model.fit([X_train, A_train, E_train, m_train], y_train,
-#              validation_data=([X_valid, A_valid, E_valid, m_valid], y_valid),
-#              epochs=20)
+    print(f"The size of search space is {search_space.size}")
+    #
+    # from protonation.gnnproton.load_data import load_data
+    # from tensorflow.keras.callbacks import ModelCheckpoint
+    # from tensorflow.keras.optimizers import Adam
+    # ([X_train, A_train, E_train, m_train], y_train), ([X_valid, A_valid, E_valid, m_valid], y_valid) = load_data()
+    # model.compile(loss="mse", optimizer=Adam(learning_rate=1e-3))
+    # mcp = ModelCheckpoint("./1.h5", monitor="val_loss", mode="min", save_best_only=True,
+    #                       save_weights_only=True, verbose=2)
+    # model.fit([X_train, A_train, E_train, m_train], y_train,
+    #          validation_data=([X_valid, A_valid, E_valid, m_valid], y_valid),
+    #          epochs=100, callbacks=[mcp], verbose=0)
+    # model.load_weights("./1.h5")
+    # from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+    # from tabulate import tabulate
+    # mse_train = mean_squared_error(y_train.ravel(), model.predict([X_train, A_train, E_train, m_train]).ravel())
+    # mae_train = mean_absolute_error(y_train.ravel(), model.predict([X_train, A_train, E_train, m_train]).ravel())
+    # r2_train = r2_score(y_train.ravel(), model.predict([X_train, A_train, E_train, m_train]).ravel())
+    # mse_valid = mean_squared_error(y_valid.ravel(), model.predict([X_valid, A_valid, E_valid, m_valid]).ravel())
+    # mae_valid = mean_absolute_error(y_valid.ravel(), model.predict([X_valid, A_valid, E_valid, m_valid]).ravel())
+    # r2_valid = r2_score(y_valid.ravel(), model.predict([X_valid, A_valid, E_valid, m_valid]).ravel())
+    # print(tabulate([['Train', mse_train, mae_train, r2_train], ['Valid', mse_train, mae_valid, r2_valid]],
+    #                headers=['', 'MSE', 'MAE', 'R2']))
 
 
 if __name__ == '__main__':

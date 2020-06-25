@@ -1,33 +1,37 @@
 import spektral
 import tensorflow as tf
 from . import Operation
+
+
 # TODO: add graph gathering, graph batch normalization
 
 # SELF DEFINED
-class Apply1DMask(Operation):
+class Apply1DMask(tf.keras.layers.Layer):
     def __init__(self):
+        super(Apply1DMask, self).__init__()
         pass
 
     def __str__(self):
         return f"Apply a 1D mask to the dense layers"
 
-    def __call__(self, inputs, **kwargs):
+    def call(self, inputs, **kwargs):
         assert type(inputs) is list
-        return tensorflow.multiply(inputs[0], inputs[1])
+        return tf.multiply(inputs[0], inputs[1])
 
 
-class GraphIdentity(Operation):
+class GraphIdentity(tf.keras.layers.Layer):
     def __init__(self):
+        super(GraphIdentity, self).__init__()
         pass
 
     def __str__(self):
         return f"Identity of Node features"
 
-    def __call__(self, inputs, **kwargs):
+    def call(self, inputs, **kwargs):
         return inputs[0]
 
 
-class GraphMaxPool(Operation):
+class GraphMaxPool(tf.keras.layers.Layer):
     """
     A GraphPool gathers data from local neighborhoods of a graph.
     This layer does a max-pooling over the feature vectors of atoms in a
@@ -36,13 +40,15 @@ class GraphMaxPool(Operation):
 
     Adapted from: https://github.com/deepchem/deepchem/blob/master/deepchem/models/layers.py
     """
+
     def __init__(self, **kwargs):
+        super(GraphMaxPool, self).__init__()
         self.kwargs = kwargs
 
     def __str__(self):
         return f"GraphMaxPool"
 
-    def __call__(self, inputs, **kwargs):
+    def call(self, inputs, **kwargs):
         X = inputs[0]  # Node features (batch_size, max_atom, n_features)
         A = inputs[1]  # Adjacency matrix (batch_size, max_atom, max_atom)
 
@@ -50,7 +56,7 @@ class GraphMaxPool(Operation):
         X_shape = X.get_shape().as_list()  # [batch_size, max_atom, n_features]
         X_expand = tf.expand_dims(X, 1)  # [batch_size, 1, max_atom, n_features]
         X_expand = tf.keras.backend.repeat_elements(X_expand, X_shape[1],
-                                                    axis=1) # [batch_size, max_atom, max_atom, n_features]
+                                                    axis=1)  # [batch_size, max_atom, max_atom, n_features]
 
         A_expand = tf.expand_dims(A, 3)  # [batch_size, max_atom, max_atom, 1]
         A_expand = tf.keras.backend.repeat_elements(A_expand, X_shape[2],
@@ -60,7 +66,7 @@ class GraphMaxPool(Operation):
         return tf.reduce_max(out_expand, axis=1)  # [batch_size, max_atom, n_features]
 
 
-class GraphGather(Operation):
+class GraphGather(tf.keras.layers.Layer):
     """
     A GraphGather layer pools node-level feature vectors to create a graph feature vector.
     Many graph convolutional networks manipulate feature vectors per
@@ -73,13 +79,16 @@ class GraphGather(Operation):
 
     Adapted from: https://github.com/deepchem/deepchem/blob/master/deepchem/models/layers.py
     """
+
     def __init__(self, **kwargs):
+        super(GraphGather, self).__init__()
         self.kwargs = kwargs
 
     def __str__(self):
         return f"GraphGather"
 
-    def __call__(self, inputs, **kwargs):
+    def call(self, inputs, **kwargs):
+        inputs = inputs
         # Node features (batch_size, max_atom, n_features)
         return tf.reduce_sum(inputs, axis=1)  # [batch_size, n_features]
 
@@ -89,6 +98,7 @@ class GraphBatchNorm(Operation):
     Normalize the activations of the previous layer at each batch, i.e. applies a transformation that maintains the mean
     activation close to 0 and the activation standard deviation close to 1.
     """
+
     def __init__(self, **kwargs):
         self.kwargs = kwargs
 
@@ -96,17 +106,18 @@ class GraphBatchNorm(Operation):
         return f"GraphBatchNorm"
 
     def __call__(self, inputs, **kwargs):
+        inputs = inputs[0]
         # Node features (batch_size, max_atom, n_features)
-        out = tf.keras.layers.BatchNormalization()(inputs) # (batch_size, max_atom, n_features)
+        out = tf.keras.layers.BatchNormalization(axis=-1)(inputs)  # (batch_size, max_atom, n_features)
         return out
-
 
 
 # FROM SPEKTRAL
 class GraphConv2(Operation):
     def __init__(self, channels, activation=None, use_bias=True,
                  bias_initializer='zeros',
-                 kernel_initializer='zeros', kernel_regularizer=None, bias_regularizer=None, activity_regularizer=None,
+                 kernel_initializer='glorot_uniform', kernel_regularizer=None, bias_regularizer=None,
+                 activity_regularizer=None,
                  kernel_constraint=None, bias_constraint=None, *args, **kwargs):
         self.channels = channels
         self.activation = activation
@@ -125,7 +136,6 @@ class GraphConv2(Operation):
 
     def __call__(self, inputs, **kwargs):
         assert type(inputs) is list
-        print(f"Input shape: {[inputs[i].shape for i in range(len(inputs))]}")
         out = spektral.layers.GraphConv(channels=self.channels,
                                         activation=self.activation,
                                         use_bias=self.use_bias,
@@ -138,7 +148,6 @@ class GraphConv2(Operation):
                                         bias_constraint=self.bias_constraint,
                                         **self.kwargs
                                         )(inputs)
-        print(f"Output Tensor shape: {out.get_shape()} \n")
         return out
 
 
@@ -572,7 +581,6 @@ class GINConv2(Operation):
 
     def __call__(self, inputs, **kwargs):
         assert type(inputs) is list
-        print(f"Input shape: {[inputs[i].shape for i in range(len(inputs))]} \n")
 
         out = spektral.layers.GINConv(channels=self.channels,
                                       mlp_channels=self.mlp_channels,
@@ -590,7 +598,6 @@ class GINConv2(Operation):
                                       bias_constraint=self.bias_constraint,
                                       **self.kwargs)(inputs)
 
-        print(f"Output Tensor shape: {out.get_shape()} \n")
         return out
 
 
@@ -852,4 +859,3 @@ class DiffPool2(Operation):
 
         print(f"Output Tensor shape: {out.get_shape()} \n")
         return out
-
