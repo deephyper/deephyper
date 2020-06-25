@@ -78,7 +78,7 @@ class AgeBO(RegularizedEvolution):
         self.hp_opt = SkOptimizer(
             dimensions=self.hp_space,
             base_estimator="GBRT",  # GradientBoostingQuantileRegressor(n_jobs=8),
-            acq_func="gp_hedge",
+            acq_func="LCB",  # "gp_hedge",
             acq_optimizer="sampling",
             n_initial_points=self.n_initial_points,  # Half Random - Half advised
             # model_queue_size=100,
