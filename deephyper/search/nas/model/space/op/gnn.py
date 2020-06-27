@@ -2,6 +2,10 @@ import spektral
 import tensorflow as tf
 from . import Operation
 from numpy.random import seed
+from tensorflow.keras import activations, initializers, regularizers, constraints
+from tensorflow.keras.layers import LeakyReLU, Dropout
+from spektral.layers.ops import filter_dot
+import tensorflow.keras.backend as K
 
 seed(1)
 from tensorflow import set_random_seed
@@ -933,3 +937,180 @@ class DiffPool2(Operation):
 
         print(f"Output Tensor shape: {out.get_shape()} \n")
         return out
+
+
+class GraphAttentionCell(tf.keras.layers.Layer):
+    # Dimension, Attention, Head, Aggregate, Combine, Activation
+    def __init__(self,
+                 channels,
+                 attn_heads=1,
+                 concat_heads=True,
+                 dropout_rate=0.5,
+                 return_attn_coef=False,
+                 activation='relu',
+                 use_bias=True,
+                 kernel_initializer='glorot_uniform',
+                 bias_initializer='zeros',
+                 attn_kernel_initializer='glorot_uniform',
+                 kernel_regularizer=None,
+                 bias_regularizer=None,
+                 attn_kernel_regularizer=None,
+                 activity_regularizer=None,
+                 kernel_constraint=None,
+                 bias_constraint=None,
+                 attn_kernel_constraint=None,
+                 **kwargs):
+        super(GraphAttentionCell, self).__init__()
+        if 'input_shape' not in kwargs and 'input_dim' in kwargs:
+            kwargs['input_shape'] = (kwargs.pop('input_dim'),)
+        self.channels = channels
+        self.attn_heads = attn_heads
+        self.concat_heads = concat_heads
+        self.dropout_rate = dropout_rate
+        self.return_attn_coef = return_attn_coef
+        self.activation = activations.get(activation)
+        self.use_bias = use_bias
+        self.kernel_initializer = initializers.get(kernel_initializer)
+        self.bias_initializer = initializers.get(bias_initializer)
+        self.attn_kernel_initializer = initializers.get(attn_kernel_initializer)
+        self.kernel_regularizer = regularizers.get(kernel_regularizer)
+        self.bias_regularizer = regularizers.get(bias_regularizer)
+        self.attn_kernel_regularizer = regularizers.get(attn_kernel_regularizer)
+        self.activity_regularizer = regularizers.get(activity_regularizer)
+        self.kernel_constraint = constraints.get(kernel_constraint)
+        self.bias_constraint = constraints.get(bias_constraint)
+        self.attn_kernel_constraint = constraints.get(attn_kernel_constraint)
+        self.supports_masking = False
+
+        # Populated by build()
+        self.kernels = []  # Layer kernels for attention heads
+        self.biases = []  # Layer biases for attention heads
+        self.attn_kernels = []  # Attention kernels for attention heads
+
+        if concat_heads:
+            # Output will have shape (..., attention_heads * channels)
+            self.output_dim = self.channels * self.attn_heads
+        else:
+            # Output will have shape (..., channels)
+            self.output_dim = self.channels
+
+    def build(self, input_shape):
+        assert len(input_shape) >= 2 and type(input_shape) is list
+        input_dim = int(input_shape[0][-1])
+
+        # Initialize weights for each attention head
+        for head in range(self.attn_heads):
+            # Layer kernel
+            kernel = self.add_weight(shape=(input_dim, self.channels),
+                                     initializer=self.kernel_initializer,
+                                     regularizer=self.kernel_regularizer,
+                                     constraint=self.kernel_constraint,
+                                     name='kernel_{}'.format(head))
+            self.kernels.append(kernel)
+
+            # Layer bias
+            if self.use_bias:
+                bias = self.add_weight(shape=(self.channels,),
+                                       initializer=self.bias_initializer,
+                                       regularizer=self.bias_regularizer,
+                                       constraint=self.bias_constraint,
+                                       name='bias_{}'.format(head))
+                self.biases.append(bias)
+
+            # Attention kernels
+            attn_kernel_self = self.add_weight(shape=(self.channels, 1),
+                                               initializer=self.attn_kernel_initializer,
+                                               regularizer=self.attn_kernel_regularizer,
+                                               constraint=self.attn_kernel_constraint,
+                                               name='attn_kernel_self_{}'.format(head))
+            attn_kernel_neighs = self.add_weight(shape=(self.channels, 1),
+                                                 initializer=self.attn_kernel_initializer,
+                                                 regularizer=self.attn_kernel_regularizer,
+                                                 constraint=self.attn_kernel_constraint,
+                                                 name='attn_kernel_neigh_{}'.format(head))
+            self.attn_kernels.append([attn_kernel_self, attn_kernel_neighs])
+        self.built = True
+
+    def call(self, inputs, **kwargs):
+        X = inputs[0]
+        A = inputs[1]
+
+        outputs = []
+        output_attn = []
+        for head in range(self.attn_heads):
+            kernel = self.kernels[head]
+            attention_kernel = self.attn_kernels[head]  # Attention kernel a in the paper (2F' x 1)
+
+            # Compute inputs to attention network
+            features = K.dot(X, kernel)
+
+            # Compue attention coefficients
+            # [[a_1], [a_2]]^T [[Wh_i], [Wh_2]] = [a_1]^T [Wh_i] + [a_2]^T [Wh_j]
+            attn_for_self = K.dot(features, attention_kernel[0])  # [a_1]^T [Wh_i]
+            attn_for_neighs = K.dot(features, attention_kernel[1])  # [a_2]^T [Wh_j]
+            if len(K.int_shape(features)) == 2:
+                # Single / mixed mode
+                attn_for_neighs_T = K.transpose(attn_for_neighs)
+            else:
+                # Batch mode
+                attn_for_neighs_T = K.permute_dimensions(attn_for_neighs, (0, 2, 1))
+            attn_coef = attn_for_self + attn_for_neighs_T
+            attn_coef = LeakyReLU(alpha=0.2)(attn_coef)
+
+            # Mask values before activation (Vaswani et al., 2017)
+            mask = -10e9 * (1.0 - A)
+            attn_coef += mask
+
+            # Apply softmax to get attention coefficients
+            attn_coef = K.softmax(attn_coef)
+            output_attn.append(attn_coef)
+
+            # Apply dropout to attention coefficients
+            attn_coef_drop = Dropout(self.dropout_rate)(attn_coef)
+
+            # Convolution
+            features = filter_dot(attn_coef_drop, features)
+            if self.use_bias:
+                features = K.bias_add(features, self.biases[head])
+
+            # Add output of attention head to final output
+            outputs.append(features)
+
+        # Aggregate the heads' output according to the reduction method
+        if self.concat_heads:
+            output = K.concatenate(outputs)
+        else:
+            output = K.mean(K.stack(outputs), axis=0)
+
+        output = self.activation(output)
+
+        if self.return_attn_coef:
+            return output, output_attn
+        else:
+            return output
+
+    def compute_output_shape(self, input_shape):
+        output_shape = input_shape[0][:-1] + (self.output_dim,)
+        return output_shape
+
+    def get_config(self):
+        config = {
+            'channels': self.channels,
+            'attn_heads': self.attn_heads,
+            'concat_heads': self.concat_heads,
+            'dropout_rate': self.dropout_rate,
+            'activation': activations.serialize(self.activation),
+            'use_bias': self.use_bias,
+            'kernel_initializer': initializers.serialize(self.kernel_initializer),
+            'bias_initializer': initializers.serialize(self.bias_initializer),
+            'attn_kernel_initializer': initializers.serialize(self.attn_kernel_initializer),
+            'kernel_regularizer': regularizers.serialize(self.kernel_regularizer),
+            'bias_regularizer': regularizers.serialize(self.bias_regularizer),
+            'attn_kernel_regularizer': regularizers.serialize(self.attn_kernel_regularizer),
+            'activity_regularizer': regularizers.serialize(self.activity_regularizer),
+            'kernel_constraint': constraints.serialize(self.kernel_constraint),
+            'bias_constraint': constraints.serialize(self.bias_constraint),
+            'attn_kernel_constraint': constraints.serialize(self.attn_kernel_constraint),
+        }
+        base_config = super().get_config()
+        return dict(list(base_config.items()) + list(config.items()))
