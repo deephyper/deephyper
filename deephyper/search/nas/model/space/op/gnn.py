@@ -1,6 +1,12 @@
 import spektral
 import tensorflow as tf
 from . import Operation
+from numpy.random import seed
+
+seed(1)
+from tensorflow import set_random_seed
+
+set_random_seed(2)
 
 
 # TODO: add graph gathering, graph batch normalization
@@ -66,6 +72,76 @@ class GraphMaxPool(tf.keras.layers.Layer):
         return tf.reduce_max(out_expand, axis=1)  # [batch_size, max_atom, n_features]
 
 
+class GraphSumPool(tf.keras.layers.Layer):
+    """
+    A GraphPool gathers data from local neighborhoods of a graph.
+    This layer does a max-pooling over the feature vectors of atoms in a
+    neighborhood. You can think of this layer as analogous to a max-pooling layer
+    for 2D convolutions but which operates on graphs instead.
+
+    Adapted from: https://github.com/deepchem/deepchem/blob/master/deepchem/models/layers.py
+    """
+
+    def __init__(self, **kwargs):
+        super(GraphSumPool, self).__init__()
+        self.kwargs = kwargs
+
+    def __str__(self):
+        return f"GraphSumPool"
+
+    def call(self, inputs, **kwargs):
+        X = inputs[0]  # Node features (batch_size, max_atom, n_features)
+        A = inputs[1]  # Adjacency matrix (batch_size, max_atom, max_atom)
+
+        # If tf 1.15, can use tf.repeat, <= 1.14 tf.keras.backend.repeat_elements
+        X_shape = X.get_shape().as_list()  # [batch_size, max_atom, n_features]
+        X_expand = tf.expand_dims(X, 1)  # [batch_size, 1, max_atom, n_features]
+        X_expand = tf.keras.backend.repeat_elements(X_expand, X_shape[1],
+                                                    axis=1)  # [batch_size, max_atom, max_atom, n_features]
+
+        A_expand = tf.expand_dims(A, 3)  # [batch_size, max_atom, max_atom, 1]
+        A_expand = tf.keras.backend.repeat_elements(A_expand, X_shape[2],
+                                                    axis=3)  # [batch_size, max_atom, max_atom, n_features]
+        out_expand = tf.multiply(X_expand, A_expand)  # [batch_size, max_atom, max_atom, n_features]
+
+        return tf.reduce_sum(out_expand, axis=1)  # [batch_size, max_atom, n_features]
+
+
+class GraphMeanPool(tf.keras.layers.Layer):
+    """
+    A GraphPool gathers data from local neighborhoods of a graph.
+    This layer does a max-pooling over the feature vectors of atoms in a
+    neighborhood. You can think of this layer as analogous to a max-pooling layer
+    for 2D convolutions but which operates on graphs instead.
+
+    Adapted from: https://github.com/deepchem/deepchem/blob/master/deepchem/models/layers.py
+    """
+
+    def __init__(self, **kwargs):
+        super(GraphMeanPool, self).__init__()
+        self.kwargs = kwargs
+
+    def __str__(self):
+        return f"GraphMeanPool"
+
+    def call(self, inputs, **kwargs):
+        X = inputs[0]  # Node features (batch_size, max_atom, n_features)
+        A = inputs[1]  # Adjacency matrix (batch_size, max_atom, max_atom)
+
+        # If tf 1.15, can use tf.repeat, <= 1.14 tf.keras.backend.repeat_elements
+        X_shape = X.get_shape().as_list()  # [batch_size, max_atom, n_features]
+        X_expand = tf.expand_dims(X, 1)  # [batch_size, 1, max_atom, n_features]
+        X_expand = tf.keras.backend.repeat_elements(X_expand, X_shape[1],
+                                                    axis=1)  # [batch_size, max_atom, max_atom, n_features]
+
+        A_expand = tf.expand_dims(A, 3)  # [batch_size, max_atom, max_atom, 1]
+        A_expand = tf.keras.backend.repeat_elements(A_expand, X_shape[2],
+                                                    axis=3)  # [batch_size, max_atom, max_atom, n_features]
+        out_expand = tf.multiply(X_expand, A_expand)  # [batch_size, max_atom, max_atom, n_features]
+
+        return tf.reduce_mean(out_expand, axis=1)  # [batch_size, max_atom, n_features]
+
+
 class GraphGather(tf.keras.layers.Layer):
     """
     A GraphGather layer pools node-level feature vectors to create a graph feature vector.
@@ -90,7 +166,7 @@ class GraphGather(tf.keras.layers.Layer):
     def call(self, inputs, **kwargs):
         inputs = inputs
         # Node features (batch_size, max_atom, n_features)
-        return tf.reduce_sum(inputs, axis=1)  # [batch_size, n_features]
+        return tf.nn.tanh(tf.reduce_sum(inputs, axis=1))  # [batch_size, n_features]
 
 
 class GraphBatchNorm(Operation):
@@ -341,11 +417,10 @@ class GraphAttention2(Operation):
         self.kwargs = kwargs
 
     def __str__(self):
-        return f"GraphEdgedConv {self.channels} channels"
+        return f"GraphAttention {self.channels} channels"
 
     def __call__(self, inputs, **kwargs):
         assert type(inputs) is list
-        print(f"Input shape: {[inputs[i].shape for i in range(len(inputs))]} \n")
 
         out = spektral.layers.GraphAttention(channels=self.channels,
                                              attn_heads=self.attn_heads,
@@ -365,7 +440,6 @@ class GraphAttention2(Operation):
                                              bias_constraint=self.bias_constraint,
                                              attn_kernel_constraint=self.attn_kernel_constraint,
                                              **self.kwargs)(inputs)
-        print(f"Output Tensor shape: {out.get_shape()} \n")
         return out
 
 

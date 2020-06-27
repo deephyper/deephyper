@@ -1,5 +1,5 @@
 import numpy as np
-from deepchem.molnet import load_qm9
+from deepchem.molnet import load_qm9 as load_qm9_dc
 
 
 def adjacency_list_to_array(adjacency_list):
@@ -19,7 +19,7 @@ def adjacency_list_to_array(adjacency_list):
     return adjacency_array
 
 
-def load_data(zero_padding=True, split='random'):
+def load_qm9(zero_padding=True, split='random'):
     """
     Load qm9 dataset from .mat file. Max atom 23.
     Check details here: http://quantum-machine.org/datasets/
@@ -31,7 +31,7 @@ def load_data(zero_padding=True, split='random'):
         Lists of train, valid and test data, and 12 qm9 tasks.
     """
     print("Loading QM9 Dataset (takes about 1 minute)...")
-    qm9_tasks, (train_dataset, valid_dataset, test_dataset), transformers = load_qm9(featurizer='GraphConv',
+    qm9_tasks, (train_dataset, valid_dataset, test_dataset), transformers = load_qm9_dc(featurizer='GraphConv',
                                                                                      split=split)
     MAX_ATOM = 9
     N_FEAT = 75
@@ -100,11 +100,11 @@ def load_data(zero_padding=True, split='random'):
             A_test.append(adjacency_array)
         y_test.append(test_y[i])
 
-    return [X_train, A_train, E_train, y_train], \
-           [X_valid, A_valid, E_valid, y_valid], \
-           [X_test, A_test, E_test, y_test], \
-           qm9_tasks
+    return [X_train, A_train, y_train], \
+           [X_valid, A_valid, y_valid], \
+           [X_test, A_test, y_test], \
+           qm9_tasks, transformers
 
 
 if __name__ == '__main__':
-    train_data, valid_data, test_data, qm9_tasks = load_data()
+    train_data, valid_data, test_data, qm9_tasks, transformers = load_data()

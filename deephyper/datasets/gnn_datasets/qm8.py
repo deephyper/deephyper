@@ -103,8 +103,8 @@ def load_data(zero_padding=True, split='random'):
     return [X_train, A_train, E_train, y_train], \
            [X_valid, A_valid, E_valid, y_valid], \
            [X_test, A_test, E_test, y_test], \
-           qm8_tasks
+           qm8_tasks, transformers
 
 
 if __name__ == '__main__':
-    train_data, valid_data, test_data, qm8_tasks = load_data()
+    train_data, valid_data, test_data, qm8_tasks, transformers = load_data()

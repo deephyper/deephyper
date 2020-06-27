@@ -103,8 +103,9 @@ def load_qm7(zero_padding=True, split='stratified'):
     return [X_train, A_train, y_train], \
            [X_valid, A_valid, y_valid], \
            [X_test, A_test, y_test], \
-           qm7_tasks
+           qm7_tasks, transformers
 
 
 if __name__ == '__main__':
-    train_data, valid_data, test_data, qm7_tasks = load_data()
+    train_data, valid_data, test_data, qm7_tasks, transformers = load_qm7()
+    print(train_data[-1][0][0])

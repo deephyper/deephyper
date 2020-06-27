@@ -96,6 +96,10 @@ def poloss(y_true, y_pred):
     return custom_loss
 
 
+def negmae(y_true, y_pred):
+    return -tf.keras.metrics.mean_absolute_error(y_true, y_pred)
+
+
 metrics = OrderedDict()
 metrics["mean_absolute_error"] = metrics["mae"] = mae
 metrics["r2"] = r2
@@ -106,6 +110,7 @@ metrics["accuracy"] = metrics["acc"] = acc
 metrics["po"] = po
 metrics["por2"] = por2
 metrics["poloss"] = poloss
+metrics["negmae"] = negmae
 
 
 def selectMetric(name: str):
