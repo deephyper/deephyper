@@ -680,60 +680,40 @@ class GINConv2(Operation):
         return out
 
 
-class GlobalAvgPool2(Operation):
+class GlobalAvgPool2(tf.keras.layers.Layer):
     def __init__(self, **kwargs):
+        super(GlobalAvgPool2, self).__init__()
         self.kwargs = kwargs
 
     def __str__(self):
         return f"GraphAvgPool"
 
-    def __call__(self, inputs, **kwargs):
-        print(f"Input shape: {[inputs[i].shape for i in range(len(inputs))]} \n")
-
-        out = spektral.layers.GlobalAvgPool(**self.kwargs)(inputs)
-
-        if out.get_shape()[-2].value is None and len(out.get_shape()) is 3:
-            out = tf.transpose(out, perm=[1, 0, 2])
-
-        print(f"Output Tensor shape: {out.get_shape()} \n")
-        return out
+    def call(self, inputs):
+        return tf.reduce_mean(inputs, axis=-1)
 
 
-class GlobalMaxPool2(Operation):
+class GlobalMaxPool2(tf.keras.layers.Layer):
     def __init__(self, **kwargs):
+        super(GlobalMaxPool2, self).__init__()
         self.kwargs = kwargs
 
     def __str__(self):
         return f"GraphMaxPool"
 
-    def __call__(self, inputs, **kwargs):
-        print(f"Input shape: {[inputs[i].shape for i in range(len(inputs))]}")
-
-        out = spektral.layers.GlobalMaxPool(**self.kwargs)(inputs)
-
-        if out.get_shape()[-2].value is None and len(out.get_shape()) is 3:
-            out = tf.transpose(out, perm=[1, 0, 2])
-
-        print(f"Output Tensor shape: {out.get_shape()} \n")
-        return out
+    def call(self, inputs):
+        return tf.reduce_max(inputs, axis=-1)
 
 
-class GlobalSumPool2(Operation):
+class GlobalSumPool2(tf.keras.layers.Layer):
     def __init__(self, **kwargs):
+        super(GlobalSumPool2, self).__init__()
         self.kwargs = kwargs
 
     def __str__(self):
         return f"GraphSumPool"
 
-    def __call__(self, inputs, **kwargs):
-        print(f"Input shape: {[inputs[i].shape for i in range(len(inputs))]}")
-
-        out = spektral.layers.GlobalSumPool(**self.kwargs)(inputs)
-        if out.get_shape()[-2].value is None and len(out.get_shape()) is 3:
-            out = tf.transpose(out, perm=[1, 0, 2])
-
-        print(f"Output Tensor shape: {out.get_shape()} \n")
-        return out
+    def call(self, inputs):
+        return tf.reduce_sum(inputs, axis=-1)
 
 
 class GlobalAttentionPool2(Operation):
@@ -1015,10 +995,10 @@ class GraphAttentionCell(tf.keras.layers.Layer):
 
         if concat_heads:
             # Output will have shape (..., attention_heads * channels)
-            self.output_dim = self.channels * self.attn_heads
+            self.output_dim = self.channels * self.attn_heads * 2
         else:
             # Output will have shape (..., channels)
-            self.output_dim = self.channels
+            self.output_dim = self.channels * 2
 
     def build(self, input_shape):
         assert len(input_shape) >= 2 and type(input_shape) is list
@@ -1044,59 +1024,60 @@ class GraphAttentionCell(tf.keras.layers.Layer):
                 self.biases.append(bias)
 
             # Attention kernels
-            attn_kernel_self = self.add_weight(shape=(self.channels, 1),
-                                               initializer=self.attn_kernel_initializer,
-                                               regularizer=self.attn_kernel_regularizer,
-                                               constraint=self.attn_kernel_constraint,
-                                               name='attn_kernel_self_{}'.format(head))  # shape: (C, 1)
-            attn_kernel_neighs = self.add_weight(shape=(self.channels, 1),
-                                                 initializer=self.attn_kernel_initializer,
-                                                 regularizer=self.attn_kernel_regularizer,
-                                                 constraint=self.attn_kernel_constraint,
-                                                 name='attn_kernel_neigh_{}'.format(head))  # shape: (C, 1)
-            self.attn_kernels.append([attn_kernel_self, attn_kernel_neighs])
+            if self.attn_method == 'gat' or self.attn_method == 'sym-gat':
+                attn_kernel_self = self.add_weight(shape=(self.channels, 1),
+                                                   initializer=self.attn_kernel_initializer,
+                                                   regularizer=self.attn_kernel_regularizer,
+                                                   constraint=self.attn_kernel_constraint,
+                                                   name='attn_kernel_self_{}'.format(head))  # shape: (C, 1)
+                attn_kernel_neighs = self.add_weight(shape=(self.channels, 1),
+                                                     initializer=self.attn_kernel_initializer,
+                                                     regularizer=self.attn_kernel_regularizer,
+                                                     constraint=self.attn_kernel_constraint,
+                                                     name='attn_kernel_neigh_{}'.format(head))  # shape: (C, 1)
+                self.attn_kernels.append([attn_kernel_self, attn_kernel_neighs])
 
         if self.combine == 'mlp':
             if self.concat_heads:
-                self.combine_kernel_1 = self.add_weight(shape=(2 * self.channels * self.attn_heads, 128),
+                self.combine_kernel_1 = self.add_weight(shape=(2 * self.channels * self.attn_heads, 32),
                                                         initializer=self.kernel_initializer,
                                                         regularizer=self.kernel_regularizer,
                                                         constraint=self.kernel_constraint,
-                                                        name='combine_kernel_1')  # shape: (C*Head, 128)
-                self.combine_kernel_2 = self.add_weight(shape=(128, 2 * self.channels * self.attn_heads),
+                                                        name='combine_kernel_1')  # shape: (C*Head, 32)
+                self.combine_kernel_2 = self.add_weight(shape=(32, 2 * self.channels * self.attn_heads),
                                                         initializer=self.kernel_initializer,
                                                         regularizer=self.kernel_regularizer,
                                                         constraint=self.kernel_constraint,
-                                                        name='combine_kernel_1')  # shape: (128, 2*C)
+                                                        name='combine_kernel_2')  # shape: (32, 2*C)
             else:
-                self.combine_kernel_1 = self.add_weight(shape=(2 * self.channels, 128),
+                self.combine_kernel_1 = self.add_weight(shape=(2 * self.channels, 32),
                                                         initializer=self.kernel_initializer,
                                                         regularizer=self.kernel_regularizer,
                                                         constraint=self.kernel_constraint,
-                                                        name='combine_kernel_1')  # shape: (C, 128)
-                self.combine_kernel_2 = self.add_weight(shape=(128, 2 * self.channels),
+                                                        name='combine_kernel_1')  # shape: (C, 32)
+                self.combine_kernel_2 = self.add_weight(shape=(32, 2 * self.channels),
                                                         initializer=self.kernel_initializer,
                                                         regularizer=self.kernel_regularizer,
                                                         constraint=self.kernel_constraint,
-                                                        name='combine_kernel_1')  # shape: (128, 2*C)
+                                                        name='combine_kernel_2')  # shape: (32, 2*C)
             if self.use_bias:
-                self.combine_bias_1 = self.add_weight(shape=(128,),
+                self.combine_bias_1 = self.add_weight(shape=(32,),
                                                       initializer=self.bias_initializer,
                                                       regularizer=self.bias_regularizer,
                                                       constraint=self.bias_constraint,
-                                                      name='combine_bias_1')  # shape: (128, )
+                                                      name='combine_bias_1')  # shape: (32, )
                 if self.concat_heads:
                     self.combine_bias_2 = self.add_weight(shape=(2 * self.channels * self.attn_heads),
                                                           initializer=self.bias_initializer,
                                                           regularizer=self.bias_regularizer,
                                                           constraint=self.bias_constraint,
-                                                          name='combine_bias_2')  # shape: (128, )
+                                                          name='combine_bias_2')  # shape: (32, )
                 else:
                     self.combine_bias_2 = self.add_weight(shape=(2 * self.channels),
                                                           initializer=self.bias_initializer,
                                                           regularizer=self.bias_regularizer,
                                                           constraint=self.bias_constraint,
-                                                          name='combine_bias_2')  # shape: (128, )
+                                                          name='combine_bias_2')  # shape: (32, )
         self.built = True
 
     def call(self, inputs, **kwargs):
@@ -1109,7 +1090,6 @@ class GraphAttentionCell(tf.keras.layers.Layer):
         embeddings = []
         for head in range(self.attn_heads):
             kernel = self.kernels[head]  # shape: (F, C)
-            attention_kernel = self.attn_kernels[head]  # Attention kernel a in the paper (2F' x 1)
             # shape: [(C, 1), (C, 1)]
 
             # Compute inputs to attention network
@@ -1117,6 +1097,7 @@ class GraphAttentionCell(tf.keras.layers.Layer):
             embeddings.append(features)  # shape: [(?, N, C), (?, N, C), ...]
 
             if self.attn_method == 'gat' or self.attn_method == 'sym-gat':
+                attention_kernel = self.attn_kernels[head]  # Attention kernel a in the paper (2F' x 1)
                 # Compute attention coefficients
                 # [[a_1], [a_2]]^T [[Wh_i], [Wh_j]] = [a_1]^T [Wh_i] + [a_2]^T [Wh_j]
                 attn_for_self = K.dot(features, attention_kernel[0])  # [a_1]^T [Wh_i] # shape: (?, N, 1)
@@ -1167,7 +1148,7 @@ class GraphAttentionCell(tf.keras.layers.Layer):
         # Combine local embedding with attention results
         output = K.concatenate((embeddings, output))  # shape: (?, N, 2*C) or (?, N, 2*Head*C)
         if self.combine == 'mlp':
-            output = K.dot(output, self.combine_kernel_1)  # shape: (?, N, 128)
+            output = K.dot(output, self.combine_kernel_1)  # shape: (?, N, 32)
             if self.use_bias:
                 output = K.bias_add(output, self.combine_bias_1)
             output = K.dot(output, self.combine_kernel_2)  # shape: (?, N, 2*C) or (?, N, 2*Head*C)
