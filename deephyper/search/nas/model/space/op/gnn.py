@@ -4,6 +4,7 @@ from . import Operation
 from numpy.random import seed
 from tensorflow.keras import activations, initializers, regularizers, constraints
 from tensorflow.keras.layers import LeakyReLU, Dropout
+from tensorflow.keras.activations import tanh
 from spektral.layers.ops import filter_dot
 import tensorflow.keras.backend as K
 
@@ -59,21 +60,21 @@ class GraphMaxPool(tf.keras.layers.Layer):
         return f"GraphMaxPool"
 
     def call(self, inputs, **kwargs):
-        X = inputs[0]  # Node features (batch_size, max_atom, n_features)
-        A = inputs[1]  # Adjacency matrix (batch_size, max_atom, max_atom)
+        X = inputs[0]  # Node features (?, N, F)
+        A = inputs[1]  # Adjacency matrix (?, N, N)
 
         # If tf 1.15, can use tf.repeat, <= 1.14 tf.keras.backend.repeat_elements
-        X_shape = X.get_shape().as_list()  # [batch_size, max_atom, n_features]
-        X_expand = tf.expand_dims(X, 1)  # [batch_size, 1, max_atom, n_features]
+        X_shape = X.get_shape().as_list()  # [?, N, F]
+        X_expand = tf.expand_dims(X, 1)  # [?, 1, N, F]
         X_expand = tf.keras.backend.repeat_elements(X_expand, X_shape[1],
-                                                    axis=1)  # [batch_size, max_atom, max_atom, n_features]
+                                                    axis=1)  # [?, N, N, F]
 
-        A_expand = tf.expand_dims(A, 3)  # [batch_size, max_atom, max_atom, 1]
+        A_expand = tf.expand_dims(A, 3)  # [?, N, N, 1]
         A_expand = tf.keras.backend.repeat_elements(A_expand, X_shape[2],
-                                                    axis=3)  # [batch_size, max_atom, max_atom, n_features]
-        out_expand = tf.multiply(X_expand, A_expand)  # [batch_size, max_atom, max_atom, n_features]
+                                                    axis=3)  # [?, N, N, F]
+        out_expand = tf.multiply(X_expand, A_expand)  # [?, N, N, F]
 
-        return tf.reduce_max(out_expand, axis=1)  # [batch_size, max_atom, n_features]
+        return tf.reduce_max(out_expand, axis=1)  # [?, N, F]
 
 
 class GraphSumPool(tf.keras.layers.Layer):
@@ -94,21 +95,21 @@ class GraphSumPool(tf.keras.layers.Layer):
         return f"GraphSumPool"
 
     def call(self, inputs, **kwargs):
-        X = inputs[0]  # Node features (batch_size, max_atom, n_features)
-        A = inputs[1]  # Adjacency matrix (batch_size, max_atom, max_atom)
+        X = inputs[0]  # Node features (?, N, F)
+        A = inputs[1]  # Adjacency matrix (?, N, N)
 
         # If tf 1.15, can use tf.repeat, <= 1.14 tf.keras.backend.repeat_elements
-        X_shape = X.get_shape().as_list()  # [batch_size, max_atom, n_features]
-        X_expand = tf.expand_dims(X, 1)  # [batch_size, 1, max_atom, n_features]
+        X_shape = X.get_shape().as_list()  # [?, N, F]
+        X_expand = tf.expand_dims(X, 1)  # [?, 1, N, F]
         X_expand = tf.keras.backend.repeat_elements(X_expand, X_shape[1],
-                                                    axis=1)  # [batch_size, max_atom, max_atom, n_features]
+                                                    axis=1)  # [?, N, N, F]
 
-        A_expand = tf.expand_dims(A, 3)  # [batch_size, max_atom, max_atom, 1]
+        A_expand = tf.expand_dims(A, 3)  # [?, N, N, 1]
         A_expand = tf.keras.backend.repeat_elements(A_expand, X_shape[2],
-                                                    axis=3)  # [batch_size, max_atom, max_atom, n_features]
-        out_expand = tf.multiply(X_expand, A_expand)  # [batch_size, max_atom, max_atom, n_features]
+                                                    axis=3)  # [?, N, N, F]
+        out_expand = tf.multiply(X_expand, A_expand)  # [?, N, N, F]
 
-        return tf.reduce_sum(out_expand, axis=1)  # [batch_size, max_atom, n_features]
+        return tf.reduce_sum(out_expand, axis=1)  # [?, N, F]
 
 
 class GraphMeanPool(tf.keras.layers.Layer):
@@ -129,21 +130,21 @@ class GraphMeanPool(tf.keras.layers.Layer):
         return f"GraphMeanPool"
 
     def call(self, inputs, **kwargs):
-        X = inputs[0]  # Node features (batch_size, max_atom, n_features)
-        A = inputs[1]  # Adjacency matrix (batch_size, max_atom, max_atom)
+        X = inputs[0]  # Node features (?, N, F)
+        A = inputs[1]  # Adjacency matrix (?, N, N)
 
         # If tf 1.15, can use tf.repeat, <= 1.14 tf.keras.backend.repeat_elements
-        X_shape = X.get_shape().as_list()  # [batch_size, max_atom, n_features]
-        X_expand = tf.expand_dims(X, 1)  # [batch_size, 1, max_atom, n_features]
+        X_shape = X.get_shape().as_list()  # [?, N, F]
+        X_expand = tf.expand_dims(X, 1)  # [?, 1, N, F]
         X_expand = tf.keras.backend.repeat_elements(X_expand, X_shape[1],
-                                                    axis=1)  # [batch_size, max_atom, max_atom, n_features]
+                                                    axis=1)  # [?, N, N, F]
 
-        A_expand = tf.expand_dims(A, 3)  # [batch_size, max_atom, max_atom, 1]
+        A_expand = tf.expand_dims(A, 3)  # [?, N, N, 1]
         A_expand = tf.keras.backend.repeat_elements(A_expand, X_shape[2],
-                                                    axis=3)  # [batch_size, max_atom, max_atom, n_features]
-        out_expand = tf.multiply(X_expand, A_expand)  # [batch_size, max_atom, max_atom, n_features]
+                                                    axis=3)  # [?, N, N, F]
+        out_expand = tf.multiply(X_expand, A_expand)  # [?, N, N, F]
 
-        return tf.reduce_mean(out_expand, axis=1)  # [batch_size, max_atom, n_features]
+        return tf.reduce_mean(out_expand, axis=1)  # [?, N, F]
 
 
 class GraphGather(tf.keras.layers.Layer):
@@ -169,8 +170,8 @@ class GraphGather(tf.keras.layers.Layer):
 
     def call(self, inputs, **kwargs):
         inputs = inputs
-        # Node features (batch_size, max_atom, n_features)
-        return tf.nn.tanh(tf.reduce_sum(inputs, axis=1))  # [batch_size, n_features]
+        # Node features (?, N, F)
+        return tf.nn.tanh(tf.reduce_sum(inputs, axis=1))  # [?, F]
 
 
 class GraphBatchNorm(Operation):
@@ -187,8 +188,8 @@ class GraphBatchNorm(Operation):
 
     def __call__(self, inputs, **kwargs):
         inputs = inputs[0]
-        # Node features (batch_size, max_atom, n_features)
-        out = tf.keras.layers.BatchNormalization(axis=-1)(inputs)  # (batch_size, max_atom, n_features)
+        # Node features (?, N, F)
+        out = tf.keras.layers.BatchNormalization(axis=-1)(inputs)  # (?, N, F)
         return out
 
 
@@ -939,11 +940,33 @@ class DiffPool2(Operation):
         return out
 
 
+def aggregate(name, X, A):
+    X_shape = X.get_shape().as_list()  # [?, N, C]
+    X_expand = tf.expand_dims(X, 1)  # [?, 1, N, C]
+    X_expand = tf.keras.backend.repeat_elements(X_expand, X_shape[1],
+                                                axis=1)  # [?, N, N, C]
+
+    A_expand = tf.expand_dims(A, 3)  # [?, N, N, 1]
+    A_expand = tf.keras.backend.repeat_elements(A_expand, X_shape[2],
+                                                axis=3)  # [?, N, N, C]
+    out_expand = tf.multiply(X_expand, A_expand)  # [?, N, N, C]
+
+    if name == 'maxpooling':
+        return tf.reduce_max(out_expand, axis=1)  # [?, N, C]
+    elif name == 'summation':
+        return tf.reduce_sum(out_expand, axis=1)  # [?, N, C]
+    elif name == 'mean':
+        return tf.reduce_mean(out_expand, axis=1)  # [?, N, C]
+
+
 class GraphAttentionCell(tf.keras.layers.Layer):
     # Dimension, Attention, Head, Aggregate, Combine, Activation
     def __init__(self,
                  channels,
+                 attn_method='gat',
+                 aggr_method='maxpooling',
                  attn_heads=1,
+                 combine='identity',
                  concat_heads=True,
                  dropout_rate=0.5,
                  return_attn_coef=False,
@@ -964,6 +987,9 @@ class GraphAttentionCell(tf.keras.layers.Layer):
         if 'input_shape' not in kwargs and 'input_dim' in kwargs:
             kwargs['input_shape'] = (kwargs.pop('input_dim'),)
         self.channels = channels
+        self.attn_method = attn_method
+        self.aggr_method = aggr_method
+        self.combine = combine
         self.attn_heads = attn_heads
         self.concat_heads = concat_heads
         self.dropout_rate = dropout_rate
@@ -1005,7 +1031,7 @@ class GraphAttentionCell(tf.keras.layers.Layer):
                                      initializer=self.kernel_initializer,
                                      regularizer=self.kernel_regularizer,
                                      constraint=self.kernel_constraint,
-                                     name='kernel_{}'.format(head))
+                                     name='kernel_{}'.format(head))  # shape: (F, C)
             self.kernels.append(kernel)
 
             # Layer bias
@@ -1014,7 +1040,7 @@ class GraphAttentionCell(tf.keras.layers.Layer):
                                        initializer=self.bias_initializer,
                                        regularizer=self.bias_regularizer,
                                        constraint=self.bias_constraint,
-                                       name='bias_{}'.format(head))
+                                       name='bias_{}'.format(head))  # shape: (C, )
                 self.biases.append(bias)
 
             # Attention kernels
@@ -1022,67 +1048,133 @@ class GraphAttentionCell(tf.keras.layers.Layer):
                                                initializer=self.attn_kernel_initializer,
                                                regularizer=self.attn_kernel_regularizer,
                                                constraint=self.attn_kernel_constraint,
-                                               name='attn_kernel_self_{}'.format(head))
+                                               name='attn_kernel_self_{}'.format(head))  # shape: (C, 1)
             attn_kernel_neighs = self.add_weight(shape=(self.channels, 1),
                                                  initializer=self.attn_kernel_initializer,
                                                  regularizer=self.attn_kernel_regularizer,
                                                  constraint=self.attn_kernel_constraint,
-                                                 name='attn_kernel_neigh_{}'.format(head))
+                                                 name='attn_kernel_neigh_{}'.format(head))  # shape: (C, 1)
             self.attn_kernels.append([attn_kernel_self, attn_kernel_neighs])
+
+        if self.combine == 'mlp':
+            if self.concat_heads:
+                self.combine_kernel_1 = self.add_weight(shape=(2 * self.channels * self.attn_heads, 128),
+                                                        initializer=self.kernel_initializer,
+                                                        regularizer=self.kernel_regularizer,
+                                                        constraint=self.kernel_constraint,
+                                                        name='combine_kernel_1')  # shape: (C*Head, 128)
+                self.combine_kernel_2 = self.add_weight(shape=(128, 2 * self.channels * self.attn_heads),
+                                                        initializer=self.kernel_initializer,
+                                                        regularizer=self.kernel_regularizer,
+                                                        constraint=self.kernel_constraint,
+                                                        name='combine_kernel_1')  # shape: (128, 2*C)
+            else:
+                self.combine_kernel_1 = self.add_weight(shape=(2 * self.channels, 128),
+                                                        initializer=self.kernel_initializer,
+                                                        regularizer=self.kernel_regularizer,
+                                                        constraint=self.kernel_constraint,
+                                                        name='combine_kernel_1')  # shape: (C, 128)
+                self.combine_kernel_2 = self.add_weight(shape=(128, 2 * self.channels),
+                                                        initializer=self.kernel_initializer,
+                                                        regularizer=self.kernel_regularizer,
+                                                        constraint=self.kernel_constraint,
+                                                        name='combine_kernel_1')  # shape: (128, 2*C)
+            if self.use_bias:
+                self.combine_bias_1 = self.add_weight(shape=(128,),
+                                                      initializer=self.bias_initializer,
+                                                      regularizer=self.bias_regularizer,
+                                                      constraint=self.bias_constraint,
+                                                      name='combine_bias_1')  # shape: (128, )
+                if self.concat_heads:
+                    self.combine_bias_2 = self.add_weight(shape=(2 * self.channels * self.attn_heads),
+                                                          initializer=self.bias_initializer,
+                                                          regularizer=self.bias_regularizer,
+                                                          constraint=self.bias_constraint,
+                                                          name='combine_bias_2')  # shape: (128, )
+                else:
+                    self.combine_bias_2 = self.add_weight(shape=(2 * self.channels),
+                                                          initializer=self.bias_initializer,
+                                                          regularizer=self.bias_regularizer,
+                                                          constraint=self.bias_constraint,
+                                                          name='combine_bias_2')  # shape: (128, )
         self.built = True
 
     def call(self, inputs, **kwargs):
-        X = inputs[0]
-        A = inputs[1]
+        assert self.attn_method in ['gat', 'sym-gat', 'gcn', 'const']
+        X = inputs[0]  # shape: (?, N, F)
+        A = inputs[1]  # shape: (?, N, N)
 
         outputs = []
         output_attn = []
+        embeddings = []
         for head in range(self.attn_heads):
-            kernel = self.kernels[head]
+            kernel = self.kernels[head]  # shape: (F, C)
             attention_kernel = self.attn_kernels[head]  # Attention kernel a in the paper (2F' x 1)
+            # shape: [(C, 1), (C, 1)]
 
             # Compute inputs to attention network
-            features = K.dot(X, kernel)
+            features = K.dot(X, kernel)  # shape: (?, N, C)
+            embeddings.append(features)  # shape: [(?, N, C), (?, N, C), ...]
 
-            # Compue attention coefficients
-            # [[a_1], [a_2]]^T [[Wh_i], [Wh_2]] = [a_1]^T [Wh_i] + [a_2]^T [Wh_j]
-            attn_for_self = K.dot(features, attention_kernel[0])  # [a_1]^T [Wh_i]
-            attn_for_neighs = K.dot(features, attention_kernel[1])  # [a_2]^T [Wh_j]
-            if len(K.int_shape(features)) == 2:
-                # Single / mixed mode
-                attn_for_neighs_T = K.transpose(attn_for_neighs)
-            else:
-                # Batch mode
-                attn_for_neighs_T = K.permute_dimensions(attn_for_neighs, (0, 2, 1))
-            attn_coef = attn_for_self + attn_for_neighs_T
-            attn_coef = LeakyReLU(alpha=0.2)(attn_coef)
+            if self.attn_method == 'gat' or self.attn_method == 'sym-gat':
+                # Compute attention coefficients
+                # [[a_1], [a_2]]^T [[Wh_i], [Wh_j]] = [a_1]^T [Wh_i] + [a_2]^T [Wh_j]
+                attn_for_self = K.dot(features, attention_kernel[0])  # [a_1]^T [Wh_i] # shape: (?, N, 1)
+                attn_for_neighs = K.dot(features, attention_kernel[1])  # [a_2]^T [Wh_j] # shape: (?, N, 1)
+                attn_for_neighs_T = K.permute_dimensions(attn_for_neighs, (0, 2, 1))  # shape: (?, 1, N)
+                attn_coef = attn_for_self + attn_for_neighs_T  # shape: (?, N, N)
+                attn_coef = LeakyReLU(alpha=0.2)(attn_coef)  # shape: (?, N, N)
 
-            # Mask values before activation (Vaswani et al., 2017)
-            mask = -10e9 * (1.0 - A)
-            attn_coef += mask
+                # Mask values before activation (Vaswani et al., 2017)
+                mask = -10e9 * (1.0 - A)  # shape: (?, N, N)
+                attn_coef += mask  # shape: (?, N, N)
 
-            # Apply softmax to get attention coefficients
-            attn_coef = K.softmax(attn_coef)
-            output_attn.append(attn_coef)
+                # Apply softmax to get attention coefficients
+                attn_coef = K.softmax(attn_coef)  # shape: (?, N, N)
+                output_attn.append(attn_coef)  # shape: [(?, N, N), (?, N, N), ...]
 
-            # Apply dropout to attention coefficients
-            attn_coef_drop = Dropout(self.dropout_rate)(attn_coef)
+                # Apply dropout to attention coefficients
+                attn_coef = Dropout(self.dropout_rate)(attn_coef)  # shape: (?, N, N)
+                if self.attn_method == 'sym-gat':
+                    attn_coef = attn_coef + K.permute_dimensions(attn_coef, (0, 2, 1))  # shape: (?, N, N)
+            elif self.attn_method == 'const':
+                attn_coef = A  # shape: (?, N, N)
+            elif self.attn_method == 'gcn':
+                D = tf.reduce_sum(A, axis=-1)  # node degrees shape: (?, N)
+                D = tf.expand_dims(D, axis=-1)  # shape: (?, N, 1)
+                Dt = K.permute_dimensions(D, (0, 2, 1))  # shape: (?, 1, N)
+                D = tf.sqrt(tf.multiply(D, Dt))  # shape: (?, N, N)
+                attn_coef = tf.math.divide_no_nan(A, D)  # shape: (?, N, N)
 
             # Convolution
-            features = filter_dot(attn_coef_drop, features)
+            features = filter_dot(attn_coef, features)  # shape: (?, N, C)
             if self.use_bias:
-                features = K.bias_add(features, self.biases[head])
+                features = K.bias_add(features, self.biases[head])  # shape: (?, N, C)
 
             # Add output of attention head to final output
-            outputs.append(features)
+            outputs.append(features)  # shape: [(?, N, C), (?, N, C), ...]
 
         # Aggregate the heads' output according to the reduction method
         if self.concat_heads:
-            output = K.concatenate(outputs)
+            output = K.concatenate(outputs)  # shape: (?, N, Head*C)
+            embeddings = K.concatenate(embeddings)  # shape: (?, N, Head*C)
         else:
-            output = K.mean(K.stack(outputs), axis=0)
+            output = K.mean(K.stack(outputs), axis=0)  # shape: (?, N, C)
+            embeddings = K.mean(K.stack(embeddings), axis=0)  # shape: (?, N, C)
 
-        output = self.activation(output)
+        output = aggregate(self.aggr_method, output, A)  # shape: (?, N, C) or (?, N, Head*C)
+
+        # Combine local embedding with attention results
+        output = K.concatenate((embeddings, output))  # shape: (?, N, 2*C) or (?, N, 2*Head*C)
+        if self.combine == 'mlp':
+            output = K.dot(output, self.combine_kernel_1)  # shape: (?, N, 128)
+            if self.use_bias:
+                output = K.bias_add(output, self.combine_bias_1)
+            output = K.dot(output, self.combine_kernel_2)  # shape: (?, N, 2*C) or (?, N, 2*Head*C)
+            if self.use_bias:
+                output = K.bias_add(output, self.combine_bias_2)
+
+        output = self.activation(output)  # shape: (?, N, 2*C) or (?, N, 2*Head*C)
 
         if self.return_attn_coef:
             return output, output_attn
