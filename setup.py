@@ -19,10 +19,23 @@ on_gpu = type(os.environ.get("DH_GPU")) is str and "true" == os.environ.get("DH_
 NAME = "deephyper"
 DESCRIPTION = "Scalable asynchronous neural architecture and hyperparameter search for deep neural networks."
 URL = "https://github.com/deephyper/deephyper"
-EMAIL = "pbalapra@anl.gov"
-AUTHOR = "Prasanna Balaprakash"
 REQUIRES_PYTHON = ">=3.6, <3.8"
 VERSION = None
+
+# Build Author list
+authors = {
+    "Prasanna Balaprakash": "pbalapra@anl.gov",
+    "Romain Egele": "romain.egele@polytechnique.edu",
+    "Misha Salim": "msalim@anl.gov",
+    "Romit Maulik": "rmaulik@anl.gov",
+    "Venkat Vishwanath": "venkat@anl.gov",
+    "Stefan Wild": "wild@anl.gov",
+}
+AUTHOR = ""
+for i, (k, v) in enumerate(authors.items()):
+    if i > 0:
+        AUTHOR += ", "
+    AUTHOR += f"{k} <{v}>"
 
 # What packages are required for this module to be executed?
 REQUIRED = [
@@ -133,10 +146,6 @@ class UploadCommand(Command):
         self.status("Uploading the package to PyPI via Twine…")
         os.system("twine upload dist/*")
 
-        # self.status('Pushing git tags…')
-        # os.system('git tag v{0}'.format(about['__version__']))
-        # os.system('git push --tags')
-
         sys.exit()
 
 
@@ -205,7 +214,6 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     author=AUTHOR,
-    author_email=EMAIL,
     python_requires=REQUIRES_PYTHON,
     url=URL,
     packages=find_packages(exclude=("tests",)),
