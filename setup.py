@@ -39,11 +39,11 @@ for i, (k, v) in enumerate(authors.items()):
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    "numpy",
+    "tensorflow>=2.0.0",
+    "numpy==1.19.0",
     "dh-scikit-optimize==0.8.1",
     "scikit-learn",
     "tqdm",
-    "tensorflow>=1.13.1,<=1.15.2",
     "keras",
     "deap",  # GA search
     # nas
@@ -57,23 +57,21 @@ REQUIRED = [
     "Jinja2",
     "ConfigSpace==0.4.12",
     "xgboost",
-    "horovod",
+    "horovod==0.19.5",
 ]
 
 if on_rtd:
     REQUIRED.remove("balsam-flow==0.3.8")
-    REQUIRED.remove("horovod")
+    REQUIRED.remove("horovod==0.19.5")
 
 if on_theta:  # --system-site-packages
     # we want to use the default mpi4py from cray environment
     REQUIRED.append("mpi4py")
-    REQUIRED.remove("tensorflow>=1.13.1,<=1.15.2")
-    REQUIRED.append("tensorflow-gpu>=1.13.1,<=1.15.2")
 elif not on_rtd and not on_gpu:
     REQUIRED.append("mpi4py>=3.0.0")
 elif on_gpu:
-    REQUIRED.remove("tensorflow>=1.13.1,<=1.15.2")
-    REQUIRED.append("tensorflow-gpu>=1.13.1,<=1.15.2")
+    REQUIRED.remove("tensorflow>=2.0.0")
+    REQUIRED.append("tensorflow-gpu>=2.0.0")
     REQUIRED.append("mpi4py")
 else:
     REQUIRED.append("Sphinx>=1.8.2")
