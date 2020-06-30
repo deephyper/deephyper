@@ -6,7 +6,14 @@ import copy
 # import ConfigSpace as cs
 import numpy as np
 from skopt import Optimizer as SkOptimizer
-from skopt.learning import GradientBoostingQuantileRegressor, RandomForestRegressor
+from skopt.learning import (
+    GradientBoostingQuantileRegressor,
+    RandomForestRegressor,
+    ExtraTreesRegressor,
+)
+from skopt.acquisition import gaussian_lcb
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 
 from deephyper.core.logs.logging import JsonMessage as jm
 from deephyper.core.parser import add_arguments_from_signature
@@ -35,7 +42,15 @@ class AgeBO(RegularizedEvolution):
     """
 
     def __init__(
-        self, problem, run, evaluator, population_size=100, sample_size=10, **kwargs
+        self,
+        problem,
+        run,
+        evaluator,
+        population_size=100,
+        sample_size=10,
+        plot="true",
+        n_jobs=1,
+        **kwargs,
     ):
         super().__init__(
             problem=problem,
@@ -43,8 +58,11 @@ class AgeBO(RegularizedEvolution):
             evaluator=evaluator,
             population_size=population_size,
             sample_size=sample_size,
-            **kwargs
+            **kwargs,
         )
+
+        self.do_plot = plot == "true"
+        self.n_jobs = int(n_jobs)
 
         # Initialize Hyperaparameter space
         # self.hp_space = cs.ConfigurationSpace(seed=42)
@@ -60,7 +78,11 @@ class AgeBO(RegularizedEvolution):
         # )
 
         self.hp_space = []
-        self.hp_space.append(self.problem.space["hyperparameters"]["learning_rate"][:2])
+        self.hp_space.append(self.problem.space["hyperparameters"]["learning_rate"])
+
+        # ploting
+        lr_range = self.problem.space["hyperparameters"]["learning_rate"]
+        self.domain_x = np.linspace(*lr_range, 400).reshape(-1, 1)
         # self.hp_space.append(self.problem.space["hyperparameters"]["batch_size"][:2])
 
         # if surrogate_model == "RF":
@@ -73,13 +95,17 @@ class AgeBO(RegularizedEvolution):
         #     base_estimator = surrogate_model
 
         # Initialize opitmizer of hyperparameter space
-        # acq_func_kwargs = {"xi": 0.000001, "kappa": 0.001}
+        acq_func_kwargs = {"xi": 0.000001, "kappa": 0.001}  # tiny exploration
         self.n_initial_points = self.free_workers
+
         self.hp_opt = SkOptimizer(
             dimensions=self.hp_space,
-            base_estimator="GBRT",  # GradientBoostingQuantileRegressor(n_jobs=8),
+            # base_estimator=GradientBoostingQuantileRegressor(n_jobs=4),
+            base_estimator=RandomForestRegressor(n_jobs=32),
+            # base_estimator=RandomForestRegressor(n_jobs=self.n_jobs),
             acq_func="LCB",  # "gp_hedge",
             acq_optimizer="sampling",
+            acq_func_kwargs=acq_func_kwargs,
             n_initial_points=self.n_initial_points,  # Half Random - Half advised
             # model_queue_size=100,
         )
@@ -101,6 +127,7 @@ class AgeBO(RegularizedEvolution):
     def main(self):
 
         num_evals_done = 0
+        it = 0
         population = collections.deque(maxlen=self.population_size)
 
         # Filling available nodes at start
@@ -181,6 +208,12 @@ class AgeBO(RegularizedEvolution):
 
                     self.evaluator.add_eval_batch(new_batch)
 
+                try:
+                    self.plot_optimizer(x=self.domain_x, it=it)
+                    it += 1
+                except:
+                    pass
+
     # def ask(self, n_points=None, batch_size=20):
     #     if n_points is None:
     #         return self._ask()
@@ -255,6 +288,66 @@ class AgeBO(RegularizedEvolution):
         cfg = self.pb_dict.copy()
         cfg["arch_seq"] = child_arch
         return cfg
+
+    def plot_optimizer(self, x, it=0):
+        opt = self.hp_opt
+        model = opt.models[-1]
+        x_model = opt.space.transform(x.tolist())
+
+        plt.figure(figsize=(6.4 * 2, 4.8))
+        plt.subplot(1, 2, 1)
+        # Plot Model(x) + contours
+        y_pred, sigma = model.predict(x_model, return_std=True)
+        y_pred *= -1
+        plt.plot(x, y_pred, "g--", label=r"$\mu(x)$")
+        plt.fill(
+            np.concatenate([x, x[::-1]]),
+            np.concatenate([y_pred - 1.9600 * sigma, (y_pred + 1.9600 * sigma)[::-1]]),
+            alpha=0.2,
+            fc="g",
+            ec="None",
+        )
+
+        # Plot sampled points
+        W = 10
+        yi = np.array(opt.yi)[-W:] * -1
+        Xi = opt.Xi[-W:]
+        plt.plot(Xi, yi, "r.", markersize=8, label="Observations")
+
+        plt.grid()
+        plt.legend(loc="best")
+        plt.xlim(0.001, 0.1)
+        plt.ylim(0, 1)
+        plt.xlabel("Learning Rate")
+        plt.ylabel("Objective")
+
+        ax = plt.gca()
+        ax.xaxis.set_major_locator(ticker.FixedLocator([0.001, 0.01, 0.1]))
+        ax.xaxis.set_major_formatter(ticker.FixedFormatter(["0.001", "0.01", "0.1"]))
+        ax.yaxis.set_major_locator(ticker.MultipleLocator(0.2))
+
+        # LCB
+        plt.subplot(1, 2, 2)
+        acq = gaussian_lcb(x_model, model) * -1
+        plt.plot(x, acq, "b", label="UCB(x)")
+        plt.fill_between(x.ravel(), 0.0, acq.ravel(), alpha=0.3, color="blue")
+
+        plt.xlabel("Learning Rate")
+
+        # Adjust plot layout
+        plt.grid()
+        plt.legend(loc="best")
+        plt.xlim(0.001, 0.1)
+        plt.ylim(0, 1)
+
+        ax = plt.gca()
+        ax.xaxis.set_major_locator(ticker.FixedLocator([0.001, 0.01, 0.1]))
+        ax.xaxis.set_major_formatter(ticker.FixedFormatter(["0.001", "0.01", "0.1"]))
+        ax.yaxis.set_major_locator(ticker.MultipleLocator(0.2))
+
+        # Save Figure
+        plt.savefig(f"opt-{it:05}.png", dpi=100)
+        plt.close()
 
 
 if __name__ == "__main__":
