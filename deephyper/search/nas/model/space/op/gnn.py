@@ -11,7 +11,7 @@ set_random_seed(2020)
 
 
 def tensor_dot(X):
-    assert X is list
+    assert type(X) is list
     out = K.dot(X[0], X[1])
     if len(X) > 2:
         for i in range(2, len(X)):
@@ -128,8 +128,6 @@ class GraphAttentionCell(tf.keras.layers.Layer):
                  attn_kernel_constraint=None,
                  **kwargs):
         super(GraphAttentionCell, self).__init__()
-        if 'input_shape' not in kwargs and 'input_dim' in kwargs:
-            kwargs['input_shape'] = (kwargs.pop('input_dim'),)
         self.channels = channels
         self.attn_method = attn_method
         self.aggr_method = aggr_method
@@ -358,9 +356,7 @@ class GraphConv(tf.keras.layers.Layer):
                  bias_constraint=None,
                  **kwargs):
 
-        if 'input_shape' not in kwargs and 'input_dim' in kwargs:
-            kwargs['input_shape'] = (kwargs.pop('input_dim'),)
-        super().__init__(**kwargs)
+        super(GraphConv, self).__init__()
         self.channels = channels
         self.activation = activations.get(activation)
         self.use_bias = use_bias
@@ -390,7 +386,7 @@ class GraphConv(tf.keras.layers.Layer):
 
     def build(self, input_shape):
         assert len(input_shape) >= 2 and type(input_shape) is list
-        input_dim = K.int_shape(input_shape[0])[-1]
+        input_dim = int(input_shape[0][-1])
         self.kernel = self._build_kernel(input_dim, self.channels, 'GraphConv_kernel')
         if self.use_bias:
             self.bias = self._build_bias(self.channels, 'GraphConv_bias')
@@ -431,6 +427,45 @@ class GraphConv(tf.keras.layers.Layer):
         }
         base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))
+
+
+# noinspection PyAttributeOutsideInit
+class ChebConv(GraphConv):
+    def __init__(self,
+                 channels,
+                 K,
+                 activation=None,
+                 use_bias=True,
+                 kernel_initializer='glorot_uniform',
+                 bias_initializer='zeros',
+                 kernel_regularizer=None,
+                 bias_regularizer=None,
+                 activity_regularizer=None,
+                 kernel_constraint=None,
+                 bias_constraint=None,
+                 **kwargs):
+        super(ChebConv, self).__init__(**kwargs)
+        self.channels = channels
+        self.K = K
+        self.activation = activations.get(activation)
+        self.use_bias = use_bias
+        self.kernel_initializer = initializers.get(kernel_initializer)
+        self.bias_initializer = initializers.get(bias_initializer)
+        self.kernel_regularizer = regularizers.get(kernel_regularizer)
+        self.bias_regularizer = regularizers.get(bias_regularizer)
+        self.activity_regularizer = regularizers.get(activity_regularizer)
+        self.kernel_constraint = constraints.get(kernel_constraint)
+        self.bias_constraint = constraints.get(bias_constraint)
+
+    def build(self, input_shape):
+        assert len(input_shape) >= 2 and type(input_shape) is list
+        input_dim = int(input_shape[0][-1])
+        self.kernel = self._build_kernel(input_dim, self.channels, 'CheBConv_kernel')
+        if self.use_bias:
+            self.bias = self._build_bias(self.channels, 'ChebCONV_bias')
+        else:
+            self.bias = None
+        self.built = True
 
 
 
