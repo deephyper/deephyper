@@ -100,9 +100,9 @@ def load_data(zero_padding=True, split='random'):
             A_test.append(adjacency_array)
         y_test.append(test_y[i])
 
-    return [X_train, A_train, E_train, y_train], \
-           [X_valid, A_valid, E_valid, y_valid], \
-           [X_test, A_test, E_test, y_test], \
+    return [X_train, A_train, y_train], \
+           [X_valid, A_valid, y_valid], \
+           [X_test, A_test, y_test], \
            qm8_tasks, transformers
 
 
