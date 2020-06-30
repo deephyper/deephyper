@@ -81,7 +81,7 @@ class AgeBO(RegularizedEvolution):
         self.hp_space.append(self.problem.space["hyperparameters"]["learning_rate"])
 
         # ploting
-        lr_range = self.problem.space["hyperparameters"]["learning_rate"]
+        lr_range = self.problem.space["hyperparameters"]["learning_rate"][:2]
         self.domain_x = np.linspace(*lr_range, 400).reshape(-1, 1)
         # self.hp_space.append(self.problem.space["hyperparameters"]["batch_size"][:2])
 
