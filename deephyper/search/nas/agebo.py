@@ -320,6 +320,7 @@ class AgeBO(RegularizedEvolution):
         plt.ylim(0, 1)
         plt.xlabel("Learning Rate")
         plt.ylabel("Objective")
+        plt.xscale("log")
 
         ax = plt.gca()
         ax.xaxis.set_major_locator(ticker.FixedLocator([0.001, 0.01, 0.1]))
@@ -339,6 +340,7 @@ class AgeBO(RegularizedEvolution):
         plt.legend(loc="best")
         plt.xlim(0.001, 0.1)
         plt.ylim(0, 1)
+        plt.xscale("log")
 
         ax = plt.gca()
         ax.xaxis.set_major_locator(ticker.FixedLocator([0.001, 0.01, 0.1]))
