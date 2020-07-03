@@ -1,8 +1,9 @@
 import tensorflow as tf
 from numpy.random import seed
 from tensorflow.keras import activations, initializers, regularizers, constraints
-from tensorflow.keras.layers import LeakyReLU, Dropout
+from tensorflow.keras.layers import LeakyReLU, Dropout, Dense
 import tensorflow.keras.backend as K
+from spektral.layers import ops
 
 seed(2020)
 from tensorflow import set_random_seed
@@ -48,7 +49,7 @@ class GraphIdentity(tf.keras.layers.Layer):
 class GlobalAvgPool(tf.keras.layers.Layer):
     def __init__(self, axis=-2, **kwargs):
         super(GlobalAvgPool, self).__init__()
-        self.axis=axis
+        self.axis = axis
         self.kwargs = kwargs
 
     def __str__(self):
@@ -163,7 +164,7 @@ class GraphAttentionCell(tf.keras.layers.Layer):
             self.output_dim = self.channels * 2
 
         assert self.attn_method in ['gat', 'sym-gat', 'gcn', 'const']
-        assert self.aggr_method in ['maxpooling', 'summation', 'mean']
+        assert self.aggr_method in ['maxpooling', 'sum', 'mean']
         assert self.combine in ['identity', 'mlp']
 
     def _build_kernel(self, input_dim, output_dim, name):
@@ -175,7 +176,7 @@ class GraphAttentionCell(tf.keras.layers.Layer):
         return kernel
 
     def _build_bias(self, output_dim, name):
-        bias = self.add_weight(shape=(output_dim, ),
+        bias = self.add_weight(shape=(output_dim,),
                                initializer=self.bias_initializer,
                                regularizer=self.bias_regularizer,
                                constraint=self.bias_constraint,
@@ -345,7 +346,7 @@ class GraphAttentionCell(tf.keras.layers.Layer):
 class GraphConv(tf.keras.layers.Layer):
     def __init__(self,
                  channels,
-                 activation=None,
+                 activation='relu',
                  use_bias=True,
                  kernel_initializer='glorot_uniform',
                  bias_initializer='zeros',
@@ -377,7 +378,7 @@ class GraphConv(tf.keras.layers.Layer):
         return kernel
 
     def _build_bias(self, output_dim, name):
-        bias = self.add_weight(shape=(output_dim, ),
+        bias = self.add_weight(shape=(output_dim,),
                                initializer=self.bias_initializer,
                                regularizer=self.bias_regularizer,
                                constraint=self.bias_constraint,
@@ -468,4 +469,194 @@ class ChebConv(GraphConv):
         self.built = True
 
 
+class GATMPNN(tf.keras.layers.Layer):
+    def __init__(self,
+                 channels,
+                 message_fn='ecgcn',
+                 kernel_network=None,
+                 update_fn='gru',
+                 attn_method='sym-gat',
+                 attn_heads = 2,
+                 dropout_rate = 0.5,
+                 aggr_method='max',
+                 activation='relu',
+                 use_bias=True,
+                 kernel_initializer='glorot_uniform',
+                 bias_initializer='zeros',
+                 kernel_regularizer=None,
+                 bias_regularizer=None,
+                 activity_regularizer=None,
+                 kernel_constraint=None,
+                 bias_constraint=None,
+                 **kwargs):
+        """
+        GATMPNN (graph attention message passing neural networks)
+        Args:
+            channels: int
+                number of output channels
+            message_fn: str, optional
+                message function in the model
+            update_fn: str, optional
+                update function in the model
+        """
+        super(GATMPNN, self).__init__()
+        self.channels = channels
+        self.message_fn = message_fn
+        self.kernel_network = kernel_network
+        self.update_fn = update_fn
+        self.attn_method = attn_method
+        self.attn_heads = attn_heads
+        self.dropout_rate = dropout_rate
+        self.aggr_method = aggr_method
+        self.activation = activations.get(activation)
+        self.use_bias = use_bias
+        self.kernel_initializer = initializers.get(kernel_initializer)
+        self.bias_initializer = initializers.get(bias_initializer)
+        self.kernel_regularizer = regularizers.get(kernel_regularizer)
+        self.bias_regularizer = regularizers.get(bias_regularizer)
+        self.activity_regularizer = regularizers.get(activity_regularizer)
+        self.kernel_constraint = constraints.get(kernel_constraint)
+        self.bias_constraint = constraints.get(bias_constraint)
 
+    def build(self, input_shape):
+        if self.message_fn == 'ecgcn':
+            self.message_function = GATEdge(self.channels, self.kernel_network)
+            self._trainable_weights = self.message_function.trainable_weights
+            super(GATMPNN, self).build(input_shape)
+        return
+
+    def call(self, inputs, **kwargs):
+        X, A, E = inputs
+        out = self.message_function([X, A, E])
+        return out
+
+
+class GATEdge(GATMPNN):
+    def __init__(self,
+                 channels,
+                 kernel_network=None,
+                 **kwargs):
+        super(GATEdge, self).__init__(channels, kernel_network, **kwargs)
+
+        self.channels = channels
+        self.kernel_network = kernel_network
+        self.kernel_network_layers = []
+        self.root_kernels = []
+        self.root_biases = []
+        self.attn_kernels = []
+
+    def _build_kernel(self, input_dim, output_dim, name):
+        kernel = self.add_weight(shape=(input_dim, output_dim),
+                                 initializer=self.kernel_initializer,
+                                 regularizer=self.kernel_regularizer,
+                                 constraint=self.kernel_constraint,
+                                 name=name)
+        return kernel
+
+    def _build_bias(self, output_dim, name):
+        bias = self.add_weight(shape=(output_dim,),
+                               initializer=self.bias_initializer,
+                               regularizer=self.bias_regularizer,
+                               constraint=self.bias_constraint,
+                               name=name)
+        return bias
+
+    def build(self, input_shape):
+        assert len(input_shape) >= 3 and type(input_shape) is list
+        input_dim = int(input_shape[0][-1])
+
+        # BUILD KERNEL NETWORK
+        if self.kernel_network is not None:
+            for i, l in enumerate(self.kernel_network):
+                self.kernel_network_layers.append(Dense(l,
+                                                        name=f'Edge_MLP_{i}',
+                                                        activation=self.activation,
+                                                        use_bias=self.use_bias,
+                                                        kernel_initializer=self.kernel_initializer,
+                                                        bias_initializer=self.bias_initializer,
+                                                        kernel_regularizer=self.kernel_regularizer,
+                                                        bias_regularizer=self.bias_regularizer,
+                                                        kernel_constraint=self.kernel_constraint,
+                                                        bias_constraint=self.bias_constraint
+                                                        ))
+        self.kernel_network_layers.append(Dense(self.channels * input_dim, name='Edge_MLP_out'))
+
+        # BUILD ATTN ROOT KERNEL
+        for head in range(self.attn_heads):
+            root_kernel = self._build_kernel(input_dim, self.channels, name=f'Root_kernel_{head}')
+            self.root_kernels.append(root_kernel)
+            if self.use_bias:
+                root_bias = self._build_bias(self.channels, name=f'Root_bias_{head}')
+                self.root_biases.append(root_bias)
+            if self.attn_method in ['gat', 'sym-gat']:
+                attn_kernel_self = self._build_kernel(self.channels, 1, f'Attn_kernel_self_{head}')
+                attn_kernel_nbrs = self._build_kernel(self.channels, 1, f'Attn_kernel_nbrs_{head}')
+                self.attn_kernels.append([attn_kernel_self, attn_kernel_nbrs])
+
+        self.bias = self._build_bias(self.channels, name='GATEdge_bias')
+        self.build = True
+
+    def call(self, inputs, **kwargs):
+        X = inputs[0]  # (?, N, F)
+        A = inputs[1]  # (?, N, N)
+        E = inputs[2]  # (?, N, N, S)
+        B, N, F = K.int_shape(X)
+        S = K.int_shape(E)[-1]
+
+        # FILTER NETWORK
+        kernel_network = E
+        for l in self.kernel_network_layers:
+            kernel_network = l(kernel_network)
+
+        # CONVOLUTION
+        target_shape = (-1, N, N, self.channels, F)
+        kernel = K.reshape(kernel_network, target_shape)
+        conv_out = kernel * A[..., None, None]
+
+        # AGGREGATE METHOD
+        output = tf.einsum('abicf,aif->abic', conv_out, X)
+        if self.aggr_method == 'sum':
+            output = tf.reduce_sum(output, axis=-2)
+        elif self.aggr_method == 'mean':
+            output = tf.reduce_mean(output, axis=-2)
+        elif self.aggr_method == 'max':
+            output = tf.reduce_max(output, axis=-2)
+
+        # ROOT MULTIPLICATION
+        root_outputs = []
+        for head in range(self.attn_heads):
+            root_kernel = self.root_kernels[head]
+            root_output = K.dot(X, root_kernel)
+            if self.attn_method in ['gat', 'sym-gat']:
+                attn_kernel = self.attn_kernels[head]
+                attn_for_self = K.dot(root_output, attn_kernel[0])
+                attn_for_nbrs = K.dot(root_output, attn_kernel[1])
+                attn_for_nbrs_T = K.permute_dimensions(attn_for_nbrs, (0, 2, 1))
+                attn_coef = attn_for_self + attn_for_nbrs_T
+                attn_coef = LeakyReLU(alpha=0.2)(attn_coef)
+                mask = -10e9 * (1.0 - A)
+                attn_coef += mask
+                attn_coef = K.softmax(attn_coef)
+                attn_coef = Dropout(self.dropout_rate)(attn_coef)
+                if self.attn_method == 'sym-gat':
+                    attn_coef = attn_coef + K.permute_dimensions(attn_coef, (0, 2, 1))
+            elif self.attn_method == 'const':
+                attn_coef = A
+            elif self.attn_method == 'gcn':
+                D = tf.reduce_sum(A, axis=-1)
+                D = tf.expand_dims(D, axis=-1)
+                Dt = K.permute_dimensions(D, (0, 2, 1))
+                D = tf.sqrt(tf.multiply(D, Dt))
+                attn_coef = tf.math.divide_no_nan(A, D)
+            root_output = K.batch_dot(attn_coef, root_output)
+            if self.use_bias:
+                root_output = K.bias_add(root_output, self.root_biases[head])
+            root_outputs.append(root_output)
+        root_outputs = K.mean(K.stack(root_outputs), axis=0)
+
+        output += root_outputs
+        if self.use_bias:
+            output = K.bias_add(output, self.bias)
+        if self.activation is not None:
+            output = self.activation(output)
+        return output

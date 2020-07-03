@@ -1,5 +1,11 @@
 import numpy as np
-from deepchem.molnet import load_qm9 as load_qm9_dc
+from deepchem.molnet import load_qm9
+
+# FIXED PARAMETERS
+
+MAX_ATOM = 23
+N_FEAT = 70
+E_FEAT = 9
 
 
 def adjacency_list_to_array(adjacency_list):
@@ -12,29 +18,38 @@ def adjacency_list_to_array(adjacency_list):
         Adjacency array
     """
     max_size = len(adjacency_list)
-    adjacency_array = np.zeros(shape=(max_size, max_size))
+    A = np.zeros(shape=(max_size, max_size))
     for i in range(max_size):
-        adjacency_array[i, adjacency_list[i]] = 1
-        adjacency_array[i, i] = 1
-    return adjacency_array
+        A[i, adjacency_list[i]] = 1
+        A[i, i] = 1
+    return A
 
 
-def load_qm9(zero_padding=True, split='random'):
+def organize_data(X, E):
     """
-    Load qm9 dataset from .mat file. Max atom 23.
-    Check details here: http://quantum-machine.org/datasets/
+    Zero padding node features, adjacency matrix, edge features
     Args:
-        zero_padding: bool, by default True. Padding node feature array X to (MAX_ATOM, N_FEAT), adjacency array A to
-        (MAX_ATOM, MAX_ATOM);
-        split: str, {'index', 'random', 'stratified', None};
+        X: node features
+        E: edge features
+
     Returns:
-        Lists of train, valid and test data, and 12 qm9 tasks.
+        node features, adjacency matrix, edge features
     """
-    print("Loading QM9 Dataset (takes about 1 minute)...")
-    qm9_tasks, (train_dataset, valid_dataset, test_dataset), transformers = load_qm9_dc(featurizer='GraphConv',
-                                                                                     split=split)
-    MAX_ATOM = 9
-    N_FEAT = 75
+    A = E[..., :5].sum(axis=-1)
+    X_0 = np.zeros(shape=(MAX_ATOM, N_FEAT))
+    X_0[:X.shape[0], :X.shape[1]] = X
+    A_0 = np.zeros(shape=(MAX_ATOM, MAX_ATOM))
+    A_0[:A.shape[0], :A.shape[1]] = A
+    E_0 = np.zeros(shape=(MAX_ATOM, MAX_ATOM, E_FEAT))
+    E_0[:E.shape[0], :E.shape[1], :-1] = E
+    return X_0, A_0, E_0
+
+
+def load_qm9_MPNN(split='random'):
+    print("Loading qm9 Dataset")
+    qm9_tasks, (train_dataset, valid_dataset, test_dataset), transformers = load_qm9(featurizer='MP',
+                                                                                     split=split,
+                                                                                     move_mean=True)
     X_train, X_valid, X_test = [], [], []
     A_train, A_valid, A_test = [], [], []
     E_train, E_valid, E_test = [], [], []
@@ -48,63 +63,45 @@ def load_qm9(zero_padding=True, split='random'):
 
     # TRAINING DATASET
     for i in range(len(train_dataset)):
-        atom_features = train_x[i].atom_features
-        adjacency_list = train_x[i].get_adjacency_list()
-        adjacency_array = adjacency_list_to_array(adjacency_list)
-
-        if zero_padding:
-            atom_features_zero_padding = np.zeros(shape=(MAX_ATOM, N_FEAT))
-            atom_features_zero_padding[:atom_features.shape[0], :atom_features.shape[1]] = atom_features
-            adjacency_array_zero_padding = np.zeros(shape=(MAX_ATOM, MAX_ATOM))
-            adjacency_array_zero_padding[:adjacency_array.shape[0], :adjacency_array.shape[1]] = adjacency_array
-            X_train.append(atom_features_zero_padding)
-            A_train.append(adjacency_array_zero_padding)
-        else:
-            X_train.append(atom_features)
-            A_train.append(adjacency_array)
+        X, A, E = organize_data(train_x[i].nodes, train_x[i].pairs)
+        X_train.append(X)
+        E_train.append(E)
+        A_train.append(A)
         y_train.append(train_y[i])
 
     # VALIDATION DATASET
     for i in range(len(valid_dataset)):
-        atom_features = valid_x[i].atom_features
-        adjacency_list = valid_x[i].get_adjacency_list()
-        adjacency_array = adjacency_list_to_array(adjacency_list)
-
-        if zero_padding:
-            atom_features_zero_padding = np.zeros(shape=(MAX_ATOM, N_FEAT))
-            atom_features_zero_padding[:atom_features.shape[0], :atom_features.shape[1]] = atom_features
-            adjacency_array_zero_padding = np.zeros(shape=(MAX_ATOM, MAX_ATOM))
-            adjacency_array_zero_padding[:adjacency_array.shape[0], :adjacency_array.shape[1]] = adjacency_array
-            X_valid.append(atom_features_zero_padding)
-            A_valid.append(adjacency_array_zero_padding)
-        else:
-            X_valid.append(atom_features)
-            A_valid.append(adjacency_array)
+        X, A, E = organize_data(valid_x[i].nodes, valid_x[i].pairs)
+        X_valid.append(X)
+        E_valid.append(E)
+        A_valid.append(A)
         y_valid.append(valid_y[i])
 
     # TESTING DATASET
     for i in range(len(test_dataset)):
-        atom_features = test_x[i].atom_features
-        adjacency_list = test_x[i].get_adjacency_list()
-        adjacency_array = adjacency_list_to_array(adjacency_list)
-
-        if zero_padding:
-            atom_features_zero_padding = np.zeros(shape=(MAX_ATOM, N_FEAT))
-            atom_features_zero_padding[:atom_features.shape[0], :atom_features.shape[1]] = atom_features
-            adjacency_array_zero_padding = np.zeros(shape=(MAX_ATOM, MAX_ATOM))
-            adjacency_array_zero_padding[:adjacency_array.shape[0], :adjacency_array.shape[1]] = adjacency_array
-            X_test.append(atom_features_zero_padding)
-            A_test.append(adjacency_array_zero_padding)
-        else:
-            X_test.append(atom_features)
-            A_test.append(adjacency_array)
+        X, A, E = organize_data(test_x[i].nodes, test_x[i].pairs)
+        X_test.append(X)
+        E_test.append(E)
+        A_test.append(A)
         y_test.append(test_y[i])
-
-    return [X_train, A_train, y_train], \
-           [X_valid, A_valid, y_valid], \
-           [X_test, A_test, y_test], \
+    X_train = np.array(X_train)
+    A_train = np.array(A_train)
+    E_train = np.array(E_train)
+    y_train = np.array(y_train).squeeze()
+    X_valid = np.array(X_valid)
+    A_valid = np.array(A_valid)
+    E_valid = np.array(E_valid)
+    y_valid = np.array(y_valid).squeeze()
+    X_test = np.array(X_test)
+    A_test = np.array(A_test)
+    E_test = np.array(E_test)
+    y_test = np.array(y_test).squeeze()
+    print("Loading qm9 Dataset Finished")
+    return [X_train, A_train, E_train, y_train], \
+           [X_valid, A_valid, E_valid, y_valid], \
+           [X_test, A_test, E_test, y_test], \
            qm9_tasks, transformers
 
 
 if __name__ == '__main__':
-    train_data, valid_data, test_data, qm9_tasks, transformers = load_data()
+    train_data, valid_data, test_data, qm9_tasks, transformers = load_qm9_MPNN()
