@@ -36,6 +36,7 @@ def organize_data(X, E):
         node features, adjacency matrix, edge features
     """
     A = E[..., :5].sum(axis=-1)
+    # A += np.eye(A.shape[0])
     X_0 = np.zeros(shape=(MAX_ATOM, N_FEAT))
     X_0[:X.shape[0], :X.shape[1]] = X
     A_0 = np.zeros(shape=(MAX_ATOM, MAX_ATOM))

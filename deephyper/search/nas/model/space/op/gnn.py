@@ -473,8 +473,10 @@ class GATMPNN(tf.keras.layers.Layer):
     def __init__(self,
                  channels,
                  message_fn='ecgcn',
+                 T=3,
+                 hidden=10,
                  kernel_network=None,
-                 update_fn='gru',
+                 update_fn='gat',
                  attn_method='sym-gat',
                  attn_heads = 2,
                  dropout_rate = 0.5,
@@ -502,6 +504,8 @@ class GATMPNN(tf.keras.layers.Layer):
         super(GATMPNN, self).__init__()
         self.channels = channels
         self.message_fn = message_fn
+        self.T = T
+        self.hidden = hidden
         self.kernel_network = kernel_network
         self.update_fn = update_fn
         self.attn_method = attn_method
@@ -519,31 +523,27 @@ class GATMPNN(tf.keras.layers.Layer):
         self.bias_constraint = constraints.get(bias_constraint)
 
     def build(self, input_shape):
+        self.message_function = []
         if self.message_fn == 'ecgcn':
-            self.message_function = GATEdge(self.channels, self.kernel_network)
-            self._trainable_weights = self.message_function.trainable_weights
-            super(GATMPNN, self).build(input_shape)
+            for i in range(self.T):
+                self.message_function.append(EdgeConv(self.hidden, self.kernel_network))
+                self._trainable_weights += self.message_function[i].trainable_weights
+            self.message_function.append(EdgeConv(self.channels, self.kernel_network))
+            self._trainable_weights += self.message_function[-1].trainable_weights
+        if self.update_fn == 'gat':
+            self.update_function = GAT(self.channels)
+            self._trainable_weights += self.update_function.trainable_weights
+        super(GATMPNN, self).build(input_shape)
         return
 
     def call(self, inputs, **kwargs):
         X, A, E = inputs
-        out = self.message_function([X, A, E])
+        out = X
+        for i in range(self.T+1):
+            out = self.message_function[i]([out, A, E])
+
+        out = self.update_function([X, A, out])
         return out
-
-
-class GATEdge(GATMPNN):
-    def __init__(self,
-                 channels,
-                 kernel_network=None,
-                 **kwargs):
-        super(GATEdge, self).__init__(channels, kernel_network, **kwargs)
-
-        self.channels = channels
-        self.kernel_network = kernel_network
-        self.kernel_network_layers = []
-        self.root_kernels = []
-        self.root_biases = []
-        self.attn_kernels = []
 
     def _build_kernel(self, input_dim, output_dim, name):
         kernel = self.add_weight(shape=(input_dim, output_dim),
@@ -560,6 +560,18 @@ class GATEdge(GATMPNN):
                                constraint=self.bias_constraint,
                                name=name)
         return bias
+
+
+class EdgeConv(GATMPNN):
+    def __init__(self,
+                 channels,
+                 kernel_network=None,
+                 **kwargs):
+        super(EdgeConv, self).__init__(channels, kernel_network, **kwargs)
+
+        self.channels = channels
+        self.kernel_network = kernel_network
+        self.kernel_network_layers = []
 
     def build(self, input_shape):
         assert len(input_shape) >= 3 and type(input_shape) is list
@@ -580,28 +592,12 @@ class GATEdge(GATMPNN):
                                                         bias_constraint=self.bias_constraint
                                                         ))
         self.kernel_network_layers.append(Dense(self.channels * input_dim, name='Edge_MLP_out'))
-
-        # BUILD ATTN ROOT KERNEL
-        for head in range(self.attn_heads):
-            root_kernel = self._build_kernel(input_dim, self.channels, name=f'Root_kernel_{head}')
-            self.root_kernels.append(root_kernel)
-            if self.use_bias:
-                root_bias = self._build_bias(self.channels, name=f'Root_bias_{head}')
-                self.root_biases.append(root_bias)
-            if self.attn_method in ['gat', 'sym-gat']:
-                attn_kernel_self = self._build_kernel(self.channels, 1, f'Attn_kernel_self_{head}')
-                attn_kernel_nbrs = self._build_kernel(self.channels, 1, f'Attn_kernel_nbrs_{head}')
-                self.attn_kernels.append([attn_kernel_self, attn_kernel_nbrs])
-
-        self.bias = self._build_bias(self.channels, name='GATEdge_bias')
+        self.edge_bias = self._build_bias(self.channels, name='Edge_bias')
         self.build = True
 
     def call(self, inputs, **kwargs):
-        X = inputs[0]  # (?, N, F)
-        A = inputs[1]  # (?, N, N)
-        E = inputs[2]  # (?, N, N, S)
+        X, A, E = inputs
         B, N, F = K.int_shape(X)
-        S = K.int_shape(E)[-1]
 
         # FILTER NETWORK
         kernel_network = E
@@ -622,6 +618,44 @@ class GATEdge(GATMPNN):
         elif self.aggr_method == 'max':
             output = tf.reduce_max(output, axis=-2)
 
+        if self.use_bias:
+            output = K.bias_add(output, self.edge_bias)
+        if self.activation is not None:
+            output = self.activation(output)
+        return output
+
+
+class GAT(GATMPNN):
+    def __init__(self,
+                 channels,
+                 **kwargs):
+        super(GAT, self).__init__(channels, **kwargs)
+
+        self.channels = channels
+        self.root_kernels = []
+        self.root_biases = []
+        self.attn_kernels = []
+
+    def build(self, input_shape):
+        assert len(input_shape) >= 3 and type(input_shape) is list
+        input_dim = int(input_shape[0][-1])
+
+        # BUILD ATTN ROOT KERNEL
+        for head in range(self.attn_heads):
+            root_kernel = self._build_kernel(input_dim, self.channels, name=f'Root_kernel_{head}')
+            self.root_kernels.append(root_kernel)
+            if self.use_bias:
+                root_bias = self._build_bias(self.channels, name=f'Root_bias_{head}')
+                self.root_biases.append(root_bias)
+            if self.attn_method in ['gat', 'sym-gat']:
+                attn_kernel_self = self._build_kernel(self.channels, 1, f'Attn_kernel_self_{head}')
+                attn_kernel_nbrs = self._build_kernel(self.channels, 1, f'Attn_kernel_nbrs_{head}')
+                self.attn_kernels.append([attn_kernel_self, attn_kernel_nbrs])
+
+        self.gat_bias = self._build_bias(self.channels, name='GAT_bias')
+
+    def call(self, inputs, **kwargs):
+        X, A, M = inputs
         # ROOT MULTIPLICATION
         root_outputs = []
         for head in range(self.attn_heads):
@@ -653,10 +687,11 @@ class GATEdge(GATMPNN):
                 root_output = K.bias_add(root_output, self.root_biases[head])
             root_outputs.append(root_output)
         root_outputs = K.mean(K.stack(root_outputs), axis=0)
+        output = root_outputs + M
 
-        output += root_outputs
         if self.use_bias:
-            output = K.bias_add(output, self.bias)
+            output = K.bias_add(output, self.gat_bias)
         if self.activation is not None:
             output = self.activation(output)
         return output
+

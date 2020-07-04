@@ -1,11 +1,11 @@
 import numpy as np
-from deepchem.molnet import load_qm7
+from deepchem.molnet import load_delaney
 
 # FIXED PARAMETERS
 
-MAX_ATOM = 23
-N_FEAT = 70
-E_FEAT = 8
+MAX_ATOM = 55
+N_FEAT = 75
+E_FEAT = 14
 
 
 def adjacency_list_to_array(adjacency_list):
@@ -46,11 +46,11 @@ def organize_data(X, E):
     return X_0, A_0, E_0
 
 
-def load_qm7_MPNN(split='random'):
-    print("Loading QM7 Dataset")
-    qm7_tasks, (train_dataset, valid_dataset, test_dataset), transformers = load_qm7(featurizer='MP',
-                                                                                     split=split,
-                                                                                     move_mean=True)
+def load_esol_MPNN(split='random'):
+    print("Loading esol Dataset")
+    esol_tasks, (train_dataset, valid_dataset, test_dataset), transformers = load_delaney(featurizer='Weave',
+                                                                                          split=split,
+                                                                                          move_mean=True)
     X_train, X_valid, X_test = [], [], []
     A_train, A_valid, A_test = [], [], []
     E_train, E_valid, E_test = [], [], []
@@ -97,12 +97,12 @@ def load_qm7_MPNN(split='random'):
     A_test = np.array(A_test)
     E_test = np.array(E_test)
     y_test = np.array(y_test).squeeze()
-    print("Loading QM7 Dataset Finished")
+    print("Loading esol Dataset Finished")
     return [X_train, A_train, E_train, y_train], \
            [X_valid, A_valid, E_valid, y_valid], \
            [X_test, A_test, E_test, y_test], \
-           qm7_tasks, transformers
+           esol_tasks, transformers
 
 
 if __name__ == '__main__':
-    train_data, valid_data, test_data, qm7_tasks, transformers = load_qm7_MPNN()
+    train_data, valid_data, test_data, esol_tasks, transformers = load_esol_MPNN()
