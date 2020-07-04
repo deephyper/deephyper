@@ -1,19 +1,40 @@
 import numpy as np
-from deepchem.molnet import load_delaney
-from .utils import organize_data
+from deepchem.molnet import load_bace_classification
 
 # FIXED PARAMETERS
 
-MAX_ATOM = 55
+MAX_ATOM = 97
 N_FEAT = 75
 E_FEAT = 14
 
 
-def load_esol_MPNN(split='random'):
-    print("Loading esol Dataset")
-    esol_tasks, (train_dataset, valid_dataset, test_dataset), transformers = load_delaney(featurizer='Weave',
-                                                                                          split=split,
-                                                                                          move_mean=True)
+def organize_data(X, E):
+    """
+    Zero padding node features, adjacency matrix, edge features
+    Args:
+        X: node features
+        E: edge features
+
+    Returns:
+        node features, adjacency matrix, edge features
+    """
+    A = E[..., :5].sum(axis=-1)
+    A += np.eye(A.shape[0])
+    X_0 = np.zeros(shape=(MAX_ATOM, N_FEAT))
+    X_0[:X.shape[0], :X.shape[1]] = X
+    A_0 = np.zeros(shape=(MAX_ATOM, MAX_ATOM))
+    A_0[:A.shape[0], :A.shape[1]] = A
+    E_0 = np.zeros(shape=(MAX_ATOM, MAX_ATOM, E_FEAT))
+    E_0[:E.shape[0], :E.shape[1], :] = E
+    return X_0, A_0, E_0
+
+
+def load_bace_MPNN(split='scaffold'):
+    print("Loading bace Dataset")
+    bace_tasks, (train_dataset, valid_dataset, test_dataset), transformers = load_bace_classification(
+        featurizer='Weave',
+        split=split,
+        move_mean=True)
     X_train, X_valid, X_test = [], [], []
     A_train, A_valid, A_test = [], [], []
     E_train, E_valid, E_test = [], [], []
@@ -27,7 +48,7 @@ def load_esol_MPNN(split='random'):
 
     # TRAINING DATASET
     for i in range(len(train_dataset)):
-        X, A, E = organize_data(train_x[i].nodes, train_x[i].pairs, MAX_ATOM, N_FEAT, E_FEAT)
+        X, A, E = organize_data(train_x[i].nodes, train_x[i].pairs)
         X_train.append(X)
         E_train.append(E)
         A_train.append(A)
@@ -35,7 +56,7 @@ def load_esol_MPNN(split='random'):
 
     # VALIDATION DATASET
     for i in range(len(valid_dataset)):
-        X, A, E = organize_data(valid_x[i].nodes, valid_x[i].pairs, MAX_ATOM, N_FEAT, E_FEAT)
+        X, A, E = organize_data(valid_x[i].nodes, valid_x[i].pairs)
         X_valid.append(X)
         E_valid.append(E)
         A_valid.append(A)
@@ -43,7 +64,7 @@ def load_esol_MPNN(split='random'):
 
     # TESTING DATASET
     for i in range(len(test_dataset)):
-        X, A, E = organize_data(test_x[i].nodes, test_x[i].pairs, MAX_ATOM, N_FEAT, E_FEAT)
+        X, A, E = organize_data(test_x[i].nodes, test_x[i].pairs)
         X_test.append(X)
         E_test.append(E)
         A_test.append(A)
@@ -60,12 +81,12 @@ def load_esol_MPNN(split='random'):
     A_test = np.array(A_test)
     E_test = np.array(E_test)
     y_test = np.array(y_test).squeeze()
-    print("Loading esol Dataset Finished")
+    print("Loading bace Dataset Finished")
     return [X_train, A_train, E_train, y_train], \
            [X_valid, A_valid, E_valid, y_valid], \
            [X_test, A_test, E_test, y_test], \
-           esol_tasks, transformers
+           bace_tasks, transformers
 
 
 if __name__ == '__main__':
-    train_data, valid_data, test_data, esol_tasks, transformers = load_esol_MPNN()
+    train_data, valid_data, test_data, bace_tasks, transformers = load_bace_MPNN()

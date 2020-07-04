@@ -1,54 +1,17 @@
 import numpy as np
 from deepchem.molnet import load_qm8
+from .utils import organize_data
 
 # FIXED PARAMETERS
 
-MAX_ATOM = 26
-N_FEAT = 70
-E_FEAT = 8
-
-
-def adjacency_list_to_array(adjacency_list):
-    """
-    Function to convert adjacency list to array
-    Args:
-        adjacency_list: list containing atom's connection
-
-    Returns:
-        Adjacency array
-    """
-    max_size = len(adjacency_list)
-    A = np.zeros(shape=(max_size, max_size))
-    for i in range(max_size):
-        A[i, adjacency_list[i]] = 1
-        A[i, i] = 1
-    return A
-
-
-def organize_data(X, E):
-    """
-    Zero padding node features, adjacency matrix, edge features
-    Args:
-        X: node features
-        E: edge features
-
-    Returns:
-        node features, adjacency matrix, edge features
-    """
-    A = E[..., :5].sum(axis=-1)
-    # A += np.eye(A.shape[0])
-    X_0 = np.zeros(shape=(MAX_ATOM, N_FEAT))
-    X_0[:X.shape[0], :X.shape[1]] = X
-    A_0 = np.zeros(shape=(MAX_ATOM, MAX_ATOM))
-    A_0[:A.shape[0], :A.shape[1]] = A
-    E_0 = np.zeros(shape=(MAX_ATOM, MAX_ATOM, E_FEAT))
-    E_0[:E.shape[0], :E.shape[1], :] = E
-    return X_0, A_0, E_0
+MAX_ATOM = 9
+N_FEAT = 75
+E_FEAT = 14
 
 
 def load_qm8_MPNN(split='random'):
     print("Loading qm8 Dataset")
-    qm8_tasks, (train_dataset, valid_dataset, test_dataset), transformers = load_qm8(featurizer='MP',
+    qm8_tasks, (train_dataset, valid_dataset, test_dataset), transformers = load_qm8(featurizer='Weave',
                                                                                      split=split,
                                                                                      move_mean=True)
     X_train, X_valid, X_test = [], [], []
@@ -64,7 +27,7 @@ def load_qm8_MPNN(split='random'):
 
     # TRAINING DATASET
     for i in range(len(train_dataset)):
-        X, A, E = organize_data(train_x[i].nodes, train_x[i].pairs)
+        X, A, E = organize_data(train_x[i].nodes, train_x[i].pairs, MAX_ATOM, N_FEAT, E_FEAT)
         X_train.append(X)
         E_train.append(E)
         A_train.append(A)
@@ -72,7 +35,7 @@ def load_qm8_MPNN(split='random'):
 
     # VALIDATION DATASET
     for i in range(len(valid_dataset)):
-        X, A, E = organize_data(valid_x[i].nodes, valid_x[i].pairs)
+        X, A, E = organize_data(valid_x[i].nodes, valid_x[i].pairs, MAX_ATOM, N_FEAT, E_FEAT)
         X_valid.append(X)
         E_valid.append(E)
         A_valid.append(A)
@@ -80,7 +43,7 @@ def load_qm8_MPNN(split='random'):
 
     # TESTING DATASET
     for i in range(len(test_dataset)):
-        X, A, E = organize_data(test_x[i].nodes, test_x[i].pairs)
+        X, A, E = organize_data(test_x[i].nodes, test_x[i].pairs, MAX_ATOM, N_FEAT, E_FEAT)
         X_test.append(X)
         E_test.append(E)
         A_test.append(A)

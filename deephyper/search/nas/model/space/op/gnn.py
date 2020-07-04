@@ -473,8 +473,7 @@ class GATMPNN(tf.keras.layers.Layer):
     def __init__(self,
                  channels,
                  message_fn='ecgcn',
-                 T=3,
-                 hidden=10,
+                 hidden=32,
                  kernel_network=None,
                  update_fn='gat',
                  attn_method='sym-gat',
@@ -504,7 +503,6 @@ class GATMPNN(tf.keras.layers.Layer):
         super(GATMPNN, self).__init__()
         self.channels = channels
         self.message_fn = message_fn
-        self.T = T
         self.hidden = hidden
         self.kernel_network = kernel_network
         self.update_fn = update_fn
@@ -523,13 +521,9 @@ class GATMPNN(tf.keras.layers.Layer):
         self.bias_constraint = constraints.get(bias_constraint)
 
     def build(self, input_shape):
-        self.message_function = []
         if self.message_fn == 'ecgcn':
-            for i in range(self.T):
-                self.message_function.append(EdgeConv(self.hidden, self.kernel_network))
-                self._trainable_weights += self.message_function[i].trainable_weights
-            self.message_function.append(EdgeConv(self.channels, self.kernel_network))
-            self._trainable_weights += self.message_function[-1].trainable_weights
+            self.message_function = EdgeConv(self.channels, self.kernel_network)
+            self._trainable_weights += self.message_function.trainable_weights
         if self.update_fn == 'gat':
             self.update_function = GAT(self.channels)
             self._trainable_weights += self.update_function.trainable_weights
@@ -538,10 +532,7 @@ class GATMPNN(tf.keras.layers.Layer):
 
     def call(self, inputs, **kwargs):
         X, A, E = inputs
-        out = X
-        for i in range(self.T+1):
-            out = self.message_function[i]([out, A, E])
-
+        out = self.message_function([X, A, E])
         out = self.update_function([X, A, out])
         return out
 

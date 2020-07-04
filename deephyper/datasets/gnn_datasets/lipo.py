@@ -1,19 +1,19 @@
 import numpy as np
-from deepchem.molnet import load_delaney
+from deepchem.molnet import load_lipo
 from .utils import organize_data
 
 # FIXED PARAMETERS
 
-MAX_ATOM = 55
+MAX_ATOM = 115
 N_FEAT = 75
 E_FEAT = 14
 
 
-def load_esol_MPNN(split='random'):
-    print("Loading esol Dataset")
-    esol_tasks, (train_dataset, valid_dataset, test_dataset), transformers = load_delaney(featurizer='Weave',
-                                                                                          split=split,
-                                                                                          move_mean=True)
+def load_lipo_MPNN(split='random'):
+    print("Loading lipo Dataset")
+    lipo_tasks, (train_dataset, valid_dataset, test_dataset), transformers = load_lipo(featurizer='Weave',
+                                                                                            split=split,
+                                                                                            move_mean=True)
     X_train, X_valid, X_test = [], [], []
     A_train, A_valid, A_test = [], [], []
     E_train, E_valid, E_test = [], [], []
@@ -60,12 +60,12 @@ def load_esol_MPNN(split='random'):
     A_test = np.array(A_test)
     E_test = np.array(E_test)
     y_test = np.array(y_test).squeeze()
-    print("Loading esol Dataset Finished")
+    print("Loading lipo Dataset Finished")
     return [X_train, A_train, E_train, y_train], \
            [X_valid, A_valid, E_valid, y_valid], \
            [X_test, A_test, E_test, y_test], \
-           esol_tasks, transformers
+           lipo_tasks, transformers
 
 
 if __name__ == '__main__':
-    train_data, valid_data, test_data, esol_tasks, transformers = load_esol_MPNN()
+    train_data, valid_data, test_data, lipo_tasks, transformers = load_lipo_MPNN()
