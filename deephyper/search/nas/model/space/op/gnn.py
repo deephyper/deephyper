@@ -473,12 +473,12 @@ class GATMPNN(tf.keras.layers.Layer):
     def __init__(self,
                  channels,
                  message_fn='ecgcn',
-                 hidden=32,
+                 hidden=64,
                  kernel_network=None,
-                 update_fn='gat',
+                 update_fn='MLP',
                  attn_method='sym-gat',
-                 attn_heads = 2,
-                 dropout_rate = 0.5,
+                 attn_heads=2,
+                 dropout_rate=0.5,
                  aggr_method='max',
                  activation='relu',
                  use_bias=True,
@@ -522,18 +522,18 @@ class GATMPNN(tf.keras.layers.Layer):
 
     def build(self, input_shape):
         if self.message_fn == 'ecgcn':
-            self.message_function = EdgeConv(self.channels, self.kernel_network)
-            self._trainable_weights += self.message_function.trainable_weights
-        if self.update_fn == 'gat':
-            self.update_function = GAT(self.channels)
-            self._trainable_weights += self.update_function.trainable_weights
+            self.message_function = EdgeConv(self.channels)
+        self._trainable_weights += self.message_function.trainable_weights
+        if self.update_fn == 'MLP':
+            self.update_function = MLP(self.channels)
+        self._trainable_weights += self.update_function.trainable_weights
         super(GATMPNN, self).build(input_shape)
         return
 
     def call(self, inputs, **kwargs):
         X, A, E = inputs
         out = self.message_function([X, A, E])
-        out = self.update_function([X, A, out])
+        out = self.update_function([X, out])
         return out
 
     def _build_kernel(self, input_dim, output_dim, name):
@@ -554,20 +554,14 @@ class GATMPNN(tf.keras.layers.Layer):
 
 
 class EdgeConv(GATMPNN):
-    def __init__(self,
-                 channels,
-                 kernel_network=None,
-                 **kwargs):
-        super(EdgeConv, self).__init__(channels, kernel_network, **kwargs)
-
+    def __init__(self, channels, **kwargs):
+        super(EdgeConv, self).__init__(channels, **kwargs)
         self.channels = channels
-        self.kernel_network = kernel_network
         self.kernel_network_layers = []
 
     def build(self, input_shape):
         assert len(input_shape) >= 3 and type(input_shape) is list
         input_dim = int(input_shape[0][-1])
-
         # BUILD KERNEL NETWORK
         if self.kernel_network is not None:
             for i, l in enumerate(self.kernel_network):
@@ -584,6 +578,7 @@ class EdgeConv(GATMPNN):
                                                         ))
         self.kernel_network_layers.append(Dense(self.channels * input_dim, name='Edge_MLP_out'))
         self.edge_bias = self._build_bias(self.channels, name='Edge_bias')
+        self.gat_network = GAT(self.channels)
         self.build = True
 
     def call(self, inputs, **kwargs):
@@ -609,6 +604,8 @@ class EdgeConv(GATMPNN):
         elif self.aggr_method == 'max':
             output = tf.reduce_max(output, axis=-2)
 
+        output = self.gat_network([X, A, output])
+
         if self.use_bias:
             output = K.bias_add(output, self.edge_bias)
         if self.activation is not None:
@@ -617,11 +614,8 @@ class EdgeConv(GATMPNN):
 
 
 class GAT(GATMPNN):
-    def __init__(self,
-                 channels,
-                 **kwargs):
+    def __init__(self, channels, **kwargs):
         super(GAT, self).__init__(channels, **kwargs)
-
         self.channels = channels
         self.root_kernels = []
         self.root_biases = []
@@ -642,8 +636,7 @@ class GAT(GATMPNN):
                 attn_kernel_self = self._build_kernel(self.channels, 1, f'Attn_kernel_self_{head}')
                 attn_kernel_nbrs = self._build_kernel(self.channels, 1, f'Attn_kernel_nbrs_{head}')
                 self.attn_kernels.append([attn_kernel_self, attn_kernel_nbrs])
-
-        self.gat_bias = self._build_bias(self.channels, name='GAT_bias')
+        self.build = True
 
     def call(self, inputs, **kwargs):
         X, A, M = inputs
@@ -680,9 +673,29 @@ class GAT(GATMPNN):
         root_outputs = K.mean(K.stack(root_outputs), axis=0)
         output = root_outputs + M
 
+        return output
+
+class MLP(GATMPNN):
+    def __init__(self, channels, **kwargs):
+        super(MLP, self).__init__(channels, **kwargs)
+        self.channels = channels
+
+    def build(self, input_shape):
+        assert len(input_shape) >= 2 and type(input_shape) is list
+        input_dim = int(input_shape[0][-1])
+        self.MLP_W = self._build_kernel(input_dim, self.channels, 'MLP_W')
+        self.MLP_b = self._build_bias(self.channels, 'MLP_bias')
+        self.build = True
+
+    def call(self, inputs, **kwargs):
+        X, M = inputs
+        output = K.dot(X, self.MLP_W) + M
         if self.use_bias:
-            output = K.bias_add(output, self.gat_bias)
+            output = K.bias_add(output, self.MLP_b)
         if self.activation is not None:
             output = self.activation(output)
         return output
+
+
+################################ NEW MPNN #####################################
 
