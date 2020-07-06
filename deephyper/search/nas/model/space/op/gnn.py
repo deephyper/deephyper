@@ -675,6 +675,7 @@ class GAT(GATMPNN):
 
         return output
 
+
 class MLP(GATMPNN):
     def __init__(self, channels, **kwargs):
         super(MLP, self).__init__(channels, **kwargs)
@@ -698,4 +699,112 @@ class MLP(GATMPNN):
 
 
 ################################ NEW MPNN #####################################
+class MPNN(tf.keras.layers.Layer):
+    def __init__(self,
+                 state_dim,
+                 T,
+                 activation='relu',
+                 use_bias=True,
+                 kernel_initializer='glorot_uniform',
+                 bias_initializer='zeros'):
+        super(MPNN, self).__init__(self)
+        self.state_dim = state_dim
+        self.T = T
+        self.activation = activations.get(activation)
+        self.use_bias = use_bias
+        self.kernel_initializer = initializers.get(kernel_initializer)
+        self.bias_initializer = initializers.get(bias_initializer)
 
+        self.embed = tf.keras.layers.Dense(units=state_dim, activation=self.activation)
+        self.MP = MP_layer(state_dim)
+
+    def call(self, inputs, **kwargs):
+        X, A, E = inputs
+
+        X = self.embed(X)
+
+        for _ in range(self.T):
+            X = self.MP([X, A, E])
+
+        return X
+
+
+class MP_layer(tf.keras.layers.Layer):
+    def __init__(self, state_dim):
+        super(MP_layer, self).__init__(self)
+        self.message_passer = Message_Passer_NNM(node_dim=state_dim)
+        self.message_aggs = Message_Agg()
+        self.update_functions = Update_Func_GRU(state_dim=state_dim)
+
+        self.state_dim = state_dim
+
+    def call(self, inputs, **kwargs):
+        X, A, E = inputs
+        B, N, F = K.int_shape(X)
+
+        state_j = tf.tile(X, [1, N, 1])
+
+        messages = self.message_passer([state_j, E])
+
+        masked = tf.math.multiply(messages, A)
+        masked = tf.reshape(masked, [tf.shape(messages)[0], N, N, F])
+
+        agg_m = self.message_aggs(masked)
+
+        updated_nodes = self.update_functions([X, agg_m])
+
+        nodes_out = updated_nodes
+
+        return nodes_out
+
+
+class Message_Passer_NNM(tf.keras.layers.Layer):
+    def __init__(self, node_dim):
+        super(Message_Passer_NNM, self).__init__()
+        self.node_dim = node_dim
+        self.nn = tf.keras.layers.Dense(units=self.node_dim * self.node_dim, activation=tf.nn.relu)
+
+    def call(self, inputs, **kwargs):
+        X, E = inputs
+        A = self.nn(E)
+
+        # Reshape so matrix mult can be done
+        A = tf.reshape(A, [-1, self.node_dim, self.node_dim])
+        X = tf.reshape(X, [-1, self.node_dim, 1])
+
+        # Multiply edge matrix by node and shape into message list
+        messages = tf.linalg.matmul(A, X)
+        messages = tf.reshape(messages, [-1, K.int_shape(E)[1], self.node_dim])
+
+        return messages
+
+
+class Message_Agg(tf.keras.layers.Layer):
+    def __init__(self):
+        super(Message_Agg, self).__init__()
+
+    def call(self, inputs, **kwargs):
+        return tf.math.reduce_sum(inputs, 2)
+
+
+class Update_Func_GRU(tf.keras.layers.Layer):
+    def __init__(self, state_dim):
+        super(Update_Func_GRU, self).__init__()
+        self.concat_layer = tf.keras.layers.Concatenate(axis=1)
+        self.GRU = tf.keras.layers.GRU(state_dim)
+
+    def call(self, inputs, **kwargs):
+        # Remember node dim
+        old_state, agg_messages = inputs
+        B, N, F = K.int_shape(old_state)
+        B1, N1, F1 = K.int_shape(old_state)
+
+        # Reshape so GRU can be applied, concat so old_state and messages are in sequence
+        old_state = tf.reshape(old_state, [-1, 1, F])
+        agg_messages = tf.reshape(agg_messages, [-1, 1, F1])
+        concat = self.concat_layer([old_state, agg_messages])
+
+        # Apply GRU and then reshape so it can be returned
+        activation = self.GRU(concat)
+        activation = tf.reshape(activation, [-1, N, F])
+        return activation

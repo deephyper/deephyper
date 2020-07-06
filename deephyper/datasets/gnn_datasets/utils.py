@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def organize_data(X, E, MAX_ATOM, N_FEAT, E_FEAT):
     """
     Zero padding node features, adjacency matrix, edge features
@@ -18,4 +19,6 @@ def organize_data(X, E, MAX_ATOM, N_FEAT, E_FEAT):
     A_0[:A.shape[0], :A.shape[1]] = A
     E_0 = np.zeros(shape=(MAX_ATOM, MAX_ATOM, E_FEAT))
     E_0[:E.shape[0], :E.shape[1], :] = E
+    A_0 = A_0.reshape(MAX_ATOM * MAX_ATOM, 1)
+    E_0 = E_0.reshape(MAX_ATOM * MAX_ATOM, E_FEAT)
     return X_0, A_0, E_0
