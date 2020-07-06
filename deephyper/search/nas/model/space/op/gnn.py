@@ -705,6 +705,7 @@ class MPNN(tf.keras.layers.Layer):
                  T,
                  aggr_method='mean',
                  attn_method='sym-gat',
+                 update_method='gru',
                  attn_head=2,
                  activation='relu'):
         super(MPNN, self).__init__(self)
@@ -712,8 +713,8 @@ class MPNN(tf.keras.layers.Layer):
         self.T = T
         self.activation = activations.get(activation)
 
-        self.embed = tf.keras.layers.Dense(units=state_dim, activation=self.activation)
-        self.MP = MP_layer(state_dim, aggr_method, activation, attn_method, attn_head)
+        self.embed = tf.keras.layers.Dense(state_dim, activation=self.activation)
+        self.MP = MP_layer(state_dim, aggr_method, activation, attn_method, attn_head, update_method)
 
     def call(self, inputs, **kwargs):
         X, A, E = inputs
@@ -727,16 +728,20 @@ class MPNN(tf.keras.layers.Layer):
 
 
 class MP_layer(tf.keras.layers.Layer):
-    def __init__(self, state_dim, aggr_method, activation, attn_method, attn_head):
+    def __init__(self, state_dim, aggr_method, activation, attn_method, attn_head, update_method):
         super(MP_layer, self).__init__(self)
-        self.message_passer = Message_Passer_NNM(state_dim, activation, attn_method, attn_head)
-        self.message_aggs = Message_Agg(aggr_method=aggr_method)
-        self.update_functions = Update_Func_GRU(state_dim=state_dim)
+        self.message_passer = Message_Passer_NNM(state_dim, activation)
+        self.message_aggs = Message_Agg(state_dim, aggr_method, attn_method, attn_head)
+        if update_method == 'gru':
+            self.update_functions = Update_Func_GRU(state_dim)
+        elif update_method == 'mlp':
+            self.update_functions = Update_Func_MLP(state_dim, activation)
 
         self.state_dim = state_dim
 
     def call(self, inputs, **kwargs):
         X, A, E = inputs
+
         B, N, F = K.int_shape(X)
 
         state_j = tf.tile(X, [1, N, 1])
@@ -746,7 +751,7 @@ class MP_layer(tf.keras.layers.Layer):
         masked = tf.math.multiply(messages, A)
         masked = tf.reshape(masked, [tf.shape(messages)[0], N, N, F])
 
-        agg_m = self.message_aggs(masked)
+        agg_m = self.message_aggs([masked, A])
 
         updated_nodes = self.update_functions([X, agg_m])
 
@@ -756,12 +761,11 @@ class MP_layer(tf.keras.layers.Layer):
 
 
 class Message_Passer_NNM(tf.keras.layers.Layer):
-    def __init__(self, node_dim, activation, attn_method, attn_head):
+    def __init__(self, node_dim, activation):
         super(Message_Passer_NNM, self).__init__()
         self.node_dim = node_dim
         self.nn = tf.keras.layers.Dense(units=self.node_dim * self.node_dim, activation=activation,
                                         kernel_initializer='glorot_uniform', bias_initializer='zeros')
-        self.Attn_Func = Attention_Func(self.node_dim, attn_method, attn_head)
 
     def call(self, inputs, **kwargs):
         X, A, E = inputs
@@ -774,23 +778,26 @@ class Message_Passer_NNM(tf.keras.layers.Layer):
         # Multiply edge matrix by node and shape into message list
         messages = tf.linalg.matmul(W, X)
         messages = tf.reshape(messages, [-1, K.int_shape(E)[1], self.node_dim])
-        messages = self.Attn_Func([X, A, messages])
 
         return messages
 
 
 class Message_Agg(tf.keras.layers.Layer):
-    def __init__(self, aggr_method):
+    def __init__(self, node_dim, aggr_method, attn_method, attn_head):
         super(Message_Agg, self).__init__()
         self.aggr_method = aggr_method
+        self.Attn_Func = Attention_Func(node_dim, attn_method, attn_head)
 
     def call(self, inputs, **kwargs):
+        X, A = inputs
         if self.aggr_method == 'sum':
-            return tf.math.reduce_sum(inputs, 2)
+            out = tf.math.reduce_sum(X, 2)
         elif self.aggr_method == 'mean':
-            return tf.math.reduce_mean(inputs, 2)
+            out = tf.math.reduce_mean(X, 2)
         elif self.aggr_method == 'max':
-            return tf.math.reduce_max(inputs, 2)
+            out = tf.math.reduce_max(X, 2)
+        out = self.Attn_Func([out, A])
+        return out
 
 
 class Update_Func_GRU(tf.keras.layers.Layer):
@@ -803,7 +810,7 @@ class Update_Func_GRU(tf.keras.layers.Layer):
         # Remember node dim
         old_state, agg_messages = inputs
         B, N, F = K.int_shape(old_state)
-        B1, N1, F1 = K.int_shape(old_state)
+        B1, N1, F1 = K.int_shape(agg_messages)
 
         # Reshape so GRU can be applied, concat so old_state and messages are in sequence
         old_state = tf.reshape(old_state, [-1, 1, F])
@@ -813,6 +820,25 @@ class Update_Func_GRU(tf.keras.layers.Layer):
         # Apply GRU and then reshape so it can be returned
         activation = self.GRU(concat)
         activation = tf.reshape(activation, [-1, N, F])
+        return activation
+
+
+class Update_Func_MLP(tf.keras.layers.Layer):
+    def __init__(self, state_dim, activation):
+        super(Update_Func_MLP, self).__init__()
+        self.concat_layer = tf.keras.layers.Concatenate(axis=-1)
+        self.dense = tf.keras.layers.Dense(state_dim, activation=activation,
+                                           kernel_initializer='glorot_uniform', bias_initializer='zeros')
+
+    def call(self, inputs, **kwargs):
+        # Remember node dim
+        old_state, agg_messages = inputs
+
+        # Reshape so GRU can be applied, concat so old_state and messages are in sequence
+        concat = self.concat_layer([old_state, agg_messages])
+
+        # Apply GRU and then reshape so it can be returned
+        activation = self.dense(concat)
         return activation
 
 
@@ -839,8 +865,12 @@ class Attention_Func(tf.keras.layers.Layer):
         self.build = True
 
     def call(self, inputs, **kwargs):
-        X, A, root_output = inputs
+        X, A = inputs
+        B, N, F = K.int_shape(A)
+        N = int(N**0.5)
+        A = tf.reshape(A, [tf.shape(A)[0], N, N])
         root_outputs = []
+        root_output = X
         for head in range(self.attn_heads):
             if self.attn_method in ['gat', 'sym-gat']:
                 attn_kernel = self.attn_kernels[head]
@@ -863,9 +893,7 @@ class Attention_Func(tf.keras.layers.Layer):
                 Dt = K.permute_dimensions(D, (0, 2, 1))
                 D = tf.sqrt(tf.multiply(D, Dt))
                 attn_coef = tf.math.divide_no_nan(A, D)
-            root_output = K.batch_dot(attn_coef, root_output)
-            root_outputs.append(root_output)
+            root_output1 = K.batch_dot(attn_coef, root_output)
+            root_outputs.append(root_output1)
         output = K.mean(K.stack(root_outputs), axis=0)
-
-
         return output
