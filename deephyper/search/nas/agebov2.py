@@ -69,13 +69,13 @@ class AgeBO(RegularizedEvolution):
 
         # Initialize opitmizer of hyperparameter space
         acq_func_kwargs = {"xi": 0.000001, "kappa": 0.001}  # tiny exploration
-        self.free_workers = 128  #! TODO: test
+        # self.free_workers = 128  #! TODO: test
         self.n_initial_points = self.free_workers
 
         self.hp_opt = SkOptimizer(
             dimensions=self.hp_space,
-            # base_estimator=RandomForestRegressor(n_jobs=32),
-            base_estimator=RandomForestRegressor(n_jobs=4),
+            base_estimator=RandomForestRegressor(n_jobs=32),
+            # base_estimator=RandomForestRegressor(n_jobs=4),
             acq_func="LCB",
             acq_optimizer="sampling",
             acq_func_kwargs=acq_func_kwargs,
