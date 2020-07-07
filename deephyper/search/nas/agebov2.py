@@ -12,26 +12,23 @@ from skopt.learning import (
     ExtraTreesRegressor,
 )
 from skopt.acquisition import gaussian_lcb
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 
 from deephyper.core.logs.logging import JsonMessage as jm
 from deephyper.core.parser import add_arguments_from_signature
 from deephyper.evaluator.evaluate import Encoder
-from deephyper.problem.base import check_hyperparameter
 from deephyper.search import util
 from deephyper.search.nas.regevo import RegularizedEvolution
 
-dhlogger = util.conf_logger("deephyper.search.nas.agebo")
+dhlogger = util.conf_logger("deephyper.search.nas.agebov2")
 
 # def key(d):
 #     return json.dumps(dict(arch_seq=d['arch_seq']), cls=Encoder)
 
 
 class AgeBO(RegularizedEvolution):
-    """Regularized evolution.
+    """Aging evolution with Bayesian Optimization.
 
-    https://arxiv.org/abs/1802.01548
+    This algorithm build on the 'Regularized Evolution' from https://arxiv.org/abs/1802.01548. It cumulates Hyperparameter optimization with bayesian optimisation and Neural architecture search with regularized evolution.
 
     Args:
         problem (str): Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.nas.linearReg.Problem).
@@ -48,7 +45,6 @@ class AgeBO(RegularizedEvolution):
         evaluator,
         population_size=100,
         sample_size=10,
-        plot="true",
         n_jobs=1,
         **kwargs,
     ):
@@ -61,38 +57,25 @@ class AgeBO(RegularizedEvolution):
             **kwargs,
         )
 
-        self.do_plot = plot == "true"
         self.n_jobs = int(n_jobs)
 
         # Initialize Hyperaparameter space
 
-        # self.hp_space = cs.ConfigurationSpace(seed=42)
-        # self.hp_space.add_hyperparameter(
-        #     check_hyperparameter(
-        #         self.problem.space["hyperparameters"]["learning_rate"], "learning_rate"
-        #     )
-        # )
-        # self.hp_space.add_hyperparameter(
-        #     check_hyperparameter(
-        #         self.problem.space["hyperparameters"]["batch_size"], "batch_size"
-        #     )
-        # )
-
         self.hp_space = []
+        # add the 'learning_rate' space to the HPO search space
         self.hp_space.append(self.problem.space["hyperparameters"]["learning_rate"])
-
-        # ploting
-        lr_range = self.problem.space["hyperparameters"]["learning_rate"][:2]
-        self.domain_x = np.linspace(*lr_range, 400).reshape(-1, 1)
+        # add the 'batch_size' space to the HPO search space
+        self.hp_space.append(self.problem.space["hyperparameters"]["batch_size"])
 
         # Initialize opitmizer of hyperparameter space
         acq_func_kwargs = {"xi": 0.000001, "kappa": 0.001}  # tiny exploration
+        self.free_workers = 128  #! TODO: test
         self.n_initial_points = self.free_workers
 
         self.hp_opt = SkOptimizer(
             dimensions=self.hp_space,
-            base_estimator=RandomForestRegressor(n_jobs=32),
-            # base_estimator=RandomForestRegressor(n_jobs=self.n_jobs),
+            # base_estimator=RandomForestRegressor(n_jobs=32),
+            base_estimator=RandomForestRegressor(n_jobs=4),
             acq_func="LCB",
             acq_optimizer="sampling",
             acq_func_kwargs=acq_func_kwargs,
@@ -117,7 +100,6 @@ class AgeBO(RegularizedEvolution):
     def main(self):
 
         num_evals_done = 0
-        it = 0
         population = collections.deque(maxlen=self.population_size)
 
         # Filling available nodes at start
@@ -160,11 +142,10 @@ class AgeBO(RegularizedEvolution):
                         # add child to batch
                         children_batch.append(child)
 
-                        # hpo
                         # collect infos for hp optimization
                         new_i_hps = new_results[new_i][0]["hyperparameters"]
                         new_i_y = new_results[new_i][1]
-                        hp_new_i = [new_i_hps["learning_rate"]]
+                        hp_new_i = [new_i_hps["learning_rate"], new_i_hps["batch_size"]]
                         hp_results_X.append(hp_new_i)
                         hp_results_y.append(-new_i_y)
 
@@ -173,6 +154,7 @@ class AgeBO(RegularizedEvolution):
 
                     for hps, child in zip(new_hps, children_batch):
                         child["hyperparameters"]["learning_rate"] = hps[0]
+                        child["hyperparameters"]["batch_size"] = hps[1]
 
                     # submit_childs
                     if len(new_results) > 0:
@@ -184,8 +166,7 @@ class AgeBO(RegularizedEvolution):
 
                         new_i_hps = new_results[new_i][0]["hyperparameters"]
                         new_i_y = new_results[new_i][1]
-                        # hp_new_i = [new_i_hps["learning_rate"], new_i_hps["batch_size"]]
-                        hp_new_i = [new_i_hps["learning_rate"]]
+                        hp_new_i = [new_i_hps["learning_rate"], new_i_hps["batch_size"]]
                         hp_results_X.append(hp_new_i)
                         hp_results_y.append(-new_i_y)
 
@@ -195,12 +176,6 @@ class AgeBO(RegularizedEvolution):
                     new_batch = self.gen_random_batch(size=len(new_results), hps=new_hps)
 
                     self.evaluator.add_eval_batch(new_batch)
-
-                try:
-                    self.plot_optimizer(x=self.domain_x, it=it)
-                    it += 1
-                except:
-                    pass
 
     # def ask(self, n_points=None, batch_size=20):
     #     if n_points is None:
@@ -229,11 +204,12 @@ class AgeBO(RegularizedEvolution):
 
                 # hyperparameters
                 cfg["hyperparameters"]["learning_rate"] = point[0]
-                # cfg["hyperparameters"]["batch_size"] = point[1]
+                cfg["hyperparameters"]["batch_size"] = point[1]
 
-                # architecture dna
+                # architecture DNA
                 cfg["arch_seq"] = self.random_search_space()
                 batch.append(cfg)
+
         else:  # passed hps are used
             assert size == len(hps)
             for point in hps:
@@ -242,9 +218,9 @@ class AgeBO(RegularizedEvolution):
 
                 # hyperparameters
                 cfg["hyperparameters"]["learning_rate"] = point[0]
-                # cfg["hyperparameters"]["batch_size"] = point[1]
+                cfg["hyperparameters"]["batch_size"] = point[1]
 
-                # architecture dna
+                # architecture DNA
                 cfg["arch_seq"] = self.random_search_space()
                 batch.append(cfg)
         return batch
@@ -276,68 +252,6 @@ class AgeBO(RegularizedEvolution):
         cfg = self.pb_dict.copy()
         cfg["arch_seq"] = child_arch
         return cfg
-
-    def plot_optimizer(self, x, it=0):
-        opt = self.hp_opt
-        model = opt.models[-1]
-        x_model = opt.space.transform(x.tolist())
-
-        plt.figure(figsize=(6.4 * 2, 4.8))
-        plt.subplot(1, 2, 1)
-        # Plot Model(x) + contours
-        y_pred, sigma = model.predict(x_model, return_std=True)
-        y_pred *= -1
-        plt.plot(x, y_pred, "g--", label=r"$\mu(x)$")
-        plt.fill(
-            np.concatenate([x, x[::-1]]),
-            np.concatenate([y_pred - 1.9600 * sigma, (y_pred + 1.9600 * sigma)[::-1]]),
-            alpha=0.2,
-            fc="g",
-            ec="None",
-        )
-
-        # Plot sampled points
-        W = 10
-        yi = np.array(opt.yi)[-W:] * -1
-        Xi = opt.Xi[-W:]
-        plt.plot(Xi, yi, "r.", markersize=8, label="Observations")
-
-        plt.grid()
-        plt.legend(loc="best")
-        plt.xlim(0.001, 0.1)
-        plt.ylim(0, 1)
-        plt.xlabel("Learning Rate")
-        plt.ylabel("Objective")
-        plt.xscale("log")
-
-        ax = plt.gca()
-        ax.xaxis.set_major_locator(ticker.FixedLocator([0.001, 0.01, 0.1]))
-        ax.xaxis.set_major_formatter(ticker.FixedFormatter(["0.001", "0.01", "0.1"]))
-        ax.yaxis.set_major_locator(ticker.MultipleLocator(0.2))
-
-        # LCB
-        plt.subplot(1, 2, 2)
-        acq = gaussian_lcb(x_model, model) * -1
-        plt.plot(x, acq, "b", label="UCB(x)")
-        plt.fill_between(x.ravel(), 0.0, acq.ravel(), alpha=0.3, color="blue")
-
-        plt.xlabel("Learning Rate")
-
-        # Adjust plot layout
-        plt.grid()
-        plt.legend(loc="best")
-        plt.xlim(0.001, 0.1)
-        plt.ylim(0, 1)
-        plt.xscale("log")
-
-        ax = plt.gca()
-        ax.xaxis.set_major_locator(ticker.FixedLocator([0.001, 0.01, 0.1]))
-        ax.xaxis.set_major_formatter(ticker.FixedFormatter(["0.001", "0.01", "0.1"]))
-        ax.yaxis.set_major_locator(ticker.MultipleLocator(0.2))
-
-        # Save Figure
-        plt.savefig(f"opt-{it:05}.png", dpi=100)
-        plt.close()
 
 
 if __name__ == "__main__":
