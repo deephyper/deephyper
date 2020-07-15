@@ -44,6 +44,7 @@ default_callbacks_config = {
     ),
     "CSVLogger": dict(filename="training.csv", append=True),
     "CSVExtendedLogger": dict(filename="training.csv", append=True),
+    "TimeStopping": dict(),
 }
 # Name of Callbacks reserved for root node
 hvd_root_cb = ["ModelCheckpoint", "Tensorboard", "CSVLogger", "CSVExtendedLogger"]
