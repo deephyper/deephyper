@@ -1034,7 +1034,7 @@ class Attention_Func(tf.keras.layers.Layer):
         for head in range(self.attn_heads):
             X = X_list[head]
             if self.attn_method in ['gat', 'sym-gat']:
-                attn_kernel = self.attn_kernels[head]   # [[C,1], [C,1]]
+                attn_kernel = self.attn_kernels[head]  # [[C,1], [C,1]]
                 attn_for_self = tf.squeeze(K.dot(X, attn_kernel[0]), axis=-1)  # [?,N,N]
                 attn_for_nbrs = tf.squeeze(K.dot(X, attn_kernel[1]), axis=-1)  # [?,N,N]
                 attn_for_nbrs_T = K.permute_dimensions(attn_for_nbrs, (0, 2, 1))  # [?,N,N]
@@ -1059,4 +1059,84 @@ class Attention_Func(tf.keras.layers.Layer):
             Xs.append(X1)
         output = K.stack(Xs)
         output = K.mean(output, axis=0)
+        return output
+
+
+#### SPARSE MPNN
+def dot(a, b, transpose_a=False, transpose_b=False):
+    """
+    Dot product between `a` and `b`, with automatic handling of batch dimensions.
+    Supports both dense and sparse multiplication (including sparse-sparse).
+    The innermost dimension of `a` must match the outermost dimension of `b`,
+    unless there is a shared batch dimension.
+    Note that doing sparse-sparse multiplication of any rank and sparse-dense
+    multiplication with rank higher than 2 may result in slower computations.
+    :param a: Tensor or SparseTensor with rank 2 or 3.
+    :param b: Tensor or SparseTensor with rank 2 or 3.
+    :param transpose_a: bool, transpose innermost two dimensions of a.
+    :param transpose_b: bool, transpose innermost two dimensions of b.
+    :return: Tensor or SparseTensor with rank 2 or 3.
+    """
+    a_is_sparse_tensor = isinstance(a, tf.SparseTensor)
+    b_is_sparse_tensor = isinstance(b, tf.SparseTensor)
+
+    # Handle case where we can use faster sparse-dense matmul
+    if K.ndim(a) == 2 and K.ndim(b) == 2:
+        if a_is_sparse_tensor and not b_is_sparse_tensor:
+            return tf.sparse.sparse_dense_matmul(a, b)
+
+    out = tf.matmul(a, b, transpose_a=transpose_a, transpose_b=transpose_b)
+    if hasattr(out, 'to_sparse_tensor'):
+        return out.to_sparse_tensor()
+
+    return out
+
+
+class SPARSE_MPNN(tf.keras.layers.Layer):
+    def __init__(self, state_dim, kernel_network=None):
+        super(SPARSE_MPNN, self).__init__(self)
+        self.state_dim = state_dim
+        self.kernel_network = kernel_network
+
+    def build(self, input_shape):
+        F = input_shape[0][-1]
+        F_ = self.state_dim
+        self.kernel_network_layers = []
+        if self.kernel_network is not None:
+            for i, l in enumerate(self.kernel_network):
+                self.kernel_network_layers.append(
+                    Dense(l,
+                          name='FGN_{}'.format(i),
+                          activation='relu')
+                )
+        self.kernel_network_layers.append(Dense(F_ * F, name='FGN_out'))
+
+    def call(self, inputs, **kwargs):
+        X = inputs[0]  # (N, F)
+        A = inputs[1]  # (N, N)
+        E = inputs[2]  # (n_edges, S)
+        assert K.ndim(E) == 2, 'In single mode, E must have shape (n_edges, S).'
+        assert K.is_sparse(A)
+        N = tf.shape(X)[-2]
+        F = K.int_shape(X)[-1]
+        F_ = self.state_dim
+
+        kernel_network = E
+
+        for l in self.kernel_network_layers:
+            kernel_network = l(kernel_network)
+
+        target_shape = (-1, F, F_)
+        kernel = tf.reshape(kernel_network, target_shape)
+
+        # Propagation
+        index_i = A.indices[:, -2]
+        index_j = A.indices[:, -1]
+        messages = tf.gather(X, index_j)
+        messages = dot(messages[:, None, :], kernel)[:, 0, :]
+        aggregated = tf.math.unsorted_segment_sum(messages, index_i, N)
+
+        # Update
+        output = aggregated
+
         return output

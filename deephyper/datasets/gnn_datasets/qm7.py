@@ -9,11 +9,12 @@ N_FEAT = 75
 E_FEAT = 14
 
 
-def load_qm7_MPNN(split='stratified'):
+def load_qm7_MPNN(split='stratified', seed=0):
     print("Loading qm7 Dataset")
     qm7_tasks, (train_dataset, valid_dataset, test_dataset), transformers = load_qm7_from_mat(featurizer='Weave',
                                                                                               split=split,
-                                                                                              move_mean=True)
+                                                                                              move_mean=True,
+                                                                                              seed=seed)
     X_train, X_valid, X_test = [], [], []
     A_train, A_valid, A_test = [], [], []
     E_train, E_valid, E_test = [], [], []

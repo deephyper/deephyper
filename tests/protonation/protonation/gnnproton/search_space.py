@@ -3,7 +3,7 @@ import tensorflow as tf
 from deephyper.search.nas.model.space import KSearchSpace
 from deephyper.search.nas.model.space.node import ConstantNode, VariableNode
 from deephyper.search.nas.model.space.op.merge import AddByProjecting, Concatenate
-from deephyper.search.nas.model.space.op.gnn import GlobalAvgPool, GlobalSumPool, GlobalMaxPool, MPNN
+from deephyper.search.nas.model.space.op.gnn import GlobalAvgPool, GlobalSumPool, GlobalMaxPool, MPNN, Apply1DMask
 from deephyper.search.nas.model.space.op.op1d import Dense, Identity, Flatten
 from deephyper.search.nas.model.space.op.connect import Connect
 from deephyper.search.nas.model.space.op.basic import Tensor
@@ -21,12 +21,11 @@ def add_gat_to_(node):
     # node.add_op(GraphIdentity())
     state_dims = [8, 16, 32]
     Ts = [1, 2, 3]
-    attn_methods = ['const', 'gcn', 'gat', 'sym-gat']
-    attn_heads = [1, 2, 4, 6]
-    aggr_methods = ['max', 'mean', 'sum']
-    update_methods = ['gru', 'mlp']
-    activations = [tf.nn.sigmoid, tf.nn.tanh, tf.nn.relu, tf.keras.activations.linear, tf.nn.softplus, tf.nn.leaky_relu,
-                   tf.nn.relu6, tf.nn.elu]
+    attn_methods = ['gcn']
+    attn_heads = [1]
+    aggr_methods = ['max']
+    update_methods = ['gru']
+    activations = [tf.nn.sigmoid, tf.nn.tanh, tf.nn.relu, tf.nn.elu]
 
     for state_dim in state_dims:
         for T in Ts:
@@ -55,9 +54,9 @@ def add_global_pooling_to_(node):
 
     """
     # node.add_op(Identity())
-    for functions in [GlobalSumPool, GlobalMaxPool, GlobalAvgPool]:
-        for axis in [-1, -2]:  # Pool in terms of nodes or features
-            node.add_op(functions(axis=axis))
+    # for functions in [GlobalSumPool, GlobalMaxPool, GlobalAvgPool]:
+    #     for axis in [-1, -2]:  # Pool in terms of nodes or features
+    #         node.add_op(functions(axis=axis))
     node.add_op(Flatten())
     return
 
@@ -81,11 +80,12 @@ def create_search_space(input_shape=None,
 
     """
     if input_shape is None:
-        input_shape = [(31, 23), (31*31, 1), (31*31, 6)]
+        input_shape = [(31, 23), (31*31, 1), (31*31, 6), (31, )]
     arch = KSearchSpace(input_shape, output_shape, regression=True)
     source = prev_input = arch.input_nodes[0]  # X, node feature matrix (?, 23, 75)
     prev_input1 = arch.input_nodes[1]  # A, Adjacency matrix (?, 23, 23)
     prev_input2 = arch.input_nodes[2]  # E
+    prev_input3 = arch.input_nodes[3]  # m
 
     # look over skip connections within a range of the 3 previous nodes
     anchor_points = collections.deque([source], maxlen=3)
@@ -131,8 +131,12 @@ def create_search_space(input_shape=None,
         count_dense_layers += 1
 
     output_node = ConstantNode()
-    output_node.set_op(Dense(output_shape[0], activation='relu'))
+    output_node.set_op(Dense(output_shape[0], activation='linear'))
     arch.connect(prev_input, output_node)
-
+    prev_input = output_node
+    mask_node = ConstantNode()
+    mask_node.set_op(Apply1DMask())
+    arch.connect(prev_input, mask_node)
+    arch.connect(prev_input3, mask_node)
     return arch
 

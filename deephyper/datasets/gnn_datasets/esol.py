@@ -9,11 +9,12 @@ N_FEAT = 75
 E_FEAT = 14
 
 
-def load_esol_MPNN(split='random'):
+def load_esol_MPNN(split='random', seed=2020):
     print("Loading esol Dataset")
     esol_tasks, (train_dataset, valid_dataset, test_dataset), transformers = load_delaney(featurizer='Weave',
                                                                                           split=split,
-                                                                                          move_mean=True)
+                                                                                          move_mean=True,
+                                                                                          seed=seed)
     X_train, X_valid, X_test = [], [], []
     A_train, A_valid, A_test = [], [], []
     E_train, E_valid, E_test = [], [], []

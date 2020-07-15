@@ -9,7 +9,7 @@ N_FEAT = 75
 E_FEAT = 14
 
 
-def load_freesolv_MPNN(split='random'):
+def load_freesolv_MPNN(split='random', seed=2020):
     print("Loading freesolv Dataset")
     freesolv_tasks, (train_dataset, valid_dataset, test_dataset), transformers = load_sampl(featurizer='Weave',
                                                                                             split=split,

@@ -9,11 +9,12 @@ N_FEAT = 75
 E_FEAT = 14
 
 
-def load_lipo_MPNN(split='random'):
+def load_lipo_MPNN(split='random', seed=2020):
     print("Loading lipo Dataset")
     lipo_tasks, (train_dataset, valid_dataset, test_dataset), transformers = load_lipo(featurizer='Weave',
-                                                                                            split=split,
-                                                                                            move_mean=True)
+                                                                                       split=split,
+                                                                                       move_mean=True,
+                                                                                       seed=seed)
     X_train, X_valid, X_test = [], [], []
     A_train, A_valid, A_test = [], [], []
     E_train, E_valid, E_test = [], [], []
