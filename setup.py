@@ -45,6 +45,7 @@ REQUIRED = [
     "ConfigSpace==0.4.12",
     "xgboost",
     "horovod",
+    "typeguard",
 ]
 
 if on_rtd:
