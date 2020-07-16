@@ -879,16 +879,200 @@ class MLP(GATMPNN):
 #         output = K.mean(K.stack(root_outputs), axis=0)
 #         return output
 
-class MPNN(tf.keras.layers.Layer):
+# class MPNN(tf.keras.layers.Layer):
+#     def __init__(self,
+#                  state_dim,
+#                  T,
+#                  aggr_method='mean',
+#                  attn_method='sym-gat',
+#                  update_method='gru',
+#                  attn_head=6,
+#                  activation='relu'):
+#         super(MPNN, self).__init__(self)
+#         self.state_dim = state_dim
+#         self.T = T
+#         self.activation = activations.get(activation)
+#         self.embed = tf.keras.layers.Dense(state_dim, activation=self.activation)
+#         self.MP = MP_layer(state_dim, aggr_method, activation, attn_method, attn_head, update_method)
+#
+#     def call(self, inputs, **kwargs):
+#         X, A, E = inputs  # [?,N,F],[?,N*N,1],[?,N*N,S]
+#         X = self.embed(X)  # [?,N,C]
+#         for _ in range(self.T):
+#             X = self.MP([X, A, E])  # [?,N,C]
+#         return X
+#
+#
+# class MP_layer(tf.keras.layers.Layer):
+#     def __init__(self, state_dim, aggr_method, activation, attn_method, attn_head, update_method):
+#         super(MP_layer, self).__init__(self)
+#         self.message_passer = Message_Passer_NNM(state_dim, activation)
+#         self.message_aggs = Message_Agg(state_dim, aggr_method, attn_method, attn_head)
+#         self.attn_head = attn_head
+#         if update_method == 'gru':
+#             self.update_functions = Update_Func_GRU(state_dim)
+#         elif update_method == 'mlp':
+#             self.update_functions = Update_Func_MLP(state_dim, activation)
+#
+#         self.state_dim = state_dim
+#
+#     def call(self, inputs, **kwargs):
+#         masked_list = []
+#         X, A, E = inputs  # [?,N,C],[?,N*N,1],[?,N*N,S]
+#         B, N, F = K.int_shape(X)
+#         state_j = tf.tile(X, [1, N, 1])  # [?,N*N,C]
+#
+#         for _ in range(self.attn_head):
+#             messages = self.message_passer([state_j, A, E])  # [?,N*N,C]
+#             masked = tf.math.multiply(messages, A)  # [?,N*N,C]
+#             masked = tf.reshape(masked, [tf.shape(messages)[0], N, N, F])  # [?,N,N,C]
+#             masked_list.append(masked)
+#         agg_m = self.message_aggs([masked_list, A, N])  # [?,N,C]
+#         updated_nodes = self.update_functions([X, agg_m])  # [?,N,C]
+#         return updated_nodes
+#
+#
+# class Message_Passer_NNM(tf.keras.layers.Layer):
+#     def __init__(self, state_dim, activation):
+#         super(Message_Passer_NNM, self).__init__()
+#         self.state_dim = state_dim
+#         self.nn = tf.keras.layers.Dense(units=self.state_dim * self.state_dim, activation=activation,
+#                                         kernel_initializer='glorot_uniform', bias_initializer='zeros')
+#
+#     def call(self, inputs, **kwargs):
+#         X, A, E = inputs  # [?,N*N,C],[?,N*N,1],[?,N*N,S]
+#         W = self.nn(E)  # [?,N*N,C*C]
+#         W = tf.reshape(W, [-1, self.state_dim, self.state_dim])  # [?*N*N,C,C]
+#         X = tf.reshape(X, [-1, self.state_dim, 1])  # [?*N*N,C,1]
+#         messages = tf.linalg.matmul(W, X)  # [?*N*N,C,1]
+#         messages = tf.reshape(messages, [-1, K.int_shape(E)[1], self.state_dim])  # [?,N*N,C]
+#         return messages
+#
+#
+# class Message_Agg(tf.keras.layers.Layer):
+#     def __init__(self, state_dim, aggr_method, attn_method, attn_head):
+#         super(Message_Agg, self).__init__()
+#         self.aggr_method = aggr_method
+#         self.Attn_Func = Attention_Func(state_dim, attn_method, attn_head)
+#
+#     def call(self, inputs, **kwargs):
+#         X, A, N = inputs
+#         X = self.Attn_Func([X, A, N])
+#         if self.aggr_method == 'sum':
+#             out = tf.math.reduce_sum(X, 2)
+#         elif self.aggr_method == 'mean':
+#             out = tf.math.reduce_mean(X, 2)
+#         elif self.aggr_method == 'max':
+#             out = tf.math.reduce_max(X, 2)
+#         return out
+#
+#
+# class Update_Func_GRU(tf.keras.layers.Layer):
+#     def __init__(self, state_dim):
+#         super(Update_Func_GRU, self).__init__()
+#         self.concat_layer = tf.keras.layers.Concatenate(axis=1)
+#         self.GRU = tf.keras.layers.GRU(state_dim)
+#
+#     def call(self, inputs, **kwargs):
+#         # Remember node dim
+#         old_state, agg_messages = inputs
+#         B, N, F = K.int_shape(old_state)
+#         B1, N1, F1 = K.int_shape(agg_messages)
+#         # Reshape so GRU can be applied, concat so old_state and messages are in sequence
+#         old_state = tf.reshape(old_state, [-1, 1, F])
+#         agg_messages = tf.reshape(agg_messages, [-1, 1, F1])
+#         concat = self.concat_layer([old_state, agg_messages])
+#         # Apply GRU and then reshape so it can be returned
+#         activation = self.GRU(concat)
+#         activation = tf.reshape(activation, [-1, N, F])
+#         return activation
+#
+#
+# class Update_Func_MLP(tf.keras.layers.Layer):
+#     def __init__(self, state_dim, activation):
+#         super(Update_Func_MLP, self).__init__()
+#         self.concat_layer = tf.keras.layers.Concatenate(axis=-1)
+#         self.dense = tf.keras.layers.Dense(state_dim, activation=activation,
+#                                            kernel_initializer='glorot_uniform', bias_initializer='zeros')
+#
+#     def call(self, inputs, **kwargs):
+#         # Remember node dim
+#         old_state, agg_messages = inputs
+#         # Reshape so GRU can be applied, concat so old_state and messages are in sequence
+#         concat = self.concat_layer([old_state, agg_messages])
+#         # Apply GRU and then reshape so it can be returned
+#         activation = self.dense(concat)
+#         return activation
+#
+#
+# class Attention_Func(tf.keras.layers.Layer):
+#     def __init__(self, channels, attn_method, attn_head):
+#         super(Attention_Func, self).__init__()
+#         self.channels = channels
+#         self.attn_method = attn_method
+#         self.attn_heads = attn_head
+#         self.attn_kernels = []
+#
+#     def _build_kernel(self, input_dim, output_dim, name):
+#         kernel = self.add_weight(shape=(input_dim, output_dim),
+#                                  initializer='glorot_uniform',
+#                                  name=name)
+#         return kernel
+#
+#     def build(self, input_shape):
+#         for head in range(self.attn_heads):
+#             if self.attn_method in ['gat', 'sym-gat']:
+#                 attn_kernel_self = self._build_kernel(self.channels, 1, f'Attn_kernel_self_{head}')
+#                 attn_kernel_nbrs = self._build_kernel(self.channels, 1, f'Attn_kernel_nbrs_{head}')
+#                 self.attn_kernels.append([attn_kernel_self, attn_kernel_nbrs])
+#         self.build = True
+#
+#     def call(self, inputs, **kwargs):
+#         X_list, A, N = inputs  # [?,N,N,C],[?,N,N],N
+#         A = tf.reshape(A, [tf.shape(A)[0], N, N])  # [?,N,N]
+#         Xs = []
+#         for head in range(self.attn_heads):
+#             X = X_list[head]
+#             if self.attn_method in ['gat', 'sym-gat']:
+#                 attn_kernel = self.attn_kernels[head]  # [[C,1], [C,1]]
+#                 attn_for_self = tf.squeeze(K.dot(X, attn_kernel[0]), axis=-1)  # [?,N,N]
+#                 attn_for_nbrs = tf.squeeze(K.dot(X, attn_kernel[1]), axis=-1)  # [?,N,N]
+#                 attn_for_nbrs_T = K.permute_dimensions(attn_for_nbrs, (0, 2, 1))  # [?,N,N]
+#                 attn_coef = attn_for_self + attn_for_nbrs_T  # [?,N,N]
+#                 attn_coef = LeakyReLU(alpha=0.2)(attn_coef)  # [?,N,N]
+#                 mask = -10e9 * (1.0 - A)  # [?,N,N]
+#                 attn_coef += mask  # [?,N,N]
+#                 attn_coef = K.softmax(attn_coef)  # [?,N,N]
+#                 attn_coef = Dropout(0.5)(attn_coef)  # [?,N,N]
+#                 if self.attn_method == 'sym-gat':
+#                     attn_coef = attn_coef + K.permute_dimensions(attn_coef, (0, 2, 1))  # [?,N,N]
+#             elif self.attn_method == 'const':
+#                 attn_coef = A  # [?,N,N]
+#             elif self.attn_method == 'gcn':
+#                 D = tf.reduce_sum(A, axis=-1)  # [?,N]
+#                 D = tf.expand_dims(D, axis=-1)  # [?,N,N]
+#                 Dt = K.permute_dimensions(D, (0, 2, 1))  # [?,N,N]
+#                 D = tf.sqrt(tf.multiply(D, Dt))  # [?,N,N]
+#                 attn_coef = tf.math.divide_no_nan(A, D)  # [?,N,N]
+#             # X1 = K.batch_dot(attn_coef, X)  # [?,N,C]
+#             X1 = attn_coef[..., None] * X  # [?,N,N,C]
+#             Xs.append(X1)
+#         output = K.stack(Xs)
+#         output = K.mean(output, axis=0)
+#         return output
+
+
+#### SPARSE MPNN
+class SPARSE_MPNN(tf.keras.layers.Layer):
     def __init__(self,
                  state_dim,
                  T,
                  aggr_method='mean',
                  attn_method='sym-gat',
                  update_method='gru',
-                 attn_head=6,
+                 attn_head=2,
                  activation='relu'):
-        super(MPNN, self).__init__(self)
+        super(SPARSE_MPNN, self).__init__(self)
         self.state_dim = state_dim
         self.T = T
         self.activation = activations.get(activation)
@@ -896,18 +1080,17 @@ class MPNN(tf.keras.layers.Layer):
         self.MP = MP_layer(state_dim, aggr_method, activation, attn_method, attn_head, update_method)
 
     def call(self, inputs, **kwargs):
-        X, A, E = inputs  # [?,N,F],[?,N*N,1],[?,N*N,S]
+        X, A, E, mask = inputs  # [?,N,F],[?,E,2],[?,E,S],[?,1],[?,1]
         X = self.embed(X)  # [?,N,C]
         for _ in range(self.T):
-            X = self.MP([X, A, E])  # [?,N,C]
+            X = self.MP([X, A, E, mask])  # [?,N,C]
         return X
 
 
 class MP_layer(tf.keras.layers.Layer):
     def __init__(self, state_dim, aggr_method, activation, attn_method, attn_head, update_method):
         super(MP_layer, self).__init__(self)
-        self.message_passer = Message_Passer_NNM(state_dim, activation)
-        self.message_aggs = Message_Agg(state_dim, aggr_method, attn_method, attn_head)
+        self.message_passer = Message_Passer_NNM(state_dim, attn_head, attn_method, activation)
         self.attn_head = attn_head
         if update_method == 'gru':
             self.update_functions = Update_Func_GRU(state_dim)
@@ -918,53 +1101,79 @@ class MP_layer(tf.keras.layers.Layer):
 
     def call(self, inputs, **kwargs):
         masked_list = []
-        X, A, E = inputs  # [?,N,C],[?,N*N,1],[?,N*N,S]
-        B, N, F = K.int_shape(X)
-        state_j = tf.tile(X, [1, N, 1])  # [?,N*N,C]
-
-        for _ in range(self.attn_head):
-            messages = self.message_passer([state_j, A, E])  # [?,N*N,C]
-            masked = tf.math.multiply(messages, A)  # [?,N*N,C]
-            masked = tf.reshape(masked, [tf.shape(messages)[0], N, N, F])  # [?,N,N,C]
-            masked_list.append(masked)
-        agg_m = self.message_aggs([masked_list, A, N])  # [?,N,C]
+        X, A, E, mask = inputs  # [?,N,C],[?,E,2],[?,E,S],[?,1],[?,1]
+        # B, N, F = K.int_shape(X)
+        # state_j = tf.tile(X, [1, N, 1])  # [?,N*N,C]
+        state_j = X  # [?,N,C]
+        agg_m = self.message_passer([state_j, A, E])  # [?,N,C]
+        mask = tf.tile(mask[..., None], [1, 1, self.state_dim])
+        agg_m = tf.multiply(agg_m, mask)
         updated_nodes = self.update_functions([X, agg_m])  # [?,N,C]
         return updated_nodes
 
 
 class Message_Passer_NNM(tf.keras.layers.Layer):
-    def __init__(self, state_dim, activation):
+    def __init__(self, state_dim, attn_heads, attn_method, activation):
         super(Message_Passer_NNM, self).__init__()
         self.state_dim = state_dim
-        self.nn = tf.keras.layers.Dense(units=self.state_dim * self.state_dim, activation=activation,
+        self.attn_heads = attn_heads
+        self.attn_method = attn_method
+        self.nn = tf.keras.layers.Dense(units=self.state_dim * self.state_dim * self.attn_heads, activation=activation,
                                         kernel_initializer='glorot_uniform', bias_initializer='zeros')
 
-    def call(self, inputs, **kwargs):
-        X, A, E = inputs  # [?,N*N,C],[?,N*N,1],[?,N*N,S]
-        W = self.nn(E)  # [?,N*N,C*C]
-        W = tf.reshape(W, [-1, self.state_dim, self.state_dim])  # [?*N*N,C,C]
-        X = tf.reshape(X, [-1, self.state_dim, 1])  # [?*N*N,C,1]
-        messages = tf.linalg.matmul(W, X)  # [?*N*N,C,1]
-        messages = tf.reshape(messages, [-1, K.int_shape(E)[1], self.state_dim])  # [?,N*N,C]
-        return messages
+    def build(self, input_shape):
+        input_dim = int(input_shape[0][-1])
 
+        self.attn_kernel_self = self.add_weight(name='attn_kernel_self', shape=[self.state_dim, self.attn_heads, 1],
+                                                initializer='glorot_uniform')
+        self.attn_kernel_adjc = self.add_weight(name='attn_kernel_adjc', shape=[self.state_dim, self.attn_heads, 1],
+                                                initializer='glorot_uniform')
+        self.bias = self.add_weight(name='attn_bias', shape=[self.state_dim], initializer='zeros')
 
-class Message_Agg(tf.keras.layers.Layer):
-    def __init__(self, state_dim, aggr_method, attn_method, attn_head):
-        super(Message_Agg, self).__init__()
-        self.aggr_method = aggr_method
-        self.Attn_Func = Attention_Func(state_dim, attn_method, attn_head)
+        self.built = True
 
     def call(self, inputs, **kwargs):
-        X, A, N = inputs
-        X = self.Attn_Func([X, A, N])
-        if self.aggr_method == 'sum':
-            out = tf.math.reduce_sum(X, 2)
-        elif self.aggr_method == 'mean':
-            out = tf.math.reduce_mean(X, 2)
-        elif self.aggr_method == 'max':
-            out = tf.math.reduce_max(X, 2)
-        return out
+        X, A, E = inputs  # [?,N,C],[?,E,2],[?,E,S],[?,1],[?,1]
+        targets, sources = A[..., -2], A[..., -1]
+        W = self.nn(E)  # [?,E,C*C*H]
+        W = tf.reshape(W, [-1, tf.shape(E)[1], self.attn_heads, self.state_dim, self.state_dim])  # [?*E,C,C,H]
+        X = tf.tile(X[..., None], [1, 1, 1, self.attn_heads])
+        X = tf.transpose(X, [0, 1, 3, 2])
+        attn_kernel_self = tf.transpose(self.attn_kernel_self, (2, 1, 0))
+        attn_kernel_adjc = tf.transpose(self.attn_kernel_adjc, (2, 1, 0))
+
+        attn_for_self = tf.reduce_sum(X * attn_kernel_self[None, ...], -1)
+        attn_for_self = tf.gather(attn_for_self, targets, batch_dims=1)
+
+        attn_for_adjc = tf.reduce_sum(X * attn_kernel_adjc[None, ...], -1)
+        attn_for_adjc = tf.gather(attn_for_adjc, sources, batch_dims=1)
+        attn_coef = attn_for_self + attn_for_adjc
+        attn_coef = tf.nn.leaky_relu(attn_coef, alpha=0.2)
+
+        N = K.int_shape(X)[1]
+        e_x = tf.exp(attn_coef - tf.gather(tf.math.unsorted_segment_max(attn_coef, targets, N), targets))
+        e_x /= tf.gather(tf.math.unsorted_segment_sum(e_x, targets, N) + 1e-9, targets)
+        attn_coef = e_x
+        attn_coef = tf.nn.dropout(attn_coef, 0.5)
+        attn_coef = attn_coef[..., None]
+
+        messages = tf.gather(X, sources, batch_dims=1)
+        messages = messages[..., None]
+        messages = tf.matmul(W, messages)
+        messages = messages[..., 0]
+
+        output = attn_coef * messages
+
+        num_rows = tf.shape(targets)[0]
+        rows_idx = tf.range(num_rows)
+        segment_ids_per_row = targets + N * tf.expand_dims(rows_idx, axis=1)
+        output = tf.math.unsorted_segment_sum(output, segment_ids_per_row, N*num_rows)
+        output = tf.reshape(output, [-1, N, self.attn_heads, self.state_dim])
+
+        output = tf.reduce_mean(output, axis=-2)
+
+        output = K.bias_add(output, self.bias)
+        return output
 
 
 class Update_Func_GRU(tf.keras.layers.Layer):
@@ -1059,84 +1268,4 @@ class Attention_Func(tf.keras.layers.Layer):
             Xs.append(X1)
         output = K.stack(Xs)
         output = K.mean(output, axis=0)
-        return output
-
-
-#### SPARSE MPNN
-def dot(a, b, transpose_a=False, transpose_b=False):
-    """
-    Dot product between `a` and `b`, with automatic handling of batch dimensions.
-    Supports both dense and sparse multiplication (including sparse-sparse).
-    The innermost dimension of `a` must match the outermost dimension of `b`,
-    unless there is a shared batch dimension.
-    Note that doing sparse-sparse multiplication of any rank and sparse-dense
-    multiplication with rank higher than 2 may result in slower computations.
-    :param a: Tensor or SparseTensor with rank 2 or 3.
-    :param b: Tensor or SparseTensor with rank 2 or 3.
-    :param transpose_a: bool, transpose innermost two dimensions of a.
-    :param transpose_b: bool, transpose innermost two dimensions of b.
-    :return: Tensor or SparseTensor with rank 2 or 3.
-    """
-    a_is_sparse_tensor = isinstance(a, tf.SparseTensor)
-    b_is_sparse_tensor = isinstance(b, tf.SparseTensor)
-
-    # Handle case where we can use faster sparse-dense matmul
-    if K.ndim(a) == 2 and K.ndim(b) == 2:
-        if a_is_sparse_tensor and not b_is_sparse_tensor:
-            return tf.sparse.sparse_dense_matmul(a, b)
-
-    out = tf.matmul(a, b, transpose_a=transpose_a, transpose_b=transpose_b)
-    if hasattr(out, 'to_sparse_tensor'):
-        return out.to_sparse_tensor()
-
-    return out
-
-
-class SPARSE_MPNN(tf.keras.layers.Layer):
-    def __init__(self, state_dim, kernel_network=None):
-        super(SPARSE_MPNN, self).__init__(self)
-        self.state_dim = state_dim
-        self.kernel_network = kernel_network
-
-    def build(self, input_shape):
-        F = input_shape[0][-1]
-        F_ = self.state_dim
-        self.kernel_network_layers = []
-        if self.kernel_network is not None:
-            for i, l in enumerate(self.kernel_network):
-                self.kernel_network_layers.append(
-                    Dense(l,
-                          name='FGN_{}'.format(i),
-                          activation='relu')
-                )
-        self.kernel_network_layers.append(Dense(F_ * F, name='FGN_out'))
-
-    def call(self, inputs, **kwargs):
-        X = inputs[0]  # (N, F)
-        A = inputs[1]  # (N, N)
-        E = inputs[2]  # (n_edges, S)
-        assert K.ndim(E) == 2, 'In single mode, E must have shape (n_edges, S).'
-        assert K.is_sparse(A)
-        N = tf.shape(X)[-2]
-        F = K.int_shape(X)[-1]
-        F_ = self.state_dim
-
-        kernel_network = E
-
-        for l in self.kernel_network_layers:
-            kernel_network = l(kernel_network)
-
-        target_shape = (-1, F, F_)
-        kernel = tf.reshape(kernel_network, target_shape)
-
-        # Propagation
-        index_i = A.indices[:, -2]
-        index_j = A.indices[:, -1]
-        messages = tf.gather(X, index_j)
-        messages = dot(messages[:, None, :], kernel)[:, 0, :]
-        aggregated = tf.math.unsorted_segment_sum(messages, index_i, N)
-
-        # Update
-        output = aggregated
-
         return output
