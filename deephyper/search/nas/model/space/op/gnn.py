@@ -1106,6 +1106,7 @@ class SPARSE_MPNN(tf.keras.layers.Layer):
             X: an output node embedding tensor [?, N, F']
         """
         X, A, E, mask, degree = inputs
+        A = tf.cast(A, tf.int32)
         X = self.embed(X)
         for _ in range(self.T):
             X = self.MP([X, A, E, mask, degree])
@@ -1126,8 +1127,6 @@ class MP_layer(tf.keras.layers.Layer):
 
     def call(self, inputs, **kwargs):
         X, A, E, mask, degree = inputs  # [?,N,C],[?,E,2],[?,E,S],[?,1],[?,1]
-        # B, N, F = K.int_shape(X)
-        # state_j = tf.tile(X, [1, N, 1])  # [?,N*N,C]
         agg_m = self.message_passer([X, A, E, degree])  # [?,N,C]
         mask = tf.tile(mask[..., None], [1, 1, self.state_dim])
         agg_m = tf.multiply(agg_m, mask)
@@ -1190,7 +1189,7 @@ class Message_Passer_NNM(tf.keras.layers.Layer):
         segment_ids_per_row = targets + N * tf.expand_dims(rows_idx, axis=1)
 
         # Aggregation
-        if self.aggr_method == 'max-pooling':
+        if self.aggr_method == 'max':
             output = tf.math.unsorted_segment_max(output, segment_ids_per_row, N * num_rows)
         elif self.aggr_method == 'mean':
             output = tf.math.unsorted_segment_mean(output, segment_ids_per_row, N * num_rows)

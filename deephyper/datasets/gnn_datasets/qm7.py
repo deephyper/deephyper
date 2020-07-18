@@ -4,7 +4,7 @@ from .utils import organize_data, organize_data_sparse
 
 # FIXED PARAMETERS
 
-MAX_ATOM = 7 + 1
+MAX_ATOM = 8 + 1
 MAX_EDGE = 10 + 1
 N_FEAT = 75
 E_FEAT = 14
@@ -69,7 +69,7 @@ def load_qm7_MPNN(split='stratified', seed=0):
            qm7_tasks, transformers
 
 
-def load_qm7_MPNN_sparse(split='random', seed=2020):
+def load_qm7_MPNN_sparse(split='stratified', seed=2020):
     print("Loading qm7 Dataset")
     qm7_tasks, (train_dataset, valid_dataset, test_dataset), transformers = load_qm7_from_mat(featurizer='Weave',
                                                                                               split=split,
