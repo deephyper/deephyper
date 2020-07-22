@@ -103,6 +103,9 @@ class KSearchSpace(NxSearchSpace):
         for op_i, node in zip(indexes, self.variable_nodes):
             node.set_op(op_i)
 
+        for node in self.mime_nodes:
+            node.set_op()
+
         output_nodes = self.get_output_nodes()
 
         self.output_node = self.set_output_node(self.graph, output_nodes)
