@@ -13,7 +13,7 @@ class Conv2D(Operation):
     """Classic convolution with 2 dimensions.
 
     Create a 2 dimensions classic convolution operation.
-    https://www.tensorflow.org/versions/r1.0/api_docs/python/tf/contrib/layers/conv2d
+    https://www.tensorflow.org/versions/r1.15/api_docs/python/tf/keras/layers/Conv2D
 
     Args:
         filter_height (int): height of a filter or kernel.
@@ -22,13 +22,20 @@ class Conv2D(Operation):
     """
 
     def __init__(
-        self, kernel_size, filters=8, strides=1, padding="SAME", dilation_rate=1
+        self,
+        kernel_size,
+        filters=8,
+        strides=1,
+        padding="SAME",
+        dilation_rate=1,
+        activation=None,
     ):
         self.kernel_size = kernel_size
         self.filters = filters
         self.strides = strides
         self.padding = padding
         self.dilation_rate = dilation_rate
+        self.activation = activation
         self._layer = None
 
     def __str__(self):
@@ -52,6 +59,7 @@ class Conv2D(Operation):
                 strides=self.strides,
                 padding=self.padding,
                 dilation_rate=self.dilation_rate,
+                activation=self.activation,
             )
         out = self._layer(inputs[0])
         return out
