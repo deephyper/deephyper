@@ -1088,9 +1088,16 @@ class SPARSE_MPNN(tf.keras.layers.Layer):
         self.state_dim = state_dim
         self.T = T
         self.activation = activations.get(activation)
-        self.embed = tf.keras.layers.Dense(state_dim, activation=self.activation, kernel_initializer='glorot_uniform',
-                                           bias_initializer='zeros')
-        self.MP = MP_layer(state_dim, aggr_method, activation, attn_method, attn_head, update_method)
+        self.aggr_method = aggr_method
+        self.attn_method = attn_method
+        self.attn_head = attn_head
+        self.update_method = update_method
+
+    def build(self, input_shape):
+        self.embed = tf.keras.layers.Dense(self.state_dim, activation=self.activation)
+        self.MP = MP_layer(self.state_dim, self.aggr_method, self.activation,
+                           self.attn_method, self.attn_head, self.update_method)
+        self.built = True
 
     def call(self, inputs, **kwargs):
         """
@@ -1116,14 +1123,22 @@ class SPARSE_MPNN(tf.keras.layers.Layer):
 class MP_layer(tf.keras.layers.Layer):
     def __init__(self, state_dim, aggr_method, activation, attn_method, attn_head, update_method):
         super(MP_layer, self).__init__(self)
-        self.message_passer = Message_Passer_NNM(state_dim, attn_head, attn_method, aggr_method, activation)
-        self.attn_head = attn_head
-        if update_method == 'gru':
-            self.update_functions = Update_Func_GRU(state_dim)
-        elif update_method == 'mlp':
-            self.update_functions = Update_Func_MLP(state_dim, activation)
-
         self.state_dim = state_dim
+        self.aggr_method = aggr_method
+        self.activation = activation
+        self.attn_method = attn_method
+        self.attn_head = attn_head
+        self.update_method = update_method
+
+    def build(self, input_shape):
+        self.message_passer = Message_Passer_NNM(self.state_dim, self.attn_head, self.attn_method,
+                                                 self.aggr_method, self.activation)
+        if self.update_method == 'gru':
+            self.update_functions = Update_Func_GRU(self.state_dim)
+        elif self.update_method == 'mlp':
+            self.update_functions = Update_Func_MLP(self.state_dim, self.activation)
+
+        self.built = True
 
     def call(self, inputs, **kwargs):
         X, A, E, mask, degree = inputs  # [?,N,C],[?,E,2],[?,E,S],[?,1],[?,1]
@@ -1144,9 +1159,12 @@ class Message_Passer_NNM(tf.keras.layers.Layer):
         self.aggr_method = aggr_method
         self.activation = activation
 
+
+
+
+    def build(self, input_shape):
         self.nn = tf.keras.layers.Dense(units=self.state_dim * self.state_dim * self.attn_heads,
-                                        activation=self.activation,
-                                        kernel_initializer='glorot_uniform', bias_initializer='zeros')
+                                        activation=self.activation)
 
         if self.attn_method == 'gat':
             self.attn_func = Attention_GAT(self.state_dim, self.attn_heads)
@@ -1163,7 +1181,6 @@ class Message_Passer_NNM(tf.keras.layers.Layer):
         elif self.attn_method == 'gcn':
             self.attn_func = Attention_GCN(self.state_dim, self.attn_heads)
 
-    def build(self, input_shape):
         self.bias = self.add_weight(name='attn_bias', shape=[self.state_dim], initializer='zeros')
         self.built = True
 
@@ -1188,6 +1205,7 @@ class Message_Passer_NNM(tf.keras.layers.Layer):
         rows_idx = tf.range(num_rows)
         segment_ids_per_row = targets + N * tf.expand_dims(rows_idx, axis=1)
 
+
         # Aggregation
         if self.aggr_method == 'max':
             output = tf.math.unsorted_segment_max(output, segment_ids_per_row, N * num_rows)
@@ -1206,8 +1224,12 @@ class Message_Passer_NNM(tf.keras.layers.Layer):
 class Update_Func_GRU(tf.keras.layers.Layer):
     def __init__(self, state_dim):
         super(Update_Func_GRU, self).__init__()
+        self.state_dim = state_dim
+
+    def build(self, input_shape):
         self.concat_layer = tf.keras.layers.Concatenate(axis=1)
-        self.GRU = tf.keras.layers.GRU(state_dim)
+        self.GRU = tf.keras.layers.GRU(self.state_dim)
+        self.built = True
 
     def call(self, inputs, **kwargs):
         # Remember node dim
@@ -1227,9 +1249,12 @@ class Update_Func_GRU(tf.keras.layers.Layer):
 class Update_Func_MLP(tf.keras.layers.Layer):
     def __init__(self, state_dim, activation):
         super(Update_Func_MLP, self).__init__()
+        self.state_dim = state_dim
+        self.activation = activation
+
+    def build(self, input_shape):
         self.concat_layer = tf.keras.layers.Concatenate(axis=-1)
-        self.dense = tf.keras.layers.Dense(state_dim, activation=activation,
-                                           kernel_initializer='glorot_uniform', bias_initializer='zeros')
+        self.dense = tf.keras.layers.Dense(self.state_dim, activation=self.activation)
 
     def call(self, inputs, **kwargs):
         # Remember node dim
@@ -1292,13 +1317,15 @@ class Attention_SYM_GAT(tf.keras.layers.Layer):
         attn_for_self = tf.gather(attn_for_self, targets, batch_dims=1)
         attn_for_adjc = tf.reduce_sum(X * attn_kernel_adjc[None, ...], -1)
         attn_for_adjc = tf.gather(attn_for_adjc, sources, batch_dims=1)
-        attn_coef = attn_for_self + attn_for_adjc
+
+        attn_for_self_reverse = tf.gather(attn_for_self, sources, batch_dims=1)
+        attn_for_adjc_reverse = tf.gather(attn_for_self, targets, batch_dims=1)
+        attn_coef = attn_for_self + attn_for_adjc + attn_for_self_reverse + attn_for_adjc_reverse
         attn_coef = tf.nn.leaky_relu(attn_coef, alpha=0.2)
         attn_coef = tf.exp(attn_coef - tf.gather(tf.math.unsorted_segment_max(attn_coef, targets, N), targets))
         attn_coef /= tf.gather(tf.math.unsorted_segment_max(attn_coef, targets, N) + 1e-9, targets)
         attn_coef = tf.nn.dropout(attn_coef, 0.5)
         attn_coef = attn_coef[..., None]
-        attn_coef += tf.reverse(attn_coef, axis=[1])
         return attn_coef
 
 
@@ -1414,40 +1441,50 @@ class Attention_Const(tf.keras.layers.Layer):
         attn_coef = tf.ones((tf.shape(targets)[0], tf.shape(targets)[1], self.attn_heads, 1))
         return attn_coef
 
-# attention mechanism
-# if self.attn_method != 'const' and self.attn_method != 'gcn':
-#     attn_kernel_self = tf.transpose(self.attn_kernel_self, (2, 1, 0))
-#     attn_kernel_adjc = tf.transpose(self.attn_kernel_adjc, (2, 1, 0))
-#     attn_for_self = tf.reduce_sum(X * attn_kernel_self[None, ...], -1)
-#     attn_for_self = tf.gather(attn_for_self, targets, batch_dims=1)
-#     attn_for_adjc = tf.reduce_sum(X * attn_kernel_adjc[None, ...], -1)
-#     attn_for_adjc = tf.gather(attn_for_adjc, sources, batch_dims=1)
-#     if self.attn_method == 'gat' or self.attn_method == 'sym-gat' or self.attn_method == 'gen-linear':
-#         attn_coef = attn_for_self + attn_for_adjc
-#     elif self.attn_method == 'cos':
-#         attn_coef = tf.multiply(attn_for_self, attn_for_adjc)
-#     elif self.attn_method == 'linear':
-#         attn_coef = attn_for_adjc + 0 * attn_for_self
-#
-#     if self.attn_method == 'gat' or self.attn_method == 'sym-gat' or self.attn_method == 'cos':
-#         attn_coef = tf.nn.leaky_relu(attn_coef, alpha=0.2)
-#     elif self.attn_method == 'linear' or self.attn_method == 'gen-linear':
-#         attn_coef = tf.nn.tanh(attn_coef)
-#
-#     if self.attn_method == 'gen-linear':
-#         attn_coef = self.gen_nn(attn_coef)
-#     e_x = tf.exp(attn_coef - tf.gather(tf.math.unsorted_segment_max(attn_coef, targets, N), targets))
-#     e_x /= tf.gather(tf.math.unsorted_segment_max(e_x, targets, N) + 1e-9, targets)
-#     attn_coef = e_x
-#     attn_coef = tf.nn.dropout(attn_coef, 0.5)
-#     attn_coef = attn_coef[..., None]
-#
-#     if self.attn_method == 'sym-gat':
-#         attn_coef += tf.reverse(attn_coef, axis=[1])
-#
-# elif self.attn_method == 'const':
-#     attn_coef = tf.ones((tf.shape(E)[0], tf.shape(E)[1], self.attn_heads, 1))
-#
-# elif self.attn_method == 'gcn':
-#     attn_coef = degree[..., None, None]
-#     attn_coef = tf.tile(attn_coef, [1, 1, self.attn_heads, 1])
+
+class GlobalAttentionPool(tf.keras.layers.Layer):
+    def __init__(self, state_dim, **kwargs):
+        super(GlobalAttentionPool, self).__init__()
+        self.state_dim = state_dim
+        self.kwargs = kwargs
+
+    def __str__(self):
+        return f"GraphAttentionPool"
+
+    def build(self, input_shape):
+        self.features_layer = Dense(self.state_dim, name='features_layer')
+        self.attention_layer = Dense(self.state_dim, name='attention_layer', activation='sigmoid')
+        self.built = True
+
+    def call(self, inputs, **kwargs):
+        inputs_linear = self.features_layer(inputs)
+        attn = self.attention_layer(inputs)
+        masked_inputs = inputs_linear * attn
+        output = K.sum(masked_inputs, axis=-2, keepdims=False)
+        return output
+
+
+class GlobalAttentionSumPool(tf.keras.layers.Layer):
+    def __init__(self, **kwargs):
+        super(GlobalAttentionSumPool, self).__init__()
+        self.kwargs = kwargs
+
+    def __str__(self):
+        return f"GraphAttentionSumPool"
+
+    def build(self, input_shape):
+        F = int(input_shape[-1])
+        # Attention kernels
+        self.attn_kernel = self.add_weight(shape=(F, 1),
+                                           initializer='glorot_uniform',
+                                           name='attn_kernel')
+        self.built = True
+
+    def call(self, inputs, **kwargs):
+        X = inputs
+        attn_coeff = K.dot(X, self.attn_kernel)
+        attn_coeff = K.squeeze(attn_coeff, -1)
+        attn_coeff = K.softmax(attn_coeff)
+        output = K.batch_dot(attn_coeff, X)
+        return output
+

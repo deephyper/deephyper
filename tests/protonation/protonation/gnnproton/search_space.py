@@ -2,9 +2,9 @@ import collections
 import tensorflow as tf
 from deephyper.search.nas.model.space import KSearchSpace
 from deephyper.search.nas.model.space.node import ConstantNode, VariableNode
-from deephyper.search.nas.model.space.op.merge import AddByProjecting, Concatenate
-from deephyper.search.nas.model.space.op.gnn import GlobalAvgPool, GlobalSumPool, GlobalMaxPool, MPNN, Apply1DMask
-from deephyper.search.nas.model.space.op.op1d import Dense, Identity, Flatten
+from deephyper.search.nas.model.space.op.merge import AddByProjecting
+from deephyper.search.nas.model.space.op.gnn import GlobalAvgPool, GlobalSumPool, GlobalMaxPool, SPARSE_MPNN, GlobalAttentionPool, GlobalAttentionSumPool, Apply1DMask
+from deephyper.search.nas.model.space.op.op1d import Dense, Flatten
 from deephyper.search.nas.model.space.op.connect import Connect
 from deephyper.search.nas.model.space.op.basic import Tensor
 
@@ -19,13 +19,20 @@ def add_gat_to_(node):
 
     """
     # node.add_op(GraphIdentity())
-    state_dims = [8, 16, 32]
-    Ts = [1, 2, 3]
-    attn_methods = ['gcn']
-    attn_heads = [1]
-    aggr_methods = ['max']
-    update_methods = ['gru']
-    activations = [tf.nn.sigmoid, tf.nn.tanh, tf.nn.relu, tf.nn.elu]
+    state_dims = [4, 8, 16, 32]
+    Ts = [1, 2, 3, 4]
+    attn_methods = ['const', 'gcn', 'gat', 'sym-gat', 'linear', 'gen-linear', 'cos']
+    attn_heads = [1, 2, 4, 6]
+    aggr_methods = ['max', 'mean', 'sum']
+    update_methods = ['gru', 'mlp']
+    activations = [tf.keras.activations.sigmoid,
+                   tf.keras.activations.tanh,
+                   tf.keras.activations.relu,
+                   tf.keras.activations.linear,
+                   tf.keras.activations.elu,
+                   tf.keras.activations.softplus,
+                   tf.nn.leaky_relu,
+                   tf.nn.relu6]
 
     for state_dim in state_dims:
         for T in Ts:
@@ -34,13 +41,13 @@ def add_gat_to_(node):
                     for aggr_method in aggr_methods:
                         for update_method in update_methods:
                             for activation in activations:
-                                node.add_op(MPNN(state_dim=state_dim,
-                                                 T=T,
-                                                 attn_method=attn_method,
-                                                 attn_head=attn_head,
-                                                 aggr_method=aggr_method,
-                                                 update_method=update_method,
-                                                 activation=activation))
+                                node.add_op(SPARSE_MPNN(state_dim=state_dim,
+                                                        T=T,
+                                                        attn_method=attn_method,
+                                                        attn_head=attn_head,
+                                                        aggr_method=aggr_method,
+                                                        update_method=update_method,
+                                                        activation=activation))
     return
 
 
@@ -53,18 +60,20 @@ def add_global_pooling_to_(node):
     Returns:
 
     """
-    # node.add_op(Identity())
-    # for functions in [GlobalSumPool, GlobalMaxPool, GlobalAvgPool]:
-    #     for axis in [-1, -2]:  # Pool in terms of nodes or features
-    #         node.add_op(functions(axis=axis))
+    for functions in [GlobalSumPool, GlobalMaxPool, GlobalAvgPool]:
+        for axis in [-1, -2]:  # Pool in terms of nodes or features
+            node.add_op(functions(axis=axis))
     node.add_op(Flatten())
+    for state_dim in [16, 32, 64]:
+        node.add_op(GlobalAttentionPool(state_dim=state_dim))
+    node.add_op(GlobalAttentionSumPool())
     return
 
 
 def create_search_space(input_shape=None,
-                        output_shape=(31,),
+                        output_shape=(33,),
                         num_gcn_layers=3,
-                        num_dense_layers=1,
+                        num_dense_layers=2,
                         *args, **kwargs):
     """
     A function to create keras search sapce
@@ -80,12 +89,17 @@ def create_search_space(input_shape=None,
 
     """
     if input_shape is None:
-        input_shape = [(31, 23), (31*31, 1), (31*31, 6), (31, )]
+        input_shape = [(32+1, 23),
+                       (32+1+94+1, 2),
+                       (32+1+94+1, 6),
+                       (32+1, ),
+                       (32+1+94+1, )]
     arch = KSearchSpace(input_shape, output_shape, regression=True)
-    source = prev_input = arch.input_nodes[0]  # X, node feature matrix (?, 23, 75)
-    prev_input1 = arch.input_nodes[1]  # A, Adjacency matrix (?, 23, 23)
-    prev_input2 = arch.input_nodes[2]  # E
-    prev_input3 = arch.input_nodes[3]  # m
+    source = prev_input = arch.input_nodes[0]
+    prev_input1 = arch.input_nodes[1]
+    prev_input2 = arch.input_nodes[2]
+    prev_input3 = arch.input_nodes[3]
+    prev_input4 = arch.input_nodes[4]
 
     # look over skip connections within a range of the 3 previous nodes
     anchor_points = collections.deque([source], maxlen=3)
@@ -94,10 +108,12 @@ def create_search_space(input_shape=None,
     count_dense_layers = 0
     for _ in range(num_gcn_layers):
         graph_attn_cell = VariableNode()
-        add_gat_to_(graph_attn_cell)  # Graph convolution
-        arch.connect(prev_input, graph_attn_cell)  # X --> Graph convolution
-        arch.connect(prev_input1, graph_attn_cell)  # A --> Graph convolution
-        arch.connect(prev_input2, graph_attn_cell)  # E --> Graph convolution
+        add_gat_to_(graph_attn_cell)  #
+        arch.connect(prev_input, graph_attn_cell)
+        arch.connect(prev_input1, graph_attn_cell)
+        arch.connect(prev_input2, graph_attn_cell)
+        arch.connect(prev_input3, graph_attn_cell)
+        arch.connect(prev_input4, graph_attn_cell)
 
         cell_output = graph_attn_cell
         cmerge = ConstantNode()
