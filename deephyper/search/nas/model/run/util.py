@@ -126,16 +126,22 @@ def setup_search_space(config, input_shape, output_shape, seed):
 
 def compute_objective(objective, history):
     if type(objective) is str and ("__" in objective or objective in history):
+        if objective[0] == "-":
+            multiplier = -1
+            objective = objective[1:]
+        else:
+            multiplier = 1
 
         split_objective = objective.split("__")
         kind = split_objective[1] if len(split_objective) > 1 else "last"
         mname = split_objective[0]
         if kind == "min":
-            return min(history[mname])
+            res = min(history[mname])
         elif kind == "max":
-            return max(history[mname])
-        else:  # 'last' or else
-            return history[mname][-1]
+            res = max(history[mname])
+        else:  # 'last' or else, by default it will be the last one
+            res = history[mname][-1]
+        return multiplier * res
     elif callable(objective):
         func = objective
         return func(history)
