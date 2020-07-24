@@ -125,13 +125,15 @@ def setup_search_space(config, input_shape, output_shape, seed):
 
 
 def compute_objective(objective, history):
-    if type(objective) is str and ("__" in objective or objective in history):
+    # set a multiplier to turn objective to its negative
+    if type(objective) is str:
         if objective[0] == "-":
             multiplier = -1
             objective = objective[1:]
         else:
             multiplier = 1
 
+    if type(objective) is str and ("__" in objective or objective in history):
         split_objective = objective.split("__")
         kind = split_objective[1] if len(split_objective) > 1 else "last"
         mname = split_objective[0]
