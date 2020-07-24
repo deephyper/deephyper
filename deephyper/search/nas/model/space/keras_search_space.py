@@ -39,18 +39,21 @@ class KSearchSpace(NxSearchSpace):
     Args:
         input_shape (list(tuple(int))): list of shapes of all inputs.
         output_shape (tuple(int)): shape of output.
+        batch_size (list(tuple(int))): batch size of the input layer. If ``input_shape`` is defining a list of inputs, ``batch_size`` should also define a list of inputs.
 
     Raises:
         InputShapeOfWrongType: [description]
     """
 
-    def __init__(self, input_shape, output_shape, *args, **kwargs):
+    def __init__(self, input_shape, output_shape, batch_size=None, *args, **kwargs):
 
         super().__init__()
 
         if type(input_shape) is tuple:
             # we have only one input tensor here
-            op = Tensor(keras.layers.Input(input_shape, name="input_0"))
+            op = Tensor(
+                keras.layers.Input(input_shape, name="input_0", batch_size=batch_size)
+            )
             self.input_nodes = [ConstantNode(op=op, name="Input_0")]
 
         elif type(input_shape) is list and all(
@@ -59,7 +62,12 @@ class KSearchSpace(NxSearchSpace):
             # we have a list of input tensors here
             self.input_nodes = list()
             for i in range(len(input_shape)):
-                op = Tensor(keras.layers.Input(input_shape[i], name=f"input_{i}"))
+                batch_size = batch_size[i] if type(batch_size) is list else None
+                op = Tensor(
+                    keras.layers.Input(
+                        input_shape[i], name=f"input_{i}", batch_size=batch_size
+                    )
+                )
                 inode = ConstantNode(op=op, name=f"Input_{i}")
                 self.input_nodes.append(inode)
         else:
