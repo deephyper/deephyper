@@ -315,6 +315,7 @@ class HorovodTrainerTrainValid:
         )
 
         if self.augment:
+            logger.info("Augmenting data...")
             self.dataset_train = self.dataset_train.map(
                 augment, num_parallel_calls=AUTOTUNE
             )
