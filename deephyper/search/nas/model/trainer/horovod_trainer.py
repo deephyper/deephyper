@@ -3,6 +3,7 @@ import os
 import time
 import traceback
 from inspect import signature
+import sys
 
 import numpy as np
 import tensorflow as tf
@@ -20,15 +21,16 @@ logger = util.conf_logger(__name__)
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 
 
-def convert(image, label):
-    image = tf.image.convert_image_dtype(
-        image, tf.float32
-    )  # Cast and normalize the image to [0,1]
-    return image, label
+# def convert(image, label):
+#     image = tf.image.convert_image_dtype(
+#         image, tf.float32
+#     )  # Cast and normalize the image to [0,1]
+#     return image, label
 
 
 def augment(image, label):
-    image, label = convert(image, label)
+    # image, label = convert(image, label)
+    tf.print(image, output_stream=sys.stdout)
     image = tf.image.random_crop(image, [28, 28, 3])
     image = tf.image.resize_with_crop_or_pad(image, 32, 32)
     image = tf.image.random_flip_left_right(image)
@@ -314,6 +316,7 @@ class HorovodTrainerTrainValid:
         self.dataset_train = self.dataset_train.shuffle(
             self.train_size // hvd.size(), reshuffle_each_iteration=True
         )
+        self.dataset_train = self.dataset_train.repeat(self.num_epochs)
 
         if self.augment:
             logger.info("Augmenting data...")
@@ -323,7 +326,7 @@ class HorovodTrainerTrainValid:
 
         self.dataset_train = self.dataset_train.batch(self.batch_size)
         self.dataset_train = self.dataset_train.prefetch(AUTOTUNE)
-        self.dataset_train = self.dataset_train.repeat()
+        # self.dataset_train = self.dataset_train.repeat()
 
     def set_dataset_valid(self):
         if self.data_config_type == "ndarray":
