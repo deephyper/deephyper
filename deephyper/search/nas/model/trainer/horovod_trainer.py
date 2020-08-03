@@ -21,23 +21,6 @@ logger = util.conf_logger(__name__)
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 
 
-# def convert(image, label):
-#     image = tf.image.convert_image_dtype(
-#         image, tf.float32
-#     )  # Cast and normalize the image to [0,1]
-#     return image, label
-
-
-def augment(image, label):
-    # image, label = convert(image, label)
-    tf.print(image, output_stream=sys.stdout)
-    image = tf.image.random_crop(image, [28, 28, 3])
-    image = tf.image.resize_with_crop_or_pad(image, 32, 32)
-    image = tf.image.random_flip_left_right(image)
-
-    return image, label
-
-
 class HorovodTrainerTrainValid:
     def __init__(self, config, model):
         self.cname = self.__class__.__name__
@@ -62,13 +45,22 @@ class HorovodTrainerTrainValid:
 
         self.data = self.config[a.data]
 
+        # hyperparameters
         self.config_hp = self.config[a.hyperparameters]
         self.optimizer_name = self.config_hp.get(a.optimizer, "adam")
         self.optimizer_eps = self.config_hp.get("epsilon", None)
         self.batch_size = self.config_hp.get(a.batch_size, 32)
         self.clipvalue = self.config_hp.get("clipvalue", None)
         self.learning_rate = self.config_hp.get(a.learning_rate, 1e-3)
-        self.augment = self.config_hp.get("augment", False)  # TODO: modify
+
+        # augmentation strategy
+        if not self.config.get("augment", None) is None:
+            if not self.config["augment"].get("kwargs", None) is None:
+                self.augment_func = lambda inputs, outputs: self.config["augment"][
+                    "func"
+                ](inputs, outputs, **self.config["augment"]["kwargs"])
+            else:
+                self.augment_func = self.config["augment"]["func"]
 
         self.num_epochs = self.config_hp[a.num_epochs]
         self.verbose = (
@@ -318,10 +310,10 @@ class HorovodTrainerTrainValid:
         )
         self.dataset_train = self.dataset_train.repeat(self.num_epochs)
 
-        if self.augment:
-            logger.info("Augmenting data...")
+        if hasattr(self, "augment_func"):
+            logger.info("Data augmentation set.")
             self.dataset_train = self.dataset_train.map(
-                augment, num_parallel_calls=AUTOTUNE
+                self.augment_func, num_parallel_calls=AUTOTUNE
             )
 
         self.dataset_train = self.dataset_train.batch(self.batch_size)

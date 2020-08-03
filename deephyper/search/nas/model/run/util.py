@@ -10,6 +10,11 @@ def load_config(config):
     # ! load functions
     config["load_data"]["func"] = util.load_attr_from(config["load_data"]["func"])
 
+    # load augmentation strategy
+    if not config.get("augment") is None:
+        config["augment"]["func"] = util.load_attr_from(config["augment"]["func"])
+
+    # load the function creating the search space
     config["create_search_space"]["func"] = util.load_attr_from(
         config["create_search_space"]["func"]
     )
