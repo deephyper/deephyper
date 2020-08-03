@@ -19,15 +19,16 @@ logger = util.conf_logger(__name__)
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 
-# def convert(image, label):
-#     image = tf.image.convert_image_dtype(
-#         image, tf.float32
-#     )  # Cast and normalize the image to [0,1]
-#     return image, label
+
+def convert(image, label):
+    image = tf.image.convert_image_dtype(
+        image, tf.float32
+    )  # Cast and normalize the image to [0,1]
+    return image, label
 
 
 def augment(image, label):
-    # image, label = convert(image, label)
+    image, label = convert(image, label)
     image = tf.image.random_crop(image, [28, 28, 3])
     image = tf.image.resize_with_crop_or_pad(image, 32, 32)
     image = tf.image.random_flip_left_right(image)
