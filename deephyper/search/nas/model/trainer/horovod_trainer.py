@@ -28,8 +28,8 @@ AUTOTUNE = tf.data.experimental.AUTOTUNE
 
 def augment(image, label):
     # image, label = convert(image, label)
-    image = tf.image.random_crop(t, [28, 28, 3])
-    image = tf.image.resize_with_crop_or_pad(ct, 32, 32)
+    image = tf.image.random_crop(image, [28, 28, 3])
+    image = tf.image.resize_with_crop_or_pad(image, 32, 32)
     image = tf.image.random_flip_left_right(image)
 
     return image, label
