@@ -17,6 +17,23 @@ from .. import train_utils as U
 
 logger = util.conf_logger(__name__)
 
+AUTOTUNE = tf.data.experimental.AUTOTUNE
+
+# def convert(image, label):
+#     image = tf.image.convert_image_dtype(
+#         image, tf.float32
+#     )  # Cast and normalize the image to [0,1]
+#     return image, label
+
+
+def augment(image, label):
+    # image, label = convert(image, label)
+    image = tf.image.random_crop(t, [28, 28, 3])
+    image = tf.image.resize_with_crop_or_pad(ct, 32, 32)
+    image = tf.image.random_flip_left_right(image)
+
+    return image, label
+
 
 class HorovodTrainerTrainValid:
     def __init__(self, config, model):
@@ -46,8 +63,9 @@ class HorovodTrainerTrainValid:
         self.optimizer_name = self.config_hp.get(a.optimizer, "adam")
         self.optimizer_eps = self.config_hp.get("epsilon", None)
         self.batch_size = self.config_hp.get(a.batch_size, 32)
-
+        self.clipvalue = self.config_hp.get("clipvalue", None)
         self.learning_rate = self.config_hp.get(a.learning_rate, 1e-3)
+        self.augment = self.config_hp.get("augment", False)  # TODO: modify
 
         self.num_epochs = self.config_hp[a.num_epochs]
         self.verbose = (
@@ -218,8 +236,6 @@ class HorovodTrainerTrainValid:
                 f"Data are of an unsupported type and should be of same type: type(self.config['data']['train_X'])=={type(self.config[a.data][a.train_X])} and type(self.config['data']['valid_X'])=={type(self.config[a.data][a.valid_X])} !"
             )
 
-        logger.debug(f"{self.cname}: {len(self.train_X)} inputs")
-
         # check data length
         self.train_size = np.shape(self.train_X[0])[0]
         if not all(map(lambda x: np.shape(x)[0] == self.train_size, self.train_X)):
@@ -298,7 +314,13 @@ class HorovodTrainerTrainValid:
             self.train_size // hvd.size(), reshuffle_each_iteration=True
         )
 
+        if self.augment:
+            self.dataset_train = self.dataset_train.map(
+                augment, num_parallel_calls=AUTOTUNE
+            )
+
         self.dataset_train = self.dataset_train.batch(self.batch_size)
+        self.dataset_train = self.dataset_train.prefetch(AUTOTUNE)
         self.dataset_train = self.dataset_train.repeat()
 
     def set_dataset_valid(self):
@@ -344,6 +366,9 @@ class HorovodTrainerTrainValid:
 
         if "epsilon" in opti_parameters:
             params["epsilon"] = self.optimizer_eps
+
+        if self.clipvalue is not None:
+            params["clipvalue"] = self.clipvalue
 
         # if "decay" in opti_parameters:
         #     decay_rate = (
