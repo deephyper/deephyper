@@ -15,12 +15,11 @@ class Concatenate(Operation):
         axis (int): axis to concatenate
     """
 
-    def __init__(self, search_space, stacked_nodes=None, axis=-1, not_connected=False):
+    def __init__(self, search_space, stacked_nodes=None, axis=-1):
         self.search_space = search_space
         self.node = None  # current_node of the operation
         self.stacked_nodes = stacked_nodes
         self.axis = axis
-        self.not_connected = not_connected
 
     def __str__(self):
         return "Concatenate"
@@ -32,19 +31,16 @@ class Concatenate(Operation):
                 self.search_space.connect(n, self.node)
 
     def __call__(self, values, **kwargs):
+        # case where there is no inputs
+        if len(values) == 0:
+            return []
+
         len_shp = max([len(x.get_shape()) for x in values])
 
         if len_shp > 4:
             raise RuntimeError(
                 f"This concatenation is for 2D or 3D tensors only but a {len_shp-1}D is passed!"
             )
-
-        if self.not_connected:  # concatenate values that are not fead somewhere else
-            values = [
-                v
-                for v, n in zip(values, self.stacked_nodes)
-                if len(list(self.search_space.graph.successors(n))) == 1
-            ]
 
         # zeros padding
         if len(values) > 1:
@@ -110,6 +106,10 @@ class AddByPadding(Operation):
                 self.search_space.connect(n, self.node)
 
     def __call__(self, values, **kwargs):
+        # case where there is no inputs
+        if len(values) == 0:
+            return []
+
         values = values[:]
         max_len_shp = max([len(x.get_shape()) for x in values])
 
@@ -180,6 +180,10 @@ class AddByProjecting(Operation):
                 self.search_space.connect(n, self.node)
 
     def __call__(self, values, seed=None, **kwargs):
+        # case where there is no inputs
+        if len(values) == 0:
+            return []
+
         values = values[:]
         max_len_shp = max([len(x.get_shape()) for x in values])
 

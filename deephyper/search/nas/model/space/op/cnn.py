@@ -176,7 +176,7 @@ class AvgPool2D(Operation):
         self._layer = None
 
     def __str__(self):
-        return f"AvgPool2D_k{self.pool_size}_s{self.stride}"
+        return f"AvgPool2D_k{self.pool_size}_s{self.strides}"
 
     def __call__(self, inputs, **kwargs):
         """Create the tensorflow operation.

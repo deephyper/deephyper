@@ -129,14 +129,8 @@ class KSearchSpace(NxSearchSpace):
             Node: output node of the search_space.
         """
         if len(output_nodes) == 1:
-            # node = ConstantNode(op=Identity(), name='Structure_Output')
-            # graph.add_node(node)
-            # graph.add_edge(output_nodes[0], node)
             node = output_nodes[0]
         else:
-            # node = ConstantNode(name='Structure_Output')
-            # op = Concatenate(self, output_nodes)
-            # node.set_op(op=op)
             node = output_nodes
         return node
 
