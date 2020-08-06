@@ -46,6 +46,7 @@ REQUIRED = [
     "xgboost",
     "horovod",
     "typeguard",
+    "openml==0.10.2",
 ]
 
 if on_rtd:
