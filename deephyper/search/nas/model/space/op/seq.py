@@ -1,6 +1,9 @@
 import tensorflow as tf
 
 from . import Operation
+from deephyper.contrib.layers.timestep_dropout import (
+    TimestepDropout as TimestepDropoutLayer,
+)
 
 
 class LSTM(Operation):
@@ -63,6 +66,28 @@ class Embedding(Operation):
                 embeddings_initializer=tf.keras.initializers.glorot_uniform(seed=seed),
                 **self.kwargs,
             )
+
+        out = self._layer(inputs[0])
+        return out
+
+
+class TimestepDropout(Operation):
+    def __init__(self, rate):
+        # Layer args
+        self.rate = rate
+
+        # Reuse arg
+        self._layer = None
+
+    def __str__(self):
+        return f"TimestepDropout_{self.rate}"
+
+    def __call__(self, inputs, seed=None, **kwargs):
+        assert (
+            len(inputs) == 1
+        ), f"{type(self).__name__} as {len(inputs)} inputs when 1 is required."
+        if self._layer is None:  # reuse mechanism
+            self._layer = TimestepDropoutLayer(rate=self.rate)
 
         out = self._layer(inputs[0])
         return out
