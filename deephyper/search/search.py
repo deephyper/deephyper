@@ -175,7 +175,7 @@ class Search:
         )
         parser.add_argument(
             "--num-threads-per-node",
-            default=64,
+            default=None,
             type=int,
             help="Number of threads per node. Only valid if evaluator==balsam and balsam job-mode is 'mpi'.",
         )
