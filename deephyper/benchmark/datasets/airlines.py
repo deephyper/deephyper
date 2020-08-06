@@ -13,7 +13,7 @@ def load_data(random_state=42, summary=False):
         np.random.RandomState(random_state) if type(random_state) is int else random_state
     )
 
-    dataset = openml.datasets.get_dataset(41167)
+    dataset = openml.datasets.get_dataset(1169)
 
     if summary:
         # Print a summary
@@ -39,12 +39,12 @@ def load_data(random_state=42, summary=False):
     return (X_train, y_train), (X_valid, y_valid), (X_test, y_test)
 
 
-def test_load_data_dionis():
-    from deephyper.benchmark.datasets import dionis
+def test_load_data_airlines():
+    from deephyper.benchmark.datasets import airlines
     import numpy as np
 
     names = ["train", "valid", "test "]
-    data = dionis.load_data(random_state=42, summary=True)
+    data = airlines.load_data(random_state=42, summary=True)
     for (X, y), subset_name in zip(data, names):
         print(
             f"X_{subset_name} shape: ",
@@ -55,4 +55,4 @@ def test_load_data_dionis():
 
 
 if __name__ == "__main__":
-    test_load_data_dionis()
+    test_load_data_airlines()
