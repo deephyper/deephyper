@@ -30,7 +30,7 @@ def test_load_data_covertype():
     import numpy as np
 
     names = ["train", "valid", "test"]
-    data = covertype.load_data(seed=42)
+    data = covertype.load_data(random_state=42)
     for (X, y), subset_name in zip(data, names):
         print(
             f"X_{subset_name} shape: ",
