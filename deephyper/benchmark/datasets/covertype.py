@@ -6,7 +6,7 @@ from sklearn import datasets
 from sklearn import model_selection
 
 
-def load_data(random_state=42, test_size=0.1, valid_size=0.1):
+def load_data(random_state=42, test_size=0.33, valid_size=0.33):
     # Random State
     random_state = (
         np.random.RandomState(random_state) if type(random_state) is int else random_state
