@@ -56,8 +56,6 @@ if on_rtd:
 if on_theta:  # --system-site-packages
     # we want to use the default mpi4py from cray environment
     REQUIRED.append("mpi4py")
-    REQUIRED.remove("tensorflow>=1.13.1,<=1.15.2")
-    REQUIRED.append("tensorflow-gpu>=1.13.1,<=1.15.2")
 elif not on_rtd and not on_gpu:
     REQUIRED.append("mpi4py>=3.0.0")
 elif on_gpu:
