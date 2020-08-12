@@ -12,6 +12,8 @@ import sys
 import time
 import types
 
+import skopt
+
 from deephyper.evaluator import runner
 from deephyper.core.exceptions import DeephyperRuntimeError
 
@@ -26,7 +28,7 @@ class Encoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, uuid.UUID):
             return obj.hex
-        if isinstance(obj, integer):
+        elif isinstance(obj, integer):
             return int(obj)
         elif isinstance(obj, floating):
             return float(obj)
@@ -36,6 +38,8 @@ class Encoder(json.JSONEncoder):
             return obj.tolist()
         elif isinstance(obj, types.FunctionType):
             return f"{obj.__module__}.{obj.__name__}"
+        elif isinstance(obj, skopt.space.Dimension):
+            return str(obj)
         else:
             return super(Encoder, self).default(obj)
 
