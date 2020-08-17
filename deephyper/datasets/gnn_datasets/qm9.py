@@ -74,7 +74,8 @@ def load_qm9_MPNN_sparse(split='random', seed=2020):
     qm9_tasks, (train_dataset, valid_dataset, test_dataset), transformers = load_qm9(featurizer='Weave',
                                                                                      split=split,
                                                                                      move_mean=True,
-                                                                                     seed=seed)
+                                                                                     seed=seed,
+                                                                                     reload=False)
     X_train, X_valid, X_test = [], [], []
     A_train, A_valid, A_test = [], [], []
     E_train, E_valid, E_test = [], [], []

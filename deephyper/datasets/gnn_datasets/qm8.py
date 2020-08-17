@@ -1,6 +1,6 @@
 import numpy as np
 from deepchem.molnet import load_qm8
-from .utils import organize_data, organize_data_sparse
+from .utils import organize_data_sparse
 
 # FIXED PARAMETERS
 
