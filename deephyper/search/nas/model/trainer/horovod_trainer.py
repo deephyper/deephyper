@@ -3,6 +3,7 @@ import os
 import time
 import traceback
 from inspect import signature
+import sys
 
 import numpy as np
 import tensorflow as tf
@@ -16,6 +17,8 @@ from .. import arch as a
 from .. import train_utils as U
 
 logger = util.conf_logger(__name__)
+
+AUTOTUNE = tf.data.experimental.AUTOTUNE
 
 
 class HorovodTrainerTrainValid:
@@ -42,12 +45,22 @@ class HorovodTrainerTrainValid:
 
         self.data = self.config[a.data]
 
+        # hyperparameters
         self.config_hp = self.config[a.hyperparameters]
         self.optimizer_name = self.config_hp.get(a.optimizer, "adam")
         self.optimizer_eps = self.config_hp.get("epsilon", None)
         self.batch_size = self.config_hp.get(a.batch_size, 32)
-
+        self.clipvalue = self.config_hp.get("clipvalue", None)
         self.learning_rate = self.config_hp.get(a.learning_rate, 1e-3)
+
+        # augmentation strategy
+        if not self.config.get("augment", None) is None:
+            if not self.config["augment"].get("kwargs", None) is None:
+                self.augment_func = lambda inputs, outputs: self.config["augment"][
+                    "func"
+                ](inputs, outputs, **self.config["augment"]["kwargs"])
+            else:
+                self.augment_func = self.config["augment"]["func"]
 
         self.num_epochs = self.config_hp[a.num_epochs]
         self.verbose = (
@@ -218,8 +231,6 @@ class HorovodTrainerTrainValid:
                 f"Data are of an unsupported type and should be of same type: type(self.config['data']['train_X'])=={type(self.config[a.data][a.train_X])} and type(self.config['data']['valid_X'])=={type(self.config[a.data][a.valid_X])} !"
             )
 
-        logger.debug(f"{self.cname}: {len(self.train_X)} inputs")
-
         # check data length
         self.train_size = np.shape(self.train_X[0])[0]
         if not all(map(lambda x: np.shape(x)[0] == self.train_size, self.train_X)):
@@ -297,9 +308,17 @@ class HorovodTrainerTrainValid:
         self.dataset_train = self.dataset_train.shuffle(
             self.train_size // hvd.size(), reshuffle_each_iteration=True
         )
+        self.dataset_train = self.dataset_train.repeat(self.num_epochs)
+
+        if hasattr(self, "augment_func"):
+            logger.info("Data augmentation set.")
+            self.dataset_train = self.dataset_train.map(
+                self.augment_func, num_parallel_calls=AUTOTUNE
+            )
 
         self.dataset_train = self.dataset_train.batch(self.batch_size)
-        self.dataset_train = self.dataset_train.repeat()
+        self.dataset_train = self.dataset_train.prefetch(AUTOTUNE)
+        # self.dataset_train = self.dataset_train.repeat()
 
     def set_dataset_valid(self):
         if self.data_config_type == "ndarray":
@@ -344,6 +363,9 @@ class HorovodTrainerTrainValid:
 
         if "epsilon" in opti_parameters:
             params["epsilon"] = self.optimizer_eps
+
+        if self.clipvalue is not None:
+            params["clipvalue"] = self.clipvalue
 
         # if "decay" in opti_parameters:
         #     decay_rate = (

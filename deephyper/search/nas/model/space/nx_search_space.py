@@ -1,7 +1,7 @@
 import traceback
+from collections.abc import Iterable
 
 import networkx as nx
-from collections.abc import Iterable
 
 from deephyper.core.exceptions.nas.space import (
     InputShapeOfWrongType,
@@ -10,7 +10,12 @@ from deephyper.core.exceptions.nas.space import (
     WrongOutputShape,
     WrongSequenceToSetOperations,
 )
-from deephyper.search.nas.model.space.node import ConstantNode, Node, VariableNode
+from deephyper.search.nas.model.space.node import (
+    ConstantNode,
+    MimeNode,
+    Node,
+    VariableNode,
+)
 
 
 class NxSearchSpace:
@@ -127,6 +132,15 @@ class NxSearchSpace:
             (Iterator(VariableNode)): generator of VariablesNodes of the search_space.
         """
         return filter(lambda n: isinstance(n, VariableNode), self.nodes)
+
+    @property
+    def mime_nodes(self):
+        """Iterator of MimeNodes of the search_space.
+
+        Returns:
+            (Iterator(MimeNode)): iterator of MimeNodes of the search_space.
+        """
+        return filter(lambda n: isinstance(n, MimeNode), self.nodes)
 
     def denormalize(self, indexes):
         """Denormalize a sequence of normalized indexes to get a sequence of absolute indexes. Useful when you want to compare the number of different search_spaces.

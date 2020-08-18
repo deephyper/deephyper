@@ -10,6 +10,11 @@ def load_config(config):
     # ! load functions
     config["load_data"]["func"] = util.load_attr_from(config["load_data"]["func"])
 
+    # load augmentation strategy
+    if not config.get("augment") is None:
+        config["augment"]["func"] = util.load_attr_from(config["augment"]["func"])
+
+    # load the function creating the search space
     config["create_search_space"]["func"] = util.load_attr_from(
         config["create_search_space"]["func"]
     )
@@ -125,17 +130,25 @@ def setup_search_space(config, input_shape, output_shape, seed):
 
 
 def compute_objective(objective, history):
-    if type(objective) is str and ("__" in objective or objective in history):
+    # set a multiplier to turn objective to its negative
+    if type(objective) is str:
+        if objective[0] == "-":
+            multiplier = -1
+            objective = objective[1:]
+        else:
+            multiplier = 1
 
+    if type(objective) is str and ("__" in objective or objective in history):
         split_objective = objective.split("__")
         kind = split_objective[1] if len(split_objective) > 1 else "last"
         mname = split_objective[0]
         if kind == "min":
-            return min(history[mname])
+            res = min(history[mname])
         elif kind == "max":
-            return max(history[mname])
-        else:  # 'last' or else
-            return history[mname][-1]
+            res = max(history[mname])
+        else:  # 'last' or else, by default it will be the last one
+            res = history[mname][-1]
+        return multiplier * res
     elif callable(objective):
         func = objective
         return func(history)

@@ -12,8 +12,9 @@ Problem.load_data(load_data)
 Problem.search_space(create_search_space, num_layers=10, regression=False, bn=False)
 
 Problem.hyperparameters(
-    batch_size=256,  # (128, 2048),
-    learning_rate=(0.001, 0.1),
+    # batch_size=256,  # (128, 2048),
+    batch_size=[32, 64, 128, 256, 512, 1024],
+    learning_rate=(0.001, 0.1, "log-uniform"),
     optimizer="adam",
     num_epochs=20,
     verbose=0,

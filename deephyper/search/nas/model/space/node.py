@@ -52,7 +52,7 @@ class OperationNode(Node):
 
     def create_tensor(self, inputs=None, train=True, seed=None, **kwargs):
         if self._tensor is None:
-            if inputs == None:
+            if inputs is None:
                 try:
                     self._tensor = self.op(train=train, seed=None)
                 except TypeError:
@@ -242,8 +242,8 @@ class MimeNode(OperationNode):
     Dense_30
     """
 
-    def __init__(self, node):
-        super().__init__(name=f"Mime[{str(node)}]")
+    def __init__(self, node, name=""):
+        super().__init__(name=f"Mime[{name}][src={str(node)}]")
         self.node = node
         self._ops = list()
 
@@ -253,6 +253,13 @@ class MimeNode(OperationNode):
     @property
     def num_ops(self):
         return len(self._ops)
+
+    def set_op(self):
+        if self.node._index is None:
+            raise DeephyperRuntimeError(
+                f"{str(self)} cannot be initialized because its source {str(self.node)} is not initialized!"
+            )
+        self._ops[self.node._index].init(self)
 
     @property
     def op(self):

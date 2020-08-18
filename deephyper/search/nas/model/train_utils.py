@@ -61,11 +61,18 @@ def acc(y_true, y_pred):
     return tf.keras.metrics.categorical_accuracy(y_true, y_pred)
 
 
+def sparse_perplexity(y_true, y_pred):
+    cross_entropy = tf.keras.losses.sparse_categorical_crossentropy(y_true, y_pred)
+    perplexity = tf.pow(2.0, cross_entropy)
+    return perplexity
+
+
 metrics = OrderedDict()
 metrics["mean_absolute_error"] = metrics["mae"] = mae
 metrics["r2"] = r2
 metrics["mean_squared_error"] = metrics["mse"] = mse
 metrics["accuracy"] = metrics["acc"] = acc
+metrics["sparse_perplexity"] = sparse_perplexity
 
 
 def selectMetric(name: str):
