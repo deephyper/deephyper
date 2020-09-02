@@ -15,6 +15,7 @@ DeepHyper is already installed in Theta and can be directly loaded as a module a
 
 ::
 
+    module load postgresql
     module load miniconda-3
     conda create -p dh-env --clone base
     conda activate dh-env
@@ -22,9 +23,12 @@ DeepHyper is already installed in Theta and can be directly loaded as a module a
     pip install deephyper[analytics]
 
 .. note::
-    You might put
-    ``module load miniconda-3`` in your ``~/.bashrc`` if you want to use
-    *DeepHyper* in all new session.
+    You might put::
+
+        module load postgresql
+        module load miniconda-3
+
+    in your ``~/.bashrc`` if you want to use *DeepHyper* in all new session.
 
 Developer installation
 ======================
