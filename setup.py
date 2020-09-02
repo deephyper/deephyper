@@ -20,7 +20,7 @@ NAME = "deephyper"
 DESCRIPTION = "Scalable asynchronous neural architecture and hyperparameter search for deep neural networks."
 URL = "https://github.com/deephyper/deephyper"
 EMAIL = "pbalapra@anl.gov"
-AUTHOR = "Prasanna Balaprakash"
+AUTHOR = "Prasanna Balaprakash and Romain Egele"
 REQUIRES_PYTHON = ">=3.6, <3.8"
 VERSION = None
 
@@ -208,6 +208,11 @@ setup(
     author_email=EMAIL,
     python_requires=REQUIRES_PYTHON,
     url=URL,
+    project_urls={
+        "Documentation": "https://deephyper.readthedocs.io/",
+        "Source": "https://github.com/deephyper/deephyper",
+        "Tracker": "https://github.com/deephyper/deephyper/issues",
+    },
     packages=find_packages(exclude=("tests",)),
     # If your package is a single module, use this instead of 'packages':
     # py_modules=['deephyper'],
