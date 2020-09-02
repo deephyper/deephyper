@@ -44,14 +44,12 @@ REQUIRED = [
     "Jinja2",
     "ConfigSpace==0.4.12",
     "xgboost",
-    "horovod",
     "typeguard",
     "openml==0.10.2",
 ]
 
 if on_rtd:
     REQUIRED.remove("balsam-flow==0.3.8")
-    REQUIRED.remove("horovod")
 
 if on_theta:  # --system-site-packages
     # we want to use the default mpi4py from cray environment
@@ -77,6 +75,7 @@ EXTRAS = {
         "seaborn>=0.9.1",
         "matplotlib>=3.0.3",
     ],
+    "hvd": ["horovod"],
 }
 
 # The rest you shouldn't have to touch too much :)
@@ -143,7 +142,7 @@ class UploadCommand(Command):
 class TestUploadCommand(Command):
     """Support setup.py testupload."""
 
-    description = "Build and publish the package."
+    description = "Build and publish the package to test.pypi."
     user_options = []
 
     @staticmethod
