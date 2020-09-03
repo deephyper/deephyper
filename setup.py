@@ -63,19 +63,11 @@ REQUIRED = [
 
 if on_rtd:
     REQUIRED.remove("balsam-flow==0.3.8")
-
-if on_theta:  # --system-site-packages
-    # we want to use the default mpi4py from cray environment
-    REQUIRED.append("mpi4py")
-elif not on_rtd and not on_gpu:
-    REQUIRED.append("mpi4py>=3.0.0")
+    REQUIRED.append("Sphinx>=1.8.2")
+    REQUIRED.append("sphinx_rtd_theme")
 elif on_gpu:
     REQUIRED.remove("tensorflow>=1.13.1,<=1.15.2")
     REQUIRED.append("tensorflow-gpu>=1.13.1,<=1.15.2")
-    REQUIRED.append("mpi4py")
-else:
-    REQUIRED.append("Sphinx>=1.8.2")
-    REQUIRED.append("sphinx_rtd_theme")
 
 # What packages are optional?
 EXTRAS = {
@@ -88,7 +80,7 @@ EXTRAS = {
         "seaborn>=0.9.1",
         "matplotlib>=3.0.3",
     ],
-    "hvd": ["horovod"],
+    "hvd": ["horovod", "mpi4py>=3.0.0"],
 }
 
 # The rest you shouldn't have to touch too much :)
