@@ -137,7 +137,14 @@ def main(path, *args, **kwargs):
         data["fig"] = "data_" + now
 
     # initialize lists to add parsed data
-    keys = ["raw_rewards", "arch_seq", "timestamps", "batch_size", "learning_rate"]
+    keys = [
+        "raw_rewards",
+        "arch_seq",
+        "timestamps",
+        "batch_size",
+        "learning_rate",
+        "ranks_per_node",
+    ]
     for k in keys:
         data[k] = []
 
