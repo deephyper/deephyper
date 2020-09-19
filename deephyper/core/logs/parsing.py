@@ -94,7 +94,7 @@ def parsing(f, data):
 
             # parse algorithm hyperparameters
             for kw, key_, convert in zip(kws, keys, converts):
-                parseline(line, data, kw, key_, converts)
+                parseline(line, data, kw, key_, convert)
 
             line = " ".join(line)
             date = line.split("|")[0]
