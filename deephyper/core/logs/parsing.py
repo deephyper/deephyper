@@ -3,6 +3,7 @@ import datetime
 import json
 import os
 import sys
+import re
 from shutil import copyfile
 
 try:
@@ -71,9 +72,12 @@ def parseline_arch_seq(line, data):
 
 
 def parseline(line: list, data: dict, kw: str, key_: str, convert: callable):
+
+    regexp = r"[-+]?\d*\.\d+|\d+"  # parse ints and floats
+
     if kw in line:
         i = line.index(kw) + 1
-        info = convert(line[i][:-1])
+        info = convert(re.findall(regexp, line[i])[0])
         data[key_].append(info)
 
 
