@@ -183,7 +183,7 @@ class AMBS(Search):
         accepted_names = ["RF", "ET", "GBRT", "GP", "DUMMY"]
         if not (name in accepted_names):
             raise ValueError(
-                f"Unknown surrogate model {name}, please choose among {names}."
+                f"Unknown surrogate model {name}, please choose among {accepted_names}."
             )
 
         if name == "RF":

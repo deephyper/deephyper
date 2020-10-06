@@ -40,6 +40,8 @@ class AgeBO(RegularizedEvolution):
         population_size=100,
         sample_size=10,
         n_jobs=1,
+        kappa=0.001,
+        xi=0.000001,
         **kwargs,
     ):
         super().__init__(
@@ -64,7 +66,7 @@ class AgeBO(RegularizedEvolution):
         self.hp_space.append(self.problem.space["hyperparameters"]["ranks_per_node"])
 
         # Initialize opitmizer of hyperparameter space
-        acq_func_kwargs = {"xi": 0.000001, "kappa": 0.001}  # tiny exploration
+        acq_func_kwargs = {"xi": float(xi), "kappa": float(kappa)}  # tiny exploration
         # self.free_workers = 128  #! TODO: test
         self.n_initial_points = self.free_workers
 
