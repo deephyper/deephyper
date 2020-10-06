@@ -43,7 +43,7 @@ REQUIRED = [
     "dh-scikit-optimize==0.8.1",
     "scikit-learn",
     "tqdm",
-    "tensorflow>=1.13.1,<=1.15.2",
+    "tensorflow>=1.13.1,<=1.15.4",
     "keras",
     "deap",  # GA search
     # nas
