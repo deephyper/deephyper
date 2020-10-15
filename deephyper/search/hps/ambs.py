@@ -67,8 +67,6 @@ class AMBS(Search):
 
         self.n_initial_points = self.evaluator.num_workers
 
-        print(self.problem.space)
-
         self.opt = skopt.Optimizer(
             dimensions=self.problem.space,
             base_estimator=self.get_surrogate_model(surrogate_model, n_jobs),
@@ -153,10 +151,6 @@ class AMBS(Search):
                     x = replace_nan(cfg.values())
                     opt_X.append(x)
                     opt_y.append(-obj)  #! maximizing
-
-                print(opt_X)
-                print(opt_y)
-                print()
 
                 self.opt.tell(opt_X, opt_y)  #! fit: costly
                 new_X = self.opt.ask(n_points=len(new_results))
