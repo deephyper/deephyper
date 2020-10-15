@@ -48,6 +48,7 @@ class AMBS(Search):
         kwargs["cache_key"] = "to_dict"
         super().__init__(problem, run, evaluator, **kwargs)
         logger.info("Initializing AMBS")
+        kwargs.pop("num_workers")
         self.optimizer = Optimizer(self.problem, self.evaluator.num_workers, **kwargs)
 
     @staticmethod
