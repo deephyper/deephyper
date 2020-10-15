@@ -150,7 +150,7 @@ class AMBS(Search):
                 opt_X = []
                 opt_y = []
                 for cfg, obj in new_results:
-                    x = list(cfg.values())
+                    x = replace_nan(cfg.values())
                     opt_X.append(x)
                     opt_y.append(-obj)  #! maximizing
 
@@ -222,6 +222,10 @@ def isnan(x) -> bool:
         return np.isnan(x)
     else:
         return False
+
+
+def replace_nan(x):
+    return [np.nan if x_i == "nan" else x_i for x_i in x]
 
 
 if __name__ == "__main__":
