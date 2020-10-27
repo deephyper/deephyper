@@ -9,7 +9,7 @@ HPS_SEARCHES = {
     "ambs": "deephyper.search.nas.ambs.AMBNeuralArchitectureSearch",
     "random": "deephyper.search.nas.full_random.Random",
     "regevo": "deephyper.search.nas.regevo.RegularizedEvolution",
-    # 'ppo': 'deephyper.search.nas.ppo.Ppo',
+    "agebo": "deephyper.search.nas.agebo.AgEBO",
 }
 
 
