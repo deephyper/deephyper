@@ -7,7 +7,7 @@ from deephyper.search.util import load_attr_from
 
 HPS_SEARCHES = {
     "ambs": "deephyper.search.nas.ambs.AMBNeuralArchitectureSearch",
-    "random": "deephyper.search.nas.full_random.Random",
+    "random": "deephyper.search.nas.random.Random",
     "regevo": "deephyper.search.nas.regevo.RegularizedEvolution",
     "agebo": "deephyper.search.nas.agebo.AgEBO",
 }
