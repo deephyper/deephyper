@@ -15,8 +15,8 @@ addons:
     sources:
     - ubuntu-toolchain-r-test
     # packages:
-    # - libopenmpi-dev
-    # - openmpi-bin
+    - libopenmpi-dev
+    - openmpi-bin
 
 git:
   depth: 3
@@ -28,8 +28,8 @@ before_install:
   - sudo apt-get install build-essential
   # We need GraphViz to draw figures of graphs and lattices:
   - sudo apt-get install graphviz
-  - sh ./conf/travis-install-mpi.sh mpich2
-  - mpirun --version
+  # - sh ./conf/travis-install-mpi.sh mpich2
+  # - mpirun --version
 
 install:
   - pip install -e '.[docs,tests,analytics]'
