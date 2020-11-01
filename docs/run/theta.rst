@@ -146,7 +146,7 @@ There are three main algorithms for effective search over the potentially vast s
 
     balsam app --name PPO --exec "$(which python) -m deephyper.search.nas.ppo"
     balsam app --name EVO --exec "$(which python) -m deephyper.search.nas.regevo"
-    balsam app --name RAN --exec "$(which python) -m deephyper.search.nas.full_random"
+    balsam app --name RAN --exec "$(which python) -m deephyper.search.nas.random"
 
 ::
 

@@ -183,6 +183,6 @@ class Search:
             "--num-workers",
             default=None,
             type=int,
-            help="Number of parallel workers for the search. By default, it is be automatically computed depending on the chosen evaluator. If fixed then the default number of workers is override by this value.",
+            help="Number of parallel workers for the search. By default, it is being automatically computed depending on the chosen evaluator. If fixed then the default number of workers is override by this value.",
         )
         return parser

@@ -45,7 +45,7 @@ Asynchronous Model Based Neural Architecture Search (AMBNAS)
 Random Search
 -------------
 
-.. autoclass:: deephyper.search.nas.full_random.Random
+.. autoclass:: deephyper.search.nas.random.Random
     :members:
 
 If you want to run the random search:
