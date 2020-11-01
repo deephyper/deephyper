@@ -171,6 +171,13 @@ class NaProblem(Problem):
 
         self.add_dim("load_data", {"func": func, "kwargs": kwargs})
 
+    def augment(self, func: callable, **kwargs):
+
+        if not callable(func):
+            raise ProblemLoadDataIsNotCallable(func)
+
+        self.add_dim("augment", {"func": func, "kwargs": kwargs})
+
     def search_space(self, func: callable, **kwargs):
         """Set a search space for neural architecture search.
 

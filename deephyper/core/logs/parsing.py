@@ -3,6 +3,7 @@ import datetime
 import json
 import os
 import sys
+import re
 from shutil import copyfile
 
 try:
@@ -70,13 +71,35 @@ def parseline_arch_seq(line, data):
         data["arch_seq"].append(l)
 
 
+def parseline(line: list, data: dict, kw: str, key_: str, convert: callable):
+
+    regexp = r"[-+]?\d*\.\d+|\d+"  # parse ints and floats
+
+    if kw in line:
+        i = line.index(kw) + 1
+        info = convert(re.findall(regexp, line[i])[0])
+        data[key_].append(info)
+
+
 def parsing(f, data):
+
+    # to collect hyperparameters
+    kws = ["'batch_size':", "'learning_rate':", "'ranks_per_node':"]
+    keys = ["batch_size", "learning_rate", "ranks_per_node"]
+    converts = [int, float, int]
+
     line = f.readline()
+
     while line:
         line = line.split()
         if "y:" in line:
             parseline_reward(line, data)
             parseline_arch_seq(line, data)
+
+            # parse algorithm hyperparameters
+            for kw, key_, convert in zip(kws, keys, converts):
+                parseline(line, data, kw, key_, convert)
+
             line = " ".join(line)
             date = line.split("|")[0]
             data["timestamps"].append(date)
@@ -113,9 +136,17 @@ def main(path, *args, **kwargs):
         workload_in_path = False
         data["fig"] = "data_" + now
 
-    data["raw_rewards"] = list()
-    data["arch_seq"] = list()
-    data["timestamps"] = list()
+    # initialize lists to add parsed data
+    keys = [
+        "raw_rewards",
+        "arch_seq",
+        "timestamps",
+        "batch_size",
+        "learning_rate",
+        "ranks_per_node",
+    ]
+    for k in keys:
+        data[k] = []
 
     with open(path, "r") as flog:
         print("File has been opened")

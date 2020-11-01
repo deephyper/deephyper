@@ -39,7 +39,8 @@ class Search:
         evaluator: str,
         max_evals: int = 1000000,
         seed: int = None,
-        num_nodes_master: int=1,
+        num_nodes_master: int = 1,
+        num_workers: int = None,
         **kwargs,
     ):
         kwargs["problem"] = problem
@@ -60,7 +61,13 @@ class Search:
         logger.info(notice)
         util.banner(notice)
 
-        self.evaluator = Evaluator.create(self.run_func, method=evaluator, num_nodes_master=num_nodes_master, **kwargs)
+        self.evaluator = Evaluator.create(
+            self.run_func,
+            method=evaluator,
+            num_nodes_master=num_nodes_master,
+            num_workers=num_workers,
+            **kwargs,
+        )
         self.num_workers = self.evaluator.num_workers
         self.max_evals = max_evals
 
@@ -152,7 +159,7 @@ class Search:
             "--num-evals-per-node",
             default=1,
             type=int,
-            help="Number of evaluations performed on each node. Only valid if evaluator==balsam and balsam job-mode is 'serial'."
+            help="Number of evaluations performed on each node. Only valid if evaluator==balsam and balsam job-mode is 'serial'.",
         )
         parser.add_argument(
             "--num-nodes-per-eval",
@@ -164,5 +171,18 @@ class Search:
             "--num-threads-per-rank",
             default=64,
             type=int,
-            help="Number of threads per MPI rank. Only valid if evaluator==balsam and balsam job-mode is 'mpi'.")
+            help="Number of threads per MPI rank. Only valid if evaluator==balsam and balsam job-mode is 'mpi'.",
+        )
+        parser.add_argument(
+            "--num-threads-per-node",
+            default=None,
+            type=int,
+            help="Number of threads per node. Only valid if evaluator==balsam and balsam job-mode is 'mpi'.",
+        )
+        parser.add_argument(
+            "--num-workers",
+            default=None,
+            type=int,
+            help="Number of parallel workers for the search. By default, it is being automatically computed depending on the chosen evaluator. If fixed then the default number of workers is override by this value.",
+        )
         return parser

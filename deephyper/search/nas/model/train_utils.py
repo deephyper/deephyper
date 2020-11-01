@@ -39,14 +39,6 @@ def check_data_config(data_dict):
 # Metrics with tensors
 
 
-# def r2(y_true, y_pred):
-#     SS_res = tf.keras.backend.sum(tf.keras.backend.square(y_true - y_pred))
-#     SS_tot = tf.keras.backend.sum(
-#         tf.keras.backend.square(y_true - tf.keras.backend.mean(y_true))
-#     )
-#     return 1 - SS_res / (SS_tot + tf.keras.backend.epsilon())
-
-
 def r2(y_true, y_pred):
     SS_res = tf.keras.backend.sum(tf.keras.backend.square(y_true - y_pred), axis=0)
     SS_tot = tf.keras.backend.sum(
@@ -69,11 +61,18 @@ def acc(y_true, y_pred):
     return tf.keras.metrics.categorical_accuracy(y_true, y_pred)
 
 
+def sparse_perplexity(y_true, y_pred):
+    cross_entropy = tf.keras.losses.sparse_categorical_crossentropy(y_true, y_pred)
+    perplexity = tf.pow(2.0, cross_entropy)
+    return perplexity
+
+
 metrics = OrderedDict()
 metrics["mean_absolute_error"] = metrics["mae"] = mae
 metrics["r2"] = r2
 metrics["mean_squared_error"] = metrics["mse"] = mse
 metrics["accuracy"] = metrics["acc"] = acc
+metrics["sparse_perplexity"] = sparse_perplexity
 
 
 def selectMetric(name: str):

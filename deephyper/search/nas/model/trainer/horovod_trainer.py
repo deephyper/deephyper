@@ -1,7 +1,9 @@
 import math
+import os
 import time
 import traceback
 from inspect import signature
+import sys
 
 import numpy as np
 import tensorflow as tf
@@ -14,7 +16,9 @@ from .... import util
 from .. import arch as a
 from .. import train_utils as U
 
-logger = util.conf_logger("deephyper.model.trainer")
+logger = util.conf_logger(__name__)
+
+AUTOTUNE = tf.data.experimental.AUTOTUNE
 
 
 class HorovodTrainerTrainValid:
@@ -25,19 +29,45 @@ class HorovodTrainerTrainValid:
         if tf.__version__ == "1.13.1":
             self.sess = keras.backend.get_session()
         else:
+            if os.environ.get("OMP_NUM_THREADS", None) is not None:
+                logger.debug(f"OMP_NUM_THREADS is {os.environ.get('OMP_NUM_THREADS')}")
+                sess_config = tf.ConfigProto()
+                sess_config.intra_op_parallelism_threads = int(
+                    os.environ.get("OMP_NUM_THREADS")
+                )
+                sess_config.inter_op_parallelism_threads = 2
+                session = tf.Session(config=sess_config)
+                tf.compat.v1.keras.backend.set_session(session)
             self.sess = tf.compat.v1.keras.backend.get_session()
+
         self.model = model
         self.callbacks = []
 
         self.data = self.config[a.data]
 
+        # hyperparameters
         self.config_hp = self.config[a.hyperparameters]
         self.optimizer_name = self.config_hp.get(a.optimizer, "adam")
         self.optimizer_eps = self.config_hp.get("epsilon", None)
         self.batch_size = self.config_hp.get(a.batch_size, 32)
-        self.learning_rate = self.config_hp.get(a.learning_rate, 1e-3) * hvd.size()
+        self.clipvalue = self.config_hp.get("clipvalue", None)
+        self.learning_rate = self.config_hp.get(a.learning_rate, 1e-3)
+
+        # augmentation strategy
+        if not self.config.get("augment", None) is None:
+            if not self.config["augment"].get("kwargs", None) is None:
+                self.augment_func = lambda inputs, outputs: self.config["augment"][
+                    "func"
+                ](inputs, outputs, **self.config["augment"]["kwargs"])
+            else:
+                self.augment_func = self.config["augment"]["func"]
+
         self.num_epochs = self.config_hp[a.num_epochs]
-        self.verbose = self.config_hp.get("verbose", 1) if self.config_hp.get("verbose", 1) and hvd.rank() == 0 else 0
+        self.verbose = (
+            self.config_hp.get("verbose", 1)
+            if self.config_hp.get("verbose", 1) and hvd.rank() == 0
+            else 0
+        )
 
         self.setup_losses_and_metrics()
 
@@ -201,8 +231,6 @@ class HorovodTrainerTrainValid:
                 f"Data are of an unsupported type and should be of same type: type(self.config['data']['train_X'])=={type(self.config[a.data][a.train_X])} and type(self.config['data']['valid_X'])=={type(self.config[a.data][a.valid_X])} !"
             )
 
-        logger.debug(f"{self.cname}: {len(self.train_X)} inputs")
-
         # check data length
         self.train_size = np.shape(self.train_X[0])[0]
         if not all(map(lambda x: np.shape(x)[0] == self.train_size, self.train_X)):
@@ -272,7 +300,25 @@ class HorovodTrainerTrainValid:
                     tf.TensorShape([*self.data_shapes[1]]),
                 ),
             )
-        self.dataset_train = self.dataset_train.batch(self.batch_size).repeat()
+
+        self.dataset_train = self.dataset_train.shard(
+            num_shards=hvd.size(), index=hvd.rank()
+        )
+
+        self.dataset_train = self.dataset_train.shuffle(
+            self.train_size // hvd.size(), reshuffle_each_iteration=True
+        )
+        self.dataset_train = self.dataset_train.repeat(self.num_epochs)
+
+        if hasattr(self, "augment_func"):
+            logger.info("Data augmentation set.")
+            self.dataset_train = self.dataset_train.map(
+                self.augment_func, num_parallel_calls=AUTOTUNE
+            )
+
+        self.dataset_train = self.dataset_train.batch(self.batch_size)
+        self.dataset_train = self.dataset_train.prefetch(AUTOTUNE)
+        # self.dataset_train = self.dataset_train.repeat()
 
     def set_dataset_valid(self):
         if self.data_config_type == "ndarray":
@@ -304,15 +350,29 @@ class HorovodTrainerTrainValid:
 
         opti_parameters = signature(optimizer_fn).parameters
         params = {}
+
+        # "lr" and "learning_rate" is checked depending if Keras or Tensorflow optimizer is used
         if "lr" in opti_parameters:
             params["lr"] = self.learning_rate
+        elif "learning_rate" in opti_parameters:
+            params["learning_rate"] = self.learning_rate
+        else:
+            raise DeephyperRuntimeError(
+                f"The learning_rate parameter is not found amoung optimiser arguments: {opti_parameters}"
+            )
+
         if "epsilon" in opti_parameters:
             params["epsilon"] = self.optimizer_eps
-        if "decay" in opti_parameters:
-            decay_rate = (
-                self.learning_rate / self.num_epochs if self.num_epochs > 0 else 1
-            )
-            params["decay"] = decay_rate
+
+        if self.clipvalue is not None:
+            params["clipvalue"] = self.clipvalue
+
+        # if "decay" in opti_parameters:
+        #     decay_rate = (
+        #         self.learning_rate / self.num_epochs if self.num_epochs > 0 else 1
+        #     )
+        #     params["decay"] = decay_rate
+
         self.optimizer = hvd.DistributedOptimizer(optimizer_fn(**params))
 
         if type(self.loss_metrics) is dict:
@@ -348,9 +408,10 @@ class HorovodTrainerTrainValid:
             )
 
         if dataset == "valid":
-            y_pred = self.model.predict(
-                self.dataset_valid, steps=self.valid_steps_per_epoch
-            )
+            valid_steps = self.valid_size // self.batch_size
+            if valid_steps * self.batch_size < self.valid_size:
+                valid_steps += 1
+            y_pred = self.model.predict(self.dataset_valid, steps=valid_steps)
         else:  # dataset == 'train'
             y_pred = self.model.predict(
                 self.dataset_train, steps=self.train_steps_per_epoch

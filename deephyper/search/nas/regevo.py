@@ -56,8 +56,8 @@ class RegularizedEvolution(NeuralArchitectureSearch):
         self.space_list = [
             (0, vnode.num_ops - 1) for vnode in search_space.variable_nodes
         ]
-        self.population_size = population_size
-        self.sample_size = sample_size
+        self.population_size = int(population_size)
+        self.sample_size = int(sample_size)
 
     @staticmethod
     def _extend_parser(parser):

@@ -12,6 +12,8 @@ import sys
 import time
 import types
 
+import skopt
+
 from deephyper.evaluator import runner
 from deephyper.core.exceptions import DeephyperRuntimeError
 
@@ -26,7 +28,7 @@ class Encoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, uuid.UUID):
             return obj.hex
-        if isinstance(obj, integer):
+        elif isinstance(obj, integer):
             return int(obj)
         elif isinstance(obj, floating):
             return float(obj)
@@ -36,6 +38,8 @@ class Encoder(json.JSONEncoder):
             return obj.tolist()
         elif isinstance(obj, types.FunctionType):
             return f"{obj.__module__}.{obj.__name__}"
+        elif isinstance(obj, skopt.space.Dimension):
+            return str(obj)
         else:
             return super(Encoder, self).default(obj)
 
@@ -59,7 +63,13 @@ class Evaluator:
     assert os.path.isfile(PYTHON_EXE)
 
     def __init__(
-        self, run_function, cache_key=None, encoder=Encoder, seed=None, **kwargs
+        self,
+        run_function,
+        cache_key=None,
+        encoder=Encoder,
+        seed=None,
+        num_workers=None,
+        **kwargs,
     ):
         self.encoder = encoder  # dict --> uuid
         self.pending_evals = {}  # uid --> Future
@@ -77,7 +87,7 @@ class Evaluator:
         self.elapsed_times = {}
 
         self._run_function = run_function
-        self.num_workers = 0
+        self.num_workers = num_workers
 
         if (cache_key is not None) and (cache_key != "to_dict"):
             if callable(cache_key):
@@ -99,7 +109,12 @@ class Evaluator:
 
     @staticmethod
     def create(
-        run_function, cache_key=None, method="subprocess", redis_address=None, **kwargs
+        run_function,
+        cache_key=None,
+        method="subprocess",
+        redis_address=None,
+        num_workers=None,
+        **kwargs,
     ):
         available_methods = [
             "balsam",
@@ -136,11 +151,15 @@ class Evaluator:
 
             Eval = MPIWorkerPool(run_function, cache_key=cache_key, **kwargs)
         elif method == "ray":
-            from deephyper.evaluator.ray_evaluator import RayEvaluator
+            from deephyper.evaluator._ray_evaluator import RayEvaluator
 
             Eval = RayEvaluator(
                 run_function, cache_key=cache_key, redis_address=redis_address, **kwargs
             )
+
+        # Override the number of workers if passed as an argument
+        if not (num_workers is None) and type(num_workers) is int:
+            Eval.num_workers = num_workers
 
         return Eval
 
@@ -294,7 +313,31 @@ class Evaluator:
         logger.debug(f"{num_evals} pending evals; {self.num_workers} workers")
         return max(self.num_workers - num_evals, 0)
 
-    def dump_evals(self, saved_key=None):
+    def convert_for_csv(self, val):
+        if type(val) is list:
+            return str(val)
+        else:
+            return val
+
+    def dump_evals(self, saved_key: str = None, saved_keys: list = None):
+        """Dump evaluations to 'results.csv' file.
+
+        If both arguments are set to None, then all keys for all points will be added to the CSV file. Keys are columns and values are used to fill rows.
+
+
+        Args:
+            saved_key (str, optional): If is a key corresponding to an element of points which should be a list. Defaults to None.
+            saved_keys (list|callable, optional): If is a list of key corresponding to elements of points' dictonnaries then it will add them to the CSV file. If callable such as:
+                >>> def saved_keys(self, val: dict):
+                >>>     res = {
+                >>>         "learning_rate": val["hyperparameters"]["learning_rate"],
+                >>>         "batch_size": val["hyperparameters"]["batch_size"],
+                >>>         "ranks_per_node": val["hyperparameters"]["ranks_per_node"],
+                >>>         "arch_seq": str(val["arch_seq"]),
+                >>>     }
+                >>> return res.
+            Then it will add the result to the CSV file. Defaults to None.
+        """
         if not self.finished_evals:
             return
 
@@ -304,10 +347,16 @@ class Evaluator:
             if uid not in self.finished_evals:
                 continue
 
-            if saved_key is None:
+            if saved_key is None and saved_keys is None:
                 result = self.decode(key)
-            else:
+            elif type(saved_key) is str:
                 result = {str(i): v for i, v in enumerate(self.decode(key)[saved_key])}
+            elif type(saved_keys) is list:
+                decoded_key = self.decode(key)
+                result = {k: self.convert_for_csv(decoded_key[k]) for k in saved_keys}
+            elif callable(saved_keys):
+                decoded_key = self.decode(key)
+                result = saved_keys(decoded_key)
             result["objective"] = self.finished_evals[uid]
             result["elapsed_sec"] = self.elapsed_times[uid]
             resultsList.append(result)

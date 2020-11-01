@@ -1,4 +1,5 @@
 import math
+import os
 import time
 import traceback
 from inspect import signature
@@ -8,8 +9,8 @@ import tensorflow as tf
 from sklearn.metrics import mean_squared_error
 from tensorflow import keras
 
-from .....core.logs.logging import JsonMessage as jm
 from .....core.exceptions import DeephyperRuntimeError
+from .....core.logs.logging import JsonMessage as jm
 from .... import util
 from .. import arch as a
 from .. import train_utils as U
@@ -25,9 +26,18 @@ class TrainerTrainValid:
         if tf.__version__ == "1.13.1":
             self.sess = keras.backend.get_session()
         else:
+            if os.environ.get("OMP_NUM_THREADS", None) is not None:
+                logger.debug(f"OMP_NUM_THREADS is {os.environ.get('OMP_NUM_THREADS')}")
+                sess_config = tf.compat.v1.ConfigProto()
+                sess_config.intra_op_parallelism_threads = int(
+                    os.environ.get("OMP_NUM_THREADS")
+                )
+                sess_config.inter_op_parallelism_threads = 2
+                session = tf.compat.v1.Session(config=sess_config)
+                tf.compat.v1.keras.backend.set_session(session)
             self.sess = tf.compat.v1.keras.backend.get_session()
         self.model = model
-        self.callbacks = [keras.callbacks.CSVLogger("training.csv", append=True)]
+        self.callbacks = []
 
         self.data = self.config[a.data]
 
@@ -38,6 +48,7 @@ class TrainerTrainValid:
         self.learning_rate = self.config_hp.get(a.learning_rate, 1e-3)
         self.num_epochs = self.config_hp[a.num_epochs]
         self.verbose = self.config_hp.get("verbose", 1)
+        # self.balanced = self.config_hp.get("balanced", False)
 
         self.setup_losses_and_metrics()
 
@@ -301,10 +312,19 @@ class TrainerTrainValid:
 
         opti_parameters = signature(optimizer_fn).parameters
         params = {}
+
         if "lr" in opti_parameters:
             params["lr"] = self.learning_rate
+        elif "learning_rate" in opti_parameters:
+            params["learning_rate"] = self.learning_rate
+        else:
+            raise DeephyperRuntimeError(
+                f"The learning_rate parameter is not found amoung optimiser arguments: {opti_parameters}"
+            )
+
         if "epsilon" in opti_parameters:
             params["epsilon"] = self.optimizer_eps
+
         if "decay" in opti_parameters:
             decay_rate = (
                 self.learning_rate / self.num_epochs if self.num_epochs > 0 else 1
@@ -317,7 +337,6 @@ class TrainerTrainValid:
                 optimizer=self.optimizer,
                 loss=self.loss_metrics,
                 loss_weights=self.loss_weights,
-                # loss_weights=[1.0 for _ in range(len(self.loss_metrics))],
                 metrics=self.metrics_name,
             )
         else:

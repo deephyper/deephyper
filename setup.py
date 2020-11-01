@@ -19,18 +19,31 @@ on_gpu = type(os.environ.get("DH_GPU")) is str and "true" == os.environ.get("DH_
 NAME = "deephyper"
 DESCRIPTION = "Scalable asynchronous neural architecture and hyperparameter search for deep neural networks."
 URL = "https://github.com/deephyper/deephyper"
-EMAIL = "pbalapra@anl.gov"
-AUTHOR = "Prasanna Balaprakash"
 REQUIRES_PYTHON = ">=3.6, <3.8"
 VERSION = None
+
+# Build Author list
+authors = {
+    "Prasanna Balaprakash": "pbalapra@anl.gov",
+    "Romain Egele": "romain.egele@polytechnique.edu",
+    "Misha Salim": "msalim@anl.gov",
+    "Romit Maulik": "rmaulik@anl.gov",
+    "Venkat Vishwanath": "venkat@anl.gov",
+    "Stefan Wild": "wild@anl.gov",
+}
+AUTHOR = ""
+for i, (k, v) in enumerate(authors.items()):
+    if i > 0:
+        AUTHOR += ", "
+    AUTHOR += f"{k} <{v}>"
 
 # What packages are required for this module to be executed?
 REQUIRED = [
     "numpy",
-    "dh-scikit-optimize",
+    "dh-scikit-optimize==0.8.1",
     "scikit-learn",
     "tqdm",
-    "tensorflow>=1.13.1,<=1.15.2",
+    "tensorflow>=1.13.1,<=1.15.4",
     "keras",
     "deap",  # GA search
     # nas
@@ -44,27 +57,17 @@ REQUIRED = [
     "Jinja2",
     "ConfigSpace==0.4.12",
     "xgboost",
-    "horovod",
+    "typeguard",
+    "openml==0.10.2",
 ]
 
 if on_rtd:
     REQUIRED.remove("balsam-flow==0.3.8")
-    REQUIRED.remove("horovod")
-
-if on_theta:  # --system-site-packages
-    # we want to use the default mpi4py from cray environment
-    REQUIRED.append("mpi4py")
-    REQUIRED.remove("tensorflow>=1.13.1,<=1.15.2")
-    REQUIRED.append("tensorflow-gpu>=1.13.1,<=1.15.2")
-elif not on_rtd and not on_gpu:
-    REQUIRED.append("mpi4py>=3.0.0")
+    REQUIRED.append("Sphinx>=1.8.2")
+    REQUIRED.append("sphinx_rtd_theme")
 elif on_gpu:
     REQUIRED.remove("tensorflow>=1.13.1,<=1.15.2")
     REQUIRED.append("tensorflow-gpu>=1.13.1,<=1.15.2")
-    REQUIRED.append("mpi4py")
-else:
-    REQUIRED.append("Sphinx>=1.8.2")
-    REQUIRED.append("sphinx_rtd_theme")
 
 # What packages are optional?
 EXTRAS = {
@@ -77,6 +80,7 @@ EXTRAS = {
         "seaborn>=0.9.1",
         "matplotlib>=3.0.3",
     ],
+    "hvd": ["horovod", "mpi4py>=3.0.0"],
 }
 
 # The rest you shouldn't have to touch too much :)
@@ -133,17 +137,13 @@ class UploadCommand(Command):
         self.status("Uploading the package to PyPI via Twine…")
         os.system("twine upload dist/*")
 
-        # self.status('Pushing git tags…')
-        # os.system('git tag v{0}'.format(about['__version__']))
-        # os.system('git push --tags')
-
         sys.exit()
 
 
 class TestUploadCommand(Command):
     """Support setup.py testupload."""
 
-    description = "Build and publish the package."
+    description = "Build and publish the package to test.pypi."
     user_options = []
 
     @staticmethod
@@ -205,9 +205,13 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     author=AUTHOR,
-    author_email=EMAIL,
     python_requires=REQUIRES_PYTHON,
     url=URL,
+    project_urls={
+        "Documentation": "https://deephyper.readthedocs.io/",
+        "Source": "https://github.com/deephyper/deephyper",
+        "Tracker": "https://github.com/deephyper/deephyper/issues",
+    },
     packages=find_packages(exclude=("tests",)),
     # If your package is a single module, use this instead of 'packages':
     # py_modules=['deephyper'],

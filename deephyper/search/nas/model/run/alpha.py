@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 
+from .....contrib.callbacks import import_callback
 from ....search import util
 from ..trainer.train_valid import TrainerTrainValid
 from .util import (
@@ -21,6 +22,14 @@ default_callbacks_config = {
     "EarlyStopping": dict(
         monitor="val_loss", min_delta=0, mode="min", verbose=0, patience=0
     ),
+    "ModelCheckpoint": dict(
+        monitor="val_loss",
+        mode="min",
+        save_best_only=True,
+        verbose=1,
+        filepath="model.h5",
+        save_weights_only=False,
+    ),
     "TensorBoard": dict(
         log_dir="",
         histogram_freq=0,
@@ -30,6 +39,9 @@ default_callbacks_config = {
         write_images=False,
         update_freq="epoch",
     ),
+    "CSVLogger": dict(filename="training.csv", append=True),
+    "CSVExtendedLogger": dict(filename="training.csv", append=True),
+    "TimeStopping": dict(),
 }
 
 
@@ -74,7 +86,7 @@ def run(config):
                         ] = f'best_model_{config["id"]}.h5'
 
                     # Import and create corresponding callback
-                    Callback = getattr(keras.callbacks, cb_name)
+                    Callback = import_callback(cb_name)
                     callbacks.append(Callback(**default_callbacks_config[cb_name]))
 
                     if cb_name in ["EarlyStopping"]:

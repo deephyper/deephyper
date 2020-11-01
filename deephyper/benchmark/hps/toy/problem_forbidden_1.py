@@ -1,7 +1,16 @@
+"""
+!! CURRENT OPTIMIZER DOES NOT SUPPORT THIS!!
+
+Hyperparameter optimization problem to try forbidden clauses.
+
+Example command line::
+
+    python -m deephyper.search.hps.ambs2 --evaluator threadPool --problem deephyper.benchmark.hps.toy.problem_basic_1.Problem --run deephyper.benchmark.hps.toy.problem_forbidden_1.run --max-evals 100 --kappa 0.001
+"""
 import numpy as np
 
-from deephyper.problem import config_space as cs
 from deephyper.problem import BaseProblem
+from deephyper.problem import config_space as cs
 
 # Problem definition
 Problem = BaseProblem()

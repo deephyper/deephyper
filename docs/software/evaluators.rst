@@ -29,7 +29,7 @@ BalsamEvaluator
 RayEvaluator
 =============
 
-.. autoclass:: deephyper.evaluator.ray_evaluator.RayEvaluator
+.. autoclass:: deephyper.evaluator._ray_evaluator.RayEvaluator
 
 
 .. _subprocess-evaluator:

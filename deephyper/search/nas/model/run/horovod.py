@@ -1,10 +1,12 @@
 import traceback
+import os
 
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 import horovod.tensorflow.keras as hvd
 
+from .....contrib.callbacks import import_callback
 from ....search import util
 from ..trainer.horovod_trainer import HorovodTrainerTrainValid
 from .util import (
@@ -14,6 +16,7 @@ from .util import (
     setup_data,
     setup_search_space,
 )
+from .. import arch as a
 
 logger = util.conf_logger("deephyper.search.nas.run")
 
@@ -21,6 +24,14 @@ logger = util.conf_logger("deephyper.search.nas.run")
 default_callbacks_config = {
     "EarlyStopping": dict(
         monitor="val_loss", min_delta=0, mode="min", verbose=0, patience=0
+    ),
+    "ModelCheckpoint": dict(
+        monitor="val_loss",
+        mode="min",
+        save_best_only=True,
+        verbose=1,
+        filepath="model.h5",
+        save_weights_only=False,
     ),
     "TensorBoard": dict(
         log_dir="",
@@ -31,16 +42,19 @@ default_callbacks_config = {
         write_images=False,
         update_freq="epoch",
     ),
-    "CSVLogger": dict(
-        filename="training.csv",
-        append=True
-    )
+    "CSVLogger": dict(filename="training.csv", append=True),
+    "CSVExtendedLogger": dict(filename="training.csv", append=True),
+    "TimeStopping": dict(),
+    "ReduceLROnPlateau": dict(patience=5, verbose=0),
 }
 # Name of Callbacks reserved for root node
-hvd_root_cb = ["ModelCheckpoint", "Tensorboard", "CSVLogger"]
+hvd_root_cb = ["ModelCheckpoint", "Tensorboard", "CSVLogger", "CSVExtendedLogger"]
 
 
 def run(config):
+    hvd.init()
+
+    config["seed"]
     seed = config["seed"]
     if seed is not None:
         np.random.seed(seed)
@@ -51,12 +65,23 @@ def run(config):
 
     load_config(config)
 
+    # Scale batch size and learning rate according to the number of ranks
+    batch_size = config[a.hyperparameters][a.batch_size] * hvd.size()
+    learning_rate = config[a.hyperparameters][a.learning_rate] * hvd.size()
+    logger.info(
+        f"Scaled: 'batch_size' from {config[a.hyperparameters][a.batch_size]} to {batch_size} "
+    )
+    logger.info(
+        f"Scaled: 'learning_rate' from {config[a.hyperparameters][a.learning_rate]} to {learning_rate} "
+    )
+    config[a.hyperparameters][a.batch_size] = batch_size
+    config[a.hyperparameters][a.learning_rate] = learning_rate
+
     input_shape, output_shape = setup_data(config)
 
     search_space = setup_search_space(config, input_shape, output_shape, seed=seed)
 
     # Initialize Horovod
-    hvd.init()
 
     model_created = False
     try:
@@ -69,24 +94,34 @@ def run(config):
     if model_created:
 
         # Setup callbacks only
-        callbacks = []
+        callbacks = [
+            # Horovod: broadcast initial variable states from rank 0 to all other processes.
+            # This is necessary to ensure consistent initialization of all workers when
+            # training is started with random weights or restored from a checkpoint.
+            hvd.callbacks.BroadcastGlobalVariablesCallback(0),
+            # Horovod: average metrics among workers at the end of every epoch.
+            #
+            # Note: This callback must be in the list before the ReduceLROnPlateau,
+            # TensorBoard or other metrics-based callbacks.
+            hvd.callbacks.MetricAverageCallback(),
+            # Horovod: using `lr = 1.0 * hvd.size()` from the very beginning leads to worse final
+            # accuracy. Scale the learning rate `lr = 1.0` ---> `lr = 1.0 * hvd.size()` during
+            # the first five epochs. See https://arxiv.org/abs/1706.02677 for details.
+            #! initial_lr argument is not available in horovod==0.19.0
+            hvd.callbacks.LearningRateWarmupCallback(warmup_epochs=5, verbose=0),
+        ]
+
         cb_requires_valid = False  # Callbacks requires validation data
-        callbacks_config = config["hyperparameters"].get("callbacks")
+        callbacks_config = config[a.hyperparameters].get(a.callbacks, {})
         if callbacks_config is not None:
             for cb_name, cb_conf in callbacks_config.items():
                 if cb_name in default_callbacks_config:
                     # cb_bame in hvd_root_cb implies hvd.rank() == 0
-                    if not(cb_name in hvd_root_cb) or hvd.rank() == 0:
+                    if not (cb_name in hvd_root_cb) or hvd.rank() == 0:
                         default_callbacks_config[cb_name].update(cb_conf)
 
-                        # Special dynamic parameters for callbacks
-                        if cb_name == "ModelCheckpoint":
-                            default_callbacks_config[cb_name][
-                                "filepath"
-                            ] = f'best_model_{config["id"]}.h5'
-
                         # Import and create corresponding callback
-                        Callback = getattr(keras.callbacks, cb_name)
+                        Callback = import_callback(cb_name)
                         callbacks.append(Callback(**default_callbacks_config[cb_name]))
 
                         if cb_name in ["EarlyStopping"]:
@@ -95,12 +130,7 @@ def run(config):
                     logger.error(f"'{cb_name}' is not an accepted callback!")
 
         trainer = HorovodTrainerTrainValid(config=config, model=model)
-        callbacks.append(
-            # Horovod: broadcast initial variable states from rank 0 to all other processes.
-            # This is necessary to ensure consistent initialization of all workers when
-            # training is started with random weights or restored from a checkpoint.
-            hvd.callbacks.BroadcastGlobalVariablesCallback(0)
-        )
+
         trainer.callbacks.extend(callbacks)
 
         last_only, with_pred = preproc_trainer(config)

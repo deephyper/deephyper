@@ -31,11 +31,15 @@ class Concatenate(Operation):
                 self.search_space.connect(n, self.node)
 
     def __call__(self, values, **kwargs):
+        # case where there is no inputs
+        if len(values) == 0:
+            return []
+
         len_shp = max([len(x.get_shape()) for x in values])
 
-        if len_shp > 3:
+        if len_shp > 4:
             raise RuntimeError(
-                "This concatenation is for 2D or 3D tensors only when a {len_shp}D is passed!"
+                f"This concatenation is for 2D or 3D tensors only but a {len_shp-1}D is passed!"
             )
 
         # zeros padding
@@ -102,6 +106,10 @@ class AddByPadding(Operation):
                 self.search_space.connect(n, self.node)
 
     def __call__(self, values, **kwargs):
+        # case where there is no inputs
+        if len(values) == 0:
+            return []
+
         values = values[:]
         max_len_shp = max([len(x.get_shape()) for x in values])
 
@@ -160,7 +168,7 @@ class AddByProjecting(Operation):
 
     def __init__(self, search_space, stacked_nodes=None, activation=None, axis=-1):
         self.search_space = search_space
-        self.node = None # current_node of the operation
+        self.node = None  # current_node of the operation
         self.stacked_nodes = stacked_nodes
         self.activation = activation
         self.axis = axis
@@ -172,6 +180,10 @@ class AddByProjecting(Operation):
                 self.search_space.connect(n, self.node)
 
     def __call__(self, values, seed=None, **kwargs):
+        # case where there is no inputs
+        if len(values) == 0:
+            return []
+
         values = values[:]
         max_len_shp = max([len(x.get_shape()) for x in values])
 
@@ -182,9 +194,11 @@ class AddByProjecting(Operation):
 
                 if len(v.get_shape()) < max_len_shp:
                     values[i] = keras.layers.Reshape(
-                        (*tuple(v.get_shape()[1:]),
-                            *tuple(1 for i in range(max_len_shp - len(v.get_shape())))
-                        ))(v)
+                        (
+                            *tuple(v.get_shape()[1:]),
+                            *tuple(1 for i in range(max_len_shp - len(v.get_shape()))),
+                        )
+                    )(v)
 
             proj_size = values[0].get_shape()[self.axis]
 
@@ -192,8 +206,10 @@ class AddByProjecting(Operation):
                 if values[i].get_shape()[1] != proj_size:
                     values[i] = tf.keras.layers.Dense(
                         units=proj_size,
-                        kernel_initializer=tf.keras.initializers.glorot_uniform(seed=seed)
-                        )(values[i])
+                        kernel_initializer=tf.keras.initializers.glorot_uniform(
+                            seed=seed
+                        ),
+                    )(values[i])
 
         # concatenation
         if len(values) > 1:
