@@ -1,17 +1,7 @@
 from deephyper.core.parser import add_arguments_from_signature
 from deephyper.search import Search
 
-__all__ = [
-    "ambs",
-    "random",
-    "ppo",
-    "regevo",
-    "rl",
-    "baselines",
-    "env",
-    "model",
-    "optimizer",
-]
+__all__ = ["ambs", "random", "regevo", "envs", "model", "optimizer"]
 
 
 class NeuralArchitectureSearch(Search):

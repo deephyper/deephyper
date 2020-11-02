@@ -1,27 +1,6 @@
 Algorithms
 ============
 
-Proximal Policy Optimization
-------------------------------
-
-.. autoclass:: deephyper.search.nas.ppo.Ppo
-    :members:
-
-If you want to run the proximal policy optimization search without MPI:
-
-.. code-block:: console
-    :caption: bash
-
-    deephyper nas ppo --problem deephyper.benchmark.nas.mnist1D.Problem
-
-
-and with MPI (i.e. several agents):
-
-.. code-block:: console
-    :caption: bash
-
-    mpirun -np 2 deephyper nas ppo --problem deephyper.benchmark.nas.mnist1D.Problem
-
 Regularized Evolution
 ---------------------
 
