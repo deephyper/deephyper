@@ -51,7 +51,6 @@ REQUIRED = [
     "networkx",
     "joblib>=0.10.3",
     "pydot",
-    "balsam-flow==0.3.8",
     "ray>=0.7.6",
     "pandas>=0.24.2",
     "Jinja2",
@@ -81,6 +80,7 @@ EXTRAS = {
         "matplotlib>=3.0.3",
     ],
     "hvd": ["horovod", "mpi4py>=3.0.0"],
+    "balsam": ["balsam-flow==0.3.8"],
 }
 
 # The rest you shouldn't have to touch too much :)
