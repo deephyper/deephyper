@@ -58,7 +58,7 @@ def train(config):
         default_callbacks_config = copy.deepcopy(CB_CONFIG)
         if seed is not None:
             np.random.seed(seeds[rep])
-            tf.random.set_random_seed(seeds[rep])
+            tf.random.set_seed(seeds[rep])
 
         logger.info(f"Training replica {rep+1}")
         # Pre-settings: particularly import for BeholderCB to work
