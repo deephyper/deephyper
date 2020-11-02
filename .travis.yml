@@ -20,9 +20,6 @@ addons:
     # MPICH
     - mpich
     - libmpich-dev
-    # openmpi
-    # - libopenmpi-dev
-    # - openmpi-bin
 
 git:
   depth: 3
@@ -39,6 +36,7 @@ before_install:
 
 install:
   - pip install -e '.[docs,tests,analytics]'
+  - pip install pydot
   - pip install codecov pytest-cov
 
 script:
