@@ -7,7 +7,7 @@ from deephyper.search.nas import NeuralArchitectureSearch
 from deephyper.core.logs.logging import JsonMessage as jm
 from deephyper.evaluator.evaluate import Encoder
 
-dhlogger = util.conf_logger("deephyper.search.nas.full_random")
+dhlogger = util.conf_logger("deephyper.search.nas.random")
 
 
 class Random(NeuralArchitectureSearch):

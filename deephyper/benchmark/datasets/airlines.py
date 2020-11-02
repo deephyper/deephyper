@@ -2,17 +2,31 @@
 https://scikit-learn.org/stable/modules/generated/sklearn.datasets.fetch_covtype.html#sklearn.datasets.fetch_covtype
 """
 import numpy as np
-from sklearn import datasets
+import openml
+from openml.datasets.functions import get_dataset
 from sklearn import model_selection
 
 
-def load_data(random_state=42, test_size=0.33, valid_size=0.33):
+def load_data(random_state=42, summary=False, test_size=0.33, valid_size=0.33):
     # Random State
     random_state = (
         np.random.RandomState(random_state) if type(random_state) is int else random_state
     )
 
-    X, y = datasets.fetch_covtype(return_X_y=True)
+    dataset = openml.datasets.get_dataset(1169)
+
+    if summary:
+        # Print a summary
+        print(
+            f"This is dataset '{dataset.name}', the target feature is "
+            f"'{dataset.default_target_attribute}'"
+        )
+        print(f"URL: {dataset.url}")
+        print(dataset.description[:500])
+
+    X, y, categorical_indicator, attribute_names = dataset.get_data(
+        dataset_format="array", target=dataset.default_target_attribute
+    )
 
     X_train, X_test, y_train, y_test = model_selection.train_test_split(
         X, y, test_size=test_size, shuffle=True, random_state=random_state
@@ -27,12 +41,12 @@ def load_data(random_state=42, test_size=0.33, valid_size=0.33):
     return (X_train, y_train), (X_valid, y_valid), (X_test, y_test)
 
 
-def test_load_data_covertype():
-    from deephyper.benchmark.datasets import covertype
+def test_load_data_airlines():
+    from deephyper.benchmark.datasets import airlines
     import numpy as np
 
-    names = ["train", "valid", "test"]
-    data = covertype.load_data(random_state=42)
+    names = ["train", "valid", "test "]
+    data = airlines.load_data(random_state=42, summary=True)
     for (X, y), subset_name in zip(data, names):
         print(
             f"X_{subset_name} shape: ",
@@ -43,4 +57,4 @@ def test_load_data_covertype():
 
 
 if __name__ == "__main__":
-    test_load_data_covertype()
+    test_load_data_airlines()

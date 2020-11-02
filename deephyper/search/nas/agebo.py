@@ -3,15 +3,13 @@ import json
 import os
 import copy
 
-# import ConfigSpace as cs
 import numpy as np
 from skopt import Optimizer as SkOptimizer
-from skopt.learning import GradientBoostingQuantileRegressor, RandomForestRegressor
+from skopt.learning import RandomForestRegressor
 
 from deephyper.core.logs.logging import JsonMessage as jm
 from deephyper.core.parser import add_arguments_from_signature
 from deephyper.evaluator.evaluate import Encoder
-from deephyper.problem.base import check_hyperparameter
 from deephyper.search import util
 from deephyper.search.nas.regevo import RegularizedEvolution
 
@@ -21,10 +19,10 @@ dhlogger = util.conf_logger("deephyper.search.nas.agebo")
 #     return json.dumps(dict(arch_seq=d['arch_seq']), cls=Encoder)
 
 
-class AgeBO(RegularizedEvolution):
-    """Regularized evolution.
+class AgEBO(RegularizedEvolution):
+    """Aging evolution with Bayesian Optimization.
 
-    https://arxiv.org/abs/1802.01548
+    This algorithm build on the 'Regularized Evolution' from https://arxiv.org/abs/1802.01548. It cumulates Hyperparameter optimization with bayesian optimisation and Neural architecture search with regularized evolution.
 
     Args:
         problem (str): Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.nas.linearReg.Problem).
@@ -35,7 +33,17 @@ class AgeBO(RegularizedEvolution):
     """
 
     def __init__(
-        self, problem, run, evaluator, population_size=100, sample_size=10, **kwargs
+        self,
+        problem,
+        run,
+        evaluator,
+        population_size=100,
+        sample_size=10,
+        n_jobs=1,
+        kappa=0.001,
+        xi=0.000001,
+        acq_func="LCB",
+        **kwargs,
     ):
         super().__init__(
             problem=problem,
@@ -43,57 +51,45 @@ class AgeBO(RegularizedEvolution):
             evaluator=evaluator,
             population_size=population_size,
             sample_size=sample_size,
-            **kwargs
+            **kwargs,
         )
 
+        self.n_jobs = int(n_jobs)  # parallelism of BO surrogate model estimator
+
         # Initialize Hyperaparameter space
-        # self.hp_space = cs.ConfigurationSpace(seed=42)
-        # self.hp_space.add_hyperparameter(
-        #     check_hyperparameter(
-        #         self.problem.space["hyperparameters"]["learning_rate"], "learning_rate"
-        #     )
-        # )
-        # self.hp_space.add_hyperparameter(
-        #     check_hyperparameter(
-        #         self.problem.space["hyperparameters"]["batch_size"], "batch_size"
-        #     )
-        # )
 
         self.hp_space = []
-        self.hp_space.append(self.problem.space["hyperparameters"]["learning_rate"][:2])
-        # self.hp_space.append(self.problem.space["hyperparameters"]["batch_size"][:2])
-
-        # if surrogate_model == "RF":
-        #     base_estimator = RandomForestRegressor(n_jobs=n_jobs)
-        # elif surrogate_model == "ET":
-        #     base_estimator = ExtraTreesRegressor(n_jobs=n_jobs)
-        # elif surrogate_model == "GBRT":
-        #     base_estimator = GradientBoostingQuantileRegressor(n_jobs=n_jobs)
-        # else:
-        #     base_estimator = surrogate_model
+        # add the 'learning_rate' space to the HPO search space
+        self.hp_space.append(self.problem.space["hyperparameters"]["learning_rate"])
+        # add the 'batch_size' space to the HPO search space
+        self.hp_space.append(self.problem.space["hyperparameters"]["batch_size"])
+        # add the 'num_ranks_per_node' space to the HPO search space
+        self.hp_space.append(self.problem.space["hyperparameters"]["ranks_per_node"])
 
         # Initialize opitmizer of hyperparameter space
-        # acq_func_kwargs = {"xi": 0.000001, "kappa": 0.001}
+        acq_func_kwargs = {"xi": float(xi), "kappa": float(kappa)}  # tiny exploration
         self.n_initial_points = self.free_workers
+
         self.hp_opt = SkOptimizer(
             dimensions=self.hp_space,
-            base_estimator="GBRT",  # GradientBoostingQuantileRegressor(n_jobs=8),
-            acq_func="gp_hedge",
+            base_estimator=RandomForestRegressor(n_jobs=self.n_jobs),
+            acq_func=acq_func,
             acq_optimizer="sampling",
-            n_initial_points=self.n_initial_points,  # Half Random - Half advised
-            # model_queue_size=100,
+            acq_func_kwargs=acq_func_kwargs,
+            n_initial_points=self.n_initial_points,
         )
 
     @staticmethod
     def _extend_parser(parser):
         RegularizedEvolution._extend_parser(parser)
-        add_arguments_from_signature(parser, AgeBO)
+        add_arguments_from_signature(parser, AgEBO)
         return parser
 
     def saved_keys(self, val: dict):
         res = {
             "learning_rate": val["hyperparameters"]["learning_rate"],
             "batch_size": val["hyperparameters"]["batch_size"],
+            "ranks_per_node": val["hyperparameters"]["ranks_per_node"],
             "arch_seq": str(val["arch_seq"]),
         }
         return res
@@ -143,12 +139,14 @@ class AgeBO(RegularizedEvolution):
                         # add child to batch
                         children_batch.append(child)
 
-                        # hpo
                         # collect infos for hp optimization
                         new_i_hps = new_results[new_i][0]["hyperparameters"]
                         new_i_y = new_results[new_i][1]
-                        # hp_new_i = [new_i_hps["learning_rate"], new_i_hps["batch_size"]]
-                        hp_new_i = [new_i_hps["learning_rate"]]
+                        hp_new_i = [
+                            new_i_hps["learning_rate"],
+                            new_i_hps["batch_size"],
+                            new_i_hps["ranks_per_node"],
+                        ]
                         hp_results_X.append(hp_new_i)
                         hp_results_y.append(-new_i_y)
 
@@ -157,7 +155,8 @@ class AgeBO(RegularizedEvolution):
 
                     for hps, child in zip(new_hps, children_batch):
                         child["hyperparameters"]["learning_rate"] = hps[0]
-                        # child["hyperparameters"]["batch_size"] = hps[1]
+                        child["hyperparameters"]["batch_size"] = hps[1]
+                        child["hyperparameters"]["ranks_per_node"] = hps[2]
 
                     # submit_childs
                     if len(new_results) > 0:
@@ -169,8 +168,11 @@ class AgeBO(RegularizedEvolution):
 
                         new_i_hps = new_results[new_i][0]["hyperparameters"]
                         new_i_y = new_results[new_i][1]
-                        # hp_new_i = [new_i_hps["learning_rate"], new_i_hps["batch_size"]]
-                        hp_new_i = [new_i_hps["learning_rate"]]
+                        hp_new_i = [
+                            new_i_hps["learning_rate"],
+                            new_i_hps["batch_size"],
+                            new_i_hps["ranks_per_node"],
+                        ]
                         hp_results_X.append(hp_new_i)
                         hp_results_y.append(-new_i_y)
 
@@ -180,19 +182,6 @@ class AgeBO(RegularizedEvolution):
                     new_batch = self.gen_random_batch(size=len(new_results), hps=new_hps)
 
                     self.evaluator.add_eval_batch(new_batch)
-
-    # def ask(self, n_points=None, batch_size=20):
-    #     if n_points is None:
-    #         return self._ask()
-    #     else:
-    #         batch = []
-    #         for _ in range(n_points):
-    #             batch.append(self._ask())
-    #             if len(batch) == batch_size:
-    #                 yield batch
-    #                 batch = []
-    #         if batch:
-    #             yield batch
 
     def select_parent(self, sample: list) -> list:
         cfg, _ = max(sample, key=lambda x: x[1])
@@ -208,11 +197,13 @@ class AgeBO(RegularizedEvolution):
 
                 # hyperparameters
                 cfg["hyperparameters"]["learning_rate"] = point[0]
-                # cfg["hyperparameters"]["batch_size"] = point[1]
+                cfg["hyperparameters"]["batch_size"] = point[1]
+                cfg["hyperparameters"]["ranks_per_node"] = point[2]
 
-                # architecture dna
+                # architecture DNA
                 cfg["arch_seq"] = self.random_search_space()
                 batch.append(cfg)
+
         else:  # passed hps are used
             assert size == len(hps)
             for point in hps:
@@ -221,9 +212,10 @@ class AgeBO(RegularizedEvolution):
 
                 # hyperparameters
                 cfg["hyperparameters"]["learning_rate"] = point[0]
-                # cfg["hyperparameters"]["batch_size"] = point[1]
+                cfg["hyperparameters"]["batch_size"] = point[1]
+                cfg["hyperparameters"]["ranks_per_node"] = point[2]
 
-                # architecture dna
+                # architecture DNA
                 cfg["arch_seq"] = self.random_search_space()
                 batch.append(cfg)
         return batch
@@ -258,6 +250,6 @@ class AgeBO(RegularizedEvolution):
 
 
 if __name__ == "__main__":
-    args = AgeBO.parse_args()
-    search = AgeBO(**vars(args))
+    args = AgEBO.parse_args()
+    search = AgEBO(**vars(args))
     search.main()

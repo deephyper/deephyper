@@ -1,5 +1,11 @@
 """
+!! CURRENT OPTIMIZER DOES NOT SUPPORT THIS!!
+
 Hyperparameter optimization problem to try forbidden clauses by directly using ConfigSpace.
+
+Example command line::
+
+    python -m deephyper.search.hps.ambs2 --evaluator threadPool --problem deephyper.benchmark.hps.toy.problem_basic_1.Problem --run deephyper.benchmark.hps.toy.problem_forbidden_2.run --max-evals 100 --kappa 0.001
 """
 import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh

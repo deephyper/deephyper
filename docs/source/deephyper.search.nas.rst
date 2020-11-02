@@ -25,7 +25,7 @@ deephyper.search.nas.ambs module
 deephyper.search.nas.full\_random module
 ----------------------------------------
 
-.. automodule:: deephyper.search.nas.full_random
+.. automodule:: deephyper.search.nas.random
    :members:
    :undoc-members:
    :show-inheritance:

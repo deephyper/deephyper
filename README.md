@@ -73,13 +73,17 @@ nas/
 
 ## Hyperparameter Search (HPS)
 
-```
+An example command line for HPS:
+
+```bash
 deephyper hps ambs --evaluator ray --problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run --n-jobs 1
 ```
 
 ## Neural Architecture Search (NAS)
 
-```
+An example command line for NAS:
+
+```bash
 deephyper nas ambs --evaluator ray --problem deephyper.benchmark.nas.polynome2Reg.Problem --n-jobs 1
 ```
 
@@ -88,7 +92,7 @@ deephyper nas ambs --evaluator ray --problem deephyper.benchmark.nas.polynome2Re
 Currently, the core DeepHyper team is at Argonne National Laboratory:
 
 * Prasanna Balaprakash <pbalapra@anl.gov>, Lead and founder
-* Romain Egele <regele@anl.gov>
+* Romain Egele <romain.egele@polytechnique.edu>
 * Misha Salim <msalim@anl.gov>
 * Romit Maulik <rmaulik@anl.gov>
 * Venkat Vishwanath <venkat@anl.gov>
@@ -99,29 +103,23 @@ Modules, patches (code, documentation, etc.) contributed by:
 * Elise Jennings <ejennings@anl.gov>
 * Dipendra Kumar Jha <dipendrajha2018@u.northwestern.edu>
 
-
 # Citing DeepHyper
 
 If you are referencing DeepHyper in a publication, please cite the following papers:
 
- * P. Balaprakash, M. Salim, T. Uram, V. Vishwanath, and S. M. Wild. **DeepHyper: Asynchronous Hyperparameter Search for Deep Neural Networks**.
+* P. Balaprakash, M. Salim, T. Uram, V. Vishwanath, and S. M. Wild. **DeepHyper: Asynchronous Hyperparameter Search for Deep Neural Networks**.
     In 25th IEEE International Conference on High Performance Computing, Data, and Analytics. IEEE, 2018.
- 
- * P. Balaprakash, R. Egele, M. Salim, S. Wild, V. Vishwanath, F. Xia, T. Brettin, and R. Stevens. **Scalable reinforcement-learning-based neural architecture search for cancer deep learning research**.  In SC ’19:  IEEE/ACM International Conference on High Performance Computing, Network-ing, Storage and Analysis, 2019.
 
- <!-- * R. Egele, D. Jha, P. Balaprakash, M. Salim, V. Vishwanath, and S. M. Wild. **Scalable Reinforcement-Learning-Based Neural Architecture Search for Scientific and Engineering Applications**. In 34th International Conference on High Performance Computing, 2019. -->
+* P. Balaprakash, R. Egele, M. Salim, S. Wild, V. Vishwanath, F. Xia, T. Brettin, and R. Stevens. **Scalable reinforcement-learning-based neural architecture search for cancer deep learning research**.  In SC ’19:  IEEE/ACM International Conference on High Performance Computing, Network-ing, Storage and Analysis, 2019.
 
 # How can I participate?
 
 Questions, comments, feature requests, bug reports, etc. can be directed to:
 
-* Our mailing list: *deephyper@groups.io* or https://groups.io/g/deephyper
-
 * Issues on GitHub
 
-Patches are much appreciated on the software itself as well as documentation.
-Optionally, please include in your first patch a credit for yourself in the
-list above.
+Patches through pull requests are much appreciated on the software itself as well as documentation.
+Optionally, please include in your first patch a credit for yourself in the list above.
 
 The DeepHyper Team uses git-flow to organize the development: [Git-Flow cheatsheet](https://danielkummer.github.io/git-flow-cheatsheet/). For tests we are using: [Pytest](https://docs.pytest.org/en/latest/).
 
@@ -138,4 +136,3 @@ Copyright © 2019, UChicago Argonne, LLC
 DeepHyper is distributed under the terms of BSD License. See [LICENSE](https://github.com/deephyper/deephyper/blob/master/LICENSE.md)
 
 Argonne Patent & Intellectual Property File Number: SF-19-007
-

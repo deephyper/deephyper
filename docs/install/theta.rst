@@ -15,16 +15,37 @@ DeepHyper is already installed in Theta and can be directly loaded as a module a
 
 ::
 
+    module load postgresql
     module load miniconda-3
     conda create -p dh-env --clone base
     conda activate dh-env
     conda install gxx_linux-64 gcc_linux-64
+    # DeepHyper + Analytics Tools (Parsing logs, Plots, Notebooks)
     pip install deephyper[analytics]
+    # or DeepHyper + Analytics Tools (Parsing logs, Plots, Notebooks) + Horovod
+    pip install deephyper[analytics,hvd]
 
 .. note::
-    You might put
-    ``module load miniconda-3`` in your ``~/.bashrc`` if you want to use
-    *DeepHyper* in all new session.
+    You might put::
+
+        module load postgresql
+        module load miniconda-3
+
+    in your ``~/.bashrc`` if you want to use *DeepHyper* in all new session.
+
+
+Analytics
+---------
+
+Follow the installation like :ref:`analytics-local-install` to create a new IPython kernel.
+Then go to `Theta Jupyter <https://jupyter.alcf.anl.gov/theta>`_ and use
+your regular authentication method. The `Jupyter Hub tutorial <https://www.alcf.anl.gov/user-guides/jupyter-hub>`_
+from Argonne Leadership Computing Facility might help you in case of troubles.
+
+.. WARNING::
+
+    Now when openning a generated notebook make sure to use the *"Python (deephyper)"* kernel before executing otherwise you will not have all required dependencies.
+
 
 Developer installation
 ======================

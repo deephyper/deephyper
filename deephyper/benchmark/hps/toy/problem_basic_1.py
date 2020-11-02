@@ -3,7 +3,7 @@ Hyperparameter optimization problem to try forbidden clauses by directly using C
 
 Example command line::
 
-    deephyper hps ambs --evaluator threadPool --problem deephyper.benchmark.hps.toy.problem_basic_1.Problem --run deephyper.benchmark.hps.toy.problem_basic_1.run --max-evals 100 --acq-kappa 0.001
+    python -m deephyper.search.hps.ambs2 --evaluator threadPool --problem deephyper.benchmark.hps.toy.problem_basic_1.Problem --run deephyper.benchmark.hps.toy.problem_basic_1.run --max-evals 100 --kappa 0.001
 """
 import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh

@@ -41,7 +41,8 @@ class BalsamEvaluator(Evaluator):
         num_nodes_per_eval=1,
         num_ranks_per_node=1,
         num_evals_per_node=1,
-        num_threads_per_rank=64,
+        num_threads_per_rank=128,
+        num_threads_per_node=None,
         **kwargs,
     ):
         super().__init__(run_function, cache_key)
@@ -53,6 +54,11 @@ class BalsamEvaluator(Evaluator):
         self.num_ranks_per_node = num_ranks_per_node
         self.num_evals_per_node = num_evals_per_node
         self.num_threads_per_rank = num_threads_per_rank
+        self.num_threads_per_node = (
+            num_threads_per_rank * num_ranks_per_node
+            if num_threads_per_node is None
+            else num_threads_per_node
+        )
 
         # reserve 1 DeepHyper worker for searcher process
         if LAUNCHER_NODES == 1:
@@ -138,10 +144,20 @@ class BalsamEvaluator(Evaluator):
     def _create_balsam_task(self, x):
         args = f"'{self.encode(x)}'"
         envs = f"KERAS_BACKEND={self.KERAS_BACKEND}:KMP_BLOCK_TIME=0"
+
+        ranks_per_node = self.num_ranks_per_node
+        threads_per_rank = self.num_threads_per_rank
+
+        # override cli value by x's value
+        if "hyperparameters" in x:
+            if "ranks_per_node" in x["hyperparameters"]:
+                ranks_per_node = x["hyperparameters"]["ranks_per_node"]
+                threads_per_rank = self.num_threads_per_node // ranks_per_node
+
         resources = {
             "num_nodes": self.num_nodes_per_eval,
-            "ranks_per_node": self.num_ranks_per_node,
-            "threads_per_rank": self.num_threads_per_rank,
+            "ranks_per_node": ranks_per_node,
+            "threads_per_rank": threads_per_rank,
             "threads_per_core": 2,
             "node_packing_count": self.num_evals_per_node,
             "cpu_affinity": "depth",

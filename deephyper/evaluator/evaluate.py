@@ -12,6 +12,8 @@ import sys
 import time
 import types
 
+import skopt
+
 from deephyper.evaluator import runner
 from deephyper.core.exceptions import DeephyperRuntimeError
 
@@ -26,7 +28,7 @@ class Encoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, uuid.UUID):
             return obj.hex
-        if isinstance(obj, integer):
+        elif isinstance(obj, integer):
             return int(obj)
         elif isinstance(obj, floating):
             return float(obj)
@@ -36,6 +38,8 @@ class Encoder(json.JSONEncoder):
             return obj.tolist()
         elif isinstance(obj, types.FunctionType):
             return f"{obj.__module__}.{obj.__name__}"
+        elif isinstance(obj, skopt.space.Dimension):
+            return str(obj)
         else:
             return super(Encoder, self).default(obj)
 
@@ -316,6 +320,24 @@ class Evaluator:
             return val
 
     def dump_evals(self, saved_key: str = None, saved_keys: list = None):
+        """Dump evaluations to 'results.csv' file.
+
+        If both arguments are set to None, then all keys for all points will be added to the CSV file. Keys are columns and values are used to fill rows.
+
+
+        Args:
+            saved_key (str, optional): If is a key corresponding to an element of points which should be a list. Defaults to None.
+            saved_keys (list|callable, optional): If is a list of key corresponding to elements of points' dictonnaries then it will add them to the CSV file. If callable such as:
+                >>> def saved_keys(self, val: dict):
+                >>>     res = {
+                >>>         "learning_rate": val["hyperparameters"]["learning_rate"],
+                >>>         "batch_size": val["hyperparameters"]["batch_size"],
+                >>>         "ranks_per_node": val["hyperparameters"]["ranks_per_node"],
+                >>>         "arch_seq": str(val["arch_seq"]),
+                >>>     }
+                >>> return res.
+            Then it will add the result to the CSV file. Defaults to None.
+        """
         if not self.finished_evals:
             return
 

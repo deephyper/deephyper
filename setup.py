@@ -51,31 +51,22 @@ REQUIRED = [
     "networkx",
     "joblib>=0.10.3",
     "pydot",
-    "balsam-flow==0.3.8",
     "ray>=0.7.6",
     "pandas>=0.24.2",
     "Jinja2",
     "ConfigSpace==0.4.12",
     "xgboost",
-    "horovod==0.19.5",
+    "typeguard",
+    "openml==0.10.2",
 ]
 
 if on_rtd:
     REQUIRED.remove("balsam-flow==0.3.8")
-    REQUIRED.remove("horovod==0.19.5")
-
-if on_theta:  # --system-site-packages
-    # we want to use the default mpi4py from cray environment
-    REQUIRED.append("mpi4py")
-elif not on_rtd and not on_gpu:
-    REQUIRED.append("mpi4py>=3.0.0")
-elif on_gpu:
-    REQUIRED.remove("tensorflow>=2.0.0")
-    REQUIRED.append("tensorflow-gpu>=2.0.0")
-    REQUIRED.append("mpi4py")
-else:
     REQUIRED.append("Sphinx>=1.8.2")
     REQUIRED.append("sphinx_rtd_theme")
+elif on_gpu:
+    REQUIRED.remove("tensorflow>=1.13.1,<=1.15.2")
+    REQUIRED.append("tensorflow-gpu>=1.13.1,<=1.15.2")
 
 # What packages are optional?
 EXTRAS = {
@@ -88,6 +79,8 @@ EXTRAS = {
         "seaborn>=0.9.1",
         "matplotlib>=3.0.3",
     ],
+    "hvd": ["horovod", "mpi4py>=3.0.0"],
+    "balsam": ["balsam-flow==0.3.8"],
 }
 
 # The rest you shouldn't have to touch too much :)
@@ -150,7 +143,7 @@ class UploadCommand(Command):
 class TestUploadCommand(Command):
     """Support setup.py testupload."""
 
-    description = "Build and publish the package."
+    description = "Build and publish the package to test.pypi."
     user_options = []
 
     @staticmethod
@@ -214,6 +207,11 @@ setup(
     author=AUTHOR,
     python_requires=REQUIRES_PYTHON,
     url=URL,
+    project_urls={
+        "Documentation": "https://deephyper.readthedocs.io/",
+        "Source": "https://github.com/deephyper/deephyper",
+        "Tracker": "https://github.com/deephyper/deephyper/issues",
+    },
     packages=find_packages(exclude=("tests",)),
     # If your package is a single module, use this instead of 'packages':
     # py_modules=['deephyper'],

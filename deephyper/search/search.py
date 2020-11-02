@@ -174,9 +174,15 @@ class Search:
             help="Number of threads per MPI rank. Only valid if evaluator==balsam and balsam job-mode is 'mpi'.",
         )
         parser.add_argument(
+            "--num-threads-per-node",
+            default=None,
+            type=int,
+            help="Number of threads per node. Only valid if evaluator==balsam and balsam job-mode is 'mpi'.",
+        )
+        parser.add_argument(
             "--num-workers",
             default=None,
             type=int,
-            help="Number of parallel workers for the search. By default, it is be automatically computed depending on the chosen evaluator. If fixed then the default number of workers is override by this value.",
+            help="Number of parallel workers for the search. By default, it is being automatically computed depending on the chosen evaluator. If fixed then the default number of workers is override by this value.",
         )
         return parser
