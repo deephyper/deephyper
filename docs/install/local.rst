@@ -3,12 +3,17 @@ Local
 
 DeepHyper installation requires Python 3.7.
 
-We recommend creating isolated Python environments on your local machine using ``virtaulenv`` or ``miniconda``.
+We recommend creating isolated Python environments on your local machine using ``virtualenv`` or ``miniconda``, for example::
+
+    conda create -n deephyper python=3.7
+    conda activate deephyper
+
+Some features of DeepHyper are using the ``MPI`` library, which you have to install yourself depending on your system.
 
 User installation
 =================
 
-From Pypi::
+From PyPI::
 
     pip install deephyper
 
@@ -21,6 +26,31 @@ From github::
     git clone https://github.com/deephyper/deephyper.git
     cd deephyper/
     pip install -e .
+
+.. _horovod-local-install:
+
+Horovod
+-------
+
+If you want to install Horovod with DeepHyper (MPI is required)::
+
+    pip install 'deephyper[hvd]'
+
+.. _analytics-local-install:
+
+Analytics
+--------
+
+From Pypi::
+
+    pip install 'deephyper[analytics]'
+
+
+Then to make DeepHyper accessible in a notebook create a new *IPython* kernel with (before running the command make sure that your virtual environment is activated if you are using one)::
+
+    python -m ipykernel install --user --name deephyper --display-name "Python (deephyper)"
+
+Now when you will open a Jupyter notebook the "Python (deephyper)" kernel will be available.
 
 Documentation & Tests installation
 ==================================

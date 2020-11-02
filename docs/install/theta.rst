@@ -33,6 +33,20 @@ DeepHyper is already installed in Theta and can be directly loaded as a module a
 
     in your ``~/.bashrc`` if you want to use *DeepHyper* in all new session.
 
+
+Analytics
+---------
+
+Follow the installation like :ref:`analytics-local-install` to create a new IPython kernel.
+Then go to `Theta Jupyter <https://jupyter.alcf.anl.gov/theta>`_ and use
+your regular authentication method. The `Jupyter Hub tutorial <https://www.alcf.anl.gov/user-guides/jupyter-hub>`_
+from Argonne Leadership Computing Facility might help you in case of troubles.
+
+.. WARNING::
+
+    Now when openning a generated notebook make sure to use the *"Python (deephyper)"* kernel before executing otherwise you will not have all required dependencies.
+
+
 Developer installation
 ======================
 
