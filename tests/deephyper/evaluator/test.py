@@ -3,23 +3,24 @@ Basic test for Evaluator : 'local' or 'balsam'.
 """
 import os
 import unittest
-os.environ['DEEPHYPER_WORKERS_PER_NODE'] = '4'
+
+os.environ["DEEPHYPER_WORKERS_PER_NODE"] = "4"
 from deephyper.evaluator.evaluate import Evaluator
 from .test_functions import run, key
 from .test_utils import stop_launcher_processes
 
-from balsam.core.models import BalsamJob
 from django.core.management import call_command
 import subprocess
 
+
 class BaseEvaluatorTest:
     def test_add(self):
-        '''ev.add_eval(x) works correctly; caching equivalent evals'''
+        """ev.add_eval(x) works correctly; caching equivalent evals"""
         ev = self.ev
         # Add 3 evals
-        ev.add_eval( dict(ID="test1", x1=3, x2=4) )
-        ev.add_eval( dict(ID="test2", x1=3, x2=4) )
-        ev.add_eval( dict(ID="test3", x1=10, x2=10) )
+        ev.add_eval(dict(ID="test1", x1=3, x2=4))
+        ev.add_eval(dict(ID="test2", x1=3, x2=4))
+        ev.add_eval(dict(ID="test3", x1=10, x2=10))
 
         # There are only 2 pending evals (test1==test2)
         self.assertEqual(len(ev.pending_evals), 2)
@@ -27,7 +28,7 @@ class BaseEvaluatorTest:
         self.assertEqual(len(ev.requested_evals), 3)
 
     def test_add_batch(self):
-        '''ev.add_eval_batch(x_list) also works correctly'''
+        """ev.add_eval_batch(x_list) also works correctly"""
         ev = self.ev
         evals = [
             dict(ID="test1", x1=3, x2=4),
@@ -41,31 +42,31 @@ class BaseEvaluatorTest:
         self.assertEqual(len(ev.requested_evals), 3)
 
     def test_get_finished_success(self):
-        '''get_finished returns all requested evals'''
+        """get_finished returns all requested evals"""
         ev = self.ev
-        ev.add_eval( dict(ID="test1", x1=3, x2=4) )
-        ev.add_eval( dict(ID="test2", x1=3, x2=4) )
-        ev.add_eval( dict(ID="test3", x1=10, x2=10) )
+        ev.add_eval(dict(ID="test1", x1=3, x2=4))
+        ev.add_eval(dict(ID="test2", x1=3, x2=4))
+        ev.add_eval(dict(ID="test3", x1=10, x2=10))
 
         # fetch results until all 3 are finished
         res = []
         while len(res) < 3:
             res.extend(ev.get_finished_evals())
 
-        self.assertEqual(len(ev.finished_evals), 2) # internally, only 2 results
+        self.assertEqual(len(ev.finished_evals), 2)  # internally, only 2 results
         self.assertEqual(len(res), 3)
-        self.assertIn(({'ID':'test1','x1':3,'x2':4}, 25),    res)
-        self.assertIn(({'ID':'test2','x1':3,'x2':4}, 25),    res)
-        self.assertIn(({'ID':'test3','x1':10,'x2':10}, 200), res)
+        self.assertIn(({"ID": "test1", "x1": 3, "x2": 4}, 25), res)
+        self.assertIn(({"ID": "test2", "x1": 3, "x2": 4}, 25), res)
+        self.assertIn(({"ID": "test3", "x1": 10, "x2": 10}, 200), res)
 
     def test_get_finished_one_slow(self):
-        '''One straggler eval does not block return of all fast ones'''
+        """One straggler eval does not block return of all fast ones"""
         ev = self.ev
         # test4 is very slow eval
-        ev.add_eval( dict(ID="test4", x1=10, x2=10, sleep=10) )
-        ev.add_eval( dict(ID="test1", x1=3, x2=4) )
-        ev.add_eval( dict(ID="test2", x1=3, x2=4) )
-        ev.add_eval( dict(ID="test3", x1=10, x2=10, sleep=0.1) )
+        ev.add_eval(dict(ID="test4", x1=10, x2=10, sleep=10))
+        ev.add_eval(dict(ID="test1", x1=3, x2=4))
+        ev.add_eval(dict(ID="test2", x1=3, x2=4))
+        ev.add_eval(dict(ID="test3", x1=10, x2=10, sleep=0.1))
 
         # fetch results until first 3 are obtained
         res = []
@@ -74,26 +75,26 @@ class BaseEvaluatorTest:
 
         # got all 3 except for the slow one:
         self.assertEqual(len(res), 3)
-        self.assertIn(({'ID':'test1','x1':3,'x2':4}, 25),    res)
-        self.assertIn(({'ID':'test2','x1':3,'x2':4}, 25),    res)
-        self.assertIn(({'ID':'test3','x1':10,'x2':10,'sleep':0.1}, 200), res)
+        self.assertIn(({"ID": "test1", "x1": 3, "x2": 4}, 25), res)
+        self.assertIn(({"ID": "test2", "x1": 3, "x2": 4}, 25), res)
+        self.assertIn(({"ID": "test3", "x1": 10, "x2": 10, "sleep": 0.1}, 200), res)
 
     def test_get_finished_timeout(self):
-        '''No exceptions raised if get_finished_evals returns nothing'''
+        """No exceptions raised if get_finished_evals returns nothing"""
         ev = self.ev
         # two slow evals:
-        ev.add_eval( dict(ID="test1", x1=3, x2=4, sleep=10) )
-        ev.add_eval( dict(ID="test2", x1=3, x2=4, sleep=10) )
+        ev.add_eval(dict(ID="test1", x1=3, x2=4, sleep=10))
+        ev.add_eval(dict(ID="test2", x1=3, x2=4, sleep=10))
 
         # non-blocking; no problem:
         res = list(ev.get_finished_evals())
         self.assertEqual(len(res), 0)
 
     def test_get_finished_fail(self):
-        '''If one eval fails, then the result is marked as Evaluator.FAIL_RETURN_VALUE'''
+        """If one eval fails, then the result is marked as Evaluator.FAIL_RETURN_VALUE"""
         ev = self.ev
-        ev.add_eval( dict(ID="test1", x1=3, x2=4, fail=True) )
-        ev.add_eval( dict(ID="test2", x1=3, x2=4, fail=False) )
+        ev.add_eval(dict(ID="test1", x1=3, x2=4, fail=True))
+        ev.add_eval(dict(ID="test2", x1=3, x2=4, fail=False))
 
         res = []
         while len(res) < 2:
@@ -105,7 +106,7 @@ class BaseEvaluatorTest:
         self.assertListEqual(yvals, [25, Evaluator.FAIL_RETURN_VALUE])
 
     def test_await_success(self):
-        '''await_evals(list) works correctly'''
+        """await_evals(list) works correctly"""
         ev = self.ev
         evals = [
             dict(ID="test1", x1=3, x2=4),
@@ -115,14 +116,14 @@ class BaseEvaluatorTest:
         ev.add_eval_batch(evals)
         res = list(ev.await_evals(evals))
 
-        self.assertEqual(len(ev.finished_evals), 2) # internally, only 2 results
+        self.assertEqual(len(ev.finished_evals), 2)  # internally, only 2 results
         self.assertEqual(len(res), 3)
-        self.assertIn(({'ID':'test1','x1':3,'x2':4}, 25),    res)
-        self.assertIn(({'ID':'test2','x1':3,'x2':4}, 25),    res)
-        self.assertIn(({'ID':'test3','x1':10,'x2':10}, 200), res)
+        self.assertIn(({"ID": "test1", "x1": 3, "x2": 4}, 25), res)
+        self.assertIn(({"ID": "test2", "x1": 3, "x2": 4}, 25), res)
+        self.assertIn(({"ID": "test3", "x1": 10, "x2": 10}, 200), res)
 
     def test_await_one_failed(self):
-        '''await_evals returns expected value for failed evals'''
+        """await_evals returns expected value for failed evals"""
         ev = self.ev
         evals = [
             dict(ID="test1", x1=3, x2=4),
@@ -134,12 +135,18 @@ class BaseEvaluatorTest:
 
         self.assertEqual(len(ev.finished_evals), 3)
         self.assertEqual(len(res), 3)
-        self.assertIn(({'ID':'test1','x1':3,'x2':4}, 25),    res)
-        self.assertIn(({'ID':'test2','x1':3,'x2':4,'fail':True}, Evaluator.FAIL_RETURN_VALUE), res)
-        self.assertIn(({'ID':'test3','x1':10,'x2':10}, 200), res)
+        self.assertIn(({"ID": "test1", "x1": 3, "x2": 4}, 25), res)
+        self.assertIn(
+            (
+                {"ID": "test2", "x1": 3, "x2": 4, "fail": True},
+                Evaluator.FAIL_RETURN_VALUE,
+            ),
+            res,
+        )
+        self.assertIn(({"ID": "test3", "x1": 10, "x2": 10}, 200), res)
 
     def test_await_empty(self):
-        '''await_evals accepts empty list; does not block'''
+        """await_evals accepts empty list; does not block"""
         ev = self.ev
         evals = []
         ev.add_eval_batch(evals)
@@ -147,7 +154,7 @@ class BaseEvaluatorTest:
         self.assertEqual(len(res), 0)
 
     def test_await_timeout(self):
-        '''TimeoutError is raised on await with timeout'''
+        """TimeoutError is raised on await with timeout"""
         ev = self.ev
         evals = [
             dict(ID="test1", x1=3, x2=4, sleep=0.1),
@@ -156,41 +163,50 @@ class BaseEvaluatorTest:
         ]
         ev.add_eval_batch(evals)
         with self.assertRaises(TimeoutError):
-            res = list(ev.await_evals(evals,timeout=self.AWAIT_TIMEOUT))
+            res = list(ev.await_evals(evals, timeout=self.AWAIT_TIMEOUT))
 
         res = list(ev.get_finished_evals())
         self.assertEqual(len(ev.finished_evals), 2)
         self.assertEqual(len(res), 2)
-        self.assertIn(({'ID':'test1','x1':3,'x2':4,'sleep':0.1}, 25),    res)
-        self.assertNotIn(({'ID':'test2','x1':3,'x2':4,'sleep':20}, 25),    res)
-        self.assertIn(({'ID':'test3','x1':10,'x2':10}, 200), res)
+        self.assertIn(({"ID": "test1", "x1": 3, "x2": 4, "sleep": 0.1}, 25), res)
+        self.assertNotIn(({"ID": "test2", "x1": 3, "x2": 4, "sleep": 20}, 25), res)
+        self.assertIn(({"ID": "test3", "x1": 10, "x2": 10}, 200), res)
+
 
 class TestLocal(unittest.TestCase, BaseEvaluatorTest):
     def setUp(self):
-        self.ev = Evaluator.create(run, cache_key=key, method='local')
-        self.AWAIT_TIMEOUT=8
+        self.ev = Evaluator.create(run, cache_key=key, method="local")
+        self.AWAIT_TIMEOUT = 8
+
     def tearDown(self):
-        for f in self.ev.pending_evals.values(): f.cancel()
+        for f in self.ev.pending_evals.values():
+            f.cancel()
+
 
 class TestLocalLite(unittest.TestCase, BaseEvaluatorTest):
     def setUp(self):
-        self.ev = Evaluator.create(run, cache_key=key, method='local-lite')
-        self.AWAIT_TIMEOUT=8
+        self.ev = Evaluator.create(run, cache_key=key, method="local-lite")
+        self.AWAIT_TIMEOUT = 8
+
     def tearDown(self):
-        for f in self.ev.pending_evals.values(): f.cancel()
+        for f in self.ev.pending_evals.values():
+            f.cancel()
 
 
 class TestBalsam(unittest.TestCase, BaseEvaluatorTest):
     @classmethod
     def setUpClass(cls):
-        test_db_path = os.environ['BALSAM_DB_PATH']
-        assert 'testdb' in test_db_path
-        call_command('flush',interactive=False,verbosity=0)
+        test_db_path = os.environ["BALSAM_DB_PATH"]
+        assert "testdb" in test_db_path
+        call_command("flush", interactive=False, verbosity=0)
 
     def setUp(self):
-        self.ev = Evaluator.create(run, cache_key=key, method='balsam')
-        self.AWAIT_TIMEOUT=30
-        self.launcher = subprocess.Popen('balsam launcher --job-mode=serial --consume-all --num-transition=1', shell=True)
+        self.ev = Evaluator.create(run, cache_key=key, method="balsam")
+        self.AWAIT_TIMEOUT = 30
+        self.launcher = subprocess.Popen(
+            "balsam launcher --job-mode=serial --consume-all --num-transition=1",
+            shell=True,
+        )
 
     def tearDown(self):
         stop_launcher_processes()
@@ -199,7 +215,8 @@ class TestBalsam(unittest.TestCase, BaseEvaluatorTest):
             self.launcher.communicate()
         except:
             pass
-        call_command('flush',interactive=False,verbosity=0)
+        call_command("flush", interactive=False, verbosity=0)
+
 
 if __name__ == "__main__":
     unittest.main()
