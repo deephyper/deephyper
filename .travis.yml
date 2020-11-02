@@ -15,8 +15,12 @@ addons:
     sources:
     - ubuntu-toolchain-r-test
     # packages:
-    - libopenmpi-dev
-    - openmpi-bin
+    # MPICH
+    - mpich
+    - libmpich-dev
+    # openmpi
+    # - libopenmpi-dev
+    # - openmpi-bin
 
 git:
   depth: 3
