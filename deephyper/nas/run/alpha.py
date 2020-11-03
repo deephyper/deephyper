@@ -4,8 +4,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 
-from .....contrib.callbacks import import_callback
-from ....search import util
+from deephyper.contrib.callbacks import import_callback
+from deephyper.search import util
 from ..trainer.train_valid import TrainerTrainValid
 from .util import (
     compute_objective,

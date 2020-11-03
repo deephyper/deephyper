@@ -6,8 +6,8 @@ import tensorflow as tf
 from tensorflow import keras
 import horovod.tensorflow.keras as hvd
 
-from .....contrib.callbacks import import_callback
-from ....search import util
+from deephyper.contrib.callbacks import import_callback
+from deephyper.search import util
 from ..trainer.horovod_trainer import HorovodTrainerTrainValid
 from .util import (
     compute_objective,

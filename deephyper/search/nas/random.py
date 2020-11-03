@@ -81,6 +81,7 @@ class Random(NeuralArchitectureSearch):
 
             # Filling available nodes
             if num_received > 0:
+                self.evaluator.dump_evals(saved_key="arch_seq")
                 self.evaluator.add_eval_batch(gen_batch(size=num_received))
 
 

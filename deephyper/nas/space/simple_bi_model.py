@@ -1,9 +1,5 @@
 import tensorflow as tf
 
-# from ..space import KSearchSpace
-# from ..space.node import VariableNode
-# from ..space.op.op1d import Dense, Identity
-
 from deephyper.nas.space import KSearchSpace
 from deephyper.nas.space.node import VariableNode, ConstantNode
 from deephyper.nas.space.op.op1d import Dense, Identity
@@ -26,12 +22,10 @@ def create_search_space(
         vnode.add_op(Identity())
         if d == 1 and units[i] < units[i + 1]:
             d = -1
-            # print(min(1, units[i]), ' - ', max(1, units[i])+1)
             for u in range(min(2, units[i]), max(2, units[i]) + 1, 2):
                 vnode.add_op(Dense(u, tf.nn.relu))
             latente_space = vnode
         else:
-            # print(min(units[i], units[i+d]), ' - ', max(units[i], units[i+d])+1)
             for u in range(
                 min(units[i], units[i + d]), max(units[i], units[i + d]) + 1, 2
             ):

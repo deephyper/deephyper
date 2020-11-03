@@ -1,14 +1,14 @@
 import collections
 
 import tensorflow as tf
+from deephyper.contrib.layers.evonorm import EvoNormS01D
 
 from ..space import AutoKSearchSpace
-from ..space.node import ConstantNode, VariableNode, MimeNode
+from ..space.node import ConstantNode, MimeNode, VariableNode
 from ..space.op.basic import Tensor
 from ..space.op.connect import Connect
 from ..space.op.merge import AddByProjecting
 from ..space.op.op1d import Dense, Identity
-from .....contrib.layers.evonorm import EvoNormS01D
 
 
 def swish(x):
