@@ -12,20 +12,20 @@ from deephyper.core.exceptions.nas.space import (
     WrongOutputShape,
     WrongSequenceToSetOperations,
 )
-from deephyper.search.nas.model.space import NxSearchSpace
-from deephyper.search.nas.model.space.node import ConstantNode, Node, VariableNode
-from deephyper.search.nas.model.space.op.basic import Tensor
-from deephyper.search.nas.model.space.op.merge import Concatenate
-from deephyper.search.nas.model.space.op.op1d import Identity
+from deephyper.nas.space import NxSearchSpace
+from deephyper.nas.space.node import ConstantNode, Node, VariableNode
+from deephyper.nas.space.op.basic import Tensor
+from deephyper.nas.space.op.merge import Concatenate
+from deephyper.nas.space.op.op1d import Identity
 
 
 class KSearchSpace(NxSearchSpace):
     """A KSearchSpace represents a search space of neural networks.
 
     >>> from tensorflow.keras.utils import plot_model
-    >>> from deephyper.search.nas.model.space import KSearchSpace
-    >>> from deephyper.search.nas.model.space.node import VariableNode, ConstantNode
-    >>> from deephyper.search.nas.model.space.op.op1d import Dense
+    >>> from deephyper.nas.space import KSearchSpace
+    >>> from deephyper.nas.space.node import VariableNode, ConstantNode
+    >>> from deephyper.nas.space.op.op1d import Dense
     >>> struct = KSearchSpace((5, ), (1, ))
     >>> vnode = VariableNode()
     >>> struct.connect(struct.input_nodes[0], vnode)

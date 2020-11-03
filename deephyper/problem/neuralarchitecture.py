@@ -4,7 +4,7 @@ from inspect import signature
 from pprint import pformat
 
 import tensorflow as tf
-from deephyper.search.nas.model.run.util import setup_data, get_search_space
+from deephyper.nas.run.util import setup_data, get_search_space
 from deephyper.core.exceptions.problem import (
     NaProblemError,
     ProblemLoadDataIsNotCallable,
@@ -52,8 +52,8 @@ class NaProblem(Problem):
 
     >>> from deephyper.problem import NaProblem
     >>> from deephyper.benchmark.nas.linearReg.load_data import load_data
-    >>> from deephyper.search.nas.model.baseline.simple import create_search_space
-    >>> from deephyper.search.nas.model.preprocessing import minmaxstdscaler
+    >>> from deephyper.nas.space.simple import create_search_space
+    >>> from deephyper.nas.preprocessing import minmaxstdscaler
     >>> Problem = NaProblem()
     >>> Problem.load_data(load_data)
     >>> Problem.preprocessing(minmaxstdscaler)

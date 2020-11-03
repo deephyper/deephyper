@@ -1,7 +1,7 @@
 import numpy as np
 
-from .....core.exceptions.problem import WrongProblemObjective
-from ....search import util
+from deephyper.core.exceptions.problem import WrongProblemObjective
+from deephyper.search import util
 
 logger = util.conf_logger("deephyper.search.nas.run")
 

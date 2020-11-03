@@ -1,7 +1,7 @@
 from deephyper.problem import NaProblem
 from deephyper.benchmark.nas.saddleReg.load_data import load_data
-from deephyper.search.nas.model.baseline.simple import create_search_space
-from deephyper.search.nas.model.preprocessing import minmaxstdscaler
+from deephyper.nas.space.simple import create_search_space
+from deephyper.nas.preprocessing import minmaxstdscaler
 
 Problem = NaProblem()
 

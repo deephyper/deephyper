@@ -1,7 +1,7 @@
 Training Pipeline
 =====================
 
-.. autofunction:: deephyper.search.nas.model.run.alpha.run
+.. autofunction:: deephyper.nas.run.alpha.run
     :noindex:
 
 Trainer

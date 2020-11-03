@@ -154,7 +154,7 @@ To submit a neural architecture search on theta that uses PPO we can use
 
 ::
 
-    balsam job --name ppo_test --workflow ppo_test --app PPO --num-nodes 11 --args '--evaluator balsam --run deephyper.search.nas.model.run.alpha.run --problem naspb.pblp.problem_skip_co_0.Problem --ent-coef 0.01 --noptepochs 10 --network ppo_lnlstm_128 --gamma 1.0 --lam 0.95 --max-evals 1000000'
+    balsam job --name ppo_test --workflow ppo_test --app PPO --num-nodes 11 --args '--evaluator balsam --run deephyper.nas.run.alpha.run --problem naspb.pblp.problem_skip_co_0.Problem --ent-coef 0.01 --noptepochs 10 --network ppo_lnlstm_128 --gamma 1.0 --lam 0.95 --max-evals 1000000'
 
 ::
 
@@ -172,7 +172,7 @@ In contrast for EVO, the ``num-nodes`` argument is kept restricted to 1 (for now
 
 ::
 
-    balsam job --name evo_test --workflow evo_test --app EVO --num-nodes 1 --args '--evaluator balsam --run deephyper.search.nas.model.run.alpha.run --problem naspb.pblp.problem_skip_co_0.Problem --max-evals 1000000'
+    balsam job --name evo_test --workflow evo_test --app EVO --num-nodes 1 --args '--evaluator balsam --run deephyper.nas.run.alpha.run --problem naspb.pblp.problem_skip_co_0.Problem --max-evals 1000000'
 
 ::
 

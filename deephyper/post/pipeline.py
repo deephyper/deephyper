@@ -10,7 +10,7 @@ import tensorflow.keras.backend as K
 
 from deephyper.evaluator import Encoder
 from deephyper.search import util
-from deephyper.search.nas.model.run.util import (
+from deephyper.nas.run.util import (
     load_config,
     setup_data,
     setup_search_space,

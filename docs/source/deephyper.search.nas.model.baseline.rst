@@ -1,37 +1,37 @@
-deephyper.search.nas.model.baseline package
+deephyper.nas.space package
 ===========================================
 
 Submodules
 ----------
 
-deephyper.search.nas.model.baseline.dense\_skipco module
+deephyper.nas.space.dense\_skipco module
 --------------------------------------------------------
 
-.. automodule:: deephyper.search.nas.model.baseline.dense_skipco
+.. automodule:: deephyper.nas.space.dense_skipco
    :members:
    :undoc-members:
    :show-inheritance:
 
-deephyper.search.nas.model.baseline.simple module
+deephyper.nas.space.simple module
 -------------------------------------------------
 
-.. automodule:: deephyper.search.nas.model.baseline.simple
+.. automodule:: deephyper.nas.space.simple
    :members:
    :undoc-members:
    :show-inheritance:
 
-deephyper.search.nas.model.baseline.simple\_bi\_model module
+deephyper.nas.space.simple\_bi\_model module
 ------------------------------------------------------------
 
-.. automodule:: deephyper.search.nas.model.baseline.simple_bi_model
+.. automodule:: deephyper.nas.space.simple_bi_model
    :members:
    :undoc-members:
    :show-inheritance:
 
-deephyper.search.nas.model.baseline.simple\_deep module
+deephyper.nas.space.simple\_deep module
 -------------------------------------------------------
 
-.. automodule:: deephyper.search.nas.model.baseline.simple_deep
+.. automodule:: deephyper.nas.space.simple_deep
    :members:
    :undoc-members:
    :show-inheritance:
@@ -40,7 +40,7 @@ deephyper.search.nas.model.baseline.simple\_deep module
 Module contents
 ---------------
 
-.. automodule:: deephyper.search.nas.model.baseline
+.. automodule:: deephyper.nas.space
    :members:
    :undoc-members:
    :show-inheritance:

@@ -6,11 +6,7 @@ __all__ = ["ambs", "random", "regevo", "envs", "model", "optimizer"]
 
 class NeuralArchitectureSearch(Search):
     def __init__(
-        self,
-        problem,
-        run="deephyper.search.nas.model.run.alpha.run",
-        evaluator="ray",
-        **kwargs
+        self, problem, run="deephyper.nas.run.alpha.run", evaluator="ray", **kwargs
     ):
 
         super().__init__(problem, run=run, evaluator=evaluator, **kwargs)

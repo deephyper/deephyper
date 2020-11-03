@@ -1,8 +1,9 @@
 import tensorflow as tf
 
-from deephyper.search.nas.model.space import AutoKSearchSpace
-from deephyper.search.nas.model.space.node import VariableNode
-from deephyper.search.nas.model.space.op.op1d import Operation
+from deephyper.nas.space import AutoKSearchSpace
+from deephyper.nas.space.node import VariableNode
+from deephyper.nas.space.op.op1d import Operation
+
 
 def test_create_search_space(input_shape=(2,), output_shape=(1,), **kwargs):
     struct = AutoKSearchSpace(input_shape, output_shape, regression=True)

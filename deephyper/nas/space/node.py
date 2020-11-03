@@ -1,7 +1,7 @@
 from tensorflow import keras
 
-from .....core.exceptions import DeephyperRuntimeError
-from .op.basic import Operation
+from deephyper.core.exceptions import DeephyperRuntimeError
+from deephyper.nas.space.op.basic import Operation
 
 
 class Node:
@@ -68,9 +68,9 @@ class VariableNode(OperationNode):
     """This class represents a node of a graph where you have a set of possible operations. It means the agent will have to act to choose one of these operations.
 
     >>> import tensorflow as tf
-    >>> from deephyper.search.nas.model.space.node import VariableNode
+    >>> from deephyper.nas.space.node import VariableNode
     >>> vnode = VariableNode("VNode1")
-    >>> from deephyper.search.nas.model.space.op.op1d import Dense
+    >>> from deephyper.nas.space.op.op1d import Dense
     >>> vnode.add_op(Dense(
     ... units=10,
     ... activation=tf.nn.relu))
@@ -161,8 +161,8 @@ class ConstantNode(OperationNode):
     """A ConstantNode represents a node with a fixed operation. It means the agent will not make any new decision for this node. The common use case for this node is to add a tensor in the graph.
 
     >>> import tensorflow as tf
-    >>> from deephyper.search.nas.model.space.node import ConstantNode
-    >>> from deephyper.search.nas.model.space.op.op1d import Dense
+    >>> from deephyper.nas.space.node import ConstantNode
+    >>> from deephyper.nas.space.op.op1d import Dense
     >>> cnode = ConstantNode(op=Dense(units=100, activation=tf.nn.relu), name='CNode1')
     >>> cnode.op
     Dense_100_relu
@@ -198,8 +198,8 @@ class MirrorNode(OperationNode):
     Args:
         node (Node): The targeted node to mirror.
 
-    >>> from deephyper.search.nas.model.space.node import VariableNode, MirrorNode
-    >>> from deephyper.search.nas.model.space.op.op1d import Dense
+    >>> from deephyper.nas.space.node import VariableNode, MirrorNode
+    >>> from deephyper.nas.space.op.op1d import Dense
     >>> vnode = VariableNode()
     >>> vnode.add_op(Dense(10))
     >>> vnode.add_op(Dense(20))
@@ -227,8 +227,8 @@ class MimeNode(OperationNode):
     Args:
         node (VariableNode): the VariableNode to mime.
 
-    >>> from deephyper.search.nas.model.space.node import VariableNode, MimeNode
-    >>> from deephyper.search.nas.model.space.op.op1d import Dense
+    >>> from deephyper.nas.space.node import VariableNode, MimeNode
+    >>> from deephyper.nas.space.op.op1d import Dense
     >>> vnode = VariableNode()
     >>> vnode.add_op(Dense(10))
     >>> vnode.add_op(Dense(20))

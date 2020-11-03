@@ -4,39 +4,44 @@ import pytest
 @pytest.mark.incremental
 class TestAutoKSearchSpace:
     def test_import(self):
-        from deephyper.search.nas.model.space import AutoKSearchSpace
+        from deephyper.nas.space import AutoKSearchSpace
 
     def test_create(self):
-        from deephyper.search.nas.model.space import AutoKSearchSpace
-        AutoKSearchSpace((5, ), (1, ), regression=True)
+        from deephyper.nas.space import AutoKSearchSpace
+
+        AutoKSearchSpace((5,), (1,), regression=True)
 
     def test_create_one_vnode(self):
-        from deephyper.search.nas.model.space import AutoKSearchSpace
-        struct = AutoKSearchSpace((5, ), (1, ), regression=True)
+        from deephyper.nas.space import AutoKSearchSpace
 
-        from deephyper.search.nas.model.space.node import VariableNode
+        struct = AutoKSearchSpace((5,), (1,), regression=True)
+
+        from deephyper.nas.space.node import VariableNode
+
         vnode = VariableNode()
 
         struct.connect(struct.input_nodes[0], vnode)
 
-        from deephyper.search.nas.model.space.op.op1d import Dense
+        from deephyper.nas.space.op.op1d import Dense
+
         vnode.add_op(Dense(10))
 
         struct.set_ops([0])
 
-        falias = 'test_auto_keras_search_spaceure'
-        struct.draw_graphviz(f'{falias}.dot')
+        falias = "test_auto_keras_search_spaceure"
+        struct.draw_graphviz(f"{falias}.dot")
 
         model = struct.create_model()
         from tensorflow.keras.utils import plot_model
 
-        plot_model(model, to_file=f'{falias}.png', show_shapes=True)
+        plot_model(model, to_file=f"{falias}.png", show_shapes=True)
 
     def test_create_more_nodes(self):
-        from deephyper.search.nas.model.space import AutoKSearchSpace
-        from deephyper.search.nas.model.space.node import VariableNode
-        from deephyper.search.nas.model.space.op.op1d import Dense
-        struct = AutoKSearchSpace((5, ), (1, ), regression=True)
+        from deephyper.nas.space import AutoKSearchSpace
+        from deephyper.nas.space.node import VariableNode
+        from deephyper.nas.space.op.op1d import Dense
+
+        struct = AutoKSearchSpace((5,), (1,), regression=True)
 
         vnode1 = VariableNode()
         struct.connect(struct.input_nodes[0], vnode1)
@@ -50,26 +55,27 @@ class TestAutoKSearchSpace:
 
         struct.set_ops([0, 0])
 
-        falias = 'test_auto_keras_search_spaceure'
-        struct.draw_graphviz(f'{falias}.dot')
+        falias = "test_auto_keras_search_spaceure"
+        struct.draw_graphviz(f"{falias}.dot")
 
         model = struct.create_model()
         from tensorflow.keras.utils import plot_model
 
-        plot_model(model, to_file=f'{falias}.png', show_shapes=True)
+        plot_model(model, to_file=f"{falias}.png", show_shapes=True)
 
     def test_create_multiple_inputs(self):
-        from deephyper.search.nas.model.space import AutoKSearchSpace
-        from deephyper.search.nas.model.space.node import VariableNode
-        from deephyper.search.nas.model.space.op.op1d import Dense
-        struct = AutoKSearchSpace([(5, ), (5, )], (1, ), regression=True)
+        from deephyper.nas.space import AutoKSearchSpace
+        from deephyper.nas.space.node import VariableNode
+        from deephyper.nas.space.op.op1d import Dense
+
+        struct = AutoKSearchSpace([(5,), (5,)], (1,), regression=True)
 
         struct.set_ops([])
 
-        falias = 'test_auto_keras_search_spaceure'
-        struct.draw_graphviz(f'{falias}.dot')
+        falias = "test_auto_keras_search_spaceure"
+        struct.draw_graphviz(f"{falias}.dot")
 
         model = struct.create_model()
         from tensorflow.keras.utils import plot_model
 
-        plot_model(model, to_file=f'{falias}.png', show_shapes=True)
+        plot_model(model, to_file=f"{falias}.png", show_shapes=True)

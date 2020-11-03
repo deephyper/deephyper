@@ -1,5 +1,5 @@
 from deephyper.post.pipeline import train
-from deephyper.search.nas.model.run.alpha import run
+from deephyper.nas.run.alpha import run
 from deephyper.benchmark.nas.linearReg import Problem
 
 

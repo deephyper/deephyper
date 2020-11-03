@@ -15,7 +15,7 @@ class Random(NeuralArchitectureSearch):
 
     Args:
         problem (str): Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.nas.linearReg.Problem).
-        run (str): Module path to the run function you want to use for the search (e.g. deephyper.search.nas.model.run.quick).
+        run (str): Module path to the run function you want to use for the search (e.g. deephyper.nas.run.quick).
         evaluator (str): value in ['balsam', 'subprocess', 'processPool', 'threadPool'].
     """
 

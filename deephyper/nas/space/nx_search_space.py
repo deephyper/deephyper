@@ -10,7 +10,7 @@ from deephyper.core.exceptions.nas.space import (
     WrongOutputShape,
     WrongSequenceToSetOperations,
 )
-from deephyper.search.nas.model.space.node import (
+from deephyper.nas.space.node import (
     ConstantNode,
     MimeNode,
     Node,

@@ -5,7 +5,7 @@ class Operation:
     """Interface of an operation.
 
     >>> import tensorflow as tf
-    >>> from deephyper.search.nas.model.space.op.op1d import Operation
+    >>> from deephyper.nas.space.op.op1d import Operation
     >>> Operation(layer=tf.keras.layers.Dense(10))
     Dense
 

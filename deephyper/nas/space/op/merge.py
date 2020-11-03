@@ -1,8 +1,7 @@
 import tensorflow as tf
-from tensorflow import keras
 
-from . import Operation
-from .. import layers as deeplayers
+from deephyper.nas.space.op import Operation
+import deephyper as dh
 
 
 class Concatenate(Operation):
@@ -55,9 +54,9 @@ class Concatenate(Operation):
                 # we have a mix of 2d and 3d tensors so we are expanding 2d tensors to be 3d with last_dim==1
                 for i, v in enumerate(values):
                     if len(v.get_shape()) < len_shp:
-                        values[i] = keras.layers.Reshape((*tuple(v.get_shape()[1:]), 1))(
-                            v
-                        )
+                        values[i] = tf.keras.layers.Reshape(
+                            (*tuple(v.get_shape()[1:]), 1)
+                        )(v)
                 # for 3d tensors concatenation is applied along last dim (axis=-1), so we are applying a zero padding to make 2nd dimensions (ie. shape()[1]) equals
                 if len_shp == 3:
                     max_len = max(map(lambda x: int(x.get_shape()[1]), values))
@@ -65,7 +64,7 @@ class Concatenate(Operation):
                     for i, (p, v) in enumerate(zip(paddings, values)):
                         lp = p // 2
                         rp = p - lp
-                        values[i] = keras.layers.ZeroPadding1D(padding=(lp, rp))(v)
+                        values[i] = tf.keras.layers.ZeroPadding1D(padding=(lp, rp))(v)
                 # elif len_shp == 2 nothing to do
             else:
                 raise RuntimeError(
@@ -76,7 +75,7 @@ class Concatenate(Operation):
 
         # concatenation
         if len(values) > 1:
-            out = keras.layers.Concatenate(axis=-1)(values)
+            out = tf.keras.layers.Concatenate(axis=-1)(values)
         else:
             out = values[0]
         return out
@@ -119,7 +118,7 @@ class AddByPadding(Operation):
             for i, v in enumerate(values):
 
                 if len(v.get_shape()) < max_len_shp:
-                    values[i] = keras.layers.Reshape(
+                    values[i] = tf.keras.layers.Reshape(
                         (
                             *tuple(v.get_shape()[1:]),
                             *tuple(1 for i in range(max_len_shp - len(v.get_shape()))),
@@ -144,13 +143,13 @@ class AddByPadding(Operation):
                     rp = p - lp
                     paddings.append([lp, rp])
                 if sum(map(sum, paddings)) != 0:
-                    values[i] = deeplayers.Padding(paddings)(values[i])
+                    values[i] = dh.layers.Padding(paddings)(values[i])
 
         # concatenation
         if len(values) > 1:
-            out = keras.layers.Add()(values)
+            out = tf.keras.layers.Add()(values)
             if self.activation is not None:
-                out = keras.layers.Activation(self.activation)(out)
+                out = tf.keras.layers.Activation(self.activation)(out)
         else:
             out = values[0]
         return out
@@ -193,7 +192,7 @@ class AddByProjecting(Operation):
             for i, v in enumerate(values):
 
                 if len(v.get_shape()) < max_len_shp:
-                    values[i] = keras.layers.Reshape(
+                    values[i] = tf.keras.layers.Reshape(
                         (
                             *tuple(v.get_shape()[1:]),
                             *tuple(1 for i in range(max_len_shp - len(v.get_shape()))),
@@ -204,18 +203,18 @@ class AddByProjecting(Operation):
 
             for i in range(len(values)):
                 if values[i].get_shape()[1] != proj_size:
-                    values[i] = tf.keras.layers.Dense(
+                    values[i] = tf.tf.keras.layers.Dense(
                         units=proj_size,
-                        kernel_initializer=tf.keras.initializers.glorot_uniform(
+                        kernel_initializer=tf.tf.keras.initializers.glorot_uniform(
                             seed=seed
                         ),
                     )(values[i])
 
         # concatenation
         if len(values) > 1:
-            out = keras.layers.Add()(values)
+            out = tf.keras.layers.Add()(values)
             if self.activation is not None:
-                out = keras.layers.Activation(self.activation)(out)
+                out = tf.keras.layers.Activation(self.activation)(out)
         else:
             out = values[0]
         return out

@@ -112,7 +112,7 @@ The expected output is:
     * SEED = 2019 *
         - search space   : nas_problems.polynome2.search_space.create_search_space
         - data loading   : nas_problems.polynome2.load_data.load_data
-        - preprocessing  : deephyper.search.nas.model.preprocessing.minmaxstdscaler
+        - preprocessing  : deephyper.nas.preprocessing.minmaxstdscaler
         - hyperparameters:
             * verbose: 1
             * batch_size: 32

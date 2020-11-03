@@ -2,7 +2,7 @@ import traceback
 
 from deephyper.benchmark.nas.covertype.load_data import load_data
 from deephyper.problem import NaProblem
-from deephyper.search.nas.model.baseline.dense_skipco import create_search_space
+from deephyper.nas.space.dense_skipco import create_search_space
 
 
 Problem = NaProblem(seed=2019)
