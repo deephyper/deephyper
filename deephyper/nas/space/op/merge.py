@@ -203,9 +203,9 @@ class AddByProjecting(Operation):
 
             for i in range(len(values)):
                 if values[i].get_shape()[1] != proj_size:
-                    values[i] = tf.tf.keras.layers.Dense(
+                    values[i] = tf.keras.layers.Dense(
                         units=proj_size,
-                        kernel_initializer=tf.tf.keras.initializers.glorot_uniform(
+                        kernel_initializer=tf.keras.initializers.glorot_uniform(
                             seed=seed
                         ),
                     )(values[i])

@@ -7,5 +7,5 @@ Training Pipeline
 Trainer
 ------------
 
-.. autoclass:: deephyper.search.nas.model.trainer.train_valid.TrainerTrainValid
+.. autoclass:: deephyper.nas.trainer.train_valid.TrainerTrainValid
     :members:

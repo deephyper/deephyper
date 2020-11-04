@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from deephyper.nas.space.layers import Padding
+from deephyper.layers import Padding
 from pprint import pprint
 
 

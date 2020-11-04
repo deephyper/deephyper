@@ -6,7 +6,7 @@ Subpackages
 
 .. toctree::
 
-   deephyper.nas.space.layers
+   deephyper.layers
    deephyper.nas.space.op
 
 Submodules

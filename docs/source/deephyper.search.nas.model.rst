@@ -9,7 +9,7 @@ Subpackages
    deephyper.nas.space
    deephyper.nas.run
    deephyper.nas.space
-   deephyper.search.nas.model.trainer
+   deephyper.nas.trainer
 
 Submodules
 ----------

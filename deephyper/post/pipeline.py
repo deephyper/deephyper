@@ -16,7 +16,7 @@ from deephyper.nas.run.util import (
     setup_search_space,
     compute_objective,
 )
-from deephyper.search.nas.model.trainer.train_valid import TrainerTrainValid
+from deephyper.nas.trainer.train_valid import TrainerTrainValid
 from deephyper.contrib.callbacks.beholder import BeholderCB
 
 logger = util.conf_logger(__name__)

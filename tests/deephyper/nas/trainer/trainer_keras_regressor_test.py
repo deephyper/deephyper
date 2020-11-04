@@ -1,4 +1,3 @@
-import json
 import sys
 from random import random
 
@@ -7,7 +6,7 @@ import pytest
 from tensorflow.keras.utils import plot_model
 
 from deephyper.search import util
-from deephyper.search.nas.model.trainer.train_valid import TrainerTrainValid
+from deephyper.nas.trainer.train_valid import TrainerTrainValid
 
 
 @pytest.mark.slow
@@ -112,11 +111,8 @@ def test_trainer_regressor_train_valid_with_multiple_ndarray_inputs():
 @pytest.mark.slow
 def test_trainer_regressor_train_valid_with_multiple_generator_inputs():
     from deephyper.nas.run.util import (
-        compute_objective,
         load_config,
-        preproc_trainer,
         setup_data,
-        setup_search_space,
     )
     from deephyper.benchmark.nas.linearRegMultiInputsGen.problem import Problem
 

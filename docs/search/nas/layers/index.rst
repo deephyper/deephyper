@@ -1,10 +1,10 @@
 Layers
 ******
 
-.. automodule:: deephyper.nas.space.layers
+.. automodule:: deephyper.layers
 
 
 Padding
 =======
 
-.. autoclass:: deephyper.nas.space.layers.padding.Padding
+.. autoclass:: deephyper.layers.padding.Padding

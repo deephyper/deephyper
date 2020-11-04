@@ -1,13 +1,13 @@
-deephyper.nas.space.layers package
+deephyper.layers package
 ===============================================
 
 Submodules
 ----------
 
-deephyper.nas.space.layers.padding module
+deephyper.layers.padding module
 ------------------------------------------------------
 
-.. automodule:: deephyper.nas.space.layers.padding
+.. automodule:: deephyper.layers.padding
    :members:
    :undoc-members:
    :show-inheritance:
@@ -16,7 +16,7 @@ deephyper.nas.space.layers.padding module
 Module contents
 ---------------
 
-.. automodule:: deephyper.nas.space.layers
+.. automodule:: deephyper.layers
    :members:
    :undoc-members:
    :show-inheritance:

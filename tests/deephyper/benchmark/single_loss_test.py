@@ -1,4 +1,3 @@
-from deephyper.post.pipeline import train
 from deephyper.nas.run.alpha import run
 from deephyper.benchmark.nas.linearReg import Problem
 

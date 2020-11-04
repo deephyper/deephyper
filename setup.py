@@ -70,7 +70,7 @@ elif on_gpu:
 
 # What packages are optional?
 EXTRAS = {
-    "tests": ["pytest"],
+    "tests": ["pytest", "codecov", "pytest-cov"],
     "dev": ["twine"],
     "docs": ["Sphinx>=1.8.2", "sphinx_rtd_theme"],
     "analytics": [
