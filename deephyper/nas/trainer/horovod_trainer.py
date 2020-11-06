@@ -1,16 +1,11 @@
-import math
 import os
 import time
-import traceback
 from inspect import signature
-import sys
 
 import numpy as np
 import tensorflow as tf
-from tensorflow import keras
 import horovod.tensorflow.keras as hvd
 
-from deephyper.core.logs.logging import JsonMessage as jm
 from deephyper.core.exceptions import DeephyperRuntimeError
 from deephyper.search import util
 from deephyper.nas import arch as a
@@ -26,19 +21,13 @@ class HorovodTrainerTrainValid:
         self.cname = self.__class__.__name__
 
         self.config = config
-        if tf.__version__ == "1.13.1":
-            self.sess = keras.backend.get_session()
-        else:
-            if os.environ.get("OMP_NUM_THREADS", None) is not None:
-                logger.debug(f"OMP_NUM_THREADS is {os.environ.get('OMP_NUM_THREADS')}")
-                sess_config = tf.ConfigProto()
-                sess_config.intra_op_parallelism_threads = int(
-                    os.environ.get("OMP_NUM_THREADS")
-                )
-                sess_config.inter_op_parallelism_threads = 2
-                session = tf.Session(config=sess_config)
-                tf.compat.v1.keras.backend.set_session(session)
-            self.sess = tf.compat.v1.keras.backend.get_session()
+
+        # Threading configuration
+        if os.environ.get("OMP_NUM_THREADS", None) is not None:
+            logger.debug(f"OMP_NUM_THREADS is {os.environ.get('OMP_NUM_THREADS')}")
+            num_intra = int(os.environ.get("OMP_NUM_THREADS"))
+            tf.config.threading.set_intra_op_parallelism_threads(num_intra)
+            tf.config.threading.set_inter_op_parallelism_threads(2)
 
         self.model = model
         self.callbacks = []

@@ -2,7 +2,6 @@ import traceback
 
 import numpy as np
 import tensorflow as tf
-from tensorflow import keras
 
 from deephyper.contrib.callbacks import import_callback
 from deephyper.search import util

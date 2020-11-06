@@ -3,7 +3,6 @@ import os
 
 import numpy as np
 import tensorflow as tf
-from tensorflow import keras
 import horovod.tensorflow.keras as hvd
 
 from deephyper.contrib.callbacks import import_callback
