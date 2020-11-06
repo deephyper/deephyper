@@ -1,12 +1,14 @@
-import traceback
 import os
+import traceback
 
 import numpy as np
 import tensorflow as tf
-import horovod.tensorflow.keras as hvd
-
 from deephyper.contrib.callbacks import import_callback
 from deephyper.search import util
+
+import horovod.tensorflow.keras as hvd
+
+from .. import arch as a
 from ..trainer.horovod_trainer import HorovodTrainerTrainValid
 from .util import (
     compute_objective,
@@ -15,7 +17,6 @@ from .util import (
     setup_data,
     setup_search_space,
 )
-from .. import arch as a
 
 logger = util.conf_logger("deephyper.search.nas.run")
 

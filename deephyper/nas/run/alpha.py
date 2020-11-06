@@ -1,10 +1,11 @@
+import os
 import traceback
 
 import numpy as np
 import tensorflow as tf
-
 from deephyper.contrib.callbacks import import_callback
 from deephyper.search import util
+
 from ..trainer.train_valid import TrainerTrainValid
 from .util import (
     compute_objective,
@@ -45,6 +46,13 @@ default_callbacks_config = {
 
 
 def run(config):
+    # Threading configuration
+    if os.environ.get("OMP_NUM_THREADS", None) is not None:
+        logger.debug(f"OMP_NUM_THREADS is {os.environ.get('OMP_NUM_THREADS')}")
+        num_intra = int(os.environ.get("OMP_NUM_THREADS"))
+        tf.config.threading.set_intra_op_parallelism_threads(num_intra)
+        tf.config.threading.set_inter_op_parallelism_threads(2)
+
     seed = config["seed"]
     if seed is not None:
         np.random.seed(seed)
