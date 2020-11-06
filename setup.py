@@ -70,7 +70,7 @@ elif on_gpu:
 
 # What packages are optional?
 EXTRAS = {
-    "tests": ["pytest", "codecov", "pytest-cov"],
+    "tests": ["pytest", "codecov", "pytest-cov", "deepspace>=0.0.2"],
     "dev": ["twine"],
     "docs": ["Sphinx>=1.8.2", "sphinx_rtd_theme"],
     "analytics": [
@@ -81,6 +81,7 @@ EXTRAS = {
     ],
     "hvd": ["horovod", "mpi4py>=3.0.0"],
     "balsam": ["balsam-flow==0.3.8"],
+    "deepspace": ["deepspace>=0.0.2"],
 }
 
 # The rest you shouldn't have to touch too much :)
