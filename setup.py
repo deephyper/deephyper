@@ -41,7 +41,7 @@ for i, (k, v) in enumerate(authors.items()):
 REQUIRED = [
     "tensorflow>=2.0.0",
     "numpy<1.19.0",
-    "dh-scikit-optimize==0.8.1",
+    "dh-scikit-optimize==0.8.2",
     "scikit-learn",
     "tqdm",
     "keras",
