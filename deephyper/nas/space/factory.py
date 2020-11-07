@@ -1,5 +1,6 @@
 from abc import ABC, abstractclassmethod
 import random
+from copy import deepcopy
 
 from typeguard import typechecked
 
@@ -13,17 +14,11 @@ __all__ = ["SpaceFactory"]
 
 
 class SpaceFactory(ABC):
-    def __init__(self, input_shape, output_shape, **kwargs) -> None:
-        self.input_shape = input_shape
-        self.output_shape = output_shape
-        # Add all k,v from kwargs as attributes
-        self.__dict__.update({k: v for k, v in kwargs.items()})
-
-    def create_space(self) -> KSearchSpace:
-        return self.build(self.input_shape, self.output_shape)
+    def __call__(self, input_shape, output_shape, **kwargs) -> KSearchSpace:
+        return self.build(input_shape, output_shape, **kwargs)
 
     @abstractclassmethod
-    def build(self, input_shape, output_shape) -> KSearchSpace:
+    def build(self, input_shape, output_shape, **kwargs) -> KSearchSpace:
         """Return a search space.
         """
         pass
@@ -40,8 +35,15 @@ class SpaceFactory(ABC):
         return ops
 
     @typechecked
-    def plot_space(self, ops: list = [], fname: str = "space.dot") -> None:
-        space = self.create_space()
+    def plot_space(
+        self,
+        input_shape,
+        output_shape,
+        ops: list = [],
+        fname: str = "space.dot",
+        **kwargs,
+    ) -> None:
+        space = self(input_shape, output_shape, **kwargs)
 
         if not (ops is None):
             ops = self.check_op_list(space, ops)
@@ -52,16 +54,22 @@ class SpaceFactory(ABC):
 
     @typechecked
     def plot_model(
-        self, ops: list = [], fname: str = "random_model.png", show_shapes: bool = True
+        self,
+        input_shape,
+        output_shape,
+        ops: list = [],
+        fname: str = "random_model.png",
+        show_shapes: bool = True,
+        **kwargs,
     ) -> None:
-        space = self.create_space()
+        space = self(input_shape, output_shape, **kwargs)
         ops = self.check_op_list(space, ops)
         space.set_ops(ops)
         model = space.create_model()
         plot_model(model, to_file=fname, show_shapes=show_shapes)
 
-    def test(self):
-        space = self.create_space()
+    def test(self, input_shape, output_shape, **kwargs):
+        space = self(input_shape, output_shape, **kwargs)
         ops = self.check_op_list(space, [])
         space.set_ops(ops)
         model = space.create_model()
