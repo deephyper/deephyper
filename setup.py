@@ -13,7 +13,6 @@ from setuptools import find_packages, setup, Command
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
 on_theta = type(os.environ.get("HOST")) is str and "theta" in os.environ.get("HOST")
-on_gpu = type(os.environ.get("DH_GPU")) is str and "true" == os.environ.get("DH_GPU")
 
 # Package meta-data.
 NAME = "deephyper"
@@ -64,9 +63,6 @@ if on_rtd:
     REQUIRED.remove("balsam-flow==0.3.8")
     REQUIRED.append("Sphinx>=1.8.2")
     REQUIRED.append("sphinx_rtd_theme")
-elif on_gpu:
-    REQUIRED.remove("tensorflow>=1.13.1,<=1.15.2")
-    REQUIRED.append("tensorflow-gpu>=1.13.1,<=1.15.2")
 
 # What packages are optional?
 EXTRAS = {
