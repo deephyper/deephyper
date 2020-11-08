@@ -114,12 +114,6 @@ class TestNaProblem:
         with pytest.raises(SearchSpaceBuilderMissingParameter):
             pb.search_space(func=dummy)
 
-        def dummy(input_shape, output_shape):
-            return
-
-        with pytest.raises(SearchSpaceBuilderMissingDefaultParameter):
-            pb.search_space(func=dummy)
-
         def dummy(input_shape=(1,), output_shape=(1,)):
             return
 
@@ -160,12 +154,6 @@ class TestNaProblem:
         possible_objective = ["loss", "val_loss", "r2", "val_r2"]
         for obj in possible_objective:
             pb.objective(obj)
-
-        # wrong_objective = ["mse", "wrong", "r2__last__max", "val_mse"]
-        # for obj in wrong_objective:
-        #     with pytest.raises(WrongProblemObjective):
-        #         # print("obj: ", obj)
-        #         pb.objective(obj)
 
         pb.post_training(
             num_epochs=2000,

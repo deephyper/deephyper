@@ -1,14 +1,15 @@
 from deephyper.problem import NaProblem
 from deephyper.benchmark.nas.linearRegMultiLoss.load_data import load_data
-from deephyper.nas.space.simple_bi_model import create_search_space
+from deepspace.tabular import SupervisedRegAutoEncoderFactory
 
-from deephyper.nas.preprocessing import minmaxstdscaler
+
+def create_search_space(input_shape, output_shape, **kwargs):
+    return SupervisedRegAutoEncoderFactory()(input_shape, output_shape, **kwargs)
+
 
 Problem = NaProblem(seed=2019)
 
 Problem.load_data(load_data)
-
-# Problem.preprocessing(minmaxstdscaler)
 
 Problem.search_space(create_search_space, num_layers=10)
 

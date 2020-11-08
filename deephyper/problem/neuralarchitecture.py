@@ -200,12 +200,6 @@ class NaProblem(Problem):
         if not "output_shape" in sign_func.parameters:
             raise SearchSpaceBuilderMissingParameter("output_shape")
 
-        if isinstance(sign_func.parameters["input_shape"].default, inspect._empty):
-            raise SearchSpaceBuilderMissingDefaultParameter("input_shape")
-
-        if sign_func.parameters["output_shape"].default is inspect._empty:
-            raise SearchSpaceBuilderMissingDefaultParameter("output_shape")
-
         self.add_dim("create_search_space", {"func": func, "kwargs": kwargs})
 
     def preprocessing(self, func: callable):
@@ -387,4 +381,6 @@ class NaProblem(Problem):
 
 
 def module_location(attr):
+    print(attr)
+    print(dir(attr))
     return f"{attr.__module__}.{attr.__name__}"
