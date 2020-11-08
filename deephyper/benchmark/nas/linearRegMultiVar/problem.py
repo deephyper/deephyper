@@ -1,13 +1,15 @@
 from deephyper.problem import NaProblem
 from deephyper.benchmark.nas.linearRegMultiVar.load_data import load_data
-from deephyper.search.nas.model.baseline.simple_deep import create_search_space
-from deephyper.search.nas.model.preprocessing import minmaxstdscaler
+from deepspace.tabular import OneLayerFactory
+
+
+def create_search_space(input_shape, output_shape, **kwargs):
+    return OneLayerFactory()(input_shape, output_shape, **kwargs)
+
 
 Problem = NaProblem(seed=2019)
 
 Problem.load_data(load_data)
-
-# Problem.preprocessing(minmaxstdscaler)
 
 Problem.search_space(create_search_space)
 

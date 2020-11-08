@@ -1,13 +1,13 @@
-deephyper.search.nas.model.trainer package
+deephyper.nas.trainer package
 ==========================================
 
 Submodules
 ----------
 
-deephyper.search.nas.model.trainer.train\_valid module
+deephyper.nas.trainer.train\_valid module
 ------------------------------------------------------
 
-.. automodule:: deephyper.search.nas.model.trainer.train_valid
+.. automodule:: deephyper.nas.trainer.train_valid
    :members:
    :undoc-members:
    :show-inheritance:
@@ -16,7 +16,7 @@ deephyper.search.nas.model.trainer.train\_valid module
 Module contents
 ---------------
 
-.. automodule:: deephyper.search.nas.model.trainer
+.. automodule:: deephyper.nas.trainer
    :members:
    :undoc-members:
    :show-inheritance:

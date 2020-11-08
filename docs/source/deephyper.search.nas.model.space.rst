@@ -1,4 +1,4 @@
-deephyper.search.nas.model.space package
+deephyper.nas.space package
 ========================================
 
 Subpackages
@@ -6,40 +6,40 @@ Subpackages
 
 .. toctree::
 
-   deephyper.search.nas.model.space.layers
-   deephyper.search.nas.model.space.op
+   deephyper.layers
+   deephyper.nas.space.op
 
 Submodules
 ----------
 
-deephyper.search.nas.model.space.auto\_keras\_search\_space module
+deephyper.nas.space.auto\_keras\_search\_space module
 ------------------------------------------------------------------
 
-.. automodule:: deephyper.search.nas.model.space.auto_keras_search_space
+.. automodule:: deephyper.nas.space.auto_keras_search_space
    :members:
    :undoc-members:
    :show-inheritance:
 
-deephyper.search.nas.model.space.keras\_search\_space module
+deephyper.nas.space.keras\_search\_space module
 ------------------------------------------------------------
 
-.. automodule:: deephyper.search.nas.model.space.keras_search_space
+.. automodule:: deephyper.nas.space.keras_search_space
    :members:
    :undoc-members:
    :show-inheritance:
 
-deephyper.search.nas.model.space.node module
+deephyper.nas.space.node module
 --------------------------------------------
 
-.. automodule:: deephyper.search.nas.model.space.node
+.. automodule:: deephyper.nas.space.node
    :members:
    :undoc-members:
    :show-inheritance:
 
-deephyper.search.nas.model.space.nx\_search\_space module
+deephyper.nas.space.nx\_search\_space module
 ---------------------------------------------------------
 
-.. automodule:: deephyper.search.nas.model.space.nx_search_space
+.. automodule:: deephyper.nas.space.nx_search_space
    :members:
    :undoc-members:
    :show-inheritance:
@@ -48,7 +48,7 @@ deephyper.search.nas.model.space.nx\_search\_space module
 Module contents
 ---------------
 
-.. automodule:: deephyper.search.nas.model.space
+.. automodule:: deephyper.nas.space
    :members:
    :undoc-members:
    :show-inheritance:

@@ -6,7 +6,7 @@ horovodrun -np 4 python -m deephyper.benchmark.nas.covertype.train
 """
 
 from deephyper.benchmark.nas.covertype.problem import Problem
-from deephyper.search.nas.model.run.horovod import run
+from deephyper.nas.run.horovod import run
 
 config = Problem.space
 

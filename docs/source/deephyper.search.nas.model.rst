@@ -6,10 +6,10 @@ Subpackages
 
 .. toctree::
 
-   deephyper.search.nas.model.baseline
-   deephyper.search.nas.model.run
-   deephyper.search.nas.model.space
-   deephyper.search.nas.model.trainer
+   deephyper.nas.space
+   deephyper.nas.run
+   deephyper.nas.space
+   deephyper.nas.trainer
 
 Submodules
 ----------
@@ -22,10 +22,10 @@ deephyper.search.nas.model.arch module
    :undoc-members:
    :show-inheritance:
 
-deephyper.search.nas.model.preprocessing module
+deephyper.nas.preprocessing module
 -----------------------------------------------
 
-.. automodule:: deephyper.search.nas.model.preprocessing
+.. automodule:: deephyper.nas.preprocessing
    :members:
    :undoc-members:
    :show-inheritance:

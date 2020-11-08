@@ -1,11 +1,10 @@
-
 import numpy as np
 from sklearn.datasets import load_boston
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 
-from deephyper.search.nas.model.preprocessing import minmaxstdscaler
+from deephyper.nas.preprocessing import minmaxstdscaler
 from deephyper.baseline import BasePipeline
 
 
@@ -35,7 +34,6 @@ class BaseRegressorPipeline(BasePipeline):
 
     def evaluate(self, metric=r2_score):
         return super().evaluate(metric=metric)
-
 
 
 if __name__ == "__main__":

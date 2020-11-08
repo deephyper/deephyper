@@ -30,14 +30,6 @@ deephyper.search.nas.full\_random module
    :undoc-members:
    :show-inheritance:
 
-deephyper.search.nas.ppo module
--------------------------------
-
-.. automodule:: deephyper.search.nas.ppo
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 deephyper.search.nas.regevo module
 ----------------------------------
 

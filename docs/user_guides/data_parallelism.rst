@@ -17,12 +17,12 @@ To use this feature the :ref:`balsam-evaluator` should be set for the search wit
 Neural Architecture Search (NAS)
 ================================
 
-The available pipeline to use Horovod with NAS algorithms is ``deephyper.search.nas.model.run.horovod.run`` which has to be specified with the ``--run`` argument such as:
+The available pipeline to use Horovod with NAS algorithms is ``deephyper.nas.run.horovod.run`` which has to be specified with the ``--run`` argument such as:
 
 .. code-block:: console
     :caption: bash
 
-    $ python -m deephyper.search.nas.regevo --problem deephyper.benchmark.nas.linearReg.Problem --evaluator balsam --max-evals 5 --num-nodes-per-eval 2 --num-ranks-per-node 1 --num-threads-per-rank 64 --run deephyper.search.nas.model.run.horovod.run
+    $ python -m deephyper.search.nas.regevo --problem deephyper.benchmark.nas.linearReg.Problem --evaluator balsam --max-evals 5 --num-nodes-per-eval 2 --num-ranks-per-node 1 --num-threads-per-rank 64 --run deephyper.nas.run.horovod.run
 
 .. note::
 

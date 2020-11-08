@@ -39,11 +39,11 @@ for i, (k, v) in enumerate(authors.items()):
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    "numpy",
-    "dh-scikit-optimize==0.8.1",
+    "tensorflow>=2.0.0",
+    "numpy<1.19.0",
+    "dh-scikit-optimize==0.8.2",
     "scikit-learn",
     "tqdm",
-    "tensorflow>=1.13.1,<=1.15.4",
     "keras",
     "deap",  # GA search
     # nas
@@ -70,7 +70,7 @@ elif on_gpu:
 
 # What packages are optional?
 EXTRAS = {
-    "tests": ["pytest"],
+    "tests": ["pytest", "codecov", "pytest-cov", "deepspace>=0.0.3"],
     "dev": ["twine"],
     "docs": ["Sphinx>=1.8.2", "sphinx_rtd_theme"],
     "analytics": [
@@ -81,6 +81,7 @@ EXTRAS = {
     ],
     "hvd": ["horovod", "mpi4py>=3.0.0"],
     "balsam": ["balsam-flow==0.3.8"],
+    "deepspace": ["deepspace>=0.0.3"],
 }
 
 # The rest you shouldn't have to touch too much :)

@@ -4,7 +4,7 @@ from inspect import signature
 from pprint import pformat
 
 import tensorflow as tf
-from deephyper.search.nas.model.run.util import setup_data, get_search_space
+from deephyper.nas.run.util import setup_data, get_search_space
 from deephyper.core.exceptions.problem import (
     NaProblemError,
     ProblemLoadDataIsNotCallable,
@@ -52,8 +52,8 @@ class NaProblem(Problem):
 
     >>> from deephyper.problem import NaProblem
     >>> from deephyper.benchmark.nas.linearReg.load_data import load_data
-    >>> from deephyper.search.nas.model.baseline.simple import create_search_space
-    >>> from deephyper.search.nas.model.preprocessing import minmaxstdscaler
+    >>> from deephyper.nas.space.simple import create_search_space
+    >>> from deephyper.nas.preprocessing import minmaxstdscaler
     >>> Problem = NaProblem()
     >>> Problem.load_data(load_data)
     >>> Problem.preprocessing(minmaxstdscaler)
@@ -199,12 +199,6 @@ class NaProblem(Problem):
 
         if not "output_shape" in sign_func.parameters:
             raise SearchSpaceBuilderMissingParameter("output_shape")
-
-        if isinstance(sign_func.parameters["input_shape"].default, inspect._empty):
-            raise SearchSpaceBuilderMissingDefaultParameter("input_shape")
-
-        if sign_func.parameters["output_shape"].default is inspect._empty:
-            raise SearchSpaceBuilderMissingDefaultParameter("output_shape")
 
         self.add_dim("create_search_space", {"func": func, "kwargs": kwargs})
 
@@ -387,4 +381,6 @@ class NaProblem(Problem):
 
 
 def module_location(attr):
+    print(attr)
+    print(dir(attr))
     return f"{attr.__module__}.{attr.__name__}"
