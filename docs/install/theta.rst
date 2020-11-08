@@ -1,5 +1,5 @@
 Theta
-******
+*****
 
 `Theta <https://www.alcf.anl.gov/theta>`_ is a 11.69 petaflops system based on the second-generation Intel Xeon Phi processor at Argonne Leadership Computing Facility (ALCF).
 It serves as a stepping stone to the ALCF's next leadership-class supercomputer, Aurora.
@@ -11,19 +11,20 @@ and a Lustre-based parallel file system, all integrated by Cray’s HPC software
 User installation
 =================
 
-DeepHyper is already installed in Theta and can be directly loaded as a module as follows.
+DeepHyper can be installed on Theta by following these commands.
 
 ::
 
     module load postgresql
     module load miniconda-3
-    conda create -p dh-env --clone base
+    conda create -p dh-env
     conda activate dh-env
     conda install gxx_linux-64 gcc_linux-64
+    conda install tensorflow -c intel
     # DeepHyper + Analytics Tools (Parsing logs, Plots, Notebooks)
-    pip install deephyper[analytics]
+    pip install deephyper[analytics,balsam]
     # or DeepHyper + Analytics Tools (Parsing logs, Plots, Notebooks) + Horovod
-    pip install deephyper[analytics,hvd]
+    pip install deephyper[analytics,hvd,balsam]
 
 .. note::
     You might put::

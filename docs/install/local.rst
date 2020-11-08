@@ -17,10 +17,6 @@ From PyPI::
 
     pip install deephyper
 
-.. note::
-
-    If you want to use ``tensorflow-gpu`` assuming you already have CUDA installed. Just do ``DH_GPU=true pip install -e .``
-
 From github::
 
     git clone https://github.com/deephyper/deephyper.git
@@ -34,12 +30,12 @@ Horovod
 
 If you want to install Horovod with DeepHyper (MPI is required)::
 
-    pip install 'deephyper[hvd]'
+    pip install 'deephyper[balsam,hvd]'
 
 .. _analytics-local-install:
 
 Analytics
---------
+---------
 
 From Pypi::
 
