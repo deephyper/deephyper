@@ -60,7 +60,6 @@ REQUIRED = [
 ]
 
 if on_rtd:
-    REQUIRED.remove("balsam-flow==0.3.8")
     REQUIRED.append("Sphinx>=1.8.2")
     REQUIRED.append("sphinx_rtd_theme")
 
