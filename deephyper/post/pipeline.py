@@ -10,13 +10,13 @@ import tensorflow.keras.backend as K
 
 from deephyper.evaluator import Encoder
 from deephyper.search import util
-from deephyper.search.nas.model.run.util import (
+from deephyper.nas.run.util import (
     load_config,
     setup_data,
     setup_search_space,
     compute_objective,
 )
-from deephyper.search.nas.model.trainer.train_valid import TrainerTrainValid
+from deephyper.nas.trainer.train_valid import TrainerTrainValid
 from deephyper.contrib.callbacks.beholder import BeholderCB
 
 logger = util.conf_logger(__name__)
@@ -58,7 +58,7 @@ def train(config):
         default_callbacks_config = copy.deepcopy(CB_CONFIG)
         if seed is not None:
             np.random.seed(seeds[rep])
-            tf.random.set_random_seed(seeds[rep])
+            tf.random.set_seed(seeds[rep])
 
         logger.info(f"Training replica {rep+1}")
         # Pre-settings: particularly import for BeholderCB to work

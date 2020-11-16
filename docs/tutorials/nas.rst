@@ -112,7 +112,7 @@ The expected output is:
     * SEED = 2019 *
         - search space   : nas_problems.polynome2.search_space.create_search_space
         - data loading   : nas_problems.polynome2.load_data.load_data
-        - preprocessing  : deephyper.search.nas.model.preprocessing.minmaxstdscaler
+        - preprocessing  : deephyper.nas.preprocessing.minmaxstdscaler
         - hyperparameters:
             * verbose: 1
             * batch_size: 32
@@ -191,12 +191,12 @@ Start and connect to the ``polydb`` database:
 
     source balsamactivate polydb
 
-Create a Balsam ``PPO`` application:
+Create a Balsam ``AE`` application:
 
 .. code-block:: console
     :caption: bash
 
-    balsam app --name PPO --exe "$(which python) -m deephyper.search.nas.ppo"
+    balsam app --name AE --exe "$(which python) -m deephyper.search.nas.regevo"
 
 .. code-block:: console
     :caption: [Out]
@@ -205,7 +205,7 @@ Create a Balsam ``PPO`` application:
     -----------------------------
     Name:           PPO
     Description:
-    Executable:     /lus/theta-fs0/projects/datascience/regele/dh-opt/bin/python -m deephyper.search.nas.ppo
+    Executable:     /lus/theta-fs0/projects/datascience/regele/dh-opt/bin/python -m deephyper.search.nas.regevo
     Preprocess:
     Postprocess:
 
@@ -247,7 +247,7 @@ Create a Balsam ``PPO`` application:
     state:                          CREATED
     queued_launch_id:               None
     data:                           {}
-    *** Executed command:         /lus/theta-fs0/projects/datascience/regele/dh-opt/bin/python -m deephyper.search.nas.ppo --evaluator balsam --problem nas_problems.polynome2.problem.Problem
+    *** Executed command:         /lus/theta-fs0/projects/datascience/regele/dh-opt/bin/python -m deephyper.search.nas.regevo --evaluator balsam --problem nas_problems.polynome2.problem.Problem
     *** Working directory:        /lus/theta-fs0/projects/datascience/regele/polydb/data/poly_exp/poly_exp_575dba96
 
     Confirm adding job to DB [y/n]: y

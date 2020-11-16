@@ -22,7 +22,7 @@ class RegularizedEvolution(NeuralArchitectureSearch):
 
     Args:
         problem (str): Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.nas.linearReg.Problem).
-        run (str): Module path to the run function you want to use for the search (e.g. deephyper.search.nas.model.run.quick).
+        run (str): Module path to the run function you want to use for the search (e.g. deephyper.nas.run.quick).
         evaluator (str): value in ['balsam', 'subprocess', 'processPool', 'threadPool'].
         population_size (int, optional): the number of individuals to keep in the population. Defaults to 100.
         sample_size (int, optional): the number of individuals that should participate in each tournament. Defaults to 10.

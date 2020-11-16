@@ -1,7 +1,7 @@
 Cooley
 ******
 
-`Cooley <https://www.alcf.anl.gov/user-guides/cooley>`_ is a GPU cluster at Argonne Leadership Computing Facility (ALCF). It has a total of 126 compute nodes; each node has 12 CPU cores and one NVIDIA Tesla K80 dual-GPU card. 
+`Cooley <https://www.alcf.anl.gov/user-guides/cooley>`_ is a GPU cluster at Argonne Leadership Computing Facility (ALCF). It has a total of 126 compute nodes; each node has 12 CPU cores and one NVIDIA Tesla K80 dual-GPU card.
 
 
 1. **Install Postgresql**
@@ -55,7 +55,7 @@ Cooley
 
 * Install deephyper from pypi::
 
-    DH_GPU=true pip install deephyper
+    pip install deephyper
 
 
 .. WARNING::

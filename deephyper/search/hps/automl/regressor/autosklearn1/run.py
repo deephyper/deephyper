@@ -6,7 +6,7 @@ from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 
 from deephyper.search.hps.automl.regressor.mapping import REGRESSORS
-from deephyper.search.nas.model.preprocessing import minmaxstdscaler
+from deephyper.nas.preprocessing import minmaxstdscaler
 
 
 def run(config: dict, load_data: callable) -> float:

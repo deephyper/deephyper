@@ -1,11 +1,11 @@
 Training Pipeline
 =====================
 
-.. autofunction:: deephyper.search.nas.model.run.alpha.run
+.. autofunction:: deephyper.nas.run.alpha.run
     :noindex:
 
 Trainer
 ------------
 
-.. autoclass:: deephyper.search.nas.model.trainer.train_valid.TrainerTrainValid
+.. autoclass:: deephyper.nas.trainer.train_valid.TrainerTrainValid
     :members:

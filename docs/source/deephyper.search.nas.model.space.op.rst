@@ -1,45 +1,45 @@
-deephyper.search.nas.model.space.op package
+deephyper.nas.space.op package
 ===========================================
 
 Submodules
 ----------
 
-deephyper.search.nas.model.space.op.basic module
+deephyper.nas.space.op.basic module
 ------------------------------------------------
 
-.. automodule:: deephyper.search.nas.model.space.op.basic
+.. automodule:: deephyper.nas.space.op.basic
    :members:
    :undoc-members:
    :show-inheritance:
 
-deephyper.search.nas.model.space.op.cnn module
+deephyper.nas.space.op.cnn module
 ----------------------------------------------
 
-.. automodule:: deephyper.search.nas.model.space.op.cnn
+.. automodule:: deephyper.nas.space.op.cnn
    :members:
    :undoc-members:
    :show-inheritance:
 
-deephyper.search.nas.model.space.op.connect module
+deephyper.nas.space.op.connect module
 --------------------------------------------------
 
-.. automodule:: deephyper.search.nas.model.space.op.connect
+.. automodule:: deephyper.nas.space.op.connect
    :members:
    :undoc-members:
    :show-inheritance:
 
-deephyper.search.nas.model.space.op.merge module
+deephyper.nas.space.op.merge module
 ------------------------------------------------
 
-.. automodule:: deephyper.search.nas.model.space.op.merge
+.. automodule:: deephyper.nas.space.op.merge
    :members:
    :undoc-members:
    :show-inheritance:
 
-deephyper.search.nas.model.space.op.op1d module
+deephyper.nas.space.op.op1d module
 -----------------------------------------------
 
-.. automodule:: deephyper.search.nas.model.space.op.op1d
+.. automodule:: deephyper.nas.space.op.op1d
    :members:
    :undoc-members:
    :show-inheritance:
@@ -48,7 +48,7 @@ deephyper.search.nas.model.space.op.op1d module
 Module contents
 ---------------
 
-.. automodule:: deephyper.search.nas.model.space.op
+.. automodule:: deephyper.nas.space.op
    :members:
    :undoc-members:
    :show-inheritance:

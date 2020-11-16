@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 
 from deephyper.baseline.base import BasePipeline
-from deephyper.search.nas.model.preprocessing import minmaxstdscaler
+from deephyper.nas.preprocessing import minmaxstdscaler
 
 
 class BaseClassifierPipeline(BasePipeline):

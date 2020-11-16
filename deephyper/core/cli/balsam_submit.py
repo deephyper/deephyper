@@ -103,7 +103,10 @@ def bootstrap_apps():
 
     apps = {
         "AMBS": f"{sys.executable} -m deephyper.search.hps.ambs",
-        "PPO": f"{sys.executable} -m deephyper.search.nas.ppo",
+        "NAS-AMBS": f"{sys.executable} -m deephyper.search.nas.ambs",
+        "NAS-RANDOM": f"{sys.executable} -m deephyper.search.nas.random",
+        "NAS-REGEVO": f"{sys.executable} -m deephyper.search.nas.regevo",
+        "NAS-AGEBO": f"{sys.executable} -m deephyper.search.nas.agebo",
     }
 
     for name, exe in apps.items():

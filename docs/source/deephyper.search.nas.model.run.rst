@@ -1,53 +1,53 @@
-deephyper.search.nas.model.run package
+deephyper.nas.run package
 ======================================
 
 Submodules
 ----------
 
-deephyper.search.nas.model.run.alpha module
+deephyper.nas.run.alpha module
 -------------------------------------------
 
-.. automodule:: deephyper.search.nas.model.run.alpha
+.. automodule:: deephyper.nas.run.alpha
    :members:
    :undoc-members:
    :show-inheritance:
 
-deephyper.search.nas.model.run.beta module
+deephyper.nas.run.beta module
 ------------------------------------------
 
-.. automodule:: deephyper.search.nas.model.run.beta
+.. automodule:: deephyper.nas.run.beta
    :members:
    :undoc-members:
    :show-inheritance:
 
-deephyper.search.nas.model.run.quick module
+deephyper.nas.run.quick module
 -------------------------------------------
 
-.. automodule:: deephyper.search.nas.model.run.quick
+.. automodule:: deephyper.nas.run.quick
    :members:
    :undoc-members:
    :show-inheritance:
 
-deephyper.search.nas.model.run.random module
+deephyper.nas.run.random module
 --------------------------------------------
 
-.. automodule:: deephyper.search.nas.model.run.random
+.. automodule:: deephyper.nas.run.random
    :members:
    :undoc-members:
    :show-inheritance:
 
-deephyper.search.nas.model.run.repeat module
+deephyper.nas.run.repeat module
 --------------------------------------------
 
-.. automodule:: deephyper.search.nas.model.run.repeat
+.. automodule:: deephyper.nas.run.repeat
    :members:
    :undoc-members:
    :show-inheritance:
 
-deephyper.search.nas.model.run.util module
+deephyper.nas.run.util module
 ------------------------------------------
 
-.. automodule:: deephyper.search.nas.model.run.util
+.. automodule:: deephyper.nas.run.util
    :members:
    :undoc-members:
    :show-inheritance:
@@ -56,7 +56,7 @@ deephyper.search.nas.model.run.util module
 Module contents
 ---------------
 
-.. automodule:: deephyper.search.nas.model.run
+.. automodule:: deephyper.nas.run
    :members:
    :undoc-members:
    :show-inheritance:

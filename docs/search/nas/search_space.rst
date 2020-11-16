@@ -10,38 +10,38 @@ Search space
 Nodes
 -----------
 
-.. autoclass:: deephyper.search.nas.model.space.node.Node
+.. autoclass:: deephyper.nas.space.node.Node
     :members:
 
 VariableNode
 ~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: deephyper.search.nas.model.space.node.VariableNode
+.. autoclass:: deephyper.nas.space.node.VariableNode
     :members:
 
 ConstantNode
 ~~~~~~~~~~~~~~~
 
-.. autoclass:: deephyper.search.nas.model.space.node.ConstantNode
+.. autoclass:: deephyper.nas.space.node.ConstantNode
     :members:
 
 MirrorNode
 ~~~~~~~~~~~~~~~
 
-.. autoclass:: deephyper.search.nas.model.space.node.MirrorNode
+.. autoclass:: deephyper.nas.space.node.MirrorNode
     :members:
 
 MimeNode
 ~~~~~~~~~~~~~~~
 
-.. autoclass:: deephyper.search.nas.model.space.node.MimeNode
+.. autoclass:: deephyper.nas.space.node.MimeNode
     :members:
 
 Search Space
 ----------------
 
-.. autoclass:: deephyper.search.nas.model.space.KSearchSpace
+.. autoclass:: deephyper.nas.space.KSearchSpace
     :members:
 
-.. autoclass:: deephyper.search.nas.model.space.AutoKSearchSpace
+.. autoclass:: deephyper.nas.space.AutoKSearchSpace
     :members:

@@ -13,7 +13,6 @@ from setuptools import find_packages, setup, Command
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
 on_theta = type(os.environ.get("HOST")) is str and "theta" in os.environ.get("HOST")
-on_gpu = type(os.environ.get("DH_GPU")) is str and "true" == os.environ.get("DH_GPU")
 
 # Package meta-data.
 NAME = "deephyper"
@@ -39,11 +38,11 @@ for i, (k, v) in enumerate(authors.items()):
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    "numpy",
-    "dh-scikit-optimize==0.8.1",
+    "tensorflow>=2.0.0",
+    "numpy<1.19.0",
+    "dh-scikit-optimize==0.8.2",
     "scikit-learn",
     "tqdm",
-    "tensorflow>=1.13.1,<=1.15.4",
     "keras",
     "deap",  # GA search
     # nas
@@ -61,16 +60,12 @@ REQUIRED = [
 ]
 
 if on_rtd:
-    REQUIRED.remove("balsam-flow==0.3.8")
     REQUIRED.append("Sphinx>=1.8.2")
     REQUIRED.append("sphinx_rtd_theme")
-elif on_gpu:
-    REQUIRED.remove("tensorflow>=1.13.1,<=1.15.2")
-    REQUIRED.append("tensorflow-gpu>=1.13.1,<=1.15.2")
 
 # What packages are optional?
 EXTRAS = {
-    "tests": ["pytest"],
+    "tests": ["pytest", "codecov", "pytest-cov", "deepspace>=0.0.3"],
     "dev": ["twine"],
     "docs": ["Sphinx>=1.8.2", "sphinx_rtd_theme"],
     "analytics": [
@@ -81,6 +76,7 @@ EXTRAS = {
     ],
     "hvd": ["horovod", "mpi4py>=3.0.0"],
     "balsam": ["balsam-flow==0.3.8"],
+    "deepspace": ["deepspace>=0.0.3"],
 }
 
 # The rest you shouldn't have to touch too much :)
