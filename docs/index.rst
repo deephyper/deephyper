@@ -33,7 +33,7 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
     :caption: Tutorials
 
     tutorials/hps_ml_basic
-    tutorial/hps_ml_advanced
+    tutorials/hps_ml_advanced
     tutorials/hps_dl_basic
     tutorials/hps_dl_advanced
     tutorials/nas
