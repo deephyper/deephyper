@@ -4,7 +4,7 @@ It comprises two components:
 
 * :ref:`create-new-nas-problem`: fully-automated search for high-performing deep neural network architectures
 
-* :ref:`create-new-hps-problem`: optimizing hyperparameters for a given reference model
+* :ref:`tutorial-hps-deep-learning-basic`: optimizing hyperparameters for a given reference model
 
 
 DeepHyper provides an infrastructure that targets experimental research in NAS and HPS methods, scalability, and portability across diverse supercomputers.
