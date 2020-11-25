@@ -3,8 +3,8 @@
 Hyperparameter Search for Machine Learning (Basic)
 **************************************************
 
-
-In this tutorial we will show how to search the Hyperparameters of the Random Forest (RF) model for the Arlines data set.
+In this tutorial, we will show how to tune the hyperparameters of the `Random Forest (RF) classifier <https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html>`_ 
+in `scikit-learn <https://scikit-learn.org/stable/>`_ for the Airlines data set.
 
 Let us start by creating a DeepHyper project and a problem for our application:
 
@@ -16,14 +16,14 @@ Let us start by creating a DeepHyper project and a problem for our application:
     $ deephyper new-problem hps rf_tuning
     $ cd rf_tuning/
 
-Now we can create a script to test our model performance:
+Create a script to test the accuracy of the baseline model:
 
 .. literalinclude:: content_hps_ml_basic/test_config.py
     :linenos:
     :caption: rf_tuning/test_config.py
     :name: rf_tuning-test_config
 
-We can execute this fonction with:
+Run the script and record the training, validation, and test accuracy as follows:
 
 .. code-block:: console
     :caption: bash
@@ -31,7 +31,7 @@ We can execute this fonction with:
     $ python -i test_config.py
     >>> test_config({})
 
-which gives the the following output:
+Running the script will give the the following output:
 
 .. code-block:: python
     :caption: [Out]
@@ -40,7 +40,11 @@ which gives the the following output:
     Accuracy on Validation: 0.621
     Accuracy on Testing: 0.620
 
-We can clearly see that our RandomForest classifier is overfitting the training data set by looking at the difference between training and validation/testing accuracies. Now that we have this baseline performence we can optimize the hyperparameters of our model. Let us define the ``load_data`` to return training and validation data:
+The accuracy values show that the RandomForest classifier with default hyperparameters results in overfitting and thus poor generalization 
+(high accuracy on training data but not on the validation and test data). 
+
+Next, we optimize the hyperparameters of the RandomForest classifier to address the overfitting problem and improve the accuracy on the vaidation and test data. 
+Create ``load_data.py`` file to load and return training and validation data:
 
 .. literalinclude:: content_hps_ml_basic/load_data.py
     :linenos:
@@ -64,21 +68,22 @@ The expected output is:
     X_valid shape: (128462, 54)
     y_valid shape: (128462,)
 
-Now, by taking inspiration from our ``test_config`` function we can create the ``run`` function where the model will be evaluated. This function has to return a scalar value which will be maximized by the search algorithm.
+Create ``model_run.py`` file to train and evaluate the RF model. This function has to return a scalar value (typically, validation accuracy), 
+which will be maximized by the search algorithm.
 
 .. literalinclude:: content_hps_ml_basic/model_run.py
     :linenos:
     :caption: rf_tuning/model_run.py
     :name: rf_tuning-model_run
 
-The last piece of code that we need is the search space of hyperparameters that we want to explore, defined in ``problem.py``:
+Create ``problem.py`` to define the search space of hyperparameters for the RF model:
 
 .. literalinclude:: content_hps_ml_basic/problem.py
     :linenos:
     :caption: rf_tuning/problem.py
     :name: rf_tuning-problem
 
-You can run the ``problem.py`` with ``$ python problem.py`` in your shell and should expect the corresponding outpout:
+Run the ``problem.py`` with ``$ python problem.py`` in your shell. The output will be:
 
 .. code-block:: python
     :caption: [Out]
@@ -98,15 +103,15 @@ You can run the ``problem.py`` with ``$ python problem.py`` in your shell and sh
             'n_estimators': 100}}
 
 
-You can now run the search for 20 iterations by executing:
+Run the search for 20 model evaluations using the following command line:
 
 .. code-block:: console
     :caption: bash
 
     $ deephyper hps ambs --problem dhproj.rf_tuning.problem.Problem --run dhproj.rf_tuning.model_run.run --max-evals 20 --evaluator subprocess --n-jobs 4
 
-
-Once the search has finished, the ``results.csv`` file contains the hyperparameters configurations tried during the search and their corresponding objective value.
+Once the search is over, the ``results.csv`` file contains the hyperparameters configurations evalauted during the search and their corresponding objective value (validation accuracy).
+Create ``test_best_config.py`` as given belwo. It will extract the best configuration from the ``results.csv`` and run RF with it. 
 
 .. code-block:: python
     :caption: rf_tuning/test_best_config.py
@@ -118,7 +123,7 @@ Once the search has finished, the ``results.csv`` file contains the hyperparamet
     best_config = df.iloc[df.objective.argmax()][:-2].to_dict()
     test_config(best_config)
 
-Which gives as a good performance improvement! Now with a 0.66 accuracy on the test set when it was before 0.62. We can also observe a reduction of the overfitting issue:
+Compared to the default configuration, we can see the accuracy improvement in the validation and test data sets.  
 
 .. code-block:: python
     :caption: [Out]
@@ -126,3 +131,4 @@ Which gives as a good performance improvement! Now with a 0.66 accuracy on the t
     Accuracy on Training: 0.748
     Accuracy on Validation: 0.666
     Accuracy on Testing: 0.666
+
