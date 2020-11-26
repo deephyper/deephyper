@@ -10,7 +10,7 @@ import numpy as np
 import deephyper.core.exceptions as dh_exceptions
 
 
-def check_hyperparameter(parameter, name=None):
+def check_hyperparameter(parameter, name=None, default_value=None):
     if isinstance(parameter, csh.Hyperparameter):
         return parameter
 
@@ -22,8 +22,9 @@ def check_hyperparameter(parameter, name=None):
     if not (type(name) is str):
         raise dh_exceptions.problem.SpaceDimNameOfWrongType(name)
 
-    # if isinstance(parameter, (int, float)):  # Constant parameter
-    #     return csh.Constant(name, parameter)
+    kwargs = {}
+    if default_value is not None:
+        kwargs["default_value"] = default_value
 
     if type(parameter) is tuple:  # Range of reals or integers
         if len(parameter) == 2:
@@ -37,19 +38,20 @@ def check_hyperparameter(parameter, name=None):
             parameter = parameter[:2]
 
         log = prior == "log-uniform"
+
         if all([isinstance(p, int) for p in parameter]):
             return csh.UniformIntegerHyperparameter(
-                name=name, lower=parameter[0], upper=parameter[1], log=log
+                name=name, lower=parameter[0], upper=parameter[1], log=log, **kwargs
             )
         elif any([isinstance(p, float) for p in parameter]):
             return csh.UniformFloatHyperparameter(
-                name=name, lower=parameter[0], upper=parameter[1], log=log
+                name=name, lower=parameter[0], upper=parameter[1], log=log, **kwargs
             )
     elif type(parameter) is list:  # Categorical
         if any(
             [isinstance(p, (str, bool)) or isinstance(p, np.bool_) for p in parameter]
         ):
-            return csh.CategoricalHyperparameter(name, choices=parameter)
+            return csh.CategoricalHyperparameter(name, choices=parameter, **kwargs)
         elif all([isinstance(p, (int, float)) for p in parameter]):
             return csh.OrdinalHyperparameter(name, sequence=parameter)
 
@@ -102,7 +104,9 @@ class BaseProblem:
 
         return self.add_hyperparameter(p_space, p_name)
 
-    def add_hyperparameter(self, value, name: str = None) -> csh.Hyperparameter:
+    def add_hyperparameter(
+        self, value, name: str = None, default_value=None
+    ) -> csh.Hyperparameter:
         """Add an hyperparameter to the search space of the Problem.
 
         Args:
@@ -114,7 +118,7 @@ class BaseProblem:
         """
         if not (type(name) is str or name is None):
             raise dh_exceptions.problem.SpaceDimNameOfWrongType(name)
-        csh_parameter = check_hyperparameter(value, name)
+        csh_parameter = check_hyperparameter(value, name, default_value=default_value)
         self._space.add_hyperparameter(csh_parameter)
         return csh_parameter
 
@@ -123,6 +127,9 @@ class BaseProblem:
 
     def add_condition(self, condition):
         self._space.add_condition(condition)
+
+    def add_conditions(self, conditions: list) -> None:
+        self._space.add_conditions(conditions)
 
     @property
     def space(self):
