@@ -17,7 +17,6 @@ from deephyper.nas.run.util import (
     compute_objective,
 )
 from deephyper.nas.trainer.train_valid import TrainerTrainValid
-from deephyper.contrib.callbacks.beholder import BeholderCB
 
 logger = util.conf_logger(__name__)
 
@@ -39,7 +38,6 @@ CB_CONFIG = {
         write_grads=False,
         write_images=False,
         update_freq="epoch",
-        beholder=False,
     ),
 }
 
@@ -61,7 +59,7 @@ def train(config):
             tf.random.set_seed(seeds[rep])
 
         logger.info(f"Training replica {rep+1}")
-        # Pre-settings: particularly import for BeholderCB to work
+
         sess = tf.Session()
         K.set_session(sess)
 
@@ -104,17 +102,6 @@ def train(config):
                             default_callbacks_config[cb_name][
                                 "filepath"
                             ] = f'best_model_id{config["id"]}_r{rep}.h5'
-                        elif cb_name == "TensorBoard":
-                            if default_callbacks_config[cb_name]["beholder"]:
-                                callbacks.append(
-                                    BeholderCB(
-                                        logdir=default_callbacks_config[cb_name][
-                                            "log_dir"
-                                        ],
-                                        sess=sess,
-                                    )
-                                )
-                            default_callbacks_config[cb_name].pop("beholder")
 
                         Callback = getattr(keras.callbacks, cb_name)
                         callbacks.append(Callback(**default_callbacks_config[cb_name]))
