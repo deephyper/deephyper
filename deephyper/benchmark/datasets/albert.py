@@ -1,9 +1,5 @@
-"""Wrapper around the covertype dataset from Scikit-learn:
-https://scikit-learn.org/stable/modules/generated/sklearn.datasets.fetch_covtype.html#sklearn.datasets.fetch_covtype
-"""
 import numpy as np
 import openml
-from openml.datasets.functions import get_dataset
 from sklearn import model_selection
 
 

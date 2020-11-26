@@ -1,7 +1,7 @@
-.. _create-new-hps-problem:
+.. _tutorial-hps-deep-learning-basic:
 
-Hyperparameter Search (HPS)
-******************************************
+Hyperparameter Search for Deep Learning (Basic)
+***********************************************
 
 Every DeepHyper search requires at least 2 Python objects as input:
 

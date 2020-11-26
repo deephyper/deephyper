@@ -192,12 +192,13 @@ class AMBS(Search):
         return surrogate
 
     def get_random_batch(self, size: int) -> list:
-        batch = []
-        points = self.opt.ask(n_points=size)
-        for point in points:
-            point_as_dict = self.to_dict(point)
-            batch.append(point_as_dict)
-
+        batch = self.problem.starting_point_asdict
+        n_points = max(0, size - len(batch))
+        if n_points > 0:
+            points = self.opt.ask(n_points=n_points)
+            for point in points:
+                point_as_dict = self.to_dict(point)
+                batch.append(point_as_dict)
         return batch
 
     def to_dict(self, x: list) -> dict:

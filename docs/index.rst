@@ -20,7 +20,7 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
 
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
     :caption: Installation
 
     install/local
@@ -29,14 +29,17 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
     install/analytics
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
     :caption: Tutorials
 
-    tutorials/hps
+    tutorials/hps_ml_basic
+    tutorials/hps_ml_advanced
+    tutorials/hps_dl_basic
+    tutorials/hps_dl_advanced
     tutorials/nas
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
     :caption: User Guides
 
     run/newproblem
