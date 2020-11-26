@@ -1,3 +1,6 @@
+"""Wrapper around the iris dataset from Scikit-learn:
+https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_iris.html#sklearn.datasets.load_iris
+"""
 import numpy as np
 import openml
 from sklearn import model_selection
@@ -9,7 +12,7 @@ def load_data(random_state=42, summary=False, test_size=0.33, valid_size=0.33):
         np.random.RandomState(random_state) if type(random_state) is int else random_state
     )
 
-    dataset = openml.datasets.get_dataset(41167)
+    dataset = openml.datasets.get_dataset(61)
 
     if summary:
         # Print a summary
@@ -37,12 +40,12 @@ def load_data(random_state=42, summary=False, test_size=0.33, valid_size=0.33):
     return (X_train, y_train), (X_valid, y_valid), (X_test, y_test)
 
 
-def test_load_data_dionis():
-    from deephyper.benchmark.datasets import dionis
+def test_load_data_airlines():
+    from deephyper.benchmark.datasets import iris
     import numpy as np
 
     names = ["train", "valid", "test "]
-    data = dionis.load_data(random_state=42, summary=True)
+    data = iris.load_data(random_state=42, summary=True)
     for (X, y), subset_name in zip(data, names):
         print(
             f"X_{subset_name} shape: ",
@@ -53,4 +56,4 @@ def test_load_data_dionis():
 
 
 if __name__ == "__main__":
-    test_load_data_dionis()
+    test_load_data_airlines()
