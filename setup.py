@@ -41,7 +41,7 @@ REQUIRED = [
     "tensorflow>=2.0.0",
     "numpy<1.19.0",
     "dh-scikit-optimize==0.8.2",
-    "scikit-learn",
+    "scikit-learn>=0.23.1",
     "tqdm",
     "keras",
     "deap",  # GA search
@@ -53,7 +53,7 @@ REQUIRED = [
     "ray>=0.7.6",
     "pandas>=0.24.2",
     "Jinja2",
-    "ConfigSpace==0.4.12",
+    "ConfigSpace==0.4.16",
     "xgboost",
     "typeguard",
     "openml==0.10.2",
