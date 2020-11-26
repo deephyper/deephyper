@@ -1,5 +1,6 @@
 import numpy as np
 
+from sklearn.utils import resample
 from deephyper.benchmark.datasets import airlines as dataset
 
 
@@ -23,6 +24,10 @@ def load_data():
     (X_train, y_train), (X_valid, y_valid), _ = dataset.load_data(
         random_state=random_state, test_size=ratio_test, valid_size=ratio_valid
     )
+
+    # Uncomment the next line if you want to sub-sample the training data to speed-up
+    # the search, "n_samples" controls the size of the new training data
+    # X_train, y_train = resample(X_train, y_train, n_samples=int(1e4))
 
     print(f"X_train shape: {np.shape(X_train)}")
     print(f"y_train shape: {np.shape(y_train)}")

@@ -47,6 +47,9 @@ We can clearly see that our RandomForest classifier is overfitting the training 
     :caption: rf_tuning/load_data.py
     :name: rf_tuning-load_data
 
+.. note::
+    Subsampling with ``X_train, y_train = resample(X_train, y_train, n_samples=int(1e4))`` can be useful if you want to speed-up your search. By subsampling the training time will reduce.
+
 To test this code:
 
 .. code-block:: console
