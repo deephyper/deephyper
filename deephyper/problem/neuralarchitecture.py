@@ -52,8 +52,10 @@ class NaProblem(Problem):
 
     >>> from deephyper.problem import NaProblem
     >>> from deephyper.benchmark.nas.linearReg.load_data import load_data
-    >>> from deephyper.nas.space.simple import create_search_space
     >>> from deephyper.nas.preprocessing import minmaxstdscaler
+    >>> from deepspace.tabular import OneLayerFactory
+    >>> def create_search_space(input_shape, output_shape, **kwargs):
+    ...     return OneLayerFactory()(input_shape, output_shape, **kwargs)
     >>> Problem = NaProblem()
     >>> Problem.load_data(load_data)
     >>> Problem.preprocessing(minmaxstdscaler)
