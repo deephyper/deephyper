@@ -3,10 +3,19 @@
 Hyperparameter Search for Machine Learning (Advanced)
 *****************************************************
 
-In this tutorial, we will show how to tune the hyperparameters of the `Random Forest (RF) classifier <https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html>`_ and `Gradient Boosting (GB) classifier <https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingClassifier.html>`_
-in `scikit-learn <https://scikit-learn.org/stable/>`_ for the Airlines data set.
+In this tutorial, we will show how to treat a learning method as a hyperparameter in the hyperparameter search. 
+We will consider `Random Forest (RF) classifier <https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html>`_ 
+and `Gradient Boosting (GB) classifier <https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingClassifier.html>`_ 
+methods in `scikit-learn <https://scikit-learn.org/stable/>`_ for the Airlines data set.
+Each of these methods have its own set of hyperparameters and some common parameters. 
+We model them using `ConfigSpace  <https://automl.github.io/ConfigSpace/master/>`_ 
+a python package to express conditional hyperparameters and more.
 
 Let us start by creating a DeepHyper project and a problem for our application:
+
+
+.. note::
+    If you already have a DeepHyper project you do not need to create a new one for each problem.
 
 .. code-block:: console
     :caption: bash
@@ -16,17 +25,14 @@ Let us start by creating a DeepHyper project and a problem for our application:
     $ deephyper new-problem hps advanced_hpo
     $ cd rf_tuning/
 
-.. note::
-    If you already have a DeepHyper project you do not need to create a new one for each problem.
-
-Create a ``mapping.py`` script where you will record the classification algorithms of interest by executing ``$ touch mapping.py`` in the terminal then edit the file:
+Create a ``mapping.py`` script where you will record the classification algorithms of interest (``$ touch mapping.py`` in the terminal then edit the file):
 
 .. literalinclude:: content_hps_ml_advanced/mapping.py
     :linenos:
     :caption: advanced_hpo/mapping.py
     :name: advanced_hpo-mapping
 
-Create a script to test the accuracy of the default configuration for both models:
+Create a script to test the accuracy of the default configuration for both the models:
 
 .. literalinclude:: content_hps_ml_advanced/test_default_configs.py
     :linenos:
@@ -56,9 +62,12 @@ Running the script will give the the following outputs:
     Accuracy on Testing: 0.649
 
 The accuracy values show that the RandomForest classifier with default hyperparameters results in overfitting and thus poor generalization
-(high accuracy on training data but not on the validation and test data). On the contrary GradientBoosting does not show any sign of overfitting and has a better accuracy on the validation and testing set which shows a better generalization than RandomForest.
+(high accuracy on training data but not on the validation and test data). 
+On the contrary GradientBoosting does not show any sign of overfitting and has a better accuracy on the validation and testing set, 
+which shows a better generalization than RandomForest.
 
-Next, we optimize the hyperparameters of both classifiers to address the overfitting problem and improve the accuracy on the vaidation and test data.
+Next, we optimize the hyperparameters, where we seek to find the right classifier and its corresponding hyperparameters, 
+and improve the accuracy on the vaidation and test data.
 Create ``load_data.py`` file to load and return training and validation data:
 
 .. literalinclude:: content_hps_ml_advanced/load_data.py
@@ -86,7 +95,8 @@ The expected output is:
     X_valid shape: (10000, 7)
     y_valid shape: (10000,)
 
-Create ``model_run.py`` file to train and evaluate incoming configurations. This function has to return a scalar value (typically, validation accuracy), which will be maximized by the search algorithm.
+Create ``model_run.py`` file to train and evaluate a given hyperparameter configuration. 
+This function has to return a scalar value (typically, validation accuracy), which will be maximized by the search algorithm.
 
 .. literalinclude:: content_hps_ml_advanced/model_run.py
     :linenos:
@@ -132,7 +142,7 @@ Run the search for 20 model evaluations using the following command line:
     $ deephyper hps ambs --problem dhproj.advanced_hpo.problem.Problem --run dhproj.advanced_hpo.model_run.run --max-evals 20 --evaluator ray --n-jobs 4
 
 Once the search is over, the ``results.csv`` file contains the hyperparameters configurations evaluated during the search and their corresponding objective value (validation accuracy).
-Create ``test_best_config.py`` as given belwo. It will extract the best configuration from the ``results.csv`` and run it for the training, validation and test set.
+Create ``test_best_config.py`` as given below. It will extract the best configuration from the ``results.csv`` and run it for the training, validation and test set.
 
 .. literalinclude:: content_hps_ml_advanced/test_best_config.py
     :linenos:
