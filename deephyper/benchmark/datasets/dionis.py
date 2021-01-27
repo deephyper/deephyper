@@ -38,14 +38,16 @@ def load_data(
         print(dataset.description[:500])
 
     X, y, categorical_indicator, ft_names = dataset.get_data(
-        dataset_format="array", target=dataset.default_target_attribute
+        target=dataset.default_target_attribute
     )
+
+    X, y = X.to_numpy(), y.to_numpy()
 
     # encode categoricals as integers
     if categoricals_to_integers:
         for (ft_ind, ft_name) in enumerate(ft_names):
             if categorical_indicator[ft_ind]:
-                X[ft_name] = LabelEncoder().fit_transform(X[ft_name])
+                X[ft_ind] = LabelEncoder().fit_transform(X[ft_ind])
 
     X_train, X_test, y_train, y_test = model_selection.train_test_split(
         X, y, test_size=test_size, shuffle=True, random_state=random_state
@@ -65,7 +67,7 @@ def test_load_data_dionis():
     import numpy as np
 
     names = ["train", "valid", "test "]
-    data = dionis.load_data(random_state=42, verbose=True)
+    data = dionis.load_data(random_state=42, verbose=True, categoricals_to_integers=True)
     for (X, y), subset_name in zip(data, names):
         print(
             f"X_{subset_name} shape: ",

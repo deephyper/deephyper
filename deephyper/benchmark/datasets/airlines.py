@@ -38,14 +38,16 @@ def load_data(
         print(dataset.description[:500])
 
     X, y, categorical_indicator, ft_names = dataset.get_data(
-        dataset_format="array", target=dataset.default_target_attribute
+        target=dataset.default_target_attribute
     )
+
+    X, y = X.to_numpy(), y.to_numpy()
 
     # encode categoricals
     if categoricals_to_integers:
         for (ft_ind, ft_name) in enumerate(ft_names):
             if categorical_indicator[ft_ind]:
-                X[ft_name] = LabelEncoder().fit_transform(X[ft_name])
+                X[ft_ind] = LabelEncoder().fit_transform(X[ft_ind])
 
     X_train, X_test, y_train, y_test = model_selection.train_test_split(
         X, y, test_size=test_size, shuffle=True, random_state=random_state

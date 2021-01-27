@@ -38,14 +38,24 @@ def load_data(
         print(dataset.description[:500])
 
     X, y, categorical_indicator, ft_names = dataset.get_data(
-        dataset_format="array", target=dataset.default_target_attribute
+        target=dataset.default_target_attribute
     )
 
     # encode categoricals as integers
     if categoricals_to_integers:
         for (ft_ind, ft_name) in enumerate(ft_names):
             if categorical_indicator[ft_ind]:
-                X[ft_name] = LabelEncoder().fit_transform(X[ft_name])
+                labenc = LabelEncoder().fit(X[ft_name])
+                X[ft_name] = labenc.transform(X[ft_name])
+                n_classes = len(labenc.classes_)
+            else:
+                n_classes = -1
+            categorical_indicator[ft_ind] = (
+                categorical_indicator[ft_ind],
+                n_classes,
+            )
+
+    X, y = X.to_numpy(), y.to_numpy()
 
     X_train, X_test, y_train, y_test = model_selection.train_test_split(
         X, y, test_size=test_size, shuffle=True, random_state=random_state
@@ -57,7 +67,7 @@ def load_data(
         X_train, y_train, test_size=r_valid_size, shuffle=True, random_state=random_state
     )
 
-    return (X_train, y_train), (X_valid, y_valid), (X_test, y_test)
+    return (X_train, y_train), (X_valid, y_valid), (X_test, y_test), categorical_indicator
 
 
 def test_load_data_albert():
@@ -65,8 +75,8 @@ def test_load_data_albert():
     import numpy as np
 
     names = ["train", "valid", "test "]
-    data = albert.load_data(random_state=42, verbose=True)
-    for (X, y), subset_name in zip(data, names):
+    data = albert.load_data(random_state=42, verbose=True, categoricals_to_integers=True)
+    for (X, y), subset_name in zip(data[:3], names):
         print(
             f"X_{subset_name} shape: ",
             np.shape(X),
