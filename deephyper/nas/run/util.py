@@ -30,7 +30,7 @@ def load_config(config):
         config["objective"] = util.load_attr_from(config["objective"])
 
 
-def setup_data(config):
+def setup_data(config, add_to_config=True):
     # Loading data
     load_data = config["load_data"]["func"]
     kwargs = config["load_data"].get("kwargs")
@@ -83,9 +83,16 @@ def setup_data(config):
             raise RuntimeError(
                 f"Data returned by load_data function are of a wrong type: type(t_X)=={type(t_X)},  type(t_y)=={type(t_y)}, type(v_X)=={type(v_X)}, type(v_y)=={type(v_y)}"
             )
-        config["data"] = {"train_X": t_X, "train_Y": t_y, "valid_X": v_X, "valid_Y": v_y}
+        if add_to_config:
+            config["data"] = {
+                "train_X": t_X,
+                "train_Y": t_y,
+                "valid_X": v_X,
+                "valid_Y": v_y,
+            }
     elif type(data) is dict:
-        config["data"] = data
+        if add_to_config:
+            config["data"] = data
         input_shape = [
             data["shapes"][0][f"input_{i}"] for i in range(len(data["shapes"][0]))
         ]

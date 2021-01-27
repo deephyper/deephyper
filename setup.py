@@ -67,7 +67,7 @@ if on_rtd:
 # What packages are optional?
 EXTRAS = {
     "tests": ["pytest", "codecov", "pytest-cov", "deepspace>=0.0.3"],
-    "dev": ["twine"],
+    "dev": ["twine", "black"],
     "docs": ["Sphinx>=1.8.2", "sphinx_rtd_theme"],
     "analytics": [
         "jupyter",

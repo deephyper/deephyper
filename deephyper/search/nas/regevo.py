@@ -47,11 +47,7 @@ class RegularizedEvolution(NeuralArchitectureSearch):
 
         # Setup
         self.pb_dict = self.problem.space
-        cs_kwargs = self.pb_dict["create_search_space"].get("kwargs")
-        if cs_kwargs is None:
-            search_space = self.pb_dict["create_search_space"]["func"]()
-        else:
-            search_space = self.pb_dict["create_search_space"]["func"](**cs_kwargs)
+        search_space = self.problem.build_search_space()
 
         self.space_list = [
             (0, vnode.num_ops - 1) for vnode in search_space.variable_nodes

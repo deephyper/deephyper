@@ -1,21 +1,20 @@
 import csv
-from collections import OrderedDict
-from contextlib import suppress as dummy_context
-from math import isnan
-import numpy as np
-from numpy import integer, floating, ndarray, bool_
 import json
-import uuid
 import logging
 import os
 import sys
 import time
 import types
+import uuid
+from collections import OrderedDict
+from contextlib import suppress as dummy_context
+from math import isnan
 
+import numpy as np
 import skopt
-
-from deephyper.evaluator import runner
 from deephyper.core.exceptions import DeephyperRuntimeError
+from deephyper.evaluator import runner
+from numpy import bool_, floating, integer, ndarray
 
 logger = logging.getLogger(__name__)
 
@@ -47,13 +46,13 @@ class Encoder(json.JSONEncoder):
 class Evaluator:
     """The goal off the evaluator module is to have a set of objects which can helps us to run our task on different environments and with different system settings/properties.
 
-        Args:
-            run_function (Callable): the function to execute, it must be a callable and should not be defined in the `__main__` module.
-            cache_key (Callable, str, optional): A way of defining how to use cached results. When an evaluation is done a corresponding uuid is generated, if an new evaluation as a already known uuid then the past result will be re-used. You have different ways to define how to generate an uuid. If `None` then the whole  parameter `dict` (corresponding to the evaluation) will be serialized and used as a uuid (it may raise an exception if it's not serializable, please use the `encoder` parameter to use a custom `json.JSONEncoder`). If callable then the parameter dict will be passed to the callable which must return an uuid. If `'uuid'` then the `uuid.uuid4()` will be used for every new evaluation. Defaults to None.
+    Args:
+        run_function (Callable): the function to execute, it must be a callable and should not be defined in the `__main__` module.
+        cache_key (Callable, str, optional): A way of defining how to use cached results. When an evaluation is done a corresponding uuid is generated, if an new evaluation as a already known uuid then the past result will be re-used. You have different ways to define how to generate an uuid. If `None` then the whole  parameter `dict` (corresponding to the evaluation) will be serialized and used as a uuid (it may raise an exception if it's not serializable, please use the `encoder` parameter to use a custom `json.JSONEncoder`). If callable then the parameter dict will be passed to the callable which must return an uuid. If `'uuid'` then the `uuid.uuid4()` will be used for every new evaluation. Defaults to None.
 
-        Raises:
-            DeephyperRuntimeError: raised if the `cache_key` parameter is not None, a callable or equal to 'uuid'.
-            DeephyperRuntimeError: raised if the `run_function` parameter is from the`__main__` module.
+    Raises:
+        DeephyperRuntimeError: raised if the `cache_key` parameter is not None, a callable or equal to 'uuid'.
+        DeephyperRuntimeError: raised if the `run_function` parameter is from the`__main__` module.
     """
 
     FAIL_RETURN_VALUE = np.finfo(np.float32).min
@@ -154,7 +153,11 @@ class Evaluator:
             from deephyper.evaluator._ray_evaluator import RayEvaluator
 
             Eval = RayEvaluator(
-                run_function, cache_key=cache_key, redis_address=redis_address, **kwargs
+                run_function,
+                cache_key=cache_key,
+                redis_address=redis_address,
+                num_workers=num_workers,
+                **kwargs,
             )
 
         # Override the number of workers if passed as an argument
@@ -172,8 +175,7 @@ class Evaluator:
         return time.time() - self._start_sec
 
     def decode(self, key):
-        """from JSON string to x (list)
-        """
+        """from JSON string to x (list)"""
         x = json.loads(key)
         if not isinstance(x, dict):
             raise ValueError(f"Expected dict, but got {type(x)}")
