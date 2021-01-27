@@ -45,11 +45,7 @@ class Random(NeuralArchitectureSearch):
 
         # Setup
         space = self.problem.space
-        cs_kwargs = space["create_search_space"].get("kwargs")
-        if cs_kwargs is None:
-            search_space = space["create_search_space"]["func"]()
-        else:
-            search_space = space["create_search_space"]["func"](**cs_kwargs)
+        search_space = self.problem.build_search_space()
 
         len_arch = search_space.num_nodes
 
