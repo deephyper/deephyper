@@ -1,12 +1,42 @@
-import json
-import os
-import signal
+"""Asynchronous Model-Based Search.
 
+Arguments of AMBS:
+
+* ``surrogate-model``
+
+    * ``RF`` : Random Forest (default)
+    * ``ET`` : Extra Trees
+    * ``GBRT`` : Gradient Boosting Regression Trees
+    * ``DUMMY`` :
+    * ``GP`` : Gaussian process
+
+* ``liar-strategy``
+
+    * ``cl_max`` : (default)
+    * ``cl_min`` :
+    * ``cl_mean`` :
+
+* ``acq-func`` : Acquisition function
+
+    * ``LCB`` :
+    * ``EI`` :
+    * ``PI`` :
+    * ``gp_hedge`` : (default)
+"""
+
+
+import math
+import signal
+import json
+
+import ConfigSpace as cs
+import ConfigSpace.hyperparameters as csh
+import numpy as np
+import skopt
 from deephyper.core.logs.logging import JsonMessage as jm
-from deephyper.evaluator.evaluate import Encoder
 from deephyper.search import util
 from deephyper.search.nas import NeuralArchitectureSearch
-from deephyper.search.nas.optimizer import Optimizer
+from deephyper.evaluator.evaluate import Encoder
 
 dhlogger = util.conf_logger("deephyper.search.nas.ambs")
 
@@ -21,52 +51,52 @@ def on_exit(signum, stack):
 
 
 class AMBNeuralArchitectureSearch(NeuralArchitectureSearch):
-    """Asynchronous Model-Based Search.
-
-    Args:
-        problem (str): python attribute import of the ``NaProblem`` instance (e.g. ``mypackage.mymodule.myproblem``).
-        run (str): python attribute import of the run function (e.g. ``mypackage.mymodule.myrunfunction``).
-        evaluator (str): the name of the evaluator to use.
-        surrogate_model (str, optional): Choices are ["RF", "ET", "GBRT", "DUMMY", "GP"]. ``RF`` is Random Forest, ``ET`` is Extra Trees, ``GBRT`` is Gradient Boosting Regression Trees, ``DUMMY`` is random, ``GP`` is Gaussian process. Defaults to "RF".
-        liar_strategy (str, optional): ["cl_max", "cl_min", "cl_mean"]. Defaults to "cl_max".
-        acq_func (str, optional): Acquisition function, choices are ["gp_hedge", "LCB", "EI", "PI"]. Defaults to "gp_hedge".
-        n_jobs (int, optional): Number of parallel jobs to distribute the surrogate model (learner). Defaults to -1, means as many as the number of logical cores.
-    """
-
     def __init__(
         self,
         problem,
         run,
         evaluator,
         surrogate_model="RF",
-        liar_strategy="cl_max",
-        acq_func="gp_hedge",
-        n_jobs=-1,
+        acq_func="LCB",
+        kappa=1.96,
+        xi=0.001,
+        liar_strategy="cl_min",
+        n_jobs=1,
         **kwargs,
     ):
-
-        super().__init__(problem=problem, run=run, evaluator=evaluator, **kwargs)
-
-        self.free_workers = self.evaluator.num_workers
+        super().__init__(problem, run, evaluator, **kwargs)
+        dhlogger.info("Initializing AMBNAS")
 
         dhlogger.info(
             jm(
                 type="start_infos",
-                alg="ambs-nas",
-                nworkers=self.free_workers,
+                alg="ambs",
+                nworkers=self.evaluator.num_workers,
                 encoded_space=json.dumps(self.problem.space, cls=Encoder),
             )
         )
+        dhlogger.info(f"kappa={kappa}, xi={xi}")
 
-        dhlogger.info("Initializing AMBS")
-        self.optimizer = Optimizer(
-            self.problem,
-            self.num_workers,
-            surrogate_model=surrogate_model,
-            liar_strategy=liar_strategy,
+        self.n_initial_points = self.evaluator.num_workers
+        self.liar_strategy = liar_strategy
+
+        # Building search space for SkOptimizer using ConfigSpace
+        search_space = self.problem.build_search_space()
+        skopt_space = cs.ConfigurationSpace(seed=self.problem.seed)
+        for i, vnode in enumerate(search_space.variable_nodes):
+            hp = csh.UniformIntegerHyperparameter(
+                name=f"vnode_{i}", lower=0, upper=(vnode.num_ops - 1)
+            )
+            skopt_space.add_hyperparameter(hp)
+
+        self.opt = skopt.Optimizer(
+            dimensions=skopt_space,
+            base_estimator=self.get_surrogate_model(surrogate_model, n_jobs),
             acq_func=acq_func,
-            n_jobs=n_jobs,
-            **kwargs,
+            acq_optimizer="sampling",
+            acq_func_kwargs={"xi": xi, "kappa": kappa},
+            n_initial_points=self.n_initial_points,
+            random_state=self.problem.seed,
         )
 
     @staticmethod
@@ -76,7 +106,7 @@ class AMBNeuralArchitectureSearch(NeuralArchitectureSearch):
             "--surrogate-model",
             default="RF",
             choices=["RF", "ET", "GBRT", "DUMMY", "GP"],
-            help="type of surrogate model (learner)",
+            help="Type of surrogate model (learner).",
         )
         parser.add_argument(
             "--liar-strategy",
@@ -91,54 +121,128 @@ class AMBNeuralArchitectureSearch(NeuralArchitectureSearch):
             help="Acquisition function type",
         )
         parser.add_argument(
-            "--acq-kappa",
+            "--kappa",
             type=float,
             default=1.96,
             help='Controls how much of the variance in the predicted values should be taken into account. If set to be very high, then we are favouring exploration over exploitation and vice versa. Used when the acquisition is "LCB".',
         )
+
+        parser.add_argument(
+            "--xi",
+            type=float,
+            default=0.01,
+            help='Controls how much improvement one wants over the previous best values. If set to be very high, then we are favouring exploration over exploitation and vice versa. Used when the acquisition is "EI", "PI".',
+        )
+
         parser.add_argument(
             "--n-jobs",
-            default=-1,
             type=int,
-            help="Number of processes to use for surrogate model (learner).",
+            default=1,
+            help="number of cores to use for the 'surrogate model' (learner), if n_jobs=-1 then it will use all cores available.",
         )
         return parser
 
     def main(self):
-        timer = util.DelayTimer(max_minutes=None, period=SERVICE_PERIOD)
-        chkpoint_counter = 0
-        num_evals = 0
+        # timer = util.DelayTimer(max_minutes=None, period=SERVICE_PERIOD)
+        # chkpoint_counter = 0
 
-        dhlogger.info(f"Generating {self.num_workers} initial points...")
-        XX = self.optimizer.ask_initial(n_points=self.num_workers)
-        self.evaluator.add_eval_batch(XX)
+        num_evals_done = 0
 
-        # MAIN LOOP
-        for elapsed_str in timer:
-            dhlogger.info(f"Elapsed time: {elapsed_str}")
-            results = list(self.evaluator.get_finished_evals())
-            num_evals += len(results)
-            chkpoint_counter += len(results)
-            if EXIT_FLAG or num_evals >= self.max_evals:
-                break
-            if results:
-                dhlogger.info(f"Refitting model with batch of {len(results)} evals")
-                self.optimizer.tell(results)
-                dhlogger.info(
-                    f"Drawing {len(results)} points with strategy {self.optimizer.strategy}"
-                )
-                # ! 'ask' is written as a generator because asking for a large batch is
-                # ! slow. We get better performance when ask is batched. The RF is
-                # ! constantly re-fitting during the call to ask. So it becomes slow
-                # ! when there are a large number of workers.
-                for batch in self.optimizer.ask(n_points=len(results)):
-                    self.evaluator.add_eval_batch(batch)
-            if chkpoint_counter >= CHECKPOINT_INTERVAL:
+        # Filling available nodes at start
+        dhlogger.info(f"Generating {self.evaluator.num_workers} initial points...")
+        self.evaluator.add_eval_batch(self.get_random_batch(size=self.n_initial_points))
+
+        # Main loop
+        while num_evals_done < self.max_evals:
+
+            # Collecting finished evaluations
+            new_results = list(self.evaluator.get_finished_evals())
+
+            if len(new_results) > 0:
+                stats = {"num_cache_used": self.evaluator.stats["num_cache_used"]}
+                dhlogger.info(jm(type="env_stats", **stats))
                 self.evaluator.dump_evals(saved_key="arch_seq")
-                chkpoint_counter = 0
 
-        dhlogger.info("Hyperopt driver finishing")
-        self.evaluator.dump_evals(saved_key="arch_seq")
+                num_received = len(new_results)
+                num_evals_done += num_received
+
+                # Transform configurations to list to fit optimizer
+                opt_X = []
+                opt_y = []
+                for cfg, obj in new_results:
+                    x = replace_nan(cfg["arch_seq"])
+                    opt_X.append(x)
+                    opt_y.append(-obj)  #! maximizing
+
+                self.opt.tell(opt_X, opt_y)  #! fit: costly
+                new_X = self.opt.ask(
+                    n_points=len(new_results), strategy=self.liar_strategy
+                )
+
+                new_batch = []
+                for x in new_X:
+                    new_cfg = self.to_dict(x)
+                    new_batch.append(new_cfg)
+
+                # submit_childs
+                if len(new_results) > 0:
+                    self.evaluator.add_eval_batch(new_batch)
+
+    def get_surrogate_model(self, name: str, n_jobs: int = None):
+        """Get a surrogate model from Scikit-Optimize.
+
+        Args:
+            name (str): name of the surrogate model.
+            n_jobs (int): number of parallel processes to distribute the computation of the surrogate model.
+
+        Raises:
+            ValueError: when the name of the surrogate model is unknown.
+        """
+        accepted_names = ["RF", "ET", "GBRT", "GP", "DUMMY"]
+        if not (name in accepted_names):
+            raise ValueError(
+                f"Unknown surrogate model {name}, please choose among {accepted_names}."
+            )
+
+        if name == "RF":
+            surrogate = skopt.learning.RandomForestRegressor(n_jobs=n_jobs)
+        elif name == "ET":
+            surrogate = skopt.learning.ExtraTreesRegressor(n_jobs=n_jobs)
+        elif name == "GBRT":
+            surrogate = skopt.learning.GradientBoostingQuantileRegressor(n_jobs=n_jobs)
+        else:  # for DUMMY and GP
+            surrogate = name
+
+        return surrogate
+
+    def get_random_batch(self, size: int) -> list:
+        batch = []
+        n_points = max(0, size - len(batch))
+        if n_points > 0:
+            points = self.opt.ask(n_points=n_points)
+            for point in points:
+                point_as_dict = self.to_dict(point)
+                batch.append(point_as_dict)
+        return batch
+
+    def to_dict(self, x: list) -> dict:
+        cfg = self.problem.space.copy()
+        cfg["arch_seq"] = x
+        return cfg
+
+
+def isnan(x) -> bool:
+    """Check if a value is NaN."""
+    if isinstance(x, float):
+        return math.isnan(x)
+    elif isinstance(x, np.float64):
+        return np.isnan(x)
+    else:
+        return False
+
+
+def replace_nan(x):
+    return [np.nan if x_i == "nan" else x_i for x_i in x]
 
 
 if __name__ == "__main__":

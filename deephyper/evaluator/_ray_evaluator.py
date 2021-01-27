@@ -71,13 +71,19 @@ class RayFuture:
 class RayEvaluator(Evaluator):
     """The RayEvaluator relies on the Ray (https://ray.readthedocs.io) package. Ray is a fast and simple framework for building and running distributed applications.
 
-        Args:
-            redis_address (str, optional): The "IP:PORT" redis address for the RAY-driver to connect on the RAY-head.
+    Args:
+        redis_address (str, optional): The "IP:PORT" redis address for the RAY-driver to connect on the RAY-head.
     """
 
     WaitResult = namedtuple("WaitResult", ["active", "done", "failed", "cancelled"])
 
-    def __init__(self, run_function, cache_key=None, redis_address=None, **kwargs):
+    def __init__(
+        self,
+        run_function,
+        cache_key=None,
+        redis_address=None,
+        **kwargs,
+    ):
         super().__init__(run_function, cache_key, **kwargs)
 
         logger.info(f"RAY Evaluator init: redis-address={redis_address}")
@@ -87,7 +93,6 @@ class RayEvaluator(Evaluator):
         else:
             proc_info = ray.init()
 
-        # self.num_workers = len(ray.nodes())
         self.num_cpus = int(sum([node["Resources"]["CPU"] for node in ray.nodes()]))
         self.num_workers = self.num_cpus
 

@@ -1,8 +1,8 @@
 import logging
 import subprocess
+import sys
 import time
 from collections import defaultdict, namedtuple
-import sys
 
 from deephyper.evaluator.evaluate import Evaluator
 
@@ -85,11 +85,11 @@ class PopenFuture:
 class SubprocessEvaluator(Evaluator):
     """Evaluator using subprocess.
 
-        The ``SubprocessEvaluator`` use the ``subprocess`` package. The generated processes have a fresh memory independant from their parent process. All the imports are going to be repeated.
+    The ``SubprocessEvaluator`` use the ``subprocess`` package. The generated processes have a fresh memory independant from their parent process. All the imports are going to be repeated.
 
-        Args:
-            run_function (func): takes one parameter of type dict and returns a scalar value.
-            cache_key (func): takes one parameter of type dict and returns a hashable type, used as the key for caching evaluations. Multiple inputs that map to the same hashable key will only be evaluated once. If ``None``, then cache_key defaults to a lossless (identity) encoding of the input dict.
+    Args:
+        run_function (func): takes one parameter of type dict and returns a scalar value.
+        cache_key (func): takes one parameter of type dict and returns a hashable type, used as the key for caching evaluations. Multiple inputs that map to the same hashable key will only be evaluated once. If ``None``, then cache_key defaults to a lossless (identity) encoding of the input dict.
     """
 
     WaitResult = namedtuple("WaitResult", ["active", "done", "failed", "cancelled"])

@@ -57,6 +57,7 @@ REQUIRED = [
     "xgboost",
     "typeguard",
     "openml==0.10.2",
+    "matplotlib>=3.0.3"
 ]
 
 if on_rtd:
@@ -66,14 +67,13 @@ if on_rtd:
 # What packages are optional?
 EXTRAS = {
     "tests": ["pytest", "codecov", "pytest-cov", "deepspace>=0.0.3"],
-    "dev": ["twine"],
+    "dev": ["twine", "black"],
     "docs": ["Sphinx>=1.8.2", "sphinx_rtd_theme"],
     "analytics": [
         "jupyter",
         "jupyter_contrib_nbextensions>=0.5.1",
         "seaborn>=0.9.1",
-        "matplotlib>=3.0.3",
-    ],
+     ],
     "hvd": ["horovod", "mpi4py>=3.0.0"],
     "balsam": ["balsam-flow==0.3.8"],
     "deepspace": ["deepspace>=0.0.3"],

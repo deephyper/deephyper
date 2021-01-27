@@ -87,7 +87,7 @@ We should expect something like this::
 
 As you can see some jobs of our *TEST* workflow are in state ``RESTART_READY``. According to the `Balsam documentation <https://balsam.readthedocs.io/en/latest/index.html>`_ the job will be run again if a new launcher with the *TEST* workflow is executed.
 
-.. image:: https://balsam.readthedocs.io/en/latest/_images/state-flow.png
+.. image:: https://balsam.readthedocs.io/en/latest/userguide/figs/state-flow.png
 
 
 This is why you should delete all jobs of the same workflow if you want

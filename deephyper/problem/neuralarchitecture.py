@@ -17,8 +17,7 @@ from deephyper.core.exceptions.problem import (
 
 
 class Problem:
-    """Representation of a problem.
-    """
+    """Representation of a problem."""
 
     def __init__(self, seed=None, **kwargs):
         self._space = OrderedDict()
@@ -217,8 +216,7 @@ class NaProblem(Problem):
         super().add_dim("preprocessing", {"func": func})
 
     def hyperparameters(self, **kwargs):
-        """Define hyperparameters used to evaluate generated search_spaces.
-        """
+        """Define hyperparameters used to evaluate generated search_spaces."""
         if self._space.get("hyperparameters") is None:
             self._space["hyperparameters"] = dict()
         self._space["hyperparameters"].update(kwargs)
@@ -365,7 +363,7 @@ class NaProblem(Problem):
             NxSearchSpace: A search space instance.
         """
         config = self._space
-        input_shape, output_shape = setup_data(config)
+        input_shape, output_shape = setup_data(config, add_to_config=False)
 
         search_space = get_search_space(config, input_shape, output_shape, seed=self.seed)
         return search_space
