@@ -56,8 +56,8 @@ class AMBS(Search):
         acq_func="LCB",
         kappa=1.96,
         xi=0.001,
-        liar_strategy="cl_max",
-        n_jobs=32,
+        liar_strategy="cl_min",
+        n_jobs=1,  # 32 is good for Theta
         **kwargs,
     ):
         kwargs["cache_key"] = "to_dict"
@@ -66,6 +66,7 @@ class AMBS(Search):
         dhlogger.info(f"kappa={kappa}, xi={xi}")
 
         self.n_initial_points = self.evaluator.num_workers
+        self.liar_strategy = liar_strategy
 
         self.opt = skopt.Optimizer(
             dimensions=self.problem.space,
@@ -88,7 +89,7 @@ class AMBS(Search):
         )
         parser.add_argument(
             "--liar-strategy",
-            default="cl_max",
+            default="cl_min",
             choices=["cl_min", "cl_mean", "cl_max"],
             help="Constant liar strategy",
         )
@@ -153,7 +154,9 @@ class AMBS(Search):
                     opt_y.append(-obj)  #! maximizing
 
                 self.opt.tell(opt_X, opt_y)  #! fit: costly
-                new_X = self.opt.ask(n_points=len(new_results))
+                new_X = self.opt.ask(
+                    n_points=len(new_results), strategy=self.liar_strategy
+                )
 
                 new_batch = []
                 for x in new_X:
