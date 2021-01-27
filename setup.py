@@ -57,6 +57,7 @@ REQUIRED = [
     "xgboost",
     "typeguard",
     "openml==0.10.2",
+    "matplotlib>=3.0.3"
 ]
 
 if on_rtd:
@@ -72,8 +73,7 @@ EXTRAS = {
         "jupyter",
         "jupyter_contrib_nbextensions>=0.5.1",
         "seaborn>=0.9.1",
-        "matplotlib>=3.0.3",
-    ],
+     ],
     "hvd": ["horovod", "mpi4py>=3.0.0"],
     "balsam": ["balsam-flow==0.3.8"],
     "deepspace": ["deepspace>=0.0.3"],
