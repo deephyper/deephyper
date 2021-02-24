@@ -39,7 +39,7 @@ for i, (k, v) in enumerate(authors.items()):
 # What packages are required for this module to be executed?
 REQUIRED = [
     "tensorflow>=2.0.0",
-    "numpy<1.19.0",
+    "numpy",  # working with 1.20.1
     "dh-scikit-optimize==0.8.3",
     "scikit-learn>=0.23.1",
     "tqdm",
@@ -53,11 +53,11 @@ REQUIRED = [
     "ray>=0.7.6",
     "pandas>=0.24.2",
     "Jinja2",
-    "ConfigSpace==0.4.16",
+    "ConfigSpace==0.4.17",
     "xgboost",
     "typeguard",
     "openml==0.10.2",
-    "matplotlib>=3.0.3"
+    "matplotlib>=3.0.3",
 ]
 
 if on_rtd:
@@ -73,7 +73,7 @@ EXTRAS = {
         "jupyter",
         "jupyter_contrib_nbextensions>=0.5.1",
         "seaborn>=0.9.1",
-     ],
+    ],
     "hvd": ["horovod", "mpi4py>=3.0.0"],
     "balsam": ["balsam-flow==0.3.8"],
     "deepspace": ["deepspace>=0.0.3"],
