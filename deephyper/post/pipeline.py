@@ -60,9 +60,6 @@ def train(config):
 
         logger.info(f"Training replica {rep+1}")
 
-        sess = tf.Session()
-        K.set_session(sess)
-
         # override hyperparameters with post_train hyperparameters
         keys = filter(
             lambda k: k in config["hyperparameters"], config["post_train"].keys()
