@@ -22,7 +22,7 @@ class RayFuture:
         self.compute_objective = ray.remote(num_cpus=num_cpus, num_gpus=num_gpus)(
             compute_objective
         )
-        self.id_res = compute_objective.remote(func, x)
+        self.id_res = self.compute_objective.remote(func, x)
         self._state = "active"
         self._result = None
 
