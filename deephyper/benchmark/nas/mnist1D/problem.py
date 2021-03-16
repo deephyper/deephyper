@@ -13,9 +13,7 @@ Problem.load_data(load_data)
 
 Problem.search_space(create_search_space)
 
-Problem.hyperparameters(
-    batch_size=100, learning_rate=0.1, optimizer="adam", num_epochs=10
-)
+Problem.hyperparameters(batch_size=32, learning_rate=0.1, optimizer="adam", num_epochs=10)
 
 Problem.loss("categorical_crossentropy")
 
