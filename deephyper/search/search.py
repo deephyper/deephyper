@@ -144,7 +144,7 @@ class Search:
         )
         parser.add_argument(
             "--ray-password",
-            default=None,
+            default="5241590000000000",
             help="",
         )
         parser.add_argument("--seed", default=None, help="Random seed used.")
