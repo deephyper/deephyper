@@ -147,6 +147,8 @@ class Search:
             default="5241590000000000",
             help="",
         )
+        parser.add_argument("--num-cpus-per-task", default=1, help="")
+        parser.add_argument("--num-gpus-per-task", default=None, help="")
         parser.add_argument("--seed", default=None, help="Random seed used.")
         parser.add_argument(
             "--cache-key",

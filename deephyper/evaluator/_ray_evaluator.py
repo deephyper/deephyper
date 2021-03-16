@@ -11,7 +11,6 @@ from deephyper.evaluator.evaluate import Evaluator
 logger = logging.getLogger(__name__)
 
 
-@ray.remote
 def compute_objective(func, x):
     return func(x)
 
@@ -19,7 +18,10 @@ def compute_objective(func, x):
 class RayFuture:
     FAIL_RETURN_VALUE = Evaluator.FAIL_RETURN_VALUE
 
-    def __init__(self, func, x):
+    def __init__(self, func, x, num_cpus=1, num_gpus=None):
+        compute_objective = ray.remote(num_cpus=num_cpus, num_gpus=num_gpus)(
+            compute_objective
+        )
         self.id_res = compute_objective.remote(func, x)
         self._state = "active"
         self._result = None
@@ -83,6 +85,8 @@ class RayEvaluator(Evaluator):
         cache_key=None,
         ray_address=None,
         ray_password=None,
+        num_cpus_per_task=1,
+        num_gpus_per_task=None,
         **kwargs,
     ):
         super().__init__(run_function, cache_key, **kwargs)
@@ -94,8 +98,16 @@ class RayEvaluator(Evaluator):
         else:
             proc_info = ray.init()
 
-        self.num_cpus = int(sum([node["Resources"]["CPU"] for node in ray.nodes()]))
-        self.num_workers = self.num_cpus
+        self.num_cpus_per_tasks = num_cpus_per_task
+        self.num_gpus_per_tasks = num_gpus_per_task
+
+        self.num_cpus = int(
+            sum([node["Resources"].get("CPU", 0) for node in ray.nodes()])
+        )
+        self.num_gpus = int(
+            sum([node["Resources"].get("GPU", 0) for node in ray.nodes()])
+        )
+        self.num_workers = self.num_cpus // self.num_cpus_per_tasks
 
         logger.info(
             f"RAY Evaluator will execute: '{self._run_function}', proc_info: {proc_info}"
@@ -103,7 +115,9 @@ class RayEvaluator(Evaluator):
 
     def _eval_exec(self, x: dict):
         assert isinstance(x, dict)
-        future = RayFuture(self._run_function, x)
+        future = RayFuture(
+            self._run_function, x, self.num_cpus_per_tasks, self.num_gpus_per_tasks
+        )
         return future
 
     @staticmethod
