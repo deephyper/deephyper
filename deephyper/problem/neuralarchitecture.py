@@ -381,6 +381,4 @@ class NaProblem(Problem):
 
 
 def module_location(attr):
-    print(attr)
-    print(dir(attr))
     return f"{attr.__module__}.{attr.__name__}"
