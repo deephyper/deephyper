@@ -39,7 +39,7 @@ for i, (k, v) in enumerate(authors.items()):
 # What packages are required for this module to be executed?
 REQUIRED = [
     "tensorflow>=2.0.0",
-    "numpy~=1.20.1",  # working with 1.20.1
+    "numpy==1.19.4",  # working with 1.20.1
     "dh-scikit-optimize==0.8.3",
     "scikit-learn>=0.23.1",
     "tqdm",
@@ -50,10 +50,10 @@ REQUIRED = [
     "networkx",
     "joblib>=0.10.3",
     "pydot",
-    "ray>=0.7.6",
+    "ray>=1.0.0",
     "pandas>=0.24.2",
     "Jinja2",
-    "ConfigSpace==0.4.17",
+    "ConfigSpace==0.4.18",
     "xgboost",
     "typeguard",
     "openml==0.10.2",
