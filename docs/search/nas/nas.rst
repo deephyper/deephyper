@@ -5,8 +5,6 @@ Neural Architecture Search (NAS)
 
 .. include:: benchmarks.rst
 
-.. include:: environments.rst
-
 .. include:: problem.rst
 
 .. include:: search_space.rst
