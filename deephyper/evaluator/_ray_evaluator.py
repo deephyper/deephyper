@@ -19,7 +19,7 @@ class RayFuture:
     FAIL_RETURN_VALUE = Evaluator.FAIL_RETURN_VALUE
 
     def __init__(self, func, x, num_cpus=1, num_gpus=None):
-        compute_objective = ray.remote(num_cpus=num_cpus, num_gpus=num_gpus)(
+        self.compute_objective = ray.remote(num_cpus=num_cpus, num_gpus=num_gpus)(
             compute_objective
         )
         self.id_res = compute_objective.remote(func, x)
