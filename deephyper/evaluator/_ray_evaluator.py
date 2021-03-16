@@ -81,15 +81,16 @@ class RayEvaluator(Evaluator):
         self,
         run_function,
         cache_key=None,
-        redis_address=None,
+        ray_address=None,
+        ray_password=None,
         **kwargs,
     ):
         super().__init__(run_function, cache_key, **kwargs)
 
-        logger.info(f"RAY Evaluator init: redis-address={redis_address}")
+        logger.info(f"RAY Evaluator init: redis-address={ray_address}")
 
-        if not redis_address is None:
-            proc_info = ray.init(redis_address=redis_address)
+        if not ray_address is None:
+            proc_info = ray.init(address=ray_address, _redis_password=ray_password)
         else:
             proc_info = ray.init()
 
