@@ -10,6 +10,12 @@ We recommend creating isolated Python environments on your local machine using `
 
 Some features of DeepHyper are using the ``MPI`` library, which you have to install yourself depending on your system.
 
+For Linux systems, it is required to have additionnal dependencies::
+
+    apt-get install build-essential
+    # or
+    conda install gxx_linux-64 gcc_linux-64
+
 User installation
 =================
 
