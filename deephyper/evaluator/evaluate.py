@@ -111,7 +111,8 @@ class Evaluator:
         run_function,
         cache_key=None,
         method="subprocess",
-        redis_address=None,
+        ray_address=None,
+        ray_password=None,
         num_workers=None,
         **kwargs,
     ):
@@ -155,7 +156,8 @@ class Evaluator:
             Eval = RayEvaluator(
                 run_function,
                 cache_key=cache_key,
-                redis_address=redis_address,
+                ray_address=ray_address,
+                ray_password=ray_password,
                 num_workers=num_workers,
                 **kwargs,
             )

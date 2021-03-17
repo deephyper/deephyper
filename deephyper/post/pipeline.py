@@ -8,13 +8,13 @@ import tensorflow as tf
 from tensorflow import keras
 import tensorflow.keras.backend as K
 
+from deephyper.core.exceptions import DeephyperRuntimeError
 from deephyper.evaluator import Encoder
 from deephyper.search import util
 from deephyper.nas.run.util import (
     load_config,
     setup_data,
     setup_search_space,
-    compute_objective,
 )
 from deephyper.nas.trainer.train_valid import TrainerTrainValid
 
@@ -44,7 +44,12 @@ CB_CONFIG = {
 
 def train(config):
     seed = config["seed"]
+
+    if not "post_train" in config:
+        raise DeephyperRuntimeError("The post training was not define in the Problem!")
+
     repeat = config["post_train"]["repeat"]
+
     if seed is not None:
         np.random.seed(seed)
         # must be between (0, 2**32-1)
@@ -59,9 +64,6 @@ def train(config):
             tf.random.set_seed(seeds[rep])
 
         logger.info(f"Training replica {rep+1}")
-
-        sess = tf.Session()
-        K.set_session(sess)
 
         # override hyperparameters with post_train hyperparameters
         keys = filter(

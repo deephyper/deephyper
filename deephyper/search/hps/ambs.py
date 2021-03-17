@@ -27,9 +27,10 @@ Arguments of AMBS:
 
 import math
 import signal
-
+from pprint import pprint
 import numpy as np
 
+import ConfigSpace.hyperparameters as csh
 import skopt
 from deephyper.search import Search, util
 from deephyper.core.logs.logging import JsonMessage as jm
@@ -152,7 +153,6 @@ class AMBS(Search):
                     x = replace_nan(cfg.values())
                     opt_X.append(x)
                     opt_y.append(-obj)  #! maximizing
-
                 self.opt.tell(opt_X, opt_y)  #! fit: costly
                 new_X = self.opt.ask(
                     n_points=len(new_results), strategy=self.liar_strategy
@@ -196,6 +196,25 @@ class AMBS(Search):
 
     def get_random_batch(self, size: int) -> list:
         batch = self.problem.starting_point_asdict
+
+        # Replace None by "nan"
+        for point in batch:
+            for (k, v), hp in zip(
+                point.items(), self.problem.space.get_hyperparameters()
+            ):
+                if v is None:
+                    if (
+                        type(hp) == csh.UniformIntegerHyperparameter
+                        or type(hp) == csh.UniformFloatHyperparameter
+                    ):
+                        point[k] = np.nan
+                    elif (
+                        type(hp) == csh.CategoricalHyperparameter
+                        or type(hp) == csh.OrdinalHyperparameter
+                    ):
+                        point[k] = "NA"
+
+        # Add more starting points
         n_points = max(0, size - len(batch))
         if n_points > 0:
             points = self.opt.ask(n_points=n_points)

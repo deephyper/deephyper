@@ -1,5 +1,5 @@
-Theta
-*****
+Theta (ALCF)
+************
 
 `Theta <https://www.alcf.anl.gov/theta>`_ is a 11.69 petaflops system based on the second-generation Intel Xeon Phi processor at Argonne Leadership Computing Facility (ALCF).
 It serves as a stepping stone to the ALCF's next leadership-class supercomputer, Aurora.

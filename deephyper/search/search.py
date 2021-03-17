@@ -138,10 +138,17 @@ class Search:
             help="The evaluator is an object used to evaluate models.",
         )
         parser.add_argument(
-            "--redis-address",
+            "--ray-address",
             default=None,
             help='This parameter is mandatory when using evaluator==ray. It reference the "IP:PORT" redis address for the RAY-driver to connect on the RAY-head.',
         )
+        parser.add_argument(
+            "--ray-password",
+            default="5241590000000000",
+            help="",
+        )
+        parser.add_argument("--num-cpus-per-task", type=int, default=1, help="")
+        parser.add_argument("--num-gpus-per-task", type=int, default=None, help="")
         parser.add_argument("--seed", default=None, help="Random seed used.")
         parser.add_argument(
             "--cache-key",

@@ -18,7 +18,7 @@ on_theta = type(os.environ.get("HOST")) is str and "theta" in os.environ.get("HO
 NAME = "deephyper"
 DESCRIPTION = "Scalable asynchronous neural architecture and hyperparameter search for deep neural networks."
 URL = "https://github.com/deephyper/deephyper"
-REQUIRES_PYTHON = ">=3.6, <3.8"
+REQUIRES_PYTHON = ">=3.6, <3.9"
 VERSION = None
 
 # Build Author list
@@ -39,8 +39,8 @@ for i, (k, v) in enumerate(authors.items()):
 # What packages are required for this module to be executed?
 REQUIRED = [
     "tensorflow>=2.0.0",
-    "numpy<1.19.0",
-    "dh-scikit-optimize==0.8.2",
+    "numpy==1.19.4",  # working with 1.20.1
+    "dh-scikit-optimize==0.8.3",
     "scikit-learn>=0.23.1",
     "tqdm",
     "keras",
@@ -50,14 +50,14 @@ REQUIRED = [
     "networkx",
     "joblib>=0.10.3",
     "pydot",
-    "ray>=0.7.6",
+    "ray>=1.0.0",
     "pandas>=0.24.2",
     "Jinja2",
-    "ConfigSpace==0.4.16",
+    "ConfigSpace==0.4.18",
     "xgboost",
     "typeguard",
     "openml==0.10.2",
-    "matplotlib>=3.0.3"
+    "matplotlib>=3.0.3",
 ]
 
 if on_rtd:
@@ -73,7 +73,7 @@ EXTRAS = {
         "jupyter",
         "jupyter_contrib_nbextensions>=0.5.1",
         "seaborn>=0.9.1",
-     ],
+    ],
     "hvd": ["horovod", "mpi4py>=3.0.0"],
     "balsam": ["balsam-flow==0.3.8"],
     "deepspace": ["deepspace>=0.0.3"],

@@ -1,6 +1,36 @@
 """
 The module ``deephyper.post.train`` aims to run post-training using an already defined Problem and the results of a finished search (e.g. list of best search_spaces).
 
+
+First your NAS problem should have used the ``post_training`` method::
+
+    Problem.post_training(
+            num_epochs=1000,
+            metrics=['r2'],
+            callbacks=dict(
+            ModelCheckpoint={
+                'monitor': 'val_r2',
+                'mode': 'max',
+                'save_best_only': True,
+                'verbose': 1
+            },
+            EarlyStopping={
+                'monitor': 'val_r2',
+                'mode': 'max',
+                'verbose': 1,
+                'patience': 10
+            },
+            TensorBoard={
+                'log_dir':'tb_logs',
+                'histogram_freq':1,
+                'batch_size':64,
+                'write_graph':True,
+                'write_grads':True,
+                'write_images':True,
+                'update_freq':'epoch'
+            })
+    )
+
 Create a post-training Balsam application:
 
 .. code-block:: console
@@ -57,11 +87,11 @@ class Namespace:
 class Manager:
     """Class to manage post-training submission.
 
-        Args:
-            problem (Problem): problem related to post-training.
-            p_f_best (str): path to the `.json` file containing the list of best search_spaces.
-            evaluator (str): name of evaluator to use for the post-training.
-        """
+    Args:
+        problem (Problem): problem related to post-training.
+        p_f_best (str): path to the `.json` file containing the list of best search_spaces.
+        evaluator (str): name of evaluator to use for the post-training.
+    """
 
     def __init__(self, problem, fbest, evaluator, **kwargs):
 
@@ -69,49 +99,49 @@ class Manager:
             self.free_workers = 1
         else:
             nranks = MPI.COMM_WORLD.Get_size()
-            if evaluator == 'balsam': 
-                balsam_launcher_nodes = int(
-                    os.environ.get('BALSAM_LAUNCHER_NODES', 1))
+            if evaluator == "balsam":
+                balsam_launcher_nodes = int(os.environ.get("BALSAM_LAUNCHER_NODES", 1))
                 deephyper_workers_per_node = int(
-                    os.environ.get('DEEPHYPER_WORKERS_PER_NODE', 1))
+                    os.environ.get("DEEPHYPER_WORKERS_PER_NODE", 1)
+                )
                 n_free_nodes = balsam_launcher_nodes - nranks  # Number of free nodes
-                self.free_workers = n_free_nodes * \
-                    deephyper_workers_per_node  # Number of free workers
+                self.free_workers = (
+                    n_free_nodes * deephyper_workers_per_node
+                )  # Number of free workers
             else:
                 self.free_workers = 1
 
-        _args = vars(self.parse_args(''))
-        kwargs['problem'] = problem
-        kwargs['p_f_best'] = fbest
-        kwargs['evaluator'] = evaluator
+        _args = vars(self.parse_args(""))
+        kwargs["problem"] = problem
+        kwargs["p_f_best"] = fbest
+        kwargs["evaluator"] = evaluator
         _args.update(kwargs)
         self.args = Namespace(**_args)
-        self.problem = util.generic_loader(problem, 'Problem')
-        if kwargs.get('cache_key') is None:
-            self.evaluator = Evaluator.create(
-                run_function=train, method=evaluator)
+        self.problem = util.generic_loader(problem, "Problem")
+        if kwargs.get("cache_key") is None:
+            self.evaluator = Evaluator.create(run_function=train, method=evaluator)
         else:
             self.evaluator = Evaluator.create(
-                run_function=train, method=evaluator, cache_key=kwargs['cache_key'])
+                run_function=train, method=evaluator, cache_key=kwargs["cache_key"]
+            )
         self.num_workers = self.evaluator.num_workers
 
-        logger.info(f'Options: '+pformat(self.args.__dict__, indent=4))
-        logger.info('Problem definition: ' +
-                    pformat(self.problem.space, indent=4))
-        logger.info(f'Created {self.args.evaluator} evaluator')
-        logger.info(f'Evaluator: num_workers is {self.num_workers}')
+        logger.info(f"Options: " + pformat(self.args.__dict__, indent=4))
+        logger.info("Problem definition: " + pformat(self.problem.space, indent=4))
+        logger.info(f"Created {self.args.evaluator} evaluator")
+        logger.info(f"Evaluator: num_workers is {self.num_workers}")
 
     def main(self):
-        with open(self.args.p_f_best, 'r') as f_best:
+        with open(self.args.p_f_best, "r") as f_best:
             data = json.load(f_best)
 
         cursor = 0
         batch = []
 
-        for _ in range(min(self.num_workers, len(data['arch_seq']))):
+        for _ in range(min(self.num_workers, len(data["arch_seq"]))):
             cfg = self.problem.space.copy()
-            cfg['arch_seq'] = data['arch_seq'][cursor]
-            cfg['id'] = cursor
+            cfg["arch_seq"] = data["arch_seq"][cursor]
+            cfg["id"] = cursor
             batch.append(cfg)
             cursor += 1
 
@@ -119,7 +149,7 @@ class Manager:
 
         num_evals_done = 0
         # Main loop
-        while cursor < len(data['arch_seq']):
+        while cursor < len(data["arch_seq"]):
             results = self.evaluator.get_finished_evals()
 
             num_received = num_evals_done
@@ -130,10 +160,10 @@ class Manager:
             # Filling available nodes
             if num_received > 0:
                 batch = []
-                for _ in range(min(num_received, len(data['arch_seq']))):
+                for _ in range(min(num_received, len(data["arch_seq"]))):
                     cfg = self.problem.space.copy()
-                    cfg['arch_seq'] = data['arch_seq'][cursor]
-                    cfg['id'] = cursor
+                    cfg["arch_seq"] = data["arch_seq"][cursor]
+                    cfg["id"] = cursor
                     batch.append(cfg)
                     cursor += 1
                 self.evaluator.add_eval_batch(batch)
@@ -156,22 +186,24 @@ class Manager:
 
     @staticmethod
     def _base_parser():
-        parser = argparse.ArgumentParser(conflict_handler='resolve')
-        parser.add_argument("--problem",
-                            help="Module path to the Problem instance you want to use for the post-training (e.g. deephyper.benchmark.hps.polynome2.Problem)."
-                            )
-        parser.add_argument("--fbest",
-                            help="Path to the 'json' file containing the list of best search_spaces. "
-                            )
-        parser.add_argument("--backend",
-                            default='tensorflow',
-                            help="Keras backend module name"
-                            )
-        parser.add_argument('--evaluator',
-                            default='subprocess',
-                            choices=['balsam', 'subprocess'],
-                            help="The evaluator is an object used to run the model."
-                            )
+        parser = argparse.ArgumentParser(conflict_handler="resolve")
+        parser.add_argument(
+            "--problem",
+            help="Module path to the Problem instance you want to use for the post-training (e.g. deephyper.benchmark.hps.polynome2.Problem).",
+        )
+        parser.add_argument(
+            "--fbest",
+            help="Path to the 'json' file containing the list of best search_spaces. ",
+        )
+        parser.add_argument(
+            "--backend", default="tensorflow", help="Keras backend module name"
+        )
+        parser.add_argument(
+            "--evaluator",
+            default="subprocess",
+            choices=["balsam", "subprocess"],
+            help="The evaluator is an object used to run the model.",
+        )
         return parser
 
 

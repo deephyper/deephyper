@@ -1,18 +1,53 @@
-"""Wrapper around the covertype dataset from Scikit-learn:
-https://scikit-learn.org/stable/modules/generated/sklearn.datasets.fetch_covtype.html#sklearn.datasets.fetch_covtype
-"""
 import numpy as np
-from sklearn import datasets
+import openml
+from sklearn.preprocessing import LabelEncoder
 from sklearn import model_selection
 
 
-def load_data(random_state=42, test_size=0.33, valid_size=0.33):
-    # Random State
+def load_data(
+    random_state=42,
+    verbose=False,
+    test_size=0.33,
+    valid_size=0.33,
+    categoricals_to_integers=False,
+):
+    """Load the "Covertype" dataset from OpenML.
+
+    Args:
+        random_state (int, optional): A numpy `RandomState`. Defaults to 42.
+        verbose (bool, optional): Print informations about the dataset. Defaults to False.
+        test_size (float, optional): The proportion of the test dataset out of the whole data. Defaults to 0.33.
+        valid_size (float, optional): The proportion of the train dataset out of the whole data without the test data. Defaults to 0.33.
+        categoricals_to_integers (bool, optional): Convert categoricals features to integer values. Defaults to False.
+
+    Returns:
+        tuple: Numpy arrays as, `(X_train, y_train), (X_valid, y_valid), (X_test, y_test)`.
+    """
     random_state = (
         np.random.RandomState(random_state) if type(random_state) is int else random_state
     )
 
-    X, y = datasets.fetch_covtype(return_X_y=True)
+    dataset = openml.datasets.get_dataset(150)
+
+    if verbose:
+        print(
+            f"This is dataset '{dataset.name}', the target feature is "
+            f"'{dataset.default_target_attribute}'"
+        )
+        print(f"URL: {dataset.url}")
+        print(dataset.description[:500])
+
+    X, y, categorical_indicator, ft_names = dataset.get_data(
+        target=dataset.default_target_attribute
+    )
+
+    X, y = X.to_numpy(), y.to_numpy()
+
+    # encode categoricals as integers
+    if categoricals_to_integers:
+        for (ft_ind, ft_name) in enumerate(ft_names):
+            if categorical_indicator[ft_ind]:
+                X[ft_ind] = LabelEncoder().fit_transform(X[ft_ind])
 
     X_train, X_test, y_train, y_test = model_selection.train_test_split(
         X, y, test_size=test_size, shuffle=True, random_state=random_state
@@ -32,7 +67,7 @@ def test_load_data_covertype():
     import numpy as np
 
     names = ["train", "valid", "test"]
-    data = covertype.load_data(random_state=42)
+    data = covertype.load_data(random_state=42, verbose=True)
     for (X, y), subset_name in zip(data, names):
         print(
             f"X_{subset_name} shape: ",

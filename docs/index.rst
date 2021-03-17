@@ -25,6 +25,7 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
 
     install/local
     install/theta
+    install/thetagpu
     install/cooley
     install/analytics
 
@@ -45,6 +46,7 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
     run/newproblem
     run/local
     run/theta
+    run/thetagpu
     user_guides/choosing_scaling
     user_guides/data_parallelism
     tutorials/job_management
