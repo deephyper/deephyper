@@ -1,6 +1,3 @@
-import inspect
-from collections import OrderedDict
-from inspect import signature
 from pprint import pformat
 
 import ConfigSpace as cs
@@ -62,8 +59,7 @@ def check_hyperparameter(parameter, name=None, default_value=None):
 
 
 class BaseProblem:
-    """Representation of a problem.
-    """
+    """Representation of a problem."""
 
     def __init__(self, config_space=None, seed=42):
         if config_space is None:
