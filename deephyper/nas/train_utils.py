@@ -1,8 +1,6 @@
 from collections import OrderedDict
 
-import numpy as np
 import tensorflow as tf
-from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 from deephyper.search import util
 
@@ -17,8 +15,7 @@ optimizers_keras["nadam"] = tf.keras.optimizers.Nadam
 
 
 def selectOptimizer_keras(name):
-    """Return the optimizer defined by name.
-    """
+    """Return the optimizer defined by name."""
     if optimizers_keras.get(name) == None:
         raise RuntimeError('"{0}" is not a defined optimizer for keras.'.format(name))
     else:
@@ -53,8 +50,16 @@ def mae(y_true, y_pred):
     return tf.keras.metrics.mean_absolute_error(y_true, y_pred)
 
 
+def negmae(y_true, y_pred):
+    return -mae(y_true, y_pred)
+
+
 def mse(y_true, y_pred):
     return tf.keras.metrics.mean_squared_error(y_true, y_pred)
+
+
+def negmse(y_true, y_pred):
+    return -mse(y_true, y_pred)
 
 
 def acc(y_true, y_pred):
@@ -69,8 +74,10 @@ def sparse_perplexity(y_true, y_pred):
 
 metrics = OrderedDict()
 metrics["mean_absolute_error"] = metrics["mae"] = mae
+metrics["negative_mean_absolute_error"] = metrics["negmae"] = negmae
 metrics["r2"] = r2
 metrics["mean_squared_error"] = metrics["mse"] = mse
+metrics["negative_mean_squared_error"] = metrics["negmse"] = negmse
 metrics["accuracy"] = metrics["acc"] = acc
 metrics["sparse_perplexity"] = sparse_perplexity
 
