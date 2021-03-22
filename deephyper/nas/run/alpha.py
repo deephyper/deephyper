@@ -111,7 +111,7 @@ def run(config):
         history = trainer.train(with_pred=with_pred, last_only=last_only)
 
         # save history
-        history_path = "history/"
+        history_path = "history"
         if not (os.path.exists(history_path)):
             create_dir(history_path)
 
@@ -120,6 +120,7 @@ def run(config):
         history_path = os.path.join(
             history_path, f"{now}oo{hash_arch_seq(config['arch_seq'])}.json"
         )
+        logger.info(f"Saving history at: {history_path}")
 
         with open(history_path, "w") as f:
             json.dump(history, f)
