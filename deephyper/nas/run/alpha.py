@@ -111,12 +111,12 @@ def run(config):
         history = trainer.train(with_pred=with_pred, last_only=last_only)
 
         # save history
-        history_path = "history"
+        history_path = os.path.join(config["log_dir"], "history")
         if not (os.path.exists(history_path)):
             create_dir(history_path)
 
         now = datetime.now()
-        now = now.strftime("%d-%b-%Y_%H-%M-%S)")
+        now = now.strftime("%d-%b-%Y_%H-%M-%S")
         history_path = os.path.join(
             history_path, f"{now}oo{hash_arch_seq(config['arch_seq'])}.json"
         )

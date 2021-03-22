@@ -107,11 +107,12 @@ class NaProblem(Problem):
         regression (bool): if ``True`` the problem is defined as a ``regression`` problem, if ``False`` the problem is defined as a ``classification`` problem.
     """
 
-    def __init__(self, seed=None, **kwargs):
+    def __init__(self, seed=None, log_dir=None, **kwargs):
         super().__init__(seed=seed, **kwargs)
 
         self._space["metrics"] = list()
-        self._space["hyperparameters"] = dict(verbose=1)
+        self._space["hyperparameters"] = dict(verbose=0)
+        self._space["log_dir"] = log_dir
 
     def __repr__(self):
 
