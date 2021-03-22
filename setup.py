@@ -46,7 +46,6 @@ REQUIRED = [
     "keras",
     "deap",  # GA search
     # nas
-    "gym",
     "networkx",
     "joblib>=0.10.3",
     "pydot",
