@@ -1,5 +1,7 @@
+import json
 import os
 import traceback
+from datetime import datetime
 
 import numpy as np
 import tensorflow as tf
@@ -9,6 +11,8 @@ from deephyper.search import util
 from ..trainer.train_valid import TrainerTrainValid
 from .util import (
     compute_objective,
+    create_dir,
+    hash_arch_seq,
     load_config,
     preproc_trainer,
     setup_data,
@@ -105,6 +109,20 @@ def run(config):
         last_only = last_only and not cb_requires_valid
 
         history = trainer.train(with_pred=with_pred, last_only=last_only)
+
+        # save history
+        history_path = "history/"
+        if not (os.path.exists(history_path)):
+            create_dir(history_path)
+
+        now = datetime.now()
+        now = now.strftime("%d-%b-%Y_%H-%M-%S)")
+        history_path = os.path.join(
+            history_path, f"{now}oo{hash_arch_seq(config['arch_seq'])}.json"
+        )
+
+        with open(history_path, "w") as f:
+            json.dump(history, f)
 
         result = compute_objective(config["objective"], history)
     else:
