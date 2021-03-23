@@ -31,7 +31,7 @@ echo "IP Head: $ip_head"
 echo "Starting HEAD at $head_node"
 ssh -tt $head_node_ip "source $ACTIVATE_PYTHON_ENV; \
     ray start --head --node-ip-address=$head_node_ip --port=$port \
-    --num-cpus $CPUS_PER_TASK --num-gpus $GPUS_PER_TASK --block" &
+    --num-cpus $CPUS_PER_NODE --num-gpus $GPUS_PER_NODE --block" &
 
 # optional, though may be useful in certain versions of Ray < 1.0.
 sleep 10
