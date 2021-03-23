@@ -9,7 +9,7 @@ def add_subparser(subparsers):
     function_to_call = main
 
     subparser = subparsers.add_parser(
-        subparser_name, help='Tool to init an hyper-parameter search package or an hyper-parameter search problem folder.')
+        subparser_name, help='Tool to init an hyper-parameter search package or a neural architecture search problem folder.')
 
     subparser.add_argument('mode', type=str, choices=['nas', 'hps'], help='NAS or HPS problem')
     subparser.add_argument('name', type=str, help='Name of the problem directory to create')
