@@ -6,6 +6,10 @@
 
 mkdir {{ workflow }} && cd {{ workflow }}
 
+ACTIVATE_PYTHON_ENV="{{ activation_script }}"
+echo "Script to activate Python env: $ACTIVATE_PYTHON_ENV"
+source $ACTIVATE_PYTHON_ENV
+
 {{ script_launch_ray_cluster }}
 
 deephyper {{ mode }} {{ search }} --evaluator ray --ray-address auto \

@@ -4,11 +4,8 @@
 CPUS_PER_NODE=8
 GPUS_PER_NODE=8
 
-# Script to launch Ray cluster
-ACTIVATE_PYTHON_ENV="{{ activation_script }}"
-echo "Script to activate Python env: $ACTIVATE_PYTHON_ENV"
-
 {% raw %}
+# Script to launch Ray cluster
 # Getting the node names
 mapfile -t nodes_array -d '\n' < $COBALT_NODEFILE
 

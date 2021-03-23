@@ -2,11 +2,8 @@
 CPUS_PER_NODE=8
 GPUS_PER_NODE=8
 
-# Script to launch Ray cluster
-ACTIVATE_PYTHON_ENV="{{ activation_script }}"
-echo "Script to activate Python env: $ACTIVATE_PYTHON_ENV"
-
 {% raw %}
+# Script to launch Ray cluster
 head_node=$HOSTNAME
 head_node_ip=$(dig $head_node a +short | awk 'FNR==2')
 

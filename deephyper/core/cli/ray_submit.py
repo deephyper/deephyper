@@ -155,7 +155,7 @@ def main(
     # Job submission
     print("Performing job submission...")
     cmd = f"qsub {submission_path}"
-    os.system(f"qsub {submission_path}")
+    os.system(cmd)
 
     banner(f"Success. The search will run at: {'TODO'}")
 
