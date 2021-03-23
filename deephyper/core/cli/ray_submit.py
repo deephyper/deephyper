@@ -3,7 +3,7 @@ Example Usage:
 deephyper ray-submit nas regevo -w combo_test -n 1 -t 30 -A datascience -q full-node --problem nas_big_data.combo.problem.Problem --run deephyper.nas.run.alpha.run --max-evals 8 --num-cpus-per-task 1 --num-gpus-per-task 1 -as myscript.sh
 """
 import os
-import sys
+import stat
 from jinja2 import Template
 from deephyper.search.util import generic_loader, banner
 from deephyper.problem.neuralarchitecture import Problem
@@ -147,6 +147,10 @@ def main(
             )
         )
         print("Created", fp.name)
+
+    # add executable rights
+    st = os.stat(submission_path)
+    os.chmod(submission_path, st.st_mode | stat.S_IEXEC)
 
     # Job submission
     print("Performing job submission...")
