@@ -1,0 +1,16 @@
+#!/bin/bash -x
+#COBALT -A {{ project }}
+#COBALT -n {{ nodes }}
+#COBALT -q {{ queue }}
+#COBALT -t {{ time_minutes }}
+
+mkdir {{ workflow }} && cd {{ workflow }}
+
+{{ script_launch_ray_cluster }}
+
+deephyper {{ mode }} {{ search }} --evaluator ray --ray-address auto \
+    --problem {{ problem }} \
+    --run {{ run }} \
+    --max-evals {{ max_evals }} \
+    --num-cpus-per-task {{ num_cpus_per_task }} \
+    --num-gpus-per-task {{ num_gpus_per_task }}
