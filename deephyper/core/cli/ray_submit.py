@@ -122,9 +122,7 @@ def main(
         template_launch_ray = Template(f.read())
 
     # Render script to launch ray cluster
-    script_launch_ray_cluster = template_launch_ray.render(
-        activation_script=activation_script
-    )
+    script_launch_ray_cluster = template_launch_ray.render()
 
     # Render submission template
     submission_path = os.path.join(current_dir, f"sub_{workflow}.sh")
@@ -144,6 +142,7 @@ def main(
                 num_cpus_per_task=num_cpus_per_task,
                 num_gpus_per_task=num_gpus_per_task,
                 script_launch_ray_cluster=script_launch_ray_cluster,
+                activation_script=activation_script
             )
         )
         print("Created", fp.name)
