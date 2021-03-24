@@ -122,7 +122,7 @@ class RayEvaluator(Evaluator):
 
     def _eval_exec(self, x: dict):
         assert isinstance(x, dict)
-        future = RayFuture(x)
+        future = RayFuture(self._run_function, x)
         return future
 
     @staticmethod
