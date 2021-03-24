@@ -1,8 +1,7 @@
 import logging
-import subprocess
+import traceback
 import time
 from collections import defaultdict, namedtuple
-import sys
 
 import ray
 
@@ -39,6 +38,7 @@ class RayFuture:
                 self._result = ray.get(id_done[0])
                 self._state = "done"
             except Exception:
+                print(traceback.format_exc())
                 self._state = "failed"
         else:
             self._state = "active"
