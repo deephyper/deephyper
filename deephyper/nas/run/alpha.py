@@ -1,23 +1,19 @@
-import json
 import os
 import traceback
-from datetime import datetime
 
 import numpy as np
 import tensorflow as tf
 from deephyper.contrib.callbacks import import_callback
-from deephyper.core.utils import create_dir
-from deephyper.search import util
-
-from deephyper.nas.trainer.train_valid import TrainerTrainValid
 from deephyper.nas.run.util import (
     compute_objective,
-    hash_arch_seq,
     load_config,
     preproc_trainer,
+    save_history,
     setup_data,
     setup_search_space,
 )
+from deephyper.nas.trainer.train_valid import TrainerTrainValid
+from deephyper.search import util
 
 logger = util.conf_logger("deephyper.search.nas.run")
 
@@ -111,20 +107,7 @@ def run(config):
         history = trainer.train(with_pred=with_pred, last_only=last_only)
 
         # save history
-        if not(config.get("log_dir", None) is None):
-            history_path = os.path.join(config["log_dir"], "history")
-            if not (os.path.exists(history_path)):
-                create_dir(history_path)
-
-            now = datetime.now()
-            now = now.strftime("%d-%b-%Y_%H-%M-%S")
-            history_path = os.path.join(
-                history_path, f"{now}oo{hash_arch_seq(config['arch_seq'])}.json"
-            )
-            logger.info(f"Saving history at: {history_path}")
-
-            with open(history_path, "w") as f:
-                json.dump(history, f)
+        save_history(config.get("log_dir", None), history, config)
 
         result = compute_objective(config["objective"], history)
     else:

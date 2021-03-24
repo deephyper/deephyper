@@ -1,8 +1,10 @@
+import json
 import os
+from datetime import datetime
 
 import numpy as np
-
 from deephyper.core.exceptions.problem import WrongProblemObjective
+from deephyper.core.utils import create_dir
 from deephyper.search import util
 
 logger = util.conf_logger("deephyper.search.nas.run")
@@ -181,3 +183,19 @@ def preproc_trainer(config):
 
 def hash_arch_seq(arch_seq: list) -> str:
     return "_".join([str(el) for el in arch_seq])
+
+
+def save_history(log_dir: str, history: dict, config: dict):
+    if not (log_dir is None):
+        history_path = os.path.join(log_dir, "history")
+        if not (os.path.exists(history_path)):
+            create_dir(history_path)
+        now = datetime.now()
+        now = now.strftime("%d-%b-%Y_%H-%M-%S")
+        history_path = os.path.join(
+            history_path, f"{now}oo{hash_arch_seq(config['arch_seq'])}.json"
+        )
+        logger.info(f"Saving history at: {history_path}")
+
+        with open(history_path, "w") as f:
+            json.dump(history, f)
