@@ -1,54 +1,38 @@
 import os
 import traceback
 
-import numpy as np
-import tensorflow as tf
-from deephyper.contrib.callbacks import import_callback
-from deephyper.nas.run.util import (
-    compute_objective,
-    load_config,
-    preproc_trainer,
-    save_history,
-    setup_data,
-    setup_search_space,
-)
-from deephyper.nas.trainer.train_valid import TrainerTrainValid
-from deephyper.search import util
-
-logger = util.conf_logger("deephyper.search.nas.run")
-
-# Default callbacks parameters
-default_callbacks_config = {
-    "EarlyStopping": dict(
-        monitor="val_loss", min_delta=0, mode="min", verbose=0, patience=0
-    ),
-    "ModelCheckpoint": dict(
-        monitor="val_loss",
-        mode="min",
-        save_best_only=True,
-        verbose=1,
-        filepath="model.h5",
-        save_weights_only=False,
-    ),
-    "TensorBoard": dict(
-        log_dir="",
-        histogram_freq=0,
-        batch_size=32,
-        write_graph=False,
-        write_grads=False,
-        write_images=False,
-        update_freq="epoch",
-    ),
-    "CSVLogger": dict(filename="training.csv", append=True),
-    "CSVExtendedLogger": dict(filename="training.csv", append=True),
-    "TimeStopping": dict(),
-}
-
-
 def run(config):
+    # config hash
+    config_hash = get_configuration_hash(config)
+    infos_dir = config.get("log_dir", None)
+
+    # build custom logger for ray
+    log_dir = os.path.join(infos_dir, "logs")
+    create_dir(log_dir)
+    log_subdir = os.path.join(log_dir, config_hash)
+    os.chdir(log_dir)
+    logger = get_logger(__name__)
+
+    import numpy as np
+    import tensorflow as tf
+    from deephyper.contrib.callbacks import import_callback
+    from deephyper.core.utils import create_dir
+    from deephyper.nas.run.util import (
+        compute_objective,
+        default_callbacks_config,
+        get_configuration_hash,
+        get_logger,
+        load_config,
+        preproc_trainer,
+        save_history,
+        setup_data,
+        setup_search_space,
+    )
+    from deephyper.nas.trainer.train_valid import TrainerTrainValid
+
     # Threading configuration
     if os.environ.get("OMP_NUM_THREADS", None) is not None:
-        logger.debug(f"OMP_NUM_THREADS is {os.environ.get('OMP_NUM_THREADS')}")
+        logger.info(f"OMP_NUM_THREADS is {os.environ.get('OMP_NUM_THREADS')}")
         num_intra = int(os.environ.get("OMP_NUM_THREADS"))
         tf.config.threading.set_intra_op_parallelism_threads(num_intra)
         tf.config.threading.set_inter_op_parallelism_threads(2)
@@ -107,7 +91,7 @@ def run(config):
         history = trainer.train(with_pred=with_pred, last_only=last_only)
 
         # save history
-        save_history(config.get("log_dir", None), history, config)
+        save_history(infos_dir, history, config_hash)
 
         result = compute_objective(config["objective"], history)
     else:

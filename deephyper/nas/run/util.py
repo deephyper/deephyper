@@ -1,14 +1,25 @@
 import json
 import os
 from datetime import datetime
+import logging
 
 import numpy as np
 from deephyper.core.exceptions.problem import WrongProblemObjective
 from deephyper.core.utils import create_dir
 from deephyper.search import util
 
-logger = util.conf_logger("deephyper.search.nas.run")
+def get_logger(name: str, file_path :str = "deephyper.log"):
+    # preparing the logger
+    logger = logging.getLogger(name)
 
+    file_handler = logging.FileHandler(file_path)
+    logger.addHandler(file_handler)
+
+    logger.setLevel(logging.INFO)
+
+    return logger
+
+logger = get_logger(__name__)
 
 def load_config(config):
     # ! load functions
@@ -185,17 +196,47 @@ def hash_arch_seq(arch_seq: list) -> str:
     return "_".join([str(el) for el in arch_seq])
 
 
-def save_history(log_dir: str, history: dict, config: dict):
-    if not (log_dir is None):
-        history_path = os.path.join(log_dir, "history")
+def get_configuration_hash(config: dict) -> str:
+    now = datetime.now().strftime("%d-%b-%Y_%H-%M-%S")
+    return f"{now}oo{hash_arch_seq(config['arch_seq'])}.json"
+
+
+
+
+
+def save_history(infos_dir: str, history: dict, config_hash: str):
+    if not (infos_dir is None):
+        history_path = os.path.join(infos_dir, "history")
         if not (os.path.exists(history_path)):
             create_dir(history_path)
-        now = datetime.now()
-        now = now.strftime("%d-%b-%Y_%H-%M-%S")
-        history_path = os.path.join(
-            history_path, f"{now}oo{hash_arch_seq(config['arch_seq'])}.json"
-        )
+        history_path = os.path.join(history_path, config_hash)
         logger.info(f"Saving history at: {history_path}")
 
         with open(history_path, "w") as f:
             json.dump(history, f)
+
+default_callbacks_config = {
+    "EarlyStopping": dict(
+        monitor="val_loss", min_delta=0, mode="min", verbose=0, patience=0
+    ),
+    "ModelCheckpoint": dict(
+        monitor="val_loss",
+        mode="min",
+        save_best_only=True,
+        verbose=1,
+        filepath="model.h5",
+        save_weights_only=False,
+    ),
+    "TensorBoard": dict(
+        log_dir="",
+        histogram_freq=0,
+        batch_size=32,
+        write_graph=False,
+        write_grads=False,
+        write_images=False,
+        update_freq="epoch",
+    ),
+    "CSVLogger": dict(filename="training.csv", append=True),
+    "CSVExtendedLogger": dict(filename="training.csv", append=True),
+    "TimeStopping": dict(),
+}
