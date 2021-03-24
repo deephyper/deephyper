@@ -116,9 +116,10 @@ class RayEvaluator(Evaluator):
         )
 
         self._run_function = ray.remote(
-            num_cpus=self.num_cpus_per_tasks, num_gpus=self.num_gpus_per_tasks
+            num_cpus=self.num_cpus_per_tasks,
+            num_gpus=self.num_gpus_per_tasks,
+            max_calls=1,
         )(self._run_function)
-        # , max_calls=max_calls
 
     def _eval_exec(self, x: dict):
         assert isinstance(x, dict)
