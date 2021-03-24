@@ -6,12 +6,12 @@ from datetime import datetime
 import numpy as np
 import tensorflow as tf
 from deephyper.contrib.callbacks import import_callback
+from deephyper.core.utils import create_dir
 from deephyper.search import util
 
-from ..trainer.train_valid import TrainerTrainValid
-from .util import (
+from deephyper.nas.trainer.train_valid import TrainerTrainValid
+from deephyper.nas.run.util import (
     compute_objective,
-    create_dir,
     hash_arch_seq,
     load_config,
     preproc_trainer,

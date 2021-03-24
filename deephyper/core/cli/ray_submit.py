@@ -5,6 +5,8 @@ deephyper ray-submit nas regevo -w combo_test -n 1 -t 30 -A datascience -q full-
 import os
 import stat
 from jinja2 import Template
+
+from deephyper.core.utils import create_dir
 from deephyper.search.util import generic_loader, banner
 from deephyper.problem.neuralarchitecture import Problem
 from deephyper.problem import BaseProblem
@@ -108,7 +110,6 @@ def main(
         template = Template(f.read())
 
     # Load script to launch ray cluster template
-    current_dir = os.getcwd()
     if nodes > 1:  # mutliple nodes
         launch_ray_path = os.path.join(
             MODULE_PATH, "job-templates-ray", f"{host}.MultiNodesRayCluster.tmpl"
@@ -124,8 +125,15 @@ def main(
     # Render script to launch ray cluster
     script_launch_ray_cluster = template_launch_ray.render()
 
+    # Create workflow directory and move ot it
+    current_dir = os.getcwd()
+    exp_dir = os.path.join(current_dir, workflow)
+    if not (os.path.exists(exp_dir)):
+        create_dir(exp_dir)
+    os.chdir(exp_dir)
+
     # Render submission template
-    submission_path = os.path.join(current_dir, f"sub_{workflow}.sh")
+    submission_path = os.path.join(exp_dir, f"sub_{workflow}.sh")
     with open(submission_path, "w") as fp:
         fp.write(
             template.render(
@@ -178,22 +186,3 @@ def validate(problem, run, workflow):
     run = generic_loader(run, "run")
     assert callable(run), f"{run} must be a a callable"
     print("OK", flush=True)
-
-
-def render_files(mode, prob_name):
-    package = os.path.basename(os.getcwd())
-    print("package: ", package)
-    templates_pattern = os.path.join(
-        os.path.dirname(__file__), "templates", mode, "*.tmpl"
-    )
-    for template_name in glob.glob(templates_pattern):
-        template = Template(open(template_name).read())
-        py_name = os.path.basename(template_name.rstrip(".tmpl"))
-        with open(os.path.join(prob_name, py_name), "w") as fp:
-            fp.write(
-                template.render(
-                    pckg=package,
-                    pb_folder=prob_name,
-                )
-            )
-            print("Created", fp.name)

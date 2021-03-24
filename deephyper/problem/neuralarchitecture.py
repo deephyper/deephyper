@@ -1,4 +1,3 @@
-import inspect
 from collections import OrderedDict
 from inspect import signature
 from pprint import pformat

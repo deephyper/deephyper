@@ -179,14 +179,5 @@ def preproc_trainer(config):
     return last_only, with_pred
 
 
-def create_dir(path: str):
-    try:
-        os.mkdir(path)
-    except OSError:
-        print("Creation of the directory %s failed" % path)
-    else:
-        print("Successfully created the directory %s" % path)
-
-
 def hash_arch_seq(arch_seq: list) -> str:
     return "_".join([str(el) for el in arch_seq])
