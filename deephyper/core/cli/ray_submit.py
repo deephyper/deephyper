@@ -139,7 +139,6 @@ def main(
             template.render(
                 mode=mode,
                 search=search,
-                workflow=workflow,
                 problem=problem,
                 run=run,
                 time_minutes=time_minutes,
