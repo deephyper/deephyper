@@ -163,7 +163,7 @@ def main(
     cmd = f"qsub {submission_path}"
     os.system(cmd)
 
-    banner(f"Success. The search will run at: {'TODO'}")
+    banner(f"Success. The search will run at: {exp_dir}")
 
 
 def validate(problem, run, workflow):
