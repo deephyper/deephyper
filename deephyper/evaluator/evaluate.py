@@ -123,6 +123,7 @@ class Evaluator:
             "threadPool",
             "__mpiPool",
             "ray",
+            "rayhorovod"
         ]
 
         if not method in available_methods:
