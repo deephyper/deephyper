@@ -161,6 +161,17 @@ class Evaluator:
                 num_workers=num_workers,
                 **kwargs,
             )
+        elif method == "rayhorovod":
+            from deephyper.evaluator._ray_horovod_evaluator import RayHorovodEvaluator
+
+            Eval = RayHorovodEvaluator(
+                run_function,
+                cache_key=cache_key,
+                ray_address=ray_address,
+                ray_password=ray_password,
+                num_workers=num_workers,
+                **kwargs,
+            )
 
         # Override the number of workers if passed as an argument
         if not (num_workers is None) and type(num_workers) is int:

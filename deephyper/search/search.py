@@ -135,7 +135,14 @@ class Search:
         parser.add_argument(
             "--evaluator",
             default="ray",
-            choices=["balsam", "ray", "subprocess", "processPool", "threadPool"],
+            choices=[
+                "balsam",
+                "ray",
+                "rayhorovod",
+                "subprocess",
+                "processPool",
+                "threadPool",
+            ],
             help="The evaluator is an object used to evaluate models.",
         )
         parser.add_argument(
