@@ -73,6 +73,7 @@ def run(config):
     load_config(config)
 
     # Scale batch size and learning rate according to the number of ranks
+    initial_lr = config[a.hyperparameters][a.learning_rate]
     batch_size = config[a.hyperparameters][a.batch_size] * hvd.size()
     learning_rate = config[a.hyperparameters][a.learning_rate] * hvd.size()
     logger.info(
@@ -115,7 +116,7 @@ def run(config):
             # accuracy. Scale the learning rate `lr = 1.0` ---> `lr = 1.0 * hvd.size()` during
             # the first five epochs. See https://arxiv.org/abs/1706.02677 for details.
             #! initial_lr argument is not available in horovod==0.19.0
-            hvd.callbacks.LearningRateWarmupCallback(warmup_epochs=5, verbose=0),
+            hvd.callbacks.LearningRateWarmupCallback(warmup_epochs=5, verbose=0, initial_lr=initial_lr),
         ]
 
         cb_requires_valid = False  # Callbacks requires validation data
