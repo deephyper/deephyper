@@ -12,7 +12,7 @@ source $ACTIVATE_PYTHON_ENV
 
 {{ script_launch_ray_cluster }}
 
-deephyper {{ mode }} {{ search }} --evaluator ray --ray-address auto \
+deephyper {{ mode }} {{ search }} --evaluator {{ evaluator }} --ray-address auto \
     --problem {{ problem }} \
     --run {{ run }} \
     --max-evals {{ max_evals }} \

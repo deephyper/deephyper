@@ -64,6 +64,13 @@ def add_subparser(subparsers):
         default=1,
         help="Number of GPUs (GPU ressources defined with Ray) per task",
     )
+    subparser.add_argument(
+        "-hvd",
+        "--horovod",
+        default=False,
+        action="store_true",
+        help="Boolean argument to use horovod for the evaluation of DNNs.",
+    )
 
     subparser.set_defaults(func=function_to_call)
 
@@ -82,6 +89,7 @@ def main(
     num_cpus_per_task,
     num_gpus_per_task,
     activation_script,
+    horovod,
     **kwargs,
 ):
     """Create & submit the DH search via Balsam"""
@@ -104,7 +112,9 @@ def main(
         exit()
 
     # Load submission template
-    job_template_path = os.path.join(MODULE_PATH, "job-templates-ray", f"{host}.submission.tmpl")
+    job_template_path = os.path.join(
+        MODULE_PATH, "job-templates-ray", f"{host}.submission.tmpl"
+    )
 
     with open(job_template_path, "r") as f:
         template = Template(f.read())
@@ -132,6 +142,12 @@ def main(
         create_dir(exp_dir)
     os.chdir(exp_dir)
 
+    # resolve the evaluator to use
+    if horovod:
+        evaluator = "rayhorovod"
+    else:
+        evaluator = "ray"
+
     # Render submission template
     submission_path = os.path.join(exp_dir, f"sub_{workflow}.sh")
     with open(submission_path, "w") as fp:
@@ -139,6 +155,7 @@ def main(
             template.render(
                 mode=mode,
                 search=search,
+                evaluator=evaluator,
                 problem=problem,
                 run=run,
                 time_minutes=time_minutes,
@@ -149,7 +166,7 @@ def main(
                 num_cpus_per_task=num_cpus_per_task,
                 num_gpus_per_task=num_gpus_per_task,
                 script_launch_ray_cluster=script_launch_ray_cluster,
-                activation_script=activation_script
+                activation_script=activation_script,
             )
         )
         print("Created", fp.name)
