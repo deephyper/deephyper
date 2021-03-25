@@ -14,6 +14,7 @@ from .util import (
     compute_objective,
     load_config,
     preproc_trainer,
+    save_history,
     setup_data,
     setup_search_space,
 )
@@ -116,7 +117,9 @@ def run(config):
             # accuracy. Scale the learning rate `lr = 1.0` ---> `lr = 1.0 * hvd.size()` during
             # the first five epochs. See https://arxiv.org/abs/1706.02677 for details.
             #! initial_lr argument is not available in horovod==0.19.0
-            hvd.callbacks.LearningRateWarmupCallback(warmup_epochs=5, verbose=0, initial_lr=initial_lr),
+            hvd.callbacks.LearningRateWarmupCallback(
+                warmup_epochs=5, verbose=0, initial_lr=initial_lr
+            ),
         ]
 
         cb_requires_valid = False  # Callbacks requires validation data
@@ -145,6 +148,10 @@ def run(config):
         last_only = last_only and not cb_requires_valid
 
         history = trainer.train(with_pred=with_pred, last_only=last_only)
+
+        # save history
+        if hvd.rank() == 0:
+            save_history(config.get("log_dir", None), history, config)
 
         result = compute_objective(config["objective"], history)
     else:
