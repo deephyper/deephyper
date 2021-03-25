@@ -18,7 +18,7 @@ class RayHorovodFuture(RayFuture):
     def __init__(self, func, x, num_slots):
         self.num_slots = num_slots
         self.executor = self.start_executor()
-        self.id_res = self.compute_objective.run_remote(func, x)
+        self.id_res = self.executor.run_remote(func, x)
         self._state = "active"
         self._result = None
 
