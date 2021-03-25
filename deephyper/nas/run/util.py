@@ -198,6 +198,7 @@ def save_history(log_dir: str, history: dict, config: dict):
         logger.info(f"Saving history at: {history_path}")
 
         # convert numpy types to json compatible types
+        print(history)
         for k,v in history.items():
             if type(v) is np.ndarray:
                 if v.dtype == np.int32 or v.dtype == np.int64:
