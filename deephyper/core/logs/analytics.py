@@ -2,7 +2,7 @@ import argparse
 import os
 import sys
 
-from deephyper.core.logs import json, parsing
+from deephyper.core.logs import json, parsing, csv
 from deephyper.core.plot import hps, multi, post_train, single, quick_csv_plot
 
 
@@ -16,6 +16,7 @@ def create_parser():
     modules = [
         parsing,  # parsing deephyper.log
         json,  # operation on json
+        csv,
         single,  # generate dh-analytics single notebook
         multi,  # generate dh-analytics multi notebook
         post_train,
