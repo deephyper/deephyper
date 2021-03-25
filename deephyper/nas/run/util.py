@@ -199,6 +199,7 @@ def save_history(log_dir: str, history: dict, config: dict):
 
         # convert numpy types to json compatible types
         for k,v in history.items():
+            print(k, v, type(v))
             if type(v) is np.ndarray:
                 history[k] = v.tolist()
             elif type(v) is np.float32 or type(v) is np.float64:
