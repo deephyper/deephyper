@@ -198,7 +198,8 @@ def validate(problem, run, workflow):
     assert isinstance(prob, (Problem, BaseProblem)), f"{prob} is not a Problem instance"
     print("OK", flush=True)
 
-    print("Validating run...", end="", flush=True)
-    run = generic_loader(run, "run")
-    assert callable(run), f"{run} must be a a callable"
+    #! issue if some packages can't be imported from login nodes...
+    # print("Validating run...", end="", flush=True)
+    # run = generic_loader(run, "run")
+    # assert callable(run), f"{run} must be a a callable"
     print("OK", flush=True)
