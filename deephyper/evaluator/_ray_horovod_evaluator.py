@@ -16,6 +16,7 @@ class RayHorovodFuture(RayFuture):
     FAIL_RETURN_VALUE = Evaluator.FAIL_RETURN_VALUE
 
     def __init__(self, func, x, num_slots):
+        self.num_slots = num_slots
         self.executor = self.start_executor()
         self.id_res = self.compute_objective.run_remote(func, x)
         self._state = "active"
@@ -25,9 +26,10 @@ class RayHorovodFuture(RayFuture):
         # Ray executor settings
         setting = RayExecutor.create_settings(timeout_s=100)
         num_hosts = 1  # number of machine to use
-        num_slots = 2  # number of workers to use on each machine
+        num_slots = self.num_slots  # number of workers to use on each machine
         cpus_per_slot = 1  # number of cores to allocate to each worker
         gpus_per_slot = 1  # number of GPUs to allocate to each worker
+        use_gpus = gpus_per_slot > 0
 
         # Start num_hosts * num_slots actors on the cluster
         # https://horovod.readthedocs.io/en/stable/api.html#horovod-ray-api
