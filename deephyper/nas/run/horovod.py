@@ -63,7 +63,8 @@ def run(config):
         tf.config.threading.set_inter_op_parallelism_threads(2)
 
     if os.environ.get("CUDA_VISIBLE_DEVICES") is not None:
-        os.environ["CUDA_VISIBLE_DEVICES"] = str(hvd.rank())
+        devices = os.environ.get("CUDA_VISIBLE_DEVICES").split(",")
+        os.environ["CUDA_VISIBLE_DEVICES"] = devices[hvd.rank()]
 
     config["seed"]
     seed = config["seed"]
