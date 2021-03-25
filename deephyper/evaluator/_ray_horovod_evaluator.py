@@ -29,7 +29,7 @@ class RayHorovodFuture(RayFuture):
         num_slots = self.num_slots  # number of workers to use on each machine
         cpus_per_slot = 1  # number of cores to allocate to each worker
         gpus_per_slot = 1  # number of GPUs to allocate to each worker
-        use_gpus = gpus_per_slot > 0
+        use_gpu = gpus_per_slot > 0
 
         # Start num_hosts * num_slots actors on the cluster
         # https://horovod.readthedocs.io/en/stable/api.html#horovod-ray-api
@@ -39,6 +39,7 @@ class RayHorovodFuture(RayFuture):
             num_slots=num_slots,
             cpus_per_slot=cpus_per_slot,
             gpus_per_slot=gpus_per_slot,
+            use_gpu=use_gpu
         )
 
         # Launch the Ray actors on each machine
