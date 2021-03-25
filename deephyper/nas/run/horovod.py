@@ -61,6 +61,9 @@ def run(config):
         tf.config.threading.set_intra_op_parallelism_threads(num_intra)
         tf.config.threading.set_inter_op_parallelism_threads(2)
 
+    if os.environ.get("CUDA_VISIBLE_DEVICES") is not None:
+        os.environ["CUDA_VISIBLE_DEVICES"] = hvd.rank()
+
     config["seed"]
     seed = config["seed"]
     if seed is not None:
