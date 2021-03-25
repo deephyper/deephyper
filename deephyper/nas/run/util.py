@@ -6,6 +6,7 @@ import numpy as np
 from deephyper.core.exceptions.problem import WrongProblemObjective
 from deephyper.core.utils import create_dir
 from deephyper.search import util
+from deephyper.evaluator.evaluate import Encoder
 
 logger = util.conf_logger("deephyper.search.nas.run")
 
@@ -198,17 +199,17 @@ def save_history(log_dir: str, history: dict, config: dict):
         logger.info(f"Saving history at: {history_path}")
 
         # convert numpy types to json compatible types
-        print(history)
-        for k,v in history.items():
-            if type(v) is np.ndarray:
-                if v.dtype == np.int32 or v.dtype == np.int64:
-                    history[k] = v.astype(int).tolist()
-                elif v.dtype == np.float32 or v.dtype == np.float64:
-                    history[k] = v.astype(float).tolist()
-            elif type(v) is np.float32 or type(v) is np.float64:
-                history[k] = float(v)
-            elif type(v) is np.int32 or type(v) is np.int64:
-                history[k] = int(v)
+        # print(history)
+        # for k,v in history.items():
+        #     if type(v) is np.ndarray or:
+        #         if v.dtype == np.int32 or v.dtype == np.int64:
+        #             history[k] = v.astype(int).tolist()
+        #         elif v.dtype == np.float32 or v.dtype == np.float64:
+        #             history[k] = v.astype(float).tolist()
+        #     elif type(v) is np.float32 or type(v) is np.float64:
+        #         history[k] = float(v)
+        #     elif type(v) is np.int32 or type(v) is np.int64:
+        #         history[k] = int(v)
 
         with open(history_path, "w") as f:
-            json.dump(history, f)
+            json.dump(history, f, cls=Encoder)
