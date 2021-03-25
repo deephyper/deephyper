@@ -1,4 +1,6 @@
 import os
+import time
+import random
 
 import horovod.tensorflow as hvd
 
@@ -14,5 +16,8 @@ def run(config: dict) -> float:
         " - CUDA_VISIBLE: ",
         os.environ.get("CUDA_VISIBLE_DEVICES"),
     )
+
+    duration = random.choice([3,4,5])
+    time.sleep(duration)
 
     return 0
