@@ -197,5 +197,14 @@ def save_history(log_dir: str, history: dict, config: dict):
         )
         logger.info(f"Saving history at: {history_path}")
 
+        # convert numpy types to json compatible types
+        for k,v in history.items():
+            if type(v) is np.ndarray:
+                history[k] = v.tolist()
+            elif type(v) is np.float32 or type(v) is np.float64:
+                history[k] = float(v)
+            elif type(v) is np.int32 or type(v) is np.int64:
+                history[k] = int(v)
+
         with open(history_path, "w") as f:
             json.dump(history, f)
