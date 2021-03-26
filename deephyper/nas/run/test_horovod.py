@@ -8,7 +8,9 @@ import horovod.tensorflow as hvd
 def run(config: dict) -> float:
     """Using the stateless `run` method, a function can take in any args or kwargs"""
 
+    print("hvd init...", end="", flush=True)
     hvd.init()
+    print("OK", flush=True)
 
     print(
         "hvd rank: ",
@@ -18,6 +20,8 @@ def run(config: dict) -> float:
     )
 
     duration = random.choice([3,4,5])
+    print(f"sleep {duration}...", end="", flush=True)
     time.sleep(duration)
+    print("OK", flush=True)
 
     return 0
