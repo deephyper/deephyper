@@ -47,6 +47,23 @@ class RayHorovodFuture(RayFuture):
         executor.start()
         return executor
 
+    def _poll(self):
+        if not self._state == "active":
+            return
+
+        id_done, _ = ray.wait([self.id_res], num_returns=1, timeout=0.001)
+
+        if len(id_done) == 1:
+            try:
+                self._result = ray.get(id_done[0])
+                self.executor.shutdown()
+                self._state = "done"
+            except Exception:
+                print(traceback.format_exc())
+                self._state = "failed"
+        else:
+            self._state = "active"
+
 
 class RayHorovodEvaluator(Evaluator):
     """TODO
