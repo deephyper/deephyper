@@ -48,13 +48,6 @@ default_callbacks_config = {
 
 
 def run(config):
-    # Threading configuration
-    # if os.environ.get("OMP_NUM_THREADS", None) is not None:
-    #     logger.debug(f"OMP_NUM_THREADS is {os.environ.get('OMP_NUM_THREADS')}")
-    #     num_intra = int(os.environ.get("OMP_NUM_THREADS"))
-    #     tf.config.threading.set_intra_op_parallelism_threads(num_intra)
-    #     tf.config.threading.set_inter_op_parallelism_threads(2)
-
     distributed_strategy = tf.distribute.MirroredStrategy()
     n_replicas = distributed_strategy.num_replicas_in_sync
 
@@ -66,9 +59,8 @@ def run(config):
     load_config(config)
 
     # Scale batch size and learning rate according to the number of ranks
-    # initial_lr = config[a.hyperparameters][a.learning_rate]
     batch_size = config[a.hyperparameters][a.batch_size] * n_replicas
-    learning_rate = config[a.hyperparameters][a.learning_rate] * n_replicas
+    learning_rate = config[a.hyperparameters][a.learning_rate]
     logger.info(
         f"Scaled: 'batch_size' from {config[a.hyperparameters][a.batch_size]} to {batch_size} "
     )

@@ -42,6 +42,7 @@ default_callbacks_config = {
     "CSVLogger": dict(filename="training.csv", append=True),
     "CSVExtendedLogger": dict(filename="training.csv", append=True),
     "TimeStopping": dict(),
+    "ReduceLROnPlateau":dict(monitor="val_loss", mode="auto", verbose=0, patience=5)
 }
 
 
