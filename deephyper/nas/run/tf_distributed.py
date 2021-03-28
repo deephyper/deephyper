@@ -49,11 +49,11 @@ default_callbacks_config = {
 
 def run(config):
     # Threading configuration
-    if os.environ.get("OMP_NUM_THREADS", None) is not None:
-        logger.debug(f"OMP_NUM_THREADS is {os.environ.get('OMP_NUM_THREADS')}")
-        num_intra = int(os.environ.get("OMP_NUM_THREADS"))
-        tf.config.threading.set_intra_op_parallelism_threads(num_intra)
-        tf.config.threading.set_inter_op_parallelism_threads(2)
+    # if os.environ.get("OMP_NUM_THREADS", None) is not None:
+    #     logger.debug(f"OMP_NUM_THREADS is {os.environ.get('OMP_NUM_THREADS')}")
+    #     num_intra = int(os.environ.get("OMP_NUM_THREADS"))
+    #     tf.config.threading.set_intra_op_parallelism_threads(num_intra)
+    #     tf.config.threading.set_inter_op_parallelism_threads(2)
 
     distributed_strategy = tf.distribute.MirroredStrategy()
     n_replicas = distributed_strategy.num_replicas_in_sync
