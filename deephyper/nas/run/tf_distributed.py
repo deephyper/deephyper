@@ -43,6 +43,7 @@ default_callbacks_config = {
     "CSVLogger": dict(filename="training.csv", append=True),
     "CSVExtendedLogger": dict(filename="training.csv", append=True),
     "TimeStopping": dict(),
+    "ReduceLROnPlateau":dict(monitor="val_loss", mode="auto", verbose=0, patience=5)
 }
 
 
@@ -82,52 +83,50 @@ def run(config):
     search_space = setup_search_space(config, input_shape, output_shape, seed=seed)
 
     model_created = False
-    try:
-        with distributed_strategy.scope():
+    with distributed_strategy.scope():
+        try:
             model = search_space.create_model()
-        model_created = True
-    except:
-        logger.info("Error: Model creation failed...")
-        logger.info(traceback.format_exc())
+            model_created = True
+        except:
+            logger.info("Error: Model creation failed...")
+            logger.info(traceback.format_exc())
+        else:
+            # Setup callbacks
+            callbacks = []
+            cb_requires_valid = False  # Callbacks requires validation data
+            callbacks_config = config["hyperparameters"].get("callbacks")
+            if callbacks_config is not None:
+                for cb_name, cb_conf in callbacks_config.items():
+                    if cb_name in default_callbacks_config:
+                        default_callbacks_config[cb_name].update(cb_conf)
+
+                        # Special dynamic parameters for callbacks
+                        if cb_name == "ModelCheckpoint":
+                            default_callbacks_config[cb_name][
+                                "filepath"
+                            ] = f'best_model_{config["id"]}.h5'
+
+                        # Import and create corresponding callback
+                        Callback = import_callback(cb_name)
+                        callbacks.append(Callback(**default_callbacks_config[cb_name]))
+
+                        if cb_name in ["EarlyStopping"]:
+                            cb_requires_valid = "val" in cb_conf["monitor"].split("_")
+                    else:
+                        logger.error(f"'{cb_name}' is not an accepted callback!")
+            trainer = TrainerTrainValid(config=config, model=model)
+            trainer.callbacks.extend(callbacks)
+
+            last_only, with_pred = preproc_trainer(config)
+            last_only = last_only and not cb_requires_valid
 
     if model_created:
+            history = trainer.train(with_pred=with_pred, last_only=last_only)
 
-        # Setup callbacks
-        callbacks = []
-        cb_requires_valid = False  # Callbacks requires validation data
-        callbacks_config = config["hyperparameters"].get("callbacks")
-        if callbacks_config is not None:
-            for cb_name, cb_conf in callbacks_config.items():
-                if cb_name in default_callbacks_config:
-                    default_callbacks_config[cb_name].update(cb_conf)
+            # save history
+            save_history(config.get("log_dir", None), history, config)
 
-                    # Special dynamic parameters for callbacks
-                    if cb_name == "ModelCheckpoint":
-                        default_callbacks_config[cb_name][
-                            "filepath"
-                        ] = f'best_model_{config["id"]}.h5'
-
-                    # Import and create corresponding callback
-                    Callback = import_callback(cb_name)
-                    callbacks.append(Callback(**default_callbacks_config[cb_name]))
-
-                    if cb_name in ["EarlyStopping"]:
-                        cb_requires_valid = "val" in cb_conf["monitor"].split("_")
-                else:
-                    logger.error(f"'{cb_name}' is not an accepted callback!")
-        with distributed_strategy.scope():
-            trainer = TrainerTrainValid(config=config, model=model)
-        trainer.callbacks.extend(callbacks)
-
-        last_only, with_pred = preproc_trainer(config)
-        last_only = last_only and not cb_requires_valid
-
-        history = trainer.train(with_pred=with_pred, last_only=last_only)
-
-        # save history
-        save_history(config.get("log_dir", None), history, config)
-
-        result = compute_objective(config["objective"], history)
+            result = compute_objective(config["objective"], history)
     else:
         # penalising actions if model cannot be created
         result = -1
