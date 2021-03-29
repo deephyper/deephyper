@@ -113,8 +113,8 @@ def main(
     # Creation of the submission script
 
     # Detection of the host
-    # hostname = os.environ.get("HOSTNAME", None)
-    hostname = "thetagpusn1"
+    hostname = os.environ.get("HOSTNAME", None)
+    # hostname = "thetagpusn1"
     host = None
     if "thetagpu" in hostname:
         host = "thetagpu"
@@ -191,7 +191,7 @@ def main(
     # Job submission
     print("Performing job submission...")
     cmd = f"qsub {submission_path}"
-    # os.system(cmd)
+    os.system(cmd)
 
     banner(f"Success. The search will run at: {exp_dir}")
 
