@@ -109,8 +109,8 @@ def run(config):
     # free GPU memory
     avail_devices = os.environ.get("CUDA_VISIBLE_DEVICES")
     if avail_devices is not None:
-        for device_id in avail_devices.split(","):
-            context = cuda.current_context(int(device_id))
+        for i, device_id in enumerate(avail_devices.split(",")):
+            context = cuda.current_context(i)
             context.reset()
 
     return result
