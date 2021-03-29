@@ -4,6 +4,7 @@ deephyper ray-submit nas regevo -w combo_test -n 1 -t 30 -A datascience -q full-
 """
 import os
 import stat
+import socket
 from jinja2 import Template
 
 from deephyper.core.utils import create_dir
@@ -115,7 +116,7 @@ def main(
     # Creation of the submission script
 
     # Detection of the host
-    hostname = os.environ.get("HOSTNAME", None)
+    hostname =  socket.gethostname()
     # hostname = "thetagpusn1"
     host = None
     if "thetagpu" in hostname:
