@@ -22,6 +22,15 @@ logger = util.conf_logger("deephyper.search.nas.run")
 
 
 def run(config):
+
+    physical_devices = tf.config.list_physical_devices("GPU")
+    try:
+        for i in range(len(physical_devices)):
+            tf.config.experimental.set_memory_growth(physical_devices[i], True)
+    except:
+        # Invalid device or cannot modify virtual devices once initialized.
+        pass
+
     distributed_strategy = tf.distribute.MirroredStrategy()
     n_replicas = distributed_strategy.num_replicas_in_sync
 
@@ -105,12 +114,5 @@ def run(config):
         result = -1
     if result < -10 or np.isnan(result):
         result = -10
-
-    # free GPU memory
-    avail_devices = os.environ.get("CUDA_VISIBLE_DEVICES")
-    if avail_devices is not None:
-        for i, device_id in enumerate(avail_devices.split(",")):
-            context = cuda.current_context(i)
-            context.reset()
 
     return result
