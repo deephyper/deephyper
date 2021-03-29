@@ -93,6 +93,6 @@ def run(config):
     else:
         # penalising actions if model cannot be created
         result = -1
-    if result < -10:
+    if result < -10 or np.isnan(result):
         result = -10
     return result
