@@ -72,7 +72,19 @@ def add_subparser(subparsers):
         help="Boolean argument to use horovod for the evaluation of DNNs.",
     )
 
+    # other search arugments
+    subparser.add_argument("--n-jobs", type=int, default=None)
+
     subparser.set_defaults(func=function_to_call)
+
+def generate_other_arguments(func, **kwargs):
+    cl_format = ""
+    for k,v in kwargs.items():
+        arg = "--" + "-".join(k.split("_"))
+        val = str(v)
+        arg_val = f"{arg}={val} "
+        cl_format += arg_val
+    return cl_format
 
 
 def main(
@@ -167,6 +179,7 @@ def main(
                 num_gpus_per_task=num_gpus_per_task,
                 script_launch_ray_cluster=script_launch_ray_cluster,
                 activation_script=activation_script,
+                other_search_arguments=generate_other_arguments(**kwargs)
             )
         )
         print("Created", fp.name)
@@ -178,7 +191,7 @@ def main(
     # Job submission
     print("Performing job submission...")
     cmd = f"qsub {submission_path}"
-    os.system(cmd)
+    # os.system(cmd)
 
     banner(f"Success. The search will run at: {exp_dir}")
 
