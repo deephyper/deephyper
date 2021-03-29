@@ -11,40 +11,13 @@ from deephyper.nas.run.util import (
     save_history,
     setup_data,
     setup_search_space,
+    default_callbacks_config
 )
 from deephyper.nas.trainer.train_valid import TrainerTrainValid
 from deephyper.search import util
 import deephyper.nas.arch as a
 
 logger = util.conf_logger("deephyper.search.nas.run")
-
-# Default callbacks parameters
-default_callbacks_config = {
-    "EarlyStopping": dict(
-        monitor="val_loss", min_delta=0, mode="min", verbose=0, patience=0
-    ),
-    "ModelCheckpoint": dict(
-        monitor="val_loss",
-        mode="min",
-        save_best_only=True,
-        verbose=1,
-        filepath="model.h5",
-        save_weights_only=False,
-    ),
-    "TensorBoard": dict(
-        log_dir="",
-        histogram_freq=0,
-        batch_size=32,
-        write_graph=False,
-        write_grads=False,
-        write_images=False,
-        update_freq="epoch",
-    ),
-    "CSVLogger": dict(filename="training.csv", append=True),
-    "CSVExtendedLogger": dict(filename="training.csv", append=True),
-    "TimeStopping": dict(),
-    "ReduceLROnPlateau":dict(monitor="val_loss", mode="auto", verbose=0, patience=5)
-}
 
 
 def run(config):
@@ -97,6 +70,13 @@ def run(config):
                             default_callbacks_config[cb_name][
                                 "filepath"
                             ] = f'best_model_{config["id"]}.h5'
+
+                        # replace patience hyperparameter
+                        if "patience" in default_callbacks_config[cb_name]:
+                            patience = config["hyperparameters"].get(f"patience_{cb_name}")
+                            if patience is not None:
+                                default_callbacks_config[cb_name]["patience"] = patience
+
 
                         # Import and create corresponding callback
                         Callback = import_callback(cb_name)
