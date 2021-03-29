@@ -221,8 +221,6 @@ class AgEBO(RegularizedEvolution):
         sample = np.random.choice(elements, 1)[0]
 
         child_arch[i] = sample
-        # cfg = self.pb_dict.copy()
-        # cfg["arch_seq"] = child_arch
         return child_arch
 
 
