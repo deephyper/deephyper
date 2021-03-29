@@ -238,15 +238,16 @@ class NaProblem(Problem):
             loss (str|callable|list): a string indicating a specific loss function.
             weights (list): Optional.
         """
-        if not type(loss) is str and not callable(loss) and not type(loss) is dict:
-            raise RuntimeError(
-                f"The loss should be either a str, dict or a callable when it's of type {type(loss)}"
-            )
+        if not(type(loss) is csh.CategoricalHyperparameter):
+            if not type(loss) is str and not callable(loss) and not type(loss) is dict:
+                raise RuntimeError(
+                    f"The loss should be either a str, dict or a callable when it's of type {type(loss)}"
+                )
 
-        if type(loss) is dict and weights is not None and len(loss) != len(weights):
-            raise RuntimeError(
-                f"The losses list (len={len(loss)}) and the weights list (len={len(weights)}) should be of same length!"
-            )
+            if type(loss) is dict and weights is not None and len(loss) != len(weights):
+                raise RuntimeError(
+                    f"The losses list (len={len(loss)}) and the weights list (len={len(weights)}) should be of same length!"
+                )
 
         self._space["loss"] = loss
         if weights is not None:
