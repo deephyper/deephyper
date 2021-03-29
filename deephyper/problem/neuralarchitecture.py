@@ -1,9 +1,11 @@
 from collections import OrderedDict
 from inspect import signature
 from pprint import pformat
+from copy import deepcopy
 
+import ConfigSpace as cs
+import ConfigSpace.hyperparameters as csh
 import tensorflow as tf
-from deephyper.nas.run.util import setup_data, get_search_space
 from deephyper.core.exceptions.problem import (
     NaProblemError,
     ProblemLoadDataIsNotCallable,
@@ -13,6 +15,8 @@ from deephyper.core.exceptions.problem import (
     SearchSpaceBuilderMissingParameter,
     WrongProblemObjective,
 )
+from deephyper.nas.run.util import get_search_space, setup_data
+from deephyper.problem import HpProblem
 
 
 class Problem:
@@ -20,6 +24,7 @@ class Problem:
 
     def __init__(self, seed=None, **kwargs):
         self._space = OrderedDict()
+        self._hp_space = HpProblem(seed)
         self.seed = seed
 
     def __str__(self):
@@ -43,6 +48,11 @@ class Problem:
         dims.sort()
         space = OrderedDict(**{d: self._space[d] for d in dims})
         return space
+
+    def add_hyperparameter(
+        self, value, name: str = None, default_value=None
+    ) -> csh.Hyperparameter:
+        return self._hp_space.add_hyperparameter(value, name, default_value)
 
 
 class NaProblem(Problem):
@@ -378,6 +388,36 @@ class NaProblem(Problem):
         search_space.set_ops(arch_seq)
         keras_model = search_space.create_model()
         return keras_model
+
+    def gen_config(self, arch_seq: list, hp_values: list) -> dict:
+        config = deepcopy(self._space)
+
+        # architecture DNA
+        config["arch_seq"] = arch_seq
+
+        # replace hp values in the config
+        hp_names = self._hp_space._space.get_hyperparameter_names()
+
+        for hp_name, hp_value in zip(hp_names, hp_values):
+
+            if hp_name == "loss":
+                config["loss"] = hp_value
+            else:
+                config["hyperparameters"][hp_name] = hp_value
+
+        return config
+
+    def extract_hp_values(self, config):
+        hp_names = self._hp_space._space.get_hyperparameter_names()
+        hp_values = []
+        for hp_name in hp_names:
+            if hp_name == "loss":
+                hp_values.append(config["loss"])
+            else:
+                hp_values.append(config["hyperparameters"][hp_name])
+
+        return hp_values
+
 
 
 def module_location(attr):
