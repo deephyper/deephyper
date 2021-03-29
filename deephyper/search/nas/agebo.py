@@ -80,7 +80,7 @@ class AgEBO(RegularizedEvolution):
 
     def saved_keys(self, val: dict):
         res = {"arch_seq": str(val["arch_seq"])}
-        hp_names = self.hp_space._space.get_hyperparameters_names()
+        hp_names = self.hp_space._space.get_hyperparameter_names()
 
         for hp_name in hp_names:
             if hp_name == "loss":
@@ -160,14 +160,11 @@ class AgEBO(RegularizedEvolution):
                     # For each new parent/result we create a child from it
                     for new_i in range(len(new_results)):
 
-                        new_i_hps = new_results[new_i][0]["hyperparameters"]
+                        new_i_hp_values = self.problem.extract_hp_values(
+                            config=new_results[new_i][0]
+                        )
                         new_i_y = new_results[new_i][1]
-                        hp_new_i = [
-                            new_i_hps["learning_rate"],
-                            new_i_hps["batch_size"],
-                            new_i_hps["ranks_per_node"],
-                        ]
-                        hp_results_X.append(hp_new_i)
+                        hp_results_X.append(new_i_hp_values)
                         hp_results_y.append(-new_i_y)
 
                     self.hp_opt.tell(hp_results_X, hp_results_y)  #! fit: costly

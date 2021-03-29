@@ -372,7 +372,7 @@ class NaProblem(Problem):
         Returns:
             NxSearchSpace: A search space instance.
         """
-        config = self._space
+        config = self.space
         input_shape, output_shape = setup_data(config, add_to_config=False)
 
         search_space = get_search_space(config, input_shape, output_shape, seed=self.seed)
@@ -390,7 +390,7 @@ class NaProblem(Problem):
         return keras_model
 
     def gen_config(self, arch_seq: list, hp_values: list) -> dict:
-        config = deepcopy(self._space)
+        config = deepcopy(self.space)
 
         # architecture DNA
         config["arch_seq"] = arch_seq
