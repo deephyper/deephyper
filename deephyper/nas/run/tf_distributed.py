@@ -3,6 +3,7 @@ import traceback
 
 import numpy as np
 import tensorflow as tf
+from numba import cuda
 from deephyper.contrib.callbacks import import_callback
 from deephyper.nas.run.util import (
     compute_objective,
@@ -104,4 +105,12 @@ def run(config):
         result = -1
     if result < -10 or np.isnan(result):
         result = -10
+
+    # free GPU memory
+    avail_devices = os.environ.get("CUDA_VISIBLE_DEVICES")
+    if avail_devices is not None:
+        for device_id in avail_devices.split(","):
+            context = cuda.current_context(int(device_id))
+            context.reset()
+
     return result
