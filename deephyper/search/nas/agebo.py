@@ -57,21 +57,14 @@ class AgEBO(RegularizedEvolution):
         self.n_jobs = int(n_jobs)  # parallelism of BO surrogate model estimator
 
         # Initialize Hyperaparameter space
-
-        self.hp_space = []
-        # add the 'learning_rate' space to the HPO search space
-        self.hp_space.append(self.problem.space["hyperparameters"]["learning_rate"])
-        # add the 'batch_size' space to the HPO search space
-        self.hp_space.append(self.problem.space["hyperparameters"]["batch_size"])
-        # add the 'num_ranks_per_node' space to the HPO search space
-        self.hp_space.append(self.problem.space["hyperparameters"]["ranks_per_node"])
+        self.hp_space = self.problem._hp_space
 
         # Initialize opitmizer of hyperparameter space
         acq_func_kwargs = {"xi": float(xi), "kappa": float(kappa)}  # tiny exploration
         self.n_initial_points = self.free_workers
 
         self.hp_opt = SkOptimizer(
-            dimensions=self.hp_space,
+            dimensions=self.hp_space._space,
             base_estimator=RandomForestRegressor(n_jobs=self.n_jobs),
             acq_func=acq_func,
             acq_optimizer="sampling",
@@ -86,12 +79,15 @@ class AgEBO(RegularizedEvolution):
         return parser
 
     def saved_keys(self, val: dict):
-        res = {
-            "learning_rate": val["hyperparameters"]["learning_rate"],
-            "batch_size": val["hyperparameters"]["batch_size"],
-            "ranks_per_node": val["hyperparameters"]["ranks_per_node"],
-            "arch_seq": str(val["arch_seq"]),
-        }
+        res = {"arch_seq": str(val["arch_seq"])}
+        hp_names = self.hp_space._space.get_hyperparameters_names()
+
+        for hp_name in hp_names:
+            if hp_name == "loss":
+                res["loss"] = val["loss"]
+            else:
+                res[hp_name] = val["hyperparameters"][hp_name]
+
         return res
 
     def main(self):
@@ -136,31 +132,29 @@ class AgEBO(RegularizedEvolution):
 
                         # copy_mutate_parent
                         child = self.copy_mutate_arch(parent)
+
                         # add child to batch
                         children_batch.append(child)
 
                         # collect infos for hp optimization
-                        new_i_hps = new_results[new_i][0]["hyperparameters"]
+                        new_i_hp_values = self.problem.extract_hp_values(
+                            config=new_results[new_i][0]
+                        )
                         new_i_y = new_results[new_i][1]
-                        hp_new_i = [
-                            new_i_hps["learning_rate"],
-                            new_i_hps["batch_size"],
-                            new_i_hps["ranks_per_node"],
-                        ]
-                        hp_results_X.append(hp_new_i)
+                        hp_results_X.append(new_i_hp_values)
                         hp_results_y.append(-new_i_y)
 
                     self.hp_opt.tell(hp_results_X, hp_results_y)  #! fit: costly
                     new_hps = self.hp_opt.ask(n_points=len(new_results))
 
-                    for hps, child in zip(new_hps, children_batch):
-                        child["hyperparameters"]["learning_rate"] = hps[0]
-                        child["hyperparameters"]["batch_size"] = hps[1]
-                        child["hyperparameters"]["ranks_per_node"] = hps[2]
+                    new_configs = []
+                    for hp_values, child_arch_seq in zip(new_hps, children_batch):
+                        new_config = self.problem.gen_config(child_arch_seq, hp_values)
+                        new_configs.append(new_config)
 
                     # submit_childs
                     if len(new_results) > 0:
-                        self.evaluator.add_eval_batch(children_batch)
+                        self.evaluator.add_eval_batch(new_configs)
                 else:  # If the population is too small keep increasing it
 
                     # For each new parent/result we create a child from it
@@ -191,39 +185,22 @@ class AgEBO(RegularizedEvolution):
         batch = []
         if hps is None:
             points = self.hp_opt.ask(n_points=size)
-            for point in points:
-                #! DeepCopy is critical for nested lists or dicts
-                cfg = copy.deepcopy(self.pb_dict)
-
-                # hyperparameters
-                cfg["hyperparameters"]["learning_rate"] = point[0]
-                cfg["hyperparameters"]["batch_size"] = point[1]
-                cfg["hyperparameters"]["ranks_per_node"] = point[2]
-
-                # architecture DNA
-                cfg["arch_seq"] = self.random_search_space()
-                batch.append(cfg)
-
+            for hp_values in points:
+                arch_seq = self.random_search_space()
+                config = self.problem.gen_config(arch_seq, hp_values)
+                batch.append(config)
         else:  # passed hps are used
             assert size == len(hps)
-            for point in hps:
-                #! DeepCopy is critical for nested lists or dicts
-                cfg = copy.deepcopy(self.pb_dict)
-
-                # hyperparameters
-                cfg["hyperparameters"]["learning_rate"] = point[0]
-                cfg["hyperparameters"]["batch_size"] = point[1]
-                cfg["hyperparameters"]["ranks_per_node"] = point[2]
-
-                # architecture DNA
-                cfg["arch_seq"] = self.random_search_space()
-                batch.append(cfg)
+            for hp_values in hps:
+                arch_seq = self.random_search_space()
+                config = self.problem.gen_config(arch_seq, hp_values)
+                batch.append(config)
         return batch
 
     def random_search_space(self) -> list:
         return [np.random.choice(b + 1) for (_, b) in self.space_list]
 
-    def copy_mutate_arch(self, parent_arch: list) -> dict:
+    def copy_mutate_arch(self, parent_arch: list) -> list:
         """
         # ! Time performance is critical because called sequentialy
 
@@ -244,9 +221,9 @@ class AgEBO(RegularizedEvolution):
         sample = np.random.choice(elements, 1)[0]
 
         child_arch[i] = sample
-        cfg = self.pb_dict.copy()
-        cfg["arch_seq"] = child_arch
-        return cfg
+        # cfg = self.pb_dict.copy()
+        # cfg["arch_seq"] = child_arch
+        return child_arch
 
 
 if __name__ == "__main__":
