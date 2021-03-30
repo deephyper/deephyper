@@ -263,7 +263,13 @@ class TrainerTrainValid:
                     tf.TensorShape([*self.data_shapes[1]]),
                 ),
             )
-        self.dataset_train = self.dataset_train.batch(self.batch_size).repeat()
+        self.dataset_train = (self.dataset_train
+            .cache()
+            .shuffle(self.train_size, reshuffle_each_iteration=True)
+            .repeat(self.num_epochs)
+            .batch(self.batch_size)
+            .prefetch(tf.data.AUTOTUNE)
+        )
 
     def set_dataset_valid(self):
         if self.data_config_type == "ndarray":
@@ -286,7 +292,13 @@ class TrainerTrainValid:
                     tf.TensorShape([*self.data_shapes[1]]),
                 ),
             )
-        self.dataset_valid = self.dataset_valid.batch(self.batch_size).repeat()
+        self.dataset_valid = (self.dataset_valid
+            .cache()
+            .shuffle(self.valid_size, reshuffle_each_iteration=True)
+            .repeat(self.num_epochs)
+            .batch(self.batch_size)
+            .prefetch(tf.data.AUTOTUNE)
+        )
 
     def model_compile(self):
         optimizer_fn = U.selectOptimizer_keras(self.optimizer_name)
