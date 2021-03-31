@@ -29,7 +29,7 @@ def main(*args, **kwargs):
         i = df.objective.argmax()
         row = df.iloc[i]
         objective = row[-2]
-        hp_nams = None
+        hp_names = None
 
         if "arch_seq" in df.columns:
             arch_seq = json.loads(row["arch_seq"])
