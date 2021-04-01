@@ -42,8 +42,14 @@ def run(config):
     load_config(config)
 
     # Scale batch size and learning rate according to the number of ranks
-    batch_size = config[a.hyperparameters][a.batch_size] * n_replicas
-    learning_rate = config[a.hyperparameters][a.learning_rate]
+    if config[a.hyperparameters].get("lsr_batch_size"):
+        batch_size = config[a.hyperparameters][a.batch_size] * n_replicas
+    else:
+        batch_size = config[a.hyperparameters][a.batch_size]
+    if config[a.hyperparameters].get("lsr_learning_rate"):
+        learning_rate = config[a.hyperparameters][a.learning_rate] * n_replicas
+    else:
+        learning_rate = config[a.hyperparameters][a.learning_rate]
     logger.info(
         f"Scaled: 'batch_size' from {config[a.hyperparameters][a.batch_size]} to {batch_size} "
     )
