@@ -51,7 +51,7 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
     user_guides/data_parallelism
     tutorials/job_management
     software/balsamjob
-    usage/analytics
+    software/analytics
     search/nas/nas
     search/hps/hps
 

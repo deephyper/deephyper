@@ -1,8 +1,6 @@
-"""Deephyper analytics - multi study documentation
+"""Neural architecture search comparative study.
 
-usage:
-
-::
+usage::
 
     $ deephyper-analytics parse agebo_test1/agebo_test_382DS/deephyper.log
     $ deephyper-analytics parse agebo_test2/agebo_test_23HDS/deephyper.log

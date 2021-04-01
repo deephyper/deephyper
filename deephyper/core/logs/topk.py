@@ -2,7 +2,6 @@
 A command line to extract the top-k best configuration from a DeepHyper execution::
 
     $ deephyper-analytics topk combo_8gpu_8_agebo/infos/results.csv -k 2
-    Module: 'balsam' module was not found!
     '0':
     arch_seq: '[229, 0, 22, 1, 1, 53, 29, 1, 119, 1, 0, 116, 123, 1, 273, 0, 1, 388]'
     batch_size: 59
@@ -23,6 +22,9 @@ A command line to extract the top-k best configuration from a DeepHyper executio
     optimizer: nadam
     patience_EarlyStopping: 23
     patience_ReduceLROnPlateau: 14
+
+
+An ``--output`` argument is also available to save the output in a YAML, JSON or CSV format.
 """
 import json
 import pandas as pd

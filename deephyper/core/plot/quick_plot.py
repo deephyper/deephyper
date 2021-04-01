@@ -1,4 +1,5 @@
-"""
+"""A tool to have quick and simple visualization from your data.
+
 usage:
 
 ::

@@ -1,12 +1,9 @@
 """
-Hyperparameter search study
-===========================
 The hyperparameter search study is designed to get some visualisation and results processing after running an hyperparameter search. It will provide you an overview of evaluations done during the search as well as a search trajectory with respect to your objective value. Finally you will find the best set of hyperparameters found by the search.
 
 An example use of this command line can be as follow::
 
-    deephyper-analytics notebook --type hps --output mynotebook.ipynb ../../database/testdb/data/TEST/test_de03094c/results.csv
-
+    $ deephyper-analytics notebook --type hps --output mynotebook.ipynb ../../database/testdb/data/TEST/test_de03094c/results.csv
 """
 
 import os

@@ -1,7 +1,7 @@
-Analytics
-*********
+DeepHyper Analytics Tools
+*************************
 
-The Analytics command line is a set of tools which has been created to help you analyse deephyper data.
+The Analytics command line is a set of tools which has been created to help you analyse DeepHyper outputs.
 
 .. highlight:: console
 
@@ -11,30 +11,36 @@ Let's look at the help menu of ``deephyper-analytics``::
 
 The following output is expected::
 
-    Module: 'balsam' module was found and connected to a databse.
-    usage: deephyper-analytics [-h] {parse,json,single,multi,post,hps} ...
-
-    Run some analytics for deephyper.
+    Command line to analysis the outputs produced by DeepHyper.
 
     positional arguments:
-    {parse,json,single,multi,post,hps}
+    {notebook,parse,quickplot,topk}
                             Kind of analytics.
+        notebook            Generate a notebook with different types of analysis
         parse               Tool to parse "deephyper.log" and produce a JSON file.
-        json                Tool to analyse a JSON file produced by the "parse"
-                            tool.
-        single              Tool to generate analytics on a single NAS experiment
-                            (jupyter notebook).
-        multi               Tool to generate analytics from multiple NAS
-                            experiment (jupyter notebook).
-        post                Tool to generate analytics from a post-training
-                            experiment (jupyter notebook).
-        hps                 Tool to generate analytics on a single HPS experiment
-                            (jupyter notebook).
+        quickplot           Tool to generate a quick 2D plot from file.
+        topk                Print the top-k configurations.
 
+    optional arguments:
+    -h, --help            show this help message and exit
+
+
+Notebooks
+=========
+
+Hyperparameter search
+---------------------
 
 .. automodule:: deephyper.core.plot.hps
 
-Parsing logs
+Neural architecture search
+--------------------------
+
+.. automodule:: deephyper.core.plot.single
+
+.. automodule:: deephyper.core.plot.multi
+
+Parsing Logs
 ============
 
 The parsing tool helps you to parse the ``deephyper.log`` file of your master job. For now this tool is used for neural architecture search logs.
@@ -72,25 +78,12 @@ The parsing tool helps you to parse the ``deephyper.log`` file of your master jo
     len id_worker  : 5731
     len arch_seq   : 5731
 
-Transformations from JSON file
-==============================
+Quick Plots
+===========
 
-::
+.. automodule:: deephyper.core.plot.quick_plot
 
-    [BalsamDB: testdb] (dh-opt) dhuser $ deephyper-analytics json -h
-    usage: deephyper-analytics json [-h] {best} ...
+Top-k Configuration
+===================
 
-    positional arguments:
-    {best}      Kind of analytics.
-        best      Select the best n search_spaces and save them into a JSON file.
-
-
-Single study
-============
-
-.. automodule:: deephyper.core.plot.single
-
-Multiple study
-==============
-
-.. automodule:: deephyper.core.plot.multi
+.. automodule:: deephyper.core.logs.topk
