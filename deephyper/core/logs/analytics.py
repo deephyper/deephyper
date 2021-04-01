@@ -1,27 +1,22 @@
 import argparse
-import os
 import sys
 
-from deephyper.core.logs import json, parsing, csv
-from deephyper.core.plot import hps, multi, post_train, single, quick_csv_plot
+from deephyper.core.logs import parsing, topk, notebooks
+from deephyper.core.plot import quick_plot
 
 
 def create_parser():
-    parser = argparse.ArgumentParser(description="Run some analytics for deephyper.")
+    parser = argparse.ArgumentParser(description="Command line to analysis the outputs produced by DeepHyper.")
 
     subparsers = parser.add_subparsers(help="Kind of analytics.")
 
     mapping = dict()
 
     modules = [
+        notebooks,
         parsing,  # parsing deephyper.log
-        json,  # operation on json
-        csv,
-        single,  # generate dh-analytics single notebook
-        multi,  # generate dh-analytics multi notebook
-        post_train,
-        hps,  # generate notebook for hyperparamter optimization analytics
-        quick_csv_plot,  # output quick plots
+        quick_plot,  # output quick plots
+        topk,
     ]
 
     for module in modules:
