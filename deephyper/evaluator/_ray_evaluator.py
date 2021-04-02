@@ -3,7 +3,7 @@ import subprocess
 import time
 from collections import defaultdict, namedtuple
 import sys
-
+import traceback
 import ray
 
 from deephyper.evaluator.evaluate import Evaluator
@@ -37,6 +37,7 @@ class RayFuture:
                 self._result = ray.get(id_done[0])
                 self._state = "done"
             except Exception:
+                logger.error(traceback.format_exc())
                 self._state = "failed"
         else:
             self._state = "active"

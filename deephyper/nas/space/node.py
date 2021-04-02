@@ -111,12 +111,12 @@ class VariableNode(OperationNode):
         self.get_op(index).init(self)
 
     def get_op(self, index):
-        assert (
-            "float" in str(type(index)) or type(index) is int
-        ), f"found type is : {type(index)}"
+        assert ("float" in str(type(index)) or 'int' in str(type(index))), f"found type is : {type(index)}"
+
         if "float" in str(type(index)):
             self._index = self.denormalize(index)
         else:
+            index = int(index)
             assert 0 <= index and index < len(
                 self._ops
             ), f"Number of possible operations is: {len(self._ops)}, but index given is: {index} (index starts from 0)!"
