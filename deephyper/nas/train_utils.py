@@ -74,10 +74,10 @@ def sparse_perplexity(y_true, y_pred):
 def f1_score(y_true, y_pred):
     m_precision = tf.keras.metrics.Precision(name='precision')
     m_precision.update_state(y_true, y_pred)
-    precision = m_precision.result().numpy()
+    precision = m_precision.result()
     m_recall = tf.keras.metrics.Recall(name='recall')
     m_recall.update_state(y_true, y_pred)
-    recall = m_recall.result().numpy()
+    recall = m_recall.result()
     f1 = 2 * precision * recall / (precision + recall)
     return f1
 
