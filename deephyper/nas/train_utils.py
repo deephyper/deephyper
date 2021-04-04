@@ -80,6 +80,7 @@ metrics["mean_squared_error"] = metrics["mse"] = mse
 metrics["negative_mean_squared_error"] = metrics["negmse"] = negmse
 metrics["accuracy"] = metrics["acc"] = acc
 metrics["sparse_perplexity"] = sparse_perplexity
+metrics["auc"] = tf.keras.metrics.AUC()
 
 
 def selectMetric(name: str):
