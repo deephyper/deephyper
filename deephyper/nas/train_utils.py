@@ -74,7 +74,7 @@ def sparse_perplexity(y_true, y_pred):
 def f1_score(y_true, y_pred):
     recall = tf.compat.v1.metrics.recall(y_true, y_pred)
     precision = tf.compat.v1.metrics.precision(y_true, y_pred)
-    f1 = 2 * precision * recall / (precision + recall)
+    f1 = 2 * (precision * recall) / (precision + recall)
     return f1
 
 
