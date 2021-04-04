@@ -80,7 +80,9 @@ metrics["mean_squared_error"] = metrics["mse"] = mse
 metrics["negative_mean_squared_error"] = metrics["negmse"] = negmse
 metrics["accuracy"] = metrics["acc"] = acc
 metrics["sparse_perplexity"] = sparse_perplexity
-metrics["auc"] = tf.keras.metrics.AUC()
+
+object_metrics = OrderedDict()
+object_metrics["auc"] = tf.keras.metrics.AUC
 
 
 def selectMetric(name: str):
@@ -92,10 +94,13 @@ def selectMetric(name: str):
     Returns:
         str or callable: a string suppossing it is referenced in the keras framework or a callable taking (y_true, y_pred) as inputs and returning a tensor.
     """
-    if metrics.get(name) == None:
+    if metrics.get(name) == None and object_metrics.get(name) == None:
         try:
             return util.load_attr_from(name)
         except:
             return name  # supposing it is referenced in keras metrics
     else:
-        return metrics[name]
+        if name in metrics:
+            return metrics[name]
+        else:
+            return object_metrics[name]()
