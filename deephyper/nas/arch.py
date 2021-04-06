@@ -1,8 +1,3 @@
-import pprint
-from collections import OrderedDict
-
-import numpy as np
-
 # definition of a key
 layer_type = "layer_type"
 features = "features"
