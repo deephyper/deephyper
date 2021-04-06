@@ -231,12 +231,13 @@ class NaProblem(Problem):
             self._space["hyperparameters"] = dict()
         self._space["hyperparameters"].update(kwargs)
 
-    def loss(self, loss, weights=None):
+    def loss(self, loss, loss_weights=None, class_weights=None):
         """Define the loss used to train generated search_spaces.
 
         Args:
             loss (str|callable|list): a string indicating a specific loss function.
-            weights (list): Optional.
+            loss_weights (list): Optional.
+            class_weights (dict): Optional.
         """
         if not(type(loss) is csh.CategoricalHyperparameter):
             if not type(loss) is str and not callable(loss) and not type(loss) is dict:
@@ -244,14 +245,17 @@ class NaProblem(Problem):
                     f"The loss should be either a str, dict or a callable when it's of type {type(loss)}"
                 )
 
-            if type(loss) is dict and weights is not None and len(loss) != len(weights):
+            if type(loss) is dict and loss_weights is not None and len(loss) != len(loss_weights):
                 raise RuntimeError(
-                    f"The losses list (len={len(loss)}) and the weights list (len={len(weights)}) should be of same length!"
+                    f"The losses list (len={len(loss)}) and the weights list (len={len(loss_weights)}) should be of same length!"
                 )
 
         self._space["loss"] = loss
-        if weights is not None:
-            self._space["loss_weights"] = weights
+        if loss_weights is not None:
+            self._space["loss_weights"] = loss_weights
+
+        if class_weights is not None:
+            self._space["class_weights"] = class_weights
 
     def metrics(self, metrics):
         """Define a list of metrics for the training of generated search_spaces.

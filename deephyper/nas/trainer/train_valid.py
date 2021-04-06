@@ -74,6 +74,7 @@ class TrainerTrainValid:
     def setup_losses_and_metrics(self):
         self.loss_metrics = self.config[a.loss_metric]
         self.loss_weights = self.config.get("loss_weights")
+        self.class_weights = self.config.get("class_weights")
 
         if self.loss_weights is None and type(self.loss_metrics) is dict:
             self.loss_weights = [1.0 for _ in range(len(self.loss_metrics))]
@@ -446,6 +447,7 @@ class TrainerTrainValid:
                     callbacks=self.callbacks,
                     validation_data=self.dataset_valid,
                     validation_steps=self.valid_steps_per_epoch,
+                    class_weight=self.class_weights
                 )
             else:
                 logger.info(
@@ -458,6 +460,7 @@ class TrainerTrainValid:
                         epochs=num_epochs - 1,
                         steps_per_epoch=self.train_steps_per_epoch,
                         callbacks=self.callbacks,
+                        class_weight=self.class_weights
                     )
                 history = self.model.fit(
                     self.dataset_train,
@@ -467,6 +470,7 @@ class TrainerTrainValid:
                     callbacks=self.callbacks,
                     validation_data=self.dataset_valid,
                     validation_steps=self.valid_steps_per_epoch,
+                    class_weight=self.class_weights
                 )
 
             time_end_training = time.time()  # TIMING
