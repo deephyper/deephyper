@@ -82,7 +82,8 @@ metrics["accuracy"] = metrics["acc"] = acc
 metrics["sparse_perplexity"] = sparse_perplexity
 
 object_metrics = OrderedDict()
-object_metrics["auc"] = tf.keras.metrics.AUC
+object_metrics["auroc"] = lambda : tf.keras.metrics.AUC(name="auroc", curve="ROC")
+object_metrics["aucpr"] = lambda : tf.keras.metrics.AUC(name="aucpr", curve="PR")
 
 
 def selectMetric(name: str):
