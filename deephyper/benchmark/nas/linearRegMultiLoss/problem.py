@@ -19,7 +19,7 @@ Problem.hyperparameters(
 
 Problem.loss(
     loss={"output_0": "mse", "output_1": "mse"},
-    weights={"output_0": 0.0, "output_1": 1.0},
+    loss_weights={"output_0": 0.0, "output_1": 1.0},
 )
 
 Problem.metrics({"output_0": ["r2", "mse"], "output_1": "mse"})
