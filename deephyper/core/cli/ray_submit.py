@@ -75,6 +75,7 @@ def add_subparser(subparsers):
 
     # other search arugments
     subparser.add_argument("--n-jobs", type=int, default=None)
+    subparser.add_argument("--kappa", type=float, default=None)
 
     subparser.set_defaults(func=function_to_call)
 
