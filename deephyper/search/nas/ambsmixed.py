@@ -37,6 +37,7 @@ class AMBSMixed(NeuralArchitectureSearch):
             **kwargs,
         )
 
+        self.n_jobs = int(n_jobs)  # parallelism of BO surrogate model estimator
         self.n_initial_points = self.evaluator.num_workers
         self.liar_strategy = liar_strategy
 
@@ -65,7 +66,7 @@ class AMBSMixed(NeuralArchitectureSearch):
         # Initialize opitmizer of hyperparameter space
         self.opt = SkOptimizer(
             dimensions=self.space,
-            base_estimator=self.get_surrogate_model(surrogate_model, n_jobs),
+            base_estimator=self.get_surrogate_model(surrogate_model, self.n_jobs),
             acq_func=acq_func,
             acq_optimizer="sampling",
             acq_func_kwargs={"xi": xi, "kappa": kappa},
