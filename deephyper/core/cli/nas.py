@@ -10,6 +10,7 @@ HPS_SEARCHES = {
     "random": "deephyper.search.nas.random.Random",
     "regevo": "deephyper.search.nas.regevo.RegularizedEvolution",
     "agebo": "deephyper.search.nas.agebo.AgEBO",
+    "ambsmixed": "deephyper.search.nas.ambsmixed.AMBSMixed"
 }
 
 

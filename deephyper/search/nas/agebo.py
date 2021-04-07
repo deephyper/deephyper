@@ -1,7 +1,4 @@
 import collections
-import json
-import os
-import copy
 
 import numpy as np
 from skopt import Optimizer as SkOptimizer
