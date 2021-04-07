@@ -25,7 +25,7 @@ def add_subparser(subparsers):
 
     subparser.add_argument("mode", choices=["nas", "hps"], help="Type of search")
     subparser.add_argument(
-        "search", choices=["ambs", "regevo", "random", "agebo" "ambsmixed"], help="Search strategy"
+        "search", choices=["ambs", "regevo", "random", "agebo", "ambsmixed"], help="Search strategy"
     )
     subparser.add_argument("-w", "--workflow", required=True, help="Unique workflow name")
     subparser.add_argument(
