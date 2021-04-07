@@ -38,6 +38,8 @@ class AMBSMixed(NeuralArchitectureSearch):
         )
 
         self.n_jobs = int(n_jobs)  # parallelism of BO surrogate model estimator
+        self.kappa = float(kappa)
+        self.xi = float(xi)
         self.n_initial_points = self.evaluator.num_workers
         self.liar_strategy = liar_strategy
 
@@ -69,7 +71,7 @@ class AMBSMixed(NeuralArchitectureSearch):
             base_estimator=self.get_surrogate_model(surrogate_model, self.n_jobs),
             acq_func=acq_func,
             acq_optimizer="sampling",
-            acq_func_kwargs={"xi": xi, "kappa": kappa},
+            acq_func_kwargs={"xi": self.xi, "kappa": self.kappa},
             n_initial_points=self.n_initial_points,
         )
 
