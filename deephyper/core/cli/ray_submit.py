@@ -25,7 +25,9 @@ def add_subparser(subparsers):
 
     subparser.add_argument("mode", choices=["nas", "hps"], help="Type of search")
     subparser.add_argument(
-        "search", choices=["ambs", "regevo", "random", "agebo", "ambsmixed"], help="Search strategy"
+        "search",
+        choices=["ambs", "regevo", "random", "agebo", "ambsmixed", "regevomixed"],
+        help="Search strategy",
     )
     subparser.add_argument("-w", "--workflow", required=True, help="Unique workflow name")
     subparser.add_argument(
@@ -79,9 +81,10 @@ def add_subparser(subparsers):
 
     subparser.set_defaults(func=function_to_call)
 
+
 def generate_other_arguments(func, **kwargs):
     cl_format = ""
-    for k,v in kwargs.items():
+    for k, v in kwargs.items():
         if v is not None:
             arg = "--" + "-".join(k.split("_"))
             val = str(v)
@@ -117,7 +120,7 @@ def main(
     # Creation of the submission script
 
     # Detection of the host
-    hostname =  socket.gethostname()
+    hostname = socket.gethostname()
     # hostname = "thetagpusn1"
     host = None
     if "thetagpu" in hostname:
@@ -183,7 +186,7 @@ def main(
                 num_gpus_per_task=num_gpus_per_task,
                 script_launch_ray_cluster=script_launch_ray_cluster,
                 activation_script=activation_script,
-                other_search_arguments=generate_other_arguments(**kwargs)
+                other_search_arguments=generate_other_arguments(**kwargs),
             )
         )
         print("Created", fp.name)

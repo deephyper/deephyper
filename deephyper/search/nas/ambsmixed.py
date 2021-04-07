@@ -1,10 +1,9 @@
-import copy
-import json
 import math
 
 import ConfigSpace as CS
 import numpy as np
 import skopt
+
 from deephyper.problem import HpProblem
 from deephyper.core.logs.logging import JsonMessage as jm
 from deephyper.core.parser import add_arguments_from_signature
@@ -61,9 +60,6 @@ class AMBSMixed(NeuralArchitectureSearch):
         self.space.add_configuration_space(
             prefix="2", configuration_space=self.na_space.space
         )
-        print(self.space)
-
-        self.pb_dict = self.problem.space
 
         # Initialize opitmizer of hyperparameter space
         self.opt = SkOptimizer(
