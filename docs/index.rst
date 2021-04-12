@@ -18,7 +18,6 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
 
 .. automodule:: deephyper
 
-
 .. toctree::
     :maxdepth: 1
     :caption: Installation
@@ -43,29 +42,22 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
     :maxdepth: 1
     :caption: User Guides
 
-    run/newproblem
-    run/local
-    run/theta
-    run/thetagpu
+    user_guides/newproblem
+    user_guides/local
+    user_guides/theta
+    user_guides/thetagpu
     user_guides/choosing_scaling
     user_guides/data_parallelism
-    tutorials/job_management
-    software/balsamjob
-    software/analytics
-    search/nas/nas
-    search/hps/hps
+    user_guides/job_management
+    user_guides/balsamjob
+    user_guides/analytics
 
 .. toctree::
     :maxdepth: 3
     :caption: Software
 
-    software/automl
-    software/baselines
-    software/benchmarks
-    software/evaluators
-    software/searches
+    DeepHyper API <api/deephyper>
     tests_link
-
 
 Indices and tables
 ==================
