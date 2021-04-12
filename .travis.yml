@@ -35,7 +35,7 @@ before_install:
   # - mpirun --version
 
 install:
-  - pip install -e '.[docs,tests,analytics]'
+  - pip install -e '.[docs,tests,analytics,balsam]'
   - pip install codecov pytest-cov
 
 script:
