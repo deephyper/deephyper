@@ -85,7 +85,7 @@ class AMBNeuralArchitectureSearch(NeuralArchitectureSearch):
         skopt_space = cs.ConfigurationSpace(seed=self.problem.seed)
         for i, vnode in enumerate(search_space.variable_nodes):
             hp = csh.UniformIntegerHyperparameter(
-                name=f"vnode_{i}", lower=0, upper=(vnode.num_ops - 1)
+                name=f"vnode_{i:05d}", lower=0, upper=(vnode.num_ops - 1)
             )
             skopt_space.add_hyperparameter(hp)
 
