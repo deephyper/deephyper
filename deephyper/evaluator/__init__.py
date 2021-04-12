@@ -3,4 +3,8 @@ The goal off the evaluator module is to have a set of objects which can helps us
 """
 
 from deephyper.evaluator.evaluate import Encoder
-__all__ = ['Encoder']
+from deephyper.evaluator._balsam import BalsamEvaluator
+from deephyper.evaluator._ray_evaluator import RayEvaluator
+from deephyper.evaluator._subprocess import SubprocessEvaluator
+
+__all__ = ["Encoder", "BalsamEvaluator", "RayEvaluator", "SubprocessEvaluator"]

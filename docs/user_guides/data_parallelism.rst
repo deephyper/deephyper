@@ -8,7 +8,7 @@ The `Horovod software <https://github.com/horovod/horovod>`_ is used to do data 
    :alt: data parallelism with horovod
    :align: center
 
-To use this feature the :ref:`balsam-evaluator` should be set for the search with ``--evaluator balsam``. Also, the ``-job-mode mpi`` has to be used when submitting the task with ``balsam submit-launch --job-mode mpi``. Then, 3 command line arguments are exposed to choose how to distribute the computation: ``--num-nodes-per-eval, --num-ranks-per-node, --num-threads-per-rank`` where:
+To use this feature the :class:`deephyper.evaluator.BalsamEvaluator` should be set for the search with ``--evaluator balsam``. Also, the ``-job-mode mpi`` has to be used when submitting the task with ``balsam submit-launch --job-mode mpi``. Then, 3 command line arguments are exposed to choose how to distribute the computation: ``--num-nodes-per-eval, --num-ranks-per-node, --num-threads-per-rank`` where:
 
 - ``num-nodes-per-eval`` is the number of nodes used for each evaluation.
 - ``num-ranks-per-node`` is the number of MPI ranks used for each evaluation.

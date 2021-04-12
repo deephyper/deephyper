@@ -10,11 +10,11 @@ It comprises two components:
 DeepHyper provides an infrastructure that targets experimental research in NAS and HPS methods, scalability, and portability across diverse supercomputers.
 It comprises three modules:
 
-* :ref:`benchmarks`: Tools for defining NAS and HPS problems, as well as a curated set of sample benchmark problems for judging the efficacy of novel search algorithms.
+* :mod:`deephyper.benchmark`: Tools for defining NAS and HPS problems, as well as a curated set of sample benchmark problems for judging the efficacy of novel search algorithms.
 
-* :ref:`evaluators`: A simple interface for NAS and HPS codes to dispatch model evaluation tasks. Implementations range from `subprocess` for laptop experiments to `ray` and `balsam` for large-scale runs on HPC systems.
+* :mod:`deephyper.evaluator` : A simple interface for NAS and HPS codes to dispatch model evaluation tasks. Implementations range from `subprocess` for laptop experiments to `ray` and `balsam` for large-scale runs on HPC systems.
 
-* :ref:`SearchDH`: Search methods for NAS and HPS.  By extending the generic `Search` class, one can easily add new NAS or HPS methods to DeepHyper.
+* :mod:`deephyper.search`: Search methods for NAS and HPS.  By extending the generic `Search` class, one can easily add new NAS or HPS methods to DeepHyper.
 
 
 DeepHyper installation requires **Python 3.7**.

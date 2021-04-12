@@ -216,7 +216,7 @@ We have tested the syntax in all of these by running them individually. Now, let
 
 .. note::
 
-    In order to run DeepHyper locally and on other systems we are using :ref:`evaluators`. For local evaluations we use the :ref:`subprocess-evaluator`.
+    In order to run DeepHyper locally and on other systems we are using :mod:`deephyper.evaluator`. For local evaluations we use the :class:`deephyper.evaluator.SubprocessEvaluator`.
 
 .. note::
 
