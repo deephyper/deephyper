@@ -100,23 +100,22 @@ be consistent with the environment variable and ensure full job occupancy of the
 ``Worker`` ranks. For example, to run 4 DeepHyper "workers" (searcher and evaluators) per
 node, the above command is modified::
 
-  balsam job --name test --application AMBS --workflow TEST --node-packing-count=4 --env DEEPHYPER_WORKERS_PER_NODE=4 --args '--evaluator balsam --problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run'
+    balsam job --name test --application AMBS --workflow TEST --node-packing-count=4 --env DEEPHYPER_WORKERS_PER_NODE=4 --args '--evaluator balsam --problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run'
 
-By setting the two parameters equal to 4, the searcher (AMBS) and a single evluator process
-occupy equal fractions of a node. The resulting behavior is as follows:
-  - ``Node0`` executes the ``Master`` orchestrator process
-  - ``Node1`` executes the AMBS searcher process and 3x DeepHyper evaluators
-  - ``Node2, ..., Node126`` each execute 4x DeepHyper evaluators
+By setting the two parameters equal to 4, the searcher (AMBS) and a single evluator process occupy equal fractions of a node. The resulting behavior is as follows:
+- ``Node0`` executes the ``Master`` orchestrator process
+- ``Node1`` executes the AMBS searcher process and 3x DeepHyper evaluators
+- ``Node2, ..., Node126`` each execute 4x DeepHyper evaluators
 
 If a user wishes to allocate more compute resources to the searcher process relative to
 the evaluators, the two parameters can be toggled independently e.g.::
 
-  balsam job --name test --application AMBS --workflow TEST --node-packing-count=2 --env DEEPHYPER_WORKERS_PER_NODE=4 --args '--evaluator balsam --problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run --n-jobs=2'
+    balsam job --name test --application AMBS --workflow TEST --node-packing-count=2 --env DEEPHYPER_WORKERS_PER_NODE=4 --args '--evaluator balsam --problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run --n-jobs=2'
 
 The resulting allocation would be:
-  - ``Node0`` executes the ``Master`` orchestrator process
-  - ``Node1`` executes the AMBS searcher process (2x cores) and 1x DeepHyper evaluator
-  - ``Node2, ..., Node126`` each execute 4x DeepHyper evaluators
+- ``Node0`` executes the ``Master`` orchestrator process
+- ``Node1`` executes the AMBS searcher process (2x cores) and 1x DeepHyper evaluator
+- ``Node2, ..., Node126`` each execute 4x DeepHyper evaluators
 
 
 .. note::

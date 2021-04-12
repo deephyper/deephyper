@@ -155,7 +155,7 @@ Defining the HPS Problem space
 ==============================
 
 The ``run`` function in ``model_run.py`` expects a hyperparameter dictionary with three keys: ``units, activation, and lr``.
-We define the acceptable ranges for these hyperparameters with the ``Problem`` object inside ``problem.py`.
+We define the acceptable ranges for these hyperparameters with the ``Problem`` object inside ``problem.py``.
 Hyperparameter ranges are defined using the following syntax:
 
     * Discrete integer ranges are generated from a tuple: ``(lower: int, upper: int)``
