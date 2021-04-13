@@ -39,6 +39,10 @@ in order to run a Asynchronous Model-Based Search (AMBS)::
 You can run the following command to print all the applications available
 in your current Balsam environment::
 
+    balsam ls apps
+
+Now, let us create a submission::
+
     deephyper balsam-submit hps test -p deephyper.benchmark.hps.polynome2.Problem -r deephyper.benchmark.hps.polynome2.run \
     -t 60 -q debug-cache-quad -n 4 -A datascience -j mpi
 
