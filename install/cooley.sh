@@ -3,10 +3,12 @@
 # Install Miniconda
 wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.9.2-Linux-x86_64.sh -O miniconda.sh
 bash $PWD/miniconda.sh -b -p $PWD/miniconda
+rm -f miniconda.sh
 
 # Install Postgresql
 wget http://get.enterprisedb.com/postgresql/postgresql-9.6.13-4-linux-x64-binaries.tar.gz -O postgresql.tar.gz
 tar -xf postgresql.tar.gz
+rm -f postgresql.tar.gz
 
 # adding Cuda
 echo "+cuda-10.2" >> ~/.soft.cooley
