@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 module load postgresql
 module load miniconda-3
