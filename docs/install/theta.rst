@@ -23,9 +23,13 @@ DeepHyper can be installed on Theta by following these commands::
 
 Then, restart your session.
 
-To test you installation run::
+.. warning::
+    You will note that a new file ``~/.bashrc_theta`` was created and sourced in the ``~/.bashrc``. This is to avoid conflicting installations between the different system available at the ALCF.
 
-    ./deephyper/tests/system/test_theta.sh
+.. note::
+    To test you installation run::
+
+        ./deephyper/tests/system/test_theta.sh
 
 
 A manual installation can also be performed with the following set of commands::
@@ -40,8 +44,7 @@ A manual installation can also be performed with the following set of commands::
     conda install tensorflow -c intel -y
 
 
-.. warning::
-    You will note that a new file ``~/.bashrc_theta`` was created and sourced in the ``~/.bashrc``. This is to avoid conflicting installations between the different system available at the ALCF.
+
 
 .. note::
     Horovod can be installed to use data-parallelism during the evaluations of DeepHyper. To do so use ``pip install deephyper[analytics,hvd,balsam]`` while or after installing.
