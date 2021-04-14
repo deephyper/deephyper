@@ -10,8 +10,9 @@ value. The passed dictionary is obtained by decoding <args>, which should be a
 JSON-formatted dictionary escaped by single quotes.
 """
 import importlib
-import sys
 import json
+import sys
+
 
 def load_module(name, path):
     try:
@@ -20,6 +21,7 @@ def load_module(name, path):
         sys.path.insert(0, path)
         mod = importlib.import_module(name)
     return mod
+
 
 if __name__ == "__main__":
     argv_cp = sys.argv[:]
