@@ -15,7 +15,7 @@ BASHRC_THETA=~/.bashrc_theta
 
 read -r -d '' NEW_BASHRC_CONTENT <<- EOM
 # Added by DeepHyper
-if [[ $HOSTNAME = *"theta"* ]]; then
+if [[ $HOSTNAME = *"thetalogin"* ]]; then
     source ~/.bashrc_theta
 fi
 EOM
