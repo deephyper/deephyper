@@ -19,13 +19,14 @@ cache:
   apt: true
 
 before_install:
-  - sudo apt-get install ubuntu-toolchain-r-test -y
   - sudo apt-get install build-essential -y
   - sudo apt-get install libopenmpi-dev
   - sudo apt-get install graphviz -y
 addons:
   apt:
     update: true
+    sources:
+    - ubuntu-toolchain-r-test
 
 install:
   - pip install -e '.[docs,tests,analytics,balsam]'
