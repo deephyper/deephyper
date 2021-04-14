@@ -44,6 +44,12 @@ def add_subparser(subparsers):
         type=int,
         help="Number of nodes over which to parallelize NAS",
     )
+    subparser.add_argument(
+        "--num-evals-per-node",
+        default=1,
+        type=int,
+        help="Number of evaluations performed on each node. Only valid if evaluator==balsam and balsam job-mode is 'serial'.",
+    )
     subparser.set_defaults(func=function_to_call)
 
 
@@ -57,11 +63,11 @@ def main(mode, workflow, problem, run, **kwargs):
 
     if mode == "nas":
         print("Creating NAS(PPO) BalsamJob...", end="", flush=True)
-        setup_nas(job, problem, run, kwargs["nas_nodes"])
+        setup_nas(job, problem, run, **kwargs)
         print("OK")
     elif mode == "hps":
         print("Creating HPS(AMBS) BalsamJob...", end="", flush=True)
-        setup_ambs(job, problem, run)
+        setup_ambs(job, problem, run, **kwargs)
         print("OK")
 
     print("Performing job submission...")
@@ -131,9 +137,9 @@ def pre_submit(problem, run, workflow):
     return job
 
 
-def setup_ambs(job, problem, run):
+def setup_ambs(job, problem, run, num_evals_per_node=1):
     job.application = "AMBS"
-    job.args = f"--evaluator balsam --problem {problem} --run {run}"
+    job.args = f"--evaluator balsam --problem {problem} --run {run} --num-evals-per-node {num_evals_per_node}"
     job.save()
     return job
 
