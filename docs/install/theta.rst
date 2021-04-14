@@ -24,7 +24,7 @@ DeepHyper can be installed on Theta by following these commands::
 Then, restart your session.
 
 .. warning::
-    You will note that a new file ``~/.bashrc_theta`` was created and sourced in the ``~/.bashrc``. This is to avoid conflicting installations between the different system available at the ALCF.
+    You will note that a new file ``~/.bashrc_theta`` was created and sourced in the ``~/.bashrc``. This is to avoid conflicting installations between the different systems available at the ALCF.
 
 .. note::
     To test you installation run::
