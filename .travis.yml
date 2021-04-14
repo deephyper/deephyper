@@ -10,23 +10,26 @@ notifications:
     on_success: change
     on_failure: always
 
-
-
 git:
   depth: 3
 
 cache:
   apt: true
 
-before_install:
-  - sudo apt-get install build-essential -y
-  - sudo apt-get install libopenmpi-dev
-  - sudo apt-get install graphviz -y
+# before_install:
+#   - sudo apt-get install build-essential -y
+#   - sudo apt-get install libopenmpi-dev -y
+#   - sudo apt-get install graphviz -y
 addons:
   apt:
     update: true
     sources:
     - ubuntu-toolchain-r-test
+    - build-essential
+    - graphviz
+    # MPICH
+    - mpich
+    - libmpich-dev
 
 install:
   - pip install -e '.[docs,tests,analytics,balsam]'
