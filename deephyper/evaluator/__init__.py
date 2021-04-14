@@ -3,4 +3,5 @@ The goal off the evaluator module is to have a set of objects which can helps us
 """
 
 from deephyper.evaluator.evaluate import Encoder
-__all__ = ['Encoder']
+
+__all__ = ["Encoder"]

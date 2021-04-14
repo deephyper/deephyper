@@ -41,7 +41,7 @@ class RegularizedEvolution(NeuralArchitectureSearch):
                 type="start_infos",
                 alg="aging-evolution",
                 nworkers=self.evaluator.num_workers,
-                encoded_space=json.dumps(self.problem.space, cls=Encoder),
+                # encoded_space=json.dumps(self.problem.space, cls=Encoder),
             )
         )
 

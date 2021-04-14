@@ -123,6 +123,7 @@ class Evaluator:
             "threadPool",
             "__mpiPool",
             "ray",
+            "rayhorovod"
         ]
 
         if not method in available_methods:
@@ -154,6 +155,17 @@ class Evaluator:
             from deephyper.evaluator._ray_evaluator import RayEvaluator
 
             Eval = RayEvaluator(
+                run_function,
+                cache_key=cache_key,
+                ray_address=ray_address,
+                ray_password=ray_password,
+                num_workers=num_workers,
+                **kwargs,
+            )
+        elif method == "rayhorovod":
+            from deephyper.evaluator._ray_horovod_evaluator import RayHorovodEvaluator
+
+            Eval = RayHorovodEvaluator(
                 run_function,
                 cache_key=cache_key,
                 ray_address=ray_address,
@@ -328,19 +340,22 @@ class Evaluator:
 
         If both arguments are set to None, then all keys for all points will be added to the CSV file. Keys are columns and values are used to fill rows.
 
+        An example ``saved_keys`` argument can be:
+
+        >>> def saved_keys(self, val: dict):
+        >>>     res = {
+        >>>         "learning_rate": val["hyperparameters"]["learning_rate"],
+        >>>         "batch_size": val["hyperparameters"]["batch_size"],
+        >>>         "ranks_per_node": val["hyperparameters"]["ranks_per_node"],
+        >>>         "arch_seq": str(val["arch_seq"]),
+        >>>     }
+        >>>    return res
 
         Args:
             saved_key (str, optional): If is a key corresponding to an element of points which should be a list. Defaults to None.
-            saved_keys (list|callable, optional): If is a list of key corresponding to elements of points' dictonnaries then it will add them to the CSV file. If callable such as:
-                >>> def saved_keys(self, val: dict):
-                >>>     res = {
-                >>>         "learning_rate": val["hyperparameters"]["learning_rate"],
-                >>>         "batch_size": val["hyperparameters"]["batch_size"],
-                >>>         "ranks_per_node": val["hyperparameters"]["ranks_per_node"],
-                >>>         "arch_seq": str(val["arch_seq"]),
-                >>>     }
-                >>> return res.
-            Then it will add the result to the CSV file. Defaults to None.
+            saved_keys (list|callable, optional): If is a list of key corresponding to elements of points' dictonnaries then it will add them to the CSV file. If callable then the result has to be a dict where the keys will become columbns of the CSV. Defaults to None.
+
+
         """
         if not self.finished_evals:
             return

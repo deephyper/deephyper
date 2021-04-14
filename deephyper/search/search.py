@@ -1,12 +1,11 @@
 import argparse
-from pprint import pformat
 import logging
+import os
+from pprint import pformat
 
 import numpy as np
-
-from deephyper.search import util
 from deephyper.evaluator.evaluate import Evaluator
-
+from deephyper.search import util
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +40,7 @@ class Search:
         seed: int = None,
         num_nodes_master: int = 1,
         num_workers: int = None,
+        log_dir: int = None,
         **kwargs,
     ):
         kwargs["problem"] = problem
@@ -70,6 +70,7 @@ class Search:
         )
         self.num_workers = self.evaluator.num_workers
         self.max_evals = max_evals
+        self.log_dir = os.getcwd() if log_dir is None else log_dir
 
         # set the random seed
         np.random.seed(self.problem.seed)
@@ -134,7 +135,14 @@ class Search:
         parser.add_argument(
             "--evaluator",
             default="ray",
-            choices=["balsam", "ray", "subprocess", "processPool", "threadPool"],
+            choices=[
+                "balsam",
+                "ray",
+                "rayhorovod",
+                "subprocess",
+                "processPool",
+                "threadPool",
+            ],
             help="The evaluator is an object used to evaluate models.",
         )
         parser.add_argument(
@@ -191,5 +199,11 @@ class Search:
             default=None,
             type=int,
             help="Number of parallel workers for the search. By default, it is being automatically computed depending on the chosen evaluator. If fixed then the default number of workers is override by this value.",
+        )
+        parser.add_argument(
+            "--log-dir",
+            default=None,
+            type=str,
+            help="Path of the directory where to store information about the run.",
         )
         return parser

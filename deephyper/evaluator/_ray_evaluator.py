@@ -1,8 +1,7 @@
 import logging
-import subprocess
+import traceback
 import time
 from collections import defaultdict, namedtuple
-import sys
 
 import ray
 
@@ -11,18 +10,12 @@ from deephyper.evaluator.evaluate import Evaluator
 logger = logging.getLogger(__name__)
 
 
-def compute_objective(func, x):
-    return func(x)
-
-
 class RayFuture:
     FAIL_RETURN_VALUE = Evaluator.FAIL_RETURN_VALUE
 
-    def __init__(self, func, x, num_cpus=1, num_gpus=None):
-        self.compute_objective = ray.remote(num_cpus=num_cpus, num_gpus=num_gpus)(
-            compute_objective
-        )
-        self.id_res = self.compute_objective.remote(func, x)
+    def __init__(self, func, x):
+        self.compute_objective = func
+        self.id_res = self.compute_objective.remote(x)
         self._state = "active"
         self._result = None
 
@@ -37,6 +30,7 @@ class RayFuture:
                 self._result = ray.get(id_done[0])
                 self._state = "done"
             except Exception:
+                print(traceback.format_exc())
                 self._state = "failed"
         else:
             self._state = "active"
@@ -113,11 +107,15 @@ class RayEvaluator(Evaluator):
             f"RAY Evaluator will execute: '{self._run_function}', proc_info: {proc_info}"
         )
 
+        self._run_function = ray.remote(
+            num_cpus=self.num_cpus_per_tasks,
+            num_gpus=self.num_gpus_per_tasks,
+            max_calls=1,
+        )(self._run_function)
+
     def _eval_exec(self, x: dict):
         assert isinstance(x, dict)
-        future = RayFuture(
-            self._run_function, x, self.num_cpus_per_tasks, self.num_gpus_per_tasks
-        )
+        future = RayFuture(self._run_function, x)
         return future
 
     @staticmethod

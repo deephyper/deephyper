@@ -11,28 +11,43 @@ and a Lustre-based parallel file system, all integrated by Cray’s HPC software
 User installation
 =================
 
-DeepHyper can be installed on Theta by following these commands.
+Before installating DeepHyper, go to your project folder::
 
-::
+    cd /lus/theta-fs0/projects/PROJECTNAME
+    mkdir theta && cd theta/
+
+DeepHyper can be installed on Theta by following these commands::
+
+    git clone https://github.com/deephyper/deephyper.git --depth 1
+    ./deephyper/install/theta.sh
+
+Then, restart your session.
+
+.. warning::
+    You will note that a new file ``~/.bashrc_theta`` was created and sourced in the ``~/.bashrc``. This is to avoid conflicting installations between the different systems available at the ALCF.
+
+.. note::
+    To test you installation run::
+
+        ./deephyper/tests/system/test_theta.sh
+
+
+A manual installation can also be performed with the following set of commands::
 
     module load postgresql
     module load miniconda-3
-    conda create -p dh-env
-    conda activate dh-env
-    conda install gxx_linux-64 gcc_linux-64
-    conda install tensorflow -c intel
+    conda create -p dh-theta python=3.8 -y
+    conda activate dh-theta/
+    conda install gxx_linux-64 gcc_linux-64 -y
     # DeepHyper + Analytics Tools (Parsing logs, Plots, Notebooks)
     pip install deephyper[analytics,balsam]
-    # or DeepHyper + Analytics Tools (Parsing logs, Plots, Notebooks) + Horovod
-    pip install deephyper[analytics,hvd,balsam]
+    conda install tensorflow -c intel -y
+
+
+
 
 .. note::
-    You might put::
-
-        module load postgresql
-        module load miniconda-3
-
-    in your ``~/.bashrc`` if you want to use *DeepHyper* in all new session.
+    Horovod can be installed to use data-parallelism during the evaluations of DeepHyper. To do so use ``pip install deephyper[analytics,hvd,balsam]`` while or after installing.
 
 
 Analytics

@@ -4,7 +4,7 @@ usage:
 
 ::
 
-    $ deephyper-analytics post mybalsamdb/data/workflow_folder
+    $ deephyper-analytics notebook --type posttrain --output mynotebook.ipynb mybalsamdb/data/workflow_folder
 
 """
 

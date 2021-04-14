@@ -148,7 +148,7 @@ Next, we will run a random search (RDM).
 
 .. note::
 
-    In order to run DeepHyper locally and on other systems we are using :ref:`evaluators`. For local evaluations we can use the :ref:`ray-evaluator` or the :ref:`subprocess-evaluator`.
+    In order to run DeepHyper locally and on other systems we are using :mod:`deephyper.evaluator`. For local evaluations we can use the :class:`deephyper.evaluator.RayEvaluator` or the :class:`deephyper.evaluator.SubProcessEvaluator`.
 
 
 After the search is over, you will find the following files in your current folder:

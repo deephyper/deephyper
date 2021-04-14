@@ -21,6 +21,7 @@ class Dense(Operation):
 
         # Reuse arg
         self._layer = None
+        self._activation = None
 
     def __str__(self):
         if isinstance(self.activation, str):
@@ -41,8 +42,12 @@ class Dense(Operation):
             )
 
         out = self._layer(inputs[0])
+
         if self.activation is not None: # better for visualisation
-            out = keras.layers.Activation(activation=self.activation)(out)
+            if self._activation is None:
+                self._activation = keras.layers.Activation(activation=self.activation)
+
+            out = self._activation(out)
         return out
 
 

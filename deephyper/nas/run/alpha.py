@@ -4,45 +4,19 @@ import traceback
 import numpy as np
 import tensorflow as tf
 from deephyper.contrib.callbacks import import_callback
-from deephyper.search import util
-
-from ..trainer.train_valid import TrainerTrainValid
-from .util import (
+from deephyper.nas.run.util import (
     compute_objective,
     load_config,
     preproc_trainer,
+    save_history,
     setup_data,
     setup_search_space,
+    default_callbacks_config,
 )
+from deephyper.nas.trainer.train_valid import TrainerTrainValid
+from deephyper.search import util
 
 logger = util.conf_logger("deephyper.search.nas.run")
-
-# Default callbacks parameters
-default_callbacks_config = {
-    "EarlyStopping": dict(
-        monitor="val_loss", min_delta=0, mode="min", verbose=0, patience=0
-    ),
-    "ModelCheckpoint": dict(
-        monitor="val_loss",
-        mode="min",
-        save_best_only=True,
-        verbose=1,
-        filepath="model.h5",
-        save_weights_only=False,
-    ),
-    "TensorBoard": dict(
-        log_dir="",
-        histogram_freq=0,
-        batch_size=32,
-        write_graph=False,
-        write_grads=False,
-        write_images=False,
-        update_freq="epoch",
-    ),
-    "CSVLogger": dict(filename="training.csv", append=True),
-    "CSVExtendedLogger": dict(filename="training.csv", append=True),
-    "TimeStopping": dict(),
-}
 
 
 def run(config):
@@ -89,6 +63,12 @@ def run(config):
                             "filepath"
                         ] = f'best_model_{config["id"]}.h5'
 
+                    # replace patience hyperparameter
+                    if "patience" in default_callbacks_config[cb_name]:
+                        patience = config["hyperparameters"].get(f"patience_{cb_name}")
+                        if patience is not None:
+                            default_callbacks_config[cb_name]["patience"] = patience
+
                     # Import and create corresponding callback
                     Callback = import_callback(cb_name)
                     callbacks.append(Callback(**default_callbacks_config[cb_name]))
@@ -106,10 +86,13 @@ def run(config):
 
         history = trainer.train(with_pred=with_pred, last_only=last_only)
 
+        # save history
+        save_history(config.get("log_dir", None), history, config)
+
         result = compute_objective(config["objective"], history)
     else:
         # penalising actions if model cannot be created
         result = -1
-    if result < -10:
+    if result < -10 or np.isnan(result):
         result = -10
     return result

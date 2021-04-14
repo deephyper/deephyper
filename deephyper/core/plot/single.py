@@ -1,16 +1,12 @@
-"""Deephyper analytics - single study documentation
+"""Neural architecture search single study.
 
-usage:
+usage::
 
-::
-
-    $ deephyper-analytics parse ppo_test/ppo_test_382DS/deephyper.log
-    $ deephyper-analytics single ppo_test_2019-05-07_14.json
-
+    $ deephyper-analytics parse agebo_test2/agebo_test_2/deephyper.log
+    $ deephyper-analytics notebook --type nas --output mynotebook.ipynb agebo_test2_2019-05-07_14.json
 """
 
 import os
-import argparse
 from deephyper.core.plot.jn_loader import NbEdit
 
 HERE = os.path.dirname(os.path.abspath(__file__))

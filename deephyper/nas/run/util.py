@@ -1,9 +1,42 @@
-import numpy as np
+import json
+import os
+from datetime import datetime
 
+import numpy as np
 from deephyper.core.exceptions.problem import WrongProblemObjective
+from deephyper.core.utils import create_dir
 from deephyper.search import util
+from deephyper.evaluator.evaluate import Encoder
 
 logger = util.conf_logger("deephyper.search.nas.run")
+
+
+default_callbacks_config = {
+    "EarlyStopping": dict(
+        monitor="val_loss", min_delta=0, mode="min", verbose=0, patience=0
+    ),
+    "ModelCheckpoint": dict(
+        monitor="val_loss",
+        mode="min",
+        save_best_only=True,
+        verbose=1,
+        filepath="model.h5",
+        save_weights_only=False,
+    ),
+    "TensorBoard": dict(
+        log_dir="",
+        histogram_freq=0,
+        batch_size=32,
+        write_graph=False,
+        write_grads=False,
+        write_images=False,
+        update_freq="epoch",
+    ),
+    "CSVLogger": dict(filename="training.csv", append=True),
+    "CSVExtendedLogger": dict(filename="training.csv", append=True),
+    "TimeStopping": dict(),
+    "ReduceLROnPlateau":dict(monitor="val_loss", mode="auto", verbose=0, patience=5)
+}
 
 
 def load_config(config):
@@ -175,3 +208,36 @@ def preproc_trainer(config):
         and "with_pred" in config["objective"].__name__
     )
     return last_only, with_pred
+
+
+def hash_arch_seq(arch_seq: list) -> str:
+    return "_".join([str(el) for el in arch_seq])
+
+
+def save_history(log_dir: str, history: dict, config: dict):
+    if not (log_dir is None):
+        history_path = os.path.join(log_dir, "history")
+        if not (os.path.exists(history_path)):
+            create_dir(history_path)
+        now = datetime.now()
+        now = now.strftime("%d-%b-%Y_%H-%M-%S")
+        history_path = os.path.join(
+            history_path, f"{now}oo{hash_arch_seq(config['arch_seq'])}.json"
+        )
+        logger.info(f"Saving history at: {history_path}")
+
+        # convert numpy types to json compatible types
+        # print(history)
+        # for k,v in history.items():
+        #     if type(v) is np.ndarray or:
+        #         if v.dtype == np.int32 or v.dtype == np.int64:
+        #             history[k] = v.astype(int).tolist()
+        #         elif v.dtype == np.float32 or v.dtype == np.float64:
+        #             history[k] = v.astype(float).tolist()
+        #     elif type(v) is np.float32 or type(v) is np.float64:
+        #         history[k] = float(v)
+        #     elif type(v) is np.int32 or type(v) is np.int64:
+        #         history[k] = int(v)
+
+        with open(history_path, "w") as f:
+            json.dump(history, f, cls=Encoder)

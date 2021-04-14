@@ -1,26 +1,23 @@
-"""Deephyper analytics - multi study documentation
+"""Neural architecture search comparative study.
 
-usage:
-
-::
+usage::
 
     $ deephyper-analytics parse agebo_test1/agebo_test_382DS/deephyper.log
     $ deephyper-analytics parse agebo_test2/agebo_test_23HDS/deephyper.log
-    $ deephyper-analytics multi agebo_test1_2019-05-07_14.json agebo_test1_2019-05-07_14.json
+    $ deephyper-analytics notebook --type nas --output mynotebook.ipynb agebo_test1_2019-05-07_14.json agebo_test1_2019-05-07_14.json
 
 """
 
 import os
-import argparse
 from deephyper.core.plot.jn_loader import NbEdit
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
-def multi_analytics(path_to_data_file):
+def multi_analytics(path_to_data_file, output_path="dh-analytics-multi.ipynb"):
     editor = NbEdit(
         os.path.join(HERE, "stub/multi_analytics.ipynb"),
-        path_to_save="dh-analytics-multi.ipynb",
+        path_to_save=output_path,
     )
 
     path_list = list()

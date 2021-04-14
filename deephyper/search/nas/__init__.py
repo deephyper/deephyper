@@ -10,6 +10,8 @@ class NeuralArchitectureSearch(Search):
     ):
 
         super().__init__(problem, run=run, evaluator=evaluator, **kwargs)
+        if self.problem._space["log_dir"] is None:
+            self.problem._space["log_dir"] = self.log_dir
 
     @staticmethod
     def _extend_parser(parser):

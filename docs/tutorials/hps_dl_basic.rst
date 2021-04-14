@@ -155,7 +155,7 @@ Defining the HPS Problem space
 ==============================
 
 The ``run`` function in ``model_run.py`` expects a hyperparameter dictionary with three keys: ``units, activation, and lr``.
-We define the acceptable ranges for these hyperparameters with the ``Problem`` object inside ``problem.py`.
+We define the acceptable ranges for these hyperparameters with the ``Problem`` object inside ``problem.py``.
 Hyperparameter ranges are defined using the following syntax:
 
     * Discrete integer ranges are generated from a tuple: ``(lower: int, upper: int)``
@@ -216,7 +216,7 @@ We have tested the syntax in all of these by running them individually. Now, let
 
 .. note::
 
-    In order to run DeepHyper locally and on other systems we are using :ref:`evaluators`. For local evaluations we use the :ref:`subprocess-evaluator`.
+    In order to run DeepHyper locally and on other systems we are using :mod:`deephyper.evaluator`. For local evaluations we use the :class:`deephyper.evaluator.SubprocessEvaluator`.
 
 .. note::
 

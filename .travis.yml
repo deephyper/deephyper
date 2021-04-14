@@ -10,32 +10,29 @@ notifications:
     on_success: change
     on_failure: always
 
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    - build-essential
-    - graphviz
-    # packages:
-    # MPICH
-    - mpich
-    - libmpich-dev
-
 git:
   depth: 3
 
 cache:
   apt: true
 
-before_install:
-  # - sudo apt-get install build-essential
-  # We need GraphViz to draw figures of graphs and lattices:
-  - sudo apt-get install graphviz
-  # - sh ./conf/travis-install-mpi.sh mpich2
-  # - mpirun --version
+# before_install:
+#   - sudo apt-get install build-essential -y
+#   - sudo apt-get install libopenmpi-dev -y
+#   - sudo apt-get install graphviz -y
+addons:
+  apt:
+    update: true
+    sources:
+    - ubuntu-toolchain-r-test
+    - build-essential
+    - graphviz
+    # MPICH
+    - mpich
+    - libmpich-dev
 
 install:
-  - pip install -e '.[docs,tests,analytics]'
+  - pip install -e '.[docs,tests,analytics,balsam]'
   - pip install codecov pytest-cov
 
 script:

@@ -1,10 +1,11 @@
-import inspect
 from collections import OrderedDict
 from inspect import signature
 from pprint import pformat
+from copy import deepcopy
 
+import ConfigSpace as cs
+import ConfigSpace.hyperparameters as csh
 import tensorflow as tf
-from deephyper.nas.run.util import setup_data, get_search_space
 from deephyper.core.exceptions.problem import (
     NaProblemError,
     ProblemLoadDataIsNotCallable,
@@ -14,6 +15,8 @@ from deephyper.core.exceptions.problem import (
     SearchSpaceBuilderMissingParameter,
     WrongProblemObjective,
 )
+from deephyper.nas.run.util import get_search_space, setup_data
+from deephyper.problem import HpProblem
 
 
 class Problem:
@@ -21,6 +24,7 @@ class Problem:
 
     def __init__(self, seed=None, **kwargs):
         self._space = OrderedDict()
+        self._hp_space = HpProblem(seed)
         self.seed = seed
 
     def __str__(self):
@@ -44,6 +48,11 @@ class Problem:
         dims.sort()
         space = OrderedDict(**{d: self._space[d] for d in dims})
         return space
+
+    def add_hyperparameter(
+        self, value, name: str = None, default_value=None
+    ) -> csh.Hyperparameter:
+        return self._hp_space.add_hyperparameter(value, name, default_value)
 
 
 class NaProblem(Problem):
@@ -107,11 +116,12 @@ class NaProblem(Problem):
         regression (bool): if ``True`` the problem is defined as a ``regression`` problem, if ``False`` the problem is defined as a ``classification`` problem.
     """
 
-    def __init__(self, seed=None, **kwargs):
+    def __init__(self, seed=None, log_dir=None, **kwargs):
         super().__init__(seed=seed, **kwargs)
 
         self._space["metrics"] = list()
-        self._space["hyperparameters"] = dict(verbose=1)
+        self._space["hyperparameters"] = dict(verbose=0)
+        self._space["log_dir"] = log_dir
 
     def __repr__(self):
 
@@ -221,26 +231,31 @@ class NaProblem(Problem):
             self._space["hyperparameters"] = dict()
         self._space["hyperparameters"].update(kwargs)
 
-    def loss(self, loss, weights=None):
+    def loss(self, loss, loss_weights=None, class_weights=None):
         """Define the loss used to train generated search_spaces.
 
         Args:
             loss (str|callable|list): a string indicating a specific loss function.
-            weights (list): Optional.
+            loss_weights (list): Optional.
+            class_weights (dict): Optional.
         """
-        if not type(loss) is str and not callable(loss) and not type(loss) is dict:
-            raise RuntimeError(
-                f"The loss should be either a str, dict or a callable when it's of type {type(loss)}"
-            )
+        if not(type(loss) is csh.CategoricalHyperparameter):
+            if not type(loss) is str and not callable(loss) and not type(loss) is dict:
+                raise RuntimeError(
+                    f"The loss should be either a str, dict or a callable when it's of type {type(loss)}"
+                )
 
-        if type(loss) is dict and weights is not None and len(loss) != len(weights):
-            raise RuntimeError(
-                f"The losses list (len={len(loss)}) and the weights list (len={len(weights)}) should be of same length!"
-            )
+            if type(loss) is dict and loss_weights is not None and len(loss) != len(loss_weights):
+                raise RuntimeError(
+                    f"The losses list (len={len(loss)}) and the weights list (len={len(loss_weights)}) should be of same length!"
+                )
 
         self._space["loss"] = loss
-        if weights is not None:
-            self._space["loss_weights"] = weights
+        if loss_weights is not None:
+            self._space["loss_weights"] = loss_weights
+
+        if class_weights is not None:
+            self._space["class_weights"] = class_weights
 
     def metrics(self, metrics):
         """Define a list of metrics for the training of generated search_spaces.
@@ -362,7 +377,7 @@ class NaProblem(Problem):
         Returns:
             NxSearchSpace: A search space instance.
         """
-        config = self._space
+        config = self.space
         input_shape, output_shape = setup_data(config, add_to_config=False)
 
         search_space = get_search_space(config, input_shape, output_shape, seed=self.seed)
@@ -378,6 +393,36 @@ class NaProblem(Problem):
         search_space.set_ops(arch_seq)
         keras_model = search_space.create_model()
         return keras_model
+
+    def gen_config(self, arch_seq: list, hp_values: list) -> dict:
+        config = deepcopy(self.space)
+
+        # architecture DNA
+        config["arch_seq"] = arch_seq
+
+        # replace hp values in the config
+        hp_names = self._hp_space._space.get_hyperparameter_names()
+
+        for hp_name, hp_value in zip(hp_names, hp_values):
+
+            if hp_name == "loss":
+                config["loss"] = hp_value
+            else:
+                config["hyperparameters"][hp_name] = hp_value
+
+        return config
+
+    def extract_hp_values(self, config):
+        hp_names = self._hp_space._space.get_hyperparameter_names()
+        hp_values = []
+        for hp_name in hp_names:
+            if hp_name == "loss":
+                hp_values.append(config["loss"])
+            else:
+                hp_values.append(config["hyperparameters"][hp_name])
+
+        return hp_values
+
 
 
 def module_location(attr):

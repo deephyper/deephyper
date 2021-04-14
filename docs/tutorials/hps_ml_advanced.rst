@@ -3,12 +3,12 @@
 Hyperparameter Search for Machine Learning (Advanced)
 *****************************************************
 
-In this tutorial, we will show how to treat a learning method as a hyperparameter in the hyperparameter search. 
-We will consider `Random Forest (RF) classifier <https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html>`_ 
-and `Gradient Boosting (GB) classifier <https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingClassifier.html>`_ 
+In this tutorial, we will show how to treat a learning method as a hyperparameter in the hyperparameter search.
+We will consider `Random Forest (RF) classifier <https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html>`_
+and `Gradient Boosting (GB) classifier <https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingClassifier.html>`_
 methods in `scikit-learn <https://scikit-learn.org/stable/>`_ for the Airlines data set.
-Each of these methods have its own set of hyperparameters and some common parameters. 
-We model them using `ConfigSpace  <https://automl.github.io/ConfigSpace/master/>`_ 
+Each of these methods have its own set of hyperparameters and some common parameters.
+We model them using `ConfigSpace  <https://automl.github.io/ConfigSpace/master/>`_
 a python package to express conditional hyperparameters and more.
 
 Let us start by creating a DeepHyper project and a problem for our application:
@@ -28,9 +28,10 @@ Let us start by creating a DeepHyper project and a problem for our application:
 Create a ``mapping.py`` script where you will record the classification algorithms of interest (``$ touch mapping.py`` in the terminal then edit the file):
 
 .. literalinclude:: content_hps_ml_advanced/mapping.py
-    :linenos:
+    :language: python
     :caption: advanced_hpo/mapping.py
     :name: advanced_hpo-mapping
+    :linenos:
 
 Create a script to test the accuracy of the default configuration for both the models:
 
@@ -62,11 +63,11 @@ Running the script will give the the following outputs:
     Accuracy on Testing: 0.649
 
 The accuracy values show that the RandomForest classifier with default hyperparameters results in overfitting and thus poor generalization
-(high accuracy on training data but not on the validation and test data). 
-On the contrary GradientBoosting does not show any sign of overfitting and has a better accuracy on the validation and testing set, 
+(high accuracy on training data but not on the validation and test data).
+On the contrary GradientBoosting does not show any sign of overfitting and has a better accuracy on the validation and testing set,
 which shows a better generalization than RandomForest.
 
-Next, we optimize the hyperparameters, where we seek to find the right classifier and its corresponding hyperparameters, 
+Next, we optimize the hyperparameters, where we seek to find the right classifier and its corresponding hyperparameters,
 and improve the accuracy on the vaidation and test data.
 Create ``load_data.py`` file to load and return training and validation data:
 
@@ -95,7 +96,7 @@ The expected output is:
     X_valid shape: (10000, 7)
     y_valid shape: (10000,)
 
-Create ``model_run.py`` file to train and evaluate a given hyperparameter configuration. 
+Create ``model_run.py`` file to train and evaluate a given hyperparameter configuration.
 This function has to return a scalar value (typically, validation accuracy), which will be maximized by the search algorithm.
 
 .. literalinclude:: content_hps_ml_advanced/model_run.py

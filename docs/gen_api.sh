@@ -1,3 +1,3 @@
 #!/bin/bash
 
-sphinx-apidoc -o source/ ../deephyper
+sphinx-apidoc -o api/ ../deephyper --templatedir templates/api --module-first
