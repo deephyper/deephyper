@@ -137,14 +137,14 @@ def pre_submit(problem, run, workflow):
     return job
 
 
-def setup_ambs(job, problem, run, num_evals_per_node=1):
+def setup_ambs(job, problem, run, num_evals_per_node=1, **kwargs):
     job.application = "AMBS"
     job.args = f"--evaluator balsam --problem {problem} --run {run} --num-evals-per-node {num_evals_per_node}"
     job.save()
     return job
 
 
-def setup_nas(job, problem, run, nas_nodes):
+def setup_nas(job, problem, run, nas_nodes, **kwargs):
     job.application = "PPO"
     job.args = f"--evaluator balsam --problem {problem}"
     job.num_nodes = nas_nodes
