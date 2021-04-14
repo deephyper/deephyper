@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash +x
 
 DB_NAME=thetadb
 PROJECT_NAME=datascience
