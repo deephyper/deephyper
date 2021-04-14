@@ -20,7 +20,7 @@ conda activate dh-cooley/
 conda install gxx_linux-64 gcc_linux-64 -y
 # DeepHyper + Analytics Tools (Parsing logs, Plots, Notebooks)
 pip install deephyper[analytics,balsam]
-conda install tensorflow
+conda install tensorflow -y
 
 
 # Checking existence of "bashrc_theta"
