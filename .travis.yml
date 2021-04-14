@@ -27,12 +27,10 @@ addons:
     - ubuntu-toolchain-r-test
     - build-essential
     - graphviz
-    # MPICH
-    - mpich
-    - libmpich-dev
+    - openmpi-bin
 
 install:
-  - pip install -e '.[docs,tests,analytics,balsam]'
+  - pip install -e '.[docs,tests,analytics]'
   - pip install codecov pytest-cov
 
 script:
