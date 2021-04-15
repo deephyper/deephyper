@@ -7,7 +7,6 @@ import skopt
 from deephyper.problem import HpProblem
 from deephyper.core.logs.logging import JsonMessage as jm
 from deephyper.core.parser import add_arguments_from_signature
-from deephyper.evaluator.evaluate import Encoder
 from deephyper.search import util
 from deephyper.search.nas import NeuralArchitectureSearch
 from skopt import Optimizer as SkOptimizer

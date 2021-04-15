@@ -2,6 +2,7 @@ from collections.abc import Iterable
 from functools import reduce
 
 import networkx as nx
+import tensorflow as tf
 from tensorflow import keras
 from tensorflow.python.keras.utils.vis_utils import model_to_dot
 
@@ -140,6 +141,8 @@ class KSearchSpace(NxSearchSpace):
         Returns:
             A keras.Model for the current search_space with the corresponding set of operations.
         """
+        #! the output layer does not have to be of the same shape as the data
+        #! this depends on the loss
         if type(self.output_node) is list:
             output_tensors = [
                 self.create_tensor_aux(self.graph, out) for out in self.output_node
@@ -148,16 +151,18 @@ class KSearchSpace(NxSearchSpace):
             for out_T in output_tensors:
                 output_n = int(out_T.name.split("/")[0].split("_")[-1])
                 out_S = self.output_shape[output_n]
-                if out_T.get_shape()[1:] != out_S:
-                    raise WrongOutputShape(out_T, out_S)
+                out_T_shape = tf.shape(out_T).shape
+                if out_T_shape[1:] != out_S:
+                    print(str(WrongOutputShape(out_T_shape, out_S)))
 
             input_tensors = [inode._tensor for inode in self.input_nodes]
 
             self._model = keras.Model(inputs=input_tensors, outputs=output_tensors)
         else:
             output_tensors = self.create_tensor_aux(self.graph, self.output_node)
-            if output_tensors.get_shape()[1:] != self.output_shape:
-                raise WrongOutputShape(output_tensors, self.output_shape)
+            output_tensors_shape = tf.shape(output_tensors).shape
+            if output_tensors_shape[1:] != self.output_shape:
+                print(str(WrongOutputShape(output_tensors_shape, self.output_shape)))
 
             input_tensors = [inode._tensor for inode in self.input_nodes]
 

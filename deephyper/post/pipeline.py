@@ -9,7 +9,7 @@ from tensorflow import keras
 import tensorflow.keras.backend as K
 
 from deephyper.core.exceptions import DeephyperRuntimeError
-from deephyper.evaluator import Encoder
+from deephyper.evaluator.encoder import Encoder
 from deephyper.search import util
 from deephyper.nas.run.util import (
     load_config,

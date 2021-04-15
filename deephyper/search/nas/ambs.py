@@ -36,7 +36,6 @@ import skopt
 from deephyper.core.logs.logging import JsonMessage as jm
 from deephyper.search import util
 from deephyper.search.nas import NeuralArchitectureSearch
-from deephyper.evaluator.evaluate import Encoder
 
 dhlogger = util.conf_logger("deephyper.search.nas.ambs")
 
@@ -66,15 +65,6 @@ class AMBNeuralArchitectureSearch(NeuralArchitectureSearch):
     ):
         super().__init__(problem, run, evaluator, **kwargs)
         dhlogger.info("Initializing AMBNAS")
-
-        dhlogger.info(
-            jm(
-                type="start_infos",
-                alg="ambs",
-                nworkers=self.evaluator.num_workers,
-                encoded_space=json.dumps(self.problem.space, cls=Encoder),
-            )
-        )
         dhlogger.info(f"kappa={kappa}, xi={xi}")
 
         self.n_initial_points = self.evaluator.num_workers

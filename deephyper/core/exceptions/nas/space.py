@@ -49,9 +49,9 @@ class WrongOutputShape(NASError):
     match the expected shape.
     """
 
-    def __init__(self, tensor, expected_shape):
-        self.tensor = tensor
+    def __init__(self, tensor_shape, expected_shape):
+        self.tensor_shape = tensor_shape
         self.expected_shape = expected_shape
 
     def __str__(self):
-        return f"The output tensor of shape {self.tensor.get_shape()} doesn't match the expected shape {self.expected_shape}!"
+        return f"The output tensor of shape {self.tensor_shape} doesn't match the expected shape {self.expected_shape}!"

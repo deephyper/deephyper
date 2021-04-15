@@ -7,12 +7,8 @@ from deephyper.search import util
 from deephyper.search.nas import NeuralArchitectureSearch
 from deephyper.core.parser import add_arguments_from_signature
 from deephyper.core.logs.logging import JsonMessage as jm
-from deephyper.evaluator.evaluate import Encoder
 
 dhlogger = util.conf_logger("deephyper.search.nas.regevo")
-
-# def key(d):
-#     return json.dumps(dict(arch_seq=d['arch_seq']), cls=Encoder)
 
 
 class RegularizedEvolution(NeuralArchitectureSearch):
@@ -35,15 +31,6 @@ class RegularizedEvolution(NeuralArchitectureSearch):
         super().__init__(problem=problem, run=run, evaluator=evaluator, **kwargs)
 
         self.free_workers = self.evaluator.num_workers
-
-        dhlogger.info(
-            jm(
-                type="start_infos",
-                alg="aging-evolution",
-                nworkers=self.evaluator.num_workers,
-                # encoded_space=json.dumps(self.problem.space, cls=Encoder),
-            )
-        )
 
         # Setup
         self.pb_dict = self.problem.space

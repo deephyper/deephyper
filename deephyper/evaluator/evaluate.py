@@ -4,43 +4,17 @@ import logging
 import os
 import sys
 import time
-import types
 import uuid
 from collections import OrderedDict
 from contextlib import suppress as dummy_context
 from math import isnan
 
 import numpy as np
-import skopt
 from deephyper.core.exceptions import DeephyperRuntimeError
 from deephyper.evaluator import runner
-from numpy import bool_, floating, integer, ndarray
+from deephyper.evaluator.encoder import Encoder
 
 logger = logging.getLogger(__name__)
-
-
-class Encoder(json.JSONEncoder):
-    """
-    Enables JSON dump of numpy data
-    """
-
-    def default(self, obj):
-        if isinstance(obj, uuid.UUID):
-            return obj.hex
-        elif isinstance(obj, integer):
-            return int(obj)
-        elif isinstance(obj, floating):
-            return float(obj)
-        elif isinstance(obj, bool_):
-            return bool(obj)
-        elif isinstance(obj, ndarray):
-            return obj.tolist()
-        elif isinstance(obj, types.FunctionType):
-            return f"{obj.__module__}.{obj.__name__}"
-        elif isinstance(obj, skopt.space.Dimension):
-            return str(obj)
-        else:
-            return super(Encoder, self).default(obj)
 
 
 class Evaluator:
@@ -123,7 +97,7 @@ class Evaluator:
             "threadPool",
             "__mpiPool",
             "ray",
-            "rayhorovod"
+            "rayhorovod",
         ]
 
         if not method in available_methods:

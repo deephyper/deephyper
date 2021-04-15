@@ -6,7 +6,7 @@ import numpy as np
 from deephyper.core.exceptions.problem import WrongProblemObjective
 from deephyper.core.utils import create_dir
 from deephyper.search import util
-from deephyper.evaluator.evaluate import Encoder
+from deephyper.evaluator.encoder import Encoder
 
 logger = util.conf_logger("deephyper.search.nas.run")
 
