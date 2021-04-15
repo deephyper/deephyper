@@ -23,7 +23,11 @@ BASHRC_COOLEY=~/.bashrc_cooley
 
 read -r -d '' NEW_BASHRC_CONTENT <<- EOM
 # Added by DeepHyper
-if [[ $HOSTNAME = *"cooley"* ]]; then
+if [[ $(echo '$HOSTNAME') = *"cooley"* ]]; then
+    source ~/.bashrc_cooley
+fi
+
+if [[ $(echo '$HOSTNAME') = *"cc"* ]]; then
     source ~/.bashrc_cooley
 fi
 EOM
@@ -40,4 +44,4 @@ fi
 echo "Adding new lines to $BASHRC_COOLEY"
 echo "# Added by DeepHyper" >> $BASHRC_COOLEY
 echo "source $PWD/miniconda/bin/activate" >> $BASHRC_COOLEY
-echo "export PATH=$PWD/pgsql/bin:$PATH" >> $BASHRC_COOLEY
+echo "export PATH=$PWD/pgsql/bin:"'$PATH' >> $BASHRC_COOLEY
