@@ -52,7 +52,7 @@ A manual installation can also be performed with the following set of commands::
     conda install gxx_linux-64 gcc_linux-64 -y
     # DeepHyper + Analytics Tools (Parsing logs, Plots, Notebooks)
     pip install deephyper[analytics,balsam]
-    conda install tensorflow
+    conda install tensorflow-gpu
 
 .. warning::
     The same ``.bashrc`` is used both on Theta and Cooley. Hence adding a ``module load`` instruction to the ``.bashrc`` will not work on Cooley. In order to solve this issue you can add a specific statement to your ``.bashrc`` file and create separate *bashrc* files for Theta and Cooley and use them as follows.
