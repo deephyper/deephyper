@@ -1,18 +1,25 @@
-import traceback
+"""The :func:`deephyper.nas.run.repeat.run` function is a function used to repeat ``N`` times the evaluation performed with the :func:`deephyper.nas.run.alpha.run`. To use this evaluation function the ``repeat=N`` argument has to be defined in the list of hyperparameters of the :func:`deephyper.problem.NaProblem` object:
 
+.. code-block:: python
+
+    Problem.hyperparameters(
+        ...,
+        repeat=N
+        ...
+    )
+"""
 import numpy as np
 import tensorflow as tf
-from tensorflow import keras
 
 from deephyper.search import util
-from .alpha import run as run_alpha
+from deephyper.nas.run.alpha import run as run_alpha
 
 logger = util.conf_logger("deephyper.search.nas.run")
 
 
-def run(config):
+def run(config: dict) -> float:
     seed = config["seed"]
-    repeat = 2
+    repeat = config["hyperparameters"].get("repeat", 1)
     if seed is not None:
         np.random.seed(seed)
         seeds = np.random.randint(0, 2 ** 32 - 1, repeat)

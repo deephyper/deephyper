@@ -1,7 +1,7 @@
 .. _balsamjob_spec:
 
 Configuring model execution with Balsam
-*******************************************
+***************************************
 
 When using the Balsam evaluator or ``balsam-submit`` shortcut to
 launch DeepHyper HPS jobs, the default assumption is that the
