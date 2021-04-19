@@ -1,3 +1,5 @@
+"""The :func:`deephyper.nas.run.horovod.run` function is used to evaluate a deep neural network by enabling data-parallelism with Horovod to the :func:`deephyper.nas.run.alpha.run` function. This function will automatically apply the linear scaling rule to the learning rate and batch size given the current number of ranks (i.e., the initial learning rate and batch size are scaled by the number of ranks).
+"""
 import os
 import traceback
 
@@ -52,7 +54,7 @@ default_callbacks_config = {
 hvd_root_cb = ["ModelCheckpoint", "Tensorboard", "CSVLogger", "CSVExtendedLogger"]
 
 
-def run(config):
+def run(config: dict) -> float:
     hvd.init()
 
     # Threading configuration

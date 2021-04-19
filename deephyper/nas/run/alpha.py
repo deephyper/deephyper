@@ -1,3 +1,5 @@
+"""The :func:`deephyper.nas.run.alpha.run` function is used to evaluate a deep neural network by loading the data, building the model, training the model and returning a scalar value corresponding to the objective defined in the used :class:`deephyper.problem.NaProblem`.
+"""
 import os
 import traceback
 
@@ -19,7 +21,7 @@ from deephyper.search import util
 logger = util.conf_logger("deephyper.search.nas.run")
 
 
-def run(config):
+def run(config: dict) -> float:
     # Threading configuration
     if os.environ.get("OMP_NUM_THREADS", None) is not None:
         logger.debug(f"OMP_NUM_THREADS is {os.environ.get('OMP_NUM_THREADS')}")

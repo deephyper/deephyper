@@ -1,8 +1,11 @@
 os: linux
+dist: xenial
 sudo: required
 language: python
 python:
-  - "3.7.9"
+  - 3.6
+  - 3.7
+  - 3.8
 
 # Change this to your needs
 notifications:
@@ -16,18 +19,17 @@ git:
 cache:
   apt: true
 
-# before_install:
-#   - sudo apt-get install build-essential -y
-#   - sudo apt-get install libopenmpi-dev -y
-#   - sudo apt-get install graphviz -y
 addons:
   apt:
     update: true
     sources:
     - ubuntu-toolchain-r-test
-    - build-essential
-    - graphviz
-    - openmpi-bin
+
+before_install:
+  - sudo apt-get install build-essential -y
+  - sudo apt-get install -y -q mpich libmpich-dev
+  - sudo apt-get install graphviz -y
+
 
 install:
   - pip install -e '.[docs,tests,analytics]'
