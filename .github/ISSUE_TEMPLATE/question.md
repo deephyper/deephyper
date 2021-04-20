@@ -1,8 +1,8 @@
 ---
 name: Question
 about: Ask a question about how to use the software
-title: ''
-labels: ''
+title: '[FAQ]'
+labels: question
 assignees: ''
 
 ---
