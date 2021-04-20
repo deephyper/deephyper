@@ -1,10 +1,14 @@
+"""This module provides different loss functions. A loss can be defined by a keyword (str) or a callable following the ``tensorflow.keras`` interface. If it is a keyword it has to be available in ``tensorflow.keras`` or in ``deephyper.losses``. The loss functions availble in ``deephyper.losses`` are:
+* Negative Log Likelihood (compatible with Tensorflow Probability): ``tfp_negloglik`` or ``tfp_nll``
+"""
 from collections import OrderedDict
-import traceback
 
 import tensorflow as tf
 from deephyper.search import util
 
 def tfp_negloglik(y, rv_y):
+    """Negative log likelihood for Tensorflow probability.
+    """
     return -rv_y.log_prob(y)
 
 losses_func = OrderedDict()

@@ -1,3 +1,9 @@
+"""This module provides different metric functions. A metric can be defined by a keyword (str) or a callable. If it is a keyword it has to be available in ``tensorflow.keras`` or in ``deephyper.netrics``. The loss functions availble in ``deephyper.metrics`` are:
+* Sparse Perplexity: ``sparse_perplexity``
+* R2: ``r2``
+* AUC ROC: ``auroc``
+* AUC Precision-Recall: ``aucpr``
+"""
 from collections import OrderedDict
 
 import tensorflow as tf
