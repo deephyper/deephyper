@@ -213,7 +213,19 @@ def setup_search_space(config, input_shape, output_shape, seed):
     return search_space
 
 
-def compute_objective(objective, history):
+def compute_objective(objective, history: dict) -> float:
+    """Compute an objective based on the history
+
+    Args:
+        objective (str|callable): the definition of the objective. If ``str`` has to be one of the metrics' name (e.g. ``"acc"``). It can have a prefix ``"-"`` to ask for the negative scalar. It can have a suffix ``__max``, ``__min`` or ``__last`` depending if the maximum, minimum of last epoch objective should be used. If it is a callable, it will be passed the ``history`` and has to return a scalar value.
+        history (dict): The training history of the model.
+
+    Raises:
+        WrongProblemObjective: raised when the value of ``objective`` is not correct.
+
+    Returns:
+        float: the deducted objective from ``history``.
+    """
     # set a multiplier to turn objective to its negative
     if type(objective) is str:
         if objective[0] == "-":
