@@ -8,10 +8,10 @@ from deephyper.nas.run.util import (
     compute_objective,
     load_config,
     preproc_trainer,
-    save_history,
     setup_data,
     setup_search_space,
     default_callbacks_config,
+    HistorySaver,
 )
 from deephyper.nas.trainer.train_valid import TrainerTrainValid
 from deephyper.search import util
@@ -20,6 +20,10 @@ logger = util.conf_logger("deephyper.search.nas.run")
 
 
 def run(config):
+    saver = HistorySaver(config)
+    saver.write_config()
+    saver.write_model(None)
+
     # Threading configuration
     if os.environ.get("OMP_NUM_THREADS", None) is not None:
         logger.debug(f"OMP_NUM_THREADS is {os.environ.get('OMP_NUM_THREADS')}")
@@ -59,9 +63,7 @@ def run(config):
 
                     # Special dynamic parameters for callbacks
                     if cb_name == "ModelCheckpoint":
-                        default_callbacks_config[cb_name][
-                            "filepath"
-                        ] = f'best_model_{config["id"]}.h5'
+                        default_callbacks_config[cb_name]["filepath"] = saver.model_path
 
                     # replace patience hyperparameter
                     if "patience" in default_callbacks_config[cb_name]:
@@ -87,7 +89,7 @@ def run(config):
         history = trainer.train(with_pred=with_pred, last_only=last_only)
 
         # save history
-        save_history(config.get("log_dir", None), history, config)
+        saver.write_history(history)
 
         result = compute_objective(config["objective"], history)
     else:
