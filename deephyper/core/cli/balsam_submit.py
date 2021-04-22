@@ -152,7 +152,7 @@ def bootstrap_apps():
 
 def pre_submit(
         mode: str, search: str, workflow: str, problem: str, run: str
-) -> BalsamJob:
+):
     """Validate command line; prepare apps"""
 
     app = validate(mode, search, workflow, problem, run)

@@ -62,7 +62,7 @@ class RegularizedEvolutionMixed(RegularizedEvolution):
         return parser
 
     def saved_keys(self, val: dict):
-        res = {"arch_seq": str(val["arch_seq"])}
+        res = {"id": val["id"], "arch_seq": str(val["arch_seq"])}
         hp_names = self.hp_space._space.get_hyperparameter_names()
 
         for hp_name in hp_names:

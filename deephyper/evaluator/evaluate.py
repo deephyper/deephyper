@@ -157,6 +157,7 @@ class Evaluator:
     def encode(self, x):
         if not isinstance(x, dict):
             raise ValueError(f"Expected dict, but got {type(x)}")
+        x["id"] = uuid.uuid1()
         return json.dumps(x, cls=self.encoder)
 
     def _elapsed_sec(self):

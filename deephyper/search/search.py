@@ -1,11 +1,13 @@
 import argparse
+import json
+import time
 import logging
 import os
 from pprint import pformat
 
 import numpy as np
-from deephyper.evaluator.evaluate import Evaluator
 from deephyper.evaluator.encoder import Encoder
+from deephyper.evaluator.evaluate import Evaluator
 from deephyper.search import util
 
 logger = logging.getLogger(__name__)
@@ -83,6 +85,19 @@ class Search:
         )
         logger.info(f"Created {evaluator} evaluator")
         logger.info(f"Evaluator: num_workers is {self.num_workers}")
+        self.write_init_infos()
+
+    def write_init_infos(self):
+        infos = {}
+        infos["start_timestamp"] = time.time()
+        infos["num_workers"] = self.num_workers
+        infos["max_evals"] = self.max_evals
+        infos["problem"] = self.problem.space
+
+        path = os.path.join(self.log_dir, "init_infos.json")
+        with open(path, "w") as f:
+            json.dump(infos, f, cls=Encoder, indent=2)
+
 
     def main(self):
         raise NotImplementedError

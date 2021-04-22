@@ -48,6 +48,13 @@ class RegularizedEvolution(NeuralArchitectureSearch):
         add_arguments_from_signature(parser, RegularizedEvolution)
         return parser
 
+    def saved_keys(self, val: dict):
+        res = {
+            "id": val["id"],
+            "arch_seq": str(val["arch_seq"])
+        }
+        return res
+
     def main(self):
 
         num_evals_done = 0
@@ -67,7 +74,7 @@ class RegularizedEvolution(NeuralArchitectureSearch):
                 population.extend(new_results)
                 stats = {"num_cache_used": self.evaluator.stats["num_cache_used"]}
                 dhlogger.info(jm(type="env_stats", **stats))
-                self.evaluator.dump_evals(saved_key="arch_seq")
+                self.evaluator.dump_evals(saved_keys=self.saved_keys)
 
                 num_received = len(new_results)
                 num_evals_done += num_received

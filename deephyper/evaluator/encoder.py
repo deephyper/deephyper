@@ -13,7 +13,7 @@ class Encoder(json.JSONEncoder):
 
     def default(self, obj):
         if isinstance(obj, uuid.UUID):
-            return obj.hex
+            return str(obj)
         elif isinstance(obj, integer):
             return int(obj)
         elif isinstance(obj, floating):
