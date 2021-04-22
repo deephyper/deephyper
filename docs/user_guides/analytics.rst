@@ -20,6 +20,7 @@ The following output is expected::
         parse               Tool to parse "deephyper.log" and produce a JSON file.
         quickplot           Tool to generate a quick 2D plot from file.
         topk                Print the top-k configurations.
+        balsam              Extract information from Balsam jobs.
 
     optional arguments:
     -h, --help            show this help message and exit
@@ -87,3 +88,8 @@ Top-k Configuration
 ===================
 
 .. automodule:: deephyper.core.logs.topk
+
+Balsam
+======
+
+.. automodule:: deephyper.core.logs.balsam

@@ -1,3 +1,9 @@
+"""Tools to extract information from Balsam jobs. An example commande line is::
+
+    deephyper-analytics balsam workload --workflow test
+
+This command will generate an output file name ``balsam-workload.json`` containing information about the number of jobs running in parallel at a given time.
+"""
 import json
 
 from deephyper.core.exceptions import DeephyperRuntimeError
@@ -18,7 +24,7 @@ def add_subparser(subparsers):
         "--output",
         type=str,
         required=False,
-        default="balsam-workload.json",
+        default="",
         help="Path to the output file.",
     )
 
@@ -39,6 +45,9 @@ def extract_workload(workflow, output_file):
         "timestamps": times,
         "num_jobs_running": num_running
     }
+
+    if len(output_file) == 0:
+        output_file = "balsam-workload.json"
 
     with open(output_file, "w") as f:
         json.dump(data, f)
