@@ -108,9 +108,9 @@ def validate(mode: str, search: str, workflow: str, problem: str, run: str) -> s
         raise DeephyperRuntimeError(f"The mode '{mode}' is not valid!")
 
     # validate the search
-    app = f"{mode.upper()}-{search.upper()}"
-    if not (app in APPS[mode.upper()]):
+    if not (search.upper()in APPS[mode.upper()]):
         raise DeephyperRuntimeError(f"The search '{search}' is not valid!")
+    app = f"{mode.upper()}-{search.upper()}"
 
     print("Validating Problem...", end="", flush=True)
     prob = generic_loader(problem, "Problem")
