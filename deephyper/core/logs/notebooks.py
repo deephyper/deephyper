@@ -1,7 +1,7 @@
 """
 """
 from deephyper.core.exceptions import DeephyperRuntimeError
-from deephyper.core.plot import hps, multi, post_train, single
+from deephyper.core.plot import hps, multi, post_train, nas_single
 
 
 def add_subparser(subparsers):
@@ -38,7 +38,7 @@ def notebook_for_nas(path: list, output: str) -> None:
     output_file = "dh-analytics-nas.ipynb" if len(output) == 0 else output
 
     if len(path) == 1:
-        single.single_analytics(path[0], output_file)
+        nas_single.single_analytics(path[0], output_file)
     else:
         multi.multi_analytics(path, output_file)
 
