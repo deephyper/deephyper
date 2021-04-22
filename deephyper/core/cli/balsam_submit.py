@@ -117,10 +117,11 @@ def validate(mode: str, search: str, workflow: str, problem: str, run: str) -> s
     assert isinstance(prob, (NaProblem, BaseProblem)), f"{prob} is not a Problem instance"
     print("OK", flush=True)
 
-    print("Validating run...", end="", flush=True)
-    run = generic_loader(run, "run")
-    assert callable(run), f"{run} must be a a callable"
-    print("OK", flush=True)
+    if run: # it is not mandatory to pass a run function for NAS
+        print("Validating run...", end="", flush=True)
+        run = generic_loader(run, "run")
+        assert callable(run), f"{run} must be a a callable"
+        print("OK", flush=True)
 
     qs = BalsamJob.objects.filter(workflow=workflow)
     if qs.exists():
