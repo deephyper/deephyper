@@ -30,7 +30,7 @@ def notebook_for_hps(path: list, output: str) -> None:
     output_file = "dh-analytics-hps.ipynb" if len(output) == 0 else output
 
     if len(path) == 1:
-        hps.hps_analytics(path, output_file)
+        hps.hps_analytics(path[0], output_file)
     else:
         raise DeephyperRuntimeError("Comparative analytics for HPS is not available yet!") # TODO
 
@@ -38,7 +38,7 @@ def notebook_for_nas(path: list, output: str) -> None:
     output_file = "dh-analytics-nas.ipynb" if len(output) == 0 else output
 
     if len(path) == 1:
-        single.single_analytics(path, output_file)
+        single.single_analytics(path[0], output_file)
     else:
         multi.multi_analytics(path, output_file)
 
