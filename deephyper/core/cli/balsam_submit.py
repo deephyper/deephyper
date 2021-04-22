@@ -112,7 +112,7 @@ def validate(mode: str, search: str, workflow: str, problem: str, run: str) -> s
         raise DeephyperRuntimeError(f"The search '{search}' is not valid!")
     app = f"{mode.upper()}-{search.upper()}"
 
-    print("Validating Problem...", end="", flush=True)
+    print(f"Validating Problem({problem})...", end="", flush=True)
     prob = generic_loader(problem, "Problem")
     assert isinstance(prob, (NaProblem, BaseProblem)), f"{prob} is not a Problem instance"
     print("OK", flush=True)
@@ -151,11 +151,11 @@ def bootstrap_apps():
 
 
 def pre_submit(
-    mode: str, search: str, problem: str, run: str, workflow: str
+        mode: str, search: str, workflow: str, problem: str, run: str
 ) -> BalsamJob:
     """Validate command line; prepare apps"""
 
-    app = validate(mode, search, problem, run, workflow)
+    app = validate(mode, search, workflow, problem, run)
 
     # creating the APPS in the balsam DB
     print("Bootstrapping apps...", end="", flush=True)
