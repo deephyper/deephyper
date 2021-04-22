@@ -94,7 +94,9 @@ def run(config):
         result = compute_objective(config["objective"], history)
     else:
         # penalising actions if model cannot be created
-        result = -1
-    if result < -10 or np.isnan(result):
-        result = -10
+        result = -float("inf")
+
+    if np.isnan(result):
+        result = -float("inf")
+
     return result
