@@ -20,7 +20,10 @@ logger = util.conf_logger("deephyper.search.nas.run")
 
 
 def run(config):
-    saver = HistorySaver(config)
+
+    # setup history saver
+    save_dir = os.path.join(config.get("log_dir", ""), "save")
+    saver = HistorySaver(config, save_dir)
     saver.write_config()
     saver.write_model(None)
 
