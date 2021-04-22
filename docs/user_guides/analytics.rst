@@ -44,6 +44,10 @@ Neural architecture search
 Parsing Logs
 ============
 
+.. warning::
+
+    This tool is deprecated and is replaced by the ``save`` folder and the ``results.csv`` file.
+
 The parsing tool helps you to parse the ``deephyper.log`` file of your master job. For now this tool is used for neural architecture search logs.
 
 ::
