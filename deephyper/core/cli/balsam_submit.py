@@ -79,7 +79,7 @@ def main(mode: str, search: str, workflow: str, problem: str, run: str, **kwargs
 
     if os.path.exists(problem):  # the problem was given as a PATH
         problem = os.path.abspath(problem)
-    if os.path.exists(run):  # the run function was given as a PATH
+    if run and os.path.exists(run):  # the run function was given as a PATH
         run = os.path.abspath(run)
 
     print(
@@ -117,11 +117,15 @@ def validate(mode: str, search: str, workflow: str, problem: str, run: str) -> s
     assert isinstance(prob, (NaProblem, BaseProblem)), f"{prob} is not a Problem instance"
     print("OK", flush=True)
 
+    # validate run
     if run: # it is not mandatory to pass a run function for NAS
         print("Validating run...", end="", flush=True)
         run = generic_loader(run, "run")
         assert callable(run), f"{run} must be a a callable"
         print("OK", flush=True)
+    else:
+        if mode == "hps":
+            raise DeephyperRuntimeError(f"No '--run' was passed for the mode 'hps'")
 
     qs = BalsamJob.objects.filter(workflow=workflow)
     if qs.exists():
