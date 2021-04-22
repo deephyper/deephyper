@@ -72,6 +72,9 @@ class RegularizedEvolution(NeuralArchitectureSearch):
                 num_received = len(new_results)
                 num_evals_done += num_received
 
+                if num_evals_done >= self.max_evals:
+                    break
+
                 # If the population is big enough evolve the population
                 if len(population) == self.population_size:
                     children_batch = []
