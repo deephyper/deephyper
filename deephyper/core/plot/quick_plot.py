@@ -163,12 +163,12 @@ def main(path: list, xy: list, *args, **kwargs):
     extension = lambda path: path.split(".")[-1]
 
     if len(path) == 1:
-        if extension(path) == "csv":
+        if extension(path[0]) == "csv":
             plot_for_single_csv(path[0], xy)
-        elif extension(path) == "json":
+        elif extension(path[0]) == "json":
             plot_for_single_json(path[0], xy)
         else:
-            raise DeephyperRuntimeError(f"Extension of input file '{extension(path)}' is not yet supported.")
+            raise DeephyperRuntimeError(f"Extension of input file '{extension(path[0])}' is not yet supported.")
     else:
 
         # Comparing multiple results.csv files (different search experiments)
