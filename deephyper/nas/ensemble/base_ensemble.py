@@ -1,4 +1,5 @@
 import argparse
+import traceback
 import os
 import json
 
@@ -10,21 +11,17 @@ from deephyper.search import util as search_util
 class BaseEnsemble:
     def __init__(
         self,
-        problem,
         model_dir,
-        members_files=None,
+        loss,
         size=5,
-        history_dir=None,
-        output_members_files=None,
         verbose=True,
     ):
-        self.problem = search_util.generic_loader(problem, "Problem")
         self.model_dir = os.path.abspath(model_dir)
-        self.members_files = self.load_members_files(members_files)
-        self.members_models = list(self.load_models(self.members_files))
-        self.size = size if len(self.members_models) == 0 else len(self.members_models)
-        self.history_dir = history_dir
-        self.output_members_files = output_members_files
+        self.loss = loss
+        self.members_files = []
+        self.size = size if len(self.members_files) == 0 else len(self.members_files)
+        assert self.size >= 2, "an ensemble size must be >= 2"
+
         self.verbose = verbose
         if self.verbose:
             print(self)
@@ -34,36 +31,10 @@ class BaseEnsemble:
         out += f"Model Dir: {self.model_dir}\n"
         out += f"Members files: {self.members_files}\n"
         out += f"Ensemble size: {self.size}\n"
-        out += f"{self.problem}"
         return out
 
-    def load_members_files(self, members_files) -> list:
-        if members_files is None:
-            return []
-
-        if type(members_files) is list:
-            return members_files
-
-        if type(members_files) is str:
-            if not (os.path.exists(members_files)):
-                return []
-            else:
-                with open(members_files, "r") as f:
-                    model_files = json.load(f)
-                return model_files
-
-        return []
-
-    def load_models(self, model_files: list):
-        for model_file in model_files:
-            model_path = os.path.join(self.model_dir, model_file)
-            model = tf.keras.models.load_model(model_path, compile=False)
-            yield model
-
-    def save_members_files(self):
-        if type(self.output_members_files) is str:
-            with open(self.output_members_files, "w") as f:
-                json.dump(self.members_files, f)
+    def list_all_model_files(self):
+        return [f for f in os.listdir(self.model_dir) if f[-2:] == "h5"]
 
     @classmethod
     def get_parser(cls, parser=None) -> argparse.ArgumentParser:
@@ -108,4 +79,33 @@ class BaseEnsemble:
         return parser
 
     def main(self):
-        raise NotImplemented
+        raise NotImplementedError
+
+    def fit(self, X, y) -> None:
+        raise NotImplementedError
+
+    def load_models(self, model_files: list):
+        for i, model_file in enumerate(model_files):
+            model_path = os.path.join(self.model_dir, model_file)
+            try:
+                model = tf.keras.models.load_model(model_path, compile=False)
+                model._name = f"model_{i}"
+            except:
+                print(f"Could not load model {i}")
+                traceback.print_exc()
+                model = None
+            yield model
+
+    def load_members_files(self, file: str="members.json") -> None:
+        with open(file, "r") as f:
+            self.members_files = json.load(f)
+
+    def save_members_files(self, file: str="members.json") -> None:
+        with open(file, "w") as f:
+            json.dump(self.members_files, f)
+
+    def load(self, file: str) -> None:
+        raise NotImplementedError
+
+    def save(self, file: str) -> None:
+        raise NotImplementedError
