@@ -22,6 +22,7 @@ class UQBaggingEnsemble(BaseEnsemble):
         size=5,
         verbose=True,
         mode="classification",  # or "regression"
+        selection="greedy",
     ):
         super().__init__(
             model_dir,
@@ -32,6 +33,7 @@ class UQBaggingEnsemble(BaseEnsemble):
         self.mode = mode
         self.batch_size = batch_size
         self.model = None
+        self.selection = selection
 
     @staticmethod
     def _extend_parser(parser) -> argparse.ArgumentParser:
@@ -44,7 +46,7 @@ class UQBaggingEnsemble(BaseEnsemble):
         #! TODO: parallelize this loop
         for i, model in enumerate(self.load_models(model_files[:])):
             if self.verbose:
-                print(f"loading model {i}")
+                print(f"Loading model {i}    ", end="\r", flush=True)
             if model is None:
                 model_files.pop(i)
                 continue
@@ -52,6 +54,9 @@ class UQBaggingEnsemble(BaseEnsemble):
 
             loss = model.evaluate(X, y, batch_size=self.batch_size, verbose=0)
             model_losses.append(loss)
+
+        if self.verbose:
+            print()
 
         model_files, model_losses = list(
             zip(*sorted(zip(model_files, model_losses), key=lambda t: t[1]))
@@ -66,6 +71,17 @@ class UQBaggingEnsemble(BaseEnsemble):
 
     def fit(self, X, y) -> None:
 
+        if self.selection == "greedy":
+            self.greedy_selection(X, y)
+        elif self.selection == "topk":
+            self.topk_selection(X, y)
+        else:
+            raise DeephyperRuntimeError(f"Selection '{self.selection}' is not valid!")
+
+    def greedy_selection(self, X, y):
+        if self.verbose:
+            print("Starting Greedy selection of members of the ensemble.")
+
         model_files = self.list_all_model_files()
         model_files, model_losses = self.sort_models_by_min_loss(model_files, X, y)
 
@@ -73,9 +89,7 @@ class UQBaggingEnsemble(BaseEnsemble):
         model_files_ens = [model_files[0]]
 
         if self.verbose:
-            print(
-                f"Starting Greedy selection of members of the ensemble. Initial loss is {min_loss:.5f}"
-            )
+            print(f"Initial loss is {min_loss:.5f}")
 
         # gready selection of members from the ensemble
         for i, model_file in enumerate(model_files[1:]):
@@ -89,14 +103,18 @@ class UQBaggingEnsemble(BaseEnsemble):
             loss = self.evaluate(X, y)
 
             if self.verbose:
-                print(f"Step {i+1:04} - Best Loss: {min_loss:.5f} | Current Try: {loss:.5f}")
+                print(
+                    f"Step {i+1:04} - Best Loss: {min_loss:.5f} | Current Try: {loss:.5f}",
+                    end="\r",
+                    flush=True,
+                )
 
             if loss < min_loss:
                 min_loss = loss
 
                 if self.verbose:
                     print(
-                        f"Adding Model {i+1:04} - New loss: {min_loss:.5f} with ensemble size {len(model_files_ens)}"
+                        f"Adding Model {i+1:04} - New loss: {min_loss:.5f} with ensemble size {len(model_files_ens)}           "
                     )
             else:
                 model_files_ens.pop()
@@ -104,12 +122,34 @@ class UQBaggingEnsemble(BaseEnsemble):
             if len(model_files_ens) == self.size:
                 break
 
+        if self.verbose:
+            print()
+
         self.members_files = model_files_ens
         self.model = self.build_ensemble_model(list(self.load_models(self.members_files)))
         self.compile_model(self.model)
 
         if len(self.members_files) < self.size and self.verbose:
-            print(f"Found only {len(self.members_files)} members to improve the ensemble")
+            print(
+                f"Found only {len(self.members_files)} members to improve the ensemble",
+                flush=True,
+            )
+
+    def topk_selection(self, X, y):
+        if self.verbose:
+            print("Starting Top-K selection of members of the ensemble.")
+
+        model_files = self.list_all_model_files()
+        model_files, model_losses = self.sort_models_by_min_loss(model_files, X, y)
+
+        self.members_files = model_files[: self.size]
+
+        self.model = self.build_ensemble_model(list(self.load_models(self.members_files)))
+        self.compile_model(self.model)
+        loss = self.evaluate(X, y)
+
+        if self.verbose:
+            print(f"Top-K Loss: {loss:.5f}")
 
     def build_ensemble_model(self, models):
 
