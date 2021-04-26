@@ -4,6 +4,7 @@ import uuid
 
 import skopt
 from numpy import bool_, floating, integer, ndarray
+import ConfigSpace.hyperparameters as csh
 
 
 class Encoder(json.JSONEncoder):
@@ -25,6 +26,8 @@ class Encoder(json.JSONEncoder):
         elif isinstance(obj, types.FunctionType):
             return f"{obj.__module__}.{obj.__name__}"
         elif isinstance(obj, skopt.space.Dimension):
+            return str(obj)
+        elif isinstance(obj, csh.Hyperparameter):
             return str(obj)
         else:
             return super(Encoder, self).default(obj)
