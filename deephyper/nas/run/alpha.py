@@ -97,9 +97,11 @@ def run(config):
         result = compute_objective(config["objective"], history)
     else:
         # penalising actions if model cannot be created
+        logger.info("Model could not be created returning -Inf!")
         result = -float("inf")
 
     if np.isnan(result):
+        logger.info("Computed objective is NaN returning -Inf instead!")
         result = -float("inf")
 
     return result

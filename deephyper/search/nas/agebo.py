@@ -137,6 +137,8 @@ class AgEBO(RegularizedEvolution):
                         hp_results_X.append(new_i_hp_values)
                         hp_results_y.append(-new_i_y)
 
+                    hp_results_y = np.minimum(hp_results_y, 1e3).tolist() #! TODO
+
                     self.hp_opt.tell(hp_results_X, hp_results_y)  #! fit: costly
                     new_hps = self.hp_opt.ask(n_points=len(new_results))
 
