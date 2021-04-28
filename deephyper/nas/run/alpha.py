@@ -28,19 +28,19 @@ def run(config):
     saver.write_model(None)
 
     # Threading configuration
-    physical_devices = tf.config.list_physical_devices("GPU")
-    try:
-        for i in range(len(physical_devices)):
-            tf.config.experimental.set_memory_growth(physical_devices[i], True)
-    except:
-        # Invalid device or cannot modify virtual devices once initialized.
-        logger.info("error memory growth for GPU device")
+    # physical_devices = tf.config.list_physical_devices("GPU")
+    # try:
+    #     for i in range(len(physical_devices)):
+    #         tf.config.experimental.set_memory_growth(physical_devices[i], True)
+    # except:
+    #     # Invalid device or cannot modify virtual devices once initialized.
+    #     logger.info("error memory growth for GPU device")
 
-    if len(physical_devices) == 0 and os.environ.get("OMP_NUM_THREADS", None) is not None:
-        logger.debug(f"OMP_NUM_THREADS is {os.environ.get('OMP_NUM_THREADS')}")
-        num_intra = int(os.environ.get("OMP_NUM_THREADS"))
-        tf.config.threading.set_intra_op_parallelism_threads(num_intra)
-        tf.config.threading.set_inter_op_parallelism_threads(2)
+    # if len(physical_devices) == 0 and os.environ.get("OMP_NUM_THREADS", None) is not None:
+    #     logger.debug(f"OMP_NUM_THREADS is {os.environ.get('OMP_NUM_THREADS')}")
+    #     num_intra = int(os.environ.get("OMP_NUM_THREADS"))
+    #     tf.config.threading.set_intra_op_parallelism_threads(num_intra)
+    #     tf.config.threading.set_inter_op_parallelism_threads(2)
 
     seed = config["seed"]
     if seed is not None:
