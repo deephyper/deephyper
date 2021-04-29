@@ -63,22 +63,17 @@ class BaseEnsemble:
     def _base_parser(parser=None) -> argparse.ArgumentParser:
         if parser is None:
             parser = argparse.ArgumentParser(conflict_handler="resolve")
+
+        parser.add_argument("--model-dir", type=str, required=True)
+        parser.add_argument("--loss", type=str, required=True)
+        parser.add_argument("--size", type=int, default=3)
         parser.add_argument(
-            "--problem",
-            type=str,
-            help="Module path to the Problem instance you want to use for the search.",
+            "-v", "--verbose", type=bool, const=True, default=False, nargs="?"
         )
-        parser.add_argument("-md", "--model-dir", type=str)
-        parser.add_argument("-mf", "--members-files", type=str, default="members.json")
-        parser.add_argument(
-            "-omf", "--output-members-files", type=str, default="members.json"
-        )
-        parser.add_argument("-s", "--size", type=int, default=3)
-        parser.add_argument("-hd", "--history-dir", type=str, default=None)
-        parser.add_argument("-v", "--verbose", type=bool, default=True)
         return parser
 
-    def main(self):
+    @staticmethod
+    def main():
         raise NotImplementedError
 
     def fit(self, X, y) -> None:
@@ -96,11 +91,11 @@ class BaseEnsemble:
                 model = None
             yield model
 
-    def load_members_files(self, file: str="members.json") -> None:
+    def load_members_files(self, file: str = "members.json") -> None:
         with open(file, "r") as f:
             self.members_files = json.load(f)
 
-    def save_members_files(self, file: str="members.json") -> None:
+    def save_members_files(self, file: str = "members.json") -> None:
         with open(file, "w") as f:
             json.dump(self.members_files, f)
 

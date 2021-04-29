@@ -1,16 +1,37 @@
 import argparse
 import os
+import traceback
 
+import ray
 import tensorflow as tf
+from tensorflow.python.eager.context import num_gpus
 import tensorflow_probability as tfp
-import numpy as np
 
-from deephyper.search import util as search_util
-from deephyper.nas.run import util as run_util
-from deephyper.nas.metrics import selectMetric
-from deephyper.core.parser import add_arguments_from_signature
+
 from deephyper.core.exceptions import DeephyperRuntimeError
 from deephyper.nas.ensemble import BaseEnsemble
+
+
+# @ray.remote(num_cpus=1, num_gpus=1, max_calls=1)
+def evaluate_model(X, y, model_path, loss_func, batch_size, index):
+    import tensorflow_probability as tfp
+
+    try:
+        print(f"Loading model {index}", end="\n", flush=True)
+        model = tf.keras.models.load_model(model_path, compile=False)
+        model._name = f"model_{index}"
+    except:
+        print(f"Could not load model {index}")
+        traceback.print_exc()
+        model = None
+
+    if model:
+        model.compile(loss=loss_func)
+        loss = model.evaluate(X, y, batch_size=batch_size, verbose=0)
+    else:
+        loss = float("inf")
+
+    return loss
 
 
 class UQBaggingEnsemble(BaseEnsemble):
@@ -23,6 +44,8 @@ class UQBaggingEnsemble(BaseEnsemble):
         verbose=True,
         mode="classification",  # or "regression"
         selection="greedy",
+        num_cpus=1,
+        num_gpus=None,
     ):
         super().__init__(
             model_dir,
@@ -35,25 +58,48 @@ class UQBaggingEnsemble(BaseEnsemble):
         self.model = None
         self.selection = selection
 
+        if not(ray.is_initialized()):
+            ray.init(address="auto")
+
+        self.evaluate_model = ray.remote(
+            num_cpus=num_cpus, num_gpus=num_gpus #, max_calls=1
+        )(evaluate_model)
+
     @staticmethod
     def _extend_parser(parser) -> argparse.ArgumentParser:
-        add_arguments_from_signature(parser, UQBaggingEnsemble)
+        # add_arguments_from_signature(parser, UQBaggingEnsemble)
+        parser.add_argument("--batch-size", type=int, default=1)
+        parser.add_argument(
+            "--mode", type=str, choices=["classification", "regression"], required=True
+        )
+        parser.add_argument(
+            "--selection", type=str, choices=["greedy", "topk"], default="greedy"
+        )
         return parser
 
     def sort_models_by_min_loss(self, model_files: list, X, y) -> tuple:
         model_losses = []
 
         #! TODO: parallelize this loop
-        for i, model in enumerate(self.load_models(model_files[:])):
-            if self.verbose:
-                print(f"Loading model {i}    ", end="\r", flush=True)
-            if model is None:
-                model_files.pop(i)
-                continue
-            self.compile_model(model)
+        # for i, model in enumerate(self.load_models(model_files[:])):
+        #     if self.verbose:
+        #         print(f"Loading model {i}    ", end="\r", flush=True)
+        #     if model is None:
+        #         model_files.pop(i)
+        #         continue
+        #     self.compile_model(model)
 
-            loss = model.evaluate(X, y, batch_size=self.batch_size, verbose=0)
-            model_losses.append(loss)
+        #     loss = model.evaluate(X, y, batch_size=self.batch_size, verbose=0)
+        #     model_losses.append(loss)
+
+        for i, model_file in enumerate(model_files[:]):
+            model_path = os.path.join(self.model_dir, model_file)
+            loss_val = self.evaluate_model.remote(
+                X, y, model_path, self.loss, self.batch_size, i
+            )
+            model_losses.append(loss_val)
+
+        model_losses = ray.get(model_losses)
 
         if self.verbose:
             print()
@@ -215,8 +261,13 @@ class UQBaggingEnsemble(BaseEnsemble):
     def save(self, file):
         self.save_members_files(file)
 
+    @staticmethod
+    def main():
+        args = UQBaggingEnsemble.parse_args()
+        ensemble = UQBaggingEnsemble(**vars(args))
+
+        print("OK")
+
 
 if __name__ == "__main__":
-    args = UQBaggingEnsemble.parse_args()
-    ensemble = UQBaggingEnsemble(**vars(args))
-    ensemble.main()
+    UQBaggingEnsemble.main()
