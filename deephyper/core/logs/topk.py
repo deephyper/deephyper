@@ -75,7 +75,7 @@ def output_best_configuration(path: str, output: str, k: int, **kwargs) -> None:
         df = df.sort_values(by=["objective"], ascending=False, ignore_index=True)
         subdf = df.iloc[:k]
         if not ("arch_seq" in subdf.columns):
-            if all(subdf.to_numpy()[:, :-2] < 1):
+            if (subdf.to_numpy()[:, :-2] < 1).all():
                 conv_type = float
             else:
                 conv_type = int
