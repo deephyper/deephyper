@@ -4,7 +4,6 @@ import traceback
 
 import ray
 import tensorflow as tf
-from tensorflow.python.eager.context import num_gpus
 import tensorflow_probability as tfp
 
 
@@ -58,11 +57,11 @@ class UQBaggingEnsemble(BaseEnsemble):
         self.model = None
         self.selection = selection
 
-        if not(ray.is_initialized()):
+        if not (ray.is_initialized()):
             ray.init(address="auto")
 
         self.evaluate_model = ray.remote(
-            num_cpus=num_cpus, num_gpus=num_gpus #, max_calls=1
+            num_cpus=num_cpus, num_gpus=num_gpus  # , max_calls=1
         )(evaluate_model)
 
     @staticmethod
@@ -142,9 +141,8 @@ class UQBaggingEnsemble(BaseEnsemble):
 
             model_files_ens.append(model_file)
 
-            self.model = self.build_ensemble_model(
-                list(self.load_models(model_files_ens))
-            )
+            models = [m for m in self.load_models(model_files_ens) if m is not None]
+            self.model = self.build_ensemble_model(models)
             self.compile_model(self.model)
             loss = self.evaluate(X, y)
 
