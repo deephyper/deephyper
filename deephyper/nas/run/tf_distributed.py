@@ -3,7 +3,6 @@ import traceback
 
 import numpy as np
 import tensorflow as tf
-from numba import cuda
 from deephyper.contrib.callbacks import import_callback
 from deephyper.nas.run.util import (
     compute_objective,
