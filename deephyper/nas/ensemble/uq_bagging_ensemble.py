@@ -11,9 +11,10 @@ from deephyper.core.exceptions import DeephyperRuntimeError
 from deephyper.nas.ensemble import BaseEnsemble
 
 
-# @ray.remote(num_cpus=1, num_gpus=1, max_calls=1)
 def evaluate_model(X, y, model_path, loss_func, batch_size, index):
     import tensorflow_probability as tfp
+
+    tf.keras.backend.clear_session()
 
     try:
         print(f"Loading model {index}", end="\n", flush=True)
@@ -61,7 +62,7 @@ class UQBaggingEnsemble(BaseEnsemble):
             ray.init(address="auto")
 
         self.evaluate_model = ray.remote(
-            num_cpus=num_cpus, num_gpus=num_gpus  # , max_calls=1
+            num_cpus=num_cpus, num_gpus=num_gpus
         )(evaluate_model)
 
     @staticmethod
