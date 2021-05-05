@@ -12,6 +12,7 @@ from deephyper.nas.ensemble import BaseEnsemble
 
 
 def evaluate_model(X, y, model_path, loss_func, batch_size, index):
+    import tensorflow as tf
     import tensorflow_probability as tfp
 
     # GPU Configuration if available
