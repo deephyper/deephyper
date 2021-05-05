@@ -14,7 +14,7 @@ from deephyper.nas.ensemble import BaseEnsemble
 def evaluate_model(X, y, model_path, loss_func, batch_size, index):
     import tensorflow_probability as tfp
 
-    tf.keras.backend.clear_session()
+    # tf.keras.backend.clear_session()
 
     try:
         print(f"Loading model {index}", end="\n", flush=True)
@@ -62,7 +62,7 @@ class UQBaggingEnsemble(BaseEnsemble):
             ray.init(address="auto")
 
         self.evaluate_model = ray.remote(
-            num_cpus=num_cpus, num_gpus=num_gpus
+            num_cpus=num_cpus, num_gpus=num_gpus, max_calls=1
         )(evaluate_model)
 
     @staticmethod
