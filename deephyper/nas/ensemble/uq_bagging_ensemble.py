@@ -126,7 +126,7 @@ class UQBaggingEnsemble(BaseEnsemble):
 
     def greedy_selection(self, X, y):
         if self.verbose:
-            print("Starting Greedy selection of members of the ensemble.")
+            print("Starting Greedy selection of members of the ensemble.", flush=True)
 
         model_files = self.list_all_model_files()
         model_files, model_losses = self.sort_models_by_min_loss(model_files, X, y)
@@ -135,7 +135,7 @@ class UQBaggingEnsemble(BaseEnsemble):
         model_files_ens = [model_files[0]]
 
         if self.verbose:
-            print(f"Initial loss is {min_loss:.5f}")
+            print(f"Initial loss is {min_loss:.5f}", flush=True)
 
         # gready selection of members from the ensemble
         for i, model_file in enumerate(model_files[1:]):
