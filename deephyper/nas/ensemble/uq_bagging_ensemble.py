@@ -21,7 +21,7 @@ def evaluate_model(X, y, model_path, loss_func, batch_size, index):
         model = tf.keras.models.load_model(model_path, compile=False)
         model._name = f"model_{index}"
     except:
-        print(f"Could not load model {index}")
+        print(f"Could not load model {index}", flush=True)
         traceback.print_exc()
         model = None
 
