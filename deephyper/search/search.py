@@ -164,7 +164,7 @@ class Search:
         )
         parser.add_argument(
             "--ray-address",
-            default="auto",
+            default="",
             help='This parameter is mandatory when using evaluator==ray. It reference the "IP:PORT" redis address for the RAY-driver to connect on the RAY-head.',
         )
         parser.add_argument(
