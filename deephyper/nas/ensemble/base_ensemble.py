@@ -64,8 +64,9 @@ class BaseEnsemble:
         if parser is None:
             parser = argparse.ArgumentParser(conflict_handler="resolve")
 
+        parser.add_argument("--problem", type=str, required=True)
+        parser.add_argument("--loss", type=str, default=None)
         parser.add_argument("--model-dir", type=str, required=True)
-        parser.add_argument("--loss", type=str, required=True)
         parser.add_argument("--size", type=int, default=3)
         parser.add_argument(
             "-v", "--verbose", type=bool, const=True, default=False, nargs="?"

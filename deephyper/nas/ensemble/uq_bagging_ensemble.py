@@ -8,23 +8,26 @@ import tensorflow_probability as tfp
 
 
 from deephyper.core.exceptions import DeephyperRuntimeError
+
+# from deephyper.core.parser import add_arguments_from_signature
 from deephyper.nas.ensemble import BaseEnsemble
 
 
+@ray.remote(num_cpus=1)
 def evaluate_model(X, y, model_path, loss_func, batch_size, index):
     import tensorflow as tf
     import tensorflow_probability as tfp
 
     # GPU Configuration if available
-    # physical_devices = tf.config.list_physical_devices("GPU")
-    # try:
-    #     for i in range(len(physical_devices)):
-    #         tf.config.experimental.set_memory_growth(physical_devices[i], True)
-    # except:
-    #     # Invalid device or cannot modify virtual devices once initialized.
-    #     print("error memory growth for GPU device")
+    physical_devices = tf.config.list_physical_devices("GPU")
+    try:
+        for i in range(len(physical_devices)):
+            tf.config.experimental.set_memory_growth(physical_devices[i], True)
+    except:
+        # Invalid device or cannot modify virtual devices once initialized.
+        print("Error memory growth for GPU device", flush=True)
 
-    # tf.keras.backend.clear_session()
+    tf.keras.backend.clear_session()
 
     try:
         print(f"Loading model {index}", end="\n", flush=True)
@@ -54,6 +57,7 @@ class UQBaggingEnsemble(BaseEnsemble):
         verbose=True,
         mode="classification",  # or "regression"
         selection="greedy",
+        ray_address="",
         num_cpus=1,
         num_gpus=None,
     ):
@@ -69,16 +73,19 @@ class UQBaggingEnsemble(BaseEnsemble):
         self.selection = selection
 
         if not (ray.is_initialized()):
-            ray.init(address="auto")
+            ray.init(address=ray_address)
 
-        self.evaluate_model = ray.remote(
-            num_cpus=num_cpus, num_gpus=num_gpus , max_calls=1
-        )(evaluate_model)
+        self.evaluate_model = evaluate_model.options(
+            num_cpus=num_cpus, num_gpus=num_gpus  # , max_calls=1
+        )
 
     @staticmethod
     def _extend_parser(parser) -> argparse.ArgumentParser:
         # add_arguments_from_signature(parser, UQBaggingEnsemble)
         parser.add_argument("--batch-size", type=int, default=1)
+        parser.add_argument("--ray-address", type=str, default="")
+        parser.add_argument("--num-cpus", type=int, default=1)
+        parser.add_argument("--num-gpus", type=int, default=None)
         parser.add_argument(
             "--mode", type=str, choices=["classification", "regression"], required=True
         )
@@ -222,6 +229,33 @@ class UQBaggingEnsemble(BaseEnsemble):
         input_ensemble = tf.keras.Input(
             shape=tuple(models_input_shapes[0])[1:], name="input_ensemble"
         )
+
+        if self.mode == "classification":
+            model_ensemble = self.build_ensemble_model_classification(
+                input_ensemble, models
+            )
+        else:
+            model_ensemble = self.build_ensemble_model_regression(input_ensemble, models)
+
+        return model_ensemble
+
+    def build_ensemble_model_classification(self, input_ensemble, models):
+
+        outputs = []
+        for model in models:
+            output_model = model(input_ensemble)
+
+            outputs.append(output_model)
+
+        output_ensemble = tf.keras.layers.Average()(outputs)
+
+        model_ensemble = tf.keras.Model(
+            input_ensemble, output_ensemble, name="ensemble_model"
+        )
+
+        return model_ensemble
+
+    def build_ensemble_model_regression(self, input_ensemble, models):
 
         locs, scales = [], []
         for model in models:
