@@ -4,11 +4,8 @@ import os
 import ray
 import tensorflow as tf
 import tensorflow_probability as tfp
-
-
 from deephyper.core.exceptions import DeephyperRuntimeError
 from deephyper.nas.ensemble import BaseEnsemble
-
 
 def evaluate_model(X, y, model_path, loss_func, batch_size, index):
     import traceback
@@ -72,7 +69,7 @@ class UQBaggingEnsemble(BaseEnsemble):
         if not (ray.is_initialized()):
             ray.init(address=ray_address)
 
-        self.evaluate_model = ray.remote(um_cpus=num_cpus, num_gpus=num_gpus)(
+        self.evaluate_model = ray.remote(num_cpus=num_cpus, num_gpus=num_gpus)(
             evaluate_model
         )  # , max_calls=1
 

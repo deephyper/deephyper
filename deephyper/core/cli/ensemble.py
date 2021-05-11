@@ -3,7 +3,7 @@ deephyper ensemble uqbagging --model-dir save/model --loss tfp_nll --batch-size 
 """
 import sys
 
-
+import ray
 from deephyper.search.util import load_attr_from, generic_loader
 from deephyper.nas.losses import selectLoss
 
@@ -43,7 +43,14 @@ def main(problem, model_dir, size, verbose, loss, **kwargs):
 
     ensemble_cls = load_attr_from(ENSEMBLE_CLASSES[ensemble_type])
 
-    ensemble_obj = ensemble_cls(
+    if not (ray.is_initialized()):
+        ray.init(address=kwargs["ray_address"])
+
+    ensemble_cls = ray.remote(
+        num_cpus=kwargs.get("num_cpus", 1), num_gpus=kwargs.get("num_gpus")
+    )(ensemble_cls)
+
+    ensemble_obj = ensemble_cls.remote(
         model_dir=model_dir, size=size, verbose=verbose, loss=loss, **kwargs
     )
 
@@ -51,6 +58,6 @@ def main(problem, model_dir, size, verbose, loss, **kwargs):
     load_data_kwargs = problem.space["load_data"].get("kwargs")
     (x, y), (vx, vy) = load_data() if kwargs is None else load_data(**load_data_kwargs)
 
-    ensemble_obj.fit(vx, vy)
+    ray.get(ensemble_obj.fit.remote(vx, vy))
 
-    ensemble_obj.save("members.json")
+    ray.get(ensemble_obj.save.remote("members.json"))
