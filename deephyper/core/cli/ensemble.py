@@ -1,11 +1,12 @@
 """
 deephyper ensemble uqbagging --model-dir save/model --loss tfp_nll --batch-size 1 --size 5 --verbose --mode regression --selection greedy
 """
+import os
 import sys
 
 import ray
-from deephyper.search.util import load_attr_from, generic_loader
 from deephyper.nas.losses import selectLoss
+from deephyper.search.util import generic_loader, load_attr_from
 
 ENSEMBLE_CLASSES = {
     "uqbagging": "deephyper.nas.ensemble.uq_bagging_ensemble.UQBaggingEnsemble",
@@ -51,7 +52,7 @@ def main(problem, model_dir, size, verbose, loss, **kwargs):
     )(ensemble_cls)
 
     ensemble_obj = ensemble_cls.remote(
-        model_dir=model_dir, size=size, verbose=verbose, loss=loss, **kwargs
+        model_dir=os.path.abspath(model_dir), size=size, verbose=verbose, loss=loss, **kwargs
     )
 
     load_data = problem.space["load_data"]["func"]
@@ -60,4 +61,5 @@ def main(problem, model_dir, size, verbose, loss, **kwargs):
 
     ray.get(ensemble_obj.fit.remote(vx, vy))
 
-    ray.get(ensemble_obj.save.remote("members.json"))
+    ray.get(ensemble_obj.save.remote(os.path.abspath("members.json")))
+
