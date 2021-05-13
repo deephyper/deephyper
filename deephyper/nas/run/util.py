@@ -1,11 +1,12 @@
 import copy
+import json
 import os
 import pathlib
 import uuid
 from datetime import datetime
-import json
 
 import numpy as np
+import tensorflow as tf
 from deephyper.core.exceptions.problem import WrongProblemObjective
 from deephyper.core.utils import create_dir
 from deephyper.evaluator.encoder import Encoder
@@ -218,6 +219,13 @@ def preproc_trainer(config):
 
 def hash_arch_seq(arch_seq: list) -> str:
     return "_".join([str(el) for el in arch_seq])
+
+
+def set_memory_growth_for_visible_gpus(enable=True):
+    # GPU Configuration if available
+    physical_devices = tf.config.list_physical_devices("GPU")
+    for i in range(len(physical_devices)):
+        tf.config.experimental.set_memory_growth(physical_devices[i], enable)
 
 
 class HistorySaver:

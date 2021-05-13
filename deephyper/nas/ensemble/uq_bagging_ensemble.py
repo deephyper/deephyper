@@ -6,6 +6,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from deephyper.core.exceptions import DeephyperRuntimeError
 from deephyper.nas.ensemble import BaseEnsemble
+from deephyper.nas.run.util import set_memory_growth_for_visible_gpus
 
 def evaluate_model(X, y, model_path, loss_func, batch_size, index):
     import traceback
@@ -13,14 +14,7 @@ def evaluate_model(X, y, model_path, loss_func, batch_size, index):
     import tensorflow_probability as tfp
 
     # GPU Configuration if available
-    physical_devices = tf.config.list_physical_devices("GPU")
-    try:
-        for i in range(len(physical_devices)):
-            tf.config.experimental.set_memory_growth(physical_devices[i], True)
-    except:
-        # Invalid device or cannot modify virtual devices once initialized.
-        print("Error memory growth for GPU device", flush=True)
-
+    set_memory_growth_for_visible_gpus(True)
     tf.keras.backend.clear_session()
 
     try:
@@ -66,12 +60,16 @@ class UQBaggingEnsemble(BaseEnsemble):
         self.model = None
         self.selection = selection
 
-        if not (ray.is_initialized()):
+        if not(ray.is_initialized()):
             ray.init(address=ray_address)
 
         self.evaluate_model = ray.remote(num_cpus=num_cpus, num_gpus=num_gpus)(
             evaluate_model
         )  # , max_calls=1
+
+        # GPU Configuration if available
+        set_memory_growth_for_visible_gpus(True)
+        tf.keras.backend.clear_session()
 
     @staticmethod
     def _extend_parser(parser) -> argparse.ArgumentParser:
