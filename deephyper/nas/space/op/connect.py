@@ -32,7 +32,7 @@ class Connect(Operation):
             return f'{type(self).__name__}_{ids}->{self.destin_node.id}'
 
     def init(self, current_node):
-        """Set the connection in the search_space graph from [n1] -> n2.
+        """Set the connection in the search_space graph from n1 -> n2.
         """
         self.destin_node = current_node
         if type(self.source_node) is list:
