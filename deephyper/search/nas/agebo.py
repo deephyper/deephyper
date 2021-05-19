@@ -6,14 +6,10 @@ from skopt.learning import RandomForestRegressor
 
 from deephyper.core.logs.logging import JsonMessage as jm
 from deephyper.core.parser import add_arguments_from_signature
-from deephyper.evaluator.evaluate import Encoder
 from deephyper.search import util
 from deephyper.search.nas.regevo import RegularizedEvolution
 
 dhlogger = util.conf_logger("deephyper.search.nas.agebo")
-
-# def key(d):
-#     return json.dumps(dict(arch_seq=d['arch_seq']), cls=Encoder)
 
 
 class AgEBO(RegularizedEvolution):

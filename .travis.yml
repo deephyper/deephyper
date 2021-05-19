@@ -32,7 +32,7 @@ before_install:
 
 
 install:
-  - pip install -e '.[docs,tests,analytics,balsam]'
+  - pip install -e '.[docs,tests,analytics]'
   - pip install codecov pytest-cov
 
 script:

@@ -9,6 +9,8 @@ from deephyper.core.exceptions import DeephyperRuntimeError
 from deephyper.search import util
 from deephyper.nas import arch as a
 from deephyper.nas import train_utils as U
+from deephyper.nas.metrics import selectMetric
+from deephyper.nas.losses import selectLoss
 
 logger = util.conf_logger("deephyper.model.trainer")
 
@@ -72,7 +74,14 @@ class TrainerTrainValid:
         self.train_history["n_parameters"] = self.model.count_params()
 
     def setup_losses_and_metrics(self):
-        self.loss_metrics = self.config[a.loss_metric]
+        def selectL(loss):
+            if type(loss) is dict:
+                loss = {k:selectLoss(v) for k,v in loss.items()}
+            else:
+                loss = selectLoss(loss)
+            return loss
+
+        self.loss_metrics = selectL(self.config[a.loss_metric])
         self.loss_weights = self.config.get("loss_weights")
         self.class_weights = self.config.get("class_weights")
 
@@ -80,14 +89,14 @@ class TrainerTrainValid:
             self.loss_weights = [1.0 for _ in range(len(self.loss_metrics))]
 
         if type(self.config[a.metrics]) is list:
-            self.metrics_name = [U.selectMetric(m) for m in self.config[a.metrics]]
+            self.metrics_name = [selectMetric(m) for m in self.config[a.metrics]]
         else:
 
             def selectM(metric):
                 if type(metric) is list:
-                    return [U.selectMetric(m_i) for m_i in metric]
+                    return [selectMetric(m_i) for m_i in metric]
                 else:
-                    return U.selectMetric(metric)
+                    return selectMetric(metric)
 
             self.metrics_name = {n: selectM(m) for n, m in self.config[a.metrics].items()}
 

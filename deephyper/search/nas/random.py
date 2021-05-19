@@ -4,8 +4,6 @@ from random import random, seed
 
 from deephyper.search import util
 from deephyper.search.nas import NeuralArchitectureSearch
-from deephyper.core.logs.logging import JsonMessage as jm
-from deephyper.evaluator.evaluate import Encoder
 
 dhlogger = util.conf_logger("deephyper.search.nas.random")
 
@@ -26,15 +24,6 @@ class Random(NeuralArchitectureSearch):
         seed(self.problem.seed)
 
         self.free_workers = self.evaluator.num_workers
-
-        dhlogger.info(
-            jm(
-                type="start_infos",
-                alg="random",
-                nworkers=self.evaluator.num_workers,
-                encoded_space=json.dumps(self.problem.space, cls=Encoder),
-            )
-        )
 
     @staticmethod
     def _extend_parser(parser):

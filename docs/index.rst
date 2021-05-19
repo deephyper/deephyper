@@ -50,6 +50,7 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
     user_guides/data_parallelism
     user_guides/job_management
     user_guides/balsamjob
+    user_guides/nas/index
     user_guides/analytics
 
 .. toctree::
