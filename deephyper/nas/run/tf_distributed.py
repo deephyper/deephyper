@@ -1,4 +1,14 @@
-import os
+"""The :func:`deephyper.nas.run.tf_distributed.run` function is used to deploy a data-distributed training (on a single node) with ``tensorflow.distribute.MirroredStrategy``. It follows the same training pipeline as :func:`deephyper.nas.run.alpha.run`. Two hyperparameters arguments can be used to activate or deactivate the linear scaling rule (aka ``lsr``) for the learning rate and batch size, respectively:
+
+.. code-block:: python
+
+    Problem.hyperparameters(
+        ...
+        lsr_batch_size=True,
+        lsr_learning_rate=True,
+        ...
+    )
+"""
 import traceback
 
 import numpy as np

@@ -13,7 +13,7 @@ Run:
 .. code-block:: console
     :caption: bash
 
-    deephyper-analytics hps -p results.csv
+    deephyper-analytics notebook --type hps --output dh-analytics-hps.ipynb results.csv
 
 Then start ``jupyter``:
 

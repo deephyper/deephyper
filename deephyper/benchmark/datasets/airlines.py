@@ -47,7 +47,7 @@ def load_data(
     if categoricals_to_integers:
         for (ft_ind, ft_name) in enumerate(ft_names):
             if categorical_indicator[ft_ind]:
-                X[ft_ind] = LabelEncoder().fit_transform(X[ft_ind])
+                X[:, ft_ind] = LabelEncoder().fit_transform(X[:, ft_ind])
 
     X_train, X_test, y_train, y_test = model_selection.train_test_split(
         X, y, test_size=test_size, shuffle=True, random_state=random_state

@@ -1,6 +1,9 @@
 Data Parallelism
 ****************
 
+Horovod
+=======
+
 The `Horovod software <https://github.com/horovod/horovod>`_ is used to do data parallel traininig with deep neural neworks. Data parallelism consists in spliting the original dataset in multiple parts and then performing an distributed computation of gradients as shown in the following image.
 
 .. image:: ../_static/img/user_guides/data_parallelism/data-parallelism.png
@@ -15,7 +18,7 @@ To use this feature the :class:`deephyper.evaluator.BalsamEvaluator` should be s
 - ``num-threads-per-rank`` is the number of threads per rank for each evaluation.
 
 Neural Architecture Search (NAS)
-================================
+--------------------------------
 
 The available pipeline to use Horovod with NAS algorithms is ``deephyper.nas.run.horovod.run`` which has to be specified with the ``--run`` argument such as:
 
@@ -29,6 +32,12 @@ The available pipeline to use Horovod with NAS algorithms is ``deephyper.nas.run
     In the previous example we used a typical choice for Theta compute nodes by distributing the computation of each evalution on 2 nodes where each nodes has 64 threads.
 
 Hyperparameter Search (HPS)
-===========================
+---------------------------
 
 For HPS algorithm you simply have to follow the `Horovod documentation <https://horovod.readthedocs.io/>`_ to use it in the content of your ``run(...)`` function.
+
+
+Tensorflow Distributed
+======================
+
+TODO

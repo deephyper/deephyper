@@ -1,3 +1,5 @@
+"""The :func:`deephyper.nas.run.alpha.run` function is used to evaluate a deep neural network by loading the data, building the model, training the model and returning a scalar value corresponding to the objective defined in the used :class:`deephyper.problem.NaProblem`.
+"""
 import os
 import traceback
 

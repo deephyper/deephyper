@@ -1,3 +1,3 @@
 #!/bin/bash
 
-pytest --cov=deephyper --runslow
+pytest --cov=deephyper --runslow -s

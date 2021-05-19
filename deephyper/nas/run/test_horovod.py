@@ -1,3 +1,5 @@
+"""The :func:`deephyper.nas.run.test_horovod.run` function is used to check the good behaviour of a call made by within an Horovod context.
+"""
 import os
 import time
 import random
