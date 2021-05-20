@@ -19,7 +19,10 @@ ratio_test = 0.33
 ratio_valid = (1 - ratio_test) * 0.33
 
 train, valid, test = dataset.load_data(
-    random_state=rs_data, test_size=ratio_test, valid_size=ratio_valid,
+    random_state=rs_data,
+    test_size=ratio_test,
+    valid_size=ratio_valid,
+    categoricals_to_integers=True,
 )
 
 clf_class = CLASSIFIERS[config["classifier"]]
