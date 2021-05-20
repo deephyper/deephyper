@@ -275,10 +275,18 @@ class Evaluator:
                 pass
             yield (x, y)
 
-    def get_finished_evals(self, timeout=0.5):
+    def get_finished_evals(self, timeout=0.5, mode="async"):
+        assert mode in ["async", "sync"]
+
+        if mode == "sync":
+            return_when = "ALL_COMPLETED"
+            timeout = None
+        else: # mode == "async"
+            return_when = "ANY_COMPLETED"
+
         futures = self.pending_evals.values()
         try:
-            waitRes = self.wait(futures, timeout=timeout, return_when="ANY_COMPLETED")
+            waitRes = self.wait(futures, timeout=timeout, return_when=return_when)
         except TimeoutError:
             pass
         else:

@@ -79,10 +79,6 @@ class Search:
         np.random.seed(self.problem.seed)
 
         logger.info(f"Options: " + pformat(kwargs, indent=4))
-        # logger.info(
-        #     "Hyperparameter space definition: "
-        #     + pformat(Encoder().encode(self.problem.space), indent=4)
-        # )
         logger.info(f"Created {evaluator} evaluator")
         logger.info(f"Evaluator: num_workers is {self.num_workers}")
         self.write_init_infos()

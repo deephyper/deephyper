@@ -36,6 +36,7 @@ class AgEBO(RegularizedEvolution):
         kappa=0.001,
         xi=0.000001,
         acq_func="LCB",
+        mode="async",
         **kwargs,
     ):
         super().__init__(
@@ -46,7 +47,7 @@ class AgEBO(RegularizedEvolution):
             sample_size=sample_size,
             **kwargs,
         )
-
+        self.mode = mode # or "async"
         self.n_jobs = int(n_jobs)  # parallelism of BO surrogate model estimator
 
         # Initialize Hyperaparameter space
@@ -95,7 +96,7 @@ class AgEBO(RegularizedEvolution):
         while num_evals_done < self.max_evals:
 
             # Collecting finished evaluations
-            new_results = list(self.evaluator.get_finished_evals())
+            new_results = list(self.evaluator.get_finished_evals(mode=self.mode))
 
             if len(new_results) > 0:
                 population.extend(new_results)
