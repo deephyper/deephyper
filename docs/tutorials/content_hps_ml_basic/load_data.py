@@ -22,7 +22,10 @@ def load_data():
     # The 3rd result is ignored with "_" because it corresponds to the test set
     # which is not interesting for us now.
     (X_train, y_train), (X_valid, y_valid), _ = dataset.load_data(
-        random_state=random_state, test_size=ratio_test, valid_size=ratio_valid
+        random_state=random_state,
+        test_size=ratio_test,
+        valid_size=ratio_valid,
+        categoricals_to_integers=True,
     )
 
     # Uncomment the next line if you want to sub-sample the training data to speed-up
