@@ -79,6 +79,7 @@ def add_subparser(subparsers):
     # other search arugments
     subparser.add_argument("--n-jobs", type=int, default=None)
     subparser.add_argument("--kappa", type=float, default=None)
+    subparser.add_argument("--sync", type=bool, default=None, nargs='?', const=True)
 
     subparser.set_defaults(func=function_to_call)
 
@@ -110,7 +111,7 @@ def main(
 
     # Detection of the host
     hostname = socket.gethostname()
-    # hostname = "thetagpusn1"
+    # hostname = "thetagpusn1" # for debug
     host = None
     if "thetagpu" in hostname:
         host = "thetagpu"
@@ -175,7 +176,7 @@ def main(
                 num_gpus_per_task=num_gpus_per_task,
                 script_launch_ray_cluster=script_launch_ray_cluster,
                 activation_script=activation_script,
-                other_search_arguments=generate_other_arguments(**kwargs),
+                other_search_arguments=generate_other_arguments(func=None, **kwargs),
             )
         )
         print("Created", fp.name)

@@ -5,7 +5,7 @@ from skopt import Optimizer as SkOptimizer
 from skopt.learning import RandomForestRegressor
 
 from deephyper.core.logs.logging import JsonMessage as jm
-from deephyper.core.parser import add_arguments_from_signature
+from deephyper.core.parser import add_arguments_from_signature, str2bool
 from deephyper.search import util
 from deephyper.search.nas.regevo import RegularizedEvolution
 
@@ -36,7 +36,7 @@ class AgEBO(RegularizedEvolution):
         kappa=0.001,
         xi=0.000001,
         acq_func="LCB",
-        mode="async",
+        sync=False,
         **kwargs,
     ):
         super().__init__(
@@ -47,7 +47,10 @@ class AgEBO(RegularizedEvolution):
             sample_size=sample_size,
             **kwargs,
         )
-        self.mode = mode # or "async"
+        if type(sync) is str:
+            sync = str2bool(sync)
+        self.mode = "sync" if sync else "async"
+
         self.n_jobs = int(n_jobs)  # parallelism of BO surrogate model estimator
 
         # Initialize Hyperaparameter space
