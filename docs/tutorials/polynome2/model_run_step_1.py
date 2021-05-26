@@ -32,7 +32,7 @@ def run(point):
     (x_train, y_train), (x_valid, y_valid) = load_data()
     
     if point["activation"] == "identity":
-    	point["activation"] = None
+        point["activation"] = None
     	
     model = Sequential()
     model.add(

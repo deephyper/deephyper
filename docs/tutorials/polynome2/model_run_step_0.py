@@ -30,9 +30,6 @@ HISTORY = None
 def run():
     global HISTORY
     (x_train, y_train), (x_valid, y_valid) = load_data()
-    
-    if point["activation"] == "identity":
-    	point["activation"] = None
 
     model = Sequential()
     model.add(Dense(10, activation="relu", input_shape=tuple(np.shape(x_train)[1:])))
