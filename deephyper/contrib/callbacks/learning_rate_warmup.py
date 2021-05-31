@@ -130,7 +130,7 @@ class LearningRateWarmupCallback(LearningRateScheduleCallback):
         self.verbose = verbose
 
     def on_epoch_end(self, epoch, logs=None):
-        super(LearningRateWarmup, self).on_epoch_end(epoch, logs)
+        super(LearningRateWarmupCallback, self).on_epoch_end(epoch, logs)
 
         if epoch == self.end_epoch - 1 and self.verbose > 0:
             new_lr = self.backend.get_value(self.model.optimizer.lr)
