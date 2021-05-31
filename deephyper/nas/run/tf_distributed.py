@@ -14,6 +14,7 @@ import traceback
 import numpy as np
 import tensorflow as tf
 from deephyper.contrib.callbacks import import_callback
+from deephyper.contrib.callbacks import LearningRateWarmupCallback
 from deephyper.nas.run.util import (
     compute_objective,
     load_config,
@@ -51,6 +52,7 @@ def run(config):
     load_config(config)
 
     # Scale batch size and learning rate according to the number of ranks
+    initial_lr = config[a.hyperparameters][a.learning_rate]
     if config[a.hyperparameters].get("lsr_batch_size"):
         batch_size = config[a.hyperparameters][a.batch_size] * n_replicas
     else:
@@ -111,6 +113,12 @@ def run(config):
                             cb_requires_valid = "val" in cb_conf["monitor"].split("_")
                     else:
                         logger.error(f"'{cb_name}' is not an accepted callback!")
+
+            # WarmupLR
+            callbacks.append(LearningRateWarmupCallback(n_replicas=n_replicas,
+                warmup_epochs=5, verbose=0, initial_lr=initial_lr
+            ))
+
             trainer = TrainerTrainValid(config=config, model=model)
             trainer.callbacks.extend(callbacks)
 
