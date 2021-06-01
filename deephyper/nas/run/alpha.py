@@ -27,6 +27,9 @@ def run(config):
     tf.config.optimizer.set_jit(True)
 
     # setup history saver
+    if "log_dir" in config and config["log_dir"] is None:
+        config["log_dir"] = ""
+
     save_dir = os.path.join(config.get("log_dir", ""), "save")
     saver = HistorySaver(config, save_dir)
     saver.write_config()
@@ -42,11 +45,16 @@ def run(config):
         logger.info("error memory growth for GPU device")
 
     # Threading configuration
-    if len(physical_devices) == 0 and os.environ.get("OMP_NUM_THREADS", None) is not None:
+    if len(physical_devices) == 0 \
+        and os.environ.get("OMP_NUM_THREADS", None) is not None:
         logger.info(f"OMP_NUM_THREADS is {os.environ.get('OMP_NUM_THREADS')}")
         num_intra = int(os.environ.get("OMP_NUM_THREADS"))
-        tf.config.threading.set_intra_op_parallelism_threads(num_intra)
-        tf.config.threading.set_inter_op_parallelism_threads(2)
+        try:
+            tf.config.threading.set_intra_op_parallelism_threads(num_intra)
+            tf.config.threading.set_inter_op_parallelism_threads(2)
+        except RuntimeError: # Session already initialized
+            pass
+        tf.config.set_soft_device_placement(True)
 
     seed = config["seed"]
     if seed is not None:
