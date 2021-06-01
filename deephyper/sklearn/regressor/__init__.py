@@ -1,13 +1,16 @@
-from deephyper.search.hps.automl.classifier import mapping
+from deephyper.sklearn.regressor import mapping
+from deephyper.sklearn.regressor.autosklearn1.problem import Problem
+from deephyper.sklearn.regressor.autosklearn1.run import run
 
-clf_names = ", ".join(mapping.CLASSIFIERS.keys())
+clf_names = ", ".join(mapping.REGRESSORS.keys())
 
-__doc__ = f"Sub-package providing automl tools for a set of classifiers: {clf_names}."
+__doc__ = f"Sub-package providing automl tools for a set of regressors: {clf_names}."
 
 __doc__ += """
-AutoML searches are executed with the ``deephyper.search.hps.ambs`` algorithm only. We provide ready to go problems, and run functions for you to use it easily. The following piece of code is an exammple of a problem definition used in :ref:`autosklearn1`.
+AutoML searches are executed with the ``deephyper.search.hps.ambs`` algorithm only. We provide ready to go problems, and run functions for you to use it easily. The following piece of code is an example of a provided problem definition.
 
 .. code-block:: python
+    :caption: Example Problem
 
     import ConfigSpace as cs
     from deephyper.problem import HpProblem
@@ -82,4 +85,26 @@ AutoML searches are executed with the ``deephyper.search.hps.ambs`` algorithm on
     )
 
     Problem.add_condition(cond_gamma)
+
+
+The problem to use with the ``--problem`` argument is ``deephyper.sklearn.regressor.Problem``. For the ``--run`` argument you can wrap the ``deephyper.sklearn.regressor.run`` function as the following code and then use this new function:
+
+.. code-block:: python
+
+    import numpy as np
+
+    from deephyper.sklearn.regressor import run as sklearn_run
+
+
+    def load_data():
+        from sklearn.datasets import load_breast_cancer
+
+        X, y = load_breast_cancer(return_X_y=True)
+        print(np.shape(X))
+        print(np.shape(y))
+        return X, y
+
+
+    def run(config):
+        return sklearn_run(config, load_data)
 """

@@ -2,15 +2,15 @@ import inspect
 from inspect import signature
 from pprint import pprint
 
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 
-from deephyper.search.hps.automl.classifier.mapping import CLASSIFIERS
+from deephyper.sklearn.regressor.mapping import REGRESSORS
 from deephyper.nas.preprocessing import minmaxstdscaler
 
 
 def run(config: dict, load_data: callable) -> float:
-    """Run function which can be used for AutoML classification.
+    """Run function which can be used for AutoML regression.
 
     Args:
         config (dict): [description]
@@ -31,7 +31,7 @@ def run(config: dict, load_data: callable) -> float:
     X_train = preproc.fit_transform(X_train)
     X_test = preproc.transform(X_test)
 
-    mapping = CLASSIFIERS
+    mapping = REGRESSORS
 
     clf_class = mapping[config["classifier"]]
 
@@ -58,8 +58,8 @@ def run(config: dict, load_data: callable) -> float:
 
     if fit_is_complete:
         y_pred = clf.predict(X_test)
-        acc = accuracy_score(y_test, y_pred)
+        r2 = r2_score(y_test, y_pred)
     else:
-        acc = -1.0
+        r2 = -1.0
 
-    return acc
+    return r2

@@ -1,4 +1,15 @@
 Scikit-Learn Search
 *******************
 
-TODO
+.. automodule:: deephyper.sklearn
+
+Classification
+==============
+
+.. automodule:: deephyper.sklearn.classifier
+
+
+Regression
+==========
+
+.. automodule:: deephyper.sklearn.regressor
