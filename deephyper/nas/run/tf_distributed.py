@@ -6,6 +6,23 @@
         ...
         lsr_batch_size=True,
         lsr_learning_rate=True,
+        warmup_lr=True,
+        warmup_epochs=5
+        ...
+    )
+
+The hyperparameters of the form ``patience_{Callback}`` such as ``patience_EarlyStopping`` and ``patience_ReduceLROnPlateau`` are valid when the corresponding callback is declared:
+
+.. code-block:: python
+
+    Problem.hyperparameters(
+        ...
+        patience_ReduceLROnPlateau=5,
+        patience_EarlyStopping=10,
+        callbacks=dict(
+            ReduceLROnPlateau=dict(monitor="val_r2", mode="max", verbose=0),
+            EarlyStopping=dict(monitor="val_r2", min_delta=0, mode="max", verbose=0),
+        ),
         ...
     )
 """
@@ -22,7 +39,7 @@ from deephyper.nas.run.util import (
     save_history,
     setup_data,
     setup_search_space,
-    default_callbacks_config
+    default_callbacks_config,
 )
 from deephyper.nas.trainer.train_valid import TrainerTrainValid
 from deephyper.search import util
@@ -100,10 +117,11 @@ def run(config):
 
                         # replace patience hyperparameter
                         if "patience" in default_callbacks_config[cb_name]:
-                            patience = config["hyperparameters"].get(f"patience_{cb_name}")
+                            patience = config["hyperparameters"].get(
+                                f"patience_{cb_name}"
+                            )
                             if patience is not None:
                                 default_callbacks_config[cb_name]["patience"] = patience
-
 
                         # Import and create corresponding callback
                         Callback = import_callback(cb_name)
@@ -115,9 +133,16 @@ def run(config):
                         logger.error(f"'{cb_name}' is not an accepted callback!")
 
             # WarmupLR
-            callbacks.append(LearningRateWarmupCallback(n_replicas=n_replicas,
-                warmup_epochs=5, verbose=0, initial_lr=initial_lr
-            ))
+            if config[a.hyperparameters].get("warmup_lr"):
+                warmup_epochs = config[a.hyperparameters].get("warmup_epochs", 5)
+                callbacks.append(
+                    LearningRateWarmupCallback(
+                        n_replicas=n_replicas,
+                        warmup_epochs=warmup_epochs,
+                        verbose=0,
+                        initial_lr=initial_lr,
+                    )
+                )
 
             trainer = TrainerTrainValid(config=config, model=model)
             trainer.callbacks.extend(callbacks)
@@ -126,12 +151,12 @@ def run(config):
             last_only = last_only and not cb_requires_valid
 
     if model_created:
-            history = trainer.train(with_pred=with_pred, last_only=last_only)
+        history = trainer.train(with_pred=with_pred, last_only=last_only)
 
-            # save history
-            save_history(config.get("log_dir", None), history, config)
+        # save history
+        save_history(config.get("log_dir", None), history, config)
 
-            result = compute_objective(config["objective"], history)
+        result = compute_objective(config["objective"], history)
     else:
         # penalising actions if model cannot be created
         result = -1
