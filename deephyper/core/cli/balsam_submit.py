@@ -1,9 +1,29 @@
-import argparse
 import os
 import sys
-from deephyper.search.util import generic_loader, banner
-from deephyper.problem.neuralarchitecture import Problem
-from deephyper.problem import BaseProblem
+
+try:
+    from balsam.core import models
+    from balsam.core.models import ApplicationDefinition, BalsamJob
+    from balsam.service import service
+except:
+    pass
+
+from deephyper.core.cli.utils import generate_other_arguments
+from deephyper.core.exceptions import DeephyperRuntimeError
+from deephyper.problem import BaseProblem, NaProblem
+from deephyper.search.util import banner, generic_loader
+
+APPS = {
+    "HPS": {
+        "AMBS": f"{sys.executable} -m deephyper.search.hps.ambs",
+    },
+    "NAS": {
+        "AMBS": f"{sys.executable} -m deephyper.search.nas.ambs",
+        "RANDOM": f"{sys.executable} -m deephyper.search.nas.random",
+        "REGEVO": f"{sys.executable} -m deephyper.search.nas.regevo",
+        "AGEBO": f"{sys.executable} -m deephyper.search.nas.agebo",
+    },
+}
 
 
 def add_subparser(subparsers):
@@ -15,12 +35,17 @@ def add_subparser(subparsers):
     )
 
     subparser.add_argument("mode", choices=["nas", "hps"], help="Type of search")
+    subparser.add_argument(
+        "search",
+        choices=["ambs", "regevo", "random", "agebo", "ambsmixed", "regevomixed"],
+        help="Search strategy",
+    )
     subparser.add_argument("workflow", help="Unique workflow name")
     subparser.add_argument(
         "-p", "--problem", required=True, help="Problem definition path or object"
     )
     subparser.add_argument(
-        "-r", "--run", required=True, help="Run function path or object"
+        "-r", "--run", required=False, help="Run function path or object"
     )
 
     subparser.add_argument(
@@ -39,12 +64,6 @@ def add_subparser(subparsers):
         choices=["mpi", "serial"],
     )
     subparser.add_argument(
-        "--nas-nodes",
-        default=1,
-        type=int,
-        help="Number of nodes over which to parallelize NAS",
-    )
-    subparser.add_argument(
         "--num-evals-per-node",
         default=1,
         type=int,
@@ -53,22 +72,21 @@ def add_subparser(subparsers):
     subparser.set_defaults(func=function_to_call)
 
 
-def main(mode, workflow, problem, run, **kwargs):
+def main(mode: str, search: str, workflow: str, problem: str, run: str, **kwargs) -> None:
     """Create & submit the DH search via Balsam"""
-    job = pre_submit(problem, run, workflow)
-    if os.path.exists(problem):
+
+    job = pre_submit(mode, search, workflow, problem, run)
+
+    if os.path.exists(problem):  # the problem was given as a PATH
         problem = os.path.abspath(problem)
-    if os.path.exists(run):
+    if run and os.path.exists(run):  # the run function was given as a PATH
         run = os.path.abspath(run)
 
-    if mode == "nas":
-        print("Creating NAS(PPO) BalsamJob...", end="", flush=True)
-        setup_nas(job, problem, run, **kwargs)
-        print("OK")
-    elif mode == "hps":
-        print("Creating HPS(AMBS) BalsamJob...", end="", flush=True)
-        setup_ambs(job, problem, run, **kwargs)
-        print("OK")
+    print(
+        f"Creating BalsamJob using application {job.application}...", end="", flush=True
+    )
+    setup_job(job, problem, run, **kwargs)
+    print("OK")
 
     print("Performing job submission...")
     submit_qlaunch(
@@ -82,80 +100,92 @@ def main(mode, workflow, problem, run, **kwargs):
     banner(f"Success. The search will run at: {job.working_directory}")
 
 
-def validate(problem, run, workflow):
+def validate(mode: str, search: str, workflow: str, problem: str, run: str) -> str:
     """Validate problem, run, and workflow"""
-    from balsam.core.models import BalsamJob
 
-    print("Validating Problem...", end="", flush=True)
+    # validate the mode
+    if not (mode.upper() in APPS):
+        raise DeephyperRuntimeError(f"The mode '{mode}' is not valid!")
+
+    # validate the search
+    if not (search.upper()in APPS[mode.upper()]):
+        raise DeephyperRuntimeError(f"The search '{search}' is not valid!")
+    app = f"{mode.upper()}-{search.upper()}"
+
+    print(f"Validating Problem({problem})...", end="", flush=True)
     prob = generic_loader(problem, "Problem")
-    assert isinstance(prob, (Problem, BaseProblem)), f"{prob} is not a Problem instance"
+    assert isinstance(prob, (NaProblem, BaseProblem)), f"{prob} is not a Problem instance"
     print("OK", flush=True)
 
-    print("Validating run...", end="", flush=True)
-    run = generic_loader(run, "run")
-    assert callable(run), f"{run} must be a a callable"
-    print("OK", flush=True)
+    # validate run
+    if run: # it is not mandatory to pass a run function for NAS
+        print("Validating run...", end="", flush=True)
+        run = generic_loader(run, "run")
+        assert callable(run), f"{run} must be a a callable"
+        print("OK", flush=True)
+    else:
+        if mode == "hps":
+            raise DeephyperRuntimeError(f"No '--run' was passed for the mode 'hps'")
 
     qs = BalsamJob.objects.filter(workflow=workflow)
     if qs.exists():
-        print(f"There are already jobs matching workflow {workflow}")
-        print("Please remove these, or use a unique workflow name")
-        sys.exit(1)
+        raise DeephyperRuntimeError(
+            f"There are already jobs matching workflow {workflow}"
+            f"Please remove these, or use a unique workflow name"
+        )
+
+    return app
 
 
 def bootstrap_apps():
     """Ensure Balsam ApplicationDefinitions are populated"""
-    from balsam.core.models import ApplicationDefinition
 
-    apps = {
-        "AMBS": f"{sys.executable} -m deephyper.search.hps.ambs",
-        "NAS-AMBS": f"{sys.executable} -m deephyper.search.nas.ambs",
-        "NAS-RANDOM": f"{sys.executable} -m deephyper.search.nas.random",
-        "NAS-REGEVO": f"{sys.executable} -m deephyper.search.nas.regevo",
-        "NAS-AGEBO": f"{sys.executable} -m deephyper.search.nas.agebo",
-    }
-
-    for name, exe in apps.items():
-        app, created = ApplicationDefinition.objects.get_or_create(
-            name=name, defaults={"executable": exe}
-        )
-        if not created:
-            app.executable = exe
-            app.save()
+    for mode, mode_apps in APPS.items():
+        for app_name, app_exe in mode_apps.items():
+            app, created = ApplicationDefinition.objects.get_or_create(
+                name=f"{mode}-{app_name}", defaults={"executable": app_exe}
+            )
+            if not created:
+                app.executable = app_exe
+                app.save()
 
 
-def pre_submit(problem, run, workflow):
+def pre_submit(
+        mode: str, search: str, workflow: str, problem: str, run: str
+):
     """Validate command line; prepare apps"""
-    from balsam.core.models import BalsamJob
 
-    validate(problem, run, workflow)
+    app = validate(mode, search, workflow, problem, run)
+
+    # creating the APPS in the balsam DB
     print("Bootstrapping apps...", end="", flush=True)
     bootstrap_apps()
     print("OK")
 
-    job = BalsamJob(name=workflow, workflow=workflow)
+    job = BalsamJob(name=workflow, workflow=workflow, application=app)
     return job
 
 
-def setup_ambs(job, problem, run, num_evals_per_node=1, **kwargs):
-    job.application = "AMBS"
-    job.args = f"--evaluator balsam --problem {problem} --run {run} --num-evals-per-node {num_evals_per_node}"
-    job.save()
-    return job
-
-
-def setup_nas(job, problem, run, nas_nodes, **kwargs):
-    job.application = "PPO"
+def setup_job(job, problem, run, **kwargs):
     job.args = f"--evaluator balsam --problem {problem}"
-    job.num_nodes = nas_nodes
+
+    #! it is not required for NAS to pass a run function
+    if run:
+        job.args += f" --run {run}"
+
+    invalid_keys = ["time_minutes", "nodes", "queue", "project", "job_mode"]
+    for k in invalid_keys:
+        kwargs.pop(k)
+    args = generate_other_arguments(**kwargs)
+    if len(args) > 0:
+        job.args += f" {args}"
+
     job.save()
     return job
 
 
 def submit_qlaunch(project, queue, nodes, time_minutes, job_mode, wf_filter):
     """Submit Balsam launcher job to batch scheduler"""
-    from balsam.service import service
-    from balsam.core import models
 
     QueuedLaunch = models.QueuedLaunch
     qlaunch = QueuedLaunch(

@@ -10,10 +10,10 @@ from deephyper.nas.run.util import (
     compute_objective,
     load_config,
     preproc_trainer,
-    save_history,
     setup_data,
     setup_search_space,
     default_callbacks_config,
+    HistorySaver,
 )
 from deephyper.nas.trainer.train_valid import TrainerTrainValid
 from deephyper.search import util
@@ -21,10 +21,29 @@ from deephyper.search import util
 logger = util.conf_logger("deephyper.search.nas.run")
 
 
-def run(config: dict) -> float:
+def run(config):
+
+    tf.keras.backend.clear_session()
+    tf.config.optimizer.set_jit(True)
+
+    # setup history saver
+    save_dir = os.path.join(config.get("log_dir", ""), "save")
+    saver = HistorySaver(config, save_dir)
+    saver.write_config()
+    saver.write_model(None)
+
+    # GPU Configuration if available
+    physical_devices = tf.config.list_physical_devices("GPU")
+    try:
+        for i in range(len(physical_devices)):
+            tf.config.experimental.set_memory_growth(physical_devices[i], True)
+    except:
+        # Invalid device or cannot modify virtual devices once initialized.
+        logger.info("error memory growth for GPU device")
+
     # Threading configuration
-    if os.environ.get("OMP_NUM_THREADS", None) is not None:
-        logger.debug(f"OMP_NUM_THREADS is {os.environ.get('OMP_NUM_THREADS')}")
+    if len(physical_devices) == 0 and os.environ.get("OMP_NUM_THREADS", None) is not None:
+        logger.info(f"OMP_NUM_THREADS is {os.environ.get('OMP_NUM_THREADS')}")
         num_intra = int(os.environ.get("OMP_NUM_THREADS"))
         tf.config.threading.set_intra_op_parallelism_threads(num_intra)
         tf.config.threading.set_inter_op_parallelism_threads(2)
@@ -61,9 +80,7 @@ def run(config: dict) -> float:
 
                     # Special dynamic parameters for callbacks
                     if cb_name == "ModelCheckpoint":
-                        default_callbacks_config[cb_name][
-                            "filepath"
-                        ] = f'best_model_{config["id"]}.h5'
+                        default_callbacks_config[cb_name]["filepath"] = saver.model_path
 
                     # replace patience hyperparameter
                     if "patience" in default_callbacks_config[cb_name]:
@@ -89,12 +106,16 @@ def run(config: dict) -> float:
         history = trainer.train(with_pred=with_pred, last_only=last_only)
 
         # save history
-        save_history(config.get("log_dir", None), history, config)
+        saver.write_history(history)
 
         result = compute_objective(config["objective"], history)
     else:
         # penalising actions if model cannot be created
-        result = -1
-    if result < -10 or np.isnan(result):
-        result = -10
+        logger.info("Model could not be created returning -Inf!")
+        result = -float("inf")
+
+    if np.isnan(result):
+        logger.info("Computed objective is NaN returning -Inf instead!")
+        result = -float("inf")
+
     return result

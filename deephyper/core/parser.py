@@ -1,5 +1,7 @@
+import argparse
 import inspect
 from inspect import signature
+
 
 def add_arguments_from_signature(parser, obj):
     """Add arguments to parser base on obj default keyword parameters.
@@ -16,4 +18,16 @@ def add_arguments_from_signature(parser, obj):
                 parser.add_argument(
                     f"--{p_name.replace('_', '-')}",
                     default=p.default,
-                    help=f"Defaults to '{str(p.default)}'.")
+                    help=f"Defaults to '{str(p.default)}'.",
+                )
+
+
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ("yes", "true", "t", "y", "1"):
+        return True
+    elif v.lower() in ("no", "false", "f", "n", "0"):
+        return False
+    else:
+        raise argparse.ArgumentTypeError("Boolean value expected.")

@@ -1,9 +1,12 @@
 import argparse
+import json
+import time
 import logging
 import os
 from pprint import pformat
 
 import numpy as np
+from deephyper.evaluator.encoder import Encoder
 from deephyper.evaluator.evaluate import Evaluator
 from deephyper.search import util
 
@@ -76,11 +79,21 @@ class Search:
         np.random.seed(self.problem.seed)
 
         logger.info(f"Options: " + pformat(kwargs, indent=4))
-        logger.info(
-            "Hyperparameter space definition: " + pformat(self.problem.space, indent=4)
-        )
         logger.info(f"Created {evaluator} evaluator")
         logger.info(f"Evaluator: num_workers is {self.num_workers}")
+        self.write_init_infos()
+
+    def write_init_infos(self):
+        infos = {}
+        infos["start_timestamp"] = time.time()
+        infos["num_workers"] = self.num_workers
+        infos["max_evals"] = self.max_evals
+        infos["problem"] = self.problem.space
+
+        path = os.path.join(self.log_dir, "init_infos.json")
+        with open(path, "w") as f:
+            json.dump(infos, f, cls=Encoder, indent=2)
+
 
     def main(self):
         raise NotImplementedError
@@ -147,7 +160,7 @@ class Search:
         )
         parser.add_argument(
             "--ray-address",
-            default=None,
+            default="",
             help='This parameter is mandatory when using evaluator==ray. It reference the "IP:PORT" redis address for the RAY-driver to connect on the RAY-head.',
         )
         parser.add_argument(
@@ -155,8 +168,30 @@ class Search:
             default="5241590000000000",
             help="",
         )
-        parser.add_argument("--num-cpus-per-task", type=int, default=1, help="")
-        parser.add_argument("--num-gpus-per-task", type=int, default=None, help="")
+        parser.add_argument(
+            "--driver-num-cpus",
+            type=int,
+            default=None,
+            help="Valid only if evaluator==ray",
+        )
+        parser.add_argument(
+            "--driver-num-gpus",
+            type=int,
+            default=None,
+            help="Valid only when evaluator==ray",
+        )
+        parser.add_argument(
+            "--num-cpus-per-task",
+            type=int,
+            default=1,
+            help="Valid only if evaluator==ray",
+        )
+        parser.add_argument(
+            "--num-gpus-per-task",
+            type=int,
+            default=None,
+            help="Valid only when evaluator==ray",
+        )
         parser.add_argument("--seed", default=None, help="Random seed used.")
         parser.add_argument(
             "--cache-key",

@@ -168,11 +168,10 @@ class AvgPool2D(Operation):
         num_filters (int): corresponding to the number of filters we need the output to have
     """
 
-    def __init__(self, pool_size, strides=1, padding="same", num_filters=32):
+    def __init__(self, pool_size, strides=1, padding="same"):
         self.pool_size = pool_size
         self.strides = strides
         self.padding = padding
-        self.num_filters = num_filters
         self._layer = None
 
     def __str__(self):

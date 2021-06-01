@@ -3,6 +3,7 @@ from tensorflow import keras
 
 from . import Operation
 
+
 class Dense(Operation):
     """Multi Layer Perceptron operation.
 
@@ -25,15 +26,16 @@ class Dense(Operation):
 
     def __str__(self):
         if isinstance(self.activation, str):
-            return f'Dense_{self.units}_{self.activation}'
+            return f"Dense_{self.units}_{self.activation}"
         elif self.activation is None:
-            return f'Dense_{self.units}'
+            return f"Dense_{self.units}"
         else:
-            return f'Dense_{self.units}_{self.activation.__name__}'
+            return f"Dense_{self.units}_{self.activation.__name__}"
 
     def __call__(self, inputs, seed=None, **kwargs):
-        assert len(
-            inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when 1 is required.'
+        assert (
+            len(inputs) == 1
+        ), f"{type(self).__name__} as {len(inputs)} inputs when 1 is required."
         if self._layer is None:  # reuse mechanism
             self._layer = keras.layers.Dense(
                 units=self.units,
@@ -43,7 +45,7 @@ class Dense(Operation):
 
         out = self._layer(inputs[0])
 
-        if self.activation is not None: # better for visualisation
+        if self.activation is not None:  # better for visualisation
             if self._activation is None:
                 self._activation = keras.layers.Activation(activation=self.activation)
 
@@ -65,15 +67,17 @@ class Dropout(Operation):
         super().__init__(layer=keras.layers.Dropout(rate=self.rate))
 
     def __str__(self):
-        return f'Dropout({self.rate})'
+        return f"Dropout({self.rate})"
+
 
 class Identity(Operation):
     def __init__(self):
         pass
 
     def __call__(self, inputs, **kwargs):
-        assert len(
-            inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when 1 is required.'
+        assert (
+            len(inputs) == 1
+        ), f"{type(self).__name__} as {len(inputs)} inputs when 1 is required."
         return inputs[0]
 
 
@@ -89,7 +93,7 @@ class Conv1D(Operation):
         padding (str): 'same' or 'valid'
     """
 
-    def __init__(self, filter_size, num_filters=1, strides=1, padding='same'):
+    def __init__(self, filter_size, num_filters=1, strides=1, padding="same"):
         self.filter_size = filter_size
         self.num_filters = num_filters
         self.strides = strides
@@ -97,11 +101,12 @@ class Conv1D(Operation):
         self._layer = None
 
     def __str__(self):
-        return f'{type(self).__name__}_{self.filter_size}_{self.num_filters}'
+        return f"{type(self).__name__}_{self.filter_size}_{self.num_filters}"
 
     def __call__(self, inputs, **kwargs):
-        assert len(
-            inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when only 1 is required.'
+        assert (
+            len(inputs) == 1
+        ), f"{type(self).__name__} as {len(inputs)} inputs when only 1 is required."
         inpt = inputs[0]
         if len(inpt.get_shape()) == 2:
             out = keras.layers.Reshape((inpt.get_shape()[1], 1))(inpt)
@@ -112,7 +117,8 @@ class Conv1D(Operation):
                 filters=self.num_filters,
                 kernel_size=self.filter_size,
                 strides=self.strides,
-                padding=self.padding)
+                padding=self.padding,
+            )
         out = self._layer(out)
         return out
 
@@ -127,18 +133,21 @@ class MaxPooling1D(Operation):
         data_format (str, optional): Defaults to 'channels_last'. [description]
     """
 
-    def __init__(self, pool_size, strides=1, padding='valid', data_format='channels_last'):
+    def __init__(
+        self, pool_size, strides=1, padding="valid", data_format="channels_last"
+    ):
         self.pool_size = pool_size
         self.strides = strides
         self.padding = padding
         self.data_format = data_format
 
     def __str__(self):
-        return f'{type(self).__name__}_{self.pool_size}_{self.padding}'
+        return f"{type(self).__name__}_{self.pool_size}_{self.padding}"
 
     def __call__(self, inputs, **kwargs):
-        assert len(
-            inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when only 1 is required.'
+        assert (
+            len(inputs) == 1
+        ), f"{type(self).__name__} as {len(inputs)} inputs when only 1 is required."
         inpt = inputs[0]
         if len(inpt.get_shape()) == 2:
             out = keras.layers.Reshape((inpt.get_shape()[1], 1))(inpt)
@@ -148,7 +157,7 @@ class MaxPooling1D(Operation):
             pool_size=self.pool_size,
             strides=self.strides,
             padding=self.padding,
-            data_format=self.data_format
+            data_format=self.data_format,
         )(out)
         return out
 
@@ -164,15 +173,14 @@ class Flatten(Operation):
         self.data_format = data_format
 
     def __call__(self, inputs, **kwargs):
-        assert len(
-            inputs) == 1, f'{type(self).__name__} as {len(inputs)} inputs when only 1 is required.'
+        assert (
+            len(inputs) == 1
+        ), f"{type(self).__name__} as {len(inputs)} inputs when only 1 is required."
         inpt = inputs[0]
         if len(inpt.get_shape()) == 2:
             out = inpt
         else:
-            out = keras.layers.Flatten(
-                data_format=self.data_format
-            )(inpt)
+            out = keras.layers.Flatten(data_format=self.data_format)(inpt)
         return out
 
 
@@ -188,11 +196,38 @@ class Activation(Operation):
         self._layer = None
 
     def __str__(self):
-        return f'{type(self).__name__}_{self.activation}'
+        return f"{type(self).__name__}_{self.activation}"
 
     def __call__(self, inputs, *args, **kwargs):
         inpt = inputs[0]
         if self._layer is None:
             self._layer = keras.layers.Activation(activation=self.activation)
         out = self._layer(inpt)
+        return out
+
+
+class BatchNormalization(Operation):
+    def __init__(self, *args, activation=None, **kwargs):
+        self.args = args
+        self.activation = None
+        self.kwargs = kwargs
+
+        self._bn = None
+        self._activation = None
+
+    def __str__(self):
+        return f"{type(self).__name__}"
+
+    def __call__(self, inputs, *args, **kwargs):
+        inpt = inputs[0]
+
+        if self._bn is None:
+            self._bn = keras.layers.BatchNormalization(*self.args, **self.kwargs)
+            if not(self.activation is None):
+                self._activation = keras.layers.Activation(self.activation)
+
+        out = self._bn (inpt)
+        if not(self._activation is None):
+            out = self._activation(out)
+
         return out

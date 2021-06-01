@@ -1,7 +1,7 @@
 """
 """
 from deephyper.core.exceptions import DeephyperRuntimeError
-from deephyper.core.plot import hps, multi, post_train, single
+from deephyper.core.plot import hps, multi, post_train, nas_single
 
 
 def add_subparser(subparsers):
@@ -27,7 +27,7 @@ def add_subparser(subparsers):
 
 
 def notebook_for_hps(path: list, output: str) -> None:
-    output_file = "dh-analytics-hps.ipynb" if len(output) == 0 else output
+    output_file = "dh-analytics-hps" if len(output) == 0 else output
 
     if len(path) == 1:
         hps.hps_analytics(path[0], output_file)
@@ -35,16 +35,16 @@ def notebook_for_hps(path: list, output: str) -> None:
         raise DeephyperRuntimeError("Comparative analytics for HPS is not available yet!") # TODO
 
 def notebook_for_nas(path: list, output: str) -> None:
-    output_file = "dh-analytics-nas.ipynb" if len(output) == 0 else output
+    output_file = "dh-analytics-nas" if len(output) == 0 else output
 
     if len(path) == 1:
-        single.single_analytics(path[0], output_file)
+        nas_single.single_analytics(path[0], output_file)
     else:
         multi.multi_analytics(path, output_file)
 
 
 def notebook_for_posttrain(path: list, output: str) -> None:
-    output_file = "dh-analytics-posttrain.ipynb" if len(output) == 0 else output
+    output_file = "dh-analytics-posttrain" if len(output) == 0 else output
 
     if len(path) == 1:
         post_train.post_train_analytics(path[0], output_file)

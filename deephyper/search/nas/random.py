@@ -30,6 +30,13 @@ class Random(NeuralArchitectureSearch):
         NeuralArchitectureSearch._extend_parser(parser)
         return parser
 
+    def saved_keys(self, val: dict):
+        res = {
+            "id": val["id"],
+            "arch_seq": str(val["arch_seq"])
+        }
+        return res
+
     def main(self):
 
         # Setup
@@ -66,8 +73,10 @@ class Random(NeuralArchitectureSearch):
 
             # Filling available nodes
             if num_received > 0:
-                self.evaluator.dump_evals(saved_key="arch_seq")
-                self.evaluator.add_eval_batch(gen_batch(size=num_received))
+                self.evaluator.dump_evals(saved_keys=self.saved_keys)
+
+                if num_evals_done < self.max_evals:
+                    self.evaluator.add_eval_batch(gen_batch(size=num_received))
 
 
 if __name__ == "__main__":

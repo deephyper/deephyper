@@ -52,6 +52,8 @@ class Evaluator:
         self.uid_key_map = {}  # map uids to keys
         self.seed = seed
         self.seed_high = 2 ** 32  # exclusive
+        self.min_val = np.finfo(np.float32).min
+        self.max_val = np.finfo(np.float32).max
 
         self.stats = {"num_cache_used": 0}
 
@@ -157,6 +159,7 @@ class Evaluator:
     def encode(self, x):
         if not isinstance(x, dict):
             raise ValueError(f"Expected dict, but got {type(x)}")
+        x["id"] = uuid.uuid1()
         return json.dumps(x, cls=self.encoder)
 
     def _elapsed_sec(self):
@@ -235,7 +238,7 @@ class Evaluator:
         )
         return runner_exec
 
-    def await_evals(self, uids, timeout=None):
+    def await_evals(self, uids, timeout=None) -> list:
         """Waiting for a collection of tasks.
 
         Args:
@@ -253,12 +256,14 @@ class Evaluator:
 
         logger.info(f"Blocking on completion of {len(futures)} pending evals")
         self.wait(futures.values(), timeout=timeout, return_when="ALL_COMPLETED")
+
         # TODO: on TimeoutError, kill the evals that did not finish; return infinity
         for uid in futures:
-            y = futures[uid].result()
+            y = self.clip_value(futures[uid].result())
             self.elapsed_times[uid] = self._elapsed_sec()
             del self.pending_evals[uid]
             self.finished_evals[uid] = y
+
         for (key, uid) in zip(keys, uids):
             y = self.finished_evals[uid]
             # same printing required in get_finished_evals because of logs parsing
@@ -270,10 +275,18 @@ class Evaluator:
                 pass
             yield (x, y)
 
-    def get_finished_evals(self, timeout=0.5):
+    def get_finished_evals(self, timeout=0.5, mode="async"):
+        assert mode in ["async", "sync"]
+
+        if mode == "sync":
+            return_when = "ALL_COMPLETED"
+            timeout = None
+        else: # mode == "async"
+            return_when = "ANY_COMPLETED"
+
         futures = self.pending_evals.values()
         try:
-            waitRes = self.wait(futures, timeout=timeout, return_when="ANY_COMPLETED")
+            waitRes = self.wait(futures, timeout=timeout, return_when=return_when)
         except TimeoutError:
             pass
         else:
@@ -290,9 +303,20 @@ class Evaluator:
             if uid in self.finished_evals:
                 self.requested_evals.remove(key)
                 x = self.decode(key)
-                y = self.finished_evals[uid]
+                y = self.clip_value(self.finished_evals[uid])
                 logger.info(f"Requested eval x: {x} y: {y}")
                 yield (x, y)
+
+    def clip_value(self, y: float) -> float:
+        """Clip the input value in allowed bound. Necessary to avoid errors in some optimizers.
+
+        Args:
+            y (float): the value to clip.
+
+        Returns:
+            float: the clipped value.
+        """
+        return min(max(y, self.min_val), self.max_val)
 
     @property
     def counter(self):

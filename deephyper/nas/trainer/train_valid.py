@@ -76,7 +76,7 @@ class TrainerTrainValid:
     def setup_losses_and_metrics(self):
         def selectL(loss):
             if type(loss) is dict:
-                loss = {k:selectLoss(v) for k,v in loss.items()}
+                loss = {k: selectLoss(v) for k, v in loss.items()}
             else:
                 loss = selectLoss(loss)
             return loss
@@ -273,12 +273,12 @@ class TrainerTrainValid:
                     tf.TensorShape([*self.data_shapes[1]]),
                 ),
             )
-        self.dataset_train = (self.dataset_train
-            .cache()
+        self.dataset_train = (
+            self.dataset_train.cache()
             .shuffle(self.train_size, reshuffle_each_iteration=True)
-            .repeat(self.num_epochs)
             .batch(self.batch_size)
             .prefetch(tf.data.AUTOTUNE)
+            .repeat(self.num_epochs)
         )
 
     def set_dataset_valid(self):
@@ -302,12 +302,12 @@ class TrainerTrainValid:
                     tf.TensorShape([*self.data_shapes[1]]),
                 ),
             )
-        self.dataset_valid = (self.dataset_valid
-            .cache()
+        self.dataset_valid = (
+            self.dataset_valid.cache()
             .shuffle(self.valid_size, reshuffle_each_iteration=True)
-            .repeat(self.num_epochs)
             .batch(self.batch_size)
             .prefetch(tf.data.AUTOTUNE)
+            .repeat(self.num_epochs)
         )
 
     def model_compile(self):
@@ -456,7 +456,7 @@ class TrainerTrainValid:
                     callbacks=self.callbacks,
                     validation_data=self.dataset_valid,
                     validation_steps=self.valid_steps_per_epoch,
-                    class_weight=self.class_weights
+                    class_weight=self.class_weights,
                 )
             else:
                 logger.info(
@@ -469,7 +469,7 @@ class TrainerTrainValid:
                         epochs=num_epochs - 1,
                         steps_per_epoch=self.train_steps_per_epoch,
                         callbacks=self.callbacks,
-                        class_weight=self.class_weights
+                        class_weight=self.class_weights,
                     )
                 history = self.model.fit(
                     self.dataset_train,
@@ -479,7 +479,7 @@ class TrainerTrainValid:
                     callbacks=self.callbacks,
                     validation_data=self.dataset_valid,
                     validation_steps=self.valid_steps_per_epoch,
-                    class_weight=self.class_weights
+                    class_weight=self.class_weights,
                 )
 
             time_end_training = time.time()  # TIMING
