@@ -1,9 +1,8 @@
+import logging
 
 import networkx as nx
 import tensorflow as tf
-from tensorflow import keras
-from tensorflow.python.keras.utils.vis_utils import model_to_dot
-
+import tensorflow.keras.backend as K
 from deephyper.core.exceptions.nas.space import (
     InputShapeOfWrongType,
     NodeAlreadyAdded,
@@ -14,6 +13,10 @@ from deephyper.core.exceptions.nas.space import (
 from deephyper.nas.space import NxSearchSpace
 from deephyper.nas.space.node import ConstantNode
 from deephyper.nas.space.op.basic import Tensor
+from tensorflow import keras
+from tensorflow.python.keras.utils.vis_utils import model_to_dot
+
+logger = logging.getLogger(__name__)
 
 
 class KSearchSpace(NxSearchSpace):
@@ -148,9 +151,9 @@ class KSearchSpace(NxSearchSpace):
                 output_n = int(out_T.name.split("/")[0].split("_")[-1])
                 out_S = self.output_shape[output_n]
                 if tf.keras.backend.is_keras_tensor(out_T):
-                    out_T_shape = out_T.shape
+                    out_T_shape = K.shape(out_T).shape
                     if out_T_shape[1:] != out_S:
-                        raise WrongOutputShape(out_T_shape, out_S)
+                        logger.warning(str(WrongOutputShape(out_T_shape, out_S)))
 
             input_tensors = [inode._tensor for inode in self.input_nodes]
 
@@ -158,13 +161,11 @@ class KSearchSpace(NxSearchSpace):
         else:
             output_tensors = self.create_tensor_aux(self.graph, self.output_node)
             if tf.keras.backend.is_keras_tensor(output_tensors):
-                output_tensors_shape = output_tensors.shape
+                output_tensors_shape = K.shape(output_tensors).shape
                 if output_tensors_shape[1:] != self.output_shape:
-                    raise WrongOutputShape(output_tensors_shape, self.output_shape)
-            # else: # for example TFP distribution
-            #     output_tensors_shape = tf.shape(output_tensors).shape
-
-
+                    logger.warning(
+                        str(WrongOutputShape(output_tensors_shape, self.output_shape))
+                    )
 
             input_tensors = [inode._tensor for inode in self.input_nodes]
 
