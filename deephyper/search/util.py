@@ -135,7 +135,7 @@ def load_from_file(fname, attribute):
     return getattr(module, attribute)
 
 
-def generic_loader(target, attribute):
+def generic_loader(target: str, attribute=None):
     """Load attribute from target module
 
     Args:
@@ -148,7 +148,6 @@ def generic_loader(target, attribute):
     Returns:
         Object: the loaded attribute.
     """
-    # assert attribute in ['Problem', 'run']
     if not isinstance(target, str):
         return target
 
