@@ -1,11 +1,9 @@
-import inspect
 from inspect import signature
-from pprint import pprint
 
-from sklearn.metrics import r2_score
+from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
-from deephyper.search.hps.automl.regressor.mapping import REGRESSORS
+from deephyper.sklearn.classifier.mapping import CLASSIFIERS
 from deephyper.nas.preprocessing import minmaxstdscaler
 
 
@@ -31,7 +29,7 @@ def run(config: dict, load_data: callable) -> float:
     X_train = preproc.fit_transform(X_train)
     X_test = preproc.transform(X_test)
 
-    mapping = REGRESSORS
+    mapping = CLASSIFIERS
 
     clf_class = mapping[config["classifier"]]
 
@@ -58,8 +56,8 @@ def run(config: dict, load_data: callable) -> float:
 
     if fit_is_complete:
         y_pred = clf.predict(X_test)
-        r2 = r2_score(y_test, y_pred)
+        acc = accuracy_score(y_test, y_pred)
     else:
-        r2 = -1.0
+        acc = -1.0
 
-    return r2
+    return acc

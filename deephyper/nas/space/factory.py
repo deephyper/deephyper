@@ -14,8 +14,8 @@ __all__ = ["SpaceFactory"]
 
 
 class SpaceFactory(ABC):
-    def __call__(self, input_shape, output_shape, **kwargs) -> KSearchSpace:
-        return self.build(input_shape, output_shape, **kwargs)
+    def __call__(self, input_shape, output_shape, *args, **kwargs) -> KSearchSpace:
+        return self.build(input_shape, output_shape, *args, **kwargs)
 
     @abstractclassmethod
     def build(self, input_shape, output_shape, **kwargs) -> KSearchSpace:

@@ -1,12 +1,12 @@
 """
 Example command line::
 
-    deephyper hps ambs --evaluator subprocess --problem deephyper.search.hps.automl.regressor.autosklearn1.Problem --run deephyper.benchmark.nas.covertype.problem_hps.run
+    deephyper hps ambs --evaluator subprocess --problem deephyper.sklearn.regressor.Problem --run deephyper.benchmark.nas.covertype.problem_hps.run
 """
 import os
 import numpy as np
 
-from deephyper.search.hps.automl.regressor import autosklearn1
+from deephyper.sklearn.regressor import run as sklearn_run
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -24,12 +24,13 @@ def load_data():
 
 
 def run(config):
-    return autosklearn1.run(config, load_data)
+    return sklearn_run(config, load_data)
 
 
 if __name__ == "__main__":
     # load_data()
-    config = autosklearn1.Problem.space.sample_configuration()
+    from deephyper.sklearn.regressor import Problem
+    config = Problem.space.sample_configuration()
     config = dict(config)
     r2 = run(config)
     print(config)

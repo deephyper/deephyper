@@ -77,8 +77,10 @@ class RayEvaluator(Evaluator):
         self,
         run_function,
         cache_key=None,
-        ray_address=None,
-        ray_password=None,
+        ray_address="auto",
+        ray_password="5241590000000000",
+        driver_num_cpus=None,
+        driver_num_gpus=None,
         num_cpus_per_task=1,
         num_gpus_per_task=None,
         **kwargs,
@@ -88,6 +90,11 @@ class RayEvaluator(Evaluator):
         logger.info(f"RAY Evaluator init: redis-address={ray_address}")
 
         if not ray_address is None:
+            ray_init_kwargs = {}
+            if driver_num_cpus:
+                ray_init_kwargs["num_cpus"] = int(driver_num_cpus)
+            if driver_num_gpus:
+                ray_init_kwargs["num_gpus"] = int(driver_num_gpus)
             proc_info = ray.init(address=ray_address, _redis_password=ray_password)
         else:
             proc_info = ray.init()
@@ -110,7 +117,7 @@ class RayEvaluator(Evaluator):
         self._run_function = ray.remote(
             num_cpus=self.num_cpus_per_tasks,
             num_gpus=self.num_gpus_per_tasks,
-            max_calls=1,
+            # max_calls=1,
         )(self._run_function)
 
     def _eval_exec(self, x: dict):

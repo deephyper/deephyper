@@ -378,7 +378,7 @@ class NaProblem(Problem):
             NxSearchSpace: A search space instance.
         """
         config = self.space
-        input_shape, output_shape = setup_data(config, add_to_config=False)
+        input_shape, output_shape, _ = setup_data(config, add_to_config=False)
 
         search_space = get_search_space(config, input_shape, output_shape, seed=self.seed)
         return search_space

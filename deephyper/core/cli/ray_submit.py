@@ -3,14 +3,15 @@ Example Usage:
 deephyper ray-submit nas regevo -w combo_test -n 1 -t 30 -A datascience -q full-node --problem nas_big_data.combo.problem.Problem --run deephyper.nas.run.alpha.run --max-evals 8 --num-cpus-per-task 1 --num-gpus-per-task 1 -as myscript.sh
 """
 import os
-import stat
 import socket
-from jinja2 import Template
+import stat
 
+from deephyper.core.cli.utils import generate_other_arguments
 from deephyper.core.utils import create_dir
-from deephyper.search.util import generic_loader, banner
-from deephyper.problem.neuralarchitecture import Problem
 from deephyper.problem import BaseProblem
+from deephyper.problem.neuralarchitecture import Problem
+from deephyper.search.util import banner, generic_loader
+from jinja2 import Template
 
 MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -20,7 +21,7 @@ def add_subparser(subparsers):
     function_to_call = main
 
     subparser = subparsers.add_parser(
-        subparser_name, help="Create and submit an HPS or NAS job directly via Balsam."
+        subparser_name, help="Create and submit an HPS or NAS job directly via Ray."
     )
 
     subparser.add_argument("mode", choices=["nas", "hps"], help="Type of search")
@@ -78,20 +79,9 @@ def add_subparser(subparsers):
     # other search arugments
     subparser.add_argument("--n-jobs", type=int, default=None)
     subparser.add_argument("--kappa", type=float, default=None)
+    subparser.add_argument("--sync", type=bool, default=None, nargs='?', const=True)
 
     subparser.set_defaults(func=function_to_call)
-
-
-def generate_other_arguments(func, **kwargs):
-    cl_format = ""
-    for k, v in kwargs.items():
-        if v is not None:
-            arg = "--" + "-".join(k.split("_"))
-            val = str(v)
-            arg_val = f"{arg}={val} "
-            cl_format += arg_val
-    cl_format = cl_format[:-1]
-    return cl_format
 
 
 def main(
@@ -121,7 +111,7 @@ def main(
 
     # Detection of the host
     hostname = socket.gethostname()
-    # hostname = "thetagpusn1"
+    # hostname = "thetagpusn1" # for debug
     host = None
     if "thetagpu" in hostname:
         host = "thetagpu"
@@ -186,7 +176,7 @@ def main(
                 num_gpus_per_task=num_gpus_per_task,
                 script_launch_ray_cluster=script_launch_ray_cluster,
                 activation_script=activation_script,
-                other_search_arguments=generate_other_arguments(**kwargs),
+                other_search_arguments=generate_other_arguments(func=None, **kwargs),
             )
         )
         print("Created", fp.name)

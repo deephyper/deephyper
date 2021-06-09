@@ -1,31 +1,56 @@
 Running on ThetaGPU (ALCF)
 **************************
 
-Create a script ``SetUp.sh`` and adapt the path to activate your DeepHyper conda environment ``PATH_TO_ENV``::
+It is important to run the following commands from the appropriate storage space because some features of DeepHyper can generate a consequante quantity of data such as model checkpointing. The storage spaces available at the ALCF are:
+
+- ``/lus/grand/projects/...``
+- ``/lus/eagle/projects/...``
+- ``/lus/theta-fs0/projects/...``
+
+Then create a script named ``SetUpEnv.sh`` and adapt the path to activate your installed DeepHyper conda environment ``PATH_TO_ENV``:
+
+.. code-block:: bash
+    :caption: SetUpEnv.sh
 
     #!/bin/bash
 
+    . /etc/profile
+
     # Tensorflow optimized for A100 with CUDA 11
-    source /lus/theta-fs0/software/thetagpu/conda/tf_master/2020-11-11/mconda3/setup.sh
+    module load conda/tensorflow/2020-11-11
 
     # Activate conda env
     conda activate $PATH_TO_ENV/dhgpu/
 
+.. note::
 
-**If you want to run on a singe node**
+    This ``SetUpEnv.sh`` script can be very useful to tailor the execution's environment to your needs. Here are a few tips that can be useful:
 
-Create a ``SingleNodeRayCluster.sh`` script and adapt the value of ``CURRENT_DIR`` which is the path of the folder containing ``SetUp.sh``::
+      - To activate XLA optimized compilation add  ``export TF_XLA_FLAGS=--tf_xla_enable_xla_devices``
+      - To change the log level of Tensorflow add ``export TF_CPP_MIN_LOG_LEVEL=3``
+
+
+Manually start a Ray cluster
+============================
+
+Single Node Cluster
+-------------------
+
+Create a ``SingleNodeRayCluster.sh`` script and adapt the value of ``CURRENT_DIR`` which is the path of the folder containing ``SetUpEnv.sh``:
+
+.. code-block:: bash
+    :caption: SingleNodeRayCluster.sh
 
     #!/bin/bash
 
     # USER CONFIGURATION
     CURRENT_DIR=...
-    CPUS_PER_TASK=8
-    GPUS_PER_TASK=8
+    CPUS_PER_NODE=8
+    GPUS_PER_NODE=8
 
     # Script to launch Ray cluster
 
-    ACTIVATE_PYTHON_ENV="${CURRENT_DIR}SetUpEnv.sh"
+    ACTIVATE_PYTHON_ENV="${CURRENT_DIR}/SetUpEnv.sh"
     echo "Script to activate Python env: $ACTIVATE_PYTHON_ENV"
 
     head_node=$HOSTNAME
@@ -52,26 +77,30 @@ Create a ``SingleNodeRayCluster.sh`` script and adapt the value of ``CURRENT_DIR
     echo "Starting HEAD at $head_node"
     ssh -tt $head_node_ip "source $ACTIVATE_PYTHON_ENV; \
         ray start --head --node-ip-address=$head_node_ip --port=$port \
-        --num-cpus $CPUS_PER_TASK --num-gpus $GPUS_PER_TASK --block" &
+        --num-cpus $CPUS_PER_NODE --num-gpus $GPUS_PER_NODE --block" &
 
     # optional, though may be useful in certain versions of Ray < 1.0.
     sleep 10
 
 
-**If you want to run on multiple nodes**
+Multiple Nodes Cluster
+----------------------
 
-Create a ``MultiNodeRayCluster.sh`` script and adapt the value of ``CURRENT_DIR`` which is the path of the folder containing ``SetUp.sh``::
+Create a ``MultiNodeRayCluster.sh`` script and adapt the value of ``CURRENT_DIR`` which is the path of the folder containing ``SetUpEnv.sh``:
+
+.. code-block:: bash
+    :caption: MultiNodeRayCluster.sh
 
     #!/bin/bash
 
     # USER CONFIGURATION
     CURRENT_DIR=...
-    CPUS_PER_TASK=8
-    GPUS_PER_TASK=8
+    CPUS_PER_NODE=8
+    GPUS_PER_NODE=8
 
     # Script to launch Ray cluster
 
-    ACTIVATE_PYTHON_ENV="${CURRENT_DIR}SetUpEnv.sh"
+    ACTIVATE_PYTHON_ENV="${CURRENT_DIR}/SetUpEnv.sh"
     echo "Script to activate Python env: $ACTIVATE_PYTHON_ENV"
 
 
@@ -102,7 +131,7 @@ Create a ``MultiNodeRayCluster.sh`` script and adapt the value of ``CURRENT_DIR`
     echo "Starting HEAD at $head_node"
     ssh -tt $head_node_ip "source $ACTIVATE_PYTHON_ENV; \
         ray start --head --node-ip-address=$head_node_ip --port=$port \
-        --num-cpus $CPUS_PER_TASK --num-gpus $GPUS_PER_TASK --block" &
+        --num-cpus $CPUS_PER_NODE --num-gpus $GPUS_PER_NODE --block" &
 
     # optional, though may be useful in certain versions of Ray < 1.0.
     sleep 10
@@ -117,13 +146,32 @@ Create a ``MultiNodeRayCluster.sh`` script and adapt the value of ``CURRENT_DIR`
         echo "Starting WORKER $i at $node_i with ip=$node_i_ip"
         ssh -tt $node_i_ip "source $ACTIVATE_PYTHON_ENV; \
             ray start --address $ip_head \
-            --num-cpus $CPUS_PER_TASK --num-gpus $GPUS_PER_TASK" --block &
+            --num-cpus $CPUS_PER_NODE --num-gpus $GPUS_PER_NODE" --block &
         sleep 5
     done
 
 
-**Execution of the search**
+Execution of the search
+=======================
 
-Execute::
+Manual Execution
+----------------
+
+Once a cluster is started you can execute the search with for example 1 GPU per evaluation with the following command:
+
+.. code-block:: console
 
     deephyper nas random --evaluator ray --ray-address auto --problem deephyper.benchmark.nas.mnist1D.problem.Problem --max-evals 10 --num-cpus-per-task 1 --num-gpus-per-task 1
+
+Automatic Execution
+-------------------
+
+DeepHyper provides the ``deephyper ray-submit`` command interface to automatically generate and submit a submission script for the COBALT scheduler of ThetaGPU. This interface follows some of the argument available with the ``qsub`` command such as ``-n`` (number of nodes), ``-t`` (time in minutes), ``-A`` (project name) and ``-q`` (queue name). An example command is:
+
+.. code-block:: console
+
+    deephyper ray-submit nas agebo -w mnist_1gpu_2nodes_60 -n 2 -t 60 -A $PROJECT_NAME -q full-node --problem deephyper.benchmark.nas.mnist1D.problem.Problem --run deephyper.nas.run.alpha.run --max-evals 10000 --num-cpus-per-task 1 --num-gpus-per-task 1 -as $PATH_TO_SETUP --n-jobs 16
+
+.. warning::
+
+    The ``--n-jobs`` argument is the number of parallel processes that the surrogate model of DeepHyper's Bayesian optimisation can use. This argument does not have any link with the number of available workers.

@@ -1,8 +1,9 @@
 import argparse
 import sys
 
-from deephyper.core.logs import parsing, topk, notebooks
+from deephyper.core.logs import parsing, topk, notebooks, balsam
 from deephyper.core.plot import quick_plot
+
 
 
 def create_parser():
@@ -17,6 +18,7 @@ def create_parser():
         parsing,  # parsing deephyper.log
         quick_plot,  # output quick plots
         topk,
+        balsam
     ]
 
     for module in modules:

@@ -6,7 +6,7 @@ import sys
 from deephyper.core.cli import mpi4py_mock
 sys.modules['mpi4py'] = mpi4py_mock
 from deephyper.core.cli import start_project, new_problem
-from deephyper.core.cli import hps, nas, balsam_submit, ray_submit
+from deephyper.core.cli import hps, nas, balsam_submit, ray_submit, ensemble
 
 
 def create_parser():
@@ -33,6 +33,9 @@ def create_parser():
     # ray-submit
     ray_submit.add_subparser(subparsers)
 
+    # ensemble
+    ensemble.add_subparser(subparsers)
+
     return parser
 
 
@@ -42,6 +45,9 @@ def main():
     args = parser.parse_args()
 
     if hasattr(args, 'func'):
-        args.func(**vars(args))
+        func = args.func
+        kwargs = vars(args)
+        kwargs.pop("func")
+        func(**kwargs)
     else:
         parser.print_help()

@@ -132,6 +132,13 @@ class AMBNeuralArchitectureSearch(NeuralArchitectureSearch):
         )
         return parser
 
+    def saved_keys(self, val: dict):
+        res = {
+            "id": val["id"],
+            "arch_seq": str(val["arch_seq"])
+        }
+        return res
+
     def main(self):
         # timer = util.DelayTimer(max_minutes=None, period=SERVICE_PERIOD)
         # chkpoint_counter = 0
@@ -151,7 +158,7 @@ class AMBNeuralArchitectureSearch(NeuralArchitectureSearch):
             if len(new_results) > 0:
                 stats = {"num_cache_used": self.evaluator.stats["num_cache_used"]}
                 dhlogger.info(jm(type="env_stats", **stats))
-                self.evaluator.dump_evals(saved_key="arch_seq")
+                self.evaluator.dump_evals(saved_keys=self.saved_keys)
 
                 num_received = len(new_results)
                 num_evals_done += num_received

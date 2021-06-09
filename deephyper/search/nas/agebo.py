@@ -5,7 +5,7 @@ from skopt import Optimizer as SkOptimizer
 from skopt.learning import RandomForestRegressor
 
 from deephyper.core.logs.logging import JsonMessage as jm
-from deephyper.core.parser import add_arguments_from_signature
+from deephyper.core.parser import add_arguments_from_signature, str2bool
 from deephyper.search import util
 from deephyper.search.nas.regevo import RegularizedEvolution
 
@@ -36,6 +36,7 @@ class AgEBO(RegularizedEvolution):
         kappa=0.001,
         xi=0.000001,
         acq_func="LCB",
+        sync=False,
         **kwargs,
     ):
         super().__init__(
@@ -46,6 +47,9 @@ class AgEBO(RegularizedEvolution):
             sample_size=sample_size,
             **kwargs,
         )
+        if type(sync) is str:
+            sync = str2bool(sync)
+        self.mode = "sync" if sync else "async"
 
         self.n_jobs = int(n_jobs)  # parallelism of BO surrogate model estimator
 
@@ -72,7 +76,7 @@ class AgEBO(RegularizedEvolution):
         return parser
 
     def saved_keys(self, val: dict):
-        res = {"arch_seq": str(val["arch_seq"])}
+        res = {"id": val["id"], "arch_seq": str(val["arch_seq"])}
         hp_names = self.hp_space._space.get_hyperparameter_names()
 
         for hp_name in hp_names:
@@ -95,7 +99,7 @@ class AgEBO(RegularizedEvolution):
         while num_evals_done < self.max_evals:
 
             # Collecting finished evaluations
-            new_results = list(self.evaluator.get_finished_evals())
+            new_results = list(self.evaluator.get_finished_evals(mode=self.mode))
 
             if len(new_results) > 0:
                 population.extend(new_results)
@@ -136,6 +140,8 @@ class AgEBO(RegularizedEvolution):
                         new_i_y = new_results[new_i][1]
                         hp_results_X.append(new_i_hp_values)
                         hp_results_y.append(-new_i_y)
+
+                    hp_results_y = np.minimum(hp_results_y, 1e3).tolist() #! TODO
 
                     self.hp_opt.tell(hp_results_X, hp_results_y)  #! fit: costly
                     new_hps = self.hp_opt.ask(n_points=len(new_results))

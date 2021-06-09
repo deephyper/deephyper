@@ -20,6 +20,7 @@ The following output is expected::
         parse               Tool to parse "deephyper.log" and produce a JSON file.
         quickplot           Tool to generate a quick 2D plot from file.
         topk                Print the top-k configurations.
+        balsam              Extract information from Balsam jobs.
 
     optional arguments:
     -h, --help            show this help message and exit
@@ -42,6 +43,10 @@ Neural architecture search
 
 Parsing Logs
 ============
+
+.. warning::
+
+    This tool is deprecated and is replaced by the ``save`` folder and the ``results.csv`` file.
 
 The parsing tool helps you to parse the ``deephyper.log`` file of your master job. For now this tool is used for neural architecture search logs.
 
@@ -87,3 +92,8 @@ Top-k Configuration
 ===================
 
 .. automodule:: deephyper.core.logs.topk
+
+Balsam
+======
+
+.. automodule:: deephyper.core.logs.balsam

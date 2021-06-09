@@ -1,7 +1,5 @@
-import argparse
 import os
 import glob
-import sys
 from jinja2 import Template
 
 def add_subparser(subparsers):

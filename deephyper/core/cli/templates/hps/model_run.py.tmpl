@@ -28,7 +28,7 @@ def run(config):
     global HISTORY
     (x_train, y_train), (x_valid, y_valid) = load_data()
 
-    if config['activation'] == 'NA':
+    if config['activation'] == 'identity':
         config['activation'] = None
 
     model = Sequential()
@@ -45,7 +45,7 @@ def run(config):
     history = model.fit(x_train, y_train,
                         batch_size=64,
                         epochs=1000,
-                        verbose=1,
+                        verbose=0,
                         callbacks=[EarlyStopping(
                             monitor='val_r2',
                             mode='max',

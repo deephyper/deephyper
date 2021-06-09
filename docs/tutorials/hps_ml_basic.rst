@@ -19,7 +19,6 @@ Let us start by creating a DeepHyper project and a problem for our application:
 Create a script to test the accuracy of the baseline model:
 
 .. literalinclude:: content_hps_ml_basic/test_config.py
-    :linenos:
     :caption: rf_tuning/test_config.py
     :name: rf_tuning-test_config
 
@@ -47,7 +46,6 @@ Next, we optimize the hyperparameters of the RandomForest classifier to address 
 Create ``load_data.py`` file to load and return training and validation data:
 
 .. literalinclude:: content_hps_ml_basic/load_data.py
-    :linenos:
     :caption: rf_tuning/load_data.py
     :name: rf_tuning-load_data
 
@@ -75,14 +73,12 @@ Create ``model_run.py`` file to train and evaluate the RF model. This function h
 which will be maximized by the search algorithm.
 
 .. literalinclude:: content_hps_ml_basic/model_run.py
-    :linenos:
     :caption: rf_tuning/model_run.py
     :name: rf_tuning-model_run
 
 Create ``problem.py`` to define the search space of hyperparameters for the RF model:
 
 .. literalinclude:: content_hps_ml_basic/problem.py
-    :linenos:
     :caption: rf_tuning/problem.py
     :name: rf_tuning-problem
 

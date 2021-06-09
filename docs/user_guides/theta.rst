@@ -1,5 +1,5 @@
-Running on Theta
-****************
+Running on Theta (ALCF)
+***********************
 
 .. note::
 

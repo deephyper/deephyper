@@ -32,6 +32,7 @@ class NxSearchSpace:
                 nx.nx_agraph.write_dot(self.graph, f)
             except:
                 print("Error: can't create graphviz file...")
+                traceback.print_exc()
 
     def __len__(self):
         """Number of VariableNodes in the current search_space.

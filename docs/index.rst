@@ -52,6 +52,9 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
     user_guides/balsamjob
     user_guides/nas/index
     user_guides/analytics
+    user_guides/autosklearn
+    user_guides/deepensemble
+    user_guides/uncertainty_quantification
 
 .. toctree::
     :maxdepth: 3
