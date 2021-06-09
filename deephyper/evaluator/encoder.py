@@ -2,9 +2,11 @@ import json
 import types
 import uuid
 
-import skopt
-from numpy import bool_, floating, integer, ndarray
+import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh
+import skopt
+from ConfigSpace.read_and_write import json as cs_json
+from numpy import bool_, floating, integer, ndarray
 
 
 class Encoder(json.JSONEncoder):
@@ -29,5 +31,7 @@ class Encoder(json.JSONEncoder):
             return str(obj)
         elif isinstance(obj, csh.Hyperparameter):
             return str(obj)
+        elif isinstance(obj, cs.ConfigurationSpace):
+            return json.loads(cs_json.write(obj))
         else:
             return super(Encoder, self).default(obj)
