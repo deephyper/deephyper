@@ -14,6 +14,8 @@ Then create a script named ``SetUpEnv.sh`` and adapt the path to activate your i
 
     #!/bin/bash
 
+    . /etc/profile
+
     # Tensorflow optimized for A100 with CUDA 11
     module load conda/tensorflow/2020-11-11
 
