@@ -39,6 +39,7 @@ for i, (k, v) in enumerate(authors.items()):
 # What packages are required for this module to be executed?
 REQUIRED = [
     "tensorflow>=2.0.0",
+    "tensorflow_probability",
     "numpy", #==1.19.4",  # working with 1.20.1
     "dh-scikit-optimize==0.8.3",
     "scikit-learn>=0.23.1",
