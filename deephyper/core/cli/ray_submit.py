@@ -21,7 +21,7 @@ def add_subparser(subparsers):
     function_to_call = main
 
     subparser = subparsers.add_parser(
-        subparser_name, help="Create and submit an HPS or NAS job directly via Balsam."
+        subparser_name, help="Create and submit an HPS or NAS job directly via Ray."
     )
 
     subparser.add_argument("mode", choices=["nas", "hps"], help="Type of search")

@@ -28,7 +28,7 @@ def run(config):
     global HISTORY
     (x_train, y_train), (x_valid, y_valid) = load_data()
 
-    if config['activation'] == 'NA':
+    if config['activation'] == 'identity':
         config['activation'] = None
 
     model = Sequential()
