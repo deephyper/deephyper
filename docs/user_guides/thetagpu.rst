@@ -7,22 +7,22 @@ It is important to run the following commands from the appropriate storage space
 - ``/lus/eagle/projects/...``
 - ``/lus/theta-fs0/projects/...``
 
-Then create a script named ``SetUp.sh`` and adapt the path to activate your installed DeepHyper conda environment ``PATH_TO_ENV``:
+Then create a script named ``SetUpEnv.sh`` and adapt the path to activate your installed DeepHyper conda environment ``PATH_TO_ENV``:
 
 .. code-block:: bash
-    :caption: SetUp.sh
+    :caption: SetUpEnv.sh
 
     #!/bin/bash
 
     # Tensorflow optimized for A100 with CUDA 11
-    source /lus/theta-fs0/software/thetagpu/conda/tf_master/2020-11-11/mconda3/setup.sh
+    module load conda/tensorflow/2020-11-11
 
     # Activate conda env
     conda activate $PATH_TO_ENV/dhgpu/
 
 .. note::
 
-    This ``SetUp.sh`` script can be very useful to tailor the execution's environment to your needs. Here are a few tips that can be useful:
+    This ``SetUpEnv.sh`` script can be very useful to tailor the execution's environment to your needs. Here are a few tips that can be useful:
 
       - To activate XLA optimized compilation add  ``export TF_XLA_FLAGS=--tf_xla_enable_xla_devices``
       - To change the log level of Tensorflow add ``export TF_CPP_MIN_LOG_LEVEL=3``
@@ -34,7 +34,7 @@ Manually start a Ray cluster
 Single Node Cluster
 -------------------
 
-Create a ``SingleNodeRayCluster.sh`` script and adapt the value of ``CURRENT_DIR`` which is the path of the folder containing ``SetUp.sh``:
+Create a ``SingleNodeRayCluster.sh`` script and adapt the value of ``CURRENT_DIR`` which is the path of the folder containing ``SetUpEnv.sh``:
 
 .. code-block:: bash
     :caption: SingleNodeRayCluster.sh
@@ -43,12 +43,12 @@ Create a ``SingleNodeRayCluster.sh`` script and adapt the value of ``CURRENT_DIR
 
     # USER CONFIGURATION
     CURRENT_DIR=...
-    CPUS_PER_TASK=8
-    GPUS_PER_TASK=8
+    CPUS_PER_NODE=8
+    GPUS_PER_NODE=8
 
     # Script to launch Ray cluster
 
-    ACTIVATE_PYTHON_ENV="${CURRENT_DIR}SetUpEnv.sh"
+    ACTIVATE_PYTHON_ENV="${CURRENT_DIR}/SetUpEnv.sh"
     echo "Script to activate Python env: $ACTIVATE_PYTHON_ENV"
 
     head_node=$HOSTNAME
@@ -75,7 +75,7 @@ Create a ``SingleNodeRayCluster.sh`` script and adapt the value of ``CURRENT_DIR
     echo "Starting HEAD at $head_node"
     ssh -tt $head_node_ip "source $ACTIVATE_PYTHON_ENV; \
         ray start --head --node-ip-address=$head_node_ip --port=$port \
-        --num-cpus $CPUS_PER_TASK --num-gpus $GPUS_PER_TASK --block" &
+        --num-cpus $CPUS_PER_NODE --num-gpus $GPUS_PER_NODE --block" &
 
     # optional, though may be useful in certain versions of Ray < 1.0.
     sleep 10
@@ -84,7 +84,7 @@ Create a ``SingleNodeRayCluster.sh`` script and adapt the value of ``CURRENT_DIR
 Multiple Nodes Cluster
 ----------------------
 
-Create a ``MultiNodeRayCluster.sh`` script and adapt the value of ``CURRENT_DIR`` which is the path of the folder containing ``SetUp.sh``:
+Create a ``MultiNodeRayCluster.sh`` script and adapt the value of ``CURRENT_DIR`` which is the path of the folder containing ``SetUpEnv.sh``:
 
 .. code-block:: bash
     :caption: MultiNodeRayCluster.sh
@@ -93,12 +93,12 @@ Create a ``MultiNodeRayCluster.sh`` script and adapt the value of ``CURRENT_DIR`
 
     # USER CONFIGURATION
     CURRENT_DIR=...
-    CPUS_PER_TASK=8
-    GPUS_PER_TASK=8
+    CPUS_PER_NODE=8
+    GPUS_PER_NODE=8
 
     # Script to launch Ray cluster
 
-    ACTIVATE_PYTHON_ENV="${CURRENT_DIR}SetUpEnv.sh"
+    ACTIVATE_PYTHON_ENV="${CURRENT_DIR}/SetUpEnv.sh"
     echo "Script to activate Python env: $ACTIVATE_PYTHON_ENV"
 
 
@@ -129,7 +129,7 @@ Create a ``MultiNodeRayCluster.sh`` script and adapt the value of ``CURRENT_DIR`
     echo "Starting HEAD at $head_node"
     ssh -tt $head_node_ip "source $ACTIVATE_PYTHON_ENV; \
         ray start --head --node-ip-address=$head_node_ip --port=$port \
-        --num-cpus $CPUS_PER_TASK --num-gpus $GPUS_PER_TASK --block" &
+        --num-cpus $CPUS_PER_NODE --num-gpus $GPUS_PER_NODE --block" &
 
     # optional, though may be useful in certain versions of Ray < 1.0.
     sleep 10
@@ -144,7 +144,7 @@ Create a ``MultiNodeRayCluster.sh`` script and adapt the value of ``CURRENT_DIR`
         echo "Starting WORKER $i at $node_i with ip=$node_i_ip"
         ssh -tt $node_i_ip "source $ACTIVATE_PYTHON_ENV; \
             ray start --address $ip_head \
-            --num-cpus $CPUS_PER_TASK --num-gpus $GPUS_PER_TASK" --block &
+            --num-cpus $CPUS_PER_NODE --num-gpus $GPUS_PER_NODE" --block &
         sleep 5
     done
 
