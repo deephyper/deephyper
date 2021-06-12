@@ -27,7 +27,7 @@ Then, restart your session.
     You will note that a new file ``~/.bashrc_theta`` was created and sourced in the ``~/.bashrc``. This is to avoid conflicting installations between the different systems available at the ALCF.
 
 .. note::
-    To test you installation run::
+    To test your installation run::
 
         ./deephyper/tests/system/test_theta.sh
 
