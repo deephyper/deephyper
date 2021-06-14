@@ -73,8 +73,8 @@ EXTRAS = {
         "jupyter_contrib_nbextensions>=0.5.1",
         "seaborn>=0.9.1",
     ],
-    "hvd": ["horovod>=1.21.3", "mpi4py>=3.0.0"],
-    "balsam": ["balsam-flow==0.3.8"],
+    "hvd": ["horovod>=0.21.3", "mpi4py>=3.0.0"],
+    "balsam": ["balsam-flow>=0.3.8"],
     "deepspace": ["deepspace>=0.0.3"],
 }
 
