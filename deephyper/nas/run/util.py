@@ -13,6 +13,7 @@ from deephyper.core.exceptions.problem import WrongProblemObjective
 from deephyper.core.utils import create_dir
 from deephyper.evaluator.encoder import Encoder
 from deephyper.search import util
+from deephyper.nas.lr_scheduler import exponential_decay
 
 logger = util.conf_logger("deephyper.search.nas.run")
 
@@ -42,6 +43,7 @@ default_callbacks_config = {
     "CSVExtendedLogger": dict(filename="training.csv", append=True),
     "TimeStopping": dict(),
     "ReduceLROnPlateau": dict(monitor="val_loss", mode="auto", verbose=0, patience=5),
+    "LearningRateScheduler": dict(schedule=exponential_decay)
 }
 
 
