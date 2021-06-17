@@ -176,9 +176,12 @@ def setup_data(config: dict, add_to_config: bool=True) -> tuple:
     elif type(data) is dict:
         if add_to_config:
             config["data"] = data
-        input_shape = [
-            data["shapes"][0][f"input_{i}"] for i in range(len(data["shapes"][0]))
-        ]
+        if len(data["shapes"][0]) == 1:
+            input_shape = data["shapes"][0][f"input_0"]
+        else:
+            input_shape = [
+                data["shapes"][0][f"input_{i}"] for i in range(len(data["shapes"][0]))
+            ]
         output_shape = data["shapes"][1]
     else:
         raise RuntimeError(
