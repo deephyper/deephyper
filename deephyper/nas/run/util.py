@@ -43,7 +43,15 @@ default_callbacks_config = {
     "CSVExtendedLogger": dict(filename="training.csv", append=True),
     "TimeStopping": dict(),
     "ReduceLROnPlateau": dict(monitor="val_loss", mode="auto", verbose=0, patience=5),
-    "LearningRateScheduler": dict(schedule=exponential_decay)
+    "LearningRateScheduler": dict(schedule=exponential_decay),
+    "LearningRateWarmupCallback": dict(
+        n_replicas=1,
+        initial_lr=1e-3,
+        warmup_epochs=5,
+        momentum_correction=True,
+        steps_per_epoch=None,
+        verbose=0,
+    ),
 }
 
 
@@ -76,7 +84,7 @@ def load_config(config: dict) -> None:
         config["objective"] = util.load_attr_from(config["objective"])
 
 
-def setup_data(config: dict, add_to_config: bool=True) -> tuple:
+def setup_data(config: dict, add_to_config: bool = True) -> tuple:
     """Load the data defined by the ``"load_data"`` key in the ``config`` dictionnary. The ``load_data`` function has to return numpy arrays of the form `(X_train, y_train), (X_valid, y_valid)`` or a dictionnary defining generators such as:
 
     .. code-block:: python
