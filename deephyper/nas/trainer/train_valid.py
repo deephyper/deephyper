@@ -311,7 +311,7 @@ class TrainerTrainValid:
                 {
                     f"input_{i}": tf.TensorSpec(
                         shape=(
-                            self.batch_size,
+                            None,
                             *self.data_shapes[0][f"input_{i}"],
                         ),
                         dtype=self.data_types[0][f"input_{i}"],
@@ -319,7 +319,7 @@ class TrainerTrainValid:
                     for i in range(len(self.data_shapes[0]))
                 },
                 tf.TensorSpec(
-                    shape=(self.batch_size, *self.data_shapes[1]),
+                    shape=(None, *self.data_shapes[1]),
                     dtype=self.data_types[1],
                 ),
             )
