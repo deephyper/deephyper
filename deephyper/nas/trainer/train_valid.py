@@ -340,11 +340,7 @@ class TrainerTrainValid:
             )
 
         self.dataset_valid = self.dataset_valid.cache()
-        if self.batch:
-            self.dataset_valid = self.dataset_valid.batch(self.batch_size)
-        # else:
-        # self.dataset_valid = self.dataset_valid.batch(1)
-
+        self.dataset_valid = self.dataset_valid.batch(self.batch_size)
         self.dataset_valid = self.dataset_valid.prefetch(tf.data.AUTOTUNE).repeat(
             self.num_epochs
         )
