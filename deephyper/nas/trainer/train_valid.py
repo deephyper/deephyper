@@ -291,8 +291,8 @@ class TrainerTrainValid:
             self.num_epochs
         )
 
-    def _get_output_signatures(self):
-        if self.batch:
+    def _get_output_signatures(self, valid=False):
+        if self.batch or valid:
             return (
                 {
                     f"input_{i}": tf.TensorSpec(
@@ -336,7 +336,7 @@ class TrainerTrainValid:
         else:
             self.dataset_valid = tf.data.Dataset.from_generator(
                 self.valid_gen,
-                output_signature=self._get_output_signatures(),
+                output_signature=self._get_output_signatures(valid=True),
             )
 
         self.dataset_valid = self.dataset_valid.cache()
