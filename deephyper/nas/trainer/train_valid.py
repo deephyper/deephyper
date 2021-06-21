@@ -267,27 +267,62 @@ class TrainerTrainValid:
         else:  # self.data_config_type == "gen"
             self.dataset_train = tf.data.Dataset.from_generator(
                 self.train_gen,
-                output_types=self.data_types,
-                output_shapes=(
-                    {
-                        f"input_{i}": tf.TensorShape([*self.data_shapes[0][f"input_{i}"]])
-                        for i in range(len(self.data_shapes[0]))
-                    },
-                    tf.TensorShape([*self.data_shapes[1]]),
-                ),
+                # output_types=self.data_types,
+                # output_shapes=(
+                #     {
+                #         f"input_{i}": tf.TensorShape([*self.data_shapes[0][f"input_{i}"]])
+                #         for i in range(len(self.data_shapes[0]))
+                #     },
+                #     tf.TensorShape([*self.data_shapes[1]]),
+                # ),
+                output_signature=self._get_output_signatures(),
             )
 
         if self.cache_data:
             self.dataset_train = self.dataset_train.cache()
         if self.shuffle_data:
-            self.dataset_train = self.dataset_train.shuffle(self.train_size, reshuffle_each_iteration=True)
+            self.dataset_train = self.dataset_train.shuffle(
+                self.train_size, reshuffle_each_iteration=True
+            )
         if self.batch:
             self.dataset_train = self.dataset_train.batch(self.batch_size)
 
-        self.dataset_train = (
-            self.dataset_train.prefetch(tf.data.AUTOTUNE)
-            .repeat(self.num_epochs)
+        self.dataset_train = self.dataset_train.prefetch(tf.data.AUTOTUNE).repeat(
+            self.num_epochs
         )
+
+    def _get_output_signatures(self):
+        if self.batch:
+            return (
+                {
+                    f"input_{i}": tf.TensorSpec(
+                        shape=(*self.data_shapes[0][f"input_{i}"],),
+                        dtype=self.data_types[0][f"input_{i}"],
+                    )
+                    for i in range(len(self.data_shapes[0]))
+                },
+                tf.TensorSpec(
+                    shape=(*self.data_shapes[1],),
+                    dtype=self.data_types[1],
+                ),
+            )
+        else:
+            return (
+                {
+                    f"input_{i}": tf.TensorSpec(
+                        shape=(
+                            self.batch_size,
+                            *self.data_shapes[0][f"input_{i}"],
+                        ),
+                        dtype=self.data_types[0][f"input_{i}"],
+                    )
+                    for i in range(len(self.data_shapes[0]))
+                },
+                tf.TensorSpec(
+                    shape=(self.batch_size, *self.data_shapes[1]),
+                    dtype=self.data_types[1],
+                ),
+            )
 
     def set_dataset_valid(self):
         if self.data_config_type == "ndarray":
@@ -301,20 +336,17 @@ class TrainerTrainValid:
         else:
             self.dataset_valid = tf.data.Dataset.from_generator(
                 self.valid_gen,
-                output_types=self.data_types,
-                output_shapes=(
-                    {
-                        f"input_{i}": tf.TensorShape([*self.data_shapes[0][f"input_{i}"]])
-                        for i in range(len(self.data_shapes[0]))
-                    },
-                    tf.TensorShape([*self.data_shapes[1]]),
-                ),
+                output_signature=self._get_output_signatures(),
             )
-        self.dataset_valid = (
-            self.dataset_valid.cache()
-            .batch(self.batch_size)
-            .prefetch(tf.data.AUTOTUNE)
-            .repeat(self.num_epochs)
+
+        self.dataset_valid = self.dataset_valid.cache()
+        if self.batch:
+            self.dataset_valid = self.dataset_valid.batch(self.batch_size)
+        # else:
+        # self.dataset_valid = self.dataset_valid.batch(1)
+
+        self.dataset_valid = self.dataset_valid.prefetch(tf.data.AUTOTUNE).repeat(
+            self.num_epochs
         )
 
     def model_compile(self):
