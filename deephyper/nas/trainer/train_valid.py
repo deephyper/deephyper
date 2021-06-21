@@ -34,6 +34,7 @@ class TrainerTrainValid:
         self.num_epochs = self.config_hp.get(a.num_epochs, 1)
         self.shuffle_data = self.config_hp.get(a.shuffle_data, True)
         self.cache_data = self.config_hp.get(a.cache_data, True)
+        self.batch = self.config_hp.get("batch", True)
         self.verbose = self.config_hp.get("verbose", 1)
         # self.balanced = self.config_hp.get("balanced", False)
 
@@ -280,10 +281,11 @@ class TrainerTrainValid:
             self.dataset_train = self.dataset_train.cache()
         if self.shuffle_data:
             self.dataset_train = self.dataset_train.shuffle(self.train_size, reshuffle_each_iteration=True)
+        if self.batch:
+            self.dataset_train = self.dataset_train.batch(self.batch_size)
 
         self.dataset_train = (
-            self.dataset_train.batch(self.batch_size)
-            .prefetch(tf.data.AUTOTUNE)
+            self.dataset_train.prefetch(tf.data.AUTOTUNE)
             .repeat(self.num_epochs)
         )
 
