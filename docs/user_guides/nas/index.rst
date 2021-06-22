@@ -5,6 +5,7 @@ Neural Architecture Search
     :maxdepth: 2
 
     problem
+    joint_hps_nas
     tabular_data
     autoencoder
     stacked_lstm
