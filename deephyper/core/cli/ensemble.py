@@ -9,7 +9,7 @@ from deephyper.nas.losses import selectLoss
 from deephyper.search.util import generic_loader, load_attr_from
 
 ENSEMBLE_CLASSES = {
-    "uqbagging": "deephyper.nas.ensemble.uq_bagging_ensemble.UQBaggingEnsemble",
+    "uqbagging": "deephyper.ensemble.uq_bagging_ensemble.UQBaggingEnsemble",
 }
 
 

@@ -5,7 +5,7 @@ import ray
 import tensorflow as tf
 import tensorflow_probability as tfp
 from deephyper.core.exceptions import DeephyperRuntimeError
-from deephyper.nas.ensemble import BaseEnsemble
+from deephyper.ensemble import BaseEnsemble
 from deephyper.nas.run.util import set_memory_growth_for_visible_gpus
 
 def evaluate_model(X, y, model_path, loss_func, batch_size, index):

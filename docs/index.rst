@@ -35,7 +35,6 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
     tutorials/hps_ml_basic
     tutorials/hps_ml_advanced
     tutorials/hps_dl_basic
-    tutorials/hps_dl_advanced
     tutorials/nas
 
 .. toctree::
@@ -53,8 +52,8 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
     user_guides/nas/index
     user_guides/analytics
     user_guides/autosklearn
-    user_guides/deepensemble
-    user_guides/uncertainty_quantification
+    user_guides/deep_ensemble/index
+    user_guides/uncertainty_quantification/index
 
 .. toctree::
     :maxdepth: 3

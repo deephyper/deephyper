@@ -4,8 +4,8 @@ import os
 import json
 
 import tensorflow as tf
+import ray
 
-from deephyper.search import util as search_util
 
 
 class BaseEnsemble:
@@ -15,16 +15,26 @@ class BaseEnsemble:
         loss,
         size=5,
         verbose=True,
+        ray_address="",
+        num_cpus=1,
+        num_gpus=None,
     ):
         self.model_dir = os.path.abspath(model_dir)
         self.loss = loss
         self.members_files = []
-        self.size = size if len(self.members_files) == 0 else len(self.members_files)
-        assert self.size >= 2, "an ensemble size must be >= 2"
+        self.size = size
+        # assert self.size >= 2, "an ensemble size must be >= 2"
 
         self.verbose = verbose
         if self.verbose:
             print(self)
+
+        self.ray_address = ray_address
+        self.num_cpus = num_cpus
+        self.num_gpus = num_gpus
+
+        if not(ray.is_initialized()):
+            ray.init(address=self.ray_address)
 
     def __repr__(self) -> str:
         out = ""
@@ -71,11 +81,12 @@ class BaseEnsemble:
         parser.add_argument(
             "-v", "--verbose", type=bool, const=True, default=False, nargs="?"
         )
-        return parser
+        parser.add_argument("--batch-size", default=1)
+        parser.add_argument("--ray-address", default="")
+        parser.add_argument("--num-cpus", default=1)
+        parser.add_argument("--num-gpus", default=None)
 
-    @staticmethod
-    def main():
-        raise NotImplementedError
+        return parser
 
     def fit(self, X, y) -> None:
         raise NotImplementedError

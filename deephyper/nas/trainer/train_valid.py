@@ -232,26 +232,27 @@ class TrainerTrainValid:
 
             if len(np.shape(self.train_Y)) == 2:
                 data_train = np.concatenate((*self.train_X, self.train_Y), axis=1)
-                data_valid = np.concatenate((*self.valid_X, self.valid_Y), axis=1)
-                data = np.concatenate((data_train, data_valid), axis=0)
+                data_valid = np.concatenate((*self.valid_X, self.valid_Y), axis=1) #! WTF?
+                # data = np.concatenate((data_train, data_valid), axis=0)
                 self.preprocessor = self.preprocessing_func()
 
                 dt_shp = np.shape(data_train)
                 tX_shp = [np.shape(x) for x in self.train_X]
 
-                preproc_data = self.preprocessor.fit_transform(data)
+                preproc_data_train = self.preprocessor.fit_transform(data_train)
+                preproc_data_valid = self.preprocessor.transform(data_valid)
 
                 acc, self.train_X = 0, list()
                 for shp in tX_shp:
-                    self.train_X.append(preproc_data[: dt_shp[0], acc : acc + shp[1]])
+                    self.train_X.append(preproc_data_train[:, acc : acc + shp[1]])
                     acc += shp[1]
-                self.train_Y = preproc_data[: dt_shp[0], acc:]
+                self.train_Y = preproc_data_train[:, acc:]
 
                 acc, self.valid_X = 0, list()
                 for shp in tX_shp:
-                    self.valid_X.append(preproc_data[dt_shp[0] :, acc : acc + shp[1]])
+                    self.valid_X.append(preproc_data_valid[:, acc : acc + shp[1]])
                     acc += shp[1]
-                self.valid_Y = preproc_data[dt_shp[0] :, acc:]
+                self.valid_Y = preproc_data_valid[:, acc:]
         else:
             logger.info("no preprocessing function")
 
@@ -267,14 +268,6 @@ class TrainerTrainValid:
         else:  # self.data_config_type == "gen"
             self.dataset_train = tf.data.Dataset.from_generator(
                 self.train_gen,
-                # output_types=self.data_types,
-                # output_shapes=(
-                #     {
-                #         f"input_{i}": tf.TensorShape([*self.data_shapes[0][f"input_{i}"]])
-                #         for i in range(len(self.data_shapes[0]))
-                #     },
-                #     tf.TensorShape([*self.data_shapes[1]]),
-                # ),
                 output_signature=self._get_output_signatures(),
             )
 

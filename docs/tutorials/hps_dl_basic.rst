@@ -1,7 +1,7 @@
 .. _tutorial-hps-deep-learning-basic:
 
-Hyperparameter Search for Deep Learning (Basic)
-***********************************************
+Hyperparameter Search for Deep Learning
+***************************************
 
 Every DeepHyper search requires at least 2 Python objects as input:
 
@@ -213,9 +213,9 @@ We have tested the syntax in all of these by running them individually. Now, let
     :caption: bash
 
     deephyper hps ambs --problem hps_demo.polynome2.problem.Problem --run hps_demo.polynome2.model_run.run
-    
+
 .. note::
-    The above command will require a long time to execute completely. If you want to generate a smaller dataset, append `--max-evals 100' to the 
+    The above command will require a long time to execute completely. If you want to generate a smaller dataset, append `--max-evals 100' to the
     end of the command to expedite the process.
 
 .. note::
