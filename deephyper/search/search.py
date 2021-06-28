@@ -110,7 +110,7 @@ class Search:
         return parser
 
     @classmethod
-    def parse_args(cls, arg_str=None) -> None:
+    def parse_args(cls, arg_str=None) -> argparse.Namespace:
         parser = cls.get_parser()
         if arg_str is not None:
             return parser.parse_args(arg_str)
