@@ -24,7 +24,7 @@ logger = util.conf_logger("deephyper.search.nas.run")
 def run(config):
 
     tf.keras.backend.clear_session()
-    tf.config.optimizer.set_jit(True)
+    # tf.config.optimizer.set_jit(True)
 
     # setup history saver
     if "log_dir" in config and config["log_dir"] is None:
