@@ -1,5 +1,14 @@
 from deephyper.ensemble.base_ensemble import BaseEnsemble
-from deephyper.ensemble.bagging_ensemble import BaggingEnsembleRegressor
-from deephyper.ensemble.uq_bagging_ensemble import UQBaggingEnsemble
+from deephyper.ensemble.bagging_ensemble import (
+    BaggingEnsembleRegressor,
+    BaggingEnsembleClassifier,
+)
+from deephyper.ensemble.uq_bagging_ensemble import UQBaggingEnsembleRegressor, UQBaggingEnsembleClassifier
 
-__all__ = ["BaseEnsemble", "BaggingEnsembleRegressor", "UQBaggingEnsemble"]
+__all__ = [
+    "BaseEnsemble",
+    "BaggingEnsembleRegressor",
+    "BaggingEnsembleClassifier",
+    "UQBaggingEnsembleRegressor",
+    "UQBaggingEnsembleClassifier",
+]

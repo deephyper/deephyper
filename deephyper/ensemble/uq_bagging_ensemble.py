@@ -1,308 +1,231 @@
 import argparse
 import os
+import traceback
 
-import ray
 import tensorflow as tf
 import tensorflow_probability as tfp
-from deephyper.core.exceptions import DeephyperRuntimeError
+import numpy as np
+import ray
+
+from deephyper.nas.metrics import selectMetric
+from deephyper.core.parser import add_arguments_from_signature
 from deephyper.ensemble import BaseEnsemble
 from deephyper.nas.run.util import set_memory_growth_for_visible_gpus
 
-def evaluate_model(X, y, model_path, loss_func, batch_size, index):
-    import traceback
+
+def nll(y, rv_y):
+    """Negative log likelihood for Tensorflow probability."""
+    return -rv_y.log_prob(y)
+
+
+cce = tf.keras.losses.CategoricalCrossentropy(reduction=tf.keras.losses.Reduction.NONE)
+
+
+@ray.remote(num_cpus=1)
+def model_predict(model_path, X):
     import tensorflow as tf
     import tensorflow_probability as tfp
 
     # GPU Configuration if available
     set_memory_growth_for_visible_gpus(True)
     tf.keras.backend.clear_session()
+    model_file = model_path.split("/")[-1]
 
     try:
-        print(f"Loading model {index}", end="\n", flush=True)
+        print(f"Loading model {model_file}", end="\n", flush=True)
         model = tf.keras.models.load_model(model_path, compile=False)
-        model._name = f"model_{index}"
     except:
-        print(f"Could not load model {index}", flush=True)
+        print(f"Could not load model {model_file}", flush=True)
         traceback.print_exc()
         model = None
 
     if model:
-        model.compile(loss=loss_func)
-        loss = model.evaluate(X, y, batch_size=batch_size, verbose=0)
+        y_dist = model(X)
+        y = np.concatenate([y_dist.loc, y_dist.scale], axis=1)
     else:
-        loss = float("inf")
+        y = None
 
-    return loss
+    return y
 
 
 class UQBaggingEnsemble(BaseEnsemble):
     def __init__(
         self,
         model_dir,
-        loss,
-        batch_size=None,
+        loss=nll,
         size=5,
         verbose=True,
-        mode="classification",  # or "regression"
-        selection="greedy",
         ray_address="",
         num_cpus=1,
         num_gpus=None,
+        selection="topk",
+        mode="regression",
     ):
         super().__init__(
             model_dir,
             loss,
             size,
             verbose,
+            ray_address,
+            num_cpus,
+            num_gpus,
         )
-        self.mode = mode
-        self.batch_size = batch_size
-        self.model = None
         self.selection = selection
-
-        if not(ray.is_initialized()):
-            ray.init(address=ray_address)
-
-        self.evaluate_model = ray.remote(num_cpus=num_cpus, num_gpus=num_gpus)(
-            evaluate_model
-        )  # , max_calls=1
-
-        # GPU Configuration if available
-        set_memory_growth_for_visible_gpus(True)
-        tf.keras.backend.clear_session()
+        assert mode in ["regression", "classification"]
+        self.mode = mode
 
     @staticmethod
     def _extend_parser(parser) -> argparse.ArgumentParser:
-        # add_arguments_from_signature(parser, UQBaggingEnsemble)
-        parser.add_argument("--batch-size", type=int, default=1)
-        parser.add_argument("--ray-address", type=str, default="")
-        parser.add_argument("--num-cpus", type=int, default=1)
-        parser.add_argument("--num-gpus", type=int, default=None)
-        parser.add_argument(
-            "--mode", type=str, choices=["classification", "regression"], required=True
-        )
-        parser.add_argument(
-            "--selection", type=str, choices=["greedy", "topk"], default="greedy"
-        )
+        add_arguments_from_signature(parser, UQBaggingEnsemble)
         return parser
 
-    def sort_models_by_min_loss(self, model_files: list, X, y) -> tuple:
-        model_losses = []
-
-        #! TODO: parallelize this loop
-        # for i, model in enumerate(self.load_models(model_files[:])):
-        #     if self.verbose:
-        #         print(f"Loading model {i}    ", end="\r", flush=True)
-        #     if model is None:
-        #         model_files.pop(i)
-        #         continue
-        #     self.compile_model(model)
-
-        #     loss = model.evaluate(X, y, batch_size=self.batch_size, verbose=0)
-        #     model_losses.append(loss)
-
-        for i, model_file in enumerate(model_files[:]):
-            model_path = os.path.join(self.model_dir, model_file)
-            loss_val = self.evaluate_model.remote(
-                X, y, model_path, self.loss, self.batch_size, i
-            )
-            model_losses.append(loss_val)
-
-        model_losses = ray.get(model_losses)
-
-        if self.verbose:
-            print()
-
-        model_files, model_losses = list(
-            zip(*sorted(zip(model_files, model_losses), key=lambda t: t[1]))
-        )
-        model_files = list(model_files)
-        model_losses = list(model_losses)
-
-        return model_files, model_losses
-
-    def compile_model(self, model):
-        model.compile(loss=self.loss)
-
-    def fit(self, X, y) -> None:
-
-        if self.selection == "greedy":
-            self.greedy_selection(X, y)
-        elif self.selection == "topk":
-            self.topk_selection(X, y)
-        else:
-            raise DeephyperRuntimeError(f"Selection '{self.selection}' is not valid!")
-
-    def greedy_selection(self, X, y):
-        if self.verbose:
-            print("Starting Greedy selection of members of the ensemble.", flush=True)
+    def fit(self, X, y):
+        X_id = ray.put(X)
 
         model_files = self.list_all_model_files()
-        model_files, model_losses = self.sort_models_by_min_loss(model_files, X, y)
+        model_path = lambda f: os.path.join(self.model_dir, f)
 
-        min_loss = model_losses[0]
-        model_files_ens = [model_files[0]]
-
-        if self.verbose:
-            print(f"Initial loss is {min_loss:.5f}", flush=True)
-
-        # gready selection of members from the ensemble
-        for i, model_file in enumerate(model_files[1:]):
-
-            model_files_ens.append(model_file)
-
-            models = [m for m in self.load_models(model_files_ens) if m is not None]
-            self.model = self.build_ensemble_model(models)
-            self.compile_model(self.model)
-            loss = self.evaluate(X, y)
-
-            if self.verbose:
-                print(
-                    f"Step {i+1:04} - Best Loss: {min_loss:.5f} | Current Try: {loss:.5f}",
-                    end="\r",
-                    flush=True,
-                )
-
-            if loss < min_loss:
-                min_loss = loss
-
-                if self.verbose:
-                    print(
-                        f"Adding Model {i+1:04} - New loss: {min_loss:.5f} with ensemble size {len(model_files_ens)}           "
-                    )
-            else:
-                model_files_ens.pop()
-
-            if len(model_files_ens) == self.size:
-                break
-
-        if self.verbose:
-            print()
-
-        self.members_files = model_files_ens
-        self.model = self.build_ensemble_model(list(self.load_models(self.members_files)))
-        self.compile_model(self.model)
-
-        if len(self.members_files) < self.size and self.verbose:
-            print(
-                f"Found only {len(self.members_files)} members to improve the ensemble",
-                flush=True,
-            )
-
-    def topk_selection(self, X, y):
-        if self.verbose:
-            print("Starting Top-K selection of members of the ensemble.")
-
-        model_files = self.list_all_model_files()
-        model_files, model_losses = self.sort_models_by_min_loss(model_files, X, y)
-
-        self.members_files = model_files[: self.size]
-
-        self.model = self.build_ensemble_model(list(self.load_models(self.members_files)))
-        self.compile_model(self.model)
-        loss = self.evaluate(X, y)
-
-        if self.verbose:
-            print(f"Top-K Loss: {loss:.5f}")
-
-    def build_ensemble_model(self, models):
-
-        if len(models) == 1:
-            return models[0]
-
-        models_input_shapes = [m.input.shape for m in models]
-        assert all(
+        y_pred = ray.get(
             [
-                tuple(models_input_shapes[0]) == tuple(shape)
-                for shape in models_input_shapes
+                model_predict.options(
+                    num_cpus=self.num_cpus, num_gpus=self.num_gpus
+                ).remote(model_path(f), X_id)
+                for f in model_files
             ]
-        ), "all models of the ensemble must have equal input shapes"
+        )
+        y_pred = np.array([arr for arr in y_pred if arr is not None])
 
-        input_ensemble = tf.keras.Input(
-            shape=tuple(models_input_shapes[0])[1:], name="input_ensemble"
+        members_indexes = topk(self.loss, y_true=y, y_pred=y_pred, k=self.size)
+        self.members_files = [model_files[i] for i in members_indexes]
+
+    def predict(self, X) -> np.ndarray:
+        # make predictions
+        X_id = ray.put(X)
+        model_path = lambda f: os.path.join(self.model_dir, f)
+
+        y_pred = ray.get(
+            [
+                model_predict.options(
+                    num_cpus=self.num_cpus, num_gpus=self.num_gpus
+                ).remote(model_path(f), X_id)
+                for f in self.members_files
+            ]
+        )
+        y_pred = np.array([arr for arr in y_pred if arr is not None])
+
+        y = aggregate_predictions(y_pred, regression=(self.mode == "regression"))
+
+        return y
+
+    def evaluate(self, X, y, metrics=None):
+        scores = {}
+
+        y_pred = self.predict(X)
+
+        scores["loss"] = tf.reduce_mean(self.loss(y, y_pred)).numpy()
+        if metrics:
+            for metric_name in metrics:
+                scores[metric_name] = apply_metric(metric_name, y, y_pred)
+
+        return scores
+
+
+class UQBaggingEnsembleRegressor(UQBaggingEnsemble):
+    def __init__(
+        self,
+        model_dir,
+        loss=nll,
+        size=5,
+        verbose=True,
+        ray_address="",
+        num_cpus=1,
+        num_gpus=None,
+        selection="topk",
+    ):
+        super().__init__(
+            model_dir,
+            loss,
+            size,
+            verbose,
+            ray_address,
+            num_cpus,
+            num_gpus,
+            selection,
+            mode="regression",
         )
 
-        if self.mode == "classification":
-            model_ensemble = self.build_ensemble_model_classification(
-                input_ensemble, models
-            )
-        else:
-            model_ensemble = self.build_ensemble_model_regression(input_ensemble, models)
 
-        return model_ensemble
-
-    def build_ensemble_model_classification(self, input_ensemble, models):
-
-        outputs = []
-        for model in models:
-            output_model = model(input_ensemble)
-
-            outputs.append(output_model)
-
-        output_ensemble = tf.keras.layers.Average()(outputs)
-
-        model_ensemble = tf.keras.Model(
-            input_ensemble, output_ensemble, name="ensemble_model"
+class UQBaggingEnsembleClassifier(UQBaggingEnsemble):
+    def __init__(
+        self,
+        model_dir,
+        loss=cce,
+        size=5,
+        verbose=True,
+        ray_address="",
+        num_cpus=1,
+        num_gpus=None,
+        selection="topk",
+    ):
+        super().__init__(
+            model_dir,
+            loss,
+            size,
+            verbose,
+            ray_address,
+            num_cpus,
+            num_gpus,
+            selection,
+            mode="classification",
         )
 
-        return model_ensemble
 
-    def build_ensemble_model_regression(self, input_ensemble, models):
-
-        locs, scales = [], []
-        for model in models:
-            normal_dist = model(input_ensemble)
-
-            loc = tf.keras.layers.Lambda(lambda t: t.loc)(normal_dist)
-            scale = tf.keras.layers.Lambda(lambda t: t.scale)(normal_dist)
-
-            locs.append(loc)
-            scales.append(scale)
-
-        mean_locs = tf.keras.layers.Average()(locs)
-
-        sum_loc_scale = [
-            tf.math.square(loc) + tf.math.square(scale)
-            for loc, scale in zip(locs, scales)
-        ]
-        mean_scales = tf.math.sqrt(
-            tf.math.reduce_mean(sum_loc_scale, axis=0) - tf.math.square(mean_locs)
+def apply_metric(metric_name, y_true, y_pred) -> float:
+    metric_func = selectMetric(metric_name)
+    metric = tf.reduce_mean(
+        metric_func(
+            tf.convert_to_tensor(y_true, dtype=np.float64),
+            tf.convert_to_tensor(y_pred, dtype=np.float64),
         )
+    ).numpy()
+    return metric
 
-        output_ensemble = tfp.layers.DistributionLambda(
-            lambda t: tfp.distributions.Normal(
-                loc=t[0],
-                scale=t[1],
-            )
-        )([mean_locs, mean_scales])
 
-        model_ensemble = tf.keras.Model(
-            input_ensemble, output_ensemble, name="ensemble_model"
+def aggregate_predictions(y_pred, regression=True):
+    """Build an ensemble from predictions.
+
+    Args:
+        ensemble_members (np.array): Indexes of selected members in the axis-0 of y_pred.
+        y_pred (np.array): Predictions array of shape (n_models, n_samples, n_outputs).
+        regression (bool): Boolean (True) if it is a regression (False) if it is a classification.
+    Return:
+        A TFP Normal Distribution in the case of regression and a np.array with average probabilities
+        in the case of classification.
+    """
+    if regression:
+        # assuming first half are means, second half are std
+        mid = np.shape(y_pred)[2] // 2
+        loc = y_pred[:, :, :mid]
+        scale = y_pred[:, :, mid:]
+
+        mean_loc = np.mean(loc, axis=0)
+        sum_loc_scale = np.square(loc) + np.square(scale)
+        mean_scale = np.sqrt(np.mean(sum_loc_scale, axis=0) - np.square(mean_loc))
+
+        return tfp.distributions.Normal(loc=mean_loc, scale=mean_scale)
+    else:  # classification
+        agg_y_pred = np.mean(y_pred[:, :, :], axis=0)
+        return agg_y_pred
+
+
+def topk(loss_func, y_true, y_pred, k=2):
+    """Select the top-k models to be part of the ensemble. A model can appear only once in the ensemble for this strategy."""
+    if np.shape(y_true)[-1] * 2 == np.shape(y_pred)[-1]: # regression
+        mid = np.shape(y_true)[-1]
+        y_pred = tfp.distributions.Normal(
+            loc=y_pred[:, :, :mid], scale=y_pred[:, :, mid:]
         )
-
-        return model_ensemble
-
-    def predict(self, X):
-        return self.model(X)
-
-    def evaluate(self, X, y):
-        return self.model.evaluate(X, y, batch_size=self.batch_size, verbose=0)
-
-    def load(self, file):
-        self.load_members_files(file)
-        self.model = self.build_ensemble_model(list(self.load_models(self.members_files)))
-        self.compile_model(self.model)
-
-    def save(self, file):
-        self.save_members_files(file)
-
-    @staticmethod
-    def main():
-        args = UQBaggingEnsemble.parse_args()
-        ensemble = UQBaggingEnsemble(**vars(args))
-
-        print("OK")
-
-
-if __name__ == "__main__":
-    UQBaggingEnsemble.main()
+    # losses is of shape: (n_models, n_outputs)
+    losses = tf.reduce_mean(loss_func(y_true, y_pred), axis=1).numpy()
+    ensemble_members = np.argsort(losses, axis=0)[:k].reshape(-1).tolist()
+    return ensemble_members

@@ -40,7 +40,7 @@ def model_predict(model_path, X):
     return y
 
 
-class BaggingEnsembleRegressor(BaseEnsemble):
+class BaggingEnsemble(BaseEnsemble):
     def __init__(
         self,
         model_dir,
@@ -51,6 +51,7 @@ class BaggingEnsembleRegressor(BaseEnsemble):
         num_cpus=1,
         num_gpus=None,
         selection="topk",
+        mode="regression",
     ):
         super().__init__(
             model_dir,
@@ -62,10 +63,12 @@ class BaggingEnsembleRegressor(BaseEnsemble):
             num_gpus,
         )
         self.selection = selection
+        assert mode in ["regression", "classification"]
+        self.mode = mode
 
     @staticmethod
     def _extend_parser(parser) -> argparse.ArgumentParser:
-        add_arguments_from_signature(parser, BaggingEnsembleRegressor)
+        add_arguments_from_signature(parser, BaggingEnsemble)
         return parser
 
     def fit(self, X, y):
@@ -102,7 +105,7 @@ class BaggingEnsembleRegressor(BaseEnsemble):
         )
         y_pred = np.array([arr for arr in y_pred if arr is not None])
 
-        y = aggregate_predictions(y_pred, regression=True)
+        y = aggregate_predictions(y_pred, regression=(self.mode == "regression"))
 
         return y
 
@@ -112,12 +115,60 @@ class BaggingEnsembleRegressor(BaseEnsemble):
         y_pred = self.predict(X)
 
         scores["loss"] = tf.reduce_mean(self.loss(y, y_pred)).numpy()
-        # scores["loss"] = self.loss(y, y_pred).numpy()
         if metrics:
             for metric_name in metrics:
                 scores[metric_name] = apply_metric(metric_name, y, y_pred)
 
         return scores
+
+
+class BaggingEnsembleRegressor(BaggingEnsemble):
+    def __init__(
+        self,
+        model_dir,
+        loss=mse,
+        size=5,
+        verbose=True,
+        ray_address="",
+        num_cpus=1,
+        num_gpus=None,
+        selection="topk",
+    ):
+        super().__init__(
+            model_dir,
+            loss,
+            size,
+            verbose,
+            ray_address,
+            num_cpus,
+            num_gpus,
+            selection,
+            mode="regression",
+        )
+
+class BaggingEnsembleClassifier(BaggingEnsemble):
+    def __init__(
+        self,
+        model_dir,
+        loss=mse,
+        size=5,
+        verbose=True,
+        ray_address="",
+        num_cpus=1,
+        num_gpus=None,
+        selection="topk",
+    ):
+        super().__init__(
+            model_dir,
+            loss,
+            size,
+            verbose,
+            ray_address,
+            num_cpus,
+            num_gpus,
+            selection,
+            mode="classification",
+        )
 
 
 def apply_metric(metric_name, y_true, y_pred) -> float:
@@ -155,10 +206,6 @@ def aggregate_predictions(y_pred, regression=True):
 def topk(loss_func, y_true, y_pred, k=2):
     """Select the top-k models to be part of the ensemble. A model can appear only once in the ensemble for this strategy."""
     # losses is of shape: (n_models, n_outputs)
-    print(np.shape(y_true), np.shape(y_pred))
     losses = tf.reduce_mean(loss_func(y_true, y_pred), axis=1).numpy()
-    print(np.shape(losses))
     ensemble_members = np.argsort(losses, axis=0)[:k].reshape(-1).tolist()
-    print("losses: ", losses[np.argsort(losses, axis=0)[:5]].flatten().tolist())
-    print("ensemble_members: ", ensemble_members)
     return ensemble_members
