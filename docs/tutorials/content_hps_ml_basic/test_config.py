@@ -9,7 +9,7 @@ def test_config(config):
     ratio_test = 0.33
     ratio_valid = (1 - ratio_test) * 0.33
 
-    train, valid, test = dataset.load_data(
+    train, valid, test, _ = dataset.load_data(
         random_state=rs_data,
         test_size=ratio_test,
         valid_size=ratio_valid,
