@@ -41,7 +41,10 @@ def model_predict(model_path, X):
 
     if model:
         y_dist = model(X)
-        y = np.concatenate([y_dist.loc, y_dist.scale], axis=1)
+        if isinstance(y_dist, tfp.distributions.Distribution):
+            y = np.concatenate([y_dist.loc, y_dist.scale], axis=1)
+        else:
+            y = y_dist
     else:
         y = None
 
