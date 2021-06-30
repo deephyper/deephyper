@@ -18,7 +18,10 @@ def nll(y, rv_y):
     return -rv_y.log_prob(y)
 
 
-cce = tf.keras.losses.CategoricalCrossentropy(reduction=tf.keras.losses.Reduction.NONE)
+cce_obj = tf.keras.losses.CategoricalCrossentropy(reduction=tf.keras.losses.Reduction.NONE)
+
+def cce(y_true, y_pred):
+    return cce_obj(tf.broadcast_to(y_true, y_pred.shape), y_pred)
 
 
 @ray.remote(num_cpus=1)
