@@ -1,16 +1,21 @@
 import argparse
+import itertools as it
 import os
+from re import A
 import traceback
 
-import tensorflow as tf
-import tensorflow_probability as tfp
 import numpy as np
 import ray
-
-from deephyper.nas.metrics import selectMetric
+import tensorflow as tf
+import tensorflow_probability as tfp
 from deephyper.core.parser import add_arguments_from_signature
 from deephyper.ensemble import BaseEnsemble
+from deephyper.nas.metrics import selectMetric
 from deephyper.nas.run.util import set_memory_growth_for_visible_gpus
+from joblib import Parallel, delayed
+from pandas import DataFrame
+from statsmodels.stats.libqsturng import psturng
+from scipy.stats import friedmanchisquare
 
 
 def nll(y, rv_y):
@@ -18,7 +23,10 @@ def nll(y, rv_y):
     return -rv_y.log_prob(y)
 
 
-cce_obj = tf.keras.losses.CategoricalCrossentropy(reduction=tf.keras.losses.Reduction.NONE)
+cce_obj = tf.keras.losses.CategoricalCrossentropy(
+    reduction=tf.keras.losses.Reduction.NONE
+)
+
 
 def cce(y_true, y_pred):
     return cce_obj(tf.broadcast_to(y_true, y_pred.shape), y_pred)
@@ -76,6 +84,7 @@ class UQBaggingEnsemble(BaseEnsemble):
             num_cpus,
             num_gpus,
         )
+        assert selection in ["topk", "caruana", "friedman"]
         self.selection = selection
         assert mode in ["regression", "classification"]
         self.mode = mode
@@ -84,6 +93,17 @@ class UQBaggingEnsemble(BaseEnsemble):
     def _extend_parser(parser) -> argparse.ArgumentParser:
         add_arguments_from_signature(parser, UQBaggingEnsemble)
         return parser
+
+    def _select_members(self, loss_func, y_true, y_pred, k=2):
+        if self.selection == "topk":
+            func = topk
+        elif self.selection == "caruana":
+            func = greedy_caruana
+        elif self.selection == "friedman":
+            func = friedman_faster
+        else:
+            raise NotImplementedError
+        return func(loss_func, y_true, y_pred, k)
 
     def fit(self, X, y):
         X_id = ray.put(X)
@@ -101,7 +121,9 @@ class UQBaggingEnsemble(BaseEnsemble):
         )
         y_pred = np.array([arr for arr in y_pred if arr is not None])
 
-        members_indexes = topk(self.loss, y_true=y, y_pred=y_pred, k=self.size)
+        members_indexes = self._select_members(
+            self.loss, y_true=y, y_pred=y_pred, k=self.size
+        )
         self.members_files = [model_files[i] for i in members_indexes]
 
     def predict(self, X) -> np.ndarray:
@@ -130,8 +152,12 @@ class UQBaggingEnsemble(BaseEnsemble):
 
         scores["loss"] = tf.reduce_mean(self.loss(y, y_pred)).numpy()
         if metrics:
-            for metric_name in metrics:
-                scores[metric_name] = apply_metric(metric_name, y, y_pred)
+            for metric in metrics:
+                if callable(metric):
+                    metric_name = metric.__name__
+                else:
+                    metric_name = metric
+                scores[metric_name] = apply_metric(metric, y, y_pred)
 
         return scores
 
@@ -188,10 +214,16 @@ class UQBaggingEnsembleClassifier(UQBaggingEnsemble):
 
 def apply_metric(metric_name, y_true, y_pred) -> float:
     metric_func = selectMetric(metric_name)
+
+    if type(y_true) is np.ndarray:
+        y_true = tf.convert_to_tensor(y_true, dtype=np.float32)
+    if type(y_pred) is np.ndarray:
+        y_pred = tf.convert_to_tensor(y_pred, dtype=np.float32)
+
     metric = tf.reduce_mean(
         metric_func(
-            tf.convert_to_tensor(y_true, dtype=np.float64),
-            tf.convert_to_tensor(y_pred, dtype=np.float64),
+            y_true,
+            y_pred
         )
     ).numpy()
     return metric
@@ -226,7 +258,7 @@ def aggregate_predictions(y_pred, regression=True):
 
 def topk(loss_func, y_true, y_pred, k=2):
     """Select the top-k models to be part of the ensemble. A model can appear only once in the ensemble for this strategy."""
-    if np.shape(y_true)[-1] * 2 == np.shape(y_pred)[-1]: # regression
+    if np.shape(y_true)[-1] * 2 == np.shape(y_pred)[-1]:  # regression
         mid = np.shape(y_true)[-1]
         y_pred = tfp.distributions.Normal(
             loc=y_pred[:, :, :mid], scale=y_pred[:, :, mid:]
@@ -234,4 +266,211 @@ def topk(loss_func, y_true, y_pred, k=2):
     # losses is of shape: (n_models, n_outputs)
     losses = tf.reduce_mean(loss_func(y_true, y_pred), axis=1).numpy()
     ensemble_members = np.argsort(losses, axis=0)[:k].reshape(-1).tolist()
+    return ensemble_members
+
+
+def greedy_caruana(loss_func, y_true, y_pred, k=2):
+    """Select the top-k models to be part of the ensemble. A model can appear only once in the ensemble for this strategy."""
+    regression = np.shape(y_true)[-1] * 2 == np.shape(y_pred)[-1]
+    n_models = np.shape(y_pred)[0]
+    if regression:  # regression
+        mid = np.shape(y_true)[-1]
+        y_pred_ = tfp.distributions.Normal(
+            loc=y_pred[:, :, :mid], scale=y_pred[:, :, mid:]
+        )
+    else:
+        y_pred_ = y_pred
+
+    # losses is of shape: (n_models, n_outputs)
+    losses = tf.reduce_mean(loss_func(y_true, y_pred_), axis=[1, 2]).numpy()
+
+    i_min = np.argmin(losses)
+    loss_min = losses[i_min]
+    ensemble_members = [i_min]
+    print(f"Loss: {loss_min:.3f} - Ensemble: {ensemble_members}")
+
+    loss = lambda y_true, y_pred: tf.reduce_mean(loss_func(y_true, y_pred)).numpy()
+
+    while len(np.unique(ensemble_members)) < k:
+        losses = [
+            loss(
+                y_true,
+                aggregate_predictions(
+                    y_pred[ensemble_members + [i]], regression=regression
+                ),
+            )
+            for i in range(n_models)  # iterate over all models
+        ]
+        i_min_ = np.argmin(losses)
+        loss_min_ = losses[i_min_]
+
+        if loss_min_ < loss_min:
+            if (
+                len(np.unique(ensemble_members)) == 1 and ensemble_members[0] == i_min_
+            ):  # numerical errors...
+                return ensemble_members
+            loss_min = loss_min_
+            ensemble_members.append(i_min_)
+            print(f"Loss: {loss_min:.3f} - Ensemble: {ensemble_members}")
+        else:
+            return ensemble_members
+
+    return ensemble_members
+
+
+
+
+
+def __convert_to_block_df(a, y_col=None, group_col=None, block_col=None, melted=False):
+    # TODO: refactor conversion of block data to DataFrame
+    if melted and not all([i is not None for i in [block_col, group_col, y_col]]):
+        raise ValueError(
+            "`block_col`, `group_col`, `y_col` should be explicitly specified if using melted data"
+        )
+
+    if isinstance(a, DataFrame) and not melted:
+        x = a.copy(deep=True)
+        group_col = "groups"
+        block_col = "blocks"
+        y_col = "y"
+        x.columns.name = group_col
+        x.index.name = block_col
+        x = x.reset_index().melt(id_vars=block_col, var_name=group_col, value_name=y_col)
+
+    elif isinstance(a, DataFrame) and melted:
+        x = DataFrame.from_dict(
+            {"groups": a[group_col], "blocks": a[block_col], "y": a[y_col]}
+        )
+
+    elif not isinstance(a, DataFrame):
+        x = np.array(a)
+        x = DataFrame(x, index=np.arange(x.shape[0]), columns=np.arange(x.shape[1]))
+
+        if not melted:
+            group_col = "groups"
+            block_col = "blocks"
+            y_col = "y"
+            x.columns.name = group_col
+            x.index.name = block_col
+            x = x.reset_index().melt(
+                id_vars=block_col, var_name=group_col, value_name=y_col
+            )
+
+        else:
+            x.rename(
+                columns={group_col: "groups", block_col: "blocks", y_col: "y"},
+                inplace=True,
+            )
+
+    group_col = "groups"
+    block_col = "blocks"
+    y_col = "y"
+
+    return x, y_col, group_col, block_col
+
+
+def posthoc_nemenyi_friedman(
+    a,
+    y_col=None,
+    block_col=None,
+    group_col=None,
+    melted=False,
+    sort=False,
+    i_indexes=None,
+):
+    def compare_stats(i, j):
+        dif = np.abs(R[groups[i]] - R[groups[j]])
+        qval = dif / np.sqrt(k * (k + 1.0) / (6.0 * n))
+        return qval
+
+    x, _y_col, _group_col, _block_col = __convert_to_block_df(
+        a, y_col, group_col, block_col, melted
+    )
+    x = x.sort_values(by=[_group_col, _block_col], ascending=True) if sort else x
+    x.dropna(inplace=True)
+
+    groups = x[_group_col].unique()
+    k = groups.size
+    n = x[_block_col].unique().size
+
+    x["mat"] = x.groupby(_block_col)[_y_col].rank()
+    R = x.groupby(_group_col)["mat"].mean()
+    vs = np.identity(k)
+    if i_indexes:
+        print()
+        combs = it.product(i_indexes, range(k))
+    else:
+        combs = it.combinations(range(k), 2)
+
+    tri_upper = np.triu_indices(vs.shape[0], 1)
+    tri_lower = np.tril_indices(vs.shape[0], -1)
+
+    for i, j in combs:
+        vs[i, j] = compare_stats(i, j)
+
+    vs *= np.sqrt(2.0)
+
+    # PARALLEL CODE
+    def sliced_psturng(a, sl):
+        return psturng(a[sl], k, np.inf)
+
+    if i_indexes:
+        vs[i_indexes, :] = psturng(vs[i_indexes, :], k, np.inf)
+        vs[:, i_indexes] = vs[i_indexes, :].T
+    else:
+        window_size = int(1e3)
+        end = np.shape(tri_upper)[1]
+        slices = [
+            slice(start, min(start + window_size, end))
+            for start in range(0, end, window_size)
+        ]
+
+        results = Parallel(n_jobs=6)(
+            delayed(sliced_psturng)(vs, (tri_upper[0][sl], tri_upper[1][sl]))
+            for sl in slices
+        )
+        vs[tri_upper] = np.concatenate(results)
+
+    vs[tri_lower] = np.transpose(vs)[tri_lower]
+
+    return DataFrame(vs, index=groups, columns=groups)
+
+def friedman_faster(loss_func, y_true, y_pred, k=2):
+    """Faster friedman."""
+    regression = np.shape(y_true)[-1] * 2 == np.shape(y_pred)[-1]
+    n_models = np.shape(y_pred)[0]
+    if regression:  # regression
+        mid = np.shape(y_true)[-1]
+        y_pred_ = tfp.distributions.Normal(
+            loc=y_pred[:, :, :mid], scale=y_pred[:, :, mid:]
+        )
+    else:
+        y_pred_ = y_pred
+
+    # losses is changed from shape (n_models, n_samples, n_outputs)
+    # to shape (n_models, n_samples * n_outputs)
+    losses = loss_func(y_true, y_pred_).numpy()
+    losses = losses.reshape(losses.shape[0], -1)
+
+
+    # perform Friedman test for a family of distributions
+    stat, p = friedmanchisquare(*losses)
+    print("Statistics=%.3f, p=%.3f" % (stat, p))
+    alpha = 0.05
+    if p > alpha:
+        print("Same distributions (fail to reject H0)")
+    else:
+        print("Different distributions (reject H0)")
+
+    # find the model index with the minimum mean (best model)
+    min_index = np.argmin(np.mean(losses, axis=1))
+
+    p_vals = posthoc_nemenyi_friedman(losses.T, i_indexes=[min_index])
+
+    # find model indices that are not significantly differnent from the best
+    selected_model_indices = np.where(p_vals[min_index].values >= 0.05)[0]
+
+    mean_vals = np.mean(losses[selected_model_indices], axis=1)
+
+    ensemble_members = np.argsort(mean_vals, axis=0)[:k].reshape(-1).tolist()
     return ensemble_members
