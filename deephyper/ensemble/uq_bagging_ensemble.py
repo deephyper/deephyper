@@ -288,9 +288,8 @@ def greedy_caruana(loss_func, y_true, y_pred, k=2, verbose=0):
     # losses is of shape: (n_models, n_outputs)
     losses = tf.reduce_mean(loss_func(y_true, y_pred_), axis=1).numpy().reshape(-1)
     assert n_models == np.shape(losses)[0]
-    print("losses: ", losses)
 
-    i_min = np.argmin(losses)
+    i_min = np.nanargmin(losses)
     loss_min = losses[i_min]
     ensemble_members = [i_min]
     if verbose:
@@ -308,7 +307,7 @@ def greedy_caruana(loss_func, y_true, y_pred, k=2, verbose=0):
             )
             for i in range(n_models)  # iterate over all models
         ]
-        i_min_ = np.argmin(losses)
+        i_min_ = np.nanargmin(losses)
         loss_min_ = losses[i_min_]
 
         if loss_min_ < loss_min:
@@ -475,7 +474,7 @@ def friedman_faster(loss_func, y_true, y_pred, k=2, verbose=0):
             print("Different distributions (reject H0)")
 
     # find the model index with the minimum mean (best model)
-    min_index = np.argmin(np.mean(losses, axis=1))
+    min_index = np.nanargmin(np.mean(losses, axis=1))
 
     p_vals = posthoc_nemenyi_friedman(losses.T, i_indexes=[min_index])
 
