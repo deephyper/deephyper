@@ -5,7 +5,6 @@ import copy
 
 import numpy as np
 import tensorflow as tf
-from tensorflow import keras
 
 from deephyper.core.exceptions import DeephyperRuntimeError
 from deephyper.evaluator.encoder import Encoder
@@ -55,6 +54,7 @@ def train(config):
         seeds = [np.random.randint(0, 2 ** 32 - 1) for _ in range(repeat)]
 
     for rep in range(repeat):
+        tf.keras.backend.clear_session()
 
         default_callbacks_config = copy.deepcopy(CB_CONFIG)
         if seed is not None:
@@ -103,7 +103,7 @@ def train(config):
                                 "filepath"
                             ] = f'best_model_id{config["id"]}_r{rep}.h5'
 
-                        Callback = getattr(keras.callbacks, cb_name)
+                        Callback = getattr(tf.keras.callbacks, cb_name)
                         callbacks.append(Callback(**default_callbacks_config[cb_name]))
 
                         logger.info(
