@@ -36,8 +36,6 @@ class BaseEnsemble:
         # assert self.size >= 2, "an ensemble size must be >= 2"
 
         self.verbose = verbose
-        if self.verbose:
-            print(self)
 
         self.ray_address = ray_address
         self.num_cpus = num_cpus

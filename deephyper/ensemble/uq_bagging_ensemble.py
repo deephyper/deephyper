@@ -286,6 +286,7 @@ def greedy_caruana(loss_func, y_true, y_pred, k=2, verbose=0):
     # losses is of shape: (n_models, n_outputs)
     losses = tf.reduce_mean(loss_func(y_true, y_pred_), axis=1).numpy().reshape(-1)
     assert n_models == np.shape(losses)[0]
+    print("losses: ", losses)
 
     i_min = np.argmin(losses)
     loss_min = losses[i_min]
