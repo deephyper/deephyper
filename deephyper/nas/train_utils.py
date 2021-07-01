@@ -1,9 +1,6 @@
 from collections import OrderedDict
 
 import tensorflow as tf
-import tensorflow.keras.backend as K
-
-from deephyper.search import util
 
 optimizers_keras = OrderedDict()
 optimizers_keras["sgd"] = tf.keras.optimizers.SGD
