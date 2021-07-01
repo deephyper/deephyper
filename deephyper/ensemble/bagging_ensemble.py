@@ -1,4 +1,3 @@
-import argparse
 import os
 import traceback
 
@@ -17,7 +16,7 @@ def mse(y_true, y_pred):
 
 
 @ray.remote(num_cpus=1)
-def model_predict(model_path, X):
+def model_predict(model_path, X, verbose=0):
 
     # GPU Configuration if available
     set_memory_growth_for_visible_gpus(True)
@@ -25,11 +24,13 @@ def model_predict(model_path, X):
     model_file = model_path.split("/")[-1]
 
     try:
-        print(f"Loading model {model_file}", end="\n", flush=True)
+        if verbose:
+            print(f"Loading model {model_file}", end="\n", flush=True)
         model = tf.keras.models.load_model(model_path, compile=False)
     except:
-        print(f"Could not load model {model_file}", flush=True)
-        traceback.print_exc()
+        if verbose:
+            print(f"Could not load model {model_file}", flush=True)
+            traceback.print_exc()
         model = None
 
     if model:
@@ -62,19 +63,21 @@ class BaggingEnsemble(BaseEnsemble):
             num_cpus,
             num_gpus,
         )
+        assert selection in ["topk"]
         self.selection = selection
         assert mode in ["regression", "classification"]
         self.mode = mode
 
-    @staticmethod
-    def _extend_parser(parser) -> argparse.ArgumentParser:
-        add_arguments_from_signature(parser, BaggingEnsemble)
-        return parser
+    def __repr__(self) -> str:
+        out = super().__repr__()
+        out += f"Mode: {self.mode}\n"
+        out += f"Selection: {self.selection}\n"
+        return out
 
     def fit(self, X, y):
         X_id = ray.put(X)
 
-        model_files = self.list_all_model_files()
+        model_files = self._list_files_in_model_dir()
         model_path = lambda f: os.path.join(self.model_dir, f)
 
         y_pred = ray.get(

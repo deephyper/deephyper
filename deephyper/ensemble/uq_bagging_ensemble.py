@@ -1,7 +1,5 @@
-import argparse
 import itertools as it
 import os
-from re import A
 import traceback
 
 import numpy as np
@@ -29,6 +27,7 @@ cce_obj = tf.keras.losses.CategoricalCrossentropy(
 
 
 def cce(y_true, y_pred):
+    """Categorical cross-entropy"""
     return cce_obj(tf.broadcast_to(y_true, y_pred.shape), y_pred)
 
 
@@ -89,12 +88,13 @@ class UQBaggingEnsemble(BaseEnsemble):
         assert mode in ["regression", "classification"]
         self.mode = mode
 
-    @staticmethod
-    def _extend_parser(parser) -> argparse.ArgumentParser:
-        add_arguments_from_signature(parser, UQBaggingEnsemble)
-        return parser
+    def __repr__(self) -> str:
+        out = super().__repr__()
+        out += f"Mode: {self.mode}\n"
+        out += f"Selection: {self.selection}\n"
+        return out
 
-    def _select_members(self, loss_func, y_true, y_pred, k=2):
+    def _select_members(self, loss_func, y_true, y_pred, k=2, verbose=0):
         if self.selection == "topk":
             func = topk
         elif self.selection == "caruana":
@@ -103,19 +103,19 @@ class UQBaggingEnsemble(BaseEnsemble):
             func = friedman_faster
         else:
             raise NotImplementedError
-        return func(loss_func, y_true, y_pred, k)
+        return func(loss_func, y_true, y_pred, k, verbose)
 
     def fit(self, X, y):
         X_id = ray.put(X)
 
-        model_files = self.list_all_model_files()
+        model_files = self._list_files_in_model_dir()
         model_path = lambda f: os.path.join(self.model_dir, f)
 
         y_pred = ray.get(
             [
                 model_predict.options(
                     num_cpus=self.num_cpus, num_gpus=self.num_gpus
-                ).remote(model_path(f), X_id)
+                ).remote(model_path(f), X_id, self.verbose)
                 for f in model_files
             ]
         )
@@ -135,7 +135,7 @@ class UQBaggingEnsemble(BaseEnsemble):
             [
                 model_predict.options(
                     num_cpus=self.num_cpus, num_gpus=self.num_gpus
-                ).remote(model_path(f), X_id)
+                ).remote(model_path(f), X_id, self.verbose)
                 for f in self.members_files
             ]
         )
@@ -256,7 +256,7 @@ def aggregate_predictions(y_pred, regression=True):
         return agg_y_pred
 
 
-def topk(loss_func, y_true, y_pred, k=2):
+def topk(loss_func, y_true, y_pred, k=2, verbose=0):
     """Select the top-k models to be part of the ensemble. A model can appear only once in the ensemble for this strategy."""
     if np.shape(y_true)[-1] * 2 == np.shape(y_pred)[-1]:  # regression
         mid = np.shape(y_true)[-1]
@@ -265,11 +265,13 @@ def topk(loss_func, y_true, y_pred, k=2):
         )
     # losses is of shape: (n_models, n_outputs)
     losses = tf.reduce_mean(loss_func(y_true, y_pred), axis=1).numpy()
+    if verbose:
+        print(f"Top-{k} losses: {losses.reshape(-1)[:k]}")
     ensemble_members = np.argsort(losses, axis=0)[:k].reshape(-1).tolist()
     return ensemble_members
 
 
-def greedy_caruana(loss_func, y_true, y_pred, k=2):
+def greedy_caruana(loss_func, y_true, y_pred, k=2, verbose=0):
     """Select the top-k models to be part of the ensemble. A model can appear only once in the ensemble for this strategy."""
     regression = np.shape(y_true)[-1] * 2 == np.shape(y_pred)[-1]
     n_models = np.shape(y_pred)[0]
@@ -288,7 +290,8 @@ def greedy_caruana(loss_func, y_true, y_pred, k=2):
     i_min = np.argmin(losses)
     loss_min = losses[i_min]
     ensemble_members = [i_min]
-    print(f"Loss: {loss_min:.3f} - Ensemble: {ensemble_members}")
+    if verbose:
+        print(f"Loss: {loss_min:.3f} - Ensemble: {ensemble_members}")
 
     loss = lambda y_true, y_pred: tf.reduce_mean(loss_func(y_true, y_pred)).numpy()
 
@@ -312,7 +315,8 @@ def greedy_caruana(loss_func, y_true, y_pred, k=2):
                 return ensemble_members
             loss_min = loss_min_
             ensemble_members.append(i_min_)
-            print(f"Loss: {loss_min:.3f} - Ensemble: {ensemble_members}")
+            if verbose:
+                print(f"Loss: {loss_min:.3f} - Ensemble: {ensemble_members}")
         else:
             return ensemble_members
 
@@ -436,7 +440,7 @@ def posthoc_nemenyi_friedman(
 
     return DataFrame(vs, index=groups, columns=groups)
 
-def friedman_faster(loss_func, y_true, y_pred, k=2):
+def friedman_faster(loss_func, y_true, y_pred, k=2, verbose=0):
     """Faster friedman."""
     regression = np.shape(y_true)[-1] * 2 == np.shape(y_pred)[-1]
     n_models = np.shape(y_pred)[0]
@@ -456,12 +460,16 @@ def friedman_faster(loss_func, y_true, y_pred, k=2):
 
     # perform Friedman test for a family of distributions
     stat, p = friedmanchisquare(*losses)
-    print("Statistics=%.3f, p=%.3f" % (stat, p))
+    if verbose:
+        print("Statistics=%.3f, p=%.3f" % (stat, p))
+
     alpha = 0.05
-    if p > alpha:
-        print("Same distributions (fail to reject H0)")
-    else:
-        print("Different distributions (reject H0)")
+
+    if verbose:
+        if p > alpha:
+            print("Same distributions (fail to reject H0)")
+        else:
+            print("Different distributions (reject H0)")
 
     # find the model index with the minimum mean (best model)
     min_index = np.argmin(np.mean(losses, axis=1))
