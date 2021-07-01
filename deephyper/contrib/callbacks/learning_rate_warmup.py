@@ -2,7 +2,7 @@
 Adapted from Horovod implementation: https://github.com/horovod/horovod/blob/master/horovod/keras/callbacks.py
 """
 import tensorflow as tf
-import tensorflow.keras.backend as K
+
 
 class LearningRateScheduleCallback(tf.keras.callbacks.Callback):
     def __init__(
@@ -17,7 +17,6 @@ class LearningRateScheduleCallback(tf.keras.callbacks.Callback):
         *args
     ):
         super(LearningRateScheduleCallback, self).__init__(*args)
-        self.backend = K
         self.start_epoch = start_epoch
         self.end_epoch = end_epoch
         self.staircase = staircase
@@ -52,25 +51,25 @@ class LearningRateScheduleCallback(tf.keras.callbacks.Callback):
             )
 
     def _adjust_learning_rate(self, epoch):
-        old_lr = self.backend.get_value(self.model.optimizer.lr)
+        old_lr = tf.keras.backend.get_value(self.model.optimizer.lr)
         new_lr = self.initial_lr * self.multiplier(epoch)
-        self.backend.set_value(self.model.optimizer.lr, new_lr)
+        tf.keras.backend.set_value(self.model.optimizer.lr, new_lr)
 
         if hasattr(self.model.optimizer, "momentum") and self.momentum_correction:
             # See the paper cited above for more information about momentum correction.
-            self.restore_momentum = self.backend.get_value(self.model.optimizer.momentum)
-            self.backend.set_value(
+            self.restore_momentum = tf.keras.backend.get_value(self.model.optimizer.momentum)
+            tf.keras.backend.set_value(
                 self.model.optimizer.momentum, self.restore_momentum * new_lr / old_lr
             )
 
     def _restore_momentum_if_needed(self):
         if self.restore_momentum:
-            self.backend.set_value(self.model.optimizer.momentum, self.restore_momentum)
+            tf.keras.backend.set_value(self.model.optimizer.momentum, self.restore_momentum)
             self.restore_momentum = None
 
     def on_train_begin(self, logs=None):
         if self.initial_lr is None:
-            self.initial_lr = self.backend.get_value(self.model.optimizer.lr)
+            self.initial_lr = tf.keras.backend.get_value(self.model.optimizer.lr)
         if not self.staircase and not self.steps_per_epoch:
             self.steps_per_epoch = self._autodetect_steps_per_epoch()
 
@@ -97,7 +96,7 @@ class LearningRateScheduleCallback(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         if logs is not None:
             # Log current learning rate.
-            logs["lr"] = self.backend.get_value(self.model.optimizer.lr)
+            logs["lr"] = tf.keras.backend.get_value(self.model.optimizer.lr)
 
 
 class LearningRateWarmupCallback(LearningRateScheduleCallback):
@@ -133,7 +132,7 @@ class LearningRateWarmupCallback(LearningRateScheduleCallback):
         super(LearningRateWarmupCallback, self).on_epoch_end(epoch, logs)
 
         if epoch == self.end_epoch - 1 and self.verbose > 0:
-            new_lr = self.backend.get_value(self.model.optimizer.lr)
+            new_lr = tf.keras.backend.get_value(self.model.optimizer.lr)
             print(
                 "\nEpoch %d: finished gradual learning rate warmup to %g."
                 % (epoch + 1, new_lr)

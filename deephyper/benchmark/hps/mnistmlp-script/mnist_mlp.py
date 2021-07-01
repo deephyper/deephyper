@@ -4,14 +4,12 @@ Gets to 98.40% test accuracy after 20 epochs
 2 seconds per epoch on a K520 GPU.
 '''
 
-from __future__ import print_function
-
 from load_data import load_data
-from keras.optimizers import RMSprop
-from keras.models import Sequential
-from keras.layers import Dense, Dropout
-from keras.datasets import mnist
-import keras
+
+import tensorflow as tf
+from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.optimizers import RMSprop
 
 import os
 import sys
@@ -21,10 +19,7 @@ sys.path.insert(0, here)
 
 def run(param_dict):
     print(param_dict)
-
-    batch_size = 128
     num_classes = 10
-    epochs = 20
 
     # the data, split between train and test sets
     (x_train, y_train), (x_test, y_test) = load_data()
@@ -39,8 +34,8 @@ def run(param_dict):
     print(x_test.shape[0], 'test samples')
 
     # convert class vectors to binary class matrices
-    y_train = keras.utils.to_categorical(y_train, num_classes)
-    y_test = keras.utils.to_categorical(y_test, num_classes)
+    y_train = tf.keras.utils.to_categorical(y_train, num_classes)
+    y_test = tf.keras.utils.to_categorical(y_test, num_classes)
 
     model = Sequential()
     model.add(Dense(

@@ -31,8 +31,6 @@ class Evaluator:
 
     FAIL_RETURN_VALUE = np.finfo(np.float32).min
     PYTHON_EXE = os.environ.get("DEEPHYPER_PYTHON_BACKEND", sys.executable)
-    KERAS_BACKEND = os.environ.get("KERAS_BACKEND", "tensorflow")
-    os.environ["KERAS_BACKEND"] = KERAS_BACKEND
     assert os.path.isfile(PYTHON_EXE)
 
     def __init__(

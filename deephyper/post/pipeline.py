@@ -5,8 +5,6 @@ import copy
 
 import numpy as np
 import tensorflow as tf
-from tensorflow import keras
-import tensorflow.keras.backend as K
 
 from deephyper.core.exceptions import DeephyperRuntimeError
 from deephyper.evaluator.encoder import Encoder
@@ -45,7 +43,7 @@ CB_CONFIG = {
 def train(config):
     seed = config["seed"]
 
-    if not "post_train" in config:
+    if "post_train" not in config:
         raise DeephyperRuntimeError("The post training was not define in the Problem!")
 
     repeat = config["post_train"]["repeat"]
@@ -105,7 +103,7 @@ def train(config):
                                 "filepath"
                             ] = f'best_model_id{config["id"]}_r{rep}.h5'
 
-                        Callback = getattr(keras.callbacks, cb_name)
+                        Callback = getattr(tf.keras.callbacks, cb_name)
                         callbacks.append(Callback(**default_callbacks_config[cb_name]))
 
                         logger.info(

@@ -1,10 +1,9 @@
 import numpy as np
-import keras.backend as K
-import keras
-from keras.callbacks import EarlyStopping
-from keras.layers import Dense
-from keras.models import Sequential
-from keras.optimizers import RMSprop
+import tensorflow as tf
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.optimizers import RMSprop
 
 import os
 import sys
@@ -15,12 +14,10 @@ from load_data import load_data
 
 
 def r2(y_true, y_pred):
-    SS_res = keras.backend.sum(keras.backend.square(y_true - y_pred), axis=0)
-    SS_tot = keras.backend.sum(
-        keras.backend.square(y_true - keras.backend.mean(y_true, axis=0)), axis=0
-    )
-    output_scores = 1 - SS_res / (SS_tot + keras.backend.epsilon())
-    r2 = keras.backend.mean(output_scores)
+    SS_res = tf.math.reduce_sum(tf.math.square(y_true - y_pred), axis=0)
+    SS_tot = tf.math.reduce_sum(tf.math.square(y_true - tf.math.reduce_mean(y_true, axis=0)), axis=0)
+    output_scores = 1 - SS_res / (SS_tot + tf.keras.backend.epsilon())
+    r2 = tf.math.reduce_mean(output_scores)
     return r2
 
 

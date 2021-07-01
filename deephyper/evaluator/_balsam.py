@@ -143,7 +143,7 @@ class BalsamEvaluator(Evaluator):
 
     def _create_balsam_task(self, x):
         args = f"'{self.encode(x)}'"
-        envs = f"KERAS_BACKEND={self.KERAS_BACKEND}:KMP_BLOCK_TIME=0"
+        envs = "KMP_BLOCK_TIME=0"
 
         ranks_per_node = self.num_ranks_per_node
         threads_per_rank = self.num_threads_per_rank

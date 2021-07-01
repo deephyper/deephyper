@@ -1,5 +1,6 @@
 import os
-from keras.datasets import mnist
+from tensorflowkeras.datasets import mnist
+
 
 def load_data():
     """Loads the MNIST dataset.
@@ -14,6 +15,7 @@ def load_data():
 
     (x_train, y_train), (x_test, y_test) = mnist.load_data(dest)
     return (x_train, y_train), (x_test, y_test)
+
 
 if __name__ == '__main__':
     load_data()

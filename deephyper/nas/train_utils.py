@@ -1,9 +1,7 @@
 from collections import OrderedDict
 
 import tensorflow as tf
-import tensorflow.keras.backend as K
 
-from deephyper.search import util
 
 optimizers_keras = OrderedDict()
 optimizers_keras["sgd"] = tf.keras.optimizers.SGD
@@ -17,7 +15,7 @@ optimizers_keras["nadam"] = tf.keras.optimizers.Nadam
 
 def selectOptimizer_keras(name):
     """Return the optimizer defined by name."""
-    if optimizers_keras.get(name) == None:
+    if optimizers_keras.get(name) is None:
         raise RuntimeError('"{0}" is not a defined optimizer for keras.'.format(name))
     else:
         return optimizers_keras[name]
@@ -32,4 +30,3 @@ def check_data_config(data_dict):
         return "ndarray"
     else:
         raise RuntimeError("Wrong data config...")
-
