@@ -32,7 +32,7 @@ def cce(y_true, y_pred):
 
 
 @ray.remote(num_cpus=1)
-def model_predict(model_path, X):
+def model_predict(model_path, X, verbose=0):
     import tensorflow as tf
     import tensorflow_probability as tfp
 
@@ -42,11 +42,13 @@ def model_predict(model_path, X):
     model_file = model_path.split("/")[-1]
 
     try:
-        print(f"Loading model {model_file}", end="\n", flush=True)
+        if verbose:
+            print(f"Loading model {model_file}", end="\n", flush=True)
         model = tf.keras.models.load_model(model_path, compile=False)
     except:
-        print(f"Could not load model {model_file}", flush=True)
-        traceback.print_exc()
+        if verbose:
+            print(f"Could not load model {model_file}", flush=True)
+            traceback.print_exc()
         model = None
 
     if model:
