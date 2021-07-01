@@ -44,7 +44,6 @@ REQUIRED = [
     "dh-scikit-optimize==0.8.3",
     "scikit-learn>=0.23.1",
     "tqdm",
-    "keras",
     "deap",  # GA search
     # nas
     "networkx",

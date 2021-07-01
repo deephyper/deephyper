@@ -196,9 +196,6 @@ class Manager:
             help="Path to the 'json' file containing the list of best search_spaces. ",
         )
         parser.add_argument(
-            "--backend", default="tensorflow", help="Keras backend module name"
-        )
-        parser.add_argument(
             "--evaluator",
             default="subprocess",
             choices=["balsam", "subprocess"],

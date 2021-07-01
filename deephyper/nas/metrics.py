@@ -10,24 +10,28 @@ import functools
 import tensorflow as tf
 from deephyper.search import util
 
+
 def r2(y_true, y_pred):
-    SS_res = tf.keras.backend.sum(tf.keras.backend.square(y_true - y_pred), axis=0)
-    SS_tot = tf.keras.backend.sum(
-        tf.keras.backend.square(y_true - tf.keras.backend.mean(y_true, axis=0)), axis=0
+    SS_res = tf.math.reduce_sum(tf.math.square(y_true - y_pred), axis=0)
+    SS_tot = tf.math.reduce_sum(
+        tf.math.square(y_true - tf.math.reduce_mean(y_true, axis=0)), axis=0
     )
     output_scores = 1 - SS_res / (SS_tot + tf.keras.backend.epsilon())
-    r2 = tf.keras.backend.mean(output_scores)
+    r2 = tf.math.reduce_mean(output_scores)
     return r2
 
 
 def mae(y_true, y_pred):
     return tf.keras.metrics.mean_absolute_error(y_true, y_pred)
 
+
 def mse(y_true, y_pred):
     return tf.keras.metrics.mean_squared_error(y_true, y_pred)
 
+
 def rmse(y_true, y_pred):
-        return tf.math.sqrt(tf.math.reduce_mean(tf.math.square(y_pred - y_true)))
+    return tf.math.sqrt(tf.math.reduce_mean(tf.math.square(y_pred - y_true)))
+
 
 def acc(y_true, y_pred):
     return tf.keras.metrics.categorical_accuracy(y_true, y_pred)
@@ -52,6 +56,7 @@ def to_tfp(metric_func):
     wrapper.__name__ = f"tfp_{metric_func.__name__}"
 
     return wrapper
+
 
 # convert some metrics for Tensorflow Probability where the output of the model is
 # a distribution

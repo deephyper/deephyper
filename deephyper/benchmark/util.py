@@ -25,6 +25,8 @@ def str2bool(s):
         return False
     else:
         return True
+
+
 class Timer:
     def __init__(self):
         self.t0 = 0.0
@@ -50,7 +52,6 @@ def extension_from_parameters(param_dict):
         "data_source",
         "stage_in_destination",
         "version",
-        "backend",
     ]
     extension = ""
     for key in sorted(param_dict):
@@ -72,7 +73,7 @@ def load_meta_data(filename):
 
 
 def resume_from_disk(benchmark_name, param_dict, data_dir="", custom_objects={}):
-    from keras.models import load_model
+    from tensorflow.keras.models import load_model
 
     SavedModel = namedtuple(
         "SavedModel", ["model", "model_path", "initial_epoch", "model_mda_path"]
@@ -118,7 +119,7 @@ def resume_from_disk(benchmark_name, param_dict, data_dir="", custom_objects={})
 
 
 def stage_in(file_names, source, dest):
-    from keras.utils.data_utils import get_file
+    from tensorflow.keras.utils import get_file
 
     print("Stage in files:", file_names)
     print("From source dir:", source)

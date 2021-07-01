@@ -134,9 +134,6 @@ class Search:
             help="Module path to the run function you want to use for the search.",
         )
         parser.add_argument(
-            "--backend", default="tensorflow", help="Keras backend module name"
-        )
-        parser.add_argument(
             "--max-evals", type=int, default=1000000, help="maximum number of evaluations"
         )
         parser.add_argument(

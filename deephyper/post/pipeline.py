@@ -6,7 +6,6 @@ import copy
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-import tensorflow.keras.backend as K
 
 from deephyper.core.exceptions import DeephyperRuntimeError
 from deephyper.evaluator.encoder import Encoder
@@ -45,7 +44,7 @@ CB_CONFIG = {
 def train(config):
     seed = config["seed"]
 
-    if not "post_train" in config:
+    if "post_train" not in config:
         raise DeephyperRuntimeError("The post training was not define in the Problem!")
 
     repeat = config["post_train"]["repeat"]
@@ -56,7 +55,6 @@ def train(config):
         seeds = [np.random.randint(0, 2 ** 32 - 1) for _ in range(repeat)]
 
     for rep in range(repeat):
-        tf.keras.backend.clear_session()
 
         default_callbacks_config = copy.deepcopy(CB_CONFIG)
         if seed is not None:

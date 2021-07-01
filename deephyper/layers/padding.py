@@ -1,15 +1,21 @@
 import tensorflow as tf
-from tensorflow import keras
 
-class Padding(keras.layers.Layer):
+
+class Padding(tf.keras.layers.Layer):
 
     """Multi-dimensions padding layer.
 
-    This operation pads a tensor according to the paddings you specify. paddings is an integer tensor with shape [n-1, 2], where n is the rank of tensor. For each dimension D of input, paddings[D, 0] indicates how many values to add before the contents of tensor in that dimension, and paddings[D, 1] indicates how many values to add after the contents of tensor in that dimension. The first dimension corresponding to the batch size cannot be padded.
+    This operation pads a tensor according to the paddings you specify. paddings is an
+    integer tensor with shape [n-1, 2], where n is the rank of tensor. For each dimension
+    D of input, paddings[D, 0] indicates how many values to add before the contents of
+    tensor in that dimension, and paddings[D, 1] indicates how many values to add after
+    the contents of tensor in that dimension. The first dimension corresponding to the
+    batch size cannot be padded.
 
     Args:
         padding (list(list(int))): e.g. [[1, 1]]
         mode (str): 'CONSTANT', 'REFLECT' or 'SYMMETRIC'
+
     """
 
     def __init__(self, padding, mode="CONSTANT", constant_values=0, **kwargs):
@@ -27,7 +33,7 @@ class Padding(keras.layers.Layer):
             constant_values=self.constant_values)
 
     def compute_output_shape(self, input_shape):
-        return tf.TensorShape([input_shape[i]+sum(self.padding[i]) if not input_shape[i] is None else None for i in range(len(input_shape))])
+        return tf.TensorShape([input_shape[i] + sum(self.padding[i]) if not input_shape[i] is None else None for i in range(len(input_shape))])
 
     def get_config(self):
         config = {
