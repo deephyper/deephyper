@@ -37,6 +37,7 @@ class TrainerTrainValid:
         self.cache_data = self.config_hp.get(a.cache_data, True)
         self.batch = self.config_hp.get("batch", True)
         self.momentum = self.config_hp.get("momentum", 0.0)
+        self.nesterov = self.config_hp.get("nesterov", False)
         self.label_smoothing = self.config_hp.get("label_smoothing", 0.0)
         self.verbose = self.config_hp.get("verbose", 1)
         # self.balanced = self.config_hp.get("balanced", False)
@@ -379,6 +380,9 @@ class TrainerTrainValid:
 
         if "momentum" in opti_parameters:
             params["momentum"] = self.momentum
+
+        if "nesterov" in opti_parameters:
+            params["nesterov"] = self.nesterov
 
         self.optimizer = optimizer_fn(**params)
 
