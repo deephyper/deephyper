@@ -1,9 +1,10 @@
+from typing import Type
 import deephyper
 from deephyper.core.exceptions import DeephyperRuntimeError
 import tensorflow as tf
 
 
-def import_callback(cb_name: str) -> tf.keras.callbacks.Callback:
+def import_callback(cb_name: str) -> Type[tf.keras.callbacks.Callback]:
     """Import a callback class from its name.
 
     Args:
