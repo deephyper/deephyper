@@ -28,18 +28,17 @@ class BaseEnsemble:
         ray_address="",
         num_cpus=1,
         num_gpus=None,
+        batch_size=32,
     ):
         self.model_dir = os.path.abspath(model_dir)
         self.loss = loss
         self.members_files = []
         self.size = size
-        # assert self.size >= 2, "an ensemble size must be >= 2"
-
         self.verbose = verbose
-
         self.ray_address = ray_address
         self.num_cpus = num_cpus
         self.num_gpus = num_gpus
+        self.batch_size = batch_size
 
         if not(ray.is_initialized()):
             ray.init(address=self.ray_address)
@@ -48,7 +47,7 @@ class BaseEnsemble:
         out = ""
         out += f"Model Dir: {self.model_dir}\n"
         out += f"Members files: {self.members_files}\n"
-        out += f"Ensemble size: {self.size}\n"
+        out += f"Ensemble size: {len(self.members_files)}/{self.size}\n"
         return out
 
     def _list_files_in_model_dir(self):

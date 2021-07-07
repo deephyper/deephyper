@@ -16,7 +16,7 @@ def mse(y_true, y_pred):
 
 
 @ray.remote(num_cpus=1)
-def model_predict(model_path, X, verbose=0):
+def model_predict(model_path, X, batch_size=32, verbose=0):
 
     # GPU Configuration if available
     set_memory_growth_for_visible_gpus(True)
@@ -25,7 +25,7 @@ def model_predict(model_path, X, verbose=0):
 
     try:
         if verbose:
-            print(f"Loading model {model_file}", end="\n", flush=True)
+            print(f"Loading model {model_file}", flush=True)
         model = tf.keras.models.load_model(model_path, compile=False)
     except:
         if verbose:
@@ -34,7 +34,7 @@ def model_predict(model_path, X, verbose=0):
         model = None
 
     if model:
-        y = model.predict(X, batch_size=1)
+        y = model.predict(X, batch_size=batch_size)
     else:
         y = None
 
@@ -51,6 +51,7 @@ class BaggingEnsemble(BaseEnsemble):
         ray_address="",
         num_cpus=1,
         num_gpus=None,
+        batch_size=32,
         selection="topk",
         mode="regression",
     ):
@@ -62,6 +63,7 @@ class BaggingEnsemble(BaseEnsemble):
             ray_address,
             num_cpus,
             num_gpus,
+            batch_size,
         )
         assert selection in ["topk"]
         self.selection = selection
@@ -84,7 +86,7 @@ class BaggingEnsemble(BaseEnsemble):
             [
                 model_predict.options(
                     num_cpus=self.num_cpus, num_gpus=self.num_gpus
-                ).remote(model_path(f), X_id)
+                ).remote(model_path(f), X_id, self.batch_size, self.verbose)
                 for f in model_files
             ]
         )
@@ -102,7 +104,7 @@ class BaggingEnsemble(BaseEnsemble):
             [
                 model_predict.options(
                     num_cpus=self.num_cpus, num_gpus=self.num_gpus
-                ).remote(model_path(f), X_id)
+                ).remote(model_path(f), X_id, self.batch_size, self.verbose)
                 for f in self.members_files
             ]
         )

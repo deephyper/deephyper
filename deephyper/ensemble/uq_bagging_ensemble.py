@@ -6,10 +6,10 @@ import numpy as np
 import ray
 import tensorflow as tf
 import tensorflow_probability as tfp
-from deephyper.core.parser import add_arguments_from_signature
 from deephyper.ensemble import BaseEnsemble
 from deephyper.nas.metrics import selectMetric
 from deephyper.nas.run.util import set_memory_growth_for_visible_gpus
+from deephyper.core.exceptions import DeephyperRuntimeError
 from joblib import Parallel, delayed
 from pandas import DataFrame
 from statsmodels.stats.libqsturng import psturng
@@ -32,7 +32,7 @@ def cce(y_true, y_pred):
 
 
 @ray.remote(num_cpus=1)
-def model_predict(model_path, X, verbose=0):
+def model_predict(model_path, X, batch_size=32, verbose=0):
     import tensorflow as tf
     import tensorflow_probability as tfp
 
@@ -51,12 +51,31 @@ def model_predict(model_path, X, verbose=0):
             traceback.print_exc()
         model = None
 
+    dataset = tf.data.Dataset.from_tensor_slices(X)
+    dataset = dataset.batch(batch_size)
+
+    def batch_predict(dataset, convert_func=lambda x: x):
+        y_list = []
+        for batch in dataset:
+            y = model(batch, training=False)
+            y_list.append(convert_func(y))
+        y = np.concatenate(y_list, axis=0)
+        return y
+
     if model:
-        y_dist = model(X)
+        y_dist = model(X[:1], training=False)  # just to test the type of the output
         if isinstance(y_dist, tfp.distributions.Distribution):
-            y = np.concatenate([y_dist.loc, y_dist.scale], axis=1)
+            if isinstance(y_dist, tfp.distributions.Normal):
+                convert_func = lambda y_dist: np.concatenate(
+                    [y_dist.loc, y_dist.scale], axis=1
+                )
+                y = batch_predict(dataset, convert_func)
+            else:
+                raise DeephyperRuntimeError(
+                    f"Distribution of type '{type(y_dist)}' is not implemented!"
+                )
         else:
-            y = y_dist
+            y = model.predict(X, batch_size=batch_size)
     else:
         y = None
 
@@ -73,6 +92,7 @@ class UQBaggingEnsemble(BaseEnsemble):
         ray_address="",
         num_cpus=1,
         num_gpus=None,
+        batch_size=32,
         selection="topk",
         mode="regression",
     ):
@@ -84,6 +104,7 @@ class UQBaggingEnsemble(BaseEnsemble):
             ray_address,
             num_cpus,
             num_gpus,
+            batch_size,
         )
         assert selection in ["topk", "caruana", "friedman"]
         self.selection = selection
@@ -117,7 +138,7 @@ class UQBaggingEnsemble(BaseEnsemble):
             [
                 model_predict.options(
                     num_cpus=self.num_cpus, num_gpus=self.num_gpus
-                ).remote(model_path(f), X_id, self.verbose)
+                ).remote(model_path(f), X_id, self.batch_size, self.verbose)
                 for f in model_files
             ]
         )
@@ -137,7 +158,7 @@ class UQBaggingEnsemble(BaseEnsemble):
             [
                 model_predict.options(
                     num_cpus=self.num_cpus, num_gpus=self.num_gpus
-                ).remote(model_path(f), X_id, self.verbose)
+                ).remote(model_path(f), X_id, self.batch_size, self.verbose)
                 for f in self.members_files
             ]
         )
@@ -174,6 +195,7 @@ class UQBaggingEnsembleRegressor(UQBaggingEnsemble):
         ray_address="",
         num_cpus=1,
         num_gpus=None,
+        batch_size=32,
         selection="topk",
     ):
         super().__init__(
@@ -184,6 +206,7 @@ class UQBaggingEnsembleRegressor(UQBaggingEnsemble):
             ray_address,
             num_cpus,
             num_gpus,
+            batch_size,
             selection,
             mode="regression",
         )
@@ -199,6 +222,7 @@ class UQBaggingEnsembleClassifier(UQBaggingEnsemble):
         ray_address="",
         num_cpus=1,
         num_gpus=None,
+        batch_size=32,
         selection="topk",
     ):
         super().__init__(
@@ -209,6 +233,7 @@ class UQBaggingEnsembleClassifier(UQBaggingEnsemble):
             ray_address,
             num_cpus,
             num_gpus,
+            batch_size,
             selection,
             mode="classification",
         )
@@ -222,12 +247,7 @@ def apply_metric(metric_name, y_true, y_pred) -> float:
     if type(y_pred) is np.ndarray:
         y_pred = tf.convert_to_tensor(y_pred, dtype=np.float32)
 
-    metric = tf.reduce_mean(
-        metric_func(
-            y_true,
-            y_pred
-        )
-    ).numpy()
+    metric = tf.reduce_mean(metric_func(y_true, y_pred)).numpy()
     return metric
 
 
@@ -323,9 +343,6 @@ def greedy_caruana(loss_func, y_true, y_pred, k=2, verbose=0):
             return ensemble_members
 
     return ensemble_members
-
-
-
 
 
 def __convert_to_block_df(a, y_col=None, group_col=None, block_col=None, melted=False):
@@ -442,6 +459,7 @@ def posthoc_nemenyi_friedman(
 
     return DataFrame(vs, index=groups, columns=groups)
 
+
 def friedman_faster(loss_func, y_true, y_pred, k=2, verbose=0):
     """Faster friedman."""
     regression = np.shape(y_true)[-1] * 2 == np.shape(y_pred)[-1]
@@ -458,7 +476,6 @@ def friedman_faster(loss_func, y_true, y_pred, k=2, verbose=0):
     # to shape (n_models, n_samples * n_outputs)
     losses = loss_func(y_true, y_pred_).numpy()
     losses = losses.reshape(losses.shape[0], -1)
-
 
     # perform Friedman test for a family of distributions
     stat, p = friedmanchisquare(*losses)
