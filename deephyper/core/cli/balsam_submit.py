@@ -40,7 +40,7 @@ def add_subparser(subparsers):
         choices=["ambs", "regevo", "random", "agebo", "ambsmixed", "regevomixed"],
         help="Search strategy",
     )
-    subparser.add_argument("workflow", help="Unique workflow name")
+    subparser.add_argument("-w", "--workflow", help="Unique workflow name")
     subparser.add_argument(
         "-p", "--problem", required=True, help="Problem definition path or object"
     )
