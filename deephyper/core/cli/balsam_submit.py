@@ -173,7 +173,7 @@ def setup_job(job, problem, run, **kwargs):
     if run:
         job.args += f" --run {run}"
 
-    invalid_keys = ["time_minutes", "nodes", "queue", "project", "job_mode"]
+    invalid_keys = ["time_minutes", "nodes", "queue", "project", "job_mode", "func"]
     for k in invalid_keys:
         kwargs.pop(k)
     args = generate_other_arguments(**kwargs)
