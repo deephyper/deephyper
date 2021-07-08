@@ -5,6 +5,7 @@ Research & Publications
 ====
 
 * Maulik, Romit, et al. "Recurrent neural network architecture search for geophysical emulation." SC20: International Conference for High Performance Computing, Networking, Storage and Analysis. IEEE, 2020.
+* Jiang, Shengli, and Prasanna Balaprakash. "Graph Neural Network Architecture Search for Molecular Property Prediction." 2020 IEEE International Conference on Big Data (Big Data). IEEE, 2020.
 
 2019
 ====
