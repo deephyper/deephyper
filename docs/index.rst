@@ -18,24 +18,13 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
 
 .. automodule:: deephyper
 
-.. toctree::
-    :maxdepth: 1
-    :caption: Installation
-
-    install/local
-    install/theta
-    install/thetagpu
-    install/cooley
-    install/analytics
 
 .. toctree::
-    :maxdepth: 1
-    :caption: Tutorials
+    :maxdepth: 2
+    :caption: Get Started
 
-    tutorials/hps_ml_basic
-    tutorials/hps_ml_advanced
-    tutorials/hps_dl_basic
-    tutorials/nas
+    install/index
+    tutorials/index
 
 .. toctree::
     :maxdepth: 1
