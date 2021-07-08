@@ -25,6 +25,7 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
 
     install/index
     tutorials/index
+    research
 
 .. toctree::
     :maxdepth: 1
