@@ -10,7 +10,7 @@ This guide will show you how to build deep ensemble from scratch with DeepHyper.
 
     deephyper start-project dh_project
 
-.. node::
+.. note::
 
     The ``start-project`` command line is create a directory named ``dh_project`` containing a Python package (i.e., folder with ``__init__.py``) name ``dh_project`` and installing this package in editable mode in your current Python environment.
 

@@ -92,6 +92,8 @@ def selectMetric(name: str):
     Returns:
         str or callable: a string suppossing it is referenced in the keras framework or a callable taking (y_true, y_pred) as inputs and returning a tensor.
     """
+    if callable(name):
+        return name
     if metrics_func.get(name) == None and metrics_obj.get(name) == None:
         try:
             return util.load_attr_from(name)

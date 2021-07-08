@@ -57,6 +57,7 @@ REQUIRED = [
     "typeguard",
     "openml==0.10.2",
     "matplotlib>=3.0.3",
+    "statsmodels"
 ]
 
 if on_rtd:

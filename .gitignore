@@ -174,3 +174,4 @@ logdir
 _build/
 !_templates/*
 Icon
+docs/tutorials*/

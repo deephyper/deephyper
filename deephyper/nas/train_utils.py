@@ -2,7 +2,6 @@ from collections import OrderedDict
 
 import tensorflow as tf
 
-
 optimizers_keras = OrderedDict()
 optimizers_keras["sgd"] = tf.keras.optimizers.SGD
 optimizers_keras["rmsprop"] = tf.keras.optimizers.RMSprop

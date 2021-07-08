@@ -38,6 +38,17 @@ if about["__version__"] == "":
 else:
     release = f'v{about["__version__"]}-{about["__version_suffix__"]}'
 
+# PULL Tutorials
+
+tutorials_github_link = "https://github.com/deephyper/tutorials.git"
+tutorials_dest_dir = "tutorials"
+
+def pull_tutorials(github_link, dest_dir):
+    os.system(f"rm -rf {dest_dir}/")
+    os.system(f"git clone --depth=1 --branch=main {github_link} {dest_dir}")
+    os.system(f"rm -rf {dest_dir}/.git")
+
+pull_tutorials(tutorials_github_link, tutorials_dest_dir)
 
 # -- General configuration ---------------------------------------------------
 
