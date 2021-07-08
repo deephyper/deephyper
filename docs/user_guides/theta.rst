@@ -43,8 +43,7 @@ in your current Balsam environment::
 
 Now, let us create a submission::
 
-    deephyper balsam-submit hps test -p deephyper.benchmark.hps.polynome2.Problem -r deephyper.benchmark.hps.polynome2.run \
-    -t 60 -q debug-cache-quad -n 4 -A datascience -j mpi
+deephyper balsam-submit hps ambs -w test --problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run -t 15 -q debug-cache-quad -n 2 -A datascience -j mpi
 
 This creates an AMBS hyperparameter search job for the given `Problem` and `run` arguments.  The parameters on the second line
 indicate: 60 minute wall-time, submission to `debug-cache-quad` queue, running on 4 nodes, charging to `datascience` allocation,

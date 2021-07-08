@@ -22,6 +22,8 @@ APPS = {
         "RANDOM": f"{sys.executable} -m deephyper.search.nas.random",
         "REGEVO": f"{sys.executable} -m deephyper.search.nas.regevo",
         "AGEBO": f"{sys.executable} -m deephyper.search.nas.agebo",
+        "AMBSMIXED": f"{sys.executable} -m deephyper.search.nas.ambsmixed",
+        "REGEVOMIXED": f"{sys.executable} -m deephyper.search.nas.regevomixed",
     },
 }
 
