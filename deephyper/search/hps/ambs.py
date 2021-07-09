@@ -27,13 +27,13 @@ Arguments of AMBS:
 
 import math
 import signal
-from pprint import pprint
-import numpy as np
 
 import ConfigSpace.hyperparameters as csh
+import numpy as np
+import pandas as pd
 import skopt
-from deephyper.search import Search, util
 from deephyper.core.logs.logging import JsonMessage as jm
+from deephyper.search import Search, util
 
 dhlogger = util.conf_logger("deephyper.search.hps.ambs")
 
@@ -59,6 +59,7 @@ class AMBS(Search):
         xi=0.001,
         liar_strategy="cl_min",
         n_jobs=1,  # 32 is good for Theta
+        checkpoint="",
         **kwargs,
     ):
         kwargs["cache_key"] = "to_dict"
@@ -66,6 +67,7 @@ class AMBS(Search):
         dhlogger.info("Initializing AMBS")
         dhlogger.info(f"kappa={kappa}, xi={xi}")
 
+        self.checkpoint = pd.read_csv(checkpoint) if checkpoint != "" else None
         self.n_initial_points = self.evaluator.num_workers
         self.liar_strategy = liar_strategy
 
@@ -75,10 +77,10 @@ class AMBS(Search):
             acq_func=acq_func,
             acq_optimizer="sampling",
             acq_func_kwargs={"xi": xi, "kappa": kappa},
-            n_initial_points=self.n_initial_points,
+            n_initial_points=self.n_initial_points if self.checkpoint is None else 0,
             random_state=self.problem.seed,
-            # model_queue_size=100,
         )
+
 
     @staticmethod
     def _extend_parser(parser):
@@ -120,6 +122,12 @@ class AMBS(Search):
             default=1,
             help="number of cores to use for the 'surrogate model' (learner), if n_jobs=-1 then it will use all cores available.",
         )
+        parser.add_argument(
+            "--checkpoint",
+            type=str,
+            default="",
+            help="Path to a CSV file which will be used to restart the search.",
+        )
         return parser
 
     def main(self):
@@ -131,6 +139,10 @@ class AMBS(Search):
         # Filling available nodes at start
         dhlogger.info(f"Generating {self.evaluator.num_workers} initial points...")
         self.evaluator.add_eval_batch(self.get_random_batch(size=self.n_initial_points))
+
+        print('Already evaluated points:')
+        print(self.opt.Xi)
+        print(self.opt.yi)
 
         # Main loop
         while num_evals_done < self.max_evals:
@@ -194,25 +206,36 @@ class AMBS(Search):
 
         return surrogate
 
-    def get_random_batch(self, size: int) -> list:
-        batch = self.problem.starting_point_asdict
+    def fit_checkpoint(self):
+        hp_names = self.problem.space.get_hyperparameter_names()
+        x = self.checkpoint[hp_names].values.tolist()
+        y = self.checkpoint.objective.tolist()
+        self.opt.tell(x, [yi * -1.0 for yi in y])
 
-        # Replace None by "nan"
-        for point in batch:
-            for (k, v), hp in zip(
-                point.items(), self.problem.space.get_hyperparameters()
-            ):
-                if v is None:
-                    if (
-                        type(hp) == csh.UniformIntegerHyperparameter
-                        or type(hp) == csh.UniformFloatHyperparameter
-                    ):
-                        point[k] = np.nan
-                    elif (
-                        type(hp) == csh.CategoricalHyperparameter
-                        or type(hp) == csh.OrdinalHyperparameter
-                    ):
-                        point[k] = "NA"
+    def get_random_batch(self, size: int) -> list:
+
+        if self.checkpoint is None:
+            batch = self.problem.starting_point_asdict
+
+            # Replace None by "nan"
+            for point in batch:
+                for (k, v), hp in zip(
+                    point.items(), self.problem.space.get_hyperparameters()
+                ):
+                    if v is None:
+                        if (
+                            type(hp) == csh.UniformIntegerHyperparameter
+                            or type(hp) == csh.UniformFloatHyperparameter
+                        ):
+                            point[k] = np.nan
+                        elif (
+                            type(hp) == csh.CategoricalHyperparameter
+                            or type(hp) == csh.OrdinalHyperparameter
+                        ):
+                            point[k] = "NA"
+        else:
+            batch = []
+            self.fit_checkpoint()
 
         # Add more starting points
         n_points = max(0, size - len(batch))
