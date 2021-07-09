@@ -144,10 +144,10 @@ class UQBaggingEnsemble(BaseEnsemble):
         )
         y_pred = np.array([arr for arr in y_pred if arr is not None])
 
-        members_indexes = self._select_members(
+        self._members_indexes = self._select_members(
             self.loss, y_true=y, y_pred=y_pred, k=self.size
         )
-        self.members_files = [model_files[i] for i in members_indexes]
+        self.members_files = [model_files[i] for i in self._members_indexes]
 
     def predict(self, X) -> np.ndarray:
         # make predictions
