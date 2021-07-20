@@ -7,8 +7,8 @@ from deephyper.problem import HpProblem
 
 Problem = HpProblem(seed=45)
 
-classifier = Problem.add_hyperparameter(
-    name="classifier",
+regressor = Problem.add_hyperparameter(
+    name="regressor",
     value=["RandomForest", "Linear", "AdaBoost", "KNeighbors", "MLP", "SVR", "XGBoost"],
 )
 
@@ -18,8 +18,8 @@ n_estimators = Problem.add_hyperparameter(
 )
 
 cond_n_estimators = cs.OrConjunction(
-    cs.EqualsCondition(n_estimators, classifier, "RandomForest"),
-    cs.EqualsCondition(n_estimators, classifier, "AdaBoost"),
+    cs.EqualsCondition(n_estimators, regressor, "RandomForest"),
+    cs.EqualsCondition(n_estimators, regressor, "AdaBoost"),
 )
 
 Problem.add_condition(cond_n_estimators)
@@ -27,28 +27,28 @@ Problem.add_condition(cond_n_estimators)
 # max_depth
 max_depth = Problem.add_hyperparameter(name="max_depth", value=(2, 100, "log-uniform"))
 
-cond_max_depth = cs.EqualsCondition(max_depth, classifier, "RandomForest")
+cond_max_depth = cs.EqualsCondition(max_depth, regressor, "RandomForest")
 
 Problem.add_condition(cond_max_depth)
 
 # n_neighbors
 n_neighbors = Problem.add_hyperparameter(name="n_neighbors", value=(1, 100))
 
-cond_n_neighbors = cs.EqualsCondition(n_neighbors, classifier, "KNeighbors")
+cond_n_neighbors = cs.EqualsCondition(n_neighbors, regressor, "KNeighbors")
 
 Problem.add_condition(cond_n_neighbors)
 
 # alpha
 alpha = Problem.add_hyperparameter(name="alpha", value=(1e-5, 10.0, "log-uniform"))
 
-cond_alpha = cs.EqualsCondition(alpha, classifier, "MLP")
+cond_alpha = cs.EqualsCondition(alpha, regressor, "MLP")
 
 Problem.add_condition(cond_alpha)
 
 # C
 C = Problem.add_hyperparameter(name="C", value=(1e-5, 10.0, "log-uniform"))
 
-cond_C = cs.EqualsCondition(C, classifier, "SVR")
+cond_C = cs.EqualsCondition(C, regressor, "SVR")
 
 Problem.add_condition(cond_C)
 
@@ -57,7 +57,7 @@ kernel = Problem.add_hyperparameter(
     name="kernel", value=["linear", "poly", "rbf", "sigmoid"]
 )
 
-cond_kernel = cs.EqualsCondition(kernel, classifier, "SVR")
+cond_kernel = cs.EqualsCondition(kernel, regressor, "SVR")
 
 Problem.add_condition(cond_kernel)
 

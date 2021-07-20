@@ -1,5 +1,5 @@
 import os
-from tensorflowkeras.datasets import mnist
+from tensorflow.keras.datasets import mnist
 
 
 def load_data():
