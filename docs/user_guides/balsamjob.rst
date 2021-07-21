@@ -77,7 +77,7 @@ In this script, we set up the Balsam app ``run_poly2`` to run the model
 code. Notice the call to ``ApplicationDefinition.objects.get_or_create``, which runs
 on import time.  This ensures that the Balsam application registered in the database
 is always up-to-date with this script.  Most importantly, the ``add_task(point)``
-function is annotated with the ``deephyper.benchmark.balsamjob_spec`` decorator.
+function is annotated with the ``deephyper.evaluator.balsam_utils.balsamjob_spec`` decorator.
 This signals to DeepHyper that ``add_task`` returns a BalsamJob object and
 is **NOT** an ordinary run function.
 
@@ -125,7 +125,7 @@ the ``data`` attribute of the current job (``balsam.launcher.dag.current_job``).
     :caption: polynome2/addtask_balsam.py
 
 
-Notice the import of ``deephyper.benchmark.to_encodable``, which is used to convert
+Notice the import of ``deephyper.evaluator.balsam_utils.to_encodable``, which is used to convert
 ``numpy`` arrays and other DeepHyper data types from the ``point`` dictionary
 into a JSON-encodable format. The corresponding ``if __name__ == "__main__"`` block of
 ``model_run.py`` would then read the hyperparameters directly out the
