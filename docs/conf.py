@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.abspath(".."))
 # -- Project information -----------------------------------------------------
 
 project = "DeepHyper"
-copyright = "2018-2020, Argonne"
+copyright = "2018-2021, Argonne"
 author = "Argonne"
 
 # The short X.Y version
@@ -257,6 +257,7 @@ trim_doctest_flags = True
 
 
 def setup(app):
-    app.add_css_file("custom.css")
-    app.add_js_file("custom.js")
-    app.add_js_file("https://cdn.jsdelivr.net/npm/clipboard@1/dist/clipboard.min.js")
+    ...
+    # app.add_css_file("custom.css")
+    # app.add_js_file("custom.js")
+    # app.add_js_file("https://cdn.jsdelivr.net/npm/clipboard@1/dist/clipboard.min.js")
