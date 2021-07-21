@@ -1,49 +1,11 @@
 import hashlib
 import pickle
 from collections import namedtuple
-import time
 import os
 import numpy as np
 import logging
-from functools import wraps
 
 logger = logging.getLogger(__name__)
-
-
-def balsamjob_spec(run_func):
-    @wraps(run_func)
-    def labelled_run(param_dict):
-        return run_func(param_dict)
-
-    labelled_run._balsamjob_spec = True
-    return labelled_run
-
-
-def str2bool(s):
-    s = s.lower().strip()
-    if s == "false":
-        return False
-    else:
-        return True
-
-
-class Timer:
-    def __init__(self):
-        self.t0 = 0.0
-        self.name = None
-
-    def start(self, name):
-        self.name = name
-        self.t0 = time.time()
-
-    def end(self):
-        elapsed = time.time() - self.t0
-        if not self.name:
-            return
-        print(f"TIMER {self.name}: {elapsed:.4f} seconds")
-        self.t0 = 0.0
-        self.name = None
-
 
 def extension_from_parameters(param_dict):
     EXCLUDE_PARAMS = [
