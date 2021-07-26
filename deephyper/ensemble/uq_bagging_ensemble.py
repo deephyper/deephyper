@@ -211,6 +211,42 @@ class UQBaggingEnsembleRegressor(UQBaggingEnsemble):
             mode="regression",
         )
 
+    def predict_var_decomposition(self, X):
+        """[summary]
+
+        Args:
+            X ([type]): [description]
+
+        Returns:
+            y, u1, u2: where ``y`` is the mixture distribution, ``u1`` is the aleatoric component of the variance of ``y`` and ``u2`` is the epistemic component of the variance of ``y``.
+        """
+        # make predictions
+        X_id = ray.put(X)
+        model_path = lambda f: os.path.join(self.model_dir, f)
+
+        y_pred = ray.get(
+            [
+                model_predict.options(
+                    num_cpus=self.num_cpus, num_gpus=self.num_gpus
+                ).remote(model_path(f), X_id, self.batch_size, self.verbose)
+                for f in self.members_files
+            ]
+        )
+        y_pred = np.array([arr for arr in y_pred if arr is not None])
+
+        y = aggregate_predictions(y_pred, regression=(self.mode == "regression"))
+
+        # variance decomposition
+        mid = np.shape(y_pred)[2] // 2
+        loc = y_pred[:, :, :mid]
+        scale = y_pred[:, :, mid:]
+
+        aleatoric_unc = np.mean(np.square(scale), axis=0)
+        epistemic_unc = np.square(np.std(loc, axis=0))
+
+        # dist, aleatoric uq, epistemic uq
+        return y, aleatoric_unc, epistemic_unc
+
 
 class UQBaggingEnsembleClassifier(UQBaggingEnsemble):
     def __init__(
