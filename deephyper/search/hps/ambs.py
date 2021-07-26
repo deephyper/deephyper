@@ -28,6 +28,8 @@ Arguments of AMBS:
 import math
 import signal
 
+
+import ConfigSpace as CS
 import ConfigSpace.hyperparameters as csh
 import numpy as np
 import pandas as pd
@@ -60,6 +62,7 @@ class AMBS(Search):
         liar_strategy="cl_min",
         n_jobs=1,  # 32 is good for Theta
         checkpoint="",
+        transfer_learning="",
         **kwargs,
     ):
         kwargs["cache_key"] = "to_dict"
@@ -68,6 +71,8 @@ class AMBS(Search):
         dhlogger.info(f"kappa={kappa}, xi={xi}")
 
         self.checkpoint = pd.read_csv(checkpoint) if checkpoint != "" else None
+        self.transfer_learning = pd.read_csv(transfer_learning) if transfer_learning != "" else None
+        
         self.n_initial_points = self.evaluator.num_workers
         self.liar_strategy = liar_strategy
 
@@ -127,6 +132,12 @@ class AMBS(Search):
             type=str,
             default="",
             help="Path to a CSV file which will be used to restart the search.",
+        )
+        parser.add_argument(
+            "--transfer-learning",
+            type=str,
+            default="",
+            help="Path to a CSV file which will be used for transfer learning.",
         )
         return parser
 
@@ -208,15 +219,143 @@ class AMBS(Search):
 
     def fit_checkpoint(self):
         hp_names = self.problem.space.get_hyperparameter_names()
+        print('problem space')
+        print(self.problem.space)
+        for hp in self.problem.space.get_hyperparameters():
+            print(dir(hp))
+            print(hp.name)
+            print(hp.lower)
+            print(hp.upper)
         x = self.checkpoint[hp_names].values.tolist()
         y = self.checkpoint.objective.tolist()
+
         self.opt.tell(x, [yi * -1.0 for yi in y])
+
+
+    def return_cond(self, cond, cst_new):
+        parent = cst_new.get_hyperparameter(cond.parent.name)
+        child = cst_new.get_hyperparameter(cond.child.name)
+        if type(cond) == CS.EqualsCondition:
+            value = cond.value
+            cond_new = CS.EqualsCondition(child,parent,cond.value)
+        elif type(cond) == CS.GreaterThanCondition:
+            value = cond.value
+            cond_new = CS.GreaterThanCondition(child,parent,value)
+        elif type(cond) == CS.NotEqualsCondition:
+            value = cond.value
+            cond_new = CS.GreaterThanCondition(child,parent,value)
+        elif type(cond) == CS.LessThanCondition:
+            value = cond.value
+            cond_new = CS.GreaterThanCondition(child,parent,value)
+        elif type(cond) == CS.InCondition:
+            values = cond.values
+            cond_new = CS.GreaterThanCondition(child,parent,values)
+        else:
+            print('Not supported type'+str(type(cond)))  
+        return cond_new
+
+    def return_forbid(self, cond, cst_new):
+        if type(cond) == CS.ForbiddenEqualsClause or type(cond) == CS.ForbiddenInClause:
+            hp = cst_new.get_hyperparameter(cond.hyperparameter.name)
+            if type(cond) == CS.ForbiddenEqualsClause:
+                value = cond.value
+                cond_new = CS.ForbiddenEqualsClause(hp, value)
+            elif type(cond) == CS.ForbiddenInClause:
+                values = cond.values
+                cond_new = CS.ForbiddenInClause(hp, values)
+            else:
+                print('Not supported type'+str(type(cond)))  
+        return cond_new
+
+    def fit_transfer_learning(self):
+        cst =  self.problem.space
+        if type(cst) != CS.ConfigurationSpace:
+            print('%s: not supported for trainsfer learning'%type(cst))
+
+        res_df = self.transfer_learning
+        res_df_names = res_df.columns.values
+        best_index = np.argmax(res_df['objective'].values)
+        best_param = res_df.iloc[best_index]
+        print(best_param) 
+
+        fac_numeric = 8.0 
+        fac_categorical = 10.0
+
+        cst_new = CS.ConfigurationSpace(seed=1234)
+        hp_names = cst.get_hyperparameter_names()
+        for hp_name in hp_names:
+            print(hp_name)
+            hp = cst.get_hyperparameter(hp_name)
+            print(hp)
+            if hp_name in res_df_names:
+                if type(hp) == csh.UniformIntegerHyperparameter or type(hp) == csh.UniformFloatHyperparameter:
+                    mu = best_param[hp.name]
+                    lower = hp.lower
+                    upper = hp.upper
+                    sigma = max(1.0, (upper - lower)/fac_numeric) 
+                    if type(hp) == csh.UniformIntegerHyperparameter:
+                        param_new = csh.NormalIntegerHyperparameter(name=hp.name, default_value=mu, mu=mu, sigma=sigma, lower=lower, upper=upper)
+                    elif type(hp) == csh.UniformFloatHyperparameter:
+                        param_new = csh.NormalFloatHyperparameter(name=hp.name, default_value=mu, mu=mu, sigma=sigma, lower=lower, upper=upper)
+                    else:
+                        pass
+                    cst_new.add_hyperparameter(param_new)
+                elif type(hp) == csh.CategoricalHyperparameter:
+                    choices = hp.choices
+                    weights = len(hp.choices)*[1.0]
+                    index = choices.index(best_param[hp.name])
+                    weights[index] = fac_categorical
+                    norm_weights = [float(i)/sum(weights) for i in weights] 
+                    print(norm_weights)
+                    param_new = csh.CategoricalHyperparameter(name=hp.name, choices=choices,weights=norm_weights)
+                    cst_new.add_hyperparameter(param_new)
+                else:
+                    cst_new.add_hyperparameter(hp)
+            else:
+                cst_new.add_hyperparameter(hp)
+
+
+        for cond in cst.get_conditions():
+            if type(cond) == CS.AndConjunction or type(cond) == CS.OrConjunction:
+                cond_list = []
+                for comp in cond.components:
+                    cond_list.append(self.return_cond(comp, cst_new))
+                if type(cond) == CS.AndConjunction:
+                    print(len(cond_list))
+                    print(len(tuple(cond_list)))
+                    cond_new = CS.AndConjunction(*cond_list)
+                elif type(cond) == CS.OrConjunction:
+                    cond_new = CS.OrConjunction(*cond_list)
+                else:
+                    print('Not implemented')
+            else:
+                cond_new = self.return_cond(cond, cst_new)
+            cst_new.add_condition(cond_new)
+        print(cst_new)
+
+        for cond in cst.get_forbiddens():
+            if type(cond) == CS.ForbiddenAndConjunction:
+                cond_list = []
+                for comp in cond.components:
+                    cond_list.append(self.return_forbid(comp, cst_new))
+                cond_new = CS.ForbiddenAndConjunction(*cond_list)
+            elif type(cond) == CS.ForbiddenEqualsClause or type(cond) == CS.ForbiddenInClause:
+                cond_new = self.return_forbid(cond, cst_new)
+            else:
+                print('Not supported type'+str(type(cond)))    
+            cst_new.add_forbidden_clause(cond_new)
+
 
     def get_random_batch(self, size: int) -> list:
 
-        if self.checkpoint is None:
+        if self.checkpoint is not None:
+            batch = []
+            self.fit_checkpoint()
+        elif self.transfer_learning is not None:
+            batch = []
+            self.fit_transfer_learning()
+        else:
             batch = self.problem.starting_point_asdict
-
             # Replace None by "nan"
             for point in batch:
                 for (k, v), hp in zip(
@@ -232,10 +371,7 @@ class AMBS(Search):
                             type(hp) == csh.CategoricalHyperparameter
                             or type(hp) == csh.OrdinalHyperparameter
                         ):
-                            point[k] = "NA"
-        else:
-            batch = []
-            self.fit_checkpoint()
+                            point[k] = "NA"                     
 
         # Add more starting points
         n_points = max(0, size - len(batch))

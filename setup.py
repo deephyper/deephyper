@@ -52,7 +52,7 @@ REQUIRED = [
     "ray[default]>=1.3.0",
     "pandas>=0.24.2",
     "Jinja2",
-    "ConfigSpace==0.4.18",
+    "ConfigSpace>=0.4.18",
     "xgboost",
     "typeguard",
     "openml==0.10.2",
