@@ -215,7 +215,7 @@ We have tested the syntax in all of these by running them individually. Now, let
     deephyper hps ambs --problem hps_demo.polynome2.problem.Problem --run hps_demo.polynome2.model_run.run
     
 .. note::
-    The above command will require a long time to execute completely. If you want to generate a smaller dataset, append `--max-evals 100' to the 
+    The above command will require a long time to execute completely. If you want to generate a smaller dataset, append `--max-evals 100` to the 
     end of the command to expedite the process.
 
 .. note::

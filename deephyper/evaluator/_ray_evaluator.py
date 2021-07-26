@@ -87,10 +87,13 @@ class RayEvaluator(Evaluator):
 
         logger.info(f"RAY Evaluator init: redis-address={ray_address}")
 
-        if not ray_address is None:
-            proc_info = ray.init(address=ray_address, _redis_password=ray_password)
-        else:
-            proc_info = ray.init()
+        proc_info = None
+        
+        if not(ray.is_initialized()):
+            if not ray_address is None:
+                proc_info = ray.init(address=ray_address, _redis_password=ray_password)
+            else:
+                proc_info = ray.init()
 
         self.num_cpus_per_tasks = num_cpus_per_task
         self.num_gpus_per_tasks = num_gpus_per_task
