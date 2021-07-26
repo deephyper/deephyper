@@ -4,7 +4,7 @@ import sys
 import shlex
 
 from balsam.core.models import BalsamJob, ApplicationDefinition
-from deephyper.benchmark import balsamjob_spec, JSONEncoder
+from deephyper.evaluator.balsam_utils import balsamjob_spec, JSONEncoder
 
 app_name = "run_poly2"
 here = os.path.dirname(os.path.abspath(__file__))

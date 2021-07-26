@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.abspath(".."))
 # -- Project information -----------------------------------------------------
 
 project = "DeepHyper"
-copyright = "2018-2020, Argonne"
+copyright = "2018-2021, Argonne"
 author = "Argonne"
 
 # The short X.Y version

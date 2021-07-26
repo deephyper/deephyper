@@ -60,15 +60,11 @@ REQUIRED = [
     "statsmodels"
 ]
 
-if on_rtd:
-    REQUIRED.append("Sphinx>=1.8.2")
-    REQUIRED.append("sphinx_rtd_theme")
-
 # What packages are optional?
 EXTRAS = {
     "tests": ["pytest", "codecov", "pytest-cov", "deepspace>=0.0.3"],
     "dev": ["twine", "black"],
-    "docs": ["Sphinx>=1.8.2", "sphinx_rtd_theme"],
+    "docs": ["Sphinx~=3.5.4", "sphinx_rtd_theme~=0.5.2"],
     "analytics": [
         "jupyter",
         "jupyter_contrib_nbextensions>=0.5.1",

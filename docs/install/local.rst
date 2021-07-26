@@ -1,29 +1,33 @@
 Local
 ******
 
-DeepHyper installation requires Python 3.7.
+DeepHyper installation requires ``Python>=3.7``.
 
 We recommend creating isolated Python environments on your local machine using ``virtualenv`` or ``miniconda``, for example::
 
-    conda create -n deephyper python=3.7
+    conda create -n deephyper python=3.8
     conda activate deephyper
 
 Some features of DeepHyper are using the ``MPI`` library, which you have to install yourself depending on your system.
 
-For Linux systems, it is required to have additionnal dependencies::
+For Linux systems, it is required to have the following additionnal dependencies::
 
     apt-get install build-essential
     # or
     conda install gxx_linux-64 gcc_linux-64
 
-User installation
+User Installation
 =================
+
+.. warning:: This section assumes that you already have an active virtual or conda environment as well as the prerequisites detailed in the introduction of this page.
+
+The user installation corresponds to someone who wants to use the features of the software without contributing to its code.
 
 From PyPI::
 
     pip install deephyper
 
-From github::
+From Github::
 
     git clone https://github.com/deephyper/deephyper.git
     cd deephyper/
@@ -34,7 +38,7 @@ From github::
 Horovod
 -------
 
-If you want to install Horovod with DeepHyper (MPI is required)::
+If you want to install Horovod with DeepHyper (an MPI distribution is required)::
 
     pip install 'deephyper[balsam,hvd]'
 
@@ -43,7 +47,7 @@ If you want to install Horovod with DeepHyper (MPI is required)::
 Analytics
 ---------
 
-From Pypi::
+From PyPI::
 
     pip install 'deephyper[analytics]'
 
@@ -54,16 +58,31 @@ Then to make DeepHyper accessible in a notebook create a new *IPython* kernel wi
 
 Now when you will open a Jupyter notebook the "Python (deephyper)" kernel will be available.
 
+Developer Installation
+======================
+
+.. warning:: This section assumes that you already have an active virtual or conda environment as well as the prerequisites detailed in the introduction of this page.
+
+The developer installation corresponds to someone who wants to use and/or contribute to the software.
+
+From GitHub::
+
+    git clone https://github.com/deephyper/deephyper.git
+    cd deephyper/
+    git checkout develop
+    pip install -e '.[analytics]'
+
+
 Documentation & Tests installation
-==================================
+----------------------------------
 
 If you want to install deephyper with test and documentation packages.
 
-From pypi::
+From PyPI::
 
     pip install 'deephyper[tests,docs]'
 
-From github::
+From Github::
 
     git clone https://github.com/deephyper/deephyper.git
     cd deephyper/

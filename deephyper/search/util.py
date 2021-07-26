@@ -30,24 +30,6 @@ def banner(message, color="HEADER"):
     else:
         print(msg)
 
-
-class Timer:
-    def __init__(self):
-        self.timings = {}
-
-    def start(self, name):
-        self.timings[name] = time.time()
-
-    def end(self, name):
-        try:
-            elapsed = time.time() - self.timings[name]
-        except KeyError:
-            print(f"TIMER error: never called timer.start({name})")
-        else:
-            print(f"TIMER {name}: {elapsed:.4f} seconds")
-            del self.timings[name]
-
-
 def conf_logger(name):
     global masterLogger
     # from mpi4py import MPI
