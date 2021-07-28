@@ -13,7 +13,8 @@ source $ACTIVATE_PYTHON_ENV
 
 {{ script_launch_ray_cluster }}
 
-ssh -n $head_node_ip "deephyper {{ mode }} {{ search }} --evaluator {{ evaluator }}  \
+ssh -n $head_node_ip "source $ACTIVATE_PYTHON_ENV; \
+    deephyper {{ mode }} {{ search }} --evaluator {{ evaluator }}  \
     --ray-address auto \
     --problem {{ problem }} \
     --run {{ run }} \
