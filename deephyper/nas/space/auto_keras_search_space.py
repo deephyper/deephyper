@@ -49,7 +49,7 @@ class AutoKSearchSpace(KSearchSpace):
             node = ConstantNode(name='OUTPUT_MERGE')
             op = Concatenate(self, self.output_node)
             node.set_op(op=op)
-        self.output_node = node
+            self.output_node = node
 
     def create_model(self):
         """Create the tensors corresponding to the search_space.
