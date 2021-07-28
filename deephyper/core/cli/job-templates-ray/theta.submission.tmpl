@@ -6,6 +6,7 @@
 #COBALT --attrs enable_ssh=1
 
 mkdir infos && cd infos
+exp_dir=$PWD
 
 ACTIVATE_PYTHON_ENV="{{ activation_script }}"
 echo "Script to activate Python env: $ACTIVATE_PYTHON_ENV"
@@ -13,7 +14,7 @@ source $ACTIVATE_PYTHON_ENV
 
 {{ script_launch_ray_cluster }}
 
-ssh $head_node_ip "source $ACTIVATE_PYTHON_ENV; \
+ssh $head_node_ip "source $ACTIVATE_PYTHON_ENV; cd $exp_dir; \
     deephyper {{ mode }} {{ search }} --evaluator {{ evaluator }}  \
     --ray-address auto \
     --problem {{ problem }} \
