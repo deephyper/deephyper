@@ -6,7 +6,7 @@ CPUS_PER_NODE=8
 # Getting the node names.
 
 # TODO: Adapt this part of the script be pure shell script.
-nodes_array=($(python -m deephyper.core.cli.cobalt_nodelist | tr -d '[],'))
+nodes_array=($(python -m deephyper.core.cli.cobalt_nodelist | grep -P '\[.*\]' | tr -d '[],'))
 
 head_node=${nodes_array[0]}
 head_node_ip=$(eval "getent hosts $head_node"| awk {'print $1'})
