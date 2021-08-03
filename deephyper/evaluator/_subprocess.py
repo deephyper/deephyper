@@ -5,6 +5,7 @@ import time
 from collections import defaultdict, namedtuple
 
 from deephyper.evaluator.evaluate import Evaluator
+from deephyper.core.exceptions import DeephyperRuntimeError
 
 logger = logging.getLogger(__name__)
 
@@ -96,6 +97,12 @@ class SubprocessEvaluator(Evaluator):
 
     def __init__(self, run_function, cache_key=None, **kwargs):
         super().__init__(run_function, cache_key)
+        moduleName = self._run_function.__module__
+        if moduleName == "__main__":
+            raise DeephyperRuntimeError(
+                f'Evaluator will not execute function " {run_function.__name__}" because it is in the __main__ module.  Please provide a function imported from an external module!'
+            )
+
         self.num_workers = 1
         logger.info(
             f"Subprocess Evaluator will execute {self._run_function.__name__}() from module {self._run_function.__module__}"

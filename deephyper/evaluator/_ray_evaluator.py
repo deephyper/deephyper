@@ -77,7 +77,7 @@ class RayEvaluator(Evaluator):
         self,
         run_function,
         cache_key=None,
-        ray_address="auto",
+        ray_address=None,
         ray_password="5241590000000000",
         driver_num_cpus=None,
         driver_num_gpus=None,

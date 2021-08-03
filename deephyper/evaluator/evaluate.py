@@ -8,14 +8,20 @@ import uuid
 from collections import OrderedDict
 from contextlib import suppress as dummy_context
 from math import isnan
+import importlib
 
 import numpy as np
 from deephyper.core.exceptions import DeephyperRuntimeError
 from deephyper.evaluator import runner
 from deephyper.evaluator.encoder import Encoder
 
-logger = logging.getLogger(__name__)
-
+EVALUATORS = {
+    "thread": "_threadPool.ThreadPoolEvaluator",
+    "process": "_process.ProcessPoolEvaluator",
+    "subprocess": "_subprocess.SubprocessEvaluator",
+    "ray": "_ray_evaluator.RayEvaluator",
+    "balsam": "_balsam.BalsamEvaluator"
+}
 
 class Evaluator:
     """The goal off the evaluator module is to have a set of objects which can helps us to run our task on different environments and with different system settings/properties.
@@ -74,85 +80,24 @@ class Evaluator:
         else:
             self._gen_uid = lambda d: self.encode(d)
 
-        moduleName = self._run_function.__module__
-        if moduleName == "__main__":
-            raise DeephyperRuntimeError(
-                f'Evaluator will not execute function " {run_function.__name__}" because it is in the __main__ module.  Please provide a function imported from an external module!'
-            )
-
     @staticmethod
     def create(
         run_function,
-        cache_key=None,
         method="subprocess",
-        ray_address=None,
-        ray_password=None,
-        num_workers=None,
-        **kwargs,
+        method_kwargs={},
     ):
-        available_methods = [
-            "balsam",
-            "subprocess",
-            "processPool",
-            "threadPool",
-            "__mpiPool",
-            "ray",
-            "rayhorovod",
-        ]
-
-        if not method in available_methods:
+        if not method in EVALUATORS:
             raise DeephyperRuntimeError(
                 f'The method "{method}" is not a valid method for an Evaluator!'
             )
 
-        if method == "balsam":
-            from deephyper.evaluator._balsam import BalsamEvaluator
+        # create the evaluator
+        mod_name, attr_name = EVALUATORS[method].split(".")
+        mod = importlib.import_module(f"deephyper.evaluator.{mod_name}")
+        eval_cls = getattr(mod, attr_name)
+        evaluator = eval_cls(run_function, **method_kwargs)
 
-            Eval = BalsamEvaluator(run_function, cache_key=cache_key, **kwargs)
-        elif method == "subprocess":
-            from deephyper.evaluator._subprocess import SubprocessEvaluator
-
-            Eval = SubprocessEvaluator(run_function, cache_key=cache_key, **kwargs)
-        elif method == "processPool":
-            from deephyper.evaluator._processPool import ProcessPoolEvaluator
-
-            Eval = ProcessPoolEvaluator(run_function, cache_key=cache_key, **kwargs)
-        elif method == "threadPool":
-            from deephyper.evaluator._threadPool import ThreadPoolEvaluator
-
-            Eval = ThreadPoolEvaluator(run_function, cache_key=cache_key, **kwargs)
-        elif method == "__mpiPool":
-            from deephyper.evaluator._mpiWorkerPool import MPIWorkerPool
-
-            Eval = MPIWorkerPool(run_function, cache_key=cache_key, **kwargs)
-        elif method == "ray":
-            from deephyper.evaluator._ray_evaluator import RayEvaluator
-
-            Eval = RayEvaluator(
-                run_function,
-                cache_key=cache_key,
-                ray_address=ray_address,
-                ray_password=ray_password,
-                num_workers=num_workers,
-                **kwargs,
-            )
-        elif method == "rayhorovod":
-            from deephyper.evaluator._ray_horovod_evaluator import RayHorovodEvaluator
-
-            Eval = RayHorovodEvaluator(
-                run_function,
-                cache_key=cache_key,
-                ray_address=ray_address,
-                ray_password=ray_password,
-                num_workers=num_workers,
-                **kwargs,
-            )
-
-        # Override the number of workers if passed as an argument
-        if not (num_workers is None) and type(num_workers) is int:
-            Eval.num_workers = num_workers
-
-        return Eval
+        return evaluator
 
     def encode(self, x):
         if not isinstance(x, dict):
@@ -183,10 +128,10 @@ class Evaluator:
         uid = self._gen_uid(x)
         if uid in self.key_uid_map.values():
             self.stats["num_cache_used"] += 1
-            logger.info(f"UID: {uid} already evaluated; skipping execution")
+            logging.info(f"UID: {uid} already evaluated; skipping execution")
         else:
             future = self._eval_exec(x)
-            logger.info(f"Submitted new eval of {x}")
+            logging.info(f"Submitted new eval of {x}")
             future.uid = uid
             self.pending_evals[uid] = future
             self.uid_key_map[uid] = key
@@ -216,7 +161,7 @@ class Evaluator:
                 try:
                     y = float(line.split()[-1])
                 except ValueError:
-                    logger.exception("Could not parse DH-OUTPUT line:\n" + line)
+                    logging.exception("Could not parse DH-OUTPUT line:\n" + line)
                     y = fail_return_value
                 break
         if isnan(y):
@@ -250,9 +195,9 @@ class Evaluator:
         futures = {
             uid: self.pending_evals[uid] for uid in set(uids) if uid in self.pending_evals
         }
-        logger.info(f"Waiting on {len(futures)} evals to finish...")
+        logging.info(f"Waiting on {len(futures)} evals to finish...")
 
-        logger.info(f"Blocking on completion of {len(futures)} pending evals")
+        logging.info(f"Blocking on completion of {len(futures)} pending evals")
         self.wait(futures.values(), timeout=timeout, return_when="ALL_COMPLETED")
 
         # TODO: on TimeoutError, kill the evals that did not finish; return infinity
@@ -266,7 +211,7 @@ class Evaluator:
             y = self.finished_evals[uid]
             # same printing required in get_finished_evals because of logs parsing
             x = self.decode(key)
-            logger.info(f"Requested eval x: {x} y: {y}")
+            logging.info(f"Requested eval x: {x} y: {y}")
             try:
                 self.requested_evals.remove(key)
             except ValueError:
@@ -291,7 +236,7 @@ class Evaluator:
             for future in waitRes.done + waitRes.failed:
                 uid = future.uid
                 y = future.result()
-                logger.info(f"New eval finished: {uid} --> {y}")
+                logging.info(f"New eval finished: {uid} --> {y}")
                 self.elapsed_times[uid] = self._elapsed_sec()
                 del self.pending_evals[uid]
                 self.finished_evals[uid] = y
@@ -302,7 +247,7 @@ class Evaluator:
                 self.requested_evals.remove(key)
                 x = self.decode(key)
                 y = self.clip_value(self.finished_evals[uid])
-                logger.info(f"Requested eval x: {x} y: {y}")
+                logging.info(f"Requested eval x: {x} y: {y}")
                 yield (x, y)
 
     def clip_value(self, y: float) -> float:
@@ -322,7 +267,7 @@ class Evaluator:
 
     def num_free_workers(self):
         num_evals = len(self.pending_evals)
-        logger.debug(f"{num_evals} pending evals; {self.num_workers} workers")
+        logging.debug(f"{num_evals} pending evals; {self.num_workers} workers")
         return max(self.num_workers - num_evals, 0)
 
     def convert_for_csv(self, val):
