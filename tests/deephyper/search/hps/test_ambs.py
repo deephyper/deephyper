@@ -13,7 +13,7 @@ problem.add_hyperparameter((0.0, 10.0), "x")
 def run(hp):
     return hp["x"]
 
-evaluator = Evaluator.create(run, method="ray", method_kwargs={})
+evaluator = Evaluator.create(run, method="ray", method_kwargs={"num_cpus": 8})
 
 search = AMBS(problem, evaluator)
 

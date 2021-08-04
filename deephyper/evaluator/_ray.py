@@ -14,17 +14,26 @@ class RayEvaluator(Evaluator):
         run_function,
         ray_address=None,
         ray_password=None,
+        num_cpus=None,
+        num_gpus=None,
         num_cpus_per_task=1,
         num_gpus_per_task=None,
         num_workers=None,
         ):
         super().__init__(run_function, num_workers)
 
+        ray_kwargs = {}
+        if ray_address is not None:
+            ray_kwargs["address"] = ray_address
+        if ray_password is not None:
+            ray_kwargs["_redis_password"] = ray_password
+        if num_cpus is not None:
+            ray_kwargs["num_cpus"] = num_cpus
+        if num_gpus is not None:
+            ray_kwargs["num_gpus"] = num_gpus
+
         if not(ray.is_initialized()):
-            if not ray_address is None:
-                ray.init(address=ray_address, _redis_password=ray_password)
-            else:
-                ray.init()
+            ray.init(**ray_kwargs)
 
         self.num_cpus_per_task = num_cpus_per_task
         self.num_gpus_per_task = num_gpus_per_task
