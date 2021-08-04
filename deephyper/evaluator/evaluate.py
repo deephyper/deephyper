@@ -1,38 +1,33 @@
+import asyncio
 import csv
+import importlib
 import json
-import logging
 import os
 import sys
 import time
-import uuid
-from collections import OrderedDict
-from contextlib import suppress as dummy_context
-from math import isnan
-import importlib
+import warnings
+from typing import Dict, List
 
 import numpy as np
 from deephyper.core.exceptions import DeephyperRuntimeError
-from deephyper.evaluator import runner
-from deephyper.evaluator.encoder import Encoder
+from deephyper.evaluator.job import Job
 
 EVALUATORS = {
-    "thread": "_threadPool.ThreadPoolEvaluator",
-    "process": "_process.ProcessPoolEvaluator",
+    "thread": "_thread_pool.ThreadPoolEvaluator",
+    "process": "_process_pool.ProcessPoolEvaluator",
     "subprocess": "_subprocess.SubprocessEvaluator",
-    "ray": "_ray_evaluator.RayEvaluator",
-    "balsam": "_balsam.BalsamEvaluator"
+    "ray": "_ray.RayEvaluator",
+    # "balsam": "_balsam.BalsamEvaluator" # TODO
 }
 
-class Evaluator:
-    """The goal off the evaluator module is to have a set of objects which can helps us to run our task on different environments and with different system settings/properties.
 
-    Args:
-        run_function (Callable): the function to execute, it must be a callable and should not be defined in the `__main__` module.
-        cache_key (Callable, str, optional): A way of defining how to use cached results. When an evaluation is done a corresponding uuid is generated, if an new evaluation as a already known uuid then the past result will be re-used. You have different ways to define how to generate an uuid. If `None` then the whole  parameter `dict` (corresponding to the evaluation) will be serialized and used as a uuid (it may raise an exception if it's not serializable, please use the `encoder` parameter to use a custom `json.JSONEncoder`). If callable then the parameter dict will be passed to the callable which must return an uuid. If `'uuid'` then the `uuid.uuid4()` will be used for every new evaluation. Defaults to None.
+class Evaluator:
+    """This evaluator module asynchronously manages a series of Job objects to help execute given HPS or NAS tasks on various environments with differing system settings and properties.
 
     Raises:
         DeephyperRuntimeError: raised if the `cache_key` parameter is not None, a callable or equal to 'uuid'.
         DeephyperRuntimeError: raised if the `run_function` parameter is from the`__main__` module.
+
     """
 
     FAIL_RETURN_VALUE = np.finfo(np.float32).min
@@ -42,51 +37,55 @@ class Evaluator:
     def __init__(
         self,
         run_function,
-        cache_key=None,
-        encoder=Encoder,
-        seed=None,
-        num_workers=None,
-        **kwargs,
+        num_workers=1,
     ):
-        self.encoder = encoder  # dict --> uuid
-        self.pending_evals = {}  # uid --> Future
-        self.finished_evals = OrderedDict()  # uid --> scalar
-        self.requested_evals = []  # keys
-        self.key_uid_map = {}  # map keys to uids
-        self.uid_key_map = {}  # map uids to keys
-        self.seed = seed
-        self.seed_high = 2 ** 32  # exclusive
-        self.min_val = np.finfo(np.float32).min
-        self.max_val = np.finfo(np.float32).max
+        self.run_function = run_function  # User-defined run function.
+        self.num_workers = (
+            num_workers  # Number of processors used for completing some job.
+        )
+        self.jobs = []  # Job objects currently submitted.
+        self.n_jobs = 1
+        self.num_cpus_per_task = 1
+        self.num_gpus_per_task = None
+        self._tasks_running = []  # List of AsyncIO Task objects currently running.
+        self._tasks_done = []  # Temp list to hold completed tasks from asyncio.
+        self._tasks_pending = []  # Temp list to hold pending tasks from asyncio.
+        self.jobs_done = []  # List used to store all jobs completed by the evaluator.
+        self.timestamp = (
+            time.time()
+        )  # Recorded time of when this evaluator interface was created.
+        self._loop = None  # Event loop for asyncio.
+        self._start_dumping = False
 
-        self.stats = {"num_cache_used": 0}
+        # moduleName = self.run_function.__module__
+        # if moduleName == "__main__":
+        #     raise DeephyperRuntimeError(
+        #         f'Evaluator will not execute function " {run_function.__name__}" because it is in the __main__ module.  Please provide a function imported from an external module!'
+        #     )
 
-        self.transaction_context = dummy_context
-        self._start_sec = time.time()
-        self.elapsed_times = {}
+    async def _get_at_least_n_tasks(self, n):
+        # If a user requests a batch size larger than the number of currently-running tasks, set n to the number of tasks running.
+        if n > len(self._tasks_running):
+            warnings.warn(
+                f"Requested a batch size ({n}) larger than currently running tasks ({len(self._tasks_running)}). Batch size has been set to the count of currently running tasks."
+            )
+            n = len(self._tasks_running)
 
-        self._run_function = run_function
-        self.num_workers = num_workers
+        while len(self._tasks_done) < n:
+            self._tasks_done, self._tasks_pending = await asyncio.wait(
+                self._tasks_running, return_when="FIRST_COMPLETED"
+            )
 
-        if (cache_key is not None) and (cache_key != "to_dict"):
-            if callable(cache_key):
-                self._gen_uid = cache_key
-            elif cache_key == "uuid":
-                self._gen_uid = lambda d: uuid.uuid4()
-            else:
-                raise DeephyperRuntimeError(
-                    'The "cache_key" parameter of an Evaluator must be a callable!'
-                )
-        else:
-            self._gen_uid = lambda d: self.encode(d)
+    async def _run_jobs(self, configs):
+        for config in configs:
+            new_job = self.create_job(config)
+            self._on_launch(new_job)
+            task = self.loop.create_task(self.execute(new_job))
+            self._tasks_running.append(task)
 
-    @staticmethod
-    def create(
-        run_function,
-        method="subprocess",
-        method_kwargs={},
-    ):
-        if not method in EVALUATORS:
+    def create(run_function, method="subprocess", method_kwargs={}):
+
+        if not method in EVALUATORS.keys():
             raise DeephyperRuntimeError(
                 f'The method "{method}" is not a valid method for an Evaluator!'
             )
@@ -99,14 +98,77 @@ class Evaluator:
 
         return evaluator
 
-    def encode(self, x):
-        if not isinstance(x, dict):
-            raise ValueError(f"Expected dict, but got {type(x)}")
-        x["id"] = uuid.uuid1()
-        return json.dumps(x, cls=self.encoder)
+    def _on_launch(self, job):
+        job.status = job.RUNNING
 
-    def _elapsed_sec(self):
-        return time.time() - self._start_sec
+        job.duration = time.time()
+
+    def _on_done(self, job):
+        job.status = job.DONE
+
+        job.duration = time.time() - job.duration
+        job.elapsed_sec = time.time() - self.timestamp
+
+    async def execute(self, job):
+        raise NotImplementedError
+
+    def submit(self, configs: List[Dict]):
+        self.loop = asyncio.get_event_loop()
+        self.loop.run_until_complete(self._run_jobs(configs))
+        return self.jobs
+
+    def gather(self, type, size=1):
+        """Collect the completed tasks from the evaluator in batches of one or more.
+
+        Args:
+            type ([type]):
+                Options:
+                    "ALL"
+                        Collect all jobs submitted to the evaluator.
+                        Ex.) eval.gather("ALL")
+                    "BATCH"
+                        Specify a minimum batch size of jobs to collect from the evaluator.
+            size (int, optional): The minimum batch size that we want to collect from the evaluator. Defaults to 1.
+
+        Raises:
+            Exception: Raised when a gather operation other than "ALL" or "BATCH" is provided.
+
+        Returns:
+            List[Job]: A batch of completed jobs that is at minimum the given size.
+        """
+        assert type in ["ALL", "BATCH"], f"Unsupported gather operation: {type}."
+
+        results = []
+
+        if type == "ALL":
+            size = len(self._tasks_running)  # Get all tasks.
+
+        self.loop.run_until_complete(self._get_at_least_n_tasks(size))
+        for task in self._tasks_done:
+            job = task.result()
+            self._on_done(job)
+            results.append(job)
+            self.jobs_done.append(job)
+            self._tasks_running.remove(task)
+
+        self._tasks_done = []
+        self._tasks_pending = []
+        return results
+
+    def create_job(self, config):
+        new_job = Job(
+            self.n_jobs,
+            2021,
+            config,
+            self.run_function,
+            self.num_workers,
+            self.num_cpus_per_task,
+            self.num_gpus_per_task,
+        )
+        self.n_jobs += 1  #! @Romain: we can use integers if it is enough, uuid can become useful if jobs'id are generated in parallel
+        self.jobs.append(new_job)
+
+        return new_job
 
     def decode(self, key):
         """from JSON string to x (list)"""
@@ -115,214 +177,37 @@ class Evaluator:
             raise ValueError(f"Expected dict, but got {type(x)}")
         return x
 
-    def add_eval(self, x):
-        if (
-            x.get("seed") is not None or self.seed is not None
-        ):  # numpy seed fixed in Search.__init__
-            x["seed"] = np.random.randint(
-                0, self.seed_high
-            )  # must be between (0, 2**32-1)
-
-        key = self.encode(x)
-        self.requested_evals.append(key)
-        uid = self._gen_uid(x)
-        if uid in self.key_uid_map.values():
-            self.stats["num_cache_used"] += 1
-            logging.info(f"UID: {uid} already evaluated; skipping execution")
-        else:
-            future = self._eval_exec(x)
-            logging.info(f"Submitted new eval of {x}")
-            future.uid = uid
-            self.pending_evals[uid] = future
-            self.uid_key_map[uid] = key
-        self.key_uid_map[key] = uid
-        return uid
-
-    def add_eval_batch(self, XX):
-        uids = []
-        with self.transaction_context():
-            for x in XX:
-                uid = self.add_eval(x)
-                uids.append(uid)
-        return uids
-
-    def _eval_exec(self, x):
-        raise NotImplementedError
-
-    def wait(self, futures, timeout=None, return_when="ANY_COMPLETED"):
-        raise NotImplementedError
-
-    @staticmethod
-    def _parse(run_stdout):
-        fail_return_value = Evaluator.FAIL_RETURN_VALUE
-        y = fail_return_value
-        for line in run_stdout.split("\n"):
-            if "DH-OUTPUT:" in line.upper():
-                try:
-                    y = float(line.split()[-1])
-                except ValueError:
-                    logging.exception("Could not parse DH-OUTPUT line:\n" + line)
-                    y = fail_return_value
-                break
-        if isnan(y):
-            y = fail_return_value
-        return y
-
-    @property
-    def _runner_executable(self):
-        funcName = self._run_function.__name__
-        moduleName = self._run_function.__module__
-        assert moduleName != "__main__"
-        module = sys.modules[moduleName]
-        modulePath = os.path.dirname(os.path.abspath(module.__file__))
-        runnerPath = os.path.abspath(runner.__file__)
-        runner_exec = " ".join(
-            (self.PYTHON_EXE, runnerPath, modulePath, moduleName, funcName)
-        )
-        return runner_exec
-
-    def await_evals(self, uids, timeout=None) -> list:
-        """Waiting for a collection of tasks.
-
-        Args:
-            uids (list(uid)): the list of X values that we are waiting to finish.
-            timeout (float, optional): waiting time if a float, or infinite waiting time if None
-
-        Returns:
-            list: list of results from awaited task.
-        """
-        keys = [self.uid_key_map[uid] for uid in uids]
-        futures = {
-            uid: self.pending_evals[uid] for uid in set(uids) if uid in self.pending_evals
-        }
-        logging.info(f"Waiting on {len(futures)} evals to finish...")
-
-        logging.info(f"Blocking on completion of {len(futures)} pending evals")
-        self.wait(futures.values(), timeout=timeout, return_when="ALL_COMPLETED")
-
-        # TODO: on TimeoutError, kill the evals that did not finish; return infinity
-        for uid in futures:
-            y = self.clip_value(futures[uid].result())
-            self.elapsed_times[uid] = self._elapsed_sec()
-            del self.pending_evals[uid]
-            self.finished_evals[uid] = y
-
-        for (key, uid) in zip(keys, uids):
-            y = self.finished_evals[uid]
-            # same printing required in get_finished_evals because of logs parsing
-            x = self.decode(key)
-            logging.info(f"Requested eval x: {x} y: {y}")
-            try:
-                self.requested_evals.remove(key)
-            except ValueError:
-                pass
-            yield (x, y)
-
-    def get_finished_evals(self, timeout=0.5, mode="async"):
-        assert mode in ["async", "sync"]
-
-        if mode == "sync":
-            return_when = "ALL_COMPLETED"
-            timeout = None
-        else: # mode == "async"
-            return_when = "ANY_COMPLETED"
-
-        futures = self.pending_evals.values()
-        try:
-            waitRes = self.wait(futures, timeout=timeout, return_when=return_when)
-        except TimeoutError:
-            pass
-        else:
-            for future in waitRes.done + waitRes.failed:
-                uid = future.uid
-                y = future.result()
-                logging.info(f"New eval finished: {uid} --> {y}")
-                self.elapsed_times[uid] = self._elapsed_sec()
-                del self.pending_evals[uid]
-                self.finished_evals[uid] = y
-
-        for key in self.requested_evals[:]:
-            uid = self.key_uid_map[key]
-            if uid in self.finished_evals:
-                self.requested_evals.remove(key)
-                x = self.decode(key)
-                y = self.clip_value(self.finished_evals[uid])
-                logging.info(f"Requested eval x: {x} y: {y}")
-                yield (x, y)
-
-    def clip_value(self, y: float) -> float:
-        """Clip the input value in allowed bound. Necessary to avoid errors in some optimizers.
-
-        Args:
-            y (float): the value to clip.
-
-        Returns:
-            float: the clipped value.
-        """
-        return min(max(y, self.min_val), self.max_val)
-
-    @property
-    def counter(self):
-        return len(self.finished_evals) + len(self.pending_evals)
-
-    def num_free_workers(self):
-        num_evals = len(self.pending_evals)
-        logging.debug(f"{num_evals} pending evals; {self.num_workers} workers")
-        return max(self.num_workers - num_evals, 0)
-
-    def convert_for_csv(self, val):
-        if type(val) is list:
-            return str(val)
-        else:
-            return val
-
     def dump_evals(self, saved_key: str = None, saved_keys: list = None):
-        """Dump evaluations to 'results.csv' file.
-
-        If both arguments are set to None, then all keys for all points will be added to the CSV file. Keys are columns and values are used to fill rows.
-
-        An example ``saved_keys`` argument can be:
-
-        >>> def saved_keys(self, val: dict):
-        >>>     res = {
-        >>>         "learning_rate": val["hyperparameters"]["learning_rate"],
-        >>>         "batch_size": val["hyperparameters"]["batch_size"],
-        >>>         "ranks_per_node": val["hyperparameters"]["ranks_per_node"],
-        >>>         "arch_seq": str(val["arch_seq"]),
-        >>>     }
-        >>>    return res
-
-        Args:
-            saved_key (str, optional): If is a key corresponding to an element of points which should be a list. Defaults to None.
-            saved_keys (list|callable, optional): If is a list of key corresponding to elements of points' dictonnaries then it will add them to the CSV file. If callable then the result has to be a dict where the keys will become columbns of the CSV. Defaults to None.
-
-
-        """
-        if not self.finished_evals:
-            return
+        """Dump evaluations to 'results.csv' file."""
 
         resultsList = []
 
-        for key, uid in self.key_uid_map.items():
-            if uid not in self.finished_evals:
-                continue
-
+        for job in self.jobs_done:
             if saved_key is None and saved_keys is None:
-                result = self.decode(key)
+                result = job.config
             elif type(saved_key) is str:
-                result = {str(i): v for i, v in enumerate(self.decode(key)[saved_key])}
+                result = {str(i): v for i, v in enumerate(job.config[saved_key])}
             elif type(saved_keys) is list:
-                decoded_key = self.decode(key)
+                decoded_key = job.config
                 result = {k: self.convert_for_csv(decoded_key[k]) for k in saved_keys}
             elif callable(saved_keys):
-                decoded_key = self.decode(key)
+                decoded_key = job.config
                 result = saved_keys(decoded_key)
-            result["objective"] = self.finished_evals[uid]
-            result["elapsed_sec"] = self.elapsed_times[uid]
+            result["objective"] = job.result
+            result[
+                "elapsed_sec"
+            ] = job.elapsed_sec  # Time to complete from the intitilization of evaluator.
+            result["duration"] = job.duration
             resultsList.append(result)
 
-        with open("results.csv", "w") as fp:
-            columns = resultsList[0].keys()
-            writer = csv.DictWriter(fp, columns)
-            writer.writeheader()
-            writer.writerows(resultsList)
+            self.jobs_done.remove(job)
+
+        if len(resultsList) != 0:
+            mode = "a" if self._start_dumping else "w"
+            with open("results.csv", mode) as fp:
+                columns = resultsList[0].keys()
+                writer = csv.DictWriter(fp, columns)
+                if not(self._start_dumping):
+                    writer.writeheader()
+                    self._start_dumping = True
+                writer.writerows(resultsList)

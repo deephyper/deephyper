@@ -63,17 +63,16 @@ class AMBS(Search):
 
         # Filling available nodes at start
         logging.info(f"Generating {self._evaluator.num_workers} initial points...")
-        self._evaluator.add_eval_batch(self.get_random_batch(size=self._n_initial_points))
+        self._evaluator.submit(self.get_random_batch(size=self._n_initial_points))
 
         # Main loop
         while max_evals < 0 or num_evals_done < max_evals:
-
+            print(num_evals_done)
             # Collecting finished evaluations
-            new_results = list(self._evaluator.get_finished_evals())
+            new_results = self._evaluator.gather("BATCH", size=1)
 
             if len(new_results) > 0:
-                stats = {"num_cache_used": self._evaluator.stats["num_cache_used"]}
-                logging.info(jm(type="env_stats", **stats))
+
                 self._evaluator.dump_evals()
 
                 num_received = len(new_results)
@@ -98,7 +97,7 @@ class AMBS(Search):
 
                 # submit_childs
                 if len(new_results) > 0:
-                    self._evaluator.add_eval_batch(new_batch)
+                    self._evaluator.submit(new_batch)
 
     def get_surrogate_model(self, name: str, n_jobs: int = None):
         """Get a surrogate model from Scikit-Optimize.

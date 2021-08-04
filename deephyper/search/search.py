@@ -26,13 +26,14 @@ class Search:
         raise SearchTerminationError
 
     def _set_timeout(self, timeout=None):
-        def handler(signum, frame):
-            self.terminate()
+        pass
+        # def handler(signum, frame):
+        #     self.terminate()
 
-        signal.signal(signal.SIGALRM, handler)
+        # signal.signal(signal.SIGALRM, handler)
 
-        if type(timeout) is int:
-            signal.alarm(timeout)
+        # if type(timeout) is int:
+        #     signal.alarm(timeout)
 
     def search(self, max_evals=-1, timeout=None):
 
