@@ -6,9 +6,8 @@ import ConfigSpace.hyperparameters as csh
 import numpy as np
 import pandas as pd
 import skopt
-from deephyper.core.exceptions import SearchTerminationError
 from deephyper.core.logs.logging import JsonMessage as jm
-from deephyper.search.base_search import Search
+from deephyper.search.search import Search
 
 
 class AMBS(Search):
@@ -25,7 +24,7 @@ class AMBS(Search):
         xi=0.001,
         liar_strategy="cl_min",
         n_jobs=1,  # 32 is good for Theta
-        **kwargs,
+        **kwargs
     ):
         super().__init__(problem, evaluator, random_state, log_dir, verbose)
 
@@ -43,6 +42,12 @@ class AMBS(Search):
             n_initial_points=self._n_initial_points,
             random_state=self._problem.seed,
         )
+
+    @classmethod
+    def get_parser(cls):
+        parser = super().get_parser()
+        parser.add_argument("--surrogate-model")
+        return parser
 
     def _setup_optimizer(self):
         if self._fitted:

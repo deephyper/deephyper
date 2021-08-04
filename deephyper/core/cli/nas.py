@@ -3,15 +3,15 @@ import os
 import sys
 import signal
 
-from deephyper.search.util import load_attr_from
+from deephyper.search.util import load_attr
 
 HPS_SEARCHES = {
-    "ambs": "deephyper.search.nas.ambs.AMBNeuralArchitectureSearch",
-    "random": "deephyper.search.nas.random.Random",
-    "regevo": "deephyper.search.nas.regevo.RegularizedEvolution",
-    "agebo": "deephyper.search.nas.agebo.AgEBO",
-    "ambsmixed": "deephyper.search.nas.ambsmixed.AMBSMixed",
-    "regevomixed": "deephyper.search.nas.regevomixed.RegularizedEvolutionMixed",
+    # "ambs": "deephyper.search.nas.ambs.AMBNeuralArchitectureSearch",
+    # "random": "deephyper.search.nas.random.Random",
+    # "regevo": "deephyper.search.nas.regevo.RegularizedEvolution",
+    # "agebo": "deephyper.search.nas.agebo.AgEBO",
+    # "ambsmixed": "deephyper.search.nas.ambsmixed.AMBSMixed",
+    # "regevomixed": "deephyper.search.nas.regevomixed.RegularizedEvolutionMixed",
 }
 
 
