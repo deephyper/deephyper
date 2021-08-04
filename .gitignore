@@ -175,3 +175,4 @@ _build/
 !_templates/*
 Icon
 docs/tutorials*/
+deephyper/old_search/
