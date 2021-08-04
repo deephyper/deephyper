@@ -7,7 +7,7 @@ from pprint import pformat
 
 import numpy as np
 from deephyper.evaluator.encoder import Encoder
-from deephyper.evaluator.evaluate import Evaluator
+from deephyper.evaluator.async_evaluate import AsyncEvaluator
 from deephyper.search import util
 
 logger = logging.getLogger(__name__)
@@ -64,12 +64,12 @@ class Search:
         logger.info(notice)
         util.banner(notice)
 
-        self.evaluator = Evaluator.create(
-            self.run_func,
+        self.evaluator = AsyncEvaluator.create(
+            run_function=self.run_func,
             method=evaluator,
-            num_nodes_master=num_nodes_master,
+            #num_nodes_master=num_nodes_master,
             num_workers=num_workers,
-            **kwargs,
+            #**kwargs,
         )
         self.num_workers = self.evaluator.num_workers
         self.max_evals = max_evals

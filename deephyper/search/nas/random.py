@@ -50,7 +50,7 @@ class Random(NeuralArchitectureSearch):
 
         num_evals_done = 0
         available_workers = self.free_workers
-
+        
         def gen_batch(size):
             batch = []
             for _ in range(size):
@@ -60,23 +60,26 @@ class Random(NeuralArchitectureSearch):
             return batch
 
         # Filling available nodes at start
-        self.evaluator.add_eval_batch(gen_batch(size=available_workers))
-
+        batch = gen_batch(size=available_workers)
+        print(batch.count)
+        self.evaluator.submit(batch)
+    
         # Main loop
         while num_evals_done < self.max_evals:
-            results = self.evaluator.get_finished_evals()
+            results = self.evaluator.gather("BATCH", 1)
 
             num_received = num_evals_done
-            for _ in results:
-                num_evals_done += 1
+            num_evals_done += len(results)
             num_received = num_evals_done - num_received
 
             # Filling available nodes
             if num_received > 0:
                 self.evaluator.dump_evals(saved_keys=self.saved_keys)
+                #self.evaluator.dump_evals()
 
                 if num_evals_done < self.max_evals:
-                    self.evaluator.add_eval_batch(gen_batch(size=num_received))
+                    self.evaluator.submit(gen_batch(size=num_received))
+        
 
 
 if __name__ == "__main__":
