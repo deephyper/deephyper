@@ -111,11 +111,14 @@ def main(
 
     # Detection of the host
     hostname = socket.gethostname()
-    # hostname = "thetagpusn1" # for debug
+    # hostname = "thetalogin1" # for debug
     host = None
     if "thetagpu" in hostname:
         host = "thetagpu"
         print("ThetaGPU detected")
+    elif "thetalogin" in hostname:
+        host = "theta"
+        print("Theta detected")
     else:
         print(f"There exist no submission policy for the current system: '{hostname}'")
         exit()
