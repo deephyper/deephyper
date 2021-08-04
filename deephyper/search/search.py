@@ -1,164 +1,114 @@
 import argparse
-import json
-import time
 import logging
-import os
-from pprint import pformat
+import signal
 
-import numpy as np
-from deephyper.evaluator.encoder import Encoder
-from deephyper.evaluator.async_evaluate import AsyncEvaluator
-from deephyper.search import util
-
-logger = logging.getLogger(__name__)
-
-
-class Namespace:
-    def __init__(self, **kwargs):
-        for k, v in kwargs.items():
-            self.__dict__[k] = v
+from deephyper.core.exceptions import SearchTerminationError
+from deephyper.evaluator.evaluate import EVALUATORS
 
 
 class Search:
-    """Abstract representation of a black box optimization search.
-
-    A search comprises 3 main objects: a problem, a run function and an evaluator:
-        The `problem` class defines the optimization problem, providing details like the search domain.  (You can find many kind of problems in `deephyper.benchmark`)
-        The `run` function executes the black box function/model and returns the objective value which is to be optimized.
-        The `evaluator` abstracts the run time environment (local, supercomputer...etc) in which run functions are executed.
-
-    Args:
-        problem (str): Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.hps.polynome2.Problem).
-        run (str): Module path to the run function you want to use for the search (e.g. deephyper.benchmark.hps.polynome2.run).
-        evaluator (str): value in ['balsam', 'ray',  'subprocess', 'processPool', 'threadPool'].
-        max_evals (int): the maximum number of evaluations to run. The exact behavior related to this parameter can vary in different search.
-    """
-
     def __init__(
-        self,
-        problem: str,
-        run: str,
-        evaluator: str,
-        max_evals: int = 1000000,
-        seed: int = None,
-        num_nodes_master: int = 1,
-        num_workers: int = None,
-        log_dir: int = None,
-        **kwargs,
+        self, problem, evaluator, random_state=None, log_dir=".", verbose=0, **kwargs
     ):
-        kwargs["problem"] = problem
-        kwargs["run"] = run
-        kwargs["evaluator"] = evaluator
-        kwargs["max_evals"] = max_evals  # * For retro compatibility
-        kwargs["seed"] = seed
+        self._problem = problem
+        self._evaluator = evaluator
+        self._random_state = random_state
+        self._log_dir = log_dir
+        self._verbose = verbose
 
-        # Loading problem instance and run function
-        self.problem = util.generic_loader(problem, "Problem")
-        if self.problem.seed == None:
-            self.problem.seed = seed
-        else:
-            kwargs["seed"] = self.problem.seed
-        self.run_func = util.generic_loader(run, "run")
+    def terminate(self):
+        """Terminate the search.
 
-        notice = f"Maximizing the return value of function: {run}"
-        logger.info(notice)
-        util.banner(notice)
-
-        self.evaluator = AsyncEvaluator.create(
-            run_function=self.run_func,
-            method=evaluator,
-            #num_nodes_master=num_nodes_master,
-            num_workers=num_workers,
-            #**kwargs,
-        )
-        self.num_workers = self.evaluator.num_workers
-        self.max_evals = max_evals
-        self.log_dir = os.getcwd() if log_dir is None else log_dir
-
-        # set the random seed
-        np.random.seed(self.problem.seed)
-
-        logger.info(f"Options: " + pformat(kwargs, indent=4))
-        logger.info(f"Created {evaluator} evaluator")
-        logger.info(f"Evaluator: num_workers is {self.num_workers}")
-        self.write_init_infos()
-
-    def write_init_infos(self):
-        infos = {}
-        infos["start_timestamp"] = time.time()
-        infos["num_workers"] = self.num_workers
-        infos["max_evals"] = self.max_evals
-        infos["problem"] = self.problem.space
-
-        path = os.path.join(self.log_dir, "init_infos.json")
-        with open(path, "w") as f:
-            json.dump(infos, f, cls=Encoder, indent=2)
-
-
-    def main(self):
-        raise NotImplementedError
-
-    @classmethod
-    def get_parser(cls, parser=None) -> argparse.ArgumentParser:
-        """Return the fully extended parser.
-
-        Returns:
-            ArgumentParser: the fully extended parser.
+        Raises:
+            SearchTerminationError: raised when the search is terminated with SIGALARM
         """
-        base_parser = cls._base_parser(parser)
-        parser = cls._extend_parser(base_parser)
-        return parser
+        logging.info("Search is being stopped!")
+        raise SearchTerminationError
 
-    @classmethod
-    def parse_args(cls, arg_str=None) -> None:
-        parser = cls.get_parser()
-        if arg_str is not None:
-            return parser.parse_args(arg_str)
-        else:
-            return parser.parse_args()
+    def _set_timeout(self, timeout=None):
+        def handler(signum, frame):
+            self.terminate()
 
-    @staticmethod
-    def _extend_parser(base_parser) -> argparse.ArgumentParser:
+        signal.signal(signal.SIGALRM, handler)
+
+        if type(timeout) is int:
+            signal.alarm(timeout)
+
+    def search(self, max_evals=-1, timeout=None):
+
+        self._set_timeout(timeout)
+
+        try:
+            self._search(max_evals, timeout)
+        except SearchTerminationError:
+            self._evaluator.dump_evals()
+
+    def _search(self, max_evals, timeout):
         raise NotImplementedError
 
-    @staticmethod
-    def _base_parser(parser=None) -> argparse.ArgumentParser:
-        if parser is None:
-            parser = argparse.ArgumentParser(conflict_handler="resolve")
+    @classmethod
+    def get_parser(cls):
+        parser = argparse.ArgumentParser(conflict_handler="resolve")
         parser.add_argument(
             "--problem",
-            help="Module path to the Problem instance you want to use for the search.",
+            required=True,
+            help="Python package path to the problem instance you want to use for the search. For example, 'dh_project.polynome2.problem.Problem'. It can also be the PATH to a Python script containing an attribute named 'Problem'.",
         )
         parser.add_argument(
             "--run",
-            help="Module path to the run function you want to use for the search.",
-        )
-        parser.add_argument(
-            "--max-evals", type=int, default=1000000, help="maximum number of evaluations"
-        )
-        parser.add_argument(
-            "--eval-timeout-minutes",
-            type=int,
-            default=4096,
-            help="Kill evals that take longer than this",
+            required=True,
+            help="Python package path to the run function you want to use for the evaluator. For example, 'dh_project.polynome2.model_run.run'. It can also be the PATH to a Python script containing an attribute named 'run'.",
         )
         parser.add_argument(
             "--evaluator",
             default="ray",
-            choices=[
-                "balsam",
-                "ray",
-                "rayhorovod",
-                "subprocess",
-                "processPool",
-                "threadPool",
-            ],
-            help="The evaluator is an object used to evaluate models.",
+            choices=list(EVALUATORS.keys()),
+            help="The evaluator used for the search.",
         )
+        parser.add_argument(
+            "--random-state", default=None, help="The random state of the search."
+        )
+        parser.add_argument(
+            "--log-dir",
+            default=".",
+            help="PATH to the folder where the logs are written.",
+        )
+        parser.add_argument(
+            "-v", "--verbose", type=bool, default=None, nargs="?", const=True
+        )
+        parser.add_argument(
+            "--max-evals",
+            type=int,
+            default=-1,
+            help="The maximum number of evaluations. If negative it will not stop based on the number of evaluations.",
+        )
+        parser.add_argument(
+            "--timeout",
+            type=int,
+            default=None,
+            help="The time budget (in seconds) of the search.",
+        )
+
+        #! Evaluator arguments
+        # global
+        parser.add_argument(
+            "--num-workers",
+            default=None,
+            type=int,
+            help="Number of parallel workers for the search. By default, it is being automatically computed depending on the chosen evaluator. If fixed then the default number of workers is override by this value.",
+        )
+        parser.add_argument(
+            "--cache-key",
+            default="uuid",
+            choices=["uuid", "to_dict"],
+            help="Cache policy.",
+        )
+
+        # ray evaluator
         parser.add_argument(
             "--ray-address",
             default="",
-            help='This parameter is mandatory when using evaluator==ray. It reference the "IP:PORT" redis address for the RAY-driver to connect on the RAY-head.',
+            help="This parameter is mandatory when using evaluator==ray. It reference the 'IP:PORT' redis address for the RAY-driver to connect on the RAY-head.",
         )
         parser.add_argument(
             "--ray-password",
@@ -169,33 +119,28 @@ class Search:
             "--driver-num-cpus",
             type=int,
             default=None,
-            help="Valid only if evaluator==ray",
+            help="Valid only if 'evaluator == ray'.",
         )
         parser.add_argument(
             "--driver-num-gpus",
             type=int,
             default=None,
-            help="Valid only when evaluator==ray",
+            help="Valid only when 'evaluator == ray'.",
         )
         parser.add_argument(
             "--num-cpus-per-task",
             type=int,
             default=1,
-            help="Valid only if evaluator==ray",
+            help="Valid only if 'evaluator == ray'.",
         )
         parser.add_argument(
             "--num-gpus-per-task",
             type=int,
             default=None,
-            help="Valid only when evaluator==ray",
+            help="Valid only when 'evaluator == ray'.",
         )
-        parser.add_argument("--seed", default=None, help="Random seed used.")
-        parser.add_argument(
-            "--cache-key",
-            default="uuid",
-            choices=["uuid", "to_dict"],
-            help="Cache policy.",
-        )
+
+        # balsam evaluator
         parser.add_argument(
             "--num-ranks-per-node",
             default=1,
@@ -226,16 +171,5 @@ class Search:
             type=int,
             help="Number of threads per node. Only valid if evaluator==balsam and balsam job-mode is 'mpi'.",
         )
-        parser.add_argument(
-            "--num-workers",
-            default=None,
-            type=int,
-            help="Number of parallel workers for the search. By default, it is being automatically computed depending on the chosen evaluator. If fixed then the default number of workers is override by this value.",
-        )
-        parser.add_argument(
-            "--log-dir",
-            default=None,
-            type=str,
-            help="Path of the directory where to store information about the run.",
-        )
+
         return parser

@@ -15,7 +15,6 @@ from deephyper.evaluator.encoder import Encoder
 from deephyper.search import util
 from deephyper.nas.lr_scheduler import exponential_decay
 
-logger = util.conf_logger("deephyper.search.nas.run")
 
 
 default_callbacks_config = {
@@ -126,7 +125,7 @@ def setup_data(config: dict, add_to_config: bool = True) -> tuple:
     load_data = config["load_data"]["func"]
     kwargs = config["load_data"].get("kwargs")
     data = load_data() if kwargs is None else load_data(**kwargs)
-    logger.info(f"Data loaded with kwargs: {kwargs}")
+    logging.info(f"Data loaded with kwargs: {kwargs}")
 
     # Set data shape
     if type(data) is tuple:
@@ -201,8 +200,8 @@ def setup_data(config: dict, add_to_config: bool = True) -> tuple:
     ):  # basicaly means data with shape=(num_elements) == (num_elements, 1)
         output_shape = (1,)
 
-    logger.info(f"input_shape: {input_shape}")
-    logger.info(f"output_shape: {output_shape}")
+    logging.info(f"input_shape: {input_shape}")
+    logging.info(f"output_shape: {output_shape}")
 
     if add_to_config:
         return input_shape, output_shape
@@ -227,7 +226,7 @@ def setup_search_space(config, input_shape, output_shape, seed):
     search_space = get_search_space(config, input_shape, output_shape, seed)
 
     arch_seq = config["arch_seq"]
-    logger.info(f"actions list: {arch_seq}")
+    logging.info(f"actions list: {arch_seq}")
     search_space.set_ops(arch_seq)
 
     return search_space
@@ -340,7 +339,7 @@ class HistorySaver:
         if not (os.path.exists(self.history_dir)):
             pathlib.Path(self.history_dir).mkdir(parents=True, exist_ok=True)
 
-        logger.info(f"Saving history at: {self.history_path}")
+        logging.info(f"Saving history at: {self.history_path}")
 
         with open(self.history_path, "w") as f:
             json.dump(history, f, cls=Encoder)
@@ -367,7 +366,7 @@ def save_history(log_dir: str, history: dict, config: dict):
         history_path = os.path.join(
             history_path, f"{now}oo{hash_arch_seq(config['arch_seq'])}.json"
         )
-        logger.info(f"Saving history at: {history_path}")
+        logging.info(f"Saving history at: {history_path}")
 
         with open(history_path, "w") as f:
             json.dump(history, f, cls=Encoder)

@@ -42,7 +42,7 @@ def add_subparser(subparsers):
         choices=["ambs", "regevo", "random", "agebo", "ambsmixed", "regevomixed"],
         help="Search strategy",
     )
-    subparser.add_argument("-w", "--workflow", help="Unique workflow name")
+    subparser.add_argument("-w", "--workflow", required=True, help="Unique workflow name")
     subparser.add_argument(
         "-p", "--problem", required=True, help="Problem definition path or object"
     )
@@ -110,7 +110,7 @@ def validate(mode: str, search: str, workflow: str, problem: str, run: str) -> s
         raise DeephyperRuntimeError(f"The mode '{mode}' is not valid!")
 
     # validate the search
-    if not (search.upper()in APPS[mode.upper()]):
+    if not (search.upper() in APPS[mode.upper()]):
         raise DeephyperRuntimeError(f"The search '{search}' is not valid!")
     app = f"{mode.upper()}-{search.upper()}"
 
@@ -120,7 +120,7 @@ def validate(mode: str, search: str, workflow: str, problem: str, run: str) -> s
     print("OK", flush=True)
 
     # validate run
-    if run: # it is not mandatory to pass a run function for NAS
+    if run:  # it is not mandatory to pass a run function for NAS
         print("Validating run...", end="", flush=True)
         run = generic_loader(run, "run")
         assert callable(run), f"{run} must be a a callable"
@@ -152,9 +152,7 @@ def bootstrap_apps():
                 app.save()
 
 
-def pre_submit(
-        mode: str, search: str, workflow: str, problem: str, run: str
-):
+def pre_submit(mode: str, search: str, workflow: str, problem: str, run: str):
     """Validate command line; prepare apps"""
 
     app = validate(mode, search, workflow, problem, run)

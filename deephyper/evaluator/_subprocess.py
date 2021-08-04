@@ -34,18 +34,18 @@ class SubprocessEvaluator(AsyncEvaluator):
                 sys.executable, '-c', code,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE)
-            
+
             # Retrieve the stdout byte array from the (stdout, stderr) tuple returned from the subprocess.
             byte_arr = (await proc.communicate())[0]
 
-            # Search through the byte array using a regular expression and collect the return value of the user-defined function. 
+            # Search through the byte array using a regular expression and collect the return value of the user-defined function.
             retval_bytes = re.search(b'DH-OUTPUT:(.+)\n', byte_arr).group(1)
             # Finally, parse whether the return value from the user-defined function is a scalar, a list, or a dictionary.
             retval = retval_bytes.replace(b"\'", b"\"") # For dictionaries, replace single quotes with double quotes!
             sol = json.loads(retval)
 
             await proc.wait()
-            
+
             job.duration = time.time() - start_time
             job.status = job.DONE
             job.result = (job.config, sol)
