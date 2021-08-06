@@ -2,9 +2,9 @@
 DeepHyper is a scalable automated machine learning (`AutoML <https://en.wikipedia.org/wiki/Automated_machine_learning>`_) package for developing deep neural networks for scientific applications.
 It comprises two components:
 
-* :ref:`create-new-nas-problem`: fully-automated search for high-performing deep neural network architectures
+* :ref:`tutorial-04`: fully-automated search for high-performing deep neural network architectures
 
-* :ref:`tutorial-hps-deep-learning-basic`: optimizing hyperparameters for a given reference model
+* :ref:`tutorial-01`: optimizing hyperparameters for a given reference model
 
 
 DeepHyper provides an infrastructure that targets experimental research in NAS and HPS methods, scalability, and portability across diverse supercomputers.
@@ -17,7 +17,7 @@ It comprises three modules:
 * :mod:`deephyper.search`: Search methods for NAS and HPS.  By extending the generic `Search` class, one can easily add new NAS or HPS methods to DeepHyper.
 
 
-DeepHyper installation requires **Python 3.7**.
+DeepHyper installation requires **Python >= 3.7**.
 
 """
 import os
