@@ -175,3 +175,5 @@ _build/
 !_templates/*
 Icon
 docs/tutorials*/
+
+old_*/
