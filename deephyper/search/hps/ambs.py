@@ -67,7 +67,7 @@ class AMBS(Search):
 
         # Main loop
         while max_evals < 0 or num_evals_done < max_evals:
-            print(num_evals_done)
+            print(f"i={num_evals_done}")
             # Collecting finished evaluations
             new_results = self._evaluator.gather("BATCH", size=1)
 

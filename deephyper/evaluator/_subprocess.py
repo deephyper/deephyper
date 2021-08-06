@@ -29,18 +29,15 @@ class SubprocessEvaluator(Evaluator):
             module_path = os.path.dirname(script_file)
             module_name = os.path.basename(script_file)[:-3]
             # Code that will run on the subprocess.
-            code = f"import sys; sys.path.append('{module_path}'); from {module_name} import {self.run_function.__name__}; print('DH-OUTPUT:' + str({self.run_function.__name__}({job.config})))"
-            print("exe: ", code)
+            code = f"import sys; sys.path.insert(1, '{module_path}'); from {module_name} import {self.run_function.__name__}; print('DH-OUTPUT:' + str({self.run_function.__name__}({job.config})))"
             proc = await asyncio.create_subprocess_exec(
                 sys.executable, '-c', code,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE)
-
             # Retrieve the stdout byte array from the (stdout, stderr) tuple returned from the subprocess.
-            byte_arr = (await proc.communicate())[0]
-            print("outpout: ", byte_arr)
+            stdout, stderr = await proc.communicate()
             # Search through the byte array using a regular expression and collect the return value of the user-defined function.
-            retval_bytes = re.search(b'DH-OUTPUT:(.+)\n', byte_arr).group(1)
+            retval_bytes = re.search(b'DH-OUTPUT:(.+)\n', stdout).group(1)
             # Finally, parse whether the return value from the user-defined function is a scalar, a list, or a dictionary.
             retval = retval_bytes.replace(b"\'", b"\"") # For dictionaries, replace single quotes with double quotes!
             sol = json.loads(retval)
