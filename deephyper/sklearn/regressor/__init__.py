@@ -18,9 +18,9 @@ AutoML searches are executed with the ``deephyper.search.hps.ambs`` algorithm on
 
     Problem = HpProblem(seed=45)
 
-    classifier = Problem.add_hyperparameter(
-        name="classifier",
-        value=["RandomForest", "Logistic", "AdaBoost", "KNeighbors", "MLP", "SVC", "XGBoost"],
+    regressor = Problem.add_hyperparameter(
+        name="regressor",
+        value=["RandomForest", "Linear", "AdaBoost", "KNeighbors", "MLP", "SVR", "XGBoost"],
     )
 
     # n_estimators
@@ -29,8 +29,8 @@ AutoML searches are executed with the ``deephyper.search.hps.ambs`` algorithm on
     )
 
     cond_n_estimators = cs.OrConjunction(
-        cs.EqualsCondition(n_estimators, classifier, "RandomForest"),
-        cs.EqualsCondition(n_estimators, classifier, "AdaBoost"),
+        cs.EqualsCondition(n_estimators, regressor, "RandomForest"),
+        cs.EqualsCondition(n_estimators, regressor, "AdaBoost"),
     )
 
     Problem.add_condition(cond_n_estimators)
@@ -38,31 +38,28 @@ AutoML searches are executed with the ``deephyper.search.hps.ambs`` algorithm on
     # max_depth
     max_depth = Problem.add_hyperparameter(name="max_depth", value=(2, 100, "log-uniform"))
 
-    cond_max_depth = cs.EqualsCondition(max_depth, classifier, "RandomForest")
+    cond_max_depth = cs.EqualsCondition(max_depth, regressor, "RandomForest")
 
     Problem.add_condition(cond_max_depth)
 
     # n_neighbors
     n_neighbors = Problem.add_hyperparameter(name="n_neighbors", value=(1, 100))
 
-    cond_n_neighbors = cs.EqualsCondition(n_neighbors, classifier, "KNeighbors")
+    cond_n_neighbors = cs.EqualsCondition(n_neighbors, regressor, "KNeighbors")
 
     Problem.add_condition(cond_n_neighbors)
 
     # alpha
     alpha = Problem.add_hyperparameter(name="alpha", value=(1e-5, 10.0, "log-uniform"))
 
-    cond_alpha = cs.EqualsCondition(alpha, classifier, "MLP")
+    cond_alpha = cs.EqualsCondition(alpha, regressor, "MLP")
 
     Problem.add_condition(cond_alpha)
 
     # C
     C = Problem.add_hyperparameter(name="C", value=(1e-5, 10.0, "log-uniform"))
 
-    cond_C = cs.OrConjunction(
-        cs.EqualsCondition(C, classifier, "Logistic"),
-        cs.EqualsCondition(C, classifier, "SVC"),
-    )
+    cond_C = cs.EqualsCondition(C, regressor, "SVR")
 
     Problem.add_condition(cond_C)
 
@@ -71,7 +68,7 @@ AutoML searches are executed with the ``deephyper.search.hps.ambs`` algorithm on
         name="kernel", value=["linear", "poly", "rbf", "sigmoid"]
     )
 
-    cond_kernel = cs.EqualsCondition(kernel, classifier, "SVC")
+    cond_kernel = cs.EqualsCondition(kernel, regressor, "SVR")
 
     Problem.add_condition(cond_kernel)
 
@@ -97,9 +94,9 @@ The problem to use with the ``--problem`` argument is ``deephyper.sklearn.regres
 
 
     def load_data():
-        from sklearn.datasets import load_breast_cancer
+        from sklearn.datasets import load_boston
 
-        X, y = load_breast_cancer(return_X_y=True)
+        X, y = load_boston(return_X_y=True)
         print(np.shape(X))
         print(np.shape(y))
         return X, y

@@ -6,25 +6,14 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-try:
-    from balsam.core.models import BalsamJob, process_job_times, utilization_report
-
-    if os.environ.get("BALSAM_SPHINX_DOC_BUILD_ONLY") == "TRUE":
-        BALSAM_EXIST = False
-        logger.warning("Module: 'balsam' module was found but not connected to a databse.")
-    else:
-        BALSAM_EXIST = True
-        logger.warning("Module: 'balsam' module was found and connected to a databse.")
-except ModuleNotFoundError as err:
-    BALSAM_EXIST = False
-    logger.warning("Module: 'balsam' module was not found!")
-
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 now = "_".join(str(datetime.datetime.now(datetime.timezone.utc)).split(":")[0].split(" "))
 
 
 def get_workload(wf_name):
+    from balsam.core.models import BalsamJob, process_job_times, utilization_report
+
     qs = BalsamJob.objects.filter(workflow=wf_name)
     time_data = process_job_times(qs)
     times, num_running = utilization_report(time_data)
@@ -127,6 +116,19 @@ def add_subparser(subparsers):
 
 def main(path, *args, **kwargs):
     print(f"Path to deephyper.log file: {path}")
+
+    # check if balsam is available
+    try:
+        import balsam
+        if os.environ.get("BALSAM_SPHINX_DOC_BUILD_ONLY") == "TRUE":
+            BALSAM_EXIST = False
+            logger.warning("Module: 'balsam' module was found but not connected to a databse.")
+        else:
+            BALSAM_EXIST = True
+            logger.warning("Module: 'balsam' module was found and connected to a databse.")
+    except ModuleNotFoundError as err:
+        BALSAM_EXIST = False
+        logger.warning("Module: 'balsam' module was not found!")
 
     data = dict()
     if len(path.split("/")) >= 3:
