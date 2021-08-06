@@ -191,8 +191,8 @@ class Evaluator:
                 decoded_key = job.config
                 result = {k: self.convert_for_csv(decoded_key[k]) for k in saved_keys}
             elif callable(saved_keys):
-                decoded_key = job.config
-                result = saved_keys(decoded_key)
+                result = saved_keys(job)
+            result["id"] = job.id
             result["objective"] = job.result
             result[
                 "elapsed_sec"

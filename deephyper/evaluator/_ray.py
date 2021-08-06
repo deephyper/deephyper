@@ -46,19 +46,19 @@ class RayEvaluator(Evaluator):
         )
         self.num_workers = self.num_cpus // self.num_cpus_per_task
 
-
-
         logger.info(
             f"Ray Evaluator will execute {self.run_function.__name__}() from module {self.run_function.__module__}"
         )
 
+        self._remote_run_function = ray.remote(
+            num_cpus=self.num_cpus_per_task,
+            num_gpus=self.num_gpus_per_task,
+            max_calls=1,
+        )(self.run_function)
+
     async def execute(self, job):
 
-        sol = await ray.remote(
-            num_cpus=job.num_cpus,
-            num_gpus=job.num_gpus,
-            max_calls=1,
-        )(job.run_function).remote(job.config)
+        sol = await self._remote_run_function.remote(job.config)
 
         job.result = sol
 
