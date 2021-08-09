@@ -72,7 +72,7 @@ class AMBS(Search):
 
         self.checkpoint = pd.read_csv(checkpoint) if checkpoint != "" else None
         self.transfer_learning = pd.read_csv(transfer_learning) if transfer_learning != "" else None
-        
+
         self.n_initial_points = self.evaluator.num_workers
         self.liar_strategy = liar_strategy
 
@@ -151,10 +151,6 @@ class AMBS(Search):
         dhlogger.info(f"Generating {self.evaluator.num_workers} initial points...")
         self.evaluator.add_eval_batch(self.get_random_batch(size=self.n_initial_points))
 
-        print('Already evaluated points:')
-        print(self.opt.Xi)
-        print(self.opt.yi)
-
         # Main loop
         while num_evals_done < self.max_evals:
 
@@ -219,13 +215,7 @@ class AMBS(Search):
 
     def fit_checkpoint(self):
         hp_names = self.problem.space.get_hyperparameter_names()
-        print('problem space')
-        print(self.problem.space)
         for hp in self.problem.space.get_hyperparameters():
-            print(dir(hp))
-            print(hp.name)
-            print(hp.lower)
-            print(hp.upper)
         x = self.checkpoint[hp_names].values.tolist()
         y = self.checkpoint.objective.tolist()
 
@@ -251,7 +241,7 @@ class AMBS(Search):
             values = cond.values
             cond_new = CS.GreaterThanCondition(child,parent,values)
         else:
-            print('Not supported type'+str(type(cond)))  
+            print('Not supported type'+str(type(cond)))
         return cond_new
 
     def return_forbid(self, cond, cst_new):
@@ -264,7 +254,7 @@ class AMBS(Search):
                 values = cond.values
                 cond_new = CS.ForbiddenInClause(hp, values)
             else:
-                print('Not supported type'+str(type(cond)))  
+                print('Not supported type'+str(type(cond)))
         return cond_new
 
     def fit_transfer_learning(self):
@@ -276,23 +266,20 @@ class AMBS(Search):
         res_df_names = res_df.columns.values
         best_index = np.argmax(res_df['objective'].values)
         best_param = res_df.iloc[best_index]
-        print(best_param) 
 
-        fac_numeric = 8.0 
+        fac_numeric = 8.0
         fac_categorical = 10.0
 
         cst_new = CS.ConfigurationSpace(seed=1234)
         hp_names = cst.get_hyperparameter_names()
         for hp_name in hp_names:
-            print(hp_name)
             hp = cst.get_hyperparameter(hp_name)
-            print(hp)
             if hp_name in res_df_names:
                 if type(hp) == csh.UniformIntegerHyperparameter or type(hp) == csh.UniformFloatHyperparameter:
                     mu = best_param[hp.name]
                     lower = hp.lower
                     upper = hp.upper
-                    sigma = max(1.0, (upper - lower)/fac_numeric) 
+                    sigma = max(1.0, (upper - lower)/fac_numeric)
                     if type(hp) == csh.UniformIntegerHyperparameter:
                         param_new = csh.NormalIntegerHyperparameter(name=hp.name, default_value=mu, mu=mu, sigma=sigma, lower=lower, upper=upper)
                     elif type(hp) == csh.UniformFloatHyperparameter:
@@ -305,8 +292,7 @@ class AMBS(Search):
                     weights = len(hp.choices)*[1.0]
                     index = choices.index(best_param[hp.name])
                     weights[index] = fac_categorical
-                    norm_weights = [float(i)/sum(weights) for i in weights] 
-                    print(norm_weights)
+                    norm_weights = [float(i)/sum(weights) for i in weights]
                     param_new = csh.CategoricalHyperparameter(name=hp.name, choices=choices,weights=norm_weights)
                     cst_new.add_hyperparameter(param_new)
                 else:
@@ -321,8 +307,6 @@ class AMBS(Search):
                 for comp in cond.components:
                     cond_list.append(self.return_cond(comp, cst_new))
                 if type(cond) == CS.AndConjunction:
-                    print(len(cond_list))
-                    print(len(tuple(cond_list)))
                     cond_new = CS.AndConjunction(*cond_list)
                 elif type(cond) == CS.OrConjunction:
                     cond_new = CS.OrConjunction(*cond_list)
@@ -331,7 +315,6 @@ class AMBS(Search):
             else:
                 cond_new = self.return_cond(cond, cst_new)
             cst_new.add_condition(cond_new)
-        print(cst_new)
 
         for cond in cst.get_forbiddens():
             if type(cond) == CS.ForbiddenAndConjunction:
@@ -342,7 +325,7 @@ class AMBS(Search):
             elif type(cond) == CS.ForbiddenEqualsClause or type(cond) == CS.ForbiddenInClause:
                 cond_new = self.return_forbid(cond, cst_new)
             else:
-                print('Not supported type'+str(type(cond)))    
+                print('Not supported type'+str(type(cond)))
             cst_new.add_forbidden_clause(cond_new)
 
 
@@ -371,7 +354,7 @@ class AMBS(Search):
                             type(hp) == csh.CategoricalHyperparameter
                             or type(hp) == csh.OrdinalHyperparameter
                         ):
-                            point[k] = "NA"                     
+                            point[k] = "NA"
 
         # Add more starting points
         n_points = max(0, size - len(batch))
