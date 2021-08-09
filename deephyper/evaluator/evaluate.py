@@ -38,6 +38,7 @@ class Evaluator:
         self,
         run_function,
         num_workers=1,
+        callbacks=None,
     ):
         self.run_function = run_function  # User-defined run function.
         self.num_workers = (
@@ -57,11 +58,7 @@ class Evaluator:
         self._loop = None  # Event loop for asyncio.
         self._start_dumping = False
 
-        # moduleName = self.run_function.__module__
-        # if moduleName == "__main__":
-        #     raise DeephyperRuntimeError(
-        #         f'Evaluator will not execute function " {run_function.__name__}" because it is in the __main__ module.  Please provide a function imported from an external module!'
-        #     )
+        self._callbacks = [] if callbacks is None else callbacks
 
     async def _get_at_least_n_tasks(self, n):
         # If a user requests a batch size larger than the number of currently-running tasks, set n to the number of tasks running.
@@ -107,11 +104,19 @@ class Evaluator:
 
         job.duration = time.time()
 
+        # call callbacks
+        for cb in self._callbacks:
+            cb.on_launch(job)
+
     def _on_done(self, job):
         job.status = job.DONE
 
         job.duration = time.time() - job.duration
         job.elapsed_sec = time.time() - self.timestamp
+
+        # call callbacks
+        for cb in self._callbacks:
+            cb.on_done(job)
 
     async def execute(self, job):
         raise NotImplementedError

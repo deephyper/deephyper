@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 
 class ProcessPoolEvaluator(ThreadPoolEvaluator):
 
-    def __init__(self, run_function, num_workers=1):
-        super().__init__(run_function, num_workers)
+    def __init__(self, run_function, num_workers=1, callbacks=None):
+        super().__init__(run_function, num_workers, callbacks)
         self.executor = ProcessPoolExecutor(max_workers = num_workers)
         self.n_jobs = 0
         logger.info(

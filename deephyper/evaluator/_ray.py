@@ -12,6 +12,7 @@ class RayEvaluator(Evaluator):
     def __init__(
         self,
         run_function,
+        callbacks=None,
         ray_address=None,
         ray_password=None,
         num_cpus=None,
@@ -20,7 +21,7 @@ class RayEvaluator(Evaluator):
         num_gpus_per_task=None,
         num_workers=None,
         ):
-        super().__init__(run_function, num_workers)
+        super().__init__(run_function, num_workers, callbacks)
 
         ray_kwargs = {}
         if ray_address is not None:
@@ -44,7 +45,8 @@ class RayEvaluator(Evaluator):
         self.num_gpus = int(
             sum([node["Resources"].get("GPU", 0) for node in ray.nodes()])
         )
-        self.num_workers = self.num_cpus // self.num_cpus_per_task
+        if self.num_workers is None:
+            self.num_workers = self.num_cpus // self.num_cpus_per_task
 
         logger.info(
             f"Ray Evaluator will execute {self.run_function.__name__}() from module {self.run_function.__module__}"
