@@ -18,7 +18,7 @@ if __name__ == "__main__":
     problem.add_hyperparameter((0.0, 10.0), "x")
 
     evaluator = Evaluator.create(
-        run, method="ray", method_kwargs={"num_cpus": 1}
+        run, method="process", method_kwargs={"num_workers": 1}
     )
 
     search = AMBS(problem, evaluator)

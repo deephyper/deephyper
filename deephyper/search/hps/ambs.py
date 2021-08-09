@@ -1,3 +1,4 @@
+from deephyper.core.exceptions import DeephyperRuntimeError
 import math
 import logging
 
@@ -67,7 +68,6 @@ class AMBS(Search):
 
         # Main loop
         while max_evals < 0 or num_evals_done < max_evals:
-            print(f"i={num_evals_done}")
             # Collecting finished evaluations
             new_results = self._evaluator.gather("BATCH", size=1)
 
@@ -177,8 +177,11 @@ class AMBS(Search):
             self._setup_optimizer()
 
         hp_names = self._problem.space.get_hyperparameter_names()
-        x = df[hp_names].values.tolist()
-        y = df.objective.tolist()
+        try:
+            x = df[hp_names].values.tolist()
+            y = df.objective.tolist()
+        except KeyError:
+            raise DeephyperRuntimeError("Incompatible dataframe to fit surrogate model of AMBS.")
 
         self._opt.tell(x, [-yi for yi in y])
 

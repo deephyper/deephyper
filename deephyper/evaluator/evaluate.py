@@ -86,8 +86,12 @@ class Evaluator:
     def create(run_function, method="subprocess", method_kwargs={}):
 
         if not method in EVALUATORS.keys():
+            val = ", ".join(EVALUATORS)
             raise DeephyperRuntimeError(
                 f'The method "{method}" is not a valid method for an Evaluator!'
+                f' Choose among the following evalutor types: '
+                f'{val}.'
+
             )
 
         # create the evaluator
