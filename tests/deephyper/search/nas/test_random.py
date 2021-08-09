@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     from deephyper.benchmark.nas.linearReg import Problem
     from deephyper.nas.run.quick import run
-    print("HERE")
+    
     evaluator = Evaluator.create(
         run, method="ray", method_kwargs={"num_cpus": 1}
     )
@@ -21,4 +21,4 @@ if __name__ == "__main__":
 
     search.search(max_evals=10)
 
-    # search.search(max_evals=100, timeout=1)
+    search.search(max_evals=100, timeout=1)
