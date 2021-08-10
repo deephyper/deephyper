@@ -130,11 +130,10 @@ class KSearchSpace(NxSearchSpace):
             ]
 
             for out_T in output_tensors:
-                print(out_T)
                 output_n = int(out_T.name.split("/")[0].split("_")[-1])
                 out_S = self.output_shape[output_n]
                 if tf.keras.backend.is_keras_tensor(out_T):
-                    out_T_shape = K.shape(out_T).shape
+                    out_T_shape = out_T.type_spec.shape
                     if out_T_shape[1:] != out_S:
                         logger.warning(str(WrongOutputShape(out_T_shape, out_S)))
 
@@ -144,7 +143,7 @@ class KSearchSpace(NxSearchSpace):
         else:
             output_tensors = self.create_tensor_aux(self.graph, self.output_node)
             if tf.keras.backend.is_keras_tensor(output_tensors):
-                output_tensors_shape = K.shape(output_tensors).shape
+                output_tensors_shape = output_tensors.type_spec.shape
                 if output_tensors_shape[1:] != self.output_shape:
                     logger.warning(
                         str(WrongOutputShape(output_tensors_shape, self.output_shape))
