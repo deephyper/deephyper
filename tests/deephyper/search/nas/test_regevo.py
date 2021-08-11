@@ -7,7 +7,7 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.DEBUG)
 
-    from deephyper.search.nas.random import Random
+    from deephyper.search.nas.regevo import RegularizedEvolution
     from deephyper.evaluator.evaluate import Evaluator
 
     from deephyper.benchmark.nas.linearReg import Problem
@@ -17,7 +17,7 @@ if __name__ == "__main__":
         run, method="ray", method_kwargs={"num_cpus": 1}
     )
 
-    search = Random(Problem, evaluator)
+    search = RegularizedEvolution(Problem, run, evaluator)
 
     search.search(max_evals=10)
 
