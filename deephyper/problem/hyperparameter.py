@@ -61,17 +61,9 @@ def check_hyperparameter(parameter, name=None, default_value=None):
 class HpProblem:
     """Representation of a problem."""
 
-    def __init__(self, config_space=None, seed=42):
-        if config_space is None:
-            self.seed = seed
-            self._space = cs.ConfigurationSpace(seed=seed)
-        else:
-            self._space = config_space
-            if seed is None:
-                self.seed = self._space.random.get_state()[1][0]
-            else:
-                self.seed = seed
-                self._space.seed(seed)
+    def __init__(self, seed=42):
+        self.seed = seed
+        self._space = cs.ConfigurationSpace(seed=seed)
         self.references = []  # starting points
 
     def __str__(self):

@@ -23,36 +23,36 @@ class TestHpProblem:
         from deephyper.problem import HpProblem
 
         pb = HpProblem()
-        pb.add_dim("dim0", (-10, 10))
-        pb.add_dim("dim1", (-10.0, 10.0))
-        pb.add_dim("dim2", [1, 2, 3, 4])
-        pb.add_dim("dim3", ["cat0", 1, "cat2", 2.0])
+        pb.add_hyperparameter((-10, 10), "dim0")
+        pb.add_hyperparameter((-10.0, 10.0), "dim1")
+        pb.add_hyperparameter([1, 2, 3, 4], "dim2")
+        pb.add_hyperparameter(["cat0", 1, "cat2", 2.0], "dim3")
 
     def test_kwargs(self):
         from deephyper.problem import HpProblem
 
         pb = HpProblem()
-        pb.add_dim(p_name="dim0", p_space=(-10, 10))
+        pb.add_hyperparameter(value=(-10, 10), name="dim0")
 
     def test_dim_with_wrong_name(self):
         from deephyper.problem import HpProblem
 
         pb = HpProblem()
         with pytest.raises(SpaceDimNameOfWrongType):
-            pb.add_dim(0, (-10, 10))
+            pb.add_hyperparameter((-10, 10), 0)
 
     def test_add_good_reference(self):
         from deephyper.problem import HpProblem
 
         pb = HpProblem()
-        pb.add_dim(p_name="dim0", p_space=(-10, 10))
+        pb.add_hyperparameter((-10, 10), "dim0")
         pb.add_starting_point(dim0=0)
 
     def test_add_starting_points_with_too_many_dim(self):
         from deephyper.problem import HpProblem
 
         pb = HpProblem()
-        pb.add_dim(p_name="dim0", p_space=(-10, 10))
+        pb.add_hyperparameter((-10, 10), "dim0")
         with pytest.raises(ValueError):
             pb.add_starting_point(dim0=0, dim1=2)
 
@@ -60,7 +60,7 @@ class TestHpProblem:
         from deephyper.problem import HpProblem
 
         pb = HpProblem()
-        pb.add_dim(p_name="dim0", p_space=(-10, 10))
+        pb.add_hyperparameter((-10, 10), "dim0")
         with pytest.raises(ValueError):
             pb.add_starting_point(dim1=0)
 
@@ -68,9 +68,9 @@ class TestHpProblem:
         from deephyper.problem import HpProblem
 
         pb = HpProblem()
-        pb.add_dim(p_name="dim0", p_space=(-10, 10))
-        pb.add_dim(p_name="dim1", p_space=(-10.0, 10.0))
-        pb.add_dim(p_name="dim2", p_space=["a", "b"])
+        pb.add_hyperparameter((-10, 10), "dim0")
+        pb.add_hyperparameter((-10.0, 10.0), "dim1")
+        pb.add_hyperparameter(["a", "b"], "dim2")
 
         with pytest.raises(ValueError):
             pb.add_starting_point(dim0=-11, dim1=0.0, dim2="a")
