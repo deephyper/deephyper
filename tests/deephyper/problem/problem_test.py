@@ -12,15 +12,15 @@ from deephyper.core.exceptions.problem import (
 @pytest.mark.incremental
 class TestHpProblem:
     def test_import(self):
-        from deephyper.benchmark.problem import HpProblem
+        from deephyper.problem import HpProblem
 
     def test_create(self):
-        from deephyper.benchmark.problem import HpProblem
+        from deephyper.problem import HpProblem
 
         pb = HpProblem()
 
     def test_add_good_dim(self):
-        from deephyper.benchmark.problem import HpProblem
+        from deephyper.problem import HpProblem
 
         pb = HpProblem()
         pb.add_dim("dim0", (-10, 10))
@@ -29,27 +29,27 @@ class TestHpProblem:
         pb.add_dim("dim3", ["cat0", 1, "cat2", 2.0])
 
     def test_kwargs(self):
-        from deephyper.benchmark.problem import HpProblem
+        from deephyper.problem import HpProblem
 
         pb = HpProblem()
         pb.add_dim(p_name="dim0", p_space=(-10, 10))
 
     def test_dim_with_wrong_name(self):
-        from deephyper.benchmark.problem import HpProblem
+        from deephyper.problem import HpProblem
 
         pb = HpProblem()
         with pytest.raises(SpaceDimNameOfWrongType):
             pb.add_dim(0, (-10, 10))
 
     def test_add_good_reference(self):
-        from deephyper.benchmark.problem import HpProblem
+        from deephyper.problem import HpProblem
 
         pb = HpProblem()
         pb.add_dim(p_name="dim0", p_space=(-10, 10))
         pb.add_starting_point(dim0=0)
 
     def test_add_starting_points_with_too_many_dim(self):
-        from deephyper.benchmark.problem import HpProblem
+        from deephyper.problem import HpProblem
 
         pb = HpProblem()
         pb.add_dim(p_name="dim0", p_space=(-10, 10))
@@ -57,7 +57,7 @@ class TestHpProblem:
             pb.add_starting_point(dim0=0, dim1=2)
 
     def test_add_starting_points_with_wrong_name(self):
-        from deephyper.benchmark.problem import HpProblem
+        from deephyper.problem import HpProblem
 
         pb = HpProblem()
         pb.add_dim(p_name="dim0", p_space=(-10, 10))
@@ -65,7 +65,7 @@ class TestHpProblem:
             pb.add_starting_point(dim1=0)
 
     def test_add_starting_points_not_in_space_def(self):
-        from deephyper.benchmark.problem import HpProblem
+        from deephyper.problem import HpProblem
 
         pb = HpProblem()
         pb.add_dim(p_name="dim0", p_space=(-10, 10))
@@ -93,15 +93,15 @@ class TestHpProblem:
 @pytest.mark.incremental
 class TestNaProblem:
     def test_import(self):
-        from deephyper.benchmark.problem import NaProblem
+        from deephyper.problem import NaProblem
 
     def test_create(self):
-        from deephyper.benchmark.problem import NaProblem
+        from deephyper.problem import NaProblem
 
         NaProblem()
 
     def test_search_space(self):
-        from deephyper.benchmark.problem import NaProblem
+        from deephyper.problem import NaProblem
 
         pb = NaProblem()
 

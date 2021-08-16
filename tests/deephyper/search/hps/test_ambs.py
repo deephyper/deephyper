@@ -8,7 +8,7 @@ if __name__ == "__main__":
     import os
     import logging
 
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
 
     from deephyper.problem import HpProblem
     from deephyper.search.hps import AMBS
@@ -22,8 +22,8 @@ if __name__ == "__main__":
     problem.add_hyperparameter((0.0, 10.0), "x")
 
     evaluator = Evaluator.create(
-        run, method="ray", method_kwargs={
-            # "num_cpus": 4, 
+        run, method="subprocess", method_kwargs={
+            # "num_cpus": 4,
             "num_workers": 4,
             "callbacks":[ProfilingCallback()]
         }

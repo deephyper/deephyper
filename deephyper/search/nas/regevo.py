@@ -23,10 +23,10 @@ class RegularizedEvolution(NeuralArchitectureSearch):
     """
 
     def __init__(
-        self, problem, run, evaluator, population_size=100, sample_size=10, **kwargs
+        self, problem, evaluator, random_state=None, log_dir=".", verbose=0, population_size=100, sample_size=10, **kwargs
     ):
 
-        super().__init__(problem=problem, run=run, evaluator=evaluator, **kwargs)
+        super().__init__(problem, evaluator, random_state, log_dir, verbose)
 
         self.free_workers = self._evaluator.num_workers
 
@@ -39,12 +39,6 @@ class RegularizedEvolution(NeuralArchitectureSearch):
         ]
         self.population_size = int(population_size)
         self.sample_size = int(sample_size)
-
-    @staticmethod
-    def _extend_parser(parser):
-        NeuralArchitectureSearch._extend_parser(parser)
-        add_arguments_from_signature(parser, RegularizedEvolution)
-        return parser
 
     def saved_keys(self, job):
         res = {"arch_seq": str(job.config["arch_seq"])}
@@ -84,7 +78,7 @@ class RegularizedEvolution(NeuralArchitectureSearch):
                     # For each new parent/result we create a child from it
                     for _ in range(len(new_results)):
                         # select_sample
-                        indexes = np.random.choice(
+                        indexes = self._random_state.choice(
                             self.population_size, self.sample_size, replace=False
                         )
                         sample = [population[i] for i in indexes]
@@ -115,7 +109,7 @@ class RegularizedEvolution(NeuralArchitectureSearch):
         return batch
 
     def random_search_space(self) -> list:
-        return [np.random.choice(b + 1) for (_, b) in self.space_list]
+        return [self._random_state.choice(b + 1) for (_, b) in self.space_list]
 
     def copy_mutate_arch(self, parent_arch: list) -> dict:
         """
@@ -125,22 +119,16 @@ class RegularizedEvolution(NeuralArchitectureSearch):
         Returns:
             dict: [description]
         """
-        i = np.random.choice(len(parent_arch))
+        i = self._random_state.choice(len(parent_arch))
         child_arch = parent_arch[:]
 
         range_upper_bound = self.space_list[i][1]
         elements = [j for j in range(range_upper_bound + 1) if j != child_arch[i]]
 
         # The mutation has to create a different search_space!
-        sample = np.random.choice(elements, 1)[0]
+        sample = self._random_state.choice(elements, 1)[0]
 
         child_arch[i] = sample
         cfg = self.pb_dict.copy()
         cfg["arch_seq"] = child_arch
         return cfg
-
-
-if __name__ == "__main__":
-    args = RegularizedEvolution.parse_args()
-    search = RegularizedEvolution(**vars(args))
-    search.main()

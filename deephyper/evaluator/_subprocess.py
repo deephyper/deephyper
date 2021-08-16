@@ -7,6 +7,7 @@ import json
 import os
 
 from deephyper.evaluator.evaluate import Evaluator
+from deephyper.evaluator.encoder import Encoder
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,9 @@ class SubprocessEvaluator(Evaluator):
             f"Subprocess Evaluator will execute {self.run_function.__name__}() from module {self.run_function.__module__}"
         )
 
+    def _encode(self, job):
+        return json.loads(json.dumps(job.config, cls=Encoder))
+
     async def execute(self, job):
         async with self.sem:
 
@@ -29,7 +33,8 @@ class SubprocessEvaluator(Evaluator):
             module_path = os.path.dirname(script_file)
             module_name = os.path.basename(script_file)[:-3]
             # Code that will run on the subprocess.
-            code = f"import sys; sys.path.insert(1, '{module_path}'); from {module_name} import {self.run_function.__name__}; print('DH-OUTPUT:' + str({self.run_function.__name__}({job.config})))"
+            code = f"import sys; sys.path.insert(1, '{module_path}'); from {module_name} import {self.run_function.__name__}; print('DH-OUTPUT:' + str({self.run_function.__name__}({self._encode(job)})))"
+            logger.debug(f"executing:  {code}")
             proc = await asyncio.create_subprocess_exec(
                 sys.executable, '-c', code,
                 stdout=asyncio.subprocess.PIPE,
