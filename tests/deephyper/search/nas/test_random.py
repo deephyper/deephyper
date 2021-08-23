@@ -5,16 +5,16 @@ if __name__ == "__main__":
     import os
     import logging
 
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
 
     from deephyper.search.nas.random import Random
     from deephyper.evaluator.evaluate import Evaluator
 
     from deephyper.benchmark.nas.linearReg import Problem
     from deephyper.nas.run.quick import run
-    
+
     evaluator = Evaluator.create(
-        run, method="ray", method_kwargs={"num_cpus": 1}
+        run, method="subprocess", method_kwargs={"num_workers": 1}
     )
 
     search = Random(Problem, evaluator)

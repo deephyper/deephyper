@@ -4,6 +4,7 @@ import signal
 
 from deephyper.core.exceptions import SearchTerminationError
 from deephyper.evaluator.evaluate import EVALUATORS
+import numpy as np
 
 
 class Search:
@@ -12,7 +13,7 @@ class Search:
     ):
         self._problem = problem
         self._evaluator = evaluator
-        self._random_state = random_state
+        self._random_state = np.random.RandomState(random_state)
         self._log_dir = log_dir
         self._verbose = verbose
 

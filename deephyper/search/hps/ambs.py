@@ -41,7 +41,7 @@ class AMBS(Search):
             acq_optimizer="sampling",
             acq_func_kwargs={"xi": xi, "kappa": kappa},
             n_initial_points=self._n_initial_points,
-            random_state=self._problem.seed,
+            random_state=self._random_state,
         )
 
     @classmethod

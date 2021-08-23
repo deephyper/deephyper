@@ -12,12 +12,13 @@ if __name__ == "__main__":
 
     from deephyper.benchmark.nas.linearReg import Problem
     from deephyper.nas.run.quick import run
-    
+
+
     evaluator = Evaluator.create(
-        run, method="ray", method_kwargs={"num_cpus": 1}
+        run, method="subprocess", method_kwargs={"num_workers": 1}
     )
 
-    search = RegularizedEvolution(Problem, run, evaluator)
+    search = RegularizedEvolution(Problem, evaluator)
 
     search.search(max_evals=10)
 

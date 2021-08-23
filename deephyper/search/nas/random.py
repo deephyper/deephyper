@@ -17,9 +17,8 @@ class Random(NeuralArchitectureSearch):
         self, problem, evaluator, random_state=None, log_dir=".", verbose=0, **kwargs
     ):
 
-        super().__init__(problem, evaluator, random_state, log_dir, verbose)
+        super().__init__(problem, evaluator, random_state=None, log_dir=".", verbose=0)
 
-        self._rs = np.random.RandomState(self._problem.seed)
         self.free_workers = self._evaluator.num_workers
 
         self.pb_dict = self._problem.space
@@ -66,10 +65,5 @@ class Random(NeuralArchitectureSearch):
         return batch
 
     def gen_random_arch(self) -> list:
-        return [self._rs.choice(b + 1) for (_, b) in self.space_list]
+        return [self._random_state.choice(b + 1) for (_, b) in self.space_list]
 
-
-if __name__ == "__main__":
-    args = Random.parse_args()
-    search = Random(**vars(args))
-    search.main()
