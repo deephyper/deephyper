@@ -1,13 +1,10 @@
 """
-python test_cli.py --problem foo --run foo --evaluator balsam --evaluator-config "(a,b)"
+deephyper hps ambs --problem test_cli.problem --evaluator thread --run-function test_cli.run --max-evals 100 --timeout 10
 """
-from pprint import pprint
+from deephyper.problem import HpProblem
 
-from deephyper.search.hps import AMBS
+def run(hp):
+    return hp["x"]
 
-
-parser = AMBS.get_parser()
-args = parser.parse_args()
-
-print(args)
-# pprint(args)
+problem = HpProblem()
+problem.add_hyperparameter((0.0, 10.0), "x")

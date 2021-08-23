@@ -100,6 +100,9 @@ class HpProblem:
         self._space.add_hyperparameter(csh_parameter)
         return csh_parameter
 
+    def add_hyperparameters(self, hp_list):
+        return [self.add_hyperparameter(hp) for hp in hp_list]
+
     def add_forbidden_clause(self, clause):
         self._space.add_forbidden_clause(clause)
 
@@ -146,7 +149,7 @@ def test_base_problem():
     alpha = CSH.UniformFloatHyperparameter(name="alpha", lower=0, upper=1)
     beta = CSH.UniformFloatHyperparameter(name="beta", lower=0, upper=1)
 
-    pb = BaseProblem(42)
+    pb = HpProblem(42)
     pb.add_hyperparameter(alpha)
     pb.add_hyperparameter(beta)
 

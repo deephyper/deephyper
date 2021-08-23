@@ -9,11 +9,11 @@ import numpy as np
 
 class Search:
     def __init__(
-        self, problem, evaluator, random_state=None, log_dir=".", verbose=0, **kwargs
+        self, problem, evaluator, seed=None, log_dir=".", verbose=0, **kwargs
     ):
         self._problem = problem
         self._evaluator = evaluator
-        self._random_state = np.random.RandomState(random_state)
+        self._random_state = np.random.RandomState(seed)
         self._log_dir = log_dir
         self._verbose = verbose
 

@@ -10,7 +10,7 @@ except:
 
 from deephyper.core.cli.utils import generate_other_arguments
 from deephyper.core.exceptions import DeephyperRuntimeError
-from deephyper.problem import BaseProblem, NaProblem
+from deephyper.problem import HpProblem, NaProblem
 from deephyper.search.util import banner, generic_loader
 
 APPS = {
@@ -116,7 +116,7 @@ def validate(mode: str, search: str, workflow: str, problem: str, run: str) -> s
 
     print(f"Validating Problem({problem})...", end="", flush=True)
     prob = generic_loader(problem, "Problem")
-    assert isinstance(prob, (NaProblem, BaseProblem)), f"{prob} is not a Problem instance"
+    assert isinstance(prob, (NaProblem, HpProblem)), f"{prob} is not a Problem instance"
     print("OK", flush=True)
 
     # validate run

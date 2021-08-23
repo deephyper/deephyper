@@ -13,8 +13,8 @@ class RayEvaluator(Evaluator):
         self,
         run_function,
         callbacks=None,
-        ray_address=None,
-        ray_password=None,
+        address=None,
+        password=None,
         num_cpus=None,
         num_gpus=None,
         num_cpus_per_task=1,
@@ -24,10 +24,10 @@ class RayEvaluator(Evaluator):
         super().__init__(run_function, num_workers, callbacks)
 
         ray_kwargs = {}
-        if ray_address is not None:
-            ray_kwargs["address"] = ray_address
-        if ray_password is not None:
-            ray_kwargs["_redis_password"] = ray_password
+        if address is not None:
+            ray_kwargs["address"] = address
+        if password is not None:
+            ray_kwargs["_redis_password"] = password
         if num_cpus is not None:
             ray_kwargs["num_cpus"] = num_cpus
         if num_gpus is not None:

@@ -12,6 +12,21 @@ from deephyper.search.search import Search
 
 
 class AMBS(Search):
+    """Asynchronous Model-Based Search.
+
+    Args:
+        problem (HpProblem): [description]
+        evaluator (Evaluator): [description]
+        random_state ([type], optional): [description]. Defaults to None.
+        log_dir (str, optional): [description]. Defaults to ".".
+        verbose (int, optional): [description]. Defaults to 0.
+        surrogate_model (str, optional): [description]. Defaults to "RF".
+        acq_func (str, optional): [description]. Defaults to "LCB".
+        kappa (float, optional): [description]. Defaults to 1.96.
+        xi (float, optional): [description]. Defaults to 0.001.
+        liar_strategy (str, optional): [description]. Defaults to "cl_min".
+        n_jobs (int, optional): [description]. Defaults to 1.
+    """
     def __init__(
         self,
         problem,
@@ -27,6 +42,7 @@ class AMBS(Search):
         n_jobs=1,  # 32 is good for Theta
         **kwargs
     ):
+
         super().__init__(problem, evaluator, random_state, log_dir, verbose)
 
         self._n_initial_points = self._evaluator.num_workers
