@@ -6,7 +6,7 @@ class Job:
     RUNNING = 1
     DONE = 2
 
-    def __init__(self, id, seed:str, config:dict, run_function, num_workers=1, num_cpus=1, num_gpus=1):
+    def __init__(self, id, seed:str, config:dict, run_function):
         self.id = id
         self.seed = seed
         self.config = config
@@ -15,9 +15,6 @@ class Job:
         self.elapsed_sec = 0 # in seconds
         self.status = self.READY
         self.result = None
-        self.num_workers = num_workers
-        self.num_cpus = num_cpus
-        self.num_gpus = num_gpus
 
     def __repr__(self) -> str:
         return "Job ID: " +  str(self.id) + "\n" + "Configuration: " + str(self.config) + "\n" + "Status: " + str(self.status)

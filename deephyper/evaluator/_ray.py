@@ -46,7 +46,7 @@ class RayEvaluator(Evaluator):
             sum([node["Resources"].get("GPU", 0) for node in ray.nodes()])
         )
         if self.num_workers is None:
-            self.num_workers = self.num_cpus // self.num_cpus_per_task
+            self.num_workers = int(self.num_cpus // self.num_cpus_per_task)
 
         logger.info(
             f"Ray Evaluator will execute {self.run_function.__name__}() from module {self.run_function.__module__}"
@@ -55,7 +55,7 @@ class RayEvaluator(Evaluator):
         self._remote_run_function = ray.remote(
             num_cpus=self.num_cpus_per_task,
             num_gpus=self.num_gpus_per_task,
-            max_calls=1,
+            # max_calls=1,
         )(self.run_function)
 
     async def execute(self, job):

@@ -46,8 +46,6 @@ class Evaluator:
         )
         self.jobs = []  # Job objects currently submitted.
         self.n_jobs = 1
-        self.num_cpus_per_task = 1
-        self.num_gpus_per_task = None
         self._tasks_running = []  # List of AsyncIO Task objects currently running.
         self._tasks_done = []  # Temp list to hold completed tasks from asyncio.
         self._tasks_pending = []  # Temp list to hold pending tasks from asyncio.
@@ -130,7 +128,7 @@ class Evaluator:
         """Collect the completed tasks from the evaluator in batches of one or more.
 
         Args:
-            type ([type]):
+            type (str):
                 Options:
                     "ALL"
                         Collect all jobs submitted to the evaluator.
@@ -169,12 +167,9 @@ class Evaluator:
             self.n_jobs,
             2021,
             config,
-            self.run_function,
-            self.num_workers,
-            self.num_cpus_per_task,
-            self.num_gpus_per_task,
+            self.run_function
         )
-        self.n_jobs += 1  #! @Romain: we can use integers if it is enough, uuid can become useful if jobs'id are generated in parallel
+        self.n_jobs += 1
         self.jobs.append(new_job)
 
         return new_job
