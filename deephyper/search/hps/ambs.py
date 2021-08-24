@@ -31,15 +31,15 @@ class AMBS(Search):
         self,
         problem,
         evaluator,
-        random_state=None,
-        log_dir=".",
-        verbose=0,
-        surrogate_model="RF",
-        acq_func="LCB",
-        kappa=1.96,
-        xi=0.001,
-        liar_strategy="cl_min",
-        n_jobs=1,  # 32 is good for Theta
+        random_state: int=None,
+        log_dir: str=".",
+        verbose: int=0,
+        surrogate_model: str="RF",
+        acq_func: str="LCB",
+        kappa: float=1.96,
+        xi: float=0.001,
+        liar_strategy: str="cl_min",
+        n_jobs: int=1,  # 32 is good for Theta
         **kwargs
     ):
 

@@ -13,13 +13,13 @@ class RayEvaluator(Evaluator):
         self,
         run_function,
         callbacks=None,
-        address=None,
-        password=None,
-        num_cpus=None,
-        num_gpus=None,
-        num_cpus_per_task=1,
-        num_gpus_per_task=None,
-        num_workers=None,
+        address: str=None,
+        password: str=None,
+        num_cpus: int=None,
+        num_gpus: int=None,
+        num_cpus_per_task: float=1,
+        num_gpus_per_task: float=None,
+        num_workers: int=None,
         ):
         super().__init__(run_function, num_workers, callbacks)
 

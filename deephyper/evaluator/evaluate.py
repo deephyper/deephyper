@@ -37,7 +37,7 @@ class Evaluator:
     def __init__(
         self,
         run_function,
-        num_workers=1,
+        num_workers: int=1,
         callbacks=None,
     ):
         self.run_function = run_function  # User-defined run function.

@@ -18,20 +18,20 @@ class AgEBO(RegularizedEvolution):
         self,
         problem,
         evaluator,
-        random_state=None,
-        log_dir=".",
-        verbose=0,
+        random_state: int=None,
+        log_dir: str=".",
+        verbose: int=0,
         # RE
-        population_size=100,
-        sample_size=10,
+        population_size: int=100,
+        sample_size: int=10,
         # BO
-        surrogate_model="RF",
-        n_jobs=1,
-        kappa=0.001,
-        xi=0.000001,
-        acq_func="LCB",
-        liar_strategy="cl_min",
-        sync=False,
+        surrogate_model: str="RF",
+        n_jobs: int=1,
+        kappa: float=0.001,
+        xi: float=0.000001,
+        acq_func: str="LCB",
+        liar_strategy: str="cl_min",
+        mode: str="async",
         **kwargs,
     ):
         super().__init__(
@@ -44,10 +44,8 @@ class AgEBO(RegularizedEvolution):
             sample_size,
         )
 
-        if type(sync) is str:
-            sync = str2bool(sync)
-
-        self.mode = "sync" if sync else "async"
+        assert mode in ["sync", "async"]
+        self.mode = mode
 
         self.n_jobs = int(n_jobs)  # parallelism of BO surrogate model estimator
 

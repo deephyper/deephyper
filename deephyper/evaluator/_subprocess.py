@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class SubprocessEvaluator(Evaluator):
 
-    def __init__(self, run_function, num_workers=1, callbacks=None):
+    def __init__(self, run_function, num_workers: int=1, callbacks=None):
         super().__init__(run_function, num_workers, callbacks)
         self.sem = asyncio.Semaphore(num_workers)
         logger.info(

@@ -18,8 +18,18 @@ def build_parser_from(cls):
     add_arguments_from_signature(parser, cls)
 
     # add argument of Search.search interface
-    parser.add_argument("--max-evals", default=-1, type=int)
-    parser.add_argument("--timeout", default=None, type=int)
+    parser.add_argument(
+        "--max-evals",
+        default=-1,
+        type=int,
+        help="Type[int]. Defaults to '-1' when an number of evaluations is not imposed.",
+    )
+    parser.add_argument(
+        "--timeout",
+        default=None,
+        type=int,
+        help="Type[int]. Number of seconds before killing the search. Defaults to 'None' when a time budget is not imposed.",
+    )
 
     # add arguments for evaluators
     evaluator_added_arguments = add_arguments_from_signature(parser, Evaluator)

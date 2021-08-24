@@ -14,7 +14,13 @@ class Random(NeuralArchitectureSearch):
     """
 
     def __init__(
-        self, problem, evaluator, random_state=None, log_dir=".", verbose=0, **kwargs
+        self,
+        problem,
+        evaluator,
+        random_state: int = None,
+        log_dir: str = ".",
+        verbose: int = 0,
+        **kwargs
     ):
 
         super().__init__(problem, evaluator, random_state=None, log_dir=".", verbose=0)
@@ -66,4 +72,3 @@ class Random(NeuralArchitectureSearch):
 
     def gen_random_arch(self) -> list:
         return [self._random_state.choice(b + 1) for (_, b) in self.space_list]
-

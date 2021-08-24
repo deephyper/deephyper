@@ -14,7 +14,7 @@ class RegularizedEvolution(NeuralArchitectureSearch):
     """
 
     def __init__(
-        self, problem, evaluator, random_state=None, log_dir=".", verbose=0, population_size=100, sample_size=10, **kwargs
+        self, problem, evaluator, random_state:int =None, log_dir: str=".", verbose: int=0, population_size: int=100, sample_size: int=10, **kwargs
     ):
 
         super().__init__(problem, evaluator, random_state, log_dir, verbose)
