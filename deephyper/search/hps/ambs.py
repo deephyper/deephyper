@@ -60,12 +60,6 @@ class AMBS(Search):
             random_state=self._random_state,
         )
 
-    @classmethod
-    def get_parser(cls):
-        parser = super().get_parser()
-        parser.add_argument("--surrogate-model")
-        return parser
-
     def _setup_optimizer(self):
         if self._fitted:
             self._opt_kwargs["n_initial_points"] = 0

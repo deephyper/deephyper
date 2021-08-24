@@ -1,15 +1,6 @@
-import os
 import collections
-import numpy as np
-import json
 
-from deephyper.search import util
 from deephyper.search.nas import NeuralArchitectureSearch
-from deephyper.core.parser import add_arguments_from_signature
-from deephyper.core.logs.logging import JsonMessage as jm
-
-#dhlogger = util.conf_logger("deephyper.search.nas.regevo")
-
 
 class RegularizedEvolution(NeuralArchitectureSearch):
     """Regularized evolution.

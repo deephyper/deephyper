@@ -7,17 +7,17 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.DEBUG)
 
-    from deephyper.search.nas.regevo import RegularizedEvolution
+    from deephyper.search.nas.agebo import AgEBO
     from deephyper.evaluator.evaluate import Evaluator
 
-    from deephyper.benchmark.nas.linearReg import Problem
+    from deephyper.benchmark.nas.linearRegHybrid import Problem
     from deephyper.nas.run.quick import run
 
     evaluator = Evaluator.create(
         run, method="subprocess", method_kwargs={"num_workers": 1}
     )
 
-    search = RegularizedEvolution(Problem, evaluator)
+    search = AgEBO(Problem, evaluator)
 
     search.search(max_evals=10)
 
