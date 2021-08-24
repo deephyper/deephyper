@@ -202,11 +202,10 @@ class AMBS(Search):
         self._opt.tell(x, [-yi for yi in y])
 
     def fit_search_space(self, df):
+
         if type(df) is str and df[-4:] == ".csv":
             df = pd.read_csv(df)
         assert isinstance(df, pd.DataFrame)
-
-        self._fitted = True
 
         cst = self._problem.space
         if type(cst) != CS.ConfigurationSpace:
@@ -302,6 +301,8 @@ class AMBS(Search):
             else:
                 logging.warning(f"Forbidden {type(cond)} is not implemented!")
             cst_new.add_forbidden_clause(cond_new)
+
+        self._opt_kwargs["dimensions"] = cst_new
 
     def get_random_batch(self, size: int) -> list:
 
