@@ -2,6 +2,7 @@
 """
 import os
 import traceback
+import logging
 
 import numpy as np
 import tensorflow as tf
@@ -18,7 +19,7 @@ from deephyper.nas.run.util import (
 from deephyper.nas.trainer.train_valid import TrainerTrainValid
 from deephyper.search import util
 
-logger = util.conf_logger("deephyper.search.nas.run")
+logger = logging.getLogger(__name__)
 
 
 def run(config):

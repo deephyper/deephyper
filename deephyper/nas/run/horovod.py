@@ -2,6 +2,7 @@
 """
 import os
 import traceback
+import logging
 
 import numpy as np
 import tensorflow as tf
@@ -21,7 +22,7 @@ from .util import (
     setup_search_space,
 )
 
-logger = util.conf_logger("deephyper.search.nas.run")
+logger = logging.getLogger(__name__)
 
 # Default callbacks parameters
 default_callbacks_config = {

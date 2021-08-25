@@ -88,7 +88,6 @@ class AgEBO(RegularizedEvolution):
         population = collections.deque(maxlen=self.population_size)
 
         # Filling available nodes at start
-        print("n_initial_points", self._n_initial_points)
         self._evaluator.submit(self.gen_random_batch(size=self._n_initial_points))
 
         # Main loop
@@ -99,8 +98,6 @@ class AgEBO(RegularizedEvolution):
                 new_results = list(self._evaluator.gather("BATCH", size=1))
             else:
                 new_results = list(self._evaluator.gather("ALL"))
-
-            print("results", new_results)
 
             if len(new_results) > 0:
                 population.extend(new_results)

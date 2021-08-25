@@ -1,22 +1,18 @@
+import copy
 import json
+import logging
 import traceback
 from time import time
-import copy
 
 import numpy as np
 import tensorflow as tf
-
 from deephyper.core.exceptions import DeephyperRuntimeError
 from deephyper.evaluator.encoder import Encoder
-from deephyper.search import util
-from deephyper.nas.run.util import (
-    load_config,
-    setup_data,
-    setup_search_space,
-)
+from deephyper.nas.run.util import load_config, setup_data, setup_search_space
 from deephyper.nas.trainer.train_valid import TrainerTrainValid
+from deephyper.search import util
 
-logger = util.conf_logger(__name__)
+logger = logging.getLogger(__name__)
 
 CB_CONFIG = {
     "ModelCheckpoint": dict(

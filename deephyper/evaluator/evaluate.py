@@ -37,7 +37,7 @@ class Evaluator:
     def __init__(
         self,
         run_function,
-        num_workers: int=1,
+        num_workers: int = 1,
         callbacks=None,
     ):
         self.run_function = run_function  # User-defined run function.
@@ -84,9 +84,8 @@ class Evaluator:
             val = ", ".join(EVALUATORS)
             raise DeephyperRuntimeError(
                 f'The method "{method}" is not a valid method for an Evaluator!'
-                f' Choose among the following evalutor types: '
-                f'{val}.'
-
+                f" Choose among the following evalutor types: "
+                f"{val}."
             )
 
         # create the evaluator
@@ -163,12 +162,7 @@ class Evaluator:
         return results
 
     def create_job(self, config):
-        new_job = Job(
-            self.n_jobs,
-            2021,
-            config,
-            self.run_function
-        )
+        new_job = Job(self.n_jobs, 2021, config, self.run_function)
         self.n_jobs += 1
         self.jobs.append(new_job)
 
@@ -181,7 +175,9 @@ class Evaluator:
             raise ValueError(f"Expected dict, but got {type(x)}")
         return x
 
-    def dump_evals(self, saved_key: str = None, saved_keys: list = None):
+    def dump_evals(
+        self, saved_key: str = None, saved_keys: list = None
+    ):
         """Dump evaluations to 'results.csv' file."""
 
         resultsList = []
@@ -211,7 +207,7 @@ class Evaluator:
             with open("results.csv", mode) as fp:
                 columns = resultsList[0].keys()
                 writer = csv.DictWriter(fp, columns)
-                if not(self._start_dumping):
+                if not (self._start_dumping):
                     writer.writeheader()
                     self._start_dumping = True
                 writer.writerows(resultsList)

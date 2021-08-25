@@ -1,5 +1,4 @@
 import sys
-import os
 import argparse
 
 from deephyper.search.util import load_attr

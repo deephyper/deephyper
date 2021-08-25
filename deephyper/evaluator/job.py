@@ -17,7 +17,7 @@ class Job:
         self.result = None
 
     def __repr__(self) -> str:
-        return "Job ID: " +  str(self.id) + "\n" + "Configuration: " + str(self.config) + "\n" + "Status: " + str(self.status)
+        return f"Job(id={self.id}, status={self.status}, config={self.config})"
 
     def __getitem__(self, index):
         return (self.config, self.result)[index]

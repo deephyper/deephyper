@@ -1,6 +1,4 @@
 import argparse
-import os
-import signal
 import sys
 
 from deephyper.core.parser import add_arguments_from_signature
