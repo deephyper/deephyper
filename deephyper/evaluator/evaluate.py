@@ -111,6 +111,10 @@ class Evaluator:
         job.duration = time.time() - job.duration
         job.elapsed_sec = time.time() - self.timestamp
 
+        if np.isscalar(job.result):
+            if not(np.isfinite(job.result)):
+                job.result = Evaluator.FAIL_RETURN_VALUE
+
         # call callbacks
         for cb in self._callbacks:
             cb.on_done(job)
