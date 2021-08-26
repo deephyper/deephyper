@@ -175,12 +175,18 @@ class UQBaggingEnsemble(BaseEnsemble):
 
         scores["loss"] = tf.reduce_mean(self.loss(y, y_pred)).numpy()
         if metrics:
-            for metric in metrics:
-                if callable(metric):
-                    metric_name = metric.__name__
-                else:
-                    metric_name = metric
-                scores[metric_name] = apply_metric(metric, y, y_pred)
+            if type(metrics) is list:
+                for metric in metrics:
+                    if callable(metric):
+                        metric_name = metric.__name__
+                    else:
+                        metric_name = metric
+                    scores[metric_name] = apply_metric(metric, y, y_pred)
+            elif type(metrics) is dict:
+                for metric_name, metric in metrics.items():
+                    scores[metric_name] = apply_metric(metric, y, y_pred)
+            else:
+                raise ValueError("Metrics should be of type list or dict.")
 
         return scores
 
@@ -283,8 +289,10 @@ def apply_metric(metric_name, y_true, y_pred) -> float:
     if type(y_pred) is np.ndarray:
         y_pred = tf.convert_to_tensor(y_pred, dtype=np.float32)
 
-    metric = tf.reduce_mean(metric_func(y_true, y_pred)).numpy()
-    return metric
+    metric = metric_func(y_true, y_pred)
+    if tf.size(metric) >= 1:
+        metric = tf.reduce_mean(metric)
+    return metric.numpy()
 
 
 def aggregate_predictions(y_pred, regression=True):
