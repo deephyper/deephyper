@@ -168,10 +168,14 @@ class UQBaggingEnsemble(BaseEnsemble):
 
         return y
 
-    def evaluate(self, X, y, metrics=None):
+    def evaluate(self, X, y, metrics=None, scaler_y=None):
         scores = {}
 
         y_pred = self.predict(X)
+
+        if scaler_y:
+            y_pred = scaler_y(y_pred)
+            y = scaler_y(y)
 
         scores["loss"] = tf.reduce_mean(self.loss(y, y_pred)).numpy()
         if metrics:
