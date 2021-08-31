@@ -5,6 +5,7 @@ import signal
 from deephyper.core.exceptions import SearchTerminationError
 from deephyper.evaluator.evaluate import EVALUATORS
 import numpy as np
+import pandas as pd
 
 
 class Search:
@@ -42,7 +43,13 @@ class Search:
         try:
             self._search(max_evals, timeout)
         except SearchTerminationError:
-            self._evaluator.dump_evals()
+            if "saved_keys" in dir(self):
+                self._evaluator.dump_evals(saved_keys=self.saved_keys)
+            else:
+                self._evaluator.dump_evals()
+
+        df_results = pd.read_csv("results.csv")
+        return df_results
 
     def _search(self, max_evals, timeout):
         raise NotImplementedError

@@ -7,7 +7,6 @@ from deephyper.core.parser import str2bool
 from deephyper.search.nas.regevo import RegularizedEvolution
 
 
-
 class AgEBO(RegularizedEvolution):
     """Aging evolution with Bayesian Optimization.
 
@@ -18,20 +17,20 @@ class AgEBO(RegularizedEvolution):
         self,
         problem,
         evaluator,
-        random_state: int=None,
-        log_dir: str=".",
-        verbose: int=0,
+        random_state: int = None,
+        log_dir: str = ".",
+        verbose: int = 0,
         # RE
-        population_size: int=100,
-        sample_size: int=10,
+        population_size: int = 100,
+        sample_size: int = 10,
         # BO
-        surrogate_model: str="RF",
-        n_jobs: int=1,
-        kappa: float=0.001,
-        xi: float=0.000001,
-        acq_func: str="LCB",
-        liar_strategy: str="cl_min",
-        mode: str="async",
+        surrogate_model: str = "RF",
+        n_jobs: int = 1,
+        kappa: float = 0.001,
+        xi: float = 0.000001,
+        acq_func: str = "LCB",
+        liar_strategy: str = "cl_min",
+        mode: str = "async",
         **kwargs,
     ):
         super().__init__(
@@ -51,6 +50,7 @@ class AgEBO(RegularizedEvolution):
 
         # Initialize opitmizer of hyperparameter space
         self._n_initial_points = self._evaluator.num_workers
+        self._liar_strategy = liar_strategy
 
         self._hp_opt = None
         self._hp_opt_kwargs = dict(
@@ -141,7 +141,9 @@ class AgEBO(RegularizedEvolution):
                     hp_results_y = np.minimum(hp_results_y, 1e3).tolist()  #! TODO
 
                     self._hp_opt.tell(hp_results_X, hp_results_y)  #! fit: costly
-                    new_hps = self._hp_opt.ask(n_points=len(new_results))
+                    new_hps = self._hp_opt.ask(
+                        n_points=len(new_results), strategy=self._liar_strategy
+                    )
 
                     new_configs = []
                     for hp_values, child_arch_seq in zip(new_hps, children_batch):
@@ -165,7 +167,9 @@ class AgEBO(RegularizedEvolution):
                         hp_results_y.append(-new_i_y)
 
                     self._hp_opt.tell(hp_results_X, hp_results_y)  #! fit: costly
-                    new_hps = self._hp_opt.ask(n_points=len(new_results))
+                    new_hps = self._hp_opt.ask(
+                        n_points=len(new_results), strategy=self._liar_strategy
+                    )
 
                     new_batch = self.gen_random_batch(size=len(new_results), hps=new_hps)
 
@@ -209,7 +213,6 @@ class AgEBO(RegularizedEvolution):
 
         child_arch[i] = sample
         return child_arch
-
 
     def get_surrogate_model(self, name: str, n_jobs: int = None):
         """Get a surrogate model from Scikit-Optimize.

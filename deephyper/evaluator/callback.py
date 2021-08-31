@@ -1,17 +1,16 @@
+import pandas as pd
+import time
+
 
 class Callback:
-
     def on_launch(self, job):
         ...
 
     def on_done(self, job):
         ...
 
-import pandas as pd
-import time
 
 class ProfilingCallback(Callback):
-
     def __init__(self):
         self.n = 0
         self.data = []

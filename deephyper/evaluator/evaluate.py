@@ -58,6 +58,38 @@ class Evaluator:
 
         self._callbacks = [] if callbacks is None else callbacks
 
+    @staticmethod
+    def create(run_function, method="subprocess", method_kwargs={}):
+        """Create evaluator with a specific backend and configuration.
+
+        Args:
+            run_function (function): the function to execute in parallel.
+            method (str, optional): the backend to use in ["thread", "process", "subprocess", "ray"]. Defaults to "subprocess".
+            method_kwargs (dict, optional): configuration of the corresponding backend. Defaults to "{}".
+
+        Raises:
+            DeephyperRuntimeError: if the method is not acceptable.
+
+        Returns:
+            Evaluator: the evaluator with the corresponding backend and configuration.
+        """
+
+        if not method in EVALUATORS.keys():
+            val = ", ".join(EVALUATORS)
+            raise DeephyperRuntimeError(
+                f'The method "{method}" is not a valid method for an Evaluator!'
+                f" Choose among the following evalutor types: "
+                f"{val}."
+            )
+
+        # create the evaluator
+        mod_name, attr_name = EVALUATORS[method].split(".")
+        mod = importlib.import_module(f"deephyper.evaluator.{mod_name}")
+        eval_cls = getattr(mod, attr_name)
+        evaluator = eval_cls(run_function, **method_kwargs)
+
+        return evaluator
+
     async def _get_at_least_n_tasks(self, n):
         # If a user requests a batch size larger than the number of currently-running tasks, set n to the number of tasks running.
         if n > len(self._tasks_running):
@@ -78,25 +110,8 @@ class Evaluator:
             task = self.loop.create_task(self.execute(new_job))
             self._tasks_running.append(task)
 
-    def create(run_function, method="subprocess", method_kwargs={}):
-
-        if not method in EVALUATORS.keys():
-            val = ", ".join(EVALUATORS)
-            raise DeephyperRuntimeError(
-                f'The method "{method}" is not a valid method for an Evaluator!'
-                f" Choose among the following evalutor types: "
-                f"{val}."
-            )
-
-        # create the evaluator
-        mod_name, attr_name = EVALUATORS[method].split(".")
-        mod = importlib.import_module(f"deephyper.evaluator.{mod_name}")
-        eval_cls = getattr(mod, attr_name)
-        evaluator = eval_cls(run_function, **method_kwargs)
-
-        return evaluator
-
     def _on_launch(self, job):
+        """Called after a job is started."""
         job.status = job.RUNNING
 
         job.duration = time.time()
@@ -106,13 +121,14 @@ class Evaluator:
             cb.on_launch(job)
 
     def _on_done(self, job):
+        """Called after a job has completed."""
         job.status = job.DONE
 
         job.duration = time.time() - job.duration
         job.elapsed_sec = time.time() - self.timestamp
 
         if np.isscalar(job.result):
-            if not(np.isfinite(job.result)):
+            if not (np.isfinite(job.result)):
                 job.result = Evaluator.FAIL_RETURN_VALUE
 
         # call callbacks
@@ -123,9 +139,13 @@ class Evaluator:
         raise NotImplementedError
 
     def submit(self, configs: List[Dict]):
+        """Send configurations to be evaluated by available workers.
+
+        Args:
+            configs (List[Dict]): A list of dict which will be passed to the run function to be executed.
+        """
         self.loop = asyncio.get_event_loop()
         self.loop.run_until_complete(self._run_jobs(configs))
-        return self.jobs
 
     def gather(self, type, size=1):
         """Collect the completed tasks from the evaluator in batches of one or more.
@@ -166,7 +186,7 @@ class Evaluator:
         return results
 
     def create_job(self, config):
-        new_job = Job(self.n_jobs, 2021, config, self.run_function)
+        new_job = Job(self.n_jobs, config, self.run_function)
         self.n_jobs += 1
         self.jobs.append(new_job)
 
@@ -193,9 +213,7 @@ class Evaluator:
         else:
             return val
 
-    def dump_evals(
-        self, saved_key: str = None, saved_keys: list = None
-    ):
+    def dump_evals(self, saved_key: str = None, saved_keys: list = None):
         """Dump evaluations to 'results.csv' file."""
 
         resultsList = []

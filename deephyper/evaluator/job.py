@@ -6,9 +6,8 @@ class Job:
     RUNNING = 1
     DONE = 2
 
-    def __init__(self, id, seed:str, config:dict, run_function):
+    def __init__(self, id, config:dict, run_function):
         self.id = id
-        self.seed = seed
         self.config = config
         self.run_function = run_function
         self.duration = 0 # in seconds.
