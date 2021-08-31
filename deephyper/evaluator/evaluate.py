@@ -179,6 +179,20 @@ class Evaluator:
             raise ValueError(f"Expected dict, but got {type(x)}")
         return x
 
+    def convert_for_csv(self, val):
+        """Convert an input value to an accepted format to be saved as a value of a CSV file (e.g., a list becomes it's str representation).
+
+        Args:
+            val (Any): The input value to convert.
+
+        Returns:
+            Any: The converted value.
+        """
+        if type(val) is list:
+            return str(val)
+        else:
+            return val
+
     def dump_evals(
         self, saved_key: str = None, saved_keys: list = None
     ):
