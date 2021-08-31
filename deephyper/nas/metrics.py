@@ -96,7 +96,7 @@ def selectMetric(name: str):
         return name
     if metrics_func.get(name) == None and metrics_obj.get(name) == None:
         try:
-            return util.load_attr_from(name)
+            return util.load_attr(name)
         except:
             return name  # supposing it is referenced in keras metrics
     else:

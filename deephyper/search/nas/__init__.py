@@ -1,19 +1,13 @@
-from deephyper.core.parser import add_arguments_from_signature
 from deephyper.search import Search
 
-__all__ = ["ambs", "random", "regevo", "agebo"]
+__all__ = ["random"]
 
 
 class NeuralArchitectureSearch(Search):
     def __init__(
-        self, problem, run="deephyper.nas.run.alpha.run", evaluator="ray", **kwargs
+        self, problem, evaluator, random_state=None, log_dir=".", verbose=0, **kwargs
     ):
+        super().__init__(problem, evaluator, random_state, log_dir, verbose)
 
-        super().__init__(problem, run=run, evaluator=evaluator, **kwargs)
-        if self.problem._space["log_dir"] is None:
-            self.problem._space["log_dir"] = self.log_dir
-
-    @staticmethod
-    def _extend_parser(parser):
-        add_arguments_from_signature(parser, NeuralArchitectureSearch)
-        return parser
+        if self._problem._space["log_dir"] is None:
+            self._problem._space["log_dir"] = self._log_dir

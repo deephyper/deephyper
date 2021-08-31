@@ -30,7 +30,7 @@ def selectLoss(name: str):
         return name
     if losses_func.get(name) == None and losses_obj.get(name) == None:
         try:
-            loaded_obj = util.load_attr_from(name)
+            loaded_obj = util.load_attr(name)
             return loaded_obj
         except:
             return tf.keras.losses.get(name)  # supposing it is referenced in keras losses

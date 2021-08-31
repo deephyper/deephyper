@@ -1,163 +1,54 @@
 import logging
-import subprocess
+import asyncio
 import sys
-import time
-from collections import defaultdict, namedtuple
+import inspect
+import re
+import json
+import os
 
 from deephyper.evaluator.evaluate import Evaluator
+from deephyper.evaluator.encoder import Encoder
 
 logger = logging.getLogger(__name__)
 
 
-class PopenFuture:
-    FAIL_RETURN_VALUE = Evaluator.FAIL_RETURN_VALUE
-
-    def __init__(self, args, parse_fxn):
-        self.proc = subprocess.Popen(
-            args,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            encoding="utf-8",
-        )
-        self._state = "active"
-        self._result = None
-        self._parse = parse_fxn
-
-    def _poll(self):
-        if not self._state == "active":
-            return
-        retcode = self.proc.poll()
-        if retcode is None:
-            self._state = "active"
-            stdout, stderr_data = self.proc.communicate()
-            print(stdout)
-            tmp_res = self._parse(stdout)
-            if tmp_res != sys.float_info.max:
-                self._result = tmp_res
-        elif retcode == 0:
-            self._state = "done"
-        else:
-            self._state = "failed"
-
-    def result(self):
-        if self._result is not None:
-            return self._result
-        self.proc.wait()
-        stdout, stderr_data = self.proc.communicate()
-        print(stdout)
-        if self.done:
-            self._result = self._parse(stdout)
-        else:
-            self._result = self.FAIL_RETURN_VALUE
-            logger.error(f"Eval failed: {stdout}")
-        return self._result
-
-    def cancel(self):
-        self.proc.kill()
-        try:
-            self.proc.communicate()
-        except ValueError:
-            pass
-        self._state = "cancelled"
-
-    @property
-    def active(self):
-        self._poll()
-        return self._state == "active"
-
-    @property
-    def done(self):
-        self._poll()
-        return self._state == "done"
-
-    @property
-    def failed(self):
-        self._poll()
-        return self._state == "failed"
-
-    @property
-    def cancelled(self):
-        self._poll()
-        return self._state == "cancelled"
-
-
 class SubprocessEvaluator(Evaluator):
-    """Evaluator using subprocess.
 
-    The ``SubprocessEvaluator`` use the ``subprocess`` package. The generated processes have a fresh memory independant from their parent process. All the imports are going to be repeated.
-
-    Args:
-        run_function (func): takes one parameter of type dict and returns a scalar value.
-        cache_key (func): takes one parameter of type dict and returns a hashable type, used as the key for caching evaluations. Multiple inputs that map to the same hashable key will only be evaluated once. If ``None``, then cache_key defaults to a lossless (identity) encoding of the input dict.
-    """
-
-    WaitResult = namedtuple("WaitResult", ["active", "done", "failed", "cancelled"])
-
-    def __init__(self, run_function, cache_key=None, **kwargs):
-        super().__init__(run_function, cache_key)
-        self.num_workers = 1
+    def __init__(self, run_function, num_workers: int=1, callbacks=None):
+        super().__init__(run_function, num_workers, callbacks)
+        self.sem = asyncio.Semaphore(num_workers)
         logger.info(
-            f"Subprocess Evaluator will execute {self._run_function.__name__}() from module {self._run_function.__module__}"
+            f"Subprocess Evaluator will execute {self.run_function.__name__}() from module {self.run_function.__module__}"
         )
 
-    def _args(self, x):
-        exe = self._runner_executable
-        cmd = " ".join((exe, f"'{self.encode(x)}'"))
-        return cmd
+    def _encode(self, job):
+        return json.loads(json.dumps(job.config, cls=Encoder))
 
-    def _eval_exec(self, x):
-        assert isinstance(x, dict)
-        cmd = self._args(x)
-        future = PopenFuture(cmd, self._parse)
-        return future
+    async def execute(self, job):
+        async with self.sem:
 
-    @staticmethod
-    def _timer(timeout):
-        if timeout is None:
-            return lambda: True
-        else:
-            timeout = max(float(timeout), 0.01)
-            start = time.time()
-            return lambda: (time.time() - start) < timeout
+            # Retrieve the path of the module holding the user-defined function given to the async evaluator.
+            # Pass this module path to the subprocess to add to its python path and use.
+            script_file = inspect.getfile(sys.modules[self.run_function.__module__])
+            module_path = os.path.dirname(script_file)
+            module_name = os.path.basename(script_file)[:-3]
+            # Code that will run on the subprocess.
+            code = f"import sys; sys.path.insert(1, '{module_path}'); from {module_name} import {self.run_function.__name__}; print('DH-OUTPUT:' + str({self.run_function.__name__}({self._encode(job)})))"
+            logger.debug(f"executing:  {code}")
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, '-c', code,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE)
+            # Retrieve the stdout byte array from the (stdout, stderr) tuple returned from the subprocess.
+            stdout, stderr = await proc.communicate()
+            # Search through the byte array using a regular expression and collect the return value of the user-defined function.
+            retval_bytes = re.search(b'DH-OUTPUT:(.+)\n', stdout).group(1)
+            # Finally, parse whether the return value from the user-defined function is a scalar, a list, or a dictionary.
+            retval = retval_bytes.replace(b"\'", b"\"") # For dictionaries, replace single quotes with double quotes!
+            sol = json.loads(retval)
 
-    def wait(self, futures, timeout=None, return_when="ANY_COMPLETED"):
-        assert return_when.strip() in ["ANY_COMPLETED", "ALL_COMPLETED"]
-        waitall = bool(return_when.strip() == "ALL_COMPLETED")
+            await proc.wait()
 
-        num_futures = len(futures)
-        active_futures = [f for f in futures if f.active]
-        time_isLeft = self._timer(timeout)
+            job.result = sol
 
-        if waitall:
-
-            def can_exit():
-                return len(active_futures) == 0
-
-        else:
-
-            def can_exit():
-                return len(active_futures) < num_futures
-
-        while time_isLeft():
-            if can_exit():
-                break
-            else:
-                active_futures = [f for f in futures if f.active]
-                time.sleep(0.04)
-
-        if not can_exit():
-            raise TimeoutError(
-                f"{timeout} sec timeout expired while "
-                f"waiting on {len(futures)} tasks until {return_when}"
-            )
-
-        results = defaultdict(list)
-        for f in futures:
-            results[f._state].append(f)
-        return self.WaitResult(
-            active=results["active"],
-            done=results["done"],
-            failed=results["failed"],
-            cancelled=results["cancelled"],
-        )
+        return job

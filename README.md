@@ -19,26 +19,29 @@ search, a set of search algorithms for neural architecture search and hyperparam
 and evaluators, a common interface for evaluating hyperparameter configurations
 on HPC platforms.
 
-# Documentation
+## Documentation
 
 Deephyper documentation is on [ReadTheDocs](https://deephyper.readthedocs.io)
 
-# Install instructions
+## Install instructions
 
 From pip:
-```
+
+```bash
 pip install deephyper
 ```
 
 From github:
-```
+
+```bash
 git clone https://github.com/deephyper/deephyper.git
 cd deephyper/
 pip install -e .
 ```
 
-if you want to install deephyper with test and documentation packages:
-```
+If you want to install deephyper with test and documentation packages:
+
+```bash
 # From Pypi
 pip install 'deephyper[tests,docs]'
 
@@ -48,52 +51,71 @@ cd deephyper/
 pip install -e '.[tests,docs]'
 ```
 
-# Directory search_space
+## How do I learn more?
 
+* Documentation: <https://deephyper.readthedocs.io>
+
+* GitHub repository: <https://github.com/deephyper/deephyper>
+
+## Quickstart
+
+The black-box function named `run` is defined by taking an input dictionnary named `config` which contains the different variables to optimize. Then the run-function is binded to an `Evaluator` in charge of distributing the computation of multiple evaluations. Finally, a Bayesian search named `AMBS` is created and executed to find the best `x`.
+
+```python
+def run(config: dict):
+    return -config["x"]**2
+
+
+# Necessary IF statement otherwise it will enter in a infinite loop
+# when loading the 'run' function from a subprocess
+if __name__ == "__main__":
+    from deephyper.problem import HpProblem
+    from deephyper.search.hps import AMBS
+    from deephyper.evaluator.evaluate import Evaluator
+
+    # define the variable you want to optimize
+    problem = HpProblem()
+    problem.add_hyperparameter((-10.0, 10.0), "x")
+
+    # define the evaluator to distribute the computation
+    evaluator = Evaluator.create(
+        run,
+        method="subprocess",
+        method_kwargs={
+            "num_workers": 2,
+        },
+    )
+
+    # define your search and execute it
+    search = AMBS(problem, evaluator)
+
+    results = search.search(max_evals=100)
+    print(results)
 ```
-benchmark/
-    a set of problems for hyperparameter or neural architecture search which the user can use to compare our different search algorithms or as examples to build their own problems.
-evaluator/
-    a set of objects which help to run search on different systems and for different cases such as quick and light experiments or long and heavy runs.
-search/
-    a set of algorithms for hyperparameter and neural architecture search. You will also find a modular way to define new search algorithms and specific sub modules for hyperparameter or neural architecture search.
-hps/
-        hyperparameter search applications
-nas/
-        neural architecture search applications
+
+Which outputs the following where the best ``x`` found is clearly around ``0``.
+
+```verbatim
+            x  id  objective  elapsed_sec  duration
+0   1.667375   1  -2.780140     0.124388  0.071422
+1   9.382053   2 -88.022911     0.124440  0.071465
+2   0.247856   3  -0.061433     0.264603  0.030261
+3   5.237798   4 -27.434527     0.345482  0.111113
+4   5.168073   5 -26.708983     0.514158  0.175257
+..       ...  ..        ...          ...       ...
+94  0.024265  95  -0.000589     9.261396  0.117477
+95 -0.055000  96  -0.003025     9.367814  0.113984
+96 -0.062223  97  -0.003872     9.461532  0.101337
+97 -0.016222  98  -0.000263     9.551584  0.096401
+98  0.009660  99  -0.000093     9.638016  0.092450
 ```
 
-
-# How do I learn more?
-
-* Documentation: https://deephyper.readthedocs.io
-
-* GitHub repository: https://github.com/deephyper/deephyper
-
-# Quickstart
-
-## Hyperparameter Search (HPS)
-
-An example command line for HPS:
-
-```bash
-deephyper hps ambs --evaluator ray --problem deephyper.benchmark.hps.polynome2.Problem --run deephyper.benchmark.hps.polynome2.run --n-jobs 1
-```
-
-## Neural Architecture Search (NAS)
-
-An example command line for NAS:
-
-```bash
-deephyper nas ambs --evaluator ray --problem deephyper.benchmark.nas.polynome2Reg.Problem --n-jobs 1
-```
-
-# Who is responsible?
+## Who is responsible?
 
 Currently, the core DeepHyper team is at Argonne National Laboratory:
 
 * Prasanna Balaprakash <pbalapra@anl.gov>, Lead and founder
-* Romain Egele <romain.egele@polytechnique.edu>
+* Romain Egele <romain.egele@polytechnique.edu>, Co-Lead
 * Misha Salim <msalim@anl.gov>
 * Romit Maulik <rmaulik@anl.gov>
 * Venkat Vishwanath <venkat@anl.gov>
@@ -103,17 +125,17 @@ Modules, patches (code, documentation, etc.) contributed by:
 
 * Elise Jennings <ejennings@anl.gov>
 * Dipendra Kumar Jha <dipendrajha2018@u.northwestern.edu>
+* Felix Perez <felix.perez@utdallas.edu>
 
-# Citing DeepHyper
+## Citing DeepHyper
 
-If you are referencing DeepHyper in a publication, please cite the following papers:
+If you are referencing DeepHyper in a publication, please cite one of the following papers:
 
-* P. Balaprakash, M. Salim, T. Uram, V. Vishwanath, and S. M. Wild. **DeepHyper: Asynchronous Hyperparameter Search for Deep Neural Networks**.
-    In 25th IEEE International Conference on High Performance Computing, Data, and Analytics. IEEE, 2018.
+* P. Balaprakash, R. Egele, M. Salim, S. Wild, V. Vishwanath, F. Xia, T. Brettin, and R. Stevens. **Scalable reinforcement-learning-based neural architecture search for cancer deep learning research**. In SC’19:  IEEE/ACM International Conference on High Performance Computing, Network-ing, Storage and Analysis, 2019.
 
-* P. Balaprakash, R. Egele, M. Salim, S. Wild, V. Vishwanath, F. Xia, T. Brettin, and R. Stevens. **Scalable reinforcement-learning-based neural architecture search for cancer deep learning research**.  In SC ’19:  IEEE/ACM International Conference on High Performance Computing, Network-ing, Storage and Analysis, 2019.
+* P. Balaprakash, M. Salim, T. Uram, V. Vishwanath, and S. M. Wild. **DeepHyper: Asynchronous Hyperparameter Search for Deep Neural Networks**. In 25th IEEE International Conference on High Performance Computing, Data, and Analytics. IEEE, 2018.
 
-# How can I participate?
+## How can I participate?
 
 Questions, comments, feature requests, bug reports, etc. can be directed to:
 
@@ -124,13 +146,13 @@ Optionally, please include in your first patch a credit for yourself in the list
 
 The DeepHyper Team uses git-flow to organize the development: [Git-Flow cheatsheet](https://danielkummer.github.io/git-flow-cheatsheet/). For tests we are using: [Pytest](https://docs.pytest.org/en/latest/).
 
-# Acknowledgements
+## Acknowledgements
 
 * Scalable Data-Efficient Learning for Scientific Domains, U.S. Department of Energy 2018 Early Career Award funded by the Advanced Scientific Computing Research program within the DOE Office of Science (2018--Present)
 * Argonne Leadership Computing Facility: This research used resources of the Argonne Leadership Computing Facility, which is a DOE Office of Science User Facility supported under Contract DE-AC02-06CH11357.
 * SLIK-D: Scalable Machine Learning Infrastructures for Knowledge Discovery, Argonne Computing, Environment and Life Sciences (CELS) Laboratory Directed Research and Development (LDRD) Program (2016--2018)
 
-# Copyright and license
+## Copyright and license
 
 Copyright © 2019, UChicago Argonne, LLC
 

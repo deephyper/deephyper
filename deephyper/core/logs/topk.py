@@ -74,24 +74,26 @@ def output_best_configuration(path: str, output: str, k: int, **kwargs) -> None:
         df = pd.read_csv(path)
         df = df.sort_values(by=["objective"], ascending=False, ignore_index=True)
         subdf = df.iloc[:k]
-        if not ("arch_seq" in subdf.columns):
 
-            try:
-                if (subdf.to_numpy()[:, :-2] < 1).all():
-                    conv_type = float
-                else:
-                    conv_type = int
+        # if not ("arch_seq" in subdf.columns):
 
-                subdf = pd.DataFrame(
-                    {
-                        "arch_seq": [
-                            str(list(el)) for el in subdf.to_numpy()[:, :-2].astype(conv_type)
-                        ],
-                        "objective": subdf.objective.tolist(),
-                        "elapsed_sec": subdf.elapsed_sec.tolist(),
-                    }
-                )
-            except TypeError: pass
+        #     try:
+        #         if (subdf.to_numpy()[:, :-3] < 1).all():
+        #             conv_type = float
+        #         else:
+        #             conv_type = int
+
+        #         subdf = pd.DataFrame(
+        #             {
+        #                 "arch_seq": [
+        #                     str(list(el)) for el in subdf.to_numpy()[:, :-3].astype(conv_type)
+        #                 ],
+        #                 "objective": subdf.objective.tolist(),
+        #                 "elapsed_sec": subdf.elapsed_sec.tolist(),
+        #                 "duration": subdf.duration.tolist()
+        #             }
+        #         )
+        #     except TypeError: pass
 
         if len(output) == 0:
             print(yaml.dump(json.loads(subdf.to_json(orient="index"))))

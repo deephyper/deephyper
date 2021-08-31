@@ -1,6 +1,5 @@
 
 import argparse
-import os
 import sys
 
 from deephyper.core.cli import mpi4py_mock

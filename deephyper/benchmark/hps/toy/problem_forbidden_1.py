@@ -9,11 +9,11 @@ Example command line::
 """
 import numpy as np
 
-from deephyper.problem import BaseProblem
+from deephyper.problem import HpProblem
 from deephyper.problem import config_space as cs
 
 # Problem definition
-Problem = BaseProblem()
+Problem = HpProblem(seed=42)
 
 x_hp = Problem.add_hyperparameter(
     name="x", value=(0, 10)

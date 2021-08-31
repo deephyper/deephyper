@@ -1,11 +1,7 @@
-import os
-import json
-from random import random, seed
+import logging
+import numpy as np
 
-from deephyper.search import util
 from deephyper.search.nas import NeuralArchitectureSearch
-
-dhlogger = util.conf_logger("deephyper.search.nas.random")
 
 
 class Random(NeuralArchitectureSearch):
@@ -17,69 +13,62 @@ class Random(NeuralArchitectureSearch):
         evaluator (str): value in ['balsam', 'subprocess', 'processPool', 'threadPool'].
     """
 
-    def __init__(self, problem, run, evaluator, **kwargs):
+    def __init__(
+        self,
+        problem,
+        evaluator,
+        random_state: int = None,
+        log_dir: str = ".",
+        verbose: int = 0,
+        **kwargs
+    ):
 
-        super().__init__(problem=problem, run=run, evaluator=evaluator, **kwargs)
+        super().__init__(problem, evaluator, random_state=None, log_dir=".", verbose=0)
 
-        seed(self.problem.seed)
+        self.free_workers = self._evaluator.num_workers
 
-        self.free_workers = self.evaluator.num_workers
+        self.pb_dict = self._problem.space
+        search_space = self._problem.build_search_space()
 
-    @staticmethod
-    def _extend_parser(parser):
-        NeuralArchitectureSearch._extend_parser(parser)
-        return parser
+        self.space_list = [
+            (0, vnode.num_ops - 1) for vnode in search_space.variable_nodes
+        ]
 
-    def saved_keys(self, val: dict):
-        res = {
-            "id": val["id"],
-            "arch_seq": str(val["arch_seq"])
-        }
+    def saved_keys(self, job):
+        res = {"arch_seq": str(job.config["arch_seq"])}
         return res
 
-    def main(self):
-
-        # Setup
-        space = self.problem.space
-        search_space = self.problem.build_search_space()
-
-        len_arch = search_space.num_nodes
-
-        def gen_arch():
-            return [random() for _ in range(len_arch)]
+    def _search(self, max_evals, timeout):
 
         num_evals_done = 0
-        available_workers = self.free_workers
-
-        def gen_batch(size):
-            batch = []
-            for _ in range(size):
-                cfg = space.copy()
-                cfg["arch_seq"] = gen_arch()
-                batch.append(cfg)
-            return batch
+        available_workers = self._evaluator.num_workers
 
         # Filling available nodes at start
-        self.evaluator.add_eval_batch(gen_batch(size=available_workers))
+        batch = self.gen_random_batch(size=available_workers)
+        self._evaluator.submit(batch)
 
         # Main loop
-        while num_evals_done < self.max_evals:
-            results = self.evaluator.get_finished_evals()
+        while num_evals_done < max_evals:
+            results = self._evaluator.gather("BATCH", 1)
 
             num_received = num_evals_done
-            for _ in results:
-                num_evals_done += 1
+            num_evals_done += len(results)
             num_received = num_evals_done - num_received
 
             # Filling available nodes
             if num_received > 0:
-                self.evaluator.dump_evals(saved_keys=self.saved_keys)
+                self._evaluator.dump_evals(saved_keys=self.saved_keys)
 
-                if num_evals_done < self.max_evals:
-                    self.evaluator.add_eval_batch(gen_batch(size=num_received))
+                if num_evals_done < max_evals:
+                    self._evaluator.submit(self.gen_random_batch(size=num_received))
 
+    def gen_random_batch(self, size: int) -> list:
+        batch = []
+        for _ in range(size):
+            cfg = self.pb_dict.copy()
+            cfg["arch_seq"] = self.gen_random_arch()
+            batch.append(cfg)
+        return batch
 
-if __name__ == "__main__":
-    args = Random.parse_args()
-    search = Random(**vars(args))
-    search.main()
+    def gen_random_arch(self) -> list:
+        return [self._random_state.choice(b + 1) for (_, b) in self.space_list]

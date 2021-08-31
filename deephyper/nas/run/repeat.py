@@ -10,11 +10,12 @@
 """
 import numpy as np
 import tensorflow as tf
+import logging
 
 from deephyper.search import util
 from deephyper.nas.run.alpha import run as run_alpha
 
-logger = util.conf_logger("deephyper.search.nas.run")
+logger = logging.getLogger(__name__)
 
 
 def run(config: dict) -> float:

@@ -27,6 +27,7 @@ The hyperparameters of the form ``patience_{Callback}`` such as ``patience_Early
     )
 """
 import traceback
+import logging
 
 import numpy as np
 import tensorflow as tf
@@ -45,7 +46,7 @@ from deephyper.nas.trainer.train_valid import TrainerTrainValid
 from deephyper.search import util
 import deephyper.nas.arch as a
 
-logger = util.conf_logger("deephyper.search.nas.run")
+logger = logging.getLogger(__name__)
 
 
 def run(config):

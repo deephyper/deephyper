@@ -1,19 +1,18 @@
 import inspect
-import os
+import logging
 import time
 from inspect import signature
 
 import numpy as np
 import tensorflow as tf
-
 from deephyper.core.exceptions import DeephyperRuntimeError
-from deephyper.search import util
 from deephyper.nas import arch as a
 from deephyper.nas import train_utils as U
-from deephyper.nas.metrics import selectMetric
 from deephyper.nas.losses import selectLoss
+from deephyper.nas.metrics import selectMetric
+from deephyper.search import util
 
-logger = util.conf_logger("deephyper.model.trainer")
+logger = logging.getLogger(__name__)
 
 
 class TrainerTrainValid:
