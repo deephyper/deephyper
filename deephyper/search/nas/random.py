@@ -22,30 +22,35 @@ class Random(NeuralArchitectureSearch):
 
         super().__init__(problem, evaluator, random_state, log_dir, verbose)
 
-        self.free_workers = self._evaluator.num_workers
-
         self.pb_dict = self._problem.space
         search_space = self._problem.build_search_space()
-
         self.space_list = [
             (0, vnode.num_ops - 1) for vnode in search_space.variable_nodes
         ]
 
     def saved_keys(self, job):
+
         res = {"arch_seq": str(job.config["arch_seq"])}
+        hp_names = self._problem._hp_space._space.get_hyperparameter_names()
+
+        for hp_name in hp_names:
+            if hp_name == "loss":
+                res["loss"] = job.config["loss"]
+            else:
+                res[hp_name] = job.config["hyperparameters"][hp_name]
+
         return res
 
     def _search(self, max_evals, timeout):
 
         num_evals_done = 0
-        available_workers = self._evaluator.num_workers
 
         # Filling available nodes at start
-        batch = self.gen_random_batch(size=available_workers)
+        batch = self.gen_random_batch(size=self._evaluator.num_workers)
         self._evaluator.submit(batch)
 
         # Main loop
-        while num_evals_done < max_evals:
+        while max_evals < 0 or num_evals_done < max_evals:
             results = self._evaluator.gather("BATCH", 1)
 
             num_received = num_evals_done
@@ -61,10 +66,16 @@ class Random(NeuralArchitectureSearch):
 
     def gen_random_batch(self, size: int) -> list:
         batch = []
-        for _ in range(size):
-            cfg = self.pb_dict.copy()
-            cfg["arch_seq"] = self.gen_random_arch()
-            batch.append(cfg)
+
+        hp_values_samples = self._problem._hp_space._space.sample_configuration(size)
+        if size == 1:
+            hp_values_samples = [hp_values_samples]
+
+        for i in range(size):
+            arch_seq = self.gen_random_arch()
+            config = self._problem.gen_config(arch_seq, hp_values_samples[i].get_array())
+            batch.append(config)
+
         return batch
 
     def gen_random_arch(self) -> list:
