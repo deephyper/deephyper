@@ -6,7 +6,7 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.DEBUG)
 
-    from deephyper.search.nas.agebo import AgEBO
+    from deephyper.search.nas.ambsmixed import AMBSMixed
     from deephyper.evaluator.evaluate import Evaluator
 
     from deephyper.benchmark.nas.linearRegHybrid import Problem
@@ -16,7 +16,7 @@ if __name__ == "__main__":
         run, method="subprocess", method_kwargs={"num_workers": 1}
     )
 
-    search = AgEBO(Problem, evaluator)
+    search = AMBSMixed(Problem, evaluator)
 
     search.search(max_evals=10)
 

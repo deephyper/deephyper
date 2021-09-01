@@ -1,7 +1,4 @@
-import logging
-import numpy as np
-
-from deephyper.search.nas import NeuralArchitectureSearch
+from deephyper.search.nas.base import NeuralArchitectureSearch
 
 
 class Random(NeuralArchitectureSearch):
@@ -23,7 +20,7 @@ class Random(NeuralArchitectureSearch):
         **kwargs
     ):
 
-        super().__init__(problem, evaluator, random_state=None, log_dir=".", verbose=0)
+        super().__init__(problem, evaluator, random_state, log_dir, verbose)
 
         self.free_workers = self._evaluator.num_workers
 
