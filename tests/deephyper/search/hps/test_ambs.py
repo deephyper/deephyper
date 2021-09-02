@@ -22,7 +22,7 @@ if __name__ == "__main__":
     problem.add_hyperparameter((0.0, 10.0), "x")
 
     evaluator = Evaluator.create(
-        run, method="subprocess", method_kwargs={
+        run, method="process", method_kwargs={
             # "num_cpus": 4,
             "num_workers": 4,
             "callbacks":[ProfilingCallback()]
@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
     plt.figure()
     plt.step(profile.timestamp, profile.n_jobs_running)
-    plt.ylim(top=5)
+    #plt.ylim(top=5)
     plt.show()
 
     # search.search(max_evals=100, timeout=1)
