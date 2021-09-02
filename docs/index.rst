@@ -22,7 +22,7 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
 Quick Start
 -----------
 
-The black-box function named ``run`` is defined by taking an input dictionnary named ``config`` which contains the different variables to optimize. Then the run-function is binded to an ``Evaluator`` in charge of distributing the computation of multiple evaluations. Finally, a Bayesian search named ``AMBS`` is created and executed to find the best ``x``.
+The black-box function named ``run`` is defined by taking an input dictionnary named ``config`` which contains the different variables to optimize. Then the run-function is binded to an ``Evaluator`` in charge of distributing the computation of multiple evaluations. Finally, a Bayesian search named ``AMBS`` is created and executed to find the values of config which maximize the return value of ``run(config)``.
 
 .. code-block:: python
 

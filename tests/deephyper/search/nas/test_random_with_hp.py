@@ -2,11 +2,12 @@
 #! with subprocess be carefull about this IF statement otherwise it will enter in a
 #! infinite loop
 if __name__ == "__main__":
+    import os
     import logging
 
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
 
-    from deephyper.search.nas.agebo import AgEBO
+    from deephyper.search.nas.random import Random
     from deephyper.evaluator.evaluate import Evaluator
 
     from deephyper.benchmark.nas.linearRegHybrid import Problem
@@ -16,7 +17,7 @@ if __name__ == "__main__":
         run, method="subprocess", method_kwargs={"num_workers": 1}
     )
 
-    search = AgEBO(Problem, evaluator)
+    search = Random(Problem, evaluator)
 
     search.search(max_evals=10)
 
