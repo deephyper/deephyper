@@ -73,7 +73,8 @@ class Random(NeuralArchitectureSearch):
 
         for i in range(size):
             arch_seq = self.gen_random_arch()
-            config = self._problem.gen_config(arch_seq, hp_values_samples[i].get_array())
+            hp_values = list(dict(hp_values_samples[i]).values())
+            config = self._problem.gen_config(arch_seq, hp_values)
             batch.append(config)
 
         return batch
