@@ -46,6 +46,7 @@ class RegularizedEvolutionMixed(RegularizedEvolution):
         self._space.add_configuration_space(
             prefix="2", configuration_space=self.na_space.space
         )
+        self._space_size = len(self._space.get_hyperparameter_names())
 
     def saved_keys(self, job):
 
@@ -124,7 +125,7 @@ class RegularizedEvolutionMixed(RegularizedEvolution):
         iterator = zip(*(sample(hp, size) for hp in self._space.get_hyperparameters()))
 
         for x in iterator:
-            cfg = self._problem.gen_config(x[self.hp_size :], x[: self.hp_size])
+            cfg = self._problem.gen_config(list(x[self.hp_size :]), list(x[: self.hp_size]))
             batch.append(cfg)
 
         return batch
@@ -143,7 +144,7 @@ class RegularizedEvolutionMixed(RegularizedEvolution):
 
         hp_x = self._problem.extract_hp_values(parent_cfg)
         x = hp_x + parent_cfg["arch_seq"]
-        i = np.random.choice(self.hp_size)
+        i = np.random.choice(self._space_size)
         hp = self._space.get_hyperparameters()[i]
         x[i] = hp.sample(self._space.random)
 
