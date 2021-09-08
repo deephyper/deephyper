@@ -85,7 +85,7 @@ class AgEBO(RegularizedEvolution):
             self._setup_hp_optimizer()
 
         num_evals_done = 0
-        population = collections.deque(maxlen=self.population_size)
+        population = collections.deque(maxlen=self._population_size)
 
         # Filling available nodes at start
         self._evaluator.submit(self.gen_random_batch(size=self._n_initial_points))
@@ -110,14 +110,14 @@ class AgEBO(RegularizedEvolution):
                 hp_results_X, hp_results_y = [], []
 
                 # If the population is big enough evolve the population
-                if len(population) == self.population_size:
+                if len(population) == self._population_size:
                     children_batch = []
 
                     # For each new parent/result we create a child from it
                     for new_i in range(len(new_results)):
                         # select_sample
                         indexes = np.random.choice(
-                            self.population_size, self.sample_size, replace=False
+                            self._population_size, self.sample_size, replace=False
                         )
                         sample = [population[i] for i in indexes]
 
