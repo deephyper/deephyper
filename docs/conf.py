@@ -47,18 +47,13 @@ branch_name_map = {
     "latest": "main",
     "develop": "develop"
 }
-
 if os.environ.get("READTHEDOCS"):
     doc_version = os.environ["READTHEDOCS_VERSION"]
 else:
     github_repo = git.Repo(search_parent_directories=True)
     doc_version = github_repo.active_branch.name
 
-tutorial_branch = branch_name_map.get(
-    doc_version,
-    "develop"
-)
-
+tutorial_branch = branch_name_map.get(doc_version, "develop")
 tutorials_github_link = "https://github.com/deephyper/tutorials.git"
 tutorials_dest_dir = "tutorials"
 
