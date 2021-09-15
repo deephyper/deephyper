@@ -117,7 +117,7 @@ class AgEBO(RegularizedEvolution):
                     for new_i in range(len(new_results)):
                         # select_sample
                         indexes = np.random.choice(
-                            self._population_size, self.sample_size, replace=False
+                            self._population_size, self._sample_size, replace=False
                         )
                         sample = [population[i] for i in indexes]
 
