@@ -40,7 +40,7 @@ for i, (k, v) in enumerate(authors.items()):
 REQUIRED = [
     "tensorflow~=2.5.0",
     "tensorflow_probability~=0.13.0",
-    "numpy", #==1.19.4",  # working with 1.20.1
+    "numpy",  # ==1.19.4",  # working with 1.20.1
     "dh-scikit-optimize==0.8.3",
     "scikit-learn>=0.23.1",
     "tqdm",
@@ -57,14 +57,21 @@ REQUIRED = [
     "typeguard",
     "openml==0.10.2",
     "matplotlib>=3.0.3",
-    "statsmodels"
+    "statsmodels",
 ]
 
 # What packages are optional?
 EXTRAS = {
     "tests": ["pytest", "codecov", "pytest-cov", "deepspace>=0.0.3"],
     "dev": ["twine", "black"],
-    "docs": ["ipython", "Sphinx~=3.5.4", "sphinx_rtd_theme~=0.5.2", "nbsphinx"],
+    "docs": [
+        "ipython",
+        "Sphinx~=3.5.4",
+        "sphinx-book-theme",
+        "nbsphinx",
+        "sphinx-copybutton",
+        "GitPython"
+    ],
     "analytics": [
         "jupyter",
         "jupyter_contrib_nbextensions>=0.5.1",

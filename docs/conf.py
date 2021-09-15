@@ -14,7 +14,10 @@
 #
 import os
 import sys
-import sphinx_rtd_theme
+
+import git
+import sphinx_book_theme
+
 
 sys.path.insert(0, os.path.abspath(".."))
 
@@ -39,16 +42,27 @@ else:
     release = f'v{about["__version__"]}-{about["__version_suffix__"]}'
 
 # PULL Tutorials
+branch_name_map = {
+    "master": "main",
+    "develop": "develop"
+}
+
+github_repo = git.Repo(search_parent_directories=True)
+tutorial_branch = branch_name_map.get(
+    github_repo.active_branch.name,
+    "develop"
+)
 
 tutorials_github_link = "https://github.com/deephyper/tutorials.git"
 tutorials_dest_dir = "tutorials"
 
-def pull_tutorials(github_link, dest_dir):
+
+def pull_tutorials(github_link, dest_dir, tutorial_branch):
     os.system(f"rm -rf {dest_dir}/")
-    os.system(f"git clone --depth=1 --branch=main {github_link} {dest_dir}")
+    os.system(f"git clone --depth=1 --branch={tutorial_branch} {github_link} {dest_dir}")
     os.system(f"rm -rf {dest_dir}/.git")
 
-pull_tutorials(tutorials_github_link, tutorials_dest_dir)
+pull_tutorials(tutorials_github_link, tutorials_dest_dir, tutorial_branch)
 
 # -- General configuration ---------------------------------------------------
 
@@ -71,11 +85,16 @@ extensions = [
     "sphinx.ext.githubpages",
     "sphinx.ext.napoleon",
     "sphinx.ext.autosummary",
-    "nbsphinx"
+    "nbsphinx",
+    "sphinx_book_theme",
+    "sphinx_copybutton",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates"]
+templates_path = [
+    os.path.join(sphinx_book_theme.get_html_theme_path(), "_templates"),
+    "_templates",
+]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -106,10 +125,9 @@ pygments_style = "sphinx"
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-# html_theme = "alabaster"
-html_theme = "sphinx_rtd_theme"
-# html_theme_path = ["_themes",]
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+html_theme = "sphinx_book_theme"
+html_theme_path = [sphinx_book_theme.get_html_theme_path()]
+
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -118,19 +136,17 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 html_logo = "_static/logo/medium.png"
 
 html_theme_options = {
-    "analytics_id": "UA-133225914-1",
+    # header settings
+    "repository_url": "https://github.com/deephyper/deephyper",
+    "use_repository_button": True,
+    "use_issues_button": True,
+    "use_edit_page_button": True,
+    "repository_branch": "develop",
+    "path_to_docs": "docs",
+    "use_download_button": True,
+    # sidebar settings
+    "show_navbar_depth": 1,
     "logo_only": True,
-    "display_version": True,
-    "prev_next_buttons_location": "bottom",
-    "style_external_links": False,
-    # 'vcs_pageview_mode': '',
-    "style_nav_header_background": "white",
-    # Toc options
-    "collapse_navigation": True,
-    "sticky_navigation": True,
-    "navigation_depth": 4,
-    "includehidden": True,
-    "titles_only": False,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -154,6 +170,10 @@ html_static_path = ["_static"]
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = "deephyperdoc"
+
+# CopyButton Settings
+copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
+copybutton_prompt_is_regexp = True
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -260,4 +280,3 @@ trim_doctest_flags = True
 def setup(app):
     app.add_css_file("custom.css")
     app.add_js_file("custom.js")
-    app.add_js_file("https://cdn.jsdelivr.net/npm/clipboard@1/dist/clipboard.min.js")
