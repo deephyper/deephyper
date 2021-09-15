@@ -16,18 +16,18 @@ deephyper.search.nas.agebo
    :undoc-members:
    :show-inheritance:
 
-deephyper.search.nas.ambs 
---------------------------
-
-.. automodule:: deephyper.search.nas.ambs
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 deephyper.search.nas.ambsmixed 
 -------------------------------
 
 .. automodule:: deephyper.search.nas.ambsmixed
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+deephyper.search.nas.base 
+--------------------------
+
+.. automodule:: deephyper.search.nas.base
    :members:
    :undoc-members:
    :show-inheritance:

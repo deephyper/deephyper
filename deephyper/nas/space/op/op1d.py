@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 
-from . import Operation
+from .operation import Operation
 
 
 class Dense(Operation):

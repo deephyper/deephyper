@@ -6,7 +6,7 @@ Learn more about different kind of convolution : https://towardsdatascience.com/
 
 import tensorflow as tf
 
-from ..op import Operation
+from .operation import Operation
 
 
 class Conv2D(Operation):

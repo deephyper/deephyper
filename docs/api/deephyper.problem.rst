@@ -8,14 +8,6 @@ deephyper.problem
 
 
 
-deephyper.problem.base 
------------------------
-
-.. automodule:: deephyper.problem.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 deephyper.problem.hyperparameter 
 ---------------------------------
 

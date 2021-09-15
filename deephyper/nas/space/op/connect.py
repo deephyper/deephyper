@@ -1,4 +1,4 @@
-from ..op import Operation
+from .operation import Operation
 
 
 class Connect(Operation):

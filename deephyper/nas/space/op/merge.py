@@ -1,7 +1,7 @@
+import deephyper as dh
 import tensorflow as tf
 
-from deephyper.nas.space.op import Operation
-import deephyper as dh
+from .operation import Operation
 
 
 class Concatenate(Operation):

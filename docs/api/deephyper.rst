@@ -14,9 +14,11 @@ deephyper
    deephyper.benchmark
    deephyper.contrib
    deephyper.core
+   deephyper.ensemble
    deephyper.evaluator
    deephyper.layers
    deephyper.nas
    deephyper.post
    deephyper.problem
    deephyper.search
+   deephyper.sklearn

@@ -1,6 +1,7 @@
 import numpy as np
 
-from deephyper.search.hps.automl.classifier import autosklearn1
+from deephyper.sklearn.classifier.autosklearn1.problem import Problem
+from deephyper.sklearn.classifier.autosklearn1.run import run as autosklearn_run
 
 
 def load_data():
@@ -13,11 +14,11 @@ def load_data():
 
 
 def run(config):
-    return autosklearn1.run(config, load_data)
+    return autosklearn_run(config, load_data)
 
 
 if __name__ == "__main__":
-    config = autosklearn1.Problem.space.sample_configuration()
+    config = Problem.space.sample_configuration()
     config = dict(config)
     acc = run(config)
     print(config)

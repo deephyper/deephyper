@@ -1,4 +1,4 @@
-deephyper.evaluator
+deephyper.evaluator 
 ====================
 
 .. automodule:: deephyper.evaluator
@@ -8,7 +8,23 @@ deephyper.evaluator
 
 
 
-deephyper.evaluator.evaluate
+deephyper.evaluator.callback 
+-----------------------------
+
+.. automodule:: deephyper.evaluator.callback
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+deephyper.evaluator.encoder 
+----------------------------
+
+.. automodule:: deephyper.evaluator.encoder
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+deephyper.evaluator.evaluate 
 -----------------------------
 
 .. automodule:: deephyper.evaluator.evaluate
@@ -16,10 +32,10 @@ deephyper.evaluator.evaluate
    :undoc-members:
    :show-inheritance:
 
-deephyper.evaluator.runner
----------------------------
+deephyper.evaluator.job 
+------------------------
 
-.. automodule:: deephyper.evaluator.runner
+.. automodule:: deephyper.evaluator.job
    :members:
    :undoc-members:
    :show-inheritance:

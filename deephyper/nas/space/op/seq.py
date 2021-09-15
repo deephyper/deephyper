@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from . import Operation
+from .operation import Operation
 from deephyper.contrib.layers.timestep_dropout import (
     TimestepDropout as TimestepDropoutLayer,
 )

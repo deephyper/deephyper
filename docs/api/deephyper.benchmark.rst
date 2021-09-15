@@ -32,14 +32,6 @@ deephyper.benchmark.benchmark\_functions\_wrappers
    :undoc-members:
    :show-inheritance:
 
-deephyper.benchmark.problem 
-----------------------------
-
-.. automodule:: deephyper.benchmark.problem
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 deephyper.benchmark.util 
 -------------------------
 

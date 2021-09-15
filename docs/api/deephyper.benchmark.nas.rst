@@ -13,8 +13,10 @@ deephyper.benchmark.nas
    deephyper.benchmark.nas.ackleyReg
    deephyper.benchmark.nas.covertype
    deephyper.benchmark.nas.dixonpriceReg
+   deephyper.benchmark.nas.ensembleReg
    deephyper.benchmark.nas.levyReg
    deephyper.benchmark.nas.linearReg
+   deephyper.benchmark.nas.linearRegHybrid
    deephyper.benchmark.nas.linearRegMultiInputs
    deephyper.benchmark.nas.linearRegMultiInputsGen
    deephyper.benchmark.nas.linearRegMultiLoss
