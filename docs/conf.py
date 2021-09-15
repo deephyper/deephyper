@@ -44,12 +44,18 @@ else:
 # PULL Tutorials
 branch_name_map = {
     "master": "main",
+    "latest": "main",
     "develop": "develop"
 }
 
-github_repo = git.Repo(search_parent_directories=True)
+if os.environ.get("READTHEDOCS"):
+    doc_version = os.environ["READTHEDOCS_VERSION"]
+else:
+    github_repo = git.Repo(search_parent_directories=True)
+    doc_version = github_repo.active_branch.name
+
 tutorial_branch = branch_name_map.get(
-    github_repo.active_branch.name,
+    doc_version,
     "develop"
 )
 
