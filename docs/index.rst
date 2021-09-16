@@ -75,7 +75,8 @@ Which outputs the following where the best ``x`` found is clearly around ``0``.
 
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
+
     :caption: Get Started
 
     install/index
