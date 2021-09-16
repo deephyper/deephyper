@@ -12,7 +12,7 @@ python:
         path: .
         extra_requirements:
             - docs
-   system_packages: false
+   system_packages: true
 
 sphinx:
    builder: html
