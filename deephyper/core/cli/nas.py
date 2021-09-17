@@ -1,5 +1,6 @@
 import argparse
 import sys
+import logging
 
 from deephyper.core.parser import add_arguments_from_signature
 from deephyper.evaluator.evaluate import EVALUATORS, Evaluator
@@ -72,6 +73,10 @@ def main(**kwargs):
 
     sys.path.insert(0, ".")
 
+
+    if kwargs["verbose"]:
+        logging.basicConfig(filename="deephyper.log", level=logging.INFO)
+
     search_name = sys.argv[2]
 
     # load search class
@@ -89,7 +94,7 @@ def main(**kwargs):
     evaluator_kwargs = {k: kwargs.pop(k) for k in base_arguments}
 
     for method in EVALUATORS.keys():
-        evaluator_method_kwargs = {k: kwargs.pop(k) for k in kwargs.copy() if method in k}
+        evaluator_method_kwargs = {k[len(evaluator_method)+1:]:kwargs.pop(k) for k in kwargs.copy() if method in k}
         if method == evaluator_method:
             evaluator_kwargs = {**evaluator_kwargs, **evaluator_method_kwargs}
 

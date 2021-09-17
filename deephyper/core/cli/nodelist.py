@@ -65,5 +65,5 @@ if __name__ == "__main__":
         raise ValueError("No argument provided")
 
     l = expand_nodelist(sys.argv[1], sys.argv[2])
-    l = str(l).replace(", ", " ")
+    l = str(l).replace(", ", " ").replace("'", "")
     print(l)

@@ -78,8 +78,10 @@ def do_config(head_node_ip, worker_nodes_ips, num_cpus, num_gpus, output, init, 
     # Detection of the host
     config = {
         "init_script": os.path.abspath(init),
-        "head_node_ip": validate_ip(head_node_ip),
-        "worker_nodes_ips": [validate_ip(wip) for wip in worker_nodes_ips],
+        # "head_node_ip": validate_ip(head_node_ip),
+        # "worker_nodes_ips": [validate_ip(wip) for wip in worker_nodes_ips],
+        "head_node_ip": head_node_ip,
+        "worker_nodes_ips": worker_nodes_ips,
         "username": getpass.getuser(),
     }
     config["num_workers"] = len(config["worker_nodes_ips"])
