@@ -1,5 +1,5 @@
+import sys
 import os
-from typing import List, Optional, Union
 
 # Adapted from 'get_job_nodelist()' found in the following project:
 # https://github.com/argonne-lcf/balsam/blob/main/balsam/platform/compute_node/alcf_thetaknl_node.py
@@ -12,8 +12,8 @@ def nodelist():
     # string like: 1001-1005,1030,1034-1200
     node_ids = []
     ranges = node_str.split(",")
-    lo:Union[str, int] = None
-    hi:Union[int, List[str]] = None
+    lo = None
+    hi = None
     for node_range in ranges:
         lo, *hi = node_range.split("-")
         lo = int(lo)

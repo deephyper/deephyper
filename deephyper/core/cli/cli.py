@@ -1,11 +1,8 @@
 
 import argparse
-import sys
 
-from deephyper.core.cli import mpi4py_mock
-sys.modules['mpi4py'] = mpi4py_mock
 from deephyper.core.cli import start_project, new_problem
-from deephyper.core.cli import hps, nas, balsam_submit, ray_submit
+from deephyper.core.cli import hps, nas, ray_submit, ray_cluster
 
 
 def create_parser():
@@ -27,10 +24,13 @@ def create_parser():
     hps.add_subparser(subparsers)
 
     # balsam-submit
-    balsam_submit.add_subparser(subparsers)
+    # balsam_submit.add_subparser(subparsers)
 
     # ray-submit
     ray_submit.add_subparser(subparsers)
+
+    # ray-cluster
+    ray_cluster.add_subparser(subparsers)
 
     return parser
 
