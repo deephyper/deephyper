@@ -28,7 +28,7 @@ def add_subparser(subparsers):
         help="Generate a Ray cluster YAML configuration based on the current context.",
     )
     subparser_config.add_argument("--head-node-ip")
-    subparser_config.add_argument("--worker-nodes-ips", nargs="+")
+    subparser_config.add_argument("--worker-nodes-ips", nargs="+", default=[], required=False)
     subparser_config.add_argument("--num-cpus", type=int)
     subparser_config.add_argument("--num-gpus", type=int, default=None)
     subparser_config.add_argument(
