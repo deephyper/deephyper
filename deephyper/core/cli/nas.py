@@ -7,12 +7,11 @@ from deephyper.evaluator.evaluate import EVALUATORS, Evaluator
 from deephyper.search.util import load_attr
 
 NAS_SEARCHES = {
-    # "ambs": "deephyper.search.nas.ambs.AMBNeuralArchitectureSearch",
     "random": "deephyper.search.nas.random.Random",
     "regevo": "deephyper.search.nas.regevo.RegularizedEvolution",
     "agebo": "deephyper.search.nas.agebo.AgEBO",
-    # "ambsmixed": "deephyper.search.nas.ambsmixed.AMBSMixed",
-    # "regevomixed": "deephyper.search.nas.regevomixed.RegularizedEvolutionMixed",
+    "ambsmixed": "deephyper.search.nas.ambsmixed.AMBSMixed",
+    "regevomixed": "deephyper.search.nas.regevomixed.RegularizedEvolutionMixed",
 }
 
 
