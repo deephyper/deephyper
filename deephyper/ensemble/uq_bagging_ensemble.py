@@ -65,14 +65,14 @@ def model_predict(model_path, X, batch_size=32, verbose=0):
     if model:
         y_dist = model(X[:1], training=False)  # just to test the type of the output
         if isinstance(y_dist, tfp.distributions.Distribution):
-            if isinstance(y_dist, tfp.distributions.Normal):
+            if hasattr(y_dist, "loc") and hasattr(y_dist, "scale"):
                 convert_func = lambda y_dist: np.concatenate(
                     [y_dist.loc, y_dist.scale], axis=1
                 )
                 y = batch_predict(dataset, convert_func)
             else:
                 raise DeephyperRuntimeError(
-                    f"Distribution of type '{type(y_dist)}' is not implemented!"
+                    f"Distribution doesn't have 'loc' or 'scale' attributes!"
                 )
         else:
             y = model.predict(X, batch_size=batch_size)
