@@ -1,5 +1,3 @@
-import uuid
-
 class Job:
     # Job status states.
     READY = 0
