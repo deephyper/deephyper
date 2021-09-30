@@ -3,12 +3,9 @@
     You can adapt this file completely to your liking, but it should at least
     contain the root `toctree` directive.
 
-*********
-DeepHyper
-*********
-
+******************************************************************************************
 DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neural Networks
-==========================================================================================
+******************************************************************************************
 
 .. image:: _static/logo/medium.png
     :scale: 100%
@@ -75,37 +72,31 @@ Which outputs the following where the best ``x`` found is clearly around ``0``.
 
 
 .. toctree::
-    :maxdepth: 1
-
+    :maxdepth: 2
+    :titlesonly:
     :caption: Get Started
 
     install/index
     tutorials/index
     research
 
+
 .. toctree::
     :maxdepth: 1
-    :caption: User Guides
+    :caption: API Reference
 
-    user_guides/newproblem
-    user_guides/local
-    user_guides/theta
-    user_guides/thetagpu
-    user_guides/choosing_scaling
-    user_guides/data_parallelism
-    user_guides/job_management
-    user_guides/balsamjob
-    user_guides/nas/index
-    user_guides/analytics
-    user_guides/autosklearn
-    user_guides/deep_ensemble/index
-    user_guides/uncertainty_quantification/index
+    Core <api/deephyper.core>
+    Ensemble <api/deephyper.ensemble>
+    Evaluator <api/deephyper.evaluator>
+    NAS <api/deephyper.nas>
+    Problem <api/deephyper.problem>
+    Search <api/deephyper.search>
+    Sklearn <api/deephyper.sklearn>
 
 .. toctree::
     :maxdepth: 3
-    :caption: Software
+    :caption: Developer Guides
 
-    DeepHyper API <api/deephyper>
     tests_link
 
 Indices and tables

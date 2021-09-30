@@ -8,14 +8,6 @@ deephyper.core.cli
 
 
 
-deephyper.core.cli.balsam\_submit 
-----------------------------------
-
-.. automodule:: deephyper.core.cli.balsam_submit
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 deephyper.core.cli.cli 
 -----------------------
 
@@ -60,6 +52,22 @@ deephyper.core.cli.new\_problem
 --------------------------------
 
 .. automodule:: deephyper.core.cli.new_problem
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+deephyper.core.cli.nodelist 
+----------------------------
+
+.. automodule:: deephyper.core.cli.nodelist
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+deephyper.core.cli.ray\_cluster 
+--------------------------------
+
+.. automodule:: deephyper.core.cli.ray_cluster
    :members:
    :undoc-members:
    :show-inheritance:

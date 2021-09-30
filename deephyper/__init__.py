@@ -3,9 +3,9 @@ DeepHyper is a distributed machine learning (`AutoML <https://en.wikipedia.org/w
 
 It comprises different tools such as:
 
-* :ref:`Tutorial 1 <tutorial-01>`: optimizing hyper-parameters for a given black-box function.
-* :ref:`Tutorial 4 <tutorial-04>`: neural architecture search to discover high-performing deep neural network with variable operations and connections.
-* :ref:`Tutorial 5 <tutorial-05>`: automated machine learning, to easily experiment many learning algorithms from Scikit-Learn.
+* Optimizing hyper-parameters for a given black-box function.
+* Neural architecture search to discover high-performing deep neural network with variable operations and connections.
+* Automated machine learning, to easily experiment many learning algorithms from Scikit-Learn.
 
 DeepHyper provides an infrastructure that targets experimental research in NAS and HPS methods, scalability, and portability across diverse supercomputers.
 It comprises three main modules:

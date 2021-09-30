@@ -1,2 +1,0 @@
-Graph Neural Networks
-=====================
