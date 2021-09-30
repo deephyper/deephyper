@@ -316,7 +316,7 @@ class HistorySaver:
 
     @property
     def name(self) -> str:
-        return f"{self.id}_{self.date}"
+        return f"{self.id}"
 
     @property
     def model_path(self) -> str:
