@@ -42,7 +42,11 @@ class SubprocessEvaluator(Evaluator):
             # Retrieve the stdout byte array from the (stdout, stderr) tuple returned from the subprocess.
             stdout, stderr = await proc.communicate()
             # Search through the byte array using a regular expression and collect the return value of the user-defined function.
-            retval_bytes = re.search(b'DH-OUTPUT:(.+)\n', stdout).group(1)
+            try:
+                retval_bytes = re.search(b'DH-OUTPUT:(.+)\n', stdout).group(1)
+            except AttributeError:
+                error = stderr.decode("utf-8")
+                raise RuntimeError(f"{error}\n\n Could not collect any result from the run_function in the main process because an error happened in the subprocess.")
             # Finally, parse whether the return value from the user-defined function is a scalar, a list, or a dictionary.
             retval = retval_bytes.replace(b"\'", b"\"") # For dictionaries, replace single quotes with double quotes!
             sol = json.loads(retval)

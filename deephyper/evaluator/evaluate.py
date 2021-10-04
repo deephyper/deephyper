@@ -213,7 +213,9 @@ class Evaluator:
         else:
             return val
 
-    def dump_evals(self, saved_key: str = None, saved_keys: list = None):
+    def dump_evals(
+        self, saved_key: str = None, saved_keys: list = None, log_dir: str = "."
+    ):
         """Dump evaluations to 'results.csv' file."""
 
         resultsList = []
@@ -240,7 +242,7 @@ class Evaluator:
 
         if len(resultsList) != 0:
             mode = "a" if self._start_dumping else "w"
-            with open("results.csv", mode) as fp:
+            with open(os.path.join(log_dir, "results.csv"), mode) as fp:
                 columns = resultsList[0].keys()
                 writer = csv.DictWriter(fp, columns)
                 if not (self._start_dumping):

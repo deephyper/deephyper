@@ -1,11 +1,11 @@
-import argparse
 import logging
+import os
+import pathlib
 import signal
 
-from deephyper.core.exceptions import SearchTerminationError
-from deephyper.evaluator.evaluate import EVALUATORS
 import numpy as np
 import pandas as pd
+from deephyper.core.exceptions import SearchTerminationError
 
 
 class Search:
@@ -15,7 +15,11 @@ class Search:
         self._problem = problem
         self._evaluator = evaluator
         self._random_state = np.random.RandomState(seed)
-        self._log_dir = log_dir
+
+        # Create logging directory if does not exist
+        self._log_dir = os.path.abspath(log_dir)
+        pathlib.Path(log_dir).mkdir(parents=False, exist_ok=True)
+
         self._verbose = verbose
 
     def terminate(self):

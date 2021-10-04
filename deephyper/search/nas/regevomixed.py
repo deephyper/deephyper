@@ -78,7 +78,9 @@ class RegularizedEvolutionMixed(RegularizedEvolution):
             if num_received > 0:
 
                 self._population.extend(new_results)
-                self._evaluator.dump_evals(saved_keys=self.saved_keys)
+                self._evaluator.dump_evals(
+                    saved_keys=self.saved_keys, log_dir=self._log_dir
+                )
                 num_evals_done += num_received
 
                 if num_evals_done >= max_evals:
@@ -125,7 +127,9 @@ class RegularizedEvolutionMixed(RegularizedEvolution):
         iterator = zip(*(sample(hp, size) for hp in self._space.get_hyperparameters()))
 
         for x in iterator:
-            cfg = self._problem.gen_config(list(x[self.hp_size :]), list(x[: self.hp_size]))
+            cfg = self._problem.gen_config(
+                list(x[self.hp_size :]), list(x[: self.hp_size])
+            )
             batch.append(cfg)
 
         return batch

@@ -83,7 +83,7 @@ class AMBS(Search):
 
             if len(new_results) > 0:
 
-                self._evaluator.dump_evals()
+                self._evaluator.dump_evals(log_dir=self._log_dir)
 
                 num_received = len(new_results)
                 num_evals_done += num_received

@@ -102,7 +102,9 @@ class AgEBO(RegularizedEvolution):
             if len(new_results) > 0:
                 population.extend(new_results)
 
-                self._evaluator.dump_evals(saved_keys=self.saved_keys)
+                self._evaluator.dump_evals(
+                    saved_keys=self.saved_keys, log_dir=self._log_dir
+                )
 
                 num_received = len(new_results)
                 num_evals_done += num_received

@@ -59,7 +59,9 @@ class Random(NeuralArchitectureSearch):
 
             # Filling available nodes
             if num_received > 0:
-                self._evaluator.dump_evals(saved_keys=self.saved_keys)
+                self._evaluator.dump_evals(
+                    saved_keys=self.saved_keys, log_dir=self._log_dir
+                )
 
                 if num_evals_done < max_evals:
                     self._evaluator.submit(self.gen_random_batch(size=num_received))
