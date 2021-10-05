@@ -1,6 +1,4 @@
-import inspect
 from inspect import signature
-from pprint import pprint
 
 from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
@@ -33,9 +31,9 @@ def run(config: dict, load_data: callable) -> float:
 
     mapping = REGRESSORS
 
-    clf_class = mapping[config["classifier"]]
+    clf_class = mapping[config["regressor"]]
 
-    # keep parameters possible for the current classifier
+    # keep parameters possible for the current regressor
     sig = signature(clf_class)
     clf_allowed_params = list(sig.parameters.keys())
     clf_params = {

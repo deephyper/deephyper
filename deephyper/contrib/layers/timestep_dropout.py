@@ -1,5 +1,4 @@
 import tensorflow as tf
-import tensorflow.keras.backend as K
 
 
 class TimestepDropout(tf.keras.layers.Dropout):
@@ -27,6 +26,6 @@ class TimestepDropout(tf.keras.layers.Dropout):
         self.input_spec = tf.keras.layers.InputSpec(ndim=3)
 
     def _get_noise_shape(self, inputs):
-        input_shape = K.shape(inputs)
+        input_shape = tf.shape(inputs)
         noise_shape = (input_shape[0], input_shape[1], 1)
         return noise_shape

@@ -8,7 +8,7 @@ import stat
 
 from deephyper.core.cli.utils import generate_other_arguments
 from deephyper.core.utils import create_dir
-from deephyper.problem import BaseProblem
+from deephyper.problem import HpProblem, NaProblem
 from deephyper.problem.neuralarchitecture import Problem
 from deephyper.search.util import banner, generic_loader
 from jinja2 import Template
@@ -111,11 +111,14 @@ def main(
 
     # Detection of the host
     hostname = socket.gethostname()
-    # hostname = "thetagpusn1" # for debug
+    # hostname = "thetalogin1" # for debug
     host = None
     if "thetagpu" in hostname:
         host = "thetagpu"
         print("ThetaGPU detected")
+    elif "thetalogin" in hostname:
+        host = "theta"
+        print("Theta detected")
     else:
         print(f"There exist no submission policy for the current system: '{hostname}'")
         exit()
@@ -205,7 +208,7 @@ def validate(problem, run, workflow):
 
     print("Validating Problem...", end="", flush=True)
     prob = generic_loader(problem, "Problem")
-    assert isinstance(prob, (Problem, BaseProblem)), f"{prob} is not a Problem instance"
+    assert isinstance(prob, (HpProblem, NaProblem)), f"{prob} is not a Problem instance"
     print("OK", flush=True)
 
     #! issue if some packages can't be imported from login nodes...

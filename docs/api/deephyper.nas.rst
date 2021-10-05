@@ -25,6 +25,30 @@ deephyper.nas.arch
    :undoc-members:
    :show-inheritance:
 
+deephyper.nas.losses 
+---------------------
+
+.. automodule:: deephyper.nas.losses
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+deephyper.nas.lr\_scheduler 
+----------------------------
+
+.. automodule:: deephyper.nas.lr_scheduler
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+deephyper.nas.metrics 
+----------------------
+
+.. automodule:: deephyper.nas.metrics
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 deephyper.nas.train\_utils 
 ---------------------------
 

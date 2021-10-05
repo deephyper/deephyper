@@ -26,12 +26,14 @@ def selectLoss(name: str):
     Returns:
         str or callable: a string suppossing it is referenced in the keras framework or a callable taking (y_true, y_pred) as inputs and returning a tensor.
     """
+    if callable(name):
+        return name
     if losses_func.get(name) == None and losses_obj.get(name) == None:
         try:
-            loaded_obj = util.load_attr_from(name)
+            loaded_obj = util.load_attr(name)
             return loaded_obj
         except:
-            return name  # supposing it is referenced in keras losses
+            return tf.keras.losses.get(name)  # supposing it is referenced in keras losses
     else:
         if name in losses_func:
             return losses_func[name]

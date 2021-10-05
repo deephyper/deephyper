@@ -29,6 +29,8 @@ test_metric = "test_metric"
 text_input = "text_input"
 objective = "objective"
 callbacks = "callbacks"
+shuffle_data = "shuffle_data"
+cache_data = "cache_data"
 
 
 # data

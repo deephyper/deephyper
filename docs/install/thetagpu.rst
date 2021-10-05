@@ -26,7 +26,7 @@ Then DeepHyper can be installed on ThetaGPU by following these commands.
 
 ::
 
-    module load conda/tensorflow/2020-11-11
+    module load conda/2021-09-22
     conda create -p dhgpu --clone base
     conda activate dhgpu/
     pip install pip --upgrade
@@ -40,7 +40,7 @@ The developer installation allows to edit the ``deephyper/`` code base without r
 
 ::
 
-    module load conda/tensorflow/2020-11-11
+    module load conda/2021-09-22
     conda create -p dhgpu --clone base
     conda activate dhgpu/
     pip install pip --upgrade

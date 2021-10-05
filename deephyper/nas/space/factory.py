@@ -19,8 +19,7 @@ class SpaceFactory(ABC):
 
     @abstractclassmethod
     def build(self, input_shape, output_shape, **kwargs) -> KSearchSpace:
-        """Return a search space.
-        """
+        """Return a search space."""
         pass
 
     @typechecked
@@ -60,13 +59,27 @@ class SpaceFactory(ABC):
         ops: list = [],
         fname: str = "random_model.png",
         show_shapes: bool = True,
+        show_dtype: bool = False,
+        show_layer_names: bool = True,
+        rankdir: "str" = "TB",
+        expand_nested: bool = False,
+        dpi: int = 96,
         **kwargs,
-    ) -> None:
+    ):
         space = self(input_shape, output_shape, **kwargs)
         ops = self.check_op_list(space, ops)
         space.set_ops(ops)
         model = space.create_model()
-        plot_model(model, to_file=fname, show_shapes=show_shapes)
+        return plot_model(
+            model,
+            to_file=fname,
+            show_shapes=show_shapes,
+            show_dtype=show_dtype,
+            show_layer_names=show_layer_names,
+            rankdir=rankdir,
+            expand_nested=expand_nested,
+            dpi=dpi,
+        )
 
     def test(self, input_shape, output_shape, **kwargs):
         space = self(input_shape, output_shape, **kwargs)

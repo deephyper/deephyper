@@ -2,6 +2,7 @@
 """
 import os
 import traceback
+import logging
 
 import numpy as np
 import tensorflow as tf
@@ -16,21 +17,20 @@ from deephyper.nas.run.util import (
     HistorySaver,
 )
 from deephyper.nas.trainer.train_valid import TrainerTrainValid
-from deephyper.search import util
 
-logger = util.conf_logger("deephyper.search.nas.run")
+logger = logging.getLogger(__name__)
 
 
 def run(config):
 
     tf.keras.backend.clear_session()
-    tf.config.optimizer.set_jit(True)
+    # tf.config.optimizer.set_jit(True)
 
     # setup history saver
-    if "log_dir" in config and config["log_dir"] is None:
-        config["log_dir"] = ""
+    if config.get("log_dir") is None:
+        config["log_dir"] = "."
 
-    save_dir = os.path.join(config.get("log_dir", ""), "save")
+    save_dir = os.path.join(config["log_dir"], "save")
     saver = HistorySaver(config, save_dir)
     saver.write_config()
     saver.write_model(None)

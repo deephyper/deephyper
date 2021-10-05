@@ -48,6 +48,14 @@ deephyper.nas.space.op.op1d
    :undoc-members:
    :show-inheritance:
 
+deephyper.nas.space.op.operation 
+---------------------------------
+
+.. automodule:: deephyper.nas.space.op.operation
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 deephyper.nas.space.op.seq 
 ---------------------------
 

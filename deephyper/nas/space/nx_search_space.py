@@ -25,6 +25,7 @@ class NxSearchSpace:
     def __init__(self, seed=None, **kwargs):
         self.graph = nx.DiGraph()
         self.seed = seed
+        self.output_node = None
 
     def draw_graphviz(self, path):
         with open(path, "w") as f:
@@ -163,18 +164,18 @@ class NxSearchSpace:
             vnode.denormalize(op_i) for op_i, vnode in zip(indexes, self.variable_nodes)
         ]
 
-    def get_output_nodes(self):
-        """Get nodes of 'graph' without successors.
-
-        Return:
-            list: the nodes without successors of a DiGraph.
+    def set_output_node(self):
+        """Set the output node of the search_space.
         """
-        nodes = list(self.graph.nodes())
-        output_nodes = []
-        for n in nodes:
-            if len(list(self.graph.successors(n))) == 0:
-                output_nodes.append(n)
-        return output_nodes
+        if self.output_node is None:
+            nodes = list(self.graph.nodes())
+            self.output_node = []
+            for n in nodes:
+                if len(list(self.graph.successors(n))) == 0:
+                    self.output_node.append(n)
+
+            if len(self.output_node) == 1:
+                self.output_node = self.output_node[0]
 
     def create_tensor_aux(self, g, n, train=None):
         """Recursive function to create the tensors from the graph.

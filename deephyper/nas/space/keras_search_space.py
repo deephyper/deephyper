@@ -114,25 +114,7 @@ class KSearchSpace(NxSearchSpace):
         for node in self.mime_nodes:
             node.set_op()
 
-        output_nodes = self.get_output_nodes()
-
-        self.output_node = self.set_output_node(self.graph, output_nodes)
-
-    def set_output_node(self, graph, output_nodes):
-        """Set the output node of the search_space.
-
-        Args:
-            graph (nx.DiGraph): graph of the search_space.
-            output_nodes (Node): nodes of the current search_space without successors.
-
-        Returns:
-            Node: output node of the search_space.
-        """
-        if len(output_nodes) == 1:
-            node = output_nodes[0]
-        else:
-            node = output_nodes
-        return node
+        self.set_output_node()
 
     def create_model(self):
         """Create the tensors corresponding to the search_space.
@@ -151,7 +133,7 @@ class KSearchSpace(NxSearchSpace):
                 output_n = int(out_T.name.split("/")[0].split("_")[-1])
                 out_S = self.output_shape[output_n]
                 if tf.keras.backend.is_keras_tensor(out_T):
-                    out_T_shape = K.shape(out_T).shape
+                    out_T_shape = out_T.type_spec.shape
                     if out_T_shape[1:] != out_S:
                         logger.warning(str(WrongOutputShape(out_T_shape, out_S)))
 
@@ -161,7 +143,7 @@ class KSearchSpace(NxSearchSpace):
         else:
             output_tensors = self.create_tensor_aux(self.graph, self.output_node)
             if tf.keras.backend.is_keras_tensor(output_tensors):
-                output_tensors_shape = K.shape(output_tensors).shape
+                output_tensors_shape = output_tensors.type_spec.shape
                 if output_tensors_shape[1:] != self.output_shape:
                     logger.warning(
                         str(WrongOutputShape(output_tensors_shape, self.output_shape))

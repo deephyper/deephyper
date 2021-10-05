@@ -16,6 +16,14 @@ deephyper.contrib.callbacks.csv\_extended\_logger
    :undoc-members:
    :show-inheritance:
 
+deephyper.contrib.callbacks.learning\_rate\_warmup 
+---------------------------------------------------
+
+.. automodule:: deephyper.contrib.callbacks.learning_rate_warmup
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 deephyper.contrib.callbacks.stop\_if\_unfeasible 
 -------------------------------------------------
 

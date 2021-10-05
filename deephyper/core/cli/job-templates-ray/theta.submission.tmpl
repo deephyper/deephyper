@@ -1,0 +1,25 @@
+#!/bin/bash -x
+#COBALT -A {{ project }}
+#COBALT -n {{ nodes }}
+#COBALT -q {{ queue }}
+#COBALT -t {{ time_minutes }}
+#COBALT --attrs enable_ssh=1
+
+mkdir infos && cd infos
+exp_dir=$PWD
+
+ACTIVATE_PYTHON_ENV="{{ activation_script }}"
+echo "Script to activate Python env: $ACTIVATE_PYTHON_ENV"
+source $ACTIVATE_PYTHON_ENV
+
+{{ script_launch_ray_cluster }}
+
+ssh $head_node_ip "source $ACTIVATE_PYTHON_ENV; cd $exp_dir; \
+    deephyper {{ mode }} {{ search }} --evaluator {{ evaluator }}  \
+    --ray-address auto \
+    --problem {{ problem }} \
+    --run {{ run }} \
+    --max-evals {{ max_evals }} \
+    --num-cpus-per-task {{ num_cpus_per_task }} \
+    --num-gpus-per-task {{ num_gpus_per_task }} \
+    {{ other_search_arguments }}; ray stop;"

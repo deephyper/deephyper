@@ -1,4 +1,4 @@
-deephyper.baseline 
+deephyper.baseline
 ===================
 
 .. automodule:: deephyper.baseline
@@ -8,7 +8,7 @@ deephyper.baseline
 
 
 
-deephyper.baseline.base 
+deephyper.baseline.base
 ------------------------
 
 .. automodule:: deephyper.baseline.base
@@ -16,7 +16,7 @@ deephyper.baseline.base
    :undoc-members:
    :show-inheritance:
 
-deephyper.baseline.classifier 
+deephyper.baseline.classifier
 ------------------------------
 
 .. automodule:: deephyper.baseline.classifier
@@ -24,7 +24,7 @@ deephyper.baseline.classifier
    :undoc-members:
    :show-inheritance:
 
-deephyper.baseline.regressor 
+deephyper.baseline.regressor
 -----------------------------
 
 .. automodule:: deephyper.baseline.regressor

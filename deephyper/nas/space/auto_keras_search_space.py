@@ -34,7 +34,7 @@ class AutoKSearchSpace(KSearchSpace):
         super().__init__(input_shape, output_shape)
         self.regression = regression
 
-    def set_output_node(self, graph, output_nodes):
+    def set_output_node(self):
         """Set the output node of the search_space.
 
         Args:
@@ -44,13 +44,12 @@ class AutoKSearchSpace(KSearchSpace):
         Returns:
             Node: output node of the search_space.
         """
-        if len(output_nodes) == 1:
-            node = output_nodes[0]
-        else:
+        super().set_output_node()
+        if type(self.output_node) is list:
             node = ConstantNode(name='OUTPUT_MERGE')
-            op = Concatenate(self, output_nodes)
+            op = Concatenate(self, self.output_node)
             node.set_op(op=op)
-        return node
+            self.output_node = node
 
     def create_model(self):
         """Create the tensors corresponding to the search_space.

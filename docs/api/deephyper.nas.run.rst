@@ -56,6 +56,14 @@ deephyper.nas.run.repeat
    :undoc-members:
    :show-inheritance:
 
+deephyper.nas.run.slow 
+-----------------------
+
+.. automodule:: deephyper.nas.run.slow
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 deephyper.nas.run.test\_horovod 
 --------------------------------
 

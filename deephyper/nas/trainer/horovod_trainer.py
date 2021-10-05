@@ -1,19 +1,18 @@
-import os
+import logging
 import time
 from inspect import signature
 
+import horovod.tensorflow.keras as hvd
 import numpy as np
 import tensorflow as tf
-import horovod.tensorflow.keras as hvd
-
 from deephyper.core.exceptions import DeephyperRuntimeError
-from deephyper.search import util
 from deephyper.nas import arch as a
 from deephyper.nas import train_utils as U
-from deephyper.nas.metrics import selectMetric
 from deephyper.nas.losses import selectLoss
+from deephyper.nas.metrics import selectMetric
+from deephyper.search import util
 
-logger = util.conf_logger(__name__)
+logger = logging.getLogger(__name__)
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 
@@ -94,7 +93,7 @@ class HorovodTrainerTrainValid:
     def setup_losses_and_metrics(self):
         def selectL(loss):
             if type(loss) is dict:
-                loss = {k:selectLoss(v) for k,v in loss.items()}
+                loss = {k: selectLoss(v) for k, v in loss.items()}
             else:
                 loss = selectLoss(loss)
             return loss

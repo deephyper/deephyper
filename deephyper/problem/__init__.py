@@ -1,10 +1,9 @@
 import ConfigSpace as config_space
 from inspect import signature
-from .base import BaseProblem
 from .hyperparameter import HpProblem
 from .neuralarchitecture import NaProblem
 
-__all__ = ["config_space", "BaseProblem", "HpProblem", "NaProblem", "filter_parameters"]
+__all__ = ["config_space", "HpProblem", "NaProblem", "filter_parameters"]
 
 
 def filter_parameters(obj, config: dict) -> dict:

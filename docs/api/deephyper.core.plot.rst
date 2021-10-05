@@ -32,6 +32,14 @@ deephyper.core.plot.multi
    :undoc-members:
    :show-inheritance:
 
+deephyper.core.plot.nas\_single 
+--------------------------------
+
+.. automodule:: deephyper.core.plot.nas_single
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 deephyper.core.plot.post\_train 
 --------------------------------
 
@@ -44,14 +52,6 @@ deephyper.core.plot.quick\_plot
 --------------------------------
 
 .. automodule:: deephyper.core.plot.quick_plot
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-deephyper.core.plot.single 
----------------------------
-
-.. automodule:: deephyper.core.plot.single
    :members:
    :undoc-members:
    :show-inheritance:

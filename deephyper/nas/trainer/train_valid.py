@@ -1,18 +1,18 @@
-import os
+import inspect
+import logging
 import time
 from inspect import signature
 
 import numpy as np
 import tensorflow as tf
-
 from deephyper.core.exceptions import DeephyperRuntimeError
-from deephyper.search import util
 from deephyper.nas import arch as a
 from deephyper.nas import train_utils as U
-from deephyper.nas.metrics import selectMetric
 from deephyper.nas.losses import selectLoss
+from deephyper.nas.metrics import selectMetric
+from deephyper.search import util
 
-logger = util.conf_logger("deephyper.model.trainer")
+logger = logging.getLogger(__name__)
 
 
 class TrainerTrainValid:
@@ -31,7 +31,13 @@ class TrainerTrainValid:
         self.optimizer_eps = self.config_hp.get("epsilon", None)
         self.batch_size = self.config_hp.get(a.batch_size, 32)
         self.learning_rate = self.config_hp.get(a.learning_rate, 1e-3)
-        self.num_epochs = self.config_hp[a.num_epochs]
+        self.num_epochs = self.config_hp.get(a.num_epochs, 1)
+        self.shuffle_data = self.config_hp.get(a.shuffle_data, True)
+        self.cache_data = self.config_hp.get(a.cache_data, True)
+        self.batch = self.config_hp.get("batch", True)
+        self.momentum = self.config_hp.get("momentum", 0.0)
+        self.nesterov = self.config_hp.get("nesterov", False)
+        self.label_smoothing = self.config_hp.get("label_smoothing", 0.0)
         self.verbose = self.config_hp.get("verbose", 1)
         # self.balanced = self.config_hp.get("balanced", False)
 
@@ -73,15 +79,28 @@ class TrainerTrainValid:
         self.train_history = dict()
         self.train_history["n_parameters"] = self.model.count_params()
 
-    def setup_losses_and_metrics(self):
-        def selectL(loss):
-            if type(loss) is dict:
-                loss = {k: selectLoss(v) for k, v in loss.items()}
-            else:
-                loss = selectLoss(loss)
-            return loss
+    def _select_loss(self, loss):
+        if type(loss) is dict:
+            loss = {k: selectLoss(v) for k, v in loss.items()}
+        else:
+            loss = selectLoss(loss)
 
-        self.loss_metrics = selectL(self.config[a.loss_metric])
+        if inspect.isclass(loss):
+
+            loss_parameters = signature(loss).parameters
+            params = {}
+
+            if "label_smoothing" in loss_parameters:
+                params["label_smoothing"] = self.label_smoothing
+
+            loss = loss(**params)
+
+        return loss
+
+    def setup_losses_and_metrics(self):
+
+
+        self.loss_metrics = self._select_loss(self.config[a.loss_metric])
         self.loss_weights = self.config.get("loss_weights")
         self.class_weights = self.config.get("class_weights")
 
@@ -230,25 +249,24 @@ class TrainerTrainValid:
             if len(np.shape(self.train_Y)) == 2:
                 data_train = np.concatenate((*self.train_X, self.train_Y), axis=1)
                 data_valid = np.concatenate((*self.valid_X, self.valid_Y), axis=1)
-                data = np.concatenate((data_train, data_valid), axis=0)
                 self.preprocessor = self.preprocessing_func()
 
-                dt_shp = np.shape(data_train)
                 tX_shp = [np.shape(x) for x in self.train_X]
 
-                preproc_data = self.preprocessor.fit_transform(data)
+                preproc_data_train = self.preprocessor.fit_transform(data_train)
+                preproc_data_valid = self.preprocessor.transform(data_valid)
 
                 acc, self.train_X = 0, list()
                 for shp in tX_shp:
-                    self.train_X.append(preproc_data[: dt_shp[0], acc : acc + shp[1]])
+                    self.train_X.append(preproc_data_train[:, acc : acc + shp[1]])
                     acc += shp[1]
-                self.train_Y = preproc_data[: dt_shp[0], acc:]
+                self.train_Y = preproc_data_train[:, acc:]
 
                 acc, self.valid_X = 0, list()
                 for shp in tX_shp:
-                    self.valid_X.append(preproc_data[dt_shp[0] :, acc : acc + shp[1]])
+                    self.valid_X.append(preproc_data_valid[:, acc : acc + shp[1]])
                     acc += shp[1]
-                self.valid_Y = preproc_data[dt_shp[0] :, acc:]
+                self.valid_Y = preproc_data_valid[:, acc:]
         else:
             logger.info("no preprocessing function")
 
@@ -264,21 +282,20 @@ class TrainerTrainValid:
         else:  # self.data_config_type == "gen"
             self.dataset_train = tf.data.Dataset.from_generator(
                 self.train_gen,
-                output_types=self.data_types,
-                output_shapes=(
-                    {
-                        f"input_{i}": tf.TensorShape([*self.data_shapes[0][f"input_{i}"]])
-                        for i in range(len(self.data_shapes[0]))
-                    },
-                    tf.TensorShape([*self.data_shapes[1]]),
-                ),
+                output_signature=self._get_output_signatures(),
             )
-        self.dataset_train = (
-            self.dataset_train.cache()
-            .shuffle(self.train_size, reshuffle_each_iteration=True)
-            .batch(self.batch_size)
-            .prefetch(tf.data.AUTOTUNE)
-            .repeat(self.num_epochs)
+
+        if self.cache_data:
+            self.dataset_train = self.dataset_train.cache()
+        if self.shuffle_data:
+            self.dataset_train = self.dataset_train.shuffle(
+                self.train_size, reshuffle_each_iteration=True
+            )
+        if self.batch:
+            self.dataset_train = self.dataset_train.batch(self.batch_size)
+
+        self.dataset_train = self.dataset_train.prefetch(tf.data.AUTOTUNE).repeat(
+            self.num_epochs
         )
 
     def set_dataset_valid(self):
@@ -293,27 +310,51 @@ class TrainerTrainValid:
         else:
             self.dataset_valid = tf.data.Dataset.from_generator(
                 self.valid_gen,
-                output_types=self.data_types,
-                output_shapes=(
-                    {
-                        f"input_{i}": tf.TensorShape([*self.data_shapes[0][f"input_{i}"]])
-                        for i in range(len(self.data_shapes[0]))
-                    },
-                    tf.TensorShape([*self.data_shapes[1]]),
-                ),
+                output_signature=self._get_output_signatures(valid=True),
             )
-        self.dataset_valid = (
-            self.dataset_valid.cache()
-            .shuffle(self.valid_size, reshuffle_each_iteration=True)
-            .batch(self.batch_size)
-            .prefetch(tf.data.AUTOTUNE)
-            .repeat(self.num_epochs)
+
+        self.dataset_valid = self.dataset_valid.cache()
+        self.dataset_valid = self.dataset_valid.batch(self.batch_size)
+        self.dataset_valid = self.dataset_valid.prefetch(tf.data.AUTOTUNE).repeat(
+            self.num_epochs
         )
 
-    def model_compile(self):
-        optimizer_fn = U.selectOptimizer_keras(self.optimizer_name)
+    def _get_output_signatures(self, valid=False):
+        if self.batch or valid:
+            return (
+                {
+                    f"input_{i}": tf.TensorSpec(
+                        shape=(*self.data_shapes[0][f"input_{i}"],),
+                        dtype=self.data_types[0][f"input_{i}"],
+                    )
+                    for i in range(len(self.data_shapes[0]))
+                },
+                tf.TensorSpec(
+                    shape=(*self.data_shapes[1],),
+                    dtype=self.data_types[1],
+                ),
+            )
+        else:
+            return (
+                {
+                    f"input_{i}": tf.TensorSpec(
+                        shape=(
+                            None,
+                            *self.data_shapes[0][f"input_{i}"],
+                        ),
+                        dtype=self.data_types[0][f"input_{i}"],
+                    )
+                    for i in range(len(self.data_shapes[0]))
+                },
+                tf.TensorSpec(
+                    shape=(None, *self.data_shapes[1]),
+                    dtype=self.data_types[1],
+                ),
+            )
 
-        decay_rate = self.learning_rate / self.num_epochs if self.num_epochs > 0 else 1
+
+    def _setup_optimizer(self):
+        optimizer_fn = U.selectOptimizer_keras(self.optimizer_name)
 
         opti_parameters = signature(optimizer_fn).parameters
         params = {}
@@ -330,12 +371,17 @@ class TrainerTrainValid:
         if "epsilon" in opti_parameters:
             params["epsilon"] = self.optimizer_eps
 
-        if "decay" in opti_parameters:
-            decay_rate = (
-                self.learning_rate / self.num_epochs if self.num_epochs > 0 else 1
-            )
-            params["decay"] = decay_rate
+        if "momentum" in opti_parameters:
+            params["momentum"] = self.momentum
+
+        if "nesterov" in opti_parameters:
+            params["nesterov"] = self.nesterov
+
         self.optimizer = optimizer_fn(**params)
+
+    def model_compile(self):
+
+        self._setup_optimizer()
 
         if type(self.loss_metrics) is dict:
             self.model.compile(

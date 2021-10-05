@@ -1,9 +1,6 @@
-from sklearn.neighbors import KNeighborsClassifier
 from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
 from deephyper.nas.preprocessing import minmaxstdscaler
-import numpy as np
 
 
 class BasePipeline:
@@ -23,10 +20,11 @@ class BasePipeline:
         self.preproc = preproc
 
     def load_data(self):
+        data = self.load_data_func()
         try:
-            (X_train, y_train), (X_test, y_test) = self.load_data_func()
-        except:
-            X, y = self.load_data_func()
+            (X_train, y_train), (X_test, y_test) = data
+        except ValueError:
+            X, y = data
             X_train, X_test, y_train, y_test = train_test_split(
                 X, y, test_size=0.33, random_state=self.seed
             )

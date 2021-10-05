@@ -1,7 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import activations
 from tensorflow.keras.layers import Dense
-import tensorflow.keras.backend as K
 
 
 class SPARSE_MPNN(tf.keras.layers.Layer):
@@ -178,7 +177,7 @@ class Message_Passer_NNM(tf.keras.layers.Layer):
         """
         # Edge network to transform edge information to message weight
         X, A, E, degree = inputs
-        N = K.int_shape(X)[1]
+        N = tf.keras.backend.int_shape(X)[1]
         targets, sources = A[..., -2], A[..., -1]
         W = self.nn(E)
         W = tf.reshape(
@@ -215,7 +214,7 @@ class Message_Passer_NNM(tf.keras.layers.Layer):
         # Output the mean of all attention heads
         output = tf.reshape(output, [-1, N, self.attn_heads, self.state_dim])
         output = tf.reduce_mean(output, axis=-2)
-        output = K.bias_add(output, self.bias)
+        output = tf.keras.backend.bias_add(output, self.bias)
         return output
 
 
@@ -246,8 +245,8 @@ class Update_Func_GRU(tf.keras.layers.Layer):
         """
         # Remember node dim
         old_state, agg_messages = inputs
-        B, N, F = K.int_shape(old_state)
-        B1, N1, F1 = K.int_shape(agg_messages)
+        B, N, F = tf.keras.backend.int_shape(old_state)
+        B1, N1, F1 = tf.keras.backend.int_shape(agg_messages)
         # Reshape so GRU can be applied, concat so old_state and messages are in sequence
         old_state = tf.reshape(old_state, [-1, 1, F])
         agg_messages = tf.reshape(agg_messages, [-1, 1, F1])
@@ -720,7 +719,7 @@ class GlobalAttentionPool(tf.keras.layers.Layer):
         inputs_linear = self.features_layer(inputs)
         attn = self.attention_layer(inputs)
         masked_inputs = inputs_linear * attn
-        output = K.sum(masked_inputs, axis=-2, keepdims=False)
+        output = tf.keras.backend.sum(masked_inputs, axis=-2, keepdims=False)
         return output
 
 
@@ -754,10 +753,10 @@ class GlobalAttentionSumPool(tf.keras.layers.Layer):
             GlobalAttentionSumPool tensor (tensor)
         """
         X = inputs
-        attn_coeff = K.dot(X, self.attn_kernel)
-        attn_coeff = K.squeeze(attn_coeff, -1)
-        attn_coeff = K.softmax(attn_coeff)
-        output = K.batch_dot(attn_coeff, X)
+        attn_coeff = tf.keras.backend.dot(X, self.attn_kernel)
+        attn_coeff = tf.keras.backend.squeeze(attn_coeff, -1)
+        attn_coeff = tf.nn.softmax(attn_coeff)
+        output = tf.keras.backend.batch_dot(attn_coeff, X)
         return output
 
 

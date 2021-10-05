@@ -4,14 +4,14 @@ python -m deephyper.search.hps.ambs2 --evaluator threadPool --problem deephyper.
 import numpy as np
 
 from deephyper.benchmark.benchmark_functions_wrappers import polynome_2
-from deephyper.problem.base import BaseProblem
+from deephyper.problem import HpProblem
 
 # Problem definition
-Problem = BaseProblem()
+Problem = HpProblem()
 
 num_dim = 10
 for i in range(num_dim):
-    Problem.add_dim(f"e{i}", (-10.0, 10.0))
+    Problem.add_hyperparameter((-10.0, 10.0), f"e{i}")
 
 Problem.add_starting_point(**{f"e{i}": 10.0 for i in range(num_dim)})
 

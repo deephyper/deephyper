@@ -1,47 +1,11 @@
 import hashlib
 import pickle
 from collections import namedtuple
-import time
 import os
 import numpy as np
 import logging
-from functools import wraps
 
 logger = logging.getLogger(__name__)
-
-
-def balsamjob_spec(run_func):
-    @wraps(run_func)
-    def labelled_run(param_dict):
-        return run_func(param_dict)
-
-    labelled_run._balsamjob_spec = True
-    return labelled_run
-
-
-def str2bool(s):
-    s = s.lower().strip()
-    if s == "false":
-        return False
-    else:
-        return True
-class Timer:
-    def __init__(self):
-        self.t0 = 0.0
-        self.name = None
-
-    def start(self, name):
-        self.name = name
-        self.t0 = time.time()
-
-    def end(self):
-        elapsed = time.time() - self.t0
-        if not self.name:
-            return
-        print(f"TIMER {self.name}: {elapsed:.4f} seconds")
-        self.t0 = 0.0
-        self.name = None
-
 
 def extension_from_parameters(param_dict):
     EXCLUDE_PARAMS = [
@@ -50,7 +14,6 @@ def extension_from_parameters(param_dict):
         "data_source",
         "stage_in_destination",
         "version",
-        "backend",
     ]
     extension = ""
     for key in sorted(param_dict):
@@ -72,7 +35,7 @@ def load_meta_data(filename):
 
 
 def resume_from_disk(benchmark_name, param_dict, data_dir="", custom_objects={}):
-    from keras.models import load_model
+    from tensorflow.keras.models import load_model
 
     SavedModel = namedtuple(
         "SavedModel", ["model", "model_path", "initial_epoch", "model_mda_path"]
@@ -118,7 +81,7 @@ def resume_from_disk(benchmark_name, param_dict, data_dir="", custom_objects={})
 
 
 def stage_in(file_names, source, dest):
-    from keras.utils.data_utils import get_file
+    from tensorflow.keras.utils import get_file
 
     print("Stage in files:", file_names)
     print("From source dir:", source)

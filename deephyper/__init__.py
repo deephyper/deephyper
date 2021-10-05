@@ -1,23 +1,21 @@
 """
-DeepHyper is a scalable automated machine learning (`AutoML <https://en.wikipedia.org/wiki/Automated_machine_learning>`_) package for developing deep neural networks for scientific applications.
-It comprises two components:
+DeepHyper is a distributed machine learning (`AutoML <https://en.wikipedia.org/wiki/Automated_machine_learning>`_) package for automating the developement of deep neural networks for scientific applications. It can run on a single laptop as well as on 1,000 of nodes.
 
-* :ref:`create-new-nas-problem`: fully-automated search for high-performing deep neural network architectures
+It comprises different tools such as:
 
-* :ref:`tutorial-hps-deep-learning-basic`: optimizing hyperparameters for a given reference model
-
+* Optimizing hyper-parameters for a given black-box function.
+* Neural architecture search to discover high-performing deep neural network with variable operations and connections.
+* Automated machine learning, to easily experiment many learning algorithms from Scikit-Learn.
 
 DeepHyper provides an infrastructure that targets experimental research in NAS and HPS methods, scalability, and portability across diverse supercomputers.
-It comprises three modules:
+It comprises three main modules:
 
-* :mod:`deephyper.benchmark`: Tools for defining NAS and HPS problems, as well as a curated set of sample benchmark problems for judging the efficacy of novel search algorithms.
-
-* :mod:`deephyper.evaluator` : A simple interface for NAS and HPS codes to dispatch model evaluation tasks. Implementations range from `subprocess` for laptop experiments to `ray` and `balsam` for large-scale runs on HPC systems.
-
+* :mod:`deephyper.problem`: Tools for defining neural architecture and hyper-parameter search problems.
+* :mod:`deephyper.evaluator` : A simple interface to dispatch model evaluation tasks. Implementations range from `subprocess` for laptop experiments to `ray` for large-scale runs on HPC systems.
 * :mod:`deephyper.search`: Search methods for NAS and HPS.  By extending the generic `Search` class, one can easily add new NAS or HPS methods to DeepHyper.
 
 
-DeepHyper installation requires **Python 3.7**.
+DeepHyper installation requires **Python >= 3.7**.
 
 """
 import os

@@ -18,7 +18,7 @@ on_theta = type(os.environ.get("HOST")) is str and "theta" in os.environ.get("HO
 NAME = "deephyper"
 DESCRIPTION = "Scalable asynchronous neural architecture and hyperparameter search for deep neural networks."
 URL = "https://github.com/deephyper/deephyper"
-REQUIRES_PYTHON = ">=3.6, <3.9"
+REQUIRES_PYTHON = ">=3.7, <3.9"
 VERSION = None
 
 # Build Author list
@@ -38,13 +38,14 @@ for i, (k, v) in enumerate(authors.items()):
 
 # What packages are required for this module to be executed?
 REQUIRED = [
+    # "tensorflow>=2.5.0",
+    # "tensorflow_probability>=0.13.0",
     "tensorflow>=2.0.0",
     "tensorflow_probability",
-    "numpy", #==1.19.4",  # working with 1.20.1
-    "dh-scikit-optimize==0.8.3",
+    "numpy",  # ==1.19.4",  # working with 1.20.1
+    "dh-scikit-optimize==0.9.0",
     "scikit-learn>=0.23.1",
     "tqdm",
-    "keras",
     "deap",  # GA search
     # nas
     "networkx",
@@ -53,22 +54,26 @@ REQUIRED = [
     "ray[default]>=1.3.0",
     "pandas>=0.24.2",
     "Jinja2",
-    "ConfigSpace==0.4.18",
+    "ConfigSpace>=0.4.18",
     "xgboost",
     "typeguard",
     "openml==0.10.2",
     "matplotlib>=3.0.3",
+    "statsmodels",
 ]
-
-if on_rtd:
-    REQUIRED.append("Sphinx>=1.8.2")
-    REQUIRED.append("sphinx_rtd_theme")
 
 # What packages are optional?
 EXTRAS = {
     "tests": ["pytest", "codecov", "pytest-cov", "deepspace>=0.0.3"],
     "dev": ["twine", "black"],
-    "docs": ["Sphinx>=1.8.2", "sphinx_rtd_theme"],
+    "docs": [
+        "ipython",
+        "Sphinx~=3.5.4",
+        "sphinx-book-theme",
+        "nbsphinx",
+        "sphinx-copybutton",
+        "GitPython"
+    ],
     "analytics": [
         "jupyter",
         "jupyter_contrib_nbextensions>=0.5.1",

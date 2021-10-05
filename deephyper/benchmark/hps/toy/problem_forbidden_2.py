@@ -11,7 +11,7 @@ import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh
 import numpy as np
 
-from deephyper.problem import BaseProblem
+from deephyper.problem import HpProblem
 
 config_space = cs.ConfigurationSpace(seed=42)
 
@@ -27,7 +27,7 @@ not_zero = cs.ForbiddenAndConjunction(
 config_space.add_forbidden_clause(not_zero)
 
 # Problem definition
-Problem = BaseProblem(config_space)
+Problem = HpProblem(config_space)
 
 Problem.add_starting_point(x=1, y=1)
 

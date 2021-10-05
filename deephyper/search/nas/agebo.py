@@ -1,111 +1,110 @@
 import collections
 
 import numpy as np
-from skopt import Optimizer as SkOptimizer
-from skopt.learning import RandomForestRegressor
+import skopt
 
-from deephyper.core.logs.logging import JsonMessage as jm
-from deephyper.core.parser import add_arguments_from_signature, str2bool
-from deephyper.search import util
+from deephyper.core.parser import str2bool
 from deephyper.search.nas.regevo import RegularizedEvolution
-
-dhlogger = util.conf_logger("deephyper.search.nas.agebo")
 
 
 class AgEBO(RegularizedEvolution):
     """Aging evolution with Bayesian Optimization.
 
     This algorithm build on the 'Regularized Evolution' from https://arxiv.org/abs/1802.01548. It cumulates Hyperparameter optimization with bayesian optimisation and Neural architecture search with regularized evolution.
-
-    Args:
-        problem (str): Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.nas.linearReg.Problem).
-        run (str): Module path to the run function you want to use for the search (e.g. deephyper.nas.run.quick).
-        evaluator (str): value in ['balsam', 'subprocess', 'processPool', 'threadPool'].
-        population_size (int, optional): the number of individuals to keep in the population. Defaults to 100.
-        sample_size (int, optional): the number of individuals that should participate in each tournament. Defaults to 10.
     """
 
     def __init__(
         self,
         problem,
-        run,
         evaluator,
-        population_size=100,
-        sample_size=10,
-        n_jobs=1,
-        kappa=0.001,
-        xi=0.000001,
-        acq_func="LCB",
-        sync=False,
+        random_state: int = None,
+        log_dir: str = ".",
+        verbose: int = 0,
+        # RE
+        population_size: int = 100,
+        sample_size: int = 10,
+        # BO
+        surrogate_model: str = "RF",
+        n_jobs: int = 1,
+        kappa: float = 0.001,
+        xi: float = 0.000001,
+        acq_func: str = "LCB",
+        liar_strategy: str = "cl_min",
+        mode: str = "async",
         **kwargs,
     ):
         super().__init__(
-            problem=problem,
-            run=run,
-            evaluator=evaluator,
-            population_size=population_size,
-            sample_size=sample_size,
-            **kwargs,
+            problem,
+            evaluator,
+            random_state,
+            log_dir,
+            verbose,
+            population_size,
+            sample_size,
         )
-        if type(sync) is str:
-            sync = str2bool(sync)
-        self.mode = "sync" if sync else "async"
+
+        assert mode in ["sync", "async"]
+        self.mode = mode
 
         self.n_jobs = int(n_jobs)  # parallelism of BO surrogate model estimator
 
-        # Initialize Hyperaparameter space
-        self.hp_space = self.problem._hp_space
-
         # Initialize opitmizer of hyperparameter space
-        acq_func_kwargs = {"xi": float(xi), "kappa": float(kappa)}  # tiny exploration
-        self.n_initial_points = self.free_workers
+        self._n_initial_points = self._evaluator.num_workers
+        self._liar_strategy = liar_strategy
 
-        self.hp_opt = SkOptimizer(
-            dimensions=self.hp_space._space,
-            base_estimator=RandomForestRegressor(n_jobs=self.n_jobs),
+        self._hp_opt = None
+        self._hp_opt_kwargs = dict(
+            dimensions=self._problem._hp_space._space,
+            base_estimator=self.get_surrogate_model(surrogate_model, n_jobs),
             acq_func=acq_func,
             acq_optimizer="sampling",
-            acq_func_kwargs=acq_func_kwargs,
-            n_initial_points=self.n_initial_points,
+            acq_func_kwargs={"xi": float(xi), "kappa": float(kappa)},
+            n_initial_points=self._n_initial_points,
+            random_state=self._random_state,
         )
 
-    @staticmethod
-    def _extend_parser(parser):
-        RegularizedEvolution._extend_parser(parser)
-        add_arguments_from_signature(parser, AgEBO)
-        return parser
+    def _setup_hp_optimizer(self):
+        self._hp_opt = skopt.Optimizer(**self._hp_opt_kwargs)
 
-    def saved_keys(self, val: dict):
-        res = {"id": val["id"], "arch_seq": str(val["arch_seq"])}
-        hp_names = self.hp_space._space.get_hyperparameter_names()
+    def saved_keys(self, job):
+
+        res = {"arch_seq": str(job.config["arch_seq"])}
+        hp_names = self._problem._hp_space._space.get_hyperparameter_names()
 
         for hp_name in hp_names:
             if hp_name == "loss":
-                res["loss"] = val["loss"]
+                res["loss"] = job.config["loss"]
             else:
-                res[hp_name] = val["hyperparameters"][hp_name]
+                res[hp_name] = job.config["hyperparameters"][hp_name]
 
         return res
 
-    def main(self):
+    def _search(self, max_evals, timeout):
+
+        if self._hp_opt is None:
+            self._setup_hp_optimizer()
 
         num_evals_done = 0
-        population = collections.deque(maxlen=self.population_size)
+        population = collections.deque(maxlen=self._population_size)
 
         # Filling available nodes at start
-        self.evaluator.add_eval_batch(self.gen_random_batch(size=self.free_workers))
+        self._evaluator.submit(self.gen_random_batch(size=self._n_initial_points))
 
         # Main loop
-        while num_evals_done < self.max_evals:
+        while max_evals < 0 or num_evals_done < max_evals:
 
             # Collecting finished evaluations
-            new_results = list(self.evaluator.get_finished_evals(mode=self.mode))
+            if self.mode == "async":
+                new_results = list(self._evaluator.gather("BATCH", size=1))
+            else:
+                new_results = list(self._evaluator.gather("ALL"))
 
             if len(new_results) > 0:
                 population.extend(new_results)
-                stats = {"num_cache_used": self.evaluator.stats["num_cache_used"]}
-                dhlogger.info(jm(type="env_stats", **stats))
-                self.evaluator.dump_evals(saved_keys=self.saved_keys)
+
+                self._evaluator.dump_evals(
+                    saved_keys=self.saved_keys, log_dir=self._log_dir
+                )
 
                 num_received = len(new_results)
                 num_evals_done += num_received
@@ -113,14 +112,14 @@ class AgEBO(RegularizedEvolution):
                 hp_results_X, hp_results_y = [], []
 
                 # If the population is big enough evolve the population
-                if len(population) == self.population_size:
+                if len(population) == self._population_size:
                     children_batch = []
 
                     # For each new parent/result we create a child from it
                     for new_i in range(len(new_results)):
                         # select_sample
                         indexes = np.random.choice(
-                            self.population_size, self.sample_size, replace=False
+                            self._population_size, self._sample_size, replace=False
                         )
                         sample = [population[i] for i in indexes]
 
@@ -134,67 +133,65 @@ class AgEBO(RegularizedEvolution):
                         children_batch.append(child)
 
                         # collect infos for hp optimization
-                        new_i_hp_values = self.problem.extract_hp_values(
+                        new_i_hp_values = self._problem.extract_hp_values(
                             config=new_results[new_i][0]
                         )
                         new_i_y = new_results[new_i][1]
                         hp_results_X.append(new_i_hp_values)
                         hp_results_y.append(-new_i_y)
 
-                    hp_results_y = np.minimum(hp_results_y, 1e3).tolist() #! TODO
+                    hp_results_y = np.minimum(hp_results_y, 1e3).tolist()  #! TODO
 
-                    self.hp_opt.tell(hp_results_X, hp_results_y)  #! fit: costly
-                    new_hps = self.hp_opt.ask(n_points=len(new_results))
+                    self._hp_opt.tell(hp_results_X, hp_results_y)  #! fit: costly
+                    new_hps = self._hp_opt.ask(
+                        n_points=len(new_results), strategy=self._liar_strategy
+                    )
 
                     new_configs = []
                     for hp_values, child_arch_seq in zip(new_hps, children_batch):
-                        new_config = self.problem.gen_config(child_arch_seq, hp_values)
+                        new_config = self._problem.gen_config(child_arch_seq, hp_values)
                         new_configs.append(new_config)
 
                     # submit_childs
                     if len(new_results) > 0:
-                        self.evaluator.add_eval_batch(new_configs)
+                        self._evaluator.submit(new_configs)
+
                 else:  # If the population is too small keep increasing it
 
                     # For each new parent/result we create a child from it
                     for new_i in range(len(new_results)):
 
-                        new_i_hp_values = self.problem.extract_hp_values(
+                        new_i_hp_values = self._problem.extract_hp_values(
                             config=new_results[new_i][0]
                         )
                         new_i_y = new_results[new_i][1]
                         hp_results_X.append(new_i_hp_values)
                         hp_results_y.append(-new_i_y)
 
-                    self.hp_opt.tell(hp_results_X, hp_results_y)  #! fit: costly
-                    new_hps = self.hp_opt.ask(n_points=len(new_results))
+                    self._hp_opt.tell(hp_results_X, hp_results_y)  #! fit: costly
+                    new_hps = self._hp_opt.ask(
+                        n_points=len(new_results), strategy=self._liar_strategy
+                    )
 
                     new_batch = self.gen_random_batch(size=len(new_results), hps=new_hps)
 
-                    self.evaluator.add_eval_batch(new_batch)
-
-    def select_parent(self, sample: list) -> list:
-        cfg, _ = max(sample, key=lambda x: x[1])
-        return cfg["arch_seq"]
+                    self._evaluator.submit(new_batch)
 
     def gen_random_batch(self, size: int, hps: list = None) -> list:
         batch = []
         if hps is None:
-            points = self.hp_opt.ask(n_points=size)
+            points = self._hp_opt.ask(n_points=size)
             for hp_values in points:
                 arch_seq = self.random_search_space()
-                config = self.problem.gen_config(arch_seq, hp_values)
+                config = self._problem.gen_config(arch_seq, hp_values)
                 batch.append(config)
         else:  # passed hps are used
             assert size == len(hps)
             for hp_values in hps:
                 arch_seq = self.random_search_space()
-                config = self.problem.gen_config(arch_seq, hp_values)
+                config = self._problem.gen_config(arch_seq, hp_values)
                 batch.append(config)
         return batch
-
-    def random_search_space(self) -> list:
-        return [np.random.choice(b + 1) for (_, b) in self.space_list]
 
     def copy_mutate_arch(self, parent_arch: list) -> list:
         """
@@ -219,8 +216,29 @@ class AgEBO(RegularizedEvolution):
         child_arch[i] = sample
         return child_arch
 
+    def get_surrogate_model(self, name: str, n_jobs: int = None):
+        """Get a surrogate model from Scikit-Optimize.
 
-if __name__ == "__main__":
-    args = AgEBO.parse_args()
-    search = AgEBO(**vars(args))
-    search.main()
+        Args:
+            name (str): name of the surrogate model.
+            n_jobs (int): number of parallel processes to distribute the computation of the surrogate model.
+
+        Raises:
+            ValueError: when the name of the surrogate model is unknown.
+        """
+        accepted_names = ["RF", "ET", "GBRT", "GP", "DUMMY"]
+        if not (name in accepted_names):
+            raise ValueError(
+                f"Unknown surrogate model {name}, please choose among {accepted_names}."
+            )
+
+        if name == "RF":
+            surrogate = skopt.learning.RandomForestRegressor(n_jobs=n_jobs)
+        elif name == "ET":
+            surrogate = skopt.learning.ExtraTreesRegressor(n_jobs=n_jobs)
+        elif name == "GBRT":
+            surrogate = skopt.learning.GradientBoostingQuantileRegressor(n_jobs=n_jobs)
+        else:  # for DUMMY and GP
+            surrogate = name
+
+        return surrogate
