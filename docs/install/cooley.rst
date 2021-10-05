@@ -12,7 +12,7 @@ Before installating DeepHyper, go to your project folder::
     cd /lus/theta-fs0/projects/PROJECTNAME
     mkdir cooley && cd cooley/
 
-DeepHyper can be installed on Theta by following these commands::
+DeepHyper can be installed on Cooley by following these commands::
 
     git clone https://github.com/deephyper/deephyper.git --depth 1
     ./deephyper/install/cooley.sh
