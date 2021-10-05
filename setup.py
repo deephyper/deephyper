@@ -64,15 +64,24 @@ REQUIRED = [
 
 # What packages are optional?
 EXTRAS = {
-    "tests": ["pytest", "codecov", "pytest-cov", "deepspace>=0.0.3"],
-    "dev": ["twine", "black"],
-    "docs": [
-        "ipython",
+    "dev": [
+        # Test
+        "pytest",
+        "codecov",
+        "pytest-cov",
+        # Packaging
+        "twine",
+        # Formatter
+        "black",
+        # Documentation
         "Sphinx~=3.5.4",
         "sphinx-book-theme",
         "nbsphinx",
         "sphinx-copybutton",
-        "GitPython"
+        "GitPython",
+        "ipython",
+        # Other
+        "deepspace>=0.0.3",
     ],
     "analytics": [
         "jupyter",
