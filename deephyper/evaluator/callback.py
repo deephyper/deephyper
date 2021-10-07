@@ -44,4 +44,4 @@ class LoggerCallback(Callback):
             self._best_objective = job.result
         else:
             self._best_objective = max(job.result, self._best_objective)
-        print(f"[{self._n_done:05d}] -- best objective: {self._best_objective} -- received objective: {job.result}")
+        print(f"[{self._n_done:05d}] -- best objective: {self._best_objective:.5f} -- received objective: {job.result:.5f}")
