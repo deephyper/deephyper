@@ -5,6 +5,6 @@ Installations
    :maxdepth: 1
 
    local
-   Theta (ALCF) <theta>
-   thetagpu
+   ThetaKNL (ALCF) <theta>
+   ThetaGPU (ALCF) <thetagpu>
    cooley

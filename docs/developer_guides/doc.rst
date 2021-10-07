@@ -1,7 +1,7 @@
 Documentation
 *************
 
-To build the documentation we use the `Sphinx <https://www.sphinx-doc.org/en/master/>`_ package.
+To build the documentation we use the `Sphinx <https://www.sphinx-doc.org/en/master/>`_ package. The theme used is `Sphinx Book Theme <https://sphinx-book-theme.readthedocs.io/en/latest/>`_.
 
 Developer Installation
 ======================
