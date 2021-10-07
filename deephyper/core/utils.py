@@ -1,6 +1,9 @@
 import os
 
 def create_dir(path: str):
+    """
+    :meta private:
+    """
     try:
         os.mkdir(path)
     except OSError:

@@ -28,6 +28,9 @@ MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
 
 
 def add_subparser(subparsers):
+    """
+    :meta private:
+    """
     subparser_name = "ray-submit"
     function_to_call = main
 
@@ -112,7 +115,10 @@ def main(
     horovod,
     **kwargs,
 ):
-    """Create & submit the DH search via Balsam"""
+    """Create & submit the DH search via Balsam
+
+    :meta private:
+    """
     activation_script = os.path.abspath(activation_script)
 
     # Test if "run", "problem" and "workflow" are correct
@@ -208,7 +214,10 @@ def main(
 
 
 def validate(problem, run, workflow):
-    """Validate problem, run, and workflow"""
+    """Validate problem, run, and workflow
+
+    :meta private:
+    """
     current_dir = os.getcwd()
 
     print("Validating Workflow...", end="", flush=True)

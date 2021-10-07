@@ -1,8 +1,17 @@
-import argparse
+"""Command line to create a new DeepHyper project package. The package is automatically installed to the current virtual Python environment.
+
+It can be used with:
+
+.. code-block:: console
+
+    $ deephyper start-project project_name
+"""
 import os
-import sys
 
 def add_subparser(subparsers):
+    """
+    :meta private:
+    """
     subparser_name = 'start-project'
     function_to_call = main
 
@@ -13,6 +22,9 @@ def add_subparser(subparsers):
     subparser.set_defaults(func=function_to_call)
 
 def main(path, *args, **kwargs):
+    """
+    :meta private:
+    """
     project_name = os.path.basename(path)
     os.makedirs(path, exist_ok=True)
     path_pkg = os.path.join(path,project_name)

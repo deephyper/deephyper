@@ -1,4 +1,8 @@
 def generate_other_arguments(func, **kwargs):
+    """Generate command line arguments based on the signature of ``func``.
+
+    :meta private:
+    """
     cl_format = ""
     for k, v in kwargs.items():
         if v is not None:

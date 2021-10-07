@@ -1,8 +1,19 @@
+"""Command line to create a new problem sub-package in a DeepHyper projet package.
+
+It can be used with:
+
+.. code-block:: console
+
+    $ deephyper new-problem hps problem_name
+"""
 import os
 import glob
 from jinja2 import Template
 
 def add_subparser(subparsers):
+    """
+    :meta private:
+    """
     subparser_name = 'new-problem'
     function_to_call = main
 
@@ -14,6 +25,9 @@ def add_subparser(subparsers):
     subparser.set_defaults(func=function_to_call)
 
 def main(mode, name, *args, **kwargs):
+    """
+    :meta private:
+    """
     prob_name = name
     current_path = os.getcwd()
     project_path = os.path.dirname(current_path)
@@ -28,6 +42,9 @@ def main(mode, name, *args, **kwargs):
     render_files(mode, prob_name)
 
 def render_files(mode, prob_name):
+    """
+    :meta private:
+    """
     package = os.path.basename(os.getcwd())
     print("package: ", package)
     templates_pattern = os.path.join(

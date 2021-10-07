@@ -5,8 +5,9 @@ import os
 # https://github.com/argonne-lcf/balsam/blob/main/balsam/platform/compute_node/alcf_thetaknl_node.py
 
 def nodelist():
-    """
-    Get all compute nodes allocated in the current job context
+    """Get all compute nodes allocated in the current job context.
+
+    :meta private:
     """
     node_str = os.environ["COBALT_PARTNAME"]
     # string like: 1001-1005,1030,1034-1200

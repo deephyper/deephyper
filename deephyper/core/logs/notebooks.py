@@ -5,6 +5,9 @@ from deephyper.core.plot import hps, multi, post_train, nas_single
 
 
 def add_subparser(subparsers):
+    """
+    :meta private:
+    """
     subparser_name = "notebook"
     function_to_call = main
 
@@ -53,6 +56,9 @@ def notebook_for_posttrain(path: list, output: str) -> None:
 
 
 def main(type: str, path: list, *args, **kwargs) -> None:
+    """
+    :meta private:
+    """
 
     if type == "hps":
         notebook_for_hps(path, **kwargs)

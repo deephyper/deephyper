@@ -1,4 +1,26 @@
+"""DeepHyper command line interface.
 
+It can be used in the shell with:
+
+.. code-block:: console
+
+    $ deephyper --help
+    usage: deephyper [-h] {start-project,new-problem,nas,hps,ray-submit,ray-cluster} ...
+
+    DeepHyper command line.
+
+    positional arguments:
+    {start-project,new-problem,nas,hps,ray-submit,ray-cluster}
+        start-project       Set up a new project folder for DeepHyper benchmarks
+        new-problem         Tool to init an hyper-parameter search package or a neural architecture search problem folder.
+        nas                 Command line to run neural architecture search.
+        hps                 Command line to run hyperparameter search.
+        ray-submit          Create and submit an HPS or NAS job directly via Ray.
+        ray-cluster         Manipulate a Ray cluster.
+
+    optional arguments:
+    -h, --help            show this help message and exit
+"""
 import argparse
 
 from deephyper.core.cli import start_project, new_problem
@@ -6,6 +28,9 @@ from deephyper.core.cli import hps, nas, ray_submit, ray_cluster
 
 
 def create_parser():
+    """
+    :meta private:
+    """
     parser = argparse.ArgumentParser(
         description='DeepHyper command line.')
 
@@ -36,6 +61,9 @@ def create_parser():
 
 
 def main():
+    """
+    :meta private:
+    """
     parser = create_parser()
 
     args = parser.parse_args()

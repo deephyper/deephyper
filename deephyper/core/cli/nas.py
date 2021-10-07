@@ -62,6 +62,9 @@ NAS_SEARCHES = {
 
 
 def build_parser_from(cls):
+    """
+    :meta private:
+    """
     parser = argparse.ArgumentParser(conflict_handler="resolve")
 
     # add the arguments of a specific search
@@ -94,6 +97,9 @@ def build_parser_from(cls):
 
 
 def add_subparser(parsers):
+    """
+    :meta private:
+    """
     parser_name = "nas"
 
     parser = parsers.add_parser(
@@ -115,6 +121,9 @@ def add_subparser(parsers):
 
 
 def main(**kwargs):
+    """
+    :meta private:
+    """
 
     sys.path.insert(0, ".")
 

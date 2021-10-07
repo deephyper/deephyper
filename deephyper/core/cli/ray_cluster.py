@@ -1,3 +1,23 @@
+"""Command line to generate a Ray YAML config to then start a Ray cluster.
+
+It can be used with:
+
+.. code-block:: console
+
+    $ deephyper ray-cluster config --help
+    usage: deephyper ray-cluster config [-h] [--head-node-ip HEAD_NODE_IP] [--worker-nodes-ips [WORKER_NODES_IPS [WORKER_NODES_IPS ...]]] [--num-cpus NUM_CPUS]
+                                        [--num-gpus NUM_GPUS] [-o OUTPUT] --init INIT [-v]
+
+    optional arguments:
+    -h, --help            show this help message and exit
+    --head-node-ip HEAD_NODE_IP
+    --worker-nodes-ips [WORKER_NODES_IPS [WORKER_NODES_IPS ...]]
+    --num-cpus NUM_CPUS
+    --num-gpus NUM_GPUS
+    -o OUTPUT, --output OUTPUT
+                            Name of the YAML configuration file created.
+    --init INIT           Initialization script source before starting the Ray servers.
+"""
 import os
 import socket
 import getpass
@@ -14,6 +34,9 @@ MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
 
 
 def add_subparser(subparsers):
+    """
+    :meta private:
+    """
     subparser_name = "ray-cluster"
     function_to_call = main
 
@@ -49,6 +72,9 @@ def add_subparser(subparsers):
 
 
 def main(**kwargs):
+    """
+    :meta private:
+    """
 
     if sys.argv[2] == "config":
         do_config(**kwargs)
@@ -56,6 +82,8 @@ def main(**kwargs):
 
 def validate_ip(ip):
     """Check if the input is a valid ip address. If it is not it will assume being a valid domain and try to retrive a valid ip from it.
+
+    :meta private:
 
     Args:
         ip (str): a valid ip address or a valid domain.
@@ -70,6 +98,9 @@ def validate_ip(ip):
         return socket.gethostbyname(ip)
 
 def do_config(head_node_ip, worker_nodes_ips, num_cpus, num_gpus, output, init, verbose, **kwargs):
+    """
+    :meta private:
+    """
 
     # check if output has ".yaml"
     if output[-5:] != ".yaml":

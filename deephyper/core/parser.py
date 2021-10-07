@@ -6,6 +6,8 @@ from inspect import signature, Parameter
 def add_arguments_from_signature(parser, obj, prefix="", exclude=[]):
     """Add arguments to parser base on obj default keyword parameters.
 
+    :meta private:
+
     Args:
         parser (ArgumentParser)): the argument parser to which we want to add arguments.
         obj (type): the class from which we want to extract default parameters for the constructor.
@@ -46,6 +48,9 @@ def add_arguments_from_signature(parser, obj, prefix="", exclude=[]):
     return added_arguments
 
 def str2bool(v):
+    """
+    :meta private:
+    """
     if isinstance(v, bool):
         return v
     if v.lower() in ("yes", "true", "t", "y", "1"):
