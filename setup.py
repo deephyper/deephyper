@@ -78,6 +78,7 @@ EXTRAS = {
         "sphinx-book-theme",
         "nbsphinx",
         "sphinx-copybutton",
+        "sphinx-togglebutton",
         "GitPython",
         "ipython",
         # Other
