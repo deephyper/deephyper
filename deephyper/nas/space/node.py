@@ -5,7 +5,7 @@ from deephyper.nas.space.op.basic import Operation
 
 
 class Node:
-    """This class represents a node of a graph
+    """Represents a node of a graph.
 
     Args:
         name (str): node name.

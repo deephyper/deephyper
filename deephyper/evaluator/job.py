@@ -1,4 +1,11 @@
 class Job:
+    """Represents an evaluation executed by the ``Evaluator`` class.
+
+    Args:
+        id (Any): unique identifier of the job. Usually an integer.
+        config (dict): argument dictionnary of the ``run_function``.
+        run_function (callable): function executed by the ``Evaluator``
+    """
     # Job status states.
     READY = 0
     RUNNING = 1

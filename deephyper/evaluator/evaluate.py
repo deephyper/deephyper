@@ -22,12 +22,12 @@ EVALUATORS = {
 
 
 class Evaluator:
-    """This evaluator module asynchronously manages a series of Job objects to help execute given HPS or NAS tasks on various environments with differing system settings and properties.
+    """This ``Evaluator`` class asynchronously manages a series of Job objects to help execute given HPS or NAS tasks on various environments with differing system settings and properties.
 
-    Raises:
-        DeephyperRuntimeError: raised if the `cache_key` parameter is not None, a callable or equal to 'uuid'.
-        DeephyperRuntimeError: raised if the `run_function` parameter is from the`__main__` module.
-
+    Args:
+        run_function (callable): functions to be executed by the ``Evaluator``.
+        num_workers (int, optional): Number of parallel workers available for the ``Evaluator``. Defaults to 1.
+        callbacks (list, optional): A list of callbacks to trigger custom actions at the creation or completion of jobs. Defaults to None.
     """
 
     FAIL_RETURN_VALUE = np.finfo(np.float32).min
@@ -41,9 +41,9 @@ class Evaluator:
         callbacks=None,
     ):
         self.run_function = run_function  # User-defined run function.
-        self.num_workers = (
-            num_workers  # Number of processors used for completing some job.
-        )
+
+        # Number of parallel workers available
+        self.num_workers =  num_workers
         self.jobs = []  # Job objects currently submitted.
         self.n_jobs = 1
         self._tasks_running = []  # List of AsyncIO Task objects currently running.
@@ -65,13 +65,13 @@ class Evaluator:
         Args:
             run_function (function): the function to execute in parallel.
             method (str, optional): the backend to use in ["thread", "process", "subprocess", "ray"]. Defaults to "subprocess".
-            method_kwargs (dict, optional): configuration of the corresponding backend. Defaults to "{}".
+            method_kwargs (dict, optional): configuration dictionnary of the corresponding backend. Keys corresponds to the keyword arguments of the corresponding implementation. Defaults to "{}".
 
         Raises:
-            DeephyperRuntimeError: if the method is not acceptable.
+            DeephyperRuntimeError: if the ``method is`` not acceptable.
 
         Returns:
-            Evaluator: the evaluator with the corresponding backend and configuration.
+            Evaluator: the ``Evaluator`` with the corresponding backend and configuration.
         """
 
         if not method in EVALUATORS.keys():
@@ -136,6 +136,11 @@ class Evaluator:
             cb.on_done(job)
 
     async def execute(self, job):
+        """Execute the received job. To be implemented with a specific backend.
+
+        Args:
+            job (Job): the ``Job`` to be executed.
+        """
         raise NotImplementedError
 
     def submit(self, configs: List[Dict]):
@@ -214,17 +219,20 @@ class Evaluator:
             return val
 
     def dump_evals(
-        self, saved_key: str = None, saved_keys: list = None, log_dir: str = "."
+        self, saved_keys = None, log_dir: str = "."
     ):
-        """Dump evaluations to 'results.csv' file."""
+        """Dump evaluations to a CSV file name ``"results.csv"``
+
+        Args:
+            saved_keys (list|callable): If ``None`` the whole ``job.config`` will be added as row of the CSV file. If a ``list`` filtered keys will be added as a row of the CSV file. If a ``callable`` the output dictionnary will be added as a row of the CSV file.
+            log_dir (str): directory where to dump the CSV file.
+        """
 
         resultsList = []
 
         for job in self.jobs_done:
-            if saved_key is None and saved_keys is None:
+            if saved_keys is None:
                 result = job.config
-            elif type(saved_key) is str:
-                result = {str(i): v for i, v in enumerate(job.config[saved_key])}
             elif type(saved_keys) is list:
                 decoded_key = job.config
                 result = {k: self.convert_for_csv(decoded_key[k]) for k in saved_keys}

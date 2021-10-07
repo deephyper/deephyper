@@ -20,11 +20,11 @@ class ProcessPoolEvaluator(Evaluator):
     async def execute(self, job):
 
         async with self.sem:
-    
+
             executor = ProcessPoolExecutor(max_workers=1)
             sol = await self.loop.run_in_executor(executor, job.run_function, job.config)
-    
+
             job.result = sol
-    
+
 
         return job
