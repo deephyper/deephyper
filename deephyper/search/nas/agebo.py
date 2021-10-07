@@ -8,9 +8,25 @@ from deephyper.search.nas.regevo import RegularizedEvolution
 
 
 class AgEBO(RegularizedEvolution):
-    """Aging evolution with Bayesian Optimization.
+    """`Aging evolution with Bayesian Optimization <https://arxiv.org/abs/2010.16358>`_.
 
-    This algorithm build on the 'Regularized Evolution' from https://arxiv.org/abs/1802.01548. It cumulates Hyperparameter optimization with bayesian optimisation and Neural architecture search with regularized evolution.
+    This algorithm build on the `Regularized Evolution <https://arxiv.org/abs/1802.01548>`_. It cumulates Hyperparameter optimization with Bayesian optimisation and Neural architecture search with regularized evolution.
+
+    Args:
+        problem (NaProblem): Hyperparameter problem describin the search space to explore.
+        evaluator (Evaluator): An ``Evaluator`` instance responsible of distributing the tasks.
+        random_state (int, optional): Random seed. Defaults to None.
+        log_dir (str, optional): Log directory where search's results are saved. Defaults to ".".
+        verbose (int, optional): Indicate the verbosity level of the search. Defaults to 0.
+        population_size (int, optional): the number of individuals to keep in the population. Defaults to 100.
+        sample_size (int, optional): the number of individuals that should participate in each tournament. Defaults to 10.
+        surrogate_model (str, optional): Surrogate model used by the Bayesian optimization. Can be a value in ["RF", "ET", "GBRT", "DUMMY"]. Defaults to "RF".
+        n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the Bayesian optimization. A value of -1 will use all available cores. Defaults to 1.
+        kappa (float, optional): Manage the exploration/exploitation tradeoff for the "LCB" acquisition function. Defaults to 1.96 corresponds to 95% of the confidence interval.
+        xi (float, optional): Manage the exploration/exploitation tradeoff of "EI" and "PI" acquisition function. Defaults to 0.001.
+        acq_func (str, optional): Acquisition function used by the Bayesian optimization. Can be a value in ["LCB", "EI", "PI", "gp_hedge"]. Defaults to "LCB".
+        liar_strategy (str, optional): Definition of the constant value use for the Liar strategy. Can be a value in ["cl_min", "cl_mean", "cl_max"] . Defaults to "cl_min".
+        mode (str, optional): Define if the search should be asynchronous or batch synchronous. Choice in ["sync", "async"]. Defaults to "async".
     """
 
     def __init__(
@@ -55,7 +71,7 @@ class AgEBO(RegularizedEvolution):
         self._hp_opt = None
         self._hp_opt_kwargs = dict(
             dimensions=self._problem._hp_space._space,
-            base_estimator=self.get_surrogate_model(surrogate_model, n_jobs),
+            base_estimator=self._get_surrogate_model(surrogate_model, n_jobs),
             acq_func=acq_func,
             acq_optimizer="sampling",
             acq_func_kwargs={"xi": float(xi), "kappa": float(kappa)},
@@ -66,7 +82,7 @@ class AgEBO(RegularizedEvolution):
     def _setup_hp_optimizer(self):
         self._hp_opt = skopt.Optimizer(**self._hp_opt_kwargs)
 
-    def saved_keys(self, job):
+    def _saved_keys(self, job):
 
         res = {"arch_seq": str(job.config["arch_seq"])}
         hp_names = self._problem._hp_space._space.get_hyperparameter_names()
@@ -88,7 +104,7 @@ class AgEBO(RegularizedEvolution):
         population = collections.deque(maxlen=self._population_size)
 
         # Filling available nodes at start
-        self._evaluator.submit(self.gen_random_batch(size=self._n_initial_points))
+        self._evaluator.submit(self._gen_random_batch(size=self._n_initial_points))
 
         # Main loop
         while max_evals < 0 or num_evals_done < max_evals:
@@ -103,7 +119,7 @@ class AgEBO(RegularizedEvolution):
                 population.extend(new_results)
 
                 self._evaluator.dump_evals(
-                    saved_keys=self.saved_keys, log_dir=self._log_dir
+                    saved_keys=self._saved_keys, log_dir=self._log_dir
                 )
 
                 num_received = len(new_results)
@@ -127,7 +143,7 @@ class AgEBO(RegularizedEvolution):
                         parent = self.select_parent(sample)
 
                         # copy_mutate_parent
-                        child = self.copy_mutate_arch(parent)
+                        child = self._copy_mutate_arch(parent)
 
                         # add child to batch
                         children_batch.append(child)
@@ -173,27 +189,27 @@ class AgEBO(RegularizedEvolution):
                         n_points=len(new_results), strategy=self._liar_strategy
                     )
 
-                    new_batch = self.gen_random_batch(size=len(new_results), hps=new_hps)
+                    new_batch = self._gen_random_batch(size=len(new_results), hps=new_hps)
 
                     self._evaluator.submit(new_batch)
 
-    def gen_random_batch(self, size: int, hps: list = None) -> list:
+    def _gen_random_batch(self, size: int, hps: list = None) -> list:
         batch = []
         if hps is None:
             points = self._hp_opt.ask(n_points=size)
             for hp_values in points:
-                arch_seq = self.random_search_space()
+                arch_seq = self._random_search_space()
                 config = self._problem.gen_config(arch_seq, hp_values)
                 batch.append(config)
         else:  # passed hps are used
             assert size == len(hps)
             for hp_values in hps:
-                arch_seq = self.random_search_space()
+                arch_seq = self._random_search_space()
                 config = self._problem.gen_config(arch_seq, hp_values)
                 batch.append(config)
         return batch
 
-    def copy_mutate_arch(self, parent_arch: list) -> list:
+    def _copy_mutate_arch(self, parent_arch: list) -> list:
         """
         # ! Time performance is critical because called sequentialy
 
@@ -216,7 +232,7 @@ class AgEBO(RegularizedEvolution):
         child_arch[i] = sample
         return child_arch
 
-    def get_surrogate_model(self, name: str, n_jobs: int = None):
+    def _get_surrogate_model(self, name: str, n_jobs: int = None):
         """Get a surrogate model from Scikit-Optimize.
 
         Args:

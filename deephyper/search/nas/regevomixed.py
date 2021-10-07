@@ -48,7 +48,7 @@ class RegularizedEvolutionMixed(RegularizedEvolution):
         )
         self._space_size = len(self._space.get_hyperparameter_names())
 
-    def saved_keys(self, job):
+    def _saved_keys(self, job):
 
         res = {"arch_seq": str(job.config["arch_seq"])}
         hp_names = self._problem._hp_space._space.get_hyperparameter_names()
@@ -66,7 +66,7 @@ class RegularizedEvolutionMixed(RegularizedEvolution):
         num_evals_done = 0
 
         # Filling available nodes at start
-        self._evaluator.submit(self.gen_random_batch(size=self._evaluator.num_workers))
+        self._evaluator.submit(self._gen_random_batch(size=self._evaluator.num_workers))
 
         # Main loop
         while max_evals < 0 or num_evals_done < max_evals:
@@ -79,7 +79,7 @@ class RegularizedEvolutionMixed(RegularizedEvolution):
 
                 self._population.extend(new_results)
                 self._evaluator.dump_evals(
-                    saved_keys=self.saved_keys, log_dir=self._log_dir
+                    saved_keys=self._saved_keys, log_dir=self._log_dir
                 )
                 num_evals_done += num_received
 
@@ -101,10 +101,10 @@ class RegularizedEvolutionMixed(RegularizedEvolution):
                         sample = [self._population[i] for i in indexes]
 
                         # select_parent
-                        parent = self.select_parent(sample)
+                        parent = self._select_parent(sample)
 
                         # copy_mutate_parent
-                        child = self.copy_mutate_arch(parent)
+                        child = self._copy_mutate_arch(parent)
                         # add child to batch
                         children_batch.append(child)
 
@@ -112,15 +112,15 @@ class RegularizedEvolutionMixed(RegularizedEvolution):
                     self._evaluator.submit(children_batch)
                 else:  # If the population is too small keep increasing it
 
-                    new_batch = self.gen_random_batch(size=num_received)
+                    new_batch = self._gen_random_batch(size=num_received)
 
                     self._evaluator.submit(new_batch)
 
-    def select_parent(self, sample: list) -> dict:
+    def _select_parent(self, sample: list) -> dict:
         cfg, _ = max(sample, key=lambda x: x[1])
         return cfg
 
-    def gen_random_batch(self, size: int) -> list:
+    def _gen_random_batch(self, size: int) -> list:
 
         sample = lambda hp, size: [hp.sample(self._space.random) for _ in range(size)]
         batch = []
@@ -134,7 +134,7 @@ class RegularizedEvolutionMixed(RegularizedEvolution):
 
         return batch
 
-    def copy_mutate_arch(self, parent_cfg: dict) -> dict:
+    def _copy_mutate_arch(self, parent_cfg: dict) -> dict:
         """
         # ! Time performance is critical because called sequentialy
 

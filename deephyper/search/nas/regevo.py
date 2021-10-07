@@ -4,12 +4,14 @@ from deephyper.search.nas.base import NeuralArchitectureSearch
 
 
 class RegularizedEvolution(NeuralArchitectureSearch):
-    """Regularized evolution.
-    https://arxiv.org/abs/1802.01548
+    """`Regularized evolution <https://arxiv.org/abs/1802.01548>`_ neural architecture search. This search is only compatible with a ``NaProblem`` that has fixed hyperparameters.
+
     Args:
-        problem (str): Module path to the Problem instance you want to use for the search (e.g. deephyper.benchmark.nas.linearReg.Problem).
-        run (str): Module path to the run function you want to use for the search (e.g. deephyper.nas.run.quick).
-        evaluator (str): value in ['balsam', 'subprocess', 'processPool', 'threadPool'].
+        problem (NaProblem): Hyperparameter problem describin the search space to explore.
+        evaluator (Evaluator): An ``Evaluator`` instance responsible of distributing the tasks.
+        random_state (int, optional): Random seed. Defaults to None.
+        log_dir (str, optional): Log directory where search's results are saved. Defaults to ".".
+        verbose (int, optional): Indicate the verbosity level of the search. Defaults to 0.
         population_size (int, optional): the number of individuals to keep in the population. Defaults to 100.
         sample_size (int, optional): the number of individuals that should participate in each tournament. Defaults to 10.
     """
@@ -39,7 +41,7 @@ class RegularizedEvolution(NeuralArchitectureSearch):
         self._sample_size = int(sample_size)
         self._population = collections.deque(maxlen=self._population_size)
 
-    def saved_keys(self, job):
+    def _saved_keys(self, job):
         res = {"arch_seq": str(job.config["arch_seq"])}
         return res
 
@@ -48,7 +50,7 @@ class RegularizedEvolution(NeuralArchitectureSearch):
         num_evals_done = 0
 
         # Filling available nodes at start
-        batch = self.gen_random_batch(size=self._evaluator.num_workers)
+        batch = self._gen_random_batch(size=self._evaluator.num_workers)
         self._evaluator.submit(batch)
 
         # Main loop
@@ -61,7 +63,7 @@ class RegularizedEvolution(NeuralArchitectureSearch):
             if num_received > 0:
                 self._population.extend(new_results)
                 self._evaluator.dump_evals(
-                    saved_keys=self.saved_keys, log_dir=self._log_dir
+                    saved_keys=self._saved_keys, log_dir=self._log_dir
                 )
                 num_evals_done += num_received
 
@@ -81,9 +83,9 @@ class RegularizedEvolution(NeuralArchitectureSearch):
                         )
                         sample = [self._population[i] for i in indexes]
                         # select_parent
-                        parent = self.select_parent(sample)
+                        parent = self._select_parent(sample)
                         # copy_mutate_parent
-                        child = self.copy_mutate_arch(parent)
+                        child = self._copy_mutate_arch(parent)
                         # add child to batch
                         children_batch.append(child)
 
@@ -91,24 +93,24 @@ class RegularizedEvolution(NeuralArchitectureSearch):
                     self._evaluator.submit(children_batch)
 
                 else:  # If the population is too small keep increasing it
-                    self._evaluator.submit(self.gen_random_batch(size=num_received))
+                    self._evaluator.submit(self._gen_random_batch(size=num_received))
 
-    def select_parent(self, sample: list) -> list:
+    def _select_parent(self, sample: list) -> list:
         cfg, _ = max(sample, key=lambda x: x[1])
         return cfg["arch_seq"]
 
-    def gen_random_batch(self, size: int) -> list:
+    def _gen_random_batch(self, size: int) -> list:
         batch = []
         for _ in range(size):
             cfg = self.pb_dict.copy()
-            cfg["arch_seq"] = self.random_search_space()
+            cfg["arch_seq"] = self._random_search_space()
             batch.append(cfg)
         return batch
 
-    def random_search_space(self) -> list:
+    def _random_search_space(self) -> list:
         return [self._random_state.choice(b + 1) for (_, b) in self.space_list]
 
-    def copy_mutate_arch(self, parent_arch: list) -> dict:
+    def _copy_mutate_arch(self, parent_arch: list) -> dict:
         """
         # ! Time performance is critical because called sequentialy
         Args:

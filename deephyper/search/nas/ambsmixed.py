@@ -51,7 +51,7 @@ class AMBSMixed(NeuralArchitectureSearch):
         self._opt = None
         self._opt_kwargs = dict(
             dimensions=self._space,
-            base_estimator=self.get_surrogate_model(surrogate_model, n_jobs),
+            base_estimator=self._get_surrogate_model(surrogate_model, n_jobs),
             acq_func=acq_func,
             acq_optimizer="sampling",
             acq_func_kwargs={"xi": float(xi), "kappa": float(kappa)},
@@ -62,7 +62,7 @@ class AMBSMixed(NeuralArchitectureSearch):
     def _setup_optimizer(self):
         self._opt = skopt.Optimizer(**self._opt_kwargs)
 
-    def saved_keys(self, job):
+    def _saved_keys(self, job):
 
         res = {"arch_seq": str(job.config["arch_seq"])}
         hp_names = self._problem._hp_space._space.get_hyperparameter_names()
@@ -84,7 +84,7 @@ class AMBSMixed(NeuralArchitectureSearch):
 
         # Filling available nodes at start
         logging.info(f"Generating {self._evaluator.num_workers} initial points...")
-        self._evaluator.submit(self.get_random_batch(size=self._n_initial_points))
+        self._evaluator.submit(self._get_random_batch(size=self._n_initial_points))
 
         # Main loop
         while max_evals < 0 or num_evals_done < max_evals:
@@ -96,7 +96,7 @@ class AMBSMixed(NeuralArchitectureSearch):
             if num_received > 0:
 
                 self._evaluator.dump_evals(
-                    saved_keys=self.saved_keys, log_dir=self._log_dir
+                    saved_keys=self._saved_keys, log_dir=self._log_dir
                 )
                 num_evals_done += num_received
 
@@ -129,7 +129,7 @@ class AMBSMixed(NeuralArchitectureSearch):
                 if len(new_results) > 0:
                     self._evaluator.submit(new_batch)
 
-    def get_surrogate_model(self, name: str, n_jobs: int = None):
+    def _get_surrogate_model(self, name: str, n_jobs: int = None):
         """Get a surrogate model from Scikit-Optimize.
 
         Args:
@@ -156,7 +156,7 @@ class AMBSMixed(NeuralArchitectureSearch):
 
         return surrogate
 
-    def get_random_batch(self, size: int) -> list:
+    def _get_random_batch(self, size: int) -> list:
         batch = []
         n_points = max(0, size - len(batch))
         if n_points > 0:
@@ -169,15 +169,8 @@ class AMBSMixed(NeuralArchitectureSearch):
         return batch
 
 
-def isnan(x) -> bool:
-    """Check if a value is NaN."""
-    if isinstance(x, float):
-        return math.isnan(x)
-    elif isinstance(x, np.float64):
-        return np.isnan(x)
-    else:
-        return False
-
-
 def replace_nan(x):
+    """
+    :meta private:
+    """
     return [np.nan if x_i == "nan" else x_i for x_i in x]
