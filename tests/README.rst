@@ -1,15 +1,19 @@
 Tests
 *****
 
-For automatic tests in deephyper we choosed to use the pytest framework: `pytest official website <https://docs.pytest.org/en/latest/index.html>`_.
+For automatic tests in DeepHyper we chose to use the `Pytest <https://docs.pytest.org/en/latest/index.html>`_ package.
 
 
-Install
-=======
+Developer Installation
+======================
 
-::
+From an activated Python virtual environment run the following commands:
 
-    pip install -e '.[tests,docs]'
+.. code-block:: console
+
+    $ git clone https://github.com/deephyper/deephyper.git
+    $ cd deephyper/ && git checkout develop
+    $ pip install -e ".[dev,analytics]"
 
 Run Tests
 =========
