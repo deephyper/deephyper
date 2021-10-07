@@ -1,61 +1,83 @@
-ThetaGPU (ALCF)
+ThetaGPU (Argonne LCF)
 ***************
 
-`ThetaGPU <theta healing>`_  is an extension of Theta and is comprised of 24 NVIDIA DGX A100 nodes at Argonne Leadership Computing Facility (ALCF).
+`ThetaGPU <theta healing>`_  is an extension of Theta and is comprised of 24 NVIDIA DGX A100 nodes at Argonne Leadership Computing Facility (ALCF). The documention of ThetaGPU from the Datascience group at Argonne National Laboratory can be accessed `here <https://argonne-lcf.github.io/ThetaGPU-Docs/>`_. The system documentation from the ALCF can be accessed `here <https://www.alcf.anl.gov/support-center/theta-gpu-nodes/getting-started-thetagpu>`_.
 
-The documention of ThetaGPU from the Datascience group at Argonne National Laboratory can be accessed `here <https://argonne-lcf.github.io/ThetaGPU-Docs/>`_. The system documentation from the ALCF can be accessed `here <https://www.alcf.anl.gov/support-center/theta-gpu-nodes/getting-started-thetagpu>`_.
+.. _theta-module-installation:
 
+Already installed module
+========================
 
-.. _thetagpu-user-installation:
+This installation procedure shows you how to access the installed DeepHyper module on ThetaGPU. After logging in Theta, connect to a ThetaGPU service node:
 
-User installation
+.. code-block:: console
+    $ ssh thetagpusn1
+
+Then, to access Deephyper run the following commands:
+
+.. code-block:: console
+
+    $ module load conda/2021-09-22
+    $ conda activate base
+
+Finally, to verify the installation do:
+
+.. code-block:: console
+
+    $ python
+    >>> import deephyper
+    >>> deephyper.__version__
+    '0.3.0'
+
+.. _thetagpu-conda-environment:
+
+Conda environment
 =================
 
-Locate yourself on one of the login nodes of ThetaGPU
+This installation procedure shows you how to create your own Conda virtual environment and install DeepHyper in it.
 
-::
+.. admonition:: Storage/File Systems
+    :class: dropdown, important
 
-    ssh thetagpusn1
+    It is important to run the following commands from the appropriate storage space because some features of DeepHyper can generate a consequante quantity of data such as model checkpointing. The storage spaces available at the ALCF are:
 
-.. note::
-    It is advised to do this procedure from your project directory::
+    - ``/lus/grand/projects/``
+    - ``/lus/eagle/projects/``
+    - ``/lus/theta-fs0/projects/``
 
-        cd /lus/theta-fs0/projects/$PROJECTNAME
+    For more details refer to `ALCF Documentation <https://www.alcf.anl.gov/support-center/theta/theta-file-systems>`_.
 
-Then DeepHyper can be installed on ThetaGPU by following these commands.
+After logging in Theta, locate yourself on one of the ThetaGPU service node (``thetagpusnX``) and move to your project folder (replace ``PROJECTNAME`` by your own project):
 
-::
+.. code-block:: console
 
-    module load conda/2021-09-22
-    conda create -p dhgpu --clone base
-    conda activate dhgpu/
-    pip install pip --upgrade
-    pip install deephyper
+    $ ssh thetagpusn1
+    $ cd /lus/theta-fs0/projects/PROJECTNAME
+    $ module load conda/2021-09-22
+    $ conda create -p dhgpu --clone base
+    $ conda activate dhgpu/
+    $ pip install pip --upgrade
+    $ pip install deephyper["analytics"]
 
 
 Developer installation
 ======================
 
-The developer installation allows to edit the ``deephyper/`` code base without re-installation:
+Follow the :ref:`thetagpu-conda-environment` installation and replace ``pip install deephyper[analytics]`` by:
 
-::
+.. code-block:: console
 
-    module load conda/2021-09-22
-    conda create -p dhgpu --clone base
-    conda activate dhgpu/
-    pip install pip --upgrade
-    git clone https://github.com/deephyper/deephyper.git
-    cd deephyper/
-    git checkout develop
-    pip install -e .
+    $ git clone https://github.com/deephyper/deephyper.git
+    $ cd deephyper/ && git checkout develop
+    $ pip install -e ".[dev,analytics]"
 
 
-Proxy
-=====
+Internet Access
+===============
 
 If the node you are on does not have outbound network connectivity, set the following to access the proxy host
 
-::
+.. code-block:: console
 
     export http_proxy=http://proxy.tmi.alcf.anl.gov:3128
     export https_proxy=http://proxy.tmi.alcf.anl.gov:3128

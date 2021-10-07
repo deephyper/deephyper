@@ -5,7 +5,6 @@ Installations
    :maxdepth: 1
 
    local
-   theta
+   Theta (ALCF) <theta>
    thetagpu
    cooley
-   analytics
