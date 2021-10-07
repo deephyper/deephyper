@@ -12,7 +12,6 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
-on_theta = type(os.environ.get("HOST")) is str and "theta" in os.environ.get("HOST")
 
 # Package meta-data.
 NAME = "deephyper"
@@ -46,7 +45,7 @@ REQUIRED = [
     "dh-scikit-optimize==0.9.0",
     "scikit-learn>=0.23.1",
     "tqdm",
-    "deap",  # GA search
+    "deap",  # GA search #TODO: Unused
     # nas
     "networkx",
     "joblib>=0.10.3",
@@ -71,8 +70,9 @@ EXTRAS = {
         "pytest-cov",
         # Packaging
         "twine",
-        # Formatter
+        # Formatter and Linter
         "black",
+        "rstcheck",
         # Documentation
         "Sphinx~=3.5.4",
         "sphinx-book-theme",
@@ -86,6 +86,7 @@ EXTRAS = {
     "analytics": [
         "jupyter",
         "jupyter_contrib_nbextensions>=0.5.1",
+        "nbconvert<6",
         "seaborn>=0.9.1",
     ],
     "hvd": ["horovod>=0.21.3", "mpi4py>=3.0.0"],
