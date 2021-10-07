@@ -41,7 +41,7 @@ deephyper.nas.run.quick2
    :show-inheritance:
 
 deephyper.nas.run.quick_random
--------------------------
+------------------------------
 
 .. automodule:: deephyper.nas.run.quick_random
    :members:

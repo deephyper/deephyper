@@ -1,6 +1,17 @@
-"""
+"""Command line to generate and submit scripts to execute DeepHyper on specific systems.
+
 Example Usage:
-deephyper ray-submit nas regevo -w combo_test -n 1 -t 30 -A datascience -q full-node --problem nas_big_data.combo.problem.Problem --run deephyper.nas.run.alpha.run --max-evals 8 --num-cpus-per-task 1 --num-gpus-per-task 1 -as myscript.sh
+
+.. code-block:: bash
+
+    deephyper ray-submit nas regevo -w combo_test \\
+        -n 1 -t 30 -A datascience -q full-node \\
+        --problem nas_big_data.combo.problem.Problem \\
+        --run deephyper.nas.run.alpha.run \\
+        --max-evals 8 \\
+        --num-cpus-per-task 1 \\
+        --num-gpus-per-task 1 \\
+        -as dh-init-environment.sh
 """
 import os
 import socket

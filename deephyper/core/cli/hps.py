@@ -1,3 +1,53 @@
+"""Command line to execute hyperparameter search.
+
+.. code-block:: bash
+
+    $ deephyper hps ambs --help
+
+    usage: deephyper hps ambs [-h] --problem PROBLEM --evaluator EVALUATOR [--random-state RANDOM_STATE] [--log-dir LOG_DIR] [--verbose VERBOSE] [--surrogate-model SURROGATE_MODEL] [--acq-func ACQ_FUNC]
+                            [--kappa KAPPA] [--xi XI] [--liar-strategy LIAR_STRATEGY] [--n-jobs N_JOBS] [--max-evals MAX_EVALS] [--timeout TIMEOUT] --run-function RUN_FUNCTION [--num-workers NUM_WORKERS]
+                            [--callbacks CALLBACKS] [--ray-address RAY_ADDRESS] [--ray-password RAY_PASSWORD] [--ray-num-cpus RAY_NUM_CPUS] [--ray-num-gpus RAY_NUM_GPUS]
+                            [--ray-num-cpus-per-task RAY_NUM_CPUS_PER_TASK] [--ray-num-gpus-per-task RAY_NUM_GPUS_PER_TASK] [--ray-ray-kwargs RAY_RAY_KWARGS]
+
+    optional arguments:
+    -h, --help            show this help message and exit
+    --problem PROBLEM
+    --evaluator EVALUATOR
+    --random-state RANDOM_STATE
+                            Type[int]. Defaults to 'None'.
+    --log-dir LOG_DIR     Type[str]. Defaults to '.'.
+    --verbose VERBOSE     Type[int]. Defaults to '0'.
+    --surrogate-model SURROGATE_MODEL
+                            Type[str]. Defaults to 'RF'.
+    --acq-func ACQ_FUNC   Type[str]. Defaults to 'LCB'.
+    --kappa KAPPA         Type[float]. Defaults to '1.96'.
+    --xi XI               Type[float]. Defaults to '0.001'.
+    --liar-strategy LIAR_STRATEGY
+                            Type[str]. Defaults to 'cl_min'.
+    --n-jobs N_JOBS       Type[int]. Defaults to '1'.
+    --max-evals MAX_EVALS
+                            Type[int]. Defaults to '-1' when an number of evaluations is not imposed.
+    --timeout TIMEOUT     Type[int]. Number of seconds before killing the search. Defaults to 'None' when a time budget is not imposed.
+    --run-function RUN_FUNCTION
+    --num-workers NUM_WORKERS
+                            Type[int]. Defaults to '1'.
+    --callbacks CALLBACKS
+                            Defaults to 'None'.
+    --ray-address RAY_ADDRESS
+                            Type[str]. Defaults to 'None'.
+    --ray-password RAY_PASSWORD
+                            Type[str]. Defaults to 'None'.
+    --ray-num-cpus RAY_NUM_CPUS
+                            Type[int]. Defaults to 'None'.
+    --ray-num-gpus RAY_NUM_GPUS
+                            Type[int]. Defaults to 'None'.
+    --ray-num-cpus-per-task RAY_NUM_CPUS_PER_TASK
+                            Type[float]. Defaults to '1'.
+    --ray-num-gpus-per-task RAY_NUM_GPUS_PER_TASK
+                            Type[float]. Defaults to 'None'.
+    --ray-ray-kwargs RAY_RAY_KWARGS
+                            Type[dict]. Defaults to '{}'.
+"""
 import sys
 import argparse
 
