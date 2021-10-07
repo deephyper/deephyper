@@ -1,46 +1,46 @@
-from deephyper.core.exceptions import DeephyperRuntimeError
-import math
 import logging
+import math
 
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as csh
 import numpy as np
 import pandas as pd
 import skopt
-from deephyper.core.logs.logging import JsonMessage as jm
+from deephyper.core.exceptions import DeephyperRuntimeError
 from deephyper.search.search import Search
 
 
 class AMBS(Search):
-    """Asynchronous Model-Based Search.
+    """Asynchronous Model-Based Search baised on the `Scikit-Optimized Optimizer <https://scikit-optimize.github.io/stable/modules/generated/skopt.Optimizer.html#skopt.Optimizer>`_.
 
     Args:
-        problem (HpProblem): [description]
-        evaluator (Evaluator): [description]
-        random_state ([type], optional): [description]. Defaults to None.
-        log_dir (str, optional): [description]. Defaults to ".".
-        verbose (int, optional): [description]. Defaults to 0.
-        surrogate_model (str, optional): [description]. Defaults to "RF".
-        acq_func (str, optional): [description]. Defaults to "LCB".
-        kappa (float, optional): [description]. Defaults to 1.96.
-        xi (float, optional): [description]. Defaults to 0.001.
-        liar_strategy (str, optional): [description]. Defaults to "cl_min".
-        n_jobs (int, optional): [description]. Defaults to 1.
+        problem (HpProblem): Hyperparameter problem describin the search space to explore.
+        evaluator (Evaluator): An ``Evaluator`` instance responsible of distributing the tasks.
+        random_state (int, optional): Random seed. Defaults to None.
+        log_dir (str, optional): Log directory where search's results are saved. Defaults to ".".
+        verbose (int, optional): Indicate the verbosity level of the search. Defaults to 0.
+        surrogate_model (str, optional): Surrogate model used by the Bayesian optimization. Can be a value in ["RF", "ET", "GBRT", "DUMMY"]. Defaults to "RF".
+        acq_func (str, optional): Acquisition function used by the Bayesian optimization. Can be a value in ["LCB", "EI", "PI", "gp_hedge"]. Defaults to "LCB".
+        kappa (float, optional): Manage the exploration/exploitation tradeoff for the "LCB" acquisition function. Defaults to 1.96 corresponds to 95% of the confidence interval.
+        xi (float, optional): Manage the exploration/exploitation tradeoff of "EI" and "PI" acquisition function. Defaults to 0.001.
+        liar_strategy (str, optional): Definition of the constant value use for the Liar strategy. Can be a value in ["cl_min", "cl_mean", "cl_max"] . Defaults to "cl_min".
+        n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the Bayesian optimization. A value of -1 will use all available cores. Defaults to 1.
     """
+
     def __init__(
         self,
         problem,
         evaluator,
-        random_state: int=None,
-        log_dir: str=".",
-        verbose: int=0,
-        surrogate_model: str="RF",
-        acq_func: str="LCB",
-        kappa: float=1.96,
-        xi: float=0.001,
-        liar_strategy: str="cl_min",
-        n_jobs: int=1,  # 32 is good for Theta
-        **kwargs
+        random_state: int = None,
+        log_dir: str = ".",
+        verbose: int = 0,
+        surrogate_model: str = "RF",
+        acq_func: str = "LCB",
+        kappa: float = 1.96,
+        xi: float = 0.001,
+        liar_strategy: str = "cl_min",
+        n_jobs: int = 1,  # 32 is good for Theta
+        **kwargs,
     ):
 
         super().__init__(problem, evaluator, random_state, log_dir, verbose)
@@ -112,6 +112,8 @@ class AMBS(Search):
     def get_surrogate_model(self, name: str, n_jobs: int = None):
         """Get a surrogate model from Scikit-Optimize.
 
+        :meta private:
+
         Args:
             name (str): name of the surrogate model.
             n_jobs (int): number of parallel processes to distribute the computation of the surrogate model.
@@ -137,6 +139,9 @@ class AMBS(Search):
         return surrogate
 
     def return_cond(self, cond, cst_new):
+        """
+        :meta private:
+        """
         parent = cst_new.get_hyperparameter(cond.parent.name)
         child = cst_new.get_hyperparameter(cond.child.name)
         if type(cond) == CS.EqualsCondition:
@@ -159,6 +164,9 @@ class AMBS(Search):
         return cond_new
 
     def return_forbid(self, cond, cst_new):
+        """
+        :meta private:
+        """
         if type(cond) == CS.ForbiddenEqualsClause or type(cond) == CS.ForbiddenInClause:
             hp = cst_new.get_hyperparameter(cond.hyperparameter.name)
             if type(cond) == CS.ForbiddenEqualsClause:
@@ -172,10 +180,15 @@ class AMBS(Search):
         return cond_new
 
     def fit_surrogate(self, df):
-        """Fit the surrogate model of the search from a checkpoint.
+        """Fit the surrogate model of the search from a checkpointed Dataframe.
 
         Args:
             df (str|DataFrame): a checkpoint from a previous search.
+
+        Example Usage:
+
+        >>> search = AMBS(problem, evaluator)
+        >>> search.fit_surrogate("results.csv")
         """
         if type(df) is str and df[-4:] == ".csv":
             df = pd.read_csv(df)
@@ -191,11 +204,20 @@ class AMBS(Search):
             x = df[hp_names].values.tolist()
             y = df.objective.tolist()
         except KeyError:
-            raise DeephyperRuntimeError("Incompatible dataframe to fit surrogate model of AMBS.")
+            raise DeephyperRuntimeError(
+                "Incompatible dataframe to fit surrogate model of AMBS."
+            )
 
         self._opt.tell(x, [-yi for yi in y])
 
     def fit_search_space(self, df):
+        """Apply prior-guided transfer learning based on a DataFrame of results.
+
+        :meta private:
+
+        Args:
+            df (str|DataFrame): a checkpoint from a previous search.
+        """
 
         if type(df) is str and df[-4:] == ".csv":
             df = pd.read_csv(df)
@@ -299,6 +321,16 @@ class AMBS(Search):
         self._opt_kwargs["dimensions"] = cst_new
 
     def get_random_batch(self, size: int) -> list:
+        """Generate a random batch of configuration.
+
+        :meta private:
+
+        Args:
+            size (int): number of configurations in generated batch.
+
+        Returns:
+            list: the list of generated configuration.
+        """
 
         if self._fitted:  # for the surrogate or search space
             batch = []
@@ -331,6 +363,16 @@ class AMBS(Search):
         return batch
 
     def to_dict(self, x: list) -> dict:
+        """Transform a list of hyperparameter values to a ``dict`` where keys are hyperparameters names and values are hyperparameters values.
+
+        :meta private:
+
+        Args:
+            x (list): a list of hyperparameter values.
+
+        Returns:
+            dict: a dictionnary of hyperparameter names and values.
+        """
         res = {}
         hps_names = self._problem.space.get_hyperparameter_names()
         for i in range(len(x)):
@@ -339,7 +381,10 @@ class AMBS(Search):
 
 
 def isnan(x) -> bool:
-    """Check if a value is NaN."""
+    """Check if a value is NaN.
+
+    :meta private:
+    """
     if isinstance(x, float):
         return math.isnan(x)
     elif isinstance(x, np.float64):
@@ -349,4 +394,7 @@ def isnan(x) -> bool:
 
 
 def replace_nan(x):
+    """
+    :meta private:
+    """
     return [np.nan if x_i == "nan" else x_i for x_i in x]
