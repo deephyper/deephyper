@@ -7,13 +7,8 @@ For automatic tests in DeepHyper we chose to use the `Pytest <https://docs.pytes
 Developer Installation
 ======================
 
-From an activated Python virtual environment run the following commands:
 
-.. code-block:: console
-
-    $ git clone https://github.com/deephyper/deephyper.git
-    $ cd deephyper/ && git checkout develop
-    $ pip install -e ".[dev,analytics]"
+Follow the :ref:`local-dev-installation`.
 
 Run Tests
 =========
