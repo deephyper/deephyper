@@ -145,17 +145,6 @@ class NaProblem(Problem):
                 [f"\n        * {m[0]}: {m[1]}" for m in self._space["metrics"].items()]
             )
 
-        post = (
-            None
-            if self._space.get("post_train") is None
-            else "".join(
-                [
-                    f"\n        * {k}: {self._space['post_train'][k]}"
-                    for k in self._space["post_train"]
-                ]
-            )
-        )
-
         objective = self._space["objective"]
         if not type(objective) is str:
             objective = module_location(objective)
@@ -170,7 +159,6 @@ class NaProblem(Problem):
             f"    - loss           : {self._space['loss']}\n"
             f"    - metrics        : {metrics}\n"
             f"    - objective      : {objective}\n"
-            f"    - post-training  : {post}"
         )
 
         return out
@@ -316,54 +304,6 @@ class NaProblem(Problem):
 
         self._space["objective"] = objective
 
-    def post_training(
-        self, num_epochs: int, metrics: list, callbacks: dict, repeat: int = 1
-    ):
-        """Choose settings to run a post-training.
-
-        Args:
-            num_epochs (int): the number of post-training epochs.
-            metrics (list): list of post-training metrics.
-            callbacks (dict): dict of ``keras.callbacks`` such as,
-
-                * ModelCheckpoint (dict): ``tensorflow.keras.callbacks.ModelCheckpoint`` settings.
-
-                    * ``'filepath'``: string, path to save the model file.
-
-                    * ``monitor``: quantity to monitor.
-
-                    * ``verbose``: verbosity mode, 0 or 1.
-
-                    * ``save_best_only``: if ``save_best_only=True``, the latest best model according to the quantity monitored will not be overwritten.
-
-                    * ``save_weights_only``: if True, then only the model's weights will be saved (``model.save_weights(filepath)``), else the full model is saved (``model.save(filepath)``).
-
-                    * ``mode``: one of {auto, min, max}. If ``save_best_only=True``, the decision to overwrite the current save file is made based on either the maximization or the minimization of the monitored quantity. For ``val_acc``, this should be ``max``, for `val_loss` this should be ``min``, etc. In ``auto`` mode, the direction is automatically inferred from the name of the monitored quantity.
-
-                    * ``period``: Interval (number of epochs) between checkpoints.
-
-                * EarlyStopping (dict): ``tensorflow.keras.callbacks.EarlyStopping`` settings.
-
-                    * ``monitor``: quantity to be monitored.
-
-                    * ``min_delta``: minimum change in the monitored quantity to qualify as an improvement, i.e. an absolute change of less than min_delta, will count as no improvement.
-
-                    * ``patience``: number of epochs with no improvement after which training will be stopped.
-
-                    * ``verbose``: verbosity mode.
-
-                    * ``mode``: one of ``{'auto', 'min', 'max'}``. In min mode, training will stop when the quantity monitored has stopped decreasing; in max mode it will stop when the quantity monitored has stopped increasing; in auto mode, the direction is automatically inferred from the name of the monitored quantity.
-
-                    * ``baseline``: Baseline value for the monitored quantity to reach. Training will stop if the model doesn't show improvement over the baseline. restore_best_weights: whether to restore model weights from the epoch with the best value of the monitored quantity. If False, the model weights obtained at the last step of training are used.
-            repeat (int): Number of times to repeat the training. Default to 1.
-
-        """
-        self._space["post_train"] = {
-            "num_epochs": num_epochs,
-            "metrics": metrics,
-            "callbacks": callbacks,
-            "repeat": repeat,
-        }
 
     @property
     def space(self):
