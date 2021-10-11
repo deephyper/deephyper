@@ -1,5 +1,5 @@
 """
-DeepHyper is a distributed machine learning (`AutoML <https://en.wikipedia.org/wiki/Automated_machine_learning>`_) package for automating the developement of deep neural networks for scientific applications. It can run on a single laptop as well as on 1,000 of nodes.
+DeepHyper is a distributed machine learning (`AutoML <https://en.wikipedia.org/wiki/Automated_machine_learning>`_) package for automating the development of deep neural networks for scientific applications. It can run on a single laptop as well as on 1,000 of nodes.
 
 It comprises different tools such as:
 
