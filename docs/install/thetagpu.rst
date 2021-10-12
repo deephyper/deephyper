@@ -1,7 +1,7 @@
 ThetaGPU (Argonne LCF)
 ***************
 
-`ThetaGPU <theta healing>`_  is an extension of Theta and is comprised of 24 NVIDIA DGX A100 nodes at Argonne Leadership Computing Facility (ALCF). The documention of ThetaGPU from the Datascience group at Argonne National Laboratory can be accessed `here <https://argonne-lcf.github.io/ThetaGPU-Docs/>`_. The system documentation from the ALCF can be accessed `here <https://www.alcf.anl.gov/support-center/theta-gpu-nodes/getting-started-thetagpu>`_.
+`ThetaGPU <https://www.alcf.anl.gov/theta>`_  is an extension of Theta and is comprised of 24 NVIDIA DGX A100 nodes at Argonne Leadership Computing Facility (ALCF). See the `documentation <https://argonne-lcf.github.io/ThetaGPU-Docs/>`_ of ThetaGPU from the Datascience group at Argonne National Laboratory for more information. The system documentation from the ALCF can be accessed `here <https://www.alcf.anl.gov/support-center/theta-gpu-nodes/getting-started-thetagpu>`_.
 
 .. _theta-module-installation:
 
@@ -11,6 +11,7 @@ Already installed module
 This installation procedure shows you how to access the installed DeepHyper module on ThetaGPU. After logging in Theta, connect to a ThetaGPU service node:
 
 .. code-block:: console
+
     $ ssh thetagpusn1
 
 Then, to access Deephyper run the following commands:
@@ -47,16 +48,27 @@ This installation procedure shows you how to create your own Conda virtual envir
 
     For more details refer to `ALCF Documentation <https://www.alcf.anl.gov/support-center/theta/theta-file-systems>`_.
 
-After logging in Theta, locate yourself on one of the ThetaGPU service node (``thetagpusnX``) and move to your project folder (replace ``PROJECTNAME`` by your own project):
+After logging in Theta, locate yourself on one of the ThetaGPU service node (``thetagpusnX``) and move to your project folder (replace ``PROJECTNAME`` by your own project name):
 
 .. code-block:: console
 
     $ ssh thetagpusn1
     $ cd /lus/theta-fs0/projects/PROJECTNAME
+
+Then create the ``dhgpu`` environment:
+
+.. code-block:: console
+
     $ module load conda/2021-09-22
     $ conda create -p dhgpu --clone base
     $ conda activate dhgpu/
+
+Finally install DeepHyper in the previously created ``dhgpu`` environment:
+
+.. code-block:: console
+
     $ pip install pip --upgrade
+    $ # DeepHyper + Analytics Tools (Parsing logs, Plots, Notebooks)
     $ pip install deephyper["analytics"]
 
 
@@ -75,9 +87,9 @@ Follow the :ref:`thetagpu-conda-environment` installation and replace ``pip inst
 Internet Access
 ===============
 
-If the node you are on does not have outbound network connectivity, set the following to access the proxy host
+If the node you are on does not have outbound network connectivity, set the following to access the proxy host:
 
 .. code-block:: console
 
-    export http_proxy=http://proxy.tmi.alcf.anl.gov:3128
-    export https_proxy=http://proxy.tmi.alcf.anl.gov:3128
+    $ export http_proxy=http://proxy.tmi.alcf.anl.gov:3128
+    $ export https_proxy=http://proxy.tmi.alcf.anl.gov:3128
