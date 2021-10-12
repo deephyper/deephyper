@@ -14,11 +14,11 @@ Example Usage:
         -as dh-init-environment.sh
 """
 import os
+import pathlib
 import socket
 import stat
 
 from deephyper.core.cli.utils import generate_other_arguments
-from deephyper.core.utils import create_dir
 from deephyper.problem import HpProblem, NaProblem
 from deephyper.problem.neuralarchitecture import Problem
 from deephyper.search.util import banner, generic_loader
@@ -167,8 +167,7 @@ def main(
     # Create workflow directory and move ot it
     current_dir = os.getcwd()
     exp_dir = os.path.join(current_dir, workflow)
-    if not (os.path.exists(exp_dir)):
-        create_dir(exp_dir)
+    pathlib.Path(exp_dir).mkdir(parents=False, exist_ok=False)
     os.chdir(exp_dir)
 
     # resolve the evaluator to use

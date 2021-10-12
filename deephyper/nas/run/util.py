@@ -11,7 +11,6 @@ from datetime import datetime
 import numpy as np
 import tensorflow as tf
 from deephyper.core.exceptions.problem import WrongProblemObjective
-from deephyper.core.utils import create_dir
 from deephyper.evaluator.encoder import Encoder
 from deephyper.search import util
 from deephyper.nas.lr_scheduler import exponential_decay
@@ -360,8 +359,7 @@ class HistorySaver:
 def save_history(log_dir: str, history: dict, config: dict):
     if not (log_dir is None):
         history_path = os.path.join(log_dir, "history")
-        if not (os.path.exists(history_path)):
-            create_dir(history_path)
+        pathlib.Path(history_path).mkdir(parents=False, exist_ok=False)
         now = datetime.now()
         now = now.strftime("%d-%b-%Y_%H-%M-%S")
         history_path = os.path.join(
