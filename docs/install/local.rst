@@ -8,10 +8,7 @@ DeepHyper installation requires ``Python>=3.7 and <3.9``.
 Conda environment
 =================
 
-.. todo::
-    indicate the link to the web pages of Anaconda and Miniconda ?
-
-This installation procedure shows you how to create your own Conda virtual environment and install DeepHyper in it. After installing Anaconda or Miniconda, create the ``dh`` environment:
+This installation procedure shows you how to create your own Conda virtual environment and install DeepHyper in it. After installing `Anaconda <https://docs.anaconda.com/anaconda/install/index.html>`_ or `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_, create the ``dh`` environment:
 
 .. code-block:: console
 
@@ -30,6 +27,7 @@ Finally install DeepHyper in the previously created ``dh`` environment:
 
 .. code-block:: console
 
+    $ pip install pip --upgrade
     $ # DeepHyper + Analytics Tools (Parsing logs, Plots, Notebooks)
     $ pip install deephyper["analytics"]
 
