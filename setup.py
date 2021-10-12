@@ -42,7 +42,7 @@ REQUIRED = [
     "tensorflow>=2.0.0",
     "tensorflow_probability",
     "numpy",  # ==1.19.4",  # working with 1.20.1
-    "dh-scikit-optimize==0.9.0",
+    "dh-scikit-optimize==0.9.1",
     "scikit-learn>=0.23.1",
     "tqdm",
     "deap",  # GA search #TODO: Unused

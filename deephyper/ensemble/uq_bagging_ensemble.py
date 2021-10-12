@@ -17,7 +17,7 @@ from scipy.stats import friedmanchisquare
 
 
 def nll(y, rv_y):
-    """Negative log likelihood for Tensorflow probability."""
+    """Negative log likelihood loss for Tensorflow probability."""
     return -rv_y.log_prob(y)
 
 
@@ -27,12 +27,25 @@ cce_obj = tf.keras.losses.CategoricalCrossentropy(
 
 
 def cce(y_true, y_pred):
-    """Categorical cross-entropy"""
+    """Categorical cross-entropy loss."""
     return cce_obj(tf.broadcast_to(y_true, y_pred.shape), y_pred)
 
 
 @ray.remote(num_cpus=1)
 def model_predict(model_path, X, batch_size=32, verbose=0):
+    """Perform an inference of the model located at ``model_path``.
+
+    :meta private:
+
+    Args:
+        model_path (str): Path to the ``h5`` file to load to perform the inferencec.
+        X (array): array of input data for which we perform the inference.
+        batch_size (int, optional): Batch size used to perform the inferencec. Defaults to 32.
+        verbose (int, optional): Verbose option. Defaults to 0.
+
+    Returns:
+        array: The prediction based on the provided input data.
+    """
     import tensorflow as tf
     import tensorflow_probability as tfp
 
@@ -83,6 +96,23 @@ def model_predict(model_path, X, batch_size=32, verbose=0):
 
 
 class UQBaggingEnsemble(BaseEnsemble):
+    """Ensemble with uncertainty quantification based on uniform averaging of the predictions of each members.
+
+    :meta private:
+
+    Args:
+        model_dir (str): Path to directory containing saved Keras models in .h5 format.
+        loss (callable): a callable taking (y_true, y_pred) as input.
+        size (int, optional): Number of unique models used in the ensemble. Defaults to 5.
+        verbose (bool, optional): Verbose mode. Defaults to True.
+        ray_address (str, optional): Address of the Ray cluster. If "auto" it will try to connect to an existing cluster. If "" it will start a local Ray cluster. Defaults to "".
+        num_cpus (int, optional): Number of CPUs allocated to load one model and predict. Defaults to 1.
+        num_gpus (int, optional): Number of GPUs allocated to load one model and predict. Defaults to None.
+        batch_size (int, optional): Batch size used batchify the inference of loaded models. Defaults to 32.
+        selection (str, optional): Selection strategy to build the ensemble. Value in ``["topk", "caruana", "friedman"]``. Default to ``topk``.
+        mode (str, optional): Value in ``["regression", "classification"]``. Default to ``"regression"``.
+    """
+
     def __init__(
         self,
         model_dir,
@@ -196,6 +226,19 @@ class UQBaggingEnsemble(BaseEnsemble):
 
 
 class UQBaggingEnsembleRegressor(UQBaggingEnsemble):
+    """Ensemble with uncertainty quantification for regression based on uniform averaging of the predictions of each members.
+
+    Args:
+        model_dir (str): Path to directory containing saved Keras models in .h5 format.
+        loss (callable): a callable taking (y_true, y_pred) as input.
+        size (int, optional): Number of unique models used in the ensemble. Defaults to 5.
+        verbose (bool, optional): Verbose mode. Defaults to True.
+        ray_address (str, optional): Address of the Ray cluster. If "auto" it will try to connect to an existing cluster. If "" it will start a local Ray cluster. Defaults to "".
+        num_cpus (int, optional): Number of CPUs allocated to load one model and predict. Defaults to 1.
+        num_gpus (int, optional): Number of GPUs allocated to load one model and predict. Defaults to None.
+        batch_size (int, optional): Batch size used batchify the inference of loaded models. Defaults to 32.
+        selection (str, optional): Selection strategy to build the ensemble. Value in ``[["topk", "caruana", "friedman"]``. Default to ``topk``.
+    """
     def __init__(
         self,
         model_dir,
@@ -222,10 +265,10 @@ class UQBaggingEnsembleRegressor(UQBaggingEnsemble):
         )
 
     def predict_var_decomposition(self, X):
-        """[summary]
+        """Execute an inference of the ensemble for the provided data with uncertainty quantification estimates. The **aleatoric uncertainty** corresponds to the expected value of learned variance of each model composing the ensemble :math:`\mathbf{E}[\sigma_\\theta^2(\mathbf{x})]`. The **epistemic uncertainty** corresponds to the variance of learned mean estimates of each model composing the ensemble :math:`\mathbf{V}[\mu_\\theta(\mathbf{x})]`.
 
         Args:
-            X ([type]): [description]
+            X (array): An array of input data.
 
         Returns:
             y, u1, u2: where ``y`` is the mixture distribution, ``u1`` is the aleatoric component of the variance of ``y`` and ``u2`` is the epistemic component of the variance of ``y``.
@@ -259,6 +302,19 @@ class UQBaggingEnsembleRegressor(UQBaggingEnsemble):
 
 
 class UQBaggingEnsembleClassifier(UQBaggingEnsemble):
+    """Ensemble with uncertainty quantification for classification based on uniform averaging of the predictions of each members.
+
+    Args:
+        model_dir (str): Path to directory containing saved Keras models in .h5 format.
+        loss (callable): a callable taking (y_true, y_pred) as input.
+        size (int, optional): Number of unique models used in the ensemble. Defaults to 5.
+        verbose (bool, optional): Verbose mode. Defaults to True.
+        ray_address (str, optional): Address of the Ray cluster. If "auto" it will try to connect to an existing cluster. If "" it will start a local Ray cluster. Defaults to "".
+        num_cpus (int, optional): Number of CPUs allocated to load one model and predict. Defaults to 1.
+        num_gpus (int, optional): Number of GPUs allocated to load one model and predict. Defaults to None.
+        batch_size (int, optional): Batch size used batchify the inference of loaded models. Defaults to 32.
+        selection (str, optional): Selection strategy to build the ensemble. Value in ``[["topk", "caruana", "friedman"]``. Default to ``topk``.
+    """
     def __init__(
         self,
         model_dir,
@@ -286,6 +342,18 @@ class UQBaggingEnsembleClassifier(UQBaggingEnsemble):
 
 
 def apply_metric(metric_name, y_true, y_pred) -> float:
+    """Perform the computation of provided metric.
+
+    :meta private:
+
+    Args:
+        metric_name (str|callable): If ``str`` then it needs to be a metric available in ``deephyper.nas.metrics``.
+        y_true (array): Array of true predictions.
+        y_pred (array): Array of predicted predictions
+
+    Returns:
+        float: a scalar value of the computed metric.
+    """
     metric_func = selectMetric(metric_name)
 
     if type(y_true) is np.ndarray:
@@ -301,6 +369,8 @@ def apply_metric(metric_name, y_true, y_pred) -> float:
 
 def aggregate_predictions(y_pred, regression=True):
     """Build an ensemble from predictions.
+
+    :meta private:
 
     Args:
         ensemble_members (np.array): Indexes of selected members in the axis-0 of y_pred.
@@ -327,7 +397,10 @@ def aggregate_predictions(y_pred, regression=True):
 
 
 def topk(loss_func, y_true, y_pred, k=2, verbose=0):
-    """Select the top-k models to be part of the ensemble. A model can appear only once in the ensemble for this strategy."""
+    """Select the top-k models to be part of the ensemble. A model can appear only once in the ensemble for this strategy.
+
+    :meta private:
+    """
     if np.shape(y_true)[-1] * 2 == np.shape(y_pred)[-1]:  # regression
         mid = np.shape(y_true)[-1]
         y_pred = tfp.distributions.Normal(
@@ -342,7 +415,10 @@ def topk(loss_func, y_true, y_pred, k=2, verbose=0):
 
 
 def greedy_caruana(loss_func, y_true, y_pred, k=2, verbose=0):
-    """Select the top-k models to be part of the ensemble. A model can appear only once in the ensemble for this strategy."""
+    """Select the top-k models to be part of the ensemble. A model can appear only once in the ensemble for this strategy.
+
+    :meta private:
+    """
     regression = np.shape(y_true)[-1] * 2 == np.shape(y_pred)[-1]
     n_models = np.shape(y_pred)[0]
     if regression:  # regression
@@ -449,6 +525,9 @@ def posthoc_nemenyi_friedman(
     sort=False,
     i_indexes=None,
 ):
+    """
+    :meta private:
+    """
     def compare_stats(i, j):
         dif = np.abs(R[groups[i]] - R[groups[j]])
         qval = dif / np.sqrt(k * (k + 1.0) / (6.0 * n))
@@ -508,7 +587,10 @@ def posthoc_nemenyi_friedman(
 
 
 def friedman_faster(loss_func, y_true, y_pred, k=2, verbose=0):
-    """Faster friedman."""
+    """Faster friedman.
+
+    :meta private:
+    """
     regression = np.shape(y_true)[-1] * 2 == np.shape(y_pred)[-1]
     n_models = np.shape(y_pred)[0]
     if regression:  # regression

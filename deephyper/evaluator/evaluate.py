@@ -1,5 +1,6 @@
 import asyncio
 import csv
+import copy
 import importlib
 import json
 import os
@@ -232,12 +233,12 @@ class Evaluator:
 
         for job in self.jobs_done:
             if saved_keys is None:
-                result = job.config
+                result = copy.deepcopy(job.config)
             elif type(saved_keys) is list:
-                decoded_key = job.config
+                decoded_key = copy.deepcopy(job.config)
                 result = {k: self.convert_for_csv(decoded_key[k]) for k in saved_keys}
             elif callable(saved_keys):
-                result = saved_keys(job)
+                result = copy.deepcopy(saved_keys(job))
             result["id"] = job.id
             result["objective"] = job.result
             result[
