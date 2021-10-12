@@ -1,7 +1,7 @@
 ThetaGPU (Argonne LCF)
 ***************
 
-`ThetaGPU <theta healing>`_  is an extension of `Theta <https://www.alcf.anl.gov/theta>`_ and is comprised of 24 NVIDIA DGX A100 nodes at Argonne Leadership Computing Facility (ALCF). See the `documentation <https://argonne-lcf.github.io/ThetaGPU-Docs/>`_ of ThetaGPU from the Datascience group at Argonne National Laboratory for more information. The system documentation from the ALCF can be accessed `here <https://www.alcf.anl.gov/support-center/theta-gpu-nodes/getting-started-thetagpu>`_.
+`ThetaGPU <https://www.alcf.anl.gov/theta>`_  is an extension of Theta and is comprised of 24 NVIDIA DGX A100 nodes at Argonne Leadership Computing Facility (ALCF). See the `documentation <https://argonne-lcf.github.io/ThetaGPU-Docs/>`_ of ThetaGPU from the Datascience group at Argonne National Laboratory for more information. The system documentation from the ALCF can be accessed `here <https://www.alcf.anl.gov/support-center/theta-gpu-nodes/getting-started-thetagpu>`_.
 
 .. _theta-module-installation:
 
@@ -63,13 +63,7 @@ Then create the ``dhgpu`` environment:
     $ conda create -p dhgpu --clone base
     $ conda activate dhgpu/
 
-.. todo::
-    isn't it necessary to perform the ``$ conda install gxx_linux-64 gcc_linux-64 -y`` as always ?
-
 Finally install DeepHyper in the previously created ``dhgpu`` environment:
-
-.. todo::
-    why is there a ``$ pip install pip --upgrade`` there and not in the other tutorials ?
 
 .. code-block:: console
 
@@ -93,7 +87,7 @@ Follow the :ref:`thetagpu-conda-environment` installation and replace ``pip inst
 Internet Access
 ===============
 
-If the node you are on does not have outbound network connectivity, set the following to access the proxy host
+If the node you are on does not have outbound network connectivity, set the following to access the proxy host:
 
 .. code-block:: console
 

@@ -1,11 +1,8 @@
 Theta (Argonne LCF)
 *******************
 
-.. todo::
-    "a new memory *search_space*" ?
-
 `Theta <https://www.alcf.anl.gov/theta>`_ is a 11.69 petaflops system based on the second-generation Intel Xeon Phi processor at Argonne Leadership Computing Facility (ALCF). It serves as a stepping stone to the ALCF's next leadership-class supercomputer, Aurora.
-Theta is a massively parallel, many-core system based on Intel processors and interconnect technology, a new memory search_space, and a Lustre-based parallel file system, all integrated by Cray’s HPC software stack.
+Theta is a massively parallel, many-core system based on Intel processors and interconnect technology, a new memory space, and a Lustre-based parallel file system, all integrated by Cray’s HPC software stack.
 
 .. _theta-module-installation:
 
@@ -70,6 +67,7 @@ Finally install DeepHyper in the previously created ``dhknl`` environment:
 
 .. code-block:: console
 
+    $ pip install pip --upgrade
     $ # DeepHyper + Analytics Tools (Parsing logs, Plots, Notebooks)
     $ pip install deephyper[analytics]
     $ conda install tensorflow -c intel -y
