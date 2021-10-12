@@ -20,7 +20,6 @@ import stat
 
 from deephyper.core.cli.utils import generate_other_arguments
 from deephyper.problem import HpProblem, NaProblem
-from deephyper.problem.neuralarchitecture import Problem
 from deephyper.search.util import banner, generic_loader
 from jinja2 import Template
 

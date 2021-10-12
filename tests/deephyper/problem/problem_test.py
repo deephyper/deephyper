@@ -89,6 +89,16 @@ class TestHpProblem:
 
         pb.add_starting_point(dim0=0, dim1=0.0, dim2="a")
 
+    def test_config_space_hp(self):
+        from deephyper.problem import HpProblem
+        import ConfigSpace.hyperparameters as csh
+
+        alpha = csh.UniformFloatHyperparameter(name="alpha", lower=0, upper=1)
+        beta = csh.UniformFloatHyperparameter(name="beta", lower=0, upper=1)
+
+        pb = HpProblem()
+        pb.add_hyperparameters([alpha, beta])
+
 
 @pytest.mark.incremental
 class TestNaProblem:
@@ -154,22 +164,3 @@ class TestNaProblem:
         possible_objective = ["loss", "val_loss", "r2", "val_r2"]
         for obj in possible_objective:
             pb.objective(obj)
-
-        pb.post_training(
-            num_epochs=2000,
-            metrics=["mse", "r2"],
-            callbacks=dict(
-                ModelCheckpoint={
-                    "monitor": "val_r2",
-                    "mode": "max",
-                    "save_best_only": True,
-                    "verbose": 1,
-                },
-                EarlyStopping={
-                    "monitor": "val_r2",
-                    "mode": "max",
-                    "verbose": 1,
-                    "patience": 50,
-                },
-            ),
-        )

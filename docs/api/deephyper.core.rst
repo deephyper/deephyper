@@ -1,4 +1,4 @@
-deephyper.core 
+deephyper.core
 ===============
 
 .. automodule:: deephyper.core
@@ -17,18 +17,10 @@ deephyper.core
 
 
 
-deephyper.core.parser 
+deephyper.core.parser
 ----------------------
 
 .. automodule:: deephyper.core.parser
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-deephyper.core.utils 
----------------------
-
-.. automodule:: deephyper.core.utils
    :members:
    :undoc-members:
    :show-inheritance:

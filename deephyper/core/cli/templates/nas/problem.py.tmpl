@@ -3,15 +3,15 @@ from {{ pckg }}.{{ pb_folder }}.load_data import load_data
 from {{ pckg }}.{{ pb_folder }}.search_space import create_search_space
 from deephyper.nas.preprocessing import minmaxstdscaler
 
-Problem = NaProblem(seed=2019)
+problem = NaProblem(seed=2019)
 
-Problem.load_data(load_data)
+problem.load_data(load_data)
 
-Problem.preprocessing(minmaxstdscaler)
+problem.preprocessing(minmaxstdscaler)
 
-Problem.search_space(create_search_space, num_layers=3)
+problem.search_space(create_search_space, num_layers=3)
 
-Problem.hyperparameters(
+problem.hyperparameters(
     batch_size=32,
     learning_rate=0.01,
     optimizer='adam',
@@ -26,13 +26,13 @@ Problem.hyperparameters(
     )
 )
 
-Problem.loss('mse') # or 'categorical_crossentropy' ?
+problem.loss('mse') # or 'categorical_crossentropy' ?
 
-Problem.metrics(['r2']) # or 'acc' ?
+problem.metrics(['r2']) # or 'acc' ?
 
-Problem.objective('val_r2__last') # or 'val_acc__last' ?
+problem.objective('val_r2__last') # or 'val_acc__last' ?
 
 
 # Just to print your problem, to test its definition and imports in the current python environment.
 if __name__ == '__main__':
-    print(Problem)
+    print(problem)

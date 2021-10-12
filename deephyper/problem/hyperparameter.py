@@ -8,6 +8,18 @@ import deephyper.core.exceptions as dh_exceptions
 
 
 def check_hyperparameter(parameter, name=None, default_value=None):
+    """Check if the passed parameter is a valid description of an hyperparameter.
+
+    :meta private:
+
+    Args:
+        parameter (str|Hyperparameter): a instance of ``ConfigSpace.hyperparameters.hyperparameter`` or a synthetic description (e.g., ``list``, ``tuple``).
+        parameter (str): the name of the hyperparameter. Only required when the parameter is not a ``ConfigSpace.hyperparameters.hyperparameter``.
+        default_value: a default value for the hyperparameter.
+
+    Returns:
+        Hyperparameter: the ConfigSpace hyperparameter instance corresponding to the ``parameter`` description.
+    """
     if isinstance(parameter, csh.Hyperparameter):
         return parameter
 
@@ -59,9 +71,17 @@ def check_hyperparameter(parameter, name=None, default_value=None):
 
 
 class HpProblem:
-    """Representation of a problem."""
+    """Class to define an hyperparameter problem.
+
+    >>> from deephyper.problem import HpProblem
+    >>> problem = HpProblem()
+
+    Args:
+        seed (int, optional): A random seed used by sampling-based search to generate new configurations of hyperparameters. Defaults to 42.
+    """
 
     def __init__(self, seed=42):
+
         self.seed = seed
         self._space = cs.ConfigurationSpace(seed=seed)
         self.references = []  # starting points
@@ -85,14 +105,32 @@ class HpProblem:
     def add_hyperparameter(
         self, value, name: str = None, default_value=None
     ) -> csh.Hyperparameter:
-        """Add an hyperparameter to the search space of the Problem.
+        """Add an hyperparameter to the ``HpProblem``.
+
+        Hyperparameters can be added to a ``HpProblem`` with a short syntax:
+
+        >>> problem.add_hyperparameter((0, 10), "discrete", default_value=5)
+        >>> problem.add_hyperparameter((0.0, 10.0), "real", default_value=5.0)
+        >>> problem.add_hyperparameter([0, 10], "categorical", default_value=0)
+
+        Sampling distributions can be provided:
+
+        >>> problem.add_hyperparameter((0.0, 10.0, "log-uniform"), "real", default_value=5.0)
+
+        It is also possible to use `ConfigSpace <https://automl.github.io/ConfigSpace/master/API-Doc.html#hyperparameters>`_ ``Hyperparameters``:
+
+        >>> import ConfigSpace.hyperparameters as csh
+        >>> csh_hp = csh.UniformIntegerHyperparameter(
+        ...     name='uni_int', lower=10, upper=100, log=False)
+        >>> problem.add_hyperparameter(csh_hp)
 
         Args:
-            name (str): The name of the hyper-parameter
-            value (tuple or list or ConfigSpace.Hyperparameter): [description]
+            value (tuple or list or ConfigSpace.Hyperparameter): a valid hyperparametr description.
+            name (str): The name of the hyperparameter to add.
+            default_value (float or int or str): A default value for the corresponding hyperparameter.
 
         Returns:
-            csh.Hyperparameter: a ConfigSpace.Hyperparameter object corresponding to the (name, value).
+            ConfigSpace.Hyperparameter: a ConfigSpace ``Hyperparameter`` object corresponding to the ``(value, name, default_value)``.
         """
         if not (type(name) is str or name is None):
             raise dh_exceptions.problem.SpaceDimNameOfWrongType(name)
@@ -101,26 +139,76 @@ class HpProblem:
         return csh_parameter
 
     def add_hyperparameters(self, hp_list):
+        """Add a list of hyperparameters. It can be useful when a list of ``ConfigSpace.Hyperparameter`` are defined and we need to add them to the ``HpProblem``.
+
+        Args:
+            hp_list (ConfigSpace.Hyperparameter): a list of ConfigSpace hyperparameters.
+
+        Returns:
+            list: The list of added hyperparameters.
+        """
         return [self.add_hyperparameter(hp) for hp in hp_list]
 
     def add_forbidden_clause(self, clause):
+        """Add a `forbidden clause <https://automl.github.io/ConfigSpace/master/API-Doc.html#forbidden-clauses>`_ to the ``HpProblem``.
+
+        For example if we want to optimize :math:`\\frac{1}{x}` where :math:`x` cannot be equal to 0:
+
+        >>> from deephyper.problem import HpProblem
+        >>> import ConfigSpace as cs
+        >>> problem = HpProblem()
+        >>> x = problem.add_hyperparameter((0.0, 10.0), "x")
+        >>> problem.add_forbidden_clause(cs.ForbiddenEqualsClause(x, 0.0))
+
+        Args:
+            clause: a ConfigSpace forbidden clause.
+        """
         self._space.add_forbidden_clause(clause)
 
     def add_condition(self, condition):
+        """Add a `condition <https://automl.github.io/ConfigSpace/master/API-Doc.html#conditions>`_ to the ``HpProblem``.
+
+        >>> from deephyper.problem import HpProblem
+        >>> import ConfigSpace as cs
+        >>> problem = HpProblem()
+        >>> x = problem.add_hyperparameter((0.0, 10.0), "x")
+        >>> y = problem.add_hyperparameter((1e-4, 1.0), "y")
+        >>> problem.add_condition(cs.LessThanCondition(y, x, 1.0))
+
+        Args:
+            condition: A ConfigSpace condition.
+        """
         self._space.add_condition(condition)
 
     def add_conditions(self, conditions: list) -> None:
+        """Add a list of `condition <https://automl.github.io/ConfigSpace/master/API-Doc.html#conditions>`_ to the ``HpProblem``.
+
+        Args:
+            conditions (list): A list of ConfigSpace conditions.
+        """
         self._space.add_conditions(conditions)
 
     @property
     def space(self):
+        """The wrapped ConfigSpace object.
+        """
         return self._space
 
     def add_starting_point(self, **parameters):
+        """Add starting points to the ``HpProblem``. It is useful when a good-baseline is known to help initialize the search at a given location of the search space.
+
+        >>> from deephyper.problem import HpProblem
+        >>> problem = HpProblem()
+        >>> x = problem.add_hyperparameter((0.0, 10.0), "x")
+        >>> problem.add_starting_point(x=1.0)
+        """
         self.check_configuration(parameters)
         self.references.append([parameters[p_name] for p_name in self._space])
 
     def check_configuration(self, parameters):
+        """
+        :meta private:
+        """
         config = cs.Configuration(self._space, parameters)
         self._space.check_configuration(config)
 
@@ -129,7 +217,7 @@ class HpProblem:
         """Starting point(s) of the search space.
 
         Returns:
-            list(list): list of starting points where each point is a list of values. Values are indexed in the same order as the order of creation of space's dimensions.
+            list: list of starting points where each point is a list of values. Values are indexed in the same order as the order of creation of space's dimensions.
         """
         return self.references
 
@@ -141,20 +229,3 @@ class HpProblem:
             list(dict): list of starting points where each point is a dict of values. Each key are correspnding to dimensions of the space.
         """
         return [{k: v for k, v in zip(list(self._space), p)} for p in self.references]
-
-
-def test_base_problem():
-    import ConfigSpace.hyperparameters as CSH
-
-    alpha = CSH.UniformFloatHyperparameter(name="alpha", lower=0, upper=1)
-    beta = CSH.UniformFloatHyperparameter(name="beta", lower=0, upper=1)
-
-    pb = HpProblem(42)
-    pb.add_hyperparameter(alpha)
-    pb.add_hyperparameter(beta)
-
-    print(pb)
-
-
-if __name__ == "__main__":
-    test_base_problem()
