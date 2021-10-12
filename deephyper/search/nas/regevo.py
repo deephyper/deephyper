@@ -41,6 +41,9 @@ class RegularizedEvolution(NeuralArchitectureSearch):
         self._sample_size = int(sample_size)
         self._population = collections.deque(maxlen=self._population_size)
 
+        if len(self._problem._hp_space._space) > 0:
+            raise ValueError("An hyperparameter space was defined for this problem but the current search is not compatible with joint hyperparameter and neural architecture search. Constant values should be defined for hyperparameters.")
+
     def _saved_keys(self, job):
         res = {"arch_seq": str(job.config["arch_seq"])}
         return res
