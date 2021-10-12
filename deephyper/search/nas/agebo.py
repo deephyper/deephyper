@@ -68,6 +68,9 @@ class AgEBO(RegularizedEvolution):
         self._n_initial_points = self._evaluator.num_workers
         self._liar_strategy = liar_strategy
 
+        if len(self._problem._hp_space._space) == 0:
+            raise ValueError("No hyperparameter space was defined for this problem.")
+
         self._hp_opt = None
         self._hp_opt_kwargs = dict(
             dimensions=self._problem._hp_space._space,

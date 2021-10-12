@@ -1,9 +1,7 @@
 from collections import OrderedDict
 from inspect import signature
-from pprint import pformat
 from copy import deepcopy
 
-import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh
 import tensorflow as tf
 from deephyper.core.exceptions.problem import (
@@ -19,43 +17,7 @@ from deephyper.nas.run.util import get_search_space, setup_data
 from deephyper.problem import HpProblem
 
 
-class Problem:
-    """Representation of a problem."""
-
-    def __init__(self, seed=None, **kwargs):
-        self._space = OrderedDict()
-        self._hp_space = HpProblem(seed)
-        self.seed = seed
-
-    def __str__(self):
-        return repr(self)
-
-    def __repr__(self):
-        return f"Problem\n{pformat({k:v for k,v in self._space.items()}, indent=2)}"
-
-    def add_dim(self, p_name, p_space):
-        """Add a dimension to the search space.
-
-        Args:
-            p_name (str): name of the parameter/dimension.
-            p_space (Object): space corresponding to the new dimension.
-        """
-        self._space[p_name] = p_space
-
-    @property
-    def space(self):
-        dims = list(self._space.keys())
-        dims.sort()
-        space = OrderedDict(**{d: self._space[d] for d in dims})
-        return space
-
-    def add_hyperparameter(
-        self, value, name: str = None, default_value=None
-    ) -> csh.Hyperparameter:
-        return self._hp_space.add_hyperparameter(value, name, default_value)
-
-
-class NaProblem(Problem):
+class NaProblem:
     """A Neural Architecture Problem specification for Neural Architecture Search.
 
     >>> from deephyper.problem import NaProblem
@@ -117,9 +79,10 @@ class NaProblem(Problem):
     """
 
     def __init__(self, seed=None, log_dir=None, **kwargs):
-        super().__init__(seed=seed, **kwargs)
-
-        self._space["metrics"] = list()
+        self._space = OrderedDict()
+        self._hp_space = HpProblem(seed)
+        self.seed = seed
+        self._space["metrics"] = []
         self._space["hyperparameters"] = dict(verbose=0)
         self._space["log_dir"] = log_dir
 
@@ -168,14 +131,14 @@ class NaProblem(Problem):
         if not callable(func):
             raise ProblemLoadDataIsNotCallable(func)
 
-        self.add_dim("load_data", {"func": func, "kwargs": kwargs})
+        self._space["load_data"] = {"func": func, "kwargs": kwargs}
 
     def augment(self, func: callable, **kwargs):
 
         if not callable(func):
             raise ProblemLoadDataIsNotCallable(func)
 
-        self.add_dim("augment", {"func": func, "kwargs": kwargs})
+        self._space["augment"] = {"func": func, "kwargs": kwargs}
 
     def search_space(self, func: callable, **kwargs):
         """Set a search space for neural architecture search.
@@ -199,7 +162,12 @@ class NaProblem(Problem):
         if not "output_shape" in sign_func.parameters:
             raise SearchSpaceBuilderMissingParameter("output_shape")
 
-        self.add_dim("create_search_space", {"func": func, "kwargs": kwargs})
+        self._space["create_search_space"] = {"func": func, "kwargs": kwargs}
+
+    def add_hyperparameter(
+        self, value, name: str = None, default_value=None
+    ) -> csh.Hyperparameter:
+        return self._hp_space.add_hyperparameter(value, name, default_value)
 
     def preprocessing(self, func: callable):
         """Define how to preprocess your data.
@@ -211,7 +179,7 @@ class NaProblem(Problem):
         if not callable(func):
             raise ProblemPreprocessingIsNotCallable(func)
 
-        super().add_dim("preprocessing", {"func": func})
+        self._space["preprocessing"] = {"func": func}
 
     def hyperparameters(self, **kwargs):
         """Define hyperparameters used to evaluate generated search_spaces."""
@@ -227,13 +195,17 @@ class NaProblem(Problem):
             loss_weights (list): Optional.
             class_weights (dict): Optional.
         """
-        if not(type(loss) is csh.CategoricalHyperparameter):
+        if not (type(loss) is csh.CategoricalHyperparameter):
             if not type(loss) is str and not callable(loss) and not type(loss) is dict:
                 raise RuntimeError(
                     f"The loss should be either a str, dict or a callable when it's of type {type(loss)}"
                 )
 
-            if type(loss) is dict and loss_weights is not None and len(loss) != len(loss_weights):
+            if (
+                type(loss) is dict
+                and loss_weights is not None
+                and len(loss) != len(loss_weights)
+            ):
                 raise RuntimeError(
                     f"The losses list (len={len(loss)}) and the weights list (len={len(loss_weights)}) should be of same length!"
                 )
@@ -304,10 +276,11 @@ class NaProblem(Problem):
 
         self._space["objective"] = objective
 
-
     @property
     def space(self):
-        space = super().space
+        keys = list(self._space.keys())
+        keys.sort()
+        space = OrderedDict(**{d: self._space[d] for d in keys})
         space["seed"] = self.seed
         return space
 
@@ -362,7 +335,6 @@ class NaProblem(Problem):
                 hp_values.append(config["hyperparameters"][hp_name])
 
         return hp_values
-
 
 
 def module_location(attr):

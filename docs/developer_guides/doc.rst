@@ -6,7 +6,7 @@ To build the documentation we use the `Sphinx <https://www.sphinx-doc.org/en/mas
 Developer Installation
 ======================
 
-Follow the :ref:`local-dev-installation`.
+Follow the :ref:`local-dev-installation`. and have `Pandoc <https://pandoc.org/installing.html>`_ installed.
 
 Build the Documentation
 =======================
