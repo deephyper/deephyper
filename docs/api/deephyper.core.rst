@@ -1,4 +1,4 @@
-deephyper.core
+deephyper.core 
 ===============
 
 .. automodule:: deephyper.core
@@ -17,7 +17,7 @@ deephyper.core
 
 
 
-deephyper.core.parser
+deephyper.core.parser 
 ----------------------
 
 .. automodule:: deephyper.core.parser

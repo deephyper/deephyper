@@ -4,7 +4,7 @@ import numpy as np
 import skopt
 
 from deephyper.core.parser import str2bool
-from deephyper.search.nas.regevo import RegularizedEvolution
+from deephyper.search.nas._regevo import RegularizedEvolution
 
 
 class AgEBO(RegularizedEvolution):

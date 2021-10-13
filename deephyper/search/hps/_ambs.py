@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import skopt
 from deephyper.core.exceptions import DeephyperRuntimeError
-from deephyper.search.search import Search
+from deephyper.search._search import Search
 
 
 class AMBS(Search):

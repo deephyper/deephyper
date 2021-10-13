@@ -7,7 +7,7 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO)
 
-    from deephyper.search.nas.random import Random
+    from deephyper.search.nas import Random
     from deephyper.evaluator.evaluate import Evaluator
 
     from deephyper.benchmark.nas.linearRegHybrid import Problem
