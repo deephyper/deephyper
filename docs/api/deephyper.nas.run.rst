@@ -1,4 +1,4 @@
-deephyper.nas.run
+deephyper.nas.run 
 ==================
 
 .. automodule:: deephyper.nas.run
@@ -8,7 +8,7 @@ deephyper.nas.run
 
 
 
-deephyper.nas.run.alpha
+deephyper.nas.run.alpha 
 ------------------------
 
 .. automodule:: deephyper.nas.run.alpha
@@ -16,7 +16,7 @@ deephyper.nas.run.alpha
    :undoc-members:
    :show-inheritance:
 
-deephyper.nas.run.horovod
+deephyper.nas.run.horovod 
 --------------------------
 
 .. automodule:: deephyper.nas.run.horovod
@@ -24,7 +24,7 @@ deephyper.nas.run.horovod
    :undoc-members:
    :show-inheritance:
 
-deephyper.nas.run.quick
+deephyper.nas.run.quick 
 ------------------------
 
 .. automodule:: deephyper.nas.run.quick
@@ -32,7 +32,7 @@ deephyper.nas.run.quick
    :undoc-members:
    :show-inheritance:
 
-deephyper.nas.run.quick2
+deephyper.nas.run.quick2 
 -------------------------
 
 .. automodule:: deephyper.nas.run.quick2
@@ -40,15 +40,15 @@ deephyper.nas.run.quick2
    :undoc-members:
    :show-inheritance:
 
-deephyper.nas.run.quick_random
-------------------------------
+deephyper.nas.run.quick\_random 
+--------------------------------
 
 .. automodule:: deephyper.nas.run.quick_random
    :members:
    :undoc-members:
    :show-inheritance:
 
-deephyper.nas.run.repeat
+deephyper.nas.run.repeat 
 -------------------------
 
 .. automodule:: deephyper.nas.run.repeat
@@ -56,7 +56,7 @@ deephyper.nas.run.repeat
    :undoc-members:
    :show-inheritance:
 
-deephyper.nas.run.slow
+deephyper.nas.run.slow 
 -----------------------
 
 .. automodule:: deephyper.nas.run.slow
@@ -64,7 +64,7 @@ deephyper.nas.run.slow
    :undoc-members:
    :show-inheritance:
 
-deephyper.nas.run.test\_horovod
+deephyper.nas.run.test\_horovod 
 --------------------------------
 
 .. automodule:: deephyper.nas.run.test_horovod
@@ -72,7 +72,7 @@ deephyper.nas.run.test\_horovod
    :undoc-members:
    :show-inheritance:
 
-deephyper.nas.run.tf\_distributed
+deephyper.nas.run.tf\_distributed 
 ----------------------------------
 
 .. automodule:: deephyper.nas.run.tf_distributed
@@ -80,7 +80,7 @@ deephyper.nas.run.tf\_distributed
    :undoc-members:
    :show-inheritance:
 
-deephyper.nas.run.util
+deephyper.nas.run.util 
 -----------------------
 
 .. automodule:: deephyper.nas.run.util

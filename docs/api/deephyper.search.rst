@@ -15,14 +15,6 @@ deephyper.search
 
 
 
-deephyper.search.search 
-------------------------
-
-.. automodule:: deephyper.search.search
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 deephyper.search.util 
 ----------------------
 
