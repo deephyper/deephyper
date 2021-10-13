@@ -1,3 +1,3 @@
-from deephyper.search.hps.ambs import AMBS
+from deephyper.search.hps._ambs import AMBS
 
-__all__ = ["AMBS"]
+__all__ = ['AMBS']

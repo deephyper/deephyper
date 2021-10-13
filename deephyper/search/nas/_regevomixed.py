@@ -3,7 +3,7 @@ import collections
 import ConfigSpace as CS
 import numpy as np
 from deephyper.problem import HpProblem
-from deephyper.search.nas.regevo import RegularizedEvolution
+from deephyper.search.nas import RegularizedEvolution
 
 
 class RegularizedEvolutionMixed(RegularizedEvolution):

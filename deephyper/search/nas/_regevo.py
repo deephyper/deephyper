@@ -1,6 +1,6 @@
 import collections
 
-from deephyper.search.nas.base import NeuralArchitectureSearch
+from deephyper.search.nas import NeuralArchitectureSearch
 
 
 class RegularizedEvolution(NeuralArchitectureSearch):

@@ -5,7 +5,7 @@ import ConfigSpace as CS
 import numpy as np
 import skopt
 from deephyper.problem import HpProblem
-from deephyper.search.nas.base import NeuralArchitectureSearch
+from deephyper.search.nas import NeuralArchitectureSearch
 
 
 class AMBSMixed(NeuralArchitectureSearch):
