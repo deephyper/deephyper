@@ -2,11 +2,11 @@ import pytest
 import unittest
 import time
 
-from deephyper.search.nas.random import Random
-from deephyper.search.nas.regevo import RegularizedEvolution
-from deephyper.search.nas.regevomixed import RegularizedEvolutionMixed
-from deephyper.search.nas.ambsmixed import AMBSMixed
-from deephyper.search.nas.agebo import AgEBO
+from deephyper.search.nas import Random
+from deephyper.search.nas import RegularizedEvolution
+from deephyper.search.nas import RegularizedEvolutionMixed
+from deephyper.search.nas import AMBSMixed
+from deephyper.search.nas import AgEBO
 from deephyper.evaluator.evaluate import Evaluator
 from deephyper.benchmark.nas.linearReg import Problem as linear_reg_problem
 from deephyper.benchmark.nas.linearRegHybrid import Problem as linear_reg_hybrid_problem

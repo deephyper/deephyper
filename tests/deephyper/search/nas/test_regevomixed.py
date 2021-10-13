@@ -6,7 +6,7 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.DEBUG)
 
-    from deephyper.search.nas.regevomixed import RegularizedEvolutionMixed
+    from deephyper.search.nas import RegularizedEvolutionMixed
     from deephyper.evaluator.evaluate import Evaluator
 
     from deephyper.benchmark.nas.linearRegHybrid import Problem

@@ -1,4 +1,4 @@
-from deephyper.search.nas.base import NeuralArchitectureSearch
+from deephyper.search.nas._base import NeuralArchitectureSearch
 
 
 class Random(NeuralArchitectureSearch):

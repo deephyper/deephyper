@@ -3,7 +3,7 @@ The ``search`` module brings a modular way to implement new search algorithms an
 The ``Search`` class is abstract and has different subclasses such as: ``deephyper.search.ambs`` and ``deephyper.search.ga``.
 """
 
-from deephyper.search.search import Search
+from deephyper.search._search import Search
 
 __all__ = [
     'Search',

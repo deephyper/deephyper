@@ -1,7 +1,7 @@
 """This module provides tools to define hyperparameter and neural architecture search problems. Some features of this module are based on the `ConfigSpace <https://automl.github.io/ConfigSpace/master/>`_ project.
 """
 import ConfigSpace as config_space
-from .hyperparameter import HpProblem
-from .neuralarchitecture import NaProblem
+from ._hyperparameter import HpProblem
+from ._neuralarchitecture import NaProblem
 
 __all__ = ["config_space", "HpProblem", "NaProblem"]
