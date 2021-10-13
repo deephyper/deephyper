@@ -1,4 +1,4 @@
-from deephyper.search import Search
+from deephyper.search._search import Search
 
 
 class NeuralArchitectureSearch(Search):

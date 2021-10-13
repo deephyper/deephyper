@@ -6,10 +6,10 @@ from deephyper.search.nas._random import Random
 from deephyper.search.nas._regevomixed import RegularizedEvolutionMixed
 
 __all__ = [
-    'AgEBO',
-    'AMBSMixed',
-    'NeuralArchitectureSearch',
-    'Random',
-    'RegularizedEvolution',
-    'RegularizedEvolutionMixed'
+    "AgEBO",
+    "AMBSMixed",
+    "NeuralArchitectureSearch",
+    "Random",
+    "RegularizedEvolution",
+    "RegularizedEvolutionMixed"
 ]
