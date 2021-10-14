@@ -1,12 +1,6 @@
 deephyper.core 
 ===============
 
-.. automodule:: deephyper.core
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-
 .. toctree::
    :maxdepth: 4
 
@@ -14,13 +8,11 @@ deephyper.core
    deephyper.core.exceptions
    deephyper.core.logs
    deephyper.core.plot
-
-
-
-deephyper.core.parser 
-----------------------
-
-.. automodule:: deephyper.core.parser
+   deephyper.core.parser
+.. automodule:: deephyper.core
    :members:
    :undoc-members:
    :show-inheritance:
+   :inherited-members:
+
+
