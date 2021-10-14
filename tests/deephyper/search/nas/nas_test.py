@@ -7,7 +7,7 @@ from deephyper.search.nas import RegularizedEvolution
 from deephyper.search.nas import RegularizedEvolutionMixed
 from deephyper.search.nas import AMBSMixed
 from deephyper.search.nas import AgEBO
-from deephyper.evaluator.evaluate import Evaluator
+from deephyper.evaluator import Evaluator
 from deephyper.benchmark.nas.linearReg import Problem as linear_reg_problem
 from deephyper.benchmark.nas.linearRegHybrid import Problem as linear_reg_hybrid_problem
 from deephyper.nas.run.quick import run as quick_run

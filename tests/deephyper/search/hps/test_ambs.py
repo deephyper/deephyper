@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     from deephyper.problem import HpProblem
     from deephyper.search.hps import AMBS
-    from deephyper.evaluator.evaluate import Evaluator
+    from deephyper.evaluator import Evaluator
     from deephyper.evaluator.callback import ProfilingCallback
 
     import matplotlib.pyplot as plt

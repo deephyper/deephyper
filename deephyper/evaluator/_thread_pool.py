@@ -1,7 +1,7 @@
 import logging
 import asyncio
 
-from deephyper.evaluator.evaluate import Evaluator
+from deephyper.evaluator._evaluator import Evaluator
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -21,7 +21,7 @@ class ThreadPoolEvaluator(Evaluator):
         async with self.sem:
 
             executor = ThreadPoolExecutor(max_workers=1)
-            
+
             sol = await self.loop.run_in_executor(executor, job.run_function, job.config)
 
             job.result = sol

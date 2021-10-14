@@ -8,7 +8,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
 
     from deephyper.search.nas import RegularizedEvolution
-    from deephyper.evaluator.evaluate import Evaluator
+    from deephyper.evaluator import Evaluator
 
     from deephyper.benchmark.nas.linearReg import Problem
     from deephyper.nas.run.quick import run

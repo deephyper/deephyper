@@ -6,8 +6,8 @@ import re
 import json
 import os
 
-from deephyper.evaluator.evaluate import Evaluator
-from deephyper.evaluator.encoder import Encoder
+from deephyper.evaluator._evaluator import Evaluator
+from deephyper.evaluator._encoder import Encoder
 
 logger = logging.getLogger(__name__)
 
