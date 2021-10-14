@@ -32,7 +32,7 @@ The black-box function named ``run`` is defined by taking an input dictionnary n
     if __name__ == "__main__":
         from deephyper.problem import HpProblem
         from deephyper.search.hps import AMBS
-        from deephyper.evaluator.evaluate import Evaluator
+        from deephyper.evaluator import Evaluator
 
         # define the variable you want to optimize
         problem = HpProblem()

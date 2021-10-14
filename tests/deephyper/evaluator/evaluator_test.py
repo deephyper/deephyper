@@ -9,10 +9,10 @@ def run(config):
 @pytest.mark.incremental
 class TestEvaluator:
     def test_import(self):
-        from deephyper.evaluator.evaluate import Evaluator
+        from deephyper.evaluator import Evaluator
 
     def test_wrong_evaluator(self):
-        from deephyper.evaluator.evaluate import Evaluator
+        from deephyper.evaluator import Evaluator
 
         with pytest.raises(DeephyperRuntimeError):
             evaluator = Evaluator.create(
@@ -24,7 +24,7 @@ class TestEvaluator:
             )
 
     def test_thread_process_subprocess(self):
-        from deephyper.evaluator.evaluate import Evaluator
+        from deephyper.evaluator import Evaluator
 
         for method in ["thread", "process", "subprocess"]:
             evaluator = Evaluator.create(
@@ -47,7 +47,7 @@ class TestEvaluator:
             assert 1 <= len(jobs) and len(jobs) <= len(configs)
 
     def test_ray(self):
-        from deephyper.evaluator.evaluate import Evaluator
+        from deephyper.evaluator import Evaluator
 
         def run(config):
             return config["x"]

@@ -1,7 +1,7 @@
 import logging
 import ray
 import time
-from deephyper.evaluator.evaluate import Evaluator
+from deephyper.evaluator._evaluate import Evaluator
 
 ray_initializer = None
 

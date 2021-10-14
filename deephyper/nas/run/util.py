@@ -11,7 +11,7 @@ from datetime import datetime
 import numpy as np
 import tensorflow as tf
 from deephyper.core.exceptions.problem import WrongProblemObjective
-from deephyper.evaluator.encoder import Encoder
+from deephyper.evaluator._encoder import Encoder
 from deephyper.search import util
 from deephyper.nas.lr_scheduler import exponential_decay
 

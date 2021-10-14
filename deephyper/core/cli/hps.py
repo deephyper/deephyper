@@ -53,7 +53,7 @@ import argparse
 
 from deephyper.search.util import load_attr
 from deephyper.core.parser import add_arguments_from_signature
-from deephyper.evaluator.evaluate import EVALUATORS, Evaluator
+from deephyper.evaluator import EVALUATORS, Evaluator
 
 HPS_SEARCHES = {
     "ambs": "deephyper.search.hps.AMBS",

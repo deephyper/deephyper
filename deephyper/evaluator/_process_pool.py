@@ -1,7 +1,7 @@
 import logging
 import asyncio
 
-from deephyper.evaluator.evaluate import Evaluator
+from deephyper.evaluator import Evaluator
 
 from concurrent.futures import ProcessPoolExecutor
 

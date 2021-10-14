@@ -11,7 +11,7 @@ from typing import Dict, List
 
 import numpy as np
 from deephyper.core.exceptions import DeephyperRuntimeError
-from deephyper.evaluator.job import Job
+from deephyper.evaluator._job import Job
 
 EVALUATORS = {
     "thread": "_thread_pool.ThreadPoolEvaluator",

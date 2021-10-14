@@ -49,7 +49,7 @@ import sys
 import logging
 
 from deephyper.core.parser import add_arguments_from_signature
-from deephyper.evaluator.evaluate import EVALUATORS, Evaluator
+from deephyper.evaluator import EVALUATORS, Evaluator
 from deephyper.search.util import load_attr
 
 NAS_SEARCHES = {
