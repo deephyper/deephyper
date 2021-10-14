@@ -1,11 +1,11 @@
-deephyper.nas.run 
-==================
+deephyper.nas.operation 
+========================
 
 .. toctree::
    :maxdepth: 4
 
 
-.. automodule:: deephyper.nas.run
+.. automodule:: deephyper.nas.operation
    :members:
    :undoc-members:
    :show-inheritance:

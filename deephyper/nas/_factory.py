@@ -1,0 +1,86 @@
+from abc import ABC, abstractclassmethod
+import random
+
+from typeguard import typechecked
+
+from tensorflow.keras.utils import plot_model
+
+from deephyper.nas._keras_search_space import KSearchSpace
+from deephyper.core.exceptions import DeephyperRuntimeError
+
+__all__ = ["SpaceFactory"]
+
+
+class SpaceFactory(ABC):
+    def __call__(self, input_shape, output_shape, *args, **kwargs) -> KSearchSpace:
+        return self.build(input_shape, output_shape, *args, **kwargs)
+
+    @abstractclassmethod
+    def build(self, input_shape, output_shape, **kwargs) -> KSearchSpace:
+        """Return a search space."""
+        pass
+
+    @typechecked
+    def check_op_list(self, space: KSearchSpace, ops: list) -> list:
+        if len(ops) == 0:
+            ops = [random.random() for _ in range(space.num_nodes)]
+        else:
+            if not (len(ops) == space.num_nodes):
+                raise DeephyperRuntimeError(
+                    f"The argument list 'ops' should be of length {space.num_nodes} but is {len(ops)}!"
+                )
+        return ops
+
+    @typechecked
+    def plot_space(
+        self,
+        input_shape,
+        output_shape,
+        ops: list = [],
+        fname: str = "space.dot",
+        **kwargs,
+    ) -> None:
+        space = self(input_shape, output_shape, **kwargs)
+
+        if not (ops is None):
+            ops = self.check_op_list(space, ops)
+
+            space.set_ops(ops)
+
+        space.draw_graphviz(fname)
+
+    @typechecked
+    def plot_model(
+        self,
+        input_shape,
+        output_shape,
+        ops: list = [],
+        fname: str = "random_model.png",
+        show_shapes: bool = True,
+        show_dtype: bool = False,
+        show_layer_names: bool = True,
+        rankdir: "str" = "TB",
+        expand_nested: bool = False,
+        dpi: int = 96,
+        **kwargs,
+    ):
+        space = self(input_shape, output_shape, **kwargs)
+        ops = self.check_op_list(space, ops)
+        space.set_ops(ops)
+        model = space.create_model()
+        return plot_model(
+            model,
+            to_file=fname,
+            show_shapes=show_shapes,
+            show_dtype=show_dtype,
+            show_layer_names=show_layer_names,
+            rankdir=rankdir,
+            expand_nested=expand_nested,
+            dpi=dpi,
+        )
+
+    def test(self, input_shape, output_shape, **kwargs):
+        space = self(input_shape, output_shape, **kwargs)
+        ops = self.check_op_list(space, [])
+        space.set_ops(ops)
+        model = space.create_model()

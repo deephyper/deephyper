@@ -4,15 +4,14 @@ deephyper.nas
 .. toctree::
    :maxdepth: 4
 
+   deephyper.nas.operation
    deephyper.nas.preprocessing
    deephyper.nas.run
-   deephyper.nas.space
    deephyper.nas.trainer
-   deephyper.nas.arch
    deephyper.nas.losses
    deephyper.nas.lr_scheduler
    deephyper.nas.metrics
-   deephyper.nas.train_utils
+   deephyper.nas.node
 .. automodule:: deephyper.nas
    :members:
    :undoc-members:

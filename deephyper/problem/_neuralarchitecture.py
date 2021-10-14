@@ -13,7 +13,7 @@ from deephyper.core.exceptions.problem import (
     SearchSpaceBuilderMissingParameter,
     WrongProblemObjective,
 )
-from deephyper.nas.run.util import get_search_space, setup_data
+from deephyper.nas.run._util import get_search_space, setup_data
 from deephyper.problem import HpProblem
 
 

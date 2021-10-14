@@ -10,10 +10,10 @@ if __name__ == "__main__":
     from deephyper.evaluator import Evaluator
 
     from deephyper.benchmark.nas.linearRegHybrid import Problem
-    from deephyper.nas.run.quick import run
+    from deephyper.nas.run import run_debug_slow
 
     evaluator = Evaluator.create(
-        run, method="subprocess", method_kwargs={"num_workers": 1}
+        run_debug_slow, method="subprocess", method_kwargs={"num_workers": 1}
     )
 
     search = RegularizedEvolutionMixed(Problem, evaluator)

@@ -18,16 +18,11 @@ It comprises three main modules:
 DeepHyper installation requires **Python >= 3.7**.
 
 """
-import os
 import warnings
 from deephyper.__version__ import __version__, __version_suffix__
 
 name = "deephyper"
 version = __version__
-
-# ! Check if a balsam db is connected or not
-if os.environ.get("BALSAM_DB_PATH") is None:
-    os.environ["BALSAM_SPHINX_DOC_BUILD_ONLY"] = "TRUE"
 
 # Suppress warnings from skopt using deprecated sklearn API
 warnings.filterwarnings(
