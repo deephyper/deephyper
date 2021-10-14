@@ -28,7 +28,7 @@ from pprint import pformat
 
 from jinja2 import Template
 
-from deephyper.core.cli.nodelist import expand_nodelist
+from deephyper.core.cli._nodelist import expand_nodelist
 
 MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
 
