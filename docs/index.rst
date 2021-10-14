@@ -82,7 +82,7 @@ Which outputs the following where the best ``x`` found is clearly around ``0``.
 
 
 .. toctree::
-    :maxdepth: 1
+    :maxdepth: 2
     :caption: API Reference
 
     Core <api/deephyper.core>

@@ -1,12 +1,6 @@
 deephyper 
 ==========
 
-.. automodule:: deephyper
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-
 .. toctree::
    :maxdepth: 4
 
@@ -21,3 +15,8 @@ deephyper
    deephyper.problem
    deephyper.search
    deephyper.sklearn
+.. automodule:: deephyper
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :inherited-members:

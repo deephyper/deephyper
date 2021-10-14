@@ -11,8 +11,11 @@ else
     rm api/*.rst
 fi
 
+# settings for automodule options
+export SPHINX_APIDOC_OPTIONS="members,undoc-members,show-inheritance,inherited-members"
+
 # generate the API documentation
-sphinx-apidoc -o api/ ../deephyper --templatedir templates/api --module-first
+sphinx-apidoc -o api/ ../deephyper --templatedir templates/api --module-first -e
 
 # delete some subpackages
 for package in $ignoreDoc

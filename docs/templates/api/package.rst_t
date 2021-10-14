@@ -19,20 +19,20 @@
 {{- [pkgname, ""] | join(" ") | e | heading }}
 {% endif %}
 
+
+{%- if subpackages %}
+{{ toctree(subpackages + submodules) }}
+{%- else %}
+{{ toctree(submodules) }}
+{% endif %}
+
 {%- if modulefirst and not is_namespace %}
 {{ automodule(pkgname, automodule_options) }}
 {% endif %}
 
-{%- if subpackages %}
-
-{{ toctree(subpackages) }}
-{% endif %}
-
 {%- if submodules %}
 
-{% if separatemodules %}
-{{ toctree(submodules) }}
-{% else %}
+{% if not separatemodules %}
 {%- for submodule in submodules %}
 {% if show_headings %}
 {{- [submodule, ""] | join(" ") | e | heading(2) }}
