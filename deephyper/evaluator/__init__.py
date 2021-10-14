@@ -8,11 +8,5 @@ from deephyper.evaluator._job import Job
 __all__ = [
     "Evaluator",
     "Job",
-    "callback",
     "EVALUATORS",
-    "_encoder",
-    "_process_pool"
-    "_ray",
-    "subprocess",
-    "_thread_pool"
 ]
