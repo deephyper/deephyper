@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# list of subpackages to ignore for the API
-ignoreDoc="benchmark baseline contrib layers"
-
 # delete the api/ folder if exists
 if [ ! -d "api/" ]
 then
@@ -15,10 +12,18 @@ fi
 export SPHINX_APIDOC_OPTIONS="members,undoc-members,show-inheritance,inherited-members"
 
 # generate the API documentation
-sphinx-apidoc -o api/ ../deephyper --templatedir templates/api --module-first -e
+export OUTPUT_PATH=api/
+export MODULE_PATH=../deephyper
+sphinx-apidoc --templatedir templates/api --module-first -e \
+    -o $OUTPUT_PATH \
+    $MODULE_PATH \
+    ../deephyper/benchmark \
+    ../deephyper/contrib \
+    ../deephyper/baseline \
+    ../deephyper/layers \
+    ../deephyper/core/logs \
+    ../deephyper/core/exceptions
 
-# delete some subpackages
-for package in $ignoreDoc
-do
-    rm api/deephyper.$package*
-done
+
+rm api/deephyper.rst
+rm api/modules.rst

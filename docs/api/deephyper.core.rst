@@ -5,8 +5,6 @@ deephyper.core
    :maxdepth: 4
 
    deephyper.core.cli
-   deephyper.core.exceptions
-   deephyper.core.logs
    deephyper.core.plot
    deephyper.core.parser
 .. automodule:: deephyper.core

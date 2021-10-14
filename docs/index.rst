@@ -17,7 +17,7 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
 
 
 Quick Start
------------
+===========
 
 The black-box function named ``run`` is defined by taking an input dictionnary named ``config`` which contains the different variables to optimize. Then the run-function is binded to an ``Evaluator`` in charge of distributing the computation of multiple evaluations. Finally, a Bayesian search named ``AMBS`` is created and executed to find the values of config which maximize the return value of ``run(config)``.
 
@@ -70,6 +70,9 @@ Which outputs the following where the best ``x`` found is clearly around ``0``.
     97 -0.016222  98  -0.000263     9.551584  0.096401
     98  0.009660  99  -0.000093     9.638016  0.092450
 
+
+Table of Contents
+=================
 
 .. toctree::
     :maxdepth: 2

@@ -7,7 +7,7 @@ import ray
 
 from deephyper.nas.metrics import selectMetric
 from deephyper.ensemble import BaseEnsemble
-from deephyper.nas.run.util import set_memory_growth_for_visible_gpus
+from deephyper.nas.run._util import set_memory_growth_for_visible_gpus
 
 
 def mse(y_true, y_pred):
