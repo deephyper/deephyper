@@ -11,7 +11,7 @@ from deephyper.contrib.callbacks import import_callback
 import horovod.tensorflow.keras as hvd
 
 import deephyper.nas.trainer._arch as a
-from deephyper.nas.trainer import HorovodTrainerTrainValid
+from deephyper.nas.trainer import HorovodTrainer
 from deephyper.nas.run._util import (
     compute_objective,
     load_config,
@@ -143,7 +143,7 @@ def run_horovod(config: dict) -> float:
                 else:
                     logger.error(f"'{cb_name}' is not an accepted callback!")
 
-        trainer = HorovodTrainerTrainValid(config=config, model=model)
+        trainer = HorovodTrainer(config=config, model=model)
 
         trainer.callbacks.extend(callbacks)
 

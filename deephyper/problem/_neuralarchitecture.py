@@ -273,6 +273,9 @@ class NaProblem:
 
     def hyperparameters(self, **kwargs):
         """Define hyperparameters used to evaluate generated architectures.
+
+        Hyperparameters can be defined such as:
+
         .. code-block:: python
 
             Problem.hyperparameters(

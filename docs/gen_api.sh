@@ -20,4 +20,10 @@ sphinx-apidoc --templatedir templates/api --module-first -e \
     ../deephyper/benchmark \
     ../deephyper/contrib \
     ../deephyper/baseline \
-    ../deephyper/layers
+    ../deephyper/layers \
+    ../deephyper/core/logs \
+    ../deephyper/core/exceptions
+
+
+rm api/deephyper.rst
+rm api/modules.rst
