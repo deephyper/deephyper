@@ -5,9 +5,6 @@ deephyper.evaluator
    :maxdepth: 4
 
    deephyper.evaluator.callback
-   deephyper.evaluator.encoder
-   deephyper.evaluator.evaluate
-   deephyper.evaluator.job
 
 .. automodule:: deephyper.evaluator
    :members:
