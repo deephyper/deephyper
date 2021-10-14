@@ -16,6 +16,14 @@ deephyper.core.cli.cli
    :undoc-members:
    :show-inheritance:
 
+deephyper.core.cli.cobalt\_nodelist 
+------------------------------------
+
+.. automodule:: deephyper.core.cli.cobalt_nodelist
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 deephyper.core.cli.hps 
 -----------------------
 
@@ -48,6 +56,14 @@ deephyper.core.cli.new\_problem
    :undoc-members:
    :show-inheritance:
 
+deephyper.core.cli.nodelist 
+----------------------------
+
+.. automodule:: deephyper.core.cli.nodelist
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 deephyper.core.cli.ray\_cluster 
 --------------------------------
 
@@ -68,6 +84,14 @@ deephyper.core.cli.start\_project
 ----------------------------------
 
 .. automodule:: deephyper.core.cli.start_project
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+deephyper.core.cli.utils 
+-------------------------
+
+.. automodule:: deephyper.core.cli.utils
    :members:
    :undoc-members:
    :show-inheritance:
