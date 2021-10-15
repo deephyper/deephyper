@@ -3,15 +3,11 @@ from deephyper.benchmark.nas.linearRegMultiVar.load_data import load_data
 from deepspace.tabular import OneLayerSpace
 
 
-def create_search_space(input_shape, output_shape, **kwargs):
-    return OneLayerSpace()(input_shape, output_shape, **kwargs)
-
-
 Problem = NaProblem(seed=2019)
 
 Problem.load_data(load_data)
 
-Problem.search_space(create_search_space)
+Problem.search_space(OneLayerSpace)
 
 Problem.hyperparameters(batch_size=100, learning_rate=0.1, optimizer="adam", num_epochs=1)
 
