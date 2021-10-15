@@ -1,7 +1,7 @@
 def test_search_space():
-    from deepspace.tabular import DenseSkipCoFactory
+    from deepspace.tabular import DenseSkipCoSpace
 
-    DenseSkipCoFactory().test(input_shape=(10,), output_shape=(1,))
+    DenseSkipCoSpace().test(input_shape=(10,), output_shape=(1,))
 
 
 if __name__ == "__main__":

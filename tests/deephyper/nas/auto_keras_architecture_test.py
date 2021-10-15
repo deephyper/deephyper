@@ -30,7 +30,7 @@ class TestAutoKSearchSpace:
         struct.set_ops([0])
 
         falias = "test_auto_keras_search_spaceure"
-        struct.draw_graphviz(f"{falias}.dot")
+        struct.plot(f"{falias}.dot")
 
         model = struct.create_model()
         from tensorflow.keras.utils import plot_model
@@ -60,7 +60,7 @@ class TestAutoKSearchSpace:
         struct.set_ops([0, 0])
 
         falias = "test_auto_keras_search_spaceure"
-        struct.draw_graphviz(f"{falias}.dot")
+        struct.plot(f"{falias}.dot")
 
         model = struct.create_model()
         from tensorflow.keras.utils import plot_model
@@ -80,7 +80,7 @@ class TestAutoKSearchSpace:
         struct.set_ops([])
 
         falias = "test_auto_keras_search_spaceure"
-        struct.draw_graphviz(f"{falias}.dot")
+        struct.plot(f"{falias}.dot")
 
         model = struct.create_model()
         from tensorflow.keras.utils import plot_model

@@ -23,9 +23,9 @@ class NaProblem:
     >>> from deephyper.problem import NaProblem
     >>> from deephyper.benchmark.nas.linearReg.load_data import load_data
     >>> from deephyper.nas.preprocessing import minmaxstdscaler
-    >>> from deepspace.tabular import OneLayerFactory
+    >>> from deepspace.tabular import OneLayerSpace
     >>> def create_search_space(input_shape, output_shape, **kwargs):
-    ...     return OneLayerFactory()(input_shape, output_shape, **kwargs)
+    ...     return OneLayerSpace()(input_shape, output_shape, **kwargs)
     >>> Problem = NaProblem()
     >>> Problem.load_data(load_data)
     >>> Problem.preprocessing(minmaxstdscaler)
@@ -89,7 +89,7 @@ class NaProblem:
         out = (
             f"Problem is:\n"
             f" * SEED = {self.seed} *\n"
-            f"    - search space   : {module_location(self._space['create_search_space']['func'])}\n"
+            f"    - search space   : {module_location(self._space['search_space']['class'])}\n"
             f"    - data loading   : {module_location(self._space['load_data']['func'])}\n"
             f"    - preprocessing  : {preprocessing}\n"
             f"    - hyperparameters: {hps}\n"
@@ -216,7 +216,7 @@ class NaProblem:
 
         self._space["augment"] = {"func": func, "kwargs": kwargs}
 
-    def search_space(self, func: callable, **kwargs):
+    def search_space(self, space_class, **kwargs):
         """Set a search space for neural architecture search.
 
         Args:
@@ -228,17 +228,14 @@ class NaProblem:
             SearchSpaceBuilderMissingDefaultParameter: raised when either of ``(input_shape, output_shape)`` are missing a default value.
         """
 
-        if not callable(func):
-            raise SearchSpaceBuilderIsNotCallable(func)
-
-        sign_func = signature(func)
-        if not "input_shape" in sign_func.parameters:
+        sign = signature(space_class)
+        if not "input_shape" in sign.parameters:
             raise SearchSpaceBuilderMissingParameter("input_shape")
 
-        if not "output_shape" in sign_func.parameters:
+        if not "output_shape" in sign.parameters:
             raise SearchSpaceBuilderMissingParameter("output_shape")
 
-        self._space["create_search_space"] = {"func": func, "kwargs": kwargs}
+        self._space["search_space"] = {"class": space_class, "kwargs": kwargs}
 
     def add_hyperparameter(
         self, value, name: str = None, default_value=None
@@ -467,7 +464,7 @@ class NaProblem:
         """Build and return a search space object using the infered data shapes after loading data.
 
         Returns:
-            NxSearchSpace: A search space instance.
+            KSearchSpace: A search space instance.
         """
         config = self.space
         input_shape, output_shape, _ = setup_data(config, add_to_config=False)
@@ -477,16 +474,11 @@ class NaProblem:
 
     def get_keras_model(self, arch_seq: list) -> tf.keras.Model:
         """Get a keras model object from a set of decisions in the current search space.
-
         Args:
             arch_seq (list): a list of int of floats describing a choice of operations for the search space defined in the current problem.
-        Returns:
-            tf.keras.Model: a Tensorflow Keras model corresponing to the ``arch_seq`` and current defined search space.
         """
         search_space = self.build_search_space()
-        search_space.set_ops(arch_seq)
-        keras_model = search_space.create_model()
-        return keras_model
+        return search_space.sample(arch_seq)
 
     def gen_config(self, arch_seq: list, hp_values: list) -> dict:
         """Generate a ``dict`` configuration from the ``arch_seq`` and ``hp_values`` passed.

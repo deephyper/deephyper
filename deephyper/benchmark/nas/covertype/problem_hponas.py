@@ -1,26 +1,12 @@
-import traceback
-
 from deephyper.benchmark.nas.covertype.load_data import load_data
 from deephyper.problem import NaProblem
-from deepspace.tabular import DenseSkipCoFactory
-
-
-def create_search_space(input_shape=(54,), output_shape=(7,), num_layers=10, **kwargs):
-    return DenseSkipCoFactory()(
-        input_shape,
-        output_shape,
-        num_layers=num_layers,
-        regression=False,
-        bn=False,
-        **kwargs
-    )
-
+from deepspace.tabular import DenseSkipCoSpace
 
 Problem = NaProblem(seed=2019)
 
 Problem.load_data(load_data)
 
-Problem.search_space(create_search_space, num_layers=10)
+Problem.search_space(DenseSkipCoSpace, regression=False, bn=False, num_layers=10)
 
 Problem.hyperparameters(
     batch_size=[32, 64, 128, 256, 512, 1024],

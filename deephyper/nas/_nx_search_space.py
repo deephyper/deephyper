@@ -1,21 +1,15 @@
+import abc
 import traceback
 from collections.abc import Iterable
 
 import networkx as nx
-
-from deephyper.core.exceptions.nas.space import (
-    NodeAlreadyAdded,
-    StructureHasACycle,
-    WrongSequenceToSetOperations,
-)
-from deephyper.nas.node import (
-    MimeNode,
-    Node,
-    VariableNode,
-)
+from deephyper.core.exceptions.nas.space import (NodeAlreadyAdded,
+                                                 StructureHasACycle,
+                                                 WrongSequenceToSetOperations)
+from deephyper.nas.node import MimeNode, Node, VariableNode
 
 
-class NxSearchSpace:
+class NxSearchSpace(abc.ABC):
     """A NxSearchSpace is an search_space based on a networkx graph.
     """
 
@@ -24,7 +18,7 @@ class NxSearchSpace:
         self.seed = seed
         self.output_node = None
 
-    def draw_graphviz(self, path):
+    def plot(self, path):
         with open(path, "w") as f:
             try:
                 nx.nx_agraph.write_dot(self.graph, f)
@@ -210,3 +204,28 @@ class NxSearchSpace:
             return output_tensor
         except TypeError:
             raise RuntimeError(f"Failed to build tensors from :{n}")
+
+
+    @abc.abstractmethod
+    def choices(self):
+        """Gives the possible choices for each decision variable of the search space.
+
+        Returns:
+            list: A list of tuple where each element corresponds to a discrete variable represented by ``(low, high)``.
+        """
+
+    @abc.abstractmethod
+    def sample(self, choice=None):
+        """Sample a ``tf.keras.Model`` from the search space.
+
+        Args:
+            choice (list, optional): A list of decision for the operations of this search space. Defaults to None, will generate a random sample.
+
+        Returns:
+            tf.keras.Model: A Tensorflow Keras model.
+        """
+
+    @abc.abstractmethod
+    def build(self):
+        """Build the current graph search space.
+        """

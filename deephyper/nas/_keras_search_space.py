@@ -1,6 +1,8 @@
+import copy
 import logging
 
 import networkx as nx
+import numpy as np
 import tensorflow as tf
 from deephyper.core.exceptions.nas.space import (
     InputShapeOfWrongType,
@@ -42,10 +44,13 @@ class KSearchSpace(NxSearchSpace):
         InputShapeOfWrongType: [description]
     """
 
-    def __init__(self, input_shape, output_shape, batch_size=None, *args, **kwargs):
+    def __init__(self, input_shape, output_shape, batch_size=None, seed=None, *args, **kwargs):
 
         super().__init__()
 
+        self._random = np.random.RandomState(seed)
+
+        self.input_shape = input_shape
         if type(input_shape) is tuple:
             # we have only one input tensor here
             op = Tensor(
@@ -79,6 +84,14 @@ class KSearchSpace(NxSearchSpace):
         self._model = None
 
     @property
+    def input(self):
+        return self.input_nodes
+
+    @property
+    def output(self):
+        return self.output_node
+
+    @property
     def depth(self):
         if self._model is None:
             raise RuntimeError("Can't compute depth of model without creating a model.")
@@ -95,6 +108,8 @@ class KSearchSpace(NxSearchSpace):
 
     def set_ops(self, indexes):
         """Set the operations for each node of each cell of the search_space.
+
+        :meta private:
 
         Args:
             indexes (list):  element of list can be float in [0, 1] or int.
@@ -115,6 +130,8 @@ class KSearchSpace(NxSearchSpace):
 
     def create_model(self):
         """Create the tensors corresponding to the search_space.
+
+        :meta private:
 
         Returns:
             A keras.Model for the current search_space with the corresponding set of operations.
@@ -151,3 +168,30 @@ class KSearchSpace(NxSearchSpace):
             self._model = keras.Model(inputs=input_tensors, outputs=[output_tensors])
 
         return self._model
+
+    def choices(self):
+        """Gives the possible choices for each decision variable of the search space.
+
+        Returns:
+            list: A list of tuple where each element corresponds to a discrete variable represented by ``(low, high)``.
+        """
+        return [(0, vnode.num_ops - 1) for vnode in self.variable_nodes]
+
+    def sample(self, choice=None):
+        """Sample a ``tf.keras.Model`` from the search space.
+
+        Args:
+            choice (list, optional): A list of decision for the operations of this search space. Defaults to None, will generate a random sample.
+
+        Returns:
+            tf.keras.Model: A Tensorflow Keras model.
+        """
+
+        if choice is None:
+            choice = [self._random.randint(c[0], c[1]+1) for c in self.choices()]
+
+        self_copy = copy.deepcopy(self)
+        self_copy.set_ops(choice)
+        model = self_copy.create_model()
+
+        return model
