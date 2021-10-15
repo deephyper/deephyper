@@ -1,4 +1,8 @@
-"""Command line to generate and submit scripts to execute DeepHyper on specific systems.
+"""
+Submit a Ray Experiment
+-----------------------
+
+Command line to generate and submit scripts to execute DeepHyper on specific systems.
 
 Example Usage:
 

@@ -1,8 +1,8 @@
 """A tool to have quick and simple visualization from your data.
 
-usage:
+It can be use such as:
 
-::
+.. code-block:: console
 
     $ deephyper-analytics quickplot nas_big_data/combo/exp_sc21/combo_1gpu_8_age/infos/results.csv
     $ deephyper-analytics quickplot save/history/*.json --xy time val_r2
@@ -56,6 +56,17 @@ def add_subparser(subparsers):
     return subparser_name, function_to_call
 
 def plot_for_single_csv(path: str, xy: list):
+    """Generate a plot from a single CSV file.
+
+    :meta private:
+
+    Args:
+        path (str): Path to the CSV file.
+        xy (list): If empty ``list`` then it will use ``"elapsed_sec"`` for x-axis and ``"objective"`` for the y-axis.
+
+    Raises:
+        DeephyperRuntimeError: if only 1 or more than 2 arguments are provided.
+    """
 
     if len(xy) == 0:
         xy = ["elapsed_sec", "objective"]
@@ -76,6 +87,17 @@ def plot_for_single_csv(path: str, xy: list):
 
 
 def plot_for_single_json(path: str, xy: list):
+    """[summary]
+
+    :meta private:
+
+    Args:
+        path (str): [description]
+        xy (list): [description]
+
+    Raises:
+        DeephyperRuntimeError: [description]
+    """
 
     if len(xy) == 0:
         xy = ["epochs", "val_loss"]
@@ -102,6 +124,14 @@ def plot_for_single_json(path: str, xy: list):
 
 
 def plot_multiple_training(path: list, ylabel: str):
+    """[summary]
+
+    :meta private:
+
+    Args:
+        path (list): [description]
+        ylabel (str): [description]
+    """
     for p in path:
         with open(p, "r") as f:
             history = json.load(f)
@@ -115,6 +145,14 @@ def plot_multiple_training(path: list, ylabel: str):
 
 
 def plot_multiple_objective_wrp_time(path: list, ylabel: str):
+    """[summary]
+
+    :meta private:
+
+    Args:
+        path (list): [description]
+        ylabel (str): [description]
+    """
 
     times = []
     objectives = []
@@ -136,7 +174,9 @@ def plot_multiple_objective_wrp_time(path: list, ylabel: str):
 
 
 def plot_for_multiple_json(path: list, xy: list):
-
+    """
+    :meta private:
+    """
     if len(xy) == 0:
         xy = ["epochs", "val_loss"]
     elif len(xy) != 2:
@@ -159,6 +199,9 @@ def plot_for_multiple_json(path: list, xy: list):
 
 
 def main(path: list, xy: list, *args, **kwargs):
+    """
+    :meta private:
+    """
 
     extension = lambda path: path.split(".")[-1]
 

@@ -1,4 +1,8 @@
-"""Command line to create a new problem sub-package in a DeepHyper projet package.
+"""
+Create a DeepHyper Problem
+--------------------------
+
+Command line to create a new problem sub-package in a DeepHyper projet package.
 
 It can be used with:
 

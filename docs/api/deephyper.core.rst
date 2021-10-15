@@ -6,11 +6,8 @@ deephyper.core
 
    deephyper.core.cli
    deephyper.core.plot
-   deephyper.core.parser
 .. automodule:: deephyper.core
    :members:
    :undoc-members:
    :show-inheritance:
    :inherited-members:
-
-
