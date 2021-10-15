@@ -1,11 +1,11 @@
 from deephyper.problem import NaProblem
 from deephyper.benchmark.nas.polynome2Reg.load_data import load_data
 from deephyper.nas.preprocessing import minmaxstdscaler
-from deepspace.tabular import DenseSkipCoFactory
+from deepspace.tabular import DenseSkipCoSpace
 
 
 def create_search_space(input_shape, output_shape, **kwargs):
-    return DenseSkipCoFactory()(input_shape, output_shape, **kwargs)
+    return DenseSkipCoSpace()(input_shape, output_shape, **kwargs)
 
 Problem = NaProblem()
 

@@ -1,3 +1,4 @@
+from inspect import isclass
 import json
 import types
 import uuid
@@ -25,7 +26,7 @@ class Encoder(json.JSONEncoder):
             return bool(obj)
         elif isinstance(obj, ndarray):
             return obj.tolist()
-        elif isinstance(obj, types.FunctionType):
+        elif isinstance(obj, types.FunctionType) or isclass(obj):
             return f"{obj.__module__}.{obj.__name__}"
         elif isinstance(obj, skopt.space.Dimension):
             return str(obj)

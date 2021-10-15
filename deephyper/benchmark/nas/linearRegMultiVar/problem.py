@@ -1,10 +1,10 @@
 from deephyper.problem import NaProblem
 from deephyper.benchmark.nas.linearRegMultiVar.load_data import load_data
-from deepspace.tabular import OneLayerFactory
+from deepspace.tabular import OneLayerSpace
 
 
 def create_search_space(input_shape, output_shape, **kwargs):
-    return OneLayerFactory()(input_shape, output_shape, **kwargs)
+    return OneLayerSpace()(input_shape, output_shape, **kwargs)
 
 
 Problem = NaProblem(seed=2019)

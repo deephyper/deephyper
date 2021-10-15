@@ -68,8 +68,8 @@ def load_config(config: dict) -> None:
         config["augment"]["func"] = util.load_attr(config["augment"]["func"])
 
     # load the function creating the search space
-    config["create_search_space"]["func"] = util.load_attr(
-        config["create_search_space"]["func"]
+    config["search_space"]["class"] = util.load_attr(
+        config["search_space"]["class"]
     )
 
     if not config.get("preprocessing") is None:
@@ -210,25 +210,15 @@ def setup_data(config: dict, add_to_config: bool = True) -> tuple:
 
 
 def get_search_space(config, input_shape, output_shape, seed):
-    create_search_space = config["create_search_space"]["func"]
-    cs_kwargs = config["create_search_space"].get("kwargs")
+    space_class = config["search_space"]["class"]
+    cs_kwargs = config["search_space"].get("kwargs")
     if cs_kwargs is None:
-        search_space = create_search_space(input_shape, output_shape, seed=seed)
+        search_space = space_class(input_shape, output_shape, seed=seed)
     else:
-        search_space = create_search_space(
+        search_space = space_class(
             input_shape, output_shape, seed=seed, **cs_kwargs
         )
-    return search_space
-
-
-def setup_search_space(config, input_shape, output_shape, seed):
-
-    search_space = get_search_space(config, input_shape, output_shape, seed)
-
-    arch_seq = config["arch_seq"]
-    logging.info(f"actions list: {arch_seq}")
-    search_space.set_ops(arch_seq)
-
+    search_space.build()
     return search_space
 
 

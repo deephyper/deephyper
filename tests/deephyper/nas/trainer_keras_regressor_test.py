@@ -1,3 +1,4 @@
+from re import search
 import sys
 from random import random
 
@@ -41,7 +42,7 @@ def test_trainer_regressor_train_valid_with_one_input():
     arch_seq = [random() for i in range(search_space.num_nodes)]
     print("arch_seq: ", arch_seq)
     search_space.set_ops(arch_seq)
-    search_space.draw_graphviz("trainer_keras_regressor_test.dot")
+    search_space.plot("trainer_keras_regressor_test.dot")
 
     if config.get("preprocessing") is not None:
         preprocessing = util.load_attr_from(config["preprocessing"]["func"])
@@ -91,7 +92,7 @@ def test_trainer_regressor_train_valid_with_multiple_ndarray_inputs():
     arch_seq = [random() for i in range(search_space.num_nodes)]
     print("arch_seq: ", arch_seq)
     search_space.set_ops(arch_seq)
-    search_space.draw_graphviz("trainer_keras_regressor_test.dot")
+    search_space.plot("trainer_keras_regressor_test.dot")
 
     if config.get("preprocessing") is not None:
         preprocessing = util.load_attr_from(config["preprocessing"]["func"])
@@ -113,6 +114,7 @@ def test_trainer_regressor_train_valid_with_multiple_generator_inputs():
     from deephyper.nas.run._util import (
         load_config,
         setup_data,
+        get_search_space
     )
     from deephyper.benchmark.nas.linearRegMultiInputsGen.problem import Problem
 
@@ -122,25 +124,11 @@ def test_trainer_regressor_train_valid_with_multiple_generator_inputs():
 
     input_shape, output_shape = setup_data(config)
 
-    create_search_space = config["create_search_space"]["func"]
-    cs_kwargs = config["create_search_space"].get("kwargs")
-    if cs_kwargs is None:
-        search_space = create_search_space(input_shape, output_shape, seed=42)
-    else:
-        search_space = create_search_space(
-            input_shape, output_shape, seed=42, **cs_kwargs
-        )
-
-    arch_seq = [random() for i in range(search_space.num_nodes)]
-    config["arch_seq"] = arch_seq
-    search_space.set_ops(arch_seq)
+    search_space = get_search_space(config, input_shape, output_shape, 42)
 
     config["hyperparameters"]["num_epochs"] = 2
 
-    search_space.set_ops(arch_seq)
-    search_space.draw_graphviz("trainer_keras_regressor_test.dot")
-
-    model = search_space.create_model()
+    model = search_space.sample()
     plot_model(model, to_file="trainer_keras_regressor_test.png", show_shapes=True)
 
     trainer = BaseTrainer(config=config, model=model)

@@ -12,7 +12,7 @@ from deephyper.nas.run._util import (
     load_config,
     preproc_trainer,
     setup_data,
-    setup_search_space,
+    get_search_space,
     default_callbacks_config,
     HistorySaver,
 )
@@ -65,11 +65,11 @@ def run_base_trainer(config):
 
     input_shape, output_shape = setup_data(config)
 
-    search_space = setup_search_space(config, input_shape, output_shape, seed=seed)
+    search_space = get_search_space(config, input_shape, output_shape, seed=seed)
 
     model_created = False
     try:
-        model = search_space.create_model()
+        model = search_space.sample(config["arch_seq"])
         model_created = True
     except:
         logger.info("Error: Model creation failed...")

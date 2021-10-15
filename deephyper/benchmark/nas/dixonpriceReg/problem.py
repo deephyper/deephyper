@@ -1,11 +1,11 @@
 from deephyper.problem import NaProblem
 from deephyper.benchmark.nas.dixonpriceReg.load_data import load_data
 from deephyper.nas.preprocessing import minmaxstdscaler
-from deepspace.tabular import OneLayerFactory
+from deepspace.tabular import OneLayerSpace
 
 
 def create_search_space(input_shape=(10,), output_shape=(1,), **kwargs):
-    return OneLayerFactory()(input_shape, output_shape, **kwargs)
+    return OneLayerSpace()(input_shape, output_shape, **kwargs)
 
 
 Problem = NaProblem()
