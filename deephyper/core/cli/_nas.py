@@ -1,4 +1,8 @@
-"""Command line to execute neural architecture search or joint hyperparameter and neural architecture search.
+"""
+Neural Architecture Search
+--------------------------
+
+Command line to execute neural architecture search or joint hyperparameter and neural architecture search.
 
 .. code-block:: bash
 

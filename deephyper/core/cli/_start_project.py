@@ -1,4 +1,8 @@
-"""Command line to create a new DeepHyper project package. The package is automatically installed to the current virtual Python environment.
+"""
+Start a DeepHyper Project
+-------------------------
+
+Command line to create a new DeepHyper project package. The package is automatically installed to the current virtual Python environment.
 
 It can be used with:
 

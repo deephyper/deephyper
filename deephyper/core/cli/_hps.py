@@ -1,4 +1,8 @@
-"""Command line to execute hyperparameter search.
+"""
+Hyperparameter Search
+---------------------
+
+Command line to execute hyperparameter search.
 
 .. code-block:: bash
 

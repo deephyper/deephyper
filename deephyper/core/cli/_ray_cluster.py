@@ -1,4 +1,8 @@
-"""Command line to generate a Ray YAML config to then start a Ray cluster.
+"""
+Create a Ray Cluster Configuration File
+---------------------------------------
+
+Command line to generate a Ray YAML config to then start a Ray cluster.
 
 It can be used with:
 
