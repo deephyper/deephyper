@@ -143,7 +143,7 @@ class AgEBO(RegularizedEvolution):
                         sample = [population[i] for i in indexes]
 
                         # select_parent
-                        parent = self.select_parent(sample)
+                        parent = self._select_parent(sample)
 
                         # copy_mutate_parent
                         child = self._copy_mutate_arch(parent)

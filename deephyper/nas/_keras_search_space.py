@@ -1,12 +1,12 @@
 import copy
 import logging
+import warnings
 
 import networkx as nx
 import numpy as np
 import tensorflow as tf
 from deephyper.core.exceptions.nas.space import (
     InputShapeOfWrongType,
-    WrongOutputShape,
     WrongSequenceToSetOperations,
 )
 from deephyper.nas._nx_search_space import NxSearchSpace
@@ -149,7 +149,7 @@ class KSearchSpace(NxSearchSpace):
                 if tf.keras.backend.is_keras_tensor(out_T):
                     out_T_shape = out_T.type_spec.shape
                     if out_T_shape[1:] != out_S:
-                        logger.warning(str(WrongOutputShape(out_T_shape, out_S)))
+                        warnings.warn(f"The output tensor of shape {out_T_shape} doesn't match the expected shape {out_S}!", RuntimeWarning)
 
             input_tensors = [inode._tensor for inode in self.input_nodes]
 
@@ -159,9 +159,7 @@ class KSearchSpace(NxSearchSpace):
             if tf.keras.backend.is_keras_tensor(output_tensors):
                 output_tensors_shape = output_tensors.type_spec.shape
                 if output_tensors_shape[1:] != self.output_shape:
-                    logger.warning(
-                        str(WrongOutputShape(output_tensors_shape, self.output_shape))
-                    )
+                    warnings.warn(f"The output tensor of shape {output_tensors_shape} doesn't match the expected shape {self.output_shape}!", RuntimeWarning)
 
             input_tensors = [inode._tensor for inode in self.input_nodes]
 
