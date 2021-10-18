@@ -1,17 +1,12 @@
 deephyper.search.hps 
 =====================
 
+.. toctree::
+   :maxdepth: 4
+
+
 .. automodule:: deephyper.search.hps
    :members:
    :undoc-members:
    :show-inheritance:
-
-
-
-deephyper.search.hps.ambs 
---------------------------
-
-.. automodule:: deephyper.search.hps.ambs
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   :inherited-members:

@@ -17,7 +17,7 @@ DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neura
 
 
 Quick Start
------------
+===========
 
 The black-box function named ``run`` is defined by taking an input dictionnary named ``config`` which contains the different variables to optimize. Then the run-function is binded to an ``Evaluator`` in charge of distributing the computation of multiple evaluations. Finally, a Bayesian search named ``AMBS`` is created and executed to find the values of config which maximize the return value of ``run(config)``.
 
@@ -32,7 +32,7 @@ The black-box function named ``run`` is defined by taking an input dictionnary n
     if __name__ == "__main__":
         from deephyper.problem import HpProblem
         from deephyper.search.hps import AMBS
-        from deephyper.evaluator.evaluate import Evaluator
+        from deephyper.evaluator import Evaluator
 
         # define the variable you want to optimize
         problem = HpProblem()
@@ -71,6 +71,9 @@ Which outputs the following where the best ``x`` found is clearly around ``0``.
     98  0.009660  99  -0.000093     9.638016  0.092450
 
 
+Table of Contents
+=================
+
 .. toctree::
     :maxdepth: 2
     :titlesonly:
@@ -94,10 +97,13 @@ Which outputs the following where the best ``x`` found is clearly around ``0``.
     Sklearn <api/deephyper.sklearn>
 
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 2
     :caption: Developer Guides
+    :glob:
 
-    tests_link
+    developer_guides/dev
+    developer_guides/doc
+    developer_guides/tests_link
 
 Indices and tables
 ==================

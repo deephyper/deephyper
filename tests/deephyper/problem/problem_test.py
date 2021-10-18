@@ -1,12 +1,7 @@
 import pytest
-from deephyper.core.exceptions.problem import (
-    SpaceDimNameOfWrongType,
-    SearchSpaceBuilderMissingParameter,
-    SearchSpaceBuilderIsNotCallable,
-    SearchSpaceBuilderMissingDefaultParameter,
-    NaProblemError,
-    WrongProblemObjective,
-)
+from deephyper.core.exceptions.problem import (NaProblemError,
+                                               SpaceDimNameOfWrongType)
+from deepspace.tabular import OneLayerSpace
 
 
 @pytest.mark.incremental
@@ -89,6 +84,16 @@ class TestHpProblem:
 
         pb.add_starting_point(dim0=0, dim1=0.0, dim2="a")
 
+    def test_config_space_hp(self):
+        import ConfigSpace.hyperparameters as csh
+        from deephyper.problem import HpProblem
+
+        alpha = csh.UniformFloatHyperparameter(name="alpha", lower=0, upper=1)
+        beta = csh.UniformFloatHyperparameter(name="beta", lower=0, upper=1)
+
+        pb = HpProblem()
+        pb.add_hyperparameters([alpha, beta])
+
 
 @pytest.mark.incremental
 class TestNaProblem:
@@ -105,23 +110,14 @@ class TestNaProblem:
 
         pb = NaProblem()
 
-        with pytest.raises(SearchSpaceBuilderIsNotCallable):
-            pb.search_space(func="a")
+        with pytest.raises(TypeError):
+            pb.search_space(space_class="a")
 
-        def dummy(a, b):
-            return
-
-        with pytest.raises(SearchSpaceBuilderMissingParameter):
-            pb.search_space(func=dummy)
-
-        def dummy(input_shape=(1,), output_shape=(1,)):
-            return
-
-        pb.search_space(func=dummy)
+        pb.search_space(OneLayerSpace)
 
     def test_full_problem(self):
-        from deephyper.problem import NaProblem
         from deephyper.nas.preprocessing import minmaxstdscaler
+        from deephyper.problem import NaProblem
 
         pb = NaProblem()
 
@@ -132,10 +128,7 @@ class TestNaProblem:
 
         pb.preprocessing(minmaxstdscaler)
 
-        def search_space(input_shape=(1,), output_shape=(1,)):
-            return
-
-        pb.search_space(search_space)
+        pb.search_space(OneLayerSpace)
 
         pb.hyperparameters(
             batch_size=64,
@@ -154,22 +147,3 @@ class TestNaProblem:
         possible_objective = ["loss", "val_loss", "r2", "val_r2"]
         for obj in possible_objective:
             pb.objective(obj)
-
-        pb.post_training(
-            num_epochs=2000,
-            metrics=["mse", "r2"],
-            callbacks=dict(
-                ModelCheckpoint={
-                    "monitor": "val_r2",
-                    "mode": "max",
-                    "save_best_only": True,
-                    "verbose": 1,
-                },
-                EarlyStopping={
-                    "monitor": "val_r2",
-                    "mode": "max",
-                    "verbose": 1,
-                    "patience": 50,
-                },
-            ),
-        )

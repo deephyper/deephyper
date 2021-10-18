@@ -1,5 +1,25 @@
 """
-A command line to extract the top-k best configuration from a DeepHyper execution::
+A command line to extract the top-k best configuration from a DeepHyper execution.
+
+It can be used with:
+
+.. code-block:: console
+
+    $ deephyper-analytics --help
+    usage: deephyper-analytics topk [-h] [-k K] [-o OUTPUT] path
+
+    positional arguments:
+    path                  Path to the input CSV file.
+
+    optional arguments:
+    -h, --help            show this help message and exit
+    -k K                  Number of best configurations to output in decreasing order of best objective.
+    -o OUTPUT, --output OUTPUT
+                            Path to the output file.
+
+An example usage is:
+
+.. code-block:: console
 
     $ deephyper-analytics topk combo_8gpu_8_agebo/infos/results.csv -k 2
     '0':
@@ -34,6 +54,9 @@ from deephyper.core.exceptions import DeephyperRuntimeError
 
 
 def add_subparser(subparsers):
+    """
+    :meta private:
+    """
     subparser_name = "topk"
     function_to_call = main
 
@@ -63,6 +86,8 @@ def add_subparser(subparsers):
 def output_best_configuration(path: str, output: str, k: int, **kwargs) -> None:
     """Output the configuration based on the maximal objective found in the CSV input file.
 
+    :meta private:
+
     Args:
         path (str): Path of the CSV input file.
         output (str): Path of the output file ending in (.csv|.yaml|.json).
@@ -74,26 +99,6 @@ def output_best_configuration(path: str, output: str, k: int, **kwargs) -> None:
         df = pd.read_csv(path)
         df = df.sort_values(by=["objective"], ascending=False, ignore_index=True)
         subdf = df.iloc[:k]
-
-        # if not ("arch_seq" in subdf.columns):
-
-        #     try:
-        #         if (subdf.to_numpy()[:, :-3] < 1).all():
-        #             conv_type = float
-        #         else:
-        #             conv_type = int
-
-        #         subdf = pd.DataFrame(
-        #             {
-        #                 "arch_seq": [
-        #                     str(list(el)) for el in subdf.to_numpy()[:, :-3].astype(conv_type)
-        #                 ],
-        #                 "objective": subdf.objective.tolist(),
-        #                 "elapsed_sec": subdf.elapsed_sec.tolist(),
-        #                 "duration": subdf.duration.tolist()
-        #             }
-        #         )
-        #     except TypeError: pass
 
         if len(output) == 0:
             print(yaml.dump(json.loads(subdf.to_json(orient="index"))))
@@ -117,5 +122,8 @@ def output_best_configuration(path: str, output: str, k: int, **kwargs) -> None:
 
 
 def main(*args, **kwargs):
+    """
+    :meta private:
+    """
 
     output_best_configuration(**kwargs)

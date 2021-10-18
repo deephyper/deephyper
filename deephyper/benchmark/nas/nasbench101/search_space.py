@@ -19,7 +19,7 @@ class NxSearchSpace:
         self.graph = nx.DiGraph()
         self.seed = seed
 
-    def draw_graphviz(self, path):
+    def plot(self, path):
         with open(path, "w") as f:
             try:
                 nx.nx_agraph.write_dot(self.graph, f)

@@ -1,107 +1,104 @@
-Theta (ALCF)
-************
+Theta (Argonne LCF)
+*******************
 
-`Theta <https://www.alcf.anl.gov/theta>`_ is a 11.69 petaflops system based on the second-generation Intel Xeon Phi processor at Argonne Leadership Computing Facility (ALCF).
-It serves as a stepping stone to the ALCF's next leadership-class supercomputer, Aurora.
-Theta is a massively parallel, many-core system based on Intel processors and interconnect technology, a new memory search_space,
-and a Lustre-based parallel file system, all integrated by Cray’s HPC software stack.
+`Theta <https://www.alcf.anl.gov/theta>`_ is a 11.69 petaflops system based on the second-generation Intel Xeon Phi processor at Argonne Leadership Computing Facility (ALCF). It serves as a stepping stone to the ALCF's next leadership-class supercomputer, Aurora.
+Theta is a massively parallel, many-core system based on Intel processors and interconnect technology, a new memory space, and a Lustre-based parallel file system, all integrated by Cray’s HPC software stack.
 
-.. _theta-user-installation:
+.. _theta-module-installation:
 
-User installation
+Already installed module
+========================
+
+This installation procedure shows you how to access the installed DeepHyper module on Theta. After logging in Theta, to access Deephyper run the following commands:
+
+.. code-block:: console
+
+    $ module load conda/2021-09-22
+    $ conda activate base
+
+Then to verify the installation do:
+
+.. code-block:: console
+
+    $ python
+    >>> import deephyper
+    >>> deephyper.__version__
+    '0.3.0'
+
+.. _theta-conda-environment:
+
+Conda environment
 =================
 
-Before installating DeepHyper, go to your project folder::
+This installation procedure shows you how to create your own Conda virtual environment and install DeepHyper in it.
 
-    cd /lus/theta-fs0/projects/PROJECTNAME
-    mkdir theta && cd theta/
+.. admonition:: Storage/File Systems
+    :class: dropdown, important
 
-DeepHyper can be installed on Theta by following these commands::
+    It is important to run the following commands from the appropriate storage space because some features of DeepHyper can generate a consequent quantity of data such as model checkpointing. The storage spaces available at the ALCF are:
 
-    git clone https://github.com/deephyper/deephyper.git --depth 1
-    ./deephyper/install/theta.sh
+    - ``/lus/grand/projects/``
+    - ``/lus/eagle/projects/``
+    - ``/lus/theta-fs0/projects/``
 
-Then, restart your session.
+    For more details refer to `ALCF Documentation <https://www.alcf.anl.gov/support-center/theta/theta-file-systems>`_.
 
-.. warning::
-    You will note that a new file ``~/.bashrc_theta`` was created and sourced in the ``~/.bashrc``. This is to avoid conflicting installations between the different systems available at the ALCF.
+After logging in Theta, go to your project folder (replace ``PROJECTNAME`` by your own project name):
+
+.. code-block:: console
+
+    $ cd /lus/theta-fs0/projects/PROJECTNAME
+
+Then create the ``dhknl`` environment:
+
+.. code-block:: console
+
+    $ module load miniconda-3
+    $ conda create -p dhknl python=3.8 -y
+    $ conda activate dhknl/
+
+It is then required to have the following additionnal dependencies:
+
+.. code-block:: console
+
+    $ conda install gxx_linux-64 gcc_linux-64 -y
+
+Finally install DeepHyper in the previously created ``dhknl`` environment:
+
+.. code-block:: console
+
+    $ pip install pip --upgrade
+    $ # DeepHyper + Analytics Tools (Parsing logs, Plots, Notebooks)
+    $ pip install deephyper[analytics]
+    $ conda install tensorflow -c intel -y
+
 
 .. note::
-    To test your installation run::
-
-        ./deephyper/tests/system/test_theta.sh
+    Horovod can be installed to use data-parallelism during the evaluations of DeepHyper. To do so use ``pip install deephyper[analytics,hvd]`` while or after installing.
 
 
-A manual installation can also be performed with the following set of commands::
+Jupyter Notebooks
+=================
 
-    module load postgresql
-    module load miniconda-3
-    conda create -p dh-theta python=3.8 -y
-    conda activate dh-theta/
-    conda install gxx_linux-64 gcc_linux-64 -y
-    # DeepHyper + Analytics Tools (Parsing logs, Plots, Notebooks)
-    pip install deephyper[analytics,balsam]
-    conda install tensorflow -c intel -y
+To use Jupyter notebooks on Theta go to `Theta Jupyter <https://jupyter.alcf.anl.gov/theta>`_ and use your regular authentication method. The `Jupyter Hub tutorial <https://www.alcf.anl.gov/user-guides/jupyter-hub>`_ from Argonne Leadership Computing Facility might help you in case of troubles.
 
+To create a custom Jupyter kernel run the following from your activated Conda environment:
 
+.. code-block:: console
+
+    $ python -m ipykernel install --user --name deephyper --display-name "Python (deephyper)"
 
 
-.. note::
-    Horovod can be installed to use data-parallelism during the evaluations of DeepHyper. To do so use ``pip install deephyper[analytics,hvd,balsam]`` while or after installing.
-
-
-Analytics
----------
-
-Follow the installation like :ref:`analytics-local-install` to create a new IPython kernel.
-Then go to `Theta Jupyter <https://jupyter.alcf.anl.gov/theta>`_ and use
-your regular authentication method. The `Jupyter Hub tutorial <https://www.alcf.anl.gov/user-guides/jupyter-hub>`_
-from Argonne Leadership Computing Facility might help you in case of troubles.
-
-.. WARNING::
-
-    Now when openning a generated notebook make sure to use the *"Python (deephyper)"* kernel before executing otherwise you will not have all required dependencies.
+Now when openning a notebook from Jupyter Hub at ALCF make sure to use the ``Python (deephyper)`` kernel before executing otherwise you will not have all required dependencies.
 
 
 Developer installation
 ======================
 
-1. Load the miniconda module::
+Follow the :ref:`theta-conda-environment` installation and replace ``pip install deephyper[analytics]`` by:
 
-    module load miniconda-3
+.. code-block:: console
 
-.. note::
-    The miniconda module is using the `Intel channel <https://software.intel.com/en-us/articles/using-intel-distribution-for-python-with-anaconda>`_ which has optimized wheels using MKL/DNN (available on KNL nodes with Xeon Phi CPU) for some packages.
-
-2. Create a virtual environment for your deephyper installation as a developer::
-
-    conda create -p dh-env --clone base
-
-3. Activate this freshly created virtual environment::
-
-    conda activate dh-env
-
-4. Clone the deephyper repo::
-
-    git clone https://github.com/deephyper/deephyper.git deephyper_repo/
-
-5. Go to the root directory of the repo::
-
-    cd deephyper_repo/
-
-
-6. Switch to the develop branch::
-
-    git checkout develop
-
-7. Install the package (with analytics support)::
-
-    pip install -e .['analytics']
-
-
-8. Install an ipython kernel for analytics support::
-
-    pip install ipykernel
-
-    python -m ipykernel install --user --name deephyper-dev-env --display-name "Python deephyper-dev-env"
-
+    $ git clone https://github.com/deephyper/deephyper.git
+    $ cd deephyper/ && git checkout develop
+    $ pip install -e ".[dev,analytics]"

@@ -1,5 +1,5 @@
 """
-DeepHyper is a distributed machine learning (`AutoML <https://en.wikipedia.org/wiki/Automated_machine_learning>`_) package for automating the developement of deep neural networks for scientific applications. It can run on a single laptop as well as on 1,000 of nodes.
+DeepHyper is a distributed machine learning (`AutoML <https://en.wikipedia.org/wiki/Automated_machine_learning>`_) package for automating the development of deep neural networks for scientific applications. It can run on a single laptop as well as on 1,000 of nodes.
 
 It comprises different tools such as:
 
@@ -18,16 +18,11 @@ It comprises three main modules:
 DeepHyper installation requires **Python >= 3.7**.
 
 """
-import os
 import warnings
 from deephyper.__version__ import __version__, __version_suffix__
 
 name = "deephyper"
 version = __version__
-
-# ! Check if a balsam db is connected or not
-if os.environ.get("BALSAM_DB_PATH") is None:
-    os.environ["BALSAM_SPHINX_DOC_BUILD_ONLY"] = "TRUE"
 
 # Suppress warnings from skopt using deprecated sklearn API
 warnings.filterwarnings(
