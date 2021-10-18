@@ -27,4 +27,6 @@ class Job:
         return f"Job(id={self.id}, status={self.status}, config={self.config})"
 
     def __getitem__(self, index):
-        return (self.config, self.result)[index]
+        cfg = copy.deepcopy(self.config)
+        cfg.pop("id")
+        return (cfg, self.result)[index]
