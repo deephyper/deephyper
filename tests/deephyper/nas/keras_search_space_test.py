@@ -1,94 +1,69 @@
 import pytest
-from deephyper.core.exceptions.nas.space import WrongOutputShape
+import tensorflow as tf
+from deephyper.nas import KSearchSpace
+from deephyper.nas.node import ConstantNode, VariableNode
+from deephyper.nas.operation import operation, Concatenate
 
-
+Dense = operation(tf.keras.layers.Dense)
 @pytest.mark.incremental
 class TestKSearchSpace:
-    def test_import(self):
-        from deephyper.nas import KSearchSpace
 
     def test_create(self):
-        from deephyper.nas import KSearchSpace
 
-        KSearchSpace((5,), (1,))
+        class TestSpace(KSearchSpace):
+            def __init__(self, input_shape, output_shape):
+                super().__init__(input_shape, output_shape)
 
-    def test_create_one_vnode(self):
-        from deephyper.nas import KSearchSpace
+            def build(self):
+                vnode = VariableNode()
 
-        struct = KSearchSpace((5,), (1,))
+                self.connect(self.input_nodes[0], vnode)
 
-        from deephyper.nas.node import VariableNode
+                vnode.add_op(Dense(1))
 
-        vnode = VariableNode()
+                return self
 
-        struct.connect(struct.input_nodes[0], vnode)
-
-        import tensorflow as tf
-        from deephyper.nas.operation import operation
-
-        Dense = operation(tf.keras.layers.Dense)
-
-        vnode.add_op(Dense(1))
-
-        struct.set_ops([0])
-
-        falias = "test_keras_search_spaceure"
-        struct.plot(f"{falias}.dot")
-
-        model = struct.create_model()
-        from tensorflow.keras.utils import plot_model
-
-        plot_model(model, to_file=f"{falias}.png", show_shapes=True)
+        space = TestSpace((5,), (1,)).build()
+        model = space.sample()
 
     def test_create_more_nodes(self):
-        from deephyper.nas import KSearchSpace
-        from deephyper.nas.node import VariableNode
 
-        import tensorflow as tf
-        from deephyper.nas.operation import operation
+        class TestSpace(KSearchSpace):
+            def __init__(self, input_shape, output_shape):
+                super().__init__(input_shape, output_shape)
 
-        Dense = operation(tf.keras.layers.Dense)
+            def build(self):
+                vnode1 = VariableNode()
+                self.connect(self.input_nodes[0], vnode1)
 
-        struct = KSearchSpace((5,), (1,))
+                vnode1.add_op(Dense(10))
 
-        vnode1 = VariableNode()
-        struct.connect(struct.input_nodes[0], vnode1)
+                vnode2 = VariableNode()
+                vnode2.add_op(Dense(1))
 
-        vnode1.add_op(Dense(10))
+                self.connect(vnode1, vnode2)
 
-        vnode2 = VariableNode()
-        vnode2.add_op(Dense(1))
+                return self
 
-        struct.connect(vnode1, vnode2)
-
-        struct.set_ops([0, 0])
-
-        falias = "test_keras_search_spaceure"
-        struct.plot(f"{falias}.dot")
-
-        model = struct.create_model()
-        from tensorflow.keras.utils import plot_model
-
-        plot_model(model, to_file=f"{falias}.png", show_shapes=True)
+        space = TestSpace((5,), (1,)).build()
+        model = space.sample()
 
     def test_create_multiple_inputs_with_one_vnode(self):
-        import tensorflow as tf
-        from deephyper.nas import KSearchSpace
-        from deephyper.nas.node import VariableNode, ConstantNode
-        from deephyper.nas.operation import operation, Concatenate
 
-        Dense = operation(tf.keras.layers.Dense)
+        class TestSpace(KSearchSpace):
+            def __init__(self, input_shape, output_shape):
+                super().__init__(input_shape, output_shape)
 
-        struct = KSearchSpace([(5,), (5,)], (1,))
+            def build(self):
+                merge = ConstantNode()
+                merge.set_op(Concatenate(self, self.input_nodes))
 
-        merge = ConstantNode()
-        merge.set_op(Concatenate(struct, struct.input_nodes))
+                vnode1 = VariableNode()
+                self.connect(merge, vnode1)
 
-        vnode1 = VariableNode()
-        struct.connect(merge, vnode1)
+                vnode1.add_op(Dense(1))
 
-        vnode1.add_op(Dense(1))
+                return self
 
-        struct.set_ops([0])
-
-        struct.create_model()
+        space = TestSpace([(5,), (5,)], (1,)).build()
+        model = space.sample()

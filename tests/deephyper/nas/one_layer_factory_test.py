@@ -1,5 +1,6 @@
 def test_search_space():
     from deepspace.tabular import OneLayerSpace
 
-    OneLayerSpace().test(input_shape=(10,), output_shape=(1,))
+    space = OneLayerSpace(input_shape=(10,), output_shape=(1,)).build()
+    model = space.sample()
 
