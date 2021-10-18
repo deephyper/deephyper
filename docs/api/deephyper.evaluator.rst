@@ -1,4 +1,4 @@
-deephyper.evaluator 
+deephyper.evaluator
 ====================
 
 .. toctree::

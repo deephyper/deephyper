@@ -4,8 +4,8 @@ from deephyper.nas.preprocessing import minmaxstdscaler
 from deepspace.tabular import OneLayerSpace
 
 
-def create_search_space(input_shape=(10,), output_shape=(1,), **kwargs):
-    return OneLayerSpace()(input_shape, output_shape, **kwargs)
+#def create_search_space(input_shape=(10,), output_shape=(1,), **kwargs):
+#    return OneLayerSpace()(input_shape, output_shape, **kwargs)
 
 
 Problem = NaProblem()
@@ -14,7 +14,7 @@ Problem.load_data(load_data)
 
 Problem.preprocessing(minmaxstdscaler)
 
-Problem.search_space(create_search_space)
+Problem.search_space(OneLayerSpace)
 
 Problem.hyperparameters(
     batch_size=100, learning_rate=0.1, optimizer="adam", num_epochs=10

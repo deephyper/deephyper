@@ -4,10 +4,6 @@ from deephyper.benchmark.nas.covertype.load_data import load_data
 from deephyper.problem import NaProblem
 from deepspace.tabular import DenseSkipCoSpace
 
-
-def create_search_space(input_shape, output_shape, **kwargs):
-    return DenseSkipCoSpace()(input_shape, output_shape, **kwargs)
-
 # from deephyper.nas.preprocessing import minmaxstdscaler
 
 Problem = NaProblem(seed=2019)
@@ -16,7 +12,7 @@ Problem.load_data(load_data)
 
 # Problem.preprocessing(minmaxstdscaler)
 
-Problem.search_space(create_search_space, num_layers=10, regression=False, bn=False)
+Problem.search_space(DenseSkipCoSpace, num_layers=10, regression=False, bn=False)
 
 Problem.hyperparameters(
     batch_size=256,

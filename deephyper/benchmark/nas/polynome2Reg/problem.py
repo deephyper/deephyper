@@ -3,17 +3,13 @@ from deephyper.benchmark.nas.polynome2Reg.load_data import load_data
 from deephyper.nas.preprocessing import minmaxstdscaler
 from deepspace.tabular import DenseSkipCoSpace
 
-
-def create_search_space(input_shape, output_shape, **kwargs):
-    return DenseSkipCoSpace()(input_shape, output_shape, **kwargs)
-
 Problem = NaProblem()
 
 Problem.load_data(load_data)
 
 Problem.preprocessing(minmaxstdscaler)
 
-Problem.search_space(create_search_space, num_layers=3)
+Problem.search_space(DenseSkipCoSpace, num_layers=3)
 
 Problem.hyperparameters(
     batch_size=100, learning_rate=0.1, optimizer="adam", num_epochs=10

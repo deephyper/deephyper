@@ -1,4 +1,4 @@
-from deephyper.nas.run.alpha import run
+from deephyper.nas.run import run_base_trainer
 from deephyper.benchmark.nas.linearReg import Problem
 
 
@@ -11,7 +11,7 @@ def test_single_loss():
     # Baseline
     config["arch_seq"] = [0.5]
 
-    run(config)
+    run_base_trainer(config)
 
 
 if __name__ == "__main__":
