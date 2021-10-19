@@ -12,7 +12,7 @@ from deephyper.search._search import Search
 
 # Adapt minimization -> maximization with DeepHyper
 MAP_liar_strategy = {"cl_min": "cl_max", "cl_max": "cl_min"}
-MAP_surrogate_model = {
+MAP_acq_func = {
     "UCB": "LCB",
 }
 
@@ -80,16 +80,14 @@ class AMBS(Search):
             raise ValueError(f"Parameter 'n_jobs' should be an integer value!")
 
         self._n_initial_points = self._evaluator.num_workers
-        self._liar_strategy = MAP_liar_strategy.get(liar_strategy, default=liar_strategy)
+        self._liar_strategy = MAP_liar_strategy.get(liar_strategy, liar_strategy)
         self._fitted = False
 
         self._opt = None
         self._opt_kwargs = dict(
             dimensions=self._problem.space,
-            base_estimator=self.get_surrogate_model(
-                MAP_surrogate_model.get(surrogate_model, surrogate_model), n_jobs
-            ),
-            acq_func=acq_func,
+            base_estimator=self.get_surrogate_model(surrogate_model, n_jobs),
+            acq_func=MAP_acq_func.get(acq_func, acq_func),
             acq_optimizer="sampling",
             acq_func_kwargs={"xi": xi, "kappa": kappa, "n_points": n_points},
             n_initial_points=self._n_initial_points,
