@@ -1,3 +1,5 @@
+import abc
+import copy
 import logging
 import os
 import pathlib
@@ -8,13 +10,31 @@ import pandas as pd
 from deephyper.core.exceptions import SearchTerminationError
 
 
-class Search:
+class Search(abc.ABC):
+    """Abstract class which represents a search algorithm.
+
+    Args:
+        problem ([type]): [description]
+        evaluator ([type]): [description]
+        random_state ([type], optional): [description]. Defaults to None.
+        log_dir (str, optional): [description]. Defaults to ".".
+        verbose (int, optional): [description]. Defaults to 0.
+    """
     def __init__(
-        self, problem, evaluator, seed=None, log_dir=".", verbose=0, **kwargs
+        self, problem, evaluator, random_state=None, log_dir=".", verbose=0, **kwargs
     ):
-        self._problem = problem
+
+        self._problem = copy.deepcopy(problem)
         self._evaluator = evaluator
-        self._random_state = np.random.RandomState(seed)
+        self._seed = None
+
+        if type(random_state) is int:
+            self._seed = random_state
+            self._random_state = np.random.RandomState(random_state)
+        elif isinstance(random_state, np.random.RandomState):
+            self._random_state = random_state
+        else:
+            self._random_state = np.random.RandomState()
 
         # Create logging directory if does not exist
         self._log_dir = os.path.abspath(log_dir)
@@ -64,5 +84,11 @@ class Search:
         df_results = pd.read_csv("results.csv")
         return df_results
 
+    @abc.abstractmethod
     def _search(self, max_evals, timeout):
-        raise NotImplementedError
+        """Search algorithm to be implemented.
+
+        Args:
+            max_evals (int, optional): The maximum number of evaluations of the run function to perform before stopping the search. Defaults to -1, will run indefinitely.
+            timeout (int, optional): The time budget of the search before stopping.Defaults to None, will not impose a time budget.
+        """
