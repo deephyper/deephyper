@@ -146,8 +146,9 @@ def main(**kwargs):
     base_arguments = ["num_workers", "callbacks"]
     evaluator_kwargs = {k:kwargs.pop(k) for k in base_arguments}
 
+    # remove the arguments from unused evaluator
     for method in EVALUATORS.keys():
-        evaluator_method_kwargs = {k:kwargs.pop(k) for k in kwargs.copy() if method in k}
+        evaluator_method_kwargs = {k[len(evaluator_method)+1:]:kwargs.pop(k) for k in kwargs.copy() if method in k}
         if method == evaluator_method:
             evaluator_kwargs = {**evaluator_kwargs, **evaluator_method_kwargs}
 
