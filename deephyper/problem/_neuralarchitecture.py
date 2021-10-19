@@ -49,16 +49,16 @@ class NaProblem:
     >>> Problem.objective('val_r2__last')
 
     Args:
-        regression (bool): if ``True`` the problem is defined as a ``regression`` problem, if ``False`` the problem is defined as a ``classification`` problem.
+        seed (int, optional): a random seed for hyperparameter sampling.
     """
 
-    def __init__(self, seed=None, log_dir=None, **kwargs):
+    def __init__(self, seed=None, **kwargs):
         self._space = OrderedDict()
         self._hp_space = HpProblem(seed)
         self.seed = seed
         self._space["metrics"] = []
         self._space["hyperparameters"] = dict(verbose=0)
-        self._space["log_dir"] = log_dir
+        self._space["log_dir"] = "."
 
     def __repr__(self):
 
