@@ -1,4 +1,7 @@
 """
+Top-K Configuration
+-------------------
+
 A command line to extract the top-k best configuration from a DeepHyper execution.
 
 It can be used with:
