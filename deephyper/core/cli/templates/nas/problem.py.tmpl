@@ -1,15 +1,16 @@
 from deephyper.problem import NaProblem
 from {{ pckg }}.{{ pb_folder }}.load_data import load_data
-from {{ pckg }}.{{ pb_folder }}.search_space import create_search_space
+from {{ pckg }}.{{ pb_folder }}.search_space import DenseSkipCoSpace
 from deephyper.nas.preprocessing import minmaxstdscaler
 
-problem = NaProblem(seed=2019)
+
+problem = NaProblem()
 
 problem.load_data(load_data)
 
 problem.preprocessing(minmaxstdscaler)
 
-problem.search_space(create_search_space, num_layers=3)
+problem.search_space(DenseSkipCoSpace)
 
 problem.hyperparameters(
     batch_size=32,

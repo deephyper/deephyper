@@ -10,8 +10,8 @@ It can be used with:
 
     $ deephyper new-problem hps problem_name
 """
-import os
 import glob
+import os
 import pathlib
 
 from jinja2 import Template
