@@ -23,11 +23,8 @@ class Random(NeuralArchitectureSearch):
     ):
         super().__init__(problem, evaluator, random_state, log_dir, verbose)
 
-        self.pb_dict = self._problem.space
-        search_space = self._problem.build_search_space()
-        self.space_list = [
-            (0, vnode.num_ops - 1) for vnode in search_space.variable_nodes
-        ]
+        # NAS search space
+        self._space_list = self._problem.build_search_space().choices()
 
     def _saved_keys(self, job):
 
@@ -78,9 +75,10 @@ class Random(NeuralArchitectureSearch):
             arch_seq = self._gen_random_arch()
             hp_values = list(dict(hp_values_samples[i]).values())
             config = self._problem.gen_config(arch_seq, hp_values)
+            config = self._add_default_keys(config)
             batch.append(config)
 
         return batch
 
     def _gen_random_arch(self) -> list:
-        return [self._random_state.choice(b + 1) for (_, b) in self.space_list]
+        return [self._random_state.choice(b + 1) for (_, b) in self._space_list]

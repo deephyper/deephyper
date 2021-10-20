@@ -85,7 +85,7 @@ Table of Contents
 
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
     :caption: API Reference
 
     Core <api/deephyper.core>

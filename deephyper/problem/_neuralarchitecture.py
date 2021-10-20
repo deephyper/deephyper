@@ -1,6 +1,6 @@
 from collections import OrderedDict
-from inspect import signature
 from copy import deepcopy
+from inspect import signature
 
 import ConfigSpace.hyperparameters as csh
 import tensorflow as tf
@@ -49,16 +49,16 @@ class NaProblem:
     >>> Problem.objective('val_r2__last')
 
     Args:
-        regression (bool): if ``True`` the problem is defined as a ``regression`` problem, if ``False`` the problem is defined as a ``classification`` problem.
+        seed (int, optional): a random seed for hyperparameter sampling.
     """
 
-    def __init__(self, seed=None, log_dir=None, **kwargs):
+    def __init__(self, seed=None, **kwargs):
         self._space = OrderedDict()
         self._hp_space = HpProblem(seed)
         self.seed = seed
         self._space["metrics"] = []
         self._space["hyperparameters"] = dict(verbose=0)
-        self._space["log_dir"] = log_dir
+        self._space["log_dir"] = "."
 
     def __repr__(self):
 
@@ -316,6 +316,15 @@ class NaProblem:
                 )
             )
 
+        It is possible to define a different loss for each output:
+
+        .. code-block:: python
+
+            problem.loss(
+                loss={"output_0": "mse", "output_1": "mse"},
+                loss_weights={"output_0": 0.0, "output_1": 1.0},
+            )
+
         Args:
             loss (str or callable orlist): a string indicating a specific loss function.
             loss_weights (list): Optional.
@@ -505,8 +514,7 @@ class NaProblem:
         return config
 
     def extract_hp_values(self, config):
-        """Extract the value of hyperparameters present in ``config`` based on the defined hyperparameters in the current ``NaProblem``
-        """
+        """Extract the value of hyperparameters present in ``config`` based on the defined hyperparameters in the current ``NaProblem``"""
         hp_names = self._hp_space._space.get_hyperparameter_names()
         hp_values = []
         for hp_name in hp_names:

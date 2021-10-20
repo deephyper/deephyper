@@ -15,8 +15,6 @@ It can be used in the shell with:
         hps                 Command line to run hyperparameter search.
         nas                 Command line to run neural architecture search.
         new-problem         Tool to init an hyper-parameter search package or a neural architecture search problem folder.
-        ray-cluster         Manipulate a Ray cluster.
-        ray-submit          Create and submit an HPS or NAS job directly via Ray.
         start-project       Set up a new project folder for DeepHyper benchmarks
 
     optional arguments:
@@ -24,8 +22,7 @@ It can be used in the shell with:
 """
 import argparse
 
-from deephyper.core.cli import (_hps, _nas, _new_problem, _ray_cluster,
-                                _ray_submit, _start_project)
+from deephyper.core.cli import _hps, _nas, _new_problem, _start_project
 
 
 def create_parser():
@@ -44,12 +41,6 @@ def create_parser():
 
     # new-problem
     _new_problem.add_subparser(subparsers)
-
-    # ray-cluster
-    _ray_cluster.add_subparser(subparsers)
-
-    # ray-submit
-    _ray_submit.add_subparser(subparsers)
 
     # start-project
     _start_project.add_subparser(subparsers)

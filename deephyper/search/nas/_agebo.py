@@ -3,7 +3,6 @@ import collections
 import numpy as np
 import skopt
 
-from deephyper.core.parser import str2bool
 from deephyper.search.nas._regevo import RegularizedEvolution
 
 
@@ -69,17 +68,23 @@ class AgEBO(RegularizedEvolution):
         self._liar_strategy = liar_strategy
 
         if len(self._problem._hp_space._space) == 0:
-            raise ValueError("No hyperparameter space was defined for this problem.")
+            raise ValueError(
+                "No hyperparameter space was defined for this problem use 'RegularizedEvolution' instead!"
+            )
 
+        base_estimator = self._get_surrogate_model(
+            surrogate_model, n_jobs,
+            random_state=self._random_state.get_state()[1][0]
+        )
         self._hp_opt = None
         self._hp_opt_kwargs = dict(
             dimensions=self._problem._hp_space._space,
-            base_estimator=self._get_surrogate_model(surrogate_model, n_jobs),
+            base_estimator=base_estimator,
             acq_func=acq_func,
             acq_optimizer="sampling",
             acq_func_kwargs={"xi": float(xi), "kappa": float(kappa)},
             n_initial_points=self._n_initial_points,
-            random_state=self._random_state,
+            random_state=self._random_state.get_state()[1][0],
         )
 
     def _setup_hp_optimizer(self):
@@ -137,13 +142,13 @@ class AgEBO(RegularizedEvolution):
                     # For each new parent/result we create a child from it
                     for new_i in range(len(new_results)):
                         # select_sample
-                        indexes = np.random.choice(
+                        indexes = self._random_state.choice(
                             self._population_size, self._sample_size, replace=False
                         )
                         sample = [population[i] for i in indexes]
 
                         # select_parent
-                        parent = self.select_parent(sample)
+                        parent = self._select_parent(sample)
 
                         # copy_mutate_parent
                         child = self._copy_mutate_arch(parent)
@@ -159,7 +164,7 @@ class AgEBO(RegularizedEvolution):
                         hp_results_X.append(new_i_hp_values)
                         hp_results_y.append(-new_i_y)
 
-                    hp_results_y = np.minimum(hp_results_y, 1e3).tolist()  #! TODO
+                    hp_results_y = np.minimum(hp_results_y, 1e3).tolist()  #TODO: ?
 
                     self._hp_opt.tell(hp_results_X, hp_results_y)  #! fit: costly
                     new_hps = self._hp_opt.ask(
@@ -223,19 +228,21 @@ class AgEBO(RegularizedEvolution):
             dict: embedding of the mutated architecture of the child.
 
         """
-        i = np.random.choice(len(parent_arch))
+        i = self._random_state.choice(len(parent_arch))
         child_arch = parent_arch[:]
 
         range_upper_bound = self.space_list[i][1]
         elements = [j for j in range(range_upper_bound + 1) if j != child_arch[i]]
 
         # The mutation has to create a different search_space!
-        sample = np.random.choice(elements, 1)[0]
+        sample = self._random_state.choice(elements, 1)[0]
 
         child_arch[i] = sample
         return child_arch
 
-    def _get_surrogate_model(self, name: str, n_jobs: int = None):
+    def _get_surrogate_model(
+        self, name: str, n_jobs: int = None, random_state: int = None
+    ):
         """Get a surrogate model from Scikit-Optimize.
 
         Args:
@@ -245,18 +252,24 @@ class AgEBO(RegularizedEvolution):
         Raises:
             ValueError: when the name of the surrogate model is unknown.
         """
-        accepted_names = ["RF", "ET", "GBRT", "GP", "DUMMY"]
+        accepted_names = ["RF", "ET", "GBRT", "DUMMY"]
         if not (name in accepted_names):
             raise ValueError(
                 f"Unknown surrogate model {name}, please choose among {accepted_names}."
             )
 
         if name == "RF":
-            surrogate = skopt.learning.RandomForestRegressor(n_jobs=n_jobs)
+            surrogate = skopt.learning.RandomForestRegressor(
+                n_jobs=n_jobs, random_state=random_state
+            )
         elif name == "ET":
-            surrogate = skopt.learning.ExtraTreesRegressor(n_jobs=n_jobs)
+            surrogate = skopt.learning.ExtraTreesRegressor(
+                n_jobs=n_jobs, random_state=random_state
+            )
         elif name == "GBRT":
-            surrogate = skopt.learning.GradientBoostingQuantileRegressor(n_jobs=n_jobs)
+            surrogate = skopt.learning.GradientBoostingQuantileRegressor(
+                n_jobs=n_jobs, random_state=random_state
+            )
         else:  # for DUMMY and GP
             surrogate = name
 

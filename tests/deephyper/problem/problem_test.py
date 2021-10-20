@@ -1,12 +1,7 @@
 import pytest
-from deephyper.core.exceptions.problem import (
-    SpaceDimNameOfWrongType,
-    SearchSpaceBuilderMissingParameter,
-    SearchSpaceBuilderIsNotCallable,
-    SearchSpaceBuilderMissingDefaultParameter,
-    NaProblemError,
-    WrongProblemObjective,
-)
+from deephyper.core.exceptions.problem import (NaProblemError,
+                                               SpaceDimNameOfWrongType)
+from deepspace.tabular import OneLayerSpace
 
 
 @pytest.mark.incremental
@@ -90,8 +85,8 @@ class TestHpProblem:
         pb.add_starting_point(dim0=0, dim1=0.0, dim2="a")
 
     def test_config_space_hp(self):
-        from deephyper.problem import HpProblem
         import ConfigSpace.hyperparameters as csh
+        from deephyper.problem import HpProblem
 
         alpha = csh.UniformFloatHyperparameter(name="alpha", lower=0, upper=1)
         beta = csh.UniformFloatHyperparameter(name="beta", lower=0, upper=1)
@@ -115,23 +110,14 @@ class TestNaProblem:
 
         pb = NaProblem()
 
-        with pytest.raises(SearchSpaceBuilderIsNotCallable):
-            pb.search_space(func="a")
+        with pytest.raises(TypeError):
+            pb.search_space(space_class="a")
 
-        def dummy(a, b):
-            return
-
-        with pytest.raises(SearchSpaceBuilderMissingParameter):
-            pb.search_space(func=dummy)
-
-        def dummy(input_shape=(1,), output_shape=(1,)):
-            return
-
-        pb.search_space(func=dummy)
+        pb.search_space(OneLayerSpace)
 
     def test_full_problem(self):
-        from deephyper.problem import NaProblem
         from deephyper.nas.preprocessing import minmaxstdscaler
+        from deephyper.problem import NaProblem
 
         pb = NaProblem()
 
@@ -142,10 +128,7 @@ class TestNaProblem:
 
         pb.preprocessing(minmaxstdscaler)
 
-        def search_space(input_shape=(1,), output_shape=(1,)):
-            return
-
-        pb.search_space(search_space)
+        pb.search_space(OneLayerSpace)
 
         pb.hyperparameters(
             batch_size=64,

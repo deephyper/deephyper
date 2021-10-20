@@ -37,15 +37,12 @@ for i, (k, v) in enumerate(authors.items()):
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    # "tensorflow>=2.5.0",
-    # "tensorflow_probability>=0.13.0",
     "tensorflow>=2.0.0",
     "tensorflow_probability",
     "numpy",  # ==1.19.4",  # working with 1.20.1
-    "dh-scikit-optimize==0.9.1",
+    "dh-scikit-optimize==0.9.2",
     "scikit-learn>=0.23.1",
     "tqdm",
-    "deap",  # GA search #TODO: Unused
     # nas
     "networkx",
     "joblib>=0.10.3",
@@ -82,7 +79,7 @@ EXTRAS = {
         "GitPython",
         "ipython",
         # Other
-        "deepspace>=0.0.3",
+        "deepspace>=0.0.5",
     ],
     "analytics": [
         "jupyter",
@@ -91,8 +88,7 @@ EXTRAS = {
         "seaborn>=0.9.1",
     ],
     "hvd": ["horovod>=0.21.3", "mpi4py>=3.0.0"],
-    "balsam": ["balsam-flow>=0.3.8"],
-    "deepspace": ["deepspace>=0.0.3"],
+    "deepspace": ["deepspace>=0.0.5"],
 }
 
 # The rest you shouldn't have to touch too much :)

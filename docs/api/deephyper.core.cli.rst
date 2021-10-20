@@ -1,4 +1,4 @@
-deephyper.core.cli
+deephyper.core.cli 
 ===================
 
 .. toctree::

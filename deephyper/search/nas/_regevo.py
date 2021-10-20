@@ -30,13 +30,14 @@ class RegularizedEvolution(NeuralArchitectureSearch):
 
         super().__init__(problem, evaluator, random_state, log_dir, verbose)
 
+        if type(self) is RegularizedEvolution and len(self._problem._hp_space._space) > 0:
+            raise ValueError(
+                "An hyperparameter space was defined for this problem use 'AgEBO' instead!"
+            )
+
         # Setup
         self.pb_dict = self._problem.space
-        search_space = self._problem.build_search_space()
-
-        self.space_list = [
-            (0, vnode.num_ops - 1) for vnode in search_space.variable_nodes
-        ]
+        self.space_list = self._problem.build_search_space().choices()
         self._population_size = int(population_size)
         self._sample_size = int(sample_size)
         self._population = collections.deque(maxlen=self._population_size)
