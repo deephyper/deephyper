@@ -7,7 +7,7 @@ class RegularizedEvolution(NeuralArchitectureSearch):
     """`Regularized evolution <https://arxiv.org/abs/1802.01548>`_ neural architecture search. This search is only compatible with a ``NaProblem`` that has fixed hyperparameters.
 
     Args:
-        problem (NaProblem): Hyperparameter problem describin the search space to explore.
+        problem (NaProblem): Neural architecture search problem describing the search space to explore.
         evaluator (Evaluator): An ``Evaluator`` instance responsible of distributing the tasks.
         random_state (int, optional): Random seed. Defaults to None.
         log_dir (str, optional): Log directory where search's results are saved. Defaults to ".".
