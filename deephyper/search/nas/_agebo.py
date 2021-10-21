@@ -1,9 +1,17 @@
 import collections
 
-import numpy as np
 import skopt
-
+import numpy as np
 from deephyper.search.nas._regevo import RegularizedEvolution
+
+# Adapt minimization -> maximization with DeepHyper
+MAP_liar_strategy = {
+    "cl_min": "cl_max",
+    "cl_max": "cl_min",
+}
+MAP_acq_func = {
+    "UCB": "LCB",
+}
 
 
 class AgEBO(RegularizedEvolution):
@@ -12,19 +20,20 @@ class AgEBO(RegularizedEvolution):
     This algorithm build on the `Regularized Evolution <https://arxiv.org/abs/1802.01548>`_. It cumulates Hyperparameter optimization with Bayesian optimisation and Neural architecture search with regularized evolution.
 
     Args:
-        problem (NaProblem): Hyperparameter problem describin the search space to explore.
+        problem (NaProblem): Neural architecture search problem describing the search space to explore.
         evaluator (Evaluator): An ``Evaluator`` instance responsible of distributing the tasks.
         random_state (int, optional): Random seed. Defaults to None.
         log_dir (str, optional): Log directory where search's results are saved. Defaults to ".".
         verbose (int, optional): Indicate the verbosity level of the search. Defaults to 0.
-        population_size (int, optional): the number of individuals to keep in the population. Defaults to 100.
-        sample_size (int, optional): the number of individuals that should participate in each tournament. Defaults to 10.
-        surrogate_model (str, optional): Surrogate model used by the Bayesian optimization. Can be a value in ["RF", "ET", "GBRT", "DUMMY"]. Defaults to "RF".
-        n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the Bayesian optimization. A value of -1 will use all available cores. Defaults to 1.
-        kappa (float, optional): Manage the exploration/exploitation tradeoff for the "LCB" acquisition function. Defaults to 1.96 corresponds to 95% of the confidence interval.
-        xi (float, optional): Manage the exploration/exploitation tradeoff of "EI" and "PI" acquisition function. Defaults to 0.001.
-        acq_func (str, optional): Acquisition function used by the Bayesian optimization. Can be a value in ["LCB", "EI", "PI", "gp_hedge"]. Defaults to "LCB".
-        liar_strategy (str, optional): Definition of the constant value use for the Liar strategy. Can be a value in ["cl_min", "cl_mean", "cl_max"] . Defaults to "cl_min".
+        population_size (int, optional): the number of individuals to keep in the population. Defaults to ``100``.
+        sample_size (int, optional): the number of individuals that should participate in each tournament. Defaults to ``10``.
+        surrogate_model (str, optional): Surrogate model used by the Bayesian optimization. Can be a value in ``["RF", "ET", "GBRT", "DUMMY"]``. Defaults to ``"RF"``.
+        acq_func (str, optional): Acquisition function used by the Bayesian optimization. Can be a value in ``["UCB", "EI", "PI", "gp_hedge"]``. Defaults to ``"UCB"``.
+        kappa (float, optional): Manage the exploration/exploitation tradeoff for the "UCB" acquisition function. Defaults to ``0.001`` for strong exploitation.
+        xi (float, optional): Manage the exploration/exploitation tradeoff of ``"EI"`` and ``"PI"`` acquisition function. Defaults to ``0.000001`` for strong exploitation.
+        n_points (int, optional): The number of configurations sampled from the search space to infer each batch of new evaluated configurations. Defaults to ``10000``.
+        liar_strategy (str, optional): Definition of the constant value use for the Liar strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max"]`` . Defaults to ``"cl_max"``.
+        n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the Bayesian optimization. A value of ``-1`` will use all available cores. Defaults to ``1``.
         mode (str, optional): Define if the search should be asynchronous or batch synchronous. Choice in ["sync", "async"]. Defaults to "async".
     """
 
@@ -40,11 +49,12 @@ class AgEBO(RegularizedEvolution):
         sample_size: int = 10,
         # BO
         surrogate_model: str = "RF",
-        n_jobs: int = 1,
+        acq_func: str = "UCB",
         kappa: float = 0.001,
         xi: float = 0.000001,
-        acq_func: str = "LCB",
-        liar_strategy: str = "cl_min",
+        n_points: int = 10000,
+        liar_strategy: str = "cl_max",
+        n_jobs: int = 1,
         mode: str = "async",
         **kwargs,
     ):
@@ -61,28 +71,56 @@ class AgEBO(RegularizedEvolution):
         assert mode in ["sync", "async"]
         self.mode = mode
 
-        self.n_jobs = int(n_jobs)  # parallelism of BO surrogate model estimator
-
         # Initialize opitmizer of hyperparameter space
-        self._n_initial_points = self._evaluator.num_workers
-        self._liar_strategy = liar_strategy
-
         if len(self._problem._hp_space._space) == 0:
             raise ValueError(
                 "No hyperparameter space was defined for this problem use 'RegularizedEvolution' instead!"
             )
 
+        # check input parameters
+        surrogate_model_allowed = ["RF", "ET", "GBRT", "DUMMY"]
+        if not (surrogate_model in surrogate_model_allowed):
+            raise ValueError(
+                f"Parameter 'surrogate_model={surrogate_model}' should have a value in {surrogate_model_allowed}!"
+            )
+
+        acq_func_allowed = ["UCB", "EI", "PI", "gp_hedge"]
+        if not (acq_func in acq_func_allowed):
+            raise ValueError(
+                f"Parameter 'acq_func={acq_func}' should have a value in {acq_func_allowed}!"
+            )
+
+        if not (np.isscalar(kappa)):
+            raise ValueError(f"Parameter 'kappa' should be a scalar value!")
+
+        if not (np.isscalar(xi)):
+            raise ValueError("Parameter 'xi' should be a scalar value!")
+
+        if not (type(n_points) is int):
+            raise ValueError("Parameter 'n_points' shoud be an integer value!")
+
+        liar_strategy_allowed = ["cl_min", "cl_mean", "cl_max"]
+        if not (liar_strategy in liar_strategy_allowed):
+            raise ValueError(
+                f"Parameter 'liar_strategy={liar_strategy}' should have a value in {liar_strategy_allowed}!"
+            )
+
+        if not (type(n_jobs) is int):
+            raise ValueError(f"Parameter 'n_jobs' should be an integer value!")
+
+        self._n_initial_points = self._evaluator.num_workers
+        self._liar_strategy = MAP_liar_strategy.get(liar_strategy, liar_strategy)
+
         base_estimator = self._get_surrogate_model(
-            surrogate_model, n_jobs,
-            random_state=self._random_state.get_state()[1][0]
+            surrogate_model, n_jobs, random_state=self._random_state.get_state()[1][0]
         )
         self._hp_opt = None
         self._hp_opt_kwargs = dict(
             dimensions=self._problem._hp_space._space,
             base_estimator=base_estimator,
-            acq_func=acq_func,
+            acq_func=MAP_acq_func.get(acq_func, acq_func),
             acq_optimizer="sampling",
-            acq_func_kwargs={"xi": float(xi), "kappa": float(kappa)},
+            acq_func_kwargs={"xi": xi, "kappa": kappa, "n_points": n_points},
             n_initial_points=self._n_initial_points,
             random_state=self._random_state.get_state()[1][0],
         )
@@ -163,8 +201,6 @@ class AgEBO(RegularizedEvolution):
                         new_i_y = new_results[new_i][1]
                         hp_results_X.append(new_i_hp_values)
                         hp_results_y.append(-new_i_y)
-
-                    hp_results_y = np.minimum(hp_results_y, 1e3).tolist()  #TODO: ?
 
                     self._hp_opt.tell(hp_results_X, hp_results_y)  #! fit: costly
                     new_hps = self._hp_opt.ask(

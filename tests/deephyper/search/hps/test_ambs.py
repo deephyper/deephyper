@@ -1,47 +1,45 @@
-def run(hp):
-    return hp["x"]
+import pytest
+import numpy as np
+from deephyper.problem import HpProblem
+from deephyper.evaluator import Evaluator
+from deephyper.search.hps import AMBS
 
 
-#! with subprocess be carefull about this IF statement otherwise it will enter in a
-#! infinite loop
-if __name__ == "__main__":
-    import os
-    import logging
-
-    logging.basicConfig(level=logging.INFO)
-
-    from deephyper.problem import HpProblem
-    from deephyper.search.hps import AMBS
-    from deephyper.evaluator import Evaluator
-    from deephyper.evaluator.callback import ProfilingCallback
-
-    import matplotlib.pyplot as plt
+def run(config):
+    return config["x"]
 
 
-    problem = HpProblem()
-    problem.add_hyperparameter((0.0, 10.0), "x")
+problem = HpProblem()
+problem.add_hyperparameter((0.0, 10.0), "x")
 
-    evaluator = Evaluator.create(
-        run, method="process", method_kwargs={
-            # "num_cpus": 4,
-            "num_workers": 4,
-            "callbacks":[ProfilingCallback()]
-        }
+
+def test_ambs():
+
+    create_evaluator = lambda: Evaluator.create(
+        run, method="process", method_kwargs={"num_workers": 1}
     )
 
-    search = AMBS(problem, evaluator)
+    search = AMBS(
+        problem,
+        create_evaluator(),
+        random_state=42,
+    )
 
-    if os.path.exists("results.csv"):
-        search.fit_surrogate("results.csv")
+    res1 = search.search(max_evals=4)
+    res1_array = res1[["x"]].to_numpy()
 
-    search.search(max_evals=100)
+    search.search(max_evals=100, timeout=1)
 
-    profile = evaluator._callbacks[0].profile
-    print(profile)
+    search = AMBS(
+        problem,
+        create_evaluator(),
+        random_state=42,
+    )
+    res2 = search.search(max_evals=4)
+    res2_array = res2[["x"]].to_numpy()
 
-    plt.figure()
-    plt.step(profile.timestamp, profile.n_jobs_running)
-    #plt.ylim(top=5)
-    plt.show()
+    assert np.array_equal(res1_array, res2_array)
 
-    # search.search(max_evals=100, timeout=1)
+
+if __name__ == "__main__":
+    test_ambs()

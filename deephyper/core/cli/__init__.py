@@ -1,5 +1,3 @@
-from deephyper.core.cli._cli import main
-
 # for the documentation
 from . import _cli, _hps, _nas, _new_problem, _start_project
 
