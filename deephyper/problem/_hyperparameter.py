@@ -1,10 +1,10 @@
+import copy
 from pprint import pformat
 
 import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh
-import numpy as np
-
 import deephyper.core.exceptions as dh_exceptions
+import numpy as np
 
 
 def check_hyperparameter(parameter, name=None, default_value=None):
@@ -77,13 +77,15 @@ class HpProblem:
     >>> problem = HpProblem()
 
     Args:
-        seed (int, optional): A random seed used by sampling-based search to generate new configurations of hyperparameters. Defaults to 42.
+        config_space (ConfigurationSpace, optional): In case the ``HpProblem`` is defined from a `ConfigurationSpace`.
     """
 
-    def __init__(self, seed=42):
+    def __init__(self, config_space=None):
 
-        self.seed = seed
-        self._space = cs.ConfigurationSpace(seed=seed)
+        if config_space:
+            self._space = copy.deepcopy(config_space)
+        else:
+            self._space = cs.ConfigurationSpace()
         self.references = []  # starting points
 
     def __str__(self):
@@ -190,8 +192,7 @@ class HpProblem:
 
     @property
     def space(self):
-        """The wrapped ConfigSpace object.
-        """
+        """The wrapped ConfigSpace object."""
         return self._space
 
     def add_starting_point(self, **parameters):

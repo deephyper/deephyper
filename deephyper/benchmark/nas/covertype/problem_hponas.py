@@ -2,7 +2,7 @@ from deephyper.benchmark.nas.covertype.load_data import load_data
 from deephyper.problem import NaProblem
 from deepspace.tabular import DenseSkipCoSpace
 
-Problem = NaProblem(seed=2019)
+Problem = NaProblem()
 
 Problem.load_data(load_data)
 

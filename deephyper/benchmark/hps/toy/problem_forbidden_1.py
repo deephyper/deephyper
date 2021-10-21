@@ -13,7 +13,7 @@ from deephyper.problem import HpProblem
 from deephyper.problem import config_space as cs
 
 # Problem definition
-Problem = HpProblem(seed=42)
+Problem = HpProblem()
 
 x_hp = Problem.add_hyperparameter(
     name="x", value=(0, 10)

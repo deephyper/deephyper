@@ -8,7 +8,7 @@ Example command line::
 import ConfigSpace as cs
 from deephyper.problem import HpProblem
 
-Problem = HpProblem(seed=45)
+Problem = HpProblem()
 
 func = Problem.add_hyperparameter(name="func", value=["f1", "f2"])
 
