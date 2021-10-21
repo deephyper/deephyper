@@ -21,19 +21,34 @@ logger = logging.getLogger(__name__)
 class KSearchSpace(NxSearchSpace):
     """A KSearchSpace represents a search space of neural networks.
 
-    >>> from tensorflow.keras.utils import plot_model
-    >>> from deephyper.nas.space import KSearchSpace
-    >>> from deephyper.nas.space.node import VariableNode, ConstantNode
-    >>> from deephyper.nas.space.op.op1d import Dense
-    >>> struct = KSearchSpace((5, ), (1, ))
-    >>> vnode = VariableNode()
-    >>> struct.connect(struct.input_nodes[0], vnode)
-    >>> vnode.add_op(Dense(10))
-    >>> vnode.add_op(Dense(20))
-    >>> output_node = ConstantNode(op=Dense(1))
-    >>> struct.connect(vnode, output_node)
-    >>> struct.set_ops([0])
-    >>> model = struct.create_model()
+    >>> import tensorflow as tf
+    >>> from deephyper.nas import KSearchSpace
+    >>> from deephyper.nas.node import ConstantNode, VariableNode
+    >>> from deephyper.nas.operation import operation, Identity
+    >>> Dense = operation(tf.keras.layers.Dense)
+    >>> Dropout = operation(tf.keras.layers.Dropout)
+
+    >>> class ExampleSpace(KSearchSpace):
+    ...     def build(self):    
+    ...         # input nodes are automatically built based on `input_shape`
+    ...         input_node = self.input_nodes[0]         
+    ...         # we want 4 layers maximum (Identity corresponds to not adding a layer)
+    ...         for i in range(4):
+    ...             node = VariableNode()
+    ...             self.connect(input_node, node) 
+    ...             # we add 3 possible operations for each node
+    ...             node.add_op(Identity())
+    ...             node.add_op(Dense(100, "relu"))
+    ...             node.add_op(Dropout(0.2))
+    ...             input_node = node
+    ...         output = ConstantNode(op=Dense(self.output_shape[0]))
+    ...         self.connect(input_node, output)
+    ...         return self
+    ...
+    >>>
+
+    >>> space = ExampleSpace(input_shape=(1,), output_shape=(1,)).build()
+    >>> space.sample().summary()
 
     Args:
         input_shape (list(tuple(int))): list of shapes of all inputs.
