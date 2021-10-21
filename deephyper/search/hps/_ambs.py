@@ -32,6 +32,7 @@ class AMBS(Search):
         kappa (float, optional): Manage the exploration/exploitation tradeoff for the "UCB" acquisition function. Defaults to ``1.96`` which corresponds to 95% of the confidence interval.
         xi (float, optional): Manage the exploration/exploitation tradeoff of ``"EI"`` and ``"PI"`` acquisition function. Defaults to ``0.001``.
         n_points (int, optional): The number of configurations sampled from the search space to infer each batch of new evaluated configurations.
+        filter_duplicated (bool, optional): Force the optimizer to sample unique points until the search space is "exhausted" in the sens that no new unique points can be found given the sampling size ``n_points``. Defaults to ``True``.
         liar_strategy (str, optional): Definition of the constant value use for the Liar strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max"]`` . Defaults to ``"cl_max"``.
         n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the Bayesian optimization. A value of ``-1`` will use all available cores. Defaults to ``1``.
     """
@@ -48,6 +49,7 @@ class AMBS(Search):
         kappa: float = 1.96,
         xi: float = 0.001,
         n_points: int = 10000,
+        filter_duplicated: bool = True,
         liar_strategy: str = "cl_max",
         n_jobs: int = 1,  # 32 is good for Theta
         **kwargs,
@@ -77,6 +79,9 @@ class AMBS(Search):
         if not (type(n_points) is int):
             raise ValueError("Parameter 'n_points' shoud be an integer value!")
 
+        if not (type(filter_duplicated) is bool):
+            raise ValueError("Parameter 'filter_duplicated' should be a boolean value!")
+
         liar_strategy_allowed = ["cl_min", "cl_mean", "cl_max"]
         if not (liar_strategy in liar_strategy_allowed):
             raise ValueError(
@@ -96,9 +101,18 @@ class AMBS(Search):
             base_estimator=self._get_surrogate_model(
                 surrogate_model, n_jobs, random_state=self._random_state.get_state()[1][0]
             ),
-            acq_func=MAP_acq_func.get(acq_func, acq_func),
+            # optimizer
             acq_optimizer="sampling",
-            acq_func_kwargs={"xi": xi, "kappa": kappa, "n_points": n_points},
+            acq_optimizer_kwargs={
+                "n_points": n_points,
+                "filter_duplicated": filter_duplicated,
+            },
+            # acquisition function
+            acq_func=MAP_acq_func.get(acq_func, acq_func),
+            acq_func_kwargs={
+                "xi": xi,
+                "kappa": kappa
+            },
             n_initial_points=self._n_initial_points,
             random_state=self._random_state,
         )
