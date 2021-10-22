@@ -4,7 +4,7 @@
 
 [![DOI](https://zenodo.org/badge/156403341.svg)](https://zenodo.org/badge/latestdoi/156403341)
 ![GitHub tag (latest by date)](https://img.shields.io/github/tag-date/deephyper/deephyper.svg?label=version)
-[![Build Status](https://travis-ci.com/deephyper/deephyper.svg?branch=develop)](https://travis-ci.com/deephyper/deephyper)
+<!-- [![Build Status](https://travis-ci.com/deephyper/deephyper.svg?branch=develop)](https://travis-ci.com/deephyper/deephyper) -->
 [![Documentation Status](https://readthedocs.org/projects/deephyper/badge/?version=latest)](https://deephyper.readthedocs.io/en/latest/?badge=latest)
 ![PyPI - License](https://img.shields.io/pypi/l/deephyper.svg)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/deephyper.svg?label=Pypi%20downloads)
@@ -19,43 +19,35 @@ search, a set of search algorithms for neural architecture search and hyperparam
 and evaluators, a common interface for evaluating hyperparameter configurations
 on HPC platforms.
 
-## Documentation
-
-Deephyper documentation is on [ReadTheDocs](https://deephyper.readthedocs.io)
-
 ## Install instructions
 
-From pip:
+From PyPI:
 
 ```bash
 pip install deephyper
 ```
 
-From github:
+From Github:
 
 ```bash
 git clone https://github.com/deephyper/deephyper.git
-cd deephyper/
-pip install -e .
+pip install -e deephyper/
 ```
 
 If you want to install deephyper with test and documentation packages:
 
-```bash
-# From Pypi
-pip install 'deephyper[tests,docs]'
+From PyPI:
 
-# From github
-git clone https://github.com/deephyper/deephyper.git
-cd deephyper/
-pip install -e '.[tests,docs]'
+```bash
+pip install 'deephyper[dev]'
 ```
 
-## How do I learn more?
+From Github:
 
-* Documentation: <https://deephyper.readthedocs.io>
-
-* GitHub repository: <https://github.com/deephyper/deephyper>
+```bash
+git clone https://github.com/deephyper/deephyper.git
+pip install -e 'deephyper/[dev]'
+```
 
 ## Quickstart
 
@@ -110,12 +102,18 @@ Which outputs the following where the best ``x`` found is clearly around ``0``.
 98  0.009660  99  -0.000093     9.638016  0.092450
 ```
 
+## How do I learn more?
+
+* Documentation: <https://deephyper.readthedocs.io>
+
+* GitHub repository: <https://github.com/deephyper/deephyper>
+
 ## Who is responsible?
 
 Currently, the core DeepHyper team is at Argonne National Laboratory:
 
 * Prasanna Balaprakash <pbalapra@anl.gov>, Lead and founder
-* Romain Egele <romain.egele@polytechnique.edu>, Co-Lead
+* Romain Egele <romainegele@gmail.com>, Co-Lead
 * Misha Salim <msalim@anl.gov>
 * Romit Maulik <rmaulik@anl.gov>
 * Venkat Vishwanath <venkat@anl.gov>
@@ -129,11 +127,7 @@ Modules, patches (code, documentation, etc.) contributed by:
 
 ## Citing DeepHyper
 
-If you are referencing DeepHyper in a publication, please cite one of the following papers:
-
-* P. Balaprakash, R. Egele, M. Salim, S. Wild, V. Vishwanath, F. Xia, T. Brettin, and R. Stevens. **Scalable reinforcement-learning-based neural architecture search for cancer deep learning research**. In SC’19:  IEEE/ACM International Conference on High Performance Computing, Network-ing, Storage and Analysis, 2019.
-
-* P. Balaprakash, M. Salim, T. Uram, V. Vishwanath, and S. M. Wild. **DeepHyper: Asynchronous Hyperparameter Search for Deep Neural Networks**. In 25th IEEE International Conference on High Performance Computing, Data, and Analytics. IEEE, 2018.
+Find all our publications on the [Research & Publication](https://deephyper.readthedocs.io/en/latest/research.html) page of the Documentation.
 
 ## How can I participate?
 

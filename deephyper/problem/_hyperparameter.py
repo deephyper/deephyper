@@ -23,13 +23,13 @@ def check_hyperparameter(parameter, name=None, default_value=None):
     if isinstance(parameter, csh.Hyperparameter):
         return parameter
 
-    if not isinstance(parameter, (list, tuple, np.ndarray)):
+    if not isinstance(parameter, (list, tuple, np.ndarray, dict)):
         raise ValueError(
-            "Shortcut definition of an hyper-parameter has to be a list, tuple, array."
+            "Shortcut definition of an hyper-parameter has to be a list, tuple, array or dict."
         )
 
     if not (type(name) is str):
-        raise dh_exceptions.problem.SpaceDimNameOfWrongType(name)
+        raise ValueError("The 'name' of an hyper-parameter should be a string!")
 
     kwargs = {}
     if default_value is not None:
@@ -63,6 +63,16 @@ def check_hyperparameter(parameter, name=None, default_value=None):
             return csh.CategoricalHyperparameter(name, choices=parameter, **kwargs)
         elif all([isinstance(p, (int, float)) for p in parameter]):
             return csh.OrdinalHyperparameter(name, sequence=parameter)
+    elif type(parameter) is dict: # Integer or Real distribution
+
+        # Normal
+        if "mu" in parameter and "sigma" in parameter:
+            if type(parameter["mu"]) is float:
+                return csh.NormalFloatHyperparameter(name=name, **parameter)
+            elif type(parameter["mu"]) is int:
+                return csh.NormalIntegerHyperparameter(name=name, **parameter)
+            else:
+                raise ValueError("Wrong hyperparameter definition! 'mu' should be either a float or an integer.")
 
     raise ValueError(
         f"Invalid dimension {name}: {parameter}. Read the documentation for"
