@@ -68,9 +68,9 @@ def check_hyperparameter(parameter, name=None, default_value=None):
         # Normal
         if "mu" in parameter and "sigma" in parameter:
             if type(parameter["mu"]) is float:
-                return csh.NormalFloatHyperparameter(name=name, **parameter)
+                return csh.NormalFloatHyperparameter(name=name, **parameter, **kwargs)
             elif type(parameter["mu"]) is int:
-                return csh.NormalIntegerHyperparameter(name=name, **parameter)
+                return csh.NormalIntegerHyperparameter(name=name, **parameter, **kwargs)
             else:
                 raise ValueError("Wrong hyperparameter definition! 'mu' should be either a float or an integer.")
 
