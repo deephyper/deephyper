@@ -82,6 +82,13 @@ class HpProblem:
 
     def __init__(self, config_space=None):
 
+        if config_space is not None and not (
+            isinstance(config_space, cs.ConfigurationSpace)
+        ):
+            raise ValueError(
+                "Parameter 'config_space' should be an instance of ConfigurationSpace!"
+            )
+
         if config_space:
             self._space = copy.deepcopy(config_space)
         else:
