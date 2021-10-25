@@ -1,7 +1,7 @@
 Local
 *****
 
-DeepHyper installation requires ``Python>=3.7 and <3.9``.
+DeepHyper installation requires ``Python>=3.7 and <3.10``.
 
 .. _local-conda-environment:
 
