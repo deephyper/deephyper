@@ -21,8 +21,7 @@ It can be used with:
 import argparse
 import sys
 
-from deephyper.core.logs import topk, notebooks
-from deephyper.core.plot import quick_plot
+from deephyper.core.analytics import _topk, _quick_plot
 
 
 
@@ -37,9 +36,8 @@ def create_parser():
     mapping = dict()
 
     modules = [
-        notebooks,
-        quick_plot,  # output quick plots
-        topk
+        _quick_plot,  # output quick plots
+        _topk
     ]
 
     for module in modules:

@@ -4,8 +4,8 @@ deephyper.core
 .. toctree::
    :maxdepth: 4
 
+   deephyper.core.analytics
    deephyper.core.cli
-   deephyper.core.plot
 .. automodule:: deephyper.core
    :members:
    :undoc-members:

@@ -26,7 +26,7 @@ REGRESSORS = {
 }
 
 
-problem_autosklearn1 = HpProblem(seed=42)
+problem_autosklearn1 = HpProblem()
 
 regressor = problem_autosklearn1.add_hyperparameter(
     name="regressor",

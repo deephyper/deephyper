@@ -1,7 +1,9 @@
 """The callback module contains sub-classes of the ``Callback`` class used to trigger custom actions on the start and completion of jobs by the ``Evaluator``. Callbacks can be used with any Evaluator implementation.
 """
-import pandas as pd
 import time
+
+import pandas as pd
+from deephyper.core.exceptions import SearchTerminationError
 
 
 class Callback:
@@ -75,3 +77,33 @@ class LoggerCallback(Callback):
         print(
             f"[{self._n_done:05d}] -- best objective: {self._best_objective:.5f} -- received objective: {job.result:.5f}"
         )
+
+
+class SearchEarlyStopping(Callback):
+    """Stop the search gracefully when it does not improve for a given number of evaluations.
+
+    Args:
+        patience (int, optional): The number of not improving evaluations to wait for before stopping the search. Defaults to 10.
+        objective_func (callable, optional): A function that takes a ``Job`` has input and returns the maximized scalar value monitored by this callback. Defaults to ``lambda j: j.result``.
+    """
+    def __init__(self, patience: int = 10, objective_func=lambda j: j.result):
+        self._best_objective = None
+        self._n_lower = 0
+        self._patience = patience
+        self._objective_func = objective_func
+
+    def on_done(self, job):
+        job_objective = self._objective_func(job)
+        if self._best_objective is None:
+            self._best_objective = job_objective
+        else:
+            if job_objective > self._best_objective:
+                print(f"Objective has improved from {self._best_objective:.5f} -> {job_objective:.5f}")
+                self._best_objective = job_objective
+                self._n_lower = 0
+            else:
+                self._n_lower += 1
+
+        if self._n_lower >= self._patience:
+            print(f"Stopping the search because it did not improve for the last {self._patience} evaluations!")
+            raise SearchTerminationError

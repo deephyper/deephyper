@@ -1,6 +1,6 @@
 import argparse
 import inspect
-from inspect import signature, Parameter
+from inspect import signature
 
 
 def add_arguments_from_signature(parser, obj, prefix="", exclude=[]):

@@ -6,7 +6,7 @@ from deephyper.nas.operation import operation, Identity
 
 Dense = operation(tf.keras.layers.Dense)
 
-def test_basic_space():
+def test_basic_space(verbose=0):
 
     class BasicSpace(KSearchSpace):
 
@@ -31,13 +31,15 @@ def test_basic_space():
 
     model_1 = space.sample([1])
 
-    model_1.summary()
+    if verbose:
+        model_1.summary()
 
     model_2 = space.sample()
 
-    model_2.summary()
+    if verbose:
+        model_2.summary()
 
 
 
 if __name__ == "__main__":
-    test_basic_space()
+    test_basic_space(verbose=1)

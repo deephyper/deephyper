@@ -5,9 +5,9 @@ class Random(NeuralArchitectureSearch):
     """Random neural architecture search. This search algorithm is compatible with a ``NaProblem`` defining fixed or variable hyperparameters.
 
     Args:
-        problem (NaProblem): Hyperparameter problem describin the search space to explore.
+        problem (NaProblem): Neural architecture search problem describing the search space to explore.
         evaluator (Evaluator): An ``Evaluator`` instance responsible of distributing the tasks.
-        random_state (int, optional): Random seed. Defaults to None.
+        random_state (int or RandomState, optional): Random seed. Defaults to None.
         log_dir (str, optional): Log directory where search's results are saved. Defaults to ".".
         verbose (int, optional): Indicate the verbosity level of the search. Defaults to 0.
     """
@@ -23,11 +23,8 @@ class Random(NeuralArchitectureSearch):
     ):
         super().__init__(problem, evaluator, random_state, log_dir, verbose)
 
-        self.pb_dict = self._problem.space
-        search_space = self._problem.build_search_space()
-        self.space_list = [
-            (0, vnode.num_ops - 1) for vnode in search_space.variable_nodes
-        ]
+        # NAS search space
+        self._space_list = self._problem.build_search_space().choices()
 
     def _saved_keys(self, job):
 
@@ -78,9 +75,10 @@ class Random(NeuralArchitectureSearch):
             arch_seq = self._gen_random_arch()
             hp_values = list(dict(hp_values_samples[i]).values())
             config = self._problem.gen_config(arch_seq, hp_values)
+            config = self._add_default_keys(config)
             batch.append(config)
 
         return batch
 
     def _gen_random_arch(self) -> list:
-        return [self._random_state.choice(b + 1) for (_, b) in self.space_list]
+        return [self._random_state.choice(b + 1) for (_, b) in self._space_list]

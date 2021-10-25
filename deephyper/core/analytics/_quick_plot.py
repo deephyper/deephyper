@@ -1,4 +1,8 @@
-"""A tool to have quick and simple visualization from your data.
+"""
+Quick Plot
+----------
+
+A tool to have quick and simple visualization from your data.
 
 It can be use such as:
 

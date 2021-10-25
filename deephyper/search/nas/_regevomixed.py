@@ -1,12 +1,21 @@
-import collections
-
 import ConfigSpace as CS
-import numpy as np
 from deephyper.problem import HpProblem
 from deephyper.search.nas._regevo import RegularizedEvolution
 
 
 class RegularizedEvolutionMixed(RegularizedEvolution):
+    """Extention of the `Regularized evolution <https://arxiv.org/abs/1802.01548>`_ neural architecture search to the case of joint hyperparameter and neural architecture search.
+
+    Args:
+        problem (NaProblem): Neural architecture search problem describing the search space to explore.
+        evaluator (Evaluator): An ``Evaluator`` instance responsible of distributing the tasks.
+        random_state (int, optional): Random seed. Defaults to None.
+        log_dir (str, optional): Log directory where search's results are saved. Defaults to ".".
+        verbose (int, optional): Indicate the verbosity level of the search. Defaults to 0.
+        population_size (int, optional): the number of individuals to keep in the population. Defaults to 100.
+        sample_size (int, optional): the number of individuals that should participate in each tournament. Defaults to 10.
+    """
+
     def __init__(
         self,
         problem,
@@ -33,13 +42,12 @@ class RegularizedEvolutionMixed(RegularizedEvolution):
 
         self.hp_space = self._problem._hp_space  #! hyperparameters
         self.hp_size = len(self.hp_space.space.get_hyperparameter_names())
-        self.na_space = HpProblem(self._problem.seed)
-        for i, vnode in enumerate(na_search_space.variable_nodes):
-            self.na_space.add_hyperparameter(
-                (0, vnode.num_ops - 1), name=f"vnode_{i:05d}"
-            )
+        self.na_space = HpProblem()
+        self.na_space._space.seed(self._random_state.get_state()[1][0])
+        for i, (low, high) in enumerate(na_search_space.choices()):
+            self.na_space.add_hyperparameter((low, high), name=f"vnode_{i:05d}")
 
-        self._space = CS.ConfigurationSpace(seed=self._problem.seed)
+        self._space = CS.ConfigurationSpace(seed=self._random_state.get_state()[1][0])
         self._space.add_configuration_space(
             prefix="1", configuration_space=self.hp_space.space
         )
@@ -95,7 +103,7 @@ class RegularizedEvolutionMixed(RegularizedEvolution):
                     for _ in range(num_received):
 
                         # select_sample
-                        indexes = np.random.choice(
+                        indexes = self._random_state.choice(
                             self._population_size, self._sample_size, replace=False
                         )
                         sample = [self._population[i] for i in indexes]
@@ -148,7 +156,7 @@ class RegularizedEvolutionMixed(RegularizedEvolution):
 
         hp_x = self._problem.extract_hp_values(parent_cfg)
         x = hp_x + parent_cfg["arch_seq"]
-        i = np.random.choice(self._space_size)
+        i = self._random_state.choice(self._space_size)
         hp = self._space.get_hyperparameters()[i]
         x[i] = hp.sample(self._space.random)
 

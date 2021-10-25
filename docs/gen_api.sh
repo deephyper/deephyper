@@ -23,11 +23,7 @@ sphinx-apidoc --templatedir templates/api --module-first -e \
     ../deephyper/layers \
     ../deephyper/core/logs \
     ../deephyper/core/exceptions \
-    ../deephyper/core/plot/hps* \
-    ../deephyper/core/plot/jn_loader* \
-    ../deephyper/core/plot/multi* \
-    ../deephyper/core/plot/nas_single* \
-    ../deephyper/core/plot/post_train* \
+    ../deephyper/core/analytics/plot \
     ../deephyper/core/parser*
 
 

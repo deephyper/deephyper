@@ -20,7 +20,7 @@ def add_subparser(subparsers):
         "--type",
         type=str,
         required=True,
-        choices = ["hps","nas","posttrain"],
+        choices = ["hps","nas"],
         help="Type of notebook to generate.",
     )
     parser.add_argument("path", nargs="+", type=str)

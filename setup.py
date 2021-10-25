@@ -40,7 +40,7 @@ REQUIRED = [
     "tensorflow>=2.0.0",
     "tensorflow_probability",
     "numpy",  # ==1.19.4",  # working with 1.20.1
-    "dh-scikit-optimize==0.9.2",
+    "dh-scikit-optimize==0.9.4",
     "scikit-learn>=0.23.1",
     "tqdm",
     # nas
@@ -244,8 +244,8 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "deephyper=deephyper.core.cli:main",
-            "deephyper-analytics=deephyper.core.logs.analytics:main",
+            "deephyper=deephyper.core.cli._cli:main",
+            "deephyper-analytics=deephyper.core.analytics._analytics:main",
         ]
     },
 )

@@ -15,7 +15,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
 
-problem_autosklearn1 = HpProblem(seed=42)
+problem_autosklearn1 = HpProblem()
 
 classifier = problem_autosklearn1.add_hyperparameter(
     name="classifier",

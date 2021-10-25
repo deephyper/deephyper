@@ -11,7 +11,7 @@ import numpy as np
 from deephyper.problem import HpProblem
 
 # Problem definition
-Problem = HpProblem(seed=42)
+Problem = HpProblem()
 
 x_hp = csh.UniformIntegerHyperparameter(name="x", lower=0, upper=10, log=False)
 y_hp = csh.UniformIntegerHyperparameter(name="y", lower=0, upper=10, log=False)

@@ -6,7 +6,7 @@ from deepspace.tabular import DenseSkipCoSpace
 
 # from deephyper.nas.preprocessing import minmaxstdscaler
 
-Problem = NaProblem(seed=2019)
+Problem = NaProblem()
 
 Problem.load_data(load_data)
 

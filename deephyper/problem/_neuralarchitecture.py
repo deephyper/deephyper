@@ -49,16 +49,14 @@ class NaProblem:
     >>> Problem.objective('val_r2__last')
 
     Args:
-        regression (bool): if ``True`` the problem is defined as a ``regression`` problem, if ``False`` the problem is defined as a ``classification`` problem.
+        seed (int, optional): a random seed for hyperparameter sampling.
     """
 
-    def __init__(self, seed=None, log_dir=None, **kwargs):
+    def __init__(self):
         self._space = OrderedDict()
-        self._hp_space = HpProblem(seed)
-        self.seed = seed
+        self._hp_space = HpProblem()
         self._space["metrics"] = []
         self._space["hyperparameters"] = dict(verbose=0)
-        self._space["log_dir"] = log_dir
 
     def __repr__(self):
 
@@ -88,7 +86,6 @@ class NaProblem:
 
         out = (
             f"Problem is:\n"
-            f" * SEED = {self.seed} *\n"
             f"    - search space   : {module_location(self._space['search_space']['class'])}\n"
             f"    - data loading   : {module_location(self._space['load_data']['func'])}\n"
             f"    - preprocessing  : {preprocessing}\n"
@@ -466,10 +463,9 @@ class NaProblem:
         keys = list(self._space.keys())
         keys.sort()
         space = OrderedDict(**{d: self._space[d] for d in keys})
-        space["seed"] = self.seed
         return space
 
-    def build_search_space(self):
+    def build_search_space(self, seed=None):
         """Build and return a search space object using the infered data shapes after loading data.
 
         Returns:
@@ -478,7 +474,7 @@ class NaProblem:
         config = self.space
         input_shape, output_shape, _ = setup_data(config, add_to_config=False)
 
-        search_space = get_search_space(config, input_shape, output_shape, seed=self.seed)
+        search_space = get_search_space(config, input_shape, output_shape, seed=seed)
         return search_space
 
     def get_keras_model(self, arch_seq: list) -> tf.keras.Model:
