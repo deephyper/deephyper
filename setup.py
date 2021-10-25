@@ -17,7 +17,7 @@ on_rtd = os.environ.get("READTHEDOCS") == "True"
 NAME = "deephyper"
 DESCRIPTION = "Scalable asynchronous neural architecture and hyperparameter search for deep neural networks."
 URL = "https://github.com/deephyper/deephyper"
-REQUIRES_PYTHON = ">=3.7, <3.9"
+REQUIRES_PYTHON = ">=3.7, <3.10"
 VERSION = None
 
 # Build Author list
