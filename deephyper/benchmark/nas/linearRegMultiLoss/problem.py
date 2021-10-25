@@ -3,7 +3,7 @@ from deephyper.benchmark.nas.linearRegMultiLoss.load_data import load_data
 from deepspace.tabular import SupervisedRegAutoEncoderSpace
 
 
-Problem = NaProblem(seed=2019)
+Problem = NaProblem()
 
 Problem.load_data(load_data)
 

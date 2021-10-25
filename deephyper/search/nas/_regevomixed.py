@@ -15,6 +15,7 @@ class RegularizedEvolutionMixed(RegularizedEvolution):
         population_size (int, optional): the number of individuals to keep in the population. Defaults to 100.
         sample_size (int, optional): the number of individuals that should participate in each tournament. Defaults to 10.
     """
+
     def __init__(
         self,
         problem,
@@ -41,13 +42,12 @@ class RegularizedEvolutionMixed(RegularizedEvolution):
 
         self.hp_space = self._problem._hp_space  #! hyperparameters
         self.hp_size = len(self.hp_space.space.get_hyperparameter_names())
-        self.na_space = HpProblem(self._problem.seed)
+        self.na_space = HpProblem()
+        self.na_space._space.seed(self._random_state.get_state()[1][0])
         for i, (low, high) in enumerate(na_search_space.choices()):
-            self.na_space.add_hyperparameter(
-                (low, high), name=f"vnode_{i:05d}"
-            )
+            self.na_space.add_hyperparameter((low, high), name=f"vnode_{i:05d}")
 
-        self._space = CS.ConfigurationSpace(seed=self._problem.seed)
+        self._space = CS.ConfigurationSpace(seed=self._random_state.get_state()[1][0])
         self._space.add_configuration_space(
             prefix="1", configuration_space=self.hp_space.space
         )

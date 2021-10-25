@@ -1,10 +1,10 @@
+import copy
 from pprint import pformat
 
 import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh
-import numpy as np
-
 import deephyper.core.exceptions as dh_exceptions
+import numpy as np
 
 
 def check_hyperparameter(parameter, name=None, default_value=None):
@@ -23,13 +23,13 @@ def check_hyperparameter(parameter, name=None, default_value=None):
     if isinstance(parameter, csh.Hyperparameter):
         return parameter
 
-    if not isinstance(parameter, (list, tuple, np.ndarray)):
+    if not isinstance(parameter, (list, tuple, np.ndarray, dict)):
         raise ValueError(
-            "Shortcut definition of an hyper-parameter has to be a list, tuple, array."
+            "Shortcut definition of an hyper-parameter has to be a list, tuple, array or dict."
         )
 
     if not (type(name) is str):
-        raise dh_exceptions.problem.SpaceDimNameOfWrongType(name)
+        raise ValueError("The 'name' of an hyper-parameter should be a string!")
 
     kwargs = {}
     if default_value is not None:
@@ -63,6 +63,16 @@ def check_hyperparameter(parameter, name=None, default_value=None):
             return csh.CategoricalHyperparameter(name, choices=parameter, **kwargs)
         elif all([isinstance(p, (int, float)) for p in parameter]):
             return csh.OrdinalHyperparameter(name, sequence=parameter)
+    elif type(parameter) is dict: # Integer or Real distribution
+
+        # Normal
+        if "mu" in parameter and "sigma" in parameter:
+            if type(parameter["mu"]) is float:
+                return csh.NormalFloatHyperparameter(name=name, **parameter, **kwargs)
+            elif type(parameter["mu"]) is int:
+                return csh.NormalIntegerHyperparameter(name=name, **parameter, **kwargs)
+            else:
+                raise ValueError("Wrong hyperparameter definition! 'mu' should be either a float or an integer.")
 
     raise ValueError(
         f"Invalid dimension {name}: {parameter}. Read the documentation for"
@@ -77,13 +87,22 @@ class HpProblem:
     >>> problem = HpProblem()
 
     Args:
-        seed (int, optional): A random seed used by sampling-based search to generate new configurations of hyperparameters. Defaults to 42.
+        config_space (ConfigurationSpace, optional): In case the ``HpProblem`` is defined from a `ConfigurationSpace`.
     """
 
-    def __init__(self, seed=42):
+    def __init__(self, config_space=None):
 
-        self.seed = seed
-        self._space = cs.ConfigurationSpace(seed=seed)
+        if config_space is not None and not (
+            isinstance(config_space, cs.ConfigurationSpace)
+        ):
+            raise ValueError(
+                "Parameter 'config_space' should be an instance of ConfigurationSpace!"
+            )
+
+        if config_space:
+            self._space = copy.deepcopy(config_space)
+        else:
+            self._space = cs.ConfigurationSpace()
         self.references = []  # starting points
 
     def __str__(self):
@@ -190,8 +209,7 @@ class HpProblem:
 
     @property
     def space(self):
-        """The wrapped ConfigSpace object.
-        """
+        """The wrapped ConfigSpace object."""
         return self._space
 
     def add_starting_point(self, **parameters):

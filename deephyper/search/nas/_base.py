@@ -7,8 +7,9 @@ class NeuralArchitectureSearch(Search):
     ):
         super().__init__(problem, evaluator, random_state, log_dir, verbose)
 
-        if self._problem._space["log_dir"] is None:
-            self._problem._space["log_dir"] = self._log_dir
+        self._problem._space["log_dir"] = self._log_dir
+        self._problem._space["verbose"] = self._verbose
+        self._problem._space["seed"] = self._random_state.get_state()[1][0]
 
         # HPS search space
         self._problem._hp_space._space.seed(self._random_state.get_state()[1][0])
