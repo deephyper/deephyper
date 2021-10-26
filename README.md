@@ -4,20 +4,11 @@
 
 [![DOI](https://zenodo.org/badge/156403341.svg)](https://zenodo.org/badge/latestdoi/156403341)
 ![GitHub tag (latest by date)](https://img.shields.io/github/tag-date/deephyper/deephyper.svg?label=version)
-<!-- [![Build Status](https://travis-ci.com/deephyper/deephyper.svg?branch=develop)](https://travis-ci.com/deephyper/deephyper) -->
 [![Documentation Status](https://readthedocs.org/projects/deephyper/badge/?version=latest)](https://deephyper.readthedocs.io/en/latest/?badge=latest)
 ![PyPI - License](https://img.shields.io/pypi/l/deephyper.svg)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/deephyper.svg?label=Pypi%20downloads)
-
+<!-- [![Build Status](https://travis-ci.com/deephyper/deephyper.svg?branch=develop)](https://travis-ci.com/deephyper/deephyper) -->
 ## What is DeepHyper?
-
-<!-- DeepHyper is an automated machine learning ([AutoML](https://en.wikipedia.org/wiki/Automated_machine_learning)) package for deep neural networks. It comprises two components: 1) Neural architecture search is an approach for automatically searching for high-performing the deep neural network
-search_space. 2) Hyperparameter search is an approach for automatically searching for high-performing hyperparameters for a given deep neural network. DeepHyper provides an infrastructure that targets experimental research in neural architecture
-and hyperparameter search methods, scalability, and portability across HPC systems. It comprises three modules:
-benchmarks, a collection of extensible and diverse benchmark problems;
-search, a set of search algorithms for neural architecture search and hyperparameter search;
-and evaluators, a common interface for evaluating hyperparameter configurations
-on HPC platforms. -->
 
 The package performs four key functions: (1) pipeline optimization for ML (POPT); (2) neural architecture search (NAS); (3) hyperparameter search (HPS); and (4) ensemble uncertainty quantification (EUQ). Each of these is explained more fully below.
 
