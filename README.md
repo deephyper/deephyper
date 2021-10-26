@@ -10,7 +10,14 @@
 <!-- [![Build Status](https://travis-ci.com/deephyper/deephyper.svg?branch=develop)](https://travis-ci.com/deephyper/deephyper) -->
 ## What is DeepHyper?
 
-The package performs four key functions: (1) pipeline optimization for ML (POPT); (2) neural architecture search (NAS); (3) hyperparameter search (HPS); and (4) ensemble uncertainty quantification (EUQ). Each of these is explained more fully below.
+The package performs four key functions:
+
+1. pipeline optimization for ML (POPT)
+2. neural architecture search (NAS)
+3. hyperparameter search (HPS)
+4. ensemble uncertainty quantification (EUQ)
+
+Each of these is explained more fully below.
 
 ### Pipeline optimization for ML (POPT)
 
