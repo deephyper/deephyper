@@ -116,11 +116,15 @@ class AgEBO(RegularizedEvolution):
         )
         self._hp_opt = None
         self._hp_opt_kwargs = dict(
+            acq_optimizer="sampling",
+            acq_optimizer_kwargs={
+                "n_points": n_points,
+                "filter_duplicated": False,
+            },
             dimensions=self._problem._hp_space._space,
             base_estimator=base_estimator,
             acq_func=MAP_acq_func.get(acq_func, acq_func),
-            acq_optimizer="sampling",
-            acq_func_kwargs={"xi": xi, "kappa": kappa, "n_points": n_points},
+            acq_func_kwargs={"xi": xi, "kappa": kappa},
             n_initial_points=self._n_initial_points,
             random_state=self._random_state.get_state()[1][0],
         )
