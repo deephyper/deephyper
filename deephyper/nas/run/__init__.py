@@ -20,5 +20,5 @@ try:
     from ._run_horovod import run_horovod
 
     __all__.append("run_horovod")
-except ModuleNotFoundError: pass
+except: pass
 

@@ -4,20 +4,36 @@
 
 [![DOI](https://zenodo.org/badge/156403341.svg)](https://zenodo.org/badge/latestdoi/156403341)
 ![GitHub tag (latest by date)](https://img.shields.io/github/tag-date/deephyper/deephyper.svg?label=version)
-<!-- [![Build Status](https://travis-ci.com/deephyper/deephyper.svg?branch=develop)](https://travis-ci.com/deephyper/deephyper) -->
 [![Documentation Status](https://readthedocs.org/projects/deephyper/badge/?version=latest)](https://deephyper.readthedocs.io/en/latest/?badge=latest)
 ![PyPI - License](https://img.shields.io/pypi/l/deephyper.svg)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/deephyper.svg?label=Pypi%20downloads)
+<!-- [![Build Status](https://travis-ci.com/deephyper/deephyper.svg?branch=develop)](https://travis-ci.com/deephyper/deephyper) -->
+## What is DeepHyper?
 
-# What is DeepHyper?
+The package performs four key functions:
 
-DeepHyper is an automated machine learning ([AutoML](https://en.wikipedia.org/wiki/Automated_machine_learning)) package for deep neural networks. It comprises two components: 1) Neural architecture search is an approach for automatically searching for high-performing the deep neural network
-search_space. 2) Hyperparameter search is an approach for automatically searching for high-performing hyperparameters for a given deep neural network. DeepHyper provides an infrastructure that targets experimental research in neural architecture
-and hyperparameter search methods, scalability, and portability across HPC systems. It comprises three modules:
-benchmarks, a collection of extensible and diverse benchmark problems;
-search, a set of search algorithms for neural architecture search and hyperparameter search;
-and evaluators, a common interface for evaluating hyperparameter configurations
-on HPC platforms.
+1. pipeline optimization for ML (POPT)
+2. neural architecture search (NAS)
+3. hyperparameter search (HPS)
+4. ensemble uncertainty quantification (EUQ)
+
+Each of these is explained more fully below.
+
+### Pipeline optimization for ML (POPT)
+
+Predictive modeling with classical ML methods typically requires a pipeline of methods such as data preprocessing, data balancing, data splitting, variable importance analysis, variable selection, classification/regression algorithm selection, and cross-validation methods. Because of the myriad choices available for each method, employing an effective ML pipeline is beyond most scientists and engineers; therefore, they tend to resort to rules of thumb, often resulting in non-robust models. DeepHyper provides an interface to model the search space of the pipeline. It uses an intelligent search algorithm that samples a small number of pipeline configurations and progressively fits a surrogate model over the configuration-performance space until it exhausts the user-defined maximum number of evaluations. The asynchronous aspect allows the search to avoid waiting for all the evaluation results before proceeding to the next iteration. When an evaluation is finished, the data are used to retrain the surrogate model, which is then used to bias the search toward the promising configurations. The framework uses a master/worker computational paradigm, where one master node fits the surrogate model and generates promising pipeline configurations and worker nodes perform the computationally expensive evaluations and return the outputs to the master node.
+
+### Hyperparameter search (HPS)
+
+ML methods used for predictive modeling typically require user-specified values for hyperparameters, which include the number of hidden layers and units per layer, sparsity/overfitting regularization parameters, batch size, learning rate, type of initialization, optimizer, and activation function specification. Traditionally, to find performance-optimizing hyperparameter settings, researchers have used a trial-and-error process or a brute-force grid/random search. Such approaches lead to far-from-optimal performance, however, or are impractical for addressing large numbers of hyperparameters. DeepHyper provides a set of scalable hyperparameter search methods for automatically searching for high-performing hyperparameters for a given DNN architecture. DeepHyper uses an asynchronous model-based search that relies on fitting a dynamically updated surrogate model that tries to learn the relationship between the hyperparameter configurations (input) and their validation errors (output). The surrogate model is cheap to evaluate and can be used to prune the search space and identify promising regions, where the model then is iteratively refined by obtaining new outputs at inputs that are predicted by the model to be high-performing.
+
+### Neural architecture search (NAS)
+
+Scientific data sets are diverse and often require data-set-specific DNN models. Nevertheless, designing high-performing DNN architecture for a given data set is an expert-driven, time-consuming, trial-and-error manual task. To that end, DeepHyper provides a NAS for automatically identifying high-performing DNN architectures for a given set of training data. DeepHyper adopts an evolutionary algorithm that generates a population of DNN architectures, trains them concurrently by using multiple nodes, and improves the population by performing mutations on the existing architectures within a population. To reduce the training time of each architecture evaluation, DeepHyper adopts a distributed data-parallel training technique, splitting the training data and distributing the shards to multiple processing units. Multiple models with the same architecture are trained on different data shards, and the gradients from each model are averaged and used to update the weights of all the models. To maintain accuracy and reduce training time, DeepHyper combines aging evolution and an asynchronous Bayesian optimization method for tuning the hyperparameters of the data-parallel training simultaneously.
+
+### Ensemble uncertainty quantification (EUQ)
+
+Uncertainty quantification in DNN predictions is of paramount importance for confident scientific utilization of DL. Prediction with uncertainty quantification is vital when DNN learning deployments are performed on unseen datasets that may not be from the distribution of the training data. In such cases, confidence estimates are essential for deciding when to discard predictions from neural networks, because of their proclivity to extrapolation. More importantly, EUQ sheds light on learning systems that are frequently dismissed as black-box within the scientific community, and it paves the way for greater model trustworthiness. To that end, DeepHyper/EUQ employs a scalable deep-ensemble approach for uncertainty quantification. The approach involves constructing several models with varying architectures, independently, on the training dataset. Parallel independent runs of DeepHyper/NAS are used, wherein each NAS run starts with different initialization and randomization of datasets. The best model candidates suggested by the parallel search are then utilized in an ensemble setting for quantifying the model uncertainty. Furthermore, each generated model can be configured to use various data likelihood options. The quantiles of these function values can be used to compute calibrated prediction intervals to capture data uncertainty.
 
 ## Install instructions
 

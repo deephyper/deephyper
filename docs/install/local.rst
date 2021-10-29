@@ -1,7 +1,7 @@
 Local
 *****
 
-DeepHyper installation requires ``Python>=3.7 and <3.9``.
+DeepHyper installation requires ``Python>=3.7 and <3.10``.
 
 .. _local-conda-environment:
 
@@ -15,7 +15,7 @@ This installation procedure shows you how to create your own Conda virtual envir
     $ conda create -n dh python=3.8
     $ conda activate dh
 
-For Linux-based systems, it is then required to have the following additionnal dependencies:
+For **Linux-based** systems, it is then required to have the following additionnal dependencies (skip this step if you have **MacOS**):
 
 .. code-block:: console
 
