@@ -6,5 +6,5 @@ try:
     from ._horovod import HorovodTrainer
 
     __all__.append("HorovodTrainer")
-except ModuleNotFoundError: pass
+except: pass
 

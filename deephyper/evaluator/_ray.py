@@ -22,7 +22,7 @@ class RayEvaluator(Evaluator):
         num_cpus_per_task (float, optional): number of CPUs used per remote task. Defaults to 1.
         num_gpus_per_task (float, optional): number of GPUs used per remote task. Defaults to None.
         ray_kwargs (dict, optional): other ray keyword arguments passed to ``ray.init(...)``. Defaults to {}.
-        num_workers (int, optional): number of workers available to compute remote-tasks in parallel. Defaults to None, it is automatically computed based on ``num_workers = int(num_cpus // num_cpus_per_task)``.
+        num_workers (int, optional): number of workers available to compute remote-tasks in parallel. Defaults to ``None``, or if it is ``-1`` it is automatically computed based with ``num_workers = int(num_cpus // num_cpus_per_task)``.
     """
 
     def __init__(
@@ -61,7 +61,7 @@ class RayEvaluator(Evaluator):
         self.num_gpus = int(
             sum([node["Resources"].get("GPU", 0) for node in ray.nodes()])
         )
-        if self.num_workers is None:
+        if self.num_workers is None or self.num_workers == -1:
             self.num_workers = int(self.num_cpus // self.num_cpus_per_task)
 
         logger.info(
