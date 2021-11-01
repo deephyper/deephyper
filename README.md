@@ -17,8 +17,6 @@ DeepHyper is a software package that uses learning, optimization, and parallel c
 3. hyperparameter search (DeepHyper/HPS)
 4. ensemble uncertainty quantification (DeepHyper/AutoDEUQ)
 
-Each of these is explained more fully below.
-
 ### Pipeline optimization for ML (DeepHyper/POPT)
 
 Predictive modeling with classical ML methods typically requires a pipeline of methods such as data preprocessing, data balancing, data splitting, variable importance analysis, variable selection, classification/regression algorithm selection, and cross-validation methods. Because of the myriad choices available for each method, employing an effective ML pipeline is beyond most scientists and engineers; therefore, they tend to resort to rules of thumb, often resulting in non-robust models. DeepHyper provides an interface to model the search space of the pipeline. It uses an intelligent search algorithm that samples a small number of pipeline configurations and progressively fits a surrogate model over the configuration-performance space until it exhausts the user-defined maximum number of evaluations. The asynchronous aspect allows the search to avoid waiting for all the evaluation results before proceeding to the next iteration. When an evaluation is finished, the data are used to retrain the surrogate model, which is then used to bias the search toward the promising configurations. The framework uses a master/worker computational paradigm, where one master node fits the surrogate model and generates promising pipeline configurations and worker nodes perform the computationally expensive evaluations and return the outputs to the master node.
