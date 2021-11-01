@@ -47,9 +47,6 @@ class NaProblem:
     >>> Problem.loss('mse')
     >>> Problem.metrics(['r2'])
     >>> Problem.objective('val_r2__last')
-
-    Args:
-        seed (int, optional): a random seed for hyperparameter sampling.
     """
 
     def __init__(self):
