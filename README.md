@@ -140,11 +140,12 @@ Currently, the core DeepHyper team is at Argonne National Laboratory (do not hes
 
 Modules, patches (code, documentation, etc.) contributed by:
 
-* Elise Jennings <ejennings@anl.gov>
+* Elise Jennings 
 * Dipendra Kumar Jha <dipendrajha2018@u.northwestern.edu>
 * Shengli Jiang <sjiang87@wisc.edu>
 * Felix Perez <felix.perez@utdallas.edu>
 * Joceran Gouneau <joceran.g@gmail.com>
+* Bethany Lusch <blusch@anl.gov>
 
 ## Citing DeepHyper
 
