@@ -129,7 +129,7 @@ Which outputs the following where the best ``x`` found is clearly around ``0``.
 
 ## Who is responsible?
 
-Currently, the core DeepHyper team is at Argonne National Laboratory:
+Currently, the core DeepHyper team is at Argonne National Laboratory (do not hesitate to reach out if we forgot you in the list!):
 
 * Prasanna Balaprakash <pbalapra@anl.gov>, Lead and founder
 * Romain Egele <romainegele@gmail.com>, Co-Lead
@@ -137,12 +137,15 @@ Currently, the core DeepHyper team is at Argonne National Laboratory:
 * Romit Maulik <rmaulik@anl.gov>
 * Venkat Vishwanath <venkat@anl.gov>
 * Stefan Wild <wild@anl.gov>
+* Kyle Gerard Felker <felker@anl.gov>
 
 Modules, patches (code, documentation, etc.) contributed by:
 
 * Elise Jennings <ejennings@anl.gov>
 * Dipendra Kumar Jha <dipendrajha2018@u.northwestern.edu>
+* Shengli Jiang <sjiang87@wisc.edu>
 * Felix Perez <felix.perez@utdallas.edu>
+* Joceran Gouneau <joceran.g@gmail.com>
 
 ## Citing DeepHyper
 
