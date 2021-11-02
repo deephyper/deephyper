@@ -1,6 +1,13 @@
 """
 Dashboard
 ---------
+A tool to open an interactive dashboard in the browser to help analyse DeepHyper results.
+
+It can be use such as:
+
+.. code-block:: console
+
+    $ deephyper-analytics dashboard
 """
 import os
 import subprocess
@@ -18,8 +25,6 @@ def add_subparser(subparsers):
     parser = subparsers.add_parser(
         subparser_name, help="Open a dashboard in the browser."
     )
-
-    # parser.add_argument("path", type=str, help="Path to the input CSV file.")
 
     return subparser_name, function_to_call
 
