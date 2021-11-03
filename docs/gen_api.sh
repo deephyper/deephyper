@@ -23,8 +23,8 @@ sphinx-apidoc --templatedir templates/api --module-first -e \
     ../deephyper/layers \
     ../deephyper/core/logs \
     ../deephyper/core/exceptions \
-    ../deephyper/core/analytics/plot \
-    ../deephyper/core/parser*
+    ../deephyper/core/parser* \
+    ../deephyper/core/analytics/dashboard
 
 
 rm api/deephyper.rst

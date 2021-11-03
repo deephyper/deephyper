@@ -86,6 +86,7 @@ EXTRAS = {
         "jupyter_contrib_nbextensions>=0.5.1",
         "nbconvert<6",
         "seaborn>=0.9.1",
+        "streamlit"
     ],
     "hvd": ["horovod>=0.21.3", "mpi4py>=3.0.0"],
     "deepspace": ["deepspace>=0.0.5"],

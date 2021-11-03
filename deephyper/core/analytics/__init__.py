@@ -1,7 +1,7 @@
 # for the documentation
-from . import _topk, _quick_plot
+from . import _topk, _quick_plot, _dashboard
 
-commands = [_topk, _quick_plot]
+commands = [_topk, _quick_plot, _dashboard]
 
 __doc__ = ""
 
