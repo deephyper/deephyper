@@ -81,7 +81,8 @@ class Search(abc.ABC):
             else:
                 self._evaluator.dump_evals()
 
-        df_results = pd.read_csv("results.csv")
+        path_results = os.path.join(self._log_dir, "results.csv")
+        df_results = pd.read_csv(path_results)
         return df_results
 
     @abc.abstractmethod
