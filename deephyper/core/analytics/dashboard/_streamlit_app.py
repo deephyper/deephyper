@@ -1,12 +1,13 @@
+from numpy.core.numeric import identity
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from tinydb import TinyDB, Query
 import json
 import tempfile
-import numpy as np
 
 from deephyper.core.analytics.dashboard._pyplot import plot_single_line
+from deephyper.core.analytics.dashboard._results_processors import ProfileProcessor, SearchProcessor, DefaultProcessor
 
 
 def _worker_utilization(profile, num_workers):
@@ -103,7 +104,7 @@ def _database_selection():
     uploaded_file = st.sidebar.file_uploader("Choose a Database file")
 
     if uploaded_file is not None:
-        temp_db = tempfile.NamedTemporaryFile(mode="r+")
+        temp_db = tempfile.NamedTemporaryFile(mode="w+")
         json.dump(json.load(uploaded_file), temp_db)
         temp_db.read()
         db = TinyDB(temp_db.name)
@@ -111,30 +112,23 @@ def _database_selection():
         # Get the selectable caracteristics from the database
         selection = db.all()
         criterias = {}
-        not_criterias = ["description", "results"]
+        not_criterias = ["description", "results", "date"]
         for select in selection:
-            _get_criterias(select, criterias, not_criterias)
+            criterias = _get_criterias(select, criterias, not_criterias)
 
         # Show the possible criterias
-        choices = {}
         with st.sidebar.expander("Select benchmark criterias :"):
-            _select_choices(criterias, choices, 1)
+            choices = _select_choices(criterias, 1)
 
         # Select the corresponding runs
-        run = Query()
-        run = _generate_query(choices, run)
-        selection = db.search(run)
+        query = _generate_query(choices, Query())
+        selection = db.search(query)
         select_size = len(selection)
-        if select_size == 0:
-            st.sidebar.warning("0 benchmark found.")
-        else:
+        if select_size != 0:
             st.sidebar.info("{nb} benchmark{s} found.".format(nb=select_size, s='s' if select_size > 1 else ''))
         
-        # Sort selection and bring together identical runs
-        configurations = []
-        bench_per_conf = []
-        results_list = []
-        _regroup_identicals(selection, configurations, bench_per_conf, results_list)
+        # Sort the selection and bring together identical runs
+        configurations, bench_per_conf, results_list = _regroup_identicals(selection)
 
         # Show configurations info
         st.header("Selected configurations")
@@ -143,88 +137,71 @@ def _database_selection():
                 st.info(f"Number of benchmarks comprised : {bench_per_conf[i]}")
                 _show_bench_info(configurations[i], 1)
 
-        # Preprocess the results
-        def to_max(l):
-            r = [l[0]]
-            for e in l[1:]:
-                r.append(max(r[-1], e))
-            return r
-
+        # Process the results
+        results_processors = {
+            "profile": ProfileProcessor,
+            "search": SearchProcessor
+        }
+        
         roll_val = st.sidebar.slider('Roll value', 1, 50, 25)
+        preprocess_params = {
+            "profile": {roll_val}
+        }
         for results in results_list:
             for key, val_list in results.items():
-                if key in ["profile", "search"]:
-                    new_val_list = []
-                    for val in val_list:
-                        if key == "profile":
-                            profile = pd.DataFrame({"n_jobs_running" : val["n_jobs_running"]}, index=val["timestamp"])
-                            profile.index -= profile.index[0]
-                            new_base = np.arange(0, val["timestamp"][-1], 0.1)
-                            profile = profile.reindex(profile.index.union(new_base)).interpolate('values').loc[new_base]
-                            profile = profile.rolling(roll_val).mean()
-                            new_val_list.append(profile.to_dict())
-                        elif key == "search":
-                            objective = val["objective"]
-                            search = pd.DataFrame({"objective" : to_max(objective)})
-                            new_val_list.append(search.to_dict())
-                    results[key] = new_val_list
+                processor = results_processors.get(key, DefaultProcessor)
 
-        # Mean the results of each configuration
-        for results in results_list:
-            for key, val_list in results.items():
-                if key in ["profile", "search"]:
-                    df_list = list(map(lambda x: pd.DataFrame(x), val_list))
-                    df_concat = pd.concat(df_list)
-                    by_row_index = df_concat.groupby(df_concat.index)
-                    df = by_row_index.mean()
-                    results[key] = df.to_dict()
-                elif type(val_list[0]) in [int, float]:
-                    avrg = sum(val_list)/len(val_list)
-                    results[key] = avrg
-                else:
-                    results.pop(key)
+                # Preprocess the results
+                params = preprocess_params.get(key, {})
+                new_val_list = []
+                for val in val_list:
+                    new_val = processor.preprocess(val, *params)
+                    new_val_list.append(new_val)
 
+                # Fuse the results of each configuration
+                fused_val = processor.fuse(new_val_list)
+                results[key] = fused_val
+
+        # Rearrange to regroup common results together
+        report = _regroup_results(results_list)
 
         # Show the results
         st.header("Results")
+        if len(configurations) == 0:
+            st.warning("0 benchmark found.")
 
-        for i in range(len(configurations)):
-            st.subheader(f"Configuration {i+1} :")
-            for key, val in results_list[i].items():
-                if key in ["profile", "search"]:
-                    st.markdown(f"**{key} :**")
-                    fig = plt.figure()
-                    df = pd.DataFrame.from_dict(val)
-                    plt.plot(df)
-                    st.pyplot(fig)
-                else:
-                    st.markdown(f"**{key} :** {val}")
+        for key, val_list in report.items():
+            st.subheader(f"{key} :")
+            processor = results_processors.get(key, DefaultProcessor)
+            processor.display(st, val_list)
 
 
-def _get_criterias(data, criterias, not_criterias):
+def _get_criterias(data, old_criterias, not_criterias):
+    criterias = old_criterias.copy()
     for key, val in data.items():
         if key not in not_criterias:
             if type(val) == list:
                 val = tuple(val)
-            if key not in criterias:
+            if key not in old_criterias:
                 if type(val) == dict:
                     criterias[key] = {}
                 else:
                     criterias[key] = {val}
             if type(val) == dict :
-                _get_criterias(data[key], criterias[key], not_criterias)
+                criterias[key] = _get_criterias(data[key], criterias[key], not_criterias)
             else:
                 criterias[key].add(val)
+    return criterias
 
-def _select_choices(criterias, choices, depth):
+def _select_choices(criterias, depth):
+    choices = {}
     for key, val in criterias.items():
         if type(val) == dict :
             if depth == 1:
                 st.markdown("------")
             h = depth+1 if depth < 6 else 6
             st.markdown(f"{(h)*'#'} {key} :")
-            choices[key] = {}
-            _select_choices(criterias[key], choices[key], depth+1)
+            choices[key] = _select_choices(criterias[key], depth+1)
         else:
             choice = st.multiselect(
                 label=key,
@@ -233,6 +210,7 @@ def _select_choices(criterias, choices, depth):
             if len(choice) != 0 and type(choice[0]) == tuple:
                 choice = list(map(lambda x: list(x), choice))
             choices[key] = choice
+    return choices
 
 def _generate_query(choices, query):
     sentence = query.noop()
@@ -257,11 +235,17 @@ def _show_bench_info(configuration, depth):
         else:
             st.markdown(f"**{key}:** {val}")
 
-def _regroup_identicals(selection, configurations, bench_per_conf, results_list):
+def _regroup_identicals(select):
+    selection = select.copy()
     def _cleanup_info(info):
-        #info["summary"].pop("date")
-        return 0
-
+        try:
+            info["summary"].pop("date")
+        except:
+            pass
+    
+    configurations = []
+    bench_per_conf = []
+    results_list = []
     for s in selection:
         results = s.pop("results")
         _cleanup_info(s)
@@ -276,6 +260,21 @@ def _regroup_identicals(selection, configurations, bench_per_conf, results_list)
             for key, val in results.items():
                 results[key] = [val]
             results_list.append(results)
+    return configurations, bench_per_conf, results_list
+
+def _regroup_results(results_list):
+    report = {}
+    for results in results_list:
+        for key in report.keys():
+            if key in results.keys():
+                report[key].append(results[key])
+            else:
+                report[key].append(None)
+        for key, val in results.items():
+            if key not in report.keys():
+                report[key] = [val]
+    return report
+
 
 def main():
     st.title("DeepHyper Dashboard")
