@@ -159,11 +159,10 @@ class Evaluator:
         Args:
             type (str):
                 Options:
-                    "ALL"
-                        Collect all jobs submitted to the evaluator.
-                        Ex.) eval.gather("ALL")
-                    "BATCH"
-                        Specify a minimum batch size of jobs to collect from the evaluator.
+                    ``"ALL"``
+                        Block until all jobs submitted to the evaluator are completed.
+                    ``"BATCH"``
+                        Specify a minimum batch size of jobs to collect from the evaluator. The method will block until at least ``size`` evaluations are completed.
             size (int, optional): The minimum batch size that we want to collect from the evaluator. Defaults to 1.
 
         Raises:
