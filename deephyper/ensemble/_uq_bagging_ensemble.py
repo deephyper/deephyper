@@ -64,7 +64,13 @@ def model_predict(model_path, X, batch_size=32, verbose=0):
             traceback.print_exc()
         model = None
 
-    dataset = tf.data.Dataset.from_tensor_slices(X)
+    # dataset
+    if type(X) is list:
+        dataset = tf.data.Dataset.from_tensor_slices(
+                {f"input_{i}": Xi for i, Xi in enumerate(X)}
+            )
+    else:
+        dataset = tf.data.Dataset.from_tensor_slices(X)
     dataset = dataset.batch(batch_size)
 
     def batch_predict(dataset, convert_func=lambda x: x):
@@ -76,7 +82,7 @@ def model_predict(model_path, X, batch_size=32, verbose=0):
         return y
 
     if model:
-        y_dist = model(X[:1], training=False)  # just to test the type of the output
+        y_dist = model(next(iter(dataset)), training=False)  # just to test the type of the output
         if isinstance(y_dist, tfp.distributions.Distribution):
             if hasattr(y_dist, "loc") and hasattr(y_dist, "scale"):
                 convert_func = lambda y_dist: np.concatenate(
