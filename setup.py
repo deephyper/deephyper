@@ -55,9 +55,7 @@ REQUIRED = [
     "typeguard",
     "openml==0.10.2",
     "matplotlib>=3.0.3",
-    "statsmodels",
-    "tinydb",
-    "streamlit"
+    "statsmodels"
 ]
 
 # What packages are optional?
@@ -88,7 +86,8 @@ EXTRAS = {
         "jupyter_contrib_nbextensions>=0.5.1",
         "nbconvert<6",
         "seaborn>=0.9.1",
-        "streamlit"
+        "streamlit",
+        "tinydb",
     ],
     "hvd": ["horovod>=0.21.3", "mpi4py>=3.0.0"],
     "deepspace": ["deepspace>=0.0.5"],
