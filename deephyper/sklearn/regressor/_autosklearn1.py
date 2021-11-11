@@ -1,6 +1,7 @@
 """
 This module provides ``problem_autosklearn1`` and ``run_autosklearn`` for regression tasks.
 """
+import warnings
 from inspect import signature
 
 import ConfigSpace as cs
@@ -30,7 +31,8 @@ problem_autosklearn1 = HpProblem()
 
 regressor = problem_autosklearn1.add_hyperparameter(
     name="regressor",
-    value=["RandomForest", "Linear", "AdaBoost", "KNeighbors", "MLP", "SVR", "XGBoost"],
+    value=["RandomForest", "Linear", "AdaBoost",
+           "KNeighbors", "MLP", "SVR", "XGBoost"],
 )
 
 # n_estimators
@@ -55,7 +57,8 @@ cond_max_depth = cs.EqualsCondition(max_depth, regressor, "RandomForest")
 problem_autosklearn1.add_condition(cond_max_depth)
 
 # n_neighbors
-n_neighbors = problem_autosklearn1.add_hyperparameter(name="n_neighbors", value=(1, 100))
+n_neighbors = problem_autosklearn1.add_hyperparameter(
+    name="n_neighbors", value=(1, 100))
 
 cond_n_neighbors = cs.EqualsCondition(n_neighbors, regressor, "KNeighbors")
 
@@ -71,7 +74,8 @@ cond_alpha = cs.EqualsCondition(alpha, regressor, "MLP")
 problem_autosklearn1.add_condition(cond_alpha)
 
 # C
-C = problem_autosklearn1.add_hyperparameter(name="C", value=(1e-5, 10.0, "log-uniform"))
+C = problem_autosklearn1.add_hyperparameter(
+    name="C", value=(1e-5, 10.0, "log-uniform"))
 
 cond_C = cs.EqualsCondition(C, regressor, "SVR")
 
@@ -133,12 +137,12 @@ def run_autosklearn1(config: dict, load_data: callable) -> float:
     Returns:
         float: returns the :math:`R^2` on the validation set.
     """
-    seed = 42
-    config["random_state"] = seed
+    config["random_state"] = config.get("random_state", 42)
+    config["n_jobs"] = config.get("n_jobs", 1)
 
     X, y = load_data()
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.33, random_state=seed
+        X, y, test_size=0.33, random_state=config["random_state"]
     )
 
     preproc = minmaxstdscaler()
@@ -158,13 +162,12 @@ def run_autosklearn1(config: dict, load_data: callable) -> float:
         if k in clf_allowed_params and not (v in ["nan", "NA"])
     }
 
-    if "n_jobs" in clf_allowed_params:  # performance parameter
-        clf_params["n_jobs"] = 8
-
     try:  # good practice to manage the fail value yourself...
         clf = clf_class(**clf_params)
 
-        clf.fit(X_train, y_train)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            clf.fit(X_train, y_train)
 
         fit_is_complete = True
     except:
