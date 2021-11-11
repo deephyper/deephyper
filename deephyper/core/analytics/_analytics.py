@@ -9,8 +9,9 @@ It can be used with:
     Command line to analysis the outputs produced by DeepHyper.
 
     positional arguments:
-    {notebook,quickplot,topk}
+    {dashboard,notebook,quickplot,topk}
                             Kind of analytics.
+        dashboard           Open a DeepHyper dashboard in the browser.
         notebook            Generate a notebook with different types of analysis
         quickplot           Tool to generate a quick 2D plot from file.
         topk                Print the top-k configurations.

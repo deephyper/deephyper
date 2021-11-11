@@ -86,7 +86,7 @@ def add_subparser(subparsers):
     return subparser_name, function_to_call
 
 
-def output_best_configuration(path: str, output: str, k: int, **kwargs) -> None:
+def output_best_configuration_from_csv(path: str, output: str, k: int, **kwargs) -> None:
     """Output the configuration based on the maximal objective found in the CSV input file.
 
     :meta private:
@@ -100,28 +100,41 @@ def output_best_configuration(path: str, output: str, k: int, **kwargs) -> None:
     input_extension = path.split(".")[-1]
     if input_extension == "csv":
         df = pd.read_csv(path)
-        df = df.sort_values(by=["objective"], ascending=False, ignore_index=True)
-        subdf = df.iloc[:k]
-
-        if len(output) == 0:
-            print(yaml.dump(json.loads(subdf.to_json(orient="index"))))
-        else:
-            output_extension = output.split(".")[-1]
-            if output_extension == "yaml":
-                with open(output, "w") as f:
-                    yaml.dump(json.loads(subdf.to_json(orient="index")), f)
-            elif output_extension == "csv":
-                subdf.to_csv(output)
-            elif output_extension == "json":
-                subdf.to_json(output, orient="index")
-            else:
-                raise DeephyperRuntimeError(
-                    f"The specified output extension is not supported: {output_extension}"
-                )
+        output_best_configuration_from_df(df, output, k)
     else:
         raise DeephyperRuntimeError(
             f"The specified input file extension '{input_extension}' is not supported."
         )
+
+def output_best_configuration_from_df(df: str, output: str, k: int, **kwargs) -> None:
+    """Output the configuration based on the maximal objective found in the CSV input file.
+
+    :meta private:
+
+    Args:
+        df (DataFrame): a Pandas DataFrame.
+        output (str): Path of the output file ending in (.csv|.yaml|.json).
+        k (int): Number of configuration to output.
+    """
+
+    df = df.sort_values(by=["objective"], ascending=False, ignore_index=True)
+    subdf = df.iloc[:k]
+
+    if len(output) == 0:
+        print(yaml.dump(json.loads(subdf.to_json(orient="index"))))
+    else:
+        output_extension = output.split(".")[-1]
+        if output_extension == "yaml":
+            with open(output, "w") as f:
+                yaml.dump(json.loads(subdf.to_json(orient="index")), f)
+        elif output_extension == "csv":
+            subdf.to_csv(output)
+        elif output_extension == "json":
+            subdf.to_json(output, orient="index")
+        else:
+            raise DeephyperRuntimeError(
+                f"The specified output extension is not supported: {output_extension}"
+            )
 
 
 def main(*args, **kwargs):
@@ -129,4 +142,4 @@ def main(*args, **kwargs):
     :meta private:
     """
 
-    output_best_configuration(**kwargs)
+    output_best_configuration_from_csv(**kwargs)

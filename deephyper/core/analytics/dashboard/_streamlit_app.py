@@ -1,18 +1,19 @@
-import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
-from tinydb import TinyDB, Query
 import json
+import os
 import tempfile
-import numpy as np
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy import stats
 import pandas as pd
 import streamlit as st
-from deephyper.core.analytics.dashboard._pyplot import plot_single_line
+from deephyper.core.analytics.dashboard._pyplot import plot_single_line, plot_single_line_improvement
 from deephyper.core.analytics.dashboard._results_processors import (
-    DefaultProcessor, PercUtilProcessor, ProfileProcessor, SearchProcessor)
+    DefaultProcessor,
+    PercUtilProcessor,
+    ProfileProcessor,
+    SearchProcessor,
+)
 from tinydb import Query, TinyDB
 
 
@@ -34,7 +35,7 @@ def _worker_utilization(profile, num_workers):
 
 def _files_selection(uploaded_file):
     # Can be used wherever a "file-like" object is accepted:
-    df = pd.read_csv(uploaded_file, index_col=0)
+    df = pd.read_csv(uploaded_file)
 
     # assuming it's a search csv
     if (
@@ -45,8 +46,9 @@ def _files_selection(uploaded_file):
     ):
         df["iteration"] = df.index
 
-        st.header("Line Plot")
-        st.sidebar.header("Line Plot")
+        st.subheader("Scatter Plot")
+        st.sidebar.header("Scatter Plot")
+
         line_plot_option_x = st.sidebar.selectbox(
             "Choose the X-axis",
             tuple(df.columns),
@@ -58,14 +60,48 @@ def _files_selection(uploaded_file):
             index=list(df.columns).index("objective"),
         )
 
+        outlier_threshold = st.sidebar.slider(
+            "Outlier Threshold", min_value=0.0, max_value=5.0, value=3.0
+        )
+
+        min_float = np.finfo(np.float32).min
+        has_failed = (
+            (abs(df[line_plot_option_y] - min_float) < 1e-3)
+            | (df[line_plot_option_y] < min_float)
+        )
+        n_failures = sum(has_failed.astype(int))
+
+        if n_failures > 0:
+            st.warning(f"**{n_failures}** failure{'s' if n_failures > 1 else ''} detected!")
+
+        df = df[~has_failed]
+        df = df[(np.abs(stats.zscore(df[line_plot_option_y])) < outlier_threshold)]
+
+        min_y = st.sidebar.number_input("Min Y: ", value=df[line_plot_option_y].min())
+        max_y = st.sidebar.number_input("Max Y: ", value=df[line_plot_option_y].max())
+
+        df = df[(min_y < df[line_plot_option_y]) & (df[line_plot_option_y] < max_y)]
+
         plot_single_line(df, line_plot_option_x, line_plot_option_y)
+
+        st.subheader("Line Plot")
+        plot_single_line_improvement(df, line_plot_option_x, line_plot_option_y)
+
+        st.subheader("Top-K Configurations")
+        st.sidebar.header("Top-K Configurations")
+
+        k = st.sidebar.number_input("Number of displayed configurations: ", min_value=1, max_value=len(df), value=5)
+        df = df.sort_values(by=["objective"], ascending=False, ignore_index=True)
+
+        subdf = df.iloc[:k]
+        st.dataframe(subdf)
 
     # assuming it is a profile csv
     elif "timestamp" in df.columns and "n_jobs_running" in df.columns:
+        df.set_index(df.columns[0])
+
         st.header("Worker Utilization")
-        num_workers = st.number_input(
-            "Number of Workers", value=df.n_jobs_running.max()
-        )
+        num_workers = st.number_input("Number of Workers", value=df.n_jobs_running.max())
 
         perc_ut = _worker_utilization(df, num_workers)
 
@@ -125,22 +161,22 @@ def _database_selection(uploaded_file):
     selection = db.search(query)
     select_size = len(selection)
     if select_size != 0:
-        st.sidebar.info("{nb} benchmark{s} found.".format(
-            nb=select_size, s='s' if select_size > 1 else ''))
+        st.sidebar.info(
+            "{nb} benchmark{s} found.".format(
+                nb=select_size, s="s" if select_size > 1 else ""
+            )
+        )
 
-    group = st.sidebar.checkbox(
-        "Group identical runs in the same config", True)
+    group = st.sidebar.checkbox("Group identical runs in the same config", True)
     # Sort the selection and bring together identical runs
-    configurations, bench_per_conf, results_list = _regroup_identicals(
-        selection, group)
+    configurations, bench_per_conf, results_list = _regroup_identicals(selection, group)
 
     # Show configurations info
     if len(configurations) == 0:
         st.warning("0 benchmark found.")
     else:
         st.header("Selected configurations")
-    colors = plt.get_cmap('gnuplot')(
-        np.linspace(0.1, 0.80, len(configurations)))
+    colors = plt.get_cmap("gnuplot")(np.linspace(0.1, 0.80, len(configurations)))
     for i in range(len(configurations)):
         with st.expander(f"Configuration {i+1}"):
             st.info(f"Number of benchmarks comprised : {bench_per_conf[i]}")
@@ -151,7 +187,7 @@ def _database_selection(uploaded_file):
     results_processors = {
         "profile": ProfileProcessor(menu),
         "search": SearchProcessor(),
-        "perc_util": PercUtilProcessor()
+        "perc_util": PercUtilProcessor(),
     }
     default_processor = DefaultProcessor(menu)
 
@@ -198,8 +234,7 @@ def _get_criterias(data, old_criterias, not_criterias):
                 else:
                     criterias[key] = {val}
             if type(val) == dict:
-                criterias[key] = _get_criterias(
-                    data[key], criterias[key], not_criterias)
+                criterias[key] = _get_criterias(data[key], criterias[key], not_criterias)
             else:
                 criterias[key].add(val)
     return criterias
@@ -211,18 +246,15 @@ def _select_choices(criterias, depth):
         if type(val) == dict:
             if depth == 1:
                 st.markdown("------")
-            h = depth+1 if depth < 6 else 6
+            h = depth + 1 if depth < 6 else 6
             st.markdown(f"{(h)*'#'} {key} :")
-            choices[key] = _select_choices(criterias[key], depth+1)
+            choices[key] = _select_choices(criterias[key], depth + 1)
         else:
             if len(val) == 1:
                 choice = list(val)
                 st.markdown(f"{key} : {choice[0]}")
             else:
-                choice = st.multiselect(
-                    label=key,
-                    options=val
-                )
+                choice = st.multiselect(label=key, options=val)
             if len(choice) != 0 and type(choice[0]) == tuple:
                 choice = list(map(lambda x: list(x), choice))
             choices[key] = choice
@@ -238,22 +270,23 @@ def _generate_query(choices, query):
             test = query[key].one_of(val)
         else:
             test = query.noop()
-        sentence = (~ (query[key].exists()) | test) & sentence
+        sentence = (~(query[key].exists()) | test) & sentence
     return sentence
 
 
 def _show_bench_info(configuration, depth, c):
     for key, val in configuration.items():
-        h = depth+2 if depth < 4 else 6
+        h = depth + 2 if depth < 4 else 6
         if type(val) == dict:
             if depth == 1:
                 st.markdown("------")
                 color = f"rgb({c[0]*255}, {c[1]*255}, {c[2]*255})"
                 st.markdown(
-                    f"<h3 style='color:{color}'>{key} :</h3>", unsafe_allow_html=True)
+                    f"<h3 style='color:{color}'>{key} :</h3>", unsafe_allow_html=True
+                )
             else:
                 st.markdown(f"{h*'#'} {key}:")
-            _show_bench_info(configuration[key], depth+1, c)
+            _show_bench_info(configuration[key], depth + 1, c)
         else:
             st.markdown(f"**{key}:** {val}")
 
@@ -300,133 +333,41 @@ def _regroup_results(results_list):
                 report[key] = [val]
     return report
 
-    if uploaded_file is not None:
-        temp_db = tempfile.NamedTemporaryFile(mode="r+")
-        json.dump(json.load(uploaded_file), temp_db)
-        temp_db.read()
-        db = TinyDB(temp_db.name)
-
-        # Get the selectable caracteristics from the database
-        selection = db.all()
-        criterias = {}
-        not_criterias = ["description", "results"]
-        for select in selection:
-            _get_criterias(select, criterias, not_criterias)
-
-        # Show the possible criterias
-        choices = {}
-        with st.sidebar.expander("Select benchmark criterias :"):
-            _select_choices(criterias, choices, 1)
-
-        # Select the corresponding runs
-        run = Query()
-        run = _generate_query(choices, run)
-        selection = db.search(run)
-        select_size = len(selection)
-        if select_size == 0:
-            st.sidebar.warning("0 benchmark found.")
-        else:
-            st.sidebar.info("{nb} benchmark{s} found.".format(nb=select_size, s='s' if select_size > 1 else ''))
-        
-        # Sort selection and bring together identical runs
-        configurations = []
-        bench_per_conf = []
-        results_list = []
-        _regroup_identicals(selection, configurations, bench_per_conf, results_list)
-
-        # Show configurations info
-        st.header("Selected configurations")
-        for i in range(len(configurations)):
-            with st.expander(f"Configuration {i+1}"):
-                st.info(f"Number of benchmarks comprised : {bench_per_conf[i]}")
-                _show_bench_info(configurations[i], 1)
-
-        # Preprocess the results
-        def to_max(l):
-            r = [l[0]]
-            for e in l[1:]:
-                r.append(max(r[-1], e))
-            return r
-
-        roll_val = st.sidebar.slider('Roll value', 1, 50, 25)
-        for results in results_list:
-            for key, val_list in results.items():
-                if key in ["profile", "search"]:
-                    new_val_list = []
-                    for val in val_list:
-                        if key == "profile":
-                            profile = pd.DataFrame({"n_jobs_running" : val["n_jobs_running"]}, index=val["timestamp"])
-                            profile.index -= profile.index[0]
-                            new_base = np.arange(0, val["timestamp"][-1], 0.1)
-                            profile = profile.reindex(profile.index.union(new_base)).interpolate('values').loc[new_base]
-                            profile = profile.rolling(roll_val).mean()
-                            new_val_list.append(profile.to_dict())
-                        elif key == "search":
-                            objective = val["objective"]
-                            search = pd.DataFrame({"objective" : to_max(objective)})
-                            new_val_list.append(search.to_dict())
-                    results[key] = new_val_list
-
-        # Mean the results of each configuration
-        for results in results_list:
-            for key, val_list in results.items():
-                if key in ["profile", "search"]:
-                    df_list = list(map(lambda x: pd.DataFrame(x), val_list))
-                    df_concat = pd.concat(df_list)
-                    by_row_index = df_concat.groupby(df_concat.index)
-                    df = by_row_index.mean()
-                    results[key] = df.to_dict()
-                elif type(val_list[0]) in [int, float]:
-                    avrg = sum(val_list)/len(val_list)
-                    results[key] = avrg
-                else:
-                    results.pop(key)
-
-
-        # Show the results
-        st.header("Results")
-
-        for i in range(len(configurations)):
-            st.subheader(f"Configuration {i+1} :")
-            for key, val in results_list[i].items():
-                if key in ["profile", "search"]:
-                    st.markdown(f"**{key} :**")
-                    fig = plt.figure()
-                    df = pd.DataFrame.from_dict(val)
-                    plt.plot(df)
-                    st.pyplot(fig)
-                else:
-                    st.markdown(f"**{key} :** {val}")
-
 
 def main():
     st.title("DeepHyper Dashboard")
-    st.sidebar.markdown("**Import a file**")
-    upload_type = st.sidebar.radio("Upload type :", ("Import File", "Path"))
 
-    if upload_type == "Import File":
+    st.sidebar.subheader("Source Selection")
+    st.sidebar.markdown("The file should be a `csv` or a `json`.")
+    upload_type = st.sidebar.radio(
+        "Selection Type:", ("Upload a Local File", "Enter a File Path")
+    )
+
+    if upload_type == "Upload a Local File":
         uploaded_file = st.sidebar.file_uploader("")
     else:
-        path = st.sidebar.text_input("Enter the file path:")
-        try:
-            uploaded_file = open(path)
-        except:
-            st.sidebar.warning("No such file.")
+        path = st.sidebar.text_input("Enter the file path")
+        if path is not None and len(path) > 0:
+            if not (os.path.exists(path)):
+                st.sidebar.warning("File not found!")
+            else:
+                uploaded_file = open(path, "r")
+        else:
             uploaded_file = None
 
     if uploaded_file is not None:
-        ext = uploaded_file.name.split('.')[-1]
+        ext = uploaded_file.name.split(".")[-1]
 
-        boards = {
-            "csv": _files_selection,
-            "json": _database_selection
-        }
+        boards = {"csv": _files_selection, "json": _database_selection}
 
-        def default(x): return st.sidebar.warning(
-            f"File should either be a csv or a json, not {ext}.")
+        def default(x):
+            return st.sidebar.warning(
+                f"File should either be a `csv` or a `json`, not '{ext}'."
+            )
+
         boards.get(ext, default)(uploaded_file)
-    else:
-        st.sidebar.info("Choose either a CSV or a JSON file.")
+
+        uploaded_file.close()
 
 
 if __name__ == "__main__":
