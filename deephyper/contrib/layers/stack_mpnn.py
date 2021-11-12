@@ -1,12 +1,8 @@
 import tensorflow as tf
 import numpy as np
 import tensorflow.keras.backend as K
-from numpy.random import seed
 from tensorflow.keras import activations
 from tensorflow.keras.layers import Dense
-
-seed(2020)
-tf.random.set_seed(2020)
 
 
 def get_gcn_attention(edge_pair):
