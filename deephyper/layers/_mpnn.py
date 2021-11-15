@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow.keras.backend as K
 from tensorflow.keras import activations
 from tensorflow.keras.layers import Dense
-tf.keras.layers.Layer
+
 
 def get_gcn_attention(edge_pair):
     """calculate gcn attention coef for an edge pair.
