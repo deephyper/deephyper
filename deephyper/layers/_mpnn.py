@@ -3,8 +3,7 @@ import numpy as np
 import tensorflow.keras.backend as K
 from tensorflow.keras import activations
 from tensorflow.keras.layers import Dense
-
-Operation = tf.keras.layers.Layer
+tf.keras.layers.Layer
 
 def get_gcn_attention(edge_pair):
     """calculate gcn attention coef for an edge pair.
@@ -95,7 +94,7 @@ def get_all_mol_feat(data, max_node, max_edge):
             np.array(gcn_attention)], y
 
 
-class SPARSE_MPNN(Operation):
+class SPARSE_MPNN(tf.keras.layers.Layer):
     """Message passing cell.
 
     Args:
@@ -163,7 +162,7 @@ class SPARSE_MPNN(Operation):
         return X
 
 
-class MP_layer(Operation):
+class MP_layer(tf.keras.layers.Layer):
     """Message passing layer.
 
     Args:
@@ -238,7 +237,7 @@ class MP_layer(Operation):
         return updated_nodes
 
 
-class Message_Passer_NNM(Operation):
+class Message_Passer_NNM(tf.keras.layers.Layer):
     """Message passing kernel.
 
     Args:
@@ -390,7 +389,7 @@ class Message_Passer_NNM(Operation):
         return output
 
 
-class Update_Func_GRU(Operation):
+class Update_Func_GRU(tf.keras.layers.Layer):
     """Gated recurrent unit update function. Check details here https://arxiv.org/abs/1412.3555
 
     Args:
@@ -440,7 +439,7 @@ class Update_Func_GRU(Operation):
         return activation
 
 
-class Update_Func_MLP(Operation):
+class Update_Func_MLP(tf.keras.layers.Layer):
     """Multi-layer perceptron update function.
 
     Args:
@@ -476,7 +475,7 @@ class Update_Func_MLP(Operation):
         return activation
 
 
-class Attention_GAT(Operation):
+class Attention_GAT(tf.keras.layers.Layer):
     """GAT Attention. Check details here https://arxiv.org/abs/1710.10903
 
         The attention coefficient between node $i$ and $j$ is calculated as:
@@ -548,7 +547,7 @@ class Attention_GAT(Operation):
         return attn_coef
 
 
-class Attention_SYM_GAT(Operation):
+class Attention_SYM_GAT(tf.keras.layers.Layer):
     """GAT Symmetry Attention.
 
         The attention coefficient between node $i$ and $j$ is calculated as:
@@ -624,7 +623,7 @@ class Attention_SYM_GAT(Operation):
         return attn_coef
 
 
-class Attention_COS(Operation):
+class Attention_COS(tf.keras.layers.Layer):
     """COS Attention. Check details here https://arxiv.org/abs/1803.07294
 
         The attention coefficient between node $i$ and $j$ is calculated as:
@@ -696,7 +695,7 @@ class Attention_COS(Operation):
         return attn_coef
 
 
-class Attention_Linear(Operation):
+class Attention_Linear(tf.keras.layers.Layer):
     """Linear Attention.
 
         The attention coefficient between node $i$ and $j$ is calculated as:
@@ -758,7 +757,7 @@ class Attention_Linear(Operation):
         return attn_coef
 
 
-class Attention_Gen_Linear(Operation):
+class Attention_Gen_Linear(tf.keras.layers.Layer):
     """Generalized Linear Attention. Check details here https://arxiv.org/abs/1802.00910
 
         The attention coefficient between node $i$ and $j$ is calculated as:
@@ -835,7 +834,7 @@ class Attention_Gen_Linear(Operation):
         return attn_coef
 
 
-class Attention_GCN(Operation):
+class Attention_GCN(tf.keras.layers.Layer):
     """GCN Attention.
 
         The attention coefficient between node $i$ and $j$ is calculated as:
@@ -872,7 +871,7 @@ class Attention_GCN(Operation):
         return attn_coef
 
 
-class Attention_Const(Operation):
+class Attention_Const(tf.keras.layers.Layer):
     """Constant Attention.
 
         The attention coefficient between node $i$ and $j$ is calculated as:
@@ -911,7 +910,7 @@ class Attention_Const(Operation):
         return attn_coef
 
 
-class GlobalAttentionPool(Operation):
+class GlobalAttentionPool(tf.keras.layers.Layer):
     """Global Attention Pool.
 
         A gated attention global pooling layer as presented by [Li et al. (2017)](https://arxiv.org/abs/1511.05493).
@@ -951,7 +950,7 @@ class GlobalAttentionPool(Operation):
         return output
 
 
-class GlobalAttentionSumPool(Operation):
+class GlobalAttentionSumPool(tf.keras.layers.Layer):
     """Global Attention Summation Pool.
 
         Pools a graph by learning attention coefficients to sum node features.
@@ -989,7 +988,7 @@ class GlobalAttentionSumPool(Operation):
         return output
 
 
-class GlobalAvgPool(Operation):
+class GlobalAvgPool(tf.keras.layers.Layer):
     """Global Average Pool.
 
         Takes the average over all the nodes or features.
@@ -1017,7 +1016,7 @@ class GlobalAvgPool(Operation):
         return tf.reduce_mean(inputs, axis=self.axis)
 
 
-class GlobalMaxPool(Operation):
+class GlobalMaxPool(tf.keras.layers.Layer):
     """Global Max Pool.
 
         Takes the max value over all the nodes or features.
@@ -1045,7 +1044,7 @@ class GlobalMaxPool(Operation):
         return tf.reduce_max(inputs, axis=self.axis)
 
 
-class GlobalSumPool(Operation):
+class GlobalSumPool(tf.keras.layers.Layer):
     """Global Summation Pool.
 
         Takes the summation over all the nodes or features.
