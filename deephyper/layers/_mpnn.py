@@ -4,9 +4,11 @@ import tensorflow.keras.backend as K
 from tensorflow.keras import activations
 from tensorflow.keras.layers import Dense
 
+Operation = tf.keras.layers.Layer
 
 def get_gcn_attention(edge_pair):
-    r"""calculate gcn attention coef for an edge pair.
+    """calculate gcn attention coef for an edge pair.
+
     Args:
         edge_pair (array): # edges * 2
     """
@@ -29,7 +31,8 @@ def get_gcn_attention(edge_pair):
 
 
 def get_mol_feature(mol, max_node, max_edge):
-    r"""get molecular features for an rdkit molecule
+    """get molecular features for an rdkit molecule
+
     Args:
         mol (rdkit molecule)
         max_node (int): maximum number of nodes in a dataset
@@ -64,7 +67,8 @@ def get_mol_feature(mol, max_node, max_edge):
 
 
 def get_all_mol_feat(data, max_node, max_edge):
-    r"""get molecular features for a whole dataset
+    """get molecular features for a whole dataset
+
     Args:
         data (weave data)
         max_node (int): maximum number of nodes in a dataset
@@ -91,8 +95,9 @@ def get_all_mol_feat(data, max_node, max_edge):
             np.array(gcn_attention)], y
 
 
-class SPARSE_MPNN(tf.keras.layers.Layer):
-    r"""Message passing cell.
+class SPARSE_MPNN(Operation):
+    """Message passing cell.
+
     Args:
         state_dim (int): number of output channels.
         T (int): number of message passing repetition.
@@ -158,8 +163,9 @@ class SPARSE_MPNN(tf.keras.layers.Layer):
         return X
 
 
-class MP_layer(tf.keras.layers.Layer):
-    r"""Message passing layer.
+class MP_layer(Operation):
+    """Message passing layer.
+
     Args:
         state_dim (int): number of output channels.
         attn_heads (int): number of attention heads.
@@ -232,8 +238,9 @@ class MP_layer(tf.keras.layers.Layer):
         return updated_nodes
 
 
-class Message_Passer_NNM(tf.keras.layers.Layer):
-    r"""Message passing kernel.
+class Message_Passer_NNM(Operation):
+    """Message passing kernel.
+
     Args:
         state_dim (int): number of output channels.
         attn_heads (int): number of attention heads.
@@ -383,8 +390,9 @@ class Message_Passer_NNM(tf.keras.layers.Layer):
         return output
 
 
-class Update_Func_GRU(tf.keras.layers.Layer):
-    r"""Gated recurrent unit update function. Check details here https://arxiv.org/abs/1412.3555
+class Update_Func_GRU(Operation):
+    """Gated recurrent unit update function. Check details here https://arxiv.org/abs/1412.3555
+
     Args:
         state_dim (int): number of output channels.
     """
@@ -432,8 +440,8 @@ class Update_Func_GRU(tf.keras.layers.Layer):
         return activation
 
 
-class Update_Func_MLP(tf.keras.layers.Layer):
-    r"""Multi-layer perceptron update function.
+class Update_Func_MLP(Operation):
+    """Multi-layer perceptron update function.
 
     Args:
         state_dim (int): number of output channels.
@@ -468,8 +476,9 @@ class Update_Func_MLP(tf.keras.layers.Layer):
         return activation
 
 
-class Attention_GAT(tf.keras.layers.Layer):
-    r"""GAT Attention. Check details here https://arxiv.org/abs/1710.10903
+class Attention_GAT(Operation):
+    """GAT Attention. Check details here https://arxiv.org/abs/1710.10903
+
         The attention coefficient between node $i$ and $j$ is calculated as:
         $$
             \text{LeakyReLU}(\textbf{a}(\textbf{Wh}_i||\textbf{Wh}_j))
@@ -539,8 +548,9 @@ class Attention_GAT(tf.keras.layers.Layer):
         return attn_coef
 
 
-class Attention_SYM_GAT(tf.keras.layers.Layer):
-    r"""GAT Symmetry Attention.
+class Attention_SYM_GAT(Operation):
+    """GAT Symmetry Attention.
+
         The attention coefficient between node $i$ and $j$ is calculated as:
         $$
             \alpha_{ij} + \alpha_{ij}
@@ -614,8 +624,9 @@ class Attention_SYM_GAT(tf.keras.layers.Layer):
         return attn_coef
 
 
-class Attention_COS(tf.keras.layers.Layer):
-    r"""COS Attention. Check details here https://arxiv.org/abs/1803.07294
+class Attention_COS(Operation):
+    """COS Attention. Check details here https://arxiv.org/abs/1803.07294
+
         The attention coefficient between node $i$ and $j$ is calculated as:
         $$
             \textbf{a}(\textbf{Wh}_i || \textbf{Wh}_j)
@@ -685,8 +696,9 @@ class Attention_COS(tf.keras.layers.Layer):
         return attn_coef
 
 
-class Attention_Linear(tf.keras.layers.Layer):
-    r"""Linear Attention.
+class Attention_Linear(Operation):
+    """Linear Attention.
+
         The attention coefficient between node $i$ and $j$ is calculated as:
         $$
             \text{tanh} (\textbf{a}_l\textbf{Wh}_i + \textbf{a}_r\textbf{Wh}_j)
@@ -746,8 +758,9 @@ class Attention_Linear(tf.keras.layers.Layer):
         return attn_coef
 
 
-class Attention_Gen_Linear(tf.keras.layers.Layer):
-    r"""Generalized Linear Attention. Check details here https://arxiv.org/abs/1802.00910
+class Attention_Gen_Linear(Operation):
+    """Generalized Linear Attention. Check details here https://arxiv.org/abs/1802.00910
+
         The attention coefficient between node $i$ and $j$ is calculated as:
         $$
             \textbf{W}_G \text{tanh} (\textbf{Wh}_i + \textbf{Wh}_j)
@@ -822,8 +835,9 @@ class Attention_Gen_Linear(tf.keras.layers.Layer):
         return attn_coef
 
 
-class Attention_GCN(tf.keras.layers.Layer):
-    r"""GCN Attention.
+class Attention_GCN(Operation):
+    """GCN Attention.
+
         The attention coefficient between node $i$ and $j$ is calculated as:
         $$
             \frac{1}{\sqrt{|\mathcal{N}(i)||\mathcal{N}(j)|}}
@@ -858,8 +872,9 @@ class Attention_GCN(tf.keras.layers.Layer):
         return attn_coef
 
 
-class Attention_Const(tf.keras.layers.Layer):
-    r"""Constant Attention.
+class Attention_Const(Operation):
+    """Constant Attention.
+
         The attention coefficient between node $i$ and $j$ is calculated as:
         $$
             \alpha_{ij} = 1.
@@ -896,8 +911,9 @@ class Attention_Const(tf.keras.layers.Layer):
         return attn_coef
 
 
-class GlobalAttentionPool(tf.keras.layers.Layer):
-    r"""Global Attention Pool.
+class GlobalAttentionPool(Operation):
+    """Global Attention Pool.
+
         A gated attention global pooling layer as presented by [Li et al. (2017)](https://arxiv.org/abs/1511.05493).
         Details can be seen from https://github.com/danielegrattarola/spektral
     Args:
@@ -935,8 +951,9 @@ class GlobalAttentionPool(tf.keras.layers.Layer):
         return output
 
 
-class GlobalAttentionSumPool(tf.keras.layers.Layer):
-    r"""Global Attention Summation Pool.
+class GlobalAttentionSumPool(Operation):
+    """Global Attention Summation Pool.
+
         Pools a graph by learning attention coefficients to sum node features.
         Details can be seen from https://github.com/danielegrattarola/spektral
     """
@@ -972,8 +989,9 @@ class GlobalAttentionSumPool(tf.keras.layers.Layer):
         return output
 
 
-class GlobalAvgPool(tf.keras.layers.Layer):
-    r"""Global Average Pool.
+class GlobalAvgPool(Operation):
+    """Global Average Pool.
+
         Takes the average over all the nodes or features.
         Details can be seen from https://github.com/danielegrattarola/spektral
     Args:
@@ -999,8 +1017,9 @@ class GlobalAvgPool(tf.keras.layers.Layer):
         return tf.reduce_mean(inputs, axis=self.axis)
 
 
-class GlobalMaxPool(tf.keras.layers.Layer):
-    r"""Global Max Pool.
+class GlobalMaxPool(Operation):
+    """Global Max Pool.
+
         Takes the max value over all the nodes or features.
         Details can be seen from https://github.com/danielegrattarola/spektral
     Args:
@@ -1026,8 +1045,9 @@ class GlobalMaxPool(tf.keras.layers.Layer):
         return tf.reduce_max(inputs, axis=self.axis)
 
 
-class GlobalSumPool(tf.keras.layers.Layer):
-    r"""Global Summation Pool.
+class GlobalSumPool(Operation):
+    """Global Summation Pool.
+
         Takes the summation over all the nodes or features.
         Details can be seen from https://github.com/danielegrattarola/spektral
 

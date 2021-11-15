@@ -18,7 +18,6 @@ sphinx-apidoc --templatedir templates/api --module-first -e \
     -o $OUTPUT_PATH \
     $MODULE_PATH \
     ../deephyper/benchmark \
-    ../deephyper/contrib \
     ../deephyper/baseline \
     ../deephyper/layers \
     ../deephyper/core/logs \
