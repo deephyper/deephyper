@@ -16,7 +16,9 @@ COPY $PWD deephyper/
 
 # install the package
 RUN conda install gxx_linux-64 gcc_linux-64
-RUN pip install -e 'deephyper/[dev,analytics]'
+RUN pip install -e 'deephyper/'
+RUN pip install -e 'deephyper/[analytics]'
+RUN pip install -e 'deephyper/[dev]'
 
 
 # activate 'dh' environment by default
