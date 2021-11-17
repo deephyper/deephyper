@@ -52,7 +52,6 @@ REQUIRED = [
     "Jinja2",
     "ConfigSpace>=0.4.20",
     "xgboost",
-    "typeguard",
     "openml==0.10.2",
     "matplotlib>=3.0.3",
     "statsmodels",
