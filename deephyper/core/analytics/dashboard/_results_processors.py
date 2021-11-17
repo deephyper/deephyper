@@ -13,6 +13,7 @@ class ProfileProcessor():
         menu.markdown("**Evolution of Worker Use:**")
         self.roll_val = int(menu.slider(
             'Roll value (in s.)', .1, 25., 12.5)*10)
+        self.menu = menu
 
     def verify(self, idx, key, val):
         if "n_jobs_running" not in val.keys() or "timestamp" not in val.keys():
@@ -26,7 +27,12 @@ class ProfileProcessor():
             profile = pd.DataFrame(
                 {"n_jobs_running": val["n_jobs_running"]}, index=val["timestamp"])
             profile.index -= profile.index[0]
-            new_base = np.arange(0, val["timestamp"][-1], 0.1)
+            t0, t_max = float(profile.index[0]), float(profile.index[-1])
+            t0, t_max = self.menu.slider(
+                "Time Range", min_value=t0, max_value=t_max, value=(t0, t_max)
+            )
+            profile = profile[(profile.index >= t0) & (profile.index <= t_max)]
+            new_base = np.arange(0, t_max, 0.1)
             profile = profile.reindex(profile.index.union(
                 new_base)).interpolate('values').loc[new_base]
             profile = profile.rolling(self.roll_val).mean()
@@ -43,7 +49,7 @@ class ProfileProcessor():
         df_std = by_row_index.std()
         return (df_mean, df_max, df_min, df_std)
 
-    def display(self, st, key, df_list, colors):
+    def display(self, st, key, df_list, names, colors):
         st.subheader("Evolution of Worker Use:")
         for warning in self.warnings:
             st.warning(warning)
@@ -51,11 +57,9 @@ class ProfileProcessor():
         for i in range(len(df_list)):
             if df_list[i] is not None:
                 df_mean, df_max, df_min, df_std = df_list[i]
-                plt.plot(df_mean, label=f"config {i+1}", color=colors[i])
+                plt.plot(df_mean, label=names[i], color=colors[i])
                 plt.fill_between(df_mean.index, df_min.n_jobs_running,
-                                 df_max.n_jobs_running, alpha=.1, color=colors[i])
-                plt.fill_between(df_mean.index, df_mean.n_jobs_running-df_std.n_jobs_running,
-                                 df_mean.n_jobs_running+df_std.n_jobs_running, alpha=.2, color=colors[i])
+                                 df_max.n_jobs_running, alpha=.2, color=colors[i])
         plt.xlabel("Time (sec.)")
         plt.ylabel("Number of Used Workers")
         plt.legend()
@@ -63,7 +67,9 @@ class ProfileProcessor():
         plt.tight_layout()
         st.pyplot(fig)
         return True
-
+    
+    def compare(self, st, key, val_list, comp_param, param_values, names):
+        pass
 
 class SearchProcessor():
     def __init__(self):
@@ -84,7 +90,8 @@ class SearchProcessor():
             return r
         if val is not None:
             objective = val["objective"]
-            search = pd.DataFrame({"objective": to_max(objective)})
+            start = 1 if objective[0] == -1 else 0
+            search = pd.DataFrame({"objective": to_max(objective[start:])})
         else:
             search = pd.DataFrame()
         return search
@@ -98,7 +105,7 @@ class SearchProcessor():
         df_std = by_row_index.std()
         return (df_mean, df_max, df_min, df_std)
 
-    def display(self, st, key, df_list, colors):
+    def display(self, st, key, df_list, names, colors):
         st.subheader("Objective Evolution:")
         for warning in self.warnings:
             st.warning(warning)
@@ -106,11 +113,9 @@ class SearchProcessor():
         for i in range(len(df_list)):
             if df_list[i] is not None:
                 df_mean, df_max, df_min, df_std = df_list[i]
-                plt.plot(df_mean, label=f"config {i+1}", color=colors[i])
+                plt.plot(df_mean, label=names[i], color=colors[i])
                 plt.fill_between(df_mean.index, df_min.objective,
-                                 df_max.objective, alpha=.1, color=colors[i])
-                plt.fill_between(df_mean.index, df_mean.objective-df_std.objective,
-                                 df_mean.objective+df_std.objective, alpha=.2, color=colors[i])
+                                 df_max.objective, alpha=.2, color=colors[i])
         plt.xlabel("Iteration")
         plt.ylabel("Objective")
         plt.legend()
@@ -119,6 +124,8 @@ class SearchProcessor():
         st.pyplot(fig)
         return True
 
+    def compare(self, st, key, val_list, comp_param, param_values, names):
+        pass
 
 class PercUtilProcessor():
     def __init__(self):
@@ -141,7 +148,7 @@ class PercUtilProcessor():
             std = 0
         return (avrg, std)
 
-    def display(self, st, key, val_list, colors):
+    def display(self, st, key, val_list, names, colors):
         st.subheader("Worker Use:")
         for warning in self.warnings:
             st.warning(warning)
@@ -157,20 +164,22 @@ class PercUtilProcessor():
                 color = colors[i]
                 color[-1] = 0.7
                 text_color = 'white' if color[:-1].sum() < 1.5 else '0.2'
-                plt.barh(f"config {i+1}", avrg, xerr=std,
+                plt.barh(names[i], avrg, xerr=std,
                          color=color, ecolor=err_color)
-                plt.barh(f"config {i+1}", 100-avrg,
+                plt.barh(names[i], 100-avrg,
                          left=avrg, color='lightgrey')
-                plt.text(avrg/2, p, f"{round(avrg, 2)}%\nUsed",
+                plt.text(avrg/2, p, f"{round(avrg, 2)}%Used",
                          ha='center', va='center', color=text_color)
-                plt.text(avrg/2+50, p, f"{round(100-avrg, 2)}%\nUnused",
+                plt.text(avrg/2+50, p, f"{round(100-avrg, 2)}%Unused",
                          ha='center', va='center', color='0.2')
 
         plt.xlabel("Percentage")
         plt.tight_layout()
         st.pyplot(fig)
-        return True
+        return False
 
+    def compare(self, st, key, val_list, comp_param, param_values, names):
+        pass
 
 class DefaultProcessor():
 
@@ -201,13 +210,27 @@ class DefaultProcessor():
         avrg = self.fuser(val_list)
         return round(avrg, 4)
 
-    def display(self, st, key, val_list, colors):
+    def display(self, st, key, val_list, names, colors):
         return False
 
-    def display_raw(self, st, raw_data):
+    def display_raw(self, st, raw_data, names):
         st.subheader("Other Results:")
         for warning in self.warnings:
-            self.st.warning(warning)
+            st.warning(warning)
         df = pd.DataFrame(raw_data, index=[
-                          f"config {i+1}" for i in range(len(list(raw_data.values())[0]))])
+                          names[i] for i in range(len(list(raw_data.values())[0]))])
         st.dataframe(df)
+
+    def compare(self, st, key, val_list, comp_param, param_values, names):
+        st.subheader(f"{key}:")
+        fig = plt.figure()
+        for i in range(len(val_list)):
+            if val_list[i] is not None:
+                val = val_list[i]
+                plt.plot(param_values, val, label=names[i], marker='o')
+        plt.xlabel(comp_param)
+        plt.legend()
+        plt.grid()
+        plt.tight_layout()
+        st.pyplot(fig)
+        return True
