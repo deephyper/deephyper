@@ -44,10 +44,13 @@ To create a custom Jupyter kernel run the following from your activated Conda en
 Now when you open a Jupyter notebook the ``Python (deephyper)`` kernel will be available.
 
 
+.. _local-docker-installation:
+
 Docker Image (CPU)
 ==================
 
-A `Docker <https://www.docker.com>`_ image is provided with DeepHyper. Assuming Docker is installed on the system you are using you can access the image with the following commands:
+A `Docker <https://www.docker.com>`_ image with DeepHyper is provided. Assuming `Docker <https://www.docker.com>`_ is installed on the system you are using you can access the image with the following commands:
+
 
 .. code-block:: console
 
