@@ -43,7 +43,10 @@ Check you current platform:
 
     python -c "import platform; print(platform.platform());"
 
-* If you architecture is ``x86_64`` install `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_, and create the ``dh`` environment:
+x86_64
+######
+
+If you architecture is ``x86_64`` install `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_, and create the ``dh`` environment:
 
 .. code-block:: console
 
@@ -58,7 +61,10 @@ Then install DeepHyper in the previously created ``dh`` environment:
     $ pip install deephyper["analytics"]
 
 
-* If your architecture is  ``arm64`` download `MiniForge <https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-arm64.sh>`_ then install it:
+arm64
+#####
+
+If your architecture is  ``arm64`` download `MiniForge <https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-arm64.sh>`_ then install it:
 
 .. code-block:: console
 
