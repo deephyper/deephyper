@@ -5,40 +5,62 @@
 #   $ pip install twine
 
 import os
+import platform
 import sys
 from shutil import rmtree
 
 from setuptools import Command, setup
 
-# on_rtd = os.environ.get("READTHEDOCS") == "True"
+# path of the directory where this file is located
+here = os.path.abspath(os.path.dirname(__file__))
+
+# query platform informations, e.g. 'macOS-12.0.1-arm64-arm-64bit'
+platform_infos = platform.platform()
+
 
 # What packages are required for this module to be executed?
-REQUIRED = [
-    # "tensorflow>=2.0.0",
-    # "tensorflow_probability",
-    "numpy",  # ==1.19.4",  # working with 1.20.1
+REQUIRED_ALL = [
+    "ConfigSpace>=0.4.20",
+    "deepspace>=0.0.5",
     "dh-scikit-optimize==0.9.4",
-    "scikit-learn>=0.23.1",
-    "tqdm",
-    # nas
-    "networkx",
+    "dm-tree",
+    "Jinja2",
     "joblib>=0.10.3",
+    "matplotlib>=3.0.3",
+    "networkx",
+    "numpy",  # ==1.19.4",  # working with 1.20.1
+    "openml>=0.10.2",
+    "pandas>=0.24.2",
     "pydot",
     "ray[default]>=1.3.0",
-    "pandas>=0.24.2",
-    "Jinja2",
-    "ConfigSpace>=0.4.20",
+    "scikit-learn>=0.23.1",
+    "tqdm",
     "xgboost",
-    "openml==0.10.2",
-    "matplotlib>=3.0.3",
 ]
+
+REQUIRED_PLATFORM = {
+    "default": [
+        "tensorflow>=2.0.0",
+        "tensorflow_probability"
+    ],
+    "macOS-arm64": [
+        "tensorflow_probability~=0.14"
+    ]
+}
+
+if "macOS" in platform_infos and "arm64" in platform_infos:
+    REQUIRED = REQUIRED_ALL + REQUIRED_PLATFORM["macOS-arm64"]
+else: # x86_64
+    REQUIRED = REQUIRED_ALL + REQUIRED_PLATFORM["default"]
+
+
 
 # What packages are optional?
 EXTRAS = {
     "dev": [
         # Test
-        "pytest",
         "codecov",
+        "pytest",
         "pytest-cov",
         # Packaging
         "twine",
@@ -46,15 +68,13 @@ EXTRAS = {
         "black",
         "rstcheck",
         # Documentation
-        "Sphinx~=3.5.4",
-        "sphinx-book-theme",
-        "nbsphinx",
-        "sphinx-copybutton",
-        "sphinx-togglebutton",
         "GitPython",
         "ipython",
-        # Other
-        "deepspace>=0.0.5",
+        "nbsphinx",
+        "Sphinx~=3.5.4",
+        "sphinx-book-theme",
+        "sphinx-copybutton",
+        "sphinx-togglebutton",
     ],
     "analytics": [
         "jupyter",
@@ -63,16 +83,9 @@ EXTRAS = {
         "seaborn>=0.9.1",
     ],
     "hvd": ["horovod>=0.21.3", "mpi4py>=3.0.0"],
-    "deepspace": ["deepspace>=0.0.5"],
 }
 
-# The rest you shouldn't have to touch too much :)
-# ------------------------------------------------
-# Except, perhaps the License and Trove Classifiers!
-# If you do change the License, remember to change the Trove Classifier for that!
-
-here = os.path.abspath(os.path.dirname(__file__))
-
+# Useful commands to build/upload the wheel to PyPI
 
 class UploadCommand(Command):
     """Support setup.py upload."""
@@ -168,10 +181,11 @@ class TestInstallCommand(Command):
 setup(
     install_requires=REQUIRED,
     extras_require=EXTRAS,
-    # $ setup.py publish support.
     cmdclass={
         "upload": UploadCommand,
         "testupload": TestUploadCommand,
         "testinstall": TestInstallCommand,
     }
 )
+
+

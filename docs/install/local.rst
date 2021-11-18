@@ -8,19 +8,17 @@ DeepHyper installation requires ``Python>=3.7 and <3.10``.
 Conda environment
 =================
 
-This installation procedure shows you how to create your own Conda virtual environment and install DeepHyper in it. After installing `Anaconda <https://docs.anaconda.com/anaconda/install/index.html>`_ or `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_, create the ``dh`` environment:
+This installation procedure shows you how to create your own Conda virtual environment and install DeepHyper in it. 
+
+Linux
+-----
+
+Install `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_, and create the ``dh`` environment:
 
 .. code-block:: console
 
-    $ conda create -n dh python=3.8
+    $ conda create -n dh python=3.8 -y
     $ conda activate dh
-
-For **Linux-based** systems, it is then required to have the following additionnal dependencies (skip this step if you have **MacOS**):
-
-.. code-block:: console
-
-    $ apt-get install build-essential
-    $ # or
     $ conda install gxx_linux-64 gcc_linux-64
 
 Finally install DeepHyper in the previously created ``dh`` environment:
@@ -28,8 +26,53 @@ Finally install DeepHyper in the previously created ``dh`` environment:
 .. code-block:: console
 
     $ pip install pip --upgrade
-    $ # DeepHyper + Analytics Tools (Parsing logs, Plots, Notebooks)
     $ pip install deephyper["analytics"]
+
+MacOS
+-----
+
+Install Xcode command line tools:
+
+.. code-block:: console
+
+    xcode-select --install
+
+Check you current platform:
+
+.. code-block:: console
+
+    python -c "import platform; print(platform.platform());"
+
+* If you architecture is ``x86_64`` install `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_, and create the ``dh`` environment:
+
+.. code-block:: console
+
+    $ conda create -n dh python=3.8 -y
+    $ conda activate dh
+
+Then install DeepHyper in the previously created ``dh`` environment:
+
+.. code-block:: console
+
+    $ pip install pip --upgrade
+    $ pip install deephyper["analytics"]
+
+
+* If your architecture is  ``arm64`` download `MiniForge <https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-arm64.sh>`_ then install it:
+
+.. code-block:: console
+
+    chmod +x ~/Downloads/Miniforge3-MacOSX-arm64.sh
+    sh ~/Downloads/Miniforge3-MacOSX-arm64.sh
+
+After installing MiniForge clone the DeepHyper repo and install the package:
+
+.. code-block:: console
+
+    git clone https://github.com/deephyper/deephyper.git
+    cd deephyper/
+    conda env create -f install/environment.macOS.arm64.yml
+    
 
 
 Jupyter Notebooks
