@@ -1,5 +1,5 @@
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 import tensorflow.keras.backend as K
 from tensorflow.keras import activations
 from tensorflow.keras.layers import Dense
@@ -92,7 +92,8 @@ def get_all_mol_feat(data, max_node, max_edge):
 
 
 class SPARSE_MPNN(tf.keras.layers.Layer):
-    r"""Message passing cell.
+    """Message passing cell.
+
     Args:
         state_dim (int): number of output channels.
         T (int): number of message passing repetition.
@@ -159,7 +160,8 @@ class SPARSE_MPNN(tf.keras.layers.Layer):
 
 
 class MP_layer(tf.keras.layers.Layer):
-    r"""Message passing layer.
+    """Message passing layer.
+
     Args:
         state_dim (int): number of output channels.
         attn_heads (int): number of attention heads.
@@ -233,7 +235,8 @@ class MP_layer(tf.keras.layers.Layer):
 
 
 class Message_Passer_NNM(tf.keras.layers.Layer):
-    r"""Message passing kernel.
+    """Message passing kernel.
+
     Args:
         state_dim (int): number of output channels.
         attn_heads (int): number of attention heads.
@@ -384,7 +387,8 @@ class Message_Passer_NNM(tf.keras.layers.Layer):
 
 
 class Update_Func_GRU(tf.keras.layers.Layer):
-    r"""Gated recurrent unit update function. Check details here https://arxiv.org/abs/1412.3555
+    """Gated recurrent unit update function. Check details here https://arxiv.org/abs/1412.3555
+
     Args:
         state_dim (int): number of output channels.
     """
@@ -433,7 +437,7 @@ class Update_Func_GRU(tf.keras.layers.Layer):
 
 
 class Update_Func_MLP(tf.keras.layers.Layer):
-    r"""Multi-layer perceptron update function.
+    """Multi-layer perceptron update function.
 
     Args:
         state_dim (int): number of output channels.
@@ -469,7 +473,8 @@ class Update_Func_MLP(tf.keras.layers.Layer):
 
 
 class Attention_GAT(tf.keras.layers.Layer):
-    r"""GAT Attention. Check details here https://arxiv.org/abs/1710.10903
+    """GAT Attention. Check details here https://arxiv.org/abs/1710.10903
+
         The attention coefficient between node $i$ and $j$ is calculated as:
         $$
             \text{LeakyReLU}(\textbf{a}(\textbf{Wh}_i||\textbf{Wh}_j))
@@ -540,7 +545,8 @@ class Attention_GAT(tf.keras.layers.Layer):
 
 
 class Attention_SYM_GAT(tf.keras.layers.Layer):
-    r"""GAT Symmetry Attention.
+    """GAT Symmetry Attention.
+
         The attention coefficient between node $i$ and $j$ is calculated as:
         $$
             \alpha_{ij} + \alpha_{ij}
@@ -615,7 +621,8 @@ class Attention_SYM_GAT(tf.keras.layers.Layer):
 
 
 class Attention_COS(tf.keras.layers.Layer):
-    r"""COS Attention. Check details here https://arxiv.org/abs/1803.07294
+    """COS Attention. Check details here https://arxiv.org/abs/1803.07294
+
         The attention coefficient between node $i$ and $j$ is calculated as:
         $$
             \textbf{a}(\textbf{Wh}_i || \textbf{Wh}_j)
@@ -686,7 +693,8 @@ class Attention_COS(tf.keras.layers.Layer):
 
 
 class Attention_Linear(tf.keras.layers.Layer):
-    r"""Linear Attention.
+    """Linear Attention.
+
         The attention coefficient between node $i$ and $j$ is calculated as:
         $$
             \text{tanh} (\textbf{a}_l\textbf{Wh}_i + \textbf{a}_r\textbf{Wh}_j)
@@ -747,7 +755,8 @@ class Attention_Linear(tf.keras.layers.Layer):
 
 
 class Attention_Gen_Linear(tf.keras.layers.Layer):
-    r"""Generalized Linear Attention. Check details here https://arxiv.org/abs/1802.00910
+    """Generalized Linear Attention. Check details here https://arxiv.org/abs/1802.00910
+
         The attention coefficient between node $i$ and $j$ is calculated as:
         $$
             \textbf{W}_G \text{tanh} (\textbf{Wh}_i + \textbf{Wh}_j)
@@ -823,7 +832,8 @@ class Attention_Gen_Linear(tf.keras.layers.Layer):
 
 
 class Attention_GCN(tf.keras.layers.Layer):
-    r"""GCN Attention.
+    """GCN Attention.
+
         The attention coefficient between node $i$ and $j$ is calculated as:
         $$
             \frac{1}{\sqrt{|\mathcal{N}(i)||\mathcal{N}(j)|}}
@@ -859,7 +869,8 @@ class Attention_GCN(tf.keras.layers.Layer):
 
 
 class Attention_Const(tf.keras.layers.Layer):
-    r"""Constant Attention.
+    """Constant Attention.
+
         The attention coefficient between node $i$ and $j$ is calculated as:
         $$
             \alpha_{ij} = 1.
@@ -897,7 +908,8 @@ class Attention_Const(tf.keras.layers.Layer):
 
 
 class GlobalAttentionPool(tf.keras.layers.Layer):
-    r"""Global Attention Pool.
+    """Global Attention Pool.
+
         A gated attention global pooling layer as presented by [Li et al. (2017)](https://arxiv.org/abs/1511.05493).
         Details can be seen from https://github.com/danielegrattarola/spektral
     Args:
@@ -936,7 +948,8 @@ class GlobalAttentionPool(tf.keras.layers.Layer):
 
 
 class GlobalAttentionSumPool(tf.keras.layers.Layer):
-    r"""Global Attention Summation Pool.
+    """Global Attention Summation Pool.
+
         Pools a graph by learning attention coefficients to sum node features.
         Details can be seen from https://github.com/danielegrattarola/spektral
     """
@@ -973,7 +986,8 @@ class GlobalAttentionSumPool(tf.keras.layers.Layer):
 
 
 class GlobalAvgPool(tf.keras.layers.Layer):
-    r"""Global Average Pool.
+    """Global Average Pool.
+
         Takes the average over all the nodes or features.
         Details can be seen from https://github.com/danielegrattarola/spektral
     Args:
@@ -1000,7 +1014,8 @@ class GlobalAvgPool(tf.keras.layers.Layer):
 
 
 class GlobalMaxPool(tf.keras.layers.Layer):
-    r"""Global Max Pool.
+    """Global Max Pool.
+
         Takes the max value over all the nodes or features.
         Details can be seen from https://github.com/danielegrattarola/spektral
     Args:
@@ -1027,7 +1042,8 @@ class GlobalMaxPool(tf.keras.layers.Layer):
 
 
 class GlobalSumPool(tf.keras.layers.Layer):
-    r"""Global Summation Pool.
+    """Global Summation Pool.
+
         Takes the summation over all the nodes or features.
         Details can be seen from https://github.com/danielegrattarola/spektral
 

@@ -96,6 +96,7 @@ Table of Contents
     Core <api/deephyper.core>
     Ensemble <api/deephyper.ensemble>
     Evaluator <api/deephyper.evaluator>
+    GNN <api/deephyper.layers._mpnn>
     NAS <api/deephyper.nas>
     Problem <api/deephyper.problem>
     Search <api/deephyper.search>
