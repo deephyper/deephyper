@@ -1,12 +1,10 @@
-import tensorflow as tf
+"""This module provides practical functions to prepare a dataset for message passing neural networks.
+"""
 import numpy as np
-import tensorflow.keras.backend as K
-from tensorflow.keras import activations
-from tensorflow.keras.layers import Dense
 
 
 def get_gcn_attention(edge_pair):
-    """calculate gcn attention coef for an edge pair.
+    """Calculate gcn attention coef for an edge pair.
 
     Args:
         edge_pair (array): # edges * 2
@@ -30,7 +28,7 @@ def get_gcn_attention(edge_pair):
 
 
 def get_mol_feature(mol, max_node, max_edge):
-    """get molecular features for an rdkit molecule
+    """Get molecular features for an rdkit molecule
 
     Args:
         mol (rdkit molecule)
@@ -66,7 +64,7 @@ def get_mol_feature(mol, max_node, max_edge):
 
 
 def get_all_mol_feat(data, max_node, max_edge):
-    """get molecular features for a whole dataset
+    """Get molecular features for a whole dataset
 
     Args:
         data (weave data)
@@ -79,8 +77,13 @@ def get_all_mol_feat(data, max_node, max_edge):
     node_feat, edge_pair, edge_feat, mask, gcn_attention = [], [], [], [], []
 
     for mol in x:
-        node_feat_temp, edge_pair_temp, edge_feat_temp, mask_temp, gcn_attention_temp = get_mol_feature(mol, max_node,
-                                                                                                        max_edge)
+        (
+            node_feat_temp,
+            edge_pair_temp,
+            edge_feat_temp,
+            mask_temp,
+            gcn_attention_temp,
+        ) = get_mol_feature(mol, max_node, max_edge)
         node_feat.append(node_feat_temp)
         edge_pair.append(edge_pair_temp)
         edge_feat.append(edge_feat_temp)
@@ -90,5 +93,10 @@ def get_all_mol_feat(data, max_node, max_edge):
     if len(y.shape) == 1:
         y = y[..., None]
 
-    return [np.array(node_feat), np.array(edge_pair), np.array(edge_feat), np.array(mask),
-            np.array(gcn_attention)], y
+    return [
+        np.array(node_feat),
+        np.array(edge_pair),
+        np.array(edge_feat),
+        np.array(mask),
+        np.array(gcn_attention),
+    ], y

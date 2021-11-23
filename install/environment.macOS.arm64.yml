@@ -4,7 +4,7 @@ channels:
 dependencies:
   - python>=3.7,<3.10
   - pip
-  - tensorflow 
+  - tensorflow==2.6.2
   - msgpack-python
   - pandas
   - xgboost

@@ -90,17 +90,17 @@ Table of Contents
 
 
 .. toctree::
-    :maxdepth: 1
     :caption: API Reference
 
-    Core <api/deephyper.core>
-    Ensemble <api/deephyper.ensemble>
-    Evaluator <api/deephyper.evaluator>
-    GNN <api/deephyper.layers._mpnn>
-    NAS <api/deephyper.nas>
-    Problem <api/deephyper.problem>
-    Search <api/deephyper.search>
-    Sklearn <api/deephyper.sklearn>
+    Contrib <_autosummary/deephyper.contrib>
+    Core <_autosummary/deephyper.core>
+    Ensemble <_autosummary/deephyper.ensemble>
+    Evaluator <_autosummary/deephyper.evaluator>
+    Keras Layers <_autosummary/deephyper.layers>
+    NAS <_autosummary/deephyper.nas>
+    Problem <_autosummary/deephyper.problem>
+    Search <_autosummary/deephyper.search>
+    Sklearn <_autosummary/deephyper.sklearn>
 
 .. toctree::
     :maxdepth: 2
@@ -110,6 +110,12 @@ Table of Contents
     developer_guides/dev
     developer_guides/doc
     developer_guides/tests_link
+
+
+
+
+
+
 
 Indices and tables
 ==================
