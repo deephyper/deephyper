@@ -179,3 +179,5 @@ Icon
 docs/tutorials*/
 
 old_*/
+
+!.devcontainer.json

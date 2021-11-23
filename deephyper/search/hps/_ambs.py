@@ -163,8 +163,7 @@ class AMBS(Search):
                     new_batch.append(new_cfg)
 
                 # submit_childs
-                if len(new_results) > 0:
-                    self._evaluator.submit(new_batch)
+                self._evaluator.submit(new_batch)
 
     def _get_surrogate_model(
         self, name: str, n_jobs: int = None, random_state: int = None
