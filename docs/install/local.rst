@@ -46,7 +46,7 @@ Check you current platform:
 x86_64
 ######
 
-If you architecture is ``x86_64`` install `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_, and create the ``dh`` environment:
+If your architecture is ``x86_64`` install `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_, and create the ``dh`` environment:
 
 .. code-block:: console
 
