@@ -1,0 +1,16 @@
+name: dh-arm-gpu
+channels:
+  - conda-forge
+  - apple
+dependencies:
+  - python>=3.7,<3.10
+  - pip
+  - tensorflow-deps==2.6.0
+  - msgpack-python
+  - pandas
+  - xgboost
+  - pip:
+    - numpy==1.21.4
+    - tensorflow-macos
+    - tensorflow-metal
+    - -r requirements.macOS.arm64.txt

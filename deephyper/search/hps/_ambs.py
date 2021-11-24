@@ -19,7 +19,7 @@ MAP_acq_func = {
 
 
 class AMBS(Search):
-    """Asynchronous Model-Based Search baised on the `Scikit-Optimized Optimizer <https://scikit-optimize.github.io/stable/modules/generated/skopt.Optimizer.html#skopt.Optimizer>`_.
+    """Asynchronous Model-Based Search based on the `Scikit-Optimized Optimizer <https://scikit-optimize.github.io/stable/modules/generated/skopt.Optimizer.html#skopt.Optimizer>`_.
 
     Args:
         problem (HpProblem): Hyperparameter problem describing the search space to explore.
@@ -163,8 +163,7 @@ class AMBS(Search):
                     new_batch.append(new_cfg)
 
                 # submit_childs
-                if len(new_results) > 0:
-                    self._evaluator.submit(new_batch)
+                self._evaluator.submit(new_batch)
 
     def _get_surrogate_model(
         self, name: str, n_jobs: int = None, random_state: int = None

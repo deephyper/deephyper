@@ -1,1 +1,2 @@
-from deephyper.contrib.quick_plot import quick_plot
+"""A sub-package including external contributions to DeepHyper.
+"""
