@@ -34,7 +34,7 @@ def main(*args, **kwargs):
     :meta private:
     """
 
-    path_st_app = os.path.join(HERE, "dashboard", "_streamlit_app.py")
+    path_st_app = os.path.join(HERE, "dashboard", "_views.py")
 
     result = subprocess.run(
         ["streamlit", "run", path_st_app],

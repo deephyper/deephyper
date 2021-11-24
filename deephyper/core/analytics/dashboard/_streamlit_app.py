@@ -2,19 +2,18 @@ import json
 import os
 import tempfile
 
+import copy
+from functools import partial
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 import pandas as pd
 import streamlit as st
 from deephyper.core.analytics.dashboard._pyplot import plot_single_line, plot_single_line_improvement
-from deephyper.core.analytics.dashboard._results_processors import (
-    DefaultProcessor,
-    PercUtilProcessor,
-    ProfileProcessor,
-    SearchProcessor,
-)
+
 from tinydb import Query, TinyDB
+from deephyper.core.analytics.dashboard._views import Graphs, Table
 
 
 def _worker_utilization(profile, num_workers):
@@ -90,7 +89,7 @@ def _files_selection(uploaded_file):
         st.subheader("Top-K Configurations")
         st.sidebar.header("Top-K Configurations")
 
-        k = st.sidebar.number_input("Number of displayed configurations: ", min_value=1, max_value=len(df), value=5)
+        k = st.sidebar.number_input("Number of displayed headers: ", min_value=1, max_value=len(df), value=5)
         df = df.sort_values(by=["objective"], ascending=False, ignore_index=True)
 
         subdf = df.iloc[:k]
@@ -139,230 +138,35 @@ def _files_selection(uploaded_file):
         st.write("Sorry but this type of CSV is not supported!")
 
 
-def _database_selection(uploaded_file):
-    temp_db = tempfile.NamedTemporaryFile(mode="w+")
-    json.dump(json.load(uploaded_file), temp_db)
-    temp_db.read()
-    db = TinyDB(temp_db.name)
-
-    # Get the selectable caracteristics from the database
-    selection = db.all()
-    criterias = {}
-    not_criterias = ["description", "results", "date"]
-    for select in selection:
-        criterias = _get_criterias(select, criterias, not_criterias)
-
-    # Show the possible criterias
-    with st.sidebar.expander("Select benchmark criterias :"):
-        choices = _select_choices(criterias, 1)
-
-    # Select the corresponding runs
-    query = _generate_query(choices, Query())
-    selection = db.search(query)
-    select_size = len(selection)
-    if select_size != 0:
-        st.sidebar.info(
-            "{nb} benchmark{s} found.".format(
-                nb=select_size, s="s" if select_size > 1 else ""
-            )
-        )
-
-    group = st.sidebar.checkbox("Group identical runs in the same config", True)
-    # Sort the selection and bring together identical runs
-    configurations, bench_per_conf, results_list = _regroup_identicals(selection, group)
-
-    # Show configurations info
-    if len(configurations) == 0:
-        st.warning("0 benchmark found.")
-    else:
-        st.header("Selected configurations")
-    colors = plt.get_cmap("gnuplot")(np.linspace(0.1, 0.80, len(configurations)))
-    for i in range(len(configurations)):
-        with st.expander(f"Configuration {i+1}"):
-            st.info(f"Number of benchmarks comprised : {bench_per_conf[i]}")
-            _show_bench_info(configurations[i], 1, colors[i])
-
-    # Process the results
-    menu = st.sidebar.expander("Display Parameters :")
-    results_processors = {
-        "profile": ProfileProcessor(menu),
-        "search": SearchProcessor(),
-        "perc_util": PercUtilProcessor(),
-    }
-    default_processor = DefaultProcessor(menu)
-
-    for idx, results in enumerate(results_list):
-        for key, val_list in results.items():
-            processor = results_processors.get(key, default_processor)
-
-            # Preprocess the results
-            new_val_list = []
-            for val in val_list:
-                val = processor.verify(idx, key, val)
-                new_val = processor.preprocess(val)
-                new_val_list.append(new_val)
-
-            # Fuse the results of each configuration
-            fused_val = processor.fuse(new_val_list)
-            results[key] = fused_val
-
-    # Rearrange to regroup common results together
-    report = _regroup_results(results_list)
-
-    # Show the results
-    if len(configurations) != 0:
-        st.header("Results")
-
-    raw_data = {}
-    for key, val_list in report.items():
-        processor = results_processors.get(key, default_processor)
-        display = processor.display(st, key, val_list, colors)
-        if not display:
-            raw_data[key] = val_list
-    default_processor.display_raw(st, raw_data)
-
-
-def _get_criterias(data, old_criterias, not_criterias):
-    criterias = old_criterias.copy()
-    for key, val in data.items():
-        if key not in not_criterias:
-            if type(val) == list:
-                val = tuple(val)
-            if key not in old_criterias:
-                if type(val) == dict:
-                    criterias[key] = {}
-                else:
-                    criterias[key] = {val}
-            if type(val) == dict:
-                criterias[key] = _get_criterias(data[key], criterias[key], not_criterias)
-            else:
-                criterias[key].add(val)
-    return criterias
-
-
-def _select_choices(criterias, depth):
-    choices = {}
-    for key, val in criterias.items():
-        if type(val) == dict:
-            if depth == 1:
-                st.markdown("------")
-            h = depth + 1 if depth < 6 else 6
-            st.markdown(f"{(h)*'#'} {key} :")
-            choices[key] = _select_choices(criterias[key], depth + 1)
-        else:
-            if len(val) == 1:
-                choice = list(val)
-                st.markdown(f"{key} : {choice[0]}")
-            else:
-                choice = st.multiselect(label=key, options=val)
-            if len(choice) != 0 and type(choice[0]) == tuple:
-                choice = list(map(lambda x: list(x), choice))
-            choices[key] = choice
-    return choices
-
-
-def _generate_query(choices, query):
-    sentence = query.noop()
-    for key, val in choices.items():
-        if type(val) == dict:
-            test = _generate_query(choices[key], query[key])
-        elif len(val) != 0:
-            test = query[key].one_of(val)
-        else:
-            test = query.noop()
-        sentence = (~(query[key].exists()) | test) & sentence
-    return sentence
-
-
-def _show_bench_info(configuration, depth, c):
-    for key, val in configuration.items():
-        h = depth + 2 if depth < 4 else 6
-        if type(val) == dict:
-            if depth == 1:
-                st.markdown("------")
-                color = f"rgb({c[0]*255}, {c[1]*255}, {c[2]*255})"
-                st.markdown(
-                    f"<h3 style='color:{color}'>{key} :</h3>", unsafe_allow_html=True
-                )
-            else:
-                st.markdown(f"{h*'#'} {key}:")
-            _show_bench_info(configuration[key], depth + 1, c)
-        else:
-            st.markdown(f"**{key}:** {val}")
-
-
-def _regroup_identicals(select, group):
-    selection = select.copy()
-
-    def _cleanup_info(info):
-        try:
-            info["summary"].pop("date")
-        except:
-            pass
-
-    configurations = []
-    bench_per_conf = []
-    results_list = []
-    for s in selection:
-        results = s.pop("results")
-        _cleanup_info(s)
-        if s in configurations and group:
-            index = configurations.index(s)
-            bench_per_conf[index] += 1
-            for key, val in results.items():
-                results_list[index][key].append(val)
-        else:
-            configurations.append(s)
-            bench_per_conf.append(1)
-            for key, val in results.items():
-                results[key] = [val]
-            results_list.append(results)
-    return configurations, bench_per_conf, results_list
-
-
-def _regroup_results(results_list):
-    report = {}
-    for results in results_list:
-        for key in report.keys():
-            if key in results.keys():
-                report[key].append(results[key])
-            else:
-                report[key].append(None)
-        for key, val in results.items():
-            if key not in report.keys():
-                report[key] = [val]
-    return report
-
-
 def main():
     st.title("DeepHyper Dashboard")
 
-    st.sidebar.subheader("Source Selection")
-    st.sidebar.markdown("The file should be a `csv` or a `json`.")
-    upload_type = st.sidebar.radio(
-        "Selection Type:", ("Upload a Local File", "Enter a File Path")
-    )
+    with st.sidebar.expander("Source Selection"):
+        st.markdown("The file should be a `csv`.")
+        upload_type = st.radio(
+            "Selection Type:", ("Upload a Local File", "Enter a File Path")
+        )
 
-    if upload_type == "Upload a Local File":
-        uploaded_file = st.sidebar.file_uploader("")
-    else:
-        path = st.sidebar.text_input("Enter the file path")
-        if path is not None and len(path) > 0:
-            if not (os.path.exists(path)):
-                st.sidebar.warning("File not found!")
-            else:
-                uploaded_file = open(path, "r")
+        if upload_type == "Upload a Local File":
+            uploaded_file = st.file_uploader("")
         else:
-            uploaded_file = None
+            path = st.text_input("Enter the file path")
+            if path is not None and len(path) > 0:
+                if not (os.path.exists(path)):
+                    st.warning("File not found!")
+                else:
+                    uploaded_file = open(path, "r")
+            else:
+                uploaded_file = None
 
     if uploaded_file is not None:
         ext = uploaded_file.name.split(".")[-1]
 
-        boards = {"csv": _files_selection, "json": _database_selection}
+        boards = {"csv": _files_selection}
 
         def default(x):
             return st.sidebar.warning(
-                f"File should either be a `csv` or a `json`, not '{ext}'."
+                f"File should be a `csv`, not '{ext}'."
             )
 
         boards.get(ext, default)(uploaded_file)
