@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import skopt
 from deephyper.search._search import Search
+from deephyper.problem._hyperparameter import convert_to_skopt_space
 
 # Adapt minimization -> maximization with DeepHyper
 MAP_liar_strategy = {
@@ -29,6 +30,7 @@ class AMBS(Search):
         verbose (int, optional): Indicate the verbosity level of the search. Defaults to ``0``.
         surrogate_model (str, optional): Surrogate model used by the Bayesian optimization. Can be a value in ``["RF", "ET", "GBRT", "DUMMY"]``. Defaults to ``"RF"``.
         acq_func (str, optional): Acquisition function used by the Bayesian optimization. Can be a value in ``["UCB", "EI", "PI", "gp_hedge"]``. Defaults to ``"UCB"``.
+        acq_optimizer (str, optional): Method used to minimze the acquisition function. Can be a value in ``["sampling", "lbfgs"]``. Defaults to ``"auto"``.
         kappa (float, optional): Manage the exploration/exploitation tradeoff for the "UCB" acquisition function. Defaults to ``1.96`` which corresponds to 95% of the confidence interval.
         xi (float, optional): Manage the exploration/exploitation tradeoff of ``"EI"`` and ``"PI"`` acquisition function. Defaults to ``0.001``.
         n_points (int, optional): The number of configurations sampled from the search space to infer each batch of new evaluated configurations.
@@ -46,6 +48,7 @@ class AMBS(Search):
         verbose: int = 0,
         surrogate_model: str = "RF",
         acq_func: str = "UCB",
+        acq_optimizer: str="auto",
         kappa: float = 1.96,
         xi: float = 0.001,
         n_points: int = 10000,
@@ -58,7 +61,7 @@ class AMBS(Search):
         super().__init__(problem, evaluator, random_state, log_dir, verbose)
 
         # check input parameters
-        surrogate_model_allowed = ["RF", "ET", "GBRT", "DUMMY"]
+        surrogate_model_allowed = ["RF", "ET", "GBRT", "DUMMY", "GP"]
         if not (surrogate_model in surrogate_model_allowed):
             raise ValueError(
                 f"Parameter 'surrogate_model={surrogate_model}' should have a value in {surrogate_model_allowed}!"
@@ -95,24 +98,32 @@ class AMBS(Search):
         self._liar_strategy = MAP_liar_strategy.get(liar_strategy, liar_strategy)
         self._fitted = False
 
+        # check if it is possible to convert the ConfigSpace to standard skopt Space
+        if (
+            len(self._problem.space.get_forbiddens()) == 0
+            and len(self._problem.space.get_conditions()) == 0
+        ):
+            self._opt_space = convert_to_skopt_space(self._problem.space)
+        else:
+            self._opt_space = self._problem.space
+
         self._opt = None
         self._opt_kwargs = dict(
-            dimensions=self._problem.space,
+            dimensions=self._opt_space,
             base_estimator=self._get_surrogate_model(
-                surrogate_model, n_jobs, random_state=self._random_state.get_state()[1][0]
+                surrogate_model,
+                n_jobs,
+                random_state=self._random_state.get_state()[1][0],
             ),
             # optimizer
-            acq_optimizer="sampling",
+            acq_optimizer=acq_optimizer,
             acq_optimizer_kwargs={
                 "n_points": n_points,
                 "filter_duplicated": filter_duplicated,
             },
             # acquisition function
             acq_func=MAP_acq_func.get(acq_func, acq_func),
-            acq_func_kwargs={
-                "xi": xi,
-                "kappa": kappa
-            },
+            acq_func_kwargs={"xi": xi, "kappa": kappa},
             n_initial_points=self._n_initial_points,
             random_state=self._random_state,
         )
@@ -177,7 +188,7 @@ class AMBS(Search):
         Raises:
             ValueError: when the name of the surrogate model is unknown.
         """
-        accepted_names = ["RF", "ET", "GBRT", "DUMMY"]
+        accepted_names = ["RF", "ET", "GBRT", "DUMMY", "GP"]
         if not (name in accepted_names):
             raise ValueError(
                 f"Unknown surrogate model {name}, please choose among {accepted_names}."

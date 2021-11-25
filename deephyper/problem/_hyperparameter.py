@@ -4,7 +4,84 @@ from pprint import pformat
 import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh
 import deephyper.core.exceptions as dh_exceptions
+import skopt
 import numpy as np
+
+
+def convert_to_skopt_dim(cs_hp, surrogate_model=None):
+
+    if surrogate_model in ["RF", "ET", "GBRT"]:
+        # models not sensitive ot the metric space such as trees
+        surrogate_model_type = "rule_based"
+    else:
+        # models sensitive to the metric space such as GP, neural networks
+        surrogate_model_type = "distance_based"
+
+    if isinstance(cs_hp, csh.UniformIntegerHyperparameter):
+        skopt_dim = skopt.space.Integer(
+            low=cs_hp.lower,
+            high=cs_hp.upper,
+            prior="log-uniform" if cs_hp.log else "uniform",
+            name=cs_hp.name,
+        )
+    elif isinstance(cs_hp, csh.UniformFloatHyperparameter):
+        skopt_dim = skopt.space.Real(
+            low=cs_hp.lower,
+            high=cs_hp.upper,
+            prior="log-uniform" if cs_hp.log else "uniform",
+            name=cs_hp.name,
+        )
+    elif isinstance(cs_hp, csh.CategoricalHyperparameter):
+        # the transform is important if we don't want the complexity of trees
+        # to explode with categorical variables
+        skopt_dim = skopt.space.Categorical(
+            categories=cs_hp.choices,
+            name=cs_hp.name,
+            transform="onehot" if surrogate_model_type == "distance_based" else "label",
+        )
+    elif isinstance(cs_hp, csh.OrdinalHyperparameter):
+        skopt_dim = skopt.space.Categorical(
+            categories=list(cs_hp.sequence), name=cs_hp.name, transform="label"
+        )
+    else:
+        raise TypeError(f"Cannot convert hyperparameter of type {type(cs_hp)}")
+
+    return skopt_dim
+
+
+def convert_to_skopt_space(cs_space, surrogate_model=None):
+    """Convert a ConfigurationSpace to a scikit-optimize Space.
+
+    Args:
+        cs_space (ConfigurationSpace): the ``ConfigurationSpace`` to convert.
+        surrogate_model (str, optional): the type of surrogate model/base estimator used to perform Bayesian optimization. Defaults to None.
+
+    Raises:
+        TypeError: if the input space is not a ConfigurationSpace.
+        RuntimeError: if the input space contains forbiddens.
+        RuntimeError: if the input space contains conditions
+
+    Returns:
+        skopt.space.Space: a scikit-optimize Space.
+    """
+
+    # verify pre-conditions
+    if not (isinstance(cs_space, cs.ConfigurationSpace)):
+        raise TypeError("Input space should be of type ConfigurationSpace")
+
+    if len(cs_space.get_conditions()) > 0:
+        raise RuntimeError("Cannot convert a ConfigSpace with Conditions!")
+
+    if len(cs_space.get_forbiddens()) > 0:
+        raise RuntimeError("Cannot convert a ConfigSpace with Forbiddens!")
+
+    # convert the ConfigSpace to skopt.space.Space
+    dimensions = []
+    for hp in cs_space.get_hyperparameters():
+        dimensions.append(convert_to_skopt_dim(hp, surrogate_model))
+
+    skopt_space = skopt.space.Space(dimensions)
+    return skopt_space
 
 
 def check_hyperparameter(parameter, name=None, default_value=None):
@@ -63,7 +140,7 @@ def check_hyperparameter(parameter, name=None, default_value=None):
             return csh.CategoricalHyperparameter(name, choices=parameter, **kwargs)
         elif all([isinstance(p, (int, float)) for p in parameter]):
             return csh.OrdinalHyperparameter(name, sequence=parameter)
-    elif type(parameter) is dict: # Integer or Real distribution
+    elif type(parameter) is dict:  # Integer or Real distribution
 
         # Normal
         if "mu" in parameter and "sigma" in parameter:
@@ -72,7 +149,9 @@ def check_hyperparameter(parameter, name=None, default_value=None):
             elif type(parameter["mu"]) is int:
                 return csh.NormalIntegerHyperparameter(name=name, **parameter, **kwargs)
             else:
-                raise ValueError("Wrong hyperparameter definition! 'mu' should be either a float or an integer.")
+                raise ValueError(
+                    "Wrong hyperparameter definition! 'mu' should be either a float or an integer."
+                )
 
     raise ValueError(
         f"Invalid dimension {name}: {parameter}. Read the documentation for"

@@ -1,6 +1,6 @@
+import copy
 import logging
-import ray
-import time
+
 from deephyper.evaluator._evaluator import Evaluator
 
 ray_initializer = None
@@ -34,7 +34,7 @@ class SerialEvaluator(Evaluator):
 
     async def execute(self, job):
 
-        sol = self.run_function(job.config)
+        sol = self.run_function(copy.deepcopy(job.config))
 
         job.result = sol
 
