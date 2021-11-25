@@ -22,7 +22,7 @@ platform_infos = platform.platform()
 REQUIRED_ALL = [
     "ConfigSpace>=0.4.20",
     "deepspace>=0.0.5",
-    "dh-scikit-optimize==0.9.4",
+    "dh-scikit-optimize==0.9.5",
     "dm-tree",
     "Jinja2",
     "joblib>=0.10.3",
