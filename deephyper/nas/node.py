@@ -1,3 +1,5 @@
+"""This module provides the available node types to build a ``KSearchSpace``. 
+"""
 import tensorflow as tf
 
 from deephyper.core.exceptions import DeephyperRuntimeError
@@ -5,7 +7,7 @@ from deephyper.nas.operation import Operation
 
 
 class Node:
-    """Represents a node of a graph.
+    """Represents a node of a ``KSearchSpace``.
 
     Args:
         name (str): node name.
@@ -168,8 +170,8 @@ class ConstantNode(OperationNode):
     Dense_100_relu
 
     Args:
-        op (Operation, optional): [description]. Defaults to None.
-        name (str, optional): [description]. Defaults to ''.
+        op (Operation, optional): operation to fix for this node. Defaults to None.
+        name (str, optional): node name. Defaults to ``''``.
     """
 
     def __init__(self, op=None, name="", *args, **kwargs):

@@ -18,6 +18,7 @@ EVALUATORS = {
     "process": "_process_pool.ProcessPoolEvaluator",
     "subprocess": "_subprocess.SubprocessEvaluator",
     "ray": "_ray.RayEvaluator",
+    "serial": "_serial.SerialEvaluator",
     # "balsam": "_balsam.BalsamEvaluator" # TODO
 }
 
@@ -191,6 +192,8 @@ class Evaluator:
         return results
 
     def create_job(self, config):
+        """Create a Job object from the input configuration.
+        """
         new_job = Job(self.n_jobs, config, self.run_function)
         self.n_jobs += 1
         self.jobs.append(new_job)
@@ -198,7 +201,7 @@ class Evaluator:
         return new_job
 
     def decode(self, key):
-        """from JSON string to x (list)"""
+        """Decode the key following a JSON format to return a dict."""
         x = json.loads(key)
         if not isinstance(x, dict):
             raise ValueError(f"Expected dict, but got {type(x)}")

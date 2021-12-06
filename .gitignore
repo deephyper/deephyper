@@ -170,10 +170,16 @@ logdir
 !CHANGELOG.md
 *.tfrecord
 
+# pycharm
+.idea
+
 # Sphinx documentation
 _build/
 !_templates/*
-Icon
+docs/_autosummary/
 docs/tutorials*/
+Icon
 
 old_*/
+
+!.devcontainer.json
