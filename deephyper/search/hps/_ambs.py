@@ -6,8 +6,9 @@ import ConfigSpace.hyperparameters as csh
 import numpy as np
 import pandas as pd
 import skopt
-from deephyper.search._search import Search
 from deephyper.problem._hyperparameter import convert_to_skopt_space
+from deephyper.search._search import Search
+from sklearn.ensemble import GradientBoostingRegressor
 
 # Adapt minimization -> maximization with DeepHyper
 MAP_liar_strategy = {
@@ -48,7 +49,7 @@ class AMBS(Search):
         verbose: int = 0,
         surrogate_model: str = "RF",
         acq_func: str = "UCB",
-        acq_optimizer: str="auto",
+        acq_optimizer: str = "auto",
         kappa: float = 1.96,
         xi: float = 0.001,
         n_points: int = 10000,
@@ -120,6 +121,7 @@ class AMBS(Search):
             acq_optimizer_kwargs={
                 "n_points": n_points,
                 "filter_duplicated": filter_duplicated,
+                "n_jobs": n_jobs
             },
             # acquisition function
             acq_func=MAP_acq_func.get(acq_func, acq_func),
@@ -160,7 +162,8 @@ class AMBS(Search):
                 opt_X = []
                 opt_y = []
                 for cfg, obj in new_results:
-                    x = replace_nan(cfg.values())
+                    # x = replace_nan(cfg.values())
+                    x = list(cfg.values())
                     opt_X.append(x)
                     opt_y.append(-obj)  #! maximizing
                 self._opt.tell(opt_X, opt_y)  #! fit: costly
@@ -196,15 +199,23 @@ class AMBS(Search):
 
         if name == "RF":
             surrogate = skopt.learning.RandomForestRegressor(
-                n_jobs=n_jobs, random_state=random_state
+                n_estimators=100,
+                min_samples_leaf=3,
+                n_jobs=n_jobs,
+                random_state=random_state,
             )
         elif name == "ET":
             surrogate = skopt.learning.ExtraTreesRegressor(
-                n_jobs=n_jobs, random_state=random_state
+                n_estimators=100,
+                min_samples_leaf=3,
+                n_jobs=n_jobs,
+                random_state=random_state,
             )
         elif name == "GBRT":
+
+            gbrt = GradientBoostingRegressor(n_estimators=30, loss="quantile")
             surrogate = skopt.learning.GradientBoostingQuantileRegressor(
-                n_jobs=n_jobs, random_state=random_state
+                base_estimator=gbrt, n_jobs=n_jobs, random_state=random_state
             )
         else:  # for DUMMY and GP
             surrogate = name
@@ -449,7 +460,8 @@ class AMBS(Search):
         res = {}
         hps_names = self._problem.space.get_hyperparameter_names()
         for i in range(len(x)):
-            res[hps_names[i]] = "nan" if isnan(x[i]) else x[i]
+            # res[hps_names[i]] = "nan" if isnan(x[i]) else x[i]
+            res[hps_names[i]] = x[i]
         return res
 
 

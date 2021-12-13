@@ -139,7 +139,7 @@ def check_hyperparameter(parameter, name=None, default_value=None):
         ):
             return csh.CategoricalHyperparameter(name, choices=parameter, **kwargs)
         elif all([isinstance(p, (int, float)) for p in parameter]):
-            return csh.OrdinalHyperparameter(name, sequence=parameter)
+            return csh.OrdinalHyperparameter(name, sequence=parameter, **kwargs)
     elif type(parameter) is dict:  # Integer or Real distribution
 
         # Normal
