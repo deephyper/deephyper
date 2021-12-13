@@ -30,7 +30,7 @@ jobs:
         run: sudo apt update; sudo apt install -y build-essential python3-dev
         if: ${{ matrix.os == 'ubuntu-latest' }}
       - name: Install package
-        run: pip3 install -e '.[dev]'
+        run: pip3 install '.[dev]'
       - name: Run Tests 
         run: pytest
         working-directory: tests
