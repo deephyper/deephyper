@@ -263,9 +263,12 @@ def _filter_results(data, to_filter):
         run["results"] = filtered_results
 
     list(map(_filter, data))
+    to_del = []
     for idx, run in enumerate(data):
         if not run["results"]:
-            del data[idx]
+            to_del.append(idx)
+    for idx in reversed(to_del):
+        del data[idx]
     return data
 
 
@@ -875,9 +878,12 @@ class ComparatorView(AnalysisView):
     def _display(self, key, values, param_values, ids, names, colors):
         fig = plt.figure()
         for idx in ids:
+            x = param_values[idx]
+            y = values[idx]
+            x, y = zip(*sorted(zip(x,y)))
             plt.plot(
-                param_values[idx],
-                values[idx],
+                x,
+                y,
                 label=names[idx],
                 color=colors[idx],
                 marker="o",
