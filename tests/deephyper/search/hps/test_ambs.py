@@ -1,5 +1,6 @@
 import unittest
 
+import ConfigSpace as cs
 import numpy as np
 from deephyper.evaluator import Evaluator
 from deephyper.problem import HpProblem
@@ -73,8 +74,13 @@ class AMBSTest(unittest.TestCase):
 
         def run(config):
             return config["x"]
-         
-        AMBS(problem, Evaluator.create(run, method="serial"), random_state=42, surrogate_model="GP").search(10)
+
+        AMBS(
+            problem,
+            Evaluator.create(run, method="serial"),
+            random_state=42,
+            surrogate_model="GP",
+        ).search(10)
 
         # test int hyperparameters
         problem = HpProblem()
@@ -82,8 +88,13 @@ class AMBSTest(unittest.TestCase):
 
         def run(config):
             return config["x"]
-         
-        AMBS(problem, Evaluator.create(run, method="serial"), random_state=42, surrogate_model="GP").search(10)
+
+        AMBS(
+            problem,
+            Evaluator.create(run, method="serial"),
+            random_state=42,
+            surrogate_model="GP",
+        ).search(10)
 
         # test categorical hyperparameters
         problem = HpProblem()
@@ -91,6 +102,51 @@ class AMBSTest(unittest.TestCase):
 
         def run(config):
             return int(config["x"])
-         
-        AMBS(problem, Evaluator.create(run, method="serial"), random_state=42, surrogate_model="GP").search(10)
-        
+
+        AMBS(
+            problem,
+            Evaluator.create(run, method="serial"),
+            random_state=42,
+            surrogate_model="GP",
+        ).search(10)
+
+    def test_conditional_sample_types(self):
+
+        problem = HpProblem()
+
+        # choices
+        choice = problem.add_hyperparameter(
+            name="choice",
+            value=["choice1", "choice2"],
+        )
+
+        # integers
+        x1_int = problem.add_hyperparameter(name="x1_int", value=(1, 10))
+
+        x2_int = problem.add_hyperparameter(name="x2_int", value=(1, 10))
+
+        # conditions
+        cond_1 = cs.EqualsCondition(x1_int, choice, "choice1")
+
+        cond_2 = cs.EqualsCondition(x2_int, choice, "choice2")
+
+        problem.add_condition(cond_1)
+        problem.add_condition(cond_2)
+
+        def run(config):
+
+            print(f"x1_int: {type(config['x1_int'])}")
+            print(f"x2_int: {type(config['x2_int'])}")
+
+            if config["choice"] == "choice1":
+                assert np.issubdtype(type(config["x1_int"]), np.integer)
+            else:
+                assert np.issubdtype(type(config["x2_int"]), np.integer)
+
+            return 0
+
+        create_evaluator = lambda: Evaluator.create(run, method="serial")
+
+        AMBS(
+            problem, create_evaluator(), random_state=42, surrogate_model="DUMMY"
+        ).search(10)
