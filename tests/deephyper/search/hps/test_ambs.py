@@ -64,3 +64,33 @@ class AMBSTest(unittest.TestCase):
         AMBS(problem, create_evaluator(), random_state=42, surrogate_model="RF").search(
             10
         )
+
+    def test_gp(self):
+
+        # test float hyperparameters
+        problem = HpProblem()
+        problem.add_hyperparameter((0.0, 10.0), "x")
+
+        def run(config):
+            return config["x"]
+         
+        AMBS(problem, Evaluator.create(run, method="serial"), random_state=42, surrogate_model="GP").search(10)
+
+        # test int hyperparameters
+        problem = HpProblem()
+        problem.add_hyperparameter((0, 10), "x")
+
+        def run(config):
+            return config["x"]
+         
+        AMBS(problem, Evaluator.create(run, method="serial"), random_state=42, surrogate_model="GP").search(10)
+
+        # test categorical hyperparameters
+        problem = HpProblem()
+        problem.add_hyperparameter([f"{i}" for i in range(10)], "x")
+
+        def run(config):
+            return int(config["x"])
+         
+        AMBS(problem, Evaluator.create(run, method="serial"), random_state=42, surrogate_model="GP").search(10)
+        
