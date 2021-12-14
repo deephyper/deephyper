@@ -63,7 +63,9 @@ def add_subparser(subparsers):
     subparser_name = "topk"
     function_to_call = main
 
-    parser = subparsers.add_parser(subparser_name, help="Print the top-k configurations.")
+    parser = subparsers.add_parser(
+        subparser_name, help="Print the top-k configurations."
+    )
 
     # best search_spaces
     parser.add_argument("path", type=str, help="Path to the input CSV file.")
@@ -86,7 +88,9 @@ def add_subparser(subparsers):
     return subparser_name, function_to_call
 
 
-def output_best_configuration_from_csv(path: str, output: str, k: int, **kwargs) -> None:
+def output_best_configuration_from_csv(
+    path: str, output: str, k: int, **kwargs
+) -> None:
     """Output the configuration based on the maximal objective found in the CSV input file.
 
     :meta private:
@@ -105,6 +109,7 @@ def output_best_configuration_from_csv(path: str, output: str, k: int, **kwargs)
         raise DeephyperRuntimeError(
             f"The specified input file extension '{input_extension}' is not supported."
         )
+
 
 def output_best_configuration_from_df(df: str, output: str, k: int, **kwargs) -> None:
     """Output the configuration based on the maximal objective found in the CSV input file.

@@ -237,7 +237,9 @@ class AgEBO(RegularizedEvolution):
                         n_points=len(new_results), strategy=self._liar_strategy
                     )
 
-                    new_batch = self._gen_random_batch(size=len(new_results), hps=new_hps)
+                    new_batch = self._gen_random_batch(
+                        size=len(new_results), hps=new_hps
+                    )
 
                     self._evaluator.submit(new_batch)
 

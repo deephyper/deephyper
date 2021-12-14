@@ -121,7 +121,7 @@ class AMBS(Search):
             acq_optimizer_kwargs={
                 "n_points": n_points,
                 "filter_duplicated": filter_duplicated,
-                "n_jobs": n_jobs
+                "n_jobs": n_jobs,
             },
             # acquisition function
             acq_func=MAP_acq_func.get(acq_func, acq_func),

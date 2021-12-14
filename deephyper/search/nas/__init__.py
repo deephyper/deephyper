@@ -13,5 +13,5 @@ __all__ = [
     "NeuralArchitectureSearch",
     "Random",
     "RegularizedEvolution",
-    "RegularizedEvolutionMixed"
+    "RegularizedEvolutionMixed",
 ]

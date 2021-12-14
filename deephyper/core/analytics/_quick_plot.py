@@ -59,6 +59,7 @@ def add_subparser(subparsers):
 
     return subparser_name, function_to_call
 
+
 def plot_for_single_csv(path: str, xy: list):
     """Generate a plot from a single CSV file.
 
@@ -75,7 +76,9 @@ def plot_for_single_csv(path: str, xy: list):
     if len(xy) == 0:
         xy = ["elapsed_sec", "objective"]
     elif len(xy) != 2:
-        raise DeephyperRuntimeError("--xy must take two arguments such as '--xy elapsed_sec objective'")
+        raise DeephyperRuntimeError(
+            "--xy must take two arguments such as '--xy elapsed_sec objective'"
+        )
 
     df = pd.read_csv(path)
 
@@ -106,7 +109,9 @@ def plot_for_single_json(path: str, xy: list):
     if len(xy) == 0:
         xy = ["epochs", "val_loss"]
     elif len(xy) != 2:
-        raise DeephyperRuntimeError("--xy must take two arguments such as '--xy epochs val_loss'")
+        raise DeephyperRuntimeError(
+            "--xy must take two arguments such as '--xy epochs val_loss'"
+        )
 
     xlabel, ylabel = xy
 
@@ -184,10 +189,11 @@ def plot_for_multiple_json(path: list, xy: list):
     if len(xy) == 0:
         xy = ["epochs", "val_loss"]
     elif len(xy) != 2:
-        raise DeephyperRuntimeError("--xy must take two arguments such as '--xy epochs val_loss'")
+        raise DeephyperRuntimeError(
+            "--xy must take two arguments such as '--xy epochs val_loss'"
+        )
 
     xlabel, ylabel = xy
-
 
     plt.figure()
 
@@ -215,16 +221,20 @@ def main(path: list, xy: list, *args, **kwargs):
         elif extension(path[0]) == "json":
             plot_for_single_json(path[0], xy)
         else:
-            raise DeephyperRuntimeError(f"Extension of input file '{extension(path[0])}' is not yet supported.")
+            raise DeephyperRuntimeError(
+                f"Extension of input file '{extension(path[0])}' is not yet supported."
+            )
     else:
 
         # Comparing multiple results.csv files (different search experiments)
         if all([extension(p) == "csv" for p in path]):
-            raise DeephyperRuntimeError("Comparison of multiple experiments is not yet supported.")
+            raise DeephyperRuntimeError(
+                "Comparison of multiple experiments is not yet supported."
+            )
         # Comparing multiple history.json files (different neural networks)
         elif all([extension(p) == "json" for p in path]):
             plot_for_multiple_json(path, xy)
         else:
-            raise DeephyperRuntimeError("Multiple input files should all have the same extension '.csv' or '.json'")
-
-
+            raise DeephyperRuntimeError(
+                "Multiple input files should all have the same extension '.csv' or '.json'"
+            )

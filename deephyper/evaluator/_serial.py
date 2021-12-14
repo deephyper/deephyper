@@ -22,7 +22,6 @@ class SerialEvaluator(Evaluator):
         run_function,
         num_workers: int = 1,
         callbacks=None,
-        
     ):
         super().__init__(run_function, num_workers, callbacks)
 

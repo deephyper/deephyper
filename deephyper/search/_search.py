@@ -20,6 +20,7 @@ class Search(abc.ABC):
         log_dir (str, optional): [description]. Defaults to ".".
         verbose (int, optional): [description]. Defaults to 0.
     """
+
     def __init__(
         self, problem, evaluator, random_state=None, log_dir=".", verbose=0, **kwargs
     ):
@@ -60,7 +61,7 @@ class Search(abc.ABC):
         if np.isscalar(timeout) and timeout > 0:
             signal.alarm(timeout)
 
-    def search(self, max_evals: int=-1, timeout: int=None):
+    def search(self, max_evals: int = -1, timeout: int = None):
         """Execute the search algorithm.
 
         Args:

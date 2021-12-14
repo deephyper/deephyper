@@ -30,7 +30,10 @@ class RegularizedEvolution(NeuralArchitectureSearch):
 
         super().__init__(problem, evaluator, random_state, log_dir, verbose)
 
-        if type(self) is RegularizedEvolution and len(self._problem._hp_space._space) > 0:
+        if (
+            type(self) is RegularizedEvolution
+            and len(self._problem._hp_space._space) > 0
+        ):
             raise ValueError(
                 "An hyperparameter space was defined for this problem use 'AgEBO' instead!"
             )
@@ -49,7 +52,9 @@ class RegularizedEvolution(NeuralArchitectureSearch):
     def _search(self, max_evals, timeout):
 
         if len(self._problem._hp_space._space) > 0:
-            raise ValueError("An hyperparameter space was defined for this problem but the current search is not compatible with joint hyperparameter and neural architecture search. Constant values should be defined for hyperparameters.")
+            raise ValueError(
+                "An hyperparameter space was defined for this problem but the current search is not compatible with joint hyperparameter and neural architecture search. Constant values should be defined for hyperparameters."
+            )
 
         num_evals_done = 0
 

@@ -11,22 +11,26 @@ class Operation:
     def init(self, current_node):
         pass
 
+
 class Conv3X3(Operation):
     def __str__(self):
-        return 'conv3x3-bn-relu'
+        return "conv3x3-bn-relu"
+
 
 class Conv1X1(Operation):
     def __str__(self):
-        return 'conv1x1-bn-relu'
+        return "conv1x1-bn-relu"
+
 
 class MaxPool3X3(Operation):
     def __str__(self):
-        return 'maxpool3x3'
+        return "maxpool3x3"
 
 
 class Identity(Operation):
     def __str__(self):
-        return 'id'
+        return "id"
+
 
 class Connect(Operation):
     def __init__(self, search_space, source_node):
@@ -38,7 +42,6 @@ class Connect(Operation):
         return "connect"
 
     def init(self, current_node):
-        """Set the connection in the search_space graph from [n1] -> n2.
-        """
+        """Set the connection in the search_space graph from [n1] -> n2."""
         self.destin_node = current_node
         self.search_space.connect(self.source_node, self.destin_node)

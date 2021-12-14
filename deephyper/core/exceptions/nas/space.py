@@ -23,8 +23,7 @@ class StructureHasACycle(NASError):
 
 
 class InputShapeOfWrongType(NASError):
-    """Raised when an input shape of a search_space is of a wrong type.
-    """
+    """Raised when an input shape of a search_space is of a wrong type."""
 
     def __init__(self, input_shape):
         self.input_shape = input_shape
@@ -34,14 +33,15 @@ class InputShapeOfWrongType(NASError):
 
 
 class NodeAlreadyAdded(NASError):
-    """Raised when a node has already been added in a search_space.
-    """
+    """Raised when a node has already been added in a search_space."""
 
     def __init__(self, node):
         self.node = node
 
     def __str__(self):
-        return f"The node '{str(self.node)}' has already been added to the search_space."
+        return (
+            f"The node '{str(self.node)}' has already been added to the search_space."
+        )
 
 
 class WrongOutputShape(NASError):

@@ -8,12 +8,16 @@ from deephyper.core.exceptions.nas.space import (
     StructureHasACycle,
     WrongSequenceToSetOperations,
 )
-from deephyper.benchmark.nas.nasbench101.nodes import ConstantNode, Node, VariableNode, OutputNode
+from deephyper.benchmark.nas.nasbench101.nodes import (
+    ConstantNode,
+    Node,
+    VariableNode,
+    OutputNode,
+)
 
 
 class NxSearchSpace:
-    """A NxSearchSpace is an search_space based on a networkx graph.
-    """
+    """A NxSearchSpace is an search_space based on a networkx graph."""
 
     def __init__(self, seed=None, **kwargs):
         self.graph = nx.DiGraph()
@@ -88,8 +92,7 @@ class NxSearchSpace:
 
     @property
     def size(self):
-        """Size of the search space define by the search_space
-        """
+        """Size of the search space define by the search_space"""
         s = 0
         for n in filter(lambda n: isinstance(n, VariableNode), self.nodes):
             if n.num_ops != 0:
@@ -197,8 +200,8 @@ class NxSearchSpace:
         to_contract = {"id", "connect"}
         graph = self.graph.copy()
 
-#         none_nodes = [n for n in graph.nodes() if str(n) == "none"]
-#         graph.remove_nodes_from(none_nodes)
+        #         none_nodes = [n for n in graph.nodes() if str(n) == "none"]
+        #         graph.remove_nodes_from(none_nodes)
 
         def left_to_contract(graph):
             node_names = set([str(n) for n in graph.nodes()])

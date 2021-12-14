@@ -19,7 +19,7 @@ class ThreadPoolEvaluator(Evaluator):
         callbacks (list, optional): A list of callbacks to trigger custom actions at the creation or completion of jobs. Defaults to None.
     """
 
-    def __init__(self, run_function, num_workers: int=1, callbacks=None):
+    def __init__(self, run_function, num_workers: int = 1, callbacks=None):
         super().__init__(run_function, num_workers, callbacks)
         self.sem = asyncio.Semaphore(num_workers)
         logger.info(
@@ -31,11 +31,10 @@ class ThreadPoolEvaluator(Evaluator):
 
             executor = ThreadPoolExecutor(max_workers=1)
 
-            sol = await self.loop.run_in_executor(executor, job.run_function, job.config)
+            sol = await self.loop.run_in_executor(
+                executor, job.run_function, job.config
+            )
 
             job.result = sol
 
         return job
-
-
-

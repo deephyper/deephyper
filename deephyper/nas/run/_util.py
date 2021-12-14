@@ -16,7 +16,6 @@ from deephyper.search import util
 from deephyper.nas.lr_scheduler import exponential_decay
 
 
-
 default_callbacks_config = {
     "EarlyStopping": dict(
         monitor="val_loss", min_delta=0, mode="min", verbose=0, patience=0
@@ -68,9 +67,7 @@ def load_config(config: dict) -> None:
         config["augment"]["func"] = util.load_attr(config["augment"]["func"])
 
     # load the function creating the search space
-    config["search_space"]["class"] = util.load_attr(
-        config["search_space"]["class"]
-    )
+    config["search_space"]["class"] = util.load_attr(config["search_space"]["class"])
 
     if not config.get("preprocessing") is None:
         config["preprocessing"]["func"] = util.load_attr(
@@ -215,9 +212,7 @@ def get_search_space(config, input_shape, output_shape, seed):
     if cs_kwargs is None:
         search_space = space_class(input_shape, output_shape, seed=seed)
     else:
-        search_space = space_class(
-            input_shape, output_shape, seed=seed, **cs_kwargs
-        )
+        search_space = space_class(input_shape, output_shape, seed=seed, **cs_kwargs)
     search_space.build()
     return search_space
 

@@ -30,16 +30,24 @@ class Padding(tf.keras.layers.Layer):
             tensor=x,
             paddings=padding,
             mode=self.mode,
-            constant_values=self.constant_values)
+            constant_values=self.constant_values,
+        )
 
     def compute_output_shape(self, input_shape):
-        return tf.TensorShape([input_shape[i] + sum(self.padding[i]) if not input_shape[i] is None else None for i in range(len(input_shape))])
+        return tf.TensorShape(
+            [
+                input_shape[i] + sum(self.padding[i])
+                if not input_shape[i] is None
+                else None
+                for i in range(len(input_shape))
+            ]
+        )
 
     def get_config(self):
         config = {
-            'padding': self.padding[1:],
-            'mode': self.mode,
-            'constant_values': self.constant_values
-            }
+            "padding": self.padding[1:],
+            "mode": self.mode,
+            "constant_values": self.constant_values,
+        }
         base_config = super(Padding, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))

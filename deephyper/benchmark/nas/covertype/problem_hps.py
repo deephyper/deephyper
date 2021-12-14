@@ -30,6 +30,7 @@ def run(config):
 if __name__ == "__main__":
     # load_data()
     from deephyper.sklearn.regressor import Problem
+
     config = Problem.space.sample_configuration()
     config = dict(config)
     r2 = run(config)

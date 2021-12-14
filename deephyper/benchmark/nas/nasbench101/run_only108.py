@@ -8,6 +8,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 data_file = os.path.join(HERE, "nasbench_only108.tfrecord")
 nasbench = api.NASBench(data_file)
 
+
 def run(config):
 
     ss = create_search_space()

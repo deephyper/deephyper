@@ -18,5 +18,5 @@ __all__ = [
     "RayEvaluator",
     "SerialEvaluator",
     "SubprocessEvaluator",
-    "ThreadPoolEvaluator"
+    "ThreadPoolEvaluator",
 ]

@@ -20,8 +20,15 @@ problem_autosklearn1 = HpProblem()
 
 classifier = problem_autosklearn1.add_hyperparameter(
     name="classifier",
-    value=["RandomForest", "Logistic", "AdaBoost",
-           "KNeighbors", "MLP", "SVC", "XGBoost"],
+    value=[
+        "RandomForest",
+        "Logistic",
+        "AdaBoost",
+        "KNeighbors",
+        "MLP",
+        "SVC",
+        "XGBoost",
+    ],
 )
 
 # n_estimators
@@ -47,7 +54,8 @@ problem_autosklearn1.add_condition(cond_max_depth)
 
 # n_neighbors
 n_neighbors = problem_autosklearn1.add_hyperparameter(
-    name="n_neighbors", value=(1, 100))
+    name="n_neighbors", value=(1, 100)
+)
 
 cond_n_neighbors = cs.EqualsCondition(n_neighbors, classifier, "KNeighbors")
 
@@ -63,8 +71,7 @@ cond_alpha = cs.EqualsCondition(alpha, classifier, "MLP")
 problem_autosklearn1.add_condition(cond_alpha)
 
 # C
-C = problem_autosklearn1.add_hyperparameter(
-    name="C", value=(1e-5, 10.0, "log-uniform"))
+C = problem_autosklearn1.add_hyperparameter(name="C", value=(1e-5, 10.0, "log-uniform"))
 
 cond_C = cs.OrConjunction(
     cs.EqualsCondition(C, classifier, "Logistic"),

@@ -21,7 +21,7 @@ def run(config: dict) -> float:
         os.environ.get("CUDA_VISIBLE_DEVICES"),
     )
 
-    duration = random.choice([3,4,5])
+    duration = random.choice([3, 4, 5])
     print(f"sleep {duration}...", end="", flush=True)
     time.sleep(duration)
     print("OK", flush=True)

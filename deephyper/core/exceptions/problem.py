@@ -40,8 +40,8 @@ class SearchSpaceBuilderIsNotCallable(NaProblemError):
 class SearchSpaceBuilderMissingParameter(NaProblemError):
     """Raised when a missing parameter is detected in a callable which creates a Structure.
 
-        Args:
-            missing_parameter (str): name of the missing parameter.
+    Args:
+        missing_parameter (str): name of the missing parameter.
     """
 
     def __init__(self, missing_parameter):

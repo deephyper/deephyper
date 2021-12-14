@@ -10,7 +10,10 @@ import numpy as np
 from scipy import stats
 import pandas as pd
 import streamlit as st
-from deephyper.core.analytics.dashboard._pyplot import plot_single_line, plot_single_line_improvement
+from deephyper.core.analytics.dashboard._pyplot import (
+    plot_single_line,
+    plot_single_line_improvement,
+)
 
 from tinydb import Query, TinyDB
 from deephyper.core.analytics.dashboard._views import Graphs, Table
@@ -64,14 +67,15 @@ def _files_selection(uploaded_file):
         )
 
         min_float = np.finfo(np.float32).min
-        has_failed = (
-            (abs(df[line_plot_option_y] - min_float) < 1e-3)
-            | (df[line_plot_option_y] < min_float)
+        has_failed = (abs(df[line_plot_option_y] - min_float) < 1e-3) | (
+            df[line_plot_option_y] < min_float
         )
         n_failures = sum(has_failed.astype(int))
 
         if n_failures > 0:
-            st.warning(f"**{n_failures}** failure{'s' if n_failures > 1 else ''} detected!")
+            st.warning(
+                f"**{n_failures}** failure{'s' if n_failures > 1 else ''} detected!"
+            )
 
         df = df[~has_failed]
         df = df[(np.abs(stats.zscore(df[line_plot_option_y])) < outlier_threshold)]
@@ -89,7 +93,9 @@ def _files_selection(uploaded_file):
         st.subheader("Top-K Configurations")
         st.sidebar.header("Top-K Configurations")
 
-        k = st.sidebar.number_input("Number of displayed headers: ", min_value=1, max_value=len(df), value=5)
+        k = st.sidebar.number_input(
+            "Number of displayed headers: ", min_value=1, max_value=len(df), value=5
+        )
         df = df.sort_values(by=["objective"], ascending=False, ignore_index=True)
 
         subdf = df.iloc[:k]
@@ -100,7 +106,9 @@ def _files_selection(uploaded_file):
         df.set_index(df.columns[0])
 
         st.header("Worker Utilization")
-        num_workers = st.number_input("Number of Workers", value=df.n_jobs_running.max())
+        num_workers = st.number_input(
+            "Number of Workers", value=df.n_jobs_running.max()
+        )
 
         perc_ut = _worker_utilization(df, num_workers)
 
@@ -165,9 +173,7 @@ def main():
         boards = {"csv": _files_selection}
 
         def default(x):
-            return st.sidebar.warning(
-                f"File should be a `csv`, not '{ext}'."
-            )
+            return st.sidebar.warning(f"File should be a `csv`, not '{ext}'.")
 
         boards.get(ext, default)(uploaded_file)
 

@@ -2,10 +2,10 @@
 """
 import numpy as np
 
+
 def run_debug(config: dict) -> float:
     random = np.random.RandomState(config.get("seed"))
-    if 'arch_seq' in config:
-        return sum(config['arch_seq']) + random.random()
+    if "arch_seq" in config:
+        return sum(config["arch_seq"]) + random.random()
     else:
         return sum(config.values()) + random.random()
-

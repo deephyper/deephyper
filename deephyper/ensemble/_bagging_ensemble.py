@@ -70,6 +70,7 @@ class BaggingEnsemble(BaseEnsemble):
         selection (str, optional): Selection strategy to build the ensemble. Value in ``["topk"]``. Default to ``topk``.
         mode (str, optional): Value in ``["regression", "classification"]``. Default to ``"regression"``.
     """
+
     def __init__(
         self,
         model_dir,
@@ -196,6 +197,7 @@ class BaggingEnsembleRegressor(BaggingEnsemble):
         batch_size (int, optional): Batch size used batchify the inference of loaded models. Defaults to 32.
         selection (str, optional): Selection strategy to build the ensemble. Value in ``["topk"]``. Default to ``topk``.
     """
+
     def __init__(
         self,
         model_dir,
@@ -219,6 +221,7 @@ class BaggingEnsembleRegressor(BaggingEnsemble):
             mode="regression",
         )
 
+
 class BaggingEnsembleClassifier(BaggingEnsemble):
     """Ensemble for classification based on uniform averaging of the predictions of each members.
 
@@ -234,6 +237,7 @@ class BaggingEnsembleClassifier(BaggingEnsemble):
         batch_size (int, optional): Batch size used batchify the inference of loaded models. Defaults to 32.
         selection (str, optional): Selection strategy to build the ensemble. Value in ``["topk"]``. Default to ``topk``.
     """
+
     def __init__(
         self,
         model_dir,

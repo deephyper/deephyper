@@ -442,7 +442,10 @@ class NaProblem:
         Raise:
             WrongProblemObjective: raised when the objective is of a wrong definition.
         """
-        if not self._space.get("loss") is None and not self._space.get("metrics") is None:
+        if (
+            not self._space.get("loss") is None
+            and not self._space.get("metrics") is None
+        ):
             self.check_objective(objective)
         else:
             raise NaProblemError(

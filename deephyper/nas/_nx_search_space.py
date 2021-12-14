@@ -3,15 +3,16 @@ import traceback
 from collections.abc import Iterable
 
 import networkx as nx
-from deephyper.core.exceptions.nas.space import (NodeAlreadyAdded,
-                                                 StructureHasACycle,
-                                                 WrongSequenceToSetOperations)
+from deephyper.core.exceptions.nas.space import (
+    NodeAlreadyAdded,
+    StructureHasACycle,
+    WrongSequenceToSetOperations,
+)
 from deephyper.nas.node import MimeNode, Node, VariableNode
 
 
 class NxSearchSpace(abc.ABC):
-    """A NxSearchSpace is an search_space based on a networkx graph.
-    """
+    """A NxSearchSpace is an search_space based on a networkx graph."""
 
     def __init__(self, seed=None, **kwargs):
         self.graph = nx.DiGraph()
@@ -88,8 +89,7 @@ class NxSearchSpace(abc.ABC):
 
     @property
     def size(self):
-        """Size of the search space define by the search_space
-        """
+        """Size of the search space define by the search_space"""
         s = 0
         for n in filter(lambda n: isinstance(n, VariableNode), self.nodes):
             if n.num_ops != 0:
@@ -205,7 +205,6 @@ class NxSearchSpace(abc.ABC):
         except TypeError:
             raise RuntimeError(f"Failed to build tensors from :{n}")
 
-
     @abc.abstractmethod
     def choices(self):
         """Gives the possible choices for each decision variable of the search space.
@@ -227,5 +226,4 @@ class NxSearchSpace(abc.ABC):
 
     @abc.abstractmethod
     def build(self):
-        """Build the current graph search space.
-        """
+        """Build the current graph search space."""

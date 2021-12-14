@@ -7,6 +7,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def extension_from_parameters(param_dict):
     EXCLUDE_PARAMS = [
         "epochs",

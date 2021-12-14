@@ -15,6 +15,7 @@ MAP_acq_func = {
     "UCB": "LCB",
 }
 
+
 class AMBSMixed(NeuralArchitectureSearch):
     """Asynchronous Model-Based Search baised on the `Scikit-Optimized Optimizer <https://scikit-optimize.github.io/stable/modules/generated/skopt.Optimizer.html#skopt.Optimizer>`_. It is extended to the case of joint hyperparameter and neural architecture search.
 
@@ -32,6 +33,7 @@ class AMBSMixed(NeuralArchitectureSearch):
         liar_strategy (str, optional): Definition of the constant value use for the Liar strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max"]`` . Defaults to ``"cl_max"``.
         n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the Bayesian optimization. A value of ``-1`` will use all available cores. Defaults to ``1``.
     """
+
     def __init__(
         self,
         problem,

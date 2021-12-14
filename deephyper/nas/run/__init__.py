@@ -13,12 +13,12 @@ __all__ = [
     "run_debug",
     "run_debug_arch",
     "run_debug_hp_arch",
-    "run_debug_slow"
+    "run_debug_slow",
 ]
 
 try:
     from ._run_horovod import run_horovod
 
     __all__.append("run_horovod")
-except: pass
-
+except:
+    pass
