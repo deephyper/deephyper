@@ -1,3 +1,5 @@
+import unittest
+
 import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh
 import pytest
@@ -5,16 +7,7 @@ from deephyper.core.exceptions.problem import NaProblemError, SpaceDimNameOfWron
 from deepspace.tabular import OneLayerSpace
 
 
-@pytest.mark.incremental
-class TestHpProblem:
-    def test_import(self):
-        from deephyper.problem import HpProblem
-
-    def test_create(self):
-        from deephyper.problem import HpProblem
-
-        pb = HpProblem()
-
+class HpProblemTest(unittest.TestCase):
     def test_add_good_dim(self):
         from deephyper.problem import HpProblem
 
@@ -27,7 +20,9 @@ class TestHpProblem:
         assert p0 == p0_csh
 
         p1 = pb.add_hyperparameter((1, 100, "log-uniform"), "p1")
-        p1_csh = csh.UniformIntegerHyperparameter(name="p1", lower=1, upper=100, log=True)
+        p1_csh = csh.UniformIntegerHyperparameter(
+            name="p1", lower=1, upper=100, log=True
+        )
         assert p1 == p1_csh
 
         p2 = pb.add_hyperparameter((-10.0, 10.0), "p2")
@@ -143,15 +138,7 @@ class TestHpProblem:
         pb.add_hyperparameters([alpha, beta])
 
 
-@pytest.mark.incremental
-class TestNaProblem:
-    def test_import(self):
-        from deephyper.problem import NaProblem
-
-    def test_create(self):
-        from deephyper.problem import NaProblem
-
-        NaProblem()
+class TestNaProblem(unittest.TestCase):
 
     def test_search_space(self):
         from deephyper.problem import NaProblem
