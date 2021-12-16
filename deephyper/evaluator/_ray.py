@@ -29,6 +29,7 @@ class RayEvaluator(Evaluator):
         self,
         run_function,
         callbacks=None,
+        run_function_kwargs={},
         address: str = None,
         password: str = None,
         num_cpus: int = None,
@@ -38,7 +39,7 @@ class RayEvaluator(Evaluator):
         ray_kwargs: dict = {},
         num_workers: int = None,
     ):
-        super().__init__(run_function, num_workers, callbacks)
+        super().__init__(run_function, num_workers, callbacks, run_function_kwargs)
 
         if address is not None:
             ray_kwargs["address"] = address
@@ -76,7 +77,7 @@ class RayEvaluator(Evaluator):
 
     async def execute(self, job):
 
-        sol = await self._remote_run_function.remote(job.config)
+        sol = await self._remote_run_function.remote(job.config, **self.run_function_kwargs)
 
         job.result = sol
 
