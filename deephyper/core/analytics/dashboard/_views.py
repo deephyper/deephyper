@@ -550,7 +550,7 @@ class ProfileView(SingleGraphView):
             value=(float(0), self._duration),
         )
 
-    def _preprocess(self, val):
+    def _old_preprocess(self, val):
         if val is not None:
             profile = pd.DataFrame(
                 {"n_jobs_running": val["n_jobs_running"]}, index=val["timestamp"]
@@ -570,7 +570,7 @@ class ProfileView(SingleGraphView):
             profile = pd.DataFrame({"n_jobs_running": [0]}, index=[0])
         return profile
 
-    def _aggregate(self, val_list):
+    def _old_aggregate(self, val_list):
         df_concat = pd.concat(val_list)
         by_row_index = df_concat.groupby(df_concat.index)
         df_mean = by_row_index.mean()
@@ -579,7 +579,7 @@ class ProfileView(SingleGraphView):
         df_std = by_row_index.std()
         return (df_mean, df_max, df_min, df_std)
 
-    def _plot(self, key, values, ids, names, colors):
+    def _old_plot(self, key, values, ids, names, colors):
         fig = plt.figure()
         for i, df in zip(ids, values):
             if df is not None:
@@ -591,6 +591,68 @@ class ProfileView(SingleGraphView):
                     df_max.n_jobs_running,
                     alpha=0.2,
                     color=colors[i],
+                )
+        plt.grid()
+        plt.xlabel("Time (sec.)")
+        plt.ylabel("Number of Used Workers")
+        plt.legend()
+        plt.tight_layout()
+        st.pyplot(fig)
+    
+    def _preprocess(self, val):
+        if val is not None:
+            profile = pd.DataFrame(
+                {"n_jobs_running": val["n_jobs_running"], "timestamp": val["timestamp"]}
+            )
+            profile.index -= profile.index[0]
+            profile = profile[
+                (profile.index >= self._t0) & (profile.index <= self._t_max)
+            ]
+        else:
+            profile = pd.DataFrame({"n_jobs_running": [0]}, index=[0])
+        return profile
+    
+    def _aggregate(self, df_list):
+        times = np.unique(
+            np.concatenate([df.timestamp.to_numpy() for df in df_list],
+                            axis=0))
+        times = np.concatenate([[0], times, [self._t_max-self._t0]])
+
+        series = []
+        for df in df_list:
+            df = df.sort_values("timestamp")
+            x, y = df.timestamp.to_numpy(
+            ), df.n_jobs_running.to_numpy() 
+
+            s = pd.Series(data=y, index=x)
+            s = s.reindex(times).fillna(method="ffill").fillna(method="bfill")
+            series.append(s)
+
+        array = np.array([s.to_numpy() for s in series])
+        loc = np.nanmean(array, axis=0)
+        loc_max = np.nanmax(array, axis=0)
+        loc_min = np.nanmin(array, axis=0)
+        loc_std = np.nanstd(array, axis=0)
+
+        return (times, loc, loc_max, loc_min, loc_std)
+    
+    def _plot(self, key, values, ids, names, colors):
+        fig = plt.figure()
+        for i, data in zip(ids, values):
+            if data is not None:
+                times, loc, loc_max, loc_min, loc_std = data
+                plt.step(times, loc,
+                    where="post",
+                    label=names[i],
+                    color=colors[i],
+                )
+                plt.fill_between(
+                    times,
+                    loc_min,
+                    loc_max,
+                    step="post",
+                    alpha=0.3,
+                    color=colors[i]
                 )
         plt.grid()
         plt.xlabel("Time (sec.)")
