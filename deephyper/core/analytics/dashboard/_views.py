@@ -1,20 +1,19 @@
-import statistics as stat
+import abc
 import copy
+import json
+import os
+import statistics as stat
+import tempfile
 from functools import partial, reduce
 from itertools import compress
-import os
-import json
-import tempfile
-import abc
-from matplotlib import pyplot as plt
+
 import numpy as np
-from numpy.core.numeric import NaN
 import pandas as pd
-
-from tinydb import Query, TinyDB
-
 import streamlit as st
 import tree
+from matplotlib import pyplot as plt
+from numpy.core.numeric import NaN
+from tinydb import Query, TinyDB
 
 
 class View(abc.ABC):
@@ -114,6 +113,7 @@ def _merge_dict_in(synthesis, not_criterias, to_merge):
         if path:
             if path not in not_criterias:
                 item = reduce(lambda d, key: d[key], path[:-1], synthesis)
+                print("item: ", item)
                 key = path[-1]
                 if isinstance(val, dict):
                     if key not in item.keys():
@@ -264,9 +264,12 @@ def _filter_results(data, to_filter):
         run["results"] = filtered_results
 
     list(map(_filter, data))
+    to_del = []
     for idx, run in enumerate(data):
         if not run["results"]:
-            del data[idx]
+            to_del.append(idx)
+    for idx in reversed(to_del):
+        del data[idx]
     return data
 
 
@@ -876,9 +879,12 @@ class ComparatorView(AnalysisView):
     def _display(self, key, values, param_values, ids, names, colors):
         fig = plt.figure()
         for idx in ids:
+            x = param_values[idx]
+            y = values[idx]
+            x, y = zip(*sorted(zip(x,y)))
             plt.plot(
-                param_values[idx],
-                values[idx],
+                x,
+                y,
                 label=names[idx],
                 color=colors[idx],
                 marker="o",
