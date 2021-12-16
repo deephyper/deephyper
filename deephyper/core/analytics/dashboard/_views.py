@@ -113,7 +113,6 @@ def _merge_dict_in(synthesis, not_criterias, to_merge):
         if path:
             if path not in not_criterias:
                 item = reduce(lambda d, key: d[key], path[:-1], synthesis)
-                print("item: ", item)
                 key = path[-1]
                 if isinstance(val, dict):
                     if key not in item.keys():
@@ -538,11 +537,11 @@ class ProfileView(SingleGraphView):
         return val
 
     def _show_menu(self):
-        self._roll_val = int(
-            st.slider(
-                "Roll value (in s.)", 0.1, self._duration / 10, self._duration / 5
-            )
-            * 10
+        self._roll_val = st.slider(
+            "Roll value (in s.)",
+            min_value=0,
+            max_value=int(self._duration / 2),
+            value=1,
         )
         self._t0, self._t_max = st.slider(
             "Time Range",
@@ -599,7 +598,7 @@ class ProfileView(SingleGraphView):
         plt.legend()
         plt.tight_layout()
         st.pyplot(fig)
-    
+
     def _preprocess(self, val):
         if val is not None:
             profile = pd.DataFrame(
@@ -612,22 +611,25 @@ class ProfileView(SingleGraphView):
         else:
             profile = pd.DataFrame({"n_jobs_running": [0]}, index=[0])
         return profile
-    
+
     def _aggregate(self, df_list):
         times = np.unique(
-            np.concatenate([df.timestamp.to_numpy() for df in df_list],
-                            axis=0))
-        times = np.concatenate([[self._t0], times, [self._t_max]])
+            np.concatenate([df.timestamp.to_numpy() for df in df_list], axis=0)
+        )
+        times = np.concatenate([times, [self._t_max]])
 
         series = []
         for df in df_list:
             df = df.sort_values("timestamp")
-            x, y = df.timestamp.to_numpy(
-            ), df.n_jobs_running.to_numpy() 
+            x, y = df.timestamp.to_numpy(), df.n_jobs_running.to_numpy()
 
             s = pd.Series(data=y, index=x)
-            s = s.reindex(times).fillna(method="ffill").fillna(method="bfill")
+            s = s.reindex(times).fillna(method="ffill")  # .fillna(method="bfill")
+            s.index = pd.to_datetime(s.index, unit="s")
+            if self._roll_val > 0:
+                s = s.rolling(f"{self._roll_val}s", min_periods=1).mean()
             series.append(s)
+            print(s)
 
         array = np.array([s.to_numpy() for s in series])
         loc = np.nanmean(array, axis=0)
@@ -636,24 +638,21 @@ class ProfileView(SingleGraphView):
         loc_std = np.nanstd(array, axis=0)
 
         return (times, loc, loc_max, loc_min, loc_std)
-    
+
     def _plot(self, key, values, ids, names, colors):
         fig = plt.figure()
         for i, data in zip(ids, values):
             if data is not None:
                 times, loc, loc_max, loc_min, loc_std = data
-                plt.step(times, loc,
+                plt.step(
+                    times,
+                    loc,
                     where="post",
                     label=names[i],
                     color=colors[i],
                 )
                 plt.fill_between(
-                    times,
-                    loc_min,
-                    loc_max,
-                    step="post",
-                    alpha=0.3,
-                    color=colors[i]
+                    times, loc_min, loc_max, step="post", alpha=0.3, color=colors[i]
                 )
         plt.grid()
         plt.xlabel("Time (sec.)")
@@ -943,7 +942,7 @@ class ComparatorView(AnalysisView):
         for idx in ids:
             x = param_values[idx]
             y = values[idx]
-            x, y = zip(*sorted(zip(x,y)))
+            x, y = zip(*sorted(zip(x, y)))
             plt.plot(
                 x,
                 y,
