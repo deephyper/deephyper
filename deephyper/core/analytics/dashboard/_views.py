@@ -604,9 +604,9 @@ class ProfileView(SingleGraphView):
             profile = pd.DataFrame(
                 {"n_jobs_running": val["n_jobs_running"], "timestamp": val["timestamp"]}
             )
-            profile.index -= profile.index[0]
+            profile.timestamp -= profile.timestamp[0]
             profile = profile[
-                (profile.index >= self._t0) & (profile.index <= self._t_max)
+                (profile.timestamp >= self._t0) & (profile.timestamp <= self._t_max)
             ]
         else:
             profile = pd.DataFrame({"n_jobs_running": [0]}, index=[0])
@@ -616,7 +616,7 @@ class ProfileView(SingleGraphView):
         times = np.unique(
             np.concatenate([df.timestamp.to_numpy() for df in df_list],
                             axis=0))
-        times = np.concatenate([[0], times, [self._t_max-self._t0]])
+        times = np.concatenate([[self._t0], times, [self._t_max]])
 
         series = []
         for df in df_list:
