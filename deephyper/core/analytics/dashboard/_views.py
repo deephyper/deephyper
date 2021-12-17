@@ -523,25 +523,34 @@ class ProfileView(SingleGraphView):
         self.supported_outputs = ["profile"]
         self.data = _filter_results(copy.deepcopy(data), self.supported_outputs)
         self.warnings = []
+        self.normalizable = True
+        self.normalize = False
         self._duration = -1
 
     def _checkup(self, key, idx, val):
-        if "n_jobs_running" not in val.keys() or "timestamp" not in val.keys():
+        if val.get("data"):
+            temp = val["data"]
+        else:
+            temp = val
+            self.normalizable = False
+        if "n_jobs_running" not in temp.keys() or "timestamp" not in temp.keys():
             self._warnings.append(
                 f"config {idx+1} : a run is missing 'n_jobs_running' or 'timestamp' in profile."
             )
             val = None
         else:
-            duration = float(val["timestamp"][-1] - val["timestamp"][0])
+            duration = float(temp["timestamp"][-1] - temp["timestamp"][0])
             self._duration = max(duration, self._duration)
         return val
 
     def _show_menu(self):
-        self._roll_val = int(
-            st.slider(
-                "Roll value (in s.)", 0.1, self._duration / 10, self._duration / 5
-            )
-            * 10
+        if self.normalizable:
+            self.normalize = st.checkbox("Normalize the profiles", True)
+        self._roll_val = st.slider(
+            "Window size (in s.)",
+            min_value=0,
+            max_value=int(self._duration / 2),
+            value=1,
         )
         self._t0, self._t_max = st.slider(
             "Time Range",
@@ -570,32 +579,78 @@ class ProfileView(SingleGraphView):
             profile = pd.DataFrame({"n_jobs_running": [0]}, index=[0])
         return profile
 
-    def _old_aggregate(self, val_list):
-        df_concat = pd.concat(val_list)
-        by_row_index = df_concat.groupby(df_concat.index)
-        df_mean = by_row_index.mean()
-        df_max = by_row_index.max()
-        df_min = by_row_index.min()
-        df_std = by_row_index.std()
-        return (df_mean, df_max, df_min, df_std)
+    def _preprocess(self, val):
+        num_workers = None
+        if val is not None:
+            if val.get("num_workers"):
+                num_workers = val["num_workers"]
+                temp = val["data"]
+            else:
+                temp = val
+            profile = pd.DataFrame(
+                {
+                    "n_jobs_running": temp["n_jobs_running"],
+                    "timestamp": temp["timestamp"],
+                }
+            )
+            profile.timestamp -= profile.timestamp[0]
+            profile = profile[
+                (profile.timestamp >= self._t0) & (profile.timestamp <= self._t_max)
+            ]
+            if self.normalize:
+                profile.n_jobs_running /= num_workers
+        else:
+            profile = pd.DataFrame({"n_jobs_running": [0]}, index=[0])
+        return profile
+
+    def _aggregate(self, df_list):
+        times = np.unique(
+            np.concatenate([df.timestamp.to_numpy() for df in df_list], axis=0)
+        )
+        times = np.concatenate([times, [self._t_max]])
+
+        series = []
+        for df in df_list:
+            df = df.sort_values("timestamp")
+            x, y = df.timestamp.to_numpy(), df.n_jobs_running.to_numpy()
+
+            s = pd.Series(data=y, index=x)
+            s = s.reindex(times).fillna(method="ffill")  # .fillna(method="bfill")
+            s.index = pd.to_datetime(s.index, unit="s")
+            if self._roll_val > 0:
+                s = s.rolling(f"{self._roll_val}s", min_periods=1).mean()
+            series.append(s)
+
+        array = np.array([s.to_numpy() for s in series])
+        loc = np.nanmean(array, axis=0)
+        loc_max = np.nanmax(array, axis=0)
+        loc_min = np.nanmin(array, axis=0)
+        loc_std = np.nanstd(array, axis=0)
+
+        return (times, loc, loc_max, loc_min, loc_std)
 
     def _old_plot(self, key, values, ids, names, colors):
         fig = plt.figure()
-        for i, df in zip(ids, values):
-            if df is not None:
-                df_mean, df_max, df_min, df_std = df
-                plt.plot(df_mean, label=names[i], color=colors[i])
-                plt.fill_between(
-                    df_mean.index,
-                    df_min.n_jobs_running,
-                    df_max.n_jobs_running,
-                    alpha=0.2,
+        for i, data in zip(ids, values):
+            if data is not None:
+                times, loc, loc_max, loc_min, loc_std = data
+                plt.step(
+                    times,
+                    loc,
+                    where="post",
+                    label=names[i],
                     color=colors[i],
+                )
+                plt.fill_between(
+                    times, loc_min, loc_max, step="post", alpha=0.3, color=colors[i]
                 )
         plt.grid()
         plt.xlabel("Time (sec.)")
-        plt.ylabel("Number of Used Workers")
-        plt.legend()
+        if self.normalize:
+            plt.ylabel("Percentage of Utilization")
+        else:
+            plt.ylabel("Number of Used Workers")
+        plt.legend(loc="upper center", bbox_to_anchor=(0.5, -0.05))
         plt.tight_layout()
         st.pyplot(fig)
     
@@ -742,7 +797,7 @@ class SearchView(SingleGraphView):
         plt.xlabel("Iteration")
         plt.ylabel("Objective")
         plt.grid()
-        plt.legend()
+        plt.legend(loc="upper center", bbox_to_anchor=(0.5, -0.05))
         plt.tight_layout()
         st.pyplot(fig)
 
@@ -942,7 +997,7 @@ class ComparatorView(AnalysisView):
         for idx in ids:
             x = param_values[idx]
             y = values[idx]
-            x, y = zip(*sorted(zip(x,y)))
+            x, y = zip(*sorted(zip(x, y)))
             plt.plot(
                 x,
                 y,
