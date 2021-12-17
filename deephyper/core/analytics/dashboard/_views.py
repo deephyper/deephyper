@@ -629,7 +629,6 @@ class ProfileView(SingleGraphView):
             if self._roll_val > 0:
                 s = s.rolling(f"{self._roll_val}s", min_periods=1).mean()
             series.append(s)
-            print(s)
 
         array = np.array([s.to_numpy() for s in series])
         loc = np.nanmean(array, axis=0)
