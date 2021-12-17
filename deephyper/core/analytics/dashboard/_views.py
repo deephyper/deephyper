@@ -629,7 +629,7 @@ class ProfileView(SingleGraphView):
 
         return (times, loc, loc_max, loc_min, loc_std)
 
-    def _plot(self, key, values, ids, names, colors):
+    def _old_plot(self, key, values, ids, names, colors):
         fig = plt.figure()
         for i, data in zip(ids, values):
             if data is not None:
@@ -651,6 +651,68 @@ class ProfileView(SingleGraphView):
         else:
             plt.ylabel("Number of Used Workers")
         plt.legend(loc="upper center", bbox_to_anchor=(0.5, -0.05))
+        plt.tight_layout()
+        st.pyplot(fig)
+    
+    def _preprocess(self, val):
+        if val is not None:
+            profile = pd.DataFrame(
+                {"n_jobs_running": val["n_jobs_running"], "timestamp": val["timestamp"]}
+            )
+            profile.timestamp -= profile.timestamp[0]
+            profile = profile[
+                (profile.timestamp >= self._t0) & (profile.timestamp <= self._t_max)
+            ]
+        else:
+            profile = pd.DataFrame({"n_jobs_running": [0]}, index=[0])
+        return profile
+    
+    def _aggregate(self, df_list):
+        times = np.unique(
+            np.concatenate([df.timestamp.to_numpy() for df in df_list],
+                            axis=0))
+        times = np.concatenate([[self._t0], times, [self._t_max]])
+
+        series = []
+        for df in df_list:
+            df = df.sort_values("timestamp")
+            x, y = df.timestamp.to_numpy(
+            ), df.n_jobs_running.to_numpy() 
+
+            s = pd.Series(data=y, index=x)
+            s = s.reindex(times).fillna(method="ffill").fillna(method="bfill")
+            series.append(s)
+
+        array = np.array([s.to_numpy() for s in series])
+        loc = np.nanmean(array, axis=0)
+        loc_max = np.nanmax(array, axis=0)
+        loc_min = np.nanmin(array, axis=0)
+        loc_std = np.nanstd(array, axis=0)
+
+        return (times, loc, loc_max, loc_min, loc_std)
+    
+    def _plot(self, key, values, ids, names, colors):
+        fig = plt.figure()
+        for i, data in zip(ids, values):
+            if data is not None:
+                times, loc, loc_max, loc_min, loc_std = data
+                plt.step(times, loc,
+                    where="post",
+                    label=names[i],
+                    color=colors[i],
+                )
+                plt.fill_between(
+                    times,
+                    loc_min,
+                    loc_max,
+                    step="post",
+                    alpha=0.3,
+                    color=colors[i]
+                )
+        plt.grid()
+        plt.xlabel("Time (sec.)")
+        plt.ylabel("Number of Used Workers")
+        plt.legend()
         plt.tight_layout()
         st.pyplot(fig)
 
