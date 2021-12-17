@@ -1,9 +1,9 @@
-import logging
 import asyncio
+import functools
+import logging
+from concurrent.futures import ThreadPoolExecutor
 
 from deephyper.evaluator._evaluator import Evaluator
-
-from concurrent.futures import ThreadPoolExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +37,10 @@ class ThreadPoolEvaluator(Evaluator):
 
             executor = ThreadPoolExecutor(max_workers=1)
 
+            run_function = functools.partial(job.run_function, job.config, **self.run_function_kwargs)
+
             sol = await self.loop.run_in_executor(
-                executor, job.run_function, job.config, **self.run_function_kwargs
+                executor, run_function
             )
 
             job.result = sol

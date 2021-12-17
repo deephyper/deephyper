@@ -80,7 +80,7 @@ class Evaluator:
 
         if not method in EVALUATORS.keys():
             val = ", ".join(EVALUATORS)
-            raise DeephyperRuntimeError(
+            raise ValueError(
                 f'The method "{method}" is not a valid method for an Evaluator!'
                 f" Choose among the following evalutor types: "
                 f"{val}."

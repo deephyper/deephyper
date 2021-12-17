@@ -8,18 +8,12 @@ from deephyper.search.nas import AMBSMixed
 
 def test_ambsmixed_without_hp():
 
-    create_evaluator = lambda: Evaluator.create(
-        run_debug_arch, method="process", method_kwargs={"num_workers": 1}
-    )
+    create_evaluator = lambda: Evaluator.create(run_debug_arch, method="serial")
 
-    search = AMBSMixed(
-        linearReg.Problem, create_evaluator(), random_state=42
-    )
+    search = AMBSMixed(linearReg.Problem, create_evaluator(), random_state=42)
 
     res1 = search.search(max_evals=4)
     res1_array = res1[["arch_seq"]].to_numpy()
-
-    search.search(max_evals=100, timeout=1)
 
     search = AMBSMixed(
         linearReg.Problem,
@@ -34,9 +28,7 @@ def test_ambsmixed_without_hp():
 
 def test_ambsmixed_with_hp():
 
-    create_evaluator = lambda: Evaluator.create(
-        run_debug_arch, method="process", method_kwargs={"num_workers": 1}
-    )
+    create_evaluator = lambda: Evaluator.create(run_debug_arch, method="serial")
 
     search = AMBSMixed(
         linearRegHybrid.Problem,
@@ -46,8 +38,6 @@ def test_ambsmixed_with_hp():
 
     res1 = search.search(max_evals=4)
     res1_array = res1[["arch_seq"]].to_numpy()
-
-    search.search(max_evals=100, timeout=1)
 
     search = AMBSMixed(
         linearRegHybrid.Problem,
