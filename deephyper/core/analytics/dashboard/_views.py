@@ -590,13 +590,23 @@ class ProfileView(SingleGraphView):
             profile = pd.DataFrame(
                 {
                     "n_jobs_running": temp["n_jobs_running"],
-                    "timestamp": temp["timestamp"],
-                }
+                },
+                index=temp["timestamp"],
             )
-            profile.timestamp -= profile.timestamp[0]
+            profile = profile.sort_index()
+            profile.index = profile.index - profile.index[0]
             profile = profile[
-                (profile.timestamp >= self._t0) & (profile.timestamp <= self._t_max)
+                (profile.index >= self._t0) & (profile.index <= self._t_max)
             ]
+
+            new_base = np.arange(
+                0, profile.index[-1], 0.05
+            )  # up-sample the time with a fixed step
+            profile = (
+                profile.reindex(profile.index.union(new_base))
+                .fillna(method="ffill")
+                .loc[new_base]
+            )
             if self.normalize:
                 profile.n_jobs_running /= num_workers
         else:
@@ -604,18 +614,19 @@ class ProfileView(SingleGraphView):
         return profile
 
     def _aggregate(self, df_list):
-        times = np.unique(
-            np.concatenate([df.timestamp.to_numpy() for df in df_list], axis=0)
-        )
-        times = np.concatenate([times, [self._t_max]])
+        # times = np.unique(
+        #     np.concatenate([df.timestamp.to_numpy() for df in df_list], axis=0)
+        # )
+        # times = np.concatenate([times, [self._t_max]])
 
+        times = df_list[0].index
         series = []
         for df in df_list:
-            df = df.sort_values("timestamp")
-            x, y = df.timestamp.to_numpy(), df.n_jobs_running.to_numpy()
+            # df = df.sort_values("timestamp")
+            x, y = df.index.to_numpy(), df.n_jobs_running.to_numpy()
 
             s = pd.Series(data=y, index=x)
-            s = s.reindex(times).fillna(method="ffill")  # .fillna(method="bfill")
+            # s = s.reindex(times).fillna(method="ffill")  # .fillna(method="bfill")
             s.index = pd.to_datetime(s.index, unit="s")
             if self._roll_val > 0:
                 s = s.rolling(f"{self._roll_val}s", min_periods=1).mean()
@@ -634,10 +645,9 @@ class ProfileView(SingleGraphView):
         for i, data in zip(ids, values):
             if data is not None:
                 times, loc, loc_max, loc_min, loc_std = data
-                plt.step(
+                plt.plot(
                     times,
                     loc,
-                    where="post",
                     label=names[i],
                     color=colors[i],
                 )
