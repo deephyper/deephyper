@@ -627,7 +627,7 @@ class ProfileView(SingleGraphView):
         plt.grid()
         plt.xlabel("Time (sec.)")
         plt.ylabel("Number of Used Workers")
-        plt.legend()
+        plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05))
         plt.tight_layout()
         st.pyplot(fig)
 
@@ -712,7 +712,7 @@ class SearchView(SingleGraphView):
         plt.xlabel("Iteration")
         plt.ylabel("Objective")
         plt.grid()
-        plt.legend()
+        plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05))
         plt.tight_layout()
         st.pyplot(fig)
 
