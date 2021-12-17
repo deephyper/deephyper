@@ -523,22 +523,31 @@ class ProfileView(SingleGraphView):
         self.supported_outputs = ["profile"]
         self.data = _filter_results(copy.deepcopy(data), self.supported_outputs)
         self.warnings = []
+        self.normalizable = True
+        self.normalize = False
         self._duration = -1
 
     def _checkup(self, key, idx, val):
-        if "n_jobs_running" not in val.keys() or "timestamp" not in val.keys():
+        if val.get("data"):
+            temp = val["data"]
+        else:
+            temp = val
+            self.normalizable = False
+        if "n_jobs_running" not in temp.keys() or "timestamp" not in temp.keys():
             self._warnings.append(
                 f"config {idx+1} : a run is missing 'n_jobs_running' or 'timestamp' in profile."
             )
             val = None
         else:
-            duration = float(val["timestamp"][-1] - val["timestamp"][0])
+            duration = float(temp["timestamp"][-1] - temp["timestamp"][0])
             self._duration = max(duration, self._duration)
         return val
 
     def _show_menu(self):
+        if self.normalizable:
+            self.normalize = st.checkbox("Normalize the profiles", True)
         self._roll_val = st.slider(
-            "Roll value (in s.)",
+            "Window size (in s.)",
             min_value=0,
             max_value=int(self._duration / 2),
             value=1,
@@ -570,44 +579,26 @@ class ProfileView(SingleGraphView):
             profile = pd.DataFrame({"n_jobs_running": [0]}, index=[0])
         return profile
 
-    def _old_aggregate(self, val_list):
-        df_concat = pd.concat(val_list)
-        by_row_index = df_concat.groupby(df_concat.index)
-        df_mean = by_row_index.mean()
-        df_max = by_row_index.max()
-        df_min = by_row_index.min()
-        df_std = by_row_index.std()
-        return (df_mean, df_max, df_min, df_std)
-
-    def _old_plot(self, key, values, ids, names, colors):
-        fig = plt.figure()
-        for i, df in zip(ids, values):
-            if df is not None:
-                df_mean, df_max, df_min, df_std = df
-                plt.plot(df_mean, label=names[i], color=colors[i])
-                plt.fill_between(
-                    df_mean.index,
-                    df_min.n_jobs_running,
-                    df_max.n_jobs_running,
-                    alpha=0.2,
-                    color=colors[i],
-                )
-        plt.grid()
-        plt.xlabel("Time (sec.)")
-        plt.ylabel("Number of Used Workers")
-        plt.legend()
-        plt.tight_layout()
-        st.pyplot(fig)
-
     def _preprocess(self, val):
+        num_workers = None
         if val is not None:
+            if val.get("num_workers"):
+                num_workers = val["num_workers"]
+                temp = val["data"]
+            else:
+                temp = val
             profile = pd.DataFrame(
-                {"n_jobs_running": val["n_jobs_running"], "timestamp": val["timestamp"]}
+                {
+                    "n_jobs_running": temp["n_jobs_running"],
+                    "timestamp": temp["timestamp"],
+                }
             )
             profile.timestamp -= profile.timestamp[0]
             profile = profile[
                 (profile.timestamp >= self._t0) & (profile.timestamp <= self._t_max)
             ]
+            if self.normalize:
+                profile.n_jobs_running /= num_workers
         else:
             profile = pd.DataFrame({"n_jobs_running": [0]}, index=[0])
         return profile
@@ -655,8 +646,11 @@ class ProfileView(SingleGraphView):
                 )
         plt.grid()
         plt.xlabel("Time (sec.)")
-        plt.ylabel("Number of Used Workers")
-        plt.legend()
+        if self.normalize:
+            plt.ylabel("Percentage of Utilization")
+        else:
+            plt.ylabel("Number of Used Workers")
+        plt.legend(loc="upper center", bbox_to_anchor=(0.5, -0.05))
         plt.tight_layout()
         st.pyplot(fig)
 
@@ -741,7 +735,7 @@ class SearchView(SingleGraphView):
         plt.xlabel("Iteration")
         plt.ylabel("Objective")
         plt.grid()
-        plt.legend()
+        plt.legend(loc="upper center", bbox_to_anchor=(0.5, -0.05))
         plt.tight_layout()
         st.pyplot(fig)
 
