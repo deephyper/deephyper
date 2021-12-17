@@ -41,10 +41,10 @@ class Evaluator:
         run_function,
         num_workers: int = 1,
         callbacks: list=None,
-        run_function_kwargs: dict={}
+        run_function_kwargs: dict=None
     ):
         self.run_function = run_function  # User-defined run function.
-        self.run_function_kwargs = run_function_kwargs
+        self.run_function_kwargs = {} if run_function_kwargs is None else run_function_kwargs
 
         # Number of parallel workers available
         self.num_workers = num_workers

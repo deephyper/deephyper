@@ -29,18 +29,19 @@ class RayEvaluator(Evaluator):
         self,
         run_function,
         callbacks=None,
-        run_function_kwargs={},
+        run_function_kwargs=None,
         address: str = None,
         password: str = None,
         num_cpus: int = None,
         num_gpus: int = None,
         num_cpus_per_task: float = 1,
         num_gpus_per_task: float = None,
-        ray_kwargs: dict = {},
+        ray_kwargs: dict = None,
         num_workers: int = None,
     ):
         super().__init__(run_function, num_workers, callbacks, run_function_kwargs)
 
+        ray_kwargs = {} if ray_kwargs is None else ray_kwargs
         if address is not None:
             ray_kwargs["address"] = address
         if password is not None:

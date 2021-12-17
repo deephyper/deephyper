@@ -12,6 +12,10 @@ from deephyper.evaluator._encoder import Encoder
 logger = logging.getLogger(__name__)
 
 
+def encode_dict(d: dict):
+    return json.loads(json.dumps(d, cls=Encoder))
+
+
 class SubprocessEvaluator(Evaluator):
     """This evaluator uses the ``asyncio.create_subprocess_exec`` as backend.
 
@@ -21,15 +25,21 @@ class SubprocessEvaluator(Evaluator):
         callbacks (list, optional): A list of callbacks to trigger custom actions at the creation or completion of jobs. Defaults to None.
     """
 
-    def __init__(self, run_function, num_workers: int = 1, callbacks=None):
-        super().__init__(run_function, num_workers, callbacks)
+    def __init__(
+        self,
+        run_function,
+        num_workers: int = 1,
+        callbacks: list = None,
+        run_function_kwargs: dict = None,
+    ):
+        super().__init__(run_function, num_workers, callbacks, run_function_kwargs)
         self.sem = asyncio.Semaphore(num_workers)
         logger.info(
             f"Subprocess Evaluator will execute {self.run_function.__name__}() from module {self.run_function.__module__}"
         )
 
     def _encode(self, job):
-        return json.loads(json.dumps(job.config, cls=Encoder))
+        return encode_dict(job.config)
 
     async def execute(self, job):
         async with self.sem:
@@ -40,7 +50,7 @@ class SubprocessEvaluator(Evaluator):
             module_path = os.path.dirname(script_file)
             module_name = os.path.basename(script_file)[:-3]
             # Code that will run on the subprocess.
-            code = f"import sys; sys.path.insert(1, '{module_path}'); from {module_name} import {self.run_function.__name__}; print('DH-OUTPUT:' + str({self.run_function.__name__}({self._encode(job)})))"
+            code = f"import sys; sys.path.insert(1, '{module_path}'); from {module_name} import {self.run_function.__name__}; print('DH-OUTPUT:' + str({self.run_function.__name__}({self._encode(job)}, **{encode_dict(self.run_function_kwargs)})))"
             logger.debug(f"executing:  {code}")
             proc = await asyncio.create_subprocess_exec(
                 sys.executable,

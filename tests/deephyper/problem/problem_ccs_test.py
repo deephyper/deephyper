@@ -1,8 +1,17 @@
+import sys
 import unittest
 
-import cconfigspace as ccs
+import pytest
+
+try:
+    import cconfigspace as ccs
+except ModuleNotFoundError:
+    pass
 
 
+@pytest.mark.skipif(
+    "cconfigspace" not in sys.modules, reason="requires the CConfigSpace library"
+)
 class HpProblemTest(unittest.TestCase):
     def test_add_good_dim(self):
         from deephyper.problem._hyperparameter_ccs import HpProblem

@@ -21,9 +21,10 @@ class SerialEvaluator(Evaluator):
         self,
         run_function,
         num_workers: int = 1,
-        callbacks=None,
+        callbacks: list=None,
+        run_function_kwargs: dict=None
     ):
-        super().__init__(run_function, num_workers, callbacks)
+        super().__init__(run_function, num_workers, callbacks, run_function_kwargs)
 
         self.num_workers = num_workers
 
@@ -33,7 +34,7 @@ class SerialEvaluator(Evaluator):
 
     async def execute(self, job):
 
-        sol = self.run_function(copy.deepcopy(job.config))
+        sol = self.run_function(copy.deepcopy(job.config), **self.run_function_kwargs)
 
         job.result = sol
 
