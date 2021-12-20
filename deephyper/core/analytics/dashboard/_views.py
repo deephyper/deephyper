@@ -6,6 +6,7 @@ import statistics as stat
 import tempfile
 from functools import partial, reduce
 from itertools import compress
+import math
 
 import numpy as np
 import pandas as pd
@@ -550,7 +551,7 @@ class ProfileView(SingleGraphView):
             "Window size (in s.)",
             min_value=0,
             max_value=int(self._duration / 2),
-            value=1,
+            value=0,
         )
         self._t0, self._t_max = st.slider(
             "Time Range",
@@ -640,7 +641,11 @@ class ProfileView(SingleGraphView):
             plt.ylabel("Percentage of Utilization")
         else:
             plt.ylabel("Number of Used Workers")
-        plt.legend(loc="upper center", bbox_to_anchor=(0.5, -0.05))
+        plt.legend(
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.2),
+            ncol=math.ceil(len(values) / 5),
+        )
         plt.tight_layout()
         st.pyplot(fig)
 
@@ -725,7 +730,11 @@ class SearchView(SingleGraphView):
         plt.xlabel("Iteration")
         plt.ylabel("Objective")
         plt.grid()
-        plt.legend(loc="upper center", bbox_to_anchor=(0.5, -0.05))
+        plt.legend(
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.2),
+            ncol=math.ceil(len(values) / 5),
+        )
         plt.tight_layout()
         st.pyplot(fig)
 
@@ -761,26 +770,31 @@ class PercUtilView(SingleGraphView):
             err_color = colors[i].copy()
             color = colors[i]
             color[-1] = 0.7
-            text_color = "white" if color[:-1].sum() < 1.5 else "0.2"
-            plt.barh(names[i], avrg, xerr=std, color=color, ecolor=err_color)
-            plt.barh(names[i], 100 - avrg, left=avrg, color="lightgrey")
+            plt.barh(i, avrg, xerr=std, color=color, ecolor=err_color, label=names[i])
+            plt.barh(i, 100 - avrg, left=avrg, color="lightgrey")
             plt.text(
                 avrg / 2,
                 i,
-                f"{round(avrg, 2)}%\nUsed",
+                f"{round(avrg, 2)}%",
                 ha="center",
                 va="center",
-                color=text_color,
+                color="white",
             )
             plt.text(
                 avrg / 2 + 50,
                 i,
-                f"{round(100-avrg, 2)}%\nUnused",
+                f"{round(100-avrg, 2)}%",
                 ha="center",
                 va="center",
                 color="0.2",
             )
-        plt.xlabel("Percentage")
+        plt.xlabel("Percentage Used / Unused")
+        plt.yticks([])
+        plt.legend(
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.2),
+            ncol=math.ceil(len(values) / 5),
+        )
         plt.tight_layout()
         st.pyplot(fig)
 
