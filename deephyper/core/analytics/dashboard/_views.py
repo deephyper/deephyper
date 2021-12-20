@@ -559,26 +559,6 @@ class ProfileView(SingleGraphView):
             value=(float(0), self._duration),
         )
 
-    def _old_preprocess(self, val):
-        if val is not None:
-            profile = pd.DataFrame(
-                {"n_jobs_running": val["n_jobs_running"]}, index=val["timestamp"]
-            )
-            profile.index -= profile.index[0]
-            profile = profile[
-                (profile.index >= self._t0) & (profile.index <= self._t_max)
-            ]
-            new_base = np.arange(0, profile.index[-1], 0.1)
-            profile = (
-                profile.reindex(profile.index.union(new_base))
-                .interpolate("values")
-                .loc[new_base]
-            )
-            profile = profile.rolling(self._roll_val).mean()
-        else:
-            profile = pd.DataFrame({"n_jobs_running": [0]}, index=[0])
-        return profile
-
     def _preprocess(self, val):
         num_workers = None
         if val is not None:
