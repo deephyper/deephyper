@@ -348,24 +348,30 @@ def _get_diff(synthesis):
 
 def _get_names(headers, diff):
     names = []
+    comparatives = []
     unnamed = 0
     for header in headers:
         name = []
+        comparative = []
         for path in diff:
             try:
                 val = reduce(dict.get, path, header)
+            except:
+                val = None
+            if val:
+                comparative.append(val)
                 if isinstance(val, str):
                     name.append(val)
                 else:
                     name.append(f"{path[-1]}: {val}")
-            except:
-                pass
         if name:
+            comparatives.append(comparative)
             names.append(" - ".join(name))
         else:
             unnamed += 1
+            comparatives.append(unnamed)
             names.append(f"config {unnamed}")
-    return names
+    return names, comparatives
 
 
 class ConfigurationsSelection(View):
@@ -377,7 +383,7 @@ class ConfigurationsSelection(View):
         synthesis = {}
         list(map(partial(_merge_dict_in, synthesis, []), self.headers))
         diff = _get_diff(synthesis)
-        self.config_names = _get_names(self.headers, diff)
+        self.config_names, self.comparatives = _get_names(self.headers, diff)
 
     def show(self):
         new_names = []
@@ -389,8 +395,10 @@ class ConfigurationsSelection(View):
                 to_keep.append(
                     st.checkbox(f"Show", True, key=f"Show {name} {self.key}")
                 )
-        self.data = list(compress(self.data, to_keep))
-        self.config_names = list(compress(new_names, to_keep))
+        data = list(compress(self.data, to_keep))
+        config_names = list(compress(new_names, to_keep))
+        comparatives = list(compress(self.comparatives, to_keep))
+        _, self.config_names, self.data = zip(*sorted(zip(comparatives, config_names, data)))
         self.headers = copy.deepcopy(self.data)
         list(map(lambda d: d.pop("results"), self.headers))
         for idx, header in enumerate(self.headers):
