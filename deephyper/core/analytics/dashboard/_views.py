@@ -6,6 +6,7 @@ import statistics as stat
 import tempfile
 from functools import partial, reduce
 from itertools import compress
+import math
 
 import numpy as np
 import pandas as pd
@@ -347,24 +348,30 @@ def _get_diff(synthesis):
 
 def _get_names(headers, diff):
     names = []
+    comparatives = []
     unnamed = 0
     for header in headers:
         name = []
+        comparative = []
         for path in diff:
             try:
                 val = reduce(dict.get, path, header)
+            except:
+                val = None
+            if val:
+                comparative.append(val)
                 if isinstance(val, str):
                     name.append(val)
                 else:
                     name.append(f"{path[-1]}: {val}")
-            except:
-                pass
         if name:
+            comparatives.append(comparative)
             names.append(" - ".join(name))
         else:
             unnamed += 1
+            comparatives.append(unnamed)
             names.append(f"config {unnamed}")
-    return names
+    return names, comparatives
 
 
 class ConfigurationsSelection(View):
@@ -376,7 +383,7 @@ class ConfigurationsSelection(View):
         synthesis = {}
         list(map(partial(_merge_dict_in, synthesis, []), self.headers))
         diff = _get_diff(synthesis)
-        self.config_names = _get_names(self.headers, diff)
+        self.config_names, self.comparatives = _get_names(self.headers, diff)
 
     def show(self):
         new_names = []
@@ -388,8 +395,10 @@ class ConfigurationsSelection(View):
                 to_keep.append(
                     st.checkbox(f"Show", True, key=f"Show {name} {self.key}")
                 )
-        self.data = list(compress(self.data, to_keep))
-        self.config_names = list(compress(new_names, to_keep))
+        data = list(compress(self.data, to_keep))
+        config_names = list(compress(new_names, to_keep))
+        comparatives = list(compress(self.comparatives, to_keep))
+        _, self.config_names, self.data = zip(*sorted(zip(comparatives, config_names, data)))
         self.headers = copy.deepcopy(self.data)
         list(map(lambda d: d.pop("results"), self.headers))
         for idx, header in enumerate(self.headers):
@@ -550,7 +559,7 @@ class ProfileView(SingleGraphView):
             "Window size (in s.)",
             min_value=0,
             max_value=int(self._duration / 2),
-            value=1,
+            value=0,
         )
         self._t0, self._t_max = st.slider(
             "Time Range",
@@ -558,26 +567,6 @@ class ProfileView(SingleGraphView):
             max_value=self._duration,
             value=(float(0), self._duration),
         )
-
-    def _old_preprocess(self, val):
-        if val is not None:
-            profile = pd.DataFrame(
-                {"n_jobs_running": val["n_jobs_running"]}, index=val["timestamp"]
-            )
-            profile.index -= profile.index[0]
-            profile = profile[
-                (profile.index >= self._t0) & (profile.index <= self._t_max)
-            ]
-            new_base = np.arange(0, profile.index[-1], 0.1)
-            profile = (
-                profile.reindex(profile.index.union(new_base))
-                .interpolate("values")
-                .loc[new_base]
-            )
-            profile = profile.rolling(self._roll_val).mean()
-        else:
-            profile = pd.DataFrame({"n_jobs_running": [0]}, index=[0])
-        return profile
 
     def _preprocess(self, val):
         num_workers = None
@@ -660,7 +649,11 @@ class ProfileView(SingleGraphView):
             plt.ylabel("Percentage of Utilization")
         else:
             plt.ylabel("Number of Used Workers")
-        plt.legend(loc="upper center", bbox_to_anchor=(0.5, -0.05))
+        plt.legend(
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.2),
+            ncol=math.ceil(len(values) / 5),
+        )
         plt.tight_layout()
         st.pyplot(fig)
 
@@ -745,7 +738,11 @@ class SearchView(SingleGraphView):
         plt.xlabel("Iteration")
         plt.ylabel("Objective")
         plt.grid()
-        plt.legend(loc="upper center", bbox_to_anchor=(0.5, -0.05))
+        plt.legend(
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.2),
+            ncol=math.ceil(len(values) / 5),
+        )
         plt.tight_layout()
         st.pyplot(fig)
 
@@ -781,26 +778,31 @@ class PercUtilView(SingleGraphView):
             err_color = colors[i].copy()
             color = colors[i]
             color[-1] = 0.7
-            text_color = "white" if color[:-1].sum() < 1.5 else "0.2"
-            plt.barh(names[i], avrg, xerr=std, color=color, ecolor=err_color)
-            plt.barh(names[i], 100 - avrg, left=avrg, color="lightgrey")
+            plt.barh(i, avrg, xerr=std, color=color, ecolor=err_color, label=names[i])
+            plt.barh(i, 100 - avrg, left=avrg, color="lightgrey")
             plt.text(
                 avrg / 2,
                 i,
-                f"{round(avrg, 2)}%\nUsed",
+                f"{round(avrg, 2)}%",
                 ha="center",
                 va="center",
-                color=text_color,
+                color="white",
             )
             plt.text(
                 avrg / 2 + 50,
                 i,
-                f"{round(100-avrg, 2)}%\nUnused",
+                f"{round(100-avrg, 2)}%",
                 ha="center",
                 va="center",
                 color="0.2",
             )
-        plt.xlabel("Percentage")
+        plt.xlabel("Percentage Used / Unused")
+        plt.yticks([])
+        plt.legend(
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.2),
+            ncol=math.ceil(len(values) / 5),
+        )
         plt.tight_layout()
         st.pyplot(fig)
 
