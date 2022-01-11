@@ -395,7 +395,7 @@ class ConfigurationsSelection(View):
         self.key = key
         data = copy.deepcopy(data)
         self.headers = copy.deepcopy(data)
-        list(map(lambda d: d.pop("results"), self.headers))
+        list(map(lambda d: d.pop("results") and d.pop("summary"), self.headers))
         synthesis = {}
         list(map(partial(_merge_dict_in, synthesis, []), self.headers))
         diff = _get_diff(synthesis)
