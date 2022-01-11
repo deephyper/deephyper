@@ -152,7 +152,7 @@ class DatabaseSelection(View):
         self.data = []
 
     def _select_choices(self, criterias):
-        def _add_choice(choices, path, val):
+        def _add_choice(choices, to_ignore, path, val):
             path = list(path)
             if path:
                 key = path[-1]
@@ -167,14 +167,20 @@ class DatabaseSelection(View):
                         default = val
                     else:
                         default = None
-                    choice = st.multiselect(label=key, options=val, default=default)
-                    choices.append((path, choice))
+                    col1, col2 = st.columns([2, 1])
+                    choice = col1.multiselect(label=key, options=val, default=default)
+                    ignore = col2.checkbox(label="ignore", value=False, key=path)
+                    if ignore:
+                        to_ignore.append(path)
+                    else:
+                        choices.append((path, choice))
                 else:
                     return 0
 
         choices = []
-        tree.traverse_with_path(partial(_add_choice, choices), criterias)
-        return choices
+        to_ignore = []
+        tree.traverse_with_path(partial(_add_choice, choices, to_ignore), criterias)
+        return choices, to_ignore
 
     def _generate_query(self, choices):
         query = Query().noop()
@@ -201,11 +207,21 @@ class DatabaseSelection(View):
 
         # Show the possible criterias
         with st.container():
-            choices = self._select_choices(criterias)
+            choices, to_ignore = self._select_choices(criterias)
 
         # Select the corresponding runs
         query = self._generate_query(choices)
         self.data = list(map(lambda x: dict(x), self.db.search(query)))
+
+        for path in to_ignore:
+            for entry in self.data:
+                try:
+                    item = reduce(dict.get, path[:-1], entry)
+                except:
+                    item = None
+                if item:
+                    del item[path[-1]]
+
         select_size = len(self.data)
         message = "{nb} benchmark{s} found.".format(
             nb=select_size, s="s" if select_size > 1 else ""
@@ -377,13 +393,14 @@ def _get_names(headers, diff):
 class ConfigurationsSelection(View):
     def __init__(self, data, key) -> None:
         self.key = key
-        self.data = copy.deepcopy(data)
+        data = copy.deepcopy(data)
         self.headers = copy.deepcopy(data)
         list(map(lambda d: d.pop("results"), self.headers))
         synthesis = {}
         list(map(partial(_merge_dict_in, synthesis, []), self.headers))
         diff = _get_diff(synthesis)
-        self.config_names, self.comparatives = _get_names(self.headers, diff)
+        config_names, comparatives = _get_names(self.headers, diff)
+        _, self.config_names, self.data = zip(*sorted(zip(comparatives, config_names, data)))
 
     def show(self):
         new_names = []
@@ -395,10 +412,8 @@ class ConfigurationsSelection(View):
                 to_keep.append(
                     st.checkbox(f"Show", True, key=f"Show {name} {self.key}")
                 )
-        data = list(compress(self.data, to_keep))
-        config_names = list(compress(new_names, to_keep))
-        comparatives = list(compress(self.comparatives, to_keep))
-        _, self.config_names, self.data = zip(*sorted(zip(comparatives, config_names, data)))
+        self.data = list(compress(self.data, to_keep))
+        self.config_names = list(compress(new_names, to_keep))
         self.headers = copy.deepcopy(self.data)
         list(map(lambda d: d.pop("results"), self.headers))
         for idx, header in enumerate(self.headers):
@@ -958,7 +973,11 @@ class ComparatorView(AnalysisView):
         plt.xlabel(self.param_name)
         plt.ylabel(key)
         plt.grid()
-        plt.legend()
+        plt.legend(
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.2),
+            ncol=math.ceil(len(values) / 5),
+        )
         plt.tight_layout()
         st.pyplot(fig)
 
