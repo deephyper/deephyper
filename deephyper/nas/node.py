@@ -113,8 +113,8 @@ class VariableNode(OperationNode):
         self.get_op(index).init(self)
 
     def get_op(self, index):
-        assert (
-            "float" in str(type(index)) or "int" in str(type(index))
+        assert "float" in str(type(index)) or "int" in str(
+            type(index)
         ), f"found type is : {type(index)}"
         if "float" in str(type(index)):
             self._index = self.denormalize(index)

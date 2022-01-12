@@ -131,7 +131,6 @@ def main(**kwargs):
 
     sys.path.insert(0, ".")
 
-
     if kwargs["verbose"]:
         logging.basicConfig(filename="deephyper.log", level=logging.INFO)
 
@@ -156,12 +155,18 @@ def main(**kwargs):
     evaluator_kwargs = {k: kwargs.pop(k) for k in base_arguments}
 
     for method in EVALUATORS.keys():
-        evaluator_method_kwargs = {k[len(evaluator_method)+1:]:kwargs.pop(k) for k in kwargs.copy() if method in k}
+        evaluator_method_kwargs = {
+            k[len(evaluator_method) + 1 :]: kwargs.pop(k)
+            for k in kwargs.copy()
+            if method in k
+        }
         if method == evaluator_method:
             evaluator_kwargs = {**evaluator_kwargs, **evaluator_method_kwargs}
 
     # create evaluator
-    logging.info(f"Evaluator(method={evaluator_method}, method_kwargs={evaluator_kwargs}")
+    logging.info(
+        f"Evaluator(method={evaluator_method}, method_kwargs={evaluator_kwargs}"
+    )
     evaluator = Evaluator.create(
         run_function, method=evaluator_method, method_kwargs=evaluator_kwargs
     )

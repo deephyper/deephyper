@@ -98,7 +98,6 @@ class BaseTrainer:
 
     def setup_losses_and_metrics(self):
 
-
         self.loss_metrics = self._select_loss(self.config[a.loss_metric])
         self.loss_weights = self.config.get("loss_weights")
         self.class_weights = self.config.get("class_weights")
@@ -116,7 +115,9 @@ class BaseTrainer:
                 else:
                     return selectMetric(metric)
 
-            self.metrics_name = {n: selectM(m) for n, m in self.config[a.metrics].items()}
+            self.metrics_name = {
+                n: selectM(m) for n, m in self.config[a.metrics].items()
+            }
 
     def load_data(self):
         logger.debug("load_data")
@@ -272,11 +273,16 @@ class BaseTrainer:
     def set_dataset_train(self):
         if self.data_config_type == "ndarray":
             if type(self.train_Y) is list:
-                output_mapping = {f"output_{i}": tY for i, tY in enumerate(self.train_Y)}
+                output_mapping = {
+                    f"output_{i}": tY for i, tY in enumerate(self.train_Y)
+                }
             else:
                 output_mapping = self.train_Y
             self.dataset_train = tf.data.Dataset.from_tensor_slices(
-                ({f"input_{i}": tX for i, tX in enumerate(self.train_X)}, output_mapping)
+                (
+                    {f"input_{i}": tX for i, tX in enumerate(self.train_X)},
+                    output_mapping,
+                )
             )
         else:  # self.data_config_type == "gen"
             self.dataset_train = tf.data.Dataset.from_generator(
@@ -300,11 +306,16 @@ class BaseTrainer:
     def set_dataset_valid(self):
         if self.data_config_type == "ndarray":
             if type(self.valid_Y) is list:
-                output_mapping = {f"output_{i}": vY for i, vY in enumerate(self.valid_Y)}
+                output_mapping = {
+                    f"output_{i}": vY for i, vY in enumerate(self.valid_Y)
+                }
             else:
                 output_mapping = self.valid_Y
             self.dataset_valid = tf.data.Dataset.from_tensor_slices(
-                ({f"input_{i}": vX for i, vX in enumerate(self.valid_X)}, output_mapping)
+                (
+                    {f"input_{i}": vX for i, vX in enumerate(self.valid_X)},
+                    output_mapping,
+                )
             )
         else:
             self.dataset_valid = tf.data.Dataset.from_generator(
@@ -350,7 +361,6 @@ class BaseTrainer:
                     dtype=self.data_types[1],
                 ),
             )
-
 
     def _setup_optimizer(self):
         optimizer_fn = U.selectOptimizer_keras(self.optimizer_name)
@@ -528,7 +538,9 @@ class BaseTrainer:
                 )
 
             time_end_training = time.time()  # TIMING
-            self.train_history["training_time"] = time_end_training - time_start_training
+            self.train_history["training_time"] = (
+                time_end_training - time_start_training
+            )
 
             self.train_history.update(history.history)
 
@@ -542,7 +554,9 @@ class BaseTrainer:
             time_start_predict = time.time()
             y_true, y_pred = self.predict(dataset="valid")
             time_end_predict = time.time()
-            self.train_history["val_predict_time"] = time_end_predict - time_start_predict
+            self.train_history["val_predict_time"] = (
+                time_end_predict - time_start_predict
+            )
 
             self.train_history["y_true"] = y_true
             self.train_history["y_pred"] = y_pred

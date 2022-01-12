@@ -9,19 +9,20 @@ from deephyper.search.nas import AgEBO
 
 def test_agebo_without_hp():
 
-    create_evaluator = lambda: Evaluator.create(
-        run_debug_arch, method="process", method_kwargs={"num_workers": 1}
-    )
+    create_evaluator = lambda: Evaluator.create(run_debug_arch, method="serial")
 
-    with pytest.raises(ValueError):  # timeout should be an int
-        search = AgEBO(linearReg.Problem, create_evaluator(), random_state=42)
+    # ValueError: No hyperparameter space was defined for this problem
+    with pytest.raises(ValueError):
+        search = AgEBO(
+            linearReg.Problem,
+            create_evaluator(),
+            random_state=42,
+        )
 
 
 def test_agebo_with_hp():
 
-    create_evaluator = lambda: Evaluator.create(
-        run_debug_arch, method="process", method_kwargs={"num_workers": 1}
-    )
+    create_evaluator = lambda: Evaluator.create(run_debug_arch, method="serial")
 
     search = AgEBO(
         linearRegHybrid.Problem,
@@ -30,9 +31,9 @@ def test_agebo_with_hp():
     )
 
     res1 = search.search(max_evals=4)
-    res1_array = res1[["arch_seq", "batch_size", "learning_rate", "optimizer"]].to_numpy()
-
-    search.search(max_evals=100, timeout=1)
+    res1_array = res1[
+        ["arch_seq", "batch_size", "learning_rate", "optimizer"]
+    ].to_numpy()
 
     search = AgEBO(
         linearRegHybrid.Problem,
@@ -40,7 +41,9 @@ def test_agebo_with_hp():
         random_state=42,
     )
     res2 = search.search(max_evals=4)
-    res2_array = res2[["arch_seq", "batch_size", "learning_rate", "optimizer"]].to_numpy()
+    res2_array = res2[
+        ["arch_seq", "batch_size", "learning_rate", "optimizer"]
+    ].to_numpy()
 
     assert np.array_equal(res1_array, res2_array)
 

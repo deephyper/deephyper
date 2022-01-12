@@ -1,5 +1,6 @@
 import logging
 import asyncio
+import functools
 
 from deephyper.evaluator._evaluator import Evaluator
 
@@ -17,8 +18,14 @@ class ProcessPoolEvaluator(Evaluator):
         callbacks (list, optional): A list of callbacks to trigger custom actions at the creation or completion of jobs. Defaults to None.
     """
 
-    def __init__(self, run_function, num_workers: int=1, callbacks=None):
-        super().__init__(run_function, num_workers, callbacks)
+    def __init__(
+        self,
+        run_function,
+        num_workers: int = 1,
+        callbacks: list = None,
+        run_function_kwargs: dict = None,
+    ):
+        super().__init__(run_function, num_workers, callbacks, run_function_kwargs)
         self.sem = asyncio.Semaphore(num_workers)
         logger.info(
             f"ProcessPool Evaluator will execute {self.run_function.__name__}() from module {self.run_function.__module__}"
@@ -29,9 +36,13 @@ class ProcessPoolEvaluator(Evaluator):
         async with self.sem:
 
             executor = ProcessPoolExecutor(max_workers=1)
-            sol = await self.loop.run_in_executor(executor, job.run_function, job.config)
+
+            run_function = functools.partial(
+                job.run_function, job.config, **self.run_function_kwargs
+            )
+
+            sol = await self.loop.run_in_executor(executor, run_function)
 
             job.result = sol
-
 
         return job

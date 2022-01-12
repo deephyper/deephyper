@@ -4,6 +4,7 @@ import os
 # Adapted from 'get_job_nodelist()' found in the following project:
 # https://github.com/argonne-lcf/balsam/blob/main/balsam/platform/compute_node/alcf_thetaknl_node.py
 
+
 def nodelist():
     """Get all compute nodes allocated in the current job context.
 
@@ -25,6 +26,7 @@ def nodelist():
             node_ids.append(lo)
 
     print([f"nid{node_id:05d}" for node_id in node_ids])
+
 
 if __name__ == "__main__":
     nodelist()

@@ -31,8 +31,7 @@ problem_autosklearn1 = HpProblem()
 
 regressor = problem_autosklearn1.add_hyperparameter(
     name="regressor",
-    value=["RandomForest", "Linear", "AdaBoost",
-           "KNeighbors", "MLP", "SVR", "XGBoost"],
+    value=["RandomForest", "Linear", "AdaBoost", "KNeighbors", "MLP", "SVR", "XGBoost"],
 )
 
 # n_estimators
@@ -58,7 +57,8 @@ problem_autosklearn1.add_condition(cond_max_depth)
 
 # n_neighbors
 n_neighbors = problem_autosklearn1.add_hyperparameter(
-    name="n_neighbors", value=(1, 100))
+    name="n_neighbors", value=(1, 100)
+)
 
 cond_n_neighbors = cs.EqualsCondition(n_neighbors, regressor, "KNeighbors")
 
@@ -74,8 +74,7 @@ cond_alpha = cs.EqualsCondition(alpha, regressor, "MLP")
 problem_autosklearn1.add_condition(cond_alpha)
 
 # C
-C = problem_autosklearn1.add_hyperparameter(
-    name="C", value=(1e-5, 10.0, "log-uniform"))
+C = problem_autosklearn1.add_hyperparameter(name="C", value=(1e-5, 10.0, "log-uniform"))
 
 cond_C = cs.EqualsCondition(C, regressor, "SVR")
 

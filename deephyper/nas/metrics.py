@@ -49,6 +49,7 @@ def to_tfp(metric_func):
     Args:
         metric_func (func): A regular tensorflow-keras metric function.
     """
+
     @functools.wraps(metric_func)
     def wrapper(y_true, y_pred):
         return metric_func(y_true, y_pred.mean())
@@ -79,8 +80,8 @@ metrics_func["tfp_mae"] = tfp_mae
 metrics_func["tfp_rmse"] = tfp_rmse
 
 metrics_obj = OrderedDict()
-metrics_obj["auroc"] = lambda : tf.keras.metrics.AUC(name="auroc", curve="ROC")
-metrics_obj["aucpr"] = lambda : tf.keras.metrics.AUC(name="aucpr", curve="PR")
+metrics_obj["auroc"] = lambda: tf.keras.metrics.AUC(name="auroc", curve="ROC")
+metrics_obj["aucpr"] = lambda: tf.keras.metrics.AUC(name="aucpr", curve="PR")
 
 
 def selectMetric(name: str):

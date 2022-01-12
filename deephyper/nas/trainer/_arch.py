@@ -42,4 +42,3 @@ train_set = "train_set"
 test_X = "test_X"
 test_Y = "test_Y"
 vocabulary = "vocabulary"
-

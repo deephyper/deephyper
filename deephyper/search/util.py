@@ -48,12 +48,14 @@ def load_attr(str_full_module):
     else:
         return str_full_module
 
+
 def load_from_script(fname, attr):
     dirname, basename = os.path.split(fname)
     sys.path.insert(0, dirname)
     module_name = os.path.splitext(basename)[0]
     module = importlib.import_module(module_name)
     return getattr(module, attr)
+
 
 def generic_loader(target: str, attribute=None):
     """Load attribute from target module

@@ -16,7 +16,9 @@ def load_data(prop=0.1):
     """
     dest = "mnist.npz"
 
-    (train_X, train_y), (valid_X, valid_y) = tf.keras.datasets.mnist.load_data(path=dest)
+    (train_X, train_y), (valid_X, valid_y) = tf.keras.datasets.mnist.load_data(
+        path=dest
+    )
 
     train_X = train_X / 255
     valid_X = valid_X / 255

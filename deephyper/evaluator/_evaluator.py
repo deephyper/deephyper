@@ -40,12 +40,14 @@ class Evaluator:
         self,
         run_function,
         num_workers: int = 1,
-        callbacks=None,
+        callbacks: list=None,
+        run_function_kwargs: dict=None
     ):
         self.run_function = run_function  # User-defined run function.
+        self.run_function_kwargs = {} if run_function_kwargs is None else run_function_kwargs
 
         # Number of parallel workers available
-        self.num_workers =  num_workers
+        self.num_workers = num_workers
         self.jobs = []  # Job objects currently submitted.
         self.n_jobs = 1
         self._tasks_running = []  # List of AsyncIO Task objects currently running.
@@ -78,7 +80,7 @@ class Evaluator:
 
         if not method in EVALUATORS.keys():
             val = ", ".join(EVALUATORS)
-            raise DeephyperRuntimeError(
+            raise ValueError(
                 f'The method "{method}" is not a valid method for an Evaluator!'
                 f" Choose among the following evalutor types: "
                 f"{val}."
@@ -192,8 +194,7 @@ class Evaluator:
         return results
 
     def create_job(self, config):
-        """Create a Job object from the input configuration.
-        """
+        """Create a Job object from the input configuration."""
         new_job = Job(self.n_jobs, config, self.run_function)
         self.n_jobs += 1
         self.jobs.append(new_job)
@@ -221,9 +222,7 @@ class Evaluator:
         else:
             return val
 
-    def dump_evals(
-        self, saved_keys = None, log_dir: str = "."
-    ):
+    def dump_evals(self, saved_keys=None, log_dir: str = "."):
         """Dump evaluations to a CSV file name ``"results.csv"``
 
         Args:
@@ -245,7 +244,9 @@ class Evaluator:
             result["objective"] = job.result
             result[
                 "elapsed_sec"
-            ] = job.elapsed_sec  # Time to complete from the intitilization of evaluator.
+            ] = (
+                job.elapsed_sec
+            )  # Time to complete from the intitilization of evaluator.
             result["duration"] = job.duration
             resultsList.append(result)
 

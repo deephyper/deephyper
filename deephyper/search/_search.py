@@ -20,6 +20,7 @@ class Search(abc.ABC):
         log_dir (str, optional): [description]. Defaults to ".".
         verbose (int, optional): [description]. Defaults to 0.
     """
+
     def __init__(
         self, problem, evaluator, random_state=None, log_dir=".", verbose=0, **kwargs
     ):
@@ -60,16 +61,21 @@ class Search(abc.ABC):
         if np.isscalar(timeout) and timeout > 0:
             signal.alarm(timeout)
 
-    def search(self, max_evals: int=-1, timeout: int=None):
+    def search(self, max_evals: int = -1, timeout: int = None):
         """Execute the search algorithm.
 
         Args:
-            max_evals (int, optional): The maximum number of evaluations of the run function to perform before stopping the search. Defaults to -1, will run indefinitely.
-            timeout (int, optional): The time budget of the search before stopping.Defaults to None, will not impose a time budget.
+            max_evals (int, optional): The maximum number of evaluations of the run function to perform before stopping the search. Defaults to ``-1``, will run indefinitely.
+            timeout (int, optional): The time budget (in seconds) of the search before stopping. Defaults to ``None``, will not impose a time budget.
 
         Returns:
             DataFrame: a pandas DataFrame containing the evaluations performed.
         """
+        if timeout is not None:
+            if type(timeout) is not int:
+                raise ValueError(f"'timeout' shoud be of type'int' but is of type '{type(timeout)}'!")
+            if timeout <= 0:
+                raise ValueError(f"'timeout' should be > 0!")
 
         self._set_timeout(timeout)
 

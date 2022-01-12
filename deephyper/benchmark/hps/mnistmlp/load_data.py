@@ -11,11 +11,11 @@ def load_data():
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-    dest = os.path.join(here, 'DATA', 'mnist.npz')
+    dest = os.path.join(here, "DATA", "mnist.npz")
 
     (x_train, y_train), (x_test, y_test) = mnist.load_data(dest)
     return (x_train, y_train), (x_test, y_test)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     load_data()

@@ -1,0 +1,36 @@
+name: Presubmit
+on: [push, pull_request]
+
+jobs:
+  pre_job:
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@master
+        with:
+          concurrent_skipping: 'same_content'
+          skip_after_successful_duplicate: 'true'
+          paths_ignore: '["**/README.md"]'
+          do_not_skip: '["pull_request"]'
+
+  build-and-check:
+    needs: pre_job
+    if: ${{ needs.pre_job.outputs.should_skip != 'true' }}
+    name: Build and Check ${{ matrix.os }} ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Python
+        run: sudo apt update; sudo apt install -y build-essential python3-dev
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+      - name: Install package
+        run: pip3 install '.[dev]'
+      - name: Run Tests 
+        run: pytest
+        working-directory: tests

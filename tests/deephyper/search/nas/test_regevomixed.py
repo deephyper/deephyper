@@ -8,9 +8,7 @@ from deephyper.search.nas import RegularizedEvolutionMixed
 
 def test_regovomixed_without_hp():
 
-    create_evaluator = lambda: Evaluator.create(
-        run_debug_arch, method="process", method_kwargs={"num_workers": 1}
-    )
+    create_evaluator = lambda: Evaluator.create(run_debug_arch, method="serial")
 
     search = RegularizedEvolutionMixed(
         linearReg.Problem, create_evaluator(), random_state=42
@@ -18,8 +16,6 @@ def test_regovomixed_without_hp():
 
     res1 = search.search(max_evals=4)
     res1_array = res1[["arch_seq"]].to_numpy()
-
-    search.search(max_evals=100, timeout=1)
 
     search = RegularizedEvolutionMixed(
         linearReg.Problem,
@@ -34,9 +30,7 @@ def test_regovomixed_without_hp():
 
 def test_regevomixed_with_hp():
 
-    create_evaluator = lambda: Evaluator.create(
-        run_debug_arch, method="process", method_kwargs={"num_workers": 1}
-    )
+    create_evaluator = lambda: Evaluator.create(run_debug_arch, method="serial")
 
     search = RegularizedEvolutionMixed(
         linearRegHybrid.Problem,
@@ -46,8 +40,6 @@ def test_regevomixed_with_hp():
 
     res1 = search.search(max_evals=4)
     res1_array = res1[["arch_seq"]].to_numpy()
-
-    search.search(max_evals=100, timeout=1)
 
     search = RegularizedEvolutionMixed(
         linearRegHybrid.Problem,

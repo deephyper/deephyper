@@ -10,10 +10,9 @@ def stdscaler() -> Pipeline:
     Returns:
         Pipeline: a pipeline with one step ``StandardScaler``.
     """
-    preprocessor = Pipeline([
-        ('stdscaler', StandardScaler())
-    ])
+    preprocessor = Pipeline([("stdscaler", StandardScaler())])
     return preprocessor
+
 
 def minmaxstdscaler() -> Pipeline:
     """MinMax preprocesssing followed by Standard normalization.
@@ -21,8 +20,10 @@ def minmaxstdscaler() -> Pipeline:
     Returns:
         Pipeline: a pipeline with two steps ``[MinMaxScaler, StandardScaler]``.
     """
-    preprocessor = Pipeline([
-        ('minmaxscaler', MinMaxScaler()),
-        ('stdscaler', StandardScaler()),
-    ])
+    preprocessor = Pipeline(
+        [
+            ("minmaxscaler", MinMaxScaler()),
+            ("stdscaler", StandardScaler()),
+        ]
+    )
     return preprocessor

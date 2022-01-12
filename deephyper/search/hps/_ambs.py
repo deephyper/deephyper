@@ -101,7 +101,8 @@ class AMBS(Search):
 
         # check if it is possible to convert the ConfigSpace to standard skopt Space
         if (
-            len(self._problem.space.get_forbiddens()) == 0
+            isinstance(self._problem.space, CS.ConfigurationSpace)
+            and len(self._problem.space.get_forbiddens()) == 0
             and len(self._problem.space.get_conditions()) == 0
         ):
             self._opt_space = convert_to_skopt_space(self._problem.space)
@@ -121,7 +122,7 @@ class AMBS(Search):
             acq_optimizer_kwargs={
                 "n_points": n_points,
                 "filter_duplicated": filter_duplicated,
-                "n_jobs": n_jobs
+                "n_jobs": n_jobs,
             },
             # acquisition function
             acq_func=MAP_acq_func.get(acq_func, acq_func),
@@ -283,7 +284,7 @@ class AMBS(Search):
         if self._opt is None:
             self._setup_optimizer()
 
-        hp_names = self._problem.space.get_hyperparameter_names()
+        hp_names = self._problem.hyperparameter_names
         try:
             x = df[hp_names].values.tolist()
             y = df.objective.tolist()
@@ -458,9 +459,8 @@ class AMBS(Search):
             dict: a dictionnary of hyperparameter names and values.
         """
         res = {}
-        hps_names = self._problem.space.get_hyperparameter_names()
+        hps_names = self._problem.hyperparameter_names
         for i in range(len(x)):
-            # res[hps_names[i]] = "nan" if isnan(x[i]) else x[i]
             res[hps_names[i]] = x[i]
         return res
 

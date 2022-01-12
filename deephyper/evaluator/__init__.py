@@ -9,14 +9,16 @@ from deephyper.evaluator._ray import RayEvaluator
 from deephyper.evaluator._serial import SerialEvaluator
 from deephyper.evaluator._subprocess import SubprocessEvaluator
 from deephyper.evaluator._thread_pool import ThreadPoolEvaluator
+from deephyper.evaluator._queue import queued
 
 __all__ = [
     "Evaluator",
     "EVALUATORS",
     "Job",
     "ProcessPoolEvaluator",
+    "queued",
     "RayEvaluator",
     "SerialEvaluator",
     "SubprocessEvaluator",
-    "ThreadPoolEvaluator"
+    "ThreadPoolEvaluator",
 ]

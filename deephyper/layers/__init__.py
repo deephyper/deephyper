@@ -15,7 +15,7 @@ from deephyper.layers._mpnn import (
     MessagePassing,
     SparseMPNN,
     UpdateFuncGRU,
-    UpdateFuncMLP
+    UpdateFuncMLP,
 )
 from deephyper.layers._padding import Padding
 

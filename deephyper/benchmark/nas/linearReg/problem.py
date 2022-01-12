@@ -9,7 +9,9 @@ Problem.load_data(load_data)
 
 Problem.search_space(OneLayerSpace)
 
-Problem.hyperparameters(batch_size=100, learning_rate=0.1, optimizer="adam", num_epochs=1)
+Problem.hyperparameters(
+    batch_size=100, learning_rate=0.1, optimizer="adam", num_epochs=1
+)
 
 Problem.loss("mse")
 

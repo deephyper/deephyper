@@ -12,13 +12,11 @@ from deephyper.benchmark.nas.linearReg import Problem as linear_reg_problem
 from deephyper.benchmark.nas.linearRegHybrid import Problem as linear_reg_hybrid_problem
 from deephyper.nas.run import run_debug_arch, run_debug_slow
 
-class TestNeuralArchitectureSearchAlgorithms(unittest.TestCase):
 
+class TestNeuralArchitectureSearchAlgorithms(unittest.TestCase):
     def evaluate_search(self, search_cls, problem):
         # Test "max_evals" stopping criteria
-        evaluator = Evaluator.create(
-            run_debug_arch, method="subprocess", method_kwargs={"num_workers": 1}
-        )
+        evaluator = Evaluator.create(run_debug_arch, method="serial")
 
         search = search_cls(problem, evaluator)
 
@@ -26,18 +24,16 @@ class TestNeuralArchitectureSearchAlgorithms(unittest.TestCase):
         self.assertEqual(len(res), 10)
 
         # Test "max_evals" and "timeout" stopping criterias
-        evaluator = Evaluator.create(
-            run_debug_slow, method="subprocess", method_kwargs={"num_workers": 1}
-        )
+        # evaluator = Evaluator.create(run_debug_slow, method="serial")
 
-        search = search_cls(problem, evaluator)
+        # search = search_cls(problem, evaluator)
 
-        with pytest.raises(TypeError): # timeout should be an int
-            res = search.search(max_evals=10, timeout=1.0)
-        t1 = time.time()
-        res = search.search(max_evals=10, timeout=1)
-        d = time.time() - t1
-        self.assertAlmostEqual(d, 1, delta=0.1)
+        # with pytest.raises(TypeError):  # timeout should be an int
+        #     res = search.search(max_evals=10, timeout=1.0)
+        # t1 = time.time()
+        # res = search.search(max_evals=10, timeout=1)
+        # d = time.time() - t1
+        # self.assertAlmostEqual(d, 1, delta=0.1)
 
     def test_random(self):
 

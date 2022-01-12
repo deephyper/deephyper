@@ -4,7 +4,7 @@ from deephyper.nas.preprocessing import minmaxstdscaler
 from deepspace.tabular import OneLayerSpace
 
 
-#def create_search_space(input_shape=(10,), output_shape=(1,), **kwargs):
+# def create_search_space(input_shape=(10,), output_shape=(1,), **kwargs):
 #    return OneLayerSpace()(input_shape, output_shape, **kwargs)
 
 

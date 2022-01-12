@@ -291,6 +291,10 @@ class HpProblem:
         """The wrapped ConfigSpace object."""
         return self._space
 
+    @property
+    def hyperparameter_names(self):
+        return self._space.get_hyperparameter_names()
+
     def add_starting_point(self, **parameters):
         """Add starting points to the ``HpProblem``. It is useful when a good-baseline is known to help initialize the search at a given location of the search space.
 

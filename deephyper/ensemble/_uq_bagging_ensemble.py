@@ -68,8 +68,8 @@ def model_predict(model_path, X, batch_size=32, verbose=0):
     # dataset
     if type(X) is list:
         dataset = tf.data.Dataset.from_tensor_slices(
-                {f"input_{i}": Xi for i, Xi in enumerate(X)}
-            )
+            {f"input_{i}": Xi for i, Xi in enumerate(X)}
+        )
     else:
         dataset = tf.data.Dataset.from_tensor_slices(X)
     dataset = dataset.batch(batch_size)
@@ -82,7 +82,9 @@ def model_predict(model_path, X, batch_size=32, verbose=0):
         y = np.concatenate(y_list, axis=0)
         return y
 
-    y_dist = model(next(iter(dataset)), training=False)  # just to test the type of the output
+    y_dist = model(
+        next(iter(dataset)), training=False
+    )  # just to test the type of the output
     if isinstance(y_dist, tfp.distributions.Distribution):
         if hasattr(y_dist, "loc") and hasattr(y_dist, "scale"):
             convert_func = lambda y_dist: np.concatenate(
@@ -241,6 +243,7 @@ class UQBaggingEnsembleRegressor(UQBaggingEnsemble):
         batch_size (int, optional): Batch size used batchify the inference of loaded models. Defaults to 32.
         selection (str, optional): Selection strategy to build the ensemble. Value in ``[["topk", "caruana"]``. Default to ``topk``.
     """
+
     def __init__(
         self,
         model_dir,
@@ -317,6 +320,7 @@ class UQBaggingEnsembleClassifier(UQBaggingEnsemble):
         batch_size (int, optional): Batch size used batchify the inference of loaded models. Defaults to 32.
         selection (str, optional): Selection strategy to build the ensemble. Value in ``[["topk", "caruana"]``. Default to ``topk``.
     """
+
     def __init__(
         self,
         model_dir,
@@ -431,7 +435,9 @@ def greedy_caruana(loss_func, y_true, y_pred, k=2, verbose=0):
     else:
         y_pred_ = y_pred
 
-    losses = tf.reduce_mean(tf.reshape(loss_func(y_true, y_pred_), [n_models, -1]), axis=1).numpy()
+    losses = tf.reduce_mean(
+        tf.reshape(loss_func(y_true, y_pred_), [n_models, -1]), axis=1
+    ).numpy()
     assert n_models == np.shape(losses)[0]
 
     i_min = np.nanargmin(losses)
@@ -484,7 +490,9 @@ def __convert_to_block_df(a, y_col=None, group_col=None, block_col=None, melted=
         y_col = "y"
         x.columns.name = group_col
         x.index.name = block_col
-        x = x.reset_index().melt(id_vars=block_col, var_name=group_col, value_name=y_col)
+        x = x.reset_index().melt(
+            id_vars=block_col, var_name=group_col, value_name=y_col
+        )
 
     elif isinstance(a, DataFrame) and melted:
         x = DataFrame.from_dict(

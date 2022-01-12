@@ -17,17 +17,21 @@ class Node:
     def op(self):
         raise NotImplementedError
 
+
 class InputNode(Node):
     def __init__(self):
         super().__init__("input")
+
 
 class OutputNode(Node):
     def __init__(self):
         super().__init__("output")
 
+
 class OperationNode(Node):
     def __init__(self, name="", *args, **kwargs):
         super().__init__(name=name, *args, **kwargs)
+
 
 class VariableNode(OperationNode):
     def __init__(self, name=""):

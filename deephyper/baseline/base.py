@@ -4,8 +4,7 @@ from deephyper.nas.preprocessing import minmaxstdscaler
 
 
 class BasePipeline:
-    """Baseline Pipeline.
-    """
+    """Baseline Pipeline."""
 
     def __init__(
         self,

@@ -1,4 +1,7 @@
-from deephyper.sklearn.classifier._autosklearn1 import problem_autosklearn1, run_autosklearn1
+from deephyper.sklearn.classifier._autosklearn1 import (
+    problem_autosklearn1,
+    run_autosklearn1,
+)
 
 __all__ = ["problem_autosklearn1", "run_autosklearn1"]
 

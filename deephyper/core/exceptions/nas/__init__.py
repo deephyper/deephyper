@@ -5,5 +5,4 @@ from deephyper.core.exceptions import DeephyperError
 
 
 class NASError(DeephyperError):
-    """Root neural architecture search exception.
-    """
+    """Root neural architecture search exception."""

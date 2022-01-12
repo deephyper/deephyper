@@ -5,8 +5,13 @@ import os
 import networkx as nx
 
 from deephyper.benchmark.nas.nasbench101.nodes import InputNode, VariableNode
-from deephyper.benchmark.nas.nasbench101.ops import (Connect, Conv1X1, Conv3X3,
-                                                     Identity, MaxPool3X3)
+from deephyper.benchmark.nas.nasbench101.ops import (
+    Connect,
+    Conv1X1,
+    Conv3X3,
+    Identity,
+    MaxPool3X3,
+)
 from deephyper.benchmark.nas.nasbench101.search_space import NxSearchSpace
 
 
@@ -20,13 +25,13 @@ from nasbench import api
 # nasbench = api.NASBench(data_file)
 
 
-
 def create_conv_node():
     vnode = VariableNode()
     ops = [Identity, Conv1X1, Conv3X3, MaxPool3X3]
     for op in ops:
         vnode.add_op(op())
     return vnode
+
 
 def create_search_space(input_shape=None, output_shape=None):
     ss = NxSearchSpace()
@@ -50,6 +55,7 @@ def create_search_space(input_shape=None, output_shape=None):
 
     return ss
 
+
 def evaluate_ops(ss, ops, nasbench):
     ss = copy.deepcopy(ss)
     ss.set_ops(ops)
@@ -58,9 +64,9 @@ def evaluate_ops(ss, ops, nasbench):
     matrix = nx.adjacency_matrix(graph).todense()
     ops_labels = [str(n) for n in graph.nodes()]
     cell = api.ModelSpec(
-        matrix=matrix.tolist(),   # output layer
+        matrix=matrix.tolist(),  # output layer
         # Operations at the vertices of the module, matches order of matrix.
-        ops=ops_labels
+        ops=ops_labels,
     )
 
     # Querying multiple times may yield different results. Each cell is evaluated 3

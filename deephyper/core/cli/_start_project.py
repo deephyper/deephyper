@@ -47,16 +47,13 @@ def main(path, *args, **kwargs):
     with open(os.path.join(path, ".deephyper"), "w") as fp:
         pass
     result = subprocess.run(
-            [
-                "pip",
-                "install",
-                "-e",
-                f"{path}"
-            ],
-            stdout=subprocess.PIPE,
-        )
+        ["pip", "install", "-e", f"{path}"],
+        stdout=subprocess.PIPE,
+    )
     if result.returncode != 0:
-        print(f"The package could not be installed automatically! Export the following in your environment to access the package from anywhere:\n"
-              f"export PYTHONPATH={path}:$PYTHONPATH")
+        print(
+            f"The package could not be installed automatically! Export the following in your environment to access the package from anywhere:\n"
+            f"export PYTHONPATH={path}:$PYTHONPATH"
+        )
     else:
         print(result.stdout.decode("utf-8"), end="")

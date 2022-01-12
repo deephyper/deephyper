@@ -5,8 +5,4 @@ The ``Search`` class is abstract and has different subclasses such as: ``deephyp
 
 from deephyper.search._search import Search
 
-__all__ = [
-    "Search",
-    "nas",
-    "hps"
-    ]
+__all__ = ["Search", "nas", "hps"]

@@ -54,7 +54,9 @@ def get_openml_dataset(
 ):
     # Random State
     random_state = (
-        np.random.RandomState(random_state) if type(random_state) is int else random_state
+        np.random.RandomState(random_state)
+        if type(random_state) is int
+        else random_state
     )
 
     dataset = openml.datasets.get_dataset(dataset_id)
@@ -79,7 +81,11 @@ def get_openml_dataset(
     # relative valid_size on Train set
     r_valid_size = valid_size / (1.0 - test_size)
     X_train, X_valid, y_train, y_valid = model_selection.train_test_split(
-        X_train, y_train, test_size=r_valid_size, shuffle=True, random_state=random_state
+        X_train,
+        y_train,
+        test_size=r_valid_size,
+        shuffle=True,
+        random_state=random_state,
     )
 
     return (X_train, y_train), (X_valid, y_valid), (X_test, y_test)

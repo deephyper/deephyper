@@ -152,16 +152,22 @@ def main(**kwargs):
     logging.info("Loading the evaluator...")
     evaluator_method = kwargs.pop("evaluator")
     base_arguments = ["num_workers", "callbacks"]
-    evaluator_kwargs = {k:kwargs.pop(k) for k in base_arguments}
+    evaluator_kwargs = {k: kwargs.pop(k) for k in base_arguments}
 
     # remove the arguments from unused evaluator
     for method in EVALUATORS.keys():
-        evaluator_method_kwargs = {k[len(evaluator_method)+1:]:kwargs.pop(k) for k in kwargs.copy() if method in k}
+        evaluator_method_kwargs = {
+            k[len(evaluator_method) + 1 :]: kwargs.pop(k)
+            for k in kwargs.copy()
+            if method in k
+        }
         if method == evaluator_method:
             evaluator_kwargs = {**evaluator_kwargs, **evaluator_method_kwargs}
 
     # create evaluator
-    logging.info(f"Evaluator(method={evaluator_method}, method_kwargs={evaluator_kwargs}")
+    logging.info(
+        f"Evaluator(method={evaluator_method}, method_kwargs={evaluator_kwargs}"
+    )
     evaluator = Evaluator.create(
         run_function, method=evaluator_method, method_kwargs=evaluator_kwargs
     )
@@ -169,7 +175,7 @@ def main(**kwargs):
 
     # filter arguments from search class signature
     # remove keys in evaluator_kwargs
-    kwargs = {k:v for k,v in kwargs.items() if k not in evaluator_kwargs}
+    kwargs = {k: v for k, v in kwargs.items() if k not in evaluator_kwargs}
     max_evals = kwargs.pop("max_evals")
     timeout = kwargs.pop("timeout")
 

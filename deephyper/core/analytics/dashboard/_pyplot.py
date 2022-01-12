@@ -22,11 +22,13 @@ matplotlib.rcParams.update(
     }
 )
 
+
 def to_max(l):
     r = [l[0]]
     for e in l[1:]:
         r.append(max(r[-1], e))
     return r
+
 
 def plot_single_line(df, x_label, y_label):
 
@@ -42,6 +44,7 @@ def plot_single_line(df, x_label, y_label):
     st.pyplot(fig)
     plt.close()
 
+
 def plot_single_line_improvement(df, x_label, y_label):
 
     fig = plt.figure()
@@ -55,6 +58,7 @@ def plot_single_line_improvement(df, x_label, y_label):
 
     st.pyplot(fig)
     plt.close()
+
 
 def plot_for_single_json(path: str, xy: list):
     """[summary]

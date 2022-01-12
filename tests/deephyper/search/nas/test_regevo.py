@@ -9,9 +9,7 @@ from deephyper.search.nas import RegularizedEvolution
 
 def test_regovo_with_hp():
 
-    create_evaluator = lambda: Evaluator.create(
-        run_debug_arch, method="process", method_kwargs={"num_workers": 1}
-    )
+    create_evaluator = lambda: Evaluator.create(run_debug_arch, method="serial")
 
     with pytest.raises(ValueError):  # timeout should be an int
         search = RegularizedEvolution(
@@ -21,9 +19,7 @@ def test_regovo_with_hp():
 
 def test_regevo_without_hp():
 
-    create_evaluator = lambda: Evaluator.create(
-        run_debug_arch, method="process", method_kwargs={"num_workers": 1}
-    )
+    create_evaluator = lambda: Evaluator.create(run_debug_arch, method="serial")
 
     search = RegularizedEvolution(
         linearReg.Problem,
@@ -33,8 +29,6 @@ def test_regevo_without_hp():
 
     res1 = search.search(max_evals=4)
     res1_array = res1[["arch_seq"]].to_numpy()
-
-    search.search(max_evals=100, timeout=1)
 
     search = RegularizedEvolution(
         linearReg.Problem,
