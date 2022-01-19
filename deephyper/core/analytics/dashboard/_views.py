@@ -400,7 +400,7 @@ class ConfigurationsSelection(View):
         list(map(partial(_merge_dict_in, synthesis, []), self.headers))
         diff = _get_diff(synthesis)
         config_names, comparatives = _get_names(self.headers, diff)
-        _, self.config_names, self.data = zip(*sorted(zip(comparatives, config_names, data)))
+        _, self.config_names, _, self.data = zip(*sorted(zip(comparatives, config_names, [i for i in range(len(data))], data)))
 
     def show(self):
         new_names = []
