@@ -111,13 +111,14 @@ class Evaluator:
         for config in configs:
             new_job = self.create_job(config)
             self._on_launch(new_job)
-            task = self.loop.create_task(self.execute(new_job))
+            task = self.loop.create_task(self._execute(new_job))
             self._tasks_running.append(task)
 
     def _on_launch(self, job):
         """Called after a job is started."""
         job.status = job.RUNNING
 
+        # TODO: adapt
         job.duration = time.time()
 
         # call callbacks
@@ -128,6 +129,7 @@ class Evaluator:
         """Called after a job has completed."""
         job.status = job.DONE
 
+        # TODO: addapt
         job.duration = time.time() - job.duration
         job.elapsed_sec = time.time() - self.timestamp
 
@@ -138,6 +140,20 @@ class Evaluator:
         # call callbacks
         for cb in self._callbacks:
             cb.on_done(job)
+
+    async def _execute(self, job):
+        
+        job = await self.execute(job)
+
+        # code to manage the profile decorator
+        if isinstance(job.result, dict):
+
+            profile_keys = ["objective", "timestamp_start", "timestamp_end"]
+            if all(k in job.result for k in profile_keys):
+                profile = job.result
+                job.result = profile["objective"]
+                job.
+
 
     async def execute(self, job):
         """Execute the received job. To be implemented with a specific backend.
@@ -242,6 +258,7 @@ class Evaluator:
                 result = copy.deepcopy(saved_keys(job))
             result["id"] = job.id
             result["objective"] = job.result
+            # TODO: adapt
             result[
                 "elapsed_sec"
             ] = (
