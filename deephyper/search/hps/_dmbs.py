@@ -1,11 +1,14 @@
+import logging
 import os
 import pathlib
+import signal
 import time
 
 import numpy as np
 import pandas as pd
 import ray
 import skopt
+from deephyper.core.exceptions import SearchTerminationError
 
 
 @ray.remote(num_cpus=1)
@@ -13,10 +16,10 @@ class DList:
     """Distributed List"""
 
     def __init__(self) -> None:
-        self._list_x = [] # vector of hyperparameters
-        self._list_y = [] # objective values
-        self._keys_infos = [] # keys
-        self._list_infos = [] # values
+        self._list_x = []  # vector of hyperparameters
+        self._list_y = []  # objective values
+        self._keys_infos = []  # keys
+        self._list_infos = []  # values
 
     def append_keys_infos(self, k: list):
         self._keys_infos.extend(k)
@@ -37,7 +40,7 @@ class DList:
 
     def infos(self):
         list_infos = np.array(self._list_infos).T
-        infos = {k:v for k, v in zip(self._keys_infos, list_infos)}
+        infos = {k: v for k, v in zip(self._keys_infos, list_infos)}
         return self._list_x, self._list_y, infos
 
 
@@ -96,6 +99,10 @@ class Worker:
         self._opt = skopt.Optimizer(**self._opt_kwargs)
 
     def search(self, max_evals, timeout):
+        
+        def handler(signum, frame): pass
+
+        signal.signal(signal.SIGALRM, handler)
 
         if self._opt is None:
             self._setup_optimizer()
@@ -103,7 +110,7 @@ class Worker:
         x = self._opt.ask()
         y = self._run_function(self.to_dict(x))
         infos = [self._id]
-        if self._id == 0: # only the first worker updates the keys of infos values
+        if self._id == 0:  # only the first worker updates the keys of infos values
             ray.get(self._history.append_keys_infos.remote(["worker_id"]))
 
         # code to manage the profile decorator
@@ -115,7 +122,7 @@ class Worker:
             timestamp_end = profile["timestamp_end"] - self._timestamp
             infos.extend([timestamp_start, timestamp_end])
 
-            if self._id == 0: # only the first worker updates the keys of infos values
+            if self._id == 0:  # only the first worker updates the keys of infos values
                 ray.get(self._history.append_keys_infos.remote(profile_keys[1:]))
 
         y = -y  #! we do maximization
@@ -214,8 +221,59 @@ class DMBS:
         self._resources_per_worker = (
             {"num_cpus": 1} if resources_per_worker is None else resources_per_worker
         )
+        self._workers_refs = None
 
-    def search(self, max_evals=-1, timeout=None):
+    def terminate(self):
+        """Terminate the search.
+
+        Raises:
+            SearchTerminationError: raised when the search is terminated with SIGALARM
+        """
+        logging.info("Search is being stopped!")
+
+        if self._workers_refs is not None:
+            for ref in self._workers_refs:
+                ray.kill(ref)
+
+    def _set_timeout(self, timeout=None):
+        def handler(signum, frame):
+            self.terminate()
+
+        signal.signal(signal.SIGALRM, handler)
+
+        if np.isscalar(timeout) and timeout > 0:
+            signal.alarm(timeout)
+
+    def search(self, max_evals: int = -1, timeout: int = None):
+        """Execute the search algorithm.
+
+        Args:
+            max_evals (int, optional): The maximum number of evaluations of the run function to perform before stopping the search. Defaults to ``-1``, will run indefinitely.
+            timeout (int, optional): The time budget (in seconds) of the search before stopping. Defaults to ``None``, will not impose a time budget.
+
+        Returns:
+            DataFrame: a pandas DataFrame containing the evaluations performed.
+        """
+        if timeout is not None:
+            if type(timeout) is not int:
+                raise ValueError(
+                    f"'timeout' shoud be of type'int' but is of type '{type(timeout)}'!"
+                )
+            if timeout <= 0:
+                raise ValueError(f"'timeout' should be > 0!")
+
+        self._set_timeout(timeout)
+
+        try:
+            self._search(max_evals, timeout)
+        except ray.exceptions.RayActorError as ex: pass
+
+        path_results = os.path.join(self._log_dir, "results.csv")
+        results = self.gather_results()
+        results.to_csv(path_results)
+        return results
+
+    def _search(self, max_evals, timeout):
 
         # shared history
         if self._history is None:
@@ -231,15 +289,16 @@ class DMBS:
             self._log_dir,
             self._verbose,
         )
-        workers = [create_worker(i) for i in range(self._num_workers)]
+        self._workers_refs = [create_worker(i) for i in range(self._num_workers)]
+        search_refs = [w.search.remote(max_evals, timeout) for w in self._workers_refs]
 
         # run the search process for each worker
-        ray.get([w.search.remote(max_evals, timeout) for w in workers])
+        search_done, search_processing = ray.wait(search_refs, num_returns=1)
 
-        # return the results
-        results = self.gather_results()
-
-        return results
+        # terminate other workers as soon as the first is done because it means
+        # we reached the correct number of evaluations
+        for search_ref in search_processing:
+                ray.kill(self._workers_refs[search_refs.index(search_ref)]) 
 
     def gather_results(self):
         x_list, y_list, infos_dict = ray.get(self._history.infos.remote())
@@ -253,26 +312,3 @@ class DMBS:
         results.update(dict(objective=y_list, **infos_dict))
         results = pd.DataFrame(results)
         return results
-
-
-# for test
-def run_test(config):
-    return config["x"]
-
-
-if __name__ == "__main__":
-    # problem definition
-    from deephyper.problem import HpProblem
-
-    problem = HpProblem()
-    problem.add_hyperparameter((0.0, 10.0), "x")
-
-    # initialize ray
-    ray.init(num_cpus=8)
-
-    search = DMBS(problem, run_test, random_state=42)
-
-    results = search.search(max_evals=10, timeout=None)
-    results.to_csv("results.csv")
-
-    print(results)
