@@ -1,6 +1,7 @@
 """The callback module contains sub-classes of the ``Callback`` class used to trigger custom actions on the start and completion of jobs by the ``Evaluator``. Callbacks can be used with any Evaluator implementation.
 """
 import time
+import numpy as np
 
 import pandas as pd
 from deephyper.core.exceptions import SearchTerminationError
@@ -36,23 +37,29 @@ class ProfilingCallback(Callback):
     """
 
     def __init__(self):
-        self.n = 0
         self.data = []
 
     def on_launch(self, job):
-        t = time.time()
-        self.n += 1
-        self.data.append([t, self.n])
+        ...
 
     def on_done(self, job):
-        t = time.time()
-        self.n -= 1
-        self.data.append([t, self.n])
+        start = job.timestamp_submit
+        end = job.timestamp_gather
+        if np.isfinite(job.timestamp_start) and np.isfinite(job.timestamp_end):
+            start = job.timestamp_start
+            end = job.timestamp_end
+        self.data.append((start, 1))
+        self.data.append((end, -1))
 
     @property
     def profile(self):
+        n_jobs = 0
+        history = []
+        for t, incr in sorted(self.data):
+            n_jobs += incr
+            history.append([t, n_jobs])
         cols = ["timestamp", "n_jobs_running"]
-        df = pd.DataFrame(self.data, columns=cols)
+        df = pd.DataFrame(history, columns=cols)
         return df
 
 
