@@ -85,8 +85,8 @@ class Worker:
             dimensions=self._opt_space,
             base_estimator="RF",
             acq_func="LCB",
-            acq_optimizer=acq_optimizer,
-            acq_optimizer_kwargs={"n_points": 10000},
+            acq_optimizer="boltzmann_sampling",
+            acq_optimizer_kwargs={"n_points": 10000, "boltzmann_gamma": 10},
             n_initial_points=1,
             random_state=random_state,
         )
