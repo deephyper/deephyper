@@ -251,7 +251,7 @@ class Evaluator:
                 result = {k: self.convert_for_csv(decoded_key[k]) for k in saved_keys}
             elif callable(saved_keys):
                 result = copy.deepcopy(saved_keys(job))
-            result["id"] = job.id
+            result["job_id"] = job.id
             result["objective"] = job.result
             result["timestamp_submit"] = job.timestamp_submit
             result["timestamp_gather"] = job.timestamp_gather
@@ -259,7 +259,7 @@ class Evaluator:
             if job.timestamp_start is not None and job.timestamp_end is not None:
                 result["timestamp_start"] = job.timestamp_start
                 result["timestamp_end"] = job.timestamp_end
-                
+
             resultsList.append(result)
 
             self.jobs_done.remove(job)
