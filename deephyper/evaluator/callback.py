@@ -26,7 +26,7 @@ class Callback:
 
 
 class ProfilingCallback(Callback):
-    """Collect profiling data. Each time a ``Job`` is completed by the ``Evaluator`` a timestamp and current number of running jobs is collected.
+    """Collect profiling data. Each time a ``Job`` is completed by the ``Evaluator`` a the different timestamps corresponding to the submit and gather (and run function start and end if the ``profile`` decorator is used on the run function) are collected.
 
     An example usage can be:
 
@@ -37,7 +37,7 @@ class ProfilingCallback(Callback):
     """
 
     def __init__(self):
-        self.data = []
+        self.history = []
 
     def on_launch(self, job):
         ...
@@ -45,21 +45,21 @@ class ProfilingCallback(Callback):
     def on_done(self, job):
         start = job.timestamp_submit
         end = job.timestamp_gather
-        if np.isfinite(job.timestamp_start) and np.isfinite(job.timestamp_end):
+        if job.timestamp_start is not None and job.timestamp_end is not None:
             start = job.timestamp_start
             end = job.timestamp_end
-        self.data.append((start, 1))
-        self.data.append((end, -1))
+        self.history.append((start, 1))
+        self.history.append((end, -1))
 
     @property
     def profile(self):
         n_jobs = 0
-        history = []
-        for t, incr in sorted(self.data):
+        profile = []
+        for t, incr in sorted(self.history):
             n_jobs += incr
-            history.append([t, n_jobs])
+            profile.append([t, n_jobs])
         cols = ["timestamp", "n_jobs_running"]
-        df = pd.DataFrame(history, columns=cols)
+        df = pd.DataFrame(profile, columns=cols)
         return df
 
 
