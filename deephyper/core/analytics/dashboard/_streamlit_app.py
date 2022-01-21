@@ -1,9 +1,5 @@
-import json
 import os
-import tempfile
 
-import copy
-from functools import partial
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,7 +11,6 @@ from deephyper.core.analytics.dashboard._pyplot import (
     plot_single_line_improvement,
 )
 
-from tinydb import Query, TinyDB
 from deephyper.core.analytics.dashboard._views import Graphs, Table
 
 

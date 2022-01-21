@@ -62,12 +62,13 @@ class Worker:
         self,
         id,
         history,
+        timestamp,
         problem,
         run_function,
         random_state,
         log_dir,
         verbose,
-        acq_optimizer="sampling",
+        acq_optimizer="sampling"
     ) -> None:
         self._id = id
         self._history = history  # history of [(x, y)...] configurations
@@ -89,9 +90,7 @@ class Worker:
             n_initial_points=1,
             random_state=random_state,
         )
-        self._timestamp = (
-            time.time()
-        )  # Recorded time of when this worker interface was created.
+        self._timestamp = timestamp  # Recorded time of when this worker interface was created.
 
     def _setup_optimizer(self):
         # if self._fitted:
@@ -222,6 +221,7 @@ class DMBS:
             {"num_cpus": 1} if resources_per_worker is None else resources_per_worker
         )
         self._workers_refs = None
+        self._timestamp = time.time()
 
     def terminate(self):
         """Terminate the search.
@@ -283,6 +283,7 @@ class DMBS:
         create_worker = lambda id: Worker.options(**self._resources_per_worker).remote(
             id,
             self._history,
+            self._timestamp,
             self._problem,
             self._run_function,
             self._random_state.randint(0, 2 ** 32),  # upper bound is exclusive

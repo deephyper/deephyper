@@ -86,7 +86,7 @@ class AMBS(Search):
         if not (type(filter_duplicated) is bool):
             raise ValueError("Parameter 'filter_duplicated' should be a boolean value!")
 
-        liar_strategy_allowed = ["cl_min", "cl_mean", "cl_max"]
+        liar_strategy_allowed = ["cl_min", "cl_mean", "cl_max", "topk", "boltzmann"]
         if not (liar_strategy in liar_strategy_allowed):
             raise ValueError(
                 f"Parameter 'liar_strategy={liar_strategy}' should have a value in {liar_strategy_allowed}!"
