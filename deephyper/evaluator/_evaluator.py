@@ -54,9 +54,7 @@ class Evaluator:
         self._tasks_done = []  # Temp list to hold completed tasks from asyncio.
         self._tasks_pending = []  # Temp list to hold pending tasks from asyncio.
         self.jobs_done = []  # List used to store all jobs completed by the evaluator.
-        self.timestamp = (
-            time.time()
-        )  # Recorded time of when this evaluator interface was created.
+        self.timestamp = time.time() # Recorded time of when this evaluator interface was created.
         self._loop = None  # Event loop for asyncio.
         self._start_dumping = False
 
@@ -118,8 +116,8 @@ class Evaluator:
         """Called after a job is started."""
         job.status = job.RUNNING
 
-        # TODO: adapt
-        job.duration = time.time()
+        # TODO: adapted
+        job.timestamp_submit = time.time() - self.timestamp
 
         # call callbacks
         for cb in self._callbacks:
@@ -129,9 +127,8 @@ class Evaluator:
         """Called after a job has completed."""
         job.status = job.DONE
 
-        # TODO: addapt
-        job.duration = time.time() - job.duration
-        job.elapsed_sec = time.time() - self.timestamp
+        # TODO: adapted
+        job.timestamp_gather = time.time() - self.timestamp
 
         if np.isscalar(job.result):
             if not (np.isfinite(job.result)):
@@ -145,17 +142,22 @@ class Evaluator:
         
         job = await self.execute(job)
 
+        # TODO: adapted
         # code to manage the profile decorator
-        if isinstance(job.result, dict):
+        profile_keys = ["objective", "timestamp_start", "timestamp_end"]
+        if isinstance(job.result, dict) and all(k in job.result for k in profile_keys):
+            profile = job.result
+            job.result = profile["objective"]
+            job.timestamp_start = profile["timestamp_start"] - self.timestamp
+            job.timestamp_end = profile["timestamp_end"] - self.timestamp
+        else:
+            job.timestamp_start = np.NaN
+            job.timestamp_end = np.NaN
 
-            profile_keys = ["objective", "timestamp_start", "timestamp_end"]
-            if all(k in job.result for k in profile_keys):
-                profile = job.result
-                job.result = profile["objective"]
-                job.
+        return job
 
 
-    async def execute(self, job):
+    async def execute(self, job) -> Job:
         """Execute the received job. To be implemented with a specific backend.
 
         Args:
@@ -259,12 +261,10 @@ class Evaluator:
             result["id"] = job.id
             result["objective"] = job.result
             # TODO: adapt
-            result[
-                "elapsed_sec"
-            ] = (
-                job.elapsed_sec
-            )  # Time to complete from the intitilization of evaluator.
-            result["duration"] = job.duration
+            result["timestamp_submit"] = job.timestamp_submit
+            result["timestamp_start"] = job.timestamp_start
+            result["timestamp_end"] = job.timestamp_end
+            result["timestamp_gather"] = job.timestamp_gather
             resultsList.append(result)
 
             self.jobs_done.remove(job)
