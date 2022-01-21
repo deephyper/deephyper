@@ -20,13 +20,10 @@ class Job:
         self.config = copy.deepcopy(config)
         self.config["id"] = self.id
         self.run_function = run_function
-        # TODO: replace the two following attributes
-        self.duration = 0  # in seconds.
-        self.elapsed_sec = 0  # in seconds
-        # timestamp_start_run_function
-        # timestamp_end_run_function
-        # timestamp_submit
-        # timestamp_gather
+        self.timestamp_start = None # in seconds
+        self.timestamp_end = None # in seconds
+        self.timestamp_submit = None # in seconds
+        self.timestamp_gather = None # in seconds
         self.status = self.READY
         self.result = None
 

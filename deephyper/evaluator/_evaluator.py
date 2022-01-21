@@ -10,7 +10,6 @@ import warnings
 from typing import Dict, List
 
 import numpy as np
-from deephyper.core.exceptions import DeephyperRuntimeError
 from deephyper.evaluator._job import Job
 
 EVALUATORS = {
@@ -116,7 +115,6 @@ class Evaluator:
         """Called after a job is started."""
         job.status = job.RUNNING
 
-        # TODO: adapted
         job.timestamp_submit = time.time() - self.timestamp
 
         # call callbacks
@@ -127,7 +125,6 @@ class Evaluator:
         """Called after a job has completed."""
         job.status = job.DONE
 
-        # TODO: adapted
         job.timestamp_gather = time.time() - self.timestamp
 
         if np.isscalar(job.result):
@@ -142,7 +139,6 @@ class Evaluator:
         
         job = await self.execute(job)
 
-        # TODO: adapted
         # code to manage the profile decorator
         profile_keys = ["objective", "timestamp_start", "timestamp_end"]
         if isinstance(job.result, dict) and all(k in job.result for k in profile_keys):
@@ -150,9 +146,6 @@ class Evaluator:
             job.result = profile["objective"]
             job.timestamp_start = profile["timestamp_start"] - self.timestamp
             job.timestamp_end = profile["timestamp_end"] - self.timestamp
-        else:
-            job.timestamp_start = np.NaN
-            job.timestamp_end = np.NaN
 
         return job
 
@@ -260,11 +253,13 @@ class Evaluator:
                 result = copy.deepcopy(saved_keys(job))
             result["id"] = job.id
             result["objective"] = job.result
-            # TODO: adapt
             result["timestamp_submit"] = job.timestamp_submit
-            result["timestamp_start"] = job.timestamp_start
-            result["timestamp_end"] = job.timestamp_end
             result["timestamp_gather"] = job.timestamp_gather
+
+            if job.timestamp_start is not None and job.timestamp_end is not None:
+                result["timestamp_start"] = job.timestamp_start
+                result["timestamp_end"] = job.timestamp_end
+                
             resultsList.append(result)
 
             self.jobs_done.remove(job)

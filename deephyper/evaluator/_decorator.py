@@ -13,18 +13,3 @@ def profile(run_function):
         }
 
     return wrapper
-
-
-@profile
-def run_ackley(config):
-    return 0
-
-
-# return
-# before: 0
-# after: {"objective": 0, "timestamp": ..., "duration": ...}
-
-# timestamp_start_run_function
-# timestamp_end_run_function
-# timestamp_submit
-# timestamp_gather
