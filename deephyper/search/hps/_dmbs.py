@@ -65,6 +65,7 @@ class Worker:
         timestamp,
         problem,
         run_function,
+        run_function_kwargs,
         random_state,
         log_dir,
         verbose,
@@ -75,6 +76,7 @@ class Worker:
 
         self._problem = problem
         self._run_function = run_function
+        self._run_function_kwargs = run_function_kwargs
         self._rng = np.random.RandomState(random_state)
         self._log_dir = log_dir
         self._verbose = verbose
@@ -107,7 +109,7 @@ class Worker:
             self._setup_optimizer()
 
         x = self._opt.ask()
-        y = self._run_function(self.to_dict(x))
+        y = self._run_function(self.to_dict(x), **self._run_function_kwargs)
         infos = [self._id]
         if self._id == 0:  # only the first worker updates the keys of infos values
             ray.get(self._history.append_keys_infos.remote(["worker_id"]))
@@ -141,7 +143,7 @@ class Worker:
 
             # ask next configuration
             x = self._opt.ask()
-            y = self._run_function(self.to_dict(x))
+            y = self._run_function(self.to_dict(x), **self._run_function_kwargs)
             infos = [self._id]
 
             # code to manage the profile decorator
@@ -196,11 +198,13 @@ class DMBS:
         verbose: int = 0,
         num_workers: int = 1,
         resources_per_worker: dict = None,
+        run_function_kwargs: dict = None,
     ):
 
         self._history = None
         self._problem = problem
         self._run_function = run_function
+        self._run_function_kwargs = {} if run_function_kwargs is None else run_function_kwargs
 
         if type(random_state) is int:
             self._seed = random_state
@@ -286,6 +290,7 @@ class DMBS:
             self._timestamp,
             self._problem,
             self._run_function,
+            self._run_function_kwargs,
             self._random_state.randint(0, 2 ** 32),  # upper bound is exclusive
             self._log_dir,
             self._verbose,
@@ -303,11 +308,11 @@ class DMBS:
 
     def gather_results(self):
         x_list, y_list, infos_dict = ray.get(self._history.infos.remote())
-        x_list = np.array(x_list)
+        x_list = np.transpose(np.array(x_list))
         y_list = -np.array(y_list)
 
         results = {
-            hp_name: x_list[:, i]
+            hp_name: x_list[i]
             for i, hp_name in enumerate(self._problem.hyperparameter_names)
         }
         results.update(dict(objective=y_list, **infos_dict))
