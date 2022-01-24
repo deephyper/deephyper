@@ -381,11 +381,11 @@ def _get_names(headers, diff):
                 else:
                     name.append(f"{path[-1]}: {val}")
         if name:
-            comparatives.append(comparative)
+            comparatives.append(str(comparative))
             names.append(" - ".join(name))
         else:
             unnamed += 1
-            comparatives.append(unnamed)
+            comparatives.append(str(unnamed))
             names.append(f"config {unnamed}")
     return names, comparatives
 
