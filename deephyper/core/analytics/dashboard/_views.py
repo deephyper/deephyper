@@ -7,6 +7,7 @@ import tempfile
 from functools import partial, reduce
 from itertools import compress
 import math
+from tokenize import group
 
 import numpy as np
 import pandas as pd
@@ -151,7 +152,7 @@ class DatabaseSelection(View):
         self.db = db
         self.data = []
 
-    def _select_choices(self, criterias):
+    def _select_choices(self, criterias, default_ignore):
         def _add_choice(choices, to_ignore, path, val):
             path = list(path)
             if path:
@@ -169,7 +170,7 @@ class DatabaseSelection(View):
                         default = None
                     col1, col2 = st.columns([2, 1])
                     choice = col1.multiselect(label=key, options=val, default=default)
-                    ignore = col2.checkbox(label="ignore", value=False, key=path)
+                    ignore = col2.checkbox(label="ignore", value=path in default_ignore, key=path)
                     if ignore:
                         to_ignore.append(path)
                     else:
@@ -198,16 +199,18 @@ class DatabaseSelection(View):
         headers = list(map(lambda x: dict(x), self.db.all()))
         criterias = {}
         not_criterias = [
+            ["results"],
+        ]
+        default_ignore = [
             ["summary", "description"],
             ["summary", "date"],
             ["parameters", "random_state"],
-            ["results"],
         ]
         list(map(partial(_merge_dict_in, criterias, not_criterias), headers))
 
         # Show the possible criterias
         with st.container():
-            choices, to_ignore = self._select_choices(criterias)
+            choices, to_ignore = self._select_choices(criterias, default_ignore)
 
         # Select the corresponding runs
         query = self._generate_query(choices)
@@ -297,8 +300,10 @@ class GroupIdenticalResults(View):
     def _sort_run(self, headers, results_list, data):
         header = data
         results = header.pop("results")
-        header["summary"].pop("date")
-        header["summary"].pop("description")
+        if "date" in header["summary"]:
+            header["summary"].pop("date")
+        if "description" in header["summary"]:
+            header["summary"].pop("description")
         if "random_state" in header["parameters"]:
             header["parameters"].pop("random_state")
         if header in headers:
@@ -395,7 +400,7 @@ class ConfigurationsSelection(View):
         self.key = key
         data = copy.deepcopy(data)
         self.headers = copy.deepcopy(data)
-        list(map(lambda d: d.pop("results") and d.pop("summary"), self.headers))
+        list(map(lambda d: d.pop("results"), self.headers))
         synthesis = {}
         list(map(partial(_merge_dict_in, synthesis, []), self.headers))
         diff = _get_diff(synthesis)
@@ -598,7 +603,6 @@ class ProfileView(SingleGraphView):
                 index=temp["timestamp"],
             )
             profile = profile.sort_index()
-            profile.index = profile.index - profile.index[0]
             profile = profile[
                 (profile.index >= self._t0) & (profile.index <= self._t_max)
             ]
