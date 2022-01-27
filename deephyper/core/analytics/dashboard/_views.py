@@ -598,10 +598,12 @@ class ProfileView(SingleGraphView):
                 temp = val
             profile = pd.DataFrame(
                 {
+                    "timestamp": temp["timestamp"],
                     "n_jobs_running": temp["n_jobs_running"],
-                },
-                index=temp["timestamp"],
+                }
             )
+            profile = profile.drop_duplicates(subset='timestamp', keep='last')
+            profile = profile.set_index('timestamp')
             profile = profile.sort_index()
             profile = profile[
                 (profile.index >= self._t0) & (profile.index <= self._t_max)
