@@ -11,7 +11,7 @@ import numpy as np
 def convert_to_skopt_dim(cs_hp, surrogate_model=None):
 
     if surrogate_model in ["RF", "ET", "GBRT"]:
-        # models not sensitive ot the metric space such as trees
+        # models not sensitive to the metric space such as trees
         surrogate_model_type = "rule_based"
     else:
         # models sensitive to the metric space such as GP, neural networks
@@ -90,7 +90,7 @@ def check_hyperparameter(parameter, name=None, default_value=None):
     :meta private:
 
     Args:
-        parameter (str|Hyperparameter): a instance of ``ConfigSpace.hyperparameters.hyperparameter`` or a synthetic description (e.g., ``list``, ``tuple``).
+        parameter (str|Hyperparameter): an instance of ``ConfigSpace.hyperparameters.hyperparameter`` or a synthetic description (e.g., ``list``, ``tuple``).
         parameter (str): the name of the hyperparameter. Only required when the parameter is not a ``ConfigSpace.hyperparameters.hyperparameter``.
         default_value: a default value for the hyperparameter.
 
