@@ -66,6 +66,31 @@ class AMBSTest(unittest.TestCase):
             10
         )
 
+    def test_sample_types_no_cat(self):
+
+        problem = HpProblem()
+        problem.add_hyperparameter((0, 10), "x_int")
+        problem.add_hyperparameter((0.0, 10.0), "x_float")
+
+        def run(config):
+
+            print(config)
+
+            assert np.issubdtype(type(config["x_int"]), np.integer)
+            assert np.issubdtype(type(config["x_float"]), np.float)
+
+            return 0
+
+        create_evaluator = lambda: Evaluator.create(run, method="serial")
+
+        AMBS(
+            problem, create_evaluator(), random_state=42, surrogate_model="DUMMY"
+        ).search(10)
+
+        AMBS(problem, create_evaluator(), random_state=42, surrogate_model="RF").search(
+            10
+        )
+    
     def test_gp(self):
 
         # test float hyperparameters
@@ -110,7 +135,7 @@ class AMBSTest(unittest.TestCase):
             surrogate_model="GP",
         ).search(10)
 
-    def test_conditional_sample_types(self):
+    def test_sample_types_conditional(self):
 
         problem = HpProblem()
 
