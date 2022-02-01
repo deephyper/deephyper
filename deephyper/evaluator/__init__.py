@@ -24,3 +24,8 @@ __all__ = [
     "SubprocessEvaluator",
     "ThreadPoolEvaluator",
 ]
+
+try:
+    from deephyper.evaluator._mpi import MPIEvaluator
+    __all__.append("MPIEvaluator")
+except ImportError: pass

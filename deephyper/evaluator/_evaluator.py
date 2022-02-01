@@ -13,12 +13,12 @@ import numpy as np
 from deephyper.evaluator._job import Job
 
 EVALUATORS = {
-    "thread": "_thread_pool.ThreadPoolEvaluator",
+    "mpi": "_mpi.MPIEvaluator",
     "process": "_process_pool.ProcessPoolEvaluator",
-    "subprocess": "_subprocess.SubprocessEvaluator",
     "ray": "_ray.RayEvaluator",
     "serial": "_serial.SerialEvaluator",
-    # "balsam": "_balsam.BalsamEvaluator" # TODO
+    "subprocess": "_subprocess.SubprocessEvaluator",
+    "thread": "_thread_pool.ThreadPoolEvaluator",
 }
 
 
@@ -262,7 +262,7 @@ class Evaluator:
 
             resultsList.append(result)
 
-            self.jobs_done.remove(job)
+        self.jobs_done = []
 
         if len(resultsList) != 0:
             mode = "a" if self._start_dumping else "w"
