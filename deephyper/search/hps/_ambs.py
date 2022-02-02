@@ -1,5 +1,6 @@
 import logging
 import math
+import time
 
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as csh
@@ -54,6 +55,7 @@ class AMBS(Search):
         xi: float = 0.001,
         n_points: int = 10000,
         filter_duplicated: bool = True,
+        update_prior: bool = False,
         liar_strategy: str = "cl_max",
         n_jobs: int = 1,  # 32 is good for Theta
         **kwargs,
@@ -122,6 +124,7 @@ class AMBS(Search):
             acq_optimizer_kwargs={
                 "n_points": n_points,
                 "filter_duplicated": filter_duplicated,
+                "update_prior": update_prior,
                 "n_jobs": n_jobs,
             },
             # acquisition function
@@ -145,40 +148,68 @@ class AMBS(Search):
 
         # Filling available nodes at start
         logging.info(f"Generating {self._evaluator.num_workers} initial points...")
+        t1 = time.time()
         self._evaluator.submit(self.get_random_batch(size=self._n_initial_points))
+        logging.info(f"Generation took: {time.time() - t1:.4f} sec.")
 
         # Main loop
         while max_evals < 0 or num_evals_done < max_evals:
             # Collecting finished evaluations
+            logging.info("Gathering jobs...")
+            t1 = time.time()
             new_results = self._evaluator.gather("BATCH", size=1)
+            logging.info(f"Gathered {len(new_results)} job(s) in {time.time() - t1:.4f} sec.")
+
 
             if len(new_results) > 0:
-
+                
+                logging.info("Dumping evaluations...")
+                t1 = time.time()
                 self._evaluator.dump_evals(log_dir=self._log_dir)
+                logging.info(f"Dumping took {time.time() - t1:.4f} sec.")
+
 
                 num_received = len(new_results)
                 num_evals_done += num_received
 
                 # Transform configurations to list to fit optimizer
+                logging.info("Transforming received configurations to list...")
+                t1 = time.time()
+
                 opt_X = []
                 opt_y = []
                 for cfg, obj in new_results:
-                    # x = replace_nan(cfg.values())
                     x = list(cfg.values())
                     opt_X.append(x)
                     opt_y.append(-obj)  #! maximizing
+                logging.info(f"Transformation took {time.time() - t1:.4f} sec.")
+
+                logging.info("Fitting the optimizer...")
+                t1 = time.time()
                 self._opt.tell(opt_X, opt_y)  #! fit: costly
+                logging.info(f"Fitting took {time.time() - t1:.4f} sec.")
+
+                logging.info(f"Asking {len(new_results)} new configurations...")
+                t1 = time.time()
                 new_X = self._opt.ask(
                     n_points=len(new_results), strategy=self._liar_strategy
                 )
+                logging.info(f"Asking took {time.time() - t1:.4f} sec.")
 
+                # Transform list to dict configurations
+                logging.info(f"Transforming configurations to dict...")
+                t1 = time.time()
                 new_batch = []
                 for x in new_X:
                     new_cfg = self.to_dict(x)
                     new_batch.append(new_cfg)
+                logging.info(f"Transformation took {time.time() - t1:.4f} sec.")
 
-                # submit_childs
+                # submit new configurations
+                logging.info(f"Submitting {len(new_batch)} configurations...")
+                t1 = time.time()
                 self._evaluator.submit(new_batch)
+                logging.info(f"Submition took {time.time() - t1:.4f} sec.")
 
     def _get_surrogate_model(
         self, name: str, n_jobs: int = None, random_state: int = None
