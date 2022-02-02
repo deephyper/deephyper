@@ -30,7 +30,9 @@ class MPIEvaluator(Evaluator):
         self.comm = MPI.COMM_WORLD
         self.num_workers = self.comm.Get_size() - 1 # 1 rank is the master
         self.sem = asyncio.Semaphore(self.num_workers)
+        logging.info(f"Creating MPIPoolExecutor with {self.num_workers} max_workers...")
         self.executor = MPIPoolExecutor(max_workers=self.num_workers)
+        logging.info("Creation of MPIPoolExecutor done")
 
     async def execute(self, job):
         async with self.sem:

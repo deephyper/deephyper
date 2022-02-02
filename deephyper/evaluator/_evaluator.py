@@ -3,7 +3,9 @@ import csv
 import copy
 import importlib
 import json
+import logging
 import os
+from re import I
 import sys
 import time
 import warnings
@@ -74,7 +76,7 @@ class Evaluator:
         Returns:
             Evaluator: the ``Evaluator`` with the corresponding backend and configuration.
         """
-
+        logging.info(f"Creating Evaluator({run_function}, method={method}, method_kwargs={method_kwargs}...")
         if not method in EVALUATORS.keys():
             val = ", ".join(EVALUATORS)
             raise ValueError(
@@ -88,6 +90,8 @@ class Evaluator:
         mod = importlib.import_module(f"deephyper.evaluator.{mod_name}")
         eval_cls = getattr(mod, attr_name)
         evaluator = eval_cls(run_function, **method_kwargs)
+        
+        logging.info(f"Creation done")
 
         return evaluator
 
@@ -164,8 +168,10 @@ class Evaluator:
         Args:
             configs (List[Dict]): A list of dict which will be passed to the run function to be executed.
         """
+        logging.info(f"submit {len(configs)} job(s) starts...")
         self.loop = asyncio.get_event_loop()
         self.loop.run_until_complete(self._run_jobs(configs))
+        logging.info("submit done")
 
     def gather(self, type, size=1):
         """Collect the completed tasks from the evaluator in batches of one or more.
@@ -185,6 +191,7 @@ class Evaluator:
         Returns:
             List[Job]: A batch of completed jobs that is at minimum the given size.
         """
+        logging.info("gather starts...")
         assert type in ["ALL", "BATCH"], f"Unsupported gather operation: {type}."
 
         results = []
@@ -202,6 +209,7 @@ class Evaluator:
 
         self._tasks_done = []
         self._tasks_pending = []
+        logging.info("gather done")
         return results
 
     def create_job(self, config):
@@ -240,7 +248,7 @@ class Evaluator:
             saved_keys (list|callable): If ``None`` the whole ``job.config`` will be added as row of the CSV file. If a ``list`` filtered keys will be added as a row of the CSV file. If a ``callable`` the output dictionnary will be added as a row of the CSV file.
             log_dir (str): directory where to dump the CSV file.
         """
-
+        logging.info("dump_evals starts...")
         resultsList = []
 
         for job in self.jobs_done:
@@ -273,3 +281,5 @@ class Evaluator:
                     writer.writeheader()
                     self._start_dumping = True
                 writer.writerows(resultsList)
+
+        logging.info("dum_evals done")
