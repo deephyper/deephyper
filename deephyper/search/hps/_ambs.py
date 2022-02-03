@@ -447,7 +447,8 @@ class AMBS(Search):
         Returns:
             list: the list of generated configuration.
         """
-
+        logging.info(f"Creating random batch of size {size}...")
+        t1 = time.time()
         if self._fitted:  # for the surrogate or search space
             batch = []
         else:
@@ -476,6 +477,7 @@ class AMBS(Search):
             for point in points:
                 point_as_dict = self.to_dict(point)
                 batch.append(point_as_dict)
+        logging.info(f"Random batch created in {time.time() - t1:.4f} sec.")
         return batch
 
     def to_dict(self, x: list) -> dict:
