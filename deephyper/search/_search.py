@@ -69,7 +69,7 @@ class Search(abc.ABC):
             timeout (int, optional): The time budget (in seconds) of the search before stopping. Defaults to ``None``, will not impose a time budget.
 
         Returns:
-            DataFrame: a pandas DataFrame containing the evaluations performed.
+            DataFrame: a pandas DataFrame containing the evaluations performed or ``None`` if the search could not evaluate any configuration.
         """
         if timeout is not None:
             if type(timeout) is not int:
@@ -87,9 +87,12 @@ class Search(abc.ABC):
             else:
                 self._evaluator.dump_evals()
 
-        path_results = os.path.join(self._log_dir, "results.csv")
-        df_results = pd.read_csv(path_results)
-        return df_results
+        try:
+            path_results = os.path.join(self._log_dir, "results.csv")
+            df_results = pd.read_csv(path_results)
+            return df_results
+        except FileNotFoundError:
+            return None
 
     @abc.abstractmethod
     def _search(self, max_evals, timeout):
