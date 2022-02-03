@@ -37,7 +37,10 @@ class MPICommEvaluator(Evaluator):
 
     def __enter__(self):
         self.master_executor = self.executor.__enter__()
-        return self
+        if self.master_executor is not None:
+            return self
+        else:
+            return None
     
     def __exit__(self, type, value, traceback):
         self.executor.__exit__(type, value, traceback)
