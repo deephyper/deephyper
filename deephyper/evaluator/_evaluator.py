@@ -15,7 +15,8 @@ import numpy as np
 from deephyper.evaluator._job import Job
 
 EVALUATORS = {
-    "mpi": "_mpi.MPIEvaluator",
+    "mpipool": "_mpi_pool.MPIPoolEvaluator",
+    "mpicomm": "_mpi_comm.MPICommEvaluator",
     "process": "_process_pool.ProcessPoolEvaluator",
     "ray": "_ray.RayEvaluator",
     "serial": "_serial.SerialEvaluator",
@@ -41,11 +42,13 @@ class Evaluator:
         self,
         run_function,
         num_workers: int = 1,
-        callbacks: list=None,
-        run_function_kwargs: dict=None
+        callbacks: list = None,
+        run_function_kwargs: dict = None,
     ):
         self.run_function = run_function  # User-defined run function.
-        self.run_function_kwargs = {} if run_function_kwargs is None else run_function_kwargs
+        self.run_function_kwargs = (
+            {} if run_function_kwargs is None else run_function_kwargs
+        )
 
         # Number of parallel workers available
         self.num_workers = num_workers
@@ -55,7 +58,9 @@ class Evaluator:
         self._tasks_done = []  # Temp list to hold completed tasks from asyncio.
         self._tasks_pending = []  # Temp list to hold pending tasks from asyncio.
         self.jobs_done = []  # List used to store all jobs completed by the evaluator.
-        self.timestamp = time.time() # Recorded time of when this evaluator interface was created.
+        self.timestamp = (
+            time.time()
+        )  # Recorded time of when this evaluator interface was created.
         self._loop = None  # Event loop for asyncio.
         self._start_dumping = False
 
@@ -76,7 +81,9 @@ class Evaluator:
         Returns:
             Evaluator: the ``Evaluator`` with the corresponding backend and configuration.
         """
-        logging.info(f"Creating Evaluator({run_function}, method={method}, method_kwargs={method_kwargs}...")
+        logging.info(
+            f"Creating Evaluator({run_function}, method={method}, method_kwargs={method_kwargs}..."
+        )
         if not method in EVALUATORS.keys():
             val = ", ".join(EVALUATORS)
             raise ValueError(
@@ -90,7 +97,7 @@ class Evaluator:
         mod = importlib.import_module(f"deephyper.evaluator.{mod_name}")
         eval_cls = getattr(mod, attr_name)
         evaluator = eval_cls(run_function, **method_kwargs)
-        
+
         logging.info(f"Creation done")
 
         return evaluator
@@ -140,7 +147,7 @@ class Evaluator:
             cb.on_done(job)
 
     async def _execute(self, job):
-        
+
         job = await self.execute(job)
 
         # code to manage the profile decorator
@@ -152,7 +159,6 @@ class Evaluator:
             job.timestamp_end = profile["timestamp_end"] - self.timestamp
 
         return job
-
 
     async def execute(self, job) -> Job:
         """Execute the received job. To be implemented with a specific backend.

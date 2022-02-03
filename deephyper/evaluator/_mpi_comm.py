@@ -4,13 +4,13 @@ import logging
 from deephyper.evaluator._evaluator import Evaluator
 
 from mpi4py import MPI
-from mpi4py.futures import MPIPoolExecutor
+from mpi4py.futures import MPICommExecutor
 
 
 logger = logging.getLogger(__name__)
 
 
-class MPIEvaluator(Evaluator):
+class MPICommEvaluator(Evaluator):
     """This evaluator uses the ``ray`` library as backend.
 
     Args:
@@ -31,8 +31,17 @@ class MPIEvaluator(Evaluator):
         self.num_workers = self.comm.Get_size() - 1 # 1 rank is the master
         self.sem = asyncio.Semaphore(self.num_workers)
         logging.info(f"Creating MPIPoolExecutor with {self.num_workers} max_workers...")
-        self.executor = MPIPoolExecutor(max_workers=self.num_workers)
+        self.executor = MPICommExecutor(comm=self.comm, root=0)
+        self.master_executor = None
         logging.info("Creation of MPIPoolExecutor done")
+
+    def __enter__(self):
+        self.master_executor = self.executor.__enter__()
+        return self
+    
+    def __exit__(self, type, value, traceback):
+        self.executor.__exit__(type, value, traceback)
+        self.master_executor = None
 
     async def execute(self, job):
         async with self.sem:
@@ -41,7 +50,7 @@ class MPIEvaluator(Evaluator):
                 job.run_function, job.config, **self.run_function_kwargs
             )
 
-            sol = await self.loop.run_in_executor(self.executor, run_function)
+            sol = await self.loop.run_in_executor(self.master_executor, run_function)
 
             job.result = sol
 
