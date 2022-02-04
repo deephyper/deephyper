@@ -237,7 +237,10 @@ class BaseTrainer:
             )
 
     def preprocess_data(self):
+        logger.debug("Starting preprocess of data")
+
         if self.data_config_type == "gen":
+            logger.warn("Cannot preprocess data with generator!")
             return
 
         if not self.preprocessor is None:
@@ -245,10 +248,9 @@ class BaseTrainer:
 
         if self.preprocessing_func:
             logger.debug(f"preprocess_data with: {str(self.preprocessing_func)}")
-
-            if len(np.shape(self.train_Y)) == 2:
-                data_train = np.concatenate((*self.train_X, self.train_Y), axis=1)
-                data_valid = np.concatenate((*self.valid_X, self.valid_Y), axis=1)
+            if all([len(np.shape(tX)) == len(np.shape(self.train_Y)) for tX in self.train_X]):
+                data_train = np.concatenate((*self.train_X, self.train_Y), axis=-1)
+                data_valid = np.concatenate((*self.valid_X, self.valid_Y), axis=-1)
                 self.preprocessor = self.preprocessing_func()
 
                 tX_shp = [np.shape(x) for x in self.train_X]
@@ -258,17 +260,21 @@ class BaseTrainer:
 
                 acc, self.train_X = 0, list()
                 for shp in tX_shp:
-                    self.train_X.append(preproc_data_train[:, acc : acc + shp[1]])
+                    self.train_X.append(preproc_data_train[..., acc : acc + shp[1]])
                     acc += shp[1]
-                self.train_Y = preproc_data_train[:, acc:]
+                self.train_Y = preproc_data_train[..., acc:]
 
                 acc, self.valid_X = 0, list()
                 for shp in tX_shp:
-                    self.valid_X.append(preproc_data_valid[:, acc : acc + shp[1]])
+                    self.valid_X.append(preproc_data_valid[..., acc : acc + shp[1]])
                     acc += shp[1]
-                self.valid_Y = preproc_data_valid[:, acc:]
+                self.valid_Y = preproc_data_valid[..., acc:]
+            else:
+                logger.warn(
+                    f"Skipped preprocess because shape {np.shape(self.train_Y)} is not handled!"
+                )
         else:
-            logger.info("no preprocessing function")
+            logger.info("Skipped preprocess of data because no function is defined!")
 
     def set_dataset_train(self):
         if self.data_config_type == "ndarray":
