@@ -163,6 +163,7 @@ class DatabaseSelection(View):
                     h = len(path) + 1 if len(path) < 6 else 6
                     st.markdown(f"{(h)*'#'} {key} :")
                 elif isinstance(val, list):
+                    val = list(map(lambda x: 'None' if x is None else x, val))
                     val.sort()
                     if len(val) == 1:
                         default = val
@@ -602,6 +603,14 @@ class ProfileView(SingleGraphView):
                     "n_jobs_running": temp["n_jobs_running"],
                 }
             )
+            if temp["timestamp"][0] > self._t0:
+                profile = profile.append(
+                    {
+                        'timestamp': self._t0,
+                        'n_jobs_running': 0,
+                    },
+                    ignore_index=True
+                )
             profile = profile.drop_duplicates(subset='timestamp', keep='last')
             profile = profile.set_index('timestamp')
             profile = profile.sort_index()
