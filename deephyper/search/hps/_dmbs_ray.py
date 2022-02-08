@@ -178,7 +178,7 @@ class Worker:
         return res
 
 
-class DMBS:
+class DMBSRay:
     """Distributed Model-Based Search based on the `Scikit-Optimized Optimizer <https://scikit-optimize.github.io/stable/modules/generated/skopt.Optimizer.html#skopt.Optimizer>`_.
 
     Args:
