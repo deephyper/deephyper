@@ -91,6 +91,7 @@ class DMBSMPI:
         self._comm = comm if comm else MPI.COMM_WORLD
         self._rank = self._comm.Get_rank()
         self._size = self._comm.Get_size()
+        logging.info(f"DMBSMPI has {self._size} worker(s)")
 
         # set random state for given rank
         self._rank_seed = self._random_state.randint(
@@ -212,8 +213,15 @@ class DMBSMPI:
         if self._opt is None:
             self._setup_optimizer()
 
+        logging.info("Asking 1 configuration...")
+        t1 = time.time()
         x = self._opt.ask()
+        logging.info(f"Asking took {time.time() - t1:.4f} sec.")
+
+        logging.info("Executing the run-function...")
+        t1 = time.time()
         y = self._run_function(self.to_dict(x), **self._run_function_kwargs)
+        logging.info(f"Execution took {time.time() - t1:.4f} sec.")
 
         infos = [self._rank]
         self._history.append_keys_infos(["worker_rank"])
@@ -239,16 +247,28 @@ class DMBSMPI:
             # collect x, y from other nodes (history)
             self.recv_any()
             hist_X, hist_y = self._history.value()
+            n_new = len(hist_X) - len(self._opt.Xi)
 
             # fit optimizer
-            self._opt.Xi = []
-            self._opt.yi = []
-            self._opt.sampled = hist_X  # avoid duplicated samples
-            self._opt.tell(hist_X, hist_y)
+            # self._opt.Xi = []
+            # self._opt.yi = []
+            # self._opt.sampled = hist_X  # avoid duplicated samples
+
+            logging.info("Fitting the optimizer...")
+            t1 = time.time()
+            self._opt.tell(hist_X[-n_new:], hist_y[-n_new])
+            logging.info(f"Fitting took {time.time() - t1:.4f} sec.")
 
             # ask next configuration
+            logging.info("Asking 1 configuration...")
+            t1 = time.time()
             x = self._opt.ask()
+            logging.info(f"Asking took {time.time() - t1:.4f} sec.")
+            
+            logging.info("Executing the run-function...")
+            t1 = time.time()
             y = self._run_function(self.to_dict(x), **self._run_function_kwargs)
+            logging.info(f"Execution took {time.time() - t1:.4f} sec.")
             infos = [self._rank]
 
             # code to manage the profile decorator
@@ -282,31 +302,6 @@ class DMBSMPI:
         for i in range(len(x)):
             res[hps_names[i]] = x[i]
         return res
-
-    # def _search(self, max_evals, timeout):
-
-    #     # initialize remote workers
-    #     create_worker = lambda id: Worker.options(**self._resources_per_worker).remote(
-    #         id,
-    #         self._history,
-    #         self._timestamp,
-    #         self._problem,
-    #         self._run_function,
-    #         self._run_function_kwargs,
-    #         self._random_state.randint(0, 2 ** 32),  # upper bound is exclusive
-    #         self._log_dir,
-    #         self._verbose,
-    #     )
-    #     self._workers_refs = [create_worker(i) for i in range(self._num_workers)]
-    #     search_refs = [w.search.remote(max_evals, timeout) for w in self._workers_refs]
-
-    #     # run the search process for each worker
-    #     search_done, search_processing = ray.wait(search_refs, num_returns=1)
-
-    #     # terminate other workers as soon as the first is done because it means
-    #     # we reached the correct number of evaluations
-    #     for search_ref in search_processing:
-    #             ray.kill(self._workers_refs[search_refs.index(search_ref)])
 
     def gather_results(self):
         x_list, y_list, infos_dict = self._history.infos()

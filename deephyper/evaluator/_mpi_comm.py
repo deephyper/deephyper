@@ -30,10 +30,10 @@ class MPICommEvaluator(Evaluator):
         self.comm = MPI.COMM_WORLD
         self.num_workers = self.comm.Get_size() - 1 # 1 rank is the master
         self.sem = asyncio.Semaphore(self.num_workers)
-        logging.info(f"Creating MPIPoolExecutor with {self.num_workers} max_workers...")
+        logging.info(f"Creating MPICommExecutor with {self.num_workers} max_workers...")
         self.executor = MPICommExecutor(comm=self.comm, root=0)
         self.master_executor = None
-        logging.info("Creation of MPIPoolExecutor done")
+        logging.info("Creation of MPICommExecutor done")
 
     def __enter__(self):
         self.master_executor = self.executor.__enter__()
