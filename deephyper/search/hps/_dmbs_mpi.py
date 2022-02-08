@@ -256,7 +256,7 @@ class DMBSMPI:
 
             logging.info("Fitting the optimizer...")
             t1 = time.time()
-            self._opt.tell(hist_X[-n_new:], hist_y[-n_new])
+            self._opt.tell(hist_X[-n_new:], hist_y[-n_new:])
             logging.info(f"Fitting took {time.time() - t1:.4f} sec.")
 
             # ask next configuration
