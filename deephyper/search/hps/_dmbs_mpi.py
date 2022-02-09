@@ -6,11 +6,11 @@ import time
 
 import numpy as np
 import pandas as pd
-import ray
 import skopt
 
 from mpi4py import MPI
 from deephyper.core.exceptions import SearchTerminationError
+from sklearn.ensemble import GradientBoostingRegressor
 
 
 class History:
@@ -65,6 +65,8 @@ class DMBSMPI:
         verbose: int = 0,
         comm=None,
         run_function_kwargs: dict = None,
+        n_jobs: int = 1,
+        surrogate_model: str = "RF",
     ):
 
         self._problem = problem
@@ -105,10 +107,18 @@ class DMBSMPI:
         self._opt_space = self._problem.space
         self._opt_kwargs = dict(
             dimensions=self._opt_space,
-            base_estimator="RF",
+            base_estimator=self._get_surrogate_model(
+                surrogate_model,
+                n_jobs,
+                random_state=self._random_state.get_state()[1][0],
+            ),
             acq_func="LCB",
             acq_optimizer="boltzmann_sampling",
-            acq_optimizer_kwargs={"n_points": 10000, "boltzmann_gamma": 1},
+            acq_optimizer_kwargs={
+                "n_points": 10000,
+                "boltzmann_gamma": 1,
+                "n_jobs": n_jobs,
+            },
             n_initial_points=1,
             random_state=self._rank_seed,
         )
@@ -125,7 +135,7 @@ class DMBSMPI:
 
         logging.info(f"Sending to all done in {time.time() - t1:.4f} sec.")
 
-    def recv_any(self) -> list:
+    def recv_any(self):
         logging.info("Receiving from any...")
         t1 = time.time()
 
@@ -197,11 +207,14 @@ class DMBSMPI:
         except SearchTerminationError:
             pass
 
-        # TODO
-        path_results = os.path.join(self._log_dir, "results.csv")
-        results = self.gather_results()
-        results.to_csv(path_results)
-        return results
+        if self._rank == 0:
+            path_results = os.path.join(self._log_dir, "results.csv")
+            self.recv_any()
+            results = self.gather_results()
+            results.to_csv(path_results)
+            return results
+        else:
+            return None
 
     def _setup_optimizer(self):
         # if self._fitted:
@@ -264,7 +277,7 @@ class DMBSMPI:
             t1 = time.time()
             x = self._opt.ask()
             logging.info(f"Asking took {time.time() - t1:.4f} sec.")
-            
+
             logging.info("Executing the run-function...")
             t1 = time.time()
             y = self._run_function(self.to_dict(x), **self._run_function_kwargs)
@@ -305,6 +318,7 @@ class DMBSMPI:
 
     def gather_results(self):
         x_list, y_list, infos_dict = self._history.infos()
+        print("->", len(x_list), len(y_list), len(infos_dict))
         x_list = np.transpose(np.array(x_list))
         y_list = -np.array(y_list)
 
@@ -313,5 +327,49 @@ class DMBSMPI:
             for i, hp_name in enumerate(self._problem.hyperparameter_names)
         }
         results.update(dict(objective=y_list, **infos_dict))
-        results = pd.DataFrame(results)
+
+        results = pd.DataFrame(data=results, index=list(range(len(y_list))))
         return results
+
+    def _get_surrogate_model(
+        self, name: str, n_jobs: int = None, random_state: int = None
+    ):
+        """Get a surrogate model from Scikit-Optimize.
+
+        Args:
+            name (str): name of the surrogate model.
+            n_jobs (int): number of parallel processes to distribute the computation of the surrogate model.
+
+        Raises:
+            ValueError: when the name of the surrogate model is unknown.
+        """
+        accepted_names = ["RF", "ET", "GBRT", "DUMMY", "GP"]
+        if not (name in accepted_names):
+            raise ValueError(
+                f"Unknown surrogate model {name}, please choose among {accepted_names}."
+            )
+
+        if name == "RF":
+            surrogate = skopt.learning.RandomForestRegressor(
+                n_estimators=100,
+                min_samples_leaf=3,
+                n_jobs=n_jobs,
+                random_state=random_state,
+            )
+        elif name == "ET":
+            surrogate = skopt.learning.ExtraTreesRegressor(
+                n_estimators=100,
+                min_samples_leaf=3,
+                n_jobs=n_jobs,
+                random_state=random_state,
+            )
+        elif name == "GBRT":
+
+            gbrt = GradientBoostingRegressor(n_estimators=30, loss="quantile")
+            surrogate = skopt.learning.GradientBoostingQuantileRegressor(
+                base_estimator=gbrt, n_jobs=n_jobs, random_state=random_state
+            )
+        else:  # for DUMMY and GP
+            surrogate = name
+
+        return surrogate
