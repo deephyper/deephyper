@@ -318,7 +318,6 @@ class DMBSMPI:
 
     def gather_results(self):
         x_list, y_list, infos_dict = self._history.infos()
-        print("->", len(x_list), len(y_list), len(infos_dict))
         x_list = np.transpose(np.array(x_list))
         y_list = -np.array(y_list)
 
