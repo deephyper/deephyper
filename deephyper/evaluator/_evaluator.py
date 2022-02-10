@@ -3,23 +3,25 @@ import csv
 import copy
 import importlib
 import json
+import logging
 import os
+from re import I
 import sys
 import time
 import warnings
 from typing import Dict, List
 
 import numpy as np
-from deephyper.core.exceptions import DeephyperRuntimeError
 from deephyper.evaluator._job import Job
 
 EVALUATORS = {
-    "thread": "_thread_pool.ThreadPoolEvaluator",
+    "mpipool": "_mpi_pool.MPIPoolEvaluator",
+    "mpicomm": "_mpi_comm.MPICommEvaluator",
     "process": "_process_pool.ProcessPoolEvaluator",
-    "subprocess": "_subprocess.SubprocessEvaluator",
     "ray": "_ray.RayEvaluator",
     "serial": "_serial.SerialEvaluator",
-    # "balsam": "_balsam.BalsamEvaluator" # TODO
+    "subprocess": "_subprocess.SubprocessEvaluator",
+    "thread": "_thread_pool.ThreadPoolEvaluator",
 }
 
 
@@ -40,11 +42,13 @@ class Evaluator:
         self,
         run_function,
         num_workers: int = 1,
-        callbacks: list=None,
-        run_function_kwargs: dict=None
+        callbacks: list = None,
+        run_function_kwargs: dict = None,
     ):
         self.run_function = run_function  # User-defined run function.
-        self.run_function_kwargs = {} if run_function_kwargs is None else run_function_kwargs
+        self.run_function_kwargs = (
+            {} if run_function_kwargs is None else run_function_kwargs
+        )
 
         # Number of parallel workers available
         self.num_workers = num_workers
@@ -77,7 +81,9 @@ class Evaluator:
         Returns:
             Evaluator: the ``Evaluator`` with the corresponding backend and configuration.
         """
-
+        logging.info(
+            f"Creating Evaluator({run_function}, method={method}, method_kwargs={method_kwargs}..."
+        )
         if not method in EVALUATORS.keys():
             val = ", ".join(EVALUATORS)
             raise ValueError(
@@ -91,6 +97,8 @@ class Evaluator:
         mod = importlib.import_module(f"deephyper.evaluator.{mod_name}")
         eval_cls = getattr(mod, attr_name)
         evaluator = eval_cls(run_function, **method_kwargs)
+
+        logging.info(f"Creation done")
 
         return evaluator
 
@@ -111,14 +119,14 @@ class Evaluator:
         for config in configs:
             new_job = self.create_job(config)
             self._on_launch(new_job)
-            task = self.loop.create_task(self.execute(new_job))
+            task = self.loop.create_task(self._execute(new_job))
             self._tasks_running.append(task)
 
     def _on_launch(self, job):
         """Called after a job is started."""
         job.status = job.RUNNING
 
-        job.duration = time.time()
+        job.timestamp_submit = time.time() - self.timestamp
 
         # call callbacks
         for cb in self._callbacks:
@@ -128,8 +136,7 @@ class Evaluator:
         """Called after a job has completed."""
         job.status = job.DONE
 
-        job.duration = time.time() - job.duration
-        job.elapsed_sec = time.time() - self.timestamp
+        job.timestamp_gather = time.time() - self.timestamp
 
         if np.isscalar(job.result):
             if not (np.isfinite(job.result)):
@@ -139,7 +146,21 @@ class Evaluator:
         for cb in self._callbacks:
             cb.on_done(job)
 
-    async def execute(self, job):
+    async def _execute(self, job):
+
+        job = await self.execute(job)
+
+        # code to manage the profile decorator
+        profile_keys = ["objective", "timestamp_start", "timestamp_end"]
+        if isinstance(job.result, dict) and all(k in job.result for k in profile_keys):
+            profile = job.result
+            job.result = profile["objective"]
+            job.timestamp_start = profile["timestamp_start"] - self.timestamp
+            job.timestamp_end = profile["timestamp_end"] - self.timestamp
+
+        return job
+
+    async def execute(self, job) -> Job:
         """Execute the received job. To be implemented with a specific backend.
 
         Args:
@@ -153,8 +174,10 @@ class Evaluator:
         Args:
             configs (List[Dict]): A list of dict which will be passed to the run function to be executed.
         """
+        logging.info(f"submit {len(configs)} job(s) starts...")
         self.loop = asyncio.get_event_loop()
         self.loop.run_until_complete(self._run_jobs(configs))
+        logging.info("submit done")
 
     def gather(self, type, size=1):
         """Collect the completed tasks from the evaluator in batches of one or more.
@@ -174,6 +197,7 @@ class Evaluator:
         Returns:
             List[Job]: A batch of completed jobs that is at minimum the given size.
         """
+        logging.info("gather starts...")
         assert type in ["ALL", "BATCH"], f"Unsupported gather operation: {type}."
 
         results = []
@@ -191,6 +215,7 @@ class Evaluator:
 
         self._tasks_done = []
         self._tasks_pending = []
+        logging.info("gather done")
         return results
 
     def create_job(self, config):
@@ -229,7 +254,7 @@ class Evaluator:
             saved_keys (list|callable): If ``None`` the whole ``job.config`` will be added as row of the CSV file. If a ``list`` filtered keys will be added as a row of the CSV file. If a ``callable`` the output dictionnary will be added as a row of the CSV file.
             log_dir (str): directory where to dump the CSV file.
         """
-
+        logging.info("dump_evals starts...")
         resultsList = []
 
         for job in self.jobs_done:
@@ -240,17 +265,18 @@ class Evaluator:
                 result = {k: self.convert_for_csv(decoded_key[k]) for k in saved_keys}
             elif callable(saved_keys):
                 result = copy.deepcopy(saved_keys(job))
-            result["id"] = job.id
+            result["job_id"] = job.id
             result["objective"] = job.result
-            result[
-                "elapsed_sec"
-            ] = (
-                job.elapsed_sec
-            )  # Time to complete from the intitilization of evaluator.
-            result["duration"] = job.duration
+            result["timestamp_submit"] = job.timestamp_submit
+            result["timestamp_gather"] = job.timestamp_gather
+
+            if job.timestamp_start is not None and job.timestamp_end is not None:
+                result["timestamp_start"] = job.timestamp_start
+                result["timestamp_end"] = job.timestamp_end
+
             resultsList.append(result)
 
-            self.jobs_done.remove(job)
+        self.jobs_done = []
 
         if len(resultsList) != 0:
             mode = "a" if self._start_dumping else "w"
@@ -261,3 +287,5 @@ class Evaluator:
                     writer.writeheader()
                     self._start_dumping = True
                 writer.writerows(resultsList)
+
+        logging.info("dum_evals done")

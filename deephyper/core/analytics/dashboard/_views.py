@@ -151,7 +151,7 @@ class DatabaseSelection(View):
         self.db = db
         self.data = []
 
-    def _select_choices(self, criterias):
+    def _select_choices(self, criterias, default_ignore):
         def _add_choice(choices, to_ignore, path, val):
             path = list(path)
             if path:
@@ -162,6 +162,7 @@ class DatabaseSelection(View):
                     h = len(path) + 1 if len(path) < 6 else 6
                     st.markdown(f"{(h)*'#'} {key} :")
                 elif isinstance(val, list):
+                    val = list(map(lambda x: 'None' if x is None else x, val))
                     val.sort()
                     if len(val) == 1:
                         default = val
@@ -169,7 +170,7 @@ class DatabaseSelection(View):
                         default = None
                     col1, col2 = st.columns([2, 1])
                     choice = col1.multiselect(label=key, options=val, default=default)
-                    ignore = col2.checkbox(label="ignore", value=False, key=path)
+                    ignore = col2.checkbox(label="ignore", value=path in default_ignore, key=path)
                     if ignore:
                         to_ignore.append(path)
                     else:
@@ -198,16 +199,18 @@ class DatabaseSelection(View):
         headers = list(map(lambda x: dict(x), self.db.all()))
         criterias = {}
         not_criterias = [
+            ["results"],
+        ]
+        default_ignore = [
             ["summary", "description"],
             ["summary", "date"],
             ["parameters", "random_state"],
-            ["results"],
         ]
         list(map(partial(_merge_dict_in, criterias, not_criterias), headers))
 
         # Show the possible criterias
         with st.container():
-            choices, to_ignore = self._select_choices(criterias)
+            choices, to_ignore = self._select_choices(criterias, default_ignore)
 
         # Select the corresponding runs
         query = self._generate_query(choices)
@@ -297,8 +300,10 @@ class GroupIdenticalResults(View):
     def _sort_run(self, headers, results_list, data):
         header = data
         results = header.pop("results")
-        header["summary"].pop("date")
-        header["summary"].pop("description")
+        if "date" in header["summary"]:
+            header["summary"].pop("date")
+        if "description" in header["summary"]:
+            header["summary"].pop("description")
         if "random_state" in header["parameters"]:
             header["parameters"].pop("random_state")
         if header in headers:
@@ -381,11 +386,11 @@ def _get_names(headers, diff):
                 else:
                     name.append(f"{path[-1]}: {val}")
         if name:
-            comparatives.append(comparative)
+            comparatives.append(str(comparative))
             names.append(" - ".join(name))
         else:
             unnamed += 1
-            comparatives.append(unnamed)
+            comparatives.append(str(unnamed))
             names.append(f"config {unnamed}")
     return names, comparatives
 
@@ -400,7 +405,7 @@ class ConfigurationsSelection(View):
         list(map(partial(_merge_dict_in, synthesis, []), self.headers))
         diff = _get_diff(synthesis)
         config_names, comparatives = _get_names(self.headers, diff)
-        _, self.config_names, self.data = zip(*sorted(zip(comparatives, config_names, data)))
+        _, self.config_names, _, self.data = zip(*sorted(zip(comparatives, config_names, [i for i in range(len(data))], data)))
 
     def show(self):
         new_names = []
@@ -593,12 +598,21 @@ class ProfileView(SingleGraphView):
                 temp = val
             profile = pd.DataFrame(
                 {
+                    "timestamp": temp["timestamp"],
                     "n_jobs_running": temp["n_jobs_running"],
-                },
-                index=temp["timestamp"],
+                }
             )
+            if temp["timestamp"][0] > self._t0:
+                profile = profile.append(
+                    {
+                        'timestamp': self._t0,
+                        'n_jobs_running': 0,
+                    },
+                    ignore_index=True
+                )
+            profile = profile.drop_duplicates(subset='timestamp', keep='last')
+            profile = profile.set_index('timestamp')
             profile = profile.sort_index()
-            profile.index = profile.index - profile.index[0]
             profile = profile[
                 (profile.index >= self._t0) & (profile.index <= self._t_max)
             ]

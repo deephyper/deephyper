@@ -10,15 +10,31 @@ from deephyper.evaluator._serial import SerialEvaluator
 from deephyper.evaluator._subprocess import SubprocessEvaluator
 from deephyper.evaluator._thread_pool import ThreadPoolEvaluator
 from deephyper.evaluator._queue import queued
+from deephyper.evaluator._decorator import profile
 
 __all__ = [
     "Evaluator",
     "EVALUATORS",
     "Job",
     "ProcessPoolEvaluator",
+    "profile",
     "queued",
     "RayEvaluator",
     "SerialEvaluator",
     "SubprocessEvaluator",
     "ThreadPoolEvaluator",
 ]
+
+try:
+    from deephyper.evaluator._mpi_pool import MPIPoolEvaluator
+
+    __all__.append("MPIPoolEvaluator")
+except ImportError:
+    pass
+
+try:
+    from deephyper.evaluator._mpi_comm import MPICommEvaluator
+
+    __all__.append("MPICommEvaluator")
+except ImportError:
+    pass

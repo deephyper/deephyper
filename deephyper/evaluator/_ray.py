@@ -13,7 +13,6 @@ class RayEvaluator(Evaluator):
 
     Args:
         run_function (callable): functions to be executed by the ``Evaluator``.
-        num_workers (int, optional): Number of parallel Ray-workers used to compute the ``run_function``. Defaults to 1.
         callbacks (list, optional): A list of callbacks to trigger custom actions at the creation or completion of jobs. Defaults to None.
         address (str, optional): address of the Ray-head. Defaults to None, if no Ray-head was started.
         password (str, optional): password to connect ot the Ray-head. Defaults to None, if the default Ray-password is used.

@@ -14,6 +14,16 @@ def stdscaler() -> Pipeline:
     return preprocessor
 
 
+def minmaxscaler() -> Pipeline:
+    """Standard normalization where the mean is of each row is set to zero and the standard deviation is set to one.
+
+    Returns:
+        Pipeline: a pipeline with one step ``StandardScaler``.
+    """
+    preprocessor = Pipeline([("minmaxscaler", MinMaxScaler())])
+    return preprocessor
+
+
 def minmaxstdscaler() -> Pipeline:
     """MinMax preprocesssing followed by Standard normalization.
 
