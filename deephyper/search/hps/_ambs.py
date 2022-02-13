@@ -1,7 +1,7 @@
 import logging
 import math
 import time
-
+import sys
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as csh
 import numpy as np
@@ -10,6 +10,12 @@ import skopt
 from deephyper.problem._hyperparameter import convert_to_skopt_space
 from deephyper.search._search import Search
 from sklearn.ensemble import GradientBoostingRegressor
+
+from skopt.space import Real, Integer
+from skopt.utils import use_named_args
+from sdv.tabular import TVAE
+from sdv.evaluation import evaluate
+from skopt import Optimizer
 
 # Adapt minimization -> maximization with DeepHyper
 MAP_liar_strategy = {
@@ -326,6 +332,76 @@ class AMBS(Search):
 
         self._opt.tell(x, [-yi for yi in y])
 
+
+    def fit_generative_model(self, df,q=0.10,n_iter=30,optimize=False):
+        q_val = np.quantile(df.objective.values, q)
+        req_df = df.loc[df['objective'] < q_val]
+        req_df = req_df.drop(columns=['job_id','objective','timestamp_submit','timestamp_gather'])
+
+        model = TVAE()
+        model.fit(req_df)
+        synthetic_data = model.sample(100)
+        score = evaluate(synthetic_data, req_df)
+
+        if optimize:
+            space = [Integer(1, 20, name='epochs'),
+                    #Integer(1, np.floor(req_df.shape[0]/10), name='batch_size'),
+                    Integer(1, 8, name='embedding_dim'),
+                    Integer(1, 8, name= 'compress_dims'),
+                    Integer(1, 8, name= 'decompress_dims'),
+                    Real(10**-8, 10**-4, "log-uniform", name='l2scale'),
+                    Integer(1, 5, name= 'loss_factor')
+                    ]
+
+            @use_named_args(space)
+            def objective(**params):
+                params['epochs'] = 10*params['epochs']
+                #params['batch_size'] = 10*params['batch_size']
+                params['embedding_dim'] = 2**params['embedding_dim']
+                params['compress_dims'] = [2**params['compress_dims'],2**params['compress_dims']]
+                params['decompress_dims'] = [2**params['decompress_dims'],2**params['decompress_dims']]
+                print(params)
+                model = TVAE(**params)
+                model.fit(req_df)
+                synthetic_data = model.sample(100)
+                score = evaluate(synthetic_data, req_df)
+                print(score)
+                return -score
+
+            @use_named_args(space)
+            def model_fit(**params):
+                params['epochs'] = 10*params['epochs']
+                #params['batch_size'] = 10*params['batch_size']
+                params['embedding_dim'] = 2**params['embedding_dim']
+                params['compress_dims'] = [2**params['compress_dims'],2**params['compress_dims']]
+                params['decompress_dims'] = [2**params['decompress_dims'],2**params['decompress_dims']]
+                print(params)
+                model = TVAE(**params)
+                model.fit(req_df)
+                synthetic_data = model.sample(100)
+                score = evaluate(synthetic_data, req_df)
+                print(score)
+                return -score, model
+
+
+            opt = Optimizer(space)
+            for i in range(n_iter):
+                suggested = opt.ask()
+                y = objective(suggested)
+                opt.tell(suggested, y)
+                print('iteration:', i, suggested, y)
+
+            print(opt.yi)
+
+            min_value  = min(opt.yi)
+            min_index = opt.yi.index(min_value)
+            print(min_value)
+            best_params = opt.Xi[min_index]
+
+            score, model = model_fit(best_params)
+
+        return score, model
+
     def fit_search_space(self, df):
         """Apply prior-guided transfer learning based on a DataFrame of results.
 
@@ -347,6 +423,8 @@ class AMBS(Search):
         res_df_names = res_df.columns.values
         best_index = np.argmax(res_df["objective"].values)
         best_param = res_df.iloc[best_index]
+
+        score, model = self.fit_generative_model(res_df)
 
         fac_numeric = 8.0
         fac_categorical = 10.0
@@ -435,6 +513,7 @@ class AMBS(Search):
             cst_new.add_forbidden_clause(cond_new)
 
         self._opt_kwargs["dimensions"] = cst_new
+        self._opt_kwargs["tl_sdv"] = model
 
     def get_random_batch(self, size: int) -> list:
         """Generate a random batch of configuration.
