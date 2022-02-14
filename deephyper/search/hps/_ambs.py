@@ -333,7 +333,7 @@ class AMBS(Search):
         self._opt.tell(x, [-yi for yi in y])
 
 
-    def fit_generative_model(self, df,q=0.10,n_iter=30,optimize=False):
+    def fit_generative_model(self, df,q=0.10,n_iter=100,optimize=False):
         q_val = np.quantile(df.objective.values, q)
         req_df = df.loc[df['objective'] < q_val]
         req_df = req_df.drop(columns=['job_id','objective','timestamp_submit','timestamp_gather'])
