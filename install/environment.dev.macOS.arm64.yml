@@ -8,5 +8,7 @@ dependencies:
   - msgpack-python
   - pandas
   - xgboost
+  - llvmlite
+  - numba
   - pip:
     - -r requirements.dev.macOS.arm64.txt

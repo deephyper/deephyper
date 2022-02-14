@@ -96,8 +96,7 @@ class DMBSMPI:
         logging.info(f"DMBSMPI has {self._size} worker(s)")
 
         # set random state for given rank
-        self._rank_seed = self._random_state.randint(
-            self._random_state.randint(0, 2**32), size=self._size
+        self._rank_seed = self._random_state.randint(low=0, high=2**32, size=self._size
         )[self._rank]
 
         self._timestamp = time.time()

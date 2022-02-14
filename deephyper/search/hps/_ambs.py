@@ -1,7 +1,8 @@
 import logging
 import math
 import time
-import sys
+import warnings
+
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as csh
 import numpy as np
@@ -9,13 +10,19 @@ import pandas as pd
 import skopt
 from deephyper.problem._hyperparameter import convert_to_skopt_space
 from deephyper.search._search import Search
-from sklearn.ensemble import GradientBoostingRegressor
 
-from skopt.space import Real, Integer
+from sklearn.ensemble import GradientBoostingRegressor
 from skopt.utils import use_named_args
-from sdv.tabular import TVAE
-from sdv.evaluation import evaluate
-from skopt import Optimizer
+
+# make SDV optional
+try:
+    import sdv
+    # from sdv.evaluation import evaluate
+    # from sdv.tabular import TVAE
+    SDV_INSTALLED = True
+except ImportError: 
+    logging.warn("Synthetic-Data Vault is not installed!")
+    SDV_INSTALLED = False
 
 # Adapt minimization -> maximization with DeepHyper
 MAP_liar_strategy = {
@@ -164,16 +171,16 @@ class AMBS(Search):
             logging.info("Gathering jobs...")
             t1 = time.time()
             new_results = self._evaluator.gather("BATCH", size=1)
-            logging.info(f"Gathered {len(new_results)} job(s) in {time.time() - t1:.4f} sec.")
-
+            logging.info(
+                f"Gathered {len(new_results)} job(s) in {time.time() - t1:.4f} sec."
+            )
 
             if len(new_results) > 0:
-                
+
                 logging.info("Dumping evaluations...")
                 t1 = time.time()
                 self._evaluator.dump_evals(log_dir=self._log_dir)
                 logging.info(f"Dumping took {time.time() - t1:.4f} sec.")
-
 
                 num_received = len(new_results)
                 num_evals_done += num_received
@@ -332,73 +339,94 @@ class AMBS(Search):
 
         self._opt.tell(x, [-yi for yi in y])
 
+    def fit_generative_model(self, df, q=0.90, n_iter_optimize=0, n_samples=100):
+        """_summary_
 
-    def fit_generative_model(self, df,q=0.10,n_iter=100,optimize=False):
+        Args:
+            df (str|DataFrame): a dataframe or path to CSV from a previous search.
+            q (float, optional): the quantile defined the set of top configurations used to bias the search. Defaults to ``0.90`` which select the top-10% configurations from ``df``.
+            n_iter_optimize (int, optional): the number of iterations used to optimize the generative model which samples the data for the search. Defaults to ``0`` with no optimization for the generative model.
+            n_samples (int, optional): the number of samples used to score the generative model.
+
+        Returns:
+            tuple: ``score, model`` which are a metric which measures the quality of the learned generated-model and the generative model respectively.
+        """
+        # to make sdv optional
+        if not(SDV_INSTALLED):
+            raise RuntimeError("Synthethic-Data Vault is not installed, run 'pip install sdv'")
+
+        if type(df) is str and df[-4:] == ".csv":
+            df = pd.read_csv(df)
+        assert isinstance(df, pd.DataFrame)
+
         q_val = np.quantile(df.objective.values, q)
-        req_df = df.loc[df['objective'] < q_val]
-        req_df = req_df.drop(columns=['job_id','objective','timestamp_submit','timestamp_gather'])
+        req_df = df.loc[df["objective"] > q_val]
+        req_df = req_df.drop(
+            columns=["job_id", "objective", "timestamp_submit", "timestamp_gather"]
+        )
 
-        model = TVAE()
-        model.fit(req_df)
-        synthetic_data = model.sample(100)
-        score = evaluate(synthetic_data, req_df)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
 
-        if optimize:
-            space = [Integer(1, 20, name='epochs'),
-                    #Integer(1, np.floor(req_df.shape[0]/10), name='batch_size'),
-                    Integer(1, 8, name='embedding_dim'),
-                    Integer(1, 8, name= 'compress_dims'),
-                    Integer(1, 8, name= 'decompress_dims'),
-                    Real(10**-8, 10**-4, "log-uniform", name='l2scale'),
-                    Integer(1, 5, name= 'loss_factor')
+            model = sdv.tabular.TVAE()
+            model.fit(req_df)
+            synthetic_data = model.sample(n_samples)
+            score = sdv.evaluation.evaluate(synthetic_data, req_df)
+
+            if n_iter_optimize > 0:
+                space = [
+                    skopt.space.Integer(1, 20, name="epochs"),
+                    # skopt.space.Integer(1, np.floor(req_df.shape[0]/10), name='batch_size'),
+                    skopt.space.Integer(1, 8, name="embedding_dim"),
+                    skopt.space.Integer(1, 8, name="compress_dims"),
+                    skopt.space.Integer(1, 8, name="decompress_dims"),
+                    skopt.space.Real(10**-8, 10**-4, "log-uniform", name="l2scale"),
+                    skopt.space.Integer(1, 5, name="loss_factor"),
+                ]
+
+                def model_fit(params):
+                    params["epochs"] = 10 * params["epochs"]
+                    # params['batch_size'] = 10*params['batch_size']
+                    params["embedding_dim"] = 2 ** params["embedding_dim"]
+                    params["compress_dims"] = [
+                        2 ** params["compress_dims"],
+                        2 ** params["compress_dims"],
                     ]
+                    params["decompress_dims"] = [
+                        2 ** params["decompress_dims"],
+                        2 ** params["decompress_dims"],
+                    ]
+                    model = sdv.tabular.TVAE(**params)
+                    model.fit(req_df)
+                    synthetic_data = model.sample(n_samples)
+                    score = sdv.evaluation.evaluate(synthetic_data, req_df)
+                    return -score, model
 
-            @use_named_args(space)
-            def objective(**params):
-                params['epochs'] = 10*params['epochs']
-                #params['batch_size'] = 10*params['batch_size']
-                params['embedding_dim'] = 2**params['embedding_dim']
-                params['compress_dims'] = [2**params['compress_dims'],2**params['compress_dims']]
-                params['decompress_dims'] = [2**params['decompress_dims'],2**params['decompress_dims']]
-                print(params)
-                model = TVAE(**params)
-                model.fit(req_df)
-                synthetic_data = model.sample(100)
-                score = evaluate(synthetic_data, req_df)
-                print(score)
-                return -score
+                @use_named_args(space)
+                def objective(**params):
+                    score, _ = model_fit(params)
+                    return score
 
-            @use_named_args(space)
-            def model_fit(**params):
-                params['epochs'] = 10*params['epochs']
-                #params['batch_size'] = 10*params['batch_size']
-                params['embedding_dim'] = 2**params['embedding_dim']
-                params['compress_dims'] = [2**params['compress_dims'],2**params['compress_dims']]
-                params['decompress_dims'] = [2**params['decompress_dims'],2**params['decompress_dims']]
-                print(params)
-                model = TVAE(**params)
-                model.fit(req_df)
-                synthetic_data = model.sample(100)
-                score = evaluate(synthetic_data, req_df)
-                print(score)
-                return -score, model
+                # run sequential optimization of generative model hyperparameters
+                opt = skopt.Optimizer(space)
+                for i in range(n_iter_optimize):
+                    x = opt.ask()
+                    y = objective(x)
+                    opt.tell(x, y)
+                    logging.info(f"iteration {i}: {x} -> {y}")
 
+                min_index = np.argmin(opt.yi)
+                best_params = opt.Xi[min_index]
+                logging.info(f"Min-Score of the SDV generative model: {opt.yi[min_index]}")
 
-            opt = Optimizer(space)
-            for i in range(n_iter):
-                suggested = opt.ask()
-                y = objective(suggested)
-                opt.tell(suggested, y)
-                print('iteration:', i, suggested, y)
+                best_params = {d.name:v for d, v in zip(space, best_params)}
+                logging.info(f"Best configuration for SDV generative model: {best_params}")
 
-            print(opt.yi)
+                score, model = model_fit(best_params)
 
-            min_value  = min(opt.yi)
-            min_index = opt.yi.index(min_value)
-            print(min_value)
-            best_params = opt.Xi[min_index]
-
-            score, model = model_fit(best_params)
+        # we pass the learned generative model from sdv to the
+        # skopt Optimizer
+        self._opt_kwargs["model_sdv"] = model
 
         return score, model
 
@@ -424,12 +452,10 @@ class AMBS(Search):
         best_index = np.argmax(res_df["objective"].values)
         best_param = res_df.iloc[best_index]
 
-        score, model = self.fit_generative_model(res_df)
-
         fac_numeric = 8.0
         fac_categorical = 10.0
 
-        cst_new = CS.ConfigurationSpace(seed=1234)
+        cst_new = CS.ConfigurationSpace(seed=self._random_state.randint(low=0, high=2**32))
         hp_names = cst.get_hyperparameter_names()
         for hp_name in hp_names:
             hp = cst.get_hyperparameter(hp_name)
@@ -513,7 +539,6 @@ class AMBS(Search):
             cst_new.add_forbidden_clause(cond_new)
 
         self._opt_kwargs["dimensions"] = cst_new
-        self._opt_kwargs["tl_sdv"] = model
 
     def get_random_batch(self, size: int) -> list:
         """Generate a random batch of configuration.
