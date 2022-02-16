@@ -273,6 +273,8 @@ class Evaluator:
             if job.timestamp_start is not None and job.timestamp_end is not None:
                 result["timestamp_start"] = job.timestamp_start
                 result["timestamp_end"] = job.timestamp_end
+            if hasattr(job, 'dequed'):
+                result["dequed"] = ','.join(job.dequed)
 
             resultsList.append(result)
 

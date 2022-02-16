@@ -20,6 +20,7 @@ def queued(evaluator_class):
         self.run_function_kwargs["dequed"] = dequed
 
         job = await evaluator_class.execute(self, job)
+        setattr(job, 'dequed', dequed)
 
         self.queue.extend(dequed)
 
