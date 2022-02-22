@@ -397,11 +397,11 @@ class AMBS(Search):
                     )
                     cst_new.add_hyperparameter(param_new)
                 else:
-                    logging.warning("Not fitting {hp} because it is not supported!")
+                    logging.warning(f"Not fitting {hp} because it is not supported!")
                     cst_new.add_hyperparameter(hp)
             else:
                 logging.warning(
-                    "Not fitting {hp} because it was not found in the dataframe!"
+                    f"Not fitting {hp} because it was not found in the dataframe!"
                 )
                 cst_new.add_hyperparameter(hp)
 
