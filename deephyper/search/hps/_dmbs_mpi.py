@@ -12,6 +12,7 @@ from mpi4py import MPI
 from deephyper.core.exceptions import SearchTerminationError
 from sklearn.ensemble import GradientBoostingRegressor
 
+TERMINATION = 10
 
 class History:
     """History"""
@@ -54,6 +55,11 @@ class DMBSMPI:
         random_state (int, optional): Random seed. Defaults to ``None``.
         log_dir (str, optional): Log directory where search's results are saved. Defaults to ``"."``.
         verbose (int, optional): Indicate the verbosity level of the search. Defaults to ``0``.
+        comm (optional): .... Defaults to ``None``.
+        run_function_kwargs (dict): .... Defaults to ``None``.
+        n_jobs (int, optional): .... Defaults to ``1``.
+        surrogate_model (str, optional): .... Defaults to ``"RF"``.
+        lazy_socket_allocation (bool, optional): .... Defaults to ``True``.
     """
 
     def __init__(
@@ -68,6 +74,7 @@ class DMBSMPI:
         n_jobs: int = 1,
         surrogate_model: str = "RF",
         lazy_socket_allocation: bool = True,
+        sync_communication: bool = False
     ):
 
         self._problem = problem
@@ -96,6 +103,7 @@ class DMBSMPI:
         self._size = self._comm.Get_size()
         logging.info(f"DMBSMPI has {self._size} worker(s)")
 
+        # force socket allocation with dummy message to reduce overhead
         if not lazy_socket_allocation:
             logging.info("Initializing communication...")
             ti = time.time()
@@ -115,6 +123,7 @@ class DMBSMPI:
             logging.info(f"Receiving from all done in {time.time() - t1:.4f} sec.")
             logging.info(f"Initializing communications done in {time.time() - ti:.4f} sec.")
             
+        self._sync_communication = sync_communication
 
         # set random state for given rank
         self._rank_seed = self._random_state.randint(
@@ -156,7 +165,18 @@ class DMBSMPI:
 
         logging.info(f"Sending to all done in {time.time() - t1:.4f} sec.")
 
-    def recv_any(self):
+    def send_all_termination(self):
+        logging.info("Sending termination code to all...")
+        t1 = time.time()
+
+        req_send = [
+            self._comm.isend(TERMINATION, dest=i) for i in range(self._size) if i != self._rank
+        ]
+        MPI.Request.waitall(req_send)
+
+        logging.info(f"Sending termination code to all done in {time.time() - t1:.4f} sec.")
+
+    def recv_any(self, waitall=False):
         logging.info("Receiving from any...")
         t1 = time.time()
 
@@ -170,15 +190,26 @@ class DMBSMPI:
                 self._comm.irecv(source=i) for i in range(self._size) if i != self._rank
             ]
 
-            for req in req_recv:
-                done, data = req.test()
-                if done:
-                    received_any = True
-                    n_received += 1
-                    x, y, infos = data
-                    self._history.append(x, y, infos)
-                else:
-                    req.cancel()
+            if waitall:
+                # synchronous
+                for req in req_recv:
+                    data = req.wait()
+                    if data != TERMINATION:
+                        n_received += 1
+                        x, y, infos = data
+                        self._history.append(x, y, infos)
+            else:
+                # asynchronous
+                for req in req_recv:
+                    done, data = req.test()
+                    if done:
+                        if data != TERMINATION:
+                            received_any = True
+                            n_received += 1
+                            x, y, infos = data
+                            self._history.append(x, y, infos)
+                    else:
+                        req.cancel()
 
         logging.info(
             f"Received {n_received} configurations in {time.time() - t1:.4f} sec."
@@ -226,7 +257,7 @@ class DMBSMPI:
         try:
             self._search(max_evals, timeout)
         except SearchTerminationError:
-            pass
+            self.send_all_termination()
 
         if self._rank == 0:
             path_results = os.path.join(self._log_dir, "results.csv")
@@ -279,7 +310,7 @@ class DMBSMPI:
         while max_evals < 0 or self._history.length() < max_evals:
 
             # collect x, y from other nodes (history)
-            self.recv_any()
+            self.recv_any(self._sync_communication)
             hist_X, hist_y = self._history.value()
             n_new = len(hist_X) - len(self._opt.Xi)
 
