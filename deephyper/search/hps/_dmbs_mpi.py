@@ -67,6 +67,7 @@ class DMBSMPI:
         run_function_kwargs: dict = None,
         n_jobs: int = 1,
         surrogate_model: str = "RF",
+        lazy_socket_allocation: bool = True,
     ):
 
         self._problem = problem
@@ -94,6 +95,26 @@ class DMBSMPI:
         self._rank = self._comm.Get_rank()
         self._size = self._comm.Get_size()
         logging.info(f"DMBSMPI has {self._size} worker(s)")
+
+        if not lazy_socket_allocation:
+            logging.info("Initializing communication...")
+            ti = time.time()
+            logging.info("Sending to all...")
+            t1 = time.time()
+            req_send = [
+                self._comm.isend(None, dest=i) for i in range(self._size) if i != self._rank
+            ]
+            MPI.Request.waitall(req_send)
+            logging.info(f"Sending to all done in {time.time() - t1:.4f} sec.")
+
+            logging.info("Receiving from all...")
+            t1 = time.time()
+            req_recv = [
+                self._comm.irecv(source=i) for i in range(self._size) if i != self._rank
+            ]
+            logging.info(f"Receiving from all done in {time.time() - t1:.4f} sec.")
+            logging.info(f"Initializing communications done in {time.time() - ti:.4f} sec.")
+            
 
         # set random state for given rank
         self._rank_seed = self._random_state.randint(
