@@ -117,7 +117,7 @@ class AMBS(Search):
             base_estimator=self._get_surrogate_model(
                 surrogate_model,
                 n_jobs,
-                random_state=self._random_state.get_state()[1][0],
+                random_state=self._random_state.randint(0, 2**32),
             ),
             # optimizer
             acq_optimizer=acq_optimizer,
@@ -158,16 +158,16 @@ class AMBS(Search):
             logging.info("Gathering jobs...")
             t1 = time.time()
             new_results = self._evaluator.gather("BATCH", size=1)
-            logging.info(f"Gathered {len(new_results)} job(s) in {time.time() - t1:.4f} sec.")
-
+            logging.info(
+                f"Gathered {len(new_results)} job(s) in {time.time() - t1:.4f} sec."
+            )
 
             if len(new_results) > 0:
-                
+
                 logging.info("Dumping evaluations...")
                 t1 = time.time()
                 self._evaluator.dump_evals(log_dir=self._log_dir)
                 logging.info(f"Dumping took {time.time() - t1:.4f} sec.")
-
 
                 num_received = len(new_results)
                 num_evals_done += num_received
@@ -326,13 +326,13 @@ class AMBS(Search):
 
         self._opt.tell(x, [-yi for yi in y])
 
-    def fit_search_space(self, df):
+    def fit_search_space(self, df, fac_numerical=0.125, fac_categorical=10):
         """Apply prior-guided transfer learning based on a DataFrame of results.
-
-        :meta private:
 
         Args:
             df (str|DataFrame): a checkpoint from a previous search.
+            fac_numerical (float): the factor used to compute the sigma of a truncated normal distribution based on ``sigma = max(1.0, (upper - lower) * fac_numerical)``. A small large factor increase exploration while a small factor increase exploitation around the best-configuration from the ``df`` parameter.
+            fac_categorical (float): the weight given to a categorical feature part of the best configuration. A large weight ``> 1`` increase exploitation while a small factor close to ``1`` increase exploration.
         """
 
         if type(df) is str and df[-4:] == ".csv":
@@ -348,10 +348,7 @@ class AMBS(Search):
         best_index = np.argmax(res_df["objective"].values)
         best_param = res_df.iloc[best_index]
 
-        fac_numeric = 8.0
-        fac_categorical = 10.0
-
-        cst_new = CS.ConfigurationSpace(seed=1234)
+        cst_new = CS.ConfigurationSpace(seed=self._random_state.randint(0, 2**32))
         hp_names = cst.get_hyperparameter_names()
         for hp_name in hp_names:
             hp = cst.get_hyperparameter(hp_name)
@@ -363,7 +360,7 @@ class AMBS(Search):
                     mu = best_param[hp.name]
                     lower = hp.lower
                     upper = hp.upper
-                    sigma = max(1.0, (upper - lower) / fac_numeric)
+                    sigma = max(1.0, (upper - lower) * fac_numerical)
                     if type(hp) is csh.UniformIntegerHyperparameter:
                         param_new = csh.NormalIntegerHyperparameter(
                             name=hp.name,
@@ -383,9 +380,15 @@ class AMBS(Search):
                             upper=upper,
                         )
                     cst_new.add_hyperparameter(param_new)
-                elif type(hp) is csh.CategoricalHyperparameter:
-                    choices = hp.choices
-                    weights = len(hp.choices) * [1.0]
+                elif (
+                    type(hp) is csh.CategoricalHyperparameter
+                    or type(hp) is csh.OrdinalHyperparameter
+                ):
+                    if type(hp) is csh.OrdinalHyperparameter:
+                        choices = hp.sequence
+                    else:
+                        choices = hp.choices
+                    weights = len(choices) * [1.0]
                     index = choices.index(best_param[hp.name])
                     weights[index] = fac_categorical
                     norm_weights = [float(i) / sum(weights) for i in weights]
@@ -394,11 +397,11 @@ class AMBS(Search):
                     )
                     cst_new.add_hyperparameter(param_new)
                 else:
-                    logging.warning("Not fitting {hp} because it is not supported!")
+                    logging.warning(f"Not fitting {hp} because it is not supported!")
                     cst_new.add_hyperparameter(hp)
             else:
                 logging.warning(
-                    "Not fitting {hp} because it was not found in the dataframe!"
+                    f"Not fitting {hp} because it was not found in the dataframe!"
                 )
                 cst_new.add_hyperparameter(hp)
 
