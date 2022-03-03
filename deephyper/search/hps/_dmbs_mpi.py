@@ -350,7 +350,7 @@ class DMBSMPI:
 
             # collect x, y from other nodes (history)
             if not (self._sync_communication):
-                self.recv_any(self._sync_communication)
+                self.recv_any()
 
             hist_X, hist_y = self._history.value()
             n_new = len(hist_X) - len(self._opt.Xi)
