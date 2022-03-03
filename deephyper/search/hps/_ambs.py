@@ -71,6 +71,7 @@ class AMBS(Search):
         update_prior: bool = False,
         liar_strategy: str = "cl_max",
         n_jobs: int = 1,  # 32 is good for Theta
+        sync_communication: bool = False,
         **kwargs,
     ):
 
@@ -99,16 +100,16 @@ class AMBS(Search):
             raise ValueError("Parameter 'n_points' shoud be an integer value!")
 
         if not (type(filter_duplicated) is bool):
-            raise ValueError("Parameter 'filter_duplicated' should be a boolean value!")
+            raise ValueError(f"Parameter {filter_duplicated=} should be a boolean value!")
 
         liar_strategy_allowed = ["cl_min", "cl_mean", "cl_max", "topk", "boltzmann"]
         if not (liar_strategy in liar_strategy_allowed):
             raise ValueError(
-                f"Parameter 'liar_strategy={liar_strategy}' should have a value in {liar_strategy_allowed}!"
+                f"Parameter {liar_strategy=} should have a value in {liar_strategy_allowed}!"
             )
 
         if not (type(n_jobs) is int):
-            raise ValueError(f"Parameter 'n_jobs' should be an integer value!")
+            raise ValueError(f"Parameter {n_jobs=} should be an integer value!")
 
         self._n_initial_points = self._evaluator.num_workers
         self._liar_strategy = MAP_liar_strategy.get(liar_strategy, liar_strategy)
@@ -147,6 +148,8 @@ class AMBS(Search):
             random_state=self._random_state,
         )
 
+        self._gather_type = "ALL" if sync_communication else "BATCH"
+
     def _setup_optimizer(self):
         if self._fitted:
             self._opt_kwargs["n_initial_points"] = 0
@@ -170,7 +173,7 @@ class AMBS(Search):
             # Collecting finished evaluations
             logging.info("Gathering jobs...")
             t1 = time.time()
-            new_results = self._evaluator.gather("BATCH", size=1)
+            new_results = self._evaluator.gather(self._gather_type, size=1)
             logging.info(
                 f"Gathered {len(new_results)} job(s) in {time.time() - t1:.4f} sec."
             )

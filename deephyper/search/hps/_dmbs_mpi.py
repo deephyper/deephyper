@@ -1,3 +1,4 @@
+import enum
 import logging
 import os
 import pathlib
@@ -14,6 +15,7 @@ from sklearn.ensemble import GradientBoostingRegressor
 
 TERMINATION = 10
 
+
 class History:
     """History"""
 
@@ -22,6 +24,7 @@ class History:
         self._list_y = []  # objective values
         self._keys_infos = []  # keys
         self._list_infos = []  # values
+        self.n_buffered = 0
 
     def append_keys_infos(self, k: list):
         self._keys_infos.extend(k)
@@ -33,6 +36,15 @@ class History:
         self._list_x.append(x)
         self._list_y.append(y)
         self._list_infos.append(infos)
+        self.n_buffered += 1
+
+    def extend(self, x: list, y: list, infos: dict):
+        self._list_x.extend(x)
+        self._list_y.extend(y)
+
+        infos = np.array([v for v in infos.values()], dtype="O").T.tolist()
+        self._list_infos.extend(infos)
+        self.n_buffered += len(x)
 
     def length(self):
         return len(self._list_x)
@@ -40,10 +52,17 @@ class History:
     def value(self):
         return self._list_x[:], self._list_y[:]
 
-    def infos(self):
-        list_infos = np.array(self._list_infos).T
-        infos = {k: v for k, v in zip(self._keys_infos, list_infos)}
-        return self._list_x, self._list_y, infos
+    def infos(self, k=None):
+        list_infos = np.array(self._list_infos, dtype="O").T
+        if k is not None:
+            infos = {k: v[-k:] for k, v in zip(self._keys_infos, list_infos)}
+            return self._list_x[-k:], self._list_y[-k], infos
+        else:
+            infos = {k: v for k, v in zip(self._keys_infos, list_infos)}
+            return self._list_x, self._list_y, infos
+
+    def reset_buffer(self):
+        self.n_buffered = 0
 
 
 class DMBSMPI:
@@ -60,6 +79,8 @@ class DMBSMPI:
         n_jobs (int, optional): .... Defaults to ``1``.
         surrogate_model (str, optional): .... Defaults to ``"RF"``.
         lazy_socket_allocation (bool, optional): .... Defaults to ``True``.
+        sync_communication (bool, optional): Force workers to communicate synchronously. Defaults to ``False``.
+        sync_communication_freq (int, optional): Manage the frequency at which workers should communicate their results. Defaults to ``10``.
     """
 
     def __init__(
@@ -74,7 +95,8 @@ class DMBSMPI:
         n_jobs: int = 1,
         surrogate_model: str = "RF",
         lazy_socket_allocation: bool = True,
-        sync_communication: bool = False
+        sync_communication: bool = False,
+        sync_communication_freq: int = 10,
     ):
 
         self._problem = problem
@@ -110,7 +132,9 @@ class DMBSMPI:
             logging.info("Sending to all...")
             t1 = time.time()
             req_send = [
-                self._comm.isend(None, dest=i) for i in range(self._size) if i != self._rank
+                self._comm.isend(None, dest=i)
+                for i in range(self._size)
+                if i != self._rank
             ]
             MPI.Request.waitall(req_send)
             logging.info(f"Sending to all done in {time.time() - t1:.4f} sec.")
@@ -120,13 +144,18 @@ class DMBSMPI:
             req_recv = [
                 self._comm.irecv(source=i) for i in range(self._size) if i != self._rank
             ]
+            MPI.Request.waitall(req_send)
             logging.info(f"Receiving from all done in {time.time() - t1:.4f} sec.")
-            logging.info(f"Initializing communications done in {time.time() - ti:.4f} sec.")
-            
+            logging.info(
+                f"Initializing communications done in {time.time() - ti:.4f} sec."
+            )
+
         self._sync_communication = sync_communication
+        self._sync_communication_freq = sync_communication_freq
 
         # set random state for given rank
-        self._rank_seed = self._random_state.randint(low=0, high=2**32, size=self._size
+        self._rank_seed = self._random_state.randint(
+            low=0, high=2**32, size=self._size
         )[self._rank]
 
         self._timestamp = time.time()
@@ -169,13 +198,17 @@ class DMBSMPI:
         t1 = time.time()
 
         req_send = [
-            self._comm.isend(TERMINATION, dest=i) for i in range(self._size) if i != self._rank
+            self._comm.isend(TERMINATION, dest=i)
+            for i in range(self._size)
+            if i != self._rank
         ]
         MPI.Request.waitall(req_send)
 
-        logging.info(f"Sending termination code to all done in {time.time() - t1:.4f} sec.")
+        logging.info(
+            f"Sending termination code to all done in {time.time() - t1:.4f} sec."
+        )
 
-    def recv_any(self, waitall=False):
+    def recv_any(self):
         logging.info("Receiving from any...")
         t1 = time.time()
 
@@ -189,31 +222,29 @@ class DMBSMPI:
                 self._comm.irecv(source=i) for i in range(self._size) if i != self._rank
             ]
 
-            if waitall:
-                # synchronous
-                for req in req_recv:
-                    data = req.wait()
+            # asynchronous
+            for req in req_recv:
+                done, data = req.test()
+                if done:
                     if data != TERMINATION:
+                        received_any = True
                         n_received += 1
                         x, y, infos = data
                         self._history.append(x, y, infos)
-            else:
-                # asynchronous
-                for req in req_recv:
-                    done, data = req.test()
-                    if done:
-                        if data != TERMINATION:
-                            received_any = True
-                            n_received += 1
-                            x, y, infos = data
-                            self._history.append(x, y, infos)
-                    else:
-                        req.cancel()
+                else:
+                    req.cancel()
 
         logging.info(
             f"Received {n_received} configurations in {time.time() - t1:.4f} sec."
         )
 
+    def broadcast(self, X: list, Y: list, infos: list):
+        data = self._comm.allgather((X, Y, infos))
+
+        for i, (X, Y, infos) in enumerate(data):
+            if i != self._rank:
+                self._history.extend(X, Y, infos)
+        
     def terminate(self):
         """Terminate the search.
 
@@ -304,19 +335,25 @@ class DMBSMPI:
         y = -y  #! we do maximization
 
         self._history.append(x, y, infos)
-        self.send_all(x, y, infos)
+
+        if (
+            self._sync_communication
+            and self._history.n_buffered % self._sync_communication_freq == 0
+        ):
+            self.broadcast(*self._history.infos(k=self._history.n_buffered))
+            self._history.reset_buffer()
+        else:
+            self.send_all(x, y, infos)
+            self._history.reset_buffer()
 
         while max_evals < 0 or self._history.length() < max_evals:
 
             # collect x, y from other nodes (history)
-            self.recv_any(self._sync_communication)
+            if not (self._sync_communication):
+                self.recv_any(self._sync_communication)
+
             hist_X, hist_y = self._history.value()
             n_new = len(hist_X) - len(self._opt.Xi)
-
-            # fit optimizer
-            # self._opt.Xi = []
-            # self._opt.yi = []
-            # self._opt.sampled = hist_X  # avoid duplicated samples
 
             logging.info("Fitting the optimizer...")
             t1 = time.time()
@@ -348,7 +385,16 @@ class DMBSMPI:
 
             # update shared history
             self._history.append(x, y, infos)
-            self.send_all(x, y, infos)
+
+            if (
+                self._sync_communication
+                and self._history.n_buffered % self._sync_communication_freq == 0
+            ):
+                self.broadcast(*self._history.infos(k=self._history.n_buffered))
+                self._history.reset_buffer()
+            else:
+                self.send_all(x, y, infos)
+                self._history.reset_buffer()
 
     def to_dict(self, x: list) -> dict:
         """Transform a list of hyperparameter values to a ``dict`` where keys are hyperparameters names and values are hyperparameters values.
