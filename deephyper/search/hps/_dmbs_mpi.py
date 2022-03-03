@@ -168,7 +168,7 @@ class DMBSMPI:
             base_estimator=self._get_surrogate_model(
                 surrogate_model,
                 n_jobs,
-                random_state=self._random_state.get_state()[1][0],
+                random_state=self._rank_seed,
             ),
             acq_func="LCB",
             acq_optimizer="boltzmann_sampling",
