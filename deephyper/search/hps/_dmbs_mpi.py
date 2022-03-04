@@ -94,6 +94,7 @@ class DMBSMPI:
         run_function_kwargs: dict = None,
         n_jobs: int = 1,
         surrogate_model: str = "RF",
+        n_initial_points: int = 10,
         lazy_socket_allocation: bool = True,
         sync_communication: bool = False,
         sync_communication_freq: int = 10,
@@ -177,7 +178,7 @@ class DMBSMPI:
                 "boltzmann_gamma": 1,
                 "n_jobs": n_jobs,
             },
-            n_initial_points=1,
+            n_initial_points=n_initial_points,
             random_state=self._rank_seed,
         )
 

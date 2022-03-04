@@ -71,6 +71,7 @@ class AMBS(Search):
         update_prior: bool = False,
         liar_strategy: str = "cl_max",
         n_jobs: int = 1,  # 32 is good for Theta
+        n_initial_points=10,
         sync_communication: bool = False,
         **kwargs,
     ):
@@ -111,7 +112,7 @@ class AMBS(Search):
         if not (type(n_jobs) is int):
             raise ValueError(f"Parameter {n_jobs=} should be an integer value!")
 
-        self._n_initial_points = self._evaluator.num_workers
+        self._n_initial_points =  n_initial_points 
         self._liar_strategy = MAP_liar_strategy.get(liar_strategy, liar_strategy)
         self._fitted = False
 
