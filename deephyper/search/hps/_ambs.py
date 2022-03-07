@@ -166,7 +166,7 @@ class AMBS(Search):
         # Filling available nodes at start
         logging.info(f"Generating {self._evaluator.num_workers} initial points...")
         t1 = time.time()
-        self._evaluator.submit(self.get_random_batch(size=self._n_initial_points))
+        self._evaluator.submit(self.get_random_batch(size=self._evaluator.num_workers))
         logging.info(f"Generation took: {time.time() - t1:.4f} sec.")
 
         # Main loop
