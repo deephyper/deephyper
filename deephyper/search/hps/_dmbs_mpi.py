@@ -240,11 +240,17 @@ class DMBSMPI:
         )
 
     def broadcast(self, X: list, Y: list, infos: list):
+        logging.info("Broadcasting to all...")
+        t1 = time.time()
         data = self._comm.allgather((X, Y, infos))
 
         for i, (X, Y, infos) in enumerate(data):
             if i != self._rank:
                 self._history.extend(X, Y, infos)
+        n_received = (len(data) - 1) * data[0]
+        logging.info(
+            f"Broadcast received {n_received} configurations in {time.time() - t1:.4f} sec."
+        )
         
     def terminate(self):
         """Terminate the search.
@@ -337,12 +343,10 @@ class DMBSMPI:
 
         self._history.append(x, y, infos)
 
-        if (
-            self._sync_communication
-            and self._history.n_buffered % self._sync_communication_freq == 0
-        ):
-            self.broadcast(*self._history.infos(k=self._history.n_buffered))
-            self._history.reset_buffer()
+        if self._sync_communication:
+            if self._history.n_buffered % self._sync_communication_freq == 0:
+                self.broadcast(*self._history.infos(k=self._history.n_buffered))
+                self._history.reset_buffer()
         else:
             self.send_all(x, y, infos)
             self._history.reset_buffer()
@@ -350,7 +354,7 @@ class DMBSMPI:
         while max_evals < 0 or self._history.length() < max_evals:
 
             # collect x, y from other nodes (history)
-            if not (self._sync_communication):
+            if not(self._sync_communication):
                 self.recv_any()
 
             hist_X, hist_y = self._history.value()
@@ -387,12 +391,10 @@ class DMBSMPI:
             # update shared history
             self._history.append(x, y, infos)
 
-            if (
-                self._sync_communication
-                and self._history.n_buffered % self._sync_communication_freq == 0
-            ):
-                self.broadcast(*self._history.infos(k=self._history.n_buffered))
-                self._history.reset_buffer()
+            if self._sync_communication:
+                if self._history.n_buffered % self._sync_communication_freq == 0:
+                    self.broadcast(*self._history.infos(k=self._history.n_buffered))
+                    self._history.reset_buffer()
             else:
                 self.send_all(x, y, infos)
                 self._history.reset_buffer()
