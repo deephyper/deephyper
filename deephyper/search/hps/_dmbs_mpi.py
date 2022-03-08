@@ -55,10 +55,10 @@ class History:
     def infos(self, k=None):
         list_infos = np.array(self._list_infos, dtype="O").T
         if k is not None:
-            infos = {k: v[-k:] for k, v in zip(self._keys_infos, list_infos)}
-            return self._list_x[-k:], self._list_y[-k], infos
+            infos = {key: val[-k:] for key, val in zip(self._keys_infos, list_infos)}
+            return self._list_x[-k:], self._list_y[-k:], infos
         else:
-            infos = {k: v for k, v in zip(self._keys_infos, list_infos)}
+            infos = {key: val for key, val in zip(self._keys_infos, list_infos)}
             return self._list_x, self._list_y, infos
 
     def reset_buffer(self):
