@@ -145,7 +145,7 @@ class DMBSMPI:
             req_recv = [
                 self._comm.irecv(source=i) for i in range(self._size) if i != self._rank
             ]
-            MPI.Request.waitall(req_send)
+            MPI.Request.waitall(req_recv)
             logging.info(f"Receiving from all done in {time.time() - t1:.4f} sec.")
             logging.info(
                 f"Initializing communications done in {time.time() - ti:.4f} sec."
