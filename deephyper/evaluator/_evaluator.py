@@ -110,10 +110,16 @@ class Evaluator:
             )
             n = len(self._tasks_running)
 
-        while len(self._tasks_done) < n:
+        # wait for all running tasks (sync.)
+        if n == len(self._tasks_running):
             self._tasks_done, self._tasks_pending = await asyncio.wait(
-                self._tasks_running, return_when="FIRST_COMPLETED"
+                self._tasks_running, return_when="ALL_COMPLETED"
             )
+        else:
+            while len(self._tasks_done) < n:
+                self._tasks_done, self._tasks_pending = await asyncio.wait(
+                    self._tasks_running, return_when="FIRST_COMPLETED"
+                )
 
     async def _run_jobs(self, configs):
         for config in configs:
@@ -197,7 +203,7 @@ class Evaluator:
         Returns:
             List[Job]: A batch of completed jobs that is at minimum the given size.
         """
-        logging.info("gather starts...")
+        logging.info(f"gather({type}, size={size}) starts...")
         assert type in ["ALL", "BATCH"], f"Unsupported gather operation: {type}."
 
         results = []
