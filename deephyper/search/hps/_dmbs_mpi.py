@@ -55,8 +55,12 @@ class History:
     def infos(self, k=None):
         list_infos = np.array(self._list_infos, dtype="O").T
         if k is not None:
-            infos = {key: val[-k:] for key, val in zip(self._keys_infos, list_infos)}
-            return self._list_x[-k:], self._list_y[-k:], infos
+            if k == 0:
+                infos = {key: [] for key in self._keys_infos}
+                return [], [], infos
+            else:
+                infos = {key: val[-k:] for key, val in zip(self._keys_infos, list_infos)}
+                return self._list_x[-k:], self._list_y[-k:], infos
         else:
             infos = {key: val for key, val in zip(self._keys_infos, list_infos)}
             return self._list_x, self._list_y, infos
@@ -176,6 +180,7 @@ class DMBSMPI:
             acq_optimizer_kwargs={
                 "n_points": 10000,
                 "boltzmann_gamma": 1,
+                # "boltzmann_psucc": 1/self._size,
                 "n_jobs": n_jobs,
             },
             n_initial_points=n_initial_points,
@@ -198,20 +203,12 @@ class DMBSMPI:
         logging.info("Sending termination code to all...")
         t1 = time.time()
 
-        if self._sync_communication:
-            data = self._comm.allgather(TERMINATION)
-
-            if self._rank == 0:
-                for i in range(self._size):
-                    if i != self._rank and data[i] != TERMINATION:
-                        self._history.extend(*data[i])
-        else:
-            req_send = [
-                self._comm.isend(TERMINATION, dest=i)
-                for i in range(self._size)
-                if i != self._rank
-            ]
-            MPI.Request.waitall(req_send)
+        req_send = [
+            self._comm.isend(TERMINATION, dest=i)
+            for i in range(self._size)
+            if i != self._rank
+        ]
+        MPI.Request.waitall(req_send)
 
         logging.info(
             f"Sending termination code to all done in {time.time() - t1:.4f} sec."
@@ -304,7 +301,11 @@ class DMBSMPI:
         try:
             self._search(max_evals, timeout)
         except SearchTerminationError:
-            self.send_all_termination()
+            logging.info("Handling search termination...")
+            if not(self._sync_communication):
+                self.send_all_termination()
+            else:
+                self.broadcast(*self._history.infos(k=self._history.n_buffered))
 
         if self._rank == 0:
             path_results = os.path.join(self._log_dir, "results.csv")
