@@ -198,12 +198,20 @@ class DMBSMPI:
         logging.info("Sending termination code to all...")
         t1 = time.time()
 
-        req_send = [
-            self._comm.isend(TERMINATION, dest=i)
-            for i in range(self._size)
-            if i != self._rank
-        ]
-        MPI.Request.waitall(req_send)
+        if self._sync_communication:
+            data = self._comm.allgather(TERMINATION)
+
+            if self._rank == 0:
+                for i in range(self._size):
+                    if i != self._rank and data[i] != TERMINATION:
+                        self._history.extend(*data[i])
+        else:
+            req_send = [
+                self._comm.isend(TERMINATION, dest=i)
+                for i in range(self._size)
+                if i != self._rank
+            ]
+            MPI.Request.waitall(req_send)
 
         logging.info(
             f"Sending termination code to all done in {time.time() - t1:.4f} sec."
@@ -243,11 +251,13 @@ class DMBSMPI:
         logging.info("Broadcasting to all...")
         t1 = time.time()
         data = self._comm.allgather((X, Y, infos))
+        n_received = 0
 
-        for i, (X, Y, infos) in enumerate(data):
-            if i != self._rank:
-                self._history.extend(X, Y, infos)
-        n_received = (len(data) - 1) * len(data[0][0])
+        for i in range(self._size):
+            if i != self._rank and data[i] != TERMINATION:
+                self._history.extend(*data[i])
+                n_received += len(data[i][0])
+
         logging.info(
             f"Broadcast received {n_received} configurations in {time.time() - t1:.4f} sec."
         )
@@ -298,7 +308,8 @@ class DMBSMPI:
 
         if self._rank == 0:
             path_results = os.path.join(self._log_dir, "results.csv")
-            self.recv_any()
+            if not(self._sync_communication):
+                self.recv_any()
             results = self.gather_results()
             results.to_csv(path_results)
             return results
