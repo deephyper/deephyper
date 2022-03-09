@@ -247,7 +247,7 @@ class DMBSMPI:
         for i, (X, Y, infos) in enumerate(data):
             if i != self._rank:
                 self._history.extend(X, Y, infos)
-        n_received = (len(data) - 1) * data[0]
+        n_received = (len(data) - 1) * len(data[0][0])
         logging.info(
             f"Broadcast received {n_received} configurations in {time.time() - t1:.4f} sec."
         )
