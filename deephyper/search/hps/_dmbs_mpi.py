@@ -251,13 +251,36 @@ class DMBSMPI:
         n_received = 0
 
         for i in range(self._size):
-            if i != self._rank and data[i] != TERMINATION:
+            if i != self._rank:
                 self._history.extend(*data[i])
                 n_received += len(data[i][0])
 
         logging.info(
             f"Broadcast received {n_received} configurations in {time.time() - t1:.4f} sec."
         )
+
+    def broadcast_to_root(self, X: list, Y: list, infos: list):
+        logging.info("Broadcasting to root all...")
+        t1 = time.time()
+        
+        if self._rank == 0:
+            data = self._comm.gather((X, Y, infos), root=0)
+            n_received = 0
+
+            for i in range(self._size):
+                if i != self._rank:
+                    self._history.extend(*data[i])
+                    n_received += len(data[i][0])
+
+            logging.info(
+                f"Broadcast to root received {n_received} configurations in {time.time() - t1:.4f} sec."
+            )
+        else:
+            self._comm.gather((X, Y, infos), root=0)
+            logging.info(
+                f"Broadcast to root done in {time.time() - t1:.4f} sec."
+            )
+        
         
     def terminate(self):
         """Terminate the search.
@@ -304,13 +327,13 @@ class DMBSMPI:
             logging.info("Handling search termination...")
             if not(self._sync_communication):
                 self.send_all_termination()
+                self.recv_any()
             else:
-                self.broadcast(*self._history.infos(k=self._history.n_buffered))
+                self.broadcast_to_root(*self._history.infos(k=self._history.n_buffered))
+            self._comm.Barrier()
 
         if self._rank == 0:
             path_results = os.path.join(self._log_dir, "results.csv")
-            if not(self._sync_communication):
-                self.recv_any()
             results = self.gather_results()
             results.to_csv(path_results)
             return results
