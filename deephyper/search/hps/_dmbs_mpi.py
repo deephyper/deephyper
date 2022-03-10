@@ -14,6 +14,9 @@ from deephyper.core.exceptions import SearchTerminationError
 from sklearn.ensemble import GradientBoostingRegressor
 
 TERMINATION = 10
+TAG_INIT = 20
+TAG_DATA = 30
+TAG_TERMINATION = 40
 
 
 class History:
@@ -59,7 +62,9 @@ class History:
                 infos = {key: [] for key in self._keys_infos}
                 return [], [], infos
             else:
-                infos = {key: val[-k:] for key, val in zip(self._keys_infos, list_infos)}
+                infos = {
+                    key: val[-k:] for key, val in zip(self._keys_infos, list_infos)
+                }
                 return self._list_x[-k:], self._list_y[-k:], infos
         else:
             infos = {key: val for key, val in zip(self._keys_infos, list_infos)}
@@ -137,7 +142,7 @@ class DMBSMPI:
             logging.info("Sending to all...")
             t1 = time.time()
             req_send = [
-                self._comm.isend(None, dest=i)
+                self._comm.isend(None, dest=i, tag=TAG_INIT)
                 for i in range(self._size)
                 if i != self._rank
             ]
@@ -147,7 +152,9 @@ class DMBSMPI:
             logging.info("Receiving from all...")
             t1 = time.time()
             req_recv = [
-                self._comm.irecv(source=i) for i in range(self._size) if i != self._rank
+                self._comm.irecv(source=i, tag=TAG_INIT)
+                for i in range(self._size)
+                if i != self._rank
             ]
             MPI.Request.waitall(req_recv)
             logging.info(f"Receiving from all done in {time.time() - t1:.4f} sec.")
@@ -193,7 +200,7 @@ class DMBSMPI:
 
         data = (x, y, infos)
         req_send = [
-            self._comm.isend(data, dest=i) for i in range(self._size) if i != self._rank
+            self._comm.isend(data, dest=i, tag=TAG_DATA) for i in range(self._size) if i != self._rank
         ]
         MPI.Request.waitall(req_send)
 
@@ -204,7 +211,7 @@ class DMBSMPI:
         t1 = time.time()
 
         req_send = [
-            self._comm.isend(TERMINATION, dest=i)
+            self._comm.isend(TERMINATION, dest=i, tag=TAG_TERMINATION)
             for i in range(self._size)
             if i != self._rank
         ]
@@ -225,21 +232,27 @@ class DMBSMPI:
 
             received_any = False
             req_recv = [
-                self._comm.irecv(source=i) for i in range(self._size) if i != self._rank
+                self._comm.irecv(source=i, tag=TAG_DATA)
+                for i in range(self._size)
+                if i != self._rank
             ]
 
             # asynchronous
             for req in req_recv:
-                done, data = req.test()
-                if done:
-                    if data != TERMINATION:
-                        received_any = True
-                        n_received += 1
-                        x, y, infos = data
-                        self._history.append(x, y, infos)
-                else:
-                    req.cancel()
-
+                try:
+                    done, data = req.test()
+                    if done:
+                        if data != TERMINATION:
+                            received_any = True
+                            n_received += 1
+                            x, y, infos = data
+                            self._history.append(x, y, infos)
+                    else:
+                        req.Cancel()
+                except Exception as e:
+                    logging.error(f"Exception raised: {e}")
+                    req.Free()
+                    req.Cancel()
         logging.info(
             f"Received {n_received} configurations in {time.time() - t1:.4f} sec."
         )
@@ -262,7 +275,7 @@ class DMBSMPI:
     def broadcast_to_root(self, X: list, Y: list, infos: list):
         logging.info("Broadcasting to root all...")
         t1 = time.time()
-        
+
         if self._rank == 0:
             data = self._comm.gather((X, Y, infos), root=0)
             n_received = 0
@@ -277,11 +290,8 @@ class DMBSMPI:
             )
         else:
             self._comm.gather((X, Y, infos), root=0)
-            logging.info(
-                f"Broadcast to root done in {time.time() - t1:.4f} sec."
-            )
-        
-        
+            logging.info(f"Broadcast to root done in {time.time() - t1:.4f} sec.")
+
     def terminate(self):
         """Terminate the search.
 
@@ -325,11 +335,14 @@ class DMBSMPI:
             self._search(max_evals, timeout)
         except SearchTerminationError:
             logging.info("Handling search termination...")
-            if not(self._sync_communication):
-                self.send_all_termination()
+            if not (self._sync_communication):
+                # self.send_all_termination()
                 self.recv_any()
             else:
-                self.broadcast_to_root(*self._history.infos(k=self._history.n_buffered))
+                try:
+                    self.broadcast_to_root(*self._history.infos(k=self._history.n_buffered))
+                except Exception as e:
+                    logging.error("Broadcast to root failed...")
             self._comm.Barrier()
 
         if self._rank == 0:
@@ -389,7 +402,7 @@ class DMBSMPI:
         while max_evals < 0 or self._history.length() < max_evals:
 
             # collect x, y from other nodes (history)
-            if not(self._sync_communication):
+            if not (self._sync_communication):
                 self.recv_any()
 
             hist_X, hist_y = self._history.value()
