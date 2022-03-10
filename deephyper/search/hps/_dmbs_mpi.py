@@ -2,6 +2,7 @@ import enum
 import logging
 import os
 import pathlib
+import pickle
 import signal
 import time
 
@@ -17,6 +18,14 @@ TERMINATION = 10
 TAG_INIT = 20
 TAG_DATA = 30
 TAG_TERMINATION = 40
+
+
+class SearchTerminationError(RuntimeError):
+    """Raised when a search receives SIGALARM"""
+
+
+class TerminationReceivedError(RuntimeError):
+    """Raised when a rank receive a TERMINATION message"""
 
 
 class History:
@@ -200,7 +209,9 @@ class DMBSMPI:
 
         data = (x, y, infos)
         req_send = [
-            self._comm.isend(data, dest=i, tag=TAG_DATA) for i in range(self._size) if i != self._rank
+            self._comm.isend(data, dest=i, tag=TAG_DATA)
+            for i in range(self._size)
+            if i != self._rank
         ]
         MPI.Request.waitall(req_send)
 
@@ -238,21 +249,19 @@ class DMBSMPI:
             ]
 
             # asynchronous
-            for req in req_recv:
+            for i, req in enumerate(req_recv):
                 try:
                     done, data = req.test()
                     if done:
-                        if data != TERMINATION:
-                            received_any = True
-                            n_received += 1
-                            x, y, infos = data
-                            self._history.append(x, y, infos)
+                        received_any = True
+                        n_received += 1
+                        x, y, infos = data
+                        self._history.append(x, y, infos)
                     else:
-                        req.Cancel()
-                except Exception as e:
-                    logging.error(f"Exception raised: {e}")
-                    req.Free()
-                    req.Cancel()
+                        req.cancel()
+                except pickle.UnpicklingError as e:
+                    logging.error(f"UnpicklingError for request {i}")
+                    req_recv[i].cancel()
         logging.info(
             f"Received {n_received} configurations in {time.time() - t1:.4f} sec."
         )
@@ -334,16 +343,30 @@ class DMBSMPI:
         try:
             self._search(max_evals, timeout)
         except SearchTerminationError:
-            logging.info("Handling search termination...")
+            logging.error("Processing SearchTerminationError")
             if not (self._sync_communication):
-                # self.send_all_termination()
                 self.recv_any()
-            else:
-                try:
-                    self.broadcast_to_root(*self._history.infos(k=self._history.n_buffered))
-                except Exception as e:
-                    logging.error("Broadcast to root failed...")
-            self._comm.Barrier()
+            # else:
+            #     logging.info("allgather(TERMINATION) starts...")
+            #     t1 = time.time()
+            #     data = self._comm.allgather(TERMINATION)
+            #     self._comm.
+
+            #     if self._sync_communication and self._rank == 0:
+            #         n_received = 0
+
+            #         for i in range(self._size):
+            #             if i != self._rank and data[i] != TERMINATION:
+            #                 self._history.extend(*data[i])
+            #                 n_received += len(data[i][0])
+
+            #         logging.info(
+            #             f"allgather(TERMINATION) received {n_received} configurations in {time.time() - t1:.4f} sec."
+            #         )
+
+            #     logging.info("allgather(TERMINATION) done...")
+        # except TerminationReceivedError:
+        #     logging.error("Processing TerminationReceivedError")
 
         if self._rank == 0:
             path_results = os.path.join(self._log_dir, "results.csv")
