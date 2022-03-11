@@ -21,7 +21,7 @@ try:
     # from sdv.tabular import TVAE
     SDV_INSTALLED = True
 except ImportError: 
-    logging.warn("Synthetic-Data Vault is not installed!")
+    logging.warn("Synthetic-Data Vault is not installed!!")
     SDV_INSTALLED = False
 
 # Adapt minimization -> maximization with DeepHyper
@@ -158,6 +158,8 @@ class AMBS(Search):
 
     def _search(self, max_evals, timeout):
 
+        n_wait_evals_timeout = 300
+
         if self._opt is None:
             self._setup_optimizer()
 
@@ -197,14 +199,30 @@ class AMBS(Search):
                 opt_y = []
                 for cfg, obj in new_results:
                     x = list(cfg.values())
-                    opt_X.append(x)
-                    opt_y.append(-obj)  #! maximizing
+                    if abs(obj) > 10e10:
+                        obj = math.inf 
+
+                    if math.isinf(obj):
+                        logging.warn(f"Found inf or nan value in {cfg}; skipping...")
+                    
+                    if math.isinf(obj) or math.isnan(obj):
+                        if len(self._opt.yi) <= n_wait_evals_timeout:
+                            logging.warn(f"Found inf or nan value in {cfg}; skipping...")
+                            continue
+                        else:
+                            opt_X.append(x)
+                            opt_y.append(np.mean(self._opt.yi))
+                    else:
+                        opt_X.append(x)
+                        opt_y.append(-obj)  #! maximizing
                 logging.info(f"Transformation took {time.time() - t1:.4f} sec.")
 
                 logging.info("Fitting the optimizer...")
                 t1 = time.time()
-                self._opt.tell(opt_X, opt_y)  #! fit: costly
-                logging.info(f"Fitting took {time.time() - t1:.4f} sec.")
+                
+                if len(opt_y) > 0:
+                    self._opt.tell(opt_X, opt_y)
+                    logging.info(f"Fitting took {time.time() - t1:.4f} sec.")
 
                 logging.info(f"Asking {len(new_results)} new configurations...")
                 t1 = time.time()
