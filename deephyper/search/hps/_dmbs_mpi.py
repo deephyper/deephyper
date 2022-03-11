@@ -208,8 +208,9 @@ class DMBSMPI:
         t1 = time.time()
 
         data = (x, y, infos)
+        data = MPI.pickle.dumps(data)
         req_send = [
-            self._comm.isend(data, dest=i, tag=TAG_DATA)
+            self._comm.Isend(data, dest=i, tag=TAG_DATA)
             for i in range(self._size)
             if i != self._rank
         ]
@@ -261,7 +262,6 @@ class DMBSMPI:
                         req.cancel()
                 except pickle.UnpicklingError as e:
                     logging.error(f"UnpicklingError for request {i}")
-                    req_recv[i].cancel()
         logging.info(
             f"Received {n_received} configurations in {time.time() - t1:.4f} sec."
         )
