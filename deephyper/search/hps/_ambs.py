@@ -20,8 +20,8 @@ try:
     # from sdv.evaluation import evaluate
     # from sdv.tabular import TVAE
     SDV_INSTALLED = True
-except ImportError: 
-    logging.warn("Synthetic-Data Vault is not installed!!")
+except ImportError:
+    logging.warn("Synthetic-Data Vault is not installed!")
     SDV_INSTALLED = False
 
 # Adapt minimization -> maximization with DeepHyper
@@ -53,6 +53,9 @@ class AMBS(Search):
         liar_strategy (str, optional): Definition of the constant value use for the Liar strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max"]`` . Defaults to ``"cl_max"``.
         n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the Bayesian optimization. A value of ``-1`` will use all available cores. Defaults to ``1``.
     """
+
+    # objective value used in case of failure in the run-function
+    FAILED_EVALUATION_VALUE = 10e10
 
     def __init__(
         self,
@@ -101,7 +104,9 @@ class AMBS(Search):
             raise ValueError("Parameter 'n_points' shoud be an integer value!")
 
         if not (type(filter_duplicated) is bool):
-            raise ValueError(f"Parameter {filter_duplicated=} should be a boolean value!")
+            raise ValueError(
+                f"Parameter {filter_duplicated=} should be a boolean value!"
+            )
 
         liar_strategy_allowed = ["cl_min", "cl_mean", "cl_max", "topk", "boltzmann"]
         if not (liar_strategy in liar_strategy_allowed):
@@ -112,7 +117,7 @@ class AMBS(Search):
         if not (type(n_jobs) is int):
             raise ValueError(f"Parameter {n_jobs=} should be an integer value!")
 
-        self._n_initial_points =  n_initial_points 
+        self._n_initial_points = n_initial_points
         self._liar_strategy = MAP_liar_strategy.get(liar_strategy, liar_strategy)
         self._fitted = False
 
@@ -158,8 +163,6 @@ class AMBS(Search):
 
     def _search(self, max_evals, timeout):
 
-        n_wait_evals_timeout = 300
-
         if self._opt is None:
             self._setup_optimizer()
 
@@ -199,27 +202,30 @@ class AMBS(Search):
                 opt_y = []
                 for cfg, obj in new_results:
                     x = list(cfg.values())
-                    if abs(obj) > 10e10:
-                        obj = math.inf 
 
-                    if math.isinf(obj):
-                        logging.warn(f"Found inf or nan value in {cfg}; skipping...")
-                    
-                    if math.isinf(obj) or math.isnan(obj):
-                        if len(self._opt.yi) <= n_wait_evals_timeout:
-                            logging.warn(f"Found inf or nan value in {cfg}; skipping...")
-                            continue
+                    # manage failed evaluation
+                    if obj == AMBS.FAILED_EVALUATION_VALUE or np.isnan(obj):
+                        logging.warn(
+                            f"Failed objective value for configuration={cfg}; skipping..."
+                        )
+
+                        if len(self._opt.yi) > self._n_initial_points:
+                            # TODO: this should be handled in _opt and refreshed
+                            obj = np.max(
+                                self._opt.yi
+                            )  # giving the worst possible value
                         else:
-                            opt_X.append(x)
-                            opt_y.append(np.mean(self._opt.yi))
+                            continue
+
                     else:
                         opt_X.append(x)
                         opt_y.append(-obj)  #! maximizing
+
                 logging.info(f"Transformation took {time.time() - t1:.4f} sec.")
 
                 logging.info("Fitting the optimizer...")
                 t1 = time.time()
-                
+
                 if len(opt_y) > 0:
                     self._opt.tell(opt_X, opt_y)
                     logging.info(f"Fitting took {time.time() - t1:.4f} sec.")
@@ -374,8 +380,10 @@ class AMBS(Search):
             tuple: ``score, model`` which are a metric which measures the quality of the learned generated-model and the generative model respectively.
         """
         # to make sdv optional
-        if not(SDV_INSTALLED):
-            raise RuntimeError("Synthethic-Data Vault is not installed, run 'pip install sdv'")
+        if not (SDV_INSTALLED):
+            raise RuntimeError(
+                "Synthethic-Data Vault is not installed, run 'pip install sdv'"
+            )
 
         if type(df) is str and df[-4:] == ".csv":
             df = pd.read_csv(df)
@@ -439,10 +447,14 @@ class AMBS(Search):
 
                 min_index = np.argmin(opt.yi)
                 best_params = opt.Xi[min_index]
-                logging.info(f"Min-Score of the SDV generative model: {opt.yi[min_index]}")
+                logging.info(
+                    f"Min-Score of the SDV generative model: {opt.yi[min_index]}"
+                )
 
-                best_params = {d.name:v for d, v in zip(space, best_params)}
-                logging.info(f"Best configuration for SDV generative model: {best_params}")
+                best_params = {d.name: v for d, v in zip(space, best_params)}
+                logging.info(
+                    f"Best configuration for SDV generative model: {best_params}"
+                )
 
                 score, model = model_fit(best_params)
 

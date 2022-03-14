@@ -1,3 +1,4 @@
+import csv
 import enum
 import logging
 import os
@@ -116,6 +117,8 @@ class DMBSMPI:
         lazy_socket_allocation: bool = True,
         sync_communication: bool = False,
         sync_communication_freq: int = 10,
+        checkpoint_file: str = "results.csv",
+        checkpoint_freq: int = 1,
     ):
 
         self._problem = problem
@@ -171,8 +174,14 @@ class DMBSMPI:
                 f"Initializing communications done in {time.time() - ti:.4f} sec."
             )
 
+        # sync communication management
         self._sync_communication = sync_communication
         self._sync_communication_freq = sync_communication_freq
+
+        # checkpointing
+        self._checkpoint_size = 0
+        self._checkpoint_file = checkpoint_file
+        self._checkpoint_freq = checkpoint_freq
 
         # set random state for given rank
         self._rank_seed = self._random_state.randint(
@@ -346,33 +355,9 @@ class DMBSMPI:
             logging.error("Processing SearchTerminationError")
             if not (self._sync_communication):
                 self.recv_any()
-            # else:
-            #     logging.info("allgather(TERMINATION) starts...")
-            #     t1 = time.time()
-            #     data = self._comm.allgather(TERMINATION)
-            #     self._comm.
-
-            #     if self._sync_communication and self._rank == 0:
-            #         n_received = 0
-
-            #         for i in range(self._size):
-            #             if i != self._rank and data[i] != TERMINATION:
-            #                 self._history.extend(*data[i])
-            #                 n_received += len(data[i][0])
-
-            #         logging.info(
-            #             f"allgather(TERMINATION) received {n_received} configurations in {time.time() - t1:.4f} sec."
-            #         )
-
-            #     logging.info("allgather(TERMINATION) done...")
-        # except TerminationReceivedError:
-        #     logging.error("Processing TerminationReceivedError")
 
         if self._rank == 0:
-            path_results = os.path.join(self._log_dir, "results.csv")
-            results = self.gather_results()
-            results.to_csv(path_results)
-            return results
+            return self.checkpoint()
         else:
             return None
 
@@ -462,6 +447,10 @@ class DMBSMPI:
             # update shared history
             self._history.append(x, y, infos)
 
+            # checkpointing
+            if self._rank == 0 and self._history.length() % self._checkpoint_freq == 0:
+                self.checkpoint()
+
             if self._sync_communication:
                 if self._history.n_buffered % self._sync_communication_freq == 0:
                     self.broadcast(*self._history.infos(k=self._history.n_buffered))
@@ -543,3 +532,69 @@ class DMBSMPI:
             surrogate = name
 
         return surrogate
+
+    def fit_surrogate(self, df):
+        """Fit the surrogate model of the search from a checkpointed Dataframe.
+
+        Args:
+            df (str|DataFrame): a checkpoint from a previous search.
+
+        Example Usage:
+
+        >>> search = AMBS(problem, evaluator)
+        >>> search.fit_surrogate("results.csv")
+        """
+        if type(df) is str and df[-4:] == ".csv":
+            df = pd.read_csv(df, index_col=0)
+        assert isinstance(df, pd.DataFrame)
+
+        self._fitted = True
+
+        if self._opt is None:
+            self._setup_optimizer()
+
+        hp_names = self._problem.hyperparameter_names
+        try:
+            x = df[hp_names].values.tolist()
+            y = df.objective.tolist()
+        except KeyError:
+            raise ValueError(
+                "Incompatible dataframe 'df' to fit surrogate model of AMBS."
+            )
+
+        self._opt.tell(x, [-yi for yi in y])
+
+    def checkpoint(self):
+        """Dump evaluations to a CSV file.``"""
+        logging.info("Checkpointing starts...")
+
+        path_results = os.path.join(self._log_dir, self._checkpoint_file)
+        results = self.gather_results()
+        results.to_csv(path_results)
+
+        # # collect data to checkpoint
+        # k = self._history.length() - self._checkpoint_size
+        # x_list, y_list, infos_dict = self._history.infos(k)
+        # x_list = np.transpose(np.array(x_list))
+        # y_list = -np.array(y_list)
+
+        # data = {
+        #     hp_name: x_list[i]
+        #     for i, hp_name in enumerate(self._problem.hyperparameter_names)
+        # }
+        # data.update(dict(objective=y_list, **infos_dict))
+
+        # # save to disk
+        # mode = "a" if self._checkpoint_init else "w"
+        # with open(os.path.join(self._log_dir, self._checkpoint_file), mode) as fp:
+        #     columns = list(data.keys())
+        #     writer = csv.DictWriter(fp, columns)
+
+        #     if self._checkpoint_size == 0:
+        #         writer.writeheader()
+
+        #     writer.writerows(list(data.values()))
+
+        logging.info("Checkpointing done")
+        
+        return results
