@@ -115,6 +115,7 @@ class DMBSMPI:
         surrogate_model: str = "RF",
         n_initial_points: int = 10,
         lazy_socket_allocation: bool = True,
+        communication_batch_size=2048,
         sync_communication: bool = False,
         sync_communication_freq: int = 10,
         checkpoint_file: str = "results.csv",
@@ -145,6 +146,7 @@ class DMBSMPI:
         self._comm = comm if comm else MPI.COMM_WORLD
         self._rank = self._comm.Get_rank()
         self._size = self._comm.Get_size()
+        self._communication_batch_size = communication_batch_size
         logging.info(f"DMBSMPI has {self._size} worker(s)")
 
         # force socket allocation with dummy message to reduce overhead
@@ -218,29 +220,38 @@ class DMBSMPI:
 
         data = (x, y, infos)
         data = MPI.pickle.dumps(data)
-        req_send = [
-            self._comm.Isend(data, dest=i, tag=TAG_DATA)
-            for i in range(self._size)
-            if i != self._rank
-        ]
-        MPI.Request.waitall(req_send)
+
+        # batched version
+        if self._communication_batch_size > 0:
+
+            size_processed = 0
+            while size_processed < self._size:
+
+                batch_size = min(
+                    self._size - size_processed, self._communication_batch_size
+                )
+
+                req_send = [
+                    self._comm.Isend(data, dest=i, tag=TAG_DATA)
+                    for i in range(size_processed, size_processed + batch_size)
+                    if i != self._rank
+                ]
+                MPI.Request.waitall(req_send)
+
+                size_processed += batch_size
+                logging.info(f"Processed {size_processed/self._size*100:.2f}%")
+
+        # not batched
+        else:
+
+            req_send = [
+                self._comm.Isend(data, dest=i, tag=TAG_DATA)
+                for i in range(self._size)
+                if i != self._rank
+            ]
+            MPI.Request.waitall(req_send)
 
         logging.info(f"Sending to all done in {time.time() - t1:.4f} sec.")
-
-    def send_all_termination(self):
-        logging.info("Sending termination code to all...")
-        t1 = time.time()
-
-        req_send = [
-            self._comm.isend(TERMINATION, dest=i, tag=TAG_TERMINATION)
-            for i in range(self._size)
-            if i != self._rank
-        ]
-        MPI.Request.waitall(req_send)
-
-        logging.info(
-            f"Sending termination code to all done in {time.time() - t1:.4f} sec."
-        )
 
     def recv_any(self):
         logging.info("Receiving from any...")
@@ -249,28 +260,67 @@ class DMBSMPI:
         n_received = 0
         received_any = self._size > 1
 
-        while received_any:
+        # batched version
+        if self._communication_batch_size > 0:
 
-            received_any = False
-            req_recv = [
-                self._comm.irecv(source=i, tag=TAG_DATA)
-                for i in range(self._size)
-                if i != self._rank
-            ]
+            while received_any:
 
-            # asynchronous
-            for i, req in enumerate(req_recv):
-                try:
-                    done, data = req.test()
-                    if done:
-                        received_any = True
-                        n_received += 1
-                        x, y, infos = data
-                        self._history.append(x, y, infos)
-                    else:
-                        req.cancel()
-                except pickle.UnpicklingError as e:
-                    logging.error(f"UnpicklingError for request {i}")
+                received_any = False
+                size_processed = 0
+
+                while size_processed < self._size:
+
+                    batch_size = min(
+                        self._size - size_processed, self._communication_batch_size
+                    )
+
+                    req_recv = [
+                        self._comm.irecv(source=i, tag=TAG_DATA)
+                        for i in range(size_processed, size_processed + batch_size)
+                        if i != self._rank
+                    ]
+
+                    # asynchronous
+                    for i, req in enumerate(req_recv):
+                        try:
+                            done, data = req.test()
+                            if done:
+                                received_any = True
+                                n_received += 1
+                                x, y, infos = data
+                                self._history.append(x, y, infos)
+                            else:
+                                req.cancel()
+                        except pickle.UnpicklingError as e:
+                            logging.error(f"UnpicklingError for request {i}")
+
+                    size_processed += batch_size
+                    logging.info(f"Processed {size_processed/self._size*100:.2f}%")
+
+        else:
+
+            while received_any:
+
+                received_any = False
+                req_recv = [
+                    self._comm.irecv(source=i, tag=TAG_DATA)
+                    for i in range(self._size)
+                    if i != self._rank
+                ]
+
+                # asynchronous
+                for i, req in enumerate(req_recv):
+                    try:
+                        done, data = req.test()
+                        if done:
+                            received_any = True
+                            n_received += 1
+                            x, y, infos = data
+                            self._history.append(x, y, infos)
+                        else:
+                            req.cancel()
+                    except pickle.UnpicklingError as e:
+                        logging.error(f"UnpicklingError for request {i}")
         logging.info(
             f"Received {n_received} configurations in {time.time() - t1:.4f} sec."
         )
@@ -596,5 +646,5 @@ class DMBSMPI:
         #     writer.writerows(list(data.values()))
 
         logging.info("Checkpointing done")
-        
+
         return results
