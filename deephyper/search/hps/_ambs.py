@@ -33,6 +33,9 @@ MAP_acq_func = {
     "UCB": "LCB",
 }
 
+MAP_filter_failures = {
+    "min": "max"
+}
 
 class AMBS(Search):
     """Asynchronous Model-Based Search based on the `Scikit-Optimized Optimizer <https://scikit-optimize.github.io/stable/modules/generated/skopt.Optimizer.html#skopt.Optimizer>`_.
@@ -52,6 +55,9 @@ class AMBS(Search):
         filter_duplicated (bool, optional): Force the optimizer to sample unique points until the search space is "exhausted" in the sens that no new unique points can be found given the sampling size ``n_points``. Defaults to ``True``.
         liar_strategy (str, optional): Definition of the constant value use for the Liar strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max"]`` . Defaults to ``"cl_max"``.
         n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the Bayesian optimization. A value of ``-1`` will use all available cores. Defaults to ``1``.
+        n_initial_poinst (int, optional): Number of collected objectives required before fitting the surrogate-model. Defaults to ``10``.
+        sync_communcation (bool, optional): Performs the search in a batch-synchronous manner. Defaults to ``False``.
+        filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. Defaults to ``"mean"`` to replace by mean of objectives.
     """
 
     # objective value used in case of failure in the run-function
@@ -76,6 +82,7 @@ class AMBS(Search):
         n_jobs: int = 1,  # 32 is good for Theta
         n_initial_points=10,
         sync_communication: bool = False,
+        filter_failures: str="mean",
         **kwargs,
     ):
 
@@ -146,6 +153,7 @@ class AMBS(Search):
                 "filter_duplicated": filter_duplicated,
                 "update_prior": update_prior,
                 "n_jobs": n_jobs,
+                "filter_failures": MAP_filter_failures.get(filter_failures, filter_failures),
             },
             # acquisition function
             acq_func=MAP_acq_func.get(acq_func, acq_func),
@@ -202,24 +210,15 @@ class AMBS(Search):
                 opt_y = []
                 for cfg, obj in new_results:
                     x = list(cfg.values())
-
-                    # manage failed evaluation
-                    if obj == AMBS.FAILED_EVALUATION_VALUE or np.isnan(obj):
-                        logging.warn(
-                            f"Failed objective value for configuration={cfg}; skipping..."
-                        )
-
-                        if len(self._opt.yi) > self._n_initial_points:
-                            # TODO: this should be handled in _opt and refreshed
-                            obj = np.max(
-                                self._opt.yi
-                            )  # giving the worst possible value
-                        else:
-                            continue
-
-                    else:
+                    if np.isreal(obj):
                         opt_X.append(x)
                         opt_y.append(-obj)  #! maximizing
+                    elif type(obj) is str and "F" == obj[0]:
+                        if self._opt_kwargs["acq_optimizer_kwargs"]["filter_failures"] == "ignore":
+                            continue
+                        else:
+                            opt_X.append(x)
+                            opt_y.append("F")
 
                 logging.info(f"Transformation took {time.time() - t1:.4f} sec.")
 
@@ -273,7 +272,8 @@ class AMBS(Search):
         if name == "RF":
             surrogate = skopt.learning.RandomForestRegressor(
                 n_estimators=100,
-                min_samples_leaf=3,
+                max_features=1,
+                # min_samples_leaf=3,
                 n_jobs=n_jobs,
                 random_state=random_state,
             )

@@ -1,18 +1,19 @@
 import asyncio
-import csv
 import copy
+import csv
 import importlib
 import json
 import logging
 import os
-from re import I
 import sys
 import time
 import warnings
+from re import I
 from typing import Dict, List
 
 import numpy as np
 from deephyper.evaluator._job import Job
+from skopt.optimizer import OBJECTIVE_VALUE_FAILURE
 
 EVALUATORS = {
     "mpipool": "_mpi_pool.MPIPoolEvaluator",
@@ -34,7 +35,7 @@ class Evaluator:
         callbacks (list, optional): A list of callbacks to trigger custom actions at the creation or completion of jobs. Defaults to None.
     """
 
-    FAIL_RETURN_VALUE = np.finfo(np.float32).min
+    FAIL_RETURN_VALUE = OBJECTIVE_VALUE_FAILURE
     PYTHON_EXE = os.environ.get("DEEPHYPER_PYTHON_BACKEND", sys.executable)
     assert os.path.isfile(PYTHON_EXE)
 
@@ -145,7 +146,7 @@ class Evaluator:
         job.timestamp_gather = time.time() - self.timestamp
 
         if np.isscalar(job.result):
-            if not (np.isfinite(job.result)):
+            if np.isreal(job.result) and not (np.isfinite(job.result)):
                 job.result = Evaluator.FAIL_RETURN_VALUE
 
         # call callbacks
