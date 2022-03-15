@@ -15,19 +15,17 @@ from mpi4py import MPI
 from deephyper.core.exceptions import SearchTerminationError
 from sklearn.ensemble import GradientBoostingRegressor
 
-TERMINATION = 10
 TAG_INIT = 20
 TAG_DATA = 30
-TAG_TERMINATION = 40
 
 
 class SearchTerminationError(RuntimeError):
     """Raised when a search receives SIGALARM"""
 
 
-class TerminationReceivedError(RuntimeError):
-    """Raised when a rank receive a TERMINATION message"""
-
+MAP_acq_func = {
+    "UCB": "LCB",
+}
 
 class History:
     """History"""
@@ -120,6 +118,11 @@ class DMBSMPI:
         sync_communication_freq: int = 10,
         checkpoint_file: str = "results.csv",
         checkpoint_freq: int = 1,
+        acq_func: str="UCB",
+        acq_optimizer: str="auto",
+        kappa: float = 1.96,
+        xi: float = 0.001,
+
     ):
 
         self._problem = problem
@@ -193,6 +196,18 @@ class DMBSMPI:
         self._timestamp = time.time()
 
         self._history = History()
+
+        if acq_optimizer == "auto":
+            if acq_func == "qUCB":
+                acq_optimizer = "sampling"
+            else:
+                acq_optimizer = "boltzmann_sampling"
+
+        if acq_func == "qUCB":
+            kappa = self._random_state.exponential(kappa, size=self._size)[self._rank]
+            acq_func = "UCB"
+
+
         self._opt = None
         self._opt_space = self._problem.space
         self._opt_kwargs = dict(
@@ -202,8 +217,9 @@ class DMBSMPI:
                 n_jobs,
                 random_state=self._rank_seed,
             ),
-            acq_func="LCB",
-            acq_optimizer="boltzmann_sampling",
+            acq_func=MAP_acq_func.get(acq_func, acq_func),
+            acq_func_kwargs={"xi": xi, "kappa": kappa},
+            acq_optimizer=acq_optimizer,
             acq_optimizer_kwargs={
                 "n_points": 10000,
                 "boltzmann_gamma": 1,
