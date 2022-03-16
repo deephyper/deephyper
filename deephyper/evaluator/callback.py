@@ -77,13 +77,17 @@ class LoggerCallback(Callback):
 
     def on_done(self, job):
         self._n_done += 1
-        if self._best_objective is None:
-            self._best_objective = job.result
-        else:
-            self._best_objective = max(job.result, self._best_objective)
-        print(
-            f"[{self._n_done:05d}] -- best objective: {self._best_objective:.5f} -- received objective: {job.result:.5f}"
-        )
+        if np.isreal(job.result):
+            if self._best_objective is None:
+                self._best_objective = job.result
+            else:
+                self._best_objective = max(job.result, self._best_objective)
+
+            print(
+                f"[{self._n_done:05d}] -- best objective: {self._best_objective:.5f} -- received objective: {job.result:.5f}"
+            )
+        elif type(job.result) is str and "F" == job.result[0]:
+            print(f"[{self._n_done:05d}] -- received failure: {job.result}")
 
 
 class SearchEarlyStopping(Callback):
