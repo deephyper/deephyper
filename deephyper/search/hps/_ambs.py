@@ -25,12 +25,15 @@ except ImportError:
     SDV_INSTALLED = False
 
 # Adapt minimization -> maximization with DeepHyper
-MAP_liar_strategy = {
+MAP_multi_point_strategy = {
     "cl_min": "cl_max",
     "cl_max": "cl_min",
+    "qUCB": "qLCB"
 }
+
 MAP_acq_func = {
     "UCB": "LCB",
+    "qUCB": "qLCB"
 }
 
 MAP_filter_failures = {
@@ -53,7 +56,7 @@ class AMBS(Search):
         xi (float, optional): Manage the exploration/exploitation tradeoff of ``"EI"`` and ``"PI"`` acquisition function. Defaults to ``0.001``.
         n_points (int, optional): The number of configurations sampled from the search space to infer each batch of new evaluated configurations.
         filter_duplicated (bool, optional): Force the optimizer to sample unique points until the search space is "exhausted" in the sens that no new unique points can be found given the sampling size ``n_points``. Defaults to ``True``.
-        liar_strategy (str, optional): Definition of the constant value use for the Liar strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max"]`` . Defaults to ``"cl_max"``.
+        multi_point_strategy (str, optional): Definition of the constant value use for the Liar strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max"]`` . Defaults to ``"cl_max"``.
         n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the Bayesian optimization. A value of ``-1`` will use all available cores. Defaults to ``1``.
         n_initial_poinst (int, optional): Number of collected objectives required before fitting the surrogate-model. Defaults to ``10``.
         sync_communcation (bool, optional): Performs the search in a batch-synchronous manner. Defaults to ``False``.
@@ -78,7 +81,7 @@ class AMBS(Search):
         n_points: int = 10000,
         filter_duplicated: bool = True,
         update_prior: bool = False,
-        liar_strategy: str = "cl_max",
+        multi_point_strategy: str = "cl_max",
         n_jobs: int = 1,  # 32 is good for Theta
         n_initial_points=10,
         sync_communication: bool = False,
@@ -95,7 +98,7 @@ class AMBS(Search):
                 f"Parameter 'surrogate_model={surrogate_model}' should have a value in {surrogate_model_allowed}!"
             )
 
-        acq_func_allowed = ["UCB", "EI", "PI", "gp_hedge"]
+        acq_func_allowed = ["UCB", "EI", "PI", "gp_hedge", "qUCB"]
         if not (acq_func in acq_func_allowed):
             raise ValueError(
                 f"Parameter 'acq_func={acq_func}' should have a value in {acq_func_allowed}!"
@@ -115,17 +118,17 @@ class AMBS(Search):
                 f"Parameter {filter_duplicated=} should be a boolean value!"
             )
 
-        liar_strategy_allowed = ["cl_min", "cl_mean", "cl_max", "topk", "boltzmann"]
-        if not (liar_strategy in liar_strategy_allowed):
+        multi_point_strategy_allowed = ["cl_min", "cl_mean", "cl_max", "topk", "boltzmann", "qUCB"]
+        if not (multi_point_strategy in multi_point_strategy_allowed):
             raise ValueError(
-                f"Parameter {liar_strategy=} should have a value in {liar_strategy_allowed}!"
+                f"Parameter multi_point_strategy={multi_point_strategy} should have a value in {multi_point_strategy_allowed}!"
             )
 
         if not (type(n_jobs) is int):
             raise ValueError(f"Parameter {n_jobs=} should be an integer value!")
 
         self._n_initial_points = n_initial_points
-        self._liar_strategy = MAP_liar_strategy.get(liar_strategy, liar_strategy)
+        self._multi_point_strategy = MAP_multi_point_strategy.get(multi_point_strategy, multi_point_strategy)
         self._fitted = False
 
         # check if it is possible to convert the ConfigSpace to standard skopt Space
@@ -232,7 +235,7 @@ class AMBS(Search):
                 logging.info(f"Asking {len(new_results)} new configurations...")
                 t1 = time.time()
                 new_X = self._opt.ask(
-                    n_points=len(new_results), strategy=self._liar_strategy
+                    n_points=len(new_results), strategy=self._multi_point_strategy
                 )
                 logging.info(f"Asking took {time.time() - t1:.4f} sec.")
 
