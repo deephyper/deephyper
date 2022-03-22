@@ -392,6 +392,11 @@ class AMBS(Search):
             df = pd.read_csv(df)
         assert isinstance(df, pd.DataFrame)
 
+        # filter failures
+        df = df[~df.objective.str.startswith("F")]
+        df.objective = df.objective.astype(float)
+
+        # print(df.objective.values)
         q_val = np.quantile(df.objective.values, q)
         req_df = df.loc[df["objective"] > q_val]
         req_df = req_df.drop(
@@ -479,6 +484,10 @@ class AMBS(Search):
         if type(df) is str and df[-4:] == ".csv":
             df = pd.read_csv(df)
         assert isinstance(df, pd.DataFrame)
+
+        # filter failures
+        df = df[~df.objective.str.startswith("F")]
+        df.objective = df.objective.astype(float)
 
         cst = self._problem.space
         if type(cst) != CS.ConfigurationSpace:
