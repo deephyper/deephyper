@@ -330,3 +330,8 @@ class HpProblem:
             list(dict): list of starting points where each point is a dict of values. Each key are correspnding to dimensions of the space.
         """
         return [{k: v for k, v in zip(list(self._space), p)} for p in self.references]
+
+    @property
+    def default_configuration(self):
+        config = self._space.get_default_configuration().get_dictionary()
+        return config
