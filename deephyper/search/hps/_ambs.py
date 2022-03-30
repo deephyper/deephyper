@@ -58,7 +58,7 @@ class AMBS(Search):
         filter_duplicated (bool, optional): Force the optimizer to sample unique points until the search space is "exhausted" in the sens that no new unique points can be found given the sampling size ``n_points``. Defaults to ``True``.
         multi_point_strategy (str, optional): Definition of the constant value use for the Liar strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max"]`` . Defaults to ``"cl_max"``.
         n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the Bayesian optimization. A value of ``-1`` will use all available cores. Defaults to ``1``.
-        n_initial_poinst (int, optional): Number of collected objectives required before fitting the surrogate-model. Defaults to ``10``.
+        n_initial_points (int, optional): Number of collected objectives required before fitting the surrogate-model. Defaults to ``10``.
         sync_communcation (bool, optional): Performs the search in a batch-synchronous manner. Defaults to ``False``.
         filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. Defaults to ``"mean"`` to replace by mean of objectives.
     """

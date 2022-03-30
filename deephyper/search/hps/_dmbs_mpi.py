@@ -27,6 +27,7 @@ MAP_acq_func = {
     "UCB": "LCB",
 }
 
+
 class History:
     """History"""
 
@@ -118,11 +119,11 @@ class DMBSMPI:
         sync_communication_freq: int = 10,
         checkpoint_file: str = "results.csv",
         checkpoint_freq: int = 1,
-        acq_func: str="UCB",
-        acq_optimizer: str="auto",
+        acq_func: str = "UCB",
+        acq_optimizer: str = "auto",
         kappa: float = 1.96,
         xi: float = 0.001,
-
+        surrogate_model_kwargs: dict = None,
     ):
 
         self._problem = problem
@@ -207,13 +208,13 @@ class DMBSMPI:
             kappa = self._random_state.exponential(kappa, size=self._size)[self._rank]
             acq_func = "UCB"
 
-
         self._opt = None
         self._opt_space = self._problem.space
         self._opt_kwargs = dict(
             dimensions=self._opt_space,
             base_estimator=self._get_surrogate_model(
                 surrogate_model,
+                surrogate_model_kwargs,
                 n_jobs,
                 random_state=self._rank_seed,
             ),
@@ -557,7 +558,11 @@ class DMBSMPI:
         return results
 
     def _get_surrogate_model(
-        self, name: str, n_jobs: int = None, random_state: int = None
+        self,
+        name: str,
+        surrogate_model_kwargs: dict = None,
+        n_jobs: int = None,
+        random_state: int = None,
     ):
         """Get a surrogate model from Scikit-Optimize.
 
@@ -575,12 +580,16 @@ class DMBSMPI:
             )
 
         if name == "RF":
-            surrogate = skopt.learning.RandomForestRegressor(
+            default_kwargs = dict(
                 n_estimators=100,
                 min_samples_leaf=3,
                 n_jobs=n_jobs,
+                max_features="log2",
                 random_state=random_state,
             )
+            if surrogate_model_kwargs is not None:
+                default_kwargs.update(surrogate_model_kwargs)
+            surrogate = skopt.learning.RandomForestRegressor(**default_kwargs)
         elif name == "ET":
             surrogate = skopt.learning.ExtraTreesRegressor(
                 n_estimators=100,
