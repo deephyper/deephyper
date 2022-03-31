@@ -216,6 +216,7 @@ class DMBSMPI:
             base_estimator=self._get_surrogate_model(
                 surrogate_model,
                 surrogate_model_kwargs,
+                n_jobs,
             ),
             acq_func=MAP_acq_func.get(acq_func, acq_func),
             acq_func_kwargs={"xi": xi, "kappa": kappa},
@@ -562,6 +563,7 @@ class DMBSMPI:
         self,
         name: str,
         surrogate_model_kwargs: dict = None,
+        n_jobs: int = 1,
     ):
         """Get a surrogate model from Scikit-Optimize.
 
@@ -582,7 +584,7 @@ class DMBSMPI:
             default_kwargs = dict(
                 n_estimators=100,
                 min_samples_leaf=3,
-                n_jobs=1,
+                n_jobs=n_jobs,
                 max_features="log2",
                 random_state=self._rank_seed,
             )
@@ -593,7 +595,7 @@ class DMBSMPI:
             default_kwargs = dict(
                 n_estimators=100,
                 min_samples_leaf=3,
-                n_jobs=1,
+                n_jobs=n_jobs,
                 max_features="log2",
                 random_state=self._rank_seed,
             )
@@ -602,7 +604,7 @@ class DMBSMPI:
             surrogate = skopt.learning.ExtraTreesRegressor(**default_kwargs)
         elif name == "GBRT":
             default_kwargs = dict(
-                n_jobs=1,
+                n_jobs=n_jobs,
                 random_state=self._rank_seed,
             )
             if surrogate_model_kwargs is not None:
