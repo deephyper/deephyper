@@ -1,5 +1,3 @@
-import csv
-import enum
 import logging
 import os
 import pathlib
@@ -82,6 +80,7 @@ class History:
     def reset_buffer(self):
         self.n_buffered = 0
 
+#TODO: bring all parameters of the surrogate_model in surrogate_model_kwargs
 
 class DMBSMPI:
     """Distributed Model-Based Search based on the `Scikit-Optimized Optimizer <https://scikit-optimize.github.io/stable/modules/generated/skopt.Optimizer.html#skopt.Optimizer>`_.
@@ -112,6 +111,7 @@ class DMBSMPI:
         run_function_kwargs: dict = None,
         n_jobs: int = 1,
         surrogate_model: str = "RF",
+        surrogate_model_kwargs: dict = None,
         n_initial_points: int = 10,
         lazy_socket_allocation: bool = True,
         communication_batch_size=2048,
@@ -123,7 +123,8 @@ class DMBSMPI:
         acq_optimizer: str = "auto",
         kappa: float = 1.96,
         xi: float = 0.001,
-        surrogate_model_kwargs: dict = None,
+        sample_max_size: int=5_000,
+        sample_strategy: str="quantile"
     ):
 
         self._problem = problem
@@ -215,8 +216,6 @@ class DMBSMPI:
             base_estimator=self._get_surrogate_model(
                 surrogate_model,
                 surrogate_model_kwargs,
-                n_jobs,
-                random_state=self._rank_seed,
             ),
             acq_func=MAP_acq_func.get(acq_func, acq_func),
             acq_func_kwargs={"xi": xi, "kappa": kappa},
@@ -229,6 +228,8 @@ class DMBSMPI:
             },
             n_initial_points=n_initial_points,
             random_state=self._rank_seed,
+            sample_max_size=sample_max_size,
+            sample_strategy=sample_strategy
         )
 
     def send_all(self, x, y, infos):
@@ -561,8 +562,6 @@ class DMBSMPI:
         self,
         name: str,
         surrogate_model_kwargs: dict = None,
-        n_jobs: int = None,
-        random_state: int = None,
     ):
         """Get a surrogate model from Scikit-Optimize.
 
@@ -583,26 +582,33 @@ class DMBSMPI:
             default_kwargs = dict(
                 n_estimators=100,
                 min_samples_leaf=3,
-                n_jobs=n_jobs,
+                n_jobs=1,
                 max_features="log2",
-                random_state=random_state,
+                random_state=self._rank_seed,
             )
             if surrogate_model_kwargs is not None:
                 default_kwargs.update(surrogate_model_kwargs)
             surrogate = skopt.learning.RandomForestRegressor(**default_kwargs)
         elif name == "ET":
-            surrogate = skopt.learning.ExtraTreesRegressor(
+            default_kwargs = dict(
                 n_estimators=100,
                 min_samples_leaf=3,
-                n_jobs=n_jobs,
-                random_state=random_state,
+                n_jobs=1,
+                max_features="log2",
+                random_state=self._rank_seed,
             )
+            if surrogate_model_kwargs is not None:
+                default_kwargs.update(surrogate_model_kwargs)
+            surrogate = skopt.learning.ExtraTreesRegressor(**default_kwargs)
         elif name == "GBRT":
-
-            gbrt = GradientBoostingRegressor(n_estimators=30, loss="quantile")
-            surrogate = skopt.learning.GradientBoostingQuantileRegressor(
-                base_estimator=gbrt, n_jobs=n_jobs, random_state=random_state
+            default_kwargs = dict(
+                n_jobs=1,
+                random_state=self._rank_seed,
             )
+            if surrogate_model_kwargs is not None:
+                default_kwargs.update(surrogate_model_kwargs)
+            gbrt = GradientBoostingRegressor(n_estimators=30, loss="quantile")
+            surrogate = skopt.learning.GradientBoostingQuantileRegressor(base_estimator=gbrt, **default_kwargs)
         else:  # for DUMMY and GP
             surrogate = name
 
