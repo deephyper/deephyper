@@ -403,10 +403,23 @@ class AMBS(Search):
             columns=["job_id", "objective", "timestamp_submit", "timestamp_gather"]
         )
 
+        # constraints
+        scalar_constraints = []
+        for hp_name in self._problem.space:
+            hp = self._problem.space.get_hyperparameter(hp_name)
+
+            #TODO: Categorical and Ordinal are both considered non-ordered for SDV
+            #TODO: it could be useful to use the "category"  type of Pandas and the ordered=True/False argument
+            #TODO: to extend the capability of SDV
+            if isinstance(hp, csh.CategoricalHyperparameter) or isinstance(hp, csh.OrdinalHyperparameter):
+                req_df[hp_name] = req_df[hp_name].astype("O")
+            else:
+                scalar_constraints.append(sdv.constraints.Between(hp_name, hp.lower, hp.upper))
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
 
-            model = sdv.tabular.TVAE()
+            model = sdv.tabular.TVAE(constraints=scalar_constraints)
             model.fit(req_df)
             synthetic_data = model.sample(n_samples)
             score = sdv.evaluation.evaluate(synthetic_data, req_df)
