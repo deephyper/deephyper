@@ -406,15 +406,16 @@ class AMBS(Search):
         # constraints
         scalar_constraints = []
         for hp_name in self._problem.space:
-            hp = self._problem.space.get_hyperparameter(hp_name)
+            if hp_name in req_df.columns:
+                hp = self._problem.space.get_hyperparameter(hp_name)
 
-            #TODO: Categorical and Ordinal are both considered non-ordered for SDV
-            #TODO: it could be useful to use the "category"  type of Pandas and the ordered=True/False argument
-            #TODO: to extend the capability of SDV
-            if isinstance(hp, csh.CategoricalHyperparameter) or isinstance(hp, csh.OrdinalHyperparameter):
-                req_df[hp_name] = req_df[hp_name].astype("O")
-            else:
-                scalar_constraints.append(sdv.constraints.Between(hp_name, hp.lower, hp.upper))
+                #TODO: Categorical and Ordinal are both considered non-ordered for SDV
+                #TODO: it could be useful to use the "category"  type of Pandas and the ordered=True/False argument
+                #TODO: to extend the capability of SDV
+                if isinstance(hp, csh.CategoricalHyperparameter) or isinstance(hp, csh.OrdinalHyperparameter):
+                    req_df[hp_name] = req_df[hp_name].astype("O")
+                else:
+                    scalar_constraints.append(sdv.constraints.Between(hp_name, hp.lower, hp.upper))
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
