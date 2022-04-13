@@ -19,7 +19,7 @@ platform_infos = platform.platform()
 
 
 # What packages are required for this module to be executed?
-REQUIRED_ALL = [
+REQUIRED = [
     "ConfigSpace>=0.4.20",
     # "deepspace>=0.0.5", # benchmarks sub-module
     "dh-scikit-optimize>=0.9.6",
