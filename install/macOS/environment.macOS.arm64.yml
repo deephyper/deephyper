@@ -1,0 +1,10 @@
+name: dh-arm
+channels:
+  - conda-forge
+dependencies:
+  - python>=3.7,<3.10
+  - pip
+  - msgpack-python
+  - pandas
+  - pip:
+    - -r requirements.macOS.arm64.txt

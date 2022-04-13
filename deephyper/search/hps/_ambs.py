@@ -14,16 +14,6 @@ from deephyper.search._search import Search
 from sklearn.ensemble import GradientBoostingRegressor
 from skopt.utils import use_named_args
 
-# make SDV optional
-try:
-    import sdv
-    # from sdv.evaluation import evaluate
-    # from sdv.tabular import TVAE
-    SDV_INSTALLED = True
-except ImportError:
-    logging.warn("Synthetic-Data Vault is not installed!")
-    SDV_INSTALLED = False
-
 # Adapt minimization -> maximization with DeepHyper
 MAP_multi_point_strategy = {
     "cl_min": "cl_max",
@@ -371,7 +361,7 @@ class AMBS(Search):
         self._opt.tell(x, [-yi for yi in y])
 
     def fit_generative_model(self, df, q=0.90, n_iter_optimize=0, n_samples=100):
-        """_summary_
+        """Learn the distribution of hyperparameters for the top-``(1-q)x100%`` configurations and sample from this distribution. It can be used for transfer learning.
 
         Args:
             df (str|DataFrame): a dataframe or path to CSV from a previous search.
@@ -383,10 +373,11 @@ class AMBS(Search):
             tuple: ``score, model`` which are a metric which measures the quality of the learned generated-model and the generative model respectively.
         """
         # to make sdv optional
-        if not (SDV_INSTALLED):
-            raise RuntimeError(
-                "Synthethic-Data Vault is not installed, run 'pip install sdv'"
-            )
+        try:
+            import sdv
+        except ImportError as e:
+            print("Install SDV with: pip install sdv")
+            raise e
 
         if type(df) is str and df[-4:] == ".csv":
             df = pd.read_csv(df)

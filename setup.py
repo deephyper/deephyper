@@ -21,21 +21,21 @@ platform_infos = platform.platform()
 # What packages are required for this module to be executed?
 REQUIRED_ALL = [
     "ConfigSpace>=0.4.20",
-    "deepspace>=0.0.5",
-    "dh-scikit-optimize==0.9.6",
+    # "deepspace>=0.0.5", # benchmarks sub-module
+    "dh-scikit-optimize>=0.9.6",
     "dm-tree",
     "Jinja2",
-    "joblib>=0.10.3",
-    "matplotlib>=3.0.3",
-    "networkx",
+    # "joblib>=0.10.3",
+    # "matplotlib>=3.0.3", # analytics
+    #* "networkx", # NAS
     "numpy",  # ==1.19.4",  # working with 1.20.1
-    "openml>=0.10.2",
+    # "openml>=0.10.2", # benchmarks sub-module
     "pandas>=0.24.2",
-    "pydot",
-    "ray[default]>=1.3.0",
+    # "pydot", # NAS
+    # "ray[default]>=1.3.0", # evaluator and ensemble
     "scikit-learn>=0.23.1",
-    "tqdm",
-    "xgboost",
+    # "tqdm",
+    # "xgboost", # autosklearm
 ]
 
 REQUIRED_PLATFORM = {
@@ -48,15 +48,29 @@ REQUIRED_PLATFORM = {
     ]
 }
 
-if "macOS" in platform_infos and "arm64" in platform_infos:
-    REQUIRED = REQUIRED_ALL + REQUIRED_PLATFORM["macOS-arm64"]
-else: # x86_64
-    REQUIRED = REQUIRED_ALL + REQUIRED_PLATFORM["default"]
+#! only required for NAS features
+REQUIRED_NAS = [
+    "networkx"
+]
 
+REQUIRED_NAS_PLATFORM = {
+    "default": [
+        "tensorflow>=2.0.0",
+        "tensorflow_probability"
+    ],
+    "macOS-arm64": [
+        "tensorflow_probability~=0.14"
+    ]
+}
+if "macOS" in platform_infos and "arm64" in platform_infos:
+    REQUIRED_NAS = REQUIRED_NAS + REQUIRED_PLATFORM["macOS-arm64"]
+else: # x86_64
+    REQUIRED_NAS = REQUIRED_NAS + REQUIRED_PLATFORM["default"]
 
 
 # What packages are optional?
 EXTRAS = {
+    "nas": REQUIRED_NAS,
     "dev": [
         # Test
         "codecov",

@@ -1,4 +1,3 @@
-import itertools as it
 import os
 import traceback
 
@@ -10,7 +9,6 @@ from deephyper.ensemble import BaseEnsemble
 from deephyper.nas.metrics import selectMetric
 from deephyper.nas.run._util import set_memory_growth_for_visible_gpus
 from deephyper.core.exceptions import DeephyperRuntimeError
-from joblib import Parallel, delayed
 from pandas import DataFrame
 
 

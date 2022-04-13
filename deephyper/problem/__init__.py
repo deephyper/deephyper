@@ -3,6 +3,14 @@
 from ConfigSpace import *
 
 from ._hyperparameter import HpProblem
-from ._neuralarchitecture import NaProblem
 
-__all__ = ["HpProblem", "NaProblem"]
+__all__ = ["HpProblem"]
+
+try:
+    from ._neuralarchitecture import NaProblem
+    __all__.append("NaProblem")
+except ModuleNotFoundError as e:
+    if not("tensorflow" in str(e)):
+        raise e
+
+__all__ = ["HpProblem"]
