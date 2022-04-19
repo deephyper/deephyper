@@ -60,10 +60,10 @@ else: # x86_64
     REQUIRED_NAS = REQUIRED_NAS + REQUIRED_NAS_PLATFORM["default"]
 
 #! Requirements for Pipeline Optimization for ML (popt)
-REQUIRED_POPT = ...
+REQUIRED_POPT = []
 
 #! Requirements for Automated Deep Ensemble with Uncertainty Quantification (AutoDEUQ)
-REQUIRED_AUTODEUQ = ...
+REQUIRED_AUTODEUQ = []
 
 
 # What packages are optional?
