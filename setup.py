@@ -24,7 +24,7 @@ REQUIRED = [
     # "deepspace>=0.0.5", # benchmarks sub-module
     "dh-scikit-optimize>=0.9.6",
     "dm-tree",
-    "Jinja2",
+    "Jinja2<3.1",
     # "joblib>=0.10.3",
     # "matplotlib>=3.0.3", # analytics
     #* "networkx", # NAS
