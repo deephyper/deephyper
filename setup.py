@@ -49,7 +49,7 @@ REQUIRED = [
     "pydot",
     "ray[default]>=1.3.0",
     "pandas>=0.24.2",
-    "Jinja2",
+    "Jinja2<3.1",
     "ConfigSpace>=0.4.20",
     "xgboost",
     "typeguard",
