@@ -119,7 +119,17 @@ class CBO(Search):
             raise ValueError(f"Parameter n_jobs={n_jobs} should be an integer value!")
 
         self._n_initial_points = n_initial_points
-        self._initial_points = [] if initial_points is None else initial_points
+        self._initial_points = []
+        if initial_points is not None and len(initial_points) > 0:
+            for point in initial_points:
+                if isinstance(point, list):
+                    self._initial_points.append(point)
+                elif isinstance(point, dict):
+                    self._initial_points.append([point[hp_name] for hp_name in problem.hyperparameter_names])
+                else:
+                    raise ValueError(f"Initial points should be dict or list but {type(point)} was given!")
+
+
         self._multi_point_strategy = MAP_multi_point_strategy.get(
             multi_point_strategy, multi_point_strategy
         )
@@ -158,6 +168,7 @@ class CBO(Search):
             acq_func=MAP_acq_func.get(acq_func, acq_func),
             acq_func_kwargs={"xi": xi, "kappa": kappa},
             n_initial_points=self._n_initial_points,
+            initial_points=self._initial_points,
             random_state=self._random_state,
         )
 
@@ -175,11 +186,25 @@ class CBO(Search):
 
         num_evals_done = 0
 
-        # Filling available nodes at start
-        logging.info(f"Generating {self._evaluator.num_workers} initial points...")
+        logging.info(f"Asking {self._evaluator.num_workers} initial configurations...")
         t1 = time.time()
-        self._evaluator.submit(self.get_random_batch(size=self._evaluator.num_workers))
-        logging.info(f"Generation took: {time.time() - t1:.4f} sec.")
+        new_X = self._opt.ask(n_points=self._evaluator.num_workers)
+        logging.info(f"Asking took {time.time() - t1:.4f} sec.")
+
+        # Transform list to dict configurations
+        logging.info(f"Transforming configurations to dict...")
+        t1 = time.time()
+        new_batch = []
+        for x in new_X:
+            new_cfg = self.to_dict(x)
+            new_batch.append(new_cfg)
+        logging.info(f"Transformation took {time.time() - t1:.4f} sec.")
+
+        # submit new configurations
+        logging.info(f"Submitting {len(new_batch)} configurations...")
+        t1 = time.time()
+        self._evaluator.submit(new_batch)
+        logging.info(f"Submition took {time.time() - t1:.4f} sec.")
 
         # Main loop
         while max_evals < 0 or num_evals_done < max_evals:
@@ -692,8 +717,8 @@ def replace_nan(x):
 
 
 class AMBS(CBO):
-    """"'AMBS' is now deprecated and will be removed in the future use 'CBO' (Centralized Bayesian Optimization) instead!"
-    """
+    """ "'AMBS' is now deprecated and will be removed in the future use 'CBO' (Centralized Bayesian Optimization) instead!" """
+
     def __init__(
         self,
         problem,

@@ -88,6 +88,8 @@ class Optimizer(object):
         Number of evaluations of `func` with initialization points
         before approximating it with `base_estimator`. Initial point
         generator can be changed by setting `initial_point_generator`.
+    
+    initial_points : list, default: None
 
     initial_point_generator : str, InitialPointGenerator instance, \
             default: `"random"`
@@ -189,6 +191,7 @@ class Optimizer(object):
         base_estimator="gp",
         n_random_starts=None,
         n_initial_points=10,
+        initial_points=None,
         initial_point_generator="random",
         n_jobs=1,
         acq_func="gp_hedge",
@@ -327,18 +330,19 @@ class Optimizer(object):
 
         self.space = Space(dimensions, model_sdv=self.model_sdv)
 
-        self._initial_samples = None
+        self._initial_samples = [] if initial_points is None else initial_points[:]
         self._initial_point_generator = cook_initial_point_generator(
             initial_point_generator
         )
 
         if self._initial_point_generator is not None:
             transformer = self.space.get_transformer()
-            self._initial_samples = self._initial_point_generator.generate(
+            self._initial_samples = self._initial_samples + self._initial_point_generator.generate(
                 self.space.dimensions,
-                n_initial_points,
+                n_initial_points-len(self._initial_samples),
                 random_state=self.rng.randint(0, np.iinfo(np.int32).max),
             )
+            print(f"{self._initial_samples=}")
             self.space.set_transformer(transformer)
 
         # record categorical and non-categorical indices
@@ -452,8 +456,14 @@ class Optimizer(object):
 
         if n_points > 0 and (
             self._n_initial_points > 0 or self.base_estimator_ is None
-        ):
-            X = self._ask_random_points(size=n_points)
+        ):  
+            if len(self._initial_samples) == 0:
+                X = self._ask_random_points(size=n_points)
+            else:
+                n = min(len(self._initial_samples), n_points)
+                X = self._initial_samples[:n]
+                self._initial_samples = self._initial_samples[n:]
+                X = X + self._ask_random_points(size=(n_points - n))
             self.sampled.extend(X)
             return X
 
