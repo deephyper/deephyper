@@ -21,21 +21,18 @@ platform_infos = platform.platform()
 # What packages are required for this module to be executed?
 REQUIRED = [
     "ConfigSpace>=0.4.20",
-    # "deepspace>=0.0.5", # benchmarks sub-module
-    "dh-scikit-optimize>=0.9.6",
     "dm-tree",
     "Jinja2<3.1",
     # "joblib>=0.10.3",
     # "matplotlib>=3.0.3", # analytics
-    #* "networkx", # NAS
     "numpy",  # ==1.19.4",  # working with 1.20.1
     # "openml>=0.10.2", # benchmarks sub-module
     "pandas>=0.24.2",
-    # "pydot", # NAS
+    "packaging",
     # "ray[default]>=1.3.0", # evaluator and ensemble
     "scikit-learn>=0.23.1",
-    # "tqdm",
-    # "xgboost", # autosklearm
+    "scipy>=0.19.1",
+    "tqdm>=4.64.0",
 ]
 
 
@@ -60,7 +57,9 @@ else: # x86_64
     REQUIRED_NAS = REQUIRED_NAS + REQUIRED_NAS_PLATFORM["default"]
 
 #! Requirements for Pipeline Optimization for ML (popt)
-REQUIRED_POPT = []
+REQUIRED_POPT = [
+    "xgboost"
+]
 
 #! Requirements for Automated Deep Ensemble with Uncertainty Quantification (AutoDEUQ)
 REQUIRED_AUTODEUQ = []

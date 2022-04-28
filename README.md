@@ -67,7 +67,7 @@ pip install -e 'deephyper/[dev]'
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/deephyper/tutorials/blob/main/tutorials/colab/DeepHyper_101.ipynb)
 
-The black-box function named `run` is defined by taking an input dictionnary named `config` which contains the different variables to optimize. Then the run-function is binded to an `Evaluator` in charge of distributing the computation of multiple evaluations. Finally, a Bayesian search named `AMBS` is created and executed to find the values of config which maximize the return value of `run(config)`.
+The black-box function named `run` is defined by taking an input dictionnary named `config` which contains the different variables to optimize. Then the run-function is binded to an `Evaluator` in charge of distributing the computation of multiple evaluations. Finally, a Bayesian search named `CBO` is created and executed to find the values of config which maximize the return value of `run(config)`.
 
 ```python
 def run(config: dict):
@@ -78,7 +78,7 @@ def run(config: dict):
 # when loading the 'run' function from a subprocess
 if __name__ == "__main__":
     from deephyper.problem import HpProblem
-    from deephyper.search.hps import AMBS
+    from deephyper.search.hps import CBO
     from deephyper.evaluator import Evaluator
 
     # define the variable you want to optimize
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     )
 
     # define your search and execute it
-    search = AMBS(problem, evaluator)
+    search = CBO(problem, evaluator)
 
     results = search.search(max_evals=100)
     print(results)

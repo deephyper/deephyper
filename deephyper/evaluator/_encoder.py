@@ -1,13 +1,13 @@
-from inspect import isclass
 import json
 import types
 import uuid
+from inspect import isclass
 
 import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh
-import skopt
+import deephyper.skopt
+import numpy as np
 from ConfigSpace.read_and_write import json as cs_json
-from numpy import bool_, floating, integer, ndarray
 
 
 class Encoder(json.JSONEncoder):
@@ -18,17 +18,17 @@ class Encoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, uuid.UUID):
             return str(obj)
-        elif isinstance(obj, integer):
+        elif isinstance(obj, np.integer):
             return int(obj)
-        elif isinstance(obj, floating):
+        elif isinstance(obj, np.floating):
             return float(obj)
-        elif isinstance(obj, bool_):
+        elif isinstance(obj, np.bool_):
             return bool(obj)
-        elif isinstance(obj, ndarray):
+        elif isinstance(obj, np.ndarray):
             return obj.tolist()
         elif isinstance(obj, types.FunctionType) or isclass(obj):
             return f"{obj.__module__}.{obj.__name__}"
-        elif isinstance(obj, skopt.space.Dimension):
+        elif isinstance(obj, deephyper.skopt.space.Dimension):
             return str(obj)
         elif isinstance(obj, csh.Hyperparameter):
             return str(obj)

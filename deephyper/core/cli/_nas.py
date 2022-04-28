@@ -92,10 +92,13 @@ def build_parser_from(cls):
     evaluator_added_arguments = add_arguments_from_signature(parser, Evaluator)
 
     for eval_name, eval_cls in EVALUATORS.items():
-        eval_cls = load_attr(f"deephyper.evaluator.{eval_cls}")
-        add_arguments_from_signature(
-            parser, eval_cls, prefix=eval_name, exclude=evaluator_added_arguments
-        )
+        try:
+            eval_cls = load_attr(f"deephyper.evaluator.{eval_cls}")
+            add_arguments_from_signature(
+                parser, eval_cls, prefix=eval_name, exclude=evaluator_added_arguments
+            )
+        except ModuleNotFoundError as e: # some evaluators are optional
+            pass
 
     return parser
 

@@ -4,10 +4,11 @@ import ConfigSpace as cs
 import numpy as np
 from deephyper.evaluator import Evaluator
 from deephyper.problem import HpProblem
+from deephyper.search.hps import CBO
 from deephyper.search.hps import AMBS
 
 
-class AMBSTest(unittest.TestCase):
+class CBOTest(unittest.TestCase):
     def test_random_seed(self):
 
         problem = HpProblem()
@@ -18,14 +19,14 @@ class AMBSTest(unittest.TestCase):
 
         create_evaluator = lambda: Evaluator.create(run, method="serial")
 
-        search = AMBS(
+        search = CBO(
             problem, create_evaluator(), random_state=42, surrogate_model="DUMMY"
         )
 
         res1 = search.search(max_evals=4)
         res1_array = res1[["x"]].to_numpy()
 
-        search = AMBS(
+        search = CBO(
             problem, create_evaluator(), random_state=42, surrogate_model="DUMMY"
         )
         res2 = search.search(max_evals=4)
@@ -42,27 +43,25 @@ class AMBSTest(unittest.TestCase):
 
         def run(config):
 
-            print(config)
-
             assert np.issubdtype(type(config["x_int"]), np.integer)
-            assert np.issubdtype(type(config["x_float"]), np.float)
+            assert np.issubdtype(type(config["x_float"]), float)
 
             if config["x_cat"] == 0:
                 assert np.issubdtype(type(config["x_cat"]), np.integer)
             elif config["x_cat"] == "1":
                 assert type(config["x_cat"]) is str or type(config["x_cat"]) is np.str_
             else:
-                assert np.issubdtype(type(config["x_cat"]), np.float)
+                assert np.issubdtype(type(config["x_cat"]), float)
 
             return 0
 
         create_evaluator = lambda: Evaluator.create(run, method="serial")
 
-        AMBS(
+        CBO(
             problem, create_evaluator(), random_state=42, surrogate_model="DUMMY"
         ).search(10)
 
-        AMBS(problem, create_evaluator(), random_state=42, surrogate_model="RF").search(
+        CBO(problem, create_evaluator(), random_state=42, surrogate_model="RF").search(
             10
         )
 
@@ -74,23 +73,21 @@ class AMBSTest(unittest.TestCase):
 
         def run(config):
 
-            print(config)
-
             assert np.issubdtype(type(config["x_int"]), np.integer)
-            assert np.issubdtype(type(config["x_float"]), np.float)
+            assert np.issubdtype(type(config["x_float"]), float)
 
             return 0
 
         create_evaluator = lambda: Evaluator.create(run, method="serial")
 
-        AMBS(
+        CBO(
             problem, create_evaluator(), random_state=42, surrogate_model="DUMMY"
         ).search(10)
 
-        AMBS(problem, create_evaluator(), random_state=42, surrogate_model="RF").search(
+        CBO(problem, create_evaluator(), random_state=42, surrogate_model="RF").search(
             10
         )
-    
+
     def test_gp(self):
 
         # test float hyperparameters
@@ -100,7 +97,7 @@ class AMBSTest(unittest.TestCase):
         def run(config):
             return config["x"]
 
-        AMBS(
+        CBO(
             problem,
             Evaluator.create(run, method="serial"),
             random_state=42,
@@ -114,7 +111,7 @@ class AMBSTest(unittest.TestCase):
         def run(config):
             return config["x"]
 
-        AMBS(
+        CBO(
             problem,
             Evaluator.create(run, method="serial"),
             random_state=42,
@@ -128,7 +125,7 @@ class AMBSTest(unittest.TestCase):
         def run(config):
             return int(config["x"])
 
-        AMBS(
+        CBO(
             problem,
             Evaluator.create(run, method="serial"),
             random_state=42,
@@ -160,9 +157,6 @@ class AMBSTest(unittest.TestCase):
 
         def run(config):
 
-            print(f"x1_int: {type(config['x1_int'])}")
-            print(f"x2_int: {type(config['x2_int'])}")
-
             if config["choice"] == "choice1":
                 assert np.issubdtype(type(config["x1_int"]), np.integer)
             else:
@@ -172,6 +166,6 @@ class AMBSTest(unittest.TestCase):
 
         create_evaluator = lambda: Evaluator.create(run, method="serial")
 
-        AMBS(
+        CBO(
             problem, create_evaluator(), random_state=42, surrogate_model="DUMMY"
         ).search(10)
