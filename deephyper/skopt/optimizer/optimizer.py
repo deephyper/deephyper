@@ -342,7 +342,6 @@ class Optimizer(object):
                 n_initial_points-len(self._initial_samples),
                 random_state=self.rng.randint(0, np.iinfo(np.int32).max),
             )
-            print(f"{self._initial_samples=}")
             self.space.set_transformer(transformer)
 
         # record categorical and non-categorical indices
