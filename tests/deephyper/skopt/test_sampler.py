@@ -33,7 +33,7 @@ CRITERION = ["maximin", "ratio", "correlation", None]
 SAMPLER = ["lhs", "halton", "sobol", "hammersly", "grid"]
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_lhs_centered():
     lhs = Lhs(lhs_type="centered")
     samples = lhs.generate([(0., 1.), ] * 3, 3)
@@ -107,7 +107,7 @@ def test_lhs_random_state(criterion):
     assert_array_equal(h, h2)
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_bit():
     X = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     res = [2, 1, 3, 1, 2, 1, 4, 1, 2, 1]
@@ -120,7 +120,7 @@ def test_bit():
         assert _bit_hi1(X[i]) == res[i]
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_sobol():
     sobol = Sobol()
     x, seed = sobol._sobol(3, 0)
@@ -139,7 +139,7 @@ def test_sobol():
     assert_array_equal(x, [0.625, 0.125, 0.375])
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_generate():
     sobol = Sobol(randomize=False)
     x = sobol.generate([(0., 1.), ] * 3, 4)
@@ -154,7 +154,7 @@ def test_generate():
     assert isinstance(sobol, InitialPointGenerator)
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_van_der_corput():
     x = _van_der_corput_samples(range(12), number_base=10)
     y = [0., 0.1,  0.2,  0.3,  0.4,  0.5,  0.6,  0.7,  0.8,  0.9, 0.01, 0.11]
@@ -165,7 +165,7 @@ def test_van_der_corput():
     assert_array_equal(x, y)
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_halton():
     h = Halton()
     x = h.generate([(0., 1.), ], 9)
@@ -187,7 +187,7 @@ def test_halton():
     assert len(samples[0]) == 2
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_hammersly():
     h = Hammersly()
     x = h.generate([(0., 1.), ] * 2, 4)
@@ -199,7 +199,7 @@ def test_hammersly():
     assert len(samples[0]) == 2
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_primes():
 
     x = _create_primes(1)
@@ -212,7 +212,7 @@ def test_primes():
     assert_array_equal(x, [2, 3, 5, 7, 11, 13, 17, 19])
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_quadrature_combine():
     a = [1, 2]
     b = [[4, 4], [5, 6]]
@@ -221,7 +221,7 @@ def test_quadrature_combine():
     assert_array_equal(x_test, x)
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_uniform_grid():
     x = _create_uniform_grid_exclude_border(1, 2)
     assert_array_equal(x, [[1./3.], [2./3.]])
@@ -263,7 +263,7 @@ def test_uniform_grid():
     assert_raises(AssertionError, _create_uniform_grid_only_border, 0, 2)
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_grid():
     grid = Grid()
     samples = grid.generate([(0., 1.), ] * 2, 200)

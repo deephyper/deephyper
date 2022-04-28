@@ -25,7 +25,7 @@ ESTIMATOR_STRINGS = ["GP", "RF", "ET", "GBRT", "DUMMY",
                      "gp", "rf", "et", "gbrt", "dummy"]
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_multiple_asks():
     # calling ask() multiple times without a tell() inbetween should
     # be a "no op"
@@ -46,7 +46,7 @@ def test_multiple_asks():
     assert_equal(opt.ask(), opt.ask())
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_model_queue_size():
     # Check if model_queue_size limits the model queue size
     base_estimator = ExtraTreesRegressor(random_state=2)
@@ -64,7 +64,7 @@ def test_model_queue_size():
     assert_equal(opt.ask(), opt.ask())
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_invalid_tell_arguments():
     base_estimator = ExtraTreesRegressor(random_state=2)
     opt = Optimizer([(-2.0, 2.0)], base_estimator, n_initial_points=1,
@@ -74,7 +74,7 @@ def test_invalid_tell_arguments():
     assert_raises(ValueError, opt.tell, [1.], [1., 1.])
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_invalid_tell_arguments_list():
     base_estimator = ExtraTreesRegressor(random_state=2)
     opt = Optimizer([(-2.0, 2.0)], base_estimator, n_initial_points=1,
@@ -83,7 +83,7 @@ def test_invalid_tell_arguments_list():
     assert_raises(ValueError, opt.tell, [[1.], [2.]], [1., None])
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_bounds_checking_1D():
     low = -2.
     high = 2.
@@ -98,7 +98,7 @@ def test_bounds_checking_1D():
     assert_raises(ValueError, opt.tell, [low - 0.5, high], (2., 3.))
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_bounds_checking_2D():
     low = -2.
     high = 2.
@@ -114,7 +114,7 @@ def test_bounds_checking_2D():
     assert_raises(ValueError, opt.tell, [low - 0.5, high + 0.5], 2.)
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_bounds_checking_2D_multiple_points():
     low = -2.
     high = 2.
@@ -131,7 +131,7 @@ def test_bounds_checking_2D_multiple_points():
                   [2., 3.])
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_dimension_checking_1D():
     low = -2
     high = 2
@@ -142,7 +142,7 @@ def test_dimension_checking_1D():
     assert "Dimensions of point " in str(e.value)
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_dimension_checking_2D():
     low = -2
     high = 2
@@ -157,7 +157,7 @@ def test_dimension_checking_2D():
     assert "Dimensions of point " in str(e.value)
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_dimension_checking_2D_multiple_points():
     low = -2
     high = 2
@@ -173,7 +173,7 @@ def test_dimension_checking_2D_multiple_points():
     assert "dimensions as the space" in str(e.value)
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_returns_result_object():
     base_estimator = ExtraTreesRegressor(random_state=2)
     opt = Optimizer([(-2.0, 2.0)], base_estimator, n_initial_points=1,
@@ -185,7 +185,7 @@ def test_returns_result_object():
     assert_equal(np.min(result.func_vals), result.fun)
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 @pytest.mark.parametrize("base_estimator", TREE_REGRESSORS)
 def test_acq_optimizer(base_estimator):
     with pytest.raises(ValueError) as e:
@@ -218,7 +218,7 @@ def test_acq_optimizer_with_time_api(base_estimator, acq_func):
         opt.tell(x2, bench1(x2))
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 @pytest.mark.parametrize("acq_func", ACQ_FUNCS_MIXED)
 def test_optimizer_copy(acq_func):
     # Checks that the base estimator, the objective and target values
@@ -288,7 +288,7 @@ def test_exhaust_initial_calls(base_estimator):
         assert len(r3.models) == 2
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_optimizer_base_estimator_string_invalid():
     with pytest.raises(ValueError) as e:
         Optimizer([(-2.0, 2.0)], base_estimator="rtr",
@@ -296,7 +296,7 @@ def test_optimizer_base_estimator_string_invalid():
     assert "'RF', 'ET', 'GP', 'GBRT' or 'DUMMY'" in str(e.value)
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 @pytest.mark.parametrize("base_estimator", ESTIMATOR_STRINGS)
 def test_optimizer_base_estimator_string_smoke(base_estimator):
     opt = Optimizer([(-2.0, 2.0)], base_estimator=base_estimator,
@@ -304,7 +304,7 @@ def test_optimizer_base_estimator_string_smoke(base_estimator):
     opt.run(func=lambda x: x[0]**2, n_iter=3)
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_optimizer_base_estimator_string_smoke_njobs():
     opt = Optimizer([(-2.0, 2.0)], base_estimator="GBRT",
                     n_initial_points=1, acq_func="EI", n_jobs=-1)
@@ -335,7 +335,7 @@ def test_defaults_are_equivalent():
     assert np.allclose(res_min.x, res_opt2.x)  # , atol=1e-5)
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_dimensions_names():
     from deephyper.skopt.space import Real, Categorical, Integer
     # create search space and optimizer
@@ -355,7 +355,7 @@ def test_dimensions_names():
     assert None not in names
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_categorical_only():
     from deephyper.skopt.space import Categorical
     cat1 = Categorical([2, 3, 4, 5, 6, 7, 8, 9, 10, 11])

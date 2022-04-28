@@ -17,7 +17,7 @@ def truth(X):
     return 0.5 * np.sin(1.75*X[:, 0])
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_gbrt_gaussian():
     # estimate quantiles of the normal distribution
     rng = np.random.RandomState(1)
@@ -34,7 +34,7 @@ def test_gbrt_gaussian():
                         decimal=2)
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_gbrt_base_estimator():
     rng = np.random.RandomState(1)
     N = 10000
@@ -63,7 +63,7 @@ def test_gbrt_base_estimator():
                         decimal=2)
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_gbrt_with_std():
     # simple test of the interface
     rng = np.random.RandomState(1)
@@ -93,7 +93,7 @@ def test_gbrt_with_std():
     assert_array_equal(std, (h - l) / 2.0)
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_gbrt_in_parallel():
     # check estimate quantiles with parallel
     rng = np.random.RandomState(1)

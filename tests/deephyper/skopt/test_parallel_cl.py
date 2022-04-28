@@ -9,7 +9,7 @@ from numpy.testing import assert_raises
 from deephyper.skopt.space import Real
 from deephyper.skopt import Optimizer
 from deephyper.skopt.benchmarks import branin
-import deephyper.deephyper.skopt.learning as sol
+import deephyper.skopt.learning as sol
 
 from scipy.spatial.distance import pdist
 import pytest

@@ -1,15 +1,15 @@
 import unittest
 
-import ConfigSpace as cs
-import numpy as np
-from deephyper.evaluator import Evaluator
-from deephyper.problem import HpProblem
-from deephyper.search.hps import CBO
-from deephyper.search.hps import AMBS
+import pytest
 
 
+@pytest.mark.hps_fast_test
 class CBOTest(unittest.TestCase):
     def test_random_seed(self):
+        import numpy as np
+        from deephyper.evaluator import Evaluator
+        from deephyper.problem import HpProblem
+        from deephyper.search.hps import CBO
 
         problem = HpProblem()
         problem.add_hyperparameter((0.0, 10.0), "x")
@@ -35,6 +35,10 @@ class CBOTest(unittest.TestCase):
         assert np.array_equal(res1_array, res2_array)
 
     def test_sample_types(self):
+        import numpy as np
+        from deephyper.evaluator import Evaluator
+        from deephyper.problem import HpProblem
+        from deephyper.search.hps import CBO
 
         problem = HpProblem()
         problem.add_hyperparameter((0, 10), "x_int")
@@ -66,6 +70,10 @@ class CBOTest(unittest.TestCase):
         )
 
     def test_sample_types_no_cat(self):
+        import numpy as np
+        from deephyper.evaluator import Evaluator
+        from deephyper.problem import HpProblem
+        from deephyper.search.hps import CBO
 
         problem = HpProblem()
         problem.add_hyperparameter((0, 10), "x_int")
@@ -89,6 +97,9 @@ class CBOTest(unittest.TestCase):
         )
 
     def test_gp(self):
+        from deephyper.evaluator import Evaluator
+        from deephyper.problem import HpProblem
+        from deephyper.search.hps import CBO
 
         # test float hyperparameters
         problem = HpProblem()
@@ -133,6 +144,11 @@ class CBOTest(unittest.TestCase):
         ).search(10)
 
     def test_sample_types_conditional(self):
+        import ConfigSpace as cs
+        import numpy as np
+        from deephyper.evaluator import Evaluator
+        from deephyper.problem import HpProblem
+        from deephyper.search.hps import CBO
 
         problem = HpProblem()
 

@@ -33,6 +33,7 @@ REQUIRED = [
     "scikit-learn>=0.23.1",
     "scipy>=0.19.1",
     "tqdm>=4.64.0",
+    "pyyaml",
 ]
 
 

@@ -38,7 +38,7 @@ def check_optimization_results_equality(res_1, res_2):
     assert_array_equal(res_1.func_vals, res_2.func_vals)
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_dump_and_load():
     res = gp_minimize(bench3,
                       [(-2.0, 2.0)],
@@ -74,7 +74,7 @@ def test_dump_and_load():
     assert not ("func" in res_loaded.specs["args"])
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_dump_and_load_optimizer():
     base_estimator = ExtraTreesRegressor(random_state=2)
     opt = Optimizer([(-2.0, 2.0)], base_estimator, n_initial_points=1,
@@ -88,7 +88,7 @@ def test_dump_and_load_optimizer():
         load(f)
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_expected_minimum():
     res = gp_minimize(bench3,
                       [(-2.0, 2.0)],
@@ -106,7 +106,7 @@ def test_expected_minimum():
     assert f_min == f_min2
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_expected_minimum_random_sampling():
     res = gp_minimize(bench3,
                       [(-2.0, 2.0)],
@@ -124,7 +124,7 @@ def test_expected_minimum_random_sampling():
     assert f_min == f_min2
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_dict_list_space_representation():
     """
     Tests whether the conversion of the dictionary and list representation
@@ -152,7 +152,7 @@ def test_dict_list_space_representation():
     )
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 @pytest.mark.parametrize("estimator, gradients",
                          zip(["GP", "RF", "ET", "GBRT", "DUMMY"],
                              [True, False, False, False, False]))
@@ -162,21 +162,21 @@ def test_has_gradients(estimator, gradients):
     assert has_gradients(cook_estimator(estimator, space=space)) == gradients
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_categorical_gp_has_gradients():
     space = Space([('a', 'b')])
 
     assert not has_gradients(cook_estimator('GP', space=space))
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_normalize_dimensions_all_categorical():
     dimensions = (['a', 'b', 'c'], ['1', '2', '3'])
     space = normalize_dimensions(dimensions)
     assert space.is_categorical
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_categoricals_mixed_types():
     domain = [[1, 2, 3, 4], ['a', 'b', 'c'], [True, False]]
     x = [1, 'a', True]
@@ -184,7 +184,7 @@ def test_categoricals_mixed_types():
     assert (space.inverse_transform(space.transform([x])) == [x])
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 @pytest.mark.parametrize("dimensions, normalizations",
                          [(((1, 3), (1., 3.)),
                            ('normalize', 'normalize')
@@ -199,7 +199,7 @@ def test_normalize_dimensions(dimensions, normalizations):
         assert dimension.transform_ == normalization
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 @pytest.mark.parametrize("dimension, name",
                          [(Real(1, 2, name="learning rate"), "learning rate"),
                           (Integer(1, 100, name="no of trees"), "no of trees"),
@@ -209,7 +209,7 @@ def test_normalize_dimensions(dimension, name):
     assert space.dimensions[0].name == name
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_use_named_args():
     """
     Test the function wrapper @use_named_args which is used
@@ -265,7 +265,7 @@ def test_use_named_args():
     assert (isinstance(res, float))
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_space_names_in_use_named_args():
     space = [Integer(250, 2000, name='n_estimators')]
 
@@ -279,7 +279,7 @@ def test_space_names_in_use_named_args():
     assert res.space.dimensions[0].name == 'n_estimators'
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_check_dimension_names():
     # Define the search-space dimensions. They must all have names!
     dim1 = Real(name='foo', low=0.0, high=1.0)
@@ -293,7 +293,7 @@ def test_check_dimension_names():
     assert_raises(ValueError, check_dimension_names, dimensions)
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_check_list_types():
     # Define the search-space dimensions. They must all have names!
     dim1 = Real(name='foo', low=0.0, high=1.0)

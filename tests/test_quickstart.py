@@ -1,9 +1,11 @@
 import unittest
 
+import pytest
+
 def run(config: dict):
     return -config["x"]**2
 
-
+@pytest.mark.hps_fast_test
 class QuickStartTest(unittest.TestCase):
 
     def test_quickstart(self):
@@ -27,4 +29,4 @@ class QuickStartTest(unittest.TestCase):
         # define you search and execute it
         search = CBO(problem, evaluator)
 
-        results = search.search(max_evals=100)
+        results = search.search(max_evals=15)

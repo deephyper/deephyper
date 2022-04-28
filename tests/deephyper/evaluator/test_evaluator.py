@@ -10,7 +10,6 @@ def run_many_results(config, y=0):
     return {"x": config["x"], "y": y}
 
 
-@pytest.mark.incremental
 class TestEvaluator(unittest.TestCase):
     def test_import(self):
         from deephyper.evaluator import Evaluator
@@ -101,6 +100,7 @@ class TestEvaluator(unittest.TestCase):
     def test_subprocess(self):
         self.execute_evaluator("subprocess")
 
+    @pytest.mark.ray
     def test_ray(self):
         try:
             self.execute_evaluator("ray")

@@ -123,7 +123,7 @@ def test_searchcv_runs(surrogate, n_jobs, n_points, cv=None):
     assert opt.score(X_test, y_test) > 0.9
 
 
-@pytest.mark.slow_test
+@pytest.mark.hps_slow_test
 def test_parallel_cv():
 
     """
@@ -298,7 +298,7 @@ def test_searchcv_reproducibility():
     assert optim_res2[3] == getattr(best_est, 'kernel')
 
 
-@pytest.mark.fast_test
+@pytest.mark.hps_fast_test
 def test_searchcv_rank():
     """
     Test whether results of BayesSearchCV can be reproduced with a fixed
