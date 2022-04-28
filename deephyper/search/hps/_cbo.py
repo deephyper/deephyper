@@ -99,7 +99,7 @@ class CBO(Search):
 
         if not (type(filter_duplicated) is bool):
             raise ValueError(
-                f"Parameter {filter_duplicated=} should be a boolean value!"
+                f"Parameter filter_duplicated={filter_duplicated} should be a boolean value!"
             )
 
         multi_point_strategy_allowed = [
@@ -116,7 +116,7 @@ class CBO(Search):
             )
 
         if not (type(n_jobs) is int):
-            raise ValueError(f"Parameter {n_jobs=} should be an integer value!")
+            raise ValueError(f"Parameter n_jobs={n_jobs} should be an integer value!")
 
         self._n_initial_points = n_initial_points
         self._initial_points = [] if initial_points is None else initial_points
