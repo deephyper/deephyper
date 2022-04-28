@@ -113,7 +113,7 @@ class DBO:
         surrogate_model: str = "RF",
         surrogate_model_kwargs: dict = None,
         n_initial_points: int = 10,
-        lazy_socket_allocation: bool = True,
+        lazy_socket_allocation: bool = False,
         communication_batch_size=2048,
         sync_communication: bool = False,
         sync_communication_freq: int = 10,
