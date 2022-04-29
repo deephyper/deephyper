@@ -25,6 +25,11 @@ MAP_filter_failures = {"min": "max"}
 class CBO(Search):
     """Centralized Bayesian Optimisation Search, previously named as "Asynchronous Model-Based Search" (AMBS). It follows a manager-workers architecture where the manager runs the Bayesian optimization loop and workers execute parallel evaluations of the black-box function.
 
+    Example Usage:
+
+        >>> search = CBO(problem, evaluator)
+        >>> results = search.search(max_evals=100, timeout=120)
+
     Args:
         problem (HpProblem): Hyperparameter problem describing the search space to explore.
         evaluator (Evaluator): An ``Evaluator`` instance responsible of distributing the tasks.
@@ -196,7 +201,7 @@ class CBO(Search):
         t1 = time.time()
         new_batch = []
         for x in new_X:
-            new_cfg = self.to_dict(x)
+            new_cfg = self._to_dict(x)
             new_batch.append(new_cfg)
         logging.info(f"Transformation took {time.time() - t1:.4f} sec.")
 
@@ -268,7 +273,7 @@ class CBO(Search):
                 t1 = time.time()
                 new_batch = []
                 for x in new_X:
-                    new_cfg = self.to_dict(x)
+                    new_cfg = self._to_dict(x)
                     new_batch.append(new_cfg)
                 logging.info(f"Transformation took {time.time() - t1:.4f} sec.")
 
@@ -322,10 +327,7 @@ class CBO(Search):
 
         return surrogate
 
-    def return_cond(self, cond, cst_new):
-        """
-        :meta private:
-        """
+    def _return_cond(self, cond, cst_new):
         parent = cst_new.get_hyperparameter(cond.parent.name)
         child = cst_new.get_hyperparameter(cond.child.name)
         if type(cond) == CS.EqualsCondition:
@@ -347,10 +349,7 @@ class CBO(Search):
             print("Not supported type" + str(type(cond)))
         return cond_new
 
-    def return_forbid(self, cond, cst_new):
-        """
-        :meta private:
-        """
+    def _return_forbid(self, cond, cst_new):
         if type(cond) == CS.ForbiddenEqualsClause or type(cond) == CS.ForbiddenInClause:
             hp = cst_new.get_hyperparameter(cond.hyperparameter.name)
             if type(cond) == CS.ForbiddenEqualsClause:
@@ -396,6 +395,11 @@ class CBO(Search):
 
     def fit_generative_model(self, df, q=0.90, n_iter_optimize=0, n_samples=100):
         """Learn the distribution of hyperparameters for the top-``(1-q)x100%`` configurations and sample from this distribution. It can be used for transfer learning.
+
+        Example Usage:
+
+        >>> search = CBO(problem, evaluator)
+        >>> search.fit_surrogate("results.csv")
 
         Args:
             df (str|DataFrame): a dataframe or path to CSV from a previous search.
@@ -520,6 +524,11 @@ class CBO(Search):
     def fit_search_space(self, df, fac_numerical=0.125, fac_categorical=10):
         """Apply prior-guided transfer learning based on a DataFrame of results.
 
+        Example Usage:
+
+        >>> search = CBO(problem, evaluator)
+        >>> search.fit_surrogate("results.csv")
+
         Args:
             df (str|DataFrame): a checkpoint from a previous search.
             fac_numerical (float): the factor used to compute the sigma of a truncated normal distribution based on ``sigma = max(1.0, (upper - lower) * fac_numerical)``. A small large factor increase exploration while a small factor increase exploitation around the best-configuration from the ``df`` parameter.
@@ -605,7 +614,7 @@ class CBO(Search):
             if type(cond) == CS.AndConjunction or type(cond) == CS.OrConjunction:
                 cond_list = []
                 for comp in cond.components:
-                    cond_list.append(self.return_cond(comp, cst_new))
+                    cond_list.append(self._return_cond(comp, cst_new))
                 if type(cond) is CS.AndConjunction:
                     cond_new = CS.AndConjunction(*cond_list)
                 elif type(cond) is CS.OrConjunction:
@@ -613,7 +622,7 @@ class CBO(Search):
                 else:
                     logging.warning(f"Condition {type(cond)} is not implemented!")
             else:
-                cond_new = self.return_cond(cond, cst_new)
+                cond_new = self._return_cond(cond, cst_new)
             cst_new.add_condition(cond_new)
 
         # For forbiddens
@@ -621,67 +630,21 @@ class CBO(Search):
             if type(cond) is CS.ForbiddenAndConjunction:
                 cond_list = []
                 for comp in cond.components:
-                    cond_list.append(self.return_forbid(comp, cst_new))
+                    cond_list.append(self._return_forbid(comp, cst_new))
                 cond_new = CS.ForbiddenAndConjunction(*cond_list)
             elif (
                 type(cond) is CS.ForbiddenEqualsClause
                 or type(cond) is CS.ForbiddenInClause
             ):
-                cond_new = self.return_forbid(cond, cst_new)
+                cond_new = self._return_forbid(cond, cst_new)
             else:
                 logging.warning(f"Forbidden {type(cond)} is not implemented!")
             cst_new.add_forbidden_clause(cond_new)
 
         self._opt_kwargs["dimensions"] = cst_new
 
-    def get_random_batch(self, size: int) -> list:
-        """Generate a random batch of configuration.
-
-        :meta private:
-
-        Args:
-            size (int): number of configurations in generated batch.
-
-        Returns:
-            list: the list of generated configuration.
-        """
-        logging.info(f"Creating random batch of size {size}...")
-        t1 = time.time()
-        if self._fitted:  # for the surrogate or search space
-            batch = []
-        else:
-            batch = self._initial_points
-            # Replace None by "nan"
-            for point in batch:
-                for (k, v), hp in zip(
-                    point.items(), self._problem.space.get_hyperparameters()
-                ):
-                    if v is None:
-                        if (
-                            type(hp) is csh.UniformIntegerHyperparameter
-                            or type(hp) is csh.UniformFloatHyperparameter
-                        ):
-                            point[k] = np.nan
-                        elif (
-                            type(hp) is csh.CategoricalHyperparameter
-                            or type(hp) is csh.OrdinalHyperparameter
-                        ):
-                            point[k] = "NA"
-
-        # Add more starting points
-        n_points = max(0, size - len(batch))
-        if n_points > 0:
-            points = self._opt.ask(n_points=n_points)
-            for point in points:
-                point_as_dict = self.to_dict(point)
-                batch.append(point_as_dict)
-        logging.info(f"Random batch created in {time.time() - t1:.4f} sec.")
-        return batch
-
-    def to_dict(self, x: list) -> dict:
+    def _to_dict(self, x: list) -> dict:
         """Transform a list of hyperparameter values to a ``dict`` where keys are hyperparameters names and values are hyperparameters values.
-
-        :meta private:
 
         Args:
             x (list): a list of hyperparameter values.
@@ -696,28 +659,8 @@ class CBO(Search):
         return res
 
 
-def isnan(x) -> bool:
-    """Check if a value is NaN.
-
-    :meta private:
-    """
-    if isinstance(x, float):
-        return math.isnan(x)
-    elif isinstance(x, np.float64):
-        return np.isnan(x)
-    else:
-        return False
-
-
-def replace_nan(x):
-    """
-    :meta private:
-    """
-    return [np.nan if x_i == "nan" else x_i for x_i in x]
-
-
 class AMBS(CBO):
-    """ "'AMBS' is now deprecated and will be removed in the future use 'CBO' (Centralized Bayesian Optimization) instead!" """
+    """AMBS is now deprecated and will be removed in the future use 'CBO' (Centralized Bayesian Optimization) instead! """
 
     def __init__(
         self,
