@@ -1,38 +1,47 @@
-import tensorflow as tf
+import unittest
 
-from deephyper.nas.node import VariableNode, MirrorNode, MimeNode
-from deephyper.nas.operation import operation
-
-Dense = operation(tf.keras.layers.Dense)
+import pytest
 
 
-def test_mirror_node():
+@pytest.mark.nas
+class NodeTest(unittest.TestCase):
+    def test_mirror_node(self):
+        import tensorflow as tf
+        from deephyper.nas.node import MirrorNode, VariableNode
+        from deephyper.nas.operation import operation
 
-    vnode = VariableNode()
-    vop = Dense(10)
-    vnode.add_op(vop)
-    vnode.add_op(Dense(20))
+        Dense = operation(tf.keras.layers.Dense)
 
-    mnode = MirrorNode(vnode)
+        vnode = VariableNode()
+        vop = Dense(10)
+        vnode.add_op(vop)
+        vnode.add_op(Dense(20))
 
-    vnode.set_op(0)
+        mnode = MirrorNode(vnode)
 
-    assert vnode.op == vop
-    assert mnode.op == vop
+        vnode.set_op(0)
 
+        assert vnode.op == vop
+        assert mnode.op == vop
 
-def test_mime_node():
-    vnode = VariableNode()
-    vop = Dense(10)
-    vnode.add_op(vop)
-    vnode.add_op(Dense(20))
+    def test_mime_node(self):
+        import tensorflow as tf
+        from deephyper.nas.node import MimeNode, VariableNode
+        from deephyper.nas.operation import operation
 
-    mnode = MimeNode(vnode)
-    mop = Dense(30)
-    mnode.add_op(mop)
-    mnode.add_op(Dense(40))
+        Dense = operation(tf.keras.layers.Dense)
 
-    vnode.set_op(0)
+        vnode = VariableNode()
+        vop = Dense(10)
+        vnode.add_op(vop)
+        vnode.add_op(Dense(20))
 
-    assert vnode.op == vop
-    assert mnode.op == mop
+        mnode = MimeNode(vnode)
+        mop = Dense(30)
+        mnode.add_op(mop)
+        mnode.add_op(Dense(40))
+
+        vnode.set_op(0)
+
+        assert vnode.op == vop
+        assert mnode.op == mop

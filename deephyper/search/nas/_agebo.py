@@ -1,6 +1,6 @@
 import collections
 
-import skopt
+import deephyper.skopt
 import numpy as np
 from deephyper.search.nas._regevo import RegularizedEvolution
 
@@ -130,7 +130,7 @@ class AgEBO(RegularizedEvolution):
         )
 
     def _setup_hp_optimizer(self):
-        self._hp_opt = skopt.Optimizer(**self._hp_opt_kwargs)
+        self._hp_opt = deephyper.skopt.Optimizer(**self._hp_opt_kwargs)
 
     def _saved_keys(self, job):
 
@@ -301,15 +301,15 @@ class AgEBO(RegularizedEvolution):
             )
 
         if name == "RF":
-            surrogate = skopt.learning.RandomForestRegressor(
+            surrogate = deephyper.skopt.learning.RandomForestRegressor(
                 n_jobs=n_jobs, random_state=random_state
             )
         elif name == "ET":
-            surrogate = skopt.learning.ExtraTreesRegressor(
+            surrogate = deephyper.skopt.learning.ExtraTreesRegressor(
                 n_jobs=n_jobs, random_state=random_state
             )
         elif name == "GBRT":
-            surrogate = skopt.learning.GradientBoostingQuantileRegressor(
+            surrogate = deephyper.skopt.learning.GradientBoostingQuantileRegressor(
                 n_jobs=n_jobs, random_state=random_state
             )
         else:  # for DUMMY and GP

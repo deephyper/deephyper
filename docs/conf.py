@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.abspath(".."))
 # -- Project information -----------------------------------------------------
 
 project = "DeepHyper"
-copyright = "2018-2021, Argonne"
+copyright = "2018-2022, Argonne"
 author = "Argonne"
 
 # The short X.Y version
@@ -63,7 +63,7 @@ def pull_tutorials(github_link, dest_dir, tutorial_branch):
     os.system(f"git clone --depth=1 --branch={tutorial_branch} {github_link} {dest_dir}")
     os.system(f"rm -rf {dest_dir}/.git")
 
-pull_tutorials(tutorials_github_link, tutorials_dest_dir, tutorial_branch)
+# pull_tutorials(tutorials_github_link, tutorials_dest_dir, tutorial_branch)
 
 # -- General configuration ---------------------------------------------------
 
@@ -97,7 +97,7 @@ autosummary_imported_members = True
 # Add any paths that contain templates here, relative to this directory.
 templates_path = [
     "_templates",
-    os.path.join(sphinx_book_theme.get_html_theme_path(), "_templates"),
+    os.path.join(sphinx_book_theme.get_html_theme_path(), "components"),
 ]
 
 # The suffix(es) of source filenames.
@@ -256,7 +256,7 @@ epub_exclude_files = ["search.html"]
 # -- Options for intersphinx extension ---------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {"https://docs.python.org/": None}
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 
 # -- Options for todo extension ----------------------------------------------
 
@@ -265,16 +265,17 @@ todo_include_todos = True
 
 # makes sphinx do a mock import of mpi4py so it’s not broken when you try to do auto-docs and import mpi4py
 autodoc_mock_imports = [
-    "mpi4py",
-    "balsam",
-    "nbformat",
-    "django",
-    "skopt",
-    "deap",
-    "joblib",
-    "sklearn",
-    "xgboost",
     "horovod",
+    "joblib",
+    "mpi4py",
+    "nbformat",
+    "networkx",
+    "ray",
+    "sklearn",
+    "skopt",
+    "tensorflow_probability",
+    "tensorflow",
+    "xgboost",
 ]
 
 # Remove <BLANKLINE>

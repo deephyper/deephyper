@@ -4,7 +4,7 @@ from pprint import pformat
 import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh
 import deephyper.core.exceptions as dh_exceptions
-import skopt
+import deephyper.skopt
 import numpy as np
 
 
@@ -18,14 +18,14 @@ def convert_to_skopt_dim(cs_hp, surrogate_model=None):
         surrogate_model_type = "distance_based"
 
     if isinstance(cs_hp, csh.UniformIntegerHyperparameter):
-        skopt_dim = skopt.space.Integer(
+        skopt_dim = deephyper.skopt.space.Integer(
             low=cs_hp.lower,
             high=cs_hp.upper,
             prior="log-uniform" if cs_hp.log else "uniform",
             name=cs_hp.name,
         )
     elif isinstance(cs_hp, csh.UniformFloatHyperparameter):
-        skopt_dim = skopt.space.Real(
+        skopt_dim = deephyper.skopt.space.Real(
             low=cs_hp.lower,
             high=cs_hp.upper,
             prior="log-uniform" if cs_hp.log else "uniform",
@@ -34,13 +34,13 @@ def convert_to_skopt_dim(cs_hp, surrogate_model=None):
     elif isinstance(cs_hp, csh.CategoricalHyperparameter):
         # the transform is important if we don't want the complexity of trees
         # to explode with categorical variables
-        skopt_dim = skopt.space.Categorical(
+        skopt_dim = deephyper.skopt.space.Categorical(
             categories=cs_hp.choices,
             name=cs_hp.name,
             transform="onehot" if surrogate_model_type == "distance_based" else "label",
         )
     elif isinstance(cs_hp, csh.OrdinalHyperparameter):
-        skopt_dim = skopt.space.Categorical(
+        skopt_dim = deephyper.skopt.space.Categorical(
             categories=list(cs_hp.sequence), name=cs_hp.name, transform="label"
         )
     else:
@@ -62,7 +62,7 @@ def convert_to_skopt_space(cs_space, surrogate_model=None):
         RuntimeError: if the input space contains conditions
 
     Returns:
-        skopt.space.Space: a scikit-optimize Space.
+        deephyper.skopt.space.Space: a scikit-optimize Space.
     """
 
     # verify pre-conditions
@@ -75,12 +75,12 @@ def convert_to_skopt_space(cs_space, surrogate_model=None):
     if len(cs_space.get_forbiddens()) > 0:
         raise RuntimeError("Cannot convert a ConfigSpace with Forbiddens!")
 
-    # convert the ConfigSpace to skopt.space.Space
+    # convert the ConfigSpace to deephyper.skopt.space.Space
     dimensions = []
     for hp in cs_space.get_hyperparameters():
         dimensions.append(convert_to_skopt_dim(hp, surrogate_model))
 
-    skopt_space = skopt.space.Space(dimensions)
+    skopt_space = deephyper.skopt.space.Space(dimensions)
     return skopt_space
 
 
@@ -189,16 +189,7 @@ class HpProblem:
 
     def __repr__(self):
         prob = repr(self._space)
-        if len(self.references) == 0:
-            return prob
-        else:
-            start_points = (
-                f"{pformat({k:v for k,v in enumerate(self.starting_point_asdict)})}"
-            )
-            prob += "\n\n  Starting Point"
-            prob += "s" if len(self.references) > 1 else ""
-            prob += ":\n" + start_points
-            return prob
+        return prob
 
     def add_hyperparameter(
         self, value, name: str = None, default_value=None
@@ -295,41 +286,12 @@ class HpProblem:
     def hyperparameter_names(self):
         return self._space.get_hyperparameter_names()
 
-    def add_starting_point(self, **parameters):
-        """Add starting points to the ``HpProblem``. It is useful when a good-baseline is known to help initialize the search at a given location of the search space.
-
-        >>> from deephyper.problem import HpProblem
-        >>> problem = HpProblem()
-        >>> x = problem.add_hyperparameter((0.0, 10.0), "x")
-        >>> problem.add_starting_point(x=1.0)
-        """
-        self.check_configuration(parameters)
-        self.references.append([parameters[p_name] for p_name in self._space])
-
     def check_configuration(self, parameters):
         """
         :meta private:
         """
         config = cs.Configuration(self._space, parameters)
         self._space.check_configuration(config)
-
-    @property
-    def starting_point(self):
-        """Starting point(s) of the search space.
-
-        Returns:
-            list: list of starting points where each point is a list of values. Values are indexed in the same order as the order of creation of space's dimensions.
-        """
-        return self.references
-
-    @property
-    def starting_point_asdict(self):
-        """Starting point(s) of the search space.
-
-        Returns:
-            list(dict): list of starting points where each point is a dict of values. Each key are correspnding to dimensions of the space.
-        """
-        return [{k: v for k, v in zip(list(self._space), p)} for p in self.references]
 
     @property
     def default_configuration(self):

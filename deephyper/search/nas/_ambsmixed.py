@@ -2,7 +2,7 @@ import logging
 
 import ConfigSpace as CS
 import numpy as np
-import skopt
+import deephyper.skopt
 from deephyper.problem import HpProblem
 from deephyper.search.nas._base import NeuralArchitectureSearch
 
@@ -17,7 +17,7 @@ MAP_acq_func = {
 
 
 class AMBSMixed(NeuralArchitectureSearch):
-    """Asynchronous Model-Based Search baised on the `Scikit-Optimized Optimizer <https://scikit-optimize.github.io/stable/modules/generated/skopt.Optimizer.html#skopt.Optimizer>`_. It is extended to the case of joint hyperparameter and neural architecture search.
+    """Asynchronous Model-Based Search baised on the `Scikit-Optimized Optimizer <https://scikit-optimize.github.io/stable/modules/generated/deephyper.skopt.Optimizer.html#deephyper.skopt.Optimizer>`_. It is extended to the case of joint hyperparameter and neural architecture search.
 
     Args:
         problem (NaProblem): Neural architecture search problem describing the search space to explore.
@@ -122,7 +122,7 @@ class AMBSMixed(NeuralArchitectureSearch):
         )
 
     def _setup_optimizer(self):
-        self._opt = skopt.Optimizer(**self._opt_kwargs)
+        self._opt = deephyper.skopt.Optimizer(**self._opt_kwargs)
 
     def _saved_keys(self, job):
 
@@ -210,15 +210,15 @@ class AMBSMixed(NeuralArchitectureSearch):
             )
 
         if name == "RF":
-            surrogate = skopt.learning.RandomForestRegressor(
+            surrogate = deephyper.skopt.learning.RandomForestRegressor(
                 n_jobs=n_jobs, random_state=random_state
             )
         elif name == "ET":
-            surrogate = skopt.learning.ExtraTreesRegressor(
+            surrogate = deephyper.skopt.learning.ExtraTreesRegressor(
                 n_jobs=n_jobs, random_state=random_state
             )
         elif name == "GBRT":
-            surrogate = skopt.learning.GradientBoostingQuantileRegressor(
+            surrogate = deephyper.skopt.learning.GradientBoostingQuantileRegressor(
                 n_jobs=n_jobs, random_state=random_state
             )
         else:  # for DUMMY and GP

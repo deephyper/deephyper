@@ -1,8 +1,11 @@
-from deephyper.nas.run import run_base_trainer
-from deephyper.benchmark.nas.linearReg import Problem
+import pytest
 
 
+@pytest.mark.nas
 def test_single_loss():
+    from deephyper.nas.run import run_base_trainer
+    from deephyper.benchmark.nas.linearReg import Problem
+
     print(Problem)
 
     config = Problem.space
@@ -12,7 +15,3 @@ def test_single_loss():
     config["arch_seq"] = [0.5]
 
     run_base_trainer(config)
-
-
-if __name__ == "__main__":
-    test_single_loss()

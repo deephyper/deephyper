@@ -7,7 +7,7 @@ import time
 
 import numpy as np
 import pandas as pd
-import skopt
+import deephyper.skopt
 
 from mpi4py import MPI
 from deephyper.core.exceptions import SearchTerminationError
@@ -82,8 +82,8 @@ class History:
 
 #TODO: bring all parameters of the surrogate_model in surrogate_model_kwargs
 
-class DMBSMPI:
-    """Distributed Model-Based Search based on the `Scikit-Optimized Optimizer <https://scikit-optimize.github.io/stable/modules/generated/skopt.Optimizer.html#skopt.Optimizer>`_.
+class DBO:
+    """Distributed Bayesian Optimization Search.
 
     Args:
         problem (HpProblem): Hyperparameter problem describing the search space to explore.
@@ -113,7 +113,7 @@ class DMBSMPI:
         surrogate_model: str = "RF",
         surrogate_model_kwargs: dict = None,
         n_initial_points: int = 10,
-        lazy_socket_allocation: bool = True,
+        lazy_socket_allocation: bool = False,
         communication_batch_size=2048,
         sync_communication: bool = False,
         sync_communication_freq: int = 10,
@@ -433,7 +433,7 @@ class DMBSMPI:
     def _setup_optimizer(self):
         # if self._fitted:
         #     self._opt_kwargs["n_initial_points"] = 0
-        self._opt = skopt.Optimizer(**self._opt_kwargs)
+        self._opt = deephyper.skopt.Optimizer(**self._opt_kwargs)
 
     def _search(self, max_evals, timeout):
 
@@ -590,7 +590,7 @@ class DMBSMPI:
             )
             if surrogate_model_kwargs is not None:
                 default_kwargs.update(surrogate_model_kwargs)
-            surrogate = skopt.learning.RandomForestRegressor(**default_kwargs)
+            surrogate = deephyper.skopt.learning.RandomForestRegressor(**default_kwargs)
         elif name == "ET":
             default_kwargs = dict(
                 n_estimators=100,
@@ -601,7 +601,7 @@ class DMBSMPI:
             )
             if surrogate_model_kwargs is not None:
                 default_kwargs.update(surrogate_model_kwargs)
-            surrogate = skopt.learning.ExtraTreesRegressor(**default_kwargs)
+            surrogate = deephyper.skopt.learning.ExtraTreesRegressor(**default_kwargs)
         elif name == "GBRT":
             default_kwargs = dict(
                 n_jobs=n_jobs,
@@ -610,7 +610,7 @@ class DMBSMPI:
             if surrogate_model_kwargs is not None:
                 default_kwargs.update(surrogate_model_kwargs)
             gbrt = GradientBoostingRegressor(n_estimators=30, loss="quantile")
-            surrogate = skopt.learning.GradientBoostingQuantileRegressor(base_estimator=gbrt, **default_kwargs)
+            surrogate = deephyper.skopt.learning.GradientBoostingQuantileRegressor(base_estimator=gbrt, **default_kwargs)
         else:  # for DUMMY and GP
             surrogate = name
 
@@ -624,7 +624,7 @@ class DMBSMPI:
 
         Example Usage:
 
-        >>> search = AMBS(problem, evaluator)
+        >>> search = CBO(problem, evaluator)
         >>> search.fit_surrogate("results.csv")
         """
         if type(df) is str and df[-4:] == ".csv":
@@ -642,7 +642,7 @@ class DMBSMPI:
             y = df.objective.tolist()
         except KeyError:
             raise ValueError(
-                "Incompatible dataframe 'df' to fit surrogate model of AMBS."
+                "Incompatible dataframe 'df' to fit surrogate model of CBO."
             )
 
         self._opt.tell(x, [-yi for yi in y])

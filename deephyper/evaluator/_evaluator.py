@@ -13,7 +13,7 @@ from typing import Dict, List
 
 import numpy as np
 from deephyper.evaluator._job import Job
-from skopt.optimizer import OBJECTIVE_VALUE_FAILURE
+from deephyper.skopt.optimizer import OBJECTIVE_VALUE_FAILURE
 
 EVALUATORS = {
     "mpipool": "_mpi_pool.MPIPoolEvaluator",

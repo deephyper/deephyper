@@ -1,3 +1,4 @@
+import unittest
 import pytest
 
 
@@ -9,8 +10,7 @@ def run_many_results(config, y=0):
     return {"x": config["x"], "y": y}
 
 
-@pytest.mark.incremental
-class TestEvaluator:
+class TestEvaluator(unittest.TestCase):
     def test_import(self):
         from deephyper.evaluator import Evaluator
 
@@ -100,5 +100,11 @@ class TestEvaluator:
     def test_subprocess(self):
         self.execute_evaluator("subprocess")
 
+    @pytest.mark.ray
     def test_ray(self):
-        self.execute_evaluator("ray")
+        try:
+            self.execute_evaluator("ray")
+        except ModuleNotFoundError as e:
+            e_str = str(e)
+            if not("ray" in e_str):
+                raise e

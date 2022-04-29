@@ -7,31 +7,23 @@ import ConfigSpace as CS
 import ConfigSpace.hyperparameters as csh
 import numpy as np
 import pandas as pd
-import skopt
+import deephyper.skopt
 from deephyper.problem._hyperparameter import convert_to_skopt_space
 from deephyper.search._search import Search
 
 from sklearn.ensemble import GradientBoostingRegressor
-from skopt.utils import use_named_args
+from deephyper.skopt.utils import use_named_args
 
 # Adapt minimization -> maximization with DeepHyper
-MAP_multi_point_strategy = {
-    "cl_min": "cl_max",
-    "cl_max": "cl_min",
-    "qUCB": "qLCB"
-}
+MAP_multi_point_strategy = {"cl_min": "cl_max", "cl_max": "cl_min", "qUCB": "qLCB"}
 
-MAP_acq_func = {
-    "UCB": "LCB",
-    "qUCB": "qLCB"
-}
+MAP_acq_func = {"UCB": "LCB", "qUCB": "qLCB"}
 
-MAP_filter_failures = {
-    "min": "max"
-}
+MAP_filter_failures = {"min": "max"}
 
-class AMBS(Search):
-    """Asynchronous Model-Based Search based on the `Scikit-Optimized Optimizer <https://scikit-optimize.github.io/stable/modules/generated/skopt.Optimizer.html#skopt.Optimizer>`_.
+
+class CBO(Search):
+    """Centralized Bayesian Optimisation Search, previously named as "Asynchronous Model-Based Search" (AMBS). It follows a manager-workers architecture where the manager runs the Bayesian optimization loop and workers execute parallel evaluations of the black-box function.
 
     Args:
         problem (HpProblem): Hyperparameter problem describing the search space to explore.
@@ -49,6 +41,7 @@ class AMBS(Search):
         multi_point_strategy (str, optional): Definition of the constant value use for the Liar strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max"]`` . Defaults to ``"cl_max"``.
         n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the Bayesian optimization. A value of ``-1`` will use all available cores. Defaults to ``1``.
         n_initial_points (int, optional): Number of collected objectives required before fitting the surrogate-model. Defaults to ``10``.
+        initial_points (List[Dict], optional): A list of initial points to evaluate. Defaults to ``None``.
         sync_communcation (bool, optional): Performs the search in a batch-synchronous manner. Defaults to ``False``.
         filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. Defaults to ``"mean"`` to replace by mean of objectives.
     """
@@ -74,8 +67,9 @@ class AMBS(Search):
         multi_point_strategy: str = "cl_max",
         n_jobs: int = 1,  # 32 is good for Theta
         n_initial_points=10,
+        initial_points=None,
         sync_communication: bool = False,
-        filter_failures: str="mean",
+        filter_failures: str = "mean",
         **kwargs,
     ):
 
@@ -105,20 +99,40 @@ class AMBS(Search):
 
         if not (type(filter_duplicated) is bool):
             raise ValueError(
-                f"Parameter {filter_duplicated=} should be a boolean value!"
+                f"Parameter filter_duplicated={filter_duplicated} should be a boolean value!"
             )
 
-        multi_point_strategy_allowed = ["cl_min", "cl_mean", "cl_max", "topk", "boltzmann", "qUCB"]
+        multi_point_strategy_allowed = [
+            "cl_min",
+            "cl_mean",
+            "cl_max",
+            "topk",
+            "boltzmann",
+            "qUCB",
+        ]
         if not (multi_point_strategy in multi_point_strategy_allowed):
             raise ValueError(
                 f"Parameter multi_point_strategy={multi_point_strategy} should have a value in {multi_point_strategy_allowed}!"
             )
 
         if not (type(n_jobs) is int):
-            raise ValueError(f"Parameter {n_jobs=} should be an integer value!")
+            raise ValueError(f"Parameter n_jobs={n_jobs} should be an integer value!")
 
         self._n_initial_points = n_initial_points
-        self._multi_point_strategy = MAP_multi_point_strategy.get(multi_point_strategy, multi_point_strategy)
+        self._initial_points = []
+        if initial_points is not None and len(initial_points) > 0:
+            for point in initial_points:
+                if isinstance(point, list):
+                    self._initial_points.append(point)
+                elif isinstance(point, dict):
+                    self._initial_points.append([point[hp_name] for hp_name in problem.hyperparameter_names])
+                else:
+                    raise ValueError(f"Initial points should be dict or list but {type(point)} was given!")
+
+
+        self._multi_point_strategy = MAP_multi_point_strategy.get(
+            multi_point_strategy, multi_point_strategy
+        )
         self._fitted = False
 
         # check if it is possible to convert the ConfigSpace to standard skopt Space
@@ -146,12 +160,15 @@ class AMBS(Search):
                 "filter_duplicated": filter_duplicated,
                 "update_prior": update_prior,
                 "n_jobs": n_jobs,
-                "filter_failures": MAP_filter_failures.get(filter_failures, filter_failures),
+                "filter_failures": MAP_filter_failures.get(
+                    filter_failures, filter_failures
+                ),
             },
             # acquisition function
             acq_func=MAP_acq_func.get(acq_func, acq_func),
             acq_func_kwargs={"xi": xi, "kappa": kappa},
             n_initial_points=self._n_initial_points,
+            initial_points=self._initial_points,
             random_state=self._random_state,
         )
 
@@ -160,7 +177,7 @@ class AMBS(Search):
     def _setup_optimizer(self):
         if self._fitted:
             self._opt_kwargs["n_initial_points"] = 0
-        self._opt = skopt.Optimizer(**self._opt_kwargs)
+        self._opt = deephyper.skopt.Optimizer(**self._opt_kwargs)
 
     def _search(self, max_evals, timeout):
 
@@ -169,11 +186,25 @@ class AMBS(Search):
 
         num_evals_done = 0
 
-        # Filling available nodes at start
-        logging.info(f"Generating {self._evaluator.num_workers} initial points...")
+        logging.info(f"Asking {self._evaluator.num_workers} initial configurations...")
         t1 = time.time()
-        self._evaluator.submit(self.get_random_batch(size=self._evaluator.num_workers))
-        logging.info(f"Generation took: {time.time() - t1:.4f} sec.")
+        new_X = self._opt.ask(n_points=self._evaluator.num_workers)
+        logging.info(f"Asking took {time.time() - t1:.4f} sec.")
+
+        # Transform list to dict configurations
+        logging.info(f"Transforming configurations to dict...")
+        t1 = time.time()
+        new_batch = []
+        for x in new_X:
+            new_cfg = self.to_dict(x)
+            new_batch.append(new_cfg)
+        logging.info(f"Transformation took {time.time() - t1:.4f} sec.")
+
+        # submit new configurations
+        logging.info(f"Submitting {len(new_batch)} configurations...")
+        t1 = time.time()
+        self._evaluator.submit(new_batch)
+        logging.info(f"Submition took {time.time() - t1:.4f} sec.")
 
         # Main loop
         while max_evals < 0 or num_evals_done < max_evals:
@@ -207,7 +238,10 @@ class AMBS(Search):
                         opt_X.append(x)
                         opt_y.append(-obj)  #! maximizing
                     elif type(obj) is str and "F" == obj[0]:
-                        if self._opt_kwargs["acq_optimizer_kwargs"]["filter_failures"] == "ignore":
+                        if (
+                            self._opt_kwargs["acq_optimizer_kwargs"]["filter_failures"]
+                            == "ignore"
+                        ):
                             continue
                         else:
                             opt_X.append(x)
@@ -263,7 +297,7 @@ class AMBS(Search):
             )
 
         if name == "RF":
-            surrogate = skopt.learning.RandomForestRegressor(
+            surrogate = deephyper.skopt.learning.RandomForestRegressor(
                 n_estimators=100,
                 max_features=1,
                 # min_samples_leaf=3,
@@ -271,7 +305,7 @@ class AMBS(Search):
                 random_state=random_state,
             )
         elif name == "ET":
-            surrogate = skopt.learning.ExtraTreesRegressor(
+            surrogate = deephyper.skopt.learning.ExtraTreesRegressor(
                 n_estimators=100,
                 min_samples_leaf=3,
                 n_jobs=n_jobs,
@@ -280,7 +314,7 @@ class AMBS(Search):
         elif name == "GBRT":
 
             gbrt = GradientBoostingRegressor(n_estimators=30, loss="quantile")
-            surrogate = skopt.learning.GradientBoostingQuantileRegressor(
+            surrogate = deephyper.skopt.learning.GradientBoostingQuantileRegressor(
                 base_estimator=gbrt, n_jobs=n_jobs, random_state=random_state
             )
         else:  # for DUMMY and GP
@@ -337,7 +371,7 @@ class AMBS(Search):
 
         Example Usage:
 
-        >>> search = AMBS(problem, evaluator)
+        >>> search = CBO(problem, evaluator)
         >>> search.fit_surrogate("results.csv")
         """
         if type(df) is str and df[-4:] == ".csv":
@@ -355,7 +389,7 @@ class AMBS(Search):
             y = df.objective.tolist()
         except KeyError:
             raise ValueError(
-                "Incompatible dataframe 'df' to fit surrogate model of AMBS."
+                "Incompatible dataframe 'df' to fit surrogate model of CBO."
             )
 
         self._opt.tell(x, [-yi for yi in y])
@@ -400,13 +434,17 @@ class AMBS(Search):
             if hp_name in req_df.columns:
                 hp = self._problem.space.get_hyperparameter(hp_name)
 
-                #TODO: Categorical and Ordinal are both considered non-ordered for SDV
-                #TODO: it could be useful to use the "category"  type of Pandas and the ordered=True/False argument
-                #TODO: to extend the capability of SDV
-                if isinstance(hp, csh.CategoricalHyperparameter) or isinstance(hp, csh.OrdinalHyperparameter):
+                # TODO: Categorical and Ordinal are both considered non-ordered for SDV
+                # TODO: it could be useful to use the "category"  type of Pandas and the ordered=True/False argument
+                # TODO: to extend the capability of SDV
+                if isinstance(hp, csh.CategoricalHyperparameter) or isinstance(
+                    hp, csh.OrdinalHyperparameter
+                ):
                     req_df[hp_name] = req_df[hp_name].astype("O")
                 else:
-                    scalar_constraints.append(sdv.constraints.Between(hp_name, hp.lower, hp.upper))
+                    scalar_constraints.append(
+                        sdv.constraints.Between(hp_name, hp.lower, hp.upper)
+                    )
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -418,13 +456,15 @@ class AMBS(Search):
 
             if n_iter_optimize > 0:
                 space = [
-                    skopt.space.Integer(1, 20, name="epochs"),
-                    # skopt.space.Integer(1, np.floor(req_df.shape[0]/10), name='batch_size'),
-                    skopt.space.Integer(1, 8, name="embedding_dim"),
-                    skopt.space.Integer(1, 8, name="compress_dims"),
-                    skopt.space.Integer(1, 8, name="decompress_dims"),
-                    skopt.space.Real(10**-8, 10**-4, "log-uniform", name="l2scale"),
-                    skopt.space.Integer(1, 5, name="loss_factor"),
+                    deephyper.skopt.space.Integer(1, 20, name="epochs"),
+                    # deephyper.skopt.space.Integer(1, np.floor(req_df.shape[0]/10), name='batch_size'),
+                    deephyper.skopt.space.Integer(1, 8, name="embedding_dim"),
+                    deephyper.skopt.space.Integer(1, 8, name="compress_dims"),
+                    deephyper.skopt.space.Integer(1, 8, name="decompress_dims"),
+                    deephyper.skopt.space.Real(
+                        10**-8, 10**-4, "log-uniform", name="l2scale"
+                    ),
+                    deephyper.skopt.space.Integer(1, 5, name="loss_factor"),
                 ]
 
                 def model_fit(params):
@@ -451,7 +491,7 @@ class AMBS(Search):
                     return score
 
                 # run sequential optimization of generative model hyperparameters
-                opt = skopt.Optimizer(space)
+                opt = deephyper.skopt.Optimizer(space)
                 for i in range(n_iter_optimize):
                     x = opt.ask()
                     y = objective(x)
@@ -610,7 +650,7 @@ class AMBS(Search):
         if self._fitted:  # for the surrogate or search space
             batch = []
         else:
-            batch = self._problem.starting_point_asdict
+            batch = self._initial_points
             # Replace None by "nan"
             for point in batch:
                 for (k, v), hp in zip(
@@ -674,3 +714,59 @@ def replace_nan(x):
     :meta private:
     """
     return [np.nan if x_i == "nan" else x_i for x_i in x]
+
+
+class AMBS(CBO):
+    """ "'AMBS' is now deprecated and will be removed in the future use 'CBO' (Centralized Bayesian Optimization) instead!" """
+
+    def __init__(
+        self,
+        problem,
+        evaluator,
+        random_state: int = None,
+        log_dir: str = ".",
+        verbose: int = 0,
+        surrogate_model: str = "RF",
+        acq_func: str = "UCB",
+        acq_optimizer: str = "auto",
+        kappa: float = 1.96,
+        xi: float = 0.001,
+        n_points: int = 10000,
+        filter_duplicated: bool = True,
+        update_prior: bool = False,
+        multi_point_strategy: str = "cl_max",
+        n_jobs: int = 1,
+        n_initial_points=10,
+        initial_points=None,
+        sync_communication: bool = False,
+        filter_failures: str = "mean",
+        **kwargs,
+    ):
+        super().__init__(
+            problem,
+            evaluator,
+            random_state,
+            log_dir,
+            verbose,
+            surrogate_model,
+            acq_func,
+            acq_optimizer,
+            kappa,
+            xi,
+            n_points,
+            filter_duplicated,
+            update_prior,
+            multi_point_strategy,
+            n_jobs,
+            n_initial_points,
+            initial_points,
+            sync_communication,
+            filter_failures,
+            **kwargs,
+        )
+        import warnings
+
+        warnings.warn(
+            "'AMBS' is now deprecated and will be removed in the future use 'CBO' (Centralized Bayesian Optimization) instead!",
+            category=DeprecationWarning,
+        )
