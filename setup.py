@@ -86,7 +86,7 @@ EXTRAS = {
         "ipython",
         "nbsphinx",
         "Sphinx~=3.5.4",
-        "sphinx-book-theme",
+        "sphinx-book-theme==0.3.2",
         "sphinx-copybutton",
         "sphinx-togglebutton",
     ],
