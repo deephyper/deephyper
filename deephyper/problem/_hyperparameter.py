@@ -284,16 +284,16 @@ class HpProblem:
 
     @property
     def hyperparameter_names(self):
+        """The list of hyperparameters names."""
         return self._space.get_hyperparameter_names()
 
-    def check_configuration(self, parameters):
-        """
-        :meta private:
-        """
+    def check_configuration(self, parameters: dict):
+        """Check if a configuration is valid. Raise an error if not."""
         config = cs.Configuration(self._space, parameters)
         self._space.check_configuration(config)
 
     @property
     def default_configuration(self):
+        """The default configuration as a dictionnary."""
         config = self._space.get_default_configuration().get_dictionary()
         return config
