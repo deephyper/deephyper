@@ -86,7 +86,9 @@ Table of Contents
 
     install/index
     tutorials/index
+    examples/index
     research
+    Authors <authors>
 
 
 .. toctree::

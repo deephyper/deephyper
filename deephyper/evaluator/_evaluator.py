@@ -67,6 +67,8 @@ class Evaluator:
 
         self._callbacks = [] if callbacks is None else callbacks
 
+        self._lock = asyncio.Lock()
+
     @staticmethod
     def create(run_function, method="subprocess", method_kwargs={}):
         """Create evaluator with a specific backend and configuration.
@@ -124,7 +126,12 @@ class Evaluator:
 
     async def _run_jobs(self, configs):
         for config in configs:
-            new_job = self.create_job(config)
+            
+            # Create a Job object from the input configuration
+            new_job = Job(self.n_jobs, config, self.run_function)
+            self.n_jobs += 1
+            self.jobs.append(new_job)
+
             self._on_launch(new_job)
             task = self.loop.create_task(self._execute(new_job))
             self._tasks_running.append(task)
@@ -225,14 +232,6 @@ class Evaluator:
         logging.info("gather done")
         return results
 
-    def create_job(self, config):
-        """Create a Job object from the input configuration."""
-        new_job = Job(self.n_jobs, config, self.run_function)
-        self.n_jobs += 1
-        self.jobs.append(new_job)
-
-        return new_job
-
     def decode(self, key):
         """Decode the key following a JSON format to return a dict."""
         x = json.loads(key)
@@ -265,6 +264,7 @@ class Evaluator:
         resultsList = []
 
         for job in self.jobs_done:
+
             if saved_keys is None:
                 result = copy.deepcopy(job.config)
             elif type(saved_keys) is list:
@@ -272,6 +272,7 @@ class Evaluator:
                 result = {k: self.convert_for_csv(decoded_key[k]) for k in saved_keys}
             elif callable(saved_keys):
                 result = copy.deepcopy(saved_keys(job))
+
             result["job_id"] = job.id
             result["objective"] = job.result
             result["timestamp_submit"] = job.timestamp_submit
@@ -297,4 +298,4 @@ class Evaluator:
                     self._start_dumping = True
                 writer.writerows(resultsList)
 
-        logging.info("dum_evals done")
+        logging.info("dump_evals done")

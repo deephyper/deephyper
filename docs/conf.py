@@ -78,6 +78,7 @@ extensions = [
     "nbsphinx",
     "sphinx_book_theme",
     "sphinx_copybutton",
+    "sphinx_gallery.gen_gallery",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.coverage",
@@ -281,6 +282,13 @@ autodoc_mock_imports = [
 # Remove <BLANKLINE>
 trim_doctest_flags = True
 
+
+# Sphinx Gallery
+
+sphinx_gallery_conf = {
+     'examples_dirs': '../examples',   # path to your example scripts
+     'gallery_dirs': 'examples',  # path to where to save gallery generated output
+}
 
 def setup(app):
     app.add_css_file("custom.css")

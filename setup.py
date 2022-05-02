@@ -88,6 +88,7 @@ EXTRAS = {
         "Sphinx~=3.5.4",
         "sphinx-book-theme==0.3.2",
         "sphinx-copybutton",
+        "sphinx-gallery",
         "sphinx-togglebutton",
     ],
     "analytics": [

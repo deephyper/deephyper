@@ -817,7 +817,7 @@ class Optimizer(object):
             yi = self._filter_failures(self.yi)
 
             # handle size of the sample fit to the estimator
-            Xi, yi = self._sample(self.Xi, self.yi)
+            Xi, yi = self._sample(self.Xi, yi)
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")

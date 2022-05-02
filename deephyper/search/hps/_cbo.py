@@ -48,7 +48,7 @@ class CBO(Search):
         n_initial_points (int, optional): Number of collected objectives required before fitting the surrogate-model. Defaults to ``10``.
         initial_points (List[Dict], optional): A list of initial points to evaluate. Defaults to ``None``.
         sync_communcation (bool, optional): Performs the search in a batch-synchronous manner. Defaults to ``False``.
-        filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. Defaults to ``"mean"`` to replace by mean of objectives.
+        filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. If ``"ignore"`` is passed then failed configurations will be filtered-out and not passed to the surrogate model. Defaults to ``"mean"`` to replace by failed configurations by the running mean of objectives.
     """
 
     # objective value used in case of failure in the run-function
@@ -230,6 +230,9 @@ class CBO(Search):
 
                 num_received = len(new_results)
                 num_evals_done += num_received
+
+                if num_evals_done >= max_evals:
+                    break
 
                 # Transform configurations to list to fit optimizer
                 logging.info("Transforming received configurations to list...")
