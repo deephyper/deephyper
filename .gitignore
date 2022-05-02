@@ -183,3 +183,7 @@ Icon
 old_*/
 
 !.devcontainer.json
+
+# for Sphinx Gallery
+!docs/examples/images/*.png
+!docs/examples/images/thumb/*.png
