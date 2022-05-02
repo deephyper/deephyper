@@ -79,6 +79,7 @@ extensions = [
     "sphinx_book_theme",
     "sphinx_copybutton",
     "sphinx_gallery.gen_gallery",
+    "sphinx_lfs_content",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.coverage",
