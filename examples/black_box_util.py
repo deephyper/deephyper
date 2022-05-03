@@ -16,12 +16,13 @@ def ackley(x, a=20, b=0.2, c=2 * np.pi):
 
 
 @profile
-def run_ackley(config):
+def run_ackley(config, sleep_loc=2, sleep_scale=0.5):
 
     # to simulate the computation of an expensive black-box
-    t_sleep = np.random.normal(loc=2, scale=0.5)
-    t_sleep = max(t_sleep, 0)
-    time.sleep(t_sleep)
+    if sleep_loc > 0:
+        t_sleep = np.random.normal(loc=sleep_loc, scale=sleep_scale)
+        t_sleep = max(t_sleep, 0)
+        time.sleep(t_sleep)
 
     x = np.array([config[k] for k in config if "x" in k])
     x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf

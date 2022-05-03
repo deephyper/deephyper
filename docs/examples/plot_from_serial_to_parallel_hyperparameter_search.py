@@ -15,8 +15,6 @@ We will use the ``time.sleep`` function to simulate a budget of 2 secondes of ex
 
 .. literalinclude:: ../../examples/black_box_util.py
    :language: python
-   :emphasize-lines: 19-28 
-   :linenos:
 
 After defining the black-box we can continue with the definition of our main script:
 """
@@ -36,45 +34,46 @@ problem
 
 # %%
 # Then we define serial search by creation a ``"serial"``-evaluator and we execute the search with a fixed time-budget of 2 minutes (i.e., 120 secondes).
+if __name__ == "__main__":
+    from deephyper.evaluator import Evaluator
+    from deephyper.evaluator.callback import TqdmCallback
+    from deephyper.search.hps import CBO
 
-from deephyper.evaluator import Evaluator
-from deephyper.evaluator.callback import TqdmCallback
-from deephyper.search.hps import CBO
+    # we give a budget of 2 minutes for each search
+    timeout = 120
+    serial_evaluator = Evaluator.create(
+        black_box.run_ackley, method="serial", method_kwargs={"callbacks": [TqdmCallback()]}
+    )
 
-# we give a budget of 2 minutes for each search
-timeout = 120
-serial_evaluator = Evaluator.create(
-    black_box.run_ackley, method="serial", method_kwargs={"callbacks": [TqdmCallback()]}
-)
-
-results = {}
-serial_search = CBO(problem, serial_evaluator, random_state=42)
-results["serial"] = serial_search.search(timeout=timeout)
+    results = {}
+    serial_search = CBO(problem, serial_evaluator, random_state=42)
+    results["serial"] = serial_search.search(timeout=timeout)
 
 # %%
 # After, executing the serial-search for 2 minutes we can create a parallel search which uses the ``"process"``-evaluator and defines 5 parallel workers. The search is also executed for 2 minutes.
+if __name__ == "__main__":
+    parallel_evaluator = Evaluator.create(
+        black_box.run_ackley,
+        method="process",
+        method_kwargs={"num_workers": 5, "callbacks": [TqdmCallback()]},
+    )
 
-parallel_evaluator = Evaluator.create(
-    black_box.run_ackley,
-    method="process",
-    method_kwargs={"num_workers": 5, "callbacks": [TqdmCallback()]},
-)
-
-parallel_search = CBO(problem, parallel_evaluator, random_state=42)
-results["parallel"] = parallel_search.search(timeout=timeout)
+    parallel_search = CBO(problem, parallel_evaluator, random_state=42)
+    results["parallel"] = parallel_search.search(timeout=timeout)
 
 # %%
 # Finally, we plot the results from the collected DataFrame. The execution time is used as the x-axis which help-us vizualise the advantages of the parallel search.
-import matplotlib.pyplot as plt
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
 
-plt.figure()
+    plt.figure()
 
-for strategy, df in results.items():
-    plt.scatter(df.timestamp_end, df.objective, label=strategy)
-    plt.plot(df.timestamp_end, df.objective.cummax())
+    for strategy, df in results.items():
+        plt.scatter(df.timestamp_end, df.objective, label=strategy)
+        plt.plot(df.timestamp_end, df.objective.cummax())
 
-plt.xlabel("Time (sec.)")
-plt.ylabel("Objective")
-plt.grid()
-plt.legend()
-plt.show()
+    plt.xlabel("Time (sec.)")
+    plt.ylabel("Objective")
+    plt.grid()
+    plt.legend()
+    plt.show()

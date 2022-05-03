@@ -74,6 +74,27 @@ Below is a gallery of examples on how to use DeepHyper.
    :hidden:
 
    /examples/plot_notify_failures_hyperparameter_search
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Author(s)**: Romain Egele.">
+
+.. only:: html
+
+ .. figure:: /examples/images/thumb/sphx_glr_plot_profile_worker_utilization_thumb.png
+     :alt: Profile the Worker Utiliaztion
+
+     :ref:`sphx_glr_examples_plot_profile_worker_utilization.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/plot_profile_worker_utilization
 .. raw:: html
 
     <div class="sphx-glr-clear"></div>
