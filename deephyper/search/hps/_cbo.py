@@ -422,8 +422,9 @@ class CBO(Search):
         assert isinstance(df, pd.DataFrame)
 
         # filter failures
-        df = df[~df.objective.str.startswith("F")]
-        df.objective = df.objective.astype(float)
+        if pd.api.types.is_string_dtype(df.objective):
+            df = df[~df.objective.str.startswith("F")]
+            df.objective = df.objective.astype(float)
 
         # print(df.objective.values)
         q_val = np.quantile(df.objective.values, q)
