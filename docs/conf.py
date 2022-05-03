@@ -42,11 +42,7 @@ else:
     release = f'v{about["__version__"]}-{about["__version_suffix__"]}'
 
 # PULL Tutorials
-branch_name_map = {
-    "master": "main",
-    "latest": "main",
-    "develop": "develop"
-}
+branch_name_map = {"master": "main", "latest": "main", "develop": "develop"}
 if os.environ.get("READTHEDOCS"):
     doc_version = os.environ["READTHEDOCS_VERSION"]
 else:
@@ -60,10 +56,12 @@ tutorials_dest_dir = "tutorials"
 
 def pull_tutorials(github_link, dest_dir, tutorial_branch):
     os.system(f"rm -rf {dest_dir}/")
-    os.system(f"git clone --depth=1 --branch={tutorial_branch} {github_link} {dest_dir}")
+    os.system(
+        f"git clone --depth=1 --branch={tutorial_branch} {github_link} {dest_dir}"
+    )
     os.system(f"rm -rf {dest_dir}/.git")
 
-# pull_tutorials(tutorials_github_link, tutorials_dest_dir, tutorial_branch)
+pull_tutorials(tutorials_github_link, tutorials_dest_dir, tutorial_branch)
 
 # -- General configuration ---------------------------------------------------
 
@@ -258,7 +256,7 @@ epub_exclude_files = ["search.html"]
 # -- Options for intersphinx extension ---------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
+intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
 
 # -- Options for todo extension ----------------------------------------------
 
@@ -287,9 +285,12 @@ trim_doctest_flags = True
 # Sphinx Gallery
 
 sphinx_gallery_conf = {
-     'examples_dirs': '../examples',   # path to your example scripts
-     'gallery_dirs': 'examples',  # path to where to save gallery generated output
+    "examples_dirs": "../examples",  # path to your example scripts
+    "gallery_dirs": "examples",  # path to where to save gallery generated output
+    "filename_pattern": "/plot_",
+    "ignore_pattern": r"_util\.py",
 }
+
 
 def setup(app):
     app.add_css_file("custom.css")

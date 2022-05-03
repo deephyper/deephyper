@@ -51,9 +51,6 @@ class CBO(Search):
         filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. If ``"ignore"`` is passed then failed configurations will be filtered-out and not passed to the surrogate model. Defaults to ``"mean"`` to replace by failed configurations by the running mean of objectives.
     """
 
-    # objective value used in case of failure in the run-function
-    FAILED_EVALUATION_VALUE = 10e10
-
     def __init__(
         self,
         problem,
@@ -231,7 +228,7 @@ class CBO(Search):
                 num_received = len(new_results)
                 num_evals_done += num_received
 
-                if num_evals_done >= max_evals:
+                if max_evals > 0 and num_evals_done >= max_evals:
                     break
 
                 # Transform configurations to list to fit optimizer

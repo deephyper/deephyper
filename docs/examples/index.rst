@@ -39,6 +39,27 @@ Below is a gallery of examples on how to use DeepHyper.
 
 .. only:: html
 
+ .. figure:: /examples/images/thumb/sphx_glr_plot_from_serial_to_parallel_hyperparameter_search_thumb.png
+     :alt: From Serial to Parallel Evaluations
+
+     :ref:`sphx_glr_examples_plot_from_serial_to_parallel_hyperparameter_search.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/plot_from_serial_to_parallel_hyperparameter_search
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Author(s)**: Romain Egele.">
+
+.. only:: html
+
  .. figure:: /examples/images/thumb/sphx_glr_plot_notify_failures_hyperparameter_search_thumb.png
      :alt: Notify Failures in Hyperparameter optimization
 
