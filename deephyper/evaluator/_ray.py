@@ -64,9 +64,12 @@ class RayEvaluator(Evaluator):
         if self.num_workers is None or self.num_workers == -1:
             self.num_workers = int(self.num_cpus // self.num_cpus_per_task)
 
-        logger.info(
-            f"Ray Evaluator will execute {self.run_function.__name__}() from module {self.run_function.__module__}"
-        )
+        if hasattr(run_function, "__name__") and hasattr(run_function, "__module__"):
+            logger.info(
+                f"Ray Evaluator will execute {self.run_function.__name__}() from module {self.run_function.__module__}"
+            )
+        else:
+            logger.info(f"Ray Evaluator will execute {self.run_function}")
 
         self._remote_run_function = ray.remote(
             num_cpus=self.num_cpus_per_task,

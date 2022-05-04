@@ -26,6 +26,23 @@ EVALUATORS = {
 }
 
 
+def _test_ipython_interpretor() -> bool:
+    """Test if the current Python interpretor is IPython or not.
+    
+    Suggested by: https://stackoverflow.com/questions/15411967/how-can-i-check-if-code-is-executed-in-the-ipython-notebook
+    """
+    try:
+        shell = get_ipython().__class__.__name__
+        if shell == 'ZMQInteractiveShell':
+            return True   # Jupyter notebook or qtconsole
+        elif shell == 'TerminalInteractiveShell':
+            return False  # Terminal running IPython
+        else:
+            return False  # Other type (?)
+    except NameError:
+        return False      # Probably standard Python interpreter
+
+
 class Evaluator:
     """This ``Evaluator`` class asynchronously manages a series of Job objects to help execute given HPS or NAS tasks on various environments with differing system settings and properties.
 
@@ -68,6 +85,11 @@ class Evaluator:
         self._callbacks = [] if callbacks is None else callbacks
 
         self._lock = asyncio.Lock()
+
+        # to avoid "RuntimeError: This event loop is already running"
+        if _test_ipython_interpretor():
+            import deephyper.evaluator._nest_asyncio as nest_asyncio
+            nest_asyncio.apply()
 
     @staticmethod
     def create(run_function, method="subprocess", method_kwargs={}):

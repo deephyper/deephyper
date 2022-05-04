@@ -34,9 +34,13 @@ class SubprocessEvaluator(Evaluator):
     ):
         super().__init__(run_function, num_workers, callbacks, run_function_kwargs)
         self.sem = asyncio.Semaphore(num_workers)
-        logger.info(
-            f"Subprocess Evaluator will execute {self.run_function.__name__}() from module {self.run_function.__module__}"
-        )
+        
+        if hasattr(run_function, "__name__") and hasattr(run_function, "__module__"):
+            logger.info(
+                f"Subprocess Evaluator will execute {self.run_function.__name__}() from module {self.run_function.__module__}"
+            )
+        else:
+            logger.info(f"Subprocess Evaluator will execute {self.run_function}")
 
     def _encode(self, job):
         return encode_dict(job.config)
