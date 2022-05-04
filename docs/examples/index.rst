@@ -81,8 +81,29 @@ Below is a gallery of examples on how to use DeepHyper.
 
 .. only:: html
 
+ .. figure:: /examples/images/thumb/sphx_glr_plot_transfer_learning_for_hps_thumb.png
+     :alt: Transfer Learning for Hyperparameter Search
+
+     :ref:`sphx_glr_examples_plot_transfer_learning_for_hps.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/plot_transfer_learning_for_hps
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Author(s)**: Romain Egele.">
+
+.. only:: html
+
  .. figure:: /examples/images/thumb/sphx_glr_plot_profile_worker_utilization_thumb.png
-     :alt: Profile the Worker Utiliaztion
+     :alt: Profile the Worker Utilization
 
      :ref:`sphx_glr_examples_plot_profile_worker_utilization.py`
 

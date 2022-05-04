@@ -277,6 +277,7 @@ autodoc_mock_imports = [
     "tensorflow",
     "xgboost",
 ]
+autosummary_mock_imports = autodoc_mock_imports
 
 # Remove <BLANKLINE>
 trim_doctest_flags = True

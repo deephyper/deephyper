@@ -18,7 +18,7 @@
 .. _sphx_glr_examples_plot_profile_worker_utilization.py:
 
 
-Profile the Worker Utiliaztion
+Profile the Worker Utilization
 ==============================
 
 **Author(s)**: Romain Egele.
@@ -130,105 +130,143 @@ Then we define a parallel search.
 
 
 
+
     0it [00:00, ?it/s]
 
-    1it [00:02,  2.23s/it]
 
-    1it [00:02,  2.23s/it, objective=-21.5]
+    1it [00:01,  1.82s/it]
 
-    2it [00:02,  1.18s/it, objective=-21.5]
 
-    2it [00:02,  1.18s/it, objective=-21.2]
+    1it [00:01,  1.82s/it, objective=-21.2]
 
-    3it [00:02,  1.38it/s, objective=-21.2]
 
-    3it [00:02,  1.38it/s, objective=-20.6]
+    2it [00:02,  1.26s/it, objective=-21.2]
 
-    4it [00:02,  1.38it/s, objective=-20.6]
 
-    5it [00:05,  1.07it/s, objective=-20.6]
+    2it [00:02,  1.26s/it, objective=-20.8]
 
-    5it [00:05,  1.07it/s, objective=-19.9]
 
-    6it [00:05,  1.18it/s, objective=-19.9]
+    3it [00:03,  1.17s/it, objective=-20.8]
 
-    6it [00:05,  1.18it/s, objective=-19.9]
 
-    7it [00:05,  1.57it/s, objective=-19.9]
+    3it [00:03,  1.17s/it, objective=-20.8]
 
-    7it [00:05,  1.57it/s, objective=-19.9]
 
-    8it [00:06,  1.65it/s, objective=-19.9]
+    4it [00:03,  1.17s/it, objective=-20.6]
 
-    8it [00:06,  1.65it/s, objective=-19.9]
+
+    5it [00:05,  1.10it/s, objective=-20.6]
+
+
+    5it [00:05,  1.10it/s, objective=-19.9]
+
+
+    6it [00:05,  1.22it/s, objective=-19.9]
+
+
+    6it [00:05,  1.22it/s, objective=-19.9]
+
+
+    7it [00:06,  1.47it/s, objective=-19.9]
+
+
+    7it [00:06,  1.47it/s, objective=-19.9]
+
+
+    8it [00:06,  1.66it/s, objective=-19.9]
+
+
+    8it [00:06,  1.66it/s, objective=-19.9]
+
 
     9it [00:08,  1.04it/s, objective=-19.9]
 
+
     9it [00:08,  1.04it/s, objective=-19.9]
 
-    10it [00:08,  1.38it/s, objective=-19.9]
 
-    10it [00:08,  1.38it/s, objective=-19.9]
+    10it [00:08,  1.28it/s, objective=-19.9]
 
-    11it [00:09,  1.18it/s, objective=-19.9]
 
-    11it [00:09,  1.18it/s, objective=-19.9]
+    10it [00:08,  1.28it/s, objective=-19.9]
 
-    12it [00:09,  1.34it/s, objective=-19.9]
 
-    12it [00:09,  1.34it/s, objective=-19.9]
+    11it [00:09,  1.41it/s, objective=-19.9]
 
-    13it [00:10,  1.23it/s, objective=-19.9]
 
-    13it [00:10,  1.23it/s, objective=-19.9]
+    11it [00:09,  1.41it/s, objective=-19.9]
 
-    14it [00:11,  1.55it/s, objective=-19.9]
 
-    14it [00:11,  1.55it/s, objective=-11.3]
+    12it [00:09,  1.68it/s, objective=-19.9]
 
-    15it [00:11,  1.89it/s, objective=-11.3]
 
-    15it [00:11,  1.89it/s, objective=-11.3]
+    12it [00:09,  1.68it/s, objective=-19.9]
 
-    16it [00:13,  1.19it/s, objective=-11.3]
 
-    16it [00:13,  1.19it/s, objective=-11.3]
+    13it [00:11,  1.00it/s, objective=-19.9]
 
-    17it [00:13,  1.21it/s, objective=-11.3]
 
-    17it [00:13,  1.21it/s, objective=-10.8]
+    13it [00:11,  1.00it/s, objective=-11.3]
 
-    18it [00:14,  1.47it/s, objective=-10.8]
 
-    18it [00:14,  1.47it/s, objective=-10.5]
+    14it [00:12,  1.08it/s, objective=-11.3]
 
-    19it [00:14,  1.50it/s, objective=-10.5]
 
-    19it [00:14,  1.50it/s, objective=-10.5]
+    14it [00:12,  1.08it/s, objective=-11.3]
 
-    20it [00:16,  1.01s/it, objective=-10.5]
 
-    20it [00:16,  1.01s/it, objective=-7.64]
+    15it [00:12,  1.34it/s, objective=-11.3]
 
-    21it [00:16,  1.25it/s, objective=-7.64]
 
-    21it [00:16,  1.25it/s, objective=-7.64]
+    15it [00:12,  1.34it/s, objective=-11.3]
 
-    22it [00:17,  1.56it/s, objective=-7.64]
 
-    22it [00:17,  1.56it/s, objective=-7.64]
+    16it [00:13,  1.40it/s, objective=-11.3]
 
-    23it [00:17,  1.78it/s, objective=-7.64]
 
-    23it [00:17,  1.78it/s, objective=-7.64]
+    16it [00:13,  1.40it/s, objective=-11.3]
 
-    24it [00:19,  1.04it/s, objective=-7.64]
 
-    24it [00:19,  1.04it/s, objective=-7.64]
+    17it [00:14,  1.01it/s, objective=-11.3]
 
-    25it [00:19,  1.24it/s, objective=-7.64]
 
-    25it [00:19,  1.24it/s, objective=-7.64]
+    17it [00:14,  1.01it/s, objective=-10.8]
+
+
+    18it [00:15,  1.22it/s, objective=-10.8]
+
+
+    18it [00:15,  1.22it/s, objective=-9.09]
+
+
+    19it [00:16,  1.19it/s, objective=-9.09]
+
+
+    19it [00:16,  1.19it/s, objective=-9.09]
+
+
+    20it [00:16,  1.23it/s, objective=-9.09]
+
+
+    20it [00:16,  1.23it/s, objective=-9.09]
+
+
+    21it [00:18,  1.07it/s, objective=-9.09]
+
+
+    21it [00:18,  1.07it/s, objective=-9.09]
+
+
+    22it [00:18,  1.30it/s, objective=-9.09]
+
+
+    22it [00:18,  1.30it/s, objective=-7.49]
+
+
+    23it [00:18,  1.62it/s, objective=-7.49]
+
+
+    23it [00:18,  1.62it/s, objective=-7.49]
 
 
 
@@ -303,7 +341,7 @@ Finally, we plot the results from the collected DataFrame.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  20.094 seconds)
+   **Total running time of the script:** ( 0 minutes  20.285 seconds)
 
 
 .. _sphx_glr_download_examples_plot_profile_worker_utilization.py:

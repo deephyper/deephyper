@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Profile the Worker Utiliaztion
+Profile the Worker Utilization
 ==============================
 
 **Author(s)**: Romain Egele.

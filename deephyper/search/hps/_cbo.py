@@ -413,7 +413,7 @@ class CBO(Search):
         # to make sdv optional
         try:
             import sdv
-        except ImportError as e:
+        except ModuleNotFoundError as e:
             print("Install SDV with: pip install sdv")
             raise e
 
