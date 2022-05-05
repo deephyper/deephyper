@@ -4,11 +4,11 @@
 * AUC ROC: ``auroc``
 * AUC Precision-Recall: ``aucpr``
 """
-from collections import OrderedDict
 import functools
+from collections import OrderedDict
 
 import tensorflow as tf
-from deephyper.search import util
+from deephyper.core.utils._import import load_attr
 
 
 def r2(y_true, y_pred):
@@ -97,7 +97,7 @@ def selectMetric(name: str):
         return name
     if metrics_func.get(name) == None and metrics_obj.get(name) == None:
         try:
-            return util.load_attr(name)
+            return load_attr(name)
         except:
             return name  # supposing it is referenced in keras metrics
     else:

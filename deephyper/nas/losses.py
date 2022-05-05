@@ -4,7 +4,7 @@
 from collections import OrderedDict
 
 import tensorflow as tf
-from deephyper.search import util
+from deephyper.core.utils._import import load_attr
 
 
 def tfp_negloglik(y, rv_y):
@@ -31,7 +31,7 @@ def selectLoss(name: str):
         return name
     if losses_func.get(name) == None and losses_obj.get(name) == None:
         try:
-            loaded_obj = util.load_attr(name)
+            loaded_obj = load_attr(name)
             return loaded_obj
         except:
             return tf.keras.losses.get(

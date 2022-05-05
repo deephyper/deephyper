@@ -94,11 +94,10 @@ Table of Contents
 .. toctree::
     :caption: API Reference
 
-    Contrib <_autosummary/deephyper.contrib>
     Core <_autosummary/deephyper.core>
     Ensemble <_autosummary/deephyper.ensemble>
     Evaluator <_autosummary/deephyper.evaluator>
-    Keras Layers <_autosummary/deephyper.layers>
+    Keras <_autosummary/deephyper.keras>
     NAS <_autosummary/deephyper.nas>
     Problem <_autosummary/deephyper.problem>
     Search <_autosummary/deephyper.search>

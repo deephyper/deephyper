@@ -53,11 +53,11 @@ Command line to execute hyperparameter search.
                             Type[dict]. Defaults to '{}'.
 """
 import argparse
-import sys
 import logging
+import sys
 
-from deephyper.search.util import load_attr
 from deephyper.core.parser import add_arguments_from_signature
+from deephyper.core.utils._import import load_attr
 from deephyper.evaluator import EVALUATORS, Evaluator
 
 HPS_SEARCHES = {
@@ -98,7 +98,7 @@ def build_parser_from(cls):
             add_arguments_from_signature(
                 parser, eval_cls, prefix=eval_name, exclude=evaluator_added_arguments
             )
-        except ModuleNotFoundError as e: # some evaluators are optional
+        except ModuleNotFoundError as e:  # some evaluators are optional
             pass
 
     return parser

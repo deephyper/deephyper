@@ -1,10 +1,9 @@
 """The callback module contains sub-classes of the ``Callback`` class used to trigger custom actions on the start and completion of jobs by the ``Evaluator``. Callbacks can be used with any Evaluator implementation.
 """
+import deephyper.core.exceptions
 import numpy as np
-
 import pandas as pd
 from tqdm import tqdm
-from deephyper.core.exceptions import SearchTerminationError
 
 
 class Callback:
@@ -89,6 +88,7 @@ class LoggerCallback(Callback):
         elif type(job.result) is str and "F" == job.result[0]:
             print(f"[{self._n_done:05d}] -- received failure: {job.result}")
 
+
 class TqdmCallback(Callback):
     """Print information when jobs are completed by the ``Evaluator``.
 
@@ -145,4 +145,4 @@ class SearchEarlyStopping(Callback):
             print(
                 f"Stopping the search because it did not improve for the last {self._patience} evaluations!"
             )
-            raise SearchTerminationError
+            raise deephyper.core.exceptions.SearchTerminationError

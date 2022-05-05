@@ -3,11 +3,10 @@
    :template: custom-module-template.rst
    :recursive:
 
-   deephyper.contrib 
    deephyper.core
    deephyper.ensemble
    deephyper.evaluator
-   deephyper.layers
+   deephyper.keras
    deephyper.nas
    deephyper.problem
    deephyper.search

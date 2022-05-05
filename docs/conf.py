@@ -61,6 +61,7 @@ def pull_tutorials(github_link, dest_dir, tutorial_branch):
     )
     os.system(f"rm -rf {dest_dir}/.git")
 
+
 pull_tutorials(tutorials_github_link, tutorials_dest_dir, tutorial_branch)
 
 # -- General configuration ---------------------------------------------------
@@ -102,9 +103,7 @@ templates_path = [
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
-#
-# source_suffix = ['.rst', '.md']
-source_suffix = ".rst"
+source_suffix = {".rst": "restructuredtext"}
 
 # The master toctree document.
 master_doc = "index"
@@ -119,7 +118,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = ["_build", "_templates", "Thumbs.db", ".DS_Store"]
+exclude_patterns = ["_build", "_templates", "Thumbs.db", ".DS_Store", "examples/*.ipynb"]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -267,6 +266,7 @@ todo_include_todos = True
 autodoc_mock_imports = [
     "horovod",
     "joblib",
+    "matplotlib",
     "mpi4py",
     "nbformat",
     "networkx",
@@ -275,6 +275,7 @@ autodoc_mock_imports = [
     "skopt",
     "tensorflow_probability",
     "tensorflow",
+    "tqdm",
     "xgboost",
 ]
 autosummary_mock_imports = autodoc_mock_imports

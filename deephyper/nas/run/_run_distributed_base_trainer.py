@@ -31,8 +31,8 @@ import logging
 
 import numpy as np
 import tensorflow as tf
-from deephyper.contrib.callbacks import import_callback
-from deephyper.contrib.callbacks import LearningRateWarmupCallback
+from deephyper.keras.callbacks import import_callback
+from deephyper.keras.callbacks import LearningRateWarmupCallback
 from deephyper.nas.run._util import (
     compute_objective,
     load_config,

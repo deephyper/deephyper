@@ -101,7 +101,7 @@ class Evaluator:
             method_kwargs (dict, optional): configuration dictionnary of the corresponding backend. Keys corresponds to the keyword arguments of the corresponding implementation. Defaults to "{}".
 
         Raises:
-            DeephyperRuntimeError: if the ``method is`` not acceptable.
+            ValueError: if the ``method is`` not acceptable.
 
         Returns:
             Evaluator: the ``Evaluator`` with the corresponding backend and configuration.
