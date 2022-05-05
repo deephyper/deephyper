@@ -11,9 +11,12 @@ def run_many_results(config, y=0):
 
 
 class TestEvaluator(unittest.TestCase):
+
+    @pytest.mark.fast
     def test_import(self):
         from deephyper.evaluator import Evaluator
 
+    @pytest.mark.fast
     def test_wrong_evaluator(self):
         from deephyper.evaluator import Evaluator
 
@@ -88,19 +91,24 @@ class TestEvaluator(unittest.TestCase):
             assert job.result["x"] == config["x"]
             assert job.result["y"] == 0
 
+    @pytest.mark.fast
     def test_serial(self):
         self.execute_evaluator("serial")
 
+    @pytest.mark.fast
     def test_thread(self):
         self.execute_evaluator("thread")
 
+    @pytest.mark.fast
     def test_process(self):
         self.execute_evaluator("process")
 
+    @pytest.mark.fast
     def test_subprocess(self):
         self.execute_evaluator("subprocess")
 
     @pytest.mark.ray
+    @pytest.mark.slow
     def test_ray(self):
         try:
             self.execute_evaluator("ray")

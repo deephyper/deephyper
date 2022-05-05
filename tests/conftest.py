@@ -25,21 +25,13 @@ def pytest_addoption(parser):
 
 def pytest_collection_modifyitems(config, items):
 
-    run_fast = config.getoption(f"--run-fast")
-    run_slow = config.getoption(f"--run-slow")
-
-    marks = ["hps", "nas", "ray", "mpi4py"]
+    marks = ["fast", "hps", "nas", "ray", "mpi4py"]
     for mark in marks:
-        if not(config.getoption(f"--run-{mark}")):
+        do_not_run_mark = not(config.getoption(f"--run-{mark}"))
+        if do_not_run_mark:
             skip_mark = pytest.mark.skip(reason=f"need --run-{mark} option to run")
             for item in items:
                 if mark in item.keywords:
-                    item.add_marker(skip_mark)
-        else:
-            for item in items:
-                if not(run_fast) and "fast" in item.keywords:
-                    item.add_marker(skip_mark)
-                elif not(run_slow) and "slow" in item.keywords:
                     item.add_marker(skip_mark)
             
 

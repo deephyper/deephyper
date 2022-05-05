@@ -23,7 +23,11 @@ Transfer Learning for Hyperparameter Search
 
 **Author(s)**: Romain Egele.
 
-.. GENERATED FROM PYTHON SOURCE LINES 9-20
+In this example we present how to apply transfer-learning for hyperparameter search. Let's assume you have a bunch of similar tasks for example the search of neural networks hyperparameters for different datasets. You can easily imagine that close choices of hyperparameters can perform well these different datasets even if some light additional tuning can help improve the performance. Therefore, you can perform an expensive search once to then reuse the explored set of hyperparameters of thid search and bias the following search with it. Here, we will use a cheap to compute and easy to understand example where we maximise the :math:`f(x) = -\sum_{i=0}^{n-1}` function. In this case the size of the problem can be defined by the variable :math:`n`. We will start by optimizing the small-size problem where :math:`n=1`, then apply transfer-learning from to optimize the larger-size problem where :math:`n=2` and visualize the difference if were not to apply transfer-learning on this larger problem instance.
+
+Let us start by defining the run-functions of the small and large scale problems:
+
+.. GENERATED FROM PYTHON SOURCE LINES 14-25
 
 .. code-block:: default
 
@@ -45,7 +49,11 @@ Transfer Learning for Hyperparameter Search
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 21-30
+.. GENERATED FROM PYTHON SOURCE LINES 26-27
+
+Then, we can define the hyperparameter problem space based on :math:`n`
+
+.. GENERATED FROM PYTHON SOURCE LINES 27-36
 
 .. code-block:: default
 
@@ -76,10 +84,9 @@ Transfer Learning for Hyperparameter Search
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 31-38
+.. GENERATED FROM PYTHON SOURCE LINES 37-43
 
 .. code-block:: default
-
 
     N = 2
     problem_large = HpProblem()
@@ -106,7 +113,11 @@ Transfer Learning for Hyperparameter Search
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 39-51
+.. GENERATED FROM PYTHON SOURCE LINES 44-45
+
+Then, we define setup the search and execute it:
+
+.. GENERATED FROM PYTHON SOURCE LINES 45-57
 
 .. code-block:: default
 
@@ -132,11 +143,11 @@ Transfer Learning for Hyperparameter Search
 
  .. code-block:: none
 
-      0%|          | 0/20 [00:00<?, ?it/s]      5%|5         | 1/20 [00:00<00:01, 11.69it/s, objective=-35.2]     10%|#         | 2/20 [00:00<00:00, 21.34it/s, objective=-23.6]     15%|#5        | 3/20 [00:00<00:00, 29.71it/s, objective=-23.6]     15%|#5        | 3/20 [00:00<00:00, 29.71it/s, objective=-23.6]     20%|##        | 4/20 [00:00<00:00, 29.71it/s, objective=-23.6]     25%|##5       | 5/20 [00:00<00:00, 29.71it/s, objective=-23.6]     30%|###       | 6/20 [00:00<00:00, 29.71it/s, objective=-.545]     35%|###5      | 7/20 [00:00<00:00, 29.71it/s, objective=-.545]     40%|####      | 8/20 [00:00<00:00, 41.39it/s, objective=-.545]     40%|####      | 8/20 [00:00<00:00, 41.39it/s, objective=-.545]     45%|####5     | 9/20 [00:00<00:00, 41.39it/s, objective=-.545]     50%|#####     | 10/20 [00:00<00:00, 41.39it/s, objective=-.545]     55%|#####5    | 11/20 [00:00<00:00, 41.39it/s, objective=-.469]     60%|######    | 12/20 [00:00<00:00, 41.39it/s, objective=-.469]     65%|######5   | 13/20 [00:00<00:00, 11.81it/s, objective=-.469]     65%|######5   | 13/20 [00:00<00:00, 11.81it/s, objective=-.469]     70%|#######   | 14/20 [00:01<00:00, 11.81it/s, objective=-.469]     75%|#######5  | 15/20 [00:01<00:00, 11.81it/s, objective=-.469]     80%|########  | 16/20 [00:01<00:00,  7.46it/s, objective=-.469]     80%|########  | 16/20 [00:01<00:00,  7.46it/s, objective=-.469]     85%|########5 | 17/20 [00:01<00:00,  7.46it/s, objective=-.469]     90%|######### | 18/20 [00:02<00:00,  6.38it/s, objective=-.469]     90%|######### | 18/20 [00:02<00:00,  6.38it/s, objective=-.469]     95%|#########5| 19/20 [00:02<00:00,  6.38it/s, objective=-.469]    100%|##########| 20/20 [00:02<00:00,  5.40it/s, objective=-.469]    100%|##########| 20/20 [00:02<00:00,  5.40it/s, objective=-.469]
+      0%|          | 0/20 [00:00<?, ?it/s]      5%|5         | 1/20 [00:00<00:00, 102.30it/s, objective=-35.2]     10%|#         | 2/20 [00:00<00:00, 103.58it/s, objective=-23.6]     15%|#5        | 3/20 [00:00<00:00, 109.31it/s, objective=-23.6]     20%|##        | 4/20 [00:00<00:00, 113.04it/s, objective=-23.6]     25%|##5       | 5/20 [00:00<00:00, 115.63it/s, objective=-23.6]     30%|###       | 6/20 [00:00<00:00, 48.86it/s, objective=-23.6]      30%|###       | 6/20 [00:00<00:00, 48.86it/s, objective=-.545]     35%|###5      | 7/20 [00:00<00:00, 48.86it/s, objective=-.545]     40%|####      | 8/20 [00:00<00:00, 48.86it/s, objective=-.545]     45%|####5     | 9/20 [00:00<00:00, 48.86it/s, objective=-.545]     50%|#####     | 10/20 [00:00<00:00, 48.86it/s, objective=-.545]     55%|#####5    | 11/20 [00:00<00:00, 23.38it/s, objective=-.545]     55%|#####5    | 11/20 [00:00<00:00, 23.38it/s, objective=-.469]     60%|######    | 12/20 [00:00<00:00, 23.38it/s, objective=-.469]     65%|######5   | 13/20 [00:00<00:00, 23.38it/s, objective=-.469]     70%|#######   | 14/20 [00:01<00:00, 10.03it/s, objective=-.469]     70%|#######   | 14/20 [00:01<00:00, 10.03it/s, objective=-.469]     75%|#######5  | 15/20 [00:01<00:00, 10.03it/s, objective=-.469]     80%|########  | 16/20 [00:01<00:00,  7.28it/s, objective=-.469]     80%|########  | 16/20 [00:01<00:00,  7.28it/s, objective=-.469]     85%|########5 | 17/20 [00:01<00:00,  7.28it/s, objective=-.469]     90%|######### | 18/20 [00:02<00:00,  5.87it/s, objective=-.469]     90%|######### | 18/20 [00:02<00:00,  5.87it/s, objective=-.469]     95%|#########5| 19/20 [00:02<00:00,  5.52it/s, objective=-.469]     95%|#########5| 19/20 [00:02<00:00,  5.52it/s, objective=-.469]    100%|##########| 20/20 [00:02<00:00,  5.18it/s, objective=-.469]    100%|##########| 20/20 [00:02<00:00,  5.18it/s, objective=-.469]
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 52-58
+.. GENERATED FROM PYTHON SOURCE LINES 58-64
 
 .. code-block:: default
 
@@ -158,44 +169,43 @@ Transfer Learning for Hyperparameter Search
 
 
       0%|          | 0/20 [00:00<?, ?it/s]
-      5%|5         | 1/20 [00:00<00:00, 138.18it/s, objective=-58.7]
-     10%|#         | 2/20 [00:00<00:00, 113.43it/s, objective=-58.7]
-     15%|#5        | 3/20 [00:00<00:00, 107.90it/s, objective=-58.7]
-     20%|##        | 4/20 [00:00<00:00, 38.76it/s, objective=-58.7] 
-     20%|##        | 4/20 [00:00<00:00, 38.76it/s, objective=-30.2]
-     25%|##5       | 5/20 [00:00<00:00, 38.76it/s, objective=-30.2]
-     30%|###       | 6/20 [00:00<00:00, 38.76it/s, objective=-30.2]
-     35%|###5      | 7/20 [00:00<00:00, 38.76it/s, objective=-30.2]
-     40%|####      | 8/20 [00:00<00:00, 38.76it/s, objective=-30.2]
-     45%|####5     | 9/20 [00:00<00:00, 38.76it/s, objective=-30.2]
-     50%|#####     | 10/20 [00:00<00:00, 38.76it/s, objective=-1.84]
-     55%|#####5    | 11/20 [00:00<00:00, 23.98it/s, objective=-1.84]
-     55%|#####5    | 11/20 [00:00<00:00, 23.98it/s, objective=-1.84]
-     60%|######    | 12/20 [00:00<00:00, 23.98it/s, objective=-1.84]
-     65%|######5   | 13/20 [00:00<00:00, 23.98it/s, objective=-1.84]
-     70%|#######   | 14/20 [00:01<00:00,  9.66it/s, objective=-1.84]
-     70%|#######   | 14/20 [00:01<00:00,  9.66it/s, objective=-1.84]
-     75%|#######5  | 15/20 [00:01<00:00,  9.66it/s, objective=-.26] 
-     80%|########  | 16/20 [00:01<00:00,  7.52it/s, objective=-.26]
-     80%|########  | 16/20 [00:01<00:00,  7.52it/s, objective=-.26]
-     85%|########5 | 17/20 [00:01<00:00,  7.52it/s, objective=-.26]
-     90%|######### | 18/20 [00:02<00:00,  5.98it/s, objective=-.26]
-     90%|######### | 18/20 [00:02<00:00,  5.98it/s, objective=-.26]
-     95%|#########5| 19/20 [00:02<00:00,  5.61it/s, objective=-.26]
-     95%|#########5| 19/20 [00:02<00:00,  5.61it/s, objective=-.26]
-    100%|##########| 20/20 [00:02<00:00,  5.25it/s, objective=-.26]
-    100%|##########| 20/20 [00:02<00:00,  5.25it/s, objective=-.26]
+      5%|5         | 1/20 [00:00<00:00, 126.68it/s, objective=-58.7]
+     10%|#         | 2/20 [00:00<00:00, 24.55it/s, objective=-58.7] 
+     15%|#5        | 3/20 [00:00<00:00, 32.13it/s, objective=-58.7]
+     20%|##        | 4/20 [00:00<00:00, 38.02it/s, objective=-58.7]
+     20%|##        | 4/20 [00:00<00:00, 38.02it/s, objective=-30.2]
+     25%|##5       | 5/20 [00:00<00:00, 38.02it/s, objective=-30.2]
+     30%|###       | 6/20 [00:00<00:00, 38.02it/s, objective=-30.2]
+     35%|###5      | 7/20 [00:00<00:00, 38.02it/s, objective=-30.2]
+     40%|####      | 8/20 [00:00<00:00, 38.02it/s, objective=-30.2]
+     45%|####5     | 9/20 [00:00<00:00, 39.85it/s, objective=-30.2]
+     45%|####5     | 9/20 [00:00<00:00, 39.85it/s, objective=-30.2]
+     50%|#####     | 10/20 [00:00<00:00, 39.85it/s, objective=-1.84]
+     55%|#####5    | 11/20 [00:00<00:00, 39.85it/s, objective=-1.84]
+     60%|######    | 12/20 [00:00<00:00, 39.85it/s, objective=-1.84]
+     65%|######5   | 13/20 [00:00<00:00, 10.81it/s, objective=-1.84]
+     65%|######5   | 13/20 [00:00<00:00, 10.81it/s, objective=-1.84]
+     70%|#######   | 14/20 [00:01<00:00, 10.81it/s, objective=-1.84]
+     75%|#######5  | 15/20 [00:01<00:00, 10.81it/s, objective=-.26] 
+     80%|########  | 16/20 [00:01<00:00,  6.96it/s, objective=-.26]
+     80%|########  | 16/20 [00:01<00:00,  6.96it/s, objective=-.26]
+     85%|########5 | 17/20 [00:01<00:00,  6.96it/s, objective=-.26]
+     90%|######### | 18/20 [00:02<00:00,  6.00it/s, objective=-.26]
+     90%|######### | 18/20 [00:02<00:00,  6.00it/s, objective=-.26]
+     95%|#########5| 19/20 [00:02<00:00,  6.00it/s, objective=-.26]
+    100%|##########| 20/20 [00:02<00:00,  5.13it/s, objective=-.26]
+    100%|##########| 20/20 [00:02<00:00,  5.13it/s, objective=-.26]
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 59-66
+.. GENERATED FROM PYTHON SOURCE LINES 65-72
 
 .. code-block:: default
 
     evaluator_large_tl = Evaluator.create(
         run_large, method="serial", method_kwargs={"callbacks": [TqdmCallback(max_evals)]}
     )
-    search_large_tl= CBO(problem_large, evaluator_large_tl, random_state=42)
+    search_large_tl = CBO(problem_large, evaluator_large_tl, random_state=42)
     search_large_tl.fit_generative_model(results["Large"])
     results["Large+TL"] = search_large_tl.search(max_evals)
 
@@ -211,79 +221,145 @@ Transfer Learning for Hyperparameter Search
 
 
 
-      0%|          | 0/20 [00:00<?, ?it/s]
-
-      5%|5         | 1/20 [00:00<00:18,  1.05it/s]
-
-      5%|5         | 1/20 [00:00<00:18,  1.05it/s, objective=-1.14]
-
-     10%|#         | 2/20 [00:01<00:17,  1.05it/s, objective=-.392]
-
-     15%|#5        | 3/20 [00:01<00:04,  3.45it/s, objective=-.392]
-
-     15%|#5        | 3/20 [00:01<00:04,  3.45it/s, objective=-.392]
-
-     20%|##        | 4/20 [00:01<00:04,  3.45it/s, objective=-.392]
-
-     25%|##5       | 5/20 [00:01<00:02,  5.27it/s, objective=-.392]
-
-     25%|##5       | 5/20 [00:01<00:02,  5.27it/s, objective=-.392]
-
-     30%|###       | 6/20 [00:01<00:02,  5.27it/s, objective=-.109]
-
-     35%|###5      | 7/20 [00:01<00:01,  7.52it/s, objective=-.109]
-
-     35%|###5      | 7/20 [00:01<00:01,  7.52it/s, objective=-.109]
-
-     40%|####      | 8/20 [00:01<00:01,  7.52it/s, objective=-.109]
-
-     45%|####5     | 9/20 [00:01<00:01,  9.52it/s, objective=-.109]
-
-     45%|####5     | 9/20 [00:01<00:01,  9.52it/s, objective=-.109]
-
-     50%|#####     | 10/20 [00:01<00:01,  9.52it/s, objective=-.109]
-
-     55%|#####5    | 11/20 [00:01<00:01,  6.79it/s, objective=-.109]
-
-     55%|#####5    | 11/20 [00:01<00:01,  6.79it/s, objective=-.0767]
-
-     60%|######    | 12/20 [00:02<00:01,  6.79it/s, objective=-.0767]
-
-     65%|######5   | 13/20 [00:02<00:01,  4.93it/s, objective=-.0767]
-
-     65%|######5   | 13/20 [00:02<00:01,  4.93it/s, objective=-.0706]
-
-     70%|#######   | 14/20 [00:02<00:01,  4.45it/s, objective=-.0706]
-
-     70%|#######   | 14/20 [00:02<00:01,  4.45it/s, objective=-.0706]
-
-     75%|#######5  | 15/20 [00:03<00:01,  3.80it/s, objective=-.0706]
-
-     75%|#######5  | 15/20 [00:03<00:01,  3.80it/s, objective=-.0706]
-
-     80%|########  | 16/20 [00:03<00:01,  3.53it/s, objective=-.0706]
-
-     80%|########  | 16/20 [00:03<00:01,  3.53it/s, objective=-.0706]
-
-     85%|########5 | 17/20 [00:03<00:00,  3.39it/s, objective=-.0706]
-
-     85%|########5 | 17/20 [00:03<00:00,  3.39it/s, objective=-.0706]
-
-     90%|######### | 18/20 [00:04<00:00,  3.27it/s, objective=-.0706]
-
-     90%|######### | 18/20 [00:04<00:00,  3.27it/s, objective=-.0706]
-
-     95%|#########5| 19/20 [00:04<00:00,  2.99it/s, objective=-.0706]
-
-     95%|#########5| 19/20 [00:04<00:00,  2.99it/s, objective=-.0706]
-
-    100%|##########| 20/20 [00:05<00:00,  2.98it/s, objective=-.0706]
-
-    100%|##########| 20/20 [00:05<00:00,  2.98it/s, objective=-.0706]
+      0%|          | 0/20 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
 
 
+      5%|5         | 1/20 [00:01<00:19,  1.01s/it]
 
-.. GENERATED FROM PYTHON SOURCE LINES 67-82
+      5%|5         | 1/20 [00:01<00:19,  1.01s/it, objective=-.204]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+
+
+     10%|#         | 2/20 [00:01<00:18,  1.01s/it, objective=-.132]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+
+
+     15%|#5        | 3/20 [00:01<00:05,  3.01it/s, objective=-.132]
+
+     15%|#5        | 3/20 [00:01<00:05,  3.01it/s, objective=-.132]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+
+
+     20%|##        | 4/20 [00:01<00:05,  3.01it/s, objective=-.123]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+
+
+     25%|##5       | 5/20 [00:01<00:02,  5.12it/s, objective=-.123]
+
+     25%|##5       | 5/20 [00:01<00:02,  5.12it/s, objective=-.123]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+
+
+     30%|###       | 6/20 [00:01<00:02,  5.12it/s, objective=-.11] /Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+
+
+     35%|###5      | 7/20 [00:01<00:02,  6.37it/s, objective=-.11]
+
+     35%|###5      | 7/20 [00:01<00:02,  6.37it/s, objective=-.11]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+
+
+     40%|####      | 8/20 [00:01<00:01,  6.37it/s, objective=-.11]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+
+
+     45%|####5     | 9/20 [00:01<00:01,  8.13it/s, objective=-.11]
+
+     45%|####5     | 9/20 [00:01<00:01,  8.13it/s, objective=-.11]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+
+
+     50%|#####     | 10/20 [00:01<00:01,  8.13it/s, objective=-.11]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+    /Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+
+
+     55%|#####5    | 11/20 [00:02<00:01,  6.72it/s, objective=-.11]
+
+     55%|#####5    | 11/20 [00:02<00:01,  6.72it/s, objective=-.11]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+    /Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+
+
+     60%|######    | 12/20 [00:02<00:01,  4.98it/s, objective=-.11]
+
+     60%|######    | 12/20 [00:02<00:01,  4.98it/s, objective=-.0295]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+    /Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+
+
+     65%|######5   | 13/20 [00:02<00:01,  4.34it/s, objective=-.0295]
+
+     65%|######5   | 13/20 [00:02<00:01,  4.34it/s, objective=-.0295]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+    /Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+
+
+     70%|#######   | 14/20 [00:03<00:01,  3.90it/s, objective=-.0295]
+
+     70%|#######   | 14/20 [00:03<00:01,  3.90it/s, objective=-.0295]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+    /Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+
+
+     75%|#######5  | 15/20 [00:03<00:01,  3.61it/s, objective=-.0295]
+
+     75%|#######5  | 15/20 [00:03<00:01,  3.61it/s, objective=-.0295]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+    /Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+
+
+     80%|########  | 16/20 [00:03<00:01,  3.17it/s, objective=-.0295]
+
+     80%|########  | 16/20 [00:03<00:01,  3.17it/s, objective=-.0295]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+    /Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+
+
+     85%|########5 | 17/20 [00:04<00:00,  3.09it/s, objective=-.0295]
+
+     85%|########5 | 17/20 [00:04<00:00,  3.09it/s, objective=-.0295]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+    /Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+
+
+     90%|######### | 18/20 [00:04<00:00,  3.04it/s, objective=-.0295]
+
+     90%|######### | 18/20 [00:04<00:00,  3.04it/s, objective=-.0295]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+    /Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+
+
+     95%|#########5| 19/20 [00:04<00:00,  2.99it/s, objective=-.0295]
+
+     95%|#########5| 19/20 [00:04<00:00,  2.99it/s, objective=-.0295]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+    /Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      sampled = previous_rows.append(sampled, ignore_index=True)
+
+
+    100%|##########| 20/20 [00:05<00:00,  2.77it/s, objective=-.0295]
+
+    100%|##########| 20/20 [00:05<00:00,  2.77it/s, objective=-.0295]
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 73-74
+
+Finally, we compare the results and quickly see that transfer-learning provided a consequant speed-up for the search:
+
+.. GENERATED FROM PYTHON SOURCE LINES 74-88
 
 .. code-block:: default
 
@@ -304,7 +380,6 @@ Transfer Learning for Hyperparameter Search
 
 
 
-
 .. image-sg:: /examples/images/sphx_glr_plot_transfer_learning_for_hps_001.png
    :alt: plot transfer learning for hps
    :srcset: /examples/images/sphx_glr_plot_transfer_learning_for_hps_001.png
@@ -317,7 +392,7 @@ Transfer Learning for Hyperparameter Search
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  12.171 seconds)
+   **Total running time of the script:** ( 0 minutes  12.576 seconds)
 
 
 .. _sphx_glr_download_examples_plot_transfer_learning_for_hps.py:
