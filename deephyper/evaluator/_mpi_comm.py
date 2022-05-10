@@ -3,6 +3,9 @@ import functools
 import logging
 from deephyper.evaluator._evaluator import Evaluator
 
+import mpi4py
+mpi4py.rc.initialize = False
+mpi4py.rc.finalize = True
 from mpi4py import MPI
 from mpi4py.futures import MPICommExecutor
 
@@ -27,6 +30,9 @@ class MPICommEvaluator(Evaluator):
         run_function_kwargs=None,
     ):
         super().__init__(run_function, num_workers, callbacks, run_function_kwargs)
+        if not MPI.Is_initialized():
+            MPI.Init_thread()
+
         self.comm = MPI.COMM_WORLD
         self.num_workers = self.comm.Get_size() - 1 # 1 rank is the master
         self.sem = asyncio.Semaphore(self.num_workers)
