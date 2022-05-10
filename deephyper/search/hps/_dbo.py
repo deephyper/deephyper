@@ -8,9 +8,11 @@ import time
 import numpy as np
 import pandas as pd
 import deephyper.skopt
+import ConfigSpace as CS
 
 from mpi4py import MPI
 from deephyper.core.exceptions import SearchTerminationError
+from deephyper.problem._hyperparameter import convert_to_skopt_space
 from sklearn.ensemble import GradientBoostingRegressor
 
 TAG_INIT = 20
@@ -209,8 +211,17 @@ class DBO:
             kappa = self._random_state.exponential(kappa, size=self._size)[self._rank]
             acq_func = "UCB"
 
+        # check if it is possible to convert the ConfigSpace to standard skopt Space
+        if (
+            isinstance(self._problem.space, CS.ConfigurationSpace)
+            and len(self._problem.space.get_forbiddens()) == 0
+            and len(self._problem.space.get_conditions()) == 0
+        ):
+            self._opt_space = convert_to_skopt_space(self._problem.space)
+        else:
+            self._opt_space = self._problem.space
+
         self._opt = None
-        self._opt_space = self._problem.space
         self._opt_kwargs = dict(
             dimensions=self._opt_space,
             base_estimator=self._get_surrogate_model(

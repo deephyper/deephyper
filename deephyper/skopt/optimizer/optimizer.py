@@ -703,7 +703,7 @@ class Optimizer(object):
         if self._n_initial_points > 0 or self.base_estimator_ is None:
             # this will not make a copy of `self.rng` and hence keep advancing
             # our random state.
-            if self._initial_samples is None:
+            if len(self._initial_samples) == 0:
                 return self._ask_random_points()
             else:
                 # The samples are evaluated starting form initial_samples[0]

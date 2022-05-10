@@ -88,6 +88,7 @@ class Evaluator:
 
         # to avoid "RuntimeError: This event loop is already running"
         if _test_ipython_interpretor():
+            warnings.warn("Applying nest-asyncio patch for IPython Shell!", category=UserWarning)
             import deephyper.evaluator._nest_asyncio as nest_asyncio
             nest_asyncio.apply()
 
