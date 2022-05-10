@@ -25,6 +25,7 @@ Other contributors, listed alphabetically, are:
 * Shengli Jiang - Neural architecture search with graph neural network for molecular data, Documentation
 * Sun Haozhe - Light fix
 * Zachariah Carmichael - Light fix
+* Denis Boyda
 
 Thank you so much to all the contributors for their help!
 
