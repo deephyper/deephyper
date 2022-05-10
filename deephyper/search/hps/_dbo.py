@@ -10,6 +10,9 @@ import pandas as pd
 import deephyper.skopt
 import ConfigSpace as CS
 
+import mpi4py
+mpi4py.rc.initialize = False
+mpi4py.rc.finalize = True
 from mpi4py import MPI
 from deephyper.core.exceptions import SearchTerminationError
 from deephyper.problem._hyperparameter import convert_to_skopt_space
@@ -150,6 +153,8 @@ class DBO:
         self._verbose = verbose
 
         # mpi
+        if not MPI.Is_initialized():
+            MPI.Init_thread()
         self._comm = comm if comm else MPI.COMM_WORLD
         self._rank = self._comm.Get_rank()
         self._size = self._comm.Get_size()
