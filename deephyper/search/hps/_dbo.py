@@ -128,7 +128,7 @@ class DBO:
         acq_optimizer: str = "auto",
         kappa: float = 1.96,
         xi: float = 0.001,
-        sample_max_size: int=5_000,
+        sample_max_size: int=-1,
         sample_strategy: str="quantile"
     ):
 
@@ -601,7 +601,7 @@ class DBO:
                 n_estimators=100,
                 min_samples_leaf=3,
                 n_jobs=n_jobs,
-                max_features="log2",
+                max_features="auto",
                 random_state=self._rank_seed,
             )
             if surrogate_model_kwargs is not None:
