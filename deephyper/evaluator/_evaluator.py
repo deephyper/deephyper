@@ -297,15 +297,25 @@ class Evaluator:
                 result = copy.deepcopy(saved_keys(job))
 
             result["job_id"] = job.id
-            result["objective"] = job.result
+
+            # when the returned value of the bb is a dict we flatten it to add in csv
+            if isinstance(job.result, dict):
+                result.update(job.result)
+            else:
+                result["objective"] = job.result
+
             result["timestamp_submit"] = job.timestamp_submit
             result["timestamp_gather"] = job.timestamp_gather
 
             if job.timestamp_start is not None and job.timestamp_end is not None:
                 result["timestamp_start"] = job.timestamp_start
                 result["timestamp_end"] = job.timestamp_end
+
             if hasattr(job, 'dequed'):
                 result["dequed"] = ','.join(job.dequed)
+
+            if "optuna_trial" in result:
+                result.pop("optuna_trial")
 
             resultsList.append(result)
 
