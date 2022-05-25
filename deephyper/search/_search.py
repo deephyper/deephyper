@@ -1,13 +1,16 @@
 import abc
+import ast
 import copy
 import logging
 import os
 import pathlib
 import signal
+import subprocess
 
 import numpy as np
 import pandas as pd
 from deephyper.core.exceptions import SearchTerminationError
+import yaml
 
 
 class Search(abc.ABC):
@@ -43,6 +46,36 @@ class Search(abc.ABC):
 
         self._verbose = verbose
 
+        self._context = {
+            "env": self._get_env(),
+            "search": {
+                "type": type(self).__name__,
+                "random_state": random_state,
+                "num_workers": evaluator.num_workers,
+                "evaluator": evaluator.get_infos(),
+                "problem": problem.get_infos(),
+            }
+        }
+    
+    def _get_env(self):
+        """Gives the environment of execution of a search.
+
+        Returns:
+            dict: contains the infos of the environment.
+        """        
+        pip_list_com = subprocess.run(['pip', 'list', '--format', 'json'], stdout=subprocess.PIPE)
+        pip_list = ast.literal_eval(pip_list_com.stdout.decode('utf-8'))
+
+        env = {
+            "pip": pip_list,
+        }
+        return env
+
+    def _add_call_log(self, call_args: dict = None):
+        calls_log = self._context.get("calls", [])
+        calls_log.append(call_args)
+        self._context["calls"] = calls_log
+
     def terminate(self):
         """Terminate the search.
 
@@ -76,6 +109,19 @@ class Search(abc.ABC):
                 raise ValueError(f"'timeout' shoud be of type'int' but is of type '{type(timeout)}'!")
             if timeout <= 0:
                 raise ValueError(f"'timeout' should be > 0!")
+
+        self._add_call_log(
+            {
+                "max_evals": max_evals,
+                "timeout": timeout,
+            }
+        )
+        try:
+            path_context = os.path.join(self._log_dir, "context.yaml")
+            with open(path_context, "w") as file:
+                yaml.dump(self._context, file)
+        except FileNotFoundError:
+            None
 
         self._set_timeout(timeout)
 

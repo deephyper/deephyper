@@ -91,6 +91,18 @@ class Evaluator:
             warnings.warn("Applying nest-asyncio patch for IPython Shell!", category=UserWarning)
             import deephyper.evaluator._nest_asyncio as nest_asyncio
             nest_asyncio.apply()
+        
+        self._infos = {
+            'type': type(self).__name__,
+        }
+    
+    def get_infos(self):
+        """Returns the infos that should be important for the user to have.
+
+        Returns:
+            dict: contains the infos as a dictionnary of info: value.
+        """
+        return self._infos
 
     @staticmethod
     def create(run_function, method="subprocess", method_kwargs={}):

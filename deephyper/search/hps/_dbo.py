@@ -1,8 +1,10 @@
+import ast
 import logging
 import os
 import pathlib
 import pickle
 import signal
+import subprocess
 import time
 
 import numpy as np
@@ -11,6 +13,7 @@ import deephyper.skopt
 import ConfigSpace as CS
 
 import mpi4py
+import yaml
 mpi4py.rc.initialize = False
 mpi4py.rc.finalize = True
 from mpi4py import MPI
@@ -248,6 +251,47 @@ class DBO:
             sample_max_size=sample_max_size,
             sample_strategy=sample_strategy
         )
+    
+        self._context = {
+            "env": self._get_env(),
+            "search": {
+                'type': type(self).__name__,
+                'random_state': random_state,
+                'num_workers': self._size,
+                'problem': problem.get_infos(),
+                'n_jobs': n_jobs,
+                'surrogate_model': surrogate_model,
+                'n_initial_points': n_initial_points,
+                'communication_batch_size': communication_batch_size,
+                'sync_communication': sync_communication,
+                'sync_communication_freq': sync_communication_freq,
+                'acq_func': acq_func,
+                'acq_optimizer': acq_optimizer,
+                'kappa': kappa,
+                'xi': xi,
+                'sample_max_size': sample_max_size,
+                'sample_strategy': sample_strategy,
+            }
+        }
+    
+    def _get_env(self):
+        """Gives the environment of execution of a search.
+
+        Returns:
+            dict: contains the infos of the environment.
+        """        
+        pip_list_com = subprocess.run(['pip', 'list', '--format', 'json'], stdout=subprocess.PIPE)
+        pip_list = ast.literal_eval(pip_list_com.stdout.decode('utf-8'))
+
+        env = {
+            "pip": pip_list,
+        }
+        return env
+
+    def _add_call_log(self, call_args: dict = None):
+        calls_log = self._context.get("calls", [])
+        calls_log.append(call_args)
+        self._context["calls"] = calls_log
 
     def send_all(self, x, y, infos):
         logging.info("Sending to all...")
@@ -433,6 +477,19 @@ class DBO:
                 raise ValueError(f"'timeout' should be > 0!")
 
         self._set_timeout(timeout)
+
+        self._add_call_log(
+            {
+                "max_evals": max_evals,
+                "timeout": timeout,
+            }
+        )
+        try:
+            path_context = os.path.join(self._log_dir, "context.yaml")
+            with open(path_context, "w") as file:
+                yaml.dump(self._context, file)
+        except FileNotFoundError:
+            None
 
         try:
             self._search(max_evals, timeout)
