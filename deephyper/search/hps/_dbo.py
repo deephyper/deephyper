@@ -29,6 +29,7 @@ MAP_acq_func = {
     "UCB": "LCB",
 }
 
+
 class History:
     """History"""
 
