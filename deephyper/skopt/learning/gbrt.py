@@ -38,8 +38,13 @@ class GradientBoostingQuantileRegressor(BaseEstimator, RegressorMixin):
         results.
     """
 
-    def __init__(self, quantiles=[0.16, 0.5, 0.84], base_estimator=None,
-                 n_jobs=1, random_state=None):
+    def __init__(
+        self,
+        quantiles=[0.16, 0.5, 0.84],
+        base_estimator=None,
+        n_jobs=1,
+        random_state=None,
+    ):
         self.quantiles = quantiles
         self.random_state = random_state
         self.base_estimator = base_estimator
@@ -60,17 +65,20 @@ class GradientBoostingQuantileRegressor(BaseEstimator, RegressorMixin):
         rng = check_random_state(self.random_state)
 
         if self.base_estimator is None:
-            base_estimator = GradientBoostingRegressor(loss='quantile')
+            base_estimator = GradientBoostingRegressor(loss="quantile")
         else:
             base_estimator = self.base_estimator
 
             if not isinstance(base_estimator, GradientBoostingRegressor):
-                raise ValueError('base_estimator has to be of type'
-                                 ' GradientBoostingRegressor.')
+                raise ValueError(
+                    "base_estimator has to be of type" " GradientBoostingRegressor."
+                )
 
-            if not base_estimator.loss == 'quantile':
-                raise ValueError('base_estimator has to use quantile'
-                                 ' loss not %s' % base_estimator.loss)
+            if not base_estimator.loss == "quantile":
+                raise ValueError(
+                    "base_estimator has to use quantile"
+                    " loss not %s" % base_estimator.loss
+                )
 
         # The predictions for different quantiles should be sorted.
         # Therefore each of the regressors need the same seed.
@@ -82,9 +90,9 @@ class GradientBoostingQuantileRegressor(BaseEstimator, RegressorMixin):
 
             regressors.append(regressor)
 
-        self.regressors_ = Parallel(n_jobs=self.n_jobs, backend='threading')(
-            delayed(_parallel_fit)(regressor, X, y)
-            for regressor in regressors)
+        self.regressors_ = Parallel(n_jobs=self.n_jobs, backend="threading")(
+            delayed(_parallel_fit)(regressor, X, y) for regressor in regressors
+        )
 
         return self
 
@@ -102,8 +110,7 @@ class GradientBoostingQuantileRegressor(BaseEstimator, RegressorMixin):
             where `n_samples` is the number of samples
             and `n_features` is the number of features.
         """
-        predicted_quantiles = np.asarray(
-            [rgr.predict(X) for rgr in self.regressors_])
+        predicted_quantiles = np.asarray([rgr.predict(X) for rgr in self.regressors_])
         if return_quantiles:
             return predicted_quantiles.T
 
@@ -113,7 +120,8 @@ class GradientBoostingQuantileRegressor(BaseEstimator, RegressorMixin):
             if not np.all(is_present_mask):
                 raise ValueError(
                     "return_std works only if the quantiles during "
-                    "instantiation include 0.16, 0.5 and 0.84")
+                    "instantiation include 0.16, 0.5 and 0.84"
+                )
             low = self.regressors_[self.quantiles.index(0.16)].predict(X)
             high = self.regressors_[self.quantiles.index(0.84)].predict(X)
             mean = self.regressors_[self.quantiles.index(0.5)].predict(X)

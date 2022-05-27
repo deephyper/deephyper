@@ -11,6 +11,7 @@ import deephyper.skopt
 import ConfigSpace as CS
 
 import mpi4py
+
 mpi4py.rc.initialize = False
 mpi4py.rc.finalize = True
 from mpi4py import MPI
@@ -85,7 +86,9 @@ class History:
     def reset_buffer(self):
         self.n_buffered = 0
 
-#TODO: bring all parameters of the surrogate_model in surrogate_model_kwargs
+
+# TODO: bring all parameters of the surrogate_model in surrogate_model_kwargs
+
 
 class DBO:
     """Distributed Bayesian Optimization Search.
@@ -128,8 +131,8 @@ class DBO:
         acq_optimizer: str = "auto",
         kappa: float = 1.96,
         xi: float = 0.001,
-        sample_max_size: int=-1,
-        sample_strategy: str="quantile"
+        sample_max_size: int = -1,
+        sample_strategy: str = "quantile",
     ):
 
         self._problem = problem
@@ -246,7 +249,7 @@ class DBO:
             n_initial_points=n_initial_points,
             random_state=self._rank_seed,
             sample_max_size=sample_max_size,
-            sample_strategy=sample_strategy
+            sample_strategy=sample_strategy,
         )
 
     def send_all(self, x, y, infos):
@@ -626,7 +629,9 @@ class DBO:
             if surrogate_model_kwargs is not None:
                 default_kwargs.update(surrogate_model_kwargs)
             gbrt = GradientBoostingRegressor(n_estimators=30, loss="quantile")
-            surrogate = deephyper.skopt.learning.GradientBoostingQuantileRegressor(base_estimator=gbrt, **default_kwargs)
+            surrogate = deephyper.skopt.learning.GradientBoostingQuantileRegressor(
+                base_estimator=gbrt, **default_kwargs
+            )
         else:  # for DUMMY and GP
             surrogate = name
 

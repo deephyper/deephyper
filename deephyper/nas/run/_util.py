@@ -70,9 +70,7 @@ def load_config(config: dict) -> None:
     config["search_space"]["class"] = load_attr(config["search_space"]["class"])
 
     if not config.get("preprocessing") is None:
-        config["preprocessing"]["func"] = load_attr(
-            config["preprocessing"]["func"]
-        )
+        config["preprocessing"]["func"] = load_attr(config["preprocessing"]["func"])
     else:
         config["preprocessing"] = None
 

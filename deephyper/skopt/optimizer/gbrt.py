@@ -1,18 +1,30 @@
-
 from sklearn.utils import check_random_state
 
 from .base import base_minimize
 from ..utils import cook_estimator
 
 
-def gbrt_minimize(func, dimensions, base_estimator=None,
-                  n_calls=100, n_random_starts=None,
-                  n_initial_points=10,
-                  initial_point_generator="random",
-                  acq_func="EI", acq_optimizer="auto",
-                  x0=None, y0=None, random_state=None, verbose=False,
-                  callback=None, n_points=10000, xi=0.01, kappa=1.96,
-                  n_jobs=1, model_queue_size=None):
+def gbrt_minimize(
+    func,
+    dimensions,
+    base_estimator=None,
+    n_calls=100,
+    n_random_starts=None,
+    n_initial_points=10,
+    initial_point_generator="random",
+    acq_func="EI",
+    acq_optimizer="auto",
+    x0=None,
+    y0=None,
+    random_state=None,
+    verbose=False,
+    callback=None,
+    n_points=10000,
+    xi=0.01,
+    kappa=1.96,
+    n_jobs=1,
+    model_queue_size=None,
+):
     """Sequential optimization using gradient boosted trees.
 
     Gradient boosted regression trees are used to model the (very)
@@ -174,14 +186,24 @@ def gbrt_minimize(func, dimensions, base_estimator=None,
     rng = check_random_state(random_state)
 
     if base_estimator is None:
-        base_estimator = cook_estimator("GBRT", random_state=rng,
-                                        n_jobs=n_jobs)
-    return base_minimize(func, dimensions, base_estimator,
-                         n_calls=n_calls, n_points=n_points,
-                         n_random_starts=n_random_starts,
-                         n_initial_points=n_initial_points,
-                         initial_point_generator=initial_point_generator,
-                         x0=x0, y0=y0, random_state=random_state, xi=xi,
-                         kappa=kappa, acq_func=acq_func, verbose=verbose,
-                         callback=callback, acq_optimizer="sampling",
-                         model_queue_size=model_queue_size)
+        base_estimator = cook_estimator("GBRT", random_state=rng, n_jobs=n_jobs)
+    return base_minimize(
+        func,
+        dimensions,
+        base_estimator,
+        n_calls=n_calls,
+        n_points=n_points,
+        n_random_starts=n_random_starts,
+        n_initial_points=n_initial_points,
+        initial_point_generator=initial_point_generator,
+        x0=x0,
+        y0=y0,
+        random_state=random_state,
+        xi=xi,
+        kappa=kappa,
+        acq_func=acq_func,
+        verbose=verbose,
+        callback=callback,
+        acq_optimizer="sampling",
+        model_queue_size=model_queue_size,
+    )

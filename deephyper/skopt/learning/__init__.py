@@ -6,7 +6,9 @@ from .gaussian_process import GaussianProcessRegressor
 from .gbrt import GradientBoostingQuantileRegressor
 
 
-__all__ = ("RandomForestRegressor",
-           "ExtraTreesRegressor",
-           "GradientBoostingQuantileRegressor",
-           "GaussianProcessRegressor")
+__all__ = (
+    "RandomForestRegressor",
+    "ExtraTreesRegressor",
+    "GradientBoostingQuantileRegressor",
+    "GaussianProcessRegressor",
+)

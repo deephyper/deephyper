@@ -36,6 +36,7 @@ class Hammersly(InitialPointGenerator):
         empty, growing prime values starting from 2 will be used.
 
     """
+
     def __init__(self, min_skip=0, max_skip=0, primes=None):
         self.primes = primes
         self.min_skip = min_skip
@@ -71,20 +72,27 @@ class Hammersly(InitialPointGenerator):
 
         """
         rng = check_random_state(random_state)
-        halton = Halton(min_skip=self.min_skip, max_skip=self.max_skip,
-                        primes=self.primes)
+        halton = Halton(
+            min_skip=self.min_skip, max_skip=self.max_skip, primes=self.primes
+        )
         space = Space(dimensions)
         n_dim = space.n_dims
         transformer = space.get_transformer()
         space.set_transformer("normalize")
         if n_dim == 1:
-            out = halton.generate(dimensions, n_samples,
-                                  random_state=rng)
+            out = halton.generate(dimensions, n_samples, random_state=rng)
         else:
             out = np.empty((n_dim, n_samples), dtype=float)
-            out[:n_dim - 1] = np.array(halton.generate(
-                [(0., 1.), ] * (n_dim - 1), n_samples,
-                random_state=rng)).T
+            out[: n_dim - 1] = np.array(
+                halton.generate(
+                    [
+                        (0.0, 1.0),
+                    ]
+                    * (n_dim - 1),
+                    n_samples,
+                    random_state=rng,
+                )
+            ).T
 
             out[n_dim - 1] = np.linspace(0, 1, n_samples + 1)[:-1]
             out = space.inverse_transform(out.T)

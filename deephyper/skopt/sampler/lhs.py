@@ -40,8 +40,8 @@ class Lhs(InitialPointGenerator):
     iterations : int
         Defines the number of iterations for optimizing LHS
     """
-    def __init__(self, lhs_type="classic", criterion="maximin",
-                 iterations=1000):
+
+    def __init__(self, lhs_type="classic", criterion="maximin", iterations=1000):
         self.lhs_type = lhs_type
         self.criterion = criterion
         self.iterations = iterations
@@ -93,8 +93,10 @@ class Lhs(InitialPointGenerator):
                     # Generate a random LHS
                     h = self._lhs_normalized(n_dim, n_samples, rng)
                     r = np.corrcoef(np.array(h).T)
-                    if len(np.abs(r[r != 1])) > 0 and \
-                            np.max(np.abs(r[r != 1])) < mincorr:
+                    if (
+                        len(np.abs(r[r != 1])) > 0
+                        and np.max(np.abs(r[r != 1])) < mincorr
+                    ):
                         mincorr = np.max(np.abs(r - np.eye(r.shape[0])))
                         h_opt = h.copy()
                         h_opt = space.inverse_transform(h_opt)
@@ -103,7 +105,7 @@ class Lhs(InitialPointGenerator):
                 # Maximize the minimum distance between points
                 for i in range(self.iterations):
                     h = self._lhs_normalized(n_dim, n_samples, rng)
-                    d = spatial.distance.pdist(np.array(h), 'euclidean')
+                    d = spatial.distance.pdist(np.array(h), "euclidean")
                     if maxdist < np.min(d):
                         maxdist = np.min(d)
                         h_opt = h.copy()
@@ -114,7 +116,7 @@ class Lhs(InitialPointGenerator):
                 # Maximize the minimum distance between points
                 for i in range(self.iterations):
                     h = self._lhs_normalized(n_dim, n_samples, rng)
-                    p = spatial.distance.pdist(np.array(h), 'euclidean')
+                    p = spatial.distance.pdist(np.array(h), "euclidean")
                     if np.min(p) == 0:
                         ratio = np.max(p) / 1e-8
                     else:
@@ -124,8 +126,7 @@ class Lhs(InitialPointGenerator):
                         h_opt = h.copy()
                         h_opt = space.inverse_transform(h_opt)
             else:
-                raise ValueError("Wrong criterion."
-                                 "Got {}".format(self.criterion))
+                raise ValueError("Wrong criterion." "Got {}".format(self.criterion))
             space.set_transformer(transformer)
             return h_opt
 

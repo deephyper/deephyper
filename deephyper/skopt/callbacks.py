@@ -16,6 +16,7 @@ import numpy as np
 
 from deephyper.skopt.utils import dump
 
+
 def check_callback(callback):
     """
     Check if callback is a callable or a list of callables.
@@ -24,13 +25,15 @@ def check_callback(callback):
         if isinstance(callback, Callable):
             return [callback]
 
-        elif (isinstance(callback, list) and
-              all([isinstance(c, Callable) for c in callback])):
+        elif isinstance(callback, list) and all(
+            [isinstance(c, Callable) for c in callback]
+        ):
             return callback
 
         else:
-            raise ValueError("callback should be either a callable or "
-                             "a list of callables.")
+            raise ValueError(
+                "callback should be either a callable or " "a list of callables."
+            )
     else:
         return []
 
@@ -79,16 +82,19 @@ class VerboseCallback(object):
             search_status = "Search finished for the next optimal point."
 
         if iter_no <= self.n_init:
-            print("Iteration No: %d %s. %s at provided point."
-                  % (iter_no, status, eval_status))
+            print(
+                "Iteration No: %d %s. %s at provided point."
+                % (iter_no, status, eval_status)
+            )
 
         elif self.n_init < iter_no <= (self.n_random + self.n_init):
-            print("Iteration No: %d %s. %s at random point."
-                  % (iter_no, status, eval_status))
+            print(
+                "Iteration No: %d %s. %s at random point."
+                % (iter_no, status, eval_status)
+            )
 
         else:
-            print("Iteration No: %d %s. %s"
-                  % (iter_no, status, search_status))
+            print("Iteration No: %d %s. %s" % (iter_no, status, search_status))
 
     def __call__(self, res):
         """
@@ -125,6 +131,7 @@ class TimerCallback(object):
     iter_time : list, shape (n_iter,)
         `iter_time[i-1]` gives the time taken to complete iteration `i`
     """
+
     def __init__(self):
         self._time = time()
         self.iter_time = []
@@ -146,6 +153,7 @@ class EarlyStopper(object):
 
     The optimization procedure will be stopped if the callback returns True.
     """
+
     def __call__(self, result):
         """
         Parameters
@@ -172,8 +180,10 @@ class EarlyStopper(object):
             Return True/False if the criterion can make a decision or `None` if
             there is not enough data yet to make a decision.
         """
-        raise NotImplementedError("The _criterion method should be implemented"
-                                  " by subclasses of EarlyStopper.")
+        raise NotImplementedError(
+            "The _criterion method should be implemented"
+            " by subclasses of EarlyStopper."
+        )
 
 
 class DeltaXStopper(EarlyStopper):
@@ -182,14 +192,17 @@ class DeltaXStopper(EarlyStopper):
     If the last two positions at which the objective has been evaluated
     are less than `delta` apart stop the optimization procedure.
     """
+
     def __init__(self, delta):
         super(EarlyStopper, self).__init__()
         self.delta = delta
 
     def _criterion(self, result):
         if len(result.x_iters) >= 2:
-            return result.space.distance(result.x_iters[-2],
-                                         result.x_iters[-1]) < self.delta
+            return (
+                result.space.distance(result.x_iters[-2], result.x_iters[-1])
+                < self.delta
+            )
 
         else:
             return None
@@ -201,6 +214,7 @@ class DeltaYStopper(EarlyStopper):
     Stop the optimizer if the absolute difference between the `n_best`
     objective values is less than `delta`.
     """
+
     def __init__(self, delta, n_best=5):
         super(EarlyStopper, self).__init__()
         self.delta = delta
@@ -253,6 +267,7 @@ class DeadlineStopper(EarlyStopper):
         fixed budget of time (seconds) that the optimization must
         finish within.
     """
+
     def __init__(self, total_time):
         super(DeadlineStopper, self).__init__()
         self._time = time()
@@ -276,6 +291,7 @@ class ThresholdStopper(EarlyStopper):
     Stop the optimization when the objective value is lower
     than the given threshold.
     """
+
     def __init__(self, threshold: float) -> None:
         super(EarlyStopper, self).__init__()
         self.threshold = threshold
@@ -305,6 +321,7 @@ class CheckpointSaver(object):
     dump_options : string
         options to pass on to `deephyper.skopt.dump`, like `compress=9`
     """
+
     def __init__(self, checkpoint_path, **dump_options):
         self.checkpoint_path = checkpoint_path
         self.dump_options = dump_options

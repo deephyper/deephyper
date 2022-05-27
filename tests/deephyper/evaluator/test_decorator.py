@@ -1,7 +1,8 @@
 import unittest
-import pytest 
+import pytest
 
 from deephyper.evaluator import profile
+
 
 @profile
 def run_profile(config):
@@ -10,7 +11,7 @@ def run_profile(config):
 
 class TestDecorator(unittest.TestCase):
     def test_profile(self):
-        
+
         y = run_profile({"x": 0})
 
         assert "timestamp_end" in y

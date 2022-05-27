@@ -73,7 +73,9 @@ class Search(abc.ABC):
         """
         if timeout is not None:
             if type(timeout) is not int:
-                raise ValueError(f"'timeout' shoud be of type'int' but is of type '{type(timeout)}'!")
+                raise ValueError(
+                    f"'timeout' shoud be of type'int' but is of type '{type(timeout)}'!"
+                )
             if timeout <= 0:
                 raise ValueError(f"'timeout' should be > 0!")
 

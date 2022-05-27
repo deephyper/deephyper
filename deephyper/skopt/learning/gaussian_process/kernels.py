@@ -8,11 +8,15 @@ from sklearn.gaussian_process.kernels import Exponentiation as sk_Exponentiation
 from sklearn.gaussian_process.kernels import ExpSineSquared as sk_ExpSineSquared
 from sklearn.gaussian_process.kernels import Hyperparameter
 from sklearn.gaussian_process.kernels import Matern as sk_Matern
-from sklearn.gaussian_process.kernels import NormalizedKernelMixin as sk_NormalizedKernelMixin
+from sklearn.gaussian_process.kernels import (
+    NormalizedKernelMixin as sk_NormalizedKernelMixin,
+)
 from sklearn.gaussian_process.kernels import Product as sk_Product
 from sklearn.gaussian_process.kernels import RationalQuadratic as sk_RationalQuadratic
 from sklearn.gaussian_process.kernels import RBF as sk_RBF
-from sklearn.gaussian_process.kernels import StationaryKernelMixin as sk_StationaryKernelMixin
+from sklearn.gaussian_process.kernels import (
+    StationaryKernelMixin as sk_StationaryKernelMixin,
+)
 from sklearn.gaussian_process.kernels import Sum as sk_Sum
 from sklearn.gaussian_process.kernels import WhiteKernel as sk_WhiteKernel
 
@@ -22,6 +26,7 @@ class Kernel(sk_Kernel):
     Base class for deephyper.skopt.gaussian_process kernels.
     Supports computation of the gradient of the kernel with respect to X
     """
+
     def __add__(self, b):
         if not isinstance(b, Kernel):
             return Sum(self, ConstantKernel(b))
@@ -201,7 +206,6 @@ class Matern(Kernel, sk_Matern):
 
 
 class RationalQuadratic(Kernel, sk_RationalQuadratic):
-
     def gradient_x(self, x, X_train):
         x = np.asarray(x)
         X_train = np.asarray(X_train)
@@ -216,9 +220,9 @@ class RationalQuadratic(Kernel, sk_RationalQuadratic):
         # dist = -(1 + (\sum_{i=1}^d (diff^2) / (2 * alpha)))** (-alpha - 1)
         # size = (n_train_samples,)
         scaled_dist = np.sum(diff**2, axis=1)
-        scaled_dist /= (2 * self.alpha)
+        scaled_dist /= 2 * self.alpha
         scaled_dist += 1
-        scaled_dist **= (-alpha - 1)
+        scaled_dist **= -alpha - 1
         scaled_dist *= -1
 
         scaled_dist = np.expand_dims(scaled_dist, axis=1)
@@ -227,7 +231,6 @@ class RationalQuadratic(Kernel, sk_RationalQuadratic):
 
 
 class ExpSineSquared(Kernel, sk_ExpSineSquared):
-
     def gradient_x(self, x, X_train):
         x = np.asarray(x)
         X_train = np.asarray(X_train)
@@ -253,69 +256,58 @@ class ExpSineSquared(Kernel, sk_ExpSineSquared):
         grad_wrt_theta = np.zeros_like(dist)
         nzd = dist != 0.0
         grad_wrt_theta[nzd] = np.pi / (periodicity * dist[nzd])
-        return np.expand_dims(
-            grad_wrt_theta * exp_sine_squared * grad_wrt_exp, axis=1) * diff
+        return (
+            np.expand_dims(grad_wrt_theta * exp_sine_squared * grad_wrt_exp, axis=1)
+            * diff
+        )
 
 
 class ConstantKernel(Kernel, sk_ConstantKernel):
-
     def gradient_x(self, x, X_train):
         return np.zeros_like(X_train)
 
 
 class WhiteKernel(Kernel, sk_WhiteKernel):
-
     def gradient_x(self, x, X_train):
         return np.zeros_like(X_train)
 
 
 class Exponentiation(Kernel, sk_Exponentiation):
-
     def gradient_x(self, x, X_train):
         x = np.asarray(x)
         X_train = np.asarray(X_train)
         expo = self.exponent
         kernel = self.kernel
 
-        K = np.expand_dims(
-            kernel(np.expand_dims(x, axis=0), X_train)[0], axis=1)
+        K = np.expand_dims(kernel(np.expand_dims(x, axis=0), X_train)[0], axis=1)
         return expo * K ** (expo - 1) * kernel.gradient_x(x, X_train)
 
 
 class Sum(Kernel, sk_Sum):
-
     def gradient_x(self, x, X_train):
-        return (
-            self.k1.gradient_x(x, X_train) +
-            self.k2.gradient_x(x, X_train)
-        )
+        return self.k1.gradient_x(x, X_train) + self.k2.gradient_x(x, X_train)
 
 
 class Product(Kernel, sk_Product):
-
     def gradient_x(self, x, X_train):
         x = np.asarray(x)
         x = np.expand_dims(x, axis=0)
         X_train = np.asarray(X_train)
-        f_ggrad = (
-            np.expand_dims(self.k1(x, X_train)[0], axis=1) *
-            self.k2.gradient_x(x, X_train)
+        f_ggrad = np.expand_dims(self.k1(x, X_train)[0], axis=1) * self.k2.gradient_x(
+            x, X_train
         )
-        fgrad_g = (
-            np.expand_dims(self.k2(x, X_train)[0], axis=1) *
-            self.k1.gradient_x(x, X_train)
+        fgrad_g = np.expand_dims(self.k2(x, X_train)[0], axis=1) * self.k1.gradient_x(
+            x, X_train
         )
         return f_ggrad + fgrad_g
 
 
 class DotProduct(Kernel, sk_DotProduct):
-
     def gradient_x(self, x, X_train):
         return np.asarray(X_train)
 
 
-class HammingKernel(sk_StationaryKernelMixin, sk_NormalizedKernelMixin,
-                    Kernel):
+class HammingKernel(sk_StationaryKernelMixin, sk_NormalizedKernelMixin, Kernel):
     r"""
     The HammingKernel is used to handle categorical inputs.
 
@@ -341,11 +333,10 @@ class HammingKernel(sk_StationaryKernelMixin, sk_NormalizedKernelMixin,
         length_scale = self.length_scale
         anisotropic = np.iterable(length_scale) and len(length_scale) > 1
         if anisotropic:
-            return Hyperparameter("length_scale", "numeric",
-                                  self.length_scale_bounds,
-                                  len(length_scale))
-        return Hyperparameter(
-            "length_scale", "numeric", self.length_scale_bounds)
+            return Hyperparameter(
+                "length_scale", "numeric", self.length_scale_bounds, len(length_scale)
+            )
+        return Hyperparameter("length_scale", "numeric", self.length_scale_bounds)
 
     def __call__(self, X, Y=None, eval_gradient=False):
         """Return the kernel k(X, Y) and optionally its gradient.
@@ -387,8 +378,9 @@ class HammingKernel(sk_StationaryKernelMixin, sk_NormalizedKernelMixin,
         X = np.atleast_2d(X)
         if anisotropic and X.shape[1] != len(length_scale):
             raise ValueError(
-                "Expected X to have %d features, got %d" %
-                (len(length_scale), X.shape[1]))
+                "Expected X to have %d features, got %d"
+                % (len(length_scale), X.shape[1])
+            )
 
         n_samples, n_dim = X.shape
 
@@ -409,11 +401,11 @@ class HammingKernel(sk_StationaryKernelMixin, sk_NormalizedKernelMixin,
 
         # dK / dL computation
         if anisotropic:
-            grad = (-np.expand_dims(kernel_prod, axis=-1) *
-                    np.array(indicator, dtype=np.float32))
+            grad = -np.expand_dims(kernel_prod, axis=-1) * np.array(
+                indicator, dtype=np.float32
+            )
         else:
-            grad = -np.expand_dims(kernel_prod * np.sum(indicator, axis=2),
-                                   axis=-1)
+            grad = -np.expand_dims(kernel_prod * np.sum(indicator, axis=2), axis=-1)
 
         grad *= length_scale
         if eval_gradient:

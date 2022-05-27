@@ -9,6 +9,7 @@ __all__ = ["HpProblem"]
 # make import of NaProblem optional
 try:
     from ._neuralarchitecture import NaProblem
+
     __all__.append("NaProblem")
 except ModuleNotFoundError as e:
     if "tensorflow" in str(e):

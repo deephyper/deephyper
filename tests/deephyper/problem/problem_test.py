@@ -2,6 +2,7 @@ import unittest
 
 import pytest
 
+
 @pytest.mark.hps_fast_test
 class HpProblemTest(unittest.TestCase):
     def test_add_good_dim(self):

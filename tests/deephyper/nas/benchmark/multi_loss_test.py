@@ -13,5 +13,3 @@ def test_multi_loss():
     config["arch_seq"] = [1.0] * 19
 
     run_base_trainer(config)
-
-

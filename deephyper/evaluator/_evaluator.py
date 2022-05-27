@@ -28,19 +28,19 @@ EVALUATORS = {
 
 def _test_ipython_interpretor() -> bool:
     """Test if the current Python interpretor is IPython or not.
-    
+
     Suggested by: https://stackoverflow.com/questions/15411967/how-can-i-check-if-code-is-executed-in-the-ipython-notebook
     """
     try:
         shell = get_ipython().__class__.__name__
-        if shell == 'ZMQInteractiveShell':
-            return True   # Jupyter notebook or qtconsole
-        elif shell == 'TerminalInteractiveShell':
+        if shell == "ZMQInteractiveShell":
+            return True  # Jupyter notebook or qtconsole
+        elif shell == "TerminalInteractiveShell":
             return False  # Terminal running IPython
         else:
             return False  # Other type (?)
     except NameError:
-        return False      # Probably standard Python interpreter
+        return False  # Probably standard Python interpreter
 
 
 class Evaluator:
@@ -88,8 +88,11 @@ class Evaluator:
 
         # to avoid "RuntimeError: This event loop is already running"
         if _test_ipython_interpretor():
-            warnings.warn("Applying nest-asyncio patch for IPython Shell!", category=UserWarning)
+            warnings.warn(
+                "Applying nest-asyncio patch for IPython Shell!", category=UserWarning
+            )
             import deephyper.evaluator._nest_asyncio as nest_asyncio
+
             nest_asyncio.apply()
 
     @staticmethod
@@ -149,7 +152,7 @@ class Evaluator:
 
     async def _run_jobs(self, configs):
         for config in configs:
-            
+
             # Create a Job object from the input configuration
             new_job = Job(self.n_jobs, config, self.run_function)
             self.n_jobs += 1
@@ -311,8 +314,8 @@ class Evaluator:
                 result["timestamp_start"] = job.timestamp_start
                 result["timestamp_end"] = job.timestamp_end
 
-            if hasattr(job, 'dequed'):
-                result["dequed"] = ','.join(job.dequed)
+            if hasattr(job, "dequed"):
+                result["dequed"] = ",".join(job.dequed)
 
             if "optuna_trial" in result:
                 result.pop("optuna_trial")

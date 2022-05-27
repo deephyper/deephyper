@@ -34,6 +34,7 @@ class Halton(InitialPointGenerator):
         empty or None, growing prime values starting from 2 will be used.
 
     """
+
     def __init__(self, min_skip=0, max_skip=0, primes=None):
         self.primes = primes
         self.min_skip = min_skip
@@ -97,8 +98,7 @@ class Halton(InitialPointGenerator):
         out = np.empty((n_dim, n_samples))
         indices = [idx + skip for idx in range(n_samples)]
         for dim_ in range(n_dim):
-            out[dim_] = _van_der_corput_samples(
-                indices, number_base=primes[dim_])
+            out[dim_] = _van_der_corput_samples(indices, number_base=primes[dim_])
         out = space.inverse_transform(np.transpose(out))
         space.set_transformer(transformer)
         return out
@@ -138,7 +138,7 @@ def _van_der_corput_samples(idx, number_base=2):
     base = float(number_base)
     active = np.ones(len(idx), dtype=bool)
     while np.any(active):
-        out[active] += (idx[active] % number_base)/base
+        out[active] += (idx[active] % number_base) / base
         idx //= number_base
         base *= number_base
         active = idx > 0
@@ -165,18 +165,18 @@ def _create_primes(threshold):
     elif threshold < 2:
         return []
 
-    numbers = list(range(3, threshold+1, 2))
-    root_of_threshold = threshold ** 0.5
-    half = int((threshold+1)/2-1)
+    numbers = list(range(3, threshold + 1, 2))
+    root_of_threshold = threshold**0.5
+    half = int((threshold + 1) / 2 - 1)
     idx = 0
     counter = 3
     while counter <= root_of_threshold:
         if numbers[idx]:
-            idy = int((counter*counter-3)/2)
+            idy = int((counter * counter - 3) / 2)
             numbers[idy] = 0
             while idy < half:
                 numbers[idy] = 0
                 idy += counter
         idx += 1
-        counter = 2*idx+3
+        counter = 2 * idx + 3
     return [2] + [number for number in numbers if number]

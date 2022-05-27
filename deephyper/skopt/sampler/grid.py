@@ -13,22 +13,24 @@ def _quadrature_combine(args):
     shapes = [arg.shape for arg in args]
 
     size = np.prod(shapes, 0)[0] * np.sum(shapes, 0)[1]
-    if size > 10 ** 9:
+    if size > 10**9:
         raise MemoryError("Too large sets")
 
     out = args[0]
     for arg in args[1:]:
-        out = np.hstack([
-            np.tile(out, len(arg)).reshape(-1, out.shape[1]),
-            np.tile(arg.T, len(out)).reshape(arg.shape[1], -1).T,
-        ])
+        out = np.hstack(
+            [
+                np.tile(out, len(arg)).reshape(-1, out.shape[1]),
+                np.tile(arg.T, len(out)).reshape(arg.shape[1], -1).T,
+            ]
+        )
     return out
 
 
 def _create_uniform_grid_exclude_border(n_dim, order):
     assert order > 0
     assert n_dim > 0
-    x_data = np.arange(1, order + 1) / (order + 1.)
+    x_data = np.arange(1, order + 1) / (order + 1.0)
     x_data = _quadrature_combine([x_data] * n_dim)
     return x_data
 
@@ -36,7 +38,7 @@ def _create_uniform_grid_exclude_border(n_dim, order):
 def _create_uniform_grid_include_border(n_dim, order):
     assert order > 1
     assert n_dim > 0
-    x_data = np.arange(0, order) / (order - 1.)
+    x_data = np.arange(0, order) / (order - 1.0)
     x_data = _quadrature_combine([x_data] * n_dim)
     return x_data
 
@@ -44,8 +46,8 @@ def _create_uniform_grid_include_border(n_dim, order):
 def _create_uniform_grid_only_border(n_dim, order):
     assert n_dim > 0
     assert order > 1
-    x = [[0., 1.]] * (n_dim - 1)
-    x.append(list(np.arange(0, order) / (order - 1.)))
+    x = [[0.0, 1.0]] * (n_dim - 1)
+    x.append(list(np.arange(0, order) / (order - 1.0)))
     x_data = _quadrature_combine(x)
     return x_data
 
@@ -74,8 +76,7 @@ class Grid(InitialPointGenerator):
         - 'only' : Selects only points at the border of the dimension
     """
 
-    def __init__(self, border="exclude", use_full_layout=True,
-                 append_border="only"):
+    def __init__(self, border="exclude", use_full_layout=True, append_border="only"):
         self.border = border
         self.use_full_layout = use_full_layout
         self.append_border = append_border
@@ -132,9 +133,9 @@ class Grid(InitialPointGenerator):
             h = _create_uniform_grid_exclude_border(n_dim, order)
         elif self.border == "only":
             if self.use_full_layout:
-                order = int(np.floor(n_samples / 2.))
+                order = int(np.floor(n_samples / 2.0))
             else:
-                order = int(np.ceil(n_samples / 2.))
+                order = int(np.ceil(n_samples / 2.0))
             if order < 2:
                 order = 2
             h = _create_uniform_grid_exclude_border(n_dim, order)
@@ -145,7 +146,7 @@ class Grid(InitialPointGenerator):
             h = h[:n_samples, :]
         elif np.size(h, 0) < n_samples:
             if self.append_border == "only":
-                order = int(np.ceil((n_samples - np.size(h, 0)) / 2.))
+                order = int(np.ceil((n_samples - np.size(h, 0)) / 2.0))
                 if order < 2:
                     order = 2
                 h2 = _create_uniform_grid_only_border(n_dim, order)
@@ -161,7 +162,7 @@ class Grid(InitialPointGenerator):
                 h2 = _create_uniform_grid_exclude_border(n_dim, order)
             else:
                 raise ValueError("Wrong value for append_border")
-            h = np.vstack((h, h2[:(n_samples - np.size(h, 0))]))
+            h = np.vstack((h, h2[: (n_samples - np.size(h, 0))]))
             rng.shuffle(h)
         else:
             rng.shuffle(h)

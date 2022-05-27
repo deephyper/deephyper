@@ -4,21 +4,27 @@ import warnings
 from scipy.stats import norm
 
 
-def gaussian_acquisition_1D(X, model, y_opt=None, acq_func="LCB",
-                            acq_func_kwargs=None, return_grad=True):
+def gaussian_acquisition_1D(
+    X, model, y_opt=None, acq_func="LCB", acq_func_kwargs=None, return_grad=True
+):
     """
     A wrapper around the acquisition function that is called by fmin_l_bfgs_b.
 
     This is because lbfgs allows only 1-D input.
     """
-    return _gaussian_acquisition(np.expand_dims(X, axis=0),
-                                 model, y_opt, acq_func=acq_func,
-                                 acq_func_kwargs=acq_func_kwargs,
-                                 return_grad=return_grad)
+    return _gaussian_acquisition(
+        np.expand_dims(X, axis=0),
+        model,
+        y_opt,
+        acq_func=acq_func,
+        acq_func_kwargs=acq_func_kwargs,
+        return_grad=return_grad,
+    )
 
 
-def _gaussian_acquisition(X, model, y_opt=None, acq_func="LCB",
-                          return_grad=False, acq_func_kwargs=None):
+def _gaussian_acquisition(
+    X, model, y_opt=None, acq_func="LCB", return_grad=False, acq_func_kwargs=None
+):
     """
     Wrapper so that the output of this function can be
     directly passed to a minimizer.
@@ -26,8 +32,9 @@ def _gaussian_acquisition(X, model, y_opt=None, acq_func="LCB",
     # Check inputs
     X = np.asarray(X)
     if X.ndim != 2:
-        raise ValueError("X is {}-dimensional, however,"
-                         " it must be 2-dimensional.".format(X.ndim))
+        raise ValueError(
+            "X is {}-dimensional, however," " it must be 2-dimensional.".format(X.ndim)
+        )
 
     if acq_func_kwargs is None:
         acq_func_kwargs = dict()
@@ -62,13 +69,13 @@ def _gaussian_acquisition(X, model, y_opt=None, acq_func="LCB",
 
             if return_grad:
                 mu, std, mu_grad, std_grad = time_model.predict(
-                    X, return_std=True, return_mean_grad=True,
-                    return_std_grad=True)
+                    X, return_std=True, return_mean_grad=True, return_std_grad=True
+                )
             else:
                 mu, std = time_model.predict(X, return_std=True)
 
             # acq = acq / E(t)
-            inv_t = np.exp(-mu + 0.5*std**2)
+            inv_t = np.exp(-mu + 0.5 * std**2)
             acq_vals *= inv_t
 
             # grad = d(acq_func) * inv_t + (acq_vals *d(inv_t))
@@ -77,7 +84,7 @@ def _gaussian_acquisition(X, model, y_opt=None, acq_func="LCB",
             # d(inv_t) = inv_t * (-mu_grad + std * std_grad)
             if return_grad:
                 acq_grad *= inv_t
-                acq_grad += acq_vals * (-mu_grad + std*std_grad)
+                acq_grad += acq_vals * (-mu_grad + std * std_grad)
 
     else:
         raise ValueError("Acquisition function not implemented.")
@@ -132,8 +139,8 @@ def gaussian_lcb(X, model, kappa=1.96, return_grad=False):
 
         if return_grad:
             mu, std, mu_grad, std_grad = model.predict(
-                X, return_std=True, return_mean_grad=True,
-                return_std_grad=True)
+                X, return_std=True, return_mean_grad=True, return_std_grad=True
+            )
 
             if kappa == "inf":
                 return -std, -std_grad
@@ -196,18 +203,19 @@ def gaussian_pi(X, model, y_opt=0.0, xi=0.01, return_grad=False):
 
         if return_grad:
             mu, std, mu_grad, std_grad = model.predict(
-                X, return_std=True, return_mean_grad=True,
-                return_std_grad=True)
+                X, return_std=True, return_mean_grad=True, return_std_grad=True
+            )
         else:
             mu, std = model.predict(X, return_std=True)
 
     # check dimensionality of mu, std so we can divide them below
     if (mu.ndim != 1) or (std.ndim != 1):
-        raise ValueError("mu and std are {}-dimensional and {}-dimensional, "
-                         "however both must be 1-dimensional. Did you train "
-                         "your model with an (N, 1) vector instead of an "
-                         "(N,) vector?"
-                         .format(mu.ndim, std.ndim))
+        raise ValueError(
+            "mu and std are {}-dimensional and {}-dimensional, "
+            "however both must be 1-dimensional. Did you train "
+            "your model with an (N, 1) vector instead of an "
+            "(N,) vector?".format(mu.ndim, std.ndim)
+        )
 
     values = np.zeros_like(mu)
     mask = std > 0
@@ -278,19 +286,20 @@ def gaussian_ei(X, model, y_opt=0.0, xi=0.01, return_grad=False):
 
         if return_grad:
             mu, std, mu_grad, std_grad = model.predict(
-                X, return_std=True, return_mean_grad=True,
-                return_std_grad=True)
+                X, return_std=True, return_mean_grad=True, return_std_grad=True
+            )
 
         else:
             mu, std = model.predict(X, return_std=True)
 
     # check dimensionality of mu, std so we can divide them below
     if (mu.ndim != 1) or (std.ndim != 1):
-        raise ValueError("mu and std are {}-dimensional and {}-dimensional, "
-                         "however both must be 1-dimensional. Did you train "
-                         "your model with an (N, 1) vector instead of an "
-                         "(N,) vector?"
-                         .format(mu.ndim, std.ndim))
+        raise ValueError(
+            "mu and std are {}-dimensional and {}-dimensional, "
+            "however both must be 1-dimensional. Did you train "
+            "your model with an (N, 1) vector instead of an "
+            "(N,) vector?".format(mu.ndim, std.ndim)
+        )
 
     values = np.zeros_like(mu)
     mask = std > 0
@@ -309,7 +318,7 @@ def gaussian_ei(X, model, y_opt=0.0, xi=0.01, return_grad=False):
         # Substitute (y_opt - xi - mu) / sigma = t and apply chain rule.
         # improve_grad is the gradient of t wrt x.
         improve_grad = -mu_grad * std - std_grad * improve
-        improve_grad /= std ** 2
+        improve_grad /= std**2
         cdf_grad = improve_grad * pdf
         pdf_grad = -improve * cdf_grad
         exploit_grad = -mu_grad * cdf - pdf_grad

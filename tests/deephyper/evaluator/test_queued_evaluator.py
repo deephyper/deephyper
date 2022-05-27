@@ -7,7 +7,6 @@ def run(config, dequed=None):
 
 
 class TestQueuedEvaluator(unittest.TestCase):
-
     @pytest.mark.hps_fast_test
     def test_queued_serial_evaluator(self):
         from deephyper.evaluator import SerialEvaluator, queued

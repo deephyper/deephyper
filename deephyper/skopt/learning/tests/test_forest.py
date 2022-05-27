@@ -11,7 +11,7 @@ from deephyper.skopt.learning import ExtraTreesRegressor, RandomForestRegressor
 
 
 def truth(X):
-    return 0.5 * np.sin(1.75*X[:, 0])
+    return 0.5 * np.sin(1.75 * X[:, 0])
 
 
 @pytest.mark.hps_fast_test
@@ -28,28 +28,36 @@ def test_random_forest():
     assert_array_equal(clf.predict(T), true_result)
     assert 10 == len(clf)
 
-    clf = RandomForestRegressor(n_estimators=10, min_impurity_decrease=0.1,
-                                random_state=1)
+    clf = RandomForestRegressor(
+        n_estimators=10, min_impurity_decrease=0.1, random_state=1
+    )
     clf.fit(X, y)
 
     assert_array_equal(clf.predict(T), true_result)
     assert 10 == len(clf)
 
-    clf = RandomForestRegressor(n_estimators=10, criterion="mse",
-                                max_depth=None, min_samples_split=2,
-                                min_samples_leaf=1,
-                                min_weight_fraction_leaf=0.,
-                                max_features="auto", max_leaf_nodes=None,
-                                min_impurity_decrease=0., bootstrap=True,
-                                oob_score=False,
-                                n_jobs=1, random_state=1,
-                                verbose=0, warm_start=False)
+    clf = RandomForestRegressor(
+        n_estimators=10,
+        criterion="mse",
+        max_depth=None,
+        min_samples_split=2,
+        min_samples_leaf=1,
+        min_weight_fraction_leaf=0.0,
+        max_features="auto",
+        max_leaf_nodes=None,
+        min_impurity_decrease=0.0,
+        bootstrap=True,
+        oob_score=False,
+        n_jobs=1,
+        random_state=1,
+        verbose=0,
+        warm_start=False,
+    )
     clf.fit(X, y)
     assert_array_equal(clf.predict(T), true_result)
     assert 10 == len(clf)
 
-    clf = RandomForestRegressor(n_estimators=10, max_features=1,
-                                random_state=1)
+    clf = RandomForestRegressor(n_estimators=10, max_features=1, random_state=1)
     clf.fit(X, y)
     assert_array_equal(clf.predict(T), true_result)
     assert 10 == len(clf)
@@ -73,21 +81,31 @@ def test_extra_forest():
     assert_array_equal(clf.predict(T), true_result)
     assert 10 == len(clf)
 
-    clf = ExtraTreesRegressor(n_estimators=10, min_impurity_decrease=0.1,
-                              random_state=1)
+    clf = ExtraTreesRegressor(
+        n_estimators=10, min_impurity_decrease=0.1, random_state=1
+    )
     clf.fit(X, y)
 
     assert_array_equal(clf.predict(T), true_result)
     assert 10 == len(clf)
 
-    clf = ExtraTreesRegressor(n_estimators=10, criterion="mse",
-                              max_depth=None, min_samples_split=2,
-                              min_samples_leaf=1, min_weight_fraction_leaf=0.,
-                              max_features="auto", max_leaf_nodes=None,
-                              min_impurity_decrease=0., bootstrap=False,
-                              oob_score=False,
-                              n_jobs=1, random_state=1,
-                              verbose=0, warm_start=False)
+    clf = ExtraTreesRegressor(
+        n_estimators=10,
+        criterion="mse",
+        max_depth=None,
+        min_samples_split=2,
+        min_samples_leaf=1,
+        min_weight_fraction_leaf=0.0,
+        max_features="auto",
+        max_leaf_nodes=None,
+        min_impurity_decrease=0.0,
+        bootstrap=False,
+        oob_score=False,
+        n_jobs=1,
+        random_state=1,
+        verbose=0,
+        warm_start=False,
+    )
     clf.fit(X, y)
     assert_array_equal(clf.predict(T), true_result)
     assert 10 == len(clf)

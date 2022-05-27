@@ -202,7 +202,7 @@ class Optimizer(object):
         acq_optimizer_kwargs=None,
         model_sdv=None,
         sample_max_size=-1,
-        sample_strategy="quantile"
+        sample_strategy="quantile",
     ):
         args = locals().copy()
         del args["self"]
@@ -337,10 +337,13 @@ class Optimizer(object):
 
         if self._initial_point_generator is not None:
             transformer = self.space.get_transformer()
-            self._initial_samples = self._initial_samples + self._initial_point_generator.generate(
-                self.space.dimensions,
-                n_initial_points-len(self._initial_samples),
-                random_state=self.rng.randint(0, np.iinfo(np.int32).max),
+            self._initial_samples = (
+                self._initial_samples
+                + self._initial_point_generator.generate(
+                    self.space.dimensions,
+                    n_initial_points - len(self._initial_samples),
+                    random_state=self.rng.randint(0, np.iinfo(np.int32).max),
+                )
             )
             self.space.set_transformer(transformer)
 
@@ -403,7 +406,7 @@ class Optimizer(object):
             random_state=random_state,
             model_sdv=self.model_sdv,
             sample_max_size=self._sample_max_size,
-            sample_strategy=self._sample_strategy
+            sample_strategy=self._sample_strategy,
         )
 
         optimizer._initial_samples = self._initial_samples
@@ -455,7 +458,7 @@ class Optimizer(object):
 
         if n_points > 0 and (
             self._n_initial_points > 0 or self.base_estimator_ is None
-        ):  
+        ):
             if len(self._initial_samples) == 0:
                 X = self._ask_random_points(size=n_points)
             else:
@@ -469,7 +472,14 @@ class Optimizer(object):
         if self.acq_func == "qLCB":
             strategy = "qLCB"
 
-        supported_strategies = ["cl_min", "cl_mean", "cl_max", "topk", "boltzmann", "qLCB"]
+        supported_strategies = [
+            "cl_min",
+            "cl_mean",
+            "cl_max",
+            "topk",
+            "boltzmann",
+            "qLCB",
+        ]
 
         if not (isinstance(n_points, int) and n_points > 0):
             raise ValueError("n_points should be int > 0, got " + str(n_points))
@@ -533,11 +543,13 @@ class Optimizer(object):
                     self.sampled.append(self._last_X[new_idx].tolist())
 
             return self._last_X[idx].tolist()
-        
+
         if hasattr(self, "_est") and self.acq_func == "qLCB":
             X_s = self.space.rvs(n_samples=self.n_points, random_state=self.rng)
             X_s = self._filter_duplicated(X_s)
-            X_c = self.space.imp_const.fit_transform(self.space.transform(X_s)) # candidates
+            X_c = self.space.imp_const.fit_transform(
+                self.space.transform(X_s)
+            )  # candidates
             mu, std = self._est.predict(X_c, return_std=True)
             kappa = self.acq_func_kwargs.get("kappa", 1.96)
             kappas = self.rng.exponential(kappa, size=n_points)
@@ -643,7 +655,7 @@ class Optimizer(object):
                 yi_failed_value = np.mean(yi_no_failure)
             else:
                 yi_failed_value = np.max(yi_no_failure)
-            
+
             yi = [v if v != OBJECTIVE_VALUE_FAILURE else yi_failed_value for v in yi]
 
         return yi
@@ -653,7 +665,7 @@ class Optimizer(object):
         X = np.asarray(X, dtype="O")
         y = np.asarray(y)
         size = y.shape[0]
-    
+
         if self._sample_max_size > 0 and size > self._sample_max_size:
             if self._sample_strategy == "quantile":
                 quantiles = np.quantile(y, [0.10, 0.25, 0.50, 0.75, 0.90])
@@ -664,10 +676,9 @@ class Optimizer(object):
                     if i == 0:
                         s = y < quantiles[i]
                     elif i == len(quantiles):
-                        s = quantiles[i-1] <= y
+                        s = quantiles[i - 1] <= y
                     else:
                         s = (quantiles[i - 1] <= y) & (y < quantiles[i])
-
 
                     idx = np.where(s)[0]
                     idx = np.random.choice(idx, size=int_size, replace=True)
@@ -865,7 +876,7 @@ class Optimizer(object):
                     # sampling points from the space
                     if self.acq_optimizer == "sampling":
                         next_x = X[np.argmin(values)]
-                    
+
                     elif self.acq_optimizer == "boltzmann_sampling":
 
                         p = self.rng.uniform()
@@ -935,7 +946,9 @@ class Optimizer(object):
                     if not self.space.is_categorical:
                         if not self.space.is_config_space:
                             next_x = np.clip(
-                                next_x, transformed_bounds[:, 0], transformed_bounds[:, 1]
+                                next_x,
+                                transformed_bounds[:, 0],
+                                transformed_bounds[:, 1],
                             )
                     self.next_xs_.append(next_x)
 

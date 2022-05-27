@@ -57,13 +57,15 @@ class DenseSkipCoSpace(KSearchSpace):
             # ! for next iter
             anchor_points.append(prev_input)
 
-        if self.dropout>= 0.0:
+        if self.dropout >= 0.0:
             dropout_node = ConstantNode(op=Dropout(rate=self.dropout))
             self.connect(prev_input, dropout_node)
             prev_input = dropout_node
 
         output_node = ConstantNode(
-            Dense(self.output_shape[0], activation=None if self.regression else "softmax")
+            Dense(
+                self.output_shape[0], activation=None if self.regression else "softmax"
+            )
         )
         self.connect(prev_input, output_node)
 

@@ -7,7 +7,11 @@ from .optimizer import Optimizer, OBJECTIVE_VALUE_FAILURE
 
 
 __all__ = [
-    "base_minimize", "dummy_minimize",
-    "forest_minimize", "gbrt_minimize", "gp_minimize",
-    "Optimizer", "OBJECTIVE_VALUE_FAILURE"
+    "base_minimize",
+    "dummy_minimize",
+    "forest_minimize",
+    "gbrt_minimize",
+    "gp_minimize",
+    "Optimizer",
+    "OBJECTIVE_VALUE_FAILURE",
 ]

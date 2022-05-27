@@ -3,10 +3,19 @@
 from .base import base_minimize
 
 
-def dummy_minimize(func, dimensions, n_calls=100,
-                   initial_point_generator="random", x0=None, y0=None,
-                   random_state=None, verbose=False, callback=None,
-                   model_queue_size=None, init_point_gen_kwargs=None):
+def dummy_minimize(
+    func,
+    dimensions,
+    n_calls=100,
+    initial_point_generator="random",
+    x0=None,
+    y0=None,
+    random_state=None,
+    verbose=False,
+    callback=None,
+    model_queue_size=None,
+    init_point_gen_kwargs=None,
+):
     """Random search by uniform sampling within the given bounds.
 
     Parameters
@@ -109,12 +118,20 @@ def dummy_minimize(func, dimensions, n_calls=100,
     else:
         n_initial_points = n_calls
 
-    return base_minimize(func, dimensions, base_estimator="dummy",
-                         # explicitly set optimizer to sampling as "dummy"
-                         # minimizer does not provide gradients.
-                         acq_optimizer="sampling",
-                         n_calls=n_calls, n_initial_points=n_initial_points,
-                         initial_point_generator=initial_point_generator,
-                         x0=x0, y0=y0, random_state=random_state,
-                         verbose=verbose,
-                         callback=callback, model_queue_size=model_queue_size)
+    return base_minimize(
+        func,
+        dimensions,
+        base_estimator="dummy",
+        # explicitly set optimizer to sampling as "dummy"
+        # minimizer does not provide gradients.
+        acq_optimizer="sampling",
+        n_calls=n_calls,
+        n_initial_points=n_initial_points,
+        initial_point_generator=initial_point_generator,
+        x0=x0,
+        y0=y0,
+        random_state=random_state,
+        verbose=verbose,
+        callback=callback,
+        model_queue_size=model_queue_size,
+    )

@@ -35,7 +35,7 @@ class StopIfUnfeasible(tf.keras.callbacks.Callback):
     def on_batch_end(self, batch, logs=None):
         """Called at the end of a training batch in `fit` methods.
         Subclasses should override for any actions to run.
-        
+
         Args:
             batch (int): index of batch within the current epoch.
             logs (dict): metric results for this batch.
