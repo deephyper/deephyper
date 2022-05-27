@@ -26,7 +26,7 @@ jobs:
       - name: Run Formatter
         run: black --diff --check $(git ls-files '*.py')
       - name: Run Linter
-        run: pylint $(git ls-files '*.py')
+        run: pylint --exit-zero $(git ls-files '*.py')
       - name: Run tests with tox
         run: tox -e py3
       - name: Upload coverage report
