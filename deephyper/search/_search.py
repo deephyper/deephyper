@@ -8,6 +8,8 @@ import signal
 import numpy as np
 import pandas as pd
 from deephyper.core.exceptions import SearchTerminationError
+from deephyper.evaluator import Evaluator
+from deephyper.evaluator.callback import TqdmCallback
 
 
 class Search(abc.ABC):
@@ -26,7 +28,14 @@ class Search(abc.ABC):
     ):
 
         self._problem = copy.deepcopy(problem)
-        self._evaluator = evaluator
+
+        # if a callable is directly passed wrap it around the serial evaluator
+        if not (isinstance(evaluator, Evaluator)) and callable(evaluator):
+            self._evaluator = Evaluator.create(
+                evaluator, method="serial", method_kwargs={"callbacks": TqdmCallback()}
+            )
+        else:
+            self._evaluator = evaluator
         self._seed = None
 
         if type(random_state) is int:
@@ -80,6 +89,12 @@ class Search(abc.ABC):
                 raise ValueError(f"'timeout' should be > 0!")
 
         self._set_timeout(timeout)
+
+        # init tqdm callback
+        if max_evals > 1:
+            for cb in self._evaluator._callbacks:
+                if isinstance(cb, TqdmCallback):
+                    cb.set_max_evals(max_evals)
 
         try:
             self._search(max_evals, timeout)
