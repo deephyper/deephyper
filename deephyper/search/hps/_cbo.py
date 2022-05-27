@@ -76,6 +76,8 @@ class CBO(Search):
     ):
 
         super().__init__(problem, evaluator, random_state, log_dir, verbose)
+        # get the __init__ parameters
+        self._init_params = locals()
 
         # check input parameters
         surrogate_model_allowed = ["RF", "ET", "GBRT", "DUMMY", "GP"]
@@ -175,19 +177,6 @@ class CBO(Search):
         )
 
         self._gather_type = "ALL" if sync_communication else "BATCH"
-
-        self._context["search"] = {
-            **self._context["search"],
-            'surrogate_model': surrogate_model,
-            'acq_func': acq_func,
-            'acq_optimizer': acq_optimizer,
-            'kappa': kappa,
-            'xi': xi,
-            'n_points': n_points,
-            'filter_duplicated': filter_duplicated,
-            'multi_point_strategy': multi_point_strategy,
-            'n_jobs': n_jobs,
-        }
 
     def _setup_optimizer(self):
         if self._fitted:
