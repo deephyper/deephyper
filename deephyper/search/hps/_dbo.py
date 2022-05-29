@@ -265,7 +265,7 @@ class DBO:
         json_self = {
             "search": {
                 "type": type(self).__name__,
-                "num_workers": self._evaluator.num_workers,
+                "num_workers": self._size,
                 **get_init_params_as_json(self),
             },
             "calls": self._call_args,

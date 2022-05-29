@@ -52,17 +52,6 @@ class NaProblem:
         self._hp_space = HpProblem()
         self._space["metrics"] = []
         self._space["hyperparameters"] = dict(verbose=0)
-        self._infos = {
-            'type': type(self).__name__,
-        }
-    
-    def get_infos(self):
-        """Returns the infos that should be important for the user to have.
-
-        Returns:
-            dict: contains the infos as a dictionnary of info: value.
-        """
-        return self._infos
 
     def __repr__(self):
 

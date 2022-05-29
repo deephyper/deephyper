@@ -77,3 +77,4 @@ def get_init_params_as_json(obj):
             value = type(value).__name__
         params[key] = value
     return params
+    
