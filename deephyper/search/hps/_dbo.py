@@ -4,7 +4,6 @@ import pathlib
 import pickle
 import signal
 import time
-import json
 
 import numpy as np
 import pandas as pd
