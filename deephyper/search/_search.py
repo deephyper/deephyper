@@ -4,11 +4,11 @@ import logging
 import os
 import pathlib
 import signal
-import json
 
 import numpy as np
 import pandas as pd
 from deephyper.core.exceptions import SearchTerminationError
+from deephyper.core.utils._introspection import get_init_params_as_json
 import yaml
 
 
@@ -48,23 +48,6 @@ class Search(abc.ABC):
         pathlib.Path(log_dir).mkdir(parents=False, exist_ok=True)
 
         self._verbose = verbose
-
-    
-    @property
-    def _init_params_json(self):
-        """The __init__ parameters: value dictionnary in a json format.
-        """
-        params = dict()
-        for name, value in self._init_params.items():
-            if name not in ["self", "kwargs"] and not name.startswith('__'):
-                if hasattr(value, "to_json"):
-                    value = value.to_json()
-                try:
-                    json.dumps(value)
-                except:
-                    value = type(value).__name__
-                params[name] = value
-        return params
     
     def _add_call_args(self, **kwargs):
         self._call_args.append(kwargs)
@@ -76,7 +59,7 @@ class Search(abc.ABC):
             "search": {
                 "type": type(self).__name__,
                 "num_workers": self._evaluator.num_workers,
-                **self._init_params_json,
+                **get_init_params_as_json(self),
             },
             "calls": self._call_args,
         }

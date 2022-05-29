@@ -14,6 +14,7 @@ from typing import Dict, List
 import numpy as np
 from deephyper.evaluator._job import Job
 from deephyper.skopt.optimizer import OBJECTIVE_VALUE_FAILURE
+from deephyper.core.utils._introspection import get_init_params_as_json
 
 EVALUATORS = {
     "mpipool": "_mpi_pool.MPIPoolEvaluator",
@@ -96,13 +97,10 @@ class Evaluator:
             'type': type(self).__name__,
         }
     
-    def get_infos(self):
-        """Returns the infos that should be important for the user to have.
-
-        Returns:
-            dict: contains the infos as a dictionnary of info: value.
+    def to_json(self):
+        """Returns a json version of the evaluator.
         """
-        return self._infos
+        return get_init_params_as_json(self)
 
     @staticmethod
     def create(run_function, method="subprocess", method_kwargs={}):

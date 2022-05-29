@@ -184,18 +184,6 @@ class HpProblem:
             self._space = cs.ConfigurationSpace()
         self.references = []  # starting points
 
-        self._infos = {
-            'type': type(self).__name__,
-        }
-    
-    def get_infos(self):
-        """Returns the infos that should be important for the user to have.
-
-        Returns:
-            dict: contains the infos as a dictionnary of info: value.
-        """
-        return self._infos
-
     def __str__(self):
         return repr(self)
 

@@ -18,6 +18,7 @@ mpi4py.rc.finalize = True
 from mpi4py import MPI
 from deephyper.core.exceptions import SearchTerminationError
 from deephyper.problem._hyperparameter import convert_to_skopt_space
+from deephyper.core.utils._introspection import get_init_params_as_json
 from sklearn.ensemble import GradientBoostingRegressor
 
 TAG_INIT = 20
@@ -255,33 +256,17 @@ class DBO:
             sample_strategy=sample_strategy
         )
     
-    @property
-    def _init_params_json(self):
-        """The __init__ parameters: value dictionnary in a json format.
-        """
-        params = dict()
-        for name, value in self._init_params.items():
-            if name not in ["self", "kwargs"] and not name.startswith('__'):
-                if hasattr(value, "to_json"):
-                    value = value.to_json()
-                try:
-                    json.dumps(value)
-                except:
-                    value = type(value).__name__
-                params[name] = value
-        return params
-    
     def _add_call_args(self, **kwargs):
         self._call_args.append(kwargs)
     
     def to_json(self):
         """Returns a json version of the search object.
-        """  
+        """        
         json_self = {
             "search": {
                 "type": type(self).__name__,
                 "num_workers": self._evaluator.num_workers,
-                **self._init_params_json,
+                **get_init_params_as_json(self),
             },
             "calls": self._call_args,
         }
