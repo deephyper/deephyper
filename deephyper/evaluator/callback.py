@@ -110,7 +110,10 @@ class TqdmCallback(Callback):
     def on_done(self, job):
 
         if self._tqdm is None:
-            self._tqdm = tqdm(total=self._n_done + self._max_evals)
+            if self._max_evals:
+                self._tqdm = tqdm(total=self._n_done + self._max_evals)
+            else:
+                self._tqdm = tqdm()
 
         self._n_done += 1
         self._tqdm.update(1)

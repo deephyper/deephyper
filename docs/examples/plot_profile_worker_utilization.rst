@@ -93,7 +93,7 @@ Then we define the variable(s) we want to optimize. For this problem we optimize
 
 Then we define a parallel search.
 
-.. GENERATED FROM PYTHON SOURCE LINES 40-61
+.. GENERATED FROM PYTHON SOURCE LINES 40-60
 
 .. code-block:: default
 
@@ -101,7 +101,6 @@ Then we define a parallel search.
         from deephyper.evaluator import Evaluator
         from deephyper.evaluator.callback import TqdmCallback
         from deephyper.search.hps import CBO
-
 
         timeout = 20
         num_workers = 4
@@ -130,158 +129,113 @@ Then we define a parallel search.
 
 
 
-
     0it [00:00, ?it/s]
 
+    1it [00:00, 11915.64it/s, objective=-21.5]
 
-    1it [00:01,  1.82s/it]
+    2it [00:00,  3.21it/s, objective=-21.5]   
 
+    2it [00:00,  3.21it/s, objective=-21.2]
 
-    1it [00:01,  1.82s/it, objective=-21.2]
+    3it [00:01,  1.82it/s, objective=-21.2]
 
+    3it [00:01,  1.82it/s, objective=-20.6]
 
-    2it [00:02,  1.26s/it, objective=-21.2]
+    4it [00:01,  2.05it/s, objective=-20.6]
 
+    4it [00:01,  2.05it/s, objective=-20.6]
 
-    2it [00:02,  1.26s/it, objective=-20.8]
+    5it [00:03,  1.21it/s, objective=-20.6]
 
+    5it [00:03,  1.21it/s, objective=-19.9]
 
-    3it [00:03,  1.17s/it, objective=-20.8]
+    6it [00:03,  1.55it/s, objective=-19.9]
 
+    6it [00:03,  1.55it/s, objective=-19.9]
 
-    3it [00:03,  1.17s/it, objective=-20.8]
+    7it [00:04,  1.31it/s, objective=-19.9]
 
+    7it [00:04,  1.31it/s, objective=-19.9]
 
-    4it [00:03,  1.17s/it, objective=-20.6]
+    8it [00:05,  1.48it/s, objective=-19.9]
 
+    8it [00:05,  1.48it/s, objective=-19.9]
 
-    5it [00:05,  1.10it/s, objective=-20.6]
+    9it [00:06,  1.20it/s, objective=-19.9]
 
+    9it [00:06,  1.20it/s, objective=-19.9]
 
-    5it [00:05,  1.10it/s, objective=-19.9]
+    10it [00:06,  1.41it/s, objective=-19.9]
 
+    10it [00:06,  1.41it/s, objective=-19.9]
 
-    6it [00:05,  1.22it/s, objective=-19.9]
+    11it [00:07,  1.53it/s, objective=-19.9]
 
+    11it [00:07,  1.53it/s, objective=-19.9]
 
-    6it [00:05,  1.22it/s, objective=-19.9]
+    12it [00:08,  1.37it/s, objective=-19.9]
 
+    12it [00:08,  1.37it/s, objective=-19.9]
 
-    7it [00:06,  1.47it/s, objective=-19.9]
+    13it [00:10,  1.07s/it, objective=-19.9]
 
+    13it [00:10,  1.07s/it, objective=-11.3]
 
-    7it [00:06,  1.47it/s, objective=-19.9]
+    14it [00:10,  1.20it/s, objective=-11.3]
 
+    14it [00:10,  1.20it/s, objective=-11.3]
 
-    8it [00:06,  1.66it/s, objective=-19.9]
+    15it [00:10,  1.52it/s, objective=-11.3]
 
+    15it [00:10,  1.52it/s, objective=-11.3]
 
-    8it [00:06,  1.66it/s, objective=-19.9]
+    16it [00:11,  1.42it/s, objective=-11.3]
 
+    16it [00:11,  1.42it/s, objective=-11.3]
 
-    9it [00:08,  1.04it/s, objective=-19.9]
+    17it [00:13,  1.16s/it, objective=-11.3]
 
+    17it [00:13,  1.16s/it, objective=-11.3]
 
-    9it [00:08,  1.04it/s, objective=-19.9]
+    18it [00:13,  1.11it/s, objective=-11.3]
 
+    18it [00:13,  1.11it/s, objective=-10.7]
 
-    10it [00:08,  1.28it/s, objective=-19.9]
+    19it [00:13,  1.11it/s, objective=-10.7]
 
+    20it [00:14,  1.41it/s, objective=-10.7]
 
-    10it [00:08,  1.28it/s, objective=-19.9]
+    20it [00:14,  1.41it/s, objective=-10.5]
 
+    21it [00:15,  1.23it/s, objective=-10.5]
 
-    11it [00:09,  1.41it/s, objective=-19.9]
+    21it [00:15,  1.23it/s, objective=-9.85]
 
+    22it [00:16,  1.44it/s, objective=-9.85]
 
-    11it [00:09,  1.41it/s, objective=-19.9]
+    22it [00:16,  1.44it/s, objective=-9.85]
 
+    23it [00:17,  1.31it/s, objective=-9.85]
 
-    12it [00:09,  1.68it/s, objective=-19.9]
+    23it [00:17,  1.31it/s, objective=-9.85]
 
+    24it [00:17,  1.59it/s, objective=-9.85]
 
-    12it [00:09,  1.68it/s, objective=-19.9]
+    24it [00:17,  1.59it/s, objective=-9.85]
 
 
-    13it [00:11,  1.00it/s, objective=-19.9]
 
-
-    13it [00:11,  1.00it/s, objective=-11.3]
-
-
-    14it [00:12,  1.08it/s, objective=-11.3]
-
-
-    14it [00:12,  1.08it/s, objective=-11.3]
-
-
-    15it [00:12,  1.34it/s, objective=-11.3]
-
-
-    15it [00:12,  1.34it/s, objective=-11.3]
-
-
-    16it [00:13,  1.40it/s, objective=-11.3]
-
-
-    16it [00:13,  1.40it/s, objective=-11.3]
-
-
-    17it [00:14,  1.01it/s, objective=-11.3]
-
-
-    17it [00:14,  1.01it/s, objective=-10.8]
-
-
-    18it [00:15,  1.22it/s, objective=-10.8]
-
-
-    18it [00:15,  1.22it/s, objective=-9.09]
-
-
-    19it [00:16,  1.19it/s, objective=-9.09]
-
-
-    19it [00:16,  1.19it/s, objective=-9.09]
-
-
-    20it [00:16,  1.23it/s, objective=-9.09]
-
-
-    20it [00:16,  1.23it/s, objective=-9.09]
-
-
-    21it [00:18,  1.07it/s, objective=-9.09]
-
-
-    21it [00:18,  1.07it/s, objective=-9.09]
-
-
-    22it [00:18,  1.30it/s, objective=-9.09]
-
-
-    22it [00:18,  1.30it/s, objective=-7.49]
-
-
-    23it [00:18,  1.62it/s, objective=-7.49]
-
-
-    23it [00:18,  1.62it/s, objective=-7.49]
-
-
-
-.. GENERATED FROM PYTHON SOURCE LINES 62-63
+.. GENERATED FROM PYTHON SOURCE LINES 61-62
 
 Finally, we plot the results from the collected DataFrame.
 
-.. GENERATED FROM PYTHON SOURCE LINES 63-111
+.. GENERATED FROM PYTHON SOURCE LINES 62-108
 
 .. code-block:: default
 
     if __name__ == "__main__":
         import matplotlib.pyplot as plt
         import numpy as np
-
 
         def compile_profile(df):
             """Take the results dataframe as input and return the number of jobs running at a given timestamp."""
@@ -301,7 +255,6 @@ Finally, we plot the results from the collected DataFrame.
                 n_jobs_running.append(nb_workers)
 
             return timestamp, n_jobs_running
-
 
         plt.figure()
 
@@ -341,7 +294,7 @@ Finally, we plot the results from the collected DataFrame.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  20.285 seconds)
+   **Total running time of the script:** ( 0 minutes  20.101 seconds)
 
 
 .. _sphx_glr_download_examples_plot_profile_worker_utilization.py:
