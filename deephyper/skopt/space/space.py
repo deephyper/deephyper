@@ -955,10 +955,17 @@ class Space(object):
             for x in hps:
                 self.hps_names.append(x.name)
                 if isinstance(x, CS.hyperparameters.CategoricalHyperparameter):
-                    vals = list(x.choices)
+                    categories = list(x.choices)
+                    prior = list(x.probabilities)
                     if x.name in cond_hps:
-                        vals.append("NA")
-                    param = Categorical(vals, prior=x.probabilities, name=x.name)
+                        categories.append("NA")
+
+                        # remove p from prior
+                        p = 1/len(categories)
+                        pi = p/(len(categories) - 1)
+                        prior = [prior_i-pi for prior_i in prior]
+                        prior.append(p)
+                    param = Categorical(categories, prior=prior, name=x.name)
                     space.append(param)
                     self.hps_type[x.name] = "Categorical"
                 elif isinstance(x, CS.hyperparameters.OrdinalHyperparameter):

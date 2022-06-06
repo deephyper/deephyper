@@ -111,7 +111,7 @@ class TqdmCallback(Callback):
 
         if self._tqdm is None:
             if self._max_evals:
-                self._tqdm = tqdm(total=self._n_done + self._max_evals)
+                self._tqdm = tqdm(total=self._max_evals)
             else:
                 self._tqdm = tqdm()
 
