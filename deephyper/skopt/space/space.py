@@ -961,9 +961,9 @@ class Space(object):
                         categories.append("NA")
 
                         # remove p from prior
-                        p = 1/len(categories)
-                        pi = p/(len(categories) - 1)
-                        prior = [prior_i-pi for prior_i in prior]
+                        p = 1 / len(categories)
+                        pi = p / (len(categories) - 1)
+                        prior = [prior_i - pi for prior_i in prior]
                         prior.append(p)
                     param = Categorical(categories, prior=prior, name=x.name)
                     space.append(param)
