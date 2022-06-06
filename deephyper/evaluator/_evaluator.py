@@ -104,12 +104,12 @@ class Evaluator:
             nest_asyncio.apply()
 
     @staticmethod
-    def create(run_function, method="subprocess", method_kwargs={}):
+    def create(run_function, method="serial", method_kwargs={}):
         """Create evaluator with a specific backend and configuration.
 
         Args:
             run_function (function): the function to execute in parallel.
-            method (str, optional): the backend to use in ["thread", "process", "subprocess", "ray"]. Defaults to "subprocess".
+            method (str, optional): the backend to use in ``["serial", "thread", "process", "subprocess", "ray", "mpicomm", "mpipool"]``. Defaults to ``"serial"``.
             method_kwargs (dict, optional): configuration dictionnary of the corresponding backend. Keys corresponds to the keyword arguments of the corresponding implementation. Defaults to "{}".
 
         Raises:
