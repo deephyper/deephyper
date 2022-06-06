@@ -41,7 +41,7 @@ Check you current platform:
 
 .. code-block:: console
 
-    python -c "import platform; print(platform.platform());"
+    python3 -c "import platform; print(platform.platform());"
 
 x86_64
 ######

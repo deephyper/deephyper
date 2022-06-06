@@ -8,7 +8,7 @@ import functools
 from collections import OrderedDict
 
 import tensorflow as tf
-from deephyper.core.utils._import import load_attr
+from deephyper.core.utils import load_attr
 
 
 def r2(y_true, y_pred):

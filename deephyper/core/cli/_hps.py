@@ -57,7 +57,7 @@ import logging
 import sys
 
 from deephyper.core.parser import add_arguments_from_signature
-from deephyper.core.utils._import import load_attr
+from deephyper.core.utils import load_attr
 from deephyper.evaluator import EVALUATORS, Evaluator
 
 HPS_SEARCHES = {

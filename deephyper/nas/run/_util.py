@@ -12,7 +12,7 @@ import numpy as np
 import tensorflow as tf
 from deephyper.core.exceptions.problem import WrongProblemObjective
 from deephyper.evaluator._encoder import Encoder
-from deephyper.core.utils._import import load_attr
+from deephyper.core.utils import load_attr
 from deephyper.nas.lr_scheduler import exponential_decay
 
 
