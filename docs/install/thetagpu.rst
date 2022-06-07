@@ -59,11 +59,12 @@ Then create the ``dhgpu`` environment:
 
 .. code-block:: console
 
-    $ module load conda/2021-09-22
+    $ module load conda/2021-11-30
+    $ module load openmpi/openmpi-4.0.5
     $ conda create -p dhgpu --clone base
     $ conda activate dhgpu/
 
-Finally install DeepHyper in the previously created ``dhgpu`` environment:
+Install DeepHyper in the previously created ``dhgpu`` environment:
 
 .. code-block:: console
 
@@ -71,6 +72,14 @@ Finally install DeepHyper in the previously created ``dhgpu`` environment:
     $ # DeepHyper + Analytics Tools (Parsing logs, Plots, Notebooks)
     $ pip install deephyper["analytics"]
 
+Finally install mpi4py in the previously created ``dhgpu`` environment:
+
+.. code-block:: console
+
+    $ git clone https://github.com/mpi4py/mpi4py.git
+    $ cd mpi4py/
+    $ MPICC=mpicc python setup.py install
+    $ cd ..
 
 Developer installation
 ======================
@@ -79,9 +88,8 @@ Follow the :ref:`thetagpu-conda-environment` installation and replace ``pip inst
 
 .. code-block:: console
 
-    $ git clone https://github.com/deephyper/deephyper.git
-    $ cd deephyper/ && git checkout develop
-    $ pip install -e ".[dev,analytics]"
+    $ git clone -b develop https://github.com/deephyper/deephyper.git
+    $ pip install -e "deephyper[dev,analytics]"
 
 
 Internet Access
