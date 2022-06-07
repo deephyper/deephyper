@@ -5,7 +5,6 @@ import warnings
 from inspect import signature
 
 import ConfigSpace as cs
-from deephyper.nas.preprocessing import minmaxstdscaler
 from deephyper.problem import HpProblem
 from sklearn.ensemble import AdaBoostRegressor, RandomForestRegressor
 from sklearn.linear_model import LinearRegression
@@ -13,8 +12,26 @@ from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.neural_network import MLPRegressor
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.svm import SVR
 from xgboost import XGBRegressor
+
+
+def minmaxstdscaler() -> Pipeline:
+    """MinMax preprocesssing followed by Standard normalization.
+
+    Returns:
+        Pipeline: a pipeline with two steps ``[MinMaxScaler, StandardScaler]``.
+    """
+    preprocessor = Pipeline(
+        [
+            ("minmaxscaler", MinMaxScaler()),
+            ("stdscaler", StandardScaler()),
+        ]
+    )
+    return preprocessor
+
 
 REGRESSORS = {
     "RandomForest": RandomForestRegressor,

@@ -5,7 +5,6 @@ import warnings
 from inspect import signature
 
 import ConfigSpace as cs
-from deephyper.nas.preprocessing import minmaxstdscaler
 from deephyper.problem import HpProblem
 from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -13,8 +12,26 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
+
+
+def minmaxstdscaler() -> Pipeline:
+    """MinMax preprocesssing followed by Standard normalization.
+
+    Returns:
+        Pipeline: a pipeline with two steps ``[MinMaxScaler, StandardScaler]``.
+    """
+    preprocessor = Pipeline(
+        [
+            ("minmaxscaler", MinMaxScaler()),
+            ("stdscaler", StandardScaler()),
+        ]
+    )
+    return preprocessor
+
 
 problem_autosklearn1 = HpProblem()
 

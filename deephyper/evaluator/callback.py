@@ -94,7 +94,7 @@ class TqdmCallback(Callback):
 
     An example usage can be:
 
-    >>> evaluator.create(method="ray", method_kwargs={..., "callbacks": [LoggerCallback()]})
+    >>> evaluator.create(method="ray", method_kwargs={..., "callbacks": [TqdmCallback()]})
     """
 
     def __init__(self):
