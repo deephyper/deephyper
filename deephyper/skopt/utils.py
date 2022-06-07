@@ -134,12 +134,12 @@ def dump(res, filename, store_objective=True, **kwargs):
     if store_objective:
         dump_(res, filename, **kwargs)
 
-    elif 'func' in res.specs['args']:
+    elif "func" in res.specs["args"]:
         # If the user does not want to store the objective and it is indeed
         # present in the provided object, then create a deep copy of it and
         # remove the objective function before dumping it with joblib.dump.
         res_without_func = deepcopy(res)
-        del res_without_func.specs['args']['func']
+        del res_without_func.specs["args"]["func"]
         dump_(res_without_func, filename, **kwargs)
 
     else:
@@ -185,20 +185,21 @@ def is_2Dlistlike(x):
 def check_x_in_space(x, space):
     if is_2Dlistlike(x):
         if not np.all([p in space for p in x]):
-            raise ValueError("Not all points are within the bounds of"
-                             " the space.")
+            raise ValueError("Not all points are within the bounds of" " the space.")
         if any([len(p) != len(space.dimensions) for p in x]):
-            raise ValueError("Not all points have the same dimensions as"
-                             " the space.")
+            raise ValueError("Not all points have the same dimensions as" " the space.")
     elif is_listlike(x):
         print(x)
         if x not in space:
-            raise ValueError("Point (%s) is not within the bounds of"
-                             " the space (%s)."
-                             % (x, space.bounds))
+            raise ValueError(
+                "Point (%s) is not within the bounds of"
+                " the space (%s)." % (x, space.bounds)
+            )
         if len(x) != len(space.dimensions):
-            raise ValueError("Dimensions of point (%s) and space (%s) do not match"
-                             % (x, space.bounds))
+            raise ValueError(
+                "Dimensions of point (%s) and space (%s) do not match"
+                % (x, space.bounds)
+            )
 
 
 def expected_minimum(res, n_random_starts=20, random_state=None):
@@ -231,8 +232,9 @@ def expected_minimum(res, n_random_starts=20, random_state=None):
         the surrogate function value at the minimum.
     """
     if res.space.is_partly_categorical:
-        return expected_minimum_random_sampling(res, n_random_starts=100000,
-                                                random_state=random_state)
+        return expected_minimum_random_sampling(
+            res, n_random_starts=100000, random_state=random_state
+        )
 
     def func(x):
         reg = res.models[-1]
@@ -256,8 +258,7 @@ def expected_minimum(res, n_random_starts=20, random_state=None):
     return [v for v in best_x], best_fun
 
 
-def expected_minimum_random_sampling(res, n_random_starts=100000,
-                                     random_state=None):
+def expected_minimum_random_sampling(res, n_random_starts=100000, random_state=None):
     """Minimum search by doing naive random sampling, Returns the parameters
     that gave the minimum function value. Can be used when the space
     contains any categorical values.
@@ -309,8 +310,9 @@ def has_gradients(estimator):
         sklearn BaseEstimator instance.
     """
     tree_estimators = (
-            ExtraTreesRegressor, RandomForestRegressor,
-            GradientBoostingQuantileRegressor
+        ExtraTreesRegressor,
+        RandomForestRegressor,
+        GradientBoostingQuantileRegressor,
     )
 
     # cook_estimator() returns None for "dummy minimize" aka random values only
@@ -323,9 +325,8 @@ def has_gradients(estimator):
     categorical_gp = False
     if hasattr(estimator, "kernel"):
         params = estimator.get_params()
-        categorical_gp = (
-            isinstance(estimator.kernel, HammingKernel) or
-            any([isinstance(params[p], HammingKernel) for p in params])
+        categorical_gp = isinstance(estimator.kernel, HammingKernel) or any(
+            [isinstance(params[p], HammingKernel) for p in params]
         )
 
     return not categorical_gp
@@ -358,9 +359,11 @@ def cook_estimator(base_estimator, space=None, **kwargs):
     if isinstance(base_estimator, str):
         base_estimator = base_estimator.upper()
         if base_estimator not in ["GP", "ET", "RF", "GBRT", "DUMMY"]:
-            raise ValueError("Valid strings for the base_estimator parameter "
-                             " are: 'RF', 'ET', 'GP', 'GBRT' or 'DUMMY' not "
-                             "%s." % base_estimator)
+            raise ValueError(
+                "Valid strings for the base_estimator parameter "
+                " are: 'RF', 'ET', 'GP', 'GBRT' or 'DUMMY' not "
+                "%s." % base_estimator
+            )
     elif not is_regressor(base_estimator):
         raise ValueError("base_estimator has to be a regressor.")
 
@@ -380,18 +383,20 @@ def cook_estimator(base_estimator, space=None, **kwargs):
         else:
             other_kernel = Matern(
                 length_scale=np.ones(n_dims),
-                length_scale_bounds=[(0.01, 100)] * n_dims, nu=2.5)
+                length_scale_bounds=[(0.01, 100)] * n_dims,
+                nu=2.5,
+            )
 
         base_estimator = GaussianProcessRegressor(
             kernel=cov_amplitude * other_kernel,
-            normalize_y=True, noise="gaussian",
-            n_restarts_optimizer=2)
+            normalize_y=True,
+            noise="gaussian",
+            n_restarts_optimizer=2,
+        )
     elif base_estimator == "RF":
-        base_estimator = RandomForestRegressor(n_estimators=100,
-                                               min_samples_leaf=3)
+        base_estimator = RandomForestRegressor(n_estimators=100, min_samples_leaf=3)
     elif base_estimator == "ET":
-        base_estimator = ExtraTreesRegressor(n_estimators=100,
-                                             min_samples_leaf=3)
+        base_estimator = ExtraTreesRegressor(n_estimators=100, min_samples_leaf=3)
     elif base_estimator == "GBRT":
         gbrt = GradientBoostingRegressor(n_estimators=30, loss="quantile")
         base_estimator = GradientBoostingQuantileRegressor(base_estimator=gbrt)
@@ -399,8 +404,8 @@ def cook_estimator(base_estimator, space=None, **kwargs):
     elif base_estimator == "DUMMY":
         return None
 
-    if ('n_jobs' in kwargs.keys()) and not hasattr(base_estimator, 'n_jobs'):
-        del kwargs['n_jobs']
+    if ("n_jobs" in kwargs.keys()) and not hasattr(base_estimator, "n_jobs"):
+        del kwargs["n_jobs"]
 
     base_estimator.set_params(**kwargs)
     return base_estimator
@@ -424,15 +429,18 @@ def cook_initial_point_generator(generator, **kwargs):
         generator = "random"
     elif isinstance(generator, str):
         generator = generator.lower()
-        if generator not in ["sobol", "halton", "hammersly", "lhs", "random",
-                             "grid"]:
-            raise ValueError("Valid strings for the generator parameter "
-                             " are: 'sobol', 'lhs', 'halton', 'hammersly',"
-                             "'random', or 'grid' not "
-                             "%s." % generator)
+        if generator not in ["sobol", "halton", "hammersly", "lhs", "random", "grid"]:
+            raise ValueError(
+                "Valid strings for the generator parameter "
+                " are: 'sobol', 'lhs', 'halton', 'hammersly',"
+                "'random', or 'grid' not "
+                "%s." % generator
+            )
     elif not isinstance(generator, InitialPointGenerator):
-        raise ValueError("generator has to be an InitialPointGenerator."
-                         "Got %s" % (str(type(generator))))
+        raise ValueError(
+            "generator has to be an InitialPointGenerator."
+            "Got %s" % (str(type(generator)))
+        )
 
     if isinstance(generator, str):
         if generator == "sobol":
@@ -481,9 +489,7 @@ def dimensions_aslist(search_space):
     Real(low=-1, high=1, prior='uniform', transform='identity')
 
     """
-    params_space_list = [
-        search_space[k] for k in sorted(search_space.keys())
-    ]
+    params_space_list = [search_space[k] for k in sorted(search_space.keys())]
     return params_space_list
 
 
@@ -561,9 +567,7 @@ def point_aslist(search_space, point_as_dict):
     >>> point_aslist(search_space, point_as_dict)
     [0.66, 3, -0.15]
     """
-    point_as_list = [
-        point_as_dict[k] for k in sorted(search_space.keys())
-    ]
+    point_as_list = [point_as_dict[k] for k in sorted(search_space.keys())]
     return point_as_list
 
 
@@ -598,12 +602,9 @@ def normalize_dimensions(dimensions):
             # Change the transformer to normalize
             # and add it to the new transformed dimensions
             dimension.set_transformer("normalize")
-            transformed_dimensions.append(
-                dimension
-            )
+            transformed_dimensions.append(dimension)
         else:
-            raise RuntimeError("Unknown dimension type "
-                               "(%s)" % type(dimension))
+            raise RuntimeError("Unknown dimension type " "(%s)" % type(dimension))
 
     return Space(transformed_dimensions)
 
@@ -777,8 +778,10 @@ def use_named_args(dimensions):
             # Ensure the number of dimensions match
             # the number of parameters in the list x.
             if len(x) != len(dimensions):
-                msg = "Mismatch in number of search-space dimensions. " \
-                      "len(dimensions)=={} and len(x)=={}"
+                msg = (
+                    "Mismatch in number of search-space dimensions. "
+                    "len(dimensions)=={} and len(x)=={}"
+                )
                 msg = msg.format(len(dimensions), len(x))
                 raise ValueError(msg)
 

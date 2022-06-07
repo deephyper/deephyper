@@ -90,7 +90,7 @@ Then we define the variable(s) we want to optimize. For this problem we optimize
 
 Then we define serial search by creation a ``"serial"``-evaluator and we execute the search with a fixed time-budget of 2 minutes (i.e., 120 secondes).
 
-.. GENERATED FROM PYTHON SOURCE LINES 37-52
+.. GENERATED FROM PYTHON SOURCE LINES 37-54
 
 .. code-block:: default
 
@@ -102,7 +102,9 @@ Then we define serial search by creation a ``"serial"``-evaluator and we execute
         # we give a budget of 2 minutes for each search
         timeout = 120
         serial_evaluator = Evaluator.create(
-            black_box.run_ackley, method="serial", method_kwargs={"callbacks": [TqdmCallback()]}
+            black_box.run_ackley,
+            method="serial",
+            method_kwargs={"callbacks": [TqdmCallback()]},
         )
 
         results = {}
@@ -119,15 +121,15 @@ Then we define serial search by creation a ``"serial"``-evaluator and we execute
 
  .. code-block:: none
 
-    0it [00:00, ?it/s]    1it [00:02,  2.01s/it]    1it [00:02,  2.01s/it, objective=-21.2]    2it [00:04,  2.40s/it, objective=-21.2]    2it [00:04,  2.40s/it, objective=-19.9]    3it [00:05,  1.86s/it, objective=-19.9]    3it [00:05,  1.86s/it, objective=-19.9]    4it [00:07,  1.86s/it, objective=-19.9]    4it [00:07,  1.86s/it, objective=-19.9]    5it [00:10,  2.13s/it, objective=-19.9]    5it [00:10,  2.13s/it, objective=-19.9]    6it [00:12,  2.12s/it, objective=-19.9]    6it [00:12,  2.12s/it, objective=-19.9]    7it [00:15,  2.30s/it, objective=-19.9]    7it [00:15,  2.30s/it, objective=-19.9]    8it [00:16,  2.13s/it, objective=-19.9]    8it [00:16,  2.13s/it, objective=-19.9]    9it [00:18,  2.05s/it, objective=-19.9]    9it [00:18,  2.05s/it, objective=-19.9]    10it [00:20,  1.92s/it, objective=-19.9]    10it [00:20,  1.92s/it, objective=-11.3]    11it [00:23,  2.20s/it, objective=-11.3]    11it [00:23,  2.20s/it, objective=-9.86]    12it [00:25,  2.22s/it, objective=-9.86]    12it [00:25,  2.22s/it, objective=-9.86]    13it [00:27,  2.13s/it, objective=-9.86]    13it [00:27,  2.13s/it, objective=-9.86]    14it [00:29,  2.01s/it, objective=-9.86]    14it [00:29,  2.01s/it, objective=-9.86]    15it [00:31,  2.07s/it, objective=-9.86]    15it [00:31,  2.07s/it, objective=-9.86]    16it [00:33,  2.22s/it, objective=-9.86]    16it [00:33,  2.22s/it, objective=-3.64]    17it [00:36,  2.27s/it, objective=-3.64]    17it [00:36,  2.27s/it, objective=-2.66]    18it [00:38,  2.22s/it, objective=-2.66]    18it [00:38,  2.22s/it, objective=-2.66]    19it [00:40,  2.12s/it, objective=-2.66]    19it [00:40,  2.12s/it, objective=-2.66]    20it [00:42,  2.29s/it, objective=-2.66]    20it [00:42,  2.29s/it, objective=-2.66]    21it [00:44,  2.06s/it, objective=-2.66]    21it [00:44,  2.06s/it, objective=-2.66]    22it [00:47,  2.31s/it, objective=-2.66]    22it [00:47,  2.31s/it, objective=-2.66]    23it [00:50,  2.46s/it, objective=-2.66]    23it [00:50,  2.46s/it, objective=-2.66]    24it [00:52,  2.46s/it, objective=-2.66]    24it [00:52,  2.46s/it, objective=-2.66]    25it [00:54,  2.40s/it, objective=-2.66]    25it [00:54,  2.40s/it, objective=-2.66]    26it [00:56,  2.27s/it, objective=-2.66]    26it [00:56,  2.27s/it, objective=-2.66]    27it [00:59,  2.37s/it, objective=-2.66]    27it [00:59,  2.37s/it, objective=-2.66]    28it [01:01,  2.29s/it, objective=-2.66]    28it [01:01,  2.29s/it, objective=-2.66]    29it [01:03,  2.31s/it, objective=-2.66]    29it [01:03,  2.31s/it, objective=-2.66]    30it [01:06,  2.27s/it, objective=-2.66]    30it [01:06,  2.27s/it, objective=-2.66]    31it [01:08,  2.21s/it, objective=-2.66]    31it [01:08,  2.21s/it, objective=-2.66]    32it [01:10,  2.33s/it, objective=-2.66]    32it [01:10,  2.33s/it, objective=-2.66]    33it [01:12,  2.18s/it, objective=-2.66]    33it [01:12,  2.18s/it, objective=-2.66]    34it [01:15,  2.26s/it, objective=-2.66]    34it [01:15,  2.26s/it, objective=-2.66]    35it [01:16,  1.97s/it, objective=-2.66]    35it [01:16,  1.97s/it, objective=-2.66]    36it [01:18,  1.96s/it, objective=-2.66]    36it [01:18,  1.96s/it, objective=-2.66]    37it [01:20,  1.96s/it, objective=-2.66]    37it [01:20,  1.96s/it, objective=-2.66]    38it [01:23,  2.21s/it, objective=-2.66]    38it [01:23,  2.21s/it, objective=-2.66]    39it [01:25,  2.24s/it, objective=-2.66]    39it [01:25,  2.24s/it, objective=-2.66]    40it [01:27,  2.13s/it, objective=-2.66]    40it [01:27,  2.13s/it, objective=-2.66]    41it [01:29,  2.10s/it, objective=-2.66]    41it [01:29,  2.10s/it, objective=-2.66]    42it [01:31,  2.12s/it, objective=-2.66]    42it [01:31,  2.12s/it, objective=-2.66]    43it [01:33,  2.17s/it, objective=-2.66]    43it [01:33,  2.17s/it, objective=-2.66]    44it [01:35,  2.11s/it, objective=-2.66]    44it [01:35,  2.11s/it, objective=-2.66]    45it [01:37,  2.10s/it, objective=-2.66]    45it [01:37,  2.10s/it, objective=-2.66]    46it [01:40,  2.21s/it, objective=-2.66]    46it [01:40,  2.21s/it, objective=-2.66]    47it [01:43,  2.41s/it, objective=-2.66]    47it [01:43,  2.41s/it, objective=-2.66]    48it [01:45,  2.52s/it, objective=-2.66]    48it [01:45,  2.52s/it, objective=-2.66]    49it [01:48,  2.43s/it, objective=-2.66]    49it [01:48,  2.43s/it, objective=-2.66]    50it [01:50,  2.32s/it, objective=-2.66]    50it [01:50,  2.32s/it, objective=-2.66]    51it [01:52,  2.33s/it, objective=-2.66]    51it [01:52,  2.33s/it, objective=-2.66]    52it [01:54,  2.29s/it, objective=-2.66]    52it [01:54,  2.29s/it, objective=-2.66]    53it [01:57,  2.37s/it, objective=-2.66]    53it [01:57,  2.37s/it, objective=-2.66]    54it [01:58,  2.10s/it, objective=-2.66]    54it [01:58,  2.10s/it, objective=-2.66]
+    0it [00:00, ?it/s]    1it [00:00, 3269.14it/s, objective=-21.2]    2it [00:02,  1.17s/it, objective=-21.2]      2it [00:02,  1.17s/it, objective=-19.9]    3it [00:04,  1.52s/it, objective=-19.9]    3it [00:04,  1.52s/it, objective=-19.9]    4it [00:06,  1.90s/it, objective=-19.9]    4it [00:06,  1.90s/it, objective=-19.9]    5it [00:09,  2.06s/it, objective=-19.9]    5it [00:09,  2.06s/it, objective=-19.9]    6it [00:10,  1.92s/it, objective=-19.9]    6it [00:10,  1.92s/it, objective=-19.9]    7it [00:12,  1.84s/it, objective=-19.9]    7it [00:12,  1.84s/it, objective=-19.9]    8it [00:14,  1.85s/it, objective=-19.9]    8it [00:14,  1.85s/it, objective=-19.9]    9it [00:16,  2.04s/it, objective=-19.9]    9it [00:16,  2.04s/it, objective=-19.9]    10it [00:19,  2.12s/it, objective=-19.9]    10it [00:19,  2.12s/it, objective=-11.3]    11it [00:21,  2.17s/it, objective=-11.3]    11it [00:21,  2.17s/it, objective=-9.86]    12it [00:23,  2.20s/it, objective=-9.86]    12it [00:23,  2.20s/it, objective=-9.86]    13it [00:24,  1.79s/it, objective=-9.86]    13it [00:24,  1.79s/it, objective=-9.86]    14it [00:26,  1.71s/it, objective=-9.86]    14it [00:26,  1.71s/it, objective=-9.86]    15it [00:28,  2.00s/it, objective=-9.86]    15it [00:28,  2.00s/it, objective=-9.86]    16it [00:30,  1.90s/it, objective=-9.86]    16it [00:30,  1.90s/it, objective=-3.64]    17it [00:33,  2.16s/it, objective=-3.64]    17it [00:33,  2.16s/it, objective=-2.66]    18it [00:36,  2.46s/it, objective=-2.66]    18it [00:36,  2.46s/it, objective=-2.66]    19it [00:38,  2.46s/it, objective=-2.66]    19it [00:38,  2.46s/it, objective=-2.66]    20it [00:40,  2.36s/it, objective=-2.66]    20it [00:40,  2.36s/it, objective=-2.66]    21it [00:43,  2.40s/it, objective=-2.66]    21it [00:43,  2.40s/it, objective=-2.66]    22it [00:46,  2.44s/it, objective=-2.66]    22it [00:46,  2.44s/it, objective=-2.66]    23it [00:47,  2.22s/it, objective=-2.66]    23it [00:47,  2.22s/it, objective=-2.66]    24it [00:49,  2.19s/it, objective=-2.66]    24it [00:49,  2.19s/it, objective=-2.66]    25it [00:51,  2.07s/it, objective=-2.66]    25it [00:51,  2.07s/it, objective=-2.66]    26it [00:53,  2.12s/it, objective=-2.66]    26it [00:53,  2.12s/it, objective=-2.66]    27it [00:56,  2.19s/it, objective=-2.66]    27it [00:56,  2.19s/it, objective=-2.66]    28it [00:59,  2.56s/it, objective=-2.66]    28it [00:59,  2.56s/it, objective=-2.66]    29it [01:00,  2.13s/it, objective=-2.66]    29it [01:00,  2.13s/it, objective=-2.66]    30it [01:02,  2.12s/it, objective=-2.66]    30it [01:02,  2.12s/it, objective=-2.66]    31it [01:04,  2.10s/it, objective=-2.66]    31it [01:04,  2.10s/it, objective=-2.66]    32it [01:07,  2.16s/it, objective=-2.66]    32it [01:07,  2.16s/it, objective=-2.66]    33it [01:08,  1.89s/it, objective=-2.66]    33it [01:08,  1.89s/it, objective=-2.66]    34it [01:10,  1.99s/it, objective=-2.66]    34it [01:10,  1.99s/it, objective=-2.66]    35it [01:12,  2.00s/it, objective=-2.66]    35it [01:12,  2.00s/it, objective=-2.66]    36it [01:15,  2.25s/it, objective=-2.66]    36it [01:15,  2.25s/it, objective=-2.66]    37it [01:17,  2.27s/it, objective=-2.66]    37it [01:17,  2.27s/it, objective=-2.66]    38it [01:19,  2.17s/it, objective=-2.66]    38it [01:19,  2.17s/it, objective=-2.66]    39it [01:22,  2.31s/it, objective=-2.66]    39it [01:22,  2.31s/it, objective=-2.66]    40it [01:24,  2.27s/it, objective=-2.66]    40it [01:24,  2.27s/it, objective=-2.66]    41it [01:27,  2.35s/it, objective=-2.66]    41it [01:27,  2.35s/it, objective=-2.66]    42it [01:29,  2.43s/it, objective=-2.66]    42it [01:29,  2.43s/it, objective=-2.66]    43it [01:31,  2.15s/it, objective=-2.66]    43it [01:31,  2.15s/it, objective=-2.66]    44it [01:33,  2.28s/it, objective=-2.66]    44it [01:33,  2.28s/it, objective=-2.66]    45it [01:36,  2.30s/it, objective=-2.66]    45it [01:36,  2.30s/it, objective=-2.66]    46it [01:38,  2.41s/it, objective=-2.66]    46it [01:38,  2.41s/it, objective=-2.66]    47it [01:40,  2.27s/it, objective=-2.66]    47it [01:40,  2.27s/it, objective=-2.66]    48it [01:43,  2.31s/it, objective=-2.66]    48it [01:43,  2.31s/it, objective=-2.66]    49it [01:45,  2.25s/it, objective=-2.66]    49it [01:45,  2.25s/it, objective=-2.66]    50it [01:48,  2.58s/it, objective=-2.66]    50it [01:48,  2.58s/it, objective=-2.66]    51it [01:50,  2.42s/it, objective=-2.66]    51it [01:50,  2.42s/it, objective=-2.66]    52it [01:52,  2.17s/it, objective=-2.66]    52it [01:52,  2.17s/it, objective=-2.66]    53it [01:55,  2.34s/it, objective=-2.66]    53it [01:55,  2.34s/it, objective=-2.66]    54it [01:57,  2.49s/it, objective=-2.66]    54it [01:57,  2.49s/it, objective=-2.66]
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 53-54
+.. GENERATED FROM PYTHON SOURCE LINES 55-56
 
 After, executing the serial-search for 2 minutes we can create a parallel search which uses the ``"process"``-evaluator and defines 5 parallel workers. The search is also executed for 2 minutes.
 
-.. GENERATED FROM PYTHON SOURCE LINES 54-64
+.. GENERATED FROM PYTHON SOURCE LINES 56-66
 
 .. code-block:: default
 
@@ -153,366 +155,387 @@ After, executing the serial-search for 2 minutes we can create a parallel search
 
 
     0it [00:00, ?it/s]
-    1it [00:02,  2.49s/it]
-    1it [00:02,  2.49s/it, objective=-21.5]
-    2it [00:02,  1.19s/it, objective=-21.5]
-    2it [00:02,  1.19s/it, objective=-20.6]
-    3it [00:03,  1.17it/s, objective=-20.6]
-    3it [00:03,  1.17it/s, objective=-20.6]
-    4it [00:03,  1.17it/s, objective=-20.6]
-    5it [00:04,  1.45it/s, objective=-20.6]
-    5it [00:04,  1.45it/s, objective=-20.6]
-    6it [00:05,  1.22it/s, objective=-20.6]
-    6it [00:05,  1.22it/s, objective=-19.9]
-    7it [00:05,  1.48it/s, objective=-19.9]
-    7it [00:05,  1.48it/s, objective=-19.9]
-    8it [00:06,  1.71it/s, objective=-19.9]
-    8it [00:06,  1.71it/s, objective=-19.9]
-    9it [00:06,  1.94it/s, objective=-19.9]
-    9it [00:06,  1.94it/s, objective=-19.9]
-    10it [00:07,  1.93it/s, objective=-19.9]
-    10it [00:07,  1.93it/s, objective=-19.9]
-    11it [00:08,  1.26it/s, objective=-19.9]
-    11it [00:08,  1.26it/s, objective=-19.9]
-    12it [00:08,  1.46it/s, objective=-19.9]
-    12it [00:08,  1.46it/s, objective=-19.9]
-    13it [00:09,  1.71it/s, objective=-19.9]
-    13it [00:09,  1.71it/s, objective=-19.9]
-    14it [00:10,  1.55it/s, objective=-19.9]
-    14it [00:10,  1.55it/s, objective=-19.9]
-    15it [00:10,  1.76it/s, objective=-19.9]
-    15it [00:10,  1.76it/s, objective=-19.9]
-    16it [00:11,  1.61it/s, objective=-19.9]
-    16it [00:11,  1.61it/s, objective=-19.9]
-    17it [00:12,  1.25it/s, objective=-19.9]
-    17it [00:12,  1.25it/s, objective=-19.9]
-    18it [00:12,  1.43it/s, objective=-19.9]
-    18it [00:12,  1.43it/s, objective=-19.9]
-    19it [00:13,  1.64it/s, objective=-19.9]
-    19it [00:13,  1.64it/s, objective=-19.9]
-    20it [00:13,  1.81it/s, objective=-19.9]
-    20it [00:13,  1.81it/s, objective=-19.9]
-    21it [00:13,  2.14it/s, objective=-19.9]
-    21it [00:13,  2.14it/s, objective=-19.9]
-    22it [00:15,  1.36it/s, objective=-19.9]
-    22it [00:15,  1.36it/s, objective=-19.9]
-    23it [00:16,  1.29it/s, objective=-19.9]
-    23it [00:16,  1.29it/s, objective=-19.9]
-    24it [00:16,  1.48it/s, objective=-19.9]
-    24it [00:16,  1.48it/s, objective=-19.9]
-    25it [00:16,  1.80it/s, objective=-19.9]
-    25it [00:16,  1.80it/s, objective=-19.9]
-    26it [00:17,  2.00it/s, objective=-19.9]
-    26it [00:17,  2.00it/s, objective=-19.9]
-    27it [00:18,  1.19it/s, objective=-19.9]
-    27it [00:18,  1.19it/s, objective=-19.9]
-    28it [00:19,  1.48it/s, objective=-19.9]
-    28it [00:19,  1.48it/s, objective=-19.9]
-    29it [00:19,  1.57it/s, objective=-19.9]
-    29it [00:19,  1.57it/s, objective=-19.9]
-    30it [00:20,  1.74it/s, objective=-19.9]
-    30it [00:20,  1.74it/s, objective=-19.9]
-    31it [00:20,  1.67it/s, objective=-19.9]
-    31it [00:20,  1.67it/s, objective=-19.9]
-    32it [00:22,  1.22it/s, objective=-19.9]
-    32it [00:22,  1.22it/s, objective=-19.9]
-    33it [00:22,  1.45it/s, objective=-19.9]
-    33it [00:22,  1.45it/s, objective=-19.9]
-    34it [00:22,  1.45it/s, objective=-19.9]
-    35it [00:23,  1.56it/s, objective=-19.9]
-    35it [00:23,  1.56it/s, objective=-19.3]
-    36it [00:24,  1.37it/s, objective=-19.3]
-    36it [00:24,  1.37it/s, objective=-19.3]
-    37it [00:25,  1.64it/s, objective=-19.3]
-    37it [00:25,  1.64it/s, objective=-18.1]
-    38it [00:25,  1.92it/s, objective=-18.1]
-    38it [00:25,  1.92it/s, objective=-18.1]
-    39it [00:25,  2.20it/s, objective=-18.1]
-    39it [00:25,  2.20it/s, objective=-18.1]
-    40it [00:27,  1.34it/s, objective=-18.1]
-    40it [00:27,  1.34it/s, objective=-18.1]
-    41it [00:28,  1.23it/s, objective=-18.1]
-    41it [00:28,  1.23it/s, objective=-18.1]
-    42it [00:28,  1.45it/s, objective=-18.1]
-    42it [00:28,  1.45it/s, objective=-18.1]
-    43it [00:28,  1.68it/s, objective=-18.1]
-    43it [00:28,  1.68it/s, objective=-18.1]
-    44it [00:29,  1.98it/s, objective=-18.1]
-    44it [00:29,  1.98it/s, objective=-18.1]
-    45it [00:30,  1.29it/s, objective=-18.1]
-    45it [00:30,  1.29it/s, objective=-18.1]
-    46it [00:31,  1.33it/s, objective=-18.1]
-    46it [00:31,  1.33it/s, objective=-18.1]
-    47it [00:31,  1.56it/s, objective=-18.1]
-    47it [00:31,  1.56it/s, objective=-18.1]
-    48it [00:32,  1.70it/s, objective=-18.1]
-    48it [00:32,  1.70it/s, objective=-10.3]
-    49it [00:33,  1.32it/s, objective=-10.3]
-    49it [00:33,  1.32it/s, objective=-9.42]
-    50it [00:33,  1.44it/s, objective=-9.42]
-    50it [00:33,  1.44it/s, objective=-9.42]
-    51it [00:34,  1.64it/s, objective=-9.42]
-    51it [00:34,  1.64it/s, objective=-9.42]
-    52it [00:35,  1.29it/s, objective=-9.42]
-    52it [00:35,  1.29it/s, objective=-9.42]
-    53it [00:35,  1.52it/s, objective=-9.42]
-    53it [00:35,  1.52it/s, objective=-9.42]
-    54it [00:37,  1.16it/s, objective=-9.42]
-    54it [00:37,  1.16it/s, objective=-9.42]
-    55it [00:37,  1.27it/s, objective=-9.42]
-    55it [00:37,  1.27it/s, objective=-7.48]
-    56it [00:37,  1.56it/s, objective=-7.48]
-    56it [00:37,  1.56it/s, objective=-7.48]
-    57it [00:38,  1.76it/s, objective=-7.48]
-    57it [00:38,  1.76it/s, objective=-7.48]
-    58it [00:38,  1.76it/s, objective=-7.48]
-    59it [00:40,  1.15it/s, objective=-7.48]
-    59it [00:40,  1.15it/s, objective=-7.48]
-    60it [00:41,  1.32it/s, objective=-7.48]
-    60it [00:41,  1.32it/s, objective=-4.42]
-    61it [00:41,  1.56it/s, objective=-4.42]
-    61it [00:41,  1.56it/s, objective=-4.1] 
-    62it [00:41,  1.56it/s, objective=-4.1]
-    63it [00:41,  1.56it/s, objective=-4.1]
-    64it [00:43,  1.42it/s, objective=-4.1]
-    64it [00:43,  1.42it/s, objective=-4.1]
-    65it [00:44,  1.47it/s, objective=-4.1]
-    65it [00:44,  1.47it/s, objective=-4.1]
-    66it [00:44,  1.62it/s, objective=-4.1]
-    66it [00:44,  1.62it/s, objective=-4.1]
-    67it [00:45,  1.84it/s, objective=-4.1]
-    67it [00:45,  1.84it/s, objective=-4.1]
-    68it [00:45,  1.97it/s, objective=-4.1]
-    68it [00:45,  1.97it/s, objective=-4.1]
-    69it [00:46,  1.35it/s, objective=-4.1]
-    69it [00:46,  1.35it/s, objective=-4.1]
-    70it [00:47,  1.47it/s, objective=-4.1]
-    70it [00:47,  1.47it/s, objective=-4.1]
-    71it [00:47,  1.67it/s, objective=-4.1]
-    71it [00:47,  1.67it/s, objective=-4.1]
-    72it [00:48,  1.86it/s, objective=-4.1]
-    72it [00:48,  1.86it/s, objective=-4.1]
-    73it [00:49,  1.29it/s, objective=-4.1]
-    73it [00:49,  1.29it/s, objective=-4.1]
-    74it [00:49,  1.54it/s, objective=-4.1]
-    74it [00:49,  1.54it/s, objective=-4.1]
-    75it [00:50,  1.73it/s, objective=-4.1]
-    75it [00:50,  1.73it/s, objective=-4.1]
-    76it [00:50,  1.73it/s, objective=-4.1]
-    77it [00:51,  1.67it/s, objective=-4.1]
-    77it [00:51,  1.67it/s, objective=-4.1]
-    78it [00:52,  1.38it/s, objective=-4.1]
-    78it [00:52,  1.38it/s, objective=-4.1]
-    79it [00:53,  1.49it/s, objective=-4.1]
-    79it [00:53,  1.49it/s, objective=-4.1]
-    80it [00:53,  1.73it/s, objective=-4.1]
-    80it [00:53,  1.73it/s, objective=-4.1]
-    81it [00:53,  1.97it/s, objective=-4.1]
-    81it [00:53,  1.97it/s, objective=-4.1]
-    82it [00:54,  1.66it/s, objective=-4.1]
-    82it [00:54,  1.66it/s, objective=-4.1]
-    83it [00:55,  1.26it/s, objective=-4.1]
-    83it [00:55,  1.26it/s, objective=-4.1]
-    84it [00:56,  1.40it/s, objective=-4.1]
-    84it [00:56,  1.40it/s, objective=-4.1]
-    85it [00:56,  1.60it/s, objective=-4.1]
-    85it [00:56,  1.60it/s, objective=-3.96]
-    86it [00:57,  1.57it/s, objective=-3.96]
-    86it [00:57,  1.57it/s, objective=-3.72]
-    87it [00:57,  1.84it/s, objective=-3.72]
-    87it [00:57,  1.84it/s, objective=-3.72]
-    88it [00:59,  1.26it/s, objective=-3.72]
-    88it [00:59,  1.26it/s, objective=-3.72]
-    89it [00:59,  1.46it/s, objective=-3.72]
-    89it [00:59,  1.46it/s, objective=-3.72]
-    90it [00:59,  1.73it/s, objective=-3.72]
-    90it [00:59,  1.73it/s, objective=-2.98]
-    91it [01:00,  1.99it/s, objective=-2.98]
-    91it [01:00,  1.99it/s, objective=-2.98]
-    92it [01:01,  1.54it/s, objective=-2.98]
-    92it [01:01,  1.54it/s, objective=-2.98]
-    93it [01:02,  1.13it/s, objective=-2.98]
-    93it [01:02,  1.13it/s, objective=-2.98]
-    94it [01:03,  1.38it/s, objective=-2.98]
-    94it [01:03,  1.38it/s, objective=-2.98]
-    95it [01:03,  1.38it/s, objective=-2.98]
-    96it [01:03,  1.92it/s, objective=-2.98]
-    96it [01:03,  1.92it/s, objective=-2.98]
-    97it [01:04,  1.49it/s, objective=-2.98]
-    97it [01:04,  1.49it/s, objective=-2.98]
-    98it [01:05,  1.23it/s, objective=-2.98]
-    98it [01:05,  1.23it/s, objective=-2.04]
-    99it [01:06,  1.42it/s, objective=-2.04]
-    99it [01:06,  1.42it/s, objective=-2.04]
-    100it [01:07,  1.30it/s, objective=-2.04]
-    100it [01:07,  1.30it/s, objective=-2.04]
-    101it [01:07,  1.56it/s, objective=-2.04]
-    101it [01:07,  1.56it/s, objective=-2.04]
-    102it [01:08,  1.72it/s, objective=-2.04]
-    102it [01:08,  1.72it/s, objective=-2.04]
-    103it [01:08,  1.50it/s, objective=-2.04]
-    103it [01:08,  1.50it/s, objective=-2.04]
-    104it [01:09,  1.38it/s, objective=-2.04]
-    104it [01:09,  1.38it/s, objective=-2.04]
-    105it [01:10,  1.57it/s, objective=-2.04]
-    105it [01:10,  1.57it/s, objective=-2.04]
-    106it [01:11,  1.19it/s, objective=-2.04]
-    106it [01:11,  1.19it/s, objective=-2.04]
-    107it [01:11,  1.44it/s, objective=-2.04]
-    107it [01:11,  1.44it/s, objective=-2.04]
-    108it [01:11,  1.44it/s, objective=-2.04]
-    109it [01:13,  1.41it/s, objective=-2.04]
-    109it [01:13,  1.41it/s, objective=-2.04]
-    110it [01:13,  1.57it/s, objective=-2.04]
-    110it [01:13,  1.57it/s, objective=-2.04]
-    111it [01:14,  1.31it/s, objective=-2.04]
-    111it [01:14,  1.31it/s, objective=-2.04]
-    112it [01:15,  1.54it/s, objective=-2.04]
-    112it [01:15,  1.54it/s, objective=-2.04]
-    113it [01:16,  1.46it/s, objective=-2.04]
-    113it [01:16,  1.46it/s, objective=-2.04]
-    114it [01:16,  1.70it/s, objective=-2.04]
-    114it [01:16,  1.70it/s, objective=-2.04]
-    115it [01:16,  1.91it/s, objective=-2.04]
-    115it [01:16,  1.91it/s, objective=-2.04]
-    116it [01:18,  1.13it/s, objective=-2.04]
-    116it [01:18,  1.13it/s, objective=-2.04]
-    117it [01:19,  1.28it/s, objective=-2.04]
-    117it [01:19,  1.28it/s, objective=-2.04]
-    118it [01:19,  1.35it/s, objective=-2.04]
-    118it [01:19,  1.35it/s, objective=-2.04]
-    119it [01:20,  1.57it/s, objective=-2.04]
-    119it [01:20,  1.57it/s, objective=-2.04]
-    120it [01:20,  1.75it/s, objective=-2.04]
-    120it [01:20,  1.75it/s, objective=-2.04]
-    121it [01:20,  1.95it/s, objective=-2.04]
-    121it [01:20,  1.95it/s, objective=-2.04]
-    122it [01:22,  1.18it/s, objective=-2.04]
-    122it [01:22,  1.18it/s, objective=-2.04]
-    123it [01:22,  1.43it/s, objective=-2.04]
-    123it [01:22,  1.43it/s, objective=-2.04]
-    124it [01:23,  1.62it/s, objective=-2.04]
-    124it [01:23,  1.62it/s, objective=-2.04]
-    125it [01:23,  1.87it/s, objective=-2.04]
-    125it [01:23,  1.87it/s, objective=-2.04]
-    126it [01:24,  1.71it/s, objective=-2.04]
-    126it [01:24,  1.71it/s, objective=-2.04]
-    127it [01:25,  1.41it/s, objective=-2.04]
-    127it [01:25,  1.41it/s, objective=-2.04]
-    128it [01:26,  1.27it/s, objective=-2.04]
-    128it [01:26,  1.27it/s, objective=-2.04]
-    129it [01:26,  1.54it/s, objective=-2.04]
-    129it [01:26,  1.54it/s, objective=-2.04]
-    130it [01:27,  1.62it/s, objective=-2.04]
-    130it [01:27,  1.62it/s, objective=-2.04]
-    131it [01:27,  1.88it/s, objective=-2.04]
-    131it [01:27,  1.88it/s, objective=-2.04]
-    132it [01:27,  2.11it/s, objective=-2.04]
-    132it [01:27,  2.11it/s, objective=-2.04]
-    133it [01:29,  1.22it/s, objective=-2.04]
-    133it [01:29,  1.22it/s, objective=-2.04]
-    134it [01:29,  1.22it/s, objective=-2.04]
-    135it [01:30,  1.68it/s, objective=-2.04]
-    135it [01:30,  1.68it/s, objective=-2.04]
-    136it [01:31,  1.45it/s, objective=-2.04]
-    136it [01:31,  1.45it/s, objective=-2.04]
-    137it [01:31,  1.62it/s, objective=-2.04]
-    137it [01:31,  1.62it/s, objective=-2.04]
-    138it [01:32,  1.32it/s, objective=-2.04]
-    138it [01:32,  1.32it/s, objective=-2.04]
-    139it [01:33,  1.50it/s, objective=-2.04]
-    139it [01:33,  1.50it/s, objective=-2.04]
-    140it [01:34,  1.29it/s, objective=-2.04]
-    140it [01:34,  1.29it/s, objective=-2.04]
-    141it [01:34,  1.42it/s, objective=-2.04]
-    141it [01:34,  1.42it/s, objective=-2.04]
-    142it [01:35,  1.67it/s, objective=-2.04]
-    142it [01:35,  1.67it/s, objective=-2.04]
-    143it [01:35,  1.47it/s, objective=-2.04]
-    143it [01:35,  1.47it/s, objective=-2.04]
-    144it [01:36,  1.66it/s, objective=-2.04]
-    144it [01:36,  1.66it/s, objective=-2.04]
-    145it [01:37,  1.20it/s, objective=-2.04]
-    145it [01:37,  1.20it/s, objective=-2.04]
-    146it [01:38,  1.44it/s, objective=-2.04]
-    146it [01:38,  1.44it/s, objective=-2.04]
-    147it [01:38,  1.54it/s, objective=-2.04]
-    147it [01:38,  1.54it/s, objective=-1.59]
-    148it [01:39,  1.71it/s, objective=-1.59]
-    148it [01:39,  1.71it/s, objective=-1.59]
-    149it [01:39,  1.71it/s, objective=-.782]
-    150it [01:40,  1.43it/s, objective=-.782]
-    150it [01:40,  1.43it/s, objective=-.782]
-    151it [01:41,  1.62it/s, objective=-.782]
-    151it [01:41,  1.62it/s, objective=-.782]
-    152it [01:41,  1.76it/s, objective=-.782]
-    152it [01:41,  1.76it/s, objective=-.782]
-    153it [01:42,  1.30it/s, objective=-.782]
-    153it [01:42,  1.30it/s, objective=-.782]
-    154it [01:43,  1.54it/s, objective=-.782]
-    154it [01:43,  1.54it/s, objective=-.782]
-    155it [01:43,  1.70it/s, objective=-.782]
-    155it [01:43,  1.70it/s, objective=-.782]
-    156it [01:43,  1.93it/s, objective=-.782]
-    156it [01:43,  1.93it/s, objective=-.782]
-    157it [01:44,  2.06it/s, objective=-.782]
-    157it [01:44,  2.06it/s, objective=-.782]
-    158it [01:46,  1.11it/s, objective=-.782]
-    158it [01:46,  1.11it/s, objective=-.782]
-    159it [01:46,  1.35it/s, objective=-.782]
-    159it [01:46,  1.35it/s, objective=-.782]
-    160it [01:46,  1.59it/s, objective=-.782]
-    160it [01:46,  1.59it/s, objective=-.782]
-    161it [01:47,  1.74it/s, objective=-.782]
-    161it [01:47,  1.74it/s, objective=-.782]
-    162it [01:47,  1.97it/s, objective=-.782]
-    162it [01:47,  1.97it/s, objective=-.782]
-    163it [01:49,  1.19it/s, objective=-.782]
-    163it [01:49,  1.19it/s, objective=-.43] 
-    164it [01:49,  1.44it/s, objective=-.43]
-    164it [01:49,  1.44it/s, objective=-.43]
-    165it [01:50,  1.62it/s, objective=-.43]
-    165it [01:50,  1.62it/s, objective=-.43]
-    166it [01:50,  1.87it/s, objective=-.43]
-    166it [01:50,  1.87it/s, objective=-.43]
-    167it [01:51,  1.55it/s, objective=-.43]
-    167it [01:51,  1.55it/s, objective=-.43]
-    168it [01:51,  1.73it/s, objective=-.43]
-    168it [01:51,  1.73it/s, objective=-.43]
-    169it [01:52,  1.75it/s, objective=-.43]
-    169it [01:52,  1.75it/s, objective=-.43]
-    170it [01:52,  1.72it/s, objective=-.43]
-    170it [01:52,  1.72it/s, objective=-.43]
-    171it [01:54,  1.27it/s, objective=-.43]
-    171it [01:54,  1.27it/s, objective=-.43]
-    172it [01:54,  1.41it/s, objective=-.43]
-    172it [01:54,  1.41it/s, objective=-.43]
-    173it [01:55,  1.68it/s, objective=-.43]
-    173it [01:55,  1.68it/s, objective=-.43]
-    174it [01:55,  1.74it/s, objective=-.43]
-    174it [01:55,  1.74it/s, objective=-.43]
-    175it [01:56,  1.79it/s, objective=-.43]
-    175it [01:56,  1.79it/s, objective=-.43]
-    176it [01:57,  1.38it/s, objective=-.43]
-    176it [01:57,  1.38it/s, objective=-.43]
-    177it [01:57,  1.65it/s, objective=-.43]
-    177it [01:57,  1.65it/s, objective=-.43]
-    178it [01:58,  1.77it/s, objective=-.43]
-    178it [01:58,  1.77it/s, objective=-.43]
-    179it [01:58,  1.81it/s, objective=-.43]
-    179it [01:58,  1.81it/s, objective=-.43]
-    180it [01:59,  1.46it/s, objective=-.43]
-    180it [01:59,  1.46it/s, objective=-.43]
-    181it [01:59,  1.72it/s, objective=-.43]
-    181it [01:59,  1.72it/s, objective=-.43]
+    1it [00:00, 6990.51it/s, objective=-21.5]
+    2it [00:00, 18.17it/s, objective=-21.5]  
+    2it [00:00, 18.17it/s, objective=-21.2]
+    3it [00:00, 18.17it/s, objective=-21.2]
+    4it [00:00,  6.14it/s, objective=-21.2]
+    4it [00:00,  6.14it/s, objective=-20.6]
+    5it [00:01,  3.00it/s, objective=-20.6]
+    5it [00:01,  3.00it/s, objective=-20.6]
+    6it [00:02,  1.59it/s, objective=-20.6]
+    6it [00:02,  1.59it/s, objective=-20.6]
+    7it [00:02,  1.91it/s, objective=-20.6]
+    7it [00:02,  1.91it/s, objective=-20.6]
+    8it [00:03,  1.91it/s, objective=-19.9]
+    9it [00:03,  2.58it/s, objective=-19.9]
+    9it [00:03,  2.58it/s, objective=-19.9]
+    10it [00:04,  1.94it/s, objective=-19.9]
+    10it [00:04,  1.94it/s, objective=-19.9]
+    11it [00:04,  1.82it/s, objective=-19.9]
+    11it [00:04,  1.82it/s, objective=-19.9]
+    12it [00:05,  1.88it/s, objective=-19.9]
+    12it [00:05,  1.88it/s, objective=-19.9]
+    13it [00:05,  1.91it/s, objective=-19.9]
+    13it [00:05,  1.91it/s, objective=-11.3]
+    14it [00:06,  2.24it/s, objective=-11.3]
+    14it [00:06,  2.24it/s, objective=-11.3]
+    15it [00:07,  1.64it/s, objective=-11.3]
+    15it [00:07,  1.64it/s, objective=-11.3]
+    16it [00:07,  1.98it/s, objective=-11.3]
+    16it [00:07,  1.98it/s, objective=-11.3]
+    17it [00:08,  1.56it/s, objective=-11.3]
+    17it [00:08,  1.56it/s, objective=-11.3]
+    18it [00:08,  1.82it/s, objective=-11.3]
+    18it [00:08,  1.82it/s, objective=-10.8]
+    19it [00:09,  2.15it/s, objective=-10.8]
+    19it [00:09,  2.15it/s, objective=-10.8]
+    20it [00:09,  1.73it/s, objective=-10.8]
+    20it [00:09,  1.73it/s, objective=-10.7]
+    21it [00:10,  1.35it/s, objective=-10.7]
+    21it [00:10,  1.35it/s, objective=-10.5]
+    22it [00:11,  1.67it/s, objective=-10.5]
+    22it [00:11,  1.67it/s, objective=-10.5]
+    23it [00:11,  1.99it/s, objective=-10.5]
+    23it [00:11,  1.99it/s, objective=-6.17]
+    24it [00:12,  1.62it/s, objective=-6.17]
+    24it [00:12,  1.62it/s, objective=-6.17]
+    25it [00:13,  1.59it/s, objective=-6.17]
+    25it [00:13,  1.59it/s, objective=-6.17]
+    26it [00:13,  1.47it/s, objective=-6.17]
+    26it [00:13,  1.47it/s, objective=-6.17]
+    27it [00:14,  1.61it/s, objective=-6.17]
+    27it [00:14,  1.61it/s, objective=-6.17]
+    28it [00:14,  1.84it/s, objective=-6.17]
+    28it [00:14,  1.84it/s, objective=-6.17]
+    29it [00:15,  1.50it/s, objective=-6.17]
+    29it [00:15,  1.50it/s, objective=-5.19]
+    30it [00:16,  1.39it/s, objective=-5.19]
+    30it [00:16,  1.39it/s, objective=-5.19]
+    31it [00:16,  1.63it/s, objective=-5.19]
+    31it [00:16,  1.63it/s, objective=-5.19]
+    32it [00:17,  1.93it/s, objective=-5.19]
+    32it [00:17,  1.93it/s, objective=-5.19]
+    33it [00:18,  1.31it/s, objective=-5.19]
+    33it [00:18,  1.31it/s, objective=-5.19]
+    34it [00:18,  1.54it/s, objective=-5.19]
+    34it [00:18,  1.54it/s, objective=-5.19]
+    35it [00:19,  1.47it/s, objective=-5.19]
+    35it [00:19,  1.47it/s, objective=-5.19]
+    36it [00:19,  1.77it/s, objective=-5.19]
+    36it [00:19,  1.77it/s, objective=-5.19]
+    37it [00:20,  1.98it/s, objective=-5.19]
+    37it [00:20,  1.98it/s, objective=-5.19]
+    38it [00:21,  1.27it/s, objective=-5.19]
+    38it [00:21,  1.27it/s, objective=-5.19]
+    39it [00:22,  1.54it/s, objective=-5.19]
+    39it [00:22,  1.54it/s, objective=-5.19]
+    40it [00:22,  1.38it/s, objective=-5.19]
+    40it [00:22,  1.38it/s, objective=-5.19]
+    41it [00:23,  1.61it/s, objective=-5.19]
+    41it [00:23,  1.61it/s, objective=-5.19]
+    42it [00:23,  1.86it/s, objective=-5.19]
+    42it [00:23,  1.86it/s, objective=-5.19]
+    43it [00:24,  1.60it/s, objective=-5.19]
+    43it [00:24,  1.60it/s, objective=-5.19]
+    44it [00:24,  1.82it/s, objective=-5.19]
+    44it [00:24,  1.82it/s, objective=-5.19]
+    45it [00:25,  1.41it/s, objective=-5.19]
+    45it [00:25,  1.41it/s, objective=-5.19]
+    46it [00:26,  1.42it/s, objective=-5.19]
+    46it [00:26,  1.42it/s, objective=-5.19]
+    47it [00:27,  1.65it/s, objective=-5.19]
+    47it [00:27,  1.65it/s, objective=-5.19]
+    48it [00:27,  1.56it/s, objective=-5.19]
+    48it [00:27,  1.56it/s, objective=-4.97]
+    49it [00:28,  1.85it/s, objective=-4.97]
+    49it [00:28,  1.85it/s, objective=-3.23]
+    50it [00:28,  2.03it/s, objective=-3.23]
+    50it [00:28,  2.03it/s, objective=-3.23]
+    51it [00:29,  1.36it/s, objective=-3.23]
+    51it [00:29,  1.36it/s, objective=-2.7] 
+    52it [00:30,  1.63it/s, objective=-2.7]
+    52it [00:30,  1.63it/s, objective=-2.7]
+    53it [00:30,  1.53it/s, objective=-2.7]
+    53it [00:30,  1.53it/s, objective=-2.7]
+    54it [00:31,  1.75it/s, objective=-2.7]
+    54it [00:31,  1.75it/s, objective=-2.69]
+    55it [00:31,  1.75it/s, objective=-2.01]
+    56it [00:32,  1.73it/s, objective=-2.01]
+    56it [00:32,  1.73it/s, objective=-2.01]
+    57it [00:32,  1.82it/s, objective=-2.01]
+    57it [00:32,  1.82it/s, objective=-2.01]
+    58it [00:33,  1.79it/s, objective=-2.01]
+    58it [00:33,  1.79it/s, objective=-2.01]
+    59it [00:33,  1.88it/s, objective=-2.01]
+    59it [00:33,  1.88it/s, objective=-2.01]
+    60it [00:34,  1.77it/s, objective=-2.01]
+    60it [00:34,  1.77it/s, objective=-2.01]
+    61it [00:34,  1.95it/s, objective=-2.01]
+    61it [00:34,  1.95it/s, objective=-2.01]
+    62it [00:35,  2.21it/s, objective=-2.01]
+    62it [00:35,  2.21it/s, objective=-2.01]
+    63it [00:35,  2.45it/s, objective=-2.01]
+    63it [00:35,  2.45it/s, objective=-2.01]
+    64it [00:36,  1.47it/s, objective=-2.01]
+    64it [00:36,  1.47it/s, objective=-2.01]
+    65it [00:37,  1.46it/s, objective=-2.01]
+    65it [00:37,  1.46it/s, objective=-2.01]
+    66it [00:37,  1.75it/s, objective=-2.01]
+    66it [00:37,  1.75it/s, objective=-2.01]
+    67it [00:38,  1.94it/s, objective=-2.01]
+    67it [00:38,  1.94it/s, objective=-2.01]
+    68it [00:38,  2.06it/s, objective=-2.01]
+    68it [00:38,  2.06it/s, objective=-2.01]
+    69it [00:39,  1.91it/s, objective=-2.01]
+    69it [00:39,  1.91it/s, objective=-2.01]
+    70it [00:40,  1.19it/s, objective=-2.01]
+    70it [00:40,  1.19it/s, objective=-2.01]
+    71it [00:41,  1.46it/s, objective=-2.01]
+    71it [00:41,  1.46it/s, objective=-2.01]
+    72it [00:41,  1.75it/s, objective=-2.01]
+    72it [00:41,  1.75it/s, objective=-2.01]
+    73it [00:41,  1.89it/s, objective=-2.01]
+    73it [00:41,  1.89it/s, objective=-2.01]
+    74it [00:42,  2.04it/s, objective=-2.01]
+    74it [00:42,  2.04it/s, objective=-2.01]
+    75it [00:44,  1.02it/s, objective=-2.01]
+    75it [00:44,  1.02it/s, objective=-2.01]
+    76it [00:44,  1.27it/s, objective=-2.01]
+    76it [00:44,  1.27it/s, objective=-2.01]
+    77it [00:45,  1.49it/s, objective=-2.01]
+    77it [00:45,  1.49it/s, objective=-2.01]
+    78it [00:45,  1.49it/s, objective=-2.01]
+    79it [00:45,  1.49it/s, objective=-2.01]
+    80it [00:47,  1.42it/s, objective=-2.01]
+    80it [00:47,  1.42it/s, objective=-2.01]
+    81it [00:47,  1.50it/s, objective=-2.01]
+    81it [00:47,  1.50it/s, objective=-2.01]
+    82it [00:48,  1.72it/s, objective=-2.01]
+    82it [00:48,  1.72it/s, objective=-2.01]
+    83it [00:48,  1.70it/s, objective=-2.01]
+    83it [00:48,  1.70it/s, objective=-2.01]
+    84it [00:49,  1.87it/s, objective=-2.01]
+    84it [00:49,  1.87it/s, objective=-2.01]
+    85it [00:50,  1.47it/s, objective=-2.01]
+    85it [00:50,  1.47it/s, objective=-2.01]
+    86it [00:51,  1.36it/s, objective=-2.01]
+    86it [00:51,  1.36it/s, objective=-2.01]
+    87it [00:51,  1.58it/s, objective=-2.01]
+    87it [00:51,  1.58it/s, objective=-2.01]
+    88it [00:51,  1.70it/s, objective=-2.01]
+    88it [00:51,  1.70it/s, objective=-2.01]
+    89it [00:52,  1.96it/s, objective=-2.01]
+    89it [00:52,  1.96it/s, objective=-2.01]
+    90it [00:52,  2.21it/s, objective=-2.01]
+    90it [00:52,  2.21it/s, objective=-2.01]
+    91it [00:54,  1.31it/s, objective=-2.01]
+    91it [00:54,  1.31it/s, objective=-2.01]
+    92it [00:54,  1.48it/s, objective=-2.01]
+    92it [00:54,  1.48it/s, objective=-2.01]
+    93it [00:54,  1.77it/s, objective=-2.01]
+    93it [00:54,  1.77it/s, objective=-2.01]
+    94it [00:55,  1.94it/s, objective=-2.01]
+    94it [00:55,  1.94it/s, objective=-2.01]
+    95it [00:56,  1.66it/s, objective=-2.01]
+    95it [00:56,  1.66it/s, objective=-2.01]
+    96it [00:57,  1.39it/s, objective=-2.01]
+    96it [00:57,  1.39it/s, objective=-2.01]
+    97it [00:57,  1.54it/s, objective=-2.01]
+    97it [00:57,  1.54it/s, objective=-2.01]
+    98it [00:57,  1.74it/s, objective=-2.01]
+    98it [00:57,  1.74it/s, objective=-2.01]
+    99it [00:58,  2.02it/s, objective=-2.01]
+    99it [00:58,  2.02it/s, objective=-2.01]
+    100it [00:59,  1.50it/s, objective=-2.01]
+    100it [00:59,  1.50it/s, objective=-2.01]
+    101it [00:59,  1.70it/s, objective=-2.01]
+    101it [00:59,  1.70it/s, objective=-2.01]
+    102it [01:00,  1.63it/s, objective=-2.01]
+    102it [01:00,  1.63it/s, objective=-2.01]
+    103it [01:00,  1.91it/s, objective=-2.01]
+    103it [01:00,  1.91it/s, objective=-2.01]
+    104it [01:01,  1.56it/s, objective=-2.01]
+    104it [01:01,  1.56it/s, objective=-2.01]
+    105it [01:01,  1.83it/s, objective=-2.01]
+    105it [01:01,  1.83it/s, objective=-2.01]
+    106it [01:03,  1.23it/s, objective=-2.01]
+    106it [01:03,  1.23it/s, objective=-2.01]
+    107it [01:03,  1.39it/s, objective=-2.01]
+    107it [01:03,  1.39it/s, objective=-2.01]
+    108it [01:04,  1.55it/s, objective=-2.01]
+    108it [01:04,  1.55it/s, objective=-.378]
+    109it [01:04,  1.83it/s, objective=-.378]
+    109it [01:04,  1.83it/s, objective=-.378]
+    110it [01:04,  1.83it/s, objective=-.378]
+    111it [01:06,  1.47it/s, objective=-.378]
+    111it [01:06,  1.47it/s, objective=-.378]
+    112it [01:07,  1.37it/s, objective=-.378]
+    112it [01:07,  1.37it/s, objective=-.378]
+    113it [01:07,  1.60it/s, objective=-.378]
+    113it [01:07,  1.60it/s, objective=-.378]
+    114it [01:07,  1.78it/s, objective=-.378]
+    114it [01:07,  1.78it/s, objective=-.0826]
+    115it [01:08,  2.02it/s, objective=-.0826]
+    115it [01:08,  2.02it/s, objective=-.0826]
+    116it [01:09,  1.33it/s, objective=-.0826]
+    116it [01:09,  1.33it/s, objective=-.0826]
+    117it [01:10,  1.46it/s, objective=-.0826]
+    117it [01:10,  1.46it/s, objective=-.0826]
+    118it [01:10,  1.74it/s, objective=-.0826]
+    118it [01:10,  1.74it/s, objective=-.0826]
+    119it [01:10,  2.00it/s, objective=-.0826]
+    119it [01:10,  2.00it/s, objective=-.0826]
+    120it [01:10,  2.00it/s, objective=-.0826]
+    121it [01:12,  1.41it/s, objective=-.0826]
+    121it [01:12,  1.41it/s, objective=-.0826]
+    122it [01:13,  1.61it/s, objective=-.0826]
+    122it [01:13,  1.61it/s, objective=-.0826]
+    123it [01:14,  1.31it/s, objective=-.0826]
+    123it [01:14,  1.31it/s, objective=-.0826]
+    124it [01:14,  1.51it/s, objective=-.0826]
+    124it [01:14,  1.51it/s, objective=-.0826]
+    125it [01:14,  1.51it/s, objective=-.0826]
+    126it [01:15,  1.51it/s, objective=-.0826]
+    126it [01:15,  1.51it/s, objective=-.0826]
+    127it [01:16,  1.72it/s, objective=-.0826]
+    127it [01:16,  1.72it/s, objective=-.0826]
+    128it [01:17,  1.53it/s, objective=-.0826]
+    128it [01:17,  1.53it/s, objective=-.0826]
+    129it [01:17,  1.44it/s, objective=-.0826]
+    129it [01:17,  1.44it/s, objective=-.0826]
+    130it [01:18,  1.70it/s, objective=-.0826]
+    130it [01:18,  1.70it/s, objective=-.0826]
+    131it [01:19,  1.42it/s, objective=-.0826]
+    131it [01:19,  1.42it/s, objective=-.0826]
+    132it [01:19,  1.57it/s, objective=-.0826]
+    132it [01:19,  1.57it/s, objective=-.0826]
+    133it [01:20,  1.74it/s, objective=-.0826]
+    133it [01:20,  1.74it/s, objective=-.0826]
+    134it [01:20,  1.91it/s, objective=-.0826]
+    134it [01:20,  1.91it/s, objective=-.0826]
+    135it [01:20,  2.17it/s, objective=-.0826]
+    135it [01:20,  2.17it/s, objective=-.0826]
+    136it [01:22,  1.31it/s, objective=-.0826]
+    136it [01:22,  1.31it/s, objective=-.0826]
+    137it [01:22,  1.57it/s, objective=-.0826]
+    137it [01:22,  1.57it/s, objective=-.0826]
+    138it [01:23,  1.77it/s, objective=-.0826]
+    138it [01:23,  1.77it/s, objective=-.0826]
+    139it [01:23,  1.72it/s, objective=-.0826]
+    139it [01:23,  1.72it/s, objective=-.0826]
+    140it [01:24,  1.72it/s, objective=-.0826]
+    140it [01:24,  1.72it/s, objective=-.0826]
+    141it [01:24,  1.65it/s, objective=-.0826]
+    141it [01:24,  1.65it/s, objective=-.0826]
+    142it [01:25,  1.66it/s, objective=-.0826]
+    142it [01:25,  1.66it/s, objective=-.0826]
+    143it [01:26,  1.60it/s, objective=-.0826]
+    143it [01:26,  1.60it/s, objective=-.0826]
+    144it [01:26,  1.80it/s, objective=-.0826]
+    144it [01:26,  1.80it/s, objective=-.0826]
+    145it [01:27,  1.71it/s, objective=-.0826]
+    145it [01:27,  1.71it/s, objective=-.0826]
+    146it [01:27,  1.98it/s, objective=-.0826]
+    146it [01:27,  1.98it/s, objective=-.0826]
+    147it [01:28,  1.82it/s, objective=-.0826]
+    147it [01:28,  1.82it/s, objective=-.0826]
+    148it [01:29,  1.41it/s, objective=-.0826]
+    148it [01:29,  1.41it/s, objective=-.0826]
+    149it [01:29,  1.70it/s, objective=-.0826]
+    149it [01:29,  1.70it/s, objective=-.0826]
+    150it [01:30,  1.69it/s, objective=-.0826]
+    150it [01:30,  1.69it/s, objective=-.0826]
+    151it [01:30,  1.71it/s, objective=-.0826]
+    151it [01:30,  1.71it/s, objective=-.0826]
+    152it [01:31,  1.95it/s, objective=-.0826]
+    152it [01:31,  1.95it/s, objective=-.0826]
+    153it [01:33,  1.09it/s, objective=-.0826]
+    153it [01:33,  1.09it/s, objective=-.0826]
+    154it [01:33,  1.30it/s, objective=-.0826]
+    154it [01:33,  1.30it/s, objective=-.0826]
+    155it [01:33,  1.30it/s, objective=-.0826]
+    156it [01:33,  1.30it/s, objective=-.0826]
+    157it [01:34,  2.19it/s, objective=-.0826]
+    157it [01:34,  2.19it/s, objective=-.0826]
+    158it [01:36,  1.28it/s, objective=-.0826]
+    158it [01:36,  1.28it/s, objective=-.0826]
+    159it [01:36,  1.48it/s, objective=-.0826]
+    159it [01:36,  1.48it/s, objective=-.0826]
+    160it [01:36,  1.61it/s, objective=-.0826]
+    160it [01:36,  1.61it/s, objective=-.0826]
+    161it [01:37,  1.77it/s, objective=-.0826]
+    161it [01:37,  1.77it/s, objective=-.0826]
+    162it [01:37,  2.01it/s, objective=-.0826]
+    162it [01:37,  2.01it/s, objective=-.0826]
+    163it [01:38,  1.57it/s, objective=-.0826]
+    163it [01:38,  1.57it/s, objective=-.0826]
+    164it [01:39,  1.27it/s, objective=-.0826]
+    164it [01:39,  1.27it/s, objective=-.0826]
+    165it [01:40,  1.47it/s, objective=-.0826]
+    165it [01:40,  1.47it/s, objective=-.0826]
+    166it [01:40,  1.72it/s, objective=-.0826]
+    166it [01:40,  1.72it/s, objective=-.0826]
+    167it [01:40,  1.90it/s, objective=-.0826]
+    167it [01:40,  1.90it/s, objective=-.0826]
+    168it [01:41,  2.04it/s, objective=-.0826]
+    168it [01:41,  2.04it/s, objective=-.0826]
+    169it [01:43,  1.02s/it, objective=-.0826]
+    169it [01:43,  1.02s/it, objective=-.0826]
+    170it [01:43,  1.22it/s, objective=-.0826]
+    170it [01:43,  1.22it/s, objective=-.0826]
+    171it [01:43,  1.22it/s, objective=-.0826]
+    172it [01:44,  1.75it/s, objective=-.0826]
+    172it [01:44,  1.75it/s, objective=-.0826]
+    173it [01:44,  1.96it/s, objective=-.0826]
+    173it [01:44,  1.96it/s, objective=-.0826]
+    174it [01:45,  1.54it/s, objective=-.0826]
+    174it [01:45,  1.54it/s, objective=-.0826]
+    175it [01:46,  1.30it/s, objective=-.0826]
+    175it [01:46,  1.30it/s, objective=-.0826]
+    176it [01:47,  1.56it/s, objective=-.0826]
+    176it [01:47,  1.56it/s, objective=-.0826]
+    177it [01:47,  1.70it/s, objective=-.0826]
+    177it [01:47,  1.70it/s, objective=-.0826]
+    178it [01:48,  1.74it/s, objective=-.0826]
+    178it [01:48,  1.74it/s, objective=-.0826]
+    179it [01:48,  2.00it/s, objective=-.0826]
+    179it [01:48,  2.00it/s, objective=-.0826]
+    180it [01:49,  1.75it/s, objective=-.0826]
+    180it [01:49,  1.75it/s, objective=-.0826]
+    181it [01:50,  1.55it/s, objective=-.0826]
+    181it [01:50,  1.55it/s, objective=-.0826]
+    182it [01:50,  1.53it/s, objective=-.0826]
+    182it [01:50,  1.53it/s, objective=-.0826]
+    183it [01:51,  1.60it/s, objective=-.0826]
+    183it [01:51,  1.60it/s, objective=-.0826]
+    184it [01:52,  1.58it/s, objective=-.0826]
+    184it [01:52,  1.58it/s, objective=-.0826]
+    185it [01:52,  1.43it/s, objective=-.0826]
+    185it [01:52,  1.43it/s, objective=-.0826]
+    186it [01:53,  1.66it/s, objective=-.0826]
+    186it [01:53,  1.66it/s, objective=-.0826]
+    187it [01:53,  1.66it/s, objective=-.0826]
+    187it [01:53,  1.66it/s, objective=-.0826]
+    188it [01:54,  1.84it/s, objective=-.0826]
+    188it [01:54,  1.84it/s, objective=-.0826]
+    189it [01:55,  1.23it/s, objective=-.0826]
+    189it [01:55,  1.23it/s, objective=-.0826]
+    190it [01:56,  1.48it/s, objective=-.0826]
+    190it [01:56,  1.48it/s, objective=-.0826]
+    191it [01:56,  1.48it/s, objective=-.0826]
+    192it [01:57,  1.65it/s, objective=-.0826]
+    192it [01:57,  1.65it/s, objective=-.0826]
+    193it [01:57,  1.80it/s, objective=-.0826]
+    193it [01:57,  1.80it/s, objective=-.0826]
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 65-66
+.. GENERATED FROM PYTHON SOURCE LINES 67-68
 
 Finally, we plot the results from the collected DataFrame. The execution time is used as the x-axis which help-us vizualise the advantages of the parallel search.
 
-.. GENERATED FROM PYTHON SOURCE LINES 66-80
+.. GENERATED FROM PYTHON SOURCE LINES 68-82
 
 .. code-block:: default
 
@@ -545,7 +568,7 @@ Finally, we plot the results from the collected DataFrame. The execution time is
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 4 minutes  1.945 seconds)
+   **Total running time of the script:** ( 4 minutes  1.933 seconds)
 
 
 .. _sphx_glr_download_examples_plot_from_serial_to_parallel_hyperparameter_search.py:

@@ -97,12 +97,24 @@ class TqdmCallback(Callback):
     >>> evaluator.create(method="ray", method_kwargs={..., "callbacks": [LoggerCallback()]})
     """
 
-    def __init__(self, max_evals=None):
+    def __init__(self):
         self._best_objective = None
         self._n_done = 0
-        self._tqdm = tqdm(total=max_evals)
+        self._max_evals = None
+        self._tqdm = None
+
+    def set_max_evals(self, max_evals):
+        self._max_evals = max_evals
+        self._tqdm = None
 
     def on_done(self, job):
+
+        if self._tqdm is None:
+            if self._max_evals:
+                self._tqdm = tqdm(total=self._max_evals)
+            else:
+                self._tqdm = tqdm()
+
         self._n_done += 1
         self._tqdm.update(1)
         if np.isreal(job.result):

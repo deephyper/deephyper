@@ -2,12 +2,13 @@ import unittest
 
 import pytest
 
+
 def run(config: dict):
-    return -config["x"]**2
+    return -config["x"] ** 2
+
 
 @pytest.mark.hps_fast_test
 class QuickStartTest(unittest.TestCase):
-
     def test_quickstart(self):
         from deephyper.problem import HpProblem
         from deephyper.search.hps import CBO

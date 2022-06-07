@@ -68,8 +68,7 @@ class TrainerKerasRegressorTest(unittest.TestCase):
         from deephyper.nas.trainer import BaseTrainer
         from deephyper.search import util
         from tensorflow.keras.utils import plot_model
-        from deephyper.benchmark.nas.linearRegMultiInputs.problem import \
-            Problem
+        from deephyper.benchmark.nas.linearRegMultiInputs.problem import Problem
 
         config = Problem.space
 
@@ -122,10 +121,8 @@ class TrainerKerasRegressorTest(unittest.TestCase):
         from deephyper.benchmark.nas.linearReg.problem import Problem
         from deephyper.nas.trainer import BaseTrainer
         from tensorflow.keras.utils import plot_model
-        from deephyper.benchmark.nas.linearRegMultiInputsGen.problem import \
-            Problem
-        from deephyper.nas.run._util import (get_search_space, load_config,
-                                             setup_data)
+        from deephyper.benchmark.nas.linearRegMultiInputsGen.problem import Problem
+        from deephyper.nas.run._util import get_search_space, load_config, setup_data
 
         config = Problem.space
 

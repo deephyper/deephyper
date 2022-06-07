@@ -10,11 +10,13 @@ import pandas as pd
 import deephyper.skopt
 import ConfigSpace as CS
 
+# avoid initializing mpi4py when importing
 import mpi4py
 import yaml
 mpi4py.rc.initialize = False
 mpi4py.rc.finalize = True
 from mpi4py import MPI
+
 from deephyper.core.exceptions import SearchTerminationError
 from deephyper.problem._hyperparameter import convert_to_skopt_space
 from deephyper.core.utils._introspection import get_init_params_as_json
@@ -22,10 +24,6 @@ from sklearn.ensemble import GradientBoostingRegressor
 
 TAG_INIT = 20
 TAG_DATA = 30
-
-
-class SearchTerminationError(RuntimeError):
-    """Raised when a search receives SIGALARM"""
 
 
 MAP_acq_func = {
@@ -87,24 +85,35 @@ class History:
     def reset_buffer(self):
         self.n_buffered = 0
 
-#TODO: bring all parameters of the surrogate_model in surrogate_model_kwargs
+
+# TODO: bring all parameters of the surrogate_model in surrogate_model_kwargs
+
 
 class DBO:
     """Distributed Bayesian Optimization Search.
 
     Args:
         problem (HpProblem): Hyperparameter problem describing the search space to explore.
-        evaluator (Evaluator): An ``Evaluator`` instance responsible of distributing the tasks.
+        run_function (callable): A callable instance which represents the black-box function we want to evaluate.
         random_state (int, optional): Random seed. Defaults to ``None``.
         log_dir (str, optional): Log directory where search's results are saved. Defaults to ``"."``.
         verbose (int, optional): Indicate the verbosity level of the search. Defaults to ``0``.
-        comm (optional): .... Defaults to ``None``.
-        run_function_kwargs (dict): .... Defaults to ``None``.
-        n_jobs (int, optional): .... Defaults to ``1``.
-        surrogate_model (str, optional): .... Defaults to ``"RF"``.
-        lazy_socket_allocation (bool, optional): .... Defaults to ``True``.
-        sync_communication (bool, optional): Force workers to communicate synchronously. Defaults to ``False``.
-        sync_communication_freq (int, optional): Manage the frequency at which workers should communicate their results. Defaults to ``10``.
+        comm (optional): The MPI communicator to use. Defaults to ``None``.
+        run_function_kwargs (dict): Keyword arguments to pass to the run-function. Defaults to ``None``.
+        n_jobs (int, optional): Parallel processes per rank to use for optimization updates (e.g., model re-fitting). Defaults to ``1``.
+        surrogate_model (str, optional): Type of the surrogate model to use. ``"DUMMY"`` can be used of random-search, ``"GP"`` for Gaussian-Process (efficient with few iterations such as a hundred sequentially but bottleneck when scaling because of its cubic complexity w.r.t. the number of evaluations), "``"RF"`` for the Random-Forest regressor (log-linear complexity with respect to the number of evaluations). Defaults to ``"RF"``.
+        lazy_socket_allocation (bool, optional): If `True` then MPI communication socket are initialized only when used for the first time, otherwise the initialization is forced when creating the instance. Defaults to ``False``.
+        sync_communication (bool, optional): If `True`  workers communicate synchronously, otherwise workers communicate asynchronously. Defaults to ``False``.
+        sync_communication_freq (int, optional): Manage the frequency at which workers should communicate their results in the case of synchronous communication. Defaults to ``10``.
+        checkpoint_file (str): Name of the file in ``log_dir`` where results are checkpointed. Defaults to ``"results.csv"``.
+        checkpoint_freq (int): Frequency at which results are checkpointed. Defaults to ``1``.
+        acq_func (str): Acquisition function to use. If ``"UCB"`` then the upper confidence bound is used, if ``"EI"`` then the expected-improvement is used, if ``"PI"`` then the probability of improvement is used, if ``"gp_hedge"`` then probabilistically choose one of the above.
+        acq_optimizer (str): Method use to optimise the acquisition function. If ``"sampling"`` then random-samples are drawn and infered for optimization, if ``"lbfgs"`` gradient-descent is used. Defaults to ``"auto"``.
+        kappa (float): Exploration/exploitation value for UCB-acquisition function, the higher the more exploration, the smaller the more exploitation. Defaults to ``1.96`` which corresponds to a 95% confidence interval.
+        xi (float): Exploration/exploitation value for EI and PI-acquisition functions, the higher the more exploration, the smaller the more exploitation. Defaults to ``0.001``.
+        sample_max_size (int): Maximum size of the number of samples used to re-fit the surrogate model. Defaults to ``-1`` for infinite sample size.
+        sample_strategy (str): Sub-sampling strategy to re-fit the surrogate model. If ``"quantile"`` then sub-sampling is performed based on the quantile of the collected objective values. Defaults to ``"quantile"``.
+
     """
 
     def __init__(
@@ -130,8 +139,8 @@ class DBO:
         acq_optimizer: str = "auto",
         kappa: float = 1.96,
         xi: float = 0.001,
-        sample_max_size: int=-1,
-        sample_strategy: str="quantile"
+        sample_max_size: int = -1,
+        sample_strategy: str = "quantile",
     ):
 
         # get the __init__ parameters
@@ -252,7 +261,7 @@ class DBO:
             n_initial_points=n_initial_points,
             random_state=self._rank_seed,
             sample_max_size=sample_max_size,
-            sample_strategy=sample_strategy
+            sample_strategy=sample_strategy,
         )
     
     def _add_call_args(self, **kwargs):
@@ -661,7 +670,9 @@ class DBO:
             if surrogate_model_kwargs is not None:
                 default_kwargs.update(surrogate_model_kwargs)
             gbrt = GradientBoostingRegressor(n_estimators=30, loss="quantile")
-            surrogate = deephyper.skopt.learning.GradientBoostingQuantileRegressor(base_estimator=gbrt, **default_kwargs)
+            surrogate = deephyper.skopt.learning.GradientBoostingQuantileRegressor(
+                base_estimator=gbrt, **default_kwargs
+            )
         else:  # for DUMMY and GP
             surrogate = name
 
@@ -705,29 +716,6 @@ class DBO:
         path_results = os.path.join(self._log_dir, self._checkpoint_file)
         results = self.gather_results()
         results.to_csv(path_results)
-
-        # # collect data to checkpoint
-        # k = self._history.length() - self._checkpoint_size
-        # x_list, y_list, infos_dict = self._history.infos(k)
-        # x_list = np.transpose(np.array(x_list))
-        # y_list = -np.array(y_list)
-
-        # data = {
-        #     hp_name: x_list[i]
-        #     for i, hp_name in enumerate(self._problem.hyperparameter_names)
-        # }
-        # data.update(dict(objective=y_list, **infos_dict))
-
-        # # save to disk
-        # mode = "a" if self._checkpoint_init else "w"
-        # with open(os.path.join(self._log_dir, self._checkpoint_file), mode) as fp:
-        #     columns = list(data.keys())
-        #     writer = csv.DictWriter(fp, columns)
-
-        #     if self._checkpoint_size == 0:
-        #         writer.writeheader()
-
-        #     writer.writerows(list(data.values()))
 
         logging.info("Checkpointing done")
 

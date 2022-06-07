@@ -5,8 +5,8 @@ from sklearn.utils import column_or_1d
 
 
 class Transformer(object):
-    """Base class for all 1-D transformers.
-    """
+    """Base class for all 1-D transformers."""
+
     def fit(self, X):
         return self
 
@@ -18,8 +18,7 @@ class Transformer(object):
 
 
 class Identity(Transformer):
-    """Identity transform.
-    """
+    """Identity transform."""
 
     def transform(self, X):
         return X
@@ -27,9 +26,9 @@ class Identity(Transformer):
     def inverse_transform(self, Xt):
         return Xt
 
+
 class ToInteger(Transformer):
-    """Identity transform.
-    """
+    """Identity transform."""
 
     def transform(self, X):
         return int(X)
@@ -37,10 +36,11 @@ class ToInteger(Transformer):
     def inverse_transform(self, Xt):
         return Xt
 
+
 class StringEncoder(Transformer):
     """StringEncoder transform.
-       The transform will cast everything to a
-       string and the inverse transform will cast to the type defined in dtype.
+    The transform will cast everything to a
+    string and the inverse transform will cast to the type defined in dtype.
     """
 
     def __init__(self, dtype=str):
@@ -156,13 +156,12 @@ class CategoricalEncoder(Transformer):
             The original categories.
         """
         Xt = np.asarray(Xt)
-        return [
-            self.inverse_mapping_[i] for i in self._lb.inverse_transform(Xt)
-        ]
+        return [self.inverse_mapping_[i] for i in self._lb.inverse_transform(Xt)]
 
 
 class LabelEncoder(Transformer):
     """LabelEncoder that can handle categorical variables."""
+
     def __init__(self, X=None):
         if X is not None:
             self.fit(X)
@@ -222,9 +221,7 @@ class LabelEncoder(Transformer):
             Xt = [Xt]
         else:
             Xt = np.asarray(Xt)
-        return [
-            self.inverse_mapping_[int(np.round(i))] for i in Xt
-        ]
+        return [self.inverse_mapping_[int(np.round(i))] for i in Xt]
 
 
 class Normalize(Transformer):
@@ -243,6 +240,7 @@ class Normalize(Transformer):
         Round and cast the return value of `inverse_transform` to integer. Set
         to `True` when applying this transform to integers.
     """
+
     def __init__(self, low, high, is_int=False):
         self.low = float(low)
         self.high = float(high)
@@ -253,23 +251,22 @@ class Normalize(Transformer):
         X = np.asarray(X)
         if self.is_int:
             if np.any(np.round(X) > self.high):
-                raise ValueError("All integer values should"
-                                 "be less than %f" % self.high)
+                raise ValueError(
+                    "All integer values should" "be less than %f" % self.high
+                )
             if np.any(np.round(X) < self.low):
-                raise ValueError("All integer values should"
-                                 "be greater than %f" % self.low)
+                raise ValueError(
+                    "All integer values should" "be greater than %f" % self.low
+                )
         else:
             if np.any(X > self.high + self._eps):
-                raise ValueError("All values should"
-                                 "be less than %f" % self.high)
+                raise ValueError("All values should" "be less than %f" % self.high)
             if np.any(X < self.low - self._eps):
-                raise ValueError("All values should"
-                                 "be greater than %f" % self.low)
-        if (self.high - self.low) == 0.:
-            return X * 0.
+                raise ValueError("All values should" "be greater than %f" % self.low)
+        if (self.high - self.low) == 0.0:
+            return X * 0.0
         if self.is_int:
-            return (np.round(X).astype(int) - self.low) /\
-                   (self.high - self.low)
+            return (np.round(X).astype(int) - self.low) / (self.high - self.low)
         else:
             return (X - self.low) / (self.high - self.low)
 
@@ -294,6 +291,7 @@ class Pipeline(Transformer):
     transformers : list
         A list of Transformer instances.
     """
+
     def __init__(self, transformers):
         self.transformers = list(transformers)
         for transformer in self.transformers:

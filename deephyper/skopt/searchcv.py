@@ -12,6 +12,7 @@ from sklearn.model_selection._search import BaseSearchCV
 from sklearn.utils import check_random_state
 
 from sklearn.utils.validation import check_is_fitted
+
 try:
     from sklearn.metrics import check_scoring
 except ImportError:
@@ -278,11 +279,25 @@ class BayesSearchCV(BaseSearchCV):
 
     """
 
-    def __init__(self, estimator, search_spaces, optimizer_kwargs=None,
-                 n_iter=50, scoring=None, fit_params=None, n_jobs=1,
-                 n_points=1, iid='deprecated', refit=True, cv=None, verbose=0,
-                 pre_dispatch='2*n_jobs', random_state=None,
-                 error_score='raise', return_train_score=False):
+    def __init__(
+        self,
+        estimator,
+        search_spaces,
+        optimizer_kwargs=None,
+        n_iter=50,
+        scoring=None,
+        fit_params=None,
+        n_jobs=1,
+        n_points=1,
+        iid="deprecated",
+        refit=True,
+        cv=None,
+        verbose=0,
+        pre_dispatch="2*n_jobs",
+        random_state=None,
+        error_score="raise",
+        return_train_score=False,
+    ):
 
         self.search_spaces = search_spaces
         self.n_iter = n_iter
@@ -297,15 +312,22 @@ class BayesSearchCV(BaseSearchCV):
         self.fit_params = fit_params
 
         if iid != "deprecated":
-            warnings.warn("The `iid` parameter has been deprecated "
-                          "and will be ignored.")
+            warnings.warn(
+                "The `iid` parameter has been deprecated " "and will be ignored."
+            )
         self.iid = iid  # For sklearn repr pprint
 
         super(BayesSearchCV, self).__init__(
-             estimator=estimator, scoring=scoring,
-             n_jobs=n_jobs, refit=refit, cv=cv, verbose=verbose,
-             pre_dispatch=pre_dispatch, error_score=error_score,
-             return_train_score=return_train_score)
+            estimator=estimator,
+            scoring=scoring,
+            n_jobs=n_jobs,
+            refit=refit,
+            cv=cv,
+            verbose=verbose,
+            pre_dispatch=pre_dispatch,
+            error_score=error_score,
+            return_train_score=return_train_score,
+        )
 
     def _check_search_space(self, search_space):
         """Checks whether the search space argument is correct"""
@@ -338,8 +360,7 @@ class BayesSearchCV(BaseSearchCV):
                     if (not isinstance(n_iter, int)) or n_iter < 0:
                         raise ValueError(
                             "Number of iterations in search space should be"
-                            "positive integer, got %s in tuple %s " %
-                            (n_iter, elem)
+                            "positive integer, got %s in tuple %s " % (n_iter, elem)
                         )
 
                     # save subspaces here for further checking
@@ -349,7 +370,8 @@ class BayesSearchCV(BaseSearchCV):
                 else:
                     raise TypeError(
                         "A search space should be provided as a dict or"
-                        "tuple (dict, int), got %s" % elem)
+                        "tuple (dict, int), got %s" % elem
+                    )
 
             # 2. check all the dicts for correctness of contents
             for subspace in dicts_only:
@@ -358,11 +380,12 @@ class BayesSearchCV(BaseSearchCV):
         else:
             raise TypeError(
                 "Search space should be provided as a dict or list of dict,"
-                "got %s" % search_space)
+                "got %s" % search_space
+            )
 
     @property
     def optimizer_results_(self):
-        check_is_fitted(self, '_optim_results')
+        check_is_fitted(self, "_optim_results")
         return self._optim_results
 
     def _make_optimizer(self, params_space):
@@ -383,19 +406,17 @@ class BayesSearchCV(BaseSearchCV):
         """
 
         kwargs = self.optimizer_kwargs_.copy()
-        kwargs['dimensions'] = dimensions_aslist(params_space)
+        kwargs["dimensions"] = dimensions_aslist(params_space)
         optimizer = Optimizer(**kwargs)
         for i in range(len(optimizer.space.dimensions)):
             if optimizer.space.dimensions[i].name is not None:
                 continue
-            optimizer.space.dimensions[i].name = list(sorted(
-                params_space.keys()))[i]
+            optimizer.space.dimensions[i].name = list(sorted(params_space.keys()))[i]
 
         return optimizer
 
     def _step(self, search_space, optimizer, evaluate_candidates, n_points=1):
-        """Generate n_jobs parameters and evaluate them in parallel.
-        """
+        """Generate n_jobs parameters and evaluate them in parallel."""
         # get parameter values to evaluate
         params = optimizer.ask(n_points=n_points)
 
@@ -408,7 +429,7 @@ class BayesSearchCV(BaseSearchCV):
         all_results = evaluate_candidates(params_dict)
         # Feed the point and objective value back into optimizer
         # Optimizer minimizes objective, hence provide negative score
-        local_results = all_results["mean_test_score"][-len(params):]
+        local_results = all_results["mean_test_score"][-len(params) :]
         return optimizer.tell(params, [-score for score in local_results])
 
     @property
@@ -468,9 +489,9 @@ class BayesSearchCV(BaseSearchCV):
         # BaseSearchCV never ranked train scores,
         # but apparently we used to ship this (back-compat)
         if self.return_train_score:
-            self.cv_results_["rank_train_score"] = \
-                rankdata(-np.array(self.cv_results_["mean_train_score"]),
-                         method='min').astype(int)
+            self.cv_results_["rank_train_score"] = rankdata(
+                -np.array(self.cv_results_["mean_train_score"]), method="min"
+            ).astype(int)
         return self
 
     def _run_search(self, evaluate_candidates):
@@ -482,7 +503,7 @@ class BayesSearchCV(BaseSearchCV):
         callbacks = self._callbacks
 
         random_state = check_random_state(self.random_state)
-        self.optimizer_kwargs_['random_state'] = random_state
+        self.optimizer_kwargs_["random_state"] = random_state
 
         # Instantiate optimizers for all the search spaces.
         optimizers = []
@@ -510,8 +531,10 @@ class BayesSearchCV(BaseSearchCV):
                 n_points_adjusted = min(n_iter, n_points)
 
                 optim_result = self._step(
-                    search_space, optimizer,
-                    evaluate_candidates, n_points=n_points_adjusted
+                    search_space,
+                    optimizer,
+                    evaluate_candidates,
+                    n_points=n_points_adjusted,
                 )
                 n_iter -= n_points
 

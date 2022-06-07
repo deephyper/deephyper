@@ -162,7 +162,7 @@ class DatabaseSelection(View):
                     h = len(path) + 1 if len(path) < 6 else 6
                     st.markdown(f"{(h)*'#'} {key} :")
                 elif isinstance(val, list):
-                    val = list(map(lambda x: 'None' if x is None else x, val))
+                    val = list(map(lambda x: "None" if x is None else x, val))
                     val.sort()
                     if len(val) == 1:
                         default = val
@@ -170,7 +170,9 @@ class DatabaseSelection(View):
                         default = None
                     col1, col2 = st.columns([2, 1])
                     choice = col1.multiselect(label=key, options=val, default=default)
-                    ignore = col2.checkbox(label="ignore", value=path in default_ignore, key=path)
+                    ignore = col2.checkbox(
+                        label="ignore", value=path in default_ignore, key=path
+                    )
                     if ignore:
                         to_ignore.append(path)
                     else:
@@ -405,7 +407,11 @@ class ConfigurationsSelection(View):
         list(map(partial(_merge_dict_in, synthesis, []), self.headers))
         diff = _get_diff(synthesis)
         config_names, comparatives = _get_names(self.headers, diff)
-        _, self.config_names, _, self.data = zip(*sorted(zip(comparatives, config_names, [i for i in range(len(data))], data)))
+        _, self.config_names, _, self.data = zip(
+            *sorted(
+                zip(comparatives, config_names, [i for i in range(len(data))], data)
+            )
+        )
 
     def show(self):
         new_names = []
@@ -605,13 +611,13 @@ class ProfileView(SingleGraphView):
             if temp["timestamp"][0] > self._t0:
                 profile = profile.append(
                     {
-                        'timestamp': self._t0,
-                        'n_jobs_running': 0,
+                        "timestamp": self._t0,
+                        "n_jobs_running": 0,
                     },
-                    ignore_index=True
+                    ignore_index=True,
                 )
-            profile = profile.drop_duplicates(subset='timestamp', keep='last')
-            profile = profile.set_index('timestamp')
+            profile = profile.drop_duplicates(subset="timestamp", keep="last")
+            profile = profile.set_index("timestamp")
             profile = profile.sort_index()
             profile = profile[
                 (profile.index >= self._t0) & (profile.index <= self._t_max)

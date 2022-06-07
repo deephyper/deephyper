@@ -36,14 +36,26 @@ SAMPLER = ["lhs", "halton", "sobol", "hammersly", "grid"]
 @pytest.mark.hps_fast_test
 def test_lhs_centered():
     lhs = Lhs(lhs_type="centered")
-    samples = lhs.generate([(0., 1.), ] * 3, 3)
+    samples = lhs.generate(
+        [
+            (0.0, 1.0),
+        ]
+        * 3,
+        3,
+    )
     assert_almost_equal(np.sum(samples), 4.5)
 
 
 @pytest.mark.parametrize("samlper", SAMPLER)
 def test_sampler(samlper):
     s = cook_initial_point_generator(samlper)
-    samples = s.generate([(0., 1.), ] * 2, 200)
+    samples = s.generate(
+        [
+            (0.0, 1.0),
+        ]
+        * 2,
+        200,
+    )
     assert len(samples) == 200
     assert len(samples[0]) == 2
     assert isinstance(s, InitialPointGenerator)
@@ -64,7 +76,13 @@ def test_sampler(samlper):
 @pytest.mark.parametrize("criterion", CRITERION)
 def test_lhs_criterion(lhs_type, criterion):
     lhs = Lhs(lhs_type=lhs_type, criterion=criterion, iterations=100)
-    samples = lhs.generate([(0., 1.), ] * 2, 200)
+    samples = lhs.generate(
+        [
+            (0.0, 1.0),
+        ]
+        * 2,
+        200,
+    )
     assert len(samples) == 200
     assert len(samples[0]) == 2
     samples = lhs.generate([("a", "b", "c")], 3)
@@ -85,10 +103,17 @@ def test_lhs_pdist():
     lhs = Lhs()
 
     h = lhs._lhs_normalized(n_dim, n_samples, 0)
-    d_classic = spatial.distance.pdist(np.array(h), 'euclidean')
+    d_classic = spatial.distance.pdist(np.array(h), "euclidean")
     lhs = Lhs(criterion="maximin", iterations=100)
-    h = lhs.generate([(0., 1.), ] * n_dim, n_samples, random_state=0)
-    d = spatial.distance.pdist(np.array(h), 'euclidean')
+    h = lhs.generate(
+        [
+            (0.0, 1.0),
+        ]
+        * n_dim,
+        n_samples,
+        random_state=0,
+    )
+    d = spatial.distance.pdist(np.array(h), "euclidean")
     assert np.min(d) > np.min(d_classic)
 
 
@@ -102,8 +127,22 @@ def test_lhs_random_state(criterion):
     h2 = lhs._lhs_normalized(n_dim, n_samples, 0)
     assert_array_equal(h, h2)
     lhs = Lhs(criterion=criterion, iterations=100)
-    h = lhs.generate([(0., 1.), ] * n_dim, n_samples, random_state=0)
-    h2 = lhs.generate([(0., 1.), ] * n_dim, n_samples, random_state=0)
+    h = lhs.generate(
+        [
+            (0.0, 1.0),
+        ]
+        * n_dim,
+        n_samples,
+        random_state=0,
+    )
+    h2 = lhs.generate(
+        [
+            (0.0, 1.0),
+        ]
+        * n_dim,
+        n_samples,
+        random_state=0,
+    )
     assert_array_equal(h, h2)
 
 
@@ -124,7 +163,7 @@ def test_bit():
 def test_sobol():
     sobol = Sobol()
     x, seed = sobol._sobol(3, 0)
-    assert_array_equal(x, [0., 0., 0.])
+    assert_array_equal(x, [0.0, 0.0, 0.0])
     x, seed = sobol._sobol(3, 1)
     assert_array_equal(x, [0.5, 0.5, 0.5])
     x, seed = sobol._sobol(3, 2)
@@ -142,9 +181,15 @@ def test_sobol():
 @pytest.mark.hps_fast_test
 def test_generate():
     sobol = Sobol(randomize=False)
-    x = sobol.generate([(0., 1.), ] * 3, 4)
+    x = sobol.generate(
+        [
+            (0.0, 1.0),
+        ]
+        * 3,
+        4,
+    )
     x = np.array(x)
-    assert_array_equal(x[0, :], [0., 0., 0.])
+    assert_array_equal(x[0, :], [0.0, 0.0, 0.0])
     assert_array_equal(x[1, :], [0.5, 0.5, 0.5])
     assert_array_equal(x[2, :], [0.75, 0.25, 0.75])
     assert_array_equal(x[3, :], [0.25, 0.75, 0.25])
@@ -157,32 +202,64 @@ def test_generate():
 @pytest.mark.hps_fast_test
 def test_van_der_corput():
     x = _van_der_corput_samples(range(12), number_base=10)
-    y = [0., 0.1,  0.2,  0.3,  0.4,  0.5,  0.6,  0.7,  0.8,  0.9, 0.01, 0.11]
+    y = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.01, 0.11]
     assert_array_equal(x, y)
 
     x = _van_der_corput_samples(range(9), number_base=2)
-    y = [0., 0.5, 0.25, 0.75, 0.125, 0.625, 0.375, 0.875, 0.0625]
+    y = [0.0, 0.5, 0.25, 0.75, 0.125, 0.625, 0.375, 0.875, 0.0625]
     assert_array_equal(x, y)
 
 
 @pytest.mark.hps_fast_test
 def test_halton():
     h = Halton()
-    x = h.generate([(0., 1.), ], 9)
+    x = h.generate(
+        [
+            (0.0, 1.0),
+        ],
+        9,
+    )
     y = _van_der_corput_samples(range(9), number_base=2)
     assert_array_almost_equal(np.array(x).flatten(), y)
 
     h = Halton()
-    x = h.generate([(0., 1.), ] * 2, 6)
-    y = np.array([[0, 0], [1 / 2, 1 / 3], [1 / 4, 2 / 3], [3 / 4, 1 / 9],
-                  [1 / 8, 4 / 9], [5 / 8, 7 / 9]])
+    x = h.generate(
+        [
+            (0.0, 1.0),
+        ]
+        * 2,
+        6,
+    )
+    y = np.array(
+        [
+            [0, 0],
+            [1 / 2, 1 / 3],
+            [1 / 4, 2 / 3],
+            [3 / 4, 1 / 9],
+            [1 / 8, 4 / 9],
+            [5 / 8, 7 / 9],
+        ]
+    )
     assert_array_almost_equal(x, y)
 
     h = Halton(min_skip=0, max_skip=3)
-    x = h.generate([(0., 1.), ] * 2, 4, random_state=12345)
+    x = h.generate(
+        [
+            (0.0, 1.0),
+        ]
+        * 2,
+        4,
+        random_state=12345,
+    )
     assert_array_almost_equal(x, y[2:])
 
-    samples = h.generate([(0., 1.), ] * 2, 200)
+    samples = h.generate(
+        [
+            (0.0, 1.0),
+        ]
+        * 2,
+        200,
+    )
     assert len(samples) == 200
     assert len(samples[0]) == 2
 
@@ -190,11 +267,23 @@ def test_halton():
 @pytest.mark.hps_fast_test
 def test_hammersly():
     h = Hammersly()
-    x = h.generate([(0., 1.), ] * 2, 4)
+    x = h.generate(
+        [
+            (0.0, 1.0),
+        ]
+        * 2,
+        4,
+    )
     y = np.array([[0, 0], [1 / 2, 0.25], [1 / 4, 0.5], [3 / 4, 0.75]])
     assert_almost_equal(x, y)
 
-    samples = h.generate([(0., 1.), ] * 2, 200)
+    samples = h.generate(
+        [
+            (0.0, 1.0),
+        ]
+        * 2,
+        200,
+    )
     assert len(samples) == 200
     assert len(samples[0]) == 2
 
@@ -224,36 +313,48 @@ def test_quadrature_combine():
 @pytest.mark.hps_fast_test
 def test_uniform_grid():
     x = _create_uniform_grid_exclude_border(1, 2)
-    assert_array_equal(x, [[1./3.], [2./3.]])
+    assert_array_equal(x, [[1.0 / 3.0], [2.0 / 3.0]])
     x = _create_uniform_grid_include_border(1, 2)
-    assert_array_equal(x, [[0.], [1.]])
+    assert_array_equal(x, [[0.0], [1.0]])
     x = _create_uniform_grid_only_border(1, 2)
-    assert_array_equal(x, [[0.], [1.]])
+    assert_array_equal(x, [[0.0], [1.0]])
 
     x = _create_uniform_grid_exclude_border(1, 3)
-    assert_array_equal(x, [[1./4.], [2./4.], [3./4.]])
+    assert_array_equal(x, [[1.0 / 4.0], [2.0 / 4.0], [3.0 / 4.0]])
     x = _create_uniform_grid_include_border(1, 3)
-    assert_array_equal(x, [[0./2.], [1./2.], [2./2.]])
+    assert_array_equal(x, [[0.0 / 2.0], [1.0 / 2.0], [2.0 / 2.0]])
     x = _create_uniform_grid_only_border(1, 3)
-    assert_array_equal(x, [[0./2.], [1./2.], [2./2.]])
+    assert_array_equal(x, [[0.0 / 2.0], [1.0 / 2.0], [2.0 / 2.0]])
 
     x = _create_uniform_grid_exclude_border(1, 5)
-    assert_array_equal(x, [[1./6.], [2./6.], [3./6.], [4./6.], [5./6.]])
+    assert_array_equal(
+        x, [[1.0 / 6.0], [2.0 / 6.0], [3.0 / 6.0], [4.0 / 6.0], [5.0 / 6.0]]
+    )
     x = _create_uniform_grid_include_border(1, 5)
-    assert_array_equal(x, [[0./4.], [1./4.], [2./4.], [3./4.], [4./4.]])
+    assert_array_equal(
+        x, [[0.0 / 4.0], [1.0 / 4.0], [2.0 / 4.0], [3.0 / 4.0], [4.0 / 4.0]]
+    )
     x = _create_uniform_grid_only_border(1, 5)
-    assert_array_equal(x, [[0./4.], [1./4.], [2./4.], [3./4.], [4./4.]])
+    assert_array_equal(
+        x, [[0.0 / 4.0], [1.0 / 4.0], [2.0 / 4.0], [3.0 / 4.0], [4.0 / 4.0]]
+    )
 
     x = _create_uniform_grid_exclude_border(2, 2)
-    assert_array_equal(x, [[1. / 3., 1./3.], [1. / 3., 2. / 3.],
-                           [2. / 3., 1. / 3.], [2. / 3., 2. / 3.]])
+    assert_array_equal(
+        x,
+        [
+            [1.0 / 3.0, 1.0 / 3.0],
+            [1.0 / 3.0, 2.0 / 3.0],
+            [2.0 / 3.0, 1.0 / 3.0],
+            [2.0 / 3.0, 2.0 / 3.0],
+        ],
+    )
     x = _create_uniform_grid_include_border(2, 2)
-    assert_array_equal(x, [[0., 0.], [0., 1.],
-                           [1., 0.], [1., 1.]])
+    assert_array_equal(x, [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]])
     x = _create_uniform_grid_only_border(2, 3)
-    assert_array_equal(x, [[0., 0.], [0., 0.5],
-                           [0., 1.], [1., 0.],
-                           [1., 0.5], [1., 1.]])
+    assert_array_equal(
+        x, [[0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [1.0, 0.0], [1.0, 0.5], [1.0, 1.0]]
+    )
 
     assert_raises(AssertionError, _create_uniform_grid_exclude_border, 1, 0)
     assert_raises(AssertionError, _create_uniform_grid_exclude_border, 0, 1)
@@ -266,21 +367,45 @@ def test_uniform_grid():
 @pytest.mark.hps_fast_test
 def test_grid():
     grid = Grid()
-    samples = grid.generate([(0., 1.), ] * 2, 200)
+    samples = grid.generate(
+        [
+            (0.0, 1.0),
+        ]
+        * 2,
+        200,
+    )
     assert len(samples) == 200
     assert len(samples[0]) == 2
 
     grid = Grid(border="include")
-    samples = grid.generate([(0., 1.), ] * 2, 200)
+    samples = grid.generate(
+        [
+            (0.0, 1.0),
+        ]
+        * 2,
+        200,
+    )
     assert len(samples) == 200
     assert len(samples[0]) == 2
 
     grid = Grid(use_full_layout=False)
-    samples = grid.generate([(0., 1.), ] * 2, 200)
+    samples = grid.generate(
+        [
+            (0.0, 1.0),
+        ]
+        * 2,
+        200,
+    )
     assert len(samples) == 200
     assert len(samples[0]) == 2
 
     grid = Grid(use_full_layout=True, append_border="include")
-    samples = grid.generate([(0., 1.), ] * 2, 200)
+    samples = grid.generate(
+        [
+            (0.0, 1.0),
+        ]
+        * 2,
+        200,
+    )
     assert len(samples) == 200
     assert len(samples[0]) == 2

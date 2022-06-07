@@ -54,7 +54,7 @@ import logging
 
 from deephyper.core.parser import add_arguments_from_signature
 from deephyper.evaluator import EVALUATORS, Evaluator
-from deephyper.core.utils._import import load_attr
+from deephyper.core.utils import load_attr
 
 NAS_SEARCHES = {
     "random": "deephyper.search.nas._random.Random",

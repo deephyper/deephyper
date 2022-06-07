@@ -29,19 +29,27 @@ EVALUATORS = {
 
 def _test_ipython_interpretor() -> bool:
     """Test if the current Python interpretor is IPython or not.
-    
+
     Suggested by: https://stackoverflow.com/questions/15411967/how-can-i-check-if-code-is-executed-in-the-ipython-notebook
     """
+
+    # names of shells/modules using jupyter
+    notebooks_shells = ["ZMQInteractiveShell"]
+    notebooks_modules = ["google.colab._shell"]
+
     try:
-        shell = get_ipython().__class__.__name__
-        if shell == 'ZMQInteractiveShell':
-            return True   # Jupyter notebook or qtconsole
-        elif shell == 'TerminalInteractiveShell':
+        shell_name = get_ipython().__class__.__name__
+        shell_module = get_ipython().__class__.__module__
+
+        if shell_name in notebooks_shells or shell_module in notebooks_modules:
+            return True  # Jupyter notebook or qtconsole
+        elif shell_name == "TerminalInteractiveShell":
             return False  # Terminal running IPython
         else:
             return False  # Other type (?)
+
     except NameError:
-        return False      # Probably standard Python interpreter
+        return False  # Probably standard Python interpreter
 
 
 class Evaluator:
@@ -89,8 +97,11 @@ class Evaluator:
 
         # to avoid "RuntimeError: This event loop is already running"
         if _test_ipython_interpretor():
-            warnings.warn("Applying nest-asyncio patch for IPython Shell!", category=UserWarning)
+            warnings.warn(
+                "Applying nest-asyncio patch for IPython Shell!", category=UserWarning
+            )
             import deephyper.evaluator._nest_asyncio as nest_asyncio
+
             nest_asyncio.apply()
     
     def to_json(self):
@@ -103,12 +114,12 @@ class Evaluator:
         return out
 
     @staticmethod
-    def create(run_function, method="subprocess", method_kwargs={}):
+    def create(run_function, method="serial", method_kwargs={}):
         """Create evaluator with a specific backend and configuration.
 
         Args:
             run_function (function): the function to execute in parallel.
-            method (str, optional): the backend to use in ["thread", "process", "subprocess", "ray"]. Defaults to "subprocess".
+            method (str, optional): the backend to use in ``["serial", "thread", "process", "subprocess", "ray", "mpicomm", "mpipool"]``. Defaults to ``"serial"``.
             method_kwargs (dict, optional): configuration dictionnary of the corresponding backend. Keys corresponds to the keyword arguments of the corresponding implementation. Defaults to "{}".
 
         Raises:
@@ -159,7 +170,7 @@ class Evaluator:
 
     async def _run_jobs(self, configs):
         for config in configs:
-            
+
             # Create a Job object from the input configuration
             new_job = Job(self.n_jobs, config, self.run_function)
             self.n_jobs += 1
@@ -321,8 +332,8 @@ class Evaluator:
                 result["timestamp_start"] = job.timestamp_start
                 result["timestamp_end"] = job.timestamp_end
 
-            if hasattr(job, 'dequed'):
-                result["dequed"] = ','.join(job.dequed)
+            if hasattr(job, "dequed"):
+                result["dequed"] = ",".join(job.dequed)
 
             if "optuna_trial" in result:
                 result.pop("optuna_trial")

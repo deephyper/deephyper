@@ -38,29 +38,19 @@ REQUIRED = [
 
 
 #! Requirements for Neural Architecture Search (NAS)
-REQUIRED_NAS = [
-    "networkx"
-    "pydot"
-]
+REQUIRED_NAS = ["networkx" "pydot"]
 
 REQUIRED_NAS_PLATFORM = {
-    "default": [
-        "tensorflow>=2.0.0",
-        "tensorflow_probability"
-    ],
-    "macOS-arm64": [
-        "tensorflow_probability~=0.14"
-    ]
+    "default": ["tensorflow>=2.0.0", "tensorflow_probability"],
+    "macOS-arm64": ["tensorflow_probability~=0.14"],
 }
 if "macOS" in platform_infos and "arm64" in platform_infos:
     REQUIRED_NAS = REQUIRED_NAS + REQUIRED_NAS_PLATFORM["macOS-arm64"]
-else: # x86_64
+else:  # x86_64
     REQUIRED_NAS = REQUIRED_NAS + REQUIRED_NAS_PLATFORM["default"]
 
 #! Requirements for Pipeline Optimization for ML (popt)
-REQUIRED_POPT = [
-    "xgboost"
-]
+REQUIRED_POPT = ["xgboost"]
 
 #! Requirements for Automated Deep Ensemble with Uncertainty Quantification (AutoDEUQ)
 REQUIRED_AUTODEUQ = []
@@ -68,9 +58,9 @@ REQUIRED_AUTODEUQ = []
 
 # What packages are optional?
 EXTRAS = {
-    "nas": REQUIRED_NAS, # neural architecture search
-    "popt": REQUIRED_POPT, # pipeline optimization for ml
-    "autodeuq": REQUIRED_AUTODEUQ, # automated deep ensemble with uncertainty quantificationm
+    "nas": REQUIRED_NAS,  # neural architecture search
+    "popt": REQUIRED_POPT,  # pipeline optimization for ml
+    "autodeuq": REQUIRED_AUTODEUQ,  # automated deep ensemble with uncertainty quantificationm
     "dev": [
         # Test
         "codecov",
@@ -104,6 +94,7 @@ EXTRAS = {
 }
 
 # Useful commands to build/upload the wheel to PyPI
+
 
 class UploadCommand(Command):
     """Support setup.py upload."""
@@ -203,7 +194,5 @@ setup(
         "upload": UploadCommand,
         "testupload": TestUploadCommand,
         "testinstall": TestInstallCommand,
-    }
+    },
 )
-
-

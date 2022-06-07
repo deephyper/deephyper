@@ -6,11 +6,17 @@ from ._hyperparameter import HpProblem
 
 __all__ = ["HpProblem"]
 
+# make import of NaProblem optional
 try:
     from ._neuralarchitecture import NaProblem
+
     __all__.append("NaProblem")
 except ModuleNotFoundError as e:
-    if not("tensorflow" in str(e)):
+    if "tensorflow" in str(e):
+        pass
+    elif "networkx" in str(e):
+        pass
+    else:
         raise e
 
 __all__ = ["HpProblem"]

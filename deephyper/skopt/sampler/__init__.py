@@ -9,8 +9,4 @@ from .grid import Grid
 from .base import InitialPointGenerator
 
 
-__all__ = [
-    "Lhs", "Sobol",
-    "Halton", "Hammersly",
-    "Grid", "InitialPointGenerator"
-]
+__all__ = ["Lhs", "Sobol", "Halton", "Hammersly", "Grid", "InitialPointGenerator"]

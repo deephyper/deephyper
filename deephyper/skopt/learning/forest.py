@@ -38,7 +38,7 @@ def _return_std(X, n_outputs, trees, predictions, min_variance):
     flat = len(predictions.shape) == 1
     if flat:
         predictions = predictions.reshape(-1, 1)
-    
+
     std = np.zeros((n_outputs, len(X)))
 
     for tree in trees:
@@ -51,13 +51,13 @@ def _return_std(X, n_outputs, trees, predictions, min_variance):
         # is zero variance.
         var_tree[var_tree < min_variance] = min_variance
         mean_tree = tree.predict(X).T
-        std += var_tree + mean_tree ** 2
+        std += var_tree + mean_tree**2
 
     std = std.T
     std /= len(trees)
-    std -= predictions ** 2.0
+    std -= predictions**2.0
     std[std < 0.0] = 0.0
-    std = std ** 0.5
+    std = std**0.5
 
     if flat:
         std = std.reshape(-1)
@@ -207,6 +207,7 @@ class RandomForestRegressor(ForestRegressor):
     .. [1] L. Breiman, "Random Forests", Machine Learning, 45(1), 5-32, 2001.
 
     """
+
     def __init__(
         self,
         n_estimators=100,
@@ -263,7 +264,7 @@ class RandomForestRegressor(ForestRegressor):
         self.max_leaf_nodes = max_leaf_nodes
         self.min_impurity_decrease = min_impurity_decrease
         self.ccp_alpha = ccp_alpha
-        
+
         self.min_variance = min_variance
         self.splitter = splitter
 
@@ -294,10 +295,12 @@ class RandomForestRegressor(ForestRegressor):
         if return_std:
             if self.criterion != "squared_error":
                 raise ValueError(
-                    "Expected impurity to be 'mse', got %s instead"
-                    % self.criterion)
+                    "Expected impurity to be 'mse', got %s instead" % self.criterion
+                )
 
-            std = _return_std(X, self.n_outputs_, self.estimators_, mean, self.min_variance)
+            std = _return_std(
+                X, self.n_outputs_, self.estimators_, mean, self.min_variance
+            )
 
             return mean, std
         return mean
@@ -445,25 +448,44 @@ class ExtraTreesRegressor(_sk_ExtraTreesRegressor):
     .. [1] L. Breiman, "Random Forests", Machine Learning, 45(1), 5-32, 2001.
 
     """
-    def __init__(self, n_estimators=10, criterion='squared_error', max_depth=None,
-                 min_samples_split=2, min_samples_leaf=1,
-                 min_weight_fraction_leaf=0.0, max_features='auto',
-                 max_leaf_nodes=None, min_impurity_decrease=0.,
-                 bootstrap=False, oob_score=False,
-                 n_jobs=1, random_state=None, verbose=0, warm_start=False,
-                 min_variance=0.0):
+
+    def __init__(
+        self,
+        n_estimators=10,
+        criterion="squared_error",
+        max_depth=None,
+        min_samples_split=2,
+        min_samples_leaf=1,
+        min_weight_fraction_leaf=0.0,
+        max_features="auto",
+        max_leaf_nodes=None,
+        min_impurity_decrease=0.0,
+        bootstrap=False,
+        oob_score=False,
+        n_jobs=1,
+        random_state=None,
+        verbose=0,
+        warm_start=False,
+        min_variance=0.0,
+    ):
         self.min_variance = min_variance
         super(ExtraTreesRegressor, self).__init__(
-            n_estimators=n_estimators, criterion=criterion,
+            n_estimators=n_estimators,
+            criterion=criterion,
             max_depth=max_depth,
             min_samples_split=min_samples_split,
             min_samples_leaf=min_samples_leaf,
             min_weight_fraction_leaf=min_weight_fraction_leaf,
-            max_features=max_features, max_leaf_nodes=max_leaf_nodes,
+            max_features=max_features,
+            max_leaf_nodes=max_leaf_nodes,
             min_impurity_decrease=min_impurity_decrease,
-            bootstrap=bootstrap, oob_score=oob_score,
-            n_jobs=n_jobs, random_state=random_state,
-            verbose=verbose, warm_start=warm_start)
+            bootstrap=bootstrap,
+            oob_score=oob_score,
+            n_jobs=n_jobs,
+            random_state=random_state,
+            verbose=verbose,
+            warm_start=warm_start,
+        )
 
     def predict(self, X, return_std=False):
         """
@@ -493,8 +515,11 @@ class ExtraTreesRegressor(_sk_ExtraTreesRegressor):
             if self.criterion != "squared_error":
                 raise ValueError(
                     "Expected impurity to be 'squared_error', got %s instead"
-                    % self.criterion)
-            std = _return_std(X, self.n_outputs_, self.estimators_, mean, self.min_variance)
+                    % self.criterion
+                )
+            std = _return_std(
+                X, self.n_outputs_, self.estimators_, mean, self.min_variance
+            )
             return mean, std
 
         return mean

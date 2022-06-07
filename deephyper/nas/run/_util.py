@@ -12,7 +12,7 @@ import numpy as np
 import tensorflow as tf
 from deephyper.core.exceptions.problem import WrongProblemObjective
 from deephyper.evaluator._encoder import Encoder
-from deephyper.core.utils._import import load_attr
+from deephyper.core.utils import load_attr
 from deephyper.nas.lr_scheduler import exponential_decay
 
 
@@ -70,9 +70,7 @@ def load_config(config: dict) -> None:
     config["search_space"]["class"] = load_attr(config["search_space"]["class"])
 
     if not config.get("preprocessing") is None:
-        config["preprocessing"]["func"] = load_attr(
-            config["preprocessing"]["func"]
-        )
+        config["preprocessing"]["func"] = load_attr(config["preprocessing"]["func"])
     else:
         config["preprocessing"] = None
 

@@ -4,6 +4,7 @@ from functools import wraps
 #! info [why is it important to use "wraps"]
 #! http://gael-varoquaux.info/programming/decoration-in-python-done-right-decorating-and-pickling.html
 
+
 def profile(run_function):
     """Decorator to use on a ``run_function`` to profile its execution-time. It is to be used such as:
 

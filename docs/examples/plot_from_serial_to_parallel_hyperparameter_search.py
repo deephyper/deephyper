@@ -42,7 +42,9 @@ if __name__ == "__main__":
     # we give a budget of 2 minutes for each search
     timeout = 120
     serial_evaluator = Evaluator.create(
-        black_box.run_ackley, method="serial", method_kwargs={"callbacks": [TqdmCallback()]}
+        black_box.run_ackley,
+        method="serial",
+        method_kwargs={"callbacks": [TqdmCallback()]},
     )
 
     results = {}

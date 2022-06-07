@@ -39,8 +39,7 @@ def test_param_for_white_kernel_in_Sum(kernel):
     kernel_with_noise = kernel + wk
     wk_present, wk_param = _param_for_white_kernel_in_Sum(kernel + wk)
     assert wk_present
-    kernel_with_noise.set_params(
-        **{wk_param: WhiteKernel(noise_level=0.0)})
+    kernel_with_noise.set_params(**{wk_param: WhiteKernel(noise_level=0.0)})
     assert_array_equal(kernel_with_noise(X), kernel(X))
 
     assert not _param_for_white_kernel_in_Sum(kernel5)[0]
@@ -73,9 +72,11 @@ def test_mean_gradient():
 
     mean, std, mean_grad = gpr.predict(
         np.expand_dims(X_new, axis=0),
-        return_std=True, return_cov=False, return_mean_grad=True)
-    num_grad = optimize.approx_fprime(
-        X_new, lambda x: predict_wrapper(x, gpr)[0], 1e-4)
+        return_std=True,
+        return_cov=False,
+        return_mean_grad=True,
+    )
+    num_grad = optimize.approx_fprime(X_new, lambda x: predict_wrapper(x, gpr)[0], 1e-4)
     assert_array_almost_equal(mean_grad, num_grad, decimal=3)
 
 
@@ -91,10 +92,12 @@ def test_std_gradient():
 
     _, _, _, std_grad = gpr.predict(
         np.expand_dims(X_new, axis=0),
-        return_std=True, return_cov=False, return_mean_grad=True,
-        return_std_grad=True)
-    num_grad = optimize.approx_fprime(
-        X_new, lambda x: predict_wrapper(x, gpr)[1], 1e-4)
+        return_std=True,
+        return_cov=False,
+        return_mean_grad=True,
+        return_std_grad=True,
+    )
+    num_grad = optimize.approx_fprime(X_new, lambda x: predict_wrapper(x, gpr)[1], 1e-4)
     assert_array_almost_equal(std_grad, num_grad, decimal=3)
 
 

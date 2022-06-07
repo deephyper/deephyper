@@ -31,7 +31,9 @@ class OneLayerSpace(KSearchSpace):
             self.connect(self.input_nodes[0], prev_node)
 
         output_node = ConstantNode(
-            Dense(self.output_shape[0], activation=None if self.regression else "softmax")
+            Dense(
+                self.output_shape[0], activation=None if self.regression else "softmax"
+            )
         )
         self.connect(prev_node, output_node)
 

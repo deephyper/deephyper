@@ -18,6 +18,8 @@ def test_branin():
 
 @pytest.mark.hps_fast_test
 def test_hartmann6():
-    assert_almost_equal(hart6((0.20169, 0.15001, 0.476874,
-                               0.275332, 0.311652, 0.6573)),
-                        -3.32237, decimal=5)
+    assert_almost_equal(
+        hart6((0.20169, 0.15001, 0.476874, 0.275332, 0.311652, 0.6573)),
+        -3.32237,
+        decimal=5,
+    )

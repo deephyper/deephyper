@@ -42,7 +42,6 @@ if __name__ == "__main__":
     from deephyper.evaluator.callback import TqdmCallback
     from deephyper.search.hps import CBO
 
-
     timeout = 20
     num_workers = 4
     results = {}
@@ -64,7 +63,6 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import numpy as np
 
-
     def compile_profile(df):
         """Take the results dataframe as input and return the number of jobs running at a given timestamp."""
         history = []
@@ -83,7 +81,6 @@ if __name__ == "__main__":
             n_jobs_running.append(nb_workers)
 
         return timestamp, n_jobs_running
-
 
     plt.figure()
 

@@ -15,7 +15,7 @@ class CSVExtendedLogger(tf.keras.callbacks.Callback):
 
     Supports all values that can be represented as a string,
     including 1D iterables such as np.ndarray.
-    
+
     Example:
 
     .. code-block:: python

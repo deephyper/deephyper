@@ -4,6 +4,7 @@ import logging
 from deephyper.evaluator._evaluator import Evaluator
 
 import mpi4py
+
 mpi4py.rc.initialize = False
 mpi4py.rc.finalize = True
 from mpi4py import MPI
@@ -34,7 +35,7 @@ class MPICommEvaluator(Evaluator):
             MPI.Init_thread()
 
         self.comm = MPI.COMM_WORLD
-        self.num_workers = self.comm.Get_size() - 1 # 1 rank is the master
+        self.num_workers = self.comm.Get_size() - 1  # 1 rank is the master
         self.sem = asyncio.Semaphore(self.num_workers)
         logging.info(f"Creating MPICommExecutor with {self.num_workers} max_workers...")
         self.executor = MPICommExecutor(comm=self.comm, root=0)
@@ -47,7 +48,7 @@ class MPICommEvaluator(Evaluator):
             return self
         else:
             return None
-    
+
     def __exit__(self, type, value, traceback):
         self.executor.__exit__(type, value, traceback)
         self.master_executor = None
@@ -64,6 +65,3 @@ class MPICommEvaluator(Evaluator):
             job.result = sol
 
         return job
-
-
-

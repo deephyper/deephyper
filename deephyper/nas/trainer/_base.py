@@ -248,7 +248,12 @@ class BaseTrainer:
 
         if self.preprocessing_func:
             logger.debug(f"preprocess_data with: {str(self.preprocessing_func)}")
-            if all([len(np.shape(tX)) == len(np.shape(self.train_Y)) for tX in self.train_X]):
+            if all(
+                [
+                    len(np.shape(tX)) == len(np.shape(self.train_Y))
+                    for tX in self.train_X
+                ]
+            ):
                 data_train = np.concatenate((*self.train_X, self.train_Y), axis=-1)
                 data_valid = np.concatenate((*self.valid_X, self.valid_Y), axis=-1)
                 self.preprocessor = self.preprocessing_func()

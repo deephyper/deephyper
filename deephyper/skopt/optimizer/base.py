@@ -6,6 +6,7 @@ It is sufficient that one re-implements the base estimator.
 
 import warnings
 import numbers
+
 try:
     from collections.abc import Iterable
 except ImportError:
@@ -19,14 +20,28 @@ from .optimizer import Optimizer
 from ..utils import eval_callbacks
 
 
-def base_minimize(func, dimensions, base_estimator,
-                  n_calls=100, n_random_starts=None,
-                  n_initial_points=10,
-                  initial_point_generator="random",
-                  acq_func="EI", acq_optimizer="lbfgs",
-                  x0=None, y0=None, random_state=None, verbose=False,
-                  callback=None, n_points=10000, n_restarts_optimizer=5,
-                  xi=0.01, kappa=1.96, n_jobs=1, model_queue_size=None):
+def base_minimize(
+    func,
+    dimensions,
+    base_estimator,
+    n_calls=100,
+    n_random_starts=None,
+    n_initial_points=10,
+    initial_point_generator="random",
+    acq_func="EI",
+    acq_optimizer="lbfgs",
+    x0=None,
+    y0=None,
+    random_state=None,
+    verbose=False,
+    callback=None,
+    n_points=10000,
+    n_restarts_optimizer=5,
+    xi=0.01,
+    kappa=1.96,
+    n_jobs=1,
+    model_queue_size=None,
+):
     """Base optimizer class
 
     Parameters
@@ -207,12 +222,13 @@ def base_minimize(func, dimensions, base_estimator,
         For more details related to the OptimizeResult object, refer
         http://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.OptimizeResult.html
     """
-    specs = {"args": locals(),
-             "function": "base_minimize"}
+    specs = {"args": locals(), "function": "base_minimize"}
 
     acq_optimizer_kwargs = {
-        "n_points": n_points, "n_restarts_optimizer": n_restarts_optimizer,
-        "n_jobs": n_jobs}
+        "n_points": n_points,
+        "n_restarts_optimizer": n_restarts_optimizer,
+        "n_jobs": n_jobs,
+    }
     acq_func_kwargs = {"xi": xi, "kappa": kappa}
 
     # Initialize optimization
@@ -228,14 +244,17 @@ def base_minimize(func, dimensions, base_estimator,
 
     # Check `n_random_starts` deprecation first
     if n_random_starts is not None:
-        warnings.warn(("n_random_starts will be removed in favour of "
-                       "n_initial_points. It overwrites n_initial_points."),
-                      DeprecationWarning)
+        warnings.warn(
+            (
+                "n_random_starts will be removed in favour of "
+                "n_initial_points. It overwrites n_initial_points."
+            ),
+            DeprecationWarning,
+        )
         n_initial_points = n_random_starts
 
     if n_initial_points <= 0 and not x0:
-        raise ValueError("Either set `n_initial_points` > 0,"
-                         " or provide `x0`")
+        raise ValueError("Either set `n_initial_points` > 0," " or provide `x0`")
     # check y0: list-like, requirement of maximal calls
     if isinstance(y0, Iterable):
         y0 = list(y0)
@@ -243,35 +262,43 @@ def base_minimize(func, dimensions, base_estimator,
         y0 = [y0]
     required_calls = n_initial_points + (len(x0) if not y0 else 0)
     if n_calls < required_calls:
-        raise ValueError(
-            "Expected `n_calls` >= %d, got %d" % (required_calls, n_calls))
+        raise ValueError("Expected `n_calls` >= %d, got %d" % (required_calls, n_calls))
     # calculate the total number of initial points
     n_initial_points = n_initial_points + len(x0)
 
     # Build optimizer
 
     # create optimizer class
-    optimizer = Optimizer(dimensions, base_estimator,
-                          n_initial_points=n_initial_points,
-                          initial_point_generator=initial_point_generator,
-                          n_jobs=n_jobs,
-                          acq_func=acq_func, acq_optimizer=acq_optimizer,
-                          random_state=random_state,
-                          model_queue_size=model_queue_size,
-                          acq_optimizer_kwargs=acq_optimizer_kwargs,
-                          acq_func_kwargs=acq_func_kwargs)
+    optimizer = Optimizer(
+        dimensions,
+        base_estimator,
+        n_initial_points=n_initial_points,
+        initial_point_generator=initial_point_generator,
+        n_jobs=n_jobs,
+        acq_func=acq_func,
+        acq_optimizer=acq_optimizer,
+        random_state=random_state,
+        model_queue_size=model_queue_size,
+        acq_optimizer_kwargs=acq_optimizer_kwargs,
+        acq_func_kwargs=acq_func_kwargs,
+    )
     # check x0: element-wise data type, dimensionality
     assert all(isinstance(p, Iterable) for p in x0)
     if not all(len(p) == optimizer.space.n_dims for p in x0):
-        raise RuntimeError("Optimization space (%s) and initial points in x0 "
-                           "use inconsistent dimensions." % optimizer.space)
+        raise RuntimeError(
+            "Optimization space (%s) and initial points in x0 "
+            "use inconsistent dimensions." % optimizer.space
+        )
     # check callback
     callbacks = check_callback(callback)
     if verbose:
-        callbacks.append(VerboseCallback(
-            n_init=len(x0) if not y0 else 0,
-            n_random=n_initial_points,
-            n_total=n_calls))
+        callbacks.append(
+            VerboseCallback(
+                n_init=len(x0) if not y0 else 0,
+                n_random=n_initial_points,
+                n_total=n_calls,
+            )
+        )
 
     # Record provided points
 
@@ -285,7 +312,8 @@ def base_minimize(func, dimensions, base_estimator,
     if x0:
         if not (isinstance(y0, Iterable) or isinstance(y0, numbers.Number)):
             raise ValueError(
-                "`y0` should be an iterable or a scalar, got %s" % type(y0))
+                "`y0` should be an iterable or a scalar, got %s" % type(y0)
+            )
         if len(x0) != len(y0):
             raise ValueError("`x0` and `y0` should have the same length")
         result = optimizer.tell(x0, y0)

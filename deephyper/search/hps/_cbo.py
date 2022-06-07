@@ -129,10 +129,13 @@ class CBO(Search):
                 if isinstance(point, list):
                     self._initial_points.append(point)
                 elif isinstance(point, dict):
-                    self._initial_points.append([point[hp_name] for hp_name in problem.hyperparameter_names])
+                    self._initial_points.append(
+                        [point[hp_name] for hp_name in problem.hyperparameter_names]
+                    )
                 else:
-                    raise ValueError(f"Initial points should be dict or list but {type(point)} was given!")
-
+                    raise ValueError(
+                        f"Initial points should be dict or list but {type(point)} was given!"
+                    )
 
         self._multi_point_strategy = MAP_multi_point_strategy.get(
             multi_point_strategy, multi_point_strategy
@@ -663,7 +666,7 @@ class CBO(Search):
 
 
 class AMBS(CBO):
-    """AMBS is now deprecated and will be removed in the future use 'CBO' (Centralized Bayesian Optimization) instead! """
+    """AMBS is now deprecated and will be removed in the future use 'CBO' (Centralized Bayesian Optimization) instead!"""
 
     def __init__(
         self,

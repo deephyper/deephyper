@@ -28,7 +28,7 @@ class ThreadPoolEvaluator(Evaluator):
     ):
         super().__init__(run_function, num_workers, callbacks, run_function_kwargs)
         self.sem = asyncio.Semaphore(num_workers)
-        
+
         if hasattr(run_function, "__name__") and hasattr(run_function, "__module__"):
             logger.info(
                 f"ThreadPool Evaluator will execute {self.run_function.__name__}() from module {self.run_function.__module__}"
@@ -41,11 +41,11 @@ class ThreadPoolEvaluator(Evaluator):
 
             executor = ThreadPoolExecutor(max_workers=1)
 
-            run_function = functools.partial(job.run_function, job.config, **self.run_function_kwargs)
-
-            sol = await self.loop.run_in_executor(
-                executor, run_function
+            run_function = functools.partial(
+                job.run_function, job.config, **self.run_function_kwargs
             )
+
+            sol = await self.loop.run_in_executor(executor, run_function)
 
             job.result = sol
 

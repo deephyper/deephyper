@@ -11,7 +11,6 @@ def run_many_results(config, y=0):
 
 
 class TestEvaluator(unittest.TestCase):
-
     @pytest.mark.fast
     def test_import(self):
         from deephyper.evaluator import Evaluator
@@ -114,5 +113,5 @@ class TestEvaluator(unittest.TestCase):
             self.execute_evaluator("ray")
         except ModuleNotFoundError as e:
             e_str = str(e)
-            if not("ray" in e_str):
+            if not ("ray" in e_str):
                 raise e

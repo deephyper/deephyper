@@ -27,7 +27,7 @@ class ProcessPoolEvaluator(Evaluator):
     ):
         super().__init__(run_function, num_workers, callbacks, run_function_kwargs)
         self.sem = asyncio.Semaphore(num_workers)
-        
+
         if hasattr(run_function, "__name__") and hasattr(run_function, "__module__"):
             logger.info(
                 f"ProcessPool Evaluator will execute {self.run_function.__name__}() from module {self.run_function.__module__}"

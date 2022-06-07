@@ -10,6 +10,8 @@ import pandas as pd
 from deephyper.core.exceptions import SearchTerminationError
 from deephyper.core.utils._introspection import get_init_params_as_json
 import yaml
+from deephyper.evaluator import Evaluator
+from deephyper.evaluator.callback import TqdmCallback
 
 
 class Search(abc.ABC):
@@ -32,7 +34,14 @@ class Search(abc.ABC):
         self._call_args = []
 
         self._problem = copy.deepcopy(problem)
-        self._evaluator = evaluator
+
+        # if a callable is directly passed wrap it around the serial evaluator
+        if not (isinstance(evaluator, Evaluator)) and callable(evaluator):
+            self._evaluator = Evaluator.create(
+                evaluator, method="serial", method_kwargs={"callbacks": TqdmCallback()}
+            )
+        else:
+            self._evaluator = evaluator
         self._seed = None
 
         if type(random_state) is int:
@@ -103,7 +112,9 @@ class Search(abc.ABC):
         """
         if timeout is not None:
             if type(timeout) is not int:
-                raise ValueError(f"'timeout' shoud be of type'int' but is of type '{type(timeout)}'!")
+                raise ValueError(
+                    f"'timeout' shoud be of type'int' but is of type '{type(timeout)}'!"
+                )
             if timeout <= 0:
                 raise ValueError(f"'timeout' should be > 0!")
 
@@ -113,6 +124,11 @@ class Search(abc.ABC):
         self._add_call_args(timeout=timeout, max_evals=max_evals)
         # save the context in the log folder
         self.dump_context()
+        # init tqdm callback
+        if max_evals > 1:
+            for cb in self._evaluator._callbacks:
+                if isinstance(cb, TqdmCallback):
+                    cb.set_max_evals(max_evals)
 
         try:
             self._search(max_evals, timeout)

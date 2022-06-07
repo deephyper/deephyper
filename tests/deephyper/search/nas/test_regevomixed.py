@@ -3,7 +3,6 @@ import unittest
 import pytest
 
 
-
 @pytest.mark.nas
 class RegevoMixedTest(unittest.TestCase):
     def test_regovomixed_without_hp(self):
@@ -31,7 +30,6 @@ class RegevoMixedTest(unittest.TestCase):
         res2_array = res2[["arch_seq"]].to_numpy()
 
         assert np.array_equal(res1_array, res2_array)
-
 
     def test_regevomixed_with_hp(self):
         import numpy as np

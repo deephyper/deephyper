@@ -81,7 +81,9 @@ class RayEvaluator(Evaluator):
 
     async def execute(self, job):
 
-        sol = await self._remote_run_function.remote(job.config, **self.run_function_kwargs)
+        sol = await self._remote_run_function.remote(
+            job.config, **self.run_function_kwargs
+        )
 
         job.result = sol
 
