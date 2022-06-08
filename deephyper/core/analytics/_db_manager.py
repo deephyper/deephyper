@@ -8,6 +8,7 @@ import pandas as pd
 import yaml
 from datetime import datetime
 from tinydb import TinyDB, Query
+from deephyper.core.utils._files import ensure_dh_folder_exists
 
 
 class DBManager(abc.ABC):
@@ -27,6 +28,7 @@ class DBManager(abc.ABC):
         user_name: str = None,
         path: str = "~/.deephyper/local_db.json",
     ) -> None:
+        ensure_dh_folder_exists()
         self._user_name = user_name if user_name else getpass.getuser()
         self._db = TinyDB(path)
 
