@@ -3,7 +3,12 @@
 import deephyper.core.exceptions
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
+from deephyper.evaluator._evaluator import _test_ipython_interpretor
+
+if _test_ipython_interpretor():
+    from tqdm.notebook import tqdm
+else:
+    from tqdm import tqdm
 
 
 class Callback:

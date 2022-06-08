@@ -32,7 +32,7 @@ class Search(abc.ABC):
         # if a callable is directly passed wrap it around the serial evaluator
         if not (isinstance(evaluator, Evaluator)) and callable(evaluator):
             self._evaluator = Evaluator.create(
-                evaluator, method="serial", method_kwargs={"callbacks": TqdmCallback()}
+                evaluator, method="serial", method_kwargs={"callbacks": [TqdmCallback()]}
             )
         else:
             self._evaluator = evaluator
