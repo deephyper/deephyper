@@ -265,9 +265,6 @@ class DBO:
             sample_strategy=sample_strategy,
         )
 
-    def _add_call_args(self, **kwargs):
-        self._call_args.append(kwargs)
-
     def to_json(self):
         """Returns a json version of the search object."""
         json_self = {
@@ -473,7 +470,7 @@ class DBO:
         self._set_timeout(timeout)
 
         # save the search call arguments for the context
-        self._add_call_args(timeout=timeout, max_evals=max_evals)
+        self._call_args.append({"timeout": timeout, "max_evals": max_evals})
         # save the context in the log folder
         self.dump_context()
 

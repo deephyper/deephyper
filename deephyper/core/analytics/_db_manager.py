@@ -24,21 +24,23 @@ class DBManager(abc.ABC):
 
     def __init__(
         self,
-        user_name: str = getpass.getuser(),
+        user_name: str = None,
         path: str = "~/.deephyper/local_db.json",
     ) -> None:
-        self._user_name = user_name
+        self._user_name = user_name if user_name else getpass.getuser()
         self._db = TinyDB(path)
 
-    def _get_pip_env(self, pip_versions=None):
-        if pip_versions is None:
+    def _get_pip_env(self, pip_versions=True):
+        if isinstance(pip_versions, str):
+            with open(pip_versions, "r") as file:
+                pip_env = json.load(file)
+        elif pip_versions:
             pip_list_com = subprocess.run(
                 ["pip", "list", "--format", "json"], stdout=subprocess.PIPE
             )
             pip_env = json.loads(pip_list_com.stdout.decode("utf-8"))
         else:
-            with open(pip_versions, "r") as file:
-                pip_env = json.load(file)
+            return None
         return pip_env
 
     def add(
@@ -46,22 +48,23 @@ class DBManager(abc.ABC):
         log_dir: str,
         label: str = None,
         description: str = None,
-        pip_versions: str = None,
-        extra_metadata: dict = None,
+        pip_versions: str or bool = True,
+        metadata: dict = None,
     ):
         """Adds an experiment to the database.
 
         Example Usage:
 
-            >>> extra = {"machine": "ThetaGPU", "n_nodes": 4, "num_gpus_per_node": 8}
-            >>> dbm.add("path/to/search/log_dir/", label="exp_101", description="The experiment 101", exra_metadata=extra)
+            >>> dbm = DBManager(user_name="Bob", path="path/to/db.json")
+            >>> metadata = {"machine": "ThetaGPU", "n_nodes": 4, "num_gpus_per_node": 8}
+            >>> dbm.add("path/to/search/log_dir/", label="exp_101", description="The experiment 101", metadata=metadata)
 
         Args:
             log_dir (str): the path to the search's logging directory.
             label (str, optional): the label wished for the experiment. Defaults to None.
             description (str, optional): the description wished for the experiment. Defaults to None.
-            pip_versions (str, optional): the path to the ``.json`` file corresponding to the ouptut of ``pip list --format json``. Defaults to None.
-            extra_metadata (dict, optional): a dict of extra metadata. Defaults to None.
+            pip_versions (str or bool, optional): a boolean for which ``False`` means that we don't store any pip version checkpoint, and ``True`` that we store the current pip version checkpoint ; or the path to a ``.json`` file corresponding to the ouptut of ``pip list --format json``. Defaults to True.
+            metadata (dict, optional): a dictionary of metadata. When the same key is found in the default `default_metadata` and the passed `metadata` then the values from `default_metadata` are overriden by `metadata` values. Defaults to None.
         """
         context_path = os.path.join(log_dir, "context.yaml")
         with open(context_path, "r") as file:
@@ -83,7 +86,7 @@ class DBManager(abc.ABC):
                 "add_date": str(datetime.now()),
                 "env": self._get_pip_env(pip_versions=pip_versions),
                 "search": context.get("search", None),
-                "extra": extra_metadata if extra_metadata is not None else {},
+                **metadata,
             },
             "data": {
                 "search": {
