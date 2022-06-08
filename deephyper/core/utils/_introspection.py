@@ -17,18 +17,18 @@ def _get_init_param_names(cls):
     parameters = [
         p
         for p in init_signature.parameters.values()
-        if p.kind == p.POSITIONAL_OR_KEYWORD and p.name not in ["self"] 
+        if p.kind == p.POSITIONAL_OR_KEYWORD and p.name not in ["self"]
     ]
     # Extract and sort argument names excluding 'self'
     return sorted([p.name for p in parameters])
 
 
-def get_init_params(obj):   
+def get_init_params(obj):
     """Get the raw parameters of an object.
 
     Args:
         obj (any): The object of which we want to know the ``__init__`` arguments.
-    
+
     Returns:
         params (dict): Parameter names mapped to their values.
     """
@@ -50,10 +50,10 @@ def get_init_params(obj):
 
 def get_init_params_as_json(obj):
     """Get the parameters of an object in a json format.
-    
+
     Args:
         obj (any): The object of which we want to know the ``__init__`` arguments.
-    
+
     Returns:
         params (dict): Parameter names mapped to their values.
     """
@@ -77,4 +77,3 @@ def get_init_params_as_json(obj):
             value = type(value).__name__
         params[key] = value
     return params
-    

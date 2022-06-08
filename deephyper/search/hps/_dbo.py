@@ -13,6 +13,7 @@ import ConfigSpace as CS
 # avoid initializing mpi4py when importing
 import mpi4py
 import yaml
+
 mpi4py.rc.initialize = False
 mpi4py.rc.finalize = True
 from mpi4py import MPI
@@ -263,13 +264,12 @@ class DBO:
             sample_max_size=sample_max_size,
             sample_strategy=sample_strategy,
         )
-    
+
     def _add_call_args(self, **kwargs):
         self._call_args.append(kwargs)
-    
+
     def to_json(self):
-        """Returns a json version of the search object.
-        """        
+        """Returns a json version of the search object."""
         json_self = {
             "search": {
                 "type": type(self).__name__,
@@ -279,13 +279,12 @@ class DBO:
             "calls": self._call_args,
         }
         return json_self
-    
+
     def dump_context(self):
-        """Dumps the context in the log folder.
-        """
+        """Dumps the context in the log folder."""
         context = self.to_json()
         path_context = os.path.join(self._log_dir, "context.yaml")
-        with open(path_context, 'w') as file:
+        with open(path_context, "w") as file:
             yaml.dump(context, file)
 
     def send_all(self, x, y, infos):

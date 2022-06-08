@@ -57,13 +57,12 @@ class Search(abc.ABC):
         pathlib.Path(log_dir).mkdir(parents=False, exist_ok=True)
 
         self._verbose = verbose
-    
+
     def _add_call_args(self, **kwargs):
         self._call_args.append(kwargs)
-    
+
     def to_json(self):
-        """Returns a json version of the search object.
-        """        
+        """Returns a json version of the search object."""
         json_self = {
             "search": {
                 "type": type(self).__name__,
@@ -73,15 +72,14 @@ class Search(abc.ABC):
             "calls": self._call_args,
         }
         return json_self
-    
+
     def dump_context(self):
-        """Dumps the context in the log folder.
-        """
+        """Dumps the context in the log folder."""
         context = self.to_json()
         path_context = os.path.join(self._log_dir, "context.yaml")
-        with open(path_context, 'w') as file:
+        with open(path_context, "w") as file:
             yaml.dump(context, file)
-    
+
     def terminate(self):
         """Terminate the search.
 

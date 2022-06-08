@@ -103,14 +103,10 @@ class Evaluator:
             import deephyper.evaluator._nest_asyncio as nest_asyncio
 
             nest_asyncio.apply()
-    
+
     def to_json(self):
-        """Returns a json version of the evaluator.
-        """
-        out = {
-            'type': type(self).__name__,
-            **get_init_params_as_json(self)
-        }
+        """Returns a json version of the evaluator."""
+        out = {"type": type(self).__name__, **get_init_params_as_json(self)}
         return out
 
     @staticmethod
