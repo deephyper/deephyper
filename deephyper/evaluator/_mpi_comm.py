@@ -5,6 +5,7 @@ from deephyper.evaluator._evaluator import Evaluator
 
 import mpi4py
 
+#! To avoid initializing MPI when module is imported (MPI is optional)
 mpi4py.rc.initialize = False
 mpi4py.rc.finalize = True
 from mpi4py import MPI
@@ -15,12 +16,16 @@ logger = logging.getLogger(__name__)
 
 
 class MPICommEvaluator(Evaluator):
-    """This evaluator uses the ``ray`` library as backend.
+    """This evaluator uses the ``mpi4py`` library as backend.
+
+    This evaluator consider an already existing MPI-context (with running processes), therefore it has less overhead than ``MPIPoolEvaluator`` which spawn processes dynamically.
 
     Args:
         run_function (callable): functions to be executed by the ``Evaluator``.
-        num_workers (int, optional): Number of parallel Ray-workers used to compute the ``run_function``. Defaults to 1.
-        callbacks (list, optional): A list of callbacks to trigger custom actions at the creation or completion of jobs. Defaults to None.
+        num_workers (int, optional): Number of parallel Ray-workers used to compute the ``run_function``. Defaults to ``None`` which consider 1 rank as a worker (minus the master rank).
+        callbacks (list, optional): A list of callbacks to trigger custom actions at the creation or completion of jobs. Defaults to ``None``.
+        run_function_kwargs (dict, optional): Keyword-arguments to pass to the ``run_function``. Defaults to ``None``.
+        comm (optional): A MPI communicator, if ``None`` it will use ``MPI.COMM_WORLD``. Defaults to ``None``.
     """
 
     def __init__(
@@ -29,12 +34,13 @@ class MPICommEvaluator(Evaluator):
         num_workers: int = None,
         callbacks=None,
         run_function_kwargs=None,
+        comm=None,
     ):
         super().__init__(run_function, num_workers, callbacks, run_function_kwargs)
         if not MPI.Is_initialized():
             MPI.Init_thread()
 
-        self.comm = MPI.COMM_WORLD
+        self.comm = comm if comm else MPI.COMM_WORLD
         self.num_workers = self.comm.Get_size() - 1  # 1 rank is the master
         self.sem = asyncio.Semaphore(self.num_workers)
         logging.info(f"Creating MPICommExecutor with {self.num_workers} max_workers...")
