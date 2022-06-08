@@ -38,7 +38,7 @@ REQUIRED = [
 
 
 #! Requirements for Neural Architecture Search (NAS)
-REQUIRED_NAS = ["networkx" "pydot"]
+REQUIRED_NAS = ["networkx", "pydot"]
 
 REQUIRED_NAS_PLATFORM = {
     "default": ["tensorflow>=2.0.0", "tensorflow_probability"],
@@ -53,7 +53,7 @@ else:  # x86_64
 REQUIRED_POPT = ["xgboost"]
 
 #! Requirements for Automated Deep Ensemble with Uncertainty Quantification (AutoDEUQ)
-REQUIRED_AUTODEUQ = []
+REQUIRED_AUTODEUQ = REQUIRED_NAS + ["ray"]
 
 
 # What packages are optional?
