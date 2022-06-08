@@ -34,6 +34,7 @@ REQUIRED = [
     "scipy>=0.19.1",
     "tqdm>=4.64.0",
     "pyyaml",
+    "tinydb",
 ]
 
 
@@ -88,7 +89,6 @@ EXTRAS = {
         "nbconvert<6",
         "seaborn>=0.9.1",
         "streamlit",
-        "tinydb",
     ],
     "hvd": ["horovod>=0.21.3", "mpi4py>=3.0.0"],
 }
