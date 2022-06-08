@@ -295,7 +295,8 @@ class RandomForestRegressor(ForestRegressor):
         if return_std:
             if self.criterion != "squared_error":
                 raise ValueError(
-                    "Expected impurity to be 'mse', got %s instead" % self.criterion
+                    "Expected impurity to be 'squared_error', got %s instead"
+                    % self.criterion
                 )
 
             std = _return_std(
