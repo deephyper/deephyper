@@ -35,7 +35,7 @@ To then effectively call this activation script in your scripts, you can use ``s
     source activate-dhenv.sh
     python -c "import deephyper; print(f'DeepHyper version: {deephyper.__version__}')"
 
-You should obtain a ``DeepHyper version: 0.4.0`` in the output cobaltlog file from this job after submitting it with :
+You should obtain a ``DeepHyper version: x.x.x`` in the output cobaltlog file from this job after submitting it with :
 
 .. code-block:: console
 
@@ -59,7 +59,7 @@ This installation procedure shows you how to create your own Conda virtual envir
 
     For more details refer to `ALCF Documentation <https://www.alcf.anl.gov/support-center/theta/theta-file-systems>`_.
 
-As this procedure needs to be performed on ThetaGPU, we will directly execute it in this ``job-install-dhenv.sh`` submission script (replace the ``$PROJECT_NAME`` with your project, e-g: ``#COBALT -A datascience``):
+As this procedure needs to be performed on ThetaGPU, we will directly execute it in this ``job-install-dhenv.sh`` submission script (replace the ``$PROJECT_NAME`` with the name of your project allocation, e-g: ``#COBALT -A datascience``):
 
 .. code-block:: bash
     :caption: **file**: ``job-install-dhenv.sh``
@@ -104,7 +104,7 @@ Once this job is finished you can test the good installation by creating this ``
 mpi4py installation
 -------------------
 
-You might need to additionaly install ``mpi4py`` to your environment in order to use functionnalities such as the ``mpi_comm`` evaluator, you simply need to add this after ``pip install deephyper["analytics"]`` :
+You might need to additionaly install ``mpi4py`` to your environment in order to use functionnalities such as the ``"mpicomm"`` evaluator, you simply need to add this after ``pip install deephyper["analytics"]`` :
 
 .. code-block:: console
 
