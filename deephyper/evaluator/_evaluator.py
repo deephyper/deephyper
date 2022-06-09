@@ -14,6 +14,7 @@ from typing import Dict, List
 import numpy as np
 from deephyper.evaluator._job import Job
 from deephyper.skopt.optimizer import OBJECTIVE_VALUE_FAILURE
+from deephyper.core.utils._introspection import get_init_params_as_json
 
 EVALUATORS = {
     "mpipool": "_mpi_pool.MPIPoolEvaluator",
@@ -102,6 +103,11 @@ class Evaluator:
             import deephyper.evaluator._nest_asyncio as nest_asyncio
 
             nest_asyncio.apply()
+
+    def to_json(self):
+        """Returns a json version of the evaluator."""
+        out = {"type": type(self).__name__, **get_init_params_as_json(self)}
+        return out
 
     @staticmethod
     def create(run_function, method="serial", method_kwargs={}):

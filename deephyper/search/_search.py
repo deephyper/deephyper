@@ -8,6 +8,8 @@ import signal
 import numpy as np
 import pandas as pd
 from deephyper.core.exceptions import SearchTerminationError
+from deephyper.core.utils._introspection import get_init_params_as_json
+import yaml
 from deephyper.evaluator import Evaluator
 from deephyper.evaluator.callback import TqdmCallback
 
@@ -26,6 +28,10 @@ class Search(abc.ABC):
     def __init__(
         self, problem, evaluator, random_state=None, log_dir=".", verbose=0, **kwargs
     ):
+
+        # get the __init__ parameters
+        self._init_params = locals()
+        self._call_args = []
 
         self._problem = copy.deepcopy(problem)
 
@@ -53,6 +59,25 @@ class Search(abc.ABC):
         pathlib.Path(log_dir).mkdir(parents=False, exist_ok=True)
 
         self._verbose = verbose
+
+    def to_json(self):
+        """Returns a json version of the search object."""
+        json_self = {
+            "search": {
+                "type": type(self).__name__,
+                "num_workers": self._evaluator.num_workers,
+                **get_init_params_as_json(self),
+            },
+            "calls": self._call_args,
+        }
+        return json_self
+
+    def dump_context(self):
+        """Dumps the context in the log folder."""
+        context = self.to_json()
+        path_context = os.path.join(self._log_dir, "context.yaml")
+        with open(path_context, "w") as file:
+            yaml.dump(context, file)
 
     def terminate(self):
         """Terminate the search.
@@ -92,6 +117,10 @@ class Search(abc.ABC):
 
         self._set_timeout(timeout)
 
+        # save the search call arguments for the context
+        self._call_args.append({"timeout": timeout, "max_evals": max_evals})
+        # save the context in the log folder
+        self.dump_context()
         # init tqdm callback
         if max_evals > 1:
             for cb in self._evaluator._callbacks:

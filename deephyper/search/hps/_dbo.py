@@ -12,6 +12,7 @@ import ConfigSpace as CS
 
 # avoid initializing mpi4py when importing
 import mpi4py
+import yaml
 
 mpi4py.rc.initialize = False
 mpi4py.rc.finalize = True
@@ -19,6 +20,7 @@ from mpi4py import MPI
 
 from deephyper.core.exceptions import SearchTerminationError
 from deephyper.problem._hyperparameter import convert_to_skopt_space
+from deephyper.core.utils._introspection import get_init_params_as_json
 from sklearn.ensemble import GradientBoostingRegressor
 
 TAG_INIT = 20
@@ -142,6 +144,10 @@ class DBO:
         sample_strategy: str = "quantile",
     ):
 
+        # get the __init__ parameters
+        self._init_params = locals()
+        self._call_args = []
+
         self._problem = problem
         self._run_function = run_function
         self._run_function_kwargs = (
@@ -258,6 +264,25 @@ class DBO:
             sample_max_size=sample_max_size,
             sample_strategy=sample_strategy,
         )
+
+    def to_json(self):
+        """Returns a json version of the search object."""
+        json_self = {
+            "search": {
+                "type": type(self).__name__,
+                "num_workers": self._size,
+                **get_init_params_as_json(self),
+            },
+            "calls": self._call_args,
+        }
+        return json_self
+
+    def dump_context(self):
+        """Dumps the context in the log folder."""
+        context = self.to_json()
+        path_context = os.path.join(self._log_dir, "context.yaml")
+        with open(path_context, "w") as file:
+            yaml.dump(context, file)
 
     def send_all(self, x, y, infos):
         logging.info("Sending to all...")
@@ -443,6 +468,11 @@ class DBO:
                 raise ValueError(f"'timeout' should be > 0!")
 
         self._set_timeout(timeout)
+
+        # save the search call arguments for the context
+        self._call_args.append({"timeout": timeout, "max_evals": max_evals})
+        # save the context in the log folder
+        self.dump_context()
 
         try:
             self._search(max_evals, timeout)

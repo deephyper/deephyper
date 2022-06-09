@@ -38,6 +38,8 @@ class RayEvaluator(Evaluator):
         num_workers: int = None,
     ):
         super().__init__(run_function, num_workers, callbacks, run_function_kwargs)
+        # get the __init__ parameters
+        self._init_params = locals()
 
         ray_kwargs = {} if ray_kwargs is None else ray_kwargs
         if address is not None:

@@ -76,6 +76,8 @@ class CBO(Search):
     ):
 
         super().__init__(problem, evaluator, random_state, log_dir, verbose)
+        # get the __init__ parameters
+        self._init_params = locals()
 
         # check input parameters
         surrogate_model_allowed = ["RF", "ET", "GBRT", "DUMMY", "GP"]
