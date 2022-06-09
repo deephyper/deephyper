@@ -24,7 +24,7 @@ Quick Start
    :alt: Open In Colab
    :align: center
 
-The black-box function named ``run`` is defined by taking an input dictionnary named ``config`` which contains the different variables to optimize. Then the run-function is binded to an ``Evaluator`` in charge of distributing the computation of multiple evaluations. Finally, a Bayesian search named ``AMBS`` is created and executed to find the values of config which maximize the return value of ``run(config)``.
+The black-box function named ``run`` is defined by taking an input dictionnary named ``config`` which contains the different variables to optimize. Then the run-function is binded to an ``Evaluator`` in charge of distributing the computation of multiple evaluations. Finally, a Bayesian search named ``CBO`` is created and executed to find the values of config which maximize the return value of ``run(config)``.
 
 .. code-block:: python
 
@@ -36,7 +36,7 @@ The black-box function named ``run`` is defined by taking an input dictionnary n
     # when loading the 'run' function from a subprocess
     if __name__ == "__main__":
         from deephyper.problem import HpProblem
-        from deephyper.search.hps import AMBS
+        from deephyper.search.hps import CBO
         from deephyper.evaluator import Evaluator
 
         # define the variable you want to optimize
@@ -53,7 +53,7 @@ The black-box function named ``run`` is defined by taking an input dictionnary n
         )
 
         # define your search and execute it
-        search = AMBS(problem, evaluator)
+        search = CBO(problem, evaluator)
 
         results = search.search(max_evals=100)
         print(results)
@@ -86,20 +86,22 @@ Table of Contents
 
     install/index
     tutorials/index
+    examples/index
     research
+    Authors <authors>
 
 
 .. toctree::
-    :maxdepth: 1
     :caption: API Reference
 
-    Core <api/deephyper.core>
-    Ensemble <api/deephyper.ensemble>
-    Evaluator <api/deephyper.evaluator>
-    NAS <api/deephyper.nas>
-    Problem <api/deephyper.problem>
-    Search <api/deephyper.search>
-    Sklearn <api/deephyper.sklearn>
+    Core <_autosummary/deephyper.core>
+    Ensemble <_autosummary/deephyper.ensemble>
+    Evaluator <_autosummary/deephyper.evaluator>
+    Keras <_autosummary/deephyper.keras>
+    NAS <_autosummary/deephyper.nas>
+    Problem <_autosummary/deephyper.problem>
+    Search <_autosummary/deephyper.search>
+    Sklearn <_autosummary/deephyper.sklearn>
 
 .. toctree::
     :maxdepth: 2
@@ -109,6 +111,12 @@ Table of Contents
     developer_guides/dev
     developer_guides/doc
     developer_guides/tests_link
+
+
+
+
+
+
 
 Indices and tables
 ==================

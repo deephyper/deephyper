@@ -10,16 +10,17 @@ import tensorflow as tf
 class BaseEnsemble(abc.ABC):
     """Base class for ensembles, every new ensemble algorithms needs to extend this class.
 
-        Args:
-            model_dir (str): Path to directory containing saved Keras models in .h5 format.
-            loss (callable): a callable taking (y_true, y_pred) as input.
-            size (int, optional): Number of unique models used in the ensemble. Defaults to 5.
-            verbose (bool, optional): Verbose mode. Defaults to True.
-            ray_address (str, optional): Address of the Ray cluster. If "auto" it will try to connect to an existing cluster. If "" it will start a local Ray cluster. Defaults to "".
-            num_cpus (int, optional): Number of CPUs allocated to load one model and predict. Defaults to 1.
-            num_gpus (int, optional): Number of GPUs allocated to load one model and predict. Defaults to None.
-            batch_size (int, optional): Batch size used batchify the inference of loaded models. Defaults to 32.
+    Args:
+        model_dir (str): Path to directory containing saved Keras models in .h5 format.
+        loss (callable): a callable taking (y_true, y_pred) as input.
+        size (int, optional): Number of unique models used in the ensemble. Defaults to 5.
+        verbose (bool, optional): Verbose mode. Defaults to True.
+        ray_address (str, optional): Address of the Ray cluster. If "auto" it will try to connect to an existing cluster. If "" it will start a local Ray cluster. Defaults to "".
+        num_cpus (int, optional): Number of CPUs allocated to load one model and predict. Defaults to 1.
+        num_gpus (int, optional): Number of GPUs allocated to load one model and predict. Defaults to None.
+        batch_size (int, optional): Batch size used batchify the inference of loaded models. Defaults to 32.
     """
+
     def __init__(
         self,
         model_dir,
@@ -41,7 +42,7 @@ class BaseEnsemble(abc.ABC):
         self.num_gpus = num_gpus
         self.batch_size = batch_size
 
-        if not(ray.is_initialized()):
+        if not (ray.is_initialized()):
             ray.init(address=self.ray_address)
 
     def __repr__(self) -> str:
@@ -113,7 +114,7 @@ class BaseEnsemble(abc.ABC):
         """
         self.load_members_files(file)
 
-    def save(self, file: str=None) -> None:
+    def save(self, file: str = None) -> None:
         """Save an ensemble.
 
         Args:

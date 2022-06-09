@@ -1,28 +1,53 @@
 import pytest
 
 
-#-- Control skipping of tests according to command line option
+# -- Control skipping of tests according to command line option
 def pytest_addoption(parser):
     parser.addoption(
-        "--runslow", action="store_true", default=False, help="run slow tests"
+        "--run-hps", action="store_true", default=False, help="Run HPS tests."
+    )
+    parser.addoption(
+        "--run-nas", action="store_true", default=False, help="Run NAS tests."
+    )
+    parser.addoption(
+        "--run-fast", action="store_true", default=False, help="Run fast tests."
+    )
+    parser.addoption(
+        "--run-slow", action="store_true", default=False, help="Run slow tests."
+    )
+    parser.addoption(
+        "--run-ray",
+        action="store_true",
+        default=False,
+        help="Run tests which require Ray.",
+    )
+    parser.addoption(
+        "--run-mpi4py",
+        action="store_true",
+        default=False,
+        help="Run tests which require mpi4py.",
     )
 
 
 def pytest_collection_modifyitems(config, items):
-    if config.getoption("--runslow"):
-        # --runslow given in cli: do not skip slow tests
-        return
-    skip_slow = pytest.mark.skip(reason="need --runslow option to run")
-    for item in items:
-        if "slow" in item.keywords:
-            item.add_marker(skip_slow)
 
-#-- Incremental testing - test steps
+    marks = ["fast", "hps", "nas", "ray", "mpi4py"]
+    for mark in marks:
+        do_not_run_mark = not (config.getoption(f"--run-{mark}"))
+        if do_not_run_mark:
+            skip_mark = pytest.mark.skip(reason=f"need --run-{mark} option to run")
+            for item in items:
+                if mark in item.keywords:
+                    item.add_marker(skip_mark)
+
+
+# -- Incremental testing - test steps
 def pytest_runtest_makereport(item, call):
     if "incremental" in item.keywords:
         if call.excinfo is not None:
             parent = item.parent
             parent._previousfailed = item
+
 
 def pytest_runtest_setup(item):
     if "incremental" in item.keywords:

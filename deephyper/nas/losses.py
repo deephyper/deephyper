@@ -4,12 +4,13 @@
 from collections import OrderedDict
 
 import tensorflow as tf
-from deephyper.search import util
+from deephyper.core.utils import load_attr
+
 
 def tfp_negloglik(y, rv_y):
-    """Negative log likelihood for Tensorflow probability.
-    """
+    """Negative log likelihood for Tensorflow probability."""
     return -rv_y.log_prob(y)
+
 
 losses_func = OrderedDict()
 losses_func["tfp_negloglik"] = losses_func["tfp_nll"] = tfp_negloglik
@@ -30,10 +31,12 @@ def selectLoss(name: str):
         return name
     if losses_func.get(name) == None and losses_obj.get(name) == None:
         try:
-            loaded_obj = util.load_attr(name)
+            loaded_obj = load_attr(name)
             return loaded_obj
         except:
-            return tf.keras.losses.get(name)  # supposing it is referenced in keras losses
+            return tf.keras.losses.get(
+                name
+            )  # supposing it is referenced in keras losses
     else:
         if name in losses_func:
             return losses_func[name]

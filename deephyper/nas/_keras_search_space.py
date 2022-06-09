@@ -29,13 +29,13 @@ class KSearchSpace(NxSearchSpace):
     >>> Dropout = operation(tf.keras.layers.Dropout)
 
     >>> class ExampleSpace(KSearchSpace):
-    ...     def build(self):    
+    ...     def build(self):
     ...         # input nodes are automatically built based on `input_shape`
-    ...         input_node = self.input_nodes[0]         
+    ...         input_node = self.input_nodes[0]
     ...         # we want 4 layers maximum (Identity corresponds to not adding a layer)
     ...         for i in range(4):
     ...             node = VariableNode()
-    ...             self.connect(input_node, node) 
+    ...             self.connect(input_node, node)
     ...             # we add 3 possible operations for each node
     ...             node.add_op(Identity())
     ...             node.add_op(Dense(100, "relu"))
@@ -59,7 +59,9 @@ class KSearchSpace(NxSearchSpace):
         InputShapeOfWrongType: [description]
     """
 
-    def __init__(self, input_shape, output_shape, batch_size=None, seed=None, *args, **kwargs):
+    def __init__(
+        self, input_shape, output_shape, batch_size=None, seed=None, *args, **kwargs
+    ):
 
         super().__init__()
 
@@ -164,7 +166,10 @@ class KSearchSpace(NxSearchSpace):
                 if tf.keras.backend.is_keras_tensor(out_T):
                     out_T_shape = out_T.type_spec.shape
                     if out_T_shape[1:] != out_S:
-                        warnings.warn(f"The output tensor of shape {out_T_shape} doesn't match the expected shape {out_S}!", RuntimeWarning)
+                        warnings.warn(
+                            f"The output tensor of shape {out_T_shape} doesn't match the expected shape {out_S}!",
+                            RuntimeWarning,
+                        )
 
             input_tensors = [inode._tensor for inode in self.input_nodes]
 
@@ -174,7 +179,10 @@ class KSearchSpace(NxSearchSpace):
             if tf.keras.backend.is_keras_tensor(output_tensors):
                 output_tensors_shape = output_tensors.type_spec.shape
                 if output_tensors_shape[1:] != self.output_shape:
-                    warnings.warn(f"The output tensor of shape {output_tensors_shape} doesn't match the expected shape {self.output_shape}!", RuntimeWarning)
+                    warnings.warn(
+                        f"The output tensor of shape {output_tensors_shape} doesn't match the expected shape {self.output_shape}!",
+                        RuntimeWarning,
+                    )
 
             input_tensors = [inode._tensor for inode in self.input_nodes]
 
@@ -201,7 +209,7 @@ class KSearchSpace(NxSearchSpace):
         """
 
         if choice is None:
-            choice = [self._random.randint(c[0], c[1]+1) for c in self.choices()]
+            choice = [self._random.randint(c[0], c[1] + 1) for c in self.choices()]
 
         self_copy = copy.deepcopy(self)
         self_copy.set_ops(choice)

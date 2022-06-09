@@ -1,1 +1,0 @@
-from deephyper.contrib.quick_plot import quick_plot

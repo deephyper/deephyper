@@ -17,9 +17,7 @@ def add_arguments_from_signature(parser, obj, prefix="", exclude=[]):
     added_arguments = []
 
     for p_name, p in sig.parameters.items():
-        if not(p_name in exclude):
-
-
+        if not (p_name in exclude):
 
             if p.kind == inspect._POSITIONAL_OR_KEYWORD:
 
@@ -27,7 +25,7 @@ def add_arguments_from_signature(parser, obj, prefix="", exclude=[]):
                 arg_kwargs = {"help": ""}
 
                 # check type int
-                if not(p.annotation is inspect._empty):
+                if not (p.annotation is inspect._empty):
                     arg_kwargs["type"] = p.annotation
                     arg_kwargs["help"] += f"Type[{p.annotation.__name__}]. "
 
@@ -46,6 +44,7 @@ def add_arguments_from_signature(parser, obj, prefix="", exclude=[]):
             added_arguments.append(p_name)
 
     return added_arguments
+
 
 def str2bool(v):
     """

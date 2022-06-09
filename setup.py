@@ -4,66 +4,68 @@
 # Note: To use the 'upload' functionality of this file, you must:
 #   $ pip install twine
 
-import io
 import os
+import platform
 import sys
 from shutil import rmtree
 
-from setuptools import find_packages, setup, Command
+from setuptools import Command, setup
 
-on_rtd = os.environ.get("READTHEDOCS") == "True"
+# path of the directory where this file is located
+here = os.path.abspath(os.path.dirname(__file__))
 
-# Package meta-data.
-NAME = "deephyper"
-DESCRIPTION = "Scalable asynchronous neural architecture and hyperparameter search for deep neural networks."
-URL = "https://github.com/deephyper/deephyper"
-REQUIRES_PYTHON = ">=3.7, <3.10"
-VERSION = None
+# query platform informations, e.g. 'macOS-12.0.1-arm64-arm-64bit'
+platform_infos = platform.platform()
 
-# Build Author list
-authors = {
-    "Prasanna Balaprakash": "pbalapra@anl.gov",
-    "Romain Egele": "romain.egele@polytechnique.edu",
-    "Misha Salim": "msalim@anl.gov",
-    "Romit Maulik": "rmaulik@anl.gov",
-    "Venkat Vishwanath": "venkat@anl.gov",
-    "Stefan Wild": "wild@anl.gov",
-}
-AUTHOR = ""
-for i, (k, v) in enumerate(authors.items()):
-    if i > 0:
-        AUTHOR += ", "
-    AUTHOR += f"{k} <{v}>"
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    "tensorflow>=2.0.0",
-    "tensorflow_probability",
-    "numpy",  # ==1.19.4",  # working with 1.20.1
-    "dh-scikit-optimize==0.9.4",
-    "scikit-learn>=0.23.1",
-    "tqdm",
-    # nas
-    "networkx",
-    "joblib>=0.10.3",
-    "pydot",
-    "ray[default]>=1.3.0",
-    "pandas>=0.24.2",
-    "Jinja2<3.1",
     "ConfigSpace>=0.4.20",
-    "xgboost",
-    "typeguard",
-    "openml==0.10.2",
-    "matplotlib>=3.0.3",
-    "statsmodels",
+    "dm-tree",
+    "Jinja2<3.1",
+    # "joblib>=0.10.3",
+    # "matplotlib>=3.0.3", # analytics
+    "numpy",  # ==1.19.4",  # working with 1.20.1
+    # "openml>=0.10.2", # benchmarks sub-module
+    "pandas>=0.24.2",
+    "packaging",
+    # "ray[default]>=1.3.0", # evaluator and ensemble
+    "scikit-learn>=0.23.1",
+    "scipy>=0.19.1",
+    "tqdm>=4.64.0",
+    "pyyaml",
+    "tinydb",
 ]
+
+
+#! Requirements for Neural Architecture Search (NAS)
+REQUIRED_NAS = ["networkx", "pydot"]
+
+REQUIRED_NAS_PLATFORM = {
+    "default": ["tensorflow>=2.0.0", "tensorflow_probability"],
+    "macOS-arm64": ["tensorflow_probability~=0.14"],
+}
+if "macOS" in platform_infos and "arm64" in platform_infos:
+    REQUIRED_NAS = REQUIRED_NAS + REQUIRED_NAS_PLATFORM["macOS-arm64"]
+else:  # x86_64
+    REQUIRED_NAS = REQUIRED_NAS + REQUIRED_NAS_PLATFORM["default"]
+
+#! Requirements for Pipeline Optimization for ML (popt)
+REQUIRED_POPT = ["xgboost"]
+
+#! Requirements for Automated Deep Ensemble with Uncertainty Quantification (AutoDEUQ)
+REQUIRED_AUTODEUQ = REQUIRED_NAS + ["ray"]
+
 
 # What packages are optional?
 EXTRAS = {
+    "nas": REQUIRED_NAS,  # neural architecture search
+    "popt": REQUIRED_POPT,  # pipeline optimization for ml
+    "autodeuq": REQUIRED_AUTODEUQ,  # automated deep ensemble with uncertainty quantificationm
     "dev": [
         # Test
-        "pytest",
         "codecov",
+        "pytest",
         "pytest-cov",
         # Packaging
         "twine",
@@ -71,48 +73,27 @@ EXTRAS = {
         "black",
         "rstcheck",
         # Documentation
-        "Sphinx~=3.5.4",
-        "sphinx-book-theme==0.2.0",
-        "nbsphinx",
-        "sphinx-copybutton",
-        "sphinx-togglebutton",
         "GitPython",
         "ipython",
-        # Other
-        "deepspace>=0.0.5",
+        "nbsphinx",
+        "Sphinx~=3.5.4",
+        "sphinx-book-theme==0.3.2",
+        "sphinx-copybutton",
+        "sphinx-gallery",
+        "sphinx_lfs_content",
+        "sphinx-togglebutton",
     ],
     "analytics": [
         "jupyter",
         "jupyter_contrib_nbextensions>=0.5.1",
         "nbconvert<6",
         "seaborn>=0.9.1",
+        "streamlit",
     ],
     "hvd": ["horovod>=0.21.3", "mpi4py>=3.0.0"],
-    "deepspace": ["deepspace>=0.0.5"],
 }
 
-# The rest you shouldn't have to touch too much :)
-# ------------------------------------------------
-# Except, perhaps the License and Trove Classifiers!
-# If you do change the License, remember to change the Trove Classifier for that!
-
-here = os.path.abspath(os.path.dirname(__file__))
-
-# Import the README and use it as the long-description.
-# Note: this will only work if 'README.md' is present in your MANIFEST.in file!
-try:
-    with io.open(os.path.join(here, "README.md"), encoding="utf-8") as f:
-        long_description = "\n" + f.read()
-except FileNotFoundError:
-    long_description = DESCRIPTION
-
-# Load the package's __version__.py module as a dictionary.
-about = {}
-if not VERSION:
-    with open(os.path.join(here, NAME, "__version__.py")) as f:
-        exec(f.read(), about)
-else:
-    about["__version__"] = VERSION
+# Useful commands to build/upload the wheel to PyPI
 
 
 class UploadCommand(Command):
@@ -207,45 +188,11 @@ class TestInstallCommand(Command):
 
 # Where the magic happens:
 setup(
-    name=NAME,
-    version=about["__version__"],
-    description=DESCRIPTION,
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    author=AUTHOR,
-    python_requires=REQUIRES_PYTHON,
-    url=URL,
-    project_urls={
-        "Documentation": "https://deephyper.readthedocs.io/",
-        "Source": "https://github.com/deephyper/deephyper",
-        "Tracker": "https://github.com/deephyper/deephyper/issues",
-    },
-    packages=find_packages(exclude=("tests",)),
-    # If your package is a single module, use this instead of 'packages':
-    # py_modules=['deephyper'],
     install_requires=REQUIRED,
     extras_require=EXTRAS,
-    include_package_data=True,
-    license="ANL",
-    classifiers=[
-        # Trove classifiers
-        # https://pypi.org/classifiers/
-        # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
-        "Development Status :: 3 - Alpha",
-        "Programming Language :: Python",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-    ],
-    # $ setup.py publish support.
     cmdclass={
         "upload": UploadCommand,
         "testupload": TestUploadCommand,
         "testinstall": TestInstallCommand,
-    },
-    entry_points={
-        "console_scripts": [
-            "deephyper=deephyper.core.cli._cli:main",
-            "deephyper-analytics=deephyper.core.analytics._analytics:main",
-        ]
     },
 )

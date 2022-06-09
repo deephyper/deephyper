@@ -8,11 +8,11 @@ RUN conda create -n dh python=3.9 -y --quiet
 SHELL ["conda", "run", "-n", "dh", "/bin/bash", "-c"]
 
 # copy the repo
-COPY . .
+COPY $PWD deephyper/
 
 # install the package
 RUN conda install gxx_linux-64 gcc_linux-64
-RUN pip install -e '.[analytics]'
+RUN pip install -e 'deephyper/[analytics]'
 
 
 # activate 'dh' environment by default

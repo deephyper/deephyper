@@ -1,10 +1,10 @@
 """
 This module provides ``problem_autosklearn1`` and ``run_autosklearn`` for regression tasks.
 """
+import warnings
 from inspect import signature
 
 import ConfigSpace as cs
-from deephyper.nas.preprocessing import minmaxstdscaler
 from deephyper.problem import HpProblem
 from sklearn.ensemble import AdaBoostRegressor, RandomForestRegressor
 from sklearn.linear_model import LinearRegression
@@ -12,8 +12,26 @@ from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.neural_network import MLPRegressor
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.svm import SVR
 from xgboost import XGBRegressor
+
+
+def minmaxstdscaler() -> Pipeline:
+    """MinMax preprocesssing followed by Standard normalization.
+
+    Returns:
+        Pipeline: a pipeline with two steps ``[MinMaxScaler, StandardScaler]``.
+    """
+    preprocessor = Pipeline(
+        [
+            ("minmaxscaler", MinMaxScaler()),
+            ("stdscaler", StandardScaler()),
+        ]
+    )
+    return preprocessor
+
 
 REGRESSORS = {
     "RandomForest": RandomForestRegressor,
@@ -55,7 +73,9 @@ cond_max_depth = cs.EqualsCondition(max_depth, regressor, "RandomForest")
 problem_autosklearn1.add_condition(cond_max_depth)
 
 # n_neighbors
-n_neighbors = problem_autosklearn1.add_hyperparameter(name="n_neighbors", value=(1, 100))
+n_neighbors = problem_autosklearn1.add_hyperparameter(
+    name="n_neighbors", value=(1, 100)
+)
 
 cond_n_neighbors = cs.EqualsCondition(n_neighbors, regressor, "KNeighbors")
 
@@ -133,12 +153,12 @@ def run_autosklearn1(config: dict, load_data: callable) -> float:
     Returns:
         float: returns the :math:`R^2` on the validation set.
     """
-    seed = 42
-    config["random_state"] = seed
+    config["random_state"] = config.get("random_state", 42)
+    config["n_jobs"] = config.get("n_jobs", 1)
 
     X, y = load_data()
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.33, random_state=seed
+        X, y, test_size=0.33, random_state=config["random_state"]
     )
 
     preproc = minmaxstdscaler()
@@ -158,13 +178,12 @@ def run_autosklearn1(config: dict, load_data: callable) -> float:
         if k in clf_allowed_params and not (v in ["nan", "NA"])
     }
 
-    if "n_jobs" in clf_allowed_params:  # performance parameter
-        clf_params["n_jobs"] = 8
-
     try:  # good practice to manage the fail value yourself...
         clf = clf_class(**clf_params)
 
-        clf.fit(X_train, y_train)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            clf.fit(X_train, y_train)
 
         fit_is_complete = True
     except:

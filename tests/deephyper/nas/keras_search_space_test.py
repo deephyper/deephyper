@@ -1,14 +1,17 @@
+import unittest
+
 import pytest
-import tensorflow as tf
-from deephyper.nas import KSearchSpace
-from deephyper.nas.node import ConstantNode, VariableNode
-from deephyper.nas.operation import operation, Concatenate
 
-Dense = operation(tf.keras.layers.Dense)
-@pytest.mark.incremental
-class TestKSearchSpace:
 
+@pytest.mark.nas
+class TestKSearchSpace(unittest.TestCase):
     def test_create(self):
+        import tensorflow as tf
+        from deephyper.nas import KSearchSpace
+        from deephyper.nas.node import VariableNode
+        from deephyper.nas.operation import operation
+
+        Dense = operation(tf.keras.layers.Dense)
 
         class TestSpace(KSearchSpace):
             def __init__(self, input_shape, output_shape):
@@ -27,6 +30,12 @@ class TestKSearchSpace:
         model = space.sample()
 
     def test_create_more_nodes(self):
+        import tensorflow as tf
+        from deephyper.nas import KSearchSpace
+        from deephyper.nas.node import VariableNode
+        from deephyper.nas.operation import operation
+
+        Dense = operation(tf.keras.layers.Dense)
 
         class TestSpace(KSearchSpace):
             def __init__(self, input_shape, output_shape):
@@ -49,6 +58,12 @@ class TestKSearchSpace:
         model = space.sample()
 
     def test_create_multiple_inputs_with_one_vnode(self):
+        import tensorflow as tf
+        from deephyper.nas import KSearchSpace
+        from deephyper.nas.node import ConstantNode, VariableNode
+        from deephyper.nas.operation import operation, Concatenate
+
+        Dense = operation(tf.keras.layers.Dense)
 
         class TestSpace(KSearchSpace):
             def __init__(self, input_shape, output_shape):

@@ -54,7 +54,7 @@ import logging
 
 from deephyper.core.parser import add_arguments_from_signature
 from deephyper.evaluator import EVALUATORS, Evaluator
-from deephyper.search.util import load_attr
+from deephyper.core.utils import load_attr
 
 NAS_SEARCHES = {
     "random": "deephyper.search.nas._random.Random",
@@ -92,10 +92,13 @@ def build_parser_from(cls):
     evaluator_added_arguments = add_arguments_from_signature(parser, Evaluator)
 
     for eval_name, eval_cls in EVALUATORS.items():
-        eval_cls = load_attr(f"deephyper.evaluator.{eval_cls}")
-        add_arguments_from_signature(
-            parser, eval_cls, prefix=eval_name, exclude=evaluator_added_arguments
-        )
+        try:
+            eval_cls = load_attr(f"deephyper.evaluator.{eval_cls}")
+            add_arguments_from_signature(
+                parser, eval_cls, prefix=eval_name, exclude=evaluator_added_arguments
+            )
+        except ModuleNotFoundError as e:  # some evaluators are optional
+            pass
 
     return parser
 
@@ -131,7 +134,6 @@ def main(**kwargs):
 
     sys.path.insert(0, ".")
 
-
     if kwargs["verbose"]:
         logging.basicConfig(filename="deephyper.log", level=logging.INFO)
 
@@ -156,12 +158,18 @@ def main(**kwargs):
     evaluator_kwargs = {k: kwargs.pop(k) for k in base_arguments}
 
     for method in EVALUATORS.keys():
-        evaluator_method_kwargs = {k[len(evaluator_method)+1:]:kwargs.pop(k) for k in kwargs.copy() if method in k}
+        evaluator_method_kwargs = {
+            k[len(evaluator_method) + 1 :]: kwargs.pop(k)
+            for k in kwargs.copy()
+            if method in k
+        }
         if method == evaluator_method:
             evaluator_kwargs = {**evaluator_kwargs, **evaluator_method_kwargs}
 
     # create evaluator
-    logging.info(f"Evaluator(method={evaluator_method}, method_kwargs={evaluator_kwargs}")
+    logging.info(
+        f"Evaluator(method={evaluator_method}, method_kwargs={evaluator_kwargs}"
+    )
     evaluator = Evaluator.create(
         run_function, method=evaluator_method, method_kwargs=evaluator_kwargs
     )

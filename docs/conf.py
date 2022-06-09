@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.abspath(".."))
 # -- Project information -----------------------------------------------------
 
 project = "DeepHyper"
-copyright = "2018-2021, Argonne"
+copyright = "2018-2022, Argonne"
 author = "Argonne"
 
 # The short X.Y version
@@ -42,11 +42,7 @@ else:
     release = f'v{about["__version__"]}-{about["__version_suffix__"]}'
 
 # PULL Tutorials
-branch_name_map = {
-    "master": "main",
-    "latest": "main",
-    "develop": "develop"
-}
+branch_name_map = {"master": "main", "latest": "main", "develop": "develop"}
 if os.environ.get("READTHEDOCS"):
     doc_version = os.environ["READTHEDOCS_VERSION"]
 else:
@@ -60,8 +56,11 @@ tutorials_dest_dir = "tutorials"
 
 def pull_tutorials(github_link, dest_dir, tutorial_branch):
     os.system(f"rm -rf {dest_dir}/")
-    os.system(f"git clone --depth=1 --branch={tutorial_branch} {github_link} {dest_dir}")
+    os.system(
+        f"git clone --depth=1 --branch={tutorial_branch} {github_link} {dest_dir}"
+    )
     os.system(f"rm -rf {dest_dir}/.git")
+
 
 pull_tutorials(tutorials_github_link, tutorials_dest_dir, tutorial_branch)
 
@@ -75,33 +74,36 @@ pull_tutorials(tutorials_github_link, tutorials_dest_dir, tutorial_branch)
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "sphinx.ext.autodoc",
-    "sphinx.ext.doctest",
-    "sphinx.ext.intersphinx",
-    "sphinx.ext.todo",
-    "sphinx.ext.coverage",
-    "sphinx.ext.mathjax",
-    "sphinx.ext.ifconfig",
-    "sphinx.ext.viewcode",
-    "sphinx.ext.githubpages",
-    "sphinx.ext.napoleon",
-    "sphinx.ext.autosummary",
     "nbsphinx",
     "sphinx_book_theme",
     "sphinx_copybutton",
+    "sphinx_gallery.gen_gallery",
+    "sphinx_lfs_content",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.coverage",
+    "sphinx.ext.doctest",
+    "sphinx.ext.githubpages",
+    "sphinx.ext.ifconfig",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.todo",
+    "sphinx.ext.viewcode",
 ]
+
+autosummary_generate = True
+autosummary_imported_members = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = [
-    os.path.join(sphinx_book_theme.get_html_theme_path(), "_templates"),
     "_templates",
+    os.path.join(sphinx_book_theme.get_html_theme_path(), "components"),
 ]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
-#
-# source_suffix = ['.rst', '.md']
-source_suffix = ".rst"
+source_suffix = {".rst": "restructuredtext"}
 
 # The master toctree document.
 master_doc = "index"
@@ -116,7 +118,13 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = [
+    "_build",
+    "_templates",
+    "Thumbs.db",
+    ".DS_Store",
+    "examples/*.ipynb",
+]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -253,7 +261,7 @@ epub_exclude_files = ["search.html"]
 # -- Options for intersphinx extension ---------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {"https://docs.python.org/": None}
+intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
 
 # -- Options for todo extension ----------------------------------------------
 
@@ -262,20 +270,34 @@ todo_include_todos = True
 
 # makes sphinx do a mock import of mpi4py so it’s not broken when you try to do auto-docs and import mpi4py
 autodoc_mock_imports = [
-    "mpi4py",
-    "balsam",
-    "nbformat",
-    "django",
-    "skopt",
-    "deap",
-    "joblib",
-    "sklearn",
-    "xgboost",
     "horovod",
+    "joblib",
+    "matplotlib",
+    "mpi4py",
+    "nbformat",
+    "networkx",
+    "ray",
+    "sklearn",
+    "skopt",
+    "tensorflow_probability",
+    "tensorflow",
+    "tqdm",
+    "xgboost",
 ]
+autosummary_mock_imports = autodoc_mock_imports
 
 # Remove <BLANKLINE>
 trim_doctest_flags = True
+
+
+# Sphinx Gallery
+
+sphinx_gallery_conf = {
+    "examples_dirs": "../examples",  # path to your example scripts
+    "gallery_dirs": "examples",  # path to where to save gallery generated output
+    "filename_pattern": "/plot_",
+    "ignore_pattern": r"_util\.py",
+}
 
 
 def setup(app):

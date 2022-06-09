@@ -1,4 +1,3 @@
-import itertools as it
 import os
 import traceback
 
@@ -10,10 +9,7 @@ from deephyper.ensemble import BaseEnsemble
 from deephyper.nas.metrics import selectMetric
 from deephyper.nas.run._util import set_memory_growth_for_visible_gpus
 from deephyper.core.exceptions import DeephyperRuntimeError
-from joblib import Parallel, delayed
 from pandas import DataFrame
-from statsmodels.stats.libqsturng import psturng
-from scipy.stats import friedmanchisquare
 
 
 def nll(y, rv_y):
@@ -70,8 +66,8 @@ def model_predict(model_path, X, batch_size=32, verbose=0):
     # dataset
     if type(X) is list:
         dataset = tf.data.Dataset.from_tensor_slices(
-                {f"input_{i}": Xi for i, Xi in enumerate(X)}
-            )
+            {f"input_{i}": Xi for i, Xi in enumerate(X)}
+        )
     else:
         dataset = tf.data.Dataset.from_tensor_slices(X)
     dataset = dataset.batch(batch_size)
@@ -84,7 +80,9 @@ def model_predict(model_path, X, batch_size=32, verbose=0):
         y = np.concatenate(y_list, axis=0)
         return y
 
-    y_dist = model(next(iter(dataset)), training=False)  # just to test the type of the output
+    y_dist = model(
+        next(iter(dataset)), training=False
+    )  # just to test the type of the output
     if isinstance(y_dist, tfp.distributions.Distribution):
         if hasattr(y_dist, "loc") and hasattr(y_dist, "scale"):
             convert_func = lambda y_dist: np.concatenate(
@@ -115,7 +113,7 @@ class UQBaggingEnsemble(BaseEnsemble):
         num_cpus (int, optional): Number of CPUs allocated to load one model and predict. Defaults to 1.
         num_gpus (int, optional): Number of GPUs allocated to load one model and predict. Defaults to None.
         batch_size (int, optional): Batch size used batchify the inference of loaded models. Defaults to 32.
-        selection (str, optional): Selection strategy to build the ensemble. Value in ``["topk", "caruana", "friedman"]``. Default to ``topk``.
+        selection (str, optional): Selection strategy to build the ensemble. Value in ``["topk", "caruana"]``. Default to ``topk``.
         mode (str, optional): Value in ``["regression", "classification"]``. Default to ``"regression"``.
     """
 
@@ -142,7 +140,7 @@ class UQBaggingEnsemble(BaseEnsemble):
             num_gpus,
             batch_size,
         )
-        assert selection in ["topk", "caruana", "friedman"]
+        assert selection in ["topk", "caruana"]
         self.selection = selection
         assert mode in ["regression", "classification"]
         self.mode = mode
@@ -158,8 +156,6 @@ class UQBaggingEnsemble(BaseEnsemble):
             func = topk
         elif self.selection == "caruana":
             func = greedy_caruana
-        elif self.selection == "friedman":
-            func = friedman_faster
         else:
             raise NotImplementedError
         return func(loss_func, y_true, y_pred, k, verbose)
@@ -243,8 +239,9 @@ class UQBaggingEnsembleRegressor(UQBaggingEnsemble):
         num_cpus (int, optional): Number of CPUs allocated to load one model and predict. Defaults to 1.
         num_gpus (int, optional): Number of GPUs allocated to load one model and predict. Defaults to None.
         batch_size (int, optional): Batch size used batchify the inference of loaded models. Defaults to 32.
-        selection (str, optional): Selection strategy to build the ensemble. Value in ``[["topk", "caruana", "friedman"]``. Default to ``topk``.
+        selection (str, optional): Selection strategy to build the ensemble. Value in ``[["topk", "caruana"]``. Default to ``topk``.
     """
+
     def __init__(
         self,
         model_dir,
@@ -319,8 +316,9 @@ class UQBaggingEnsembleClassifier(UQBaggingEnsemble):
         num_cpus (int, optional): Number of CPUs allocated to load one model and predict. Defaults to 1.
         num_gpus (int, optional): Number of GPUs allocated to load one model and predict. Defaults to None.
         batch_size (int, optional): Batch size used batchify the inference of loaded models. Defaults to 32.
-        selection (str, optional): Selection strategy to build the ensemble. Value in ``[["topk", "caruana", "friedman"]``. Default to ``topk``.
+        selection (str, optional): Selection strategy to build the ensemble. Value in ``[["topk", "caruana"]``. Default to ``topk``.
     """
+
     def __init__(
         self,
         model_dir,
@@ -435,7 +433,9 @@ def greedy_caruana(loss_func, y_true, y_pred, k=2, verbose=0):
     else:
         y_pred_ = y_pred
 
-    losses = tf.reduce_mean(tf.reshape(loss_func(y_true, y_pred_), [n_models, -1]), axis=1).numpy()
+    losses = tf.reduce_mean(
+        tf.reshape(loss_func(y_true, y_pred_), [n_models, -1]), axis=1
+    ).numpy()
     assert n_models == np.shape(losses)[0]
 
     i_min = np.nanargmin(losses)
@@ -488,7 +488,9 @@ def __convert_to_block_df(a, y_col=None, group_col=None, block_col=None, melted=
         y_col = "y"
         x.columns.name = group_col
         x.index.name = block_col
-        x = x.reset_index().melt(id_vars=block_col, var_name=group_col, value_name=y_col)
+        x = x.reset_index().melt(
+            id_vars=block_col, var_name=group_col, value_name=y_col
+        )
 
     elif isinstance(a, DataFrame) and melted:
         x = DataFrame.from_dict(
@@ -520,120 +522,3 @@ def __convert_to_block_df(a, y_col=None, group_col=None, block_col=None, melted=
     y_col = "y"
 
     return x, y_col, group_col, block_col
-
-
-def posthoc_nemenyi_friedman(
-    a,
-    y_col=None,
-    block_col=None,
-    group_col=None,
-    melted=False,
-    sort=False,
-    i_indexes=None,
-):
-    """
-    :meta private:
-    """
-    def compare_stats(i, j):
-        dif = np.abs(R[groups[i]] - R[groups[j]])
-        qval = dif / np.sqrt(k * (k + 1.0) / (6.0 * n))
-        return qval
-
-    x, _y_col, _group_col, _block_col = __convert_to_block_df(
-        a, y_col, group_col, block_col, melted
-    )
-    x = x.sort_values(by=[_group_col, _block_col], ascending=True) if sort else x
-    x.dropna(inplace=True)
-
-    groups = x[_group_col].unique()
-    k = groups.size
-    n = x[_block_col].unique().size
-
-    x["mat"] = x.groupby(_block_col)[_y_col].rank()
-    R = x.groupby(_group_col)["mat"].mean()
-    vs = np.identity(k)
-    if i_indexes:
-        print()
-        combs = it.product(i_indexes, range(k))
-    else:
-        combs = it.combinations(range(k), 2)
-
-    tri_upper = np.triu_indices(vs.shape[0], 1)
-    tri_lower = np.tril_indices(vs.shape[0], -1)
-
-    for i, j in combs:
-        vs[i, j] = compare_stats(i, j)
-
-    vs *= np.sqrt(2.0)
-
-    # PARALLEL CODE
-    def sliced_psturng(a, sl):
-        return psturng(a[sl], k, np.inf)
-
-    if i_indexes:
-        vs[i_indexes, :] = psturng(vs[i_indexes, :], k, np.inf)
-        vs[:, i_indexes] = vs[i_indexes, :].T
-    else:
-        window_size = int(1e3)
-        end = np.shape(tri_upper)[1]
-        slices = [
-            slice(start, min(start + window_size, end))
-            for start in range(0, end, window_size)
-        ]
-
-        results = Parallel(n_jobs=6)(
-            delayed(sliced_psturng)(vs, (tri_upper[0][sl], tri_upper[1][sl]))
-            for sl in slices
-        )
-        vs[tri_upper] = np.concatenate(results)
-
-    vs[tri_lower] = np.transpose(vs)[tri_lower]
-
-    return DataFrame(vs, index=groups, columns=groups)
-
-
-def friedman_faster(loss_func, y_true, y_pred, k=2, verbose=0):
-    """Faster friedman.
-
-    :meta private:
-    """
-    regression = np.shape(y_true)[-1] * 2 == np.shape(y_pred)[-1]
-    n_models = np.shape(y_pred)[0]
-    if regression:  # regression
-        mid = np.shape(y_true)[-1]
-        y_pred_ = tfp.distributions.Normal(
-            loc=y_pred[:, :, :mid], scale=y_pred[:, :, mid:]
-        )
-    else:
-        y_pred_ = y_pred
-
-    # losses is changed from shape (n_models, n_samples, n_outputs)
-    # to shape (n_models, n_samples * n_outputs)
-    losses = loss_func(y_true, y_pred_).numpy()
-    losses = losses.reshape(losses.shape[0], -1)
-
-    # perform Friedman test for a family of distributions
-    stat, p = friedmanchisquare(*losses)
-    if verbose:
-        print("Statistics=%.3f, p=%.3f" % (stat, p))
-
-    alpha = 0.05
-
-    if verbose:
-        if p > alpha:
-            print("Same distributions (fail to reject H0)")
-        else:
-            print("Different distributions (reject H0)")
-
-    # find the model index with the minimum mean (best model)
-    min_index = np.nanargmin(np.mean(losses, axis=1))
-
-    p_vals = posthoc_nemenyi_friedman(losses.T, i_indexes=[min_index])
-
-    # find model indices that are not significantly differnent from the best
-    selected_model_indices = np.where(p_vals[min_index].values >= 0.05)[0]
-
-    mean_vals = np.mean(losses[selected_model_indices], axis=1)
-
-    ensemble_members = np.argsort(mean_vals, axis=0)[:k].reshape(-1).tolist()
-    return ensemble_members

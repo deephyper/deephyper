@@ -49,7 +49,11 @@ class Operation:
 
 
 def operation(cls):
-    """Dynamically create a sub-class of Operation from a Keras layer."""
+    """Dynamically creates a sub-class of Operation from a Keras layer.
+
+    Args:
+        cls (tf.keras.layers.Layer): takes a Keras layer class as input and return an operation class corresponding to this layer.
+    """
 
     def __init__(self, *args, **kwargs):
         self._args = args

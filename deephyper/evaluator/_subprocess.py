@@ -12,6 +12,10 @@ from deephyper.evaluator._encoder import Encoder
 logger = logging.getLogger(__name__)
 
 
+def encode_dict(d: dict):
+    return json.loads(json.dumps(d, cls=Encoder))
+
+
 class SubprocessEvaluator(Evaluator):
     """This evaluator uses the ``asyncio.create_subprocess_exec`` as backend.
 
@@ -21,15 +25,25 @@ class SubprocessEvaluator(Evaluator):
         callbacks (list, optional): A list of callbacks to trigger custom actions at the creation or completion of jobs. Defaults to None.
     """
 
-    def __init__(self, run_function, num_workers: int=1, callbacks=None):
-        super().__init__(run_function, num_workers, callbacks)
+    def __init__(
+        self,
+        run_function,
+        num_workers: int = 1,
+        callbacks: list = None,
+        run_function_kwargs: dict = None,
+    ):
+        super().__init__(run_function, num_workers, callbacks, run_function_kwargs)
         self.sem = asyncio.Semaphore(num_workers)
-        logger.info(
-            f"Subprocess Evaluator will execute {self.run_function.__name__}() from module {self.run_function.__module__}"
-        )
+
+        if hasattr(run_function, "__name__") and hasattr(run_function, "__module__"):
+            logger.info(
+                f"Subprocess Evaluator will execute {self.run_function.__name__}() from module {self.run_function.__module__}"
+            )
+        else:
+            logger.info(f"Subprocess Evaluator will execute {self.run_function}")
 
     def _encode(self, job):
-        return json.loads(json.dumps(job.config, cls=Encoder))
+        return encode_dict(job.config)
 
     async def execute(self, job):
         async with self.sem:
@@ -40,22 +54,29 @@ class SubprocessEvaluator(Evaluator):
             module_path = os.path.dirname(script_file)
             module_name = os.path.basename(script_file)[:-3]
             # Code that will run on the subprocess.
-            code = f"import sys; sys.path.insert(1, '{module_path}'); from {module_name} import {self.run_function.__name__}; print('DH-OUTPUT:' + str({self.run_function.__name__}({self._encode(job)})))"
+            code = f"import sys; sys.path.insert(1, '{module_path}'); from {module_name} import {self.run_function.__name__}; print('DH-OUTPUT:' + str({self.run_function.__name__}({self._encode(job)}, **{encode_dict(self.run_function_kwargs)})))"
             logger.debug(f"executing:  {code}")
             proc = await asyncio.create_subprocess_exec(
-                sys.executable, '-c', code,
+                sys.executable,
+                "-c",
+                code,
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE)
+                stderr=asyncio.subprocess.PIPE,
+            )
             # Retrieve the stdout byte array from the (stdout, stderr) tuple returned from the subprocess.
             stdout, stderr = await proc.communicate()
             # Search through the byte array using a regular expression and collect the return value of the user-defined function.
             try:
-                retval_bytes = re.search(b'DH-OUTPUT:(.+)\n', stdout).group(1)
+                retval_bytes = re.search(b"DH-OUTPUT:(.+)\n", stdout).group(1)
             except AttributeError:
                 error = stderr.decode("utf-8")
-                raise RuntimeError(f"{error}\n\n Could not collect any result from the run_function in the main process because an error happened in the subprocess.")
+                raise RuntimeError(
+                    f"{error}\n\n Could not collect any result from the run_function in the main process because an error happened in the subprocess."
+                )
             # Finally, parse whether the return value from the user-defined function is a scalar, a list, or a dictionary.
-            retval = retval_bytes.replace(b"\'", b"\"") # For dictionaries, replace single quotes with double quotes!
+            retval = retval_bytes.replace(
+                b"'", b'"'
+            )  # For dictionaries, replace single quotes with double quotes!
             sol = json.loads(retval)
 
             await proc.wait()

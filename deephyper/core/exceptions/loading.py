@@ -4,8 +4,7 @@ from deephyper.core.exceptions import DeephyperError
 
 
 class GenericLoaderError(DeephyperError):
-    """Raised when the generic_loader function is failing.
-    """
+    """Raised when the generic_loader function is failing."""
 
     def __init__(self, target, attr, error_source, custom_msg=""):
         self.target = target

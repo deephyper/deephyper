@@ -53,15 +53,16 @@ Command line to execute hyperparameter search.
                             Type[dict]. Defaults to '{}'.
 """
 import argparse
-import sys
 import logging
+import sys
 
-from deephyper.search.util import load_attr
 from deephyper.core.parser import add_arguments_from_signature
+from deephyper.core.utils import load_attr
 from deephyper.evaluator import EVALUATORS, Evaluator
 
 HPS_SEARCHES = {
     "ambs": "deephyper.search.hps.AMBS",
+    "cbo": "deephyper.search.hps.CBO",
 }
 
 
@@ -92,10 +93,13 @@ def build_parser_from(cls):
     evaluator_added_arguments = add_arguments_from_signature(parser, Evaluator)
 
     for eval_name, eval_cls in EVALUATORS.items():
-        eval_cls = load_attr(f"deephyper.evaluator.{eval_cls}")
-        add_arguments_from_signature(
-            parser, eval_cls, prefix=eval_name, exclude=evaluator_added_arguments
-        )
+        try:
+            eval_cls = load_attr(f"deephyper.evaluator.{eval_cls}")
+            add_arguments_from_signature(
+                parser, eval_cls, prefix=eval_name, exclude=evaluator_added_arguments
+            )
+        except ModuleNotFoundError as e:  # some evaluators are optional
+            pass
 
     return parser
 
@@ -152,16 +156,22 @@ def main(**kwargs):
     logging.info("Loading the evaluator...")
     evaluator_method = kwargs.pop("evaluator")
     base_arguments = ["num_workers", "callbacks"]
-    evaluator_kwargs = {k:kwargs.pop(k) for k in base_arguments}
+    evaluator_kwargs = {k: kwargs.pop(k) for k in base_arguments}
 
     # remove the arguments from unused evaluator
     for method in EVALUATORS.keys():
-        evaluator_method_kwargs = {k[len(evaluator_method)+1:]:kwargs.pop(k) for k in kwargs.copy() if method in k}
+        evaluator_method_kwargs = {
+            k[len(evaluator_method) + 1 :]: kwargs.pop(k)
+            for k in kwargs.copy()
+            if method in k
+        }
         if method == evaluator_method:
             evaluator_kwargs = {**evaluator_kwargs, **evaluator_method_kwargs}
 
     # create evaluator
-    logging.info(f"Evaluator(method={evaluator_method}, method_kwargs={evaluator_kwargs}")
+    logging.info(
+        f"Evaluator(method={evaluator_method}, method_kwargs={evaluator_kwargs}"
+    )
     evaluator = Evaluator.create(
         run_function, method=evaluator_method, method_kwargs=evaluator_kwargs
     )
@@ -169,7 +179,7 @@ def main(**kwargs):
 
     # filter arguments from search class signature
     # remove keys in evaluator_kwargs
-    kwargs = {k:v for k,v in kwargs.items() if k not in evaluator_kwargs}
+    kwargs = {k: v for k, v in kwargs.items() if k not in evaluator_kwargs}
     max_evals = kwargs.pop("max_evals")
     timeout = kwargs.pop("timeout")
 

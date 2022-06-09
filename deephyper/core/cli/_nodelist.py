@@ -2,6 +2,7 @@ import os
 import sys
 import socket
 
+
 def _theta_nodelist(node_str):
     # string like: 1001-1005,1030,1034-1200
     node_ids = []
@@ -17,6 +18,7 @@ def _theta_nodelist(node_str):
         else:
             node_ids.append(lo)
     return [f"nid{node_id:05d}" for node_id in node_ids]
+
 
 # def _bebop_nodelist(node_str):
 #     node_str = os.environ["SLURM_JOB_NODELIST"]
@@ -48,6 +50,7 @@ def _theta_nodelist(node_str):
 # COBALT_BLOCKSIZE=4
 # COBALT_NODEFILE=/var/tmp/cobalt.550270
 
+
 def expand_nodelist(system, node_str):
 
     hostname = socket.gethostname()
@@ -57,6 +60,7 @@ def expand_nodelist(system, node_str):
         l = [node_str]
 
     return l
+
 
 #
 

@@ -24,12 +24,10 @@ class NaProblem:
     >>> from deephyper.benchmark.nas.linearReg.load_data import load_data
     >>> from deephyper.nas.preprocessing import minmaxstdscaler
     >>> from deepspace.tabular import OneLayerSpace
-    >>> def create_search_space(input_shape, output_shape, **kwargs):
-    ...     return OneLayerSpace()(input_shape, output_shape, **kwargs)
     >>> Problem = NaProblem()
     >>> Problem.load_data(load_data)
     >>> Problem.preprocessing(minmaxstdscaler)
-    >>> Problem.search_space(create_search_space)
+    >>> Problem.search_space(OneLayerSpace)
     >>> Problem.hyperparameters(
     ...     batch_size=100,
     ...     learning_rate=0.1,
@@ -214,12 +212,10 @@ class NaProblem:
         """Set a search space for neural architecture search.
 
         Args:
-            func (callable): an object which has to be a callable and which is returning a ``Structure`` instance.
+            space_class (KSearchSpace): an object of type ``KSearchSpace`` which has to implement the ``build()`` method.
 
         Raises:
-            SearchSpaceBuilderIsNotCallable: raised when the ``func`` parameter is not a callable.
             SearchSpaceBuilderMissingParameter: raised when either of ``(input_shape, output_shape)`` are missing parameters of ``func``.
-            SearchSpaceBuilderMissingDefaultParameter: raised when either of ``(input_shape, output_shape)`` are missing a default value.
         """
 
         sign = signature(space_class)
@@ -446,7 +442,10 @@ class NaProblem:
         Raise:
             WrongProblemObjective: raised when the objective is of a wrong definition.
         """
-        if not self._space.get("loss") is None and not self._space.get("metrics") is None:
+        if (
+            not self._space.get("loss") is None
+            and not self._space.get("metrics") is None
+        ):
             self.check_objective(objective)
         else:
             raise NaProblemError(

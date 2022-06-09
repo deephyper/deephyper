@@ -4,7 +4,84 @@ from pprint import pformat
 import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh
 import deephyper.core.exceptions as dh_exceptions
+import deephyper.skopt
 import numpy as np
+
+
+def convert_to_skopt_dim(cs_hp, surrogate_model=None):
+
+    if surrogate_model in ["RF", "ET", "GBRT"]:
+        # models not sensitive to the metric space such as trees
+        surrogate_model_type = "rule_based"
+    else:
+        # models sensitive to the metric space such as GP, neural networks
+        surrogate_model_type = "distance_based"
+
+    if isinstance(cs_hp, csh.UniformIntegerHyperparameter):
+        skopt_dim = deephyper.skopt.space.Integer(
+            low=cs_hp.lower,
+            high=cs_hp.upper,
+            prior="log-uniform" if cs_hp.log else "uniform",
+            name=cs_hp.name,
+        )
+    elif isinstance(cs_hp, csh.UniformFloatHyperparameter):
+        skopt_dim = deephyper.skopt.space.Real(
+            low=cs_hp.lower,
+            high=cs_hp.upper,
+            prior="log-uniform" if cs_hp.log else "uniform",
+            name=cs_hp.name,
+        )
+    elif isinstance(cs_hp, csh.CategoricalHyperparameter):
+        # the transform is important if we don't want the complexity of trees
+        # to explode with categorical variables
+        skopt_dim = deephyper.skopt.space.Categorical(
+            categories=cs_hp.choices,
+            name=cs_hp.name,
+            transform="onehot" if surrogate_model_type == "distance_based" else "label",
+        )
+    elif isinstance(cs_hp, csh.OrdinalHyperparameter):
+        skopt_dim = deephyper.skopt.space.Categorical(
+            categories=list(cs_hp.sequence), name=cs_hp.name, transform="label"
+        )
+    else:
+        raise TypeError(f"Cannot convert hyperparameter of type {type(cs_hp)}")
+
+    return skopt_dim
+
+
+def convert_to_skopt_space(cs_space, surrogate_model=None):
+    """Convert a ConfigurationSpace to a scikit-optimize Space.
+
+    Args:
+        cs_space (ConfigurationSpace): the ``ConfigurationSpace`` to convert.
+        surrogate_model (str, optional): the type of surrogate model/base estimator used to perform Bayesian optimization. Defaults to None.
+
+    Raises:
+        TypeError: if the input space is not a ConfigurationSpace.
+        RuntimeError: if the input space contains forbiddens.
+        RuntimeError: if the input space contains conditions
+
+    Returns:
+        deephyper.skopt.space.Space: a scikit-optimize Space.
+    """
+
+    # verify pre-conditions
+    if not (isinstance(cs_space, cs.ConfigurationSpace)):
+        raise TypeError("Input space should be of type ConfigurationSpace")
+
+    if len(cs_space.get_conditions()) > 0:
+        raise RuntimeError("Cannot convert a ConfigSpace with Conditions!")
+
+    if len(cs_space.get_forbiddens()) > 0:
+        raise RuntimeError("Cannot convert a ConfigSpace with Forbiddens!")
+
+    # convert the ConfigSpace to deephyper.skopt.space.Space
+    dimensions = []
+    for hp in cs_space.get_hyperparameters():
+        dimensions.append(convert_to_skopt_dim(hp, surrogate_model))
+
+    skopt_space = deephyper.skopt.space.Space(dimensions)
+    return skopt_space
 
 
 def check_hyperparameter(parameter, name=None, default_value=None):
@@ -13,7 +90,7 @@ def check_hyperparameter(parameter, name=None, default_value=None):
     :meta private:
 
     Args:
-        parameter (str|Hyperparameter): a instance of ``ConfigSpace.hyperparameters.hyperparameter`` or a synthetic description (e.g., ``list``, ``tuple``).
+        parameter (str|Hyperparameter): an instance of ``ConfigSpace.hyperparameters.hyperparameter`` or a synthetic description (e.g., ``list``, ``tuple``).
         parameter (str): the name of the hyperparameter. Only required when the parameter is not a ``ConfigSpace.hyperparameters.hyperparameter``.
         default_value: a default value for the hyperparameter.
 
@@ -62,8 +139,8 @@ def check_hyperparameter(parameter, name=None, default_value=None):
         ):
             return csh.CategoricalHyperparameter(name, choices=parameter, **kwargs)
         elif all([isinstance(p, (int, float)) for p in parameter]):
-            return csh.OrdinalHyperparameter(name, sequence=parameter)
-    elif type(parameter) is dict: # Integer or Real distribution
+            return csh.OrdinalHyperparameter(name, sequence=parameter, **kwargs)
+    elif type(parameter) is dict:  # Integer or Real distribution
 
         # Normal
         if "mu" in parameter and "sigma" in parameter:
@@ -72,7 +149,9 @@ def check_hyperparameter(parameter, name=None, default_value=None):
             elif type(parameter["mu"]) is int:
                 return csh.NormalIntegerHyperparameter(name=name, **parameter, **kwargs)
             else:
-                raise ValueError("Wrong hyperparameter definition! 'mu' should be either a float or an integer.")
+                raise ValueError(
+                    "Wrong hyperparameter definition! 'mu' should be either a float or an integer."
+                )
 
     raise ValueError(
         f"Invalid dimension {name}: {parameter}. Read the documentation for"
@@ -110,16 +189,7 @@ class HpProblem:
 
     def __repr__(self):
         prob = repr(self._space)
-        if len(self.references) == 0:
-            return prob
-        else:
-            start_points = (
-                f"{pformat({k:v for k,v in enumerate(self.starting_point_asdict)})}"
-            )
-            prob += "\n\n  Starting Point"
-            prob += "s" if len(self.references) > 1 else ""
-            prob += ":\n" + start_points
-            return prob
+        return prob
 
     def add_hyperparameter(
         self, value, name: str = None, default_value=None
@@ -212,38 +282,18 @@ class HpProblem:
         """The wrapped ConfigSpace object."""
         return self._space
 
-    def add_starting_point(self, **parameters):
-        """Add starting points to the ``HpProblem``. It is useful when a good-baseline is known to help initialize the search at a given location of the search space.
+    @property
+    def hyperparameter_names(self):
+        """The list of hyperparameters names."""
+        return self._space.get_hyperparameter_names()
 
-        >>> from deephyper.problem import HpProblem
-        >>> problem = HpProblem()
-        >>> x = problem.add_hyperparameter((0.0, 10.0), "x")
-        >>> problem.add_starting_point(x=1.0)
-        """
-        self.check_configuration(parameters)
-        self.references.append([parameters[p_name] for p_name in self._space])
-
-    def check_configuration(self, parameters):
-        """
-        :meta private:
-        """
+    def check_configuration(self, parameters: dict):
+        """Check if a configuration is valid. Raise an error if not."""
         config = cs.Configuration(self._space, parameters)
         self._space.check_configuration(config)
 
     @property
-    def starting_point(self):
-        """Starting point(s) of the search space.
-
-        Returns:
-            list: list of starting points where each point is a list of values. Values are indexed in the same order as the order of creation of space's dimensions.
-        """
-        return self.references
-
-    @property
-    def starting_point_asdict(self):
-        """Starting point(s) of the search space.
-
-        Returns:
-            list(dict): list of starting points where each point is a dict of values. Each key are correspnding to dimensions of the space.
-        """
-        return [{k: v for k, v in zip(list(self._space), p)} for p in self.references]
+    def default_configuration(self):
+        """The default configuration as a dictionnary."""
+        config = self._space.get_default_configuration().get_dictionary()
+        return config

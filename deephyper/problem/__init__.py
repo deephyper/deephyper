@@ -3,6 +3,20 @@
 from ConfigSpace import *
 
 from ._hyperparameter import HpProblem
-from ._neuralarchitecture import NaProblem
 
-__all__ = ["HpProblem", "NaProblem"]
+__all__ = ["HpProblem"]
+
+# make import of NaProblem optional
+try:
+    from ._neuralarchitecture import NaProblem
+
+    __all__.append("NaProblem")
+except ModuleNotFoundError as e:
+    if "tensorflow" in str(e):
+        pass
+    elif "networkx" in str(e):
+        pass
+    else:
+        raise e
+
+__all__ = ["HpProblem"]

@@ -1,11 +1,13 @@
+"""This module provides the available node types to build a ``KSearchSpace``. 
+"""
 import tensorflow as tf
 
-from deephyper.core.exceptions import DeephyperRuntimeError
+import deephyper.core.exceptions
 from deephyper.nas.operation import Operation
 
 
 class Node:
-    """Represents a node of a graph.
+    """Represents a node of a ``KSearchSpace``.
 
     Args:
         name (str): node name.
@@ -111,8 +113,8 @@ class VariableNode(OperationNode):
         self.get_op(index).init(self)
 
     def get_op(self, index):
-        assert (
-            "float" in str(type(index)) or "int" in str(type(index))
+        assert "float" in str(type(index)) or "int" in str(
+            type(index)
         ), f"found type is : {type(index)}"
         if "float" in str(type(index)):
             self._index = self.denormalize(index)
@@ -168,8 +170,8 @@ class ConstantNode(OperationNode):
     Dense_100_relu
 
     Args:
-        op (Operation, optional): [description]. Defaults to None.
-        name (str, optional): [description]. Defaults to ''.
+        op (Operation, optional): operation to fix for this node. Defaults to None.
+        name (str, optional): node name. Defaults to ``''``.
     """
 
     def __init__(self, op=None, name="", *args, **kwargs):
@@ -256,7 +258,7 @@ class MimeNode(OperationNode):
 
     def set_op(self):
         if self.node._index is None:
-            raise DeephyperRuntimeError(
+            raise deephyper.core.exceptions.DeephyperRuntimeError(
                 f"{str(self)} cannot be initialized because its source {str(self.node)} is not initialized!"
             )
         self._ops[self.node._index].init(self)
@@ -264,7 +266,7 @@ class MimeNode(OperationNode):
     @property
     def op(self):
         if self.num_ops != self.node.num_ops:
-            raise DeephyperRuntimeError(
+            raise deephyper.core.exceptions.DeephyperRuntimeError(
                 f"{str(self)} and {str(self.node)} should have the same number of opertions, when {str(self)} has {self.num_ops} and {str(self.node)} has {self.node.num_ops}!"
             )
         else:

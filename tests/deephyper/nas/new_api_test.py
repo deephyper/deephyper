@@ -1,17 +1,21 @@
-import tensorflow as tf
+import pytest
 
-from deephyper.nas import KSearchSpace
-from deephyper.nas.node import VariableNode, ConstantNode
-from deephyper.nas.operation import operation, Identity
 
-Dense = operation(tf.keras.layers.Dense)
-
+@pytest.mark.nas
 def test_basic_space(verbose=0):
+    import tensorflow as tf
+
+    from deephyper.nas import KSearchSpace
+    from deephyper.nas.node import VariableNode, ConstantNode
+    from deephyper.nas.operation import operation, Identity
+
+    Dense = operation(tf.keras.layers.Dense)
 
     class BasicSpace(KSearchSpace):
-
         def __init__(self, input_shape, output_shape, batch_size=None, *args, **kwargs):
-            super().__init__(input_shape, output_shape, batch_size=batch_size, *args, **kwargs)
+            super().__init__(
+                input_shape, output_shape, batch_size=batch_size, *args, **kwargs
+            )
 
         def build(self):
 
@@ -38,8 +42,3 @@ def test_basic_space(verbose=0):
 
     if verbose:
         model_2.summary()
-
-
-
-if __name__ == "__main__":
-    test_basic_space(verbose=1)

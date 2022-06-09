@@ -1,6 +1,9 @@
 [run]
 branch = True
 source = deephyper
+omit =
+    deephyper/skopt/*
+    deephyper/core/*
 
 [report]
 exclude_lines =

@@ -1,6 +1,5 @@
 import logging
 import ray
-import time
 from deephyper.evaluator._evaluator import Evaluator
 
 ray_initializer = None
@@ -13,7 +12,6 @@ class RayEvaluator(Evaluator):
 
     Args:
         run_function (callable): functions to be executed by the ``Evaluator``.
-        num_workers (int, optional): Number of parallel Ray-workers used to compute the ``run_function``. Defaults to 1.
         callbacks (list, optional): A list of callbacks to trigger custom actions at the creation or completion of jobs. Defaults to None.
         address (str, optional): address of the Ray-head. Defaults to None, if no Ray-head was started.
         password (str, optional): password to connect ot the Ray-head. Defaults to None, if the default Ray-password is used.
@@ -29,17 +27,21 @@ class RayEvaluator(Evaluator):
         self,
         run_function,
         callbacks=None,
+        run_function_kwargs=None,
         address: str = None,
         password: str = None,
         num_cpus: int = None,
         num_gpus: int = None,
         num_cpus_per_task: float = 1,
         num_gpus_per_task: float = None,
-        ray_kwargs: dict = {},
+        ray_kwargs: dict = None,
         num_workers: int = None,
     ):
-        super().__init__(run_function, num_workers, callbacks)
+        super().__init__(run_function, num_workers, callbacks, run_function_kwargs)
+        # get the __init__ parameters
+        self._init_params = locals()
 
+        ray_kwargs = {} if ray_kwargs is None else ray_kwargs
         if address is not None:
             ray_kwargs["address"] = address
         if password is not None:
@@ -64,9 +66,12 @@ class RayEvaluator(Evaluator):
         if self.num_workers is None or self.num_workers == -1:
             self.num_workers = int(self.num_cpus // self.num_cpus_per_task)
 
-        logger.info(
-            f"Ray Evaluator will execute {self.run_function.__name__}() from module {self.run_function.__module__}"
-        )
+        if hasattr(run_function, "__name__") and hasattr(run_function, "__module__"):
+            logger.info(
+                f"Ray Evaluator will execute {self.run_function.__name__}() from module {self.run_function.__module__}"
+            )
+        else:
+            logger.info(f"Ray Evaluator will execute {self.run_function}")
 
         self._remote_run_function = ray.remote(
             num_cpus=self.num_cpus_per_task,
@@ -76,7 +81,9 @@ class RayEvaluator(Evaluator):
 
     async def execute(self, job):
 
-        sol = await self._remote_run_function.remote(job.config)
+        sol = await self._remote_run_function.remote(
+            job.config, **self.run_function_kwargs
+        )
 
         job.result = sol
 

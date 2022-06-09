@@ -6,7 +6,7 @@ import logging
 
 import numpy as np
 import tensorflow as tf
-from deephyper.contrib.callbacks import import_callback
+from deephyper.keras.callbacks import import_callback
 from deephyper.nas.run._util import (
     compute_objective,
     load_config,
@@ -45,18 +45,20 @@ def run_base_trainer(config):
         logger.info("error memory growth for GPU device")
 
     # Threading configuration
-    if len(physical_devices) == 0 \
-        and os.environ.get("OMP_NUM_THREADS", None) is not None:
+    if (
+        len(physical_devices) == 0
+        and os.environ.get("OMP_NUM_THREADS", None) is not None
+    ):
         logger.info(f"OMP_NUM_THREADS is {os.environ.get('OMP_NUM_THREADS')}")
         num_intra = int(os.environ.get("OMP_NUM_THREADS"))
         try:
             tf.config.threading.set_intra_op_parallelism_threads(num_intra)
             tf.config.threading.set_inter_op_parallelism_threads(2)
-        except RuntimeError: # Session already initialized
+        except RuntimeError:  # Session already initialized
             pass
         tf.config.set_soft_device_placement(True)
 
-    seed = config["seed"]
+    seed = config.get("seed")
     if seed is not None:
         np.random.seed(seed)
         tf.random.set_seed(seed)

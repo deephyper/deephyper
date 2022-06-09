@@ -67,7 +67,7 @@ pip install -e 'deephyper/[dev]'
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/deephyper/tutorials/blob/main/tutorials/colab/DeepHyper_101.ipynb)
 
-The black-box function named `run` is defined by taking an input dictionnary named `config` which contains the different variables to optimize. Then the run-function is binded to an `Evaluator` in charge of distributing the computation of multiple evaluations. Finally, a Bayesian search named `AMBS` is created and executed to find the values of config which maximize the return value of `run(config)`.
+The black-box function named `run` is defined by taking an input dictionnary named `config` which contains the different variables to optimize. Then the run-function is binded to an `Evaluator` in charge of distributing the computation of multiple evaluations. Finally, a Bayesian search named `CBO` is created and executed to find the values of config which maximize the return value of `run(config)`.
 
 ```python
 def run(config: dict):
@@ -78,7 +78,7 @@ def run(config: dict):
 # when loading the 'run' function from a subprocess
 if __name__ == "__main__":
     from deephyper.problem import HpProblem
-    from deephyper.search.hps import AMBS
+    from deephyper.search.hps import CBO
     from deephyper.evaluator import Evaluator
 
     # define the variable you want to optimize
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     )
 
     # define your search and execute it
-    search = AMBS(problem, evaluator)
+    search = CBO(problem, evaluator)
 
     results = search.search(max_evals=100)
     print(results)
@@ -124,26 +124,9 @@ Which outputs the following where the best ``x`` found is clearly around ``0``.
 
 * GitHub repository: <https://github.com/deephyper/deephyper>
 
-## Who is responsible?
+## Contributions
 
-Currently, the core DeepHyper team is at Argonne National Laboratory (do not hesitate to reach out if we forgot you in the list!):
-
-* Prasanna Balaprakash <pbalapra@anl.gov>, Lead and founder
-* Romain Egele <romainegele@gmail.com>, Co-Lead
-* Misha Salim <msalim@anl.gov>
-* Romit Maulik <rmaulik@anl.gov>
-* Venkat Vishwanath <venkat@anl.gov>
-* Stefan Wild <wild@anl.gov>
-* Kyle Gerard Felker <felker@anl.gov>
-
-Modules, patches (code, documentation, etc.) contributed by:
-
-* Elise Jennings 
-* Dipendra Kumar Jha <dipendrajha2018@u.northwestern.edu>
-* Shengli Jiang <sjiang87@wisc.edu>
-* Felix Perez <felix.perez@utdallas.edu>
-* Joceran Gouneau <joceran.g@gmail.com>
-* Bethany Lusch <blusch@anl.gov>
+Find all the list of contributors on the [DeepHyper Authors](https://deephyper.readthedocs.io/en/latest/research.html) page of the Documentation.
 
 ## Citing DeepHyper
 
