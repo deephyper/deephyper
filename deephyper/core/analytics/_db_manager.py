@@ -7,6 +7,7 @@ import subprocess
 import pandas as pd
 import yaml
 from datetime import datetime
+from typing import Union
 from tinydb import TinyDB, Query
 from deephyper.core.utils._files import ensure_dh_folder_exists
 
@@ -26,7 +27,7 @@ class DBManager(abc.ABC):
     def __init__(
         self,
         user_name: str = None,
-        path: str = "~/.deephyper/local_db.json",
+        path: str = "~/.deephyper/db.json",
     ) -> None:
         ensure_dh_folder_exists()
         self._user_name = user_name if user_name else getpass.getuser()
@@ -50,7 +51,7 @@ class DBManager(abc.ABC):
         log_dir: str,
         label: str = None,
         description: str = None,
-        pip_versions: str or bool = True,
+        pip_versions: Union[str, bool] = True,
         metadata: dict = None,
     ):
         """Adds an experiment to the database.

@@ -2,4 +2,5 @@ import pathlib
 
 
 def ensure_dh_folder_exists():
-    pathlib.Path("~/.deephyper").mkdir(parents=True, exist_ok=True)
+    """Creates a ``".deephyper"`` directory in the user home directory."""
+    pathlib.Path("~/.deephyper").mkdir(parents=False, exist_ok=True)
