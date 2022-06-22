@@ -1,5 +1,6 @@
 import abc
 import copy
+from email.policy import default
 import json
 import math
 import os
@@ -46,18 +47,26 @@ class Dashboard(View):
         else:
             if len(experiment_selection.data) == 1:
                 # There is only 1 experiment to visualize
-                charts = {"Scatter": ScatterPlotView}
+                charts = {"Table": CSVView, "Scatter": ScatterPlotView}
+                default_charts = ["Table", "Scatter"]
                 exp = experiment_selection.data[0]
                 exp["data"]["search"]["results"] = pd.DataFrame(
                     exp["data"]["search"]["results"]
                 ).reset_index()
             else:
                 # There are multiple experiments to compare
-                charts = {}
+                charts = {"Table": CSVView}
+                default_charts = ["Table"]
                 exp = experiment_selection.data
+                for i in range(len(exp)):
+                    exp[i]["data"]["search"]["results"] = pd.DataFrame(
+                        exp[i]["data"]["search"]["results"]
+                    ).reset_index()
 
             with st.sidebar.expander("Charts Selection"):
-                selected_charts = st.multiselect("Charts", options=charts.keys())
+                selected_charts = st.multiselect(
+                    "Charts", options=charts.keys(), default=default_charts
+                )
 
             st.sidebar.markdown("""---""")
             st.sidebar.subheader("Options")
@@ -94,6 +103,8 @@ def get_nested(d: dict, k: str):
 
 
 class ExperimentSelection(View):
+    """Selec the experiments to display on the dashboard."""
+
     def __init__(self, dbm):
         self.dbm = dbm
         self.selection = {}
@@ -103,14 +114,23 @@ class ExperimentSelection(View):
 
         options = {"id": [], "metadata.label": [], "metadata.user": []}
 
-        for exp in self.dbm.list():
+        if len(self.selection) == 0:
+            print(f"case 1")
+            source_data = self.dbm.list()
+        else:
+            print(f"case 2")
+            source_data = self.data
+
+        for exp in source_data:
             for k in options:
                 val = get_nested(exp, k)
                 if val is not None:
                     options[k].append(val)
 
-            options[k] = list(set(options[k]))
+                # display only 1 time available options
+                options[k] = list(set(options[k]))
 
+        # display multiselect
         for k, v in options.items():
             self.selection[k] = st.multiselect(k, options=v)
 
@@ -141,6 +161,24 @@ class ExperimentSelection(View):
         st.text(f"Found {len(self.data)} matching experiment(s)!")
 
 
+class CSVView(View):
+    def __init__(self, data) -> None:
+        super().__init__()
+        self.name = "Table"
+        self.data = data
+        self.is_single = not (isinstance(data, list))
+
+    def show(self):
+        st.header(self.name)
+
+        if self.is_single:
+            st.dataframe(self.data["data"]["search"]["results"])
+        else:
+            for i in range(min(len(self.data), 5)):
+                with st.expander(f"Experiment: id={self.data[i]['id']}"):
+                    st.dataframe(self.data[i]["data"]["search"]["results"])
+
+
 class ScatterPlotView(View):
     def __init__(self, exp):
         self.name = "Scatter Plot"
@@ -150,6 +188,7 @@ class ScatterPlotView(View):
 
         columns = list(self.results.columns)
 
+        # Options for the plot
         with st.sidebar.expander(self.name):
             if "timestamp_end" in columns:
                 x_idx = columns.index("timestamp_end")
@@ -173,8 +212,20 @@ class ScatterPlotView(View):
             alt.Chart(self.results)
             .mark_circle(size=60)
             .encode(
-                x=x_axis,
-                y=y_axis,
+                x=alt.X(
+                    x_axis,
+                    title=x_axis.replace("_", " ").title(),
+                    scale=alt.Scale(
+                        domain=[self.results[x_axis].min(), self.results[x_axis].max()]
+                    ),
+                ),
+                y=alt.Y(
+                    y_axis,
+                    title=y_axis.replace("_", " ").title(),
+                    scale=alt.Scale(
+                        domain=[self.results[y_axis].min(), self.results[y_axis].max()]
+                    ),
+                ),
                 color=color_var,
                 tooltip=columns,
             )
@@ -182,11 +233,6 @@ class ScatterPlotView(View):
         )
 
         st.altair_chart(c, use_container_width=True)
-
-
-#! could be improved
-class CSVView(View):
-    ...
 
 
 class JsonView(View):
