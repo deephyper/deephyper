@@ -81,7 +81,19 @@ class LoggerCallback(Callback):
 
     def on_done(self, job):
         self._n_done += 1
-        if np.isreal(job.result):
+        if np.ndim(job.result) > 0:
+            if np.isreal(job.result).all():
+                if self._best_objective is None:
+                    self._best_objective = job.result
+                else:
+                    self._best_objective = np.maximum(job.result, self._best_objective)
+
+                print(
+                    f"[{self._n_done:05d}] -- best objective: {np.array2string(self._best_objective, precision=5)} -- received objective: {np.array2string(job.result, precision=5)}"
+                )
+            elif np.any(type(res) is str and "F" == res[0] for res in job.result):
+                print(f"[{self._n_done:05d}] -- received failure: {job.result}")
+        elif np.isreal(job.result):
             if self._best_objective is None:
                 self._best_objective = job.result
             else:
