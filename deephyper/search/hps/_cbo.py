@@ -10,6 +10,7 @@ import pandas as pd
 import deephyper.skopt
 from deephyper.problem._hyperparameter import convert_to_skopt_space
 from deephyper.search._search import Search
+from deephyper.multiobjective import MoLinearFunction, MoChebyshevFunction, MoPBIFunction
 
 from sklearn.ensemble import GradientBoostingRegressor
 from deephyper.skopt.utils import use_named_args
@@ -72,6 +73,7 @@ class CBO(Search):
         initial_points=None,
         sync_communication: bool = False,
         filter_failures: str = "mean",
+        n_objectives: int = 1,
         **kwargs,
     ):
 
@@ -105,6 +107,9 @@ class CBO(Search):
             raise ValueError(
                 f"Parameter filter_duplicated={filter_duplicated} should be a boolean value!"
             )
+
+        if not (type(n_objectives) is int):
+            raise ValueError("Parameter 'n_objectives' shoud be an integer value!")
 
         multi_point_strategy_allowed = [
             "cl_min",
@@ -179,6 +184,12 @@ class CBO(Search):
             random_state=self._random_state,
         )
 
+        self._n_objectives = n_objectives
+        self._multi_obj_func = MoPBIFunction(
+            n_objectives=self._n_objectives,
+            random_state=self._random_state.randint(0, 2**32)
+        )
+
         self._gather_type = "ALL" if sync_communication else "BATCH"
 
     def _setup_optimizer(self):
@@ -192,6 +203,8 @@ class CBO(Search):
             self._setup_optimizer()
 
         num_evals_done = 0
+        x_history = []
+        y_history = []
 
         logging.info(f"Asking {self._evaluator.num_workers} initial configurations...")
         t1 = time.time()
@@ -236,6 +249,22 @@ class CBO(Search):
                 if max_evals > 0 and num_evals_done >= max_evals:
                     break
 
+                if self._n_objectives > 1:
+                    for cfg, obj in new_results:
+                        x = list(cfg.values())
+                        x_history.append(x)
+                        y_history.append(-obj) #! maximizing
+
+                    if not self._multi_obj_func.is_utopia_point_initialized():
+                        self._multi_obj_func.normalize(y_history)
+                    # TODO: THIS IS BUGGY
+                    # elif not self._multi_obj_func.is_utopia_point_valid(y_history):
+                    #     self._multi_obj_func.normalize(y_history)
+                    #     # We re-compute all previous scalarized values
+                    #     print("re-computing!")
+                    #     for idx in range(len(self._opt.yi)):
+                    #         self._opt.yi[idx] = self._multi_obj_func.scalarize(y_history[idx])
+
                 # Transform configurations to list to fit optimizer
                 logging.info("Transforming received configurations to list...")
                 t1 = time.time()
@@ -244,7 +273,21 @@ class CBO(Search):
                 opt_y = []
                 for cfg, obj in new_results:
                     x = list(cfg.values())
-                    if np.isreal(obj):
+                    if self._n_objectives > 1:
+                        if np.isreal(obj).all():
+                            opt_X.append(x)
+                            opt_y.append(self._multi_obj_func.scalarize(-obj))  #! maximizing
+                        elif any(type(objval) is str and objval[0] == "F" for objval in obj):
+                            if (
+                                self._opt_kwargs["acq_optimizer_kwargs"]["filter_failures"]
+                                == "ignore"
+                            ):
+                                continue
+                            else:
+                                opt_X.append(x)
+                                opt_y.append("F")
+
+                    elif np.isreal(obj):
                         opt_X.append(x)
                         opt_y.append(-obj)  #! maximizing
                     elif type(obj) is str and "F" == obj[0]:
