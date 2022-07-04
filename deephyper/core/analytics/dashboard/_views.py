@@ -115,10 +115,8 @@ class ExperimentSelection(View):
         options = {"id": [], "metadata.label": [], "metadata.user": []}
 
         if len(self.selection) == 0:
-            print(f"case 1")
             source_data = self.dbm.list()
         else:
-            print(f"case 2")
             source_data = self.data
 
         for exp in source_data:
