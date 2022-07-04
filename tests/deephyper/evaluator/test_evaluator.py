@@ -1,6 +1,8 @@
 import unittest
-import pytest
+from collections import Counter
+
 import pandas as pd
+import pytest
 
 
 def run(config, y=0):
@@ -186,7 +188,6 @@ class TestEvaluator(unittest.TestCase):
         evaluator.gather(type="ALL")
         evaluator.dump_evals()
         results = pd.read_csv("results.csv")
-        print(results)
         assert all(
             results.columns
             == [
@@ -199,8 +200,9 @@ class TestEvaluator(unittest.TestCase):
             ]
         )
         assert len(results) == 10
-        assert float(results["objective_0"][0]) == 42.0
-        assert float(results["objective_1"][0]) == 0.42
+
+        counter = Counter(results["objective_0"])
+        assert counter["42.0"] == 5 and counter["F_out_of_memory"] == 5
 
     def execute_evaluator(self, method):
         from deephyper.evaluator import Evaluator
