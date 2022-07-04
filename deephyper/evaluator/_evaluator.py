@@ -38,8 +38,8 @@ def _test_ipython_interpretor() -> bool:
     notebooks_modules = ["google.colab._shell"]
 
     try:
-        shell_name = get_ipython().__class__.__name__
-        shell_module = get_ipython().__class__.__module__
+        shell_name = get_ipython().__class__.__name__ # type: ignore
+        shell_module = get_ipython().__class__.__module__ # type: ignore
 
         if shell_name in notebooks_shells or shell_module in notebooks_modules:
             return True  # Jupyter notebook or qtconsole
@@ -90,6 +90,7 @@ class Evaluator:
         )  # Recorded time of when this evaluator interface was created.
         self._loop = None  # Event loop for asyncio.
         self._start_dumping = False
+        self.num_objective = None # record if multi-objective are recorded
 
         self._callbacks = [] if callbacks is None else callbacks
 
@@ -293,12 +294,13 @@ class Evaluator:
         else:
             return val
 
-    def dump_evals(self, saved_keys=None, log_dir: str = "."):
-        """Dump evaluations to a CSV file name ``"results.csv"``
+    def dump_evals(self, saved_keys=None, log_dir: str = ".", filename="results.csv"):
+        """Dump evaluations to a CSV file.
 
         Args:
             saved_keys (list|callable): If ``None`` the whole ``job.config`` will be added as row of the CSV file. If a ``list`` filtered keys will be added as a row of the CSV file. If a ``callable`` the output dictionnary will be added as a row of the CSV file.
             log_dir (str): directory where to dump the CSV file.
+            filename (str): name of the file where to write the data.
         """
         logging.info("dump_evals starts...")
         resultsList = []
@@ -321,6 +323,27 @@ class Evaluator:
             else:
                 result["objective"] = job.result
 
+            # when the objective is a tuple we create 1 column per tuple-element
+            if isinstance(result["objective"], tuple):
+                obj = result.pop("objective")
+
+                if self.num_objective is None:
+                    self.num_objective = len(obj)
+
+                for i, obj in enumerate(obj):
+                    result[f"objective_{i}"] = obj
+            else:
+                
+                if self.num_objective is None:
+                    self.num_objective = 1
+
+                if self.num_objective > 1:
+                    obj = result.pop("objective")
+                    for i in range(self.num_objective):
+                        result[f"objective_{i}"] = obj
+                        
+
+
             result["timestamp_submit"] = job.timestamp_submit
             result["timestamp_gather"] = job.timestamp_gather
 
@@ -340,7 +363,7 @@ class Evaluator:
 
         if len(resultsList) != 0:
             mode = "a" if self._start_dumping else "w"
-            with open(os.path.join(log_dir, "results.csv"), mode) as fp:
+            with open(os.path.join(log_dir, filename), mode) as fp:
                 columns = resultsList[0].keys()
                 writer = csv.DictWriter(fp, columns)
                 if not (self._start_dumping):

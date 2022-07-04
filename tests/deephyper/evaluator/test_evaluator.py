@@ -1,5 +1,6 @@
 import unittest
 import pytest
+import pandas as pd
 
 
 def run(config, y=0):
@@ -27,6 +28,178 @@ class TestEvaluator(unittest.TestCase):
                     "num_workers": 1,
                 },
             )
+
+    @pytest.mark.fast
+    def test_run_function_standards(self):
+        from deephyper.evaluator import SerialEvaluator
+
+        configs = [{"x": i} for i in range(10)]
+
+        # float for single objective optimization
+        def run(config):
+            return 42.0
+
+        evaluator = SerialEvaluator(run)
+        evaluator.submit(configs)
+        evaluator.gather(type="ALL")
+        evaluator.dump_evals()
+        results = pd.read_csv("results.csv")
+        assert all(
+            results.columns
+            == ["x", "job_id", "objective", "timestamp_submit", "timestamp_gather"]
+        )
+        assert len(results) == 10
+        assert results["objective"][0] == 42.0
+
+        # str with "F" prefix for failed evaluation
+        def run(config):
+            return "F_out_of_memory"
+
+        evaluator = SerialEvaluator(run)
+        evaluator.submit(configs)
+        evaluator.gather(type="ALL")
+        evaluator.dump_evals()
+        results = pd.read_csv("results.csv")
+        assert all(
+            results.columns
+            == ["x", "job_id", "objective", "timestamp_submit", "timestamp_gather"]
+        )
+        assert len(results) == 10
+        assert results["objective"][0] == "F_out_of_memory"
+
+        # dict
+        def run(config):
+            return {"objective": 42.0}
+
+        evaluator = SerialEvaluator(run)
+        evaluator.submit(configs)
+        evaluator.gather(type="ALL")
+        evaluator.dump_evals()
+        results = pd.read_csv("results.csv")
+        assert all(
+            results.columns
+            == ["x", "job_id", "objective", "timestamp_submit", "timestamp_gather"]
+        )
+        assert len(results) == 10
+        assert results["objective"][0] == 42.0
+
+        # dict with additional information
+        def run(config):
+            return {
+                "objective": 42.0,
+                "num_epochs_trained": 25,
+                "num_parameters": 420000,
+            }
+
+        evaluator = SerialEvaluator(run)
+        evaluator.submit(configs)
+        evaluator.gather(type="ALL")
+        evaluator.dump_evals()
+        results = pd.read_csv("results.csv")
+        assert all(
+            results.columns
+            == [
+                "x",
+                "job_id",
+                "objective",
+                "num_epochs_trained",
+                "num_parameters",
+                "timestamp_submit",
+                "timestamp_gather",
+            ]
+        )
+        assert len(results) == 10
+        assert results["objective"][0] == 42.0
+        assert results["num_epochs_trained"][0] == 25
+        assert results["num_parameters"][0] == 420000
+
+        # dict with reserved keywords (when @profile decorator is used)
+        from deephyper.evaluator import profile
+
+        @profile
+        def run(config):
+            return 42.0
+
+        evaluator = SerialEvaluator(run)
+        evaluator.submit(configs)
+        evaluator.gather(type="ALL")
+        evaluator.dump_evals()
+        results = pd.read_csv("results.csv")
+        assert all(
+            results.columns
+            == [
+                "x",
+                "job_id",
+                "objective",
+                "timestamp_submit",
+                "timestamp_gather",
+                "timestamp_start",
+                "timestamp_end",
+            ]
+        )
+        assert len(results) == 10
+        assert results["objective"][0] == 42.0
+
+        # combine previous the two previous tests
+        @profile
+        def run(config):
+            return {
+                "objective": 42.0,
+                "num_epochs_trained": 25,
+                "num_parameters": 420000,
+            }
+
+        evaluator = SerialEvaluator(run)
+        evaluator.submit(configs)
+        evaluator.gather(type="ALL")
+        evaluator.dump_evals()
+        results = pd.read_csv("results.csv")
+        assert all(
+            results.columns
+            == [
+                "x",
+                "job_id",
+                "objective",
+                "num_epochs_trained",
+                "num_parameters",
+                "timestamp_submit",
+                "timestamp_gather",
+                "timestamp_start",
+                "timestamp_end",
+            ]
+        )
+        assert len(results) == 10
+        assert results["objective"][0] == 42.0
+        assert results["num_epochs_trained"][0] == 25
+        assert results["num_parameters"][0] == 420000
+
+        # tuple of float for multi-objective optimization (will appear as "objective_0" and "objective_1" in the resulting dataframe)
+        def run(config):
+            if config["x"] < 5:
+                return 42.0, 0.42
+            else:
+                return "F_out_of_memory"
+
+        evaluator = SerialEvaluator(run)
+        evaluator.submit(configs)
+        evaluator.gather(type="ALL")
+        evaluator.dump_evals()
+        results = pd.read_csv("results.csv")
+        print(results)
+        assert all(
+            results.columns
+            == [
+                "x",
+                "job_id",
+                "objective_0",
+                "objective_1",
+                "timestamp_submit",
+                "timestamp_gather",
+            ]
+        )
+        assert len(results) == 10
+        assert float(results["objective_0"][0]) == 42.0
+        assert float(results["objective_1"][0]) == 0.42
 
     def execute_evaluator(self, method):
         from deephyper.evaluator import Evaluator
@@ -115,3 +288,8 @@ class TestEvaluator(unittest.TestCase):
             e_str = str(e)
             if not ("ray" in e_str):
                 raise e
+
+
+if __name__ == "__main__":
+    test = TestEvaluator()
+    test.test_run_function_standards()
