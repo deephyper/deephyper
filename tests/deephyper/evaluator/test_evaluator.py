@@ -181,6 +181,7 @@ class TestEvaluator(unittest.TestCase):
                 return "F_out_of_memory"
 
         evaluator = SerialEvaluator(run)
+        evaluator.num_objective = 2
         evaluator.submit(configs)
         evaluator.gather(type="ALL")
         evaluator.dump_evals()
