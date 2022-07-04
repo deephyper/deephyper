@@ -38,8 +38,8 @@ def _test_ipython_interpretor() -> bool:
     notebooks_modules = ["google.colab._shell"]
 
     try:
-        shell_name = get_ipython().__class__.__name__ # type: ignore
-        shell_module = get_ipython().__class__.__module__ # type: ignore
+        shell_name = get_ipython().__class__.__name__  # type: ignore
+        shell_module = get_ipython().__class__.__module__  # type: ignore
 
         if shell_name in notebooks_shells or shell_module in notebooks_modules:
             return True  # Jupyter notebook or qtconsole
@@ -90,7 +90,7 @@ class Evaluator:
         )  # Recorded time of when this evaluator interface was created.
         self._loop = None  # Event loop for asyncio.
         self._start_dumping = False
-        self.num_objective = None # record if multi-objective are recorded
+        self.num_objective = None  # record if multi-objective are recorded
 
         self._callbacks = [] if callbacks is None else callbacks
 
@@ -333,7 +333,7 @@ class Evaluator:
                 for i, obj in enumerate(obj):
                     result[f"objective_{i}"] = obj
             else:
-                
+
                 if self.num_objective is None:
                     self.num_objective = 1
 
@@ -341,8 +341,6 @@ class Evaluator:
                     obj = result.pop("objective")
                     for i in range(self.num_objective):
                         result[f"objective_{i}"] = obj
-                        
-
 
             result["timestamp_submit"] = job.timestamp_submit
             result["timestamp_gather"] = job.timestamp_gather
