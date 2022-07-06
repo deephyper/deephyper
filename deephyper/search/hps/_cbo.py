@@ -10,7 +10,7 @@ import pandas as pd
 import deephyper.skopt
 from deephyper.problem._hyperparameter import convert_to_skopt_space
 from deephyper.search._search import Search
-from deephyper.multiobjective import MoLinearFunction, MoChebyshevFunction, MoPBIFunction
+from deephyper.skopt.moo import MoLinearFunction, MoChebyshevFunction, MoPBIFunction
 
 from sklearn.ensemble import GradientBoostingRegressor
 from deephyper.skopt.utils import use_named_args
