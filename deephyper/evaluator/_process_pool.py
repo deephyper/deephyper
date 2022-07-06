@@ -27,6 +27,8 @@ class ProcessPoolEvaluator(Evaluator):
     ):
         super().__init__(run_function, num_workers, callbacks, run_function_kwargs)
         self.sem = asyncio.Semaphore(num_workers)
+        #! creating the exector once here is crutial to avoid repetitive overheads
+        self.executor = ProcessPoolExecutor(max_workers=num_workers)
 
         if hasattr(run_function, "__name__") and hasattr(run_function, "__module__"):
             logger.info(
@@ -39,13 +41,11 @@ class ProcessPoolEvaluator(Evaluator):
 
         async with self.sem:
 
-            executor = ProcessPoolExecutor(max_workers=1)
-
             run_function = functools.partial(
                 job.run_function, job.config, **self.run_function_kwargs
             )
 
-            sol = await self.loop.run_in_executor(executor, run_function)
+            sol = await self.loop.run_in_executor(self.executor, run_function)
 
             job.result = sol
 
