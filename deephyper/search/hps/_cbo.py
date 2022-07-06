@@ -113,6 +113,8 @@ class CBO(Search):
             raise ValueError(
                 f"Parameter 'moo_scalarization_strategy={acq_func}' should have a value in {moo_scalarization_strategy_allowed}!"
             )
+        self._moo_scalarization_strategy = moo_scalarization_strategy
+        self._moo_scalar_function = None
 
         multi_point_strategy_allowed = [
             "cl_min",
@@ -187,8 +189,6 @@ class CBO(Search):
             random_state=self._random_state,
         )
 
-        self._moo_scalar_function = None
-        self._moo_scalarization_strategy = moo_scalarization_strategy
         self._gather_type = "ALL" if sync_communication else "BATCH"
 
     def _setup_moo_scalar_function(self):

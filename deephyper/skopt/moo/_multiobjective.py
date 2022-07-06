@@ -6,6 +6,13 @@ from deephyper.skopt.utils import is_listlike
 from deephyper.skopt.utils import is_2Dlistlike
 
 class MoScalarFunction:
+    """Abstract class representing a scalarizing function.
+
+    Args:
+        n_objectives (int, optional): Number of objective functions to be scalarized. Defaults to 1.
+        utopia_point (list or tuple or numpy.ndarray, optional): Array of reference values for each objective function. Defaults to None.
+        random_state (int, optional): Random seed. Defaults to None.
+    """
     def __init__(
         self,
         n_objectives = 1,
@@ -39,6 +46,19 @@ class MoScalarFunction:
 
 
     def scalarize(self, y): 
+        """Convert the input array (or scalar) into a scalar value.
+
+        Args:
+            y: The input array or scalar to be scalarized.
+
+        Raises:
+            ValueError: Raised if the input is not a scalar nor a 1-dimensional array of length _n_objectives.
+
+        Returns:
+            float: The converted scalar value.
+        """
+        if np.ndim(y) == 0:
+            return y
         if not (np.ndim(y) == 1 and np.shape(y)[0] == self._n_objectives):
             raise ValueError(f"expected y to be an array of length {self._n_objectives}")     
         return self._scalarize(y)
@@ -71,10 +91,10 @@ class MoScalarFunction:
         """Scalarization to be implemented.
 
         Args:
-            yi: vector of length _n_objectives
+            yi: Array of length _n_objectives.
         
         Returns:
-            f: scalar
+            float: Converted scalar value.
         """
 
 
