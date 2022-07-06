@@ -73,7 +73,7 @@ class CBO(Search):
         initial_points=None,
         sync_communication: bool = False,
         filter_failures: str = "mean",
-        n_objectives: int = 1,
+        moo_scalarization_strategy: str = "Chebyshev",
         **kwargs,
     ):
 
@@ -108,8 +108,11 @@ class CBO(Search):
                 f"Parameter filter_duplicated={filter_duplicated} should be a boolean value!"
             )
 
-        if not (type(n_objectives) is int):
-            raise ValueError("Parameter 'n_objectives' shoud be an integer value!")
+        moo_scalarization_strategy_allowed = ["Linear", "Chebyshev", "PBI"]
+        if not (moo_scalarization_strategy in moo_scalarization_strategy_allowed):
+            raise ValueError(
+                f"Parameter 'moo_scalarization_strategy={acq_func}' should have a value in {moo_scalarization_strategy_allowed}!"
+            )
 
         multi_point_strategy_allowed = [
             "cl_min",
@@ -184,13 +187,20 @@ class CBO(Search):
             random_state=self._random_state,
         )
 
-        self._n_objectives = n_objectives
-        self._multi_obj_func = MoPBIFunction(
-            n_objectives=self._n_objectives,
+        self._moo_scalar_function = None
+        self._moo_scalarization_strategy = moo_scalarization_strategy
+        self._gather_type = "ALL" if sync_communication else "BATCH"
+
+    def _setup_moo_scalar_function(self):
+        moo_function = MoLinearFunction
+        if self._moo_scalarization_strategy == "Chebyshev":
+            moo_function = MoChebyshevFunction
+        elif self._moo_scalarization_strategy == "PBI":
+            moo_function = MoPBIFunction
+        self._moo_scalar_function = moo_function(
+            n_objectives=self._evaluator.num_objective,
             random_state=self._random_state.randint(0, 2**32)
         )
-
-        self._gather_type = "ALL" if sync_communication else "BATCH"
 
     def _setup_optimizer(self):
         if self._fitted:
@@ -249,21 +259,23 @@ class CBO(Search):
                 if max_evals > 0 and num_evals_done >= max_evals:
                     break
 
-                if self._n_objectives > 1:
+                if self._evaluator.num_objective > 1:
+                    if self._moo_scalar_function is None:
+                        self._setup_moo_scalar_function()
                     for cfg, obj in new_results:
                         x = list(cfg.values())
                         x_history.append(x)
                         y_history.append(-obj) #! maximizing
 
-                    if not self._multi_obj_func.is_utopia_point_initialized():
-                        self._multi_obj_func.normalize(y_history)
+                    if not self._moo_scalar_function.is_utopia_point_initialized():
+                        self._moo_scalar_function.normalize(y_history)
                     # TODO: THIS IS BUGGY
-                    # elif not self._multi_obj_func.is_utopia_point_valid(y_history):
-                    #     self._multi_obj_func.normalize(y_history)
+                    # elif not self._moo_scalar_function.is_utopia_point_valid(y_history):
+                    #     self._moo_scalar_function.normalize(y_history)
                     #     # We re-compute all previous scalarized values
                     #     print("re-computing!")
                     #     for idx in range(len(self._opt.yi)):
-                    #         self._opt.yi[idx] = self._multi_obj_func.scalarize(y_history[idx])
+                    #         self._opt.yi[idx] = self._moo_scalar_function.scalarize(y_history[idx])
 
                 # Transform configurations to list to fit optimizer
                 logging.info("Transforming received configurations to list...")
@@ -273,10 +285,10 @@ class CBO(Search):
                 opt_y = []
                 for cfg, obj in new_results:
                     x = list(cfg.values())
-                    if self._n_objectives > 1:
+                    if self._evaluator.num_objective > 1:
                         if np.isreal(obj).all():
                             opt_X.append(x)
-                            opt_y.append(self._multi_obj_func.scalarize(-obj))  #! maximizing
+                            opt_y.append(self._moo_scalar_function.scalarize(-obj))  #! maximizing
                         elif any(type(objval) is str and objval[0] == "F" for objval in obj):
                             if (
                                 self._opt_kwargs["acq_optimizer_kwargs"]["filter_failures"]

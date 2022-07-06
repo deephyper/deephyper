@@ -21,6 +21,8 @@ class MoScalarFunction:
         else:
             self._rng = np.random.RandomState()
 
+        if not (type(n_objectives) is int):
+            raise ValueError("Parameter 'n_objectives' shoud be an integer value!")
         self._n_objectives = n_objectives
         self._utopia_point = None
         if utopia_point is not None:
