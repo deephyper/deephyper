@@ -324,7 +324,7 @@ class Evaluator:
                 result["objective"] = job.result
 
             # when the objective is a tuple we create 1 column per tuple-element
-            if isinstance(result["objective"], tuple):
+            if isinstance(result["objective"], (tuple, np.ndarray)):
                 obj = result.pop("objective")
 
                 if self.num_objective is None:
