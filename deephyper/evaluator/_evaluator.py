@@ -10,6 +10,7 @@ import time
 import warnings
 from re import I
 from typing import Dict, List
+from collections.abc import Iterable
 
 import numpy as np
 from deephyper.evaluator._job import Job
@@ -324,14 +325,14 @@ class Evaluator:
                 result["objective"] = job.result
 
             # when the objective is a tuple we create 1 column per tuple-element
-            if isinstance(result["objective"], (tuple, list, np.ndarray)):
+            if isinstance(result["objective"], Iterable):
                 obj = result.pop("objective")
 
                 if self.num_objective is None:
                     self.num_objective = len(obj)
 
-                for i, obj in enumerate(obj):
-                    result[f"objective_{i}"] = obj
+                for i, objval in enumerate(obj):
+                    result[f"objective_{i}"] = objval
             else:
 
                 if self.num_objective is None:
