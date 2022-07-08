@@ -34,6 +34,27 @@ class CBOTest(unittest.TestCase):
 
         assert np.array_equal(res1_array, res2_array)
 
+        # test multi-objective
+        def run(config):
+            return config["x"], config["x"]
+
+        create_evaluator = lambda: Evaluator.create(run, method="serial")
+
+        search = CBO(
+            problem, create_evaluator(), random_state=42, surrogate_model="DUMMY"
+        )
+
+        res1 = search.search(max_evals=4)
+        res1_array = res1[["x"]].to_numpy()
+
+        search = CBO(
+            problem, create_evaluator(), random_state=42, surrogate_model="DUMMY"
+        )
+        res2 = search.search(max_evals=4)
+        res2_array = res2[["x"]].to_numpy()
+
+        assert np.array_equal(res1_array, res2_array)
+
     def test_sample_types(self):
         import numpy as np
         from deephyper.evaluator import Evaluator
