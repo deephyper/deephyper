@@ -6,30 +6,26 @@ from numbers import Number
 import ConfigSpace as CS
 import numpy as np
 import pandas as pd
-
-from scipy.optimize import fmin_l_bfgs_b
-
-from sklearn.base import clone
-from sklearn.base import is_regressor
 from joblib import Parallel, delayed
+from scipy.optimize import fmin_l_bfgs_b
+from sklearn.base import clone, is_regressor
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.utils import check_random_state
 
-from ..acquisition import _gaussian_acquisition
-from ..acquisition import gaussian_acquisition_1D
-from ..acquisition import gaussian_lcb
+from ..acquisition import _gaussian_acquisition, gaussian_acquisition_1D
 from ..learning import GaussianProcessRegressor
-from ..space import Categorical
-from ..space import Space
-from ..utils import check_x_in_space
-from ..utils import cook_estimator
-from ..utils import create_result
-from ..utils import has_gradients
-from ..utils import is_listlike
-from ..utils import is_2Dlistlike
-from ..utils import normalize_dimensions
-from ..utils import cook_initial_point_generator
-from ..moo import MoLinearFunction, MoChebyshevFunction, MoPBIFunction
+from ..moo import MoChebyshevFunction, MoLinearFunction, MoPBIFunction
+from ..space import Categorical, Space
+from ..utils import (
+    check_x_in_space,
+    cook_estimator,
+    cook_initial_point_generator,
+    create_result,
+    has_gradients,
+    is_2Dlistlike,
+    is_listlike,
+    normalize_dimensions,
+)
 
 
 class ExhaustedSearchSpace(RuntimeError):
@@ -37,6 +33,13 @@ class ExhaustedSearchSpace(RuntimeError):
 
     def __str__(self):
         return f"The search space is exhausted and cannot sample new unique points!"
+
+
+class ExhaustedFailures(RuntimeError):
+    """Raised when the search has seen ``max_failures`` failures without any valid objective value."""
+
+    def __str__(self):
+        return f"The search has reached its quota of failures! Check if the type of failure is expected or the value of ``max_failures`` in the search algorithm."
 
 
 def boltzman_distribution(x, beta=1):
@@ -317,6 +320,7 @@ class Optimizer(object):
         self.boltzmann_gamma = acq_optimizer_kwargs.get("boltzmann_gamma", 1)
         self.boltzmann_psucc = acq_optimizer_kwargs.get("boltzmann_psucc", 0)
         self.filter_failures = acq_optimizer_kwargs.get("filter_failures", "mean")
+        self.max_failures = acq_optimizer_kwargs.get("max_failures", 100)
         self.acq_optimizer_kwargs = acq_optimizer_kwargs
 
         # Configure search space
@@ -673,8 +677,12 @@ class Optimizer(object):
         if self.filter_failures in ["mean", "max"]:
             yi_no_failure = [v for v in yi if v != OBJECTIVE_VALUE_FAILURE]
 
-            if not yi_no_failure:
-                yi_failed_value = np.nan
+            # when yi_no_failure is empty all configurations are failures
+            if len(yi_no_failure) == 0:
+                if len(yi) == self.max_failures:
+                    raise ExhaustedFailures
+                # constant value for the acq. func. to return anything
+                yi_failed_value = 0
             elif self.filter_failures == "mean":
                 yi_failed_value = np.mean(yi_no_failure, axis=0).tolist()
             else:
@@ -1069,10 +1077,6 @@ class Optimizer(object):
         return result
 
     def _moo_scalarize(self, yi):
-        # check whether all values are failures
-        if np.all(np.isnan(yi)):
-            return yi
-
         # set up the scalarizing function if not done already
         if self._moo_scalar_function is None:
             moo_function = {

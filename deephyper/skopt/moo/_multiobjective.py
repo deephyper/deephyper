@@ -1,10 +1,10 @@
 import abc
-from unicodedata import is_normalized
+
 import numpy as np
 from deephyper.skopt.utils import is_listlike
 
 
-class MoScalarFunction:
+class MoScalarFunction(abc.ABC):
     """Abstract class representing a scalarizing function.
 
     Args:
