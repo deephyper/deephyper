@@ -86,7 +86,7 @@ def model_predict(model_path, X, batch_size=32, verbose=0):
     if isinstance(y_dist, tfp.distributions.Distribution):
         if hasattr(y_dist, "loc") and hasattr(y_dist, "scale"):
             convert_func = lambda y_dist: np.concatenate(
-                [y_dist.loc, y_dist.scale], axis=1
+                [y_dist.loc, y_dist.scale], axis=-1
             )
             y = batch_predict(dataset, convert_func)
         else:
@@ -426,9 +426,16 @@ def greedy_caruana(loss_func, y_true, y_pred, k=2, verbose=0):
     regression = np.shape(y_true)[-1] * 2 == np.shape(y_pred)[-1]
     n_models = np.shape(y_pred)[0]
     if regression:  # regression
-        mid = np.shape(y_true)[-1]
+        shape = np.shape(y_true)
+        mid = shape[-1]
+        selection = [slice(0, s) for s in shape]
+        selection_loc = selection[:]
+        selection_std = selection[:]
+        selection_loc[-1] = slice(0, mid)
+        selection_loc[-1] = slice(mid, 0)
         y_pred_ = tfp.distributions.Normal(
-            loc=y_pred[:, :, :mid], scale=y_pred[:, :, mid:]
+            loc=y_pred[tuple(selection_loc)],
+            scale=y_pred[tuple(selection_std)],
         )
     else:
         y_pred_ = y_pred
