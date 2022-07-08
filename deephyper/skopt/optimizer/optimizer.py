@@ -29,6 +29,7 @@ from ..utils import is_listlike
 from ..utils import is_2Dlistlike
 from ..utils import normalize_dimensions
 from ..utils import cook_initial_point_generator
+from ..moo import MoLinearFunction, MoChebyshevFunction, MoPBIFunction
 
 
 class ExhaustedSearchSpace(RuntimeError):
@@ -170,6 +171,13 @@ class Optimizer(object):
     model_sdv : Model or None, default None
         A Model from Synthetic-Data-Vault.
 
+    moo_scalarization_strategy : string, default: `"Chebyshev"`
+        Function to convert multiple objectives into a single scalar value. Can be either
+
+        - `"Linear"` for linear/convex combination.
+        - `"Chebyshev"` for Chebyshev or weighted infinity norm.
+        - `"PBI"` for penalized boundary intersection.
+
     Attributes
     ----------
     Xi : list
@@ -203,6 +211,7 @@ class Optimizer(object):
         model_sdv=None,
         sample_max_size=-1,
         sample_strategy="quantile",
+        moo_scalarization_strategy="Chebyshev",
     ):
         args = locals().copy()
         del args["self"]
@@ -362,6 +371,16 @@ class Optimizer(object):
                 "model_queue_size should be an int or None, "
                 "got {}".format(type(model_queue_size))
             )
+
+        # For multiobjective optimization
+        moo_scalarization_strategy_allowed = ["Linear", "Chebyshev", "PBI"]
+        if not (moo_scalarization_strategy in moo_scalarization_strategy_allowed):
+            raise ValueError(
+                f"Parameter 'moo_scalarization_strategy={acq_func}' should have a value in {moo_scalarization_strategy_allowed}!"
+            )
+        self._moo_scalarization_strategy = moo_scalarization_strategy
+        self._moo_scalar_function = None
+
         self.max_model_queue_size = model_queue_size
         self.models = []
         self.Xi = []
@@ -407,11 +426,14 @@ class Optimizer(object):
             model_sdv=self.model_sdv,
             sample_max_size=self._sample_max_size,
             sample_strategy=self._sample_strategy,
+            moo_scalarization_strategy=self._moo_scalarization_strategy,
         )
 
         optimizer._initial_samples = self._initial_samples
 
         optimizer.sampled = self.sampled[:]
+
+        optimizer._moo_scalar_function = self._moo_scalar_function
 
         if hasattr(self, "gains_"):
             optimizer.gains_ = np.copy(self.gains_)
@@ -586,13 +608,13 @@ class Optimizer(object):
             opt_yi = self._filter_failures(opt.yi)
 
             if strategy == "cl_min":
-                y_lie = np.min(opt_yi) if opt_yi else 0.0  # CL-min lie
+                y_lie = np.min(opt_yi, axis=0) if opt_yi else 0.0  # CL-min lie
                 t_lie = np.min(ti) if ti is not None else log(sys.float_info.max)
             elif strategy == "cl_mean":
-                y_lie = np.mean(opt_yi) if opt_yi else 0.0  # CL-mean lie
+                y_lie = np.mean(opt_yi, axis=0) if opt_yi else 0.0  # CL-mean lie
                 t_lie = np.mean(ti) if ti is not None else log(sys.float_info.max)
             else:
-                y_lie = np.max(opt_yi) if opt_yi else 0.0  # CL-max lie
+                y_lie = np.max(opt_yi, axis=0) if opt_yi else 0.0  # CL-max lie
                 t_lie = np.max(ti) if ti is not None else log(sys.float_info.max)
 
             # Lie to the optimizer.
@@ -651,10 +673,12 @@ class Optimizer(object):
         if self.filter_failures in ["mean", "max"]:
             yi_no_failure = [v for v in yi if v != OBJECTIVE_VALUE_FAILURE]
 
-            if self.filter_failures == "mean":
-                yi_failed_value = np.mean(yi_no_failure)
+            if not yi_no_failure:
+                yi_failed_value = np.nan
+            elif self.filter_failures == "mean":
+                yi_failed_value = np.mean(yi_no_failure, axis=0).tolist()
             else:
-                yi_failed_value = np.max(yi_no_failure)
+                yi_failed_value = np.max(yi_no_failure, axis=0).tolist()
 
             yi = [v if v != OBJECTIVE_VALUE_FAILURE else yi_failed_value for v in yi]
 
@@ -827,6 +851,9 @@ class Optimizer(object):
             # handle failures
             yi = self._filter_failures(self.yi)
 
+            # convert multiple objectives to single scalar
+            yi = self._moo_scalarize(yi)
+
             # handle size of the sample fit to the estimator
             Xi, yi = self._sample(self.Xi, yi)
 
@@ -988,13 +1015,14 @@ class Optimizer(object):
             for y_value in y:
                 if (
                     not isinstance(y_value, Number)
+                    and not is_listlike(y_value)
                     and y_value != OBJECTIVE_VALUE_FAILURE
                 ):
-                    raise ValueError("expected y to be a list of scalars")
+                    raise ValueError("expected y to be a 1-D or 2-D list of scalars")
 
         elif is_listlike(x):
-            if not isinstance(y, Number):
-                raise ValueError("`func` should return a scalar")
+            if not isinstance(y, Number) and not is_listlike(y):
+                raise ValueError("`func` should return a scalar or tuple of scalars")
 
         else:
             raise ValueError(
@@ -1039,3 +1067,24 @@ class Optimizer(object):
         )
         result.specs = self.specs
         return result
+
+    def _moo_scalarize(self, yi):
+        # check whether all values are failures
+        if np.all(np.isnan(yi)):
+            return yi
+
+        # set up the scalarizing function if not done already
+        if self._moo_scalar_function is None:
+            moo_function = {
+                "Linear": MoLinearFunction,
+                "Chebyshev": MoChebyshevFunction,
+                "PBI": MoPBIFunction,
+            }
+            n_objectives = 1 if np.ndim(yi[0]) == 0 else len(yi[0])
+            self._moo_scalar_function = moo_function[self._moo_scalarization_strategy](
+                n_objectives=n_objectives, random_state=self.rng
+            )
+
+        # compute normalization constants
+        self._moo_scalar_function.normalize(yi)
+        return [self._moo_scalar_function.scalarize(yv) for yv in yi]

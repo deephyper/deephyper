@@ -85,8 +85,8 @@ class LoggerCallback(Callback):
             if np.isreal(job.result).all():
                 if self._best_objective is None:
                     self._best_objective = np.asarray(job.result)
-                else:
-                    self._best_objective = np.maximum(job.result, self._best_objective)
+                elif np.all(np.asarray(job.result) >= self._best_objective):
+                    self._best_objective = np.asarray(job.result)
 
                 print(
                     f"[{self._n_done:05d}]"

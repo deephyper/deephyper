@@ -10,7 +10,6 @@ import pandas as pd
 import deephyper.skopt
 from deephyper.problem._hyperparameter import convert_to_skopt_space
 from deephyper.search._search import Search
-from deephyper.skopt.moo import MoLinearFunction, MoChebyshevFunction, MoPBIFunction
 
 from sklearn.ensemble import GradientBoostingRegressor
 from deephyper.skopt.utils import use_named_args
@@ -50,6 +49,7 @@ class CBO(Search):
         initial_points (List[Dict], optional): A list of initial points to evaluate where each point is a dictionnary where keys are names of hyperparameters and values their corresponding choice. Defaults to ``None`` for them to be generated randomly from the search space.
         sync_communcation (bool, optional): Performs the search in a batch-synchronous manner. Defaults to ``False`` for asynchronous updates.
         filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. If ``"ignore"`` is passed then failed configurations will be filtered-out and not passed to the surrogate model. Defaults to ``"mean"`` to replace by failed configurations by the running mean of objectives.
+        moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "PBI"]``. Defaults to ``"Chebyshev"``.
     """
 
     def __init__(
@@ -114,7 +114,6 @@ class CBO(Search):
                 f"Parameter 'moo_scalarization_strategy={acq_func}' should have a value in {moo_scalarization_strategy_allowed}!"
             )
         self._moo_scalarization_strategy = moo_scalarization_strategy
-        self._moo_scalar_function = None
 
         multi_point_strategy_allowed = [
             "cl_min",
@@ -187,20 +186,10 @@ class CBO(Search):
             n_initial_points=self._n_initial_points,
             initial_points=self._initial_points,
             random_state=self._random_state,
+            moo_scalarization_strategy=self._moo_scalarization_strategy,
         )
 
         self._gather_type = "ALL" if sync_communication else "BATCH"
-
-    def _setup_moo_scalar_function(self):
-        moo_function = MoLinearFunction
-        if self._moo_scalarization_strategy == "Chebyshev":
-            moo_function = MoChebyshevFunction
-        elif self._moo_scalarization_strategy == "PBI":
-            moo_function = MoPBIFunction
-        self._moo_scalar_function = moo_function(
-            n_objectives=self._evaluator.num_objective,
-            random_state=self._random_state.randint(0, 2**32)
-        )
 
     def _setup_optimizer(self):
         if self._fitted:
@@ -213,8 +202,6 @@ class CBO(Search):
             self._setup_optimizer()
 
         num_evals_done = 0
-        x_history = []
-        y_history = []
 
         logging.info(f"Asking {self._evaluator.num_workers} initial configurations...")
         t1 = time.time()
@@ -259,24 +246,6 @@ class CBO(Search):
                 if max_evals > 0 and num_evals_done >= max_evals:
                     break
 
-                if self._evaluator.num_objective > 1:
-                    if self._moo_scalar_function is None:
-                        self._setup_moo_scalar_function()
-                    for cfg, obj in new_results:
-                        x = list(cfg.values())
-                        x_history.append(x)
-                        y_history.append(-obj) #! maximizing
-
-                    if not self._moo_scalar_function.is_utopia_point_initialized():
-                        self._moo_scalar_function.normalize(y_history)
-                    # TODO: THIS IS BUGGY
-                    # elif not self._moo_scalar_function.is_utopia_point_valid(y_history):
-                    #     self._moo_scalar_function.normalize(y_history)
-                    #     # We re-compute all previous scalarized values
-                    #     print("re-computing!")
-                    #     for idx in range(len(self._opt.yi)):
-                    #         self._opt.yi[idx] = self._moo_scalar_function.scalarize(y_history[idx])
-
                 # Transform configurations to list to fit optimizer
                 logging.info("Transforming received configurations to list...")
                 t1 = time.time()
@@ -285,24 +254,12 @@ class CBO(Search):
                 opt_y = []
                 for cfg, obj in new_results:
                     x = list(cfg.values())
-                    if self._evaluator.num_objective > 1:
-                        if np.isreal(obj).all():
-                            opt_X.append(x)
-                            opt_y.append(self._moo_scalar_function.scalarize(-obj))  #! maximizing
-                        elif any(type(objval) is str and objval[0] == "F" for objval in obj):
-                            if (
-                                self._opt_kwargs["acq_optimizer_kwargs"]["filter_failures"]
-                                == "ignore"
-                            ):
-                                continue
-                            else:
-                                opt_X.append(x)
-                                opt_y.append("F")
-
-                    elif np.isreal(obj):
+                    if np.all(np.isreal(obj)):
                         opt_X.append(x)
-                        opt_y.append(-obj)  #! maximizing
-                    elif type(obj) is str and "F" == obj[0]:
+                        opt_y.append(np.negative(obj).tolist())  #! maximizing
+                    elif (type(obj) is str and "F" == obj[0]) or np.any(
+                        type(objval) is str and "F" == objval[0] for objval in obj
+                    ):
                         if (
                             self._opt_kwargs["acq_optimizer_kwargs"]["filter_failures"]
                             == "ignore"
