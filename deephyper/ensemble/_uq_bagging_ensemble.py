@@ -434,7 +434,8 @@ def greedy_caruana(loss_func, y_true, y_pred, k=2, verbose=0):
         selection_loc[-1] = slice(0, mid)
         selection_loc[-1] = slice(mid, 0)
         y_pred_ = tfp.distributions.Normal(
-            loc=y_pred[tuple(selection_loc)], scale=y_pred[tuple(selection_std)] #TODO: slicing should be performed on last axis (-1)
+            loc=y_pred[tuple(selection_loc)],
+            scale=y_pred[tuple(selection_std)],
         )
     else:
         y_pred_ = y_pred
