@@ -8,7 +8,7 @@ class MoScalarFunction(abc.ABC):
     """Abstract class representing a scalarizing function.
 
     Args:
-        n_objectives (int, optional): Number of objective functions to be scalarized. Defaults to 1.
+        n_objectives (int, optional): Number of objective functions. Defaults to 1.
         utopia_point (float or 1-D array, optional): Array of reference values for each objective function. Defaults to None.
         random_state (int, optional): Random seed. Defaults to None.
     """
@@ -93,6 +93,14 @@ class MoScalarFunction(abc.ABC):
 
 
 class MoLinearFunction(MoScalarFunction):
+    """This scalarizing function linearly combines the individual objective values (after automatically scaling them in [0, 1]).
+
+    Args:
+        n_objectives (int, optional): Number of objective functions. Defaults to 1.
+        utopia_point (float or 1-D array, optional): Array of reference values for each objective function. Defaults to None.
+        random_state (int, optional): Random seed. Defaults to None.
+    """
+
     def __init__(
         self,
         n_objectives: int = 1,
@@ -108,6 +116,14 @@ class MoLinearFunction(MoScalarFunction):
 
 
 class MoChebyshevFunction(MoScalarFunction):
+    """This scalarizing function computes a weighted infinity-norm of the individual values (after automatically scaling them in [0, 1]).
+
+    Args:
+        n_objectives (int, optional): Number of objective functions. Defaults to 1.
+        utopia_point (float or 1-D array, optional): Array of reference values for each objective function. Defaults to None.
+        random_state (int, optional): Random seed. Defaults to None.
+    """
+
     def __init__(
         self,
         n_objectives: int = 1,
@@ -125,6 +141,15 @@ class MoChebyshevFunction(MoScalarFunction):
 
 
 class MoPBIFunction(MoScalarFunction):
+    """This scalarizing function computes the projection of the objective vector along a reference vector and adds a penalty term to minimize deviations from the projected point to the attainable objective set.
+
+    Args:
+        n_objectives (int, optional): Number of objective functions. Defaults to 1.
+        utopia_point (float or 1-D array, optional): Array of reference values for each objective function. Defaults to None.
+        random_state (int, optional): Random seed. Defaults to None.
+        penalty (float, optional): Value of penalty parameter. Defaults to 100.0.
+    """
+
     def __init__(
         self,
         n_objectives: int = 1,
