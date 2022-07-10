@@ -410,13 +410,17 @@ class CBO(Search):
         hp_names = self._problem.hyperparameter_names
         try:
             x = df[hp_names].values.tolist()
-            y = df.objective.tolist()
+            # check single or multiple objectives
+            if "objective" in df.columns:
+                y = df.objective.tolist()
+            else:
+                y = df.filter(regex="^objective_\d+$").values.tolist()
         except KeyError:
             raise ValueError(
                 "Incompatible dataframe 'df' to fit surrogate model of CBO."
             )
 
-        self._opt.tell(x, [-yi for yi in y])
+        self._opt.tell(x, [np.negative(yi).tolist() for yi in y])
 
     def fit_generative_model(self, df, q=0.90, n_iter_optimize=0, n_samples=100):
         """Learn the distribution of hyperparameters for the top-``(1-q)x100%`` configurations and sample from this distribution. It can be used for transfer learning.
