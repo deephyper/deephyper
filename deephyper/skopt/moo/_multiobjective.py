@@ -81,11 +81,11 @@ class MoScalarFunction(abc.ABC):
         self._scaling = 1.0 / np.maximum(y_max - y_min, 1e-6)
 
     @abc.abstractmethod
-    def _scalarize(self, yi):
+    def _scalarize(self, y):
         """Scalarization to be implemented.
 
         Args:
-            yi: Array of length _n_objectives.
+            y: Array of length _n_objectives.
 
         Returns:
             float: Converted scalar value.
@@ -111,8 +111,8 @@ class MoLinearFunction(MoScalarFunction):
         self._weight = self._rng.rand(self._n_objectives)
         self._weight /= np.sum(self._weight)
 
-    def _scalarize(self, yi):
-        return np.dot(self._weight, np.asarray(yi))
+    def _scalarize(self, y):
+        return np.dot(self._weight, np.asarray(y))
 
 
 class MoChebyshevFunction(MoScalarFunction):
@@ -132,12 +132,12 @@ class MoChebyshevFunction(MoScalarFunction):
     ):
         super().__init__(n_objectives, utopia_point, random_state)
         self._weight = self._rng.rand(self._n_objectives)
-        # self._weight = 0.5 * np.ones(self._n_objectives)
+        self._weight = 0.5 * np.ones(self._n_objectives)
         # self._weight /= np.sum(self._weight)
 
-    def _scalarize(self, yi):
-        yi = np.dot(self._scaling, np.asarray(yi) - self._utopia_point)
-        return np.max(self._weight * np.abs(yi))
+    def _scalarize(self, y):
+        y = np.multiply(self._scaling, np.asarray(y) - self._utopia_point)
+        return np.max(np.multiply(self._weight, np.abs(y)))
 
 
 class MoPBIFunction(MoScalarFunction):
@@ -163,8 +163,8 @@ class MoPBIFunction(MoScalarFunction):
         # self._weight /= np.sum(self._weight)
         self._penalty = np.abs(penalty) if np.isreal(penalty) else 100.0
 
-    def _scalarize(self, yi):
-        yi = np.dot(self._scaling, np.asarray(yi) - self._utopia_point)
-        d1 = np.dot(self._weight, yi) / self._weightnorm
-        d2 = np.linalg.norm(yi - (d1 * self._weight), 1)
+    def _scalarize(self, y):
+        y = np.multiply(self._scaling, np.asarray(y) - self._utopia_point)
+        d1 = np.dot(self._weight, y) / self._weightnorm
+        d2 = np.linalg.norm(y - (d1 * self._weight), 1)
         return d1 + (self._penalty * d2)

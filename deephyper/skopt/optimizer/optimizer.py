@@ -679,7 +679,7 @@ class Optimizer(object):
 
             # when yi_no_failure is empty all configurations are failures
             if len(yi_no_failure) == 0:
-                if len(yi) == self.max_failures:
+                if len(yi) >= self.max_failures:
                     raise ExhaustedFailures
                 # constant value for the acq. func. to return anything
                 yi_failed_value = 0
@@ -860,7 +860,8 @@ class Optimizer(object):
             yi = self._filter_failures(self.yi)
 
             # convert multiple objectives to single scalar
-            yi = self._moo_scalarize(yi)
+            if np.ndim(yi) > 0 and np.shape(yi)[1] > 1:
+                yi = self._moo_scalarize(yi)
 
             # handle size of the sample fit to the estimator
             Xi, yi = self._sample(self.Xi, yi)
