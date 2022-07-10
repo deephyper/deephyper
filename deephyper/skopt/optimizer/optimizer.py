@@ -860,7 +860,7 @@ class Optimizer(object):
             yi = self._filter_failures(self.yi)
 
             # convert multiple objectives to single scalar
-            if np.ndim(yi) > 0 and np.shape(yi)[1] > 1:
+            if np.ndim(yi) > 1 and np.shape(yi)[1] > 1:
                 yi = self._moo_scalarize(yi)
 
             # handle size of the sample fit to the estimator

@@ -116,7 +116,7 @@ class MoLinearFunction(MoScalarFunction):
 
 
 class MoChebyshevFunction(MoScalarFunction):
-    """This scalarizing function computes a weighted infinity-norm of the individual values (after automatically scaling them in [0, 1]).
+    """This scalarizing function computes a weighted infinity-norm of the individual objective values (after automatically scaling them in [0, 1]).
 
     Args:
         n_objectives (int, optional): Number of objective functions. Defaults to 1.
@@ -132,7 +132,6 @@ class MoChebyshevFunction(MoScalarFunction):
     ):
         super().__init__(n_objectives, utopia_point, random_state)
         self._weight = self._rng.rand(self._n_objectives)
-        self._weight = 0.5 * np.ones(self._n_objectives)
         # self._weight /= np.sum(self._weight)
 
     def _scalarize(self, y):
@@ -141,7 +140,7 @@ class MoChebyshevFunction(MoScalarFunction):
 
 
 class MoPBIFunction(MoScalarFunction):
-    """This scalarizing function computes the projection of the objective vector along a reference vector and adds a penalty term to minimize deviations from the projected point to the attainable objective set.
+    """This scalarizing function computes the projection of the objective vector along a reference vector and adds a penalty term to minimize deviations from the projected point to the attainable objective set. See https://doi.org/10.1109/TEVC.2007.892759
 
     Args:
         n_objectives (int, optional): Number of objective functions. Defaults to 1.
