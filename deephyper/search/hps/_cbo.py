@@ -10,6 +10,7 @@ import pandas as pd
 import deephyper.skopt
 from deephyper.problem._hyperparameter import convert_to_skopt_space
 from deephyper.search._search import Search
+from deephyper.skopt.moo import non_dominated_set, non_dominated_set_ranked
 
 from sklearn.ensemble import GradientBoostingRegressor
 from deephyper.skopt.utils import use_named_args
@@ -423,7 +424,7 @@ class CBO(Search):
         self._opt.tell(x, [np.negative(yi).tolist() for yi in y])
 
     def fit_generative_model(self, df, q=0.90, n_iter_optimize=0, n_samples=100):
-        """Learn the distribution of hyperparameters for the top-``(1-q)x100%`` configurations and sample from this distribution. It can be used for transfer learning.
+        """Learn the distribution of hyperparameters for the top-``(1-q)x100%`` configurations and sample from this distribution. It can be used for transfer learning. For multiobjective problems, this function computes the top-``(1-q)x100%`` configurations in terms of their ranking with respect to pareto efficiency: all points on the first non-dominated pareto front have rank 1 and in general, points on the k'th non-dominated front have rank k.
 
         Example Usage:
 
@@ -450,17 +451,33 @@ class CBO(Search):
             df = pd.read_csv(df)
         assert isinstance(df, pd.DataFrame)
 
-        # filter failures
-        if pd.api.types.is_string_dtype(df.objective):
-            df = df[~df.objective.str.startswith("F")]
-            df.objective = df.objective.astype(float)
+        # check single or multiple objectives
+        if "objective" in df.columns:
+            # filter failures
+            if pd.api.types.is_string_dtype(df.objective):
+                df = df[~df.objective.str.startswith("F")]
+                df.objective = df.objective.astype(float)
 
-        # print(df.objective.values)
-        q_val = np.quantile(df.objective.values, q)
-        req_df = df.loc[df["objective"] > q_val]
-        req_df = req_df.drop(
-            columns=["job_id", "objective", "timestamp_submit", "timestamp_gather"]
-        )
+            # print(df.objective.values)
+            q_val = np.quantile(df.objective.values, q)
+            req_df = df.loc[df["objective"] > q_val]
+            req_df = req_df.drop(
+                columns=["job_id", "objective", "timestamp_submit", "timestamp_gather"]
+            )
+        else:
+            # filter failures
+            objcol = df.filter(regex="^objective_\d+$").columns
+            for col in objcol:
+                if pd.api.types.is_string_dtype(df[col]):
+                    df = df[~df[col].str.startswith("F")]
+                    df[col] = df[col].astype(float)
+
+            top = non_dominated_set_ranked(-np.asarray(df[objcol]), 1.0 - q)
+            req_df = df.loc[top]
+            req_df = req_df.drop(columns=objcol)
+            req_df = req_df.drop(
+                columns=["job_id", "timestamp_submit", "timestamp_gather"]
+            )
 
         # constraints
         scalar_constraints = []
@@ -569,9 +586,19 @@ class CBO(Search):
             df = pd.read_csv(df)
         assert isinstance(df, pd.DataFrame)
 
-        # filter failures
-        df = df[~df.objective.str.startswith("F")]
-        df.objective = df.objective.astype(float)
+        # check single or multiple objectives
+        if "objective" in df.columns:
+            # filter failures
+            if pd.api.types.is_string_dtype(df.objective):
+                df = df[~df.objective.str.startswith("F")]
+                df.objective = df.objective.astype(float)
+        else:
+            # filter failures
+            objcol = df.filter(regex="^objective_\d+$").columns
+            for col in objcol:
+                if pd.api.types.is_string_dtype(df[col]):
+                    df = df[~df[col].str.startswith("F")]
+                    df[col] = df[col].astype(float)
 
         cst = self._problem.space
         if type(cst) != CS.ConfigurationSpace:
@@ -579,8 +606,14 @@ class CBO(Search):
 
         res_df = df
         res_df_names = res_df.columns.values
-        best_index = np.argmax(res_df["objective"].values)
-        best_param = res_df.iloc[best_index]
+        if "objective" in df.columns:
+            best_index = np.argmax(res_df["objective"].values)
+            best_param = res_df.iloc[best_index]
+        else:
+            best_index = non_dominated_set(
+                -np.asarray(res_df[objcol]), return_mask=False
+            )[0]
+            best_param = res_df.iloc[best_index]
 
         cst_new = CS.ConfigurationSpace(seed=self._random_state.randint(0, 2**32))
         hp_names = cst.get_hyperparameter_names()
