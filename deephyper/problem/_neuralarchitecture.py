@@ -342,7 +342,7 @@ class NaProblem:
         if class_weights is not None:
             self._space["class_weights"] = class_weights
 
-    def metrics(self, metrics):
+    def metrics(self, metrics=None):
         """Define a list of metrics for the training of generated architectures.
 
         A list of metrics can be defined to be monitored or used as an objective. It can be a keyword or a callable. For example, if it is a keyword:
@@ -371,6 +371,9 @@ class NaProblem:
         Args:
             metrics (list(str or callable) or dict): If ``str`` the metric should be defined in Keras or in DeepHyper. If ``callable`` it should take 2 arguments ``(y_pred, y_true)`` which are a prediction and a true value respectively.
         """
+
+        if metrics is None:
+            metrics = []
 
         self._space["metrics"] = metrics
 
@@ -507,7 +510,7 @@ class NaProblem:
 
     def extract_hp_values(self, config):
         """Extract the value of hyperparameters present in ``config`` based on the defined hyperparameters in the current ``NaProblem``"""
-        hp_names = self._hp_space._space.get_hyperparameter_names()
+        hp_names = self.hyperparameter_names
         hp_values = []
         for hp_name in hp_names:
             if hp_name == "loss":
@@ -516,6 +519,16 @@ class NaProblem:
                 hp_values.append(config["hyperparameters"][hp_name])
 
         return hp_values
+    
+    @property
+    def hyperparameter_names(self):
+        """The list of hyperparameters names."""
+        return self._hp_space.hyperparameter_names
+    
+    @property
+    def default_hp_configuration(self):
+        """The default configuration as a dictionnary."""
+        return self._hp_space.default_configuration
 
 
 def module_location(attr):
