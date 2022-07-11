@@ -519,12 +519,12 @@ class NaProblem:
                 hp_values.append(config["hyperparameters"][hp_name])
 
         return hp_values
-    
+
     @property
     def hyperparameter_names(self):
         """The list of hyperparameters names."""
         return self._hp_space.hyperparameter_names
-    
+
     @property
     def default_hp_configuration(self):
         """The default configuration as a dictionnary."""

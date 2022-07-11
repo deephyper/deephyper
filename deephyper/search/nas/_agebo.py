@@ -50,7 +50,7 @@ class AgEBO(RegularizedEvolution):
         population_size: int = 100,
         sample_size: int = 10,
         # BO
-        n_initial_points: int=10,
+        n_initial_points: int = 10,
         initial_points=None,
         surrogate_model: str = "RF",
         acq_func: str = "UCB",
