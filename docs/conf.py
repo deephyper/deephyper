@@ -228,8 +228,7 @@ texinfo_documents = [
         "deephyper",
         "deephyper Documentation",
         author,
-        "deephyper",
-        "One line description of project.",
+        "Automated Machine Learning Software for HPC",
         "Miscellaneous",
     )
 ]
