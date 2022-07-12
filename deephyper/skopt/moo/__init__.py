@@ -1,5 +1,11 @@
 from ._hv import hypervolume
-from ._multiobjective import MoChebyshevFunction, MoLinearFunction, MoPBIFunction
+from ._multiobjective import (
+    MoAugmentedChebyshevFunction,
+    MoChebyshevFunction,
+    MoLinearFunction,
+    MoPBIFunction,
+    MoQuadraticFunction,
+)
 from ._pf import (
     is_pareto_efficient,
     non_dominated_set,
@@ -10,8 +16,10 @@ from ._pf import (
 __all__ = [
     "hypervolume",
     "MoLinearFunction",
+    "MoAugmentedChebyshevFunction",
     "MoChebyshevFunction",
     "MoPBIFunction",
+    "MoQuadraticFunction",
     "is_pareto_efficient",
     "non_dominated_set",
     "non_dominated_set_ranked",

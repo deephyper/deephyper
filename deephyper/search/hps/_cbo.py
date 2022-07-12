@@ -50,7 +50,7 @@ class CBO(Search):
         sync_communcation (bool, optional): Performs the search in a batch-synchronous manner. Defaults to ``False`` for asynchronous updates.
         filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. If ``"ignore"`` is passed then failed configurations will be filtered-out and not passed to the surrogate model. For multiple objectives, failure of any single objective will lead to treating that configuration as failed and each of these multiple objective will be replaced by their individual ``"min"`` or ``"mean"`` of past configurations. Defaults to ``"mean"`` to replace by failed configurations by the running mean of objectives.
         max_failures (int, optional): Maximum number of failed configurations allowed before observing a valid objective value when ``filter_failures`` is not equal to ``"ignore"``. Defaults to ``100``.
-        moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "PBI", "rLinear", "rChebyshev", "rPBI"]``. Defaults to ``"Chebyshev"``.
+        moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "AugChebyshev", "PBI", "Quadratic", "rLinear", "rChebyshev", "rAugChebyshev", "rPBI", "rQuadratic"]``. Defaults to ``"Chebyshev"``.
         moo_scalarization_weight (list, optional): Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions. Defaults to ``None``.
     """
 
@@ -117,9 +117,16 @@ class CBO(Search):
                 f"Parameter max_failures={max_failures} should be an integer value!"
             )
 
-        moo_scalarization_strategy_allowed = ["Linear", "Chebyshev", "PBI"]
-        for strategy in moo_scalarization_strategy:
-            moo_scalarization_strategy_allowed += ["r" + strategy]
+        moo_scalarization_strategy_allowed = [
+            "Linear",
+            "Chebyshev",
+            "AugChebyshev",
+            "PBI",
+            "Quadratic",
+        ]
+        for strategy in moo_scalarization_strategy_allowed:
+            if not strategy.startswith("r"):
+                moo_scalarization_strategy_allowed += ["r" + strategy]
         if not (moo_scalarization_strategy in moo_scalarization_strategy_allowed):
             raise ValueError(
                 f"Parameter 'moo_scalarization_strategy={acq_func}' should have a value in {moo_scalarization_strategy_allowed}!"
