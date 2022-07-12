@@ -15,14 +15,16 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 __author__ = "Simon Wessing"
+from ._pf import non_dominated_set
 
 
 def hypervolume(pointset, ref):
     """Compute the absolute hypervolume of a *pointset* according to the
     reference point *ref*.
     """
+    nds = non_dominated_set(pointset, return_mask=True)
     hv = _HyperVolume(ref)
-    return hv.compute(pointset)
+    return hv.compute(pointset[nds])
 
 
 class _HyperVolume:

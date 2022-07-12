@@ -119,8 +119,6 @@ def non_dominated_set_dumb(y):
 
 
 if __name__ == "__main__":
-    from timeit import default_timer as timer
-
     rng = np.random.RandomState(42)
     npoints = 1000
     nobj = 2
