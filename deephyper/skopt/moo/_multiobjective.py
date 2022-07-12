@@ -9,6 +9,7 @@ class MoScalarFunction(abc.ABC):
 
     Args:
         n_objectives (int, optional): Number of objective functions. Defaults to 1.
+        weight (float or 1-D array, optional): Array of weights for each objective function. Defaults to None.
         utopia_point (float or 1-D array, optional): Array of reference values for each objective function. Defaults to None.
         random_state (int, optional): Random seed. Defaults to None.
     """
@@ -16,6 +17,7 @@ class MoScalarFunction(abc.ABC):
     def __init__(
         self,
         n_objectives: int = 1,
+        weight=None,
         utopia_point=None,
         random_state=None,
     ):
@@ -36,6 +38,13 @@ class MoScalarFunction(abc.ABC):
         if utopia_point is not None:
             self._check_shape(utopia_point)
             self._utopia_point = np.asarray(utopia_point)
+
+        if weight is not None:
+            self._check_shape(weight)
+            self._weight = np.asarray(weight)
+        else:
+            self._weight = self._rng.rand(self._n_objectives)
+        self._weight /= np.sum(self._weight)
         self._scaling = np.ones(self._n_objectives)
 
     def _check_shape(self, y):
@@ -97,6 +106,7 @@ class MoLinearFunction(MoScalarFunction):
 
     Args:
         n_objectives (int, optional): Number of objective functions. Defaults to 1.
+        weight (float or 1-D array, optional): Array of weights for each objective function. Defaults to None.
         utopia_point (float or 1-D array, optional): Array of reference values for each objective function. Defaults to None.
         random_state (int, optional): Random seed. Defaults to None.
     """
@@ -104,12 +114,11 @@ class MoLinearFunction(MoScalarFunction):
     def __init__(
         self,
         n_objectives: int = 1,
+        weight=None,
         utopia_point=None,
         random_state=None,
     ):
-        super().__init__(n_objectives, utopia_point, random_state)
-        self._weight = self._rng.rand(self._n_objectives)
-        self._weight /= np.sum(self._weight)
+        super().__init__(n_objectives, weight, utopia_point, random_state)
 
     def _scalarize(self, y):
         return np.dot(self._weight, np.asarray(y))
@@ -120,6 +129,7 @@ class MoChebyshevFunction(MoScalarFunction):
 
     Args:
         n_objectives (int, optional): Number of objective functions. Defaults to 1.
+        weight (float or 1-D array, optional): Array of weights for each objective function. Defaults to None.
         utopia_point (float or 1-D array, optional): Array of reference values for each objective function. Defaults to None.
         random_state (int, optional): Random seed. Defaults to None.
     """
@@ -127,12 +137,11 @@ class MoChebyshevFunction(MoScalarFunction):
     def __init__(
         self,
         n_objectives: int = 1,
+        weight=None,
         utopia_point=None,
         random_state=None,
     ):
-        super().__init__(n_objectives, utopia_point, random_state)
-        self._weight = self._rng.rand(self._n_objectives)
-        # self._weight /= np.sum(self._weight)
+        super().__init__(n_objectives, weight, utopia_point, random_state)
 
     def _scalarize(self, y):
         y = np.multiply(self._scaling, np.asarray(y) - self._utopia_point)
@@ -144,6 +153,7 @@ class MoPBIFunction(MoScalarFunction):
 
     Args:
         n_objectives (int, optional): Number of objective functions. Defaults to 1.
+        weight (float or 1-D array, optional): Array of weights for each objective function. Defaults to None.
         utopia_point (float or 1-D array, optional): Array of reference values for each objective function. Defaults to None.
         random_state (int, optional): Random seed. Defaults to None.
         penalty (float, optional): Value of penalty parameter. Defaults to 100.0.
@@ -152,14 +162,13 @@ class MoPBIFunction(MoScalarFunction):
     def __init__(
         self,
         n_objectives: int = 1,
+        weight=None,
         utopia_point=None,
         random_state=None,
         penalty: float = 100.0,
     ):
-        super().__init__(n_objectives, utopia_point, random_state)
-        self._weight = self._rng.rand(self._n_objectives)
+        super().__init__(n_objectives, weight, utopia_point, random_state)
         self._weightnorm = np.linalg.norm(self._weight) ** 2
-        # self._weight /= np.sum(self._weight)
         self._penalty = np.abs(penalty) if np.isreal(penalty) else 100.0
 
     def _scalarize(self, y):

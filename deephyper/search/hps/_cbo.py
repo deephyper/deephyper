@@ -50,7 +50,8 @@ class CBO(Search):
         sync_communcation (bool, optional): Performs the search in a batch-synchronous manner. Defaults to ``False`` for asynchronous updates.
         filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. If ``"ignore"`` is passed then failed configurations will be filtered-out and not passed to the surrogate model. For multiple objectives, failure of any single objective will lead to treating that configuration as failed and each of these multiple objective will be replaced by their individual ``"min"`` or ``"mean"`` of past configurations. Defaults to ``"mean"`` to replace by failed configurations by the running mean of objectives.
         max_failures (int, optional): Maximum number of failed configurations allowed before observing a valid objective value when ``filter_failures`` is not equal to ``"ignore"``. Defaults to ``100``.
-        moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "PBI"]``. Defaults to ``"Chebyshev"``.
+        moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "PBI", "rLinear", "rChebyshev", "rPBI"]``. Defaults to ``"Chebyshev"``.
+        moo_scalarization_weight (list, optional): Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions. Defaults to ``None``.
     """
 
     def __init__(
@@ -76,6 +77,7 @@ class CBO(Search):
         filter_failures: str = "mean",
         max_failures: int = 100,
         moo_scalarization_strategy: str = "Chebyshev",
+        moo_scalarization_weight=None,
         **kwargs,
     ):
 
@@ -116,11 +118,14 @@ class CBO(Search):
             )
 
         moo_scalarization_strategy_allowed = ["Linear", "Chebyshev", "PBI"]
+        for strategy in moo_scalarization_strategy:
+            moo_scalarization_strategy_allowed += ["r" + strategy]
         if not (moo_scalarization_strategy in moo_scalarization_strategy_allowed):
             raise ValueError(
                 f"Parameter 'moo_scalarization_strategy={acq_func}' should have a value in {moo_scalarization_strategy_allowed}!"
             )
         self._moo_scalarization_strategy = moo_scalarization_strategy
+        self._moo_scalarization_weight = moo_scalarization_weight
 
         multi_point_strategy_allowed = [
             "cl_min",
@@ -195,6 +200,7 @@ class CBO(Search):
             initial_points=self._initial_points,
             random_state=self._random_state,
             moo_scalarization_strategy=self._moo_scalarization_strategy,
+            moo_scalarization_weight=self._moo_scalarization_weight,
         )
 
         self._gather_type = "ALL" if sync_communication else "BATCH"
@@ -414,7 +420,7 @@ class CBO(Search):
             if "objective" in df.columns:
                 y = df.objective.tolist()
             else:
-                y = df.filter(regex="^objective_\d+$").values.tolist()
+                y = df.filter(regex=r"^objective_\d+$").values.tolist()
         except KeyError:
             raise ValueError(
                 "Incompatible dataframe 'df' to fit surrogate model of CBO."
@@ -465,7 +471,7 @@ class CBO(Search):
             )
         else:
             # filter failures
-            objcol = df.filter(regex="^objective_\d+$").columns
+            objcol = df.filter(regex=r"^objective_\d+$").columns
             for col in objcol:
                 if pd.api.types.is_string_dtype(df[col]):
                     df = df[~df[col].str.startswith("F")]
@@ -593,7 +599,7 @@ class CBO(Search):
                 df.objective = df.objective.astype(float)
         else:
             # filter failures
-            objcol = df.filter(regex="^objective_\d+$").columns
+            objcol = df.filter(regex=r"^objective_\d+$").columns
             for col in objcol:
                 if pd.api.types.is_string_dtype(df[col]):
                     df = df[~df[col].str.startswith("F")]

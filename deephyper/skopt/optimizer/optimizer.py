@@ -180,6 +180,10 @@ class Optimizer(object):
         - `"Linear"` for linear/convex combination.
         - `"Chebyshev"` for Chebyshev or weighted infinity norm.
         - `"PBI"` for penalized boundary intersection.
+        - `"rLinear"`, `"rChebyshev"`, `"rPBI"` where the corresponding weights are randomly perturbed in every iteration.
+
+    moo_scalarization_weight: array, default: `None`
+        Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions.
 
     Attributes
     ----------
@@ -215,6 +219,7 @@ class Optimizer(object):
         sample_max_size=-1,
         sample_strategy="quantile",
         moo_scalarization_strategy="Chebyshev",
+        moo_scalarization_weight=None,
     ):
         args = locals().copy()
         del args["self"]
@@ -378,11 +383,14 @@ class Optimizer(object):
 
         # For multiobjective optimization
         moo_scalarization_strategy_allowed = ["Linear", "Chebyshev", "PBI"]
+        for strategy in moo_scalarization_strategy:
+            moo_scalarization_strategy_allowed += ["r" + strategy]
         if not (moo_scalarization_strategy in moo_scalarization_strategy_allowed):
             raise ValueError(
                 f"Parameter 'moo_scalarization_strategy={acq_func}' should have a value in {moo_scalarization_strategy_allowed}!"
             )
         self._moo_scalarization_strategy = moo_scalarization_strategy
+        self._moo_scalarization_weight = moo_scalarization_weight
         self._moo_scalar_function = None
 
         self.max_model_queue_size = model_queue_size
@@ -414,6 +422,7 @@ class Optimizer(object):
         random_state : int, RandomState instance, or None (default)
             Set the random state of the copy.
         """
+        idx = 1 if self._moo_scalarization_strategy.startswith("r") else 0
 
         optimizer = Optimizer(
             dimensions=self.config_space
@@ -430,7 +439,7 @@ class Optimizer(object):
             model_sdv=self.model_sdv,
             sample_max_size=self._sample_max_size,
             sample_strategy=self._sample_strategy,
-            moo_scalarization_strategy=self._moo_scalarization_strategy,
+            moo_scalarization_strategy=self._moo_scalarization_strategy[idx:],
         )
 
         optimizer._initial_samples = self._initial_samples
@@ -1083,16 +1092,37 @@ class Optimizer(object):
         return result
 
     def _moo_scalarize(self, yi):
-        # set up the scalarizing function if not done already
-        if self._moo_scalar_function is None:
+        if (
+            self._moo_scalar_function is None
+            or self._moo_scalarization_strategy.startswith("r")
+        ):
             moo_function = {
                 "Linear": MoLinearFunction,
                 "Chebyshev": MoChebyshevFunction,
                 "PBI": MoPBIFunction,
+                "rLinear": MoLinearFunction,
+                "rChebyshev": MoChebyshevFunction,
+                "rPBI": MoPBIFunction,
             }
             n_objectives = 1 if np.ndim(yi[0]) == 0 else len(yi[0])
+            if self._moo_scalarization_weight is not None:
+                if (
+                    not is_listlike(self._moo_scalarization_weight)
+                    or len(self._moo_scalarization_weight) != n_objectives
+                ):
+                    raise ValueError(
+                        "expected moo_scalarization_weight to be a list of length equal to the number of objectives"
+                    )
+                weight = np.asarray_chkfinite(self._moo_scalarization_weight)
+            elif self._moo_scalarization_strategy.startswith("r"):
+                weight = None
+            else:
+                weight = np.ones(n_objectives) / n_objectives
+
             self._moo_scalar_function = moo_function[self._moo_scalarization_strategy](
-                n_objectives=n_objectives, random_state=self.rng
+                n_objectives=n_objectives,
+                weight=weight,
+                random_state=self.rng,
             )
 
         # compute normalization constants
