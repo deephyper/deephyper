@@ -1,17 +1,21 @@
 import abc
 import copy
+from email.policy import default
 import json
+import math
 import os
 import statistics as stat
 import tempfile
 from functools import partial, reduce
 from itertools import compress
-import math
 
+import altair as alt
 import numpy as np
 import pandas as pd
 import streamlit as st
 import tree
+from deephyper.core.analytics import DBManager
+from deephyper.core.utils._files import ensure_dh_folder_exists
 from matplotlib import pyplot as plt
 from numpy.core.numeric import NaN
 from tinydb import Query, TinyDB
@@ -28,53 +32,205 @@ class Dashboard(View):
 
         st.title("DeepHyper Dashboard")
 
+        st.sidebar.header("Settings")
+
         source_selection = SourceSelection()
-        with st.sidebar.expander("File Selection"):
+        with st.sidebar.expander("Experiments Source"):
             source_selection.show()
 
-        if source_selection.uploaded_file is not None:
-            file_extension = source_selection.uploaded_file.name.split(".")[-1]
+        experiment_selection = ExperimentSelection(source_selection.dbm)
+        with st.sidebar.expander("Experiments Selection"):
+            experiment_selection.show()
 
-            views = {"csv": CSVView, "json": JsonView}
+        if len(experiment_selection.data) == 0:
+            st.warning("No matching experiment found!")
+        else:
+            if len(experiment_selection.data) == 1:
+                # There is only 1 experiment to visualize
+                charts = {"Table": CSVView, "Scatter": ScatterPlotView}
+                default_charts = ["Table", "Scatter"]
+                exp = experiment_selection.data[0]
+                exp["data"]["search"]["results"] = pd.DataFrame(
+                    exp["data"]["search"]["results"]
+                ).reset_index()
+            else:
+                # There are multiple experiments to compare
+                charts = {"Table": CSVView}
+                default_charts = ["Table"]
+                exp = experiment_selection.data
+                for i in range(len(exp)):
+                    exp[i]["data"]["search"]["results"] = pd.DataFrame(
+                        exp[i]["data"]["search"]["results"]
+                    ).reset_index()
 
-            def default(_):
-                return st.sidebar.warning(
-                    f"File should either be a `csv` or a `json`, not '{file_extension}'."
+            with st.sidebar.expander("Charts Selection"):
+                selected_charts = st.multiselect(
+                    "Charts", options=charts.keys(), default=default_charts
                 )
 
-            views.get(file_extension, default)(source_selection.uploaded_file).show()
+            st.sidebar.markdown("""---""")
+            st.sidebar.subheader("Options")
 
-            source_selection.uploaded_file.close()
+            for name in selected_charts:
+                chart = charts[name]
+                chart(exp).show()
 
 
 class SourceSelection(View):
+    """Select the source database."""
+
     def __init__(self) -> None:
         super().__init__()
-        self.upload_type = None
-        self.uploaded_file = None
+        self.path = os.path.join(ensure_dh_folder_exists(), "db.json")
+        self.dbm = None
 
     def show(self):
-        st.markdown("The file should be a `csv` or a `json`.")
-        self.upload_type = st.radio(
-            "Selection Type:", ("Upload a Local File", "Enter a File Path")
+        st.markdown("The database should be a `json` file.")
+
+        self.path = st.text_input("Enter the database path", value=self.path)
+        if self.path is not None and len(self.path) > 0:
+            if not (os.path.exists(self.path)):
+                st.warning("File not found!")
+            else:
+                self.dbm = DBManager(path=self.path)
+
+
+def get_nested(d: dict, k: str):
+    levels = k.split(".")
+    for level in levels:
+        d = d[level]
+    return d
+
+
+class ExperimentSelection(View):
+    """Selec the experiments to display on the dashboard."""
+
+    def __init__(self, dbm):
+        self.dbm = dbm
+        self.selection = {}
+        self.data = None
+
+    def show(self):
+
+        options = {"id": [], "metadata.label": [], "metadata.user": []}
+
+        if len(self.selection) == 0:
+            source_data = self.dbm.list()
+        else:
+            source_data = self.data
+
+        for exp in source_data:
+            for k in options:
+                val = get_nested(exp, k)
+                if val is not None:
+                    options[k].append(val)
+
+                # display only 1 time available options
+                options[k] = list(set(options[k]))
+
+        # display multiselect
+        for k, v in options.items():
+            self.selection[k] = st.multiselect(k, options=v)
+
+        if len(self.selection["id"]) > 0:
+            self.data = [self.dbm.get(exp_id=id_) for id_ in self.selection["id"]]
+        else:
+            exp = Query()
+            search = None
+            for k, values in self.selection.items():
+                cond = None
+                for v in values:
+                    if cond is None:
+                        cond = get_nested(exp, k) == v
+                    else:
+                        cond = cond | (get_nested(exp, k) == v)
+
+                if cond is not None:
+                    if search is None:
+                        search = cond
+                    else:
+                        search = search & cond
+
+            if search is None:
+                self.data = []
+            else:
+                self.data = self.dbm.get(cond=search)
+
+        st.text(f"Found {len(self.data)} matching experiment(s)!")
+
+
+class CSVView(View):
+    def __init__(self, data) -> None:
+        super().__init__()
+        self.name = "Table"
+        self.data = data
+        self.is_single = not (isinstance(data, list))
+
+    def show(self):
+        st.header(self.name)
+
+        if self.is_single:
+            st.dataframe(self.data["data"]["search"]["results"])
+        else:
+            for i in range(min(len(self.data), 5)):
+                with st.expander(f"Experiment: id={self.data[i]['id']}"):
+                    st.dataframe(self.data[i]["data"]["search"]["results"])
+
+
+class ScatterPlotView(View):
+    def __init__(self, exp):
+        self.name = "Scatter Plot"
+        self.results = exp["data"]["search"]["results"]
+
+    def show(self):
+
+        columns = list(self.results.columns)
+
+        # Options for the plot
+        with st.sidebar.expander(self.name):
+            if "timestamp_end" in columns:
+                x_idx = columns.index("timestamp_end")
+            elif "timestamp_gather" in columns:
+                x_idx = columns.index("timestamp_gather")
+            else:
+                x_idx = columns.index("index")
+
+            x_axis = st.selectbox(label="X-axis", options=columns, index=x_idx)
+            y_axis = st.selectbox(
+                label="Y-axis", options=columns, index=columns.index("objective")
+            )
+            color_var = st.selectbox(
+                label="Color", options=columns, index=columns.index("objective")
+            )
+
+        st.header(self.name)
+
+        columns = list(self.results.columns)
+        c = (
+            alt.Chart(self.results)
+            .mark_circle(size=60)
+            .encode(
+                x=alt.X(
+                    x_axis,
+                    title=x_axis.replace("_", " ").title(),
+                    scale=alt.Scale(
+                        domain=[self.results[x_axis].min(), self.results[x_axis].max()]
+                    ),
+                ),
+                y=alt.Y(
+                    y_axis,
+                    title=y_axis.replace("_", " ").title(),
+                    scale=alt.Scale(
+                        domain=[self.results[y_axis].min(), self.results[y_axis].max()]
+                    ),
+                ),
+                color=color_var,
+                tooltip=columns,
+            )
+            .interactive()
         )
 
-        if self.upload_type == "Upload a Local File":
-            self.uploaded_file = st.file_uploader("")
-        else:
-            path = st.text_input("Enter the file path")
-            if path is not None and len(path) > 0:
-                if not (os.path.exists(path)):
-                    st.warning("File not found!")
-                else:
-                    self.uploaded_file = open(path, "r")
-            else:
-                self.uploaded_file = None
-
-
-#! could be improved
-class CSVView(View):
-    ...
+        st.altair_chart(c, use_container_width=True)
 
 
 class JsonView(View):

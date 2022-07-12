@@ -6,29 +6,26 @@ from numbers import Number
 import ConfigSpace as CS
 import numpy as np
 import pandas as pd
-
-from scipy.optimize import fmin_l_bfgs_b
-
-from sklearn.base import clone
-from sklearn.base import is_regressor
 from joblib import Parallel, delayed
+from scipy.optimize import fmin_l_bfgs_b
+from sklearn.base import clone, is_regressor
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.utils import check_random_state
 
-from ..acquisition import _gaussian_acquisition
-from ..acquisition import gaussian_acquisition_1D
-from ..acquisition import gaussian_lcb
+from ..acquisition import _gaussian_acquisition, gaussian_acquisition_1D
 from ..learning import GaussianProcessRegressor
-from ..space import Categorical
-from ..space import Space
-from ..utils import check_x_in_space
-from ..utils import cook_estimator
-from ..utils import create_result
-from ..utils import has_gradients
-from ..utils import is_listlike
-from ..utils import is_2Dlistlike
-from ..utils import normalize_dimensions
-from ..utils import cook_initial_point_generator
+from ..moo import MoChebyshevFunction, MoLinearFunction, MoPBIFunction
+from ..space import Categorical, Space
+from ..utils import (
+    check_x_in_space,
+    cook_estimator,
+    cook_initial_point_generator,
+    create_result,
+    has_gradients,
+    is_2Dlistlike,
+    is_listlike,
+    normalize_dimensions,
+)
 
 
 class ExhaustedSearchSpace(RuntimeError):
@@ -36,6 +33,13 @@ class ExhaustedSearchSpace(RuntimeError):
 
     def __str__(self):
         return f"The search space is exhausted and cannot sample new unique points!"
+
+
+class ExhaustedFailures(RuntimeError):
+    """Raised when the search has seen ``max_failures`` failures without any valid objective value."""
+
+    def __str__(self):
+        return f"The search has reached its quota of failures! Check if the type of failure is expected or the value of ``max_failures`` in the search algorithm."
 
 
 def boltzman_distribution(x, beta=1):
@@ -170,6 +174,17 @@ class Optimizer(object):
     model_sdv : Model or None, default None
         A Model from Synthetic-Data-Vault.
 
+    moo_scalarization_strategy : string, default: `"Chebyshev"`
+        Function to convert multiple objectives into a single scalar value. Can be either
+
+        - `"Linear"` for linear/convex combination.
+        - `"Chebyshev"` for Chebyshev or weighted infinity norm.
+        - `"PBI"` for penalized boundary intersection.
+        - `"rLinear"`, `"rChebyshev"`, `"rPBI"` where the corresponding weights are randomly perturbed in every iteration.
+
+    moo_scalarization_weight: array, default: `None`
+        Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions.
+
     Attributes
     ----------
     Xi : list
@@ -203,6 +218,8 @@ class Optimizer(object):
         model_sdv=None,
         sample_max_size=-1,
         sample_strategy="quantile",
+        moo_scalarization_strategy="Chebyshev",
+        moo_scalarization_weight=None,
     ):
         args = locals().copy()
         del args["self"]
@@ -308,6 +325,7 @@ class Optimizer(object):
         self.boltzmann_gamma = acq_optimizer_kwargs.get("boltzmann_gamma", 1)
         self.boltzmann_psucc = acq_optimizer_kwargs.get("boltzmann_psucc", 0)
         self.filter_failures = acq_optimizer_kwargs.get("filter_failures", "mean")
+        self.max_failures = acq_optimizer_kwargs.get("max_failures", 100)
         self.acq_optimizer_kwargs = acq_optimizer_kwargs
 
         # Configure search space
@@ -362,6 +380,19 @@ class Optimizer(object):
                 "model_queue_size should be an int or None, "
                 "got {}".format(type(model_queue_size))
             )
+
+        # For multiobjective optimization
+        moo_scalarization_strategy_allowed = ["Linear", "Chebyshev", "PBI"]
+        for strategy in moo_scalarization_strategy:
+            moo_scalarization_strategy_allowed += ["r" + strategy]
+        if not (moo_scalarization_strategy in moo_scalarization_strategy_allowed):
+            raise ValueError(
+                f"Parameter 'moo_scalarization_strategy={acq_func}' should have a value in {moo_scalarization_strategy_allowed}!"
+            )
+        self._moo_scalarization_strategy = moo_scalarization_strategy
+        self._moo_scalarization_weight = moo_scalarization_weight
+        self._moo_scalar_function = None
+
         self.max_model_queue_size = model_queue_size
         self.models = []
         self.Xi = []
@@ -391,6 +422,7 @@ class Optimizer(object):
         random_state : int, RandomState instance, or None (default)
             Set the random state of the copy.
         """
+        idx = 1 if self._moo_scalarization_strategy.startswith("r") else 0
 
         optimizer = Optimizer(
             dimensions=self.config_space
@@ -407,11 +439,14 @@ class Optimizer(object):
             model_sdv=self.model_sdv,
             sample_max_size=self._sample_max_size,
             sample_strategy=self._sample_strategy,
+            moo_scalarization_strategy=self._moo_scalarization_strategy[idx:],
         )
 
         optimizer._initial_samples = self._initial_samples
 
         optimizer.sampled = self.sampled[:]
+
+        optimizer._moo_scalar_function = self._moo_scalar_function
 
         if hasattr(self, "gains_"):
             optimizer.gains_ = np.copy(self.gains_)
@@ -586,13 +621,13 @@ class Optimizer(object):
             opt_yi = self._filter_failures(opt.yi)
 
             if strategy == "cl_min":
-                y_lie = np.min(opt_yi) if opt_yi else 0.0  # CL-min lie
+                y_lie = np.min(opt_yi, axis=0) if opt_yi else 0.0  # CL-min lie
                 t_lie = np.min(ti) if ti is not None else log(sys.float_info.max)
             elif strategy == "cl_mean":
-                y_lie = np.mean(opt_yi) if opt_yi else 0.0  # CL-mean lie
+                y_lie = np.mean(opt_yi, axis=0) if opt_yi else 0.0  # CL-mean lie
                 t_lie = np.mean(ti) if ti is not None else log(sys.float_info.max)
             else:
-                y_lie = np.max(opt_yi) if opt_yi else 0.0  # CL-max lie
+                y_lie = np.max(opt_yi, axis=0) if opt_yi else 0.0  # CL-max lie
                 t_lie = np.max(ti) if ti is not None else log(sys.float_info.max)
 
             # Lie to the optimizer.
@@ -649,14 +684,25 @@ class Optimizer(object):
             list: the filtered list.
         """
         if self.filter_failures in ["mean", "max"]:
-            yi_no_failure = [v for v in yi if v != OBJECTIVE_VALUE_FAILURE]
+            yi_no_failure = [
+                v for v in yi if np.ndim(v) > 0 or v != OBJECTIVE_VALUE_FAILURE
+            ]
 
-            if self.filter_failures == "mean":
-                yi_failed_value = np.mean(yi_no_failure)
+            # when yi_no_failure is empty all configurations are failures
+            if len(yi_no_failure) == 0:
+                if len(yi) >= self.max_failures:
+                    raise ExhaustedFailures
+                # constant value for the acq. func. to return anything
+                yi_failed_value = 0
+            elif self.filter_failures == "mean":
+                yi_failed_value = np.mean(yi_no_failure, axis=0).tolist()
             else:
-                yi_failed_value = np.max(yi_no_failure)
+                yi_failed_value = np.max(yi_no_failure, axis=0).tolist()
 
-            yi = [v if v != OBJECTIVE_VALUE_FAILURE else yi_failed_value for v in yi]
+            yi = [
+                v if np.ndim(v) > 0 or v != OBJECTIVE_VALUE_FAILURE else yi_failed_value
+                for v in yi
+            ]
 
         return yi
 
@@ -827,6 +873,10 @@ class Optimizer(object):
             # handle failures
             yi = self._filter_failures(self.yi)
 
+            # convert multiple objectives to single scalar
+            if np.ndim(yi) > 1 and np.shape(yi)[1] > 1:
+                yi = self._moo_scalarize(yi)
+
             # handle size of the sample fit to the estimator
             Xi, yi = self._sample(self.Xi, yi)
 
@@ -988,13 +1038,14 @@ class Optimizer(object):
             for y_value in y:
                 if (
                     not isinstance(y_value, Number)
+                    and not is_listlike(y_value)
                     and y_value != OBJECTIVE_VALUE_FAILURE
                 ):
-                    raise ValueError("expected y to be a list of scalars")
+                    raise ValueError("expected y to be a 1-D or 2-D list of scalars")
 
         elif is_listlike(x):
-            if not isinstance(y, Number):
-                raise ValueError("`func` should return a scalar")
+            if not isinstance(y, Number) and not is_listlike(y):
+                raise ValueError("`func` should return a scalar or tuple of scalars")
 
         else:
             raise ValueError(
@@ -1039,3 +1090,41 @@ class Optimizer(object):
         )
         result.specs = self.specs
         return result
+
+    def _moo_scalarize(self, yi):
+        if (
+            self._moo_scalar_function is None
+            or self._moo_scalarization_strategy.startswith("r")
+        ):
+            moo_function = {
+                "Linear": MoLinearFunction,
+                "Chebyshev": MoChebyshevFunction,
+                "PBI": MoPBIFunction,
+                "rLinear": MoLinearFunction,
+                "rChebyshev": MoChebyshevFunction,
+                "rPBI": MoPBIFunction,
+            }
+            n_objectives = 1 if np.ndim(yi[0]) == 0 else len(yi[0])
+            if self._moo_scalarization_weight is not None:
+                if (
+                    not is_listlike(self._moo_scalarization_weight)
+                    or len(self._moo_scalarization_weight) != n_objectives
+                ):
+                    raise ValueError(
+                        "expected moo_scalarization_weight to be a list of length equal to the number of objectives"
+                    )
+                weight = np.asarray_chkfinite(self._moo_scalarization_weight)
+            elif self._moo_scalarization_strategy.startswith("r"):
+                weight = None
+            else:
+                weight = np.ones(n_objectives) / n_objectives
+
+            self._moo_scalar_function = moo_function[self._moo_scalarization_strategy](
+                n_objectives=n_objectives,
+                weight=weight,
+                random_state=self.rng,
+            )
+
+        # compute normalization constants
+        self._moo_scalar_function.normalize(yi)
+        return [self._moo_scalar_function.scalarize(yv) for yv in yi]

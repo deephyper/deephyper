@@ -288,7 +288,7 @@ class HistorySaver:
         model_dir="model",
         config_dir="config",
     ):
-        self.id = config.get("id", uuid.uuid1())
+        self.id = config.get("job_id", uuid.uuid1())
         self.date = HistorySaver.get_date()
         self.config = copy.deepcopy(config)
         self.save_dir = save_dir

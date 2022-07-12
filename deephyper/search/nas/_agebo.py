@@ -27,6 +27,8 @@ class AgEBO(RegularizedEvolution):
         verbose (int, optional): Indicate the verbosity level of the search. Defaults to 0.
         population_size (int, optional): the number of individuals to keep in the population. Defaults to ``100``.
         sample_size (int, optional): the number of individuals that should participate in each tournament. Defaults to ``10``.
+        n_initial_points (int, optional): Number of collected objectives required before fitting the surrogate-model. Defaults to ``10``.
+        initial_points (List[Dict], optional): A list of initial points to evaluate where each point is a dictionnary where keys are names of hyperparameters and values their corresponding choice. Defaults to ``None`` for them to be generated randomly from the search space.
         surrogate_model (str, optional): Surrogate model used by the Bayesian optimization. Can be a value in ``["RF", "ET", "GBRT", "DUMMY"]``. Defaults to ``"RF"``.
         acq_func (str, optional): Acquisition function used by the Bayesian optimization. Can be a value in ``["UCB", "EI", "PI", "gp_hedge"]``. Defaults to ``"UCB"``.
         kappa (float, optional): Manage the exploration/exploitation tradeoff for the "UCB" acquisition function. Defaults to ``0.001`` for strong exploitation.
@@ -34,7 +36,7 @@ class AgEBO(RegularizedEvolution):
         n_points (int, optional): The number of configurations sampled from the search space to infer each batch of new evaluated configurations. Defaults to ``10000``.
         liar_strategy (str, optional): Definition of the constant value use for the Liar strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max"]`` . Defaults to ``"cl_max"``.
         n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the Bayesian optimization. A value of ``-1`` will use all available cores. Defaults to ``1``.
-        mode (str, optional): Define if the search should be asynchronous or batch synchronous. Choice in ["sync", "async"]. Defaults to "async".
+        sync_communcation (bool, optional): Performs the search in a batch-synchronous manner. Defaults to ``False`` for asynchronous updates.
     """
 
     def __init__(
@@ -48,6 +50,8 @@ class AgEBO(RegularizedEvolution):
         population_size: int = 100,
         sample_size: int = 10,
         # BO
+        n_initial_points: int = 10,
+        initial_points=None,
         surrogate_model: str = "RF",
         acq_func: str = "UCB",
         kappa: float = 0.001,
@@ -55,8 +59,7 @@ class AgEBO(RegularizedEvolution):
         n_points: int = 10000,
         liar_strategy: str = "cl_max",
         n_jobs: int = 1,
-        mode: str = "async",
-        **kwargs,
+        sync_communication: bool = False,
     ):
         super().__init__(
             problem,
@@ -67,9 +70,6 @@ class AgEBO(RegularizedEvolution):
             population_size,
             sample_size,
         )
-
-        assert mode in ["sync", "async"]
-        self.mode = mode
 
         # Initialize opitmizer of hyperparameter space
         if len(self._problem._hp_space._space) == 0:
@@ -108,11 +108,24 @@ class AgEBO(RegularizedEvolution):
         if not (type(n_jobs) is int):
             raise ValueError(f"Parameter 'n_jobs' should be an integer value!")
 
-        self._n_initial_points = self._evaluator.num_workers
+        self._n_initial_points = n_initial_points
+        self._initial_points = []
+        if initial_points is not None and len(initial_points) > 0:
+            for point in initial_points:
+                if isinstance(point, list):
+                    self._initial_points.append(point)
+                elif isinstance(point, dict):
+                    self._initial_points.append(
+                        [point[hp_name] for hp_name in problem.hyperparameter_names]
+                    )
+                else:
+                    raise ValueError(
+                        f"Initial points should be dict or list but {type(point)} was given!"
+                    )
         self._liar_strategy = MAP_liar_strategy.get(liar_strategy, liar_strategy)
 
         base_estimator = self._get_surrogate_model(
-            surrogate_model, n_jobs, random_state=self._random_state.get_state()[1][0]
+            surrogate_model, n_jobs, random_state=self._random_state.randint(0, 2**32)
         )
         self._hp_opt = None
         self._hp_opt_kwargs = dict(
@@ -126,8 +139,11 @@ class AgEBO(RegularizedEvolution):
             acq_func=MAP_acq_func.get(acq_func, acq_func),
             acq_func_kwargs={"xi": xi, "kappa": kappa},
             n_initial_points=self._n_initial_points,
-            random_state=self._random_state.get_state()[1][0],
+            initial_points=self._initial_points,
+            random_state=self._random_state,
         )
+
+        self._gather_type = "ALL" if sync_communication else "BATCH"
 
     def _setup_hp_optimizer(self):
         self._hp_opt = deephyper.skopt.Optimizer(**self._hp_opt_kwargs)
@@ -154,16 +170,14 @@ class AgEBO(RegularizedEvolution):
         population = collections.deque(maxlen=self._population_size)
 
         # Filling available nodes at start
-        self._evaluator.submit(self._gen_random_batch(size=self._n_initial_points))
+        batch = self._gen_random_batch(size=self._evaluator.num_workers)
+        self._evaluator.submit(batch)
 
         # Main loop
         while max_evals < 0 or num_evals_done < max_evals:
 
             # Collecting finished evaluations
-            if self.mode == "async":
-                new_results = list(self._evaluator.gather("BATCH", size=1))
-            else:
-                new_results = list(self._evaluator.gather("ALL"))
+            new_results = list(self._evaluator.gather(self._gather_type, size=1))
 
             if len(new_results) > 0:
                 population.extend(new_results)
@@ -240,7 +254,6 @@ class AgEBO(RegularizedEvolution):
                     new_batch = self._gen_random_batch(
                         size=len(new_results), hps=new_hps
                     )
-
                     self._evaluator.submit(new_batch)
 
     def _gen_random_batch(self, size: int, hps: list = None) -> list:

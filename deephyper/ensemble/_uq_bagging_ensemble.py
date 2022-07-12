@@ -86,7 +86,7 @@ def model_predict(model_path, X, batch_size=32, verbose=0):
     if isinstance(y_dist, tfp.distributions.Distribution):
         if hasattr(y_dist, "loc") and hasattr(y_dist, "scale"):
             convert_func = lambda y_dist: np.concatenate(
-                [y_dist.loc, y_dist.scale], axis=1
+                [y_dist.loc, y_dist.scale], axis=-1
             )
             y = batch_predict(dataset, convert_func)
         else:
@@ -293,9 +293,14 @@ class UQBaggingEnsembleRegressor(UQBaggingEnsemble):
         y = aggregate_predictions(y_pred, regression=(self.mode == "regression"))
 
         # variance decomposition
-        mid = np.shape(y_pred)[2] // 2
-        loc = y_pred[:, :, :mid]
-        scale = y_pred[:, :, mid:]
+        mid = np.shape(y_pred)[-1] // 2
+        selection = [slice(0, s) for s in np.shape(y_pred)]
+        selection_loc = selection[:]
+        selection_std = selection[:]
+        selection_loc[-1] = slice(0, mid)
+        selection_std[-1] = slice(mid, np.shape(y_pred)[-1])
+        loc = y_pred[tuple(selection_loc)]
+        scale = y_pred[tuple(selection_std)]
 
         aleatoric_unc = np.mean(np.square(scale), axis=0)
         epistemic_unc = np.square(np.std(loc, axis=0))
@@ -386,9 +391,14 @@ def aggregate_predictions(y_pred, regression=True):
     """
     if regression:
         # assuming first half are means, second half are std
-        mid = np.shape(y_pred)[2] // 2
-        loc = y_pred[:, :, :mid]
-        scale = y_pred[:, :, mid:]
+        mid = np.shape(y_pred)[-1] // 2
+        selection = [slice(0, s) for s in np.shape(y_pred)]
+        selection_loc = selection[:]
+        selection_std = selection[:]
+        selection_loc[-1] = slice(0, mid)
+        selection_std[-1] = slice(mid, np.shape(y_pred)[-1])
+        loc = y_pred[tuple(selection_loc)]
+        scale = y_pred[tuple(selection_std)]
 
         mean_loc = np.mean(loc, axis=0)
         sum_loc_scale = np.square(loc) + np.square(scale)
@@ -427,8 +437,14 @@ def greedy_caruana(loss_func, y_true, y_pred, k=2, verbose=0):
     n_models = np.shape(y_pred)[0]
     if regression:  # regression
         mid = np.shape(y_true)[-1]
+        selection = [slice(0, s) for s in np.shape(y_pred)]
+        selection_loc = selection[:]
+        selection_std = selection[:]
+        selection_loc[-1] = slice(0, mid)
+        selection_std[-1] = slice(mid, np.shape(y_pred)[-1])
         y_pred_ = tfp.distributions.Normal(
-            loc=y_pred[:, :, :mid], scale=y_pred[:, :, mid:]
+            loc=y_pred[tuple(selection_loc)],
+            scale=y_pred[tuple(selection_std)],
         )
     else:
         y_pred_ = y_pred

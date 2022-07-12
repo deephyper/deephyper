@@ -1,5 +1,4 @@
 import logging
-import math
 import time
 import warnings
 
@@ -10,6 +9,7 @@ import pandas as pd
 import deephyper.skopt
 from deephyper.problem._hyperparameter import convert_to_skopt_space
 from deephyper.search._search import Search
+from deephyper.skopt.moo import non_dominated_set, non_dominated_set_ranked
 
 from sklearn.ensemble import GradientBoostingRegressor
 from deephyper.skopt.utils import use_named_args
@@ -43,12 +43,15 @@ class CBO(Search):
         xi (float, optional): Manage the exploration/exploitation tradeoff of ``"EI"`` and ``"PI"`` acquisition function. Defaults to ``0.001``.
         n_points (int, optional): The number of configurations sampled from the search space to infer each batch of new evaluated configurations.
         filter_duplicated (bool, optional): Force the optimizer to sample unique points until the search space is "exhausted" in the sens that no new unique points can be found given the sampling size ``n_points``. Defaults to ``True``.
-        multi_point_strategy (str, optional): Definition of the constant value use for the Liar strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max", "qUCB"]``. All ``"cl_..."`` strategies follow the constant-liar scheme, where if $N$ new points are requested, the surrogate model is re-fitted $N-1$ times with lies (respectively, the minimum, mean and maximum objective found so far) to infer the acquisition function. Constant-Liar strategy have poor scalability because of this repeated re-fitting. The ``"qUCB"`` strategy is much more efficient by sampling a new $kappa$ value for each new requested point without re-fitting the model, but it is only compatible with ``acq_func == "UCB"``. Defaults to ``"cl_max"``.
+        multi_point_strategy (str, optional): Definition of the constant value use for the Liar strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max", "qUCB"]``. All ``"cl_..."`` strategies follow the constant-liar scheme, where if $N$ new points are requested, the surrogate model is re-fitted $N-1$ times with lies (respectively, the minimum, mean and maximum objective found so far; for multiple objectives, these are the minimum, mean and maximum of the individual objectives) to infer the acquisition function. Constant-Liar strategy have poor scalability because of this repeated re-fitting. The ``"qUCB"`` strategy is much more efficient by sampling a new $kappa$ value for each new requested point without re-fitting the model, but it is only compatible with ``acq_func == "UCB"``. Defaults to ``"cl_max"``.
         n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the Bayesian optimization. A value of ``-1`` will use all available cores. Defaults to ``1``.
         n_initial_points (int, optional): Number of collected objectives required before fitting the surrogate-model. Defaults to ``10``.
         initial_points (List[Dict], optional): A list of initial points to evaluate where each point is a dictionnary where keys are names of hyperparameters and values their corresponding choice. Defaults to ``None`` for them to be generated randomly from the search space.
         sync_communcation (bool, optional): Performs the search in a batch-synchronous manner. Defaults to ``False`` for asynchronous updates.
-        filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. If ``"ignore"`` is passed then failed configurations will be filtered-out and not passed to the surrogate model. Defaults to ``"mean"`` to replace by failed configurations by the running mean of objectives.
+        filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. If ``"ignore"`` is passed then failed configurations will be filtered-out and not passed to the surrogate model. For multiple objectives, failure of any single objective will lead to treating that configuration as failed and each of these multiple objective will be replaced by their individual ``"min"`` or ``"mean"`` of past configurations. Defaults to ``"mean"`` to replace by failed configurations by the running mean of objectives.
+        max_failures (int, optional): Maximum number of failed configurations allowed before observing a valid objective value when ``filter_failures`` is not equal to ``"ignore"``. Defaults to ``100``.
+        moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "PBI", "rLinear", "rChebyshev", "rPBI"]``. Defaults to ``"Chebyshev"``.
+        moo_scalarization_weight (list, optional): Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions. Defaults to ``None``.
     """
 
     def __init__(
@@ -72,6 +75,9 @@ class CBO(Search):
         initial_points=None,
         sync_communication: bool = False,
         filter_failures: str = "mean",
+        max_failures: int = 100,
+        moo_scalarization_strategy: str = "Chebyshev",
+        moo_scalarization_weight=None,
         **kwargs,
     ):
 
@@ -105,6 +111,21 @@ class CBO(Search):
             raise ValueError(
                 f"Parameter filter_duplicated={filter_duplicated} should be a boolean value!"
             )
+
+        if not (type(max_failures) is int):
+            raise ValueError(
+                f"Parameter max_failures={max_failures} should be an integer value!"
+            )
+
+        moo_scalarization_strategy_allowed = ["Linear", "Chebyshev", "PBI"]
+        for strategy in moo_scalarization_strategy:
+            moo_scalarization_strategy_allowed += ["r" + strategy]
+        if not (moo_scalarization_strategy in moo_scalarization_strategy_allowed):
+            raise ValueError(
+                f"Parameter 'moo_scalarization_strategy={acq_func}' should have a value in {moo_scalarization_strategy_allowed}!"
+            )
+        self._moo_scalarization_strategy = moo_scalarization_strategy
+        self._moo_scalarization_weight = moo_scalarization_weight
 
         multi_point_strategy_allowed = [
             "cl_min",
@@ -170,6 +191,7 @@ class CBO(Search):
                 "filter_failures": MAP_filter_failures.get(
                     filter_failures, filter_failures
                 ),
+                "max_failures": max_failures,
             },
             # acquisition function
             acq_func=MAP_acq_func.get(acq_func, acq_func),
@@ -177,6 +199,8 @@ class CBO(Search):
             n_initial_points=self._n_initial_points,
             initial_points=self._initial_points,
             random_state=self._random_state,
+            moo_scalarization_strategy=self._moo_scalarization_strategy,
+            moo_scalarization_weight=self._moo_scalarization_weight,
         )
 
         self._gather_type = "ALL" if sync_communication else "BATCH"
@@ -244,10 +268,12 @@ class CBO(Search):
                 opt_y = []
                 for cfg, obj in new_results:
                     x = list(cfg.values())
-                    if np.isreal(obj):
+                    if np.all(np.isreal(obj)):
                         opt_X.append(x)
-                        opt_y.append(-obj)  #! maximizing
-                    elif type(obj) is str and "F" == obj[0]:
+                        opt_y.append(np.negative(obj).tolist())  #! maximizing
+                    elif (type(obj) is str and "F" == obj[0]) or np.any(
+                        type(objval) is str and "F" == objval[0] for objval in obj
+                    ):
                         if (
                             self._opt_kwargs["acq_optimizer_kwargs"]["filter_failures"]
                             == "ignore"
@@ -390,16 +416,20 @@ class CBO(Search):
         hp_names = self._problem.hyperparameter_names
         try:
             x = df[hp_names].values.tolist()
-            y = df.objective.tolist()
+            # check single or multiple objectives
+            if "objective" in df.columns:
+                y = df.objective.tolist()
+            else:
+                y = df.filter(regex=r"^objective_\d+$").values.tolist()
         except KeyError:
             raise ValueError(
                 "Incompatible dataframe 'df' to fit surrogate model of CBO."
             )
 
-        self._opt.tell(x, [-yi for yi in y])
+        self._opt.tell(x, [np.negative(yi).tolist() for yi in y])
 
     def fit_generative_model(self, df, q=0.90, n_iter_optimize=0, n_samples=100):
-        """Learn the distribution of hyperparameters for the top-``(1-q)x100%`` configurations and sample from this distribution. It can be used for transfer learning.
+        """Learn the distribution of hyperparameters for the top-``(1-q)x100%`` configurations and sample from this distribution. It can be used for transfer learning. For multiobjective problems, this function computes the top-``(1-q)x100%`` configurations in terms of their ranking with respect to pareto efficiency: all points on the first non-dominated pareto front have rank 1 and in general, points on the k'th non-dominated front have rank k.
 
         Example Usage:
 
@@ -426,17 +456,33 @@ class CBO(Search):
             df = pd.read_csv(df)
         assert isinstance(df, pd.DataFrame)
 
-        # filter failures
-        if pd.api.types.is_string_dtype(df.objective):
-            df = df[~df.objective.str.startswith("F")]
-            df.objective = df.objective.astype(float)
+        # check single or multiple objectives
+        if "objective" in df.columns:
+            # filter failures
+            if pd.api.types.is_string_dtype(df.objective):
+                df = df[~df.objective.str.startswith("F")]
+                df.objective = df.objective.astype(float)
 
-        # print(df.objective.values)
-        q_val = np.quantile(df.objective.values, q)
-        req_df = df.loc[df["objective"] > q_val]
-        req_df = req_df.drop(
-            columns=["job_id", "objective", "timestamp_submit", "timestamp_gather"]
-        )
+            # print(df.objective.values)
+            q_val = np.quantile(df.objective.values, q)
+            req_df = df.loc[df["objective"] > q_val]
+            req_df = req_df.drop(
+                columns=["job_id", "objective", "timestamp_submit", "timestamp_gather"]
+            )
+        else:
+            # filter failures
+            objcol = df.filter(regex=r"^objective_\d+$").columns
+            for col in objcol:
+                if pd.api.types.is_string_dtype(df[col]):
+                    df = df[~df[col].str.startswith("F")]
+                    df[col] = df[col].astype(float)
+
+            top = non_dominated_set_ranked(-np.asarray(df[objcol]), 1.0 - q)
+            req_df = df.loc[top]
+            req_df = req_df.drop(columns=objcol)
+            req_df = req_df.drop(
+                columns=["job_id", "timestamp_submit", "timestamp_gather"]
+            )
 
         # constraints
         scalar_constraints = []
@@ -545,9 +591,19 @@ class CBO(Search):
             df = pd.read_csv(df)
         assert isinstance(df, pd.DataFrame)
 
-        # filter failures
-        df = df[~df.objective.str.startswith("F")]
-        df.objective = df.objective.astype(float)
+        # check single or multiple objectives
+        if "objective" in df.columns:
+            # filter failures
+            if pd.api.types.is_string_dtype(df.objective):
+                df = df[~df.objective.str.startswith("F")]
+                df.objective = df.objective.astype(float)
+        else:
+            # filter failures
+            objcol = df.filter(regex=r"^objective_\d+$").columns
+            for col in objcol:
+                if pd.api.types.is_string_dtype(df[col]):
+                    df = df[~df[col].str.startswith("F")]
+                    df[col] = df[col].astype(float)
 
         cst = self._problem.space
         if type(cst) != CS.ConfigurationSpace:
@@ -555,8 +611,14 @@ class CBO(Search):
 
         res_df = df
         res_df_names = res_df.columns.values
-        best_index = np.argmax(res_df["objective"].values)
-        best_param = res_df.iloc[best_index]
+        if "objective" in df.columns:
+            best_index = np.argmax(res_df["objective"].values)
+            best_param = res_df.iloc[best_index]
+        else:
+            best_index = non_dominated_set(
+                -np.asarray(res_df[objcol]), return_mask=False
+            )[0]
+            best_param = res_df.iloc[best_index]
 
         cst_new = CS.ConfigurationSpace(seed=self._random_state.randint(0, 2**32))
         hp_names = cst.get_hyperparameter_names()
