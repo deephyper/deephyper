@@ -675,7 +675,9 @@ class Optimizer(object):
             list: the filtered list.
         """
         if self.filter_failures in ["mean", "max"]:
-            yi_no_failure = [v for v in yi if v != OBJECTIVE_VALUE_FAILURE]
+            yi_no_failure = [
+                v for v in yi if np.ndim(v) > 0 or v != OBJECTIVE_VALUE_FAILURE
+            ]
 
             # when yi_no_failure is empty all configurations are failures
             if len(yi_no_failure) == 0:
@@ -688,7 +690,10 @@ class Optimizer(object):
             else:
                 yi_failed_value = np.max(yi_no_failure, axis=0).tolist()
 
-            yi = [v if v != OBJECTIVE_VALUE_FAILURE else yi_failed_value for v in yi]
+            yi = [
+                v if np.ndim(v) > 0 or v != OBJECTIVE_VALUE_FAILURE else yi_failed_value
+                for v in yi
+            ]
 
         return yi
 
