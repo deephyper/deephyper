@@ -81,7 +81,23 @@ class LoggerCallback(Callback):
 
     def on_done(self, job):
         self._n_done += 1
-        if np.isreal(job.result):
+        if np.ndim(job.result) > 0:
+            if np.isreal(job.result).all():
+                if self._best_objective is None:
+                    self._best_objective = np.asarray(job.result)
+                elif np.all(np.asarray(job.result) >= self._best_objective):
+                    self._best_objective = np.asarray(job.result)
+
+                print(
+                    f"[{self._n_done:05d}]"
+                    + " -- best objective: "
+                    + " ".join(format(f, ".5f") for f in self._best_objective)
+                    + " -- received objective: "
+                    + " ".join(format(f, ".5f") for f in job.result)
+                )
+            elif np.any(type(res) is str and "F" == res[0] for res in job.result):
+                print(f"[{self._n_done:05d}] -- received failure: {job.result}")
+        elif np.isreal(job.result):
             if self._best_objective is None:
                 self._best_objective = job.result
             else:

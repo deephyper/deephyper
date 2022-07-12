@@ -330,8 +330,8 @@ class Evaluator:
                 if self.num_objective is None:
                     self.num_objective = len(obj)
 
-                for i, obj in enumerate(obj):
-                    result[f"objective_{i}"] = obj
+                for i, objval in enumerate(obj):
+                    result[f"objective_{i}"] = objval
             else:
 
                 if self.num_objective is None:
