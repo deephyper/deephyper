@@ -14,7 +14,13 @@ from sklearn.utils import check_random_state
 
 from ..acquisition import _gaussian_acquisition, gaussian_acquisition_1D
 from ..learning import GaussianProcessRegressor
-from ..moo import MoChebyshevFunction, MoLinearFunction, MoPBIFunction
+from ..moo import (
+    MoAugmentedChebyshevFunction,
+    MoChebyshevFunction,
+    MoLinearFunction,
+    MoPBIFunction,
+    MoQuadraticFunction,
+)
 from ..space import Categorical, Space
 from ..utils import (
     check_x_in_space,
@@ -179,8 +185,10 @@ class Optimizer(object):
 
         - `"Linear"` for linear/convex combination.
         - `"Chebyshev"` for Chebyshev or weighted infinity norm.
+        - `"AugChebyshev"` for Chebyshev norm augmented with a weighted 1-norm.
         - `"PBI"` for penalized boundary intersection.
-        - `"rLinear"`, `"rChebyshev"`, `"rPBI"` where the corresponding weights are randomly perturbed in every iteration.
+        - `"Quadratic"` for quadratic combination (2-norm).
+        - `"rLinear"`, `"rChebyshev"`, `"rAugChebyshev"`, `"rPBI"`, `"rQuadratic"` where the corresponding weights are randomly perturbed in every iteration.
 
     moo_scalarization_weight: array, default: `None`
         Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions.
@@ -382,9 +390,16 @@ class Optimizer(object):
             )
 
         # For multiobjective optimization
-        moo_scalarization_strategy_allowed = ["Linear", "Chebyshev", "PBI"]
-        for strategy in moo_scalarization_strategy:
-            moo_scalarization_strategy_allowed += ["r" + strategy]
+        moo_scalarization_strategy_allowed = [
+            "Linear",
+            "Chebyshev",
+            "AugChebyshev",
+            "PBI",
+            "Quadratic",
+        ]
+        moo_scalarization_strategy_allowed = moo_scalarization_strategy_allowed + [
+            f"r{s}" for s in moo_scalarization_strategy_allowed
+        ]
         if not (moo_scalarization_strategy in moo_scalarization_strategy_allowed):
             raise ValueError(
                 f"Parameter 'moo_scalarization_strategy={acq_func}' should have a value in {moo_scalarization_strategy_allowed}!"
@@ -1099,10 +1114,14 @@ class Optimizer(object):
             moo_function = {
                 "Linear": MoLinearFunction,
                 "Chebyshev": MoChebyshevFunction,
+                "AugChebyshev": MoAugmentedChebyshevFunction,
                 "PBI": MoPBIFunction,
+                "Quadratic": MoQuadraticFunction,
                 "rLinear": MoLinearFunction,
                 "rChebyshev": MoChebyshevFunction,
+                "rAugChebyshev": MoAugmentedChebyshevFunction,
                 "rPBI": MoPBIFunction,
+                "rQuadratic": MoQuadraticFunction,
             }
             n_objectives = 1 if np.ndim(yi[0]) == 0 else len(yi[0])
             if self._moo_scalarization_weight is not None:

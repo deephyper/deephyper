@@ -8,7 +8,6 @@ import os
 import sys
 import time
 import warnings
-from re import I
 from typing import Dict, List
 
 import numpy as np
@@ -62,6 +61,7 @@ class Evaluator:
     """
 
     FAIL_RETURN_VALUE = OBJECTIVE_VALUE_FAILURE
+    NEST_ASYNCIO_PATCHED = False
     PYTHON_EXE = os.environ.get("DEEPHYPER_PYTHON_BACKEND", sys.executable)
     assert os.path.isfile(PYTHON_EXE)
 
@@ -97,13 +97,14 @@ class Evaluator:
         self._lock = asyncio.Lock()
 
         # to avoid "RuntimeError: This event loop is already running"
-        if _test_ipython_interpretor():
+        if not (Evaluator.NEST_ASYNCIO_PATCHED) and _test_ipython_interpretor():
             warnings.warn(
                 "Applying nest-asyncio patch for IPython Shell!", category=UserWarning
             )
             import deephyper.evaluator._nest_asyncio as nest_asyncio
 
             nest_asyncio.apply()
+            Evaluator.NEST_ASYNCIO_PATCHED = True
 
     def to_json(self):
         """Returns a json version of the evaluator."""
