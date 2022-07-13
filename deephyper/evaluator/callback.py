@@ -121,6 +121,7 @@ class TqdmCallback(Callback):
     def __init__(self):
         self._best_objective = None
         self._n_done = 0
+        self._n_failures = 0
         self._max_evals = None
         self._tqdm = None
 
@@ -138,12 +139,24 @@ class TqdmCallback(Callback):
 
         self._n_done += 1
         self._tqdm.update(1)
-        if np.isreal(job.result):
-            if self._best_objective is None:
-                self._best_objective = job.result
+        # Test if multi objectives are received
+        if np.ndim(job.result) > 0:
+            if np.isreal(job.result).all():
+                pass
             else:
-                self._best_objective = max(job.result, self._best_objective)
-        self._tqdm.set_postfix(objective=self._best_objective)
+                self._n_failures += 1
+            self._tqdm.set_postfix(failures=self._n_failures)
+        else:
+            if np.isreal(job.result):
+                if self._best_objective is None:
+                    self._best_objective = job.result
+                else:
+                    self._best_objective = max(job.result, self._best_objective)
+            else:
+                self._n_failures += 1
+            self._tqdm.set_postfix(
+                objective=self._best_objective, failures=self._n_failures
+            )
 
 
 class SearchEarlyStopping(Callback):
