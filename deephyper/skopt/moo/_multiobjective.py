@@ -176,3 +176,62 @@ class MoPBIFunction(MoScalarFunction):
         d1 = np.dot(self._weight, y) / self._weightnorm
         d2 = np.linalg.norm(y - (d1 * self._weight), 1)
         return d1 + (self._penalty * d2)
+
+
+class MoAugmentedChebyshevFunction(MoScalarFunction):
+    """This scalarizing function computes a sum of weighted infinity- and 1-norms of the individual objective values (after automatically scaling them in [0, 1]).
+
+    Args:
+        n_objectives (int, optional): Number of objective functions. Defaults to 1.
+        weight (float or 1-D array, optional): Array of weights for each objective function. Defaults to None.
+        utopia_point (float or 1-D array, optional): Array of reference values for each objective function. Defaults to None.
+        random_state (int, optional): Random seed. Defaults to None.
+        penalty (float, optional): Value of weight given to 1-norm. Defaults to 0.001.
+    """
+
+    def __init__(
+        self,
+        n_objectives: int = 1,
+        weight=None,
+        utopia_point=None,
+        random_state=None,
+        alpha: float = 0.001,
+    ):
+        super().__init__(n_objectives, weight, utopia_point, random_state)
+        self._alpha = np.abs(alpha) if np.isreal(alpha) else 0.001
+
+    def _scalarize(self, y):
+        y = np.multiply(self._scaling, np.asarray(y) - self._utopia_point)
+        y = np.multiply(self._weight, np.abs(y))
+        return np.max(y) + (self._alpha * np.linalg.norm(y, 1))
+
+
+class MoQuadraticFunction(MoScalarFunction):
+    """This scalarizing function quadratically combines the individual objective values (after automatically scaling them in [0, 1]). It can be interpreted a smoother version of `MoChebyshevFunction`.
+
+    Args:
+        n_objectives (int, optional): Number of objective functions. Defaults to 1.
+        weight (float or 1-D array, optional): Array of weights for each objective function. Defaults to None.
+        utopia_point (float or 1-D array, optional): Array of reference values for each objective function. Defaults to None.
+        random_state (int, optional): Random seed. Defaults to None.
+        penalty (float, optional): Value of smoothness parameter. Larger values make it less smooth. Defaults to 10.0.
+    """
+
+    def __init__(
+        self,
+        n_objectives: int = 1,
+        weight=None,
+        utopia_point=None,
+        random_state=None,
+        alpha: float = 10.0,
+    ):
+        super().__init__(n_objectives, weight, utopia_point, random_state)
+        U, _, _ = np.linalg.svd(self._weight.reshape(-1, 1), full_matrices=True)
+        self._alpha = np.abs(alpha) if np.isreal(alpha) else 10.0
+        self._Q = U.dot(
+            np.diag([self._alpha if j > 0 else 1.0 for j in range(self._n_objectives)])
+        ).dot(U.T)
+
+    def _scalarize(self, y):
+        y = np.multiply(self._scaling, np.asarray(y) - self._utopia_point)
+        return y.T.dot(self._Q).dot(y)
