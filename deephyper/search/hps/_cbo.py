@@ -462,7 +462,7 @@ class CBO(Search):
             )
 
         #! avoid error linked to `n_components=10` a parameter of generative model used
-        q_max = 10 / len(df)
+        q_max = 1 - 10 / len(df)
         if q_max < q:
             warnings.warn(
                 f"The value of q={q} is replaced by q_max={q_max} because a minimum of 10 results are required to perform transfer-learning!",
