@@ -124,9 +124,9 @@ class CBO(Search):
             "PBI",
             "Quadratic",
         ]
-        for strategy in moo_scalarization_strategy_allowed:
-            if not strategy.startswith("r"):
-                moo_scalarization_strategy_allowed += ["r" + strategy]
+        moo_scalarization_strategy_allowed = moo_scalarization_strategy_allowed + [
+            f"r{s}" for s in moo_scalarization_strategy_allowed
+        ]
         if not (moo_scalarization_strategy in moo_scalarization_strategy_allowed):
             raise ValueError(
                 f"Parameter 'moo_scalarization_strategy={acq_func}' should have a value in {moo_scalarization_strategy_allowed}!"
