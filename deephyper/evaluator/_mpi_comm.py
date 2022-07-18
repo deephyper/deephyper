@@ -87,8 +87,6 @@ class MPICommEvaluator(Evaluator):
             if code == 1:
                 sol += "\nException happening in remote rank was propagated to root process.\n"
                 print(sol, file=sys.stderr)
-                print(sol, file=sys.stderr)
-                print(sol, file=sys.stderr)
                 raise RunFunctionError
 
             job.result = sol
