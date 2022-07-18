@@ -1,6 +1,9 @@
 import asyncio
 import functools
 import logging
+import sys
+import traceback
+from deephyper.core.exceptions import RunFunctionError
 from deephyper.evaluator._evaluator import Evaluator
 
 import mpi4py
@@ -13,6 +16,16 @@ from mpi4py.futures import MPICommExecutor
 
 
 logger = logging.getLogger(__name__)
+
+
+def catch_exception(run_func):
+    try:
+        code = 0
+        result = run_func()
+    except Exception as e:
+        code = 1
+        result = traceback.format_exc()
+    return code, result
 
 
 class MPICommEvaluator(Evaluator):
@@ -66,7 +79,17 @@ class MPICommEvaluator(Evaluator):
                 job.run_function, job.config, **self.run_function_kwargs
             )
 
-            sol = await self.loop.run_in_executor(self.master_executor, run_function)
+            code, sol = await self.loop.run_in_executor(
+                self.master_executor, catch_exception, run_function
+            )
+
+            # check if exception happened in worker
+            if code == 1:
+                sol += "\nException happening in remote rank was propagated to root process.\n"
+                print(sol, file=sys.stderr)
+                print(sol, file=sys.stderr)
+                print(sol, file=sys.stderr)
+                raise RunFunctionError
 
             job.result = sol
 

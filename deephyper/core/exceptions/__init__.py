@@ -14,3 +14,7 @@ class DeephyperRuntimeError(RuntimeError):
 
 class SearchTerminationError(RuntimeError):
     """Raised when a search receives SIGALARM"""
+
+
+class RunFunctionError(RuntimeError):
+    """Raise when error occurs in run-function"""
