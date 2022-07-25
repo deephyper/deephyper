@@ -51,7 +51,7 @@ __all__ = [
     "SubprocessEvaluator",
     "ThreadPoolEvaluator",
     "to_json",
-    "parse_subprocess_result"
+    "parse_subprocess_result",
 ]
 
 try:

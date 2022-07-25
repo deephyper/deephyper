@@ -42,6 +42,7 @@ class Encoder(json.JSONEncoder):
 def to_json(d: dict):
     return json.dumps(d, cls=Encoder)
 
+
 def parse_subprocess_result(result):
     stdout = result.stdout
     stderr = result.stderr
