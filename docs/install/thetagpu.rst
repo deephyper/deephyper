@@ -17,7 +17,7 @@ This installation procedure shows you how to access the installed DeepHyper modu
 
     . /etc/profile
 
-    module load conda/2021-09-22
+    module load conda/2022-07-01
     conda activate base
 
 To then effectively call this activation script in your scripts, you can use ``source ...``, here is an exemple to test the good activation of the conda environment (replace the ``$PROJECT_NAME`` with your project, e-g: ``#COBALT -A datascience``) :
@@ -74,7 +74,7 @@ As this procedure needs to be performed on ThetaGPU, we will directly execute it
     . /etc/profile
 
     # create the dhgpu environment:
-    module load conda/2021-11-30
+    module load conda/2022-07-01
 
     conda create -p dhenv --clone base -y
     conda activate dhenv/
@@ -98,7 +98,7 @@ Once this job is finished you can test the good installation by creating this ``
 
     . /etc/profile
 
-    module load conda/2021-09-22
+    module load conda/2022-07-01
     conda activate dhenv/
 
 mpi4py installation

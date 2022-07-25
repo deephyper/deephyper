@@ -1,6 +1,6 @@
 #!/bin/bash
 
-module load conda/2021-09-22
+module load conda/2022-07-01
 conda create -p dhgpu --clone base -y
 conda activate dhgpu/
 pip install pip --upgrade

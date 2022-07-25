@@ -38,6 +38,7 @@ from deephyper.evaluator._subprocess import SubprocessEvaluator
 from deephyper.evaluator._thread_pool import ThreadPoolEvaluator
 from deephyper.evaluator._queue import queued
 from deephyper.evaluator._decorator import profile
+from deephyper.evaluator._encoder import to_json, parse_subprocess_result
 
 __all__ = [
     "Evaluator",
@@ -49,6 +50,8 @@ __all__ = [
     "SerialEvaluator",
     "SubprocessEvaluator",
     "ThreadPoolEvaluator",
+    "to_json",
+    "parse_subprocess_result"
 ]
 
 try:

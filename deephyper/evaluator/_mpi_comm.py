@@ -1,6 +1,9 @@
 import asyncio
 import functools
 import logging
+import sys
+import traceback
+from deephyper.core.exceptions import RunFunctionError
 from deephyper.evaluator._evaluator import Evaluator
 
 import mpi4py
@@ -15,6 +18,17 @@ from mpi4py.futures import MPICommExecutor
 logger = logging.getLogger(__name__)
 
 
+def catch_exception(run_func):
+    """A wrapper function to execute the ``run_func`` passed by the user. This way we can catch remote exception"""
+    try:
+        code = 0
+        result = run_func()
+    except Exception as e:
+        code = 1
+        result = traceback.format_exc()
+    return code, result
+
+
 class MPICommEvaluator(Evaluator):
     """This evaluator uses the ``mpi4py`` library as backend.
 
@@ -26,6 +40,7 @@ class MPICommEvaluator(Evaluator):
         callbacks (list, optional): A list of callbacks to trigger custom actions at the creation or completion of jobs. Defaults to ``None``.
         run_function_kwargs (dict, optional): Keyword-arguments to pass to the ``run_function``. Defaults to ``None``.
         comm (optional): A MPI communicator, if ``None`` it will use ``MPI.COMM_WORLD``. Defaults to ``None``.
+        rank (int, optional): The rank of the master process. Defaults to ``0``.
     """
 
     def __init__(
@@ -35,16 +50,18 @@ class MPICommEvaluator(Evaluator):
         callbacks=None,
         run_function_kwargs=None,
         comm=None,
+        root=0,
     ):
         super().__init__(run_function, num_workers, callbacks, run_function_kwargs)
         if not MPI.Is_initialized():
             MPI.Init_thread()
 
         self.comm = comm if comm else MPI.COMM_WORLD
+        self.root = root
         self.num_workers = self.comm.Get_size() - 1  # 1 rank is the master
         self.sem = asyncio.Semaphore(self.num_workers)
         logging.info(f"Creating MPICommExecutor with {self.num_workers} max_workers...")
-        self.executor = MPICommExecutor(comm=self.comm, root=0)
+        self.executor = MPICommExecutor(comm=self.comm, root=self.root)
         self.master_executor = None
         logging.info("Creation of MPICommExecutor done")
 
@@ -66,7 +83,15 @@ class MPICommEvaluator(Evaluator):
                 job.run_function, job.config, **self.run_function_kwargs
             )
 
-            sol = await self.loop.run_in_executor(self.master_executor, run_function)
+            code, sol = await self.loop.run_in_executor(
+                self.master_executor, catch_exception, run_function
+            )
+
+            # check if exception happened in worker
+            if code == 1:
+                sol += "\nException happening in remote rank was propagated to root process.\n"
+                print(sol, file=sys.stderr)
+                raise RunFunctionError
 
             job.result = sol
 

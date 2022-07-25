@@ -87,7 +87,8 @@ Table of Contents
     install/index
     tutorials/index
     examples/index
-    research
+    F.A.Q. <faq>
+    Publications <https://deephyper.github.io/papers>
     Authors <authors>
 
 
