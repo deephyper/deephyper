@@ -1,4 +1,5 @@
 import json
+import re
 import types
 import uuid
 from inspect import isclass
@@ -36,3 +37,24 @@ class Encoder(json.JSONEncoder):
             return json.loads(cs_json.write(obj))
         else:
             return super(Encoder, self).default(obj)
+
+
+def to_json(d: dict):
+    return json.dumps(d, cls=Encoder)
+
+def parse_subprocess_result(result):
+    stdout = result.stdout
+    stderr = result.stderr
+    try:
+        retval_bytes = re.search(b"DH-OUTPUT:(.+)\n", stdout).group(1)
+    except AttributeError:
+        error = stderr.decode("utf-8")
+        raise RuntimeError(
+            f"{error}\n\n Could not collect any result from the run_function in the main process because an error happened in the subprocess."
+        )
+    # Finally, parse whether the return value from the user-defined function is a scalar, a list, or a dictionary.
+    retval = retval_bytes.replace(
+        b"'", b'"'
+    )  # For dictionaries, replace single quotes with double quotes!
+    sol = json.loads(retval)
+    return sol
