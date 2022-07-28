@@ -89,7 +89,7 @@ Table of Contents
     examples/index
     F.A.Q. <faq>
     Publications <https://deephyper.github.io/papers>
-    Authors <authors>
+    Authors <https://deephyper.github.io/aboutus>
 
 
 .. toctree::
