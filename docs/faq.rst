@@ -7,6 +7,7 @@ Frequently Asked Questions (F.A.Q.)
 4. :ref:`why-more-results-than-max-evals`
 5. :ref:`how-to-consider-uncertainty-nn-training`
 6. :ref:`how-to-do-checkpointing-with-bo`
+7. :ref:`how-to-debug`
 
 .. _which-search-should-I-use:
 
@@ -56,7 +57,7 @@ The surrogate model in Bayesian optimization is estimating both aleatoric (data 
 How to perform checkpointing with Bayesian optimization?
 --------------------------------------------------------
 
-The ``CBO(..., log_dir=".")`` algorithm will save new results in ``{log_dir}/results.csv``(by default to the current directory) each time they are received. Then in case of failure and the search needs to be re-launched it can be done with the following:
+The ``CBO(..., log_dir=".")`` algorithm will save new results in ``{log_dir}/results.csv`` (by default to the current directory) each time they are received. Then in case of failure and the search needs to be re-launched it can be done with the following:
 
 .. code-block:: python
 
@@ -64,4 +65,22 @@ The ``CBO(..., log_dir=".")`` algorithm will save new results in ``{log_dir}/res
     search.fit_surrogate("results.csv") # load checkpoint
     results = search.search(max_evals=100) # continue the search
 
+
+.. _how-to-debug:
+
+How to debug with DeepHyper?
+----------------------------
+
+As a starting point is can be useful to activate the ``logger``:
+
+.. code-block:: python
+
+    import logging
+
+    logging.basicConfig(
+        # filename=path_log_file, # optional if we want to store the logs to disk
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(filename)s:%(funcName)s - %(message)s",
+        force=True,
+    )
 
