@@ -14,11 +14,11 @@ def run_many_results(config, y=0):
 
 
 class TestEvaluator(unittest.TestCase):
-    @pytest.mark.fast
+    @pytest.mark.hps_fast_test
     def test_import(self):
         from deephyper.evaluator import Evaluator
 
-    @pytest.mark.fast
+    @pytest.mark.hps_fast_test
     def test_wrong_evaluator(self):
         from deephyper.evaluator import Evaluator
 
@@ -31,7 +31,7 @@ class TestEvaluator(unittest.TestCase):
                 },
             )
 
-    @pytest.mark.fast
+    @pytest.mark.hps_fast_test
     def test_run_function_standards(self):
         from deephyper.evaluator import SerialEvaluator
 
@@ -104,10 +104,10 @@ class TestEvaluator(unittest.TestCase):
                 "x",
                 "job_id",
                 "objective",
-                "num_epochs_trained",
-                "num_parameters",
                 "timestamp_submit",
                 "timestamp_gather",
+                "num_epochs_trained",
+                "num_parameters",
             ]
         )
         assert len(results) == 10
@@ -162,12 +162,12 @@ class TestEvaluator(unittest.TestCase):
                 "x",
                 "job_id",
                 "objective",
-                "num_epochs_trained",
-                "num_parameters",
                 "timestamp_submit",
                 "timestamp_gather",
                 "timestamp_start",
                 "timestamp_end",
+                "num_epochs_trained",
+                "num_parameters",
             ]
         )
         assert len(results) == 10
@@ -266,19 +266,19 @@ class TestEvaluator(unittest.TestCase):
             assert job.result["x"] == config["x"]
             assert job.result["y"] == 0
 
-    @pytest.mark.fast
+    @pytest.mark.hps_fast_test
     def test_serial(self):
         self.execute_evaluator("serial")
 
-    @pytest.mark.fast
+    @pytest.mark.hps_fast_test
     def test_thread(self):
         self.execute_evaluator("thread")
 
-    @pytest.mark.fast
+    @pytest.mark.hps_fast_test
     def test_process(self):
         self.execute_evaluator("process")
 
-    @pytest.mark.fast
+    @pytest.mark.hps_fast_test
     def test_subprocess(self):
         self.execute_evaluator("subprocess")
 
