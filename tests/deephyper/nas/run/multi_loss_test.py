@@ -57,7 +57,6 @@ def test_multi_loss():
     config["arch_seq"] = [0.5] * 19
 
     result = run_base_trainer(config)
-    print(f"{result=}")
 
 
 if __name__ == "__main__":

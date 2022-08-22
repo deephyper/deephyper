@@ -15,21 +15,13 @@ def test_random_search_mpicomm():
     """
 
     from deephyper.evaluator import Evaluator
-    from deephyper.nas.run import run_debug_arch, run_debug_slow
+    from deephyper.nas.run import run_debug_slow
     from deephyper.search.nas import Random
 
-    import linearReg
+    import problems.linearReg as linearReg
 
     with Evaluator.create(run_debug_slow, method="mpicomm") as evaluator:
         if evaluator:
-            import logging
-
-            logging.basicConfig(
-                # filename=path_log_file, # optional if we want to store the logs to disk
-                level=logging.INFO,
-                format="%(asctime)s - %(levelname)s - %(filename)s:%(funcName)s - %(message)s",
-                force=True,
-            )
 
             search = Random(
                 linearReg.Problem,
@@ -38,8 +30,6 @@ def test_random_search_mpicomm():
                 random_state=42,
             )
             res = search.search(timeout=2)
-        #     print("master done")
-        # print("worker done")
 
 
 if __name__ == "__main__":

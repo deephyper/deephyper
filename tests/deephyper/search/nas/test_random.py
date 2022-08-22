@@ -16,7 +16,7 @@ class RandomTest(unittest.TestCase):
         from deephyper.nas.run import run_debug_arch
         from deephyper.search.nas import Random
 
-        import linearReg
+        import problems.linearReg as linearReg
 
         create_evaluator = lambda: Evaluator.create(run_debug_arch, method="serial")
 
@@ -35,7 +35,7 @@ class RandomTest(unittest.TestCase):
         from deephyper.nas.run import run_debug_arch
         from deephyper.search.nas import Random
 
-        import linearRegHybrid
+        import problems.linearRegHybrid as linearRegHybrid
 
         create_evaluator = lambda: Evaluator.create(run_debug_arch, method="serial")
 
