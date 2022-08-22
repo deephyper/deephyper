@@ -63,13 +63,6 @@ except ImportError:
     pass
 
 try:
-    from deephyper.evaluator._mpi_pool import MPIPoolEvaluator
-
-    __all__.append("MPIPoolEvaluator")
-except ImportError:
-    pass
-
-try:
     from deephyper.evaluator._mpi_comm import MPICommEvaluator
 
     __all__.append("MPICommEvaluator")

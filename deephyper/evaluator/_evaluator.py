@@ -106,6 +106,13 @@ class Evaluator:
             nest_asyncio.apply()
             Evaluator.NEST_ASYNCIO_PATCHED = True
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        if hasattr(self, "executor"):
+            self.executor.__exit__(type, value, traceback)
+
     def to_json(self):
         """Returns a json version of the evaluator."""
         out = {"type": type(self).__name__, **get_init_params_as_json(self)}
@@ -213,6 +220,11 @@ class Evaluator:
             job.result = profile["objective"]
             job.timestamp_start = profile["timestamp_start"] - self.timestamp
             job.timestamp_end = profile["timestamp_end"] - self.timestamp
+
+        # if the user returns other information that the objective
+        if isinstance(job.result, dict) and "objective" in job.result:
+            job.other = {k: v for k, v in job.result.items() if k != "objective"}
+            job.result = job.result["objective"]
 
         return job
 
@@ -352,6 +364,9 @@ class Evaluator:
 
             if hasattr(job, "dequed"):
                 result["dequed"] = ",".join(job.dequed)
+
+            if isinstance(job.other, dict):
+                result.update(job.other)
 
             if "optuna_trial" in result:
                 result.pop("optuna_trial")

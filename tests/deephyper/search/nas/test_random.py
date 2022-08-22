@@ -1,16 +1,22 @@
+import os
+import sys
 import unittest
 
 import pytest
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
 
 
 @pytest.mark.nas
 class RandomTest(unittest.TestCase):
     def test_random_search(self):
         import numpy as np
-        from deephyper.benchmark.nas import linearReg
         from deephyper.evaluator import Evaluator
         from deephyper.nas.run import run_debug_arch
         from deephyper.search.nas import Random
+
+        import linearReg
 
         create_evaluator = lambda: Evaluator.create(run_debug_arch, method="serial")
 
@@ -25,10 +31,11 @@ class RandomTest(unittest.TestCase):
 
     def test_random_search_with_hp(self):
         import numpy as np
-        from deephyper.benchmark.nas import linearRegHybrid
         from deephyper.evaluator import Evaluator
         from deephyper.nas.run import run_debug_arch
         from deephyper.search.nas import Random
+
+        import linearRegHybrid
 
         create_evaluator = lambda: Evaluator.create(run_debug_arch, method="serial")
 
@@ -46,3 +53,8 @@ class RandomTest(unittest.TestCase):
         ].to_numpy()
 
         assert np.array_equal(res1_array, res2_array)
+
+
+if __name__ == "__main__":
+    test = RandomTest()
+    test.test_random_search()

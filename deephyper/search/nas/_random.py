@@ -61,7 +61,7 @@ class Random(NeuralArchitectureSearch):
                     saved_keys=self._saved_keys, log_dir=self._log_dir
                 )
 
-                if num_evals_done < max_evals:
+                if max_evals < 0 or num_evals_done < max_evals:
                     self._evaluator.submit(self._gen_random_batch(size=num_received))
 
     def _gen_random_batch(self, size: int) -> list:

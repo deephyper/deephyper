@@ -26,6 +26,7 @@ class Job:
         self.timestamp_gather = None  # in seconds
         self.status = self.READY
         self.result = None
+        self.other = None
 
     def __repr__(self) -> str:
         return f"Job(id={self.id}, status={self.status}, config={self.config})"
