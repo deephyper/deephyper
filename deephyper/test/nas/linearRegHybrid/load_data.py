@@ -1,8 +1,4 @@
-from tabnanny import verbose
 import numpy as np
-
-from deephyper.problem import NaProblem
-from deephyper.nas.spacelib.tabular import OneLayerSpace
 
 
 def load_data(dim=10, verbose=0):
@@ -13,7 +9,7 @@ def load_data(dim=10, verbose=0):
         Tuple of Numpy arrays: ``(train_X, train_y), (valid_X, valid_y)``.
     """
     rng = np.random.RandomState(42)
-    size = 100000
+    size = 10000
     prop = 0.80
     a, b = 0, 100
     d = b - a
@@ -35,17 +31,5 @@ def load_data(dim=10, verbose=0):
     return (train_X, train_y), (valid_X, valid_y)
 
 
-Problem = NaProblem()
-Problem.load_data(load_data)
-Problem.search_space(OneLayerSpace)
-Problem.hyperparameters(
-    batch_size=Problem.add_hyperparameter((1, 100), "batch_size"),
-    learning_rate=Problem.add_hyperparameter(
-        (1e-4, 1e-1, "log-uniform"), "learning_rate"
-    ),
-    optimizer=Problem.add_hyperparameter(["adam", "nadam", "rmsprop"], "optimizer"),
-    num_epochs=1,
-)
-Problem.loss("mse")
-Problem.metrics(["r2"])
-Problem.objective("val_r2")
+if __name__ == "__main__":
+    load_data(verbose=1)

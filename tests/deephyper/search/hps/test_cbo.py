@@ -3,7 +3,7 @@ import unittest
 import pytest
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 class CBOTest(unittest.TestCase):
     def test_random_seed(self):
         import numpy as np

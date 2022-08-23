@@ -1,11 +1,12 @@
 import pytest
 
 
+@pytest.mark.fast
 @pytest.mark.nas
 def test_padding_layer():
     import tensorflow as tf
     import numpy as np
-    from deephyper.layers import Padding
+    from deephyper.keras.layers import Padding
 
     model = tf.keras.Sequential()
     model.add(Padding([[1, 1]]))

@@ -21,7 +21,6 @@ class NaProblem:
     """A Neural Architecture Problem specification for Neural Architecture Search.
 
     >>> from deephyper.problem import NaProblem
-    >>> from deephyper.benchmark.nas.linearReg.load_data import load_data
     >>> from deephyper.nas.preprocessing import minmaxstdscaler
     >>> from deepspace.tabular import OneLayerSpace
     >>> Problem = NaProblem()

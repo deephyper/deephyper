@@ -1,6 +1,7 @@
 import pytest
 
 
+@pytest.mark.fast
 @pytest.mark.nas
 def test_basic_space(verbose=0):
     import tensorflow as tf

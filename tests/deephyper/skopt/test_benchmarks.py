@@ -8,7 +8,7 @@ from deephyper.skopt.benchmarks import branin
 from deephyper.skopt.benchmarks import hart6
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_branin():
     xstars = np.asarray([(-np.pi, 12.275), (+np.pi, 2.275), (9.42478, 2.475)])
     f_at_xstars = np.asarray([branin(xstar) for xstar in xstars])
@@ -16,7 +16,7 @@ def test_branin():
     assert_array_almost_equal(f_at_xstars, branin_min)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_hartmann6():
     assert_almost_equal(
         hart6((0.20169, 0.15001, 0.476874, 0.275332, 0.311652, 0.6573)),

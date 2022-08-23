@@ -86,7 +86,7 @@ def call_single(res):
     pass
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 @pytest.mark.parametrize("verbose", [True, False])
 @pytest.mark.parametrize("call", [call_single, [call_single, check_result_callable]])
 def test_minimizer_api_dummy_minimize(verbose, call):
@@ -134,7 +134,7 @@ def test_minimizer_api(verbose, call, minimizer):
         minimizer(lambda x: x, [[-5, 10]])
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 @pytest.mark.parametrize("minimizer", MINIMIZERS)
 def test_minimizer_api_random_only(minimizer):
     # no models should be fit as we only evaluate at random points
@@ -266,7 +266,7 @@ def test_init_vals(n_initial_points, optimizer_func):
     check_init_vals(optimizer, branin, space, x0, n_calls)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_init_vals_dummy_minimize():
     space = [(-5.0, 10.0), (0.0, 15.0)]
     x0 = [[1, 2], [3, 4], [5, 6]]
@@ -346,7 +346,7 @@ def check_init_vals(optimizer, func, space, x0, n_calls):
     assert_raises(ValueError, dummy_minimize, func, space, x0=x0, y0=[1])
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 @pytest.mark.parametrize("minimizer", MINIMIZERS)
 def test_invalid_n_calls_arguments(minimizer):
     with pytest.raises(ValueError):
@@ -391,7 +391,7 @@ def test_invalid_n_calls_arguments(minimizer):
         )
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 @pytest.mark.parametrize("minimizer", MINIMIZERS)
 def test_repeated_x(minimizer):
     with pytest.warns(None) as record:
@@ -421,7 +421,7 @@ def test_repeated_x(minimizer):
         assert "has been evaluated at" in str(w.message)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 @pytest.mark.parametrize("minimizer", MINIMIZERS)
 def test_consistent_x_iter_dimensions(minimizer):
     # check that all entries in x_iters have the same dimensions

@@ -128,7 +128,7 @@ def test_plots_work_without_cat():
     # Look into how matplotlib does this.
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_evaluate_min_params():
     res = gp_minimize(
         bench3,

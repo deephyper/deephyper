@@ -45,7 +45,7 @@ def check_limits(value, low, high):
     assert np.all(high >= value)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_dimensions():
     check_dimension(Real, (1.0, 4.0), 2.251066014107722)
     check_dimension(Real, (1, 4), 2.251066014107722)
@@ -57,7 +57,7 @@ def test_dimensions():
     check_categorical((1, 2, 3, 4), 2)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_real_log_sampling_in_bounds():
     dim = Real(low=1, high=32, prior="log-uniform", transform="normalize")
 
@@ -71,7 +71,7 @@ def test_real_log_sampling_in_bounds():
         assert round_tripped in dim
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_real():
     a = Real(1, 25)
     for i in range(50):
@@ -96,7 +96,7 @@ def test_real():
     assert_array_equal(log_uniform.inverse_transform(transformed_vals), random_values)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_real_bounds():
     # should give same answer as using check_limits() but this is easier
     # to read
@@ -108,7 +108,7 @@ def test_real_bounds():
     assert np.nextafter(2.1, 3.0) not in a
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_integer():
     a = Integer(1, 10)
     for i in range(50):
@@ -123,7 +123,7 @@ def test_integer():
     assert_array_equal(a.inverse_transform(random_values), random_values)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_categorical_transform():
     categories = ["apple", "orange", "banana", None, True, False, 3]
     cat = Categorical(categories)
@@ -151,7 +151,7 @@ def test_categorical_transform():
     assert_array_equal(ent_inverse, categories)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_categorical_transform_binary():
     categories = ["apple", "orange"]
     cat = Categorical(categories)
@@ -168,7 +168,7 @@ def test_categorical_transform_binary():
     assert_array_equal(ent_inverse, categories)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_categorical_repr():
     small_cat = Categorical([1, 2, 3, 4, 5])
     assert small_cat.__repr__() == "Categorical(categories=(1, 2, 3, 4, 5), prior=None)"
@@ -180,7 +180,7 @@ def test_categorical_repr():
     )
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_space_consistency():
     # Reals (uniform)
 
@@ -294,7 +294,7 @@ def test_space_consistency():
     assert s1 == s2 == s3
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_space_api():
     space = Space(
         [(0.0, 1.0), (-5, 5), ("a", "b", "c"), (1.0, 5.0, "log-uniform"), ("e", "f")]
@@ -369,7 +369,7 @@ def test_space_api():
         assert_array_equal(b1, b2)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_space_from_space():
     # can you pass a Space instance to the Space constructor?
     space = Space(
@@ -381,7 +381,7 @@ def test_space_from_space():
     assert_equal(space, space2)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_constant_property():
     space = Space(
         [(0.0, 1.0), (1,), ("a", "b", "c"), (1.0, 5.0, "log-uniform"), ("e",)]
@@ -393,7 +393,7 @@ def test_constant_property():
         assert not space.dimensions[i].is_constant
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_set_get_transformer():
     # can you pass a Space instance to the Space constructor?
     space = Space(
@@ -414,7 +414,7 @@ def test_set_get_transformer():
     assert space.dimensions[2].transform(["a"]) == [0]
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_normalize():
     # can you pass a Space instance to the Space constructor?
     space = Space(
@@ -428,7 +428,7 @@ def test_normalize():
     assert_array_equal(space.inverse_transform(space.transform(X)), X)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_normalize_types():
     # can you pass a Space instance to the Space constructor?
     space = Space([(0.0, 1.0), Integer(-5, 5, dtype=int), (True, False)])
@@ -443,7 +443,7 @@ def test_normalize_types():
     assert isinstance(space.inverse_transform(Xt)[0][2], (np.bool_, bool))
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_normalize_real():
 
     a = Real(2.0, 30.0, transform="normalize")
@@ -510,7 +510,7 @@ def test_normalize_real():
     assert isinstance(X_orig, np.float64)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_normalize_integer():
     a = Integer(2, 30, transform="normalize")
     for i in range(50):
@@ -555,7 +555,7 @@ def test_normalize_integer():
     assert_array_equal(X_orig, X)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_normalize_categorical():
     categories = ["cat", "dog", "rat"]
     a = Categorical(categories, transform="normalize")
@@ -583,7 +583,7 @@ def test_normalize_categorical():
     assert_array_equal(categories, a.inverse_transform([0.0, 0.5, 1.0]))
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_normalize_integer():
     for dtype in [
         "int",
@@ -631,13 +631,13 @@ def check_valid_transformation(klass):
     )
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_valid_transformation():
     check_valid_transformation(Integer)
     check_valid_transformation(Real)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_invalid_dimension():
     assert_raises_regex(
         ValueError, "has to be a list or tuple", space_check_dimension, "23"
@@ -646,7 +646,7 @@ def test_invalid_dimension():
     space_check_dimension((23,))
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_categorical_identity():
     categories = ["cat", "dog", "rat"]
     cat = Categorical(categories, transform="identity")
@@ -657,7 +657,7 @@ def test_categorical_identity():
     assert_array_equal(samples, cat.inverse_transform(transformed))
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_categorical_string():
     categories = [1, 2, 3]
     categories_transformed = ["1", "2", "3"]
@@ -669,7 +669,7 @@ def test_categorical_string():
     assert_array_equal(samples, cat.inverse_transform(transformed))
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_categorical_distance():
     categories = ["car", "dog", "orange"]
     cat = Categorical(categories)
@@ -682,14 +682,14 @@ def test_categorical_distance():
                 assert delta == 1
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_integer_distance():
     ints = Integer(1, 10)
     for i in range(1, 10 + 1):
         assert_equal(ints.distance(4, i), abs(4 - i))
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_integer_distance_out_of_range():
     ints = Integer(1, 10)
     assert_raises_regex(
@@ -697,7 +697,7 @@ def test_integer_distance_out_of_range():
     )
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_real_distance_out_of_range():
     ints = Real(1, 10)
     assert_raises_regex(
@@ -705,7 +705,7 @@ def test_real_distance_out_of_range():
     )
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_real_distance():
     reals = Real(1, 10)
     for i in range(1, 10 + 1):
@@ -765,7 +765,7 @@ def test_dimension_name_none(dimension):
     assert dimension.name is None
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_space_from_yaml():
     with NamedTemporaryFile(delete=False) as tmp:
         tmp.write(
@@ -817,7 +817,7 @@ def test_dimension_with_invalid_names(name):
     assert "Dimension's name must be either string or None." == exc.value.args[0]
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_purely_categorical_space():
     # Test reproduces the bug in #908, make sure it doesn't come back
     dims = [Categorical(["a", "b", "c"]), Categorical(["A", "B", "C"])]
@@ -829,7 +829,7 @@ def test_purely_categorical_space():
         optimizer.tell(x, np.random.uniform())
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_partly_categorical_space():
     dims = Space([Categorical(["a", "b", "c"]), Categorical(["A", "B", "C"])])
     assert dims.is_partly_categorical
@@ -840,7 +840,7 @@ def test_partly_categorical_space():
     assert not dims.is_partly_categorical
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_normalize_bounds():
     bounds = [(-999, 189000), Categorical((True, False))]
     space = Space(normalize_dimensions(bounds))

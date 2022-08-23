@@ -1,13 +1,9 @@
-import os
-import sys
 import unittest
 
 import pytest
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, HERE)
 
-
+@pytest.mark.slow
 @pytest.mark.nas
 class RandomTest(unittest.TestCase):
     def test_random_search(self):
@@ -16,7 +12,7 @@ class RandomTest(unittest.TestCase):
         from deephyper.nas.run import run_debug_arch
         from deephyper.search.nas import Random
 
-        import problems.linearReg as linearReg
+        import deephyper.test.nas.linearReg as linearReg
 
         create_evaluator = lambda: Evaluator.create(run_debug_arch, method="serial")
 
@@ -35,7 +31,7 @@ class RandomTest(unittest.TestCase):
         from deephyper.nas.run import run_debug_arch
         from deephyper.search.nas import Random
 
-        import problems.linearRegHybrid as linearRegHybrid
+        import deephyper.test.nas.linearRegHybrid as linearRegHybrid
 
         create_evaluator = lambda: Evaluator.create(run_debug_arch, method="serial")
 

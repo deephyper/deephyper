@@ -7,7 +7,9 @@ def run(config, dequed=None):
 
 
 class TestQueuedEvaluator(unittest.TestCase):
-    @pytest.mark.hps_fast_test
+    
+    @pytest.mark.fast
+    @pytest.mark.hps
     def test_queued_serial_evaluator(self):
         from deephyper.evaluator import SerialEvaluator, queued
 
@@ -37,9 +39,15 @@ class TestQueuedEvaluator(unittest.TestCase):
 
         assert results == [1, 2, 3, 4, 1, 2, 3, 4]
 
+    @pytest.mark.fast
+    @pytest.mark.hps
     @pytest.mark.ray
     def test_queued_ray_evaluator(self):
         try:
+            import os
+            import sys
+            HERE = os.path.dirname(os.path.abspath(__file__))
+            
             from deephyper.evaluator import RayEvaluator, queued
 
             QueuedRayEvaluator = queued(
@@ -51,6 +59,7 @@ class TestQueuedEvaluator(unittest.TestCase):
                 num_cpus=1,
                 num_cpus_per_task=1,
                 num_workers=1,
+                ray_kwargs={"runtime_env": {"working_dir": HERE}},
                 # queued arguments
                 queue=[1, 2, 3, 4],
                 queue_pop_per_task=1,

@@ -3,6 +3,7 @@ import unittest
 import pytest
 
 
+@pytest.mark.fast
 @pytest.mark.nas
 class NodeTest(unittest.TestCase):
     def test_mirror_node(self):

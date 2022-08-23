@@ -32,6 +32,7 @@ class RayEvaluator(Evaluator):
         password: str = None,
         num_cpus: int = None,
         num_gpus: int = None,
+        include_dashboard: bool = False,
         num_cpus_per_task: float = 1,
         num_gpus_per_task: float = None,
         ray_kwargs: dict = None,
@@ -50,6 +51,8 @@ class RayEvaluator(Evaluator):
             ray_kwargs["num_cpus"] = num_cpus
         if num_gpus is not None:
             ray_kwargs["num_gpus"] = num_gpus
+        if include_dashboard is not None:
+            ray_kwargs["include_dashboard"] = include_dashboard
 
         if not (ray.is_initialized()):
             ray.init(**ray_kwargs)

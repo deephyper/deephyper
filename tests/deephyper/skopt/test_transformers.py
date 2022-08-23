@@ -9,7 +9,7 @@ from deephyper.skopt.space import LogN, Normalize
 from deephyper.skopt.space.transformers import StringEncoder, LabelEncoder, Identity
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_logn2_integer():
 
     transformer = LogN(2)
@@ -18,7 +18,7 @@ def test_logn2_integer():
         assert_array_equal(int(np.round(X_orig)), X)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_logn10_integer():
 
     transformer = LogN(2)
@@ -27,7 +27,7 @@ def test_logn10_integer():
         assert_array_equal(int(np.round(X_orig)), X)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_integer_encoder():
 
     transformer = LabelEncoder()
@@ -50,7 +50,7 @@ def test_integer_encoder():
     assert_array_equal(transformer.inverse_transform([0, 1, 2]), X)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_string_encoder():
 
     transformer = StringEncoder()
@@ -70,7 +70,7 @@ def test_string_encoder():
     assert_array_equal(transformer.inverse_transform(X), X)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_identity_encoder():
 
     transformer = Identity()
@@ -90,7 +90,7 @@ def test_identity_encoder():
     assert_array_equal(transformer.inverse_transform(X), X)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_normalize_integer():
     transformer = Normalize(1, 20, is_int=True)
     assert transformer.transform(19.8) == 1.0
@@ -109,7 +109,7 @@ def test_normalize_integer():
     assert_raises(ValueError, transformer.transform, -0.6)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_normalize():
     transformer = Normalize(1, 20, is_int=False)
     assert transformer.transform(20.0) == 1.0

@@ -301,7 +301,7 @@ def test_searchcv_reproducibility():
     assert optim_res2[3] == getattr(best_est, "kernel")
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_searchcv_rank():
     """
     Test whether results of BayesSearchCV can be reproduced with a fixed

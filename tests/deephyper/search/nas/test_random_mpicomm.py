@@ -1,13 +1,9 @@
-import os
-import sys
-
 import pytest
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, HERE)
 
-
+@pytest.mark.fast
 @pytest.mark.nas
+@pytest.mark.mpi
 def test_random_search_mpicomm():
     """Example to execute:
 
@@ -17,8 +13,7 @@ def test_random_search_mpicomm():
     from deephyper.evaluator import Evaluator
     from deephyper.nas.run import run_debug_slow
     from deephyper.search.nas import Random
-
-    import problems.linearReg as linearReg
+    from deephyper.test.nas import linearReg
 
     with Evaluator.create(run_debug_slow, method="mpicomm") as evaluator:
         if evaluator:

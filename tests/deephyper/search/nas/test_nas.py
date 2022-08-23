@@ -1,7 +1,7 @@
 import pytest
 import unittest
 
-
+@pytest.mark.slow
 @pytest.mark.nas
 class TestNeuralArchitectureSearchAlgorithms(unittest.TestCase):
     def evaluate_search(self, search_cls, problem):
@@ -30,8 +30,8 @@ class TestNeuralArchitectureSearchAlgorithms(unittest.TestCase):
 
     def test_random(self):
         from deephyper.search.nas import Random
-        from deephyper.benchmark.nas.linearReg import Problem as linear_reg_problem
-        from deephyper.benchmark.nas.linearRegHybrid import (
+        from deephyper.test.nas.linearReg import Problem as linear_reg_problem
+        from deephyper.test.nas.linearRegHybrid import (
             Problem as linear_reg_hybrid_problem,
         )
 
@@ -40,14 +40,14 @@ class TestNeuralArchitectureSearchAlgorithms(unittest.TestCase):
 
     def test_regevo(self):
         from deephyper.search.nas import RegularizedEvolution
-        from deephyper.benchmark.nas.linearReg import Problem as linear_reg_problem
+        from deephyper.test.nas.linearReg import Problem as linear_reg_problem
 
         self.evaluate_search(RegularizedEvolution, linear_reg_problem)
 
     def test_regevomixed(self):
         from deephyper.search.nas import RegularizedEvolutionMixed
-        from deephyper.benchmark.nas.linearReg import Problem as linear_reg_problem
-        from deephyper.benchmark.nas.linearRegHybrid import (
+        from deephyper.test.nas.linearReg import Problem as linear_reg_problem
+        from deephyper.test.nas.linearRegHybrid import (
             Problem as linear_reg_hybrid_problem,
         )
 
@@ -56,8 +56,8 @@ class TestNeuralArchitectureSearchAlgorithms(unittest.TestCase):
 
     def test_ambsmixed(self):
         from deephyper.search.nas import AMBSMixed
-        from deephyper.benchmark.nas.linearReg import Problem as linear_reg_problem
-        from deephyper.benchmark.nas.linearRegHybrid import (
+        from deephyper.test.nas.linearReg import Problem as linear_reg_problem
+        from deephyper.test.nas.linearRegHybrid import (
             Problem as linear_reg_hybrid_problem,
         )
 
@@ -66,8 +66,8 @@ class TestNeuralArchitectureSearchAlgorithms(unittest.TestCase):
 
     def test_agebo(self):
         from deephyper.search.nas import AgEBO
-        from deephyper.benchmark.nas.linearReg import Problem as linear_reg_problem
-        from deephyper.benchmark.nas.linearRegHybrid import (
+        from deephyper.test.nas.linearReg import Problem as linear_reg_problem
+        from deephyper.test.nas.linearRegHybrid import (
             Problem as linear_reg_hybrid_problem,
         )
 

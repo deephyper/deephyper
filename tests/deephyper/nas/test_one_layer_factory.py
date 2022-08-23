@@ -1,6 +1,7 @@
 import pytest
 
 
+@pytest.mark.fast
 @pytest.mark.nas
 def test_search_space():
     from deephyper.nas.spacelib.tabular import OneLayerSpace

@@ -3,10 +3,11 @@ import unittest
 import pytest
 
 
+@pytest.mark.slow
 @pytest.mark.nas
 class RegevoTest(unittest.TestCase):
-    def test_regovo_with_hp():
-        from deephyper.benchmark.nas import linearRegHybrid
+    def test_regovo_with_hp(self):
+        from deephyper.test.nas import linearRegHybrid
         from deephyper.evaluator import Evaluator
         from deephyper.nas.run import run_debug_arch
         from deephyper.search.nas import RegularizedEvolution
@@ -18,9 +19,9 @@ class RegevoTest(unittest.TestCase):
                 linearRegHybrid.Problem, create_evaluator(), random_state=42
             )
 
-    def test_regevo_without_hp():
+    def test_regevo_without_hp(self):
         import numpy as np
-        from deephyper.benchmark.nas import linearReg
+        from deephyper.test.nas import linearReg
         from deephyper.evaluator import Evaluator
         from deephyper.nas.run import run_debug_arch
         from deephyper.search.nas import RegularizedEvolution

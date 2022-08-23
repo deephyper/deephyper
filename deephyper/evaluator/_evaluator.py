@@ -80,7 +80,7 @@ class Evaluator:
         # Number of parallel workers available
         self.num_workers = num_workers
         self.jobs = []  # Job objects currently submitted.
-        self.n_jobs = 1
+        self.n_jobs = 0
         self._tasks_running = []  # List of AsyncIO Task objects currently running.
         self._tasks_done = []  # Temp list to hold completed tasks from asyncio.
         self._tasks_pending = []  # Temp list to hold pending tasks from asyncio.

@@ -2,12 +2,12 @@ import unittest
 
 import pytest
 
-
+@pytest.mark.slow
 @pytest.mark.nas
 class RegevoMixedTest(unittest.TestCase):
     def test_regovomixed_without_hp(self):
         import numpy as np
-        from deephyper.benchmark.nas import linearReg
+        from deephyper.test.nas import linearReg
         from deephyper.evaluator import Evaluator
         from deephyper.nas.run import run_debug_arch
         from deephyper.search.nas import RegularizedEvolutionMixed
@@ -33,7 +33,7 @@ class RegevoMixedTest(unittest.TestCase):
 
     def test_regevomixed_with_hp(self):
         import numpy as np
-        from deephyper.benchmark.nas import linearRegHybrid
+        from deephyper.test.nas import linearRegHybrid
         from deephyper.evaluator import Evaluator
         from deephyper.nas.run import run_debug_arch
         from deephyper.search.nas import RegularizedEvolutionMixed

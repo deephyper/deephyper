@@ -7,7 +7,7 @@ def run(config: dict):
     return -config["x"] ** 2
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 class QuickStartTest(unittest.TestCase):
     def test_quickstart(self):
         from deephyper.problem import HpProblem

@@ -23,10 +23,12 @@ class OneLayerSpace(KSearchSpace):
                 vn = self.gen_vnode()
                 vnodes.append(vn)
                 self.connect(self.input_nodes[i], vn)
+                print(i)
 
             prev_node = ConstantNode(Concatenate(self, vnodes))
 
         else:
+
             prev_node = self.gen_vnode()
             self.connect(self.input_nodes[0], prev_node)
 

@@ -33,7 +33,7 @@ def predict_wrapper(X, gpr):
     return gpr.predict(X, return_std=True)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 @pytest.mark.parametrize("kernel", [kernel1, kernel2, kernel3, kernel4])
 def test_param_for_white_kernel_in_Sum(kernel):
     kernel_with_noise = kernel + wk
@@ -45,7 +45,7 @@ def test_param_for_white_kernel_in_Sum(kernel):
     assert not _param_for_white_kernel_in_Sum(kernel5)[0]
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_noise_equals_gaussian():
     gpr1 = GaussianProcessRegressor(rbf + wk).fit(X, y)
 
@@ -60,7 +60,7 @@ def test_noise_equals_gaussian():
     assert not np.any(std1 == std2)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_mean_gradient():
     length_scale = np.arange(1, 6)
     X = rng.randn(10, 5)
@@ -80,7 +80,7 @@ def test_mean_gradient():
     assert_array_almost_equal(mean_grad, num_grad, decimal=3)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_std_gradient():
     length_scale = np.arange(1, 6)
     X = rng.randn(10, 5)

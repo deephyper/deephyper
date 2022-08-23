@@ -41,6 +41,7 @@ class MPICommEvaluator(Evaluator):
         run_function_kwargs (dict, optional): Keyword-arguments to pass to the ``run_function``. Defaults to ``None``.
         comm (optional): A MPI communicator, if ``None`` it will use ``MPI.COMM_WORLD``. Defaults to ``None``.
         rank (int, optional): The rank of the master process. Defaults to ``0``.
+        abort_on_exit (bool): If ``True`` then it will call ``comm.Abort()`` to force all MPI processes to finish when closing the ``Evaluator`` (i.e., exiting the current ``with`` block).
     """
 
     def __init__(
@@ -51,6 +52,7 @@ class MPICommEvaluator(Evaluator):
         run_function_kwargs=None,
         comm=None,
         root=0,
+        abort_on_exit=False,
     ):
         super().__init__(run_function, num_workers, callbacks, run_function_kwargs)
         if not MPI.Is_initialized():
@@ -58,6 +60,7 @@ class MPICommEvaluator(Evaluator):
 
         self.comm = comm if comm else MPI.COMM_WORLD
         self.root = root
+        self.abort_on_exit = abort_on_exit
         self.num_workers = self.comm.Get_size() - 1  # 1 rank is the master
         self.sem = asyncio.Semaphore(self.num_workers)
         logging.info(f"Creating MPICommExecutor with {self.num_workers} max_workers...")
@@ -73,8 +76,11 @@ class MPICommEvaluator(Evaluator):
             return None
 
     def __exit__(self, type, value, traceback):
-        self.executor.__exit__(type, value, traceback)
-        self.master_executor = None
+        if self.abort_on_exit:
+            self.comm.Abort()
+        else:
+            self.executor.__exit__(type, value, traceback)
+            self.master_executor = None
 
     async def execute(self, job):
         async with self.sem:

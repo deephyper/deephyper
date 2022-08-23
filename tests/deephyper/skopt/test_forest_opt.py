@@ -17,7 +17,7 @@ MINIMIZERS = [
 ]
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 @pytest.mark.parametrize("base_estimator", [42, DecisionTreeClassifier()])
 def test_forest_minimize_api(base_estimator):
     # invalid string value
@@ -75,7 +75,7 @@ def test_tree_based_minimize_n_jobs():
     check_minimize(forest_minimize, bench1, 0.05, [(-2.0, 2.0)], 0.05, 25, 5, n_jobs=2)
 
 
-@pytest.mark.hps_fast_test
+@pytest.mark.hps
 def test_categorical_integer():
     def f(params):
         return 0

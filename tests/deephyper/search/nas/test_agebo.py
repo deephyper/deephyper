@@ -3,10 +3,12 @@ import unittest
 import pytest
 
 
+@pytest.mark.slow
 @pytest.mark.nas
 class AgEBOTest(unittest.TestCase):
+
     def test_agebo_without_hp(self):
-        from deephyper.benchmark.nas import linearReg
+        from deephyper.test.nas import linearReg
         from deephyper.evaluator import Evaluator
         from deephyper.nas.run import run_debug_arch
         from deephyper.search.nas import AgEBO
@@ -23,7 +25,7 @@ class AgEBOTest(unittest.TestCase):
 
     def test_agebo_with_hp(self):
         import numpy as np
-        from deephyper.benchmark.nas import linearRegHybrid
+        from deephyper.test.nas import linearRegHybrid
         from deephyper.evaluator import Evaluator
         from deephyper.nas.run import run_debug_arch
         from deephyper.search.nas import AgEBO
