@@ -14,7 +14,6 @@ def run_many_results(config, y=0):
 
 
 class TestEvaluator(unittest.TestCase):
-    
     @pytest.mark.fast
     @pytest.mark.hps
     def test_import(self):
@@ -216,14 +215,11 @@ class TestEvaluator(unittest.TestCase):
         if method == "ray":
             import os
             import sys
+
             HERE = os.path.dirname(os.path.abspath(__file__))
             method_kwargs["ray_kwargs"] = {"runtime_env": {"working_dir": HERE}}
 
-        evaluator = Evaluator.create(
-            run,
-            method=method,
-            method_kwargs=method_kwargs
-        )
+        evaluator = Evaluator.create(run, method=method, method_kwargs=method_kwargs)
 
         configs = [{"x": i} for i in range(10)]
         evaluator.submit(configs)

@@ -19,8 +19,9 @@ def pytest_collection_modifyitems(config, items):
     skip_mark = pytest.mark.skip(reason=f"need --run with compatible marks to run")
     for item in items:
         item_marks = get_markers(item)
-        if not(item_marks.issubset(selected_marks)):
+        if not (item_marks.issubset(selected_marks)):
             item.add_marker(skip_mark)
+
 
 # -- Incremental testing - test steps
 def pytest_runtest_makereport(item, call):

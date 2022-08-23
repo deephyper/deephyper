@@ -6,7 +6,6 @@ import pytest
 @pytest.mark.slow
 @pytest.mark.nas
 class AgEBOTest(unittest.TestCase):
-
     def test_agebo_without_hp(self):
         from deephyper.test.nas import linearReg
         from deephyper.evaluator import Evaluator

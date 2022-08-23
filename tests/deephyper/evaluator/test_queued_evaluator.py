@@ -7,7 +7,6 @@ def run(config, dequed=None):
 
 
 class TestQueuedEvaluator(unittest.TestCase):
-    
     @pytest.mark.fast
     @pytest.mark.hps
     def test_queued_serial_evaluator(self):
@@ -46,8 +45,9 @@ class TestQueuedEvaluator(unittest.TestCase):
         try:
             import os
             import sys
+
             HERE = os.path.dirname(os.path.abspath(__file__))
-            
+
             from deephyper.evaluator import RayEvaluator, queued
 
             QueuedRayEvaluator = queued(

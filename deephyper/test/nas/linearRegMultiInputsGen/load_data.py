@@ -3,7 +3,6 @@ import numpy as np
 import tensorflow as tf
 
 
-
 def load_data(dim=10, size=100):
     """
     Generate data for linear function -sum(x_i).

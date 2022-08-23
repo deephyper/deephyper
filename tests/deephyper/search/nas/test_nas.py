@@ -1,6 +1,7 @@
 import pytest
 import unittest
 
+
 @pytest.mark.slow
 @pytest.mark.nas
 class TestNeuralArchitectureSearchAlgorithms(unittest.TestCase):

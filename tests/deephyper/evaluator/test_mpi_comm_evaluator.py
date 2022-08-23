@@ -27,9 +27,7 @@ def _test_mpicomm_evaluator():
     configs = [{"x": i} for i in range(8)]
 
     with Evaluator.create(
-        run,
-        method="mpicomm",
-        method_kwargs={"abort_on_exit": True}
+        run, method="mpicomm", method_kwargs={"abort_on_exit": True}
     ) as evaluator:
         if evaluator is not None:
             print(configs)
@@ -40,13 +38,13 @@ def _test_mpicomm_evaluator():
             objectives = sorted([job.result for job in results])
             assert objectives == list(range(4))
 
+
 @pytest.mark.fast
 @pytest.mark.hps
 @pytest.mark.mpi
 def test_mpicomm_evaluator():
     command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_mpicomm_evaluator"
     result = deephyper.test.run(command, live_output=False)
-
 
 
 if __name__ == "__main__":

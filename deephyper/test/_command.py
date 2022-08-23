@@ -11,7 +11,14 @@ def run(command, live_output=False):
     command = command.split()
     try:
         if live_output:
-            result = subprocess.run(command, check=True, capture_output=False, text=True, stdout=sys.stdout, stderr=sys.stderr)
+            result = subprocess.run(
+                command,
+                check=True,
+                capture_output=False,
+                text=True,
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+            )
         else:
             result = subprocess.run(command, check=True, capture_output=True, text=True)
         return result
