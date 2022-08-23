@@ -46,6 +46,7 @@ class CBO(Search):
         multi_point_strategy (str, optional): Definition of the constant value use for the Liar strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max", "qUCB"]``. All ``"cl_..."`` strategies follow the constant-liar scheme, where if $N$ new points are requested, the surrogate model is re-fitted $N-1$ times with lies (respectively, the minimum, mean and maximum objective found so far; for multiple objectives, these are the minimum, mean and maximum of the individual objectives) to infer the acquisition function. Constant-Liar strategy have poor scalability because of this repeated re-fitting. The ``"qUCB"`` strategy is much more efficient by sampling a new $kappa$ value for each new requested point without re-fitting the model, but it is only compatible with ``acq_func == "UCB"``. Defaults to ``"cl_max"``.
         n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the Bayesian optimization. A value of ``-1`` will use all available cores. Defaults to ``1``.
         n_initial_points (int, optional): Number of collected objectives required before fitting the surrogate-model. Defaults to ``10``.
+        initial_point_generator (str, optional): Sets an initial points generator. Can be either ``["random", "sobol", "halton", "hammersly", "lhs", "grid"]``. Defaults to ``"random"``.
         initial_points (List[Dict], optional): A list of initial points to evaluate where each point is a dictionnary where keys are names of hyperparameters and values their corresponding choice. Defaults to ``None`` for them to be generated randomly from the search space.
         sync_communcation (bool, optional): Performs the search in a batch-synchronous manner. Defaults to ``False`` for asynchronous updates.
         filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. If ``"ignore"`` is passed then failed configurations will be filtered-out and not passed to the surrogate model. For multiple objectives, failure of any single objective will lead to treating that configuration as failed and each of these multiple objective will be replaced by their individual ``"min"`` or ``"mean"`` of past configurations. Defaults to ``"mean"`` to replace by failed configurations by the running mean of objectives.
@@ -72,6 +73,7 @@ class CBO(Search):
         multi_point_strategy: str = "cl_max",
         n_jobs: int = 1,  # 32 is good for Theta
         n_initial_points=10,
+        initial_point_generator: str = "random",
         initial_points=None,
         sync_communication: bool = False,
         filter_failures: str = "mean",
@@ -189,6 +191,7 @@ class CBO(Search):
                 random_state=self._random_state.randint(0, 2**32),
             ),
             # optimizer
+            initial_point_generator=initial_point_generator,
             acq_optimizer=acq_optimizer,
             acq_optimizer_kwargs={
                 "n_points": n_points,

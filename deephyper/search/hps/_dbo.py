@@ -103,6 +103,8 @@ class DBO:
         run_function_kwargs (dict): Keyword arguments to pass to the run-function. Defaults to ``None``.
         n_jobs (int, optional): Parallel processes per rank to use for optimization updates (e.g., model re-fitting). Defaults to ``1``.
         surrogate_model (str, optional): Type of the surrogate model to use. ``"DUMMY"`` can be used of random-search, ``"GP"`` for Gaussian-Process (efficient with few iterations such as a hundred sequentially but bottleneck when scaling because of its cubic complexity w.r.t. the number of evaluations), "``"RF"`` for the Random-Forest regressor (log-linear complexity with respect to the number of evaluations). Defaults to ``"RF"``.
+        n_initial_points (int, optional): Number of collected objectives required before fitting the surrogate-model. Defaults to ``10``.
+        initial_point_generator (str, optional): Sets an initial points generator. Can be either ``["random", "sobol", "halton", "hammersly", "lhs", "grid"]``. Defaults to ``"random"``.
         lazy_socket_allocation (bool, optional): If `True` then MPI communication socket are initialized only when used for the first time, otherwise the initialization is forced when creating the instance. Defaults to ``False``.
         sync_communication (bool, optional): If `True`  workers communicate synchronously, otherwise workers communicate asynchronously. Defaults to ``False``.
         sync_communication_freq (int, optional): Manage the frequency at which workers should communicate their results in the case of synchronous communication. Defaults to ``10``.
@@ -130,6 +132,7 @@ class DBO:
         surrogate_model: str = "RF",
         surrogate_model_kwargs: dict = None,
         n_initial_points: int = 10,
+        initial_point_generator: str = "random",
         lazy_socket_allocation: bool = False,
         communication_batch_size=2048,
         sync_communication: bool = False,
@@ -260,6 +263,7 @@ class DBO:
                 "n_jobs": n_jobs,
             },
             n_initial_points=n_initial_points,
+            initial_point_generator=initial_point_generator,
             random_state=self._rank_seed,
             sample_max_size=sample_max_size,
             sample_strategy=sample_strategy,
