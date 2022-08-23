@@ -95,9 +95,6 @@ class TrainerKerasRegressorTest(unittest.TestCase):
 
         config["data"] = {"train_X": tX, "train_Y": ty, "valid_X": vX, "valid_Y": vy}
 
-        print(f"{input_shape=}")
-        print(f"{output_shape=}")
-
         search_space = config["search_space"]["class"](
             input_shape, output_shape, **config["search_space"]["kwargs"]
         ).build()
