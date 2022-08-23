@@ -22,6 +22,7 @@ from deephyper.core.exceptions import SearchTerminationError
 from deephyper.problem._hyperparameter import convert_to_skopt_space
 from deephyper.core.utils._introspection import get_init_params_as_json
 from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.base import is_regressor
 
 TAG_INIT = 20
 TAG_DATA = 30
@@ -101,8 +102,8 @@ class DBO:
         verbose (int, optional): Indicate the verbosity level of the search. Defaults to ``0``.
         comm (optional): The MPI communicator to use. Defaults to ``None``.
         run_function_kwargs (dict): Keyword arguments to pass to the run-function. Defaults to ``None``.
-        n_jobs (int, optional): Parallel processes per rank to use for optimization updates (e.g., model re-fitting). Defaults to ``1``.
-        surrogate_model (str, optional): Type of the surrogate model to use. ``"DUMMY"`` can be used of random-search, ``"GP"`` for Gaussian-Process (efficient with few iterations such as a hundred sequentially but bottleneck when scaling because of its cubic complexity w.r.t. the number of evaluations), "``"RF"`` for the Random-Forest regressor (log-linear complexity with respect to the number of evaluations). Defaults to ``"RF"``.
+        n_jobs (int, optional): Parallel processes per rank to use for optimization updates (e.g., model re-fitting). Not used in ``surrogate_model`` if passed as own sklearn regressor. Defaults to ``1``.
+        surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Type of the surrogate model to use. Can be a value in ``["RF", "GP", "ET", "GBRT", "DUMMY"]`` or a sklearn regressor. ``"DUMMY"`` can be used of random-search, ``"GP"`` for Gaussian-Process (efficient with few iterations such as a hundred sequentially but bottleneck when scaling because of its cubic complexity w.r.t. the number of evaluations), "``"RF"`` for the Random-Forest regressor (log-linear complexity with respect to the number of evaluations). Defaults to ``"RF"``.
         n_initial_points (int, optional): Number of collected objectives required before fitting the surrogate-model. Defaults to ``10``.
         initial_point_generator (str, optional): Sets an initial points generator. Can be either ``["random", "sobol", "halton", "hammersly", "lhs", "grid"]``. Defaults to ``"random"``.
         lazy_socket_allocation (bool, optional): If `True` then MPI communication socket are initialized only when used for the first time, otherwise the initialization is forced when creating the instance. Defaults to ``False``.
@@ -129,7 +130,7 @@ class DBO:
         comm=None,
         run_function_kwargs: dict = None,
         n_jobs: int = 1,
-        surrogate_model: str = "RF",
+        surrogate_model="RF",
         surrogate_model_kwargs: dict = None,
         n_initial_points: int = 10,
         initial_point_generator: str = "random",
@@ -245,14 +246,27 @@ class DBO:
         else:
             self._opt_space = self._problem.space
 
-        self._opt = None
-        self._opt_kwargs = dict(
-            dimensions=self._opt_space,
-            base_estimator=self._get_surrogate_model(
+        if not (type(n_jobs) is int):
+            raise ValueError(f"Parameter n_jobs={n_jobs} should be an integer value!")
+
+        surrogate_model_allowed = ["RF", "ET", "GBRT", "DUMMY", "GP"]
+        if surrogate_model in surrogate_model_allowed:
+            base_estimator = self._get_surrogate_model(
                 surrogate_model,
                 surrogate_model_kwargs,
                 n_jobs,
-            ),
+            )
+        elif is_regressor(surrogate_model):
+            base_estimator = surrogate_model
+        else:
+            raise ValueError(
+                f"Parameter 'surrogate_model={surrogate_model}' should have a value in {surrogate_model_allowed}, or be a sklearn regressor!"
+            )
+
+        self._opt = None
+        self._opt_kwargs = dict(
+            dimensions=self._opt_space,
+            base_estimator=base_estimator,
             acq_func=MAP_acq_func.get(acq_func, acq_func),
             acq_func_kwargs={"xi": xi, "kappa": kappa},
             acq_optimizer=acq_optimizer,

@@ -12,6 +12,7 @@ from deephyper.search._search import Search
 from deephyper.skopt.moo import non_dominated_set, non_dominated_set_ranked
 
 from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.base import is_regressor
 from deephyper.skopt.utils import use_named_args
 
 # Adapt minimization -> maximization with DeepHyper
@@ -36,7 +37,7 @@ class CBO(Search):
         random_state (int, optional): Random seed. Defaults to ``None``.
         log_dir (str, optional): Log directory where search's results are saved. Defaults to ``"."``.
         verbose (int, optional): Indicate the verbosity level of the search. Defaults to ``0``.
-        surrogate_model (str, optional): Surrogate model used by the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "GBRT", "DUMMY"]``. ``"RF"`` is for Random-Forest which is the best compromise between speed and quality when performing a lot of parallel evaluations, i.e., reaching more than hundreds of evaluations. ``"GP"`` is for Gaussian-Process which is the best choice when maximizing the quality of iteration but quickly slow down when reaching hundreds of evaluations, also it does not support conditional search space. ``"ET"`` is for Extra-Tree, faster than random forest but with worse mean estimate and poor uncertainty quantification capabilities. ``"GBRT"`` is for Gradient-Boosting Regression Tree, it has better mean estimate than other tree-based method worse uncertainty quantification capabilities and slower than ``"RF"``. Defaults to ``"RF"``.
+        surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Surrogate model used by the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "GBRT", "DUMMY"]`` or a sklearn regressor. ``"RF"`` is for Random-Forest which is the best compromise between speed and quality when performing a lot of parallel evaluations, i.e., reaching more than hundreds of evaluations. ``"GP"`` is for Gaussian-Process which is the best choice when maximizing the quality of iteration but quickly slow down when reaching hundreds of evaluations, also it does not support conditional search space. ``"ET"`` is for Extra-Tree, faster than random forest but with worse mean estimate and poor uncertainty quantification capabilities. ``"GBRT"`` is for Gradient-Boosting Regression Tree, it has better mean estimate than other tree-based method worse uncertainty quantification capabilities and slower than ``"RF"``. Defaults to ``"RF"``.
         acq_func (str, optional): Acquisition function used by the Bayesian optimization. Can be a value in ``["UCB", "EI", "PI", "gp_hedge"]``. Defaults to ``"UCB"``.
         acq_optimizer (str, optional): Method used to minimze the acquisition function. Can be a value in ``["sampling", "lbfgs"]``. Defaults to ``"auto"``.
         kappa (float, optional): Manage the exploration/exploitation tradeoff for the "UCB" acquisition function. Defaults to ``1.96`` which corresponds to 95% of the confidence interval.
@@ -44,7 +45,7 @@ class CBO(Search):
         n_points (int, optional): The number of configurations sampled from the search space to infer each batch of new evaluated configurations.
         filter_duplicated (bool, optional): Force the optimizer to sample unique points until the search space is "exhausted" in the sens that no new unique points can be found given the sampling size ``n_points``. Defaults to ``True``.
         multi_point_strategy (str, optional): Definition of the constant value use for the Liar strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max", "qUCB"]``. All ``"cl_..."`` strategies follow the constant-liar scheme, where if $N$ new points are requested, the surrogate model is re-fitted $N-1$ times with lies (respectively, the minimum, mean and maximum objective found so far; for multiple objectives, these are the minimum, mean and maximum of the individual objectives) to infer the acquisition function. Constant-Liar strategy have poor scalability because of this repeated re-fitting. The ``"qUCB"`` strategy is much more efficient by sampling a new $kappa$ value for each new requested point without re-fitting the model, but it is only compatible with ``acq_func == "UCB"``. Defaults to ``"cl_max"``.
-        n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the Bayesian optimization. A value of ``-1`` will use all available cores. Defaults to ``1``.
+        n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the Bayesian optimization. A value of ``-1`` will use all available cores. Not used in ``surrogate_model`` if passed as own sklearn regressor. Defaults to ``1``.
         n_initial_points (int, optional): Number of collected objectives required before fitting the surrogate-model. Defaults to ``10``.
         initial_point_generator (str, optional): Sets an initial points generator. Can be either ``["random", "sobol", "halton", "hammersly", "lhs", "grid"]``. Defaults to ``"random"``.
         initial_points (List[Dict], optional): A list of initial points to evaluate where each point is a dictionnary where keys are names of hyperparameters and values their corresponding choice. Defaults to ``None`` for them to be generated randomly from the search space.
@@ -62,7 +63,7 @@ class CBO(Search):
         random_state: int = None,
         log_dir: str = ".",
         verbose: int = 0,
-        surrogate_model: str = "RF",
+        surrogate_model="RF",
         acq_func: str = "UCB",
         acq_optimizer: str = "auto",
         kappa: float = 1.96,
@@ -72,7 +73,7 @@ class CBO(Search):
         update_prior: bool = False,
         multi_point_strategy: str = "cl_max",
         n_jobs: int = 1,  # 32 is good for Theta
-        n_initial_points=10,
+        n_initial_points: int = 10,
         initial_point_generator: str = "random",
         initial_points=None,
         sync_communication: bool = False,
@@ -88,10 +89,21 @@ class CBO(Search):
         self._init_params = locals()
 
         # check input parameters
+        if not (type(n_jobs) is int):
+            raise ValueError(f"Parameter n_jobs={n_jobs} should be an integer value!")
+
         surrogate_model_allowed = ["RF", "ET", "GBRT", "DUMMY", "GP"]
-        if not (surrogate_model in surrogate_model_allowed):
+        if surrogate_model in surrogate_model_allowed:
+            base_estimator = self._get_surrogate_model(
+                surrogate_model,
+                n_jobs,
+                random_state=self._random_state.randint(0, 2 ** 32),
+            )
+        elif is_regressor(surrogate_model):
+            base_estimator = surrogate_model
+        else:
             raise ValueError(
-                f"Parameter 'surrogate_model={surrogate_model}' should have a value in {surrogate_model_allowed}!"
+                f"Parameter 'surrogate_model={surrogate_model}' should have a value in {surrogate_model_allowed}, or be a sklearn regressor!"
             )
 
         acq_func_allowed = ["UCB", "EI", "PI", "gp_hedge", "qUCB"]
@@ -149,9 +161,6 @@ class CBO(Search):
                 f"Parameter multi_point_strategy={multi_point_strategy} should have a value in {multi_point_strategy_allowed}!"
             )
 
-        if not (type(n_jobs) is int):
-            raise ValueError(f"Parameter n_jobs={n_jobs} should be an integer value!")
-
         self._n_initial_points = n_initial_points
         self._initial_points = []
         if initial_points is not None and len(initial_points) > 0:
@@ -185,11 +194,7 @@ class CBO(Search):
         self._opt = None
         self._opt_kwargs = dict(
             dimensions=self._opt_space,
-            base_estimator=self._get_surrogate_model(
-                surrogate_model,
-                n_jobs,
-                random_state=self._random_state.randint(0, 2**32),
-            ),
+            base_estimator=base_estimator,
             # optimizer
             initial_point_generator=initial_point_generator,
             acq_optimizer=acq_optimizer,
@@ -761,7 +766,7 @@ class AMBS(CBO):
         random_state: int = None,
         log_dir: str = ".",
         verbose: int = 0,
-        surrogate_model: str = "RF",
+        surrogate_model="RF",
         acq_func: str = "UCB",
         acq_optimizer: str = "auto",
         kappa: float = 1.96,
