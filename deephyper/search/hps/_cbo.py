@@ -97,7 +97,7 @@ class CBO(Search):
             base_estimator = self._get_surrogate_model(
                 surrogate_model,
                 n_jobs,
-                random_state=self._random_state.randint(0, 2 ** 32),
+                random_state=self._random_state.randint(0, 2**32),
             )
         elif is_regressor(surrogate_model):
             base_estimator = surrogate_model
