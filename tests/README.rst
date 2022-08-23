@@ -13,8 +13,17 @@ Follow the :ref:`local-dev-installation`.
 Run Tests
 =========
 
-This is the basic and simplest command line to run test.
-All test marked as ``@pytest.mark.slow`` will be skipped::
+Tests are marked with possible marks such as:
 
-    cd deephyper/
-    pytest --cov=deephyper --run-hps --run-fast tests
+- fast
+- slow
+- hps
+- nas
+- mpi
+- ray
+
+To run corresponding tests these markers can be used such as:
+
+.. code-block:: console
+
+    pytest --run fast,hps tests/
