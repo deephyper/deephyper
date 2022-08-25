@@ -309,6 +309,10 @@ def has_gradients(estimator):
     estimator :
         sklearn BaseEstimator instance.
     """
+
+    if hasattr(estimator, "has_gradient"):
+        return getattr(estimator, "has_gradient")
+
     tree_estimators = (
         ExtraTreesRegressor,
         RandomForestRegressor,
