@@ -1,7 +1,6 @@
 import abc
 import json
 import os
-import traceback
 
 import ray
 import tensorflow as tf

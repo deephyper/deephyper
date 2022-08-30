@@ -9,7 +9,6 @@ from deephyper.ensemble import BaseEnsemble
 from deephyper.nas.metrics import selectMetric
 from deephyper.nas.run._util import set_memory_growth_for_visible_gpus
 from deephyper.core.exceptions import DeephyperRuntimeError
-from pandas import DataFrame
 
 
 def nll(y, rv_y):
@@ -488,53 +487,3 @@ def greedy_caruana(loss_func, y_true, y_pred, k=2, verbose=0):
             return ensemble_members
 
     return ensemble_members
-
-
-def __convert_to_block_df(a, y_col=None, group_col=None, block_col=None, melted=False):
-    # TODO: refactor conversion of block data to DataFrame
-    if melted and not all([i is not None for i in [block_col, group_col, y_col]]):
-        raise ValueError(
-            "`block_col`, `group_col`, `y_col` should be explicitly specified if using melted data"
-        )
-
-    if isinstance(a, DataFrame) and not melted:
-        x = a.copy(deep=True)
-        group_col = "groups"
-        block_col = "blocks"
-        y_col = "y"
-        x.columns.name = group_col
-        x.index.name = block_col
-        x = x.reset_index().melt(
-            id_vars=block_col, var_name=group_col, value_name=y_col
-        )
-
-    elif isinstance(a, DataFrame) and melted:
-        x = DataFrame.from_dict(
-            {"groups": a[group_col], "blocks": a[block_col], "y": a[y_col]}
-        )
-
-    elif not isinstance(a, DataFrame):
-        x = np.array(a)
-        x = DataFrame(x, index=np.arange(x.shape[0]), columns=np.arange(x.shape[1]))
-
-        if not melted:
-            group_col = "groups"
-            block_col = "blocks"
-            y_col = "y"
-            x.columns.name = group_col
-            x.index.name = block_col
-            x = x.reset_index().melt(
-                id_vars=block_col, var_name=group_col, value_name=y_col
-            )
-
-        else:
-            x.rename(
-                columns={group_col: "groups", block_col: "blocks", y_col: "y"},
-                inplace=True,
-            )
-
-    group_col = "groups"
-    block_col = "blocks"
-    y_col = "y"
-
-    return x, y_col, group_col, block_col
