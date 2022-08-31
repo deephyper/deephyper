@@ -3,11 +3,13 @@ Dashboard
 ---------
 A tool to open an interactive dashboard in the browser to help analyse DeepHyper results.
 
-It can be use such as:
+It can be used such as:
 
 .. code-block:: console
 
-    $ deephyper-analytics dashboard
+    $ deephyper-analytics dashboard --database db.json
+
+Then an interactive dashboard will appear in your browser.
 """
 import os
 import subprocess
@@ -25,17 +27,23 @@ def add_subparser(subparsers):
     parser = subparsers.add_parser(
         subparser_name, help="Open a dashboard in the browser."
     )
+    parser.add_argument(
+        "-d", "--database", default="~/.deephyper/db.json", help="Path to the default database used for the dashboard."
+    )
 
     return subparser_name, function_to_call
 
 
-def main(*args, **kwargs):
+def main(database, *args, **kwargs):
     """
     :meta private:
     """
 
     path_st_app = os.path.join(HERE, "dashboard", "_views.py")
+    database = os.path.abspath(database)
 
+    # the "--" is a posix standard to separate streamlit arguments from other arguments
+    # which are forwarded to the launched script
     result = subprocess.run(
-        ["streamlit", "run", path_st_app],
+        ["streamlit", "run", path_st_app, "--", database],
     )

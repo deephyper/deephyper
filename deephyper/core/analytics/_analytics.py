@@ -12,7 +12,6 @@ It can be used with:
     {dashboard,notebook,quickplot,topk}
                             Kind of analytics.
         dashboard           Open a DeepHyper dashboard in the browser.
-        notebook            Generate a notebook with different types of analysis
         quickplot           Tool to generate a quick 2D plot from file.
         topk                Print the top-k configurations.
 
@@ -22,7 +21,7 @@ It can be used with:
 import argparse
 import sys
 
-from deephyper.core.analytics import _topk, _quick_plot, _dashboard
+from deephyper.core.analytics import _topk, _quick_plot, _dashboard, _db_manager
 
 
 def create_parser():
@@ -37,7 +36,7 @@ def create_parser():
 
     mapping = dict()
 
-    modules = [_dashboard, _quick_plot, _topk]  # output quick plots
+    modules = [_dashboard, _db_manager, _quick_plot, _topk]  # output quick plots
 
     for module in modules:
         name, func = module.add_subparser(subparsers)
