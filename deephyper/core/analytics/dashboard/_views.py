@@ -121,7 +121,7 @@ class ExperimentSelection(View):
                         "id": exp_data["id"],
                         "date_created": exp_data["metadata"]["add_date"],
                         "label": exp_data["metadata"]["label"],
-                        "num_workers": exp_data["metadata"]["search"]["num_workers"]
+                        "num_workers": exp_data["metadata"]["search"]["num_workers"],
                     }
                 )
 
@@ -308,14 +308,14 @@ class SearchTrajectoryPlotView(View):
             domain_x = [x_axis_min, x_axis_max]
 
             y_axis = "max objective"
-            
+
             if self.is_single:
                 df = df.sort_values(x_axis)
                 df["max objective"] = df["objective"].cummax()
             else:
                 df = df.sort_values(["label", x_axis])
                 df[y_axis] = df.groupby(["label"])["objective"].transform("cummax")
-            
+
             col1, col2 = st.columns(2)
             y_axis_max = col1.number_input(
                 "Y-axis Max",
@@ -332,7 +332,7 @@ class SearchTrajectoryPlotView(View):
         st.header(self.name)
 
         encode_kwargs = {}
-        if not(self.is_single):
+        if not (self.is_single):
             encode_kwargs["color"] = "label"
 
         c = (
@@ -350,7 +350,7 @@ class SearchTrajectoryPlotView(View):
                     scale=alt.Scale(domain=domain_y),
                 ),
                 tooltip=columns,
-                **encode_kwargs
+                **encode_kwargs,
             )
             .interactive()
         )
@@ -391,7 +391,7 @@ class ProfilePlotView(View):
             profile_dict["n_processes"].append(n_processes)
         profile = pd.DataFrame(profile_dict)
         return profile
-    
+
     def get_perc_util(self, profile, num_workers):
         csum = 0
         for i in range(len(profile) - 1):
@@ -434,7 +434,9 @@ class ProfilePlotView(View):
             }[self.profile_type]
 
             self.profiles = self.get_profile(self.results)
-            self.perc_utils = self.get_perc_util(self.profiles, self.data["metadata"]["search"]["num_workers"])
+            self.perc_utils = self.get_perc_util(
+                self.profiles, self.data["metadata"]["search"]["num_workers"]
+            )
 
         #     x_axis = st.selectbox(
         #         label="X-axis",

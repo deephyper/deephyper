@@ -28,7 +28,10 @@ def add_subparser(subparsers):
         subparser_name, help="Open a dashboard in the browser."
     )
     parser.add_argument(
-        "-d", "--database", default="~/.deephyper/db.json", help="Path to the default database used for the dashboard."
+        "-d",
+        "--database",
+        default="~/.deephyper/db.json",
+        help="Path to the default database used for the dashboard.",
     )
 
     return subparser_name, function_to_call
