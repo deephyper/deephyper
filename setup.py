@@ -89,7 +89,7 @@ EXTRAS = {
         "jupyter_contrib_nbextensions>=0.5.1",
         "nbconvert<6",
         "streamlit",
-        "streamlit-aggrid"
+        "streamlit-aggrid",
     ],
     "hvd": ["horovod>=0.21.3", "mpi4py>=3.0.0"],
 }
