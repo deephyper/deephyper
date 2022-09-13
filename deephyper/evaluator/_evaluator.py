@@ -328,15 +328,19 @@ class Evaluator:
             elif callable(saved_keys):
                 result = copy.deepcopy(saved_keys(job))
 
-            result["job_id"] = job.id
+            if "job_id" in result:
+                result.pop("job_id")
 
-            # when the returned value of the bb is a dict we flatten it to add in csv
+            # add prefix for all keys found in "config"
+            result = {f"p:{k}": v for k, v in result.items()}
+
+            # when the returned value of the run-function is a dict we flatten it to add in csv
             if isinstance(job.result, dict):
                 result.update(job.result)
             else:
                 result["objective"] = job.result
 
-            # when the objective is a tuple we create 1 column per tuple-element
+            # when the objective is a tuple (multi-objective) we create 1 column per tuple-element
             if isinstance(result["objective"], tuple):
                 obj = result.pop("objective")
 
@@ -354,6 +358,8 @@ class Evaluator:
                     obj = result.pop("objective")
                     for i in range(self.num_objective):
                         result[f"objective_{i}"] = obj
+
+            result["job_id"] = job.id
 
             result["timestamp_submit"] = job.timestamp_submit
             result["timestamp_gather"] = job.timestamp_gather

@@ -31,3 +31,9 @@ class QuickStartTest(unittest.TestCase):
         search = CBO(problem, evaluator)
 
         results = search.search(max_evals=15)
+        print(results)
+
+
+if __name__ == "__main__":
+    test = QuickStartTest()
+    test.test_quickstart()

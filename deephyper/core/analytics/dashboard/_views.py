@@ -559,7 +559,6 @@ class ProfilePlotView(DataView):
                     utilization.append((label, utilization_i))
 
                 profiles = pd.concat(profiles, axis=0)
-                
 
         st.header(self.name)
 
