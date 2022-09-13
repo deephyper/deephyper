@@ -7,9 +7,9 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 from deephyper.core.analytics import DBManager
-from numpy.core.numeric import NaN
 
-from st_aggrid import AgGrid, GridOptionsBuilder
+
+from st_aggrid import AgGrid, GridOptionsBuilder, ColumnsAutoSizeMode
 
 
 class View(abc.ABC):
@@ -59,7 +59,9 @@ class Dashboard(View):
                 # There are multiple experiments to compare
                 charts = {
                     "Table": CSVView,
+                    "Scatter": ScatterPlotView,
                     "Search Trajectory": SearchTrajectoryPlotView,
+                    "Utilization": ProfilePlotView,
                 }
                 default_charts = ["Search Trajectory"]
                 exp = experiment_selection.data
@@ -105,11 +107,16 @@ class ExperimentSelection(View):
         self.dbm = dbm
         self.selection = {}
         self.data = []
+        self.selection_mode = "single"
 
     def show(self):
 
         # main column
         st.header("Available Experiments")
+
+        self.selection_mode = st.radio(
+            "Selection Mode", ["single", "multiple"], index=0, horizontal=True
+        )
 
         with st.spinner(text="In progress..."):
 
@@ -122,6 +129,9 @@ class ExperimentSelection(View):
                         "date_created": exp_data["metadata"]["add_date"],
                         "label": exp_data["metadata"]["label"],
                         "num_workers": exp_data["metadata"]["search"]["num_workers"],
+                        "num_evaluations": len(
+                            next(iter(exp_data["data"]["search"]["results"].values()))
+                        ),
                     }
                 )
 
@@ -131,7 +141,16 @@ class ExperimentSelection(View):
                 # Full example
                 # https://github.com/PablocFonseca/streamlit-aggrid-examples/blob/main/main_example.py
                 options_builder = GridOptionsBuilder.from_dataframe(df)
-                options_builder.configure_selection("multiple", use_checkbox=True)
+                options_builder.configure_selection(
+                    self.selection_mode, use_checkbox=True
+                )
+                options_builder.configure_column(
+                    "date_created",
+                    type=["dateColumnFilter", "customDateTimeFormat"],
+                    custom_format_string="yyyy-MM-dd HH:mm",
+                    pivot=True,
+                )
+                options_builder.configure_column("label", editable=True)
                 grid_options = options_builder.build()
 
                 grid_response = AgGrid(
@@ -140,7 +159,8 @@ class ExperimentSelection(View):
                     theme="streamlit",
                     data_return_mode="filtered",
                     width="100%",
-                    fit_columns_on_grid_load=True,
+                    fit_columns_on_grid_load=False,
+                    columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
                 )
 
                 df = grid_response["data"]
@@ -148,14 +168,23 @@ class ExperimentSelection(View):
                     self.dbm.get(exp_id=int(row["id"]))
                     for row in grid_response["selected_rows"]
                 ]
+                for exp_data, row in zip(self.data, grid_response["selected_rows"]):
+                    exp_data["metadata"]["label"] = row["label"]
 
 
-class CSVView(View):
-    def __init__(self, data) -> None:
+class DataView(View):
+    """For experiments displaying data (e.g., plots and tables)"""
+
+    def __init__(self, name, data):
         super().__init__()
-        self.name = "Table"
+        self.name = name
         self.data = data
         self.is_single = not (isinstance(data, list))
+
+
+class CSVView(DataView):
+    def __init__(self, data) -> None:
+        super().__init__("Table", data)
 
     def show(self):
         st.header(self.name)
@@ -170,14 +199,23 @@ class CSVView(View):
                     st.dataframe(self.data[i]["data"]["search"]["results"])
 
 
-class ScatterPlotView(View):
-    def __init__(self, exp):
-        self.name = "Scatter Plot"
-        self.results = exp["data"]["search"]["results"]
+class ScatterPlotView(DataView):
+    def __init__(self, data):
+        super().__init__("Scatter Plot", data)
 
     def show(self):
 
-        columns = list(self.results.columns)
+        if self.is_single:
+            df = self.data["data"]["search"]["results"]
+        else:
+            df = []
+            for i in range(len(self.data)):
+                df_i = self.data[i]["data"]["search"]["results"]
+                df_i["label"] = self.data[i]["metadata"]["label"]
+                df.append(df_i)
+            df = pd.concat(df, axis=0)
+
+        columns = list(df.columns)
 
         # Options for the plot
         with st.sidebar.expander(self.name):
@@ -197,12 +235,12 @@ class ScatterPlotView(View):
             col1, col2 = st.columns(2)
             x_axis_max = col1.number_input(
                 "X-axis Max",
-                value=self.results[x_axis].max(),
+                value=df[x_axis].max(),
                 key=f"{self.name}:x-axis max:number_input",
             )
             x_axis_min = col2.number_input(
                 "X-axis Min",
-                value=self.results[x_axis].min(),
+                value=df[x_axis].min(),
                 key=f"{self.name}:x-axis min:number_input",
             )
             domain_x = [x_axis_min, x_axis_max]
@@ -216,25 +254,28 @@ class ScatterPlotView(View):
             col1, col2 = st.columns(2)
             y_axis_max = col1.number_input(
                 "Y-axis Max",
-                value=self.results[y_axis].max(),
+                value=df[y_axis].max(),
                 key=f"{self.name}:y-axis max:number_input",
             )
             y_axis_min = col2.number_input(
                 "Y-axis Min",
-                value=self.results[y_axis].min(),
+                value=df[y_axis].min(),
                 key=f"{self.name}:y-axis min:number_input",
             )
             domain_y = [y_axis_min, y_axis_max]
 
             color_var = st.selectbox(
-                label="Color", options=columns, index=columns.index("objective")
+                label="Color",
+                options=columns,
+                index=columns.index("objective")
+                if self.is_single
+                else columns.index("label"),
             )
 
         st.header(self.name)
 
-        columns = list(self.results.columns)
         c = (
-            alt.Chart(self.results)
+            alt.Chart(df)
             .mark_circle(size=60)
             .encode(
                 x=alt.X(
@@ -256,11 +297,9 @@ class ScatterPlotView(View):
         st.altair_chart(c, use_container_width=True)
 
 
-class SearchTrajectoryPlotView(View):
+class SearchTrajectoryPlotView(DataView):
     def __init__(self, data):
-        self.name = "Search Trajectory"
-        self.data = data
-        self.is_single = not (isinstance(data, list))
+        super().__init__("Search Trajectory", data)
 
     def show(self):
 
@@ -334,6 +373,7 @@ class SearchTrajectoryPlotView(View):
         encode_kwargs = {}
         if not (self.is_single):
             encode_kwargs["color"] = "label"
+        encode_kwargs["tooltip"] = "label"
 
         c = (
             alt.Chart(df)
@@ -349,7 +389,6 @@ class SearchTrajectoryPlotView(View):
                     title=y_axis.replace("_", " ").title(),
                     scale=alt.Scale(domain=domain_y),
                 ),
-                tooltip=columns,
                 **encode_kwargs,
             )
             .interactive()
@@ -358,15 +397,17 @@ class SearchTrajectoryPlotView(View):
         st.altair_chart(c, use_container_width=True)
 
 
-class ProfilePlotView(View):
+class ProfilePlotView(DataView):
     def __init__(self, data):
-        self.name = "Utilization"
-        self.data = data
-        self.results = self.data["data"]["search"]["results"]
+        super().__init__("Utilization", data)
         self.profile_type = "start/end"
-        self.profiles = self.get_profile(self.results)
 
-    def get_profile(self, df):
+    def get_profile(self, df, num_workers=0):
+        """
+        Args:
+            df: data frame on which to compute the profile.
+            num_workers: number of workers to use for normalization. if 0 then it is ignored.
+        """
         # profile_type = "submit/gather"
         # profile_type = "start/end"
 
@@ -390,11 +431,15 @@ class ProfilePlotView(View):
             profile_dict["t"].append(t)
             profile_dict["n_processes"].append(n_processes)
         profile = pd.DataFrame(profile_dict)
+
+        if num_workers > 0:
+            profile["n_processes"] = profile["n_processes"] / num_workers
+
         return profile
 
     def get_perc_util(self, profile, num_workers):
         csum = 0
-        for i in range(len(profile) - 1):
+        for i in profile.index[:-1]:
             csum += (profile.loc[i + 1, "t"] - profile.loc[i, "t"]) * profile.loc[
                 i, "n_processes"
             ]
@@ -403,10 +448,35 @@ class ProfilePlotView(View):
 
     def show(self):
 
-        columns = list(self.results.columns)
+        if self.is_single:
+            df = self.data["data"]["search"]["results"]
+            columns = list(df.columns)
+        else:
+            # df = []
+            # columns = None
+            # for i in range(len(self.data)):
+            #     df_i = self.data[i]["data"]["search"]["results"]
+            #     label = self.data[i]["metadata"]["label"]
+            #     df.append((label, df_i))
+
+            #     if columns is None:
+            #         columns = set(df_i.columns)
+            #     else:
+            #         columns = columns.intersection(set(df_i.columns))
+            # columns = list(columns)
+            df = []
+            for i in range(len(self.data)):
+                df_i = self.data[i]["data"]["search"]["results"]
+                df_i["label"] = self.data[i]["metadata"]["label"]
+                df.append(df_i)
+            df = pd.concat(df, axis=0)
+            columns = list(df.columns)
 
         # Options for the plot
         with st.sidebar.expander(self.name):
+
+            normalize = st.checkbox("Normalize by number of workers")
+
             x_idx = None
             profile_types = []
             if "timestamp_end" in columns:
@@ -416,7 +486,7 @@ class ProfilePlotView(View):
                 if x_idx is None:
                     x_idx = columns.index("timestamp_gather")
                 profile_types.append("submit/gather")
-            if x_idx is None:
+            if len(profile_types) == 0:
                 st.warning(
                     "Nothing to display as no profiling information provided (e.g., timestamp_submit/gather, timestamp_start/end!)"
                 )
@@ -428,79 +498,110 @@ class ProfilePlotView(View):
                 index=0,
                 key=f"{self.name}:type of profile:selectbox",
             )
+
+            col1, col2 = st.columns(2)
+            x_axis = columns[x_idx]
+            x_axis_max = col1.number_input(
+                "X-axis Max",
+                value=df[x_axis].max(),
+                key=f"{self.name}:x-axis max:number_input",
+            )
+            x_axis_min = col2.number_input(
+                "X-axis Min",
+                value=df[x_axis].min(),
+                key=f"{self.name}:x-axis min:number_input",
+            )
+            domain_x = [x_axis_min, x_axis_max]
+
             y_label = {
                 "start/end": "# Jobs Running",
                 "submit/gather": "# Jobs Pending",
             }[self.profile_type]
 
-            self.profiles = self.get_profile(self.results)
-            self.perc_utils = self.get_perc_util(
-                self.profiles, self.data["metadata"]["search"]["num_workers"]
-            )
+            if self.is_single:
+                num_workers = self.data["metadata"]["search"]["num_workers"]
 
-        #     x_axis = st.selectbox(
-        #         label="X-axis",
-        #         options=columns,
-        #         index=x_idx,
-        #         key=f"{self.name}:x-axis:selectbox",
-        #     )
-        #     domain_x = [self.results[x_axis].min(), self.results[x_axis].max()]
-        #     col1, col2 = st.columns(2)
-        #     x_axis_max = col1.number_input(
-        #         "X-axis Max",
-        #         min_value=domain_x[0],
-        #         max_value=domain_x[1],
-        #         value=domain_x[1],
-        #         key=f"{self.name}:x-axis max:number_input",
-        #     )
-        #     x_axis_min = col2.number_input(
-        #         "X-axis Min",
-        #         min_value=domain_x[0],
-        #         max_value=domain_x[1],
-        #         value=domain_x[0],
-        #         key=f"{self.name}:x-axis min:number_input",
-        #     )
-        #     domain_x = [x_axis_min, x_axis_max]
+                if normalize:
+                    profiles = self.get_profile(df, num_workers)
+                else:
+                    profiles = self.get_profile(df)
 
-        #     y_axis = "max objective"
-        #     self.results = self.results.sort_values(x_axis)
-        #     self.results["max objective"] = self.results["objective"].cummax()
-        #     domain_y = [self.results[y_axis].min(), self.results[y_axis].max()]
-        #     col1, col2 = st.columns(2)
-        #     y_axis_max = col1.number_input(
-        #         "Y-axis Max",
-        #         min_value=domain_y[0],
-        #         max_value=domain_y[1],
-        #         value=domain_y[1],
-        #         key=f"{self.name}:y-axis max:number_input",
-        #     )
-        #     y_axis_min = col2.number_input(
-        #         "Y-axis Min",
-        #         min_value=domain_y[0],
-        #         max_value=domain_y[1],
-        #         value=domain_y[0],
-        #         key=f"{self.name}:y-axis min:number_input",
-        #     )
-        #     domain_y = [y_axis_min, y_axis_max]
+                profiles = profiles[
+                    (x_axis_min <= profiles["t"]) & (profiles["t"] <= x_axis_max)
+                ]
+
+                utilization = self.get_perc_util(
+                    profiles, 1 if normalize else num_workers
+                )
+            else:
+                profiles = []
+                utilization = []
+
+                for i, (label, df_group) in enumerate(df.groupby("label")):
+                    num_workers = self.data[i]["metadata"]["search"]["num_workers"]
+
+                    if normalize:
+                        profiles_i = self.get_profile(df_group, num_workers)
+                    else:
+                        profiles_i = self.get_profile(df_group)
+                    profiles_i["label"] = label
+
+                    profiles_i = profiles_i[
+                        (x_axis_min <= profiles_i["t"])
+                        & (profiles_i["t"] <= x_axis_max)
+                    ]
+
+                    utilization_i = self.get_perc_util(
+                        profiles_i, 1 if normalize else num_workers
+                    )
+
+                    profiles.append(profiles_i)
+                    utilization.append((label, utilization_i))
+
+                profiles = pd.concat(profiles, axis=0)
+                
 
         st.header(self.name)
-        st.markdown(f"{self.perc_utils*100:.2f}% of utilization")
 
-        # columns = list(self.results.columns)
+        if self.is_single:
+            st.markdown(
+                f"{utilization*100:.2f}%"
+                + " of utilization between $t_{min}="
+                + f"${x_axis_min:.0f}"
+                + " and $t_{max}"
+                + f"=${x_axis_max:.0f}"
+            )
+        else:
+            text = ""
+            for label, util in utilization:
+                text += (
+                    f"* __{label}__: {util*100:.2f}%"
+                    + " of utilization between $t_{min}="
+                    + f"${x_axis_min:.0f}"
+                    + " and $t_{max}"
+                    + f"=${x_axis_max:.0f}\n"
+                )
+            st.markdown(text)
+
+        encode_kwargs = {}
+        if not (self.is_single):
+            encode_kwargs["color"] = "label"
+
         c = (
-            alt.Chart(self.profiles)
+            alt.Chart(profiles)
             .mark_line(interpolate="step-after")
             .encode(
                 x=alt.X(
                     "t",
                     title="Time (sec.)",
-                    # scale=alt.Scale(domain=domain_x),
+                    scale=alt.Scale(domain=domain_x),
                 ),
                 y=alt.Y(
                     "n_processes",
                     title=y_label,
                     # scale=alt.Scale(domain=domain_y),
                 ),
+                **encode_kwargs,
             )
             .interactive()
         )
@@ -510,6 +611,7 @@ class ProfilePlotView(View):
 
 def main(database_path):
 
+    st.set_page_config(layout="wide")
     dashboard = Dashboard(database_path)
     dashboard.show()
 
