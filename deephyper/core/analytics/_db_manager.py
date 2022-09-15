@@ -227,7 +227,7 @@ def add_subparser(subparsers):
         "--view",
         type=str,
         default=None,
-        help="Print a view of the database.",
+        help="Print a view of the database based on filtered labels.",
     )
 
     return subparser_name, function_to_call
@@ -237,6 +237,9 @@ def main(username, database, add, delete, view, **kwargs):
     """
     :meta private:
     """
+
+    if not(os.path.exists(database)):
+        print(f"[DBManager] Create new database: {database}")
 
     dbm = DBManager(username=username, path=database)
 
@@ -280,5 +283,3 @@ def main(username, database, add, delete, view, **kwargs):
             print(df)
         else:
             print("[DBManager] No entry found!")
-    else:
-        print("[DBManager] Nothing to do...")
