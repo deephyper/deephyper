@@ -207,6 +207,10 @@ class DBO:
             logging.info(
                 f"Initializing communications done in {time.time() - ti:.4f} sec."
             )
+        
+        logging.info(f"MPI Barrier...")
+        self._comm.Barrier()
+        logging.info(f"MPI Barrier done!")
 
         # sync communication management
         self._sync_communication = sync_communication
