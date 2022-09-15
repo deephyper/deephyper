@@ -238,7 +238,7 @@ def main(username, database, add, delete, view, **kwargs):
     :meta private:
     """
 
-    if not(os.path.exists(database)):
+    if not (os.path.exists(database)):
         print(f"[DBManager] Creating new database: {database}")
 
     dbm = DBManager(username=username, path=database)
