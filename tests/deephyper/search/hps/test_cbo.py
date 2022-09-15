@@ -24,13 +24,13 @@ class CBOTest(unittest.TestCase):
         )
 
         res1 = search.search(max_evals=4)
-        res1_array = res1[["x"]].to_numpy()
+        res1_array = res1[["p:x"]].to_numpy()
 
         search = CBO(
             problem, create_evaluator(), random_state=42, surrogate_model="DUMMY"
         )
         res2 = search.search(max_evals=4)
-        res2_array = res2[["x"]].to_numpy()
+        res2_array = res2[["p:x"]].to_numpy()
 
         assert np.array_equal(res1_array, res2_array)
 
@@ -45,13 +45,13 @@ class CBOTest(unittest.TestCase):
         )
 
         res1 = search.search(max_evals=4)
-        res1_array = res1[["x"]].to_numpy()
+        res1_array = res1[["p:x"]].to_numpy()
 
         search = CBO(
             problem, create_evaluator(), random_state=42, surrogate_model="DUMMY"
         )
         res2 = search.search(max_evals=4)
-        res2_array = res2[["x"]].to_numpy()
+        res2_array = res2[["p:x"]].to_numpy()
 
         assert np.array_equal(res1_array, res2_array)
 

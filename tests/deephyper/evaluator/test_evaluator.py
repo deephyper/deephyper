@@ -51,7 +51,7 @@ class TestEvaluator(unittest.TestCase):
         results = pd.read_csv("results.csv")
         assert all(
             results.columns
-            == ["x", "job_id", "objective", "timestamp_submit", "timestamp_gather"]
+            == ["p:x", "objective", "job_id", "timestamp_submit", "timestamp_gather"]
         )
         assert len(results) == 10
         assert results["objective"][0] == 42.0
@@ -67,7 +67,7 @@ class TestEvaluator(unittest.TestCase):
         results = pd.read_csv("results.csv")
         assert all(
             results.columns
-            == ["x", "job_id", "objective", "timestamp_submit", "timestamp_gather"]
+            == ["p:x", "objective", "job_id", "timestamp_submit", "timestamp_gather"]
         )
         assert len(results) == 10
         assert results["objective"][0] == "F_out_of_memory"
@@ -83,7 +83,7 @@ class TestEvaluator(unittest.TestCase):
         results = pd.read_csv("results.csv")
         assert all(
             results.columns
-            == ["x", "job_id", "objective", "timestamp_submit", "timestamp_gather"]
+            == ["p:x", "objective", "job_id", "timestamp_submit", "timestamp_gather"]
         )
         assert len(results) == 10
         assert results["objective"][0] == 42.0
@@ -104,9 +104,9 @@ class TestEvaluator(unittest.TestCase):
         assert all(
             results.columns
             == [
-                "x",
-                "job_id",
+                "p:x",
                 "objective",
+                "job_id",
                 "timestamp_submit",
                 "timestamp_gather",
                 "num_epochs_trained",
@@ -133,9 +133,9 @@ class TestEvaluator(unittest.TestCase):
         assert all(
             results.columns
             == [
-                "x",
-                "job_id",
+                "p:x",
                 "objective",
+                "job_id",
                 "timestamp_submit",
                 "timestamp_gather",
                 "timestamp_start",
@@ -162,9 +162,9 @@ class TestEvaluator(unittest.TestCase):
         assert all(
             results.columns
             == [
-                "x",
-                "job_id",
+                "p:x",
                 "objective",
+                "job_id",
                 "timestamp_submit",
                 "timestamp_gather",
                 "timestamp_start",
@@ -194,10 +194,10 @@ class TestEvaluator(unittest.TestCase):
         assert all(
             results.columns
             == [
-                "x",
-                "job_id",
+                "p:x",
                 "objective_0",
                 "objective_1",
+                "job_id",
                 "timestamp_submit",
                 "timestamp_gather",
             ]
