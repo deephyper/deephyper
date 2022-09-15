@@ -206,3 +206,32 @@ class CBOTest(unittest.TestCase):
         CBO(
             problem, create_evaluator(), random_state=42, surrogate_model="DUMMY"
         ).search(10)
+
+    def test_timeout(self):
+        import time
+        from deephyper.problem import HpProblem
+        from deephyper.search.hps import CBO
+
+        problem = HpProblem()
+        problem.add_hyperparameter((0.0, 10.0), "x")
+
+        def run(config):
+            try:
+                # simulate working thread
+                while True:
+                    1 + 1
+            except:  # simulate the catching of any exception here
+                time.sleep(2)
+            return config["x"]
+
+        search = CBO(problem, run, random_state=42, surrogate_model="DUMMY")
+
+        t1 = time.time()
+        result = search.search(timeout=1)
+        duration = time.time() - t1
+        assert duration < 1.5
+
+
+if __name__ == "__main__":
+    test = CBOTest()
+    test.test_timeout()
