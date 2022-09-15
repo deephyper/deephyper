@@ -14,6 +14,7 @@ import numpy as np
 from deephyper.evaluator._job import Job
 from deephyper.skopt.optimizer import OBJECTIVE_VALUE_FAILURE
 from deephyper.core.utils._introspection import get_init_params_as_json
+from deephyper.core.utils._timeout import terminate_on_timeout
 
 EVALUATORS = {
     "mpipool": "_mpi_pool.MPIPoolEvaluator",
@@ -88,13 +89,17 @@ class Evaluator:
         self.timestamp = (
             time.time()
         )  # Recorded time of when this evaluator interface was created.
-        self._loop = None  # Event loop for asyncio.
+        self.loop = None  # Event loop for asyncio.
         self._start_dumping = False
         self.num_objective = None  # record if multi-objective are recorded
 
         self._callbacks = [] if callbacks is None else callbacks
 
         self._lock = asyncio.Lock()
+
+        # manage timeout of the search
+        self._time_timeout_set = None
+        self._timeout = None
 
         # to avoid "RuntimeError: This event loop is already running"
         if not (Evaluator.NEST_ASYNCIO_PATCHED) and _test_ipython_interpretor():
@@ -178,6 +183,15 @@ class Evaluator:
 
             # Create a Job object from the input configuration
             new_job = Job(self.n_jobs, config, self.run_function)
+
+            if self._timeout:
+                time_consumed = self._time_timeout_set - time.time()
+                time_left = self._timeout - time_consumed
+                logging.info(f"Submitting job with {time_left} sec. time budget")
+                new_job.run_function = terminate_on_timeout(time_left)(
+                    new_job.run_function
+                )
+
             self.n_jobs += 1
             self.jobs.append(new_job)
 
@@ -243,7 +257,13 @@ class Evaluator:
             configs (List[Dict]): A list of dict which will be passed to the run function to be executed.
         """
         logging.info(f"submit {len(configs)} job(s) starts...")
-        self.loop = asyncio.get_event_loop()
+        if self.loop is None:
+            try:
+                # works if `timeout` is not set and code is running in main thread
+                self.loop = asyncio.get_event_loop()
+            except RuntimeError:
+                # required when `timeout` is set because code is not running in main thread
+                self.loop = asyncio.new_event_loop()
         self.loop.run_until_complete(self._run_jobs(configs))
         logging.info("submit done")
 

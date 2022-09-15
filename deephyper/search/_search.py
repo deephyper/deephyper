@@ -3,13 +3,14 @@ import copy
 import logging
 import os
 import pathlib
-import signal
+import time
 
 import numpy as np
 import pandas as pd
+import yaml
 from deephyper.core.exceptions import SearchTerminationError
 from deephyper.core.utils._introspection import get_init_params_as_json
-import yaml
+from deephyper.core.utils._timeout import terminate_on_timeout
 from deephyper.evaluator import Evaluator
 from deephyper.evaluator.callback import TqdmCallback
 
@@ -60,6 +61,9 @@ class Search(abc.ABC):
 
         self._verbose = verbose
 
+        # record time when timeout was set
+        self._time_timeout_set = None
+
     def to_json(self):
         """Returns a json version of the search object."""
         json_self = {
@@ -79,23 +83,21 @@ class Search(abc.ABC):
         with open(path_context, "w") as file:
             yaml.dump(context, file)
 
-    def terminate(self):
-        """Terminate the search.
-
-        Raises:
-            SearchTerminationError: raised when the search is terminated with SIGALARM
-        """
-        logging.info("Search is being stopped!")
-        raise SearchTerminationError
-
     def _set_timeout(self, timeout=None):
-        def handler(signum, frame):
-            self.terminate()
+        """If the `timeout` parameter is valid. Run the search in an other thread and trigger a timeout when this thread exhaust the allocated time budget."""
 
-        signal.signal(signal.SIGALRM, handler)
+        if timeout is not None:
+            if type(timeout) is not int:
+                raise ValueError(
+                    f"'timeout' shoud be of type'int' but is of type '{type(timeout)}'!"
+                )
+            if timeout <= 0:
+                raise ValueError(f"'timeout' should be > 0!")
 
         if np.isscalar(timeout) and timeout > 0:
-            signal.alarm(timeout)
+            self._evaluator._time_timeout_set = time.time()
+            self._evaluator._timeout = timeout
+            self._search = terminate_on_timeout(timeout)(self._search)
 
     def search(self, max_evals: int = -1, timeout: int = None):
         """Execute the search algorithm.
@@ -107,13 +109,6 @@ class Search(abc.ABC):
         Returns:
             DataFrame: a pandas DataFrame containing the evaluations performed or ``None`` if the search could not evaluate any configuration.
         """
-        if timeout is not None:
-            if type(timeout) is not int:
-                raise ValueError(
-                    f"'timeout' shoud be of type'int' but is of type '{type(timeout)}'!"
-                )
-            if timeout <= 0:
-                raise ValueError(f"'timeout' should be > 0!")
 
         self._set_timeout(timeout)
 
