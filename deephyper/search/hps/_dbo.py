@@ -625,7 +625,7 @@ class DBO:
         y_list = -np.array(y_list)
 
         results = {
-            hp_name: x_list[i]
+            f"p:{hp_name}": x_list[i]
             for i, hp_name in enumerate(self._problem.hyperparameter_names)
         }
         results.update(dict(objective=y_list, **infos_dict))

@@ -188,7 +188,9 @@ class Evaluator:
                 time_consumed = self._time_timeout_set - time.time()
                 time_left = self._timeout - time_consumed
                 logging.info(f"Submitting job with {time_left} sec. time budget")
-                new_job.run_function = terminate_on_timeout(time_left)(new_job.run_function)
+                new_job.run_function = terminate_on_timeout(time_left)(
+                    new_job.run_function
+                )
 
             self.n_jobs += 1
             self.jobs.append(new_job)

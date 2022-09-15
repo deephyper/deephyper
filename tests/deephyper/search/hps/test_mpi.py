@@ -38,7 +38,7 @@ def test_mpi_timeout():
     result = deephyper.test.run(command, live_output=False)
     result = result.stderr.replace("\n", "").split(" ")
     i = result.index("sys")
-    t = float(result[i-1])
+    t = float(result[i - 1])
     assert t < 2
 
 
