@@ -239,7 +239,7 @@ def main(username, database, add, delete, view, **kwargs):
     """
 
     if not(os.path.exists(database)):
-        print(f"[DBManager] Create new database: {database}")
+        print(f"[DBManager] Creating new database: {database}")
 
     dbm = DBManager(username=username, path=database)
 

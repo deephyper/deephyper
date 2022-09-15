@@ -187,3 +187,4 @@ old_*/
 # for Sphinx Gallery
 !docs/examples/images/*.png
 !docs/examples/images/thumb/*.png
+context.yaml

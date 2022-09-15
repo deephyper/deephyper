@@ -95,8 +95,7 @@ class Search(abc.ABC):
                 raise ValueError(f"'timeout' should be > 0!")
 
         if np.isscalar(timeout) and timeout > 0:
-            self._evaluator._time_timeout_set = time.time()
-            self._evaluator._timeout = timeout
+            self._evaluator.set_timeout(timeout)
             self._search = terminate_on_timeout(timeout)(self._search)
 
     def search(self, max_evals: int = -1, timeout: int = None):

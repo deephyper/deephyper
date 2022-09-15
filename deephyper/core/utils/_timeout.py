@@ -1,3 +1,4 @@
+import functools
 import multiprocessing
 import multiprocessing.pool
 
@@ -6,6 +7,7 @@ from deephyper.core.exceptions import SearchTerminationError
 
 def terminate_on_timeout(timeout):
     def decorator(func):
+        @functools.wraps(func)
         def wrapper(*args, **kwargs):
             pool = multiprocessing.pool.ThreadPool(processes=1)
             results = pool.apply_async(func, args, kwargs)

@@ -118,6 +118,12 @@ class Evaluator:
         if hasattr(self, "executor"):
             self.executor.__exit__(type, value, traceback)
 
+    def set_timeout(self, timeout):
+        """Set a timeout for the Evaluator. It will create task with a "time budget" and will kill the the task if this budget
+        is exhausted."""
+        self._time_timeout_set = time.time()
+        self._timeout = timeout
+
     def to_json(self):
         """Returns a json version of the evaluator."""
         out = {"type": type(self).__name__, **get_init_params_as_json(self)}

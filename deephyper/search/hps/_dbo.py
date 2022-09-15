@@ -5,24 +5,25 @@ import pickle
 import signal
 import time
 
-import numpy as np
-import pandas as pd
-import deephyper.skopt
 import ConfigSpace as CS
+import deephyper.skopt
 
 # avoid initializing mpi4py when importing
 import mpi4py
+import numpy as np
+import pandas as pd
 import yaml
 
 mpi4py.rc.initialize = False
 mpi4py.rc.finalize = True
-from mpi4py import MPI
 
 from deephyper.core.exceptions import SearchTerminationError
-from deephyper.problem._hyperparameter import convert_to_skopt_space
 from deephyper.core.utils._introspection import get_init_params_as_json
-from sklearn.ensemble import GradientBoostingRegressor
+from deephyper.core.utils._timeout import terminate_on_timeout
+from deephyper.problem._hyperparameter import convert_to_skopt_space
+from mpi4py import MPI
 from sklearn.base import is_regressor
+from sklearn.ensemble import GradientBoostingRegressor
 
 TAG_INIT = 20
 TAG_DATA = 30
@@ -207,7 +208,7 @@ class DBO:
             logging.info(
                 f"Initializing communications done in {time.time() - ti:.4f} sec."
             )
-        
+
         logging.info(f"MPI Barrier...")
         self._comm.Barrier()
         logging.info(f"MPI Barrier done!")
@@ -227,6 +228,10 @@ class DBO:
         )[self._rank]
 
         self._timestamp = time.time()
+
+        # manage timeout of the search
+        self._time_timeout_set = None
+        self._timeout = None
 
         self._history = History()
 
@@ -452,24 +457,40 @@ class DBO:
             self._comm.gather((X, Y, infos), root=0)
             logging.info(f"Broadcast to root done in {time.time() - t1:.4f} sec.")
 
-    def terminate(self):
-        """Terminate the search.
+    # def terminate(self):
+    #     """Terminate the search.
 
-        Raises:
-            SearchTerminationError: raised when the search is terminated with SIGALARM
-        """
-        logging.info("Search is being stopped!")
+    #     Raises:
+    #         SearchTerminationError: raised when the search is terminated with SIGALARM
+    #     """
+    #     logging.info("Search is being stopped!")
 
-        raise SearchTerminationError
+    #     raise SearchTerminationError
+
+    # def _set_timeout(self, timeout=None):
+    #     def handler(signum, frame):
+    #         self.terminate()
+
+    #     signal.signal(signal.SIGALRM, handler)
+
+    #     if np.isscalar(timeout) and timeout > 0:
+    #         signal.alarm(timeout)
 
     def _set_timeout(self, timeout=None):
-        def handler(signum, frame):
-            self.terminate()
+        """If the `timeout` parameter is valid. Run the search in an other thread and trigger a timeout when this thread exhaust the allocated time budget."""
 
-        signal.signal(signal.SIGALRM, handler)
+        if timeout is not None:
+            if type(timeout) is not int:
+                raise ValueError(
+                    f"'timeout' shoud be of type'int' but is of type '{type(timeout)}'!"
+                )
+            if timeout <= 0:
+                raise ValueError(f"'timeout' should be > 0!")
 
         if np.isscalar(timeout) and timeout > 0:
-            signal.alarm(timeout)
+            self._time_timeout_set = time.time()
+            self._timeout = timeout
+            self._search = terminate_on_timeout(timeout)(self._search)
 
     def search(self, max_evals: int = -1, timeout: int = None):
         """Execute the search algorithm.
@@ -481,14 +502,6 @@ class DBO:
         Returns:
             DataFrame: a pandas DataFrame containing the evaluations performed.
         """
-        if timeout is not None:
-            if type(timeout) is not int:
-                raise ValueError(
-                    f"'timeout' shoud be of type'int' but is of type '{type(timeout)}'!"
-                )
-            if timeout <= 0:
-                raise ValueError(f"'timeout' should be > 0!")
-
         self._set_timeout(timeout)
 
         # save the search call arguments for the context
@@ -499,7 +512,7 @@ class DBO:
         try:
             self._search(max_evals, timeout)
         except SearchTerminationError:
-            logging.error("Processing SearchTerminationError")
+            logging.info("Processing SearchTerminationError")
             if not (self._sync_communication):
                 self.recv_any()
 
