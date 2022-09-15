@@ -450,6 +450,7 @@ class ProfilePlotView(DataView):
 
         if self.is_single:
             df = self.data["data"]["search"]["results"]
+            metadata = self.data["metadata"]
             columns = list(df.columns)
         else:
             # df = []
@@ -465,9 +466,11 @@ class ProfilePlotView(DataView):
             #         columns = columns.intersection(set(df_i.columns))
             # columns = list(columns)
             df = []
+            metadata = {}
             for i in range(len(self.data)):
                 df_i = self.data[i]["data"]["search"]["results"]
-                df_i["label"] = self.data[i]["metadata"]["label"]
+                df_i["db:id"] = self.data[i]["id"]
+                metadata[self.data[i]["id"]] = self.data[i]["metadata"]
                 df.append(df_i)
             df = pd.concat(df, axis=0)
             columns = list(df.columns)
@@ -519,7 +522,7 @@ class ProfilePlotView(DataView):
             }[self.profile_type]
 
             if self.is_single:
-                num_workers = self.data["metadata"]["search"]["num_workers"]
+                num_workers = metadata["search"]["num_workers"]
 
                 if normalize:
                     profiles = self.get_profile(df, num_workers)
@@ -537,14 +540,15 @@ class ProfilePlotView(DataView):
                 profiles = []
                 utilization = []
 
-                for i, (label, df_group) in enumerate(df.groupby("label")):
-                    num_workers = self.data[i]["metadata"]["search"]["num_workers"]
+                for i, (exp_id, df_group) in enumerate(df.groupby("db:id")):
+                    num_workers = metadata[exp_id]["search"]["num_workers"]
+                    label = metadata[exp_id]["label"]
 
                     if normalize:
                         profiles_i = self.get_profile(df_group, num_workers)
                     else:
                         profiles_i = self.get_profile(df_group)
-                    profiles_i["label"] = label
+                    profiles_i["label"] = metadata[exp_id]["label"]
 
                     profiles_i = profiles_i[
                         (x_axis_min <= profiles_i["t"])
@@ -559,7 +563,6 @@ class ProfilePlotView(DataView):
                     utilization.append((label, utilization_i))
 
                 profiles = pd.concat(profiles, axis=0)
-                
 
         st.header(self.name)
 
