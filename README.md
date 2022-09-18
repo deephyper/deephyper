@@ -104,7 +104,7 @@ if __name__ == "__main__":
 Which outputs the following where the best ``x`` found is clearly around ``0``.
 
 ```verbatim
-           x  job_id     objective  timestamp_submit  timestamp_gather
+         p:x  job_id     objective  timestamp_submit  timestamp_gather
 0  -7.744105       1 -5.997117e+01          0.011047          0.037649
 1  -9.058254       2 -8.205196e+01          0.011054          0.056398
 2  -1.959750       3 -3.840621e+00          0.049750          0.073166
@@ -124,13 +124,15 @@ Which outputs the following where the best ``x`` found is clearly around ``0``.
 
 * GitHub repository: <https://github.com/deephyper/deephyper>
 
+* Blog: <https://deephyper.github.io>
+
 ## Contributions
 
-Find all the list of contributors on the [DeepHyper Authors](https://deephyper.readthedocs.io/en/latest/research.html) page of the Documentation.
+Find all the list of contributors on the [DeepHyper Authors](https://deephyper.github.io/aboutus) page of the Documentation.
 
 ## Citing DeepHyper
 
-Find all our publications on the [Research & Publication](https://deephyper.readthedocs.io/en/latest/research.html) page of the Documentation.
+Find all our publications on the [Research & Publication](https://deephyper.github.io/papers) page of the Documentation.
 
 ## How can I participate?
 
