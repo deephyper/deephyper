@@ -1,7 +1,7 @@
 Local
 *****
 
-DeepHyper installation requires ``Python>=3.7 and <3.10``. By default, only hyperparameter search features will be installed.
+DeepHyper installation requires ``Python>=3.7``. By default, only hyperparameter search features will be installed.
 
 .. _local-conda-environment:
 
