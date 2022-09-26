@@ -1,29 +1,29 @@
-import functools
 import logging
 import os
 import pathlib
 import pickle
+import signal
 import time
 
-import ConfigSpace as CS
+import numpy as np
+import pandas as pd
 import deephyper.skopt
+import ConfigSpace as CS
 
 # avoid initializing mpi4py when importing
 import mpi4py
-import numpy as np
-import pandas as pd
 import yaml
 
 mpi4py.rc.initialize = False
 mpi4py.rc.finalize = True
+from mpi4py import MPI
+import s4m
 
 from deephyper.core.exceptions import SearchTerminationError
-from deephyper.core.utils._introspection import get_init_params_as_json
-from deephyper.core.utils._timeout import terminate_on_timeout
 from deephyper.problem._hyperparameter import convert_to_skopt_space
-from mpi4py import MPI
-from sklearn.base import is_regressor
+from deephyper.core.utils._introspection import get_init_params_as_json
 from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.base import is_regressor
 
 TAG_INIT = 20
 TAG_DATA = 30
@@ -182,33 +182,14 @@ class DBO:
         self._communication_batch_size = communication_batch_size
         logging.info(f"DMBSMPI has {self._size} worker(s)")
 
-        # force socket allocation with dummy message to reduce overhead
-        if not lazy_socket_allocation:
-            logging.info("Initializing communication...")
-            ti = time.time()
-            logging.info("Sending to all...")
-            t1 = time.time()
-            req_send = [
-                self._comm.isend(None, dest=i, tag=TAG_INIT)
-                for i in range(self._size)
-                if i != self._rank
-            ]
-            MPI.Request.waitall(req_send)
-            logging.info(f"Sending to all done in {time.time() - t1:.4f} sec.")
+        # The constructor is going to do some collective communication
+        # across processes of the provided MPI communicator, so make
+        # sure this call is done by all the processes at the same time.
+        logging.info(f"Starting S4M service...")
+        self._s4m_service = s4m.S4MService(self._comm, "verbs://")
+        logging.info(f"S4M service running!")
 
-            logging.info("Receiving from all...")
-            t1 = time.time()
-            req_recv = [
-                self._comm.irecv(source=i, tag=TAG_INIT)
-                for i in range(self._size)
-                if i != self._rank
-            ]
-            MPI.Request.waitall(req_recv)
-            logging.info(f"Receiving from all done in {time.time() - t1:.4f} sec.")
-            logging.info(
-                f"Initializing communications done in {time.time() - ti:.4f} sec."
-            )
-
+        # Wait for all s4m services to be started
         logging.info(f"MPI Barrier...")
         self._comm.Barrier()
         logging.info(f"MPI Barrier done!")
@@ -228,10 +209,6 @@ class DBO:
         )[self._rank]
 
         self._timestamp = time.time()
-
-        # manage timeout of the search
-        self._time_timeout_set = None
-        self._timeout = None
 
         self._history = History()
 
@@ -318,35 +295,7 @@ class DBO:
         data = (x, y, infos)
         data = MPI.pickle.dumps(data)
 
-        # batched version
-        if self._communication_batch_size > 0:
-
-            size_processed = 0
-            while size_processed < self._size:
-
-                batch_size = min(
-                    self._size - size_processed, self._communication_batch_size
-                )
-
-                req_send = [
-                    self._comm.Isend(data, dest=i, tag=TAG_DATA)
-                    for i in range(size_processed, size_processed + batch_size)
-                    if i != self._rank
-                ]
-                MPI.Request.waitall(req_send)
-
-                size_processed += batch_size
-                logging.info(f"Processed {size_processed/self._size*100:.2f}%")
-
-        # not batched
-        else:
-
-            req_send = [
-                self._comm.Isend(data, dest=i, tag=TAG_DATA)
-                for i in range(self._size)
-                if i != self._rank
-            ]
-            MPI.Request.waitall(req_send)
+        self._s4m_service.broadcast(data)
 
         logging.info(f"Sending to all done in {time.time() - t1:.4f} sec.")
 
@@ -354,70 +303,29 @@ class DBO:
         logging.info("Receiving from any...")
         t1 = time.time()
 
+        # The receive function is non-blocking and will check
+        # for available data sent by other processes. If data
+        # is available, the function will return a pair (source, data)
+        # where source is the rank that sent the data, and data is a
+        # bytes object. If no data is available, the function will
+        # return None.
+        received_any = True
         n_received = 0
-        received_any = self._size > 1
-
-        # batched version
-        if self._communication_batch_size > 0:
-
-            while received_any:
-
+        while received_any:
+            data = self._s4m_service.receive()
+            if data is None:
                 received_any = False
-                size_processed = 0
+            else:
+                source_rank, data = data
+                try:
+                    data = MPI.pickle.loads(data)
+                except pickle.UnpicklingError as e:
+                    logging.error(f"UnpicklingError for request {i}")
+                    continue
+                n_received += 1
+                x, y, infos = data
+                self._history.append(x, y, infos)
 
-                while size_processed < self._size:
-
-                    batch_size = min(
-                        self._size - size_processed, self._communication_batch_size
-                    )
-
-                    req_recv = [
-                        self._comm.irecv(source=i, tag=TAG_DATA)
-                        for i in range(size_processed, size_processed + batch_size)
-                        if i != self._rank
-                    ]
-
-                    # asynchronous
-                    for i, req in enumerate(req_recv):
-                        try:
-                            done, data = req.test()
-                            if done:
-                                received_any = True
-                                n_received += 1
-                                x, y, infos = data
-                                self._history.append(x, y, infos)
-                            else:
-                                req.cancel()
-                        except pickle.UnpicklingError as e:
-                            logging.error(f"UnpicklingError for request {i}")
-
-                    size_processed += batch_size
-                    logging.info(f"Processed {size_processed/self._size*100:.2f}%")
-
-        else:
-
-            while received_any:
-
-                received_any = False
-                req_recv = [
-                    self._comm.irecv(source=i, tag=TAG_DATA)
-                    for i in range(self._size)
-                    if i != self._rank
-                ]
-
-                # asynchronous
-                for i, req in enumerate(req_recv):
-                    try:
-                        done, data = req.test()
-                        if done:
-                            received_any = True
-                            n_received += 1
-                            x, y, infos = data
-                            self._history.append(x, y, infos)
-                        else:
-                            req.cancel()
-                    except pickle.UnpicklingError as e:
-                        logging.error(f"UnpicklingError for request {i}")
         logging.info(
             f"Received {n_received} configurations in {time.time() - t1:.4f} sec."
         )
@@ -457,21 +365,24 @@ class DBO:
             self._comm.gather((X, Y, infos), root=0)
             logging.info(f"Broadcast to root done in {time.time() - t1:.4f} sec.")
 
-    def _set_timeout(self, timeout=None):
-        """If the `timeout` parameter is valid. Run the search in an other thread and trigger a timeout when this thread exhaust the allocated time budget."""
+    def terminate(self):
+        """Terminate the search.
 
-        if timeout is not None:
-            if type(timeout) is not int:
-                raise ValueError(
-                    f"'timeout' shoud be of type'int' but is of type '{type(timeout)}'!"
-                )
-            if timeout <= 0:
-                raise ValueError(f"'timeout' should be > 0!")
+        Raises:
+            SearchTerminationError: raised when the search is terminated with SIGALARM
+        """
+        logging.info("Search is being stopped!")
+
+        raise SearchTerminationError
+
+    def _set_timeout(self, timeout=None):
+        def handler(signum, frame):
+            self.terminate()
+
+        signal.signal(signal.SIGALRM, handler)
 
         if np.isscalar(timeout) and timeout > 0:
-            self._time_timeout_set = time.time()
-            self._timeout = timeout
-            self._search = functools.partial(terminate_on_timeout, timeout, self._search)
+            signal.alarm(timeout)
 
     def search(self, max_evals: int = -1, timeout: int = None):
         """Execute the search algorithm.
@@ -483,6 +394,14 @@ class DBO:
         Returns:
             DataFrame: a pandas DataFrame containing the evaluations performed.
         """
+        if timeout is not None:
+            if type(timeout) is not int:
+                raise ValueError(
+                    f"'timeout' shoud be of type'int' but is of type '{type(timeout)}'!"
+                )
+            if timeout <= 0:
+                raise ValueError(f"'timeout' should be > 0!")
+
         self._set_timeout(timeout)
 
         # save the search call arguments for the context
@@ -623,7 +542,7 @@ class DBO:
         y_list = -np.array(y_list)
 
         results = {
-            f"p:{hp_name}": x_list[i]
+            hp_name: x_list[i]
             for i, hp_name in enumerate(self._problem.hyperparameter_names)
         }
         results.update(dict(objective=y_list, **infos_dict))

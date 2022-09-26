@@ -1,24 +1,41 @@
-import functools
 import multiprocessing
 import multiprocessing.pool
+
+# from functools import wraps
 
 from deephyper.core.exceptions import SearchTerminationError
 
 
-def terminate_on_timeout(timeout):
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            pool = multiprocessing.pool.ThreadPool(processes=1)
-            results = pool.apply_async(func, args, kwargs)
-            pool.close()
-            try:
-                return results.get(timeout)
-            except multiprocessing.TimeoutError:
-                raise SearchTerminationError(f"Search timeout expired after: {timeout}")
-            finally:
-                pool.terminate()
+# def dtimeout(timeout):
+#     """Decorator to wrap the call of a function in a thread to monitor its execution time."""
+    
+#     def decorator(func):
+#         @wraps(func)
+#         def wrapper(*args, **kwargs):
+#             pool = multiprocessing.pool.ThreadPool(processes=1)
+#             results = pool.apply_async(func, args, kwargs)
+#             pool.close()
+#             try:
+#                 return results.get(timeout)
+#             except multiprocessing.TimeoutError:
+#                 raise SearchTerminationError(f"Search timeout expired after: {timeout}")
+#             finally:
+#                 pool.terminate()
 
-        return wrapper
+#         return wrapper
 
-    return decorator
+#     return decorator
+
+
+def terminate_on_timeout(timeout, func, *args, **kwargs):
+    """High order function to wrap the call of a function in a thread to monitor its execution time."""
+    
+    pool = multiprocessing.pool.ThreadPool(processes=1)
+    results = pool.apply_async(func, args, kwargs)
+    pool.close()
+    try:
+        return results.get(timeout)
+    except multiprocessing.TimeoutError:
+        raise SearchTerminationError(f"Search timeout expired after: {timeout}")
+    finally:
+        pool.terminate()

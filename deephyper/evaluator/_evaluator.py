@@ -1,6 +1,7 @@
 import asyncio
 import copy
 import csv
+import functools
 import importlib
 import json
 import logging
@@ -191,12 +192,10 @@ class Evaluator:
             new_job = Job(self.n_jobs, config, self.run_function)
 
             if self._timeout:
-                time_consumed = self._time_timeout_set - time.time()
+                time_consumed = time.time() - self._time_timeout_set
                 time_left = self._timeout - time_consumed
                 logging.info(f"Submitting job with {time_left} sec. time budget")
-                new_job.run_function = terminate_on_timeout(time_left)(
-                    new_job.run_function
-                )
+                new_job.run_function = functools.partial(terminate_on_timeout, time_left, new_job.run_function)
 
             self.n_jobs += 1
             self.jobs.append(new_job)
@@ -241,7 +240,7 @@ class Evaluator:
             job.timestamp_start = profile["timestamp_start"] - self.timestamp
             job.timestamp_end = profile["timestamp_end"] - self.timestamp
 
-        # if the user returns other information that the objective
+        # if the user returns other information than the objective
         if isinstance(job.result, dict) and "objective" in job.result:
             job.other = {k: v for k, v in job.result.items() if k != "objective"}
             job.result = job.result["objective"]
@@ -400,8 +399,8 @@ class Evaluator:
             if isinstance(job.other, dict):
                 result.update(job.other)
 
-            if "optuna_trial" in result:
-                result.pop("optuna_trial")
+            if "p:optuna_trial" in result:
+                result.pop("p:optuna_trial")
 
             resultsList.append(result)
 

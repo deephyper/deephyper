@@ -1,5 +1,6 @@
 import abc
 import copy
+import functools
 import logging
 import os
 import pathlib
@@ -96,7 +97,7 @@ class Search(abc.ABC):
 
         if np.isscalar(timeout) and timeout > 0:
             self._evaluator.set_timeout(timeout)
-            self._search = terminate_on_timeout(timeout)(self._search)
+            self._search = functools.partial(terminate_on_timeout, timeout, self._search)
 
     def search(self, max_evals: int = -1, timeout: int = None):
         """Execute the search algorithm.
