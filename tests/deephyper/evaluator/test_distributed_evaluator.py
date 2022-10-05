@@ -42,7 +42,7 @@ def _test_mpi_distributed_evaluator():
 
     print(f"r={evaluator.rank} -> {len(results)}")
     if evaluator.rank != 1:
-        assert len(results) <= (evaluator.size-1) * len(configs)
+        assert len(results) <= (evaluator.size - 1) * len(configs)
     else:
         assert len(results) == (evaluator.size) * len(configs)
 

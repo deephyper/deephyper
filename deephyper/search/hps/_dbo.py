@@ -14,6 +14,7 @@ MAP_acq_func = {
     "UCB": "LCB",
 }
 
+
 class DBO(CBO):
     """Distributed Bayesian Optimization Search.
 
@@ -164,7 +165,7 @@ class DBO(CBO):
         logging.info(
             f"DBO has {self._evaluator.num_total_workers} worker(s) with {self._evaluator.num_workers} local worker(s) per rank"
         )
-    
+
     def check_evaluator(self, evaluator):
         super().check_evaluator(evaluator)
 
@@ -173,7 +174,9 @@ class DBO(CBO):
             if self._evaluator.rank == 0:
                 self._evaluator._callbacks.append(TqdmCallback())
         else:
-            if not("Distributed" in type(evaluator).__name__):
-                raise ValueError("The evaluator must is not distributed! Use deephyper.evaluator.distributed(backend)(evaluator_class)!")
+            if not ("Distributed" in type(evaluator).__name__):
+                raise ValueError(
+                    "The evaluator must is not distributed! Use deephyper.evaluator.distributed(backend)(evaluator_class)!"
+                )
 
             self._evaluator = evaluator
