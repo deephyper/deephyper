@@ -3,6 +3,7 @@ import time
 import pickle
 
 from typing import List, Tuple
+from deephyper import evaluator
 
 from deephyper.evaluator import Job
 
@@ -16,35 +17,78 @@ from mpi4py import MPI
 TAG_INIT = 20
 TAG_DATA = 30
 
+
 def distributed(backend):
-    
+    """Decorator transforming an Evaluator into a ``Distributed{Evaluator}``.
+
+    For the decorator:
+
+    Args:
+        backend (str): Use ``"mpi"`` for pure MPI backend. Use ``"s4m"`` for Share4Me backend.
+
+    For the returned evaluator:
+
+    Args:
+        comm: An MPI communicator. Defaults to ``None`` for ``MPI.COMM_WORLD``.
+        share_freq (int): The frequency at which data should be shared between ranks of the distributed evaluator.
+    """
+
     def wrapper(evaluator_class):
-        """Decorator transforming an Evaluator into a ``Distributed{Evaluator}``. The ``run_function`` used with a ``Queued{Evaluator}`` needs to have a ``dequed`` keyword-argument where the dequed resources from the queue will be passed.
 
-        Args:
-            queue (list): A list of queued resources.
-            queue_pop_per_task (int, optional): The number of resources popped out of the queue each time a task is submitted. Defaults to ``1``.
-        """
+        if not (backend in ["mpi", "s4m"]):
+            raise ValueError(f"Unknown backend={backend} for distributed Evaluator!")
 
-        def __init__(
-            self,
-            *args,
-            comm=None,
-            **kwargs
-        ):
-            evaluator_class.__init__(self, *args, **kwargs)
-            if not MPI.Is_initialized():
-                MPI.Init_thread()
-            self.comm = comm if comm else MPI.COMM_WORLD
-            self.size = self.comm.Get_size()
-            self.rank = self.comm.Get_rank()
-            self.num_total_workers = self.num_workers * self.size
-        
+        if backend == "mpi":
+
+            def __init__(self, *args, comm=None, share_freq=1, **kwargs):
+                evaluator_class.__init__(self, *args, **kwargs)
+                if not MPI.Is_initialized():
+                    MPI.Init_thread()
+                self.comm = comm if comm else MPI.COMM_WORLD
+
+                # number of local jobs to evaluate before sharing with other ranks
+                self.share_freq = share_freq
+                # number of local jobs done since last sharing with other ranks
+                self.num_local_done = 0
+
+                self.size = self.comm.Get_size()
+                self.rank = self.comm.Get_rank()
+                self.num_total_workers = self.num_workers * self.size
+
+        elif backend == "s4m":
+
+            def __init__(self, *args, comm=None, **kwargs):
+                evaluator_class.__init__(self, *args, **kwargs)
+                if not MPI.Is_initialized():
+                    MPI.Init_thread()
+                self.comm = comm if comm else MPI.COMM_WORLD
+                self.size = self.comm.Get_size()
+                self.rank = self.comm.Get_rank()
+                self.num_total_workers = self.num_workers * self.size
+
+                # The constructor is going to do some collective communication
+                # across processes of the provided MPI communicator, so make
+                # sure this call is done by all the processes at the same time.
+                logging.info(f"Starting S4M service...")
+                self._s4m_service = s4m.S4MService(self.comm, "verbs://")
+                logging.info(f"S4M service running!")
+
+                # Wait for all s4m services to be started
+                logging.info(f"MPI Barrier...")
+                self.comm.Barrier()
+                logging.info(f"MPI Barrier done!")
+
         def _on_launch(self, job):
             """Called after a job is started."""
             job.rank = self.rank
             evaluator_class._on_launch(self, job)
-        
+
+        def _on_done(self, job):
+            """Called after a job has completed."""
+            evaluator_class._on_done(self, job)
+            job.run_function = None
+            self.num_local_done += 1
+
         def allgather(self, jobs: List[Job]) -> List[Job]:
             logging.info("Broadcasting to all...")
             t1 = time.time()
@@ -81,7 +125,7 @@ def distributed(backend):
             return received_jobs
 
         if backend == "mpi":
-            
+
             def broadcast(self, jobs: List[Job]):
                 logging.info("Broadcasting jobs to all...")
                 t1 = time.time()
@@ -129,7 +173,7 @@ def distributed(backend):
                     f"Received {len(received_jobs)} configurations in {time.time() - t1:.4f} sec."
                 )
                 return received_jobs
-                
+
         elif backend == "s4m":
             import s4m
 
@@ -164,7 +208,9 @@ def distributed(backend):
                         try:
                             jobs = MPI.pickle.loads(data)
                         except pickle.UnpicklingError as e:
-                            logging.error(f"UnpicklingError for request source {source_rank}")
+                            logging.error(
+                                f"UnpicklingError for request source {source_rank}"
+                            )
                             continue
                         received_jobs.extend(jobs)
 
@@ -173,26 +219,40 @@ def distributed(backend):
                     f"Received {len(received_jobs)} configurations in {time.time() - t1:.4f} sec."
                 )
                 return received_jobs
-        else:
-            raise ValueError(f"Unknown backend={backend} for distributed Evaluator!")
 
-        def share(self, jobs: List[Job], sync_communication=False) -> Tuple[List[Job], List[Job]]:
-            
-            if sync_communication:
-                other_jobs = self.allgather(jobs)
-            else:
-                self.broadcast(jobs)
-                other_jobs = self.receive()
-            
+        def share(
+            self, jobs: List[Job], sync_communication=False
+        ) -> Tuple[List[Job], List[Job]]:
+
+            if self.num_local_done % self.share_freq == 0:
+                if sync_communication:
+                    other_jobs = self.allgather(jobs)
+                else:
+                    self.broadcast(jobs)
+                    other_jobs = self.receive()
+
             return jobs, other_jobs
 
+        def gather(self, *args, sync_communication=False, **kwargs):
+            jobs = evaluator_class.gather(self, *args, **kwargs)
+            _, other_jobs = self.share(jobs, sync_communication)
+            jobs.extend(other_jobs)
+            return jobs
+
+        def dump_evals(self, *args, **kwargs):
+            if self.rank == 0:
+                evaluator_class.dump_evals(self, *args, **kwargs)
+
         cls_attrs = {
-            "__init__": __init__, 
+            "__init__": __init__,
             "_on_launch": _on_launch,
+            "_on_done": _on_done,
             "allgather": allgather,
             "broadcast": broadcast,
             "receive": receive,
             "share": share,
+            "gather": gather,
+            "dump_evals": dump_evals,
         }
 
         distributed_evaluator_class = type(
@@ -200,5 +260,5 @@ def distributed(backend):
         )
 
         return distributed_evaluator_class
-    
+
     return wrapper

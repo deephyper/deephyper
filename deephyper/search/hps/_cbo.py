@@ -207,6 +207,7 @@ class CBO(Search):
                     filter_failures, filter_failures
                 ),
                 "max_failures": max_failures,
+                "boltzmann_gamma": 1,
             },
             # acquisition function
             acq_func=MAP_acq_func.get(acq_func, acq_func),

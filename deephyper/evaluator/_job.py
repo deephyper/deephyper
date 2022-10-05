@@ -37,5 +37,4 @@ class Job:
 
     def __getitem__(self, index):
         cfg = copy.deepcopy(self.config)
-        cfg.pop("job_id")
         return (cfg, self.result)[index]

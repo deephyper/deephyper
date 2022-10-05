@@ -38,16 +38,9 @@ class Search(abc.ABC):
         self._problem = copy.deepcopy(problem)
 
         # if a callable is directly passed wrap it around the serial evaluator
-        if not (isinstance(evaluator, Evaluator)) and callable(evaluator):
-            self._evaluator = Evaluator.create(
-                evaluator,
-                method="serial",
-                method_kwargs={"callbacks": [TqdmCallback()]},
-            )
-        else:
-            self._evaluator = evaluator
-        self._seed = None
+        self.check_evaluator(evaluator)
 
+        self._seed = None
         if type(random_state) is int:
             self._seed = random_state
             self._random_state = np.random.RandomState(random_state)
@@ -62,8 +55,15 @@ class Search(abc.ABC):
 
         self._verbose = verbose
 
-        # record time when timeout was set
-        self._time_timeout_set = None
+    def check_evaluator(self, evaluator):
+        if not (isinstance(evaluator, Evaluator)) and callable(evaluator):
+            self._evaluator = Evaluator.create(
+                evaluator,
+                method="serial",
+                method_kwargs={"callbacks": [TqdmCallback()]},
+            )
+        else:
+            self._evaluator = evaluator
 
     def to_json(self):
         """Returns a json version of the search object."""
@@ -97,7 +97,9 @@ class Search(abc.ABC):
 
         if np.isscalar(timeout) and timeout > 0:
             self._evaluator.set_timeout(timeout)
-            self._search = functools.partial(terminate_on_timeout, timeout, self._search)
+            self._search = functools.partial(
+                terminate_on_timeout, timeout, self._search
+            )
 
     def search(self, max_evals: int = -1, timeout: int = None):
         """Execute the search algorithm.

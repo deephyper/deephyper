@@ -43,10 +43,7 @@ def _test_dbo_timeout():
     search = DBO(
         hp_problem,
         run,
-        sync_communication=False,
         log_dir="log-dbo",
-        checkpoint_file="results.csv",
-        checkpoint_freq=1,
     )
 
     timeout = 2
@@ -54,7 +51,6 @@ def _test_dbo_timeout():
         t1 = time.time()
         results = search.search(timeout=timeout)
         duration = time.time() - t1
-        results.to_csv("results.csv")
     else:
         search.search(timeout=timeout)
 

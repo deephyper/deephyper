@@ -30,32 +30,28 @@ def _test_mpi_distributed_evaluator():
 
     # test synchronous share
     evaluator.submit(configs)
-    local_results = evaluator.gather("ALL")
-    local_results, other_results = evaluator.share(local_results, sync_communication=True)
+    results = evaluator.gather("ALL", sync_communication=True)
 
     if evaluator.rank == 0:
-        print(f"{local_results=}", flush=True)
-        print(f"{other_results=}", flush=True)
-    assert len(local_results) == len(configs)
-    assert len(other_results) == ((evaluator.size-1)*len(configs))
+        print(f"{results=}", flush=True)
+    assert len(results) == evaluator.size * len(configs)
 
     # test asynchronous share
     evaluator.submit(configs)
-    local_results = evaluator.gather("ALL")
-    local_results, other_results = evaluator.share(local_results)
+    results = evaluator.gather("ALL")
 
-    print(f"r={evaluator.rank} -> {len(other_results)}")
-    assert len(local_results) == len(configs)
+    print(f"r={evaluator.rank} -> {len(results)}")
     if evaluator.rank != 1:
-        assert len(other_results) == (evaluator.size-2)*len(configs)
+        assert len(results) <= (evaluator.size-1) * len(configs)
     else:
-        assert len(other_results) == (evaluator.size-1)*len(configs)
+        assert len(results) == (evaluator.size) * len(configs)
+
 
 @pytest.mark.fast
 @pytest.mark.hps
 @pytest.mark.mpi
 def test_mpi_distributed_evaluator():
-    command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_mpicomm_evaluator"
+    command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_mpi_distributed_evaluator"
     result = deephyper.test.run(command, live_output=False)
 
 
