@@ -176,9 +176,12 @@ class Evaluator:
 
         # wait for all running tasks (sync.)
         if n == len(self._tasks_running):
-            self._tasks_done, self._tasks_pending = await asyncio.wait(
-                self._tasks_running, return_when="ALL_COMPLETED"
-            )
+            try:
+                self._tasks_done, self._tasks_pending = await asyncio.wait(
+                    self._tasks_running, return_when="ALL_COMPLETED"
+                )
+            except ValueError:
+                raise ValueError("No jobs pending, call Evaluator.submit(jobs)!")
         else:
             while len(self._tasks_done) < n:
                 self._tasks_done, self._tasks_pending = await asyncio.wait(
@@ -217,6 +220,7 @@ class Evaluator:
     def _on_done(self, job):
         """Called after a job has completed."""
         job.status = job.DONE
+        job.config.pop("job_id")
 
         job.timestamp_gather = time.time() - self.timestamp
 
@@ -352,9 +356,6 @@ class Evaluator:
                 result = {k: self.convert_for_csv(decoded_key[k]) for k in saved_keys}
             elif callable(saved_keys):
                 result = copy.deepcopy(saved_keys(job))
-
-            if "job_id" in result:
-                result.pop("job_id")
 
             # add prefix for all keys found in "config"
             result = {f"p:{k}": v for k, v in result.items()}

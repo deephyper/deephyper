@@ -36,7 +36,7 @@ from deephyper.evaluator._process_pool import ProcessPoolEvaluator
 from deephyper.evaluator._serial import SerialEvaluator
 from deephyper.evaluator._subprocess import SubprocessEvaluator
 from deephyper.evaluator._thread_pool import ThreadPoolEvaluator
-from deephyper.evaluator._queue import queued
+from deephyper.evaluator._queued import queued
 from deephyper.evaluator._decorator import profile
 from deephyper.evaluator._encoder import to_json, parse_subprocess_result
 

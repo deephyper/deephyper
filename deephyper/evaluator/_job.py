@@ -17,6 +17,7 @@ class Job:
 
     def __init__(self, id, config: dict, run_function):
         self.id = id
+        self.rank = None
         self.config = copy.deepcopy(config)
         self.config["job_id"] = self.id
         self.run_function = run_function
@@ -29,7 +30,10 @@ class Job:
         self.other = None
 
     def __repr__(self) -> str:
-        return f"Job(id={self.id}, status={self.status}, config={self.config})"
+        if self.rank is not None:
+            return f"Job(id={self.id}, rank={self.rank}, status={self.status}, config={self.config})"
+        else:
+            return f"Job(id={self.id}, status={self.status}, config={self.config})"
 
     def __getitem__(self, index):
         cfg = copy.deepcopy(self.config)
