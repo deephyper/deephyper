@@ -33,7 +33,7 @@ def _test_mpi_distributed_evaluator():
     results = evaluator.gather("ALL", sync_communication=True)
 
     if evaluator.rank == 0:
-        print(f"{results=}", flush=True)
+        print(f"results={results}", flush=True)
     assert len(results) == evaluator.size * len(configs)
 
     # test asynchronous share
