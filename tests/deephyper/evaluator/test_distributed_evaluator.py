@@ -19,7 +19,7 @@ def run(config):
     r = config["r"]
     if r == 1:
         time.sleep(2)
-    print(f"{r=}")
+    print(f"r={r}")
     return config["r"]
 
 
