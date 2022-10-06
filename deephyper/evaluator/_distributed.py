@@ -57,11 +57,17 @@ def distributed(backend):
 
         elif backend == "s4m":
 
-            def __init__(self, *args, comm=None, **kwargs):
+            def __init__(self, *args, comm=None, share_freq=1, **kwargs):
                 evaluator_class.__init__(self, *args, **kwargs)
                 if not MPI.Is_initialized():
                     MPI.Init_thread()
                 self.comm = comm if comm else MPI.COMM_WORLD
+
+                # number of local jobs to evaluate before sharing with other ranks
+                self.share_freq = share_freq
+                # number of local jobs done since last sharing with other ranks
+                self.num_local_done = 0
+                
                 self.size = self.comm.Get_size()
                 self.rank = self.comm.Get_rank()
                 self.num_total_workers = self.num_workers * self.size

@@ -130,7 +130,7 @@ class Search(abc.ABC):
             if "saved_keys" in dir(self):
                 self._evaluator.dump_evals(saved_keys=self.saved_keys)
             else:
-                self._evaluator.dump_evals()
+                self._evaluator.dump_evals(log_dir=self._log_dir)
 
         try:
             path_results = os.path.join(self._log_dir, "results.csv")
