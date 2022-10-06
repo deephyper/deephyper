@@ -67,7 +67,7 @@ def distributed(backend):
                 self.share_freq = share_freq
                 # number of local jobs done since last sharing with other ranks
                 self.num_local_done = 0
-                
+
                 self.size = self.comm.Get_size()
                 self.rank = self.comm.Get_rank()
                 self.num_total_workers = self.num_workers * self.size
