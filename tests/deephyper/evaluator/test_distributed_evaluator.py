@@ -11,8 +11,6 @@ SCRIPT = os.path.abspath(__file__)
 import pytest
 
 import deephyper.test
-from deephyper.evaluator._serial import SerialEvaluator
-from deephyper.evaluator._distributed import distributed
 
 
 def run(config):
@@ -24,6 +22,9 @@ def run(config):
 
 
 def _test_mpi_distributed_evaluator():
+    from deephyper.evaluator._serial import SerialEvaluator
+    from deephyper.evaluator._distributed import distributed
+
     evaluator = distributed(backend="mpi")(SerialEvaluator)(run)
 
     configs = [{"i": i, "r": evaluator.rank} for i in range(1)]
