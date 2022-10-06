@@ -264,10 +264,14 @@ class CBO(Search):
                 new_results = local_results + other_results
                 num_new_local_results = len(local_results)
                 num_new_other_results = len(other_results)
-                logging.info(f"Gathered {num_new_local_results} local job(s) and {num_new_other_results} other job(s) in {time.time() - t1:.4f} sec.")
+                logging.info(
+                    f"Gathered {num_new_local_results} local job(s) and {num_new_other_results} other job(s) in {time.time() - t1:.4f} sec."
+                )
             else:
                 num_new_local_results = len(new_results)
-                logging.info(f"Gathered {num_new_local_results} job(s) in {time.time() - t1:.4f} sec.")
+                logging.info(
+                    f"Gathered {num_new_local_results} job(s) in {time.time() - t1:.4f} sec."
+                )
 
             if num_new_local_results > 0:
 
