@@ -259,19 +259,24 @@ class CBO(Search):
             logging.info("Gathering jobs...")
             t1 = time.time()
             new_results = self._evaluator.gather(self._gather_type, size=1)
-            logging.info(
-                f"Gathered {len(new_results)} job(s) in {time.time() - t1:.4f} sec."
-            )
+            if isinstance(new_results, tuple) and len(new_results) == 2:
+                local_results, other_results = new_results
+                new_results = local_results + other_results
+                num_new_local_results = len(local_results)
+                num_new_other_results = len(other_results)
+                logging.info(f"Gathered {num_new_local_results} local job(s) and {num_new_other_results} other job(s) in {time.time() - t1:.4f} sec.")
+            else:
+                num_new_local_results = len(new_results)
+                logging.info(f"Gathered {num_new_local_results} job(s) in {time.time() - t1:.4f} sec.")
 
-            if len(new_results) > 0:
+            if num_new_local_results > 0:
 
                 logging.info("Dumping evaluations...")
                 t1 = time.time()
                 self._evaluator.dump_evals(log_dir=self._log_dir)
                 logging.info(f"Dumping took {time.time() - t1:.4f} sec.")
 
-                num_received = len(new_results)
-                num_evals_done += num_received
+                num_evals_done += len(new_results)
 
                 if max_evals > 0 and num_evals_done >= max_evals:
                     break
@@ -308,10 +313,10 @@ class CBO(Search):
                     self._opt.tell(opt_X, opt_y)
                     logging.info(f"Fitting took {time.time() - t1:.4f} sec.")
 
-                logging.info(f"Asking {len(new_results)} new configurations...")
+                logging.info(f"Asking {num_new_local_results} new configurations...")
                 t1 = time.time()
                 new_X = self._opt.ask(
-                    n_points=len(new_results), strategy=self._multi_point_strategy
+                    n_points=num_new_local_results, strategy=self._multi_point_strategy
                 )
                 logging.info(f"Asking took {time.time() - t1:.4f} sec.")
 

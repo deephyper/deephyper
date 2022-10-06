@@ -31,7 +31,8 @@ def _test_mpi_distributed_evaluator():
 
     # test synchronous share
     evaluator.submit(configs)
-    results = evaluator.gather("ALL", sync_communication=True)
+    local_results, other_results = evaluator.gather("ALL", sync_communication=True)
+    results = local_results + other_results
 
     if evaluator.rank == 0:
         print(f"results={results}", flush=True)
@@ -39,7 +40,8 @@ def _test_mpi_distributed_evaluator():
 
     # test asynchronous share
     evaluator.submit(configs)
-    results = evaluator.gather("ALL")
+    local_results, other_results = evaluator.gather("ALL")
+    results = local_results + other_results
 
     print(f"r={evaluator.rank} -> {len(results)}")
     if evaluator.rank != 1:

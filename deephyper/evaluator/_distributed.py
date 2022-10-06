@@ -241,9 +241,8 @@ def distributed(backend):
 
         def gather(self, *args, sync_communication=False, **kwargs):
             jobs = evaluator_class.gather(self, *args, **kwargs)
-            _, other_jobs = self.share(jobs, sync_communication)
-            jobs.extend(other_jobs)
-            return jobs
+            jobs, other_jobs = self.share(jobs, sync_communication)
+            return jobs, other_jobs
 
         def dump_evals(self, *args, **kwargs):
             if self.rank == 0:
