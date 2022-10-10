@@ -72,7 +72,7 @@ class DBO(CBO):
         **kwargs,
     ):
         # get the __init__ parameters
-        self._init_params = locals()
+        _init_params = locals()
 
         self.check_evaluator(evaluator)
 
@@ -161,6 +161,9 @@ class DBO(CBO):
                 **kwargs,
             )
         self._evaluator.comm.Barrier()
+
+        # Replace CBO _init_params by DBO _init_params
+        self._init_params = _init_params
 
         logging.info(
             f"DBO has {self._evaluator.num_total_workers} worker(s) with {self._evaluator.num_workers} local worker(s) per rank"

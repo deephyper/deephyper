@@ -67,10 +67,16 @@ class Search(abc.ABC):
 
     def to_json(self):
         """Returns a json version of the search object."""
+        # Total number of workers
+        if hasattr(self._evaluator, "num_total_workers"):
+            num_workers = self._evaluator.num_total_workers
+        else:
+            num_workers = self._evaluator.num_workers
+
         json_self = {
             "search": {
                 "type": type(self).__name__,
-                "num_workers": self._evaluator.num_workers,
+                "num_workers": num_workers,
                 **get_init_params_as_json(self),
             },
             "calls": self._call_args,
