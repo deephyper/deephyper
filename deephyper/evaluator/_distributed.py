@@ -3,7 +3,6 @@ import time
 import pickle
 
 from typing import List, Tuple
-from deephyper import evaluator
 
 from deephyper.evaluator import Job
 
@@ -18,7 +17,7 @@ TAG_INIT = 20
 TAG_DATA = 30
 
 
-def distributed(backend):
+def distributed(backend: str):
     """Decorator transforming an Evaluator into a ``Distributed{Evaluator}``.
 
     For the decorator:
@@ -37,6 +36,7 @@ def distributed(backend):
 
         if not (backend in ["mpi", "s4m"]):
             raise ValueError(f"Unknown backend={backend} for distributed Evaluator!")
+        logging.info(f"Creating Distributed{evaluator_class.__name__} with backend='{backend}'.")
 
         if backend == "mpi":
 
