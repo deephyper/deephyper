@@ -13,7 +13,7 @@ def _quadrature_combine(args):
     shapes = [arg.shape for arg in args]
 
     size = np.prod(shapes, 0)[0] * np.sum(shapes, 0)[1]
-    if size > 10 ** 9:
+    if size > 10**9:
         raise MemoryError("Too large sets")
 
     out = args[0]

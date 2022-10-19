@@ -253,7 +253,7 @@ def test_use_named_args():
         assert baz == default_parameters[2]
 
         # Return some objective value.
-        return foo ** 2 + bar ** 4 + baz ** 8
+        return foo**2 + bar**4 + baz**8
 
     # Ensure the objective function can be called with a single
     # argument named x.

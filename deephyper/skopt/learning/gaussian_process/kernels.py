@@ -83,7 +83,7 @@ class RBF(Kernel, sk_RBF):
 
         # e = -exp(0.5 * \sum_{i=1}^d (diff ** 2))
         # size = (n_train_samples, 1)
-        exp_diff_squared = np.sum(diff ** 2, axis=1)
+        exp_diff_squared = np.sum(diff**2, axis=1)
         exp_diff_squared *= -0.5
         exp_diff_squared = np.exp(exp_diff_squared, exp_diff_squared)
         exp_diff_squared = np.expand_dims(exp_diff_squared, axis=1)
@@ -109,7 +109,7 @@ class Matern(Kernel, sk_Matern):
         # dist_sq = \sum_{i=1}^d (diff ^ 2)
         # dist = sqrt(dist_sq)
         # size = (n_train_samples,)
-        dist_sq = np.sum(diff ** 2, axis=1)
+        dist_sq = np.sum(diff**2, axis=1)
         dist = np.sqrt(dist_sq)
 
         if self.nu == 0.5:
@@ -219,7 +219,7 @@ class RationalQuadratic(Kernel, sk_RationalQuadratic):
 
         # dist = -(1 + (\sum_{i=1}^d (diff^2) / (2 * alpha)))** (-alpha - 1)
         # size = (n_train_samples,)
-        scaled_dist = np.sum(diff ** 2, axis=1)
+        scaled_dist = np.sum(diff**2, axis=1)
         scaled_dist /= 2 * self.alpha
         scaled_dist += 1
         scaled_dist **= -alpha - 1
@@ -238,15 +238,15 @@ class ExpSineSquared(Kernel, sk_ExpSineSquared):
         periodicity = self.periodicity
 
         diff = x - X_train
-        sq_dist = np.sum(diff ** 2, axis=1)
+        sq_dist = np.sum(diff**2, axis=1)
         dist = np.sqrt(sq_dist)
 
         pi_by_period = dist * (np.pi / periodicity)
         sine = np.sin(pi_by_period) / length_scale
-        sine_squared = -2 * sine ** 2
+        sine_squared = -2 * sine**2
         exp_sine_squared = np.exp(sine_squared)
 
-        grad_wrt_exp = -2 * np.sin(2 * pi_by_period) / length_scale ** 2
+        grad_wrt_exp = -2 * np.sin(2 * pi_by_period) / length_scale**2
 
         # When x_i -> y_i for all i in [0, D), the gradient becomes
         # zero. See https://github.com/MechCoder/Notebooks/blob/master/ExpSineSquared%20Kernel%20gradient%20computation.ipynb

@@ -84,11 +84,11 @@ def test_real():
     assert_array_equal(a.transform(random_values), random_values)
     assert_array_equal(a.inverse_transform(random_values), random_values)
 
-    log_uniform = Real(10 ** -5, 10 ** 5, prior="log-uniform")
-    assert log_uniform != Real(10 ** -5, 10 ** 5)
+    log_uniform = Real(10**-5, 10**5, prior="log-uniform")
+    assert log_uniform != Real(10**-5, 10**5)
     for i in range(50):
         random_val = log_uniform.rvs(random_state=i)
-        check_limits(random_val, 10 ** -5, 10 ** 5)
+        check_limits(random_val, 10**-5, 10**5)
     random_values = log_uniform.rvs(random_state=0, n_samples=10)
     assert len(random_values) == 10
     transformed_vals = log_uniform.transform(random_values)
@@ -210,11 +210,11 @@ def test_space_consistency():
     assert_array_equal(a1, a5)
 
     # Reals (log-uniform)
-    s1 = Space([Real(10 ** -3.0, 10 ** 3.0, prior="log-uniform", base=10)])
-    s2 = Space([Real(10 ** -3.0, 10 ** 3.0, prior="log-uniform", base=10)])
-    s3 = Space([Real(10 ** -3, 10 ** 3, prior="log-uniform", base=10)])
-    s4 = Space([(10 ** -3.0, 10 ** 3.0, "log-uniform", 10)])
-    s5 = Space([(np.float64(10 ** -3.0), 10 ** 3.0, "log-uniform", 10)])
+    s1 = Space([Real(10**-3.0, 10**3.0, prior="log-uniform", base=10)])
+    s2 = Space([Real(10**-3.0, 10**3.0, prior="log-uniform", base=10)])
+    s3 = Space([Real(10**-3, 10**3, prior="log-uniform", base=10)])
+    s4 = Space([(10**-3.0, 10**3.0, "log-uniform", 10)])
+    s5 = Space([(np.float64(10**-3.0), 10**3.0, "log-uniform", 10)])
     a1 = s1.rvs(n_samples=10, random_state=0)
     a2 = s2.rvs(n_samples=10, random_state=0)
     a3 = s3.rvs(n_samples=10, random_state=0)
@@ -462,12 +462,12 @@ def test_normalize_real():
     assert_array_almost_equal(a.inverse_transform(a.transform(X)), X)
 
     # log-uniform prior
-    a = Real(10 ** 2.0, 10 ** 4.0, prior="log-uniform", transform="normalize")
+    a = Real(10**2.0, 10**4.0, prior="log-uniform", transform="normalize")
     for i in range(50):
-        check_limits(a.rvs(random_state=i), 10 ** 2, 10 ** 4)
+        check_limits(a.rvs(random_state=i), 10**2, 10**4)
 
     rng = np.random.RandomState(0)
-    X = np.clip(10 ** 3 * rng.randn(100), 10 ** 2.0, 10 ** 4.0)
+    X = np.clip(10**3 * rng.randn(100), 10**2.0, 10**4.0)
 
     # Check transform
     assert np.all(a.transform(X) <= np.ones_like(X))

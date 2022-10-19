@@ -75,7 +75,7 @@ def _gaussian_acquisition(
                 mu, std = time_model.predict(X, return_std=True)
 
             # acq = acq / E(t)
-            inv_t = np.exp(-mu + 0.5 * std ** 2)
+            inv_t = np.exp(-mu + 0.5 * std**2)
             acq_vals *= inv_t
 
             # grad = d(acq_func) * inv_t + (acq_vals *d(inv_t))
@@ -230,7 +230,7 @@ def gaussian_pi(X, model, y_opt=0.0, xi=0.01, return_grad=False):
         # Substitute (y_opt - xi - mu) / sigma = t and apply chain rule.
         # improve_grad is the gradient of t wrt x.
         improve_grad = -mu_grad * std - std_grad * improve
-        improve_grad /= std ** 2
+        improve_grad /= std**2
 
         return values, improve_grad * norm.pdf(scaled)
 
@@ -318,7 +318,7 @@ def gaussian_ei(X, model, y_opt=0.0, xi=0.01, return_grad=False):
         # Substitute (y_opt - xi - mu) / sigma = t and apply chain rule.
         # improve_grad is the gradient of t wrt x.
         improve_grad = -mu_grad * std - std_grad * improve
-        improve_grad /= std ** 2
+        improve_grad /= std**2
         cdf_grad = improve_grad * pdf
         pdf_grad = -improve * cdf_grad
         exploit_grad = -mu_grad * cdf - pdf_grad
