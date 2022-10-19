@@ -35,7 +35,7 @@ def execute_function(handle: pymargo.core.Handle, func, *args, **kwargs):
 
 def margo_server(comm, protocol):
     with pymargo.core.Engine(protocol, mode=pymargo.server) as engine:
-        comm.send(engine.address) #! temporary
+        comm.send(engine.address)  #! temporary
         engine.register("execute_function", execute_function)
         engine.enable_remote_shutdown()
         engine.wait_for_finalize()
@@ -70,13 +70,15 @@ class MochiEvaluator(Evaluator):
         self._rank = self._comm.Get_rank()
         self._size = self._comm.Get_size()
         self.executor = None
-        if self._rank == 0: # master
+        if self._rank == 0:  # master
 
             self.sem = asyncio.Semaphore(num_workers)
             #! creating the exector once here is crutial to avoid repetitive overheads
             self.executor = ProcessPoolExecutor(max_workers=num_workers)
 
-            if hasattr(run_function, "__name__") and hasattr(run_function, "__module__"):
+            if hasattr(run_function, "__name__") and hasattr(
+                run_function, "__module__"
+            ):
                 logger.info(
                     f"Mochi Evaluator will execute {self.run_function.__name__}() from module {self.run_function.__module__}"
                 )
@@ -90,17 +92,17 @@ class MochiEvaluator(Evaluator):
                 self._worker_addresses.append(address)
             self._qworker_addresses = collections.deque(self._worker_addresses)
 
-        else: # workers
-            
+        else:  # workers
+
             margo_server(self._comm, self._protocol)
-    
+
     def __enter__(self):
         if self.executor:
             self.executor = self.executor.__enter__()
             return self
         else:
             return None
-    
+
     def __exit__(self, type, value, traceback):
         if self.executor:
             self.executor.__exit__(type, value, traceback)
@@ -111,8 +113,6 @@ class MochiEvaluator(Evaluator):
                     address = engine.lookup(target_address)
                     address.shutdown()
 
-
-
     async def execute(self, job):
 
         async with self.sem:
@@ -120,7 +120,12 @@ class MochiEvaluator(Evaluator):
             target_address = self._qworker_addresses.popleft()
 
             run_function = functools.partial(
-                margo_client, self._protocol, target_address, job.run_function, job.config, **self.run_function_kwargs
+                margo_client,
+                self._protocol,
+                target_address,
+                job.run_function,
+                job.config,
+                **self.run_function_kwargs,
             )
 
             sol = await self.loop.run_in_executor(self.executor, run_function)
