@@ -67,7 +67,7 @@ def bench5(x):
 
 
 def branin(
-    x, a=1, b=5.1 / (4 * np.pi**2), c=5.0 / np.pi, r=6, s=10, t=1.0 / (8 * np.pi)
+    x, a=1, b=5.1 / (4 * np.pi ** 2), c=5.0 / np.pi, r=6, s=10, t=1.0 / (8 * np.pi)
 ):
     """Branin-Hoo function is defined on the square
     :math:`x1 \\in [-5, 10], x2 \\in [0, 15]`.
@@ -85,7 +85,7 @@ def branin(
 def hart6(
     x,
     alpha=np.asarray([1.0, 1.2, 3.0, 3.2]),
-    P=10**-4
+    P=10 ** -4
     * np.asarray(
         [
             [1312, 1696, 5569, 124, 8283, 5886],

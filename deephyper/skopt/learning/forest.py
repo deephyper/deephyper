@@ -51,13 +51,13 @@ def _return_std(X, n_outputs, trees, predictions, min_variance):
         # is zero variance.
         var_tree[var_tree < min_variance] = min_variance
         mean_tree = tree.predict(X).T
-        std += var_tree + mean_tree**2
+        std += var_tree + mean_tree ** 2
 
     std = std.T
     std /= len(trees)
-    std -= predictions**2.0
+    std -= predictions ** 2.0
     std[std < 0.0] = 0.0
-    std = std**0.5
+    std = std ** 0.5
 
     if flat:
         std = std.reshape(-1)

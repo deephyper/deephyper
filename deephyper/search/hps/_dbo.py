@@ -85,7 +85,7 @@ class DBO(CBO):
 
         # set random state for given rank
         random_state = np.random.RandomState(
-            random_state.randint(low=0, high=2**32, size=self._evaluator.size)[
+            random_state.randint(low=0, high=2 ** 32, size=self._evaluator.size)[
                 self._evaluator.rank
             ]
         )

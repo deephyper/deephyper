@@ -17,4 +17,8 @@ class SearchTerminationError(RuntimeError):
 
 
 class RunFunctionError(RuntimeError):
-    """Raise when error occurs in run-function"""
+    """Raised when error occurs in run-function"""
+
+
+class MissingRequirementError(RuntimeError):
+    """Raised when a requirement is not installed properly."""

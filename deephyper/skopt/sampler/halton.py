@@ -166,7 +166,7 @@ def _create_primes(threshold):
         return []
 
     numbers = list(range(3, threshold + 1, 2))
-    root_of_threshold = threshold**0.5
+    root_of_threshold = threshold ** 0.5
     half = int((threshold + 1) / 2 - 1)
     idx = 0
     counter = 3

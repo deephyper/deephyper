@@ -6,9 +6,16 @@ from .gaussian_process import GaussianProcessRegressor
 from .gbrt import GradientBoostingQuantileRegressor
 
 
-__all__ = (
+__all__ = [
     "RandomForestRegressor",
     "ExtraTreesRegressor",
     "GradientBoostingQuantileRegressor",
     "GaussianProcessRegressor",
-)
+]
+
+try:
+    from skgarden.mondrian import MondrianForestRegressor
+
+    __all__.append("MondrianForestRegressor")
+except ImportError:
+    pass

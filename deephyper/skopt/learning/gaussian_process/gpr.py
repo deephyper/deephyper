@@ -340,7 +340,7 @@ class GaussianProcessRegressor(sk_GaussianProcessRegressor):
                 v = cho_solve((self.L_, True), K_trans.T)  # Line 5
                 y_cov = self.kernel_(X) - K_trans.dot(v)  # Line 6
                 # undo normalisation
-                y_cov = y_cov * self.y_train_std_**2
+                y_cov = y_cov * self.y_train_std_ ** 2
                 return y_mean, y_cov
 
             elif return_std:
@@ -360,7 +360,7 @@ class GaussianProcessRegressor(sk_GaussianProcessRegressor):
                     )
                     y_var[y_var_negative] = 0.0
                 # undo normalisation
-                y_var = y_var * self.y_train_std_**2
+                y_var = y_var * self.y_train_std_ ** 2
                 y_std = np.sqrt(y_var)
 
             if return_mean_grad:
@@ -373,7 +373,7 @@ class GaussianProcessRegressor(sk_GaussianProcessRegressor):
                     if not np.allclose(y_std, grad_std):
                         grad_std = -np.dot(K_trans, np.dot(K_inv, grad))[0] / y_std
                         # undo normalisation
-                        grad_std = grad_std * self.y_train_std_**2
+                        grad_std = grad_std * self.y_train_std_ ** 2
                     return y_mean, y_std, grad_mean, grad_std
 
                 if return_std:

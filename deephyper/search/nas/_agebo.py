@@ -125,7 +125,7 @@ class AgEBO(RegularizedEvolution):
         self._liar_strategy = MAP_liar_strategy.get(liar_strategy, liar_strategy)
 
         base_estimator = self._get_surrogate_model(
-            surrogate_model, n_jobs, random_state=self._random_state.randint(0, 2**32)
+            surrogate_model, n_jobs, random_state=self._random_state.randint(0, 2 ** 32)
         )
         self._hp_opt = None
         self._hp_opt_kwargs = dict(

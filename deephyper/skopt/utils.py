@@ -20,6 +20,15 @@ from .sampler import Sobol, Lhs, Hammersly, Halton, Grid
 from .sampler import InitialPointGenerator
 from .space import Space, Categorical, Integer, Real, Dimension
 
+# Try to import Mondrian Forest
+MF_INSTALLED = False
+try:
+    from .learning import MondrianForestRegressor
+
+    MF_INSTALLED = True
+except ImportError as e:
+    MF_INSTALLED = False
+
 __all__ = (
     "load",
     "dump",
@@ -309,11 +318,16 @@ def has_gradients(estimator):
     estimator :
         sklearn BaseEstimator instance.
     """
-    tree_estimators = (
+    tree_estimators = [
         ExtraTreesRegressor,
         RandomForestRegressor,
         GradientBoostingQuantileRegressor,
-    )
+    ]
+
+    if MF_INSTALLED:
+        tree_estimators.append(MondrianForestRegressor)
+
+    tree_estimators = tuple(tree_estimators)
 
     # cook_estimator() returns None for "dummy minimize" aka random values only
     if estimator is None:

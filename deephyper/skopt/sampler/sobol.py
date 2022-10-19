@@ -108,7 +108,7 @@ class Sobol(InitialPointGenerator):
 
         self.dim_max = 40
         self.log_max = 30
-        self.atmost = 2**self.log_max - 1
+        self.atmost = 2 ** self.log_max - 1
         self.lastq = None
         self.maxcol = None
         self.poly = None

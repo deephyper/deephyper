@@ -36,7 +36,9 @@ def distributed(backend: str):
 
         if not (backend in ["mpi", "s4m"]):
             raise ValueError(f"Unknown backend={backend} for distributed Evaluator!")
-        logging.info(f"Creating Distributed{evaluator_class.__name__} with backend='{backend}'.")
+        logging.info(
+            f"Creating Distributed{evaluator_class.__name__} with backend='{backend}'."
+        )
 
         if backend == "mpi":
 

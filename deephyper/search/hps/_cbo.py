@@ -6,6 +6,8 @@ import ConfigSpace as CS
 import ConfigSpace.hyperparameters as csh
 import numpy as np
 import pandas as pd
+
+import deephyper.core.exceptions
 import deephyper.skopt
 from deephyper.problem._hyperparameter import convert_to_skopt_space
 from deephyper.search._search import Search
@@ -92,12 +94,12 @@ class CBO(Search):
         if not (type(n_jobs) is int):
             raise ValueError(f"Parameter n_jobs={n_jobs} should be an integer value!")
 
-        surrogate_model_allowed = ["RF", "ET", "GBRT", "DUMMY", "GP"]
+        surrogate_model_allowed = ["RF", "ET", "GBRT", "DUMMY", "GP", "MF"]
         if surrogate_model in surrogate_model_allowed:
             base_estimator = self._get_surrogate_model(
                 surrogate_model,
                 n_jobs,
-                random_state=self._random_state.randint(0, 2**32),
+                random_state=self._random_state.randint(0, 2 ** 32),
             )
         elif is_regressor(surrogate_model):
             base_estimator = surrogate_model
@@ -351,7 +353,7 @@ class CBO(Search):
         Raises:
             ValueError: when the name of the surrogate model is unknown.
         """
-        accepted_names = ["RF", "ET", "GBRT", "DUMMY", "GP"]
+        accepted_names = ["RF", "ET", "GBRT", "DUMMY", "GP", "MF"]
         if not (name in accepted_names):
             raise ValueError(
                 f"Unknown surrogate model {name}, please choose among {accepted_names}."
@@ -378,6 +380,16 @@ class CBO(Search):
             surrogate = deephyper.skopt.learning.GradientBoostingQuantileRegressor(
                 base_estimator=gbrt, n_jobs=n_jobs, random_state=random_state
             )
+        elif name == "MF":
+
+            try:
+                surrogate = deephyper.skopt.learning.MondrianForestRegressor(
+                    n_estimators=100, n_jobs=n_jobs, random_state=random_state
+                )
+            except AttributeError:
+                raise deephyper.core.exceptions.MissingRequirementError(
+                    "Installing 'deephyper/scikit-garden' is required to use MondrianForest (MF) regressor as a surrogate model!"
+                )
         else:  # for DUMMY and GP
             surrogate = name
 
@@ -474,8 +486,9 @@ class CBO(Search):
         try:
             import sdv
         except ModuleNotFoundError as e:
-            print("Install SDV with: pip install sdv")
-            raise e
+            raise deephyper.core.exceptions.MissingRequirementError(
+                "Installing 'sdv' is required to use 'fit_generative_model' please run 'pip install sdv'"
+            )
 
         if type(df) is str and df[-4:] == ".csv":
             df = pd.read_csv(df)
@@ -557,7 +570,7 @@ class CBO(Search):
                     deephyper.skopt.space.Integer(1, 8, name="compress_dims"),
                     deephyper.skopt.space.Integer(1, 8, name="decompress_dims"),
                     deephyper.skopt.space.Real(
-                        10**-8, 10**-4, "log-uniform", name="l2scale"
+                        10 ** -8, 10 ** -4, "log-uniform", name="l2scale"
                     ),
                     deephyper.skopt.space.Integer(1, 5, name="loss_factor"),
                 ]
@@ -659,7 +672,7 @@ class CBO(Search):
             )[0]
             best_param = res_df.iloc[best_index]
 
-        cst_new = CS.ConfigurationSpace(seed=self._random_state.randint(0, 2**32))
+        cst_new = CS.ConfigurationSpace(seed=self._random_state.randint(0, 2 ** 32))
         hp_names = cst.get_hyperparameter_names()
         for hp_name in hp_names:
             hp = cst.get_hyperparameter(hp_name)
