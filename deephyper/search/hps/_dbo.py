@@ -1,11 +1,8 @@
 import logging
-from multiprocessing.sharedctypes import Value
 
 
-# avoid initializing mpi4py when importing
 import numpy as np
 from deephyper.search.hps._cbo import CBO
-from deephyper.evaluator._distributed import distributed
 from deephyper.evaluator import Evaluator, SerialEvaluator
 from deephyper.evaluator.callback import TqdmCallback
 
@@ -173,13 +170,15 @@ class DBO(CBO):
         super().check_evaluator(evaluator)
 
         if not (isinstance(evaluator, Evaluator)) and callable(evaluator):
+            from deephyper.evaluator._distributed import distributed
+
             self._evaluator = distributed(backend="mpi")(SerialEvaluator)(evaluator)
             if self._evaluator.rank == 0:
                 self._evaluator._callbacks.append(TqdmCallback())
         else:
             if not ("Distributed" in type(evaluator).__name__):
                 raise ValueError(
-                    "The evaluator must is not distributed! Use deephyper.evaluator.distributed(backend)(evaluator_class)!"
+                    "The evaluator is not distributed! Use deephyper.evaluator.distributed(backend)(evaluator_class)!"
                 )
 
             self._evaluator = evaluator
