@@ -361,16 +361,16 @@ class CBO(Search):
 
         if name == "RF":
             surrogate = deephyper.skopt.learning.RandomForestRegressor(
-                n_estimators=100,
-                max_features=1,
+                # n_estimators=100,
+                # max_features=1,
                 # min_samples_leaf=3,
                 n_jobs=n_jobs,
                 random_state=random_state,
             )
         elif name == "ET":
             surrogate = deephyper.skopt.learning.ExtraTreesRegressor(
-                n_estimators=100,
-                min_samples_leaf=3,
+                # n_estimators=100,
+                # min_samples_leaf=3,
                 n_jobs=n_jobs,
                 random_state=random_state,
             )
