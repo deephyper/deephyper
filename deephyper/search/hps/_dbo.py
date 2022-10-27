@@ -80,13 +80,6 @@ class DBO(CBO):
         else:
             random_state = np.random.RandomState()
 
-        # set random state for given rank
-        random_state = np.random.RandomState(
-            random_state.randint(low=0, high=2**32, size=self._evaluator.size)[
-                self._evaluator.rank
-            ]
-        )
-
         if acq_optimizer == "auto":
             if acq_func[0] == "q":
                 acq_optimizer = "sampling"
@@ -101,6 +94,13 @@ class DBO(CBO):
                 self._evaluator.rank
             ]
             acq_func = acq_func[1:]
+        
+        # set random state for given rank
+        random_state = np.random.RandomState(
+            random_state.randint(low=0, high=2**32, size=self._evaluator.size)[
+                self._evaluator.rank
+            ]
+        )
 
         if self._evaluator.rank == 0:
             super().__init__(
