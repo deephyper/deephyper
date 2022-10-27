@@ -1,3 +1,4 @@
+import functools
 import logging
 import time
 import warnings
@@ -23,6 +24,12 @@ MAP_multi_point_strategy = {"cl_min": "cl_max", "cl_max": "cl_min", "qUCB": "qLC
 MAP_acq_func = {"UCB": "LCB", "qUCB": "qLCB"}
 
 MAP_filter_failures = {"min": "max"}
+
+# schedulers
+def scheduler_periodic_exponential_decay(i, eta_0, periode, rate):
+    """Periodic exponential decay scheduler for exploration-exploitation."""
+    eta_i = eta_0 * np.exp(-rate * (i % periode))
+    return eta_i
 
 
 class CBO(Search):
@@ -83,6 +90,7 @@ class CBO(Search):
         max_failures: int = 100,
         moo_scalarization_strategy: str = "Chebyshev",
         moo_scalarization_weight=None,
+        scheduler=None,
         **kwargs,
     ):
 
@@ -223,10 +231,36 @@ class CBO(Search):
 
         self._gather_type = "ALL" if sync_communication else "BATCH"
 
+        # scheduler policy
+        self.scheduler = None
+        if type(scheduler) is dict:
+            scheduler_type = scheduler.pop("type", None)
+            assert scheduler_type in ["periodic-exp-decay"]
+
+            if scheduler_type == "periodic-exp-decay":
+                scheduler_params = {
+                    "periode": 25,
+                    "rate": 0.1,
+                }
+                scheduler_func = scheduler_periodic_exponential_decay
+
+            scheduler_params.update(scheduler)
+            eta_0 = np.array([kappa, xi])
+            self.scheduler = functools.partial(scheduler_func, eta_0=eta_0, **scheduler_params)
+            logging.info(f"Set up scheduler '{scheduler_type}' with parameters '{scheduler_params}'")
+
     def _setup_optimizer(self):
         if self._fitted:
             self._opt_kwargs["n_initial_points"] = 0
         self._opt = deephyper.skopt.Optimizer(**self._opt_kwargs)
+
+    def _apply_scheduler(self, i):
+        """Apply scheduler policy and update corresponding values in Optimizer."""
+        if self.scheduler is not None:
+            kappa, xi = self.scheduler(i)
+            values = {"kappa": kappa, "xi": xi}
+            logging.info(f"Updated exploration-exploitation policy with {values} from scheduler")
+            self._opt.acq_func_kwargs.update(values)
 
     def _search(self, max_evals, timeout):
 
@@ -234,6 +268,7 @@ class CBO(Search):
             self._setup_optimizer()
 
         num_evals_done = 0
+        num_local_evals_done = 0
 
         logging.info(f"Asking {self._evaluator.num_workers} initial configurations...")
         t1 = time.time()
@@ -256,6 +291,7 @@ class CBO(Search):
         logging.info(f"Submition took {time.time() - t1:.4f} sec.")
 
         # Main loop
+
         while max_evals < 0 or num_evals_done < max_evals:
             # Collecting finished evaluations
             logging.info("Gathering jobs...")
@@ -274,6 +310,7 @@ class CBO(Search):
                 logging.info(
                     f"Gathered {num_new_local_results} job(s) in {time.time() - t1:.4f} sec."
                 )
+            num_local_evals_done += num_new_local_results
 
             if num_new_local_results > 0:
 
@@ -312,6 +349,9 @@ class CBO(Search):
 
                 logging.info(f"Transformation took {time.time() - t1:.4f} sec.")
 
+                # apply scheduler
+                self._apply_scheduler(i=num_local_evals_done)
+                
                 logging.info("Fitting the optimizer...")
                 t1 = time.time()
 

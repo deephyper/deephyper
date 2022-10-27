@@ -594,6 +594,7 @@ class Optimizer(object):
 
             return self._last_X[idx].tolist()
 
+        # q-ACQ multi point acquisition for centralized setting
         if hasattr(self, "_est") and self.acq_func == "qLCB":
             X_s = self.space.rvs(n_samples=self.n_points, random_state=self.rng)
             X_s = self._filter_duplicated(X_s)
