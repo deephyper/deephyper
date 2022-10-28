@@ -43,7 +43,7 @@ def load_data(dim=10, size=100):
         "types": ({"input_0": tf.float64, "input_1": tf.float64}, tf.float64),
         "shapes": ({"input_0": (5,), "input_1": (5,)}, (1,)),
     }
-    print(f"load_data:\n", pformat(res))
+    print("load_data:\n", pformat(res))
     return res
 
 

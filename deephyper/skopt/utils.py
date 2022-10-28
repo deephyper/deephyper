@@ -25,7 +25,7 @@ try:
     from .learning import MondrianForestRegressor
 
     MF_INSTALLED = True
-except ImportError as e:
+except ImportError:
     MF_INSTALLED = False
 
 __all__ = (

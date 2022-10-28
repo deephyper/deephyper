@@ -11,8 +11,8 @@ import mpi4py
 # !To avoid initializing MPI when module is imported (MPI is optional)
 mpi4py.rc.initialize = False
 mpi4py.rc.finalize = True
-from mpi4py import MPI
-from mpi4py.futures import MPICommExecutor
+from mpi4py import MPI  # noqa: E402
+from mpi4py.futures import MPICommExecutor  # noqa: E402
 
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ def catch_exception(run_func):
     try:
         code = 0
         result = run_func()
-    except Exception as e:
+    except Exception:
         code = 1
         result = traceback.format_exc()
     return code, result

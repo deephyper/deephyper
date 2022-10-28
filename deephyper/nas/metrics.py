@@ -95,10 +95,10 @@ def selectMetric(name: str):
     """
     if callable(name):
         return name
-    if metrics_func.get(name) == None and metrics_obj.get(name) == None:
+    if metrics_func.get(name) is None and metrics_obj.get(name) is None:
         try:
             return load_attr(name)
-        except:
+        except Exception:
             return name  # supposing it is referenced in keras metrics
     else:
         if name in metrics_func:

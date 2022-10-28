@@ -6,7 +6,7 @@ master/pyDOE2/doe_lhs.py
 import numpy as np
 from sklearn.utils import check_random_state
 from scipy import spatial
-from ..space import Space, Categorical
+from ..space import Space
 from .base import InitialPointGenerator
 
 

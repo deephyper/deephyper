@@ -836,7 +836,7 @@ class GlobalAttentionPool(tf.keras.layers.Layer):
         self.kwargs = kwargs
 
     def __str__(self):
-        return f"GlobalAttentionPool"
+        return "GlobalAttentionPool"
 
     def build(self, input_shape):
         self.features_layer = Dense(self.state_dim, name="features_layer")
@@ -873,7 +873,7 @@ class GlobalAttentionSumPool(tf.keras.layers.Layer):
         self.kwargs = kwargs
 
     def __str__(self):
-        return f"GlobalAttentionSumPool"
+        return "GlobalAttentionSumPool"
 
     def build(self, input_shape):
         F = int(input_shape[-1])
@@ -916,7 +916,7 @@ class GlobalAvgPool(tf.keras.layers.Layer):
         self.kwargs = kwargs
 
     def __str__(self):
-        return f"GlobalAvgPool"
+        return "GlobalAvgPool"
 
     def call(self, inputs, **kwargs):
         """Apply the layer on input tensors.
@@ -946,7 +946,7 @@ class GlobalMaxPool(tf.keras.layers.Layer):
         self.kwargs = kwargs
 
     def __str__(self):
-        return f"GlobalMaxPool"
+        return "GlobalMaxPool"
 
     def call(self, inputs, **kwargs):
         """Apply the layer on input tensors.
@@ -976,7 +976,7 @@ class GlobalSumPool(tf.keras.layers.Layer):
         self.kwargs = kwargs
 
     def __str__(self):
-        return f"GlobalSumPool"
+        return "GlobalSumPool"
 
     def call(self, inputs, **kwargs):
         """Apply the layer on input tensors.

@@ -90,7 +90,7 @@ class CSVExtendedLogger(tf.keras.callbacks.Callback):
 
             fieldnames = ["epoch", "timestamp", "duration"] + self.keys
             if six.PY2:
-                fieldnames = [unicode(x) for x in fieldnames]
+                fieldnames = [f"{x}" for x in fieldnames]
 
             self.writer = csv.DictWriter(
                 self.csv_file, fieldnames=fieldnames, dialect=CustomDialect

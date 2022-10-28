@@ -1,4 +1,3 @@
-import sys
 import os
 
 # Adapted from 'get_job_nodelist()' found in the following project:

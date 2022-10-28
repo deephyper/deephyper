@@ -23,7 +23,7 @@ class NxSearchSpace(abc.ABC):
         with open(path, "w") as f:
             try:
                 nx.nx_agraph.write_dot(self.graph, f)
-            except:
+            except Exception:
                 print("Error: can't create graphviz file...")
                 traceback.print_exc()
 
@@ -58,7 +58,7 @@ class NxSearchSpace(abc.ABC):
         """
 
         if not isinstance(node, Node):
-            raise TypeError(f"'node' argument should be an instance of Node!")
+            raise TypeError("'node' argument should be an instance of Node!")
 
         if node in self.nodes:
             raise NodeAlreadyAdded(node)

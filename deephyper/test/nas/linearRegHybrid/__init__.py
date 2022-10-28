@@ -1,1 +1,1 @@
-from .problem import Problem
+from .problem import Problem  # noqa: F401

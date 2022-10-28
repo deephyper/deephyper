@@ -1,4 +1,4 @@
-"""This module provides the available node types to build a ``KSearchSpace``. 
+"""This module provides the available node types to build a ``KSearchSpace``.
 """
 import tensorflow as tf
 
@@ -97,7 +97,7 @@ class VariableNode(OperationNode):
         self._index = None
 
     def __str__(self):
-        if self._index != None:
+        if self._index is not None:
             return f"{super().__str__()}(Variable[{str(self.op)}])"
         else:
             return f"{super().__str__()}(Variable[?])"
@@ -176,7 +176,7 @@ class ConstantNode(OperationNode):
 
     def __init__(self, op=None, name="", *args, **kwargs):
         super().__init__(name=name)
-        if not op is None:
+        if op is not None:
             op = self.verify_operation(op)
             op.init(self)  # set operation
         self._op = op

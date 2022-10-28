@@ -47,7 +47,7 @@ def base_minimize(
     func : callable
         Function to minimize. Should take a single list of parameters
         and return the objective value.
-    
+
         If you have a search-space where all dimensions have names,
         then you can use :func:`deephyper.skopt.utils.use_named_args` as a decorator
         on your objective function, in order to call it directly

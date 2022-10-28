@@ -1421,7 +1421,6 @@ def _evaluate_min_params(
 ):
     """Returns the minimum based on `params`"""
     x_vals = None
-    space = result.space
     if isinstance(params, str):
         if params == "result":
             # Using the best observed result

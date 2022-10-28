@@ -33,7 +33,7 @@ def selectLoss(name: str):
         try:
             loaded_obj = load_attr(name)
             return loaded_obj
-        except:
+        except Exception:
             return tf.keras.losses.get(
                 name
             )  # supposing it is referenced in keras losses

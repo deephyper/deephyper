@@ -73,7 +73,7 @@ def get_init_params_as_json(obj):
             value = value.to_json()
         try:
             json.dumps(value)
-        except:
+        except Exception:
             value = type(value).__name__
         params[key] = value
     return params

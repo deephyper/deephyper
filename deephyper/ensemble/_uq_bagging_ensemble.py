@@ -54,7 +54,7 @@ def model_predict(model_path, X, batch_size=32, verbose=0):
         if verbose:
             print(f"Loading model {model_file}", end="\n", flush=True)
         model = tf.keras.models.load_model(model_path, compile=False)
-    except:
+    except Exception:
         if verbose:
             print(f"Could not load model {model_file}", flush=True)
             traceback.print_exc()
@@ -85,13 +85,14 @@ def model_predict(model_path, X, batch_size=32, verbose=0):
     )  # just to test the type of the output
     if isinstance(y_dist, tfp.distributions.Distribution):
         if hasattr(y_dist, "loc") and hasattr(y_dist, "scale"):
-            convert_func = lambda y_dist: np.concatenate(
-                [y_dist.loc, y_dist.scale], axis=-1
-            )
+
+            def convert_func(y_dist):
+                return np.concatenate([y_dist.loc, y_dist.scale], axis=-1)
+
             y = batch_predict(dataset, convert_func)
         else:
             raise DeephyperRuntimeError(
-                f"Distribution doesn't have 'loc' or 'scale' attributes!"
+                "Distribution doesn't have 'loc' or 'scale' attributes!"
             )
     else:
         y = model.predict(X, batch_size=batch_size)
@@ -164,7 +165,9 @@ class UQBaggingEnsemble(BaseEnsemble):
         X_id = ray.put(X)
 
         model_files = self._list_files_in_model_dir()
-        model_path = lambda f: os.path.join(self.model_dir, f)
+
+        def model_path(f):
+            return os.path.join(self.model_dir, f)
 
         y_pred = ray.get(
             [
@@ -184,7 +187,9 @@ class UQBaggingEnsemble(BaseEnsemble):
     def predict(self, X) -> np.ndarray:
         # make predictions
         X_id = ray.put(X)
-        model_path = lambda f: os.path.join(self.model_dir, f)
+
+        def model_path(f):
+            return os.path.join(self.model_dir, f)
 
         y_pred = ray.get(
             [
@@ -278,7 +283,9 @@ class UQBaggingEnsembleRegressor(UQBaggingEnsemble):
         """
         # make predictions
         X_id = ray.put(X)
-        model_path = lambda f: os.path.join(self.model_dir, f)
+
+        def model_path(f):
+            return os.path.join(self.model_dir, f)
 
         y_pred = ray.get(
             [
@@ -460,7 +467,8 @@ def greedy_caruana(loss_func, y_true, y_pred, k=2, verbose=0):
     if verbose:
         print(f"Loss: {loss_min:.3f} - Ensemble: {ensemble_members}")
 
-    loss = lambda y_true, y_pred: tf.reduce_mean(loss_func(y_true, y_pred)).numpy()
+    def loss(y_true, y_pred):
+        return tf.reduce_mean(loss_func(y_true, y_pred)).numpy()
 
     while len(np.unique(ensemble_members)) < k:
         losses = [

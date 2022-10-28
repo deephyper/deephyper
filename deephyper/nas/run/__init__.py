@@ -17,8 +17,8 @@ __all__ = [
 ]
 
 try:
-    from ._run_horovod import run_horovod
+    from ._run_horovod import run_horovod  # noqa: F401
 
     __all__.append("run_horovod")
-except:
+except Exception:
     pass

@@ -14,7 +14,7 @@ import mpi4py
 # !To avoid initializing MPI when module is imported (MPI is optional)
 mpi4py.rc.initialize = False
 mpi4py.rc.finalize = True
-from mpi4py import MPI
+from mpi4py import MPI  # noqa: E402
 
 
 logger = logging.getLogger(__name__)

@@ -51,11 +51,11 @@ def main(mode, name, *args, **kwargs):
     assert os.path.exists(
         os.path.join(project_path, ".deephyper")
     ), "Not inside a deephyper project directory"
-    assert "/" not in prob_name, f'Problem name must not contain "/"'
+    assert "/" not in prob_name, 'Problem name must not contain "/"'
     assert prob_name.isidentifier(), f"{prob_name} is not a valid Python identifier"
 
     pathlib.Path(prob_name).mkdir(parents=False, exist_ok=False)
-    with open(os.path.join(prob_name, "__init__.py"), "w") as fp:
+    with open(os.path.join(prob_name, "__init__.py"), "w"):
         pass
     render_files(mode, prob_name)
 

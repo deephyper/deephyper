@@ -213,7 +213,8 @@ def main(path: list, xy: list, *args, **kwargs):
     :meta private:
     """
 
-    extension = lambda path: path.split(".")[-1]
+    def extension(path):
+        return path.split(".")[-1]
 
     if len(path) == 1:
         if extension(path[0]) == "csv":

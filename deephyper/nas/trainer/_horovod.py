@@ -240,7 +240,7 @@ class HorovodTrainer:
         if self.data_config_type == "gen":
             return
 
-        if not self.preprocessor is None:
+        if self.preprocessor is not None:
             raise DeephyperRuntimeError("You can only preprocess data one time.")
 
         if self.preprocessing_func:

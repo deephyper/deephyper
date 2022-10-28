@@ -70,8 +70,8 @@ EXTRAS = {
         # Packaging
         "twine",
         # Formatter and Linter
-        "black",
-        "flake8",
+        "black==22.6.0",
+        "flake8==5.0.4",
         "pre-commit",
         "rstcheck",
         # Documentation

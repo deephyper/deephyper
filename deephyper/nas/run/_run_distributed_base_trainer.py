@@ -54,7 +54,7 @@ def run_distributed_base_trainer(config):
     try:
         for i in range(len(physical_devices)):
             tf.config.experimental.set_memory_growth(physical_devices[i], True)
-    except:
+    except Exception:
         # Invalid device or cannot modify virtual devices once initialized.
         pass
 
@@ -96,7 +96,7 @@ def run_distributed_base_trainer(config):
         try:
             model = search_space.sample(config["arch_seq"])
             model_created = True
-        except:
+        except Exception:
             logger.info("Error: Model creation failed...")
             logger.info(traceback.format_exc())
         else:

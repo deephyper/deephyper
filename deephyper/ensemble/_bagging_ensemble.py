@@ -39,7 +39,7 @@ def model_predict(model_path, X, batch_size=32, verbose=0):
         if verbose:
             print(f"Loading model {model_file}", flush=True)
         model = tf.keras.models.load_model(model_path, compile=False)
-    except:
+    except Exception:
         if verbose:
             print(f"Could not load model {model_file}", flush=True)
             traceback.print_exc()
@@ -116,9 +116,10 @@ class BaggingEnsemble(BaseEnsemble):
             BaseEnsemble: The current fitted instance.
         """
         X_id = ray.put(X)
-
         model_files = self._list_files_in_model_dir()
-        model_path = lambda f: os.path.join(self.model_dir, f)
+
+        def model_path(f):
+            return os.path.join(self.model_dir, f)
 
         y_pred = ray.get(
             [
@@ -146,7 +147,9 @@ class BaggingEnsemble(BaseEnsemble):
         """
         # make predictions
         X_id = ray.put(X)
-        model_path = lambda f: os.path.join(self.model_dir, f)
+
+        def model_path(f):
+            os.path.join(self.model_dir, f)
 
         y_pred = ray.get(
             [

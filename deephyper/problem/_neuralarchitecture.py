@@ -8,8 +8,6 @@ from deephyper.core.exceptions.problem import (
     NaProblemError,
     ProblemLoadDataIsNotCallable,
     ProblemPreprocessingIsNotCallable,
-    SearchSpaceBuilderIsNotCallable,
-    SearchSpaceBuilderMissingDefaultParameter,
     SearchSpaceBuilderMissingParameter,
     WrongProblemObjective,
 )
@@ -218,10 +216,10 @@ class NaProblem:
         """
 
         sign = signature(space_class)
-        if not "input_shape" in sign.parameters:
+        if "input_shape" not in sign.parameters:
             raise SearchSpaceBuilderMissingParameter("input_shape")
 
-        if not "output_shape" in sign.parameters:
+        if "output_shape" not in sign.parameters:
             raise SearchSpaceBuilderMissingParameter("output_shape")
 
         self._space["search_space"] = {"class": space_class, "kwargs": kwargs}

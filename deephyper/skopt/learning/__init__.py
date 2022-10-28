@@ -14,7 +14,7 @@ __all__ = [
 ]
 
 try:
-    from skgarden.mondrian import MondrianForestRegressor
+    from skgarden.mondrian import MondrianForestRegressor  # noqa: F401
 
     __all__.append("MondrianForestRegressor")
 except ImportError:

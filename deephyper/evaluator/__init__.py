@@ -56,15 +56,15 @@ __all__ = [
 
 try:
 
-    from deephyper.evaluator._ray import RayEvaluator
+    from deephyper.evaluator._ray import RayEvaluator  # noqa: F401
 
     __all__.append("RayEvaluator")
 except ImportError:
     pass
 
 try:
-    from deephyper.evaluator._distributed import distributed
-    from deephyper.evaluator._mpi_comm import MPICommEvaluator
+    from deephyper.evaluator._distributed import distributed  # noqa: F401
+    from deephyper.evaluator._mpi_comm import MPICommEvaluator  # noqa: F401
 
     __all__.append("MPICommEvaluator")
     __all__.append("distributed")

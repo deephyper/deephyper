@@ -1,5 +1,4 @@
 import copy
-from pprint import pformat
 
 import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh

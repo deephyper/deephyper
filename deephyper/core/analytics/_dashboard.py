@@ -47,6 +47,6 @@ def main(database, *args, **kwargs):
 
     # the "--" is a posix standard to separate streamlit arguments from other arguments
     # which are forwarded to the launched script
-    result = subprocess.run(
+    subprocess.run(
         ["streamlit", "run", path_st_app, "--", database],
     )

@@ -27,7 +27,7 @@ class Operation:
         else:
             try:
                 return str(self)
-            except:
+            except Exception:
                 return type(self).__name__
 
     def __call__(self, tensors: list, seed: int = None, **kwargs):

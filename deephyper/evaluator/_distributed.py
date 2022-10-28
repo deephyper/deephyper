@@ -11,7 +11,7 @@ import mpi4py
 # !To avoid initializing MPI when module is imported (MPI is optional)
 mpi4py.rc.initialize = False
 mpi4py.rc.finalize = True
-from mpi4py import MPI
+from mpi4py import MPI  # noqa: E402
 
 TAG_INIT = 20
 TAG_DATA = 30
@@ -77,14 +77,14 @@ def distributed(backend: str):
                 # The constructor is going to do some collective communication
                 # across processes of the provided MPI communicator, so make
                 # sure this call is done by all the processes at the same time.
-                logging.info(f"Starting S4M service...")
+                logging.info("Starting S4M service...")
                 self._s4m_service = s4m.S4MService(self.comm, "verbs://")
-                logging.info(f"S4M service running!")
+                logging.info("S4M service running!")
 
                 # Wait for all s4m services to be started
-                logging.info(f"MPI Barrier...")
+                logging.info("MPI Barrier...")
                 self.comm.Barrier()
-                logging.info(f"MPI Barrier done!")
+                logging.info("MPI Barrier done!")
 
         def _on_launch(self, job):
             """Called after a job is started."""
@@ -96,23 +96,6 @@ def distributed(backend: str):
             evaluator_class._on_done(self, job)
             job.run_function = None
             self.num_local_done += 1
-
-        def allgather(self, jobs: List[Job]) -> List[Job]:
-            logging.info("Broadcasting to all...")
-            t1 = time.time()
-            all_data = self.comm.allgather(jobs)
-            received_data = []
-
-            for i, chunk in enumerate(all_data):
-                if i != self.rank:
-                    received_data.extend(chunk)
-
-            n_received = len(received_data)
-
-            logging.info(
-                f"Broadcast received {n_received} configurations in {time.time() - t1:.4f} sec."
-            )
-            return received_data
 
         def allgather(self, jobs: List[Job]) -> List[Job]:
             logging.info("Broadcasting to all...")
@@ -173,7 +156,7 @@ def distributed(backend: str):
                                 received_jobs.extend(jobs)
                             else:
                                 req.cancel()
-                        except pickle.UnpicklingError as e:
+                        except pickle.UnpicklingError:
                             logging.error(f"UnpicklingError for request {i}")
 
                 self.jobs_done.extend(received_jobs)
@@ -215,7 +198,7 @@ def distributed(backend: str):
                         source_rank, data = data
                         try:
                             jobs = MPI.pickle.loads(data)
-                        except pickle.UnpicklingError as e:
+                        except pickle.UnpicklingError:
                             logging.error(
                                 f"UnpicklingError for request source {source_rank}"
                             )

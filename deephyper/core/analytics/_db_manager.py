@@ -32,7 +32,7 @@ import pandas as pd
 import yaml
 from datetime import datetime
 from typing import Union
-from tinydb import TinyDB, Query
+from tinydb import TinyDB
 from deephyper.core.utils._files import ensure_dh_folder_exists
 
 

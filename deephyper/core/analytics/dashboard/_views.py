@@ -3,7 +3,6 @@ import os
 import sys
 
 import altair as alt
-import numpy as np
 import pandas as pd
 import streamlit as st
 from deephyper.core.analytics import DBManager

@@ -73,7 +73,7 @@ def run_base_trainer(config):
     try:
         model = search_space.sample(config["arch_seq"])
         model_created = True
-    except:
+    except Exception:
         logger.info("Error: Model creation failed...")
         logger.info(traceback.format_exc())
 

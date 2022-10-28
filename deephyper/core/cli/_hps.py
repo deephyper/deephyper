@@ -98,7 +98,7 @@ def build_parser_from(cls):
             add_arguments_from_signature(
                 parser, eval_cls, prefix=eval_name, exclude=evaluator_added_arguments
             )
-        except ModuleNotFoundError as e:  # some evaluators are optional
+        except ModuleNotFoundError:  # some evaluators are optional
             pass
 
     return parser

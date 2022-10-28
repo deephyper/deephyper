@@ -423,7 +423,7 @@ class Real(Dimension):
 
         if self.dtype == float or self.dtype == "float":
             # necessary, otherwise the type is converted to a numpy type
-            return getattr(inv_transform, "tolist", lambda: value)()
+            return getattr(inv_transform, "tolist")()
         else:
             return inv_transform
 
@@ -671,9 +671,7 @@ class Integer(Dimension):
 
         if self.dtype == int or self.dtype == "int":
             # necessary, otherwise the type is converted to a numpy type
-            return getattr(
-                np.round(inv_transform).astype(self.dtype), "tolist", lambda: value
-            )()
+            return getattr(np.round(inv_transform).astype(self.dtype), "tolist")()
         else:
             return np.round(inv_transform).astype(self.dtype)
 

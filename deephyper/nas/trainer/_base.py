@@ -172,7 +172,7 @@ class BaseTrainer:
                 map(f, self.config[a.data][a.valid_Y])
             ):
                 raise DeephyperRuntimeError(
-                    f"all outputs data should be of type np.ndarray !"
+                    "all outputs data should be of type np.ndarray !"
                 )
 
             if (
@@ -205,7 +205,7 @@ class BaseTrainer:
                 map(f, self.config[a.data][a.valid_X])
             ):
                 raise DeephyperRuntimeError(
-                    f"all inputs data should be of type np.ndarray !"
+                    "all inputs data should be of type np.ndarray !"
                 )
             if (
                 len(self.config[a.data][a.train_X]) > 1
@@ -227,7 +227,7 @@ class BaseTrainer:
         self.train_size = np.shape(self.train_X[0])[0]
         if not all(map(lambda x: np.shape(x)[0] == self.train_size, self.train_X)):
             raise DeephyperRuntimeError(
-                f"All training inputs data should have same length!"
+                "All training inputs data should have same length!"
             )
 
         self.valid_size = np.shape(self.valid_X[0])[0]
@@ -243,7 +243,7 @@ class BaseTrainer:
             logger.warn("Cannot preprocess data with generator!")
             return
 
-        if not self.preprocessor is None:
+        if self.preprocessor is not None:
             raise DeephyperRuntimeError("You can only preprocess data one time.")
 
         if self.preprocessing_func:

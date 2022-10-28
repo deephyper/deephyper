@@ -38,14 +38,14 @@ class ExhaustedSearchSpace(RuntimeError):
     """ "Raised when the search cannot sample new points from the ConfigSpace."""
 
     def __str__(self):
-        return f"The search space is exhausted and cannot sample new unique points!"
+        return "The search space is exhausted and cannot sample new unique points!"
 
 
 class ExhaustedFailures(RuntimeError):
     """Raised when the search has seen ``max_failures`` failures without any valid objective value."""
 
     def __str__(self):
-        return f"The search has reached its quota of failures! Check if the type of failure is expected or the value of ``max_failures`` in the search algorithm."
+        return "The search has reached its quota of failures! Check if the type of failure is expected or the value of ``max_failures`` in the search algorithm."
 
 
 def boltzman_distribution(x, beta=1):
@@ -98,7 +98,7 @@ class Optimizer(object):
         Number of evaluations of `func` with initialization points
         before approximating it with `base_estimator`. Initial point
         generator can be changed by setting `initial_point_generator`.
-    
+
     initial_points : list, default: None
 
     initial_point_generator : str, InitialPointGenerator instance, \

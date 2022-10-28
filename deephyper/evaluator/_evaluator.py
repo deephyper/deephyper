@@ -148,7 +148,7 @@ class Evaluator:
         logging.info(
             f"Creating Evaluator({run_function}, method={method}, method_kwargs={method_kwargs}..."
         )
-        if not method in EVALUATORS.keys():
+        if method not in EVALUATORS.keys():
             val = ", ".join(EVALUATORS)
             raise ValueError(
                 f'The method "{method}" is not a valid method for an Evaluator!'
@@ -162,7 +162,7 @@ class Evaluator:
         eval_cls = getattr(mod, attr_name)
         evaluator = eval_cls(run_function, **method_kwargs)
 
-        logging.info(f"Creation done")
+        logging.info("Creation done")
 
         return evaluator
 
