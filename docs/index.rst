@@ -88,6 +88,7 @@ Table of Contents
     tutorials/index
     examples/index
     F.A.Q. <faq>
+    Blog (Events & Workshops) <https://deephyper.github.io>
     Publications <https://deephyper.github.io/papers>
     Authors <https://deephyper.github.io/aboutus>
 
