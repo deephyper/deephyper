@@ -40,7 +40,7 @@ class RegularizedEvolutionMixed(RegularizedEvolution):
         # Setup
         na_search_space = self._problem.build_search_space()
 
-        self.hp_space = self._problem._hp_space  #! hyperparameters
+        self.hp_space = self._problem._hp_space  # !hyperparameters
         self.hp_size = len(self.hp_space.space.get_hyperparameter_names())
         self.na_space = HpProblem()
         self.na_space._space.seed(self._random_state.get_state()[1][0])
@@ -129,8 +129,9 @@ class RegularizedEvolutionMixed(RegularizedEvolution):
         return cfg
 
     def _gen_random_batch(self, size: int) -> list:
+        def sample(hp, size):
+            return [hp.sample(self._space.random) for _ in range(size)]
 
-        sample = lambda hp, size: [hp.sample(self._space.random) for _ in range(size)]
         batch = []
         iterator = zip(*(sample(hp, size) for hp in self._space.get_hyperparameters()))
 

@@ -174,7 +174,7 @@ class HorovodTrainer:
                 map(f, self.config[a.data][a.valid_Y])
             ):
                 raise DeephyperRuntimeError(
-                    f"all outputs data should be of type np.ndarray !"
+                    "all outputs data should be of type np.ndarray !"
                 )
 
             if (
@@ -207,7 +207,7 @@ class HorovodTrainer:
                 map(f, self.config[a.data][a.valid_X])
             ):
                 raise DeephyperRuntimeError(
-                    f"all inputs data should be of type np.ndarray !"
+                    "all inputs data should be of type np.ndarray !"
                 )
             if (
                 len(self.config[a.data][a.train_X]) > 1
@@ -227,13 +227,13 @@ class HorovodTrainer:
         self.train_size = np.shape(self.train_X[0])[0]
         if not all(map(lambda x: np.shape(x)[0] == self.train_size, self.train_X)):
             raise DeephyperRuntimeError(
-                f"All training inputs data should have same length!"
+                "All training inputs data should have same length!"
             )
 
         self.valid_size = np.shape(self.valid_X[0])[0]
         if not all(map(lambda x: np.shape(x)[0] == self.valid_size, self.valid_X)):
             raise DeephyperRuntimeError(
-                f"All validation inputs data should have same length!"
+                "All validation inputs data should have same length!"
             )
 
     def preprocess_data(self):
@@ -352,8 +352,6 @@ class HorovodTrainer:
     def model_compile(self):
         optimizer_fn = U.selectOptimizer_keras(self.optimizer_name)
 
-        decay_rate = self.learning_rate / self.num_epochs if self.num_epochs > 0 else 1
-
         opti_parameters = signature(optimizer_fn).parameters
         params = {}
 
@@ -372,12 +370,6 @@ class HorovodTrainer:
 
         if self.clipvalue is not None:
             params["clipvalue"] = self.clipvalue
-
-        # if "decay" in opti_parameters:
-        #     decay_rate = (
-        #         self.learning_rate / self.num_epochs if self.num_epochs > 0 else 1
-        #     )
-        #     params["decay"] = decay_rate
 
         self.optimizer = hvd.DistributedOptimizer(optimizer_fn(**params))
 

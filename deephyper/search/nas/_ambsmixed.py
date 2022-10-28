@@ -55,7 +55,7 @@ class AMBSMixed(NeuralArchitectureSearch):
         # Setup the search space
         na_search_space = self._problem.build_search_space()
 
-        self.hp_space = self._problem._hp_space  #! hyperparameters
+        self.hp_space = self._problem._hp_space  # !hyperparameters
         self.hp_size = len(self.hp_space.space.get_hyperparameter_names())
         self.na_space = HpProblem()
         self.na_space._space.seed(self._random_state.get_state()[1][0])
@@ -86,7 +86,7 @@ class AMBSMixed(NeuralArchitectureSearch):
             )
 
         if not (np.isscalar(kappa)):
-            raise ValueError(f"Parameter 'kappa' should be a scalar value!")
+            raise ValueError("Parameter 'kappa' should be a scalar value!")
 
         if not (np.isscalar(xi)):
             raise ValueError("Parameter 'xi' should be a scalar value!")
@@ -101,7 +101,7 @@ class AMBSMixed(NeuralArchitectureSearch):
             )
 
         if not (type(n_jobs) is int):
-            raise ValueError(f"Parameter 'n_jobs' should be an integer value!")
+            raise ValueError("Parameter 'n_jobs' should be an integer value!")
 
         self._n_initial_points = self._evaluator.num_workers
         self._liar_strategy = MAP_liar_strategy.get(liar_strategy, liar_strategy)
@@ -173,9 +173,9 @@ class AMBSMixed(NeuralArchitectureSearch):
                     hp_val = self._problem.extract_hp_values(cfg)
                     x = replace_nan(hp_val + arch_seq)
                     opt_X.append(x)
-                    opt_y.append(-obj)  #! maximizing
+                    opt_y.append(-obj)  # !maximizing
 
-                self._opt.tell(opt_X, opt_y)  #! fit: costly
+                self._opt.tell(opt_X, opt_y)  # !fit: costly
                 new_X = self._opt.ask(
                     n_points=len(new_results), strategy=self._liar_strategy
                 )

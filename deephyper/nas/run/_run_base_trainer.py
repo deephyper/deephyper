@@ -40,7 +40,7 @@ def run_base_trainer(config):
     try:
         for i in range(len(physical_devices)):
             tf.config.experimental.set_memory_growth(physical_devices[i], True)
-    except:
+    except Exception:
         # Invalid device or cannot modify virtual devices once initialized.
         logger.info("error memory growth for GPU device")
 

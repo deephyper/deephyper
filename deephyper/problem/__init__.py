@@ -8,7 +8,7 @@ __all__ = ["HpProblem"]
 
 # make import of NaProblem optional
 try:
-    from ._neuralarchitecture import NaProblem
+    from ._neuralarchitecture import NaProblem  # noqa: F401
 
     __all__.append("NaProblem")
 except ModuleNotFoundError as e:

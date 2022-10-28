@@ -1,7 +1,6 @@
 import numbers
 import numpy as np
 import yaml
-import sys
 
 from scipy.stats.distributions import randint
 from scipy.stats.distributions import rv_discrete

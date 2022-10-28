@@ -1,8 +1,8 @@
 import time
 from functools import wraps
 
-#! info [why is it important to use "wraps"]
-#! http://gael-varoquaux.info/programming/decoration-in-python-done-right-decorating-and-pickling.html
+# !info [why is it important to use "wraps"]
+# !http://gael-varoquaux.info/programming/decoration-in-python-done-right-decorating-and-pickling.html
 
 
 def profile(run_function):

@@ -25,6 +25,7 @@ MAP_acq_func = {"UCB": "LCB", "qUCB": "qLCB"}
 
 MAP_filter_failures = {"min": "max"}
 
+
 # schedulers
 def scheduler_periodic_exponential_decay(i, eta_0, periode, rate):
     """Periodic exponential decay scheduler for exploration-exploitation."""
@@ -123,7 +124,7 @@ class CBO(Search):
             )
 
         if not (np.isscalar(kappa)):
-            raise ValueError(f"Parameter 'kappa' should be a scalar value!")
+            raise ValueError("Parameter 'kappa' should be a scalar value!")
 
         if not (np.isscalar(xi)):
             raise ValueError("Parameter 'xi' should be a scalar value!")
@@ -282,7 +283,7 @@ class CBO(Search):
         logging.info(f"Asking took {time.time() - t1:.4f} sec.")
 
         # Transform list to dict configurations
-        logging.info(f"Transforming configurations to dict...")
+        logging.info("Transforming configurations to dict...")
         t1 = time.time()
         new_batch = []
         for x in new_X:
@@ -340,7 +341,7 @@ class CBO(Search):
                     x = list(cfg.values())
                     if np.all(np.isreal(obj)):
                         opt_X.append(x)
-                        opt_y.append(np.negative(obj).tolist())  #! maximizing
+                        opt_y.append(np.negative(obj).tolist())  # !maximizing
                     elif (type(obj) is str and "F" == obj[0]) or np.any(
                         type(objval) is str and "F" == objval[0] for objval in obj
                     ):
@@ -373,7 +374,7 @@ class CBO(Search):
                 logging.info(f"Asking took {time.time() - t1:.4f} sec.")
 
                 # Transform list to dict configurations
-                logging.info(f"Transforming configurations to dict...")
+                logging.info("Transforming configurations to dict...")
                 t1 = time.time()
                 new_batch = []
                 for x in new_X:
@@ -531,7 +532,7 @@ class CBO(Search):
         # to make sdv optional
         try:
             import sdv
-        except ModuleNotFoundError as e:
+        except ModuleNotFoundError:
             raise deephyper.core.exceptions.MissingRequirementError(
                 "Installing 'sdv' is required to use 'fit_generative_model' please run 'pip install sdv'"
             )
@@ -545,7 +546,7 @@ class CBO(Search):
                 f"The passed DataFrame contains only {len(df)} results when a minimum of 10 is required!"
             )
 
-        #! avoid error linked to `n_components=10` a parameter of generative model used
+        # !avoid error linked to `n_components=10` a parameter of generative model used
         q_max = 1 - 10 / len(df)
         if q_max < q:
             warnings.warn(

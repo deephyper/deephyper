@@ -153,8 +153,8 @@ class KSearchSpace(NxSearchSpace):
         Returns:
             A keras.Model for the current search_space with the corresponding set of operations.
         """
-        #! the output layer does not have to be of the same shape as the data
-        #! this depends on the loss
+        # !the output layer does not have to be of the same shape as the data
+        # !this depends on the loss
         if type(self.output_node) is list:
             output_tensors = [
                 self.create_tensor_aux(self.graph, out) for out in self.output_node

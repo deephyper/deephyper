@@ -233,7 +233,7 @@ class BaseTrainer:
         self.valid_size = np.shape(self.valid_X[0])[0]
         if not all(map(lambda x: np.shape(x)[0] == self.valid_size, self.valid_X)):
             raise DeephyperRuntimeError(
-                f"All validation inputs data should have same length!"
+                "All validation inputs data should have same length!"
             )
 
     def preprocess_data(self):

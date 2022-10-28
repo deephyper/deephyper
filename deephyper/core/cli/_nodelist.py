@@ -55,11 +55,11 @@ def expand_nodelist(system, node_str):
 
     hostname = socket.gethostname()
     if "theta" in hostname:
-        l = _theta_nodelist(node_str)
+        node_list = _theta_nodelist(node_str)
     else:
-        l = [node_str]
+        node_list = [node_str]
 
-    return l
+    return node_list
 
 
 #

@@ -29,7 +29,7 @@ def selectLoss(name: str):
     """
     if callable(name):
         return name
-    if losses_func.get(name) == None and losses_obj.get(name) == None:
+    if losses_func.get(name) is None and losses_obj.get(name) is None:
         try:
             loaded_obj = load_attr(name)
             return loaded_obj

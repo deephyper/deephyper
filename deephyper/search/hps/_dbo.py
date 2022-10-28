@@ -66,6 +66,7 @@ class DBO(CBO):
         max_failures: int = 100,
         moo_scalarization_strategy: str = "Chebyshev",
         moo_scalarization_weight=None,
+        scheduler=None,
         **kwargs,
     ):
         # get the __init__ parameters
@@ -127,6 +128,7 @@ class DBO(CBO):
                 max_failures,
                 moo_scalarization_strategy,
                 moo_scalarization_weight,
+                scheduler,
                 **kwargs,
             )
         self._evaluator.comm.Barrier()
@@ -155,6 +157,7 @@ class DBO(CBO):
                 max_failures,
                 moo_scalarization_strategy,
                 moo_scalarization_weight,
+                scheduler,
                 **kwargs,
             )
         self._evaluator.comm.Barrier()

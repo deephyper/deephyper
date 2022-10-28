@@ -1,10 +1,8 @@
 import abc
 import copy
 import functools
-import logging
 import os
 import pathlib
-import time
 
 import numpy as np
 import pandas as pd
@@ -99,7 +97,7 @@ class Search(abc.ABC):
                     f"'timeout' shoud be of type'int' but is of type '{type(timeout)}'!"
                 )
             if timeout <= 0:
-                raise ValueError(f"'timeout' should be > 0!")
+                raise ValueError("'timeout' should be > 0!")
 
         if np.isscalar(timeout) and timeout > 0:
             self._evaluator.set_timeout(timeout)

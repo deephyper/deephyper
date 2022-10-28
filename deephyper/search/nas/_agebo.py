@@ -91,7 +91,7 @@ class AgEBO(RegularizedEvolution):
             )
 
         if not (np.isscalar(kappa)):
-            raise ValueError(f"Parameter 'kappa' should be a scalar value!")
+            raise ValueError("Parameter 'kappa' should be a scalar value!")
 
         if not (np.isscalar(xi)):
             raise ValueError("Parameter 'xi' should be a scalar value!")
@@ -106,7 +106,7 @@ class AgEBO(RegularizedEvolution):
             )
 
         if not (type(n_jobs) is int):
-            raise ValueError(f"Parameter 'n_jobs' should be an integer value!")
+            raise ValueError("Parameter 'n_jobs' should be an integer value!")
 
         self._n_initial_points = n_initial_points
         self._initial_points = []
@@ -220,7 +220,7 @@ class AgEBO(RegularizedEvolution):
                         hp_results_X.append(new_i_hp_values)
                         hp_results_y.append(-new_i_y)
 
-                    self._hp_opt.tell(hp_results_X, hp_results_y)  #! fit: costly
+                    self._hp_opt.tell(hp_results_X, hp_results_y)  # !fit: costly
                     new_hps = self._hp_opt.ask(
                         n_points=len(new_results), strategy=self._liar_strategy
                     )
@@ -246,7 +246,7 @@ class AgEBO(RegularizedEvolution):
                         hp_results_X.append(new_i_hp_values)
                         hp_results_y.append(-new_i_y)
 
-                    self._hp_opt.tell(hp_results_X, hp_results_y)  #! fit: costly
+                    self._hp_opt.tell(hp_results_X, hp_results_y)  # !fit: costly
                     new_hps = self._hp_opt.ask(
                         n_points=len(new_results), strategy=self._liar_strategy
                     )

@@ -142,5 +142,5 @@ class Lhs(InitialPointGenerator):
             for j in range(n_dim):
                 h[:, j] = u[:, j] * np.diff(x) + x[:n_samples]
         else:
-            raise ValueError("Wrong lhs_type. Got ".format(self.lhs_type))
+            raise ValueError("Wrong lhs_type. Got {}".format(self.lhs_type))
         return _random_permute_matrix(h, random_state=rng)

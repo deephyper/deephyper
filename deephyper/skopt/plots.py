@@ -954,7 +954,7 @@ def _get_ylim_diagonal(ax):
         # Get ylim for all diagonal plots.
         ylim = [ax[row, row].get_ylim() for row in range(n_dims)]
     else:
-        n_dim = 1
+        n_dim = 1  # noqa: F841
         ylim = [ax.get_ylim()]
 
     # Separate into two lists with low and high ylim.

@@ -186,7 +186,7 @@ def run_autosklearn1(config: dict, load_data: callable) -> float:
             clf.fit(X_train, y_train)
 
         fit_is_complete = True
-    except:
+    except:  # noqa: E722
         fit_is_complete = False
 
     if fit_is_complete:

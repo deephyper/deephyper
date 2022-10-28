@@ -81,7 +81,7 @@ class MoScalarFunction(abc.ABC):
             ValueError: Raised if yi is not a list of scalars each of length _n_objectives.
         """
         if not is_listlike(yi):
-            raise ValueError(f"expected yi to be a list")
+            raise ValueError("expected yi to be a list")
         for y in yi:
             self._check_shape(y)
         y_max = np.max(yi, axis=0)

@@ -11,7 +11,7 @@ from deephyper.evaluator._evaluator import Evaluator
 
 import mpi4py
 
-#! To avoid initializing MPI when module is imported (MPI is optional)
+# !To avoid initializing MPI when module is imported (MPI is optional)
 mpi4py.rc.initialize = False
 mpi4py.rc.finalize = True
 from mpi4py import MPI
@@ -35,7 +35,7 @@ def execute_function(handle: pymargo.core.Handle, func, *args, **kwargs):
 
 def margo_server(comm, protocol):
     with pymargo.core.Engine(protocol, mode=pymargo.server) as engine:
-        comm.send(engine.address)  #! temporary
+        comm.send(engine.address)  # !temporary
         engine.register("execute_function", execute_function)
         engine.enable_remote_shutdown()
         engine.wait_for_finalize()
@@ -62,7 +62,7 @@ class MochiEvaluator(Evaluator):
 
         self._protocol = protocol
 
-        #! use of MPI is temporary to initialise addresses
+        # !use of MPI is temporary to initialise addresses
         if not MPI.Is_initialized():
             MPI.Init_thread()
 
@@ -73,7 +73,7 @@ class MochiEvaluator(Evaluator):
         if self._rank == 0:  # master
 
             self.sem = asyncio.Semaphore(num_workers)
-            #! creating the exector once here is crutial to avoid repetitive overheads
+            # !creating the exector once here is crutial to avoid repetitive overheads
             self.executor = ProcessPoolExecutor(max_workers=num_workers)
 
             if hasattr(run_function, "__name__") and hasattr(

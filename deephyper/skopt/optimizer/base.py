@@ -12,8 +12,6 @@ try:
 except ImportError:
     from collections import Iterable
 
-import numpy as np
-
 from ..callbacks import check_callback
 from ..callbacks import VerboseCallback
 from .optimizer import Optimizer

@@ -8,7 +8,7 @@ from deephyper.evaluator import Job
 
 import mpi4py
 
-#! To avoid initializing MPI when module is imported (MPI is optional)
+# !To avoid initializing MPI when module is imported (MPI is optional)
 mpi4py.rc.initialize = False
 mpi4py.rc.finalize = True
 from mpi4py import MPI

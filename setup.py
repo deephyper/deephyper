@@ -38,7 +38,7 @@ REQUIRED = [
 ]
 
 
-#! Requirements for Neural Architecture Search (NAS)
+# !Requirements for Neural Architecture Search (NAS)
 REQUIRED_NAS = ["networkx", "pydot"]
 
 REQUIRED_NAS_PLATFORM = {
@@ -50,10 +50,10 @@ if "macOS" in platform_infos and "arm64" in platform_infos:
 else:  # x86_64
     REQUIRED_NAS = REQUIRED_NAS + REQUIRED_NAS_PLATFORM["default"]
 
-#! Requirements for Pipeline Optimization for ML (popt)
+# !Requirements for Pipeline Optimization for ML (popt)
 REQUIRED_POPT = ["xgboost"]
 
-#! Requirements for Automated Deep Ensemble with Uncertainty Quantification (AutoDEUQ)
+# !Requirements for Automated Deep Ensemble with Uncertainty Quantification (AutoDEUQ)
 REQUIRED_AUTODEUQ = REQUIRED_NAS + ["ray"]
 
 
@@ -71,8 +71,8 @@ EXTRAS = {
         "twine",
         # Formatter and Linter
         "black",
+        "flake8",
         "pre-commit",
-        "pylint",
         "rstcheck",
         # Documentation
         "GitPython",
