@@ -246,8 +246,12 @@ class CBO(Search):
 
             scheduler_params.update(scheduler)
             eta_0 = np.array([kappa, xi])
-            self.scheduler = functools.partial(scheduler_func, eta_0=eta_0, **scheduler_params)
-            logging.info(f"Set up scheduler '{scheduler_type}' with parameters '{scheduler_params}'")
+            self.scheduler = functools.partial(
+                scheduler_func, eta_0=eta_0, **scheduler_params
+            )
+            logging.info(
+                f"Set up scheduler '{scheduler_type}' with parameters '{scheduler_params}'"
+            )
 
     def _setup_optimizer(self):
         if self._fitted:
@@ -259,7 +263,9 @@ class CBO(Search):
         if self.scheduler is not None:
             kappa, xi = self.scheduler(i)
             values = {"kappa": kappa, "xi": xi}
-            logging.info(f"Updated exploration-exploitation policy with {values} from scheduler")
+            logging.info(
+                f"Updated exploration-exploitation policy with {values} from scheduler"
+            )
             self._opt.acq_func_kwargs.update(values)
 
     def _search(self, max_evals, timeout):
@@ -351,7 +357,7 @@ class CBO(Search):
 
                 # apply scheduler
                 self._apply_scheduler(i=num_local_evals_done)
-                
+
                 logging.info("Fitting the optimizer...")
                 t1 = time.time()
 

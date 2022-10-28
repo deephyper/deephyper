@@ -71,6 +71,8 @@ EXTRAS = {
         "twine",
         # Formatter and Linter
         "black",
+        "pre-commit",
+        "pylint",
         "rstcheck",
         # Documentation
         "GitPython",
