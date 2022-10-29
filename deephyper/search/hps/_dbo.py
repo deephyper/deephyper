@@ -89,17 +89,17 @@ class DBO(CBO):
 
         if acq_func[0] == "q":
             kappa = scipy.stats.truncexpon.rvs(kappa, size=self._evaluator.size)[
-                    self._evaluator.rank
+                self._evaluator.rank
             ]
             xi = scipy.stats.truncexpon.rvs(xi, size=self._evaluator.size)[
-                    self._evaluator.rank
+                self._evaluator.rank
             ]
-            #kappa = random_state.exponential(kappa, size=self._evaluator.size)[
+            # kappa = random_state.exponential(kappa, size=self._evaluator.size)[
             #    self._evaluator.rank
-            #]
-            #xi = random_state.exponential(xi, size=self._evaluator.size)[
+            # ]
+            # xi = random_state.exponential(xi, size=self._evaluator.size)[
             #    self._evaluator.rank
-            ]
+            # ]
             acq_func = acq_func[1:]
 
         # set random state for given rank
