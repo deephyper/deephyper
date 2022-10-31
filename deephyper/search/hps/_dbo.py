@@ -88,12 +88,18 @@ class DBO(CBO):
                 acq_optimizer = "boltzmann_sampling"
 
         if acq_func[0] == "q":
-            kappa = scipy.stats.truncexpon.rvs(kappa, size=self._evaluator.size)[
-                self._evaluator.rank
-            ]
-            xi = scipy.stats.truncexpon.rvs(xi, size=self._evaluator.size)[
-                self._evaluator.rank
-            ]
+            # kappa = scipy.stats.truncexpon.rvs(kappa, size=self._evaluator.size)[
+            #     self._evaluator.rank
+            # ]
+            # xi = scipy.stats.truncexpon.rvs(xi, size=self._evaluator.size)[
+            #     self._evaluator.rank
+            # ]
+            kappa = scipy.stats.expon.rvs(
+                size=self._evaluator.size, scale=kappa, random_state=random_state
+            )[self._evaluator.rank]
+            xi = scipy.stats.expon.rvs(
+                size=self._evaluator.size, scale=xi, random_state=random_state
+            )[self._evaluator.rank]
             # kappa = random_state.exponential(kappa, size=self._evaluator.size)[
             #    self._evaluator.rank
             # ]
