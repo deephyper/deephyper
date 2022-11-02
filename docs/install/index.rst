@@ -6,6 +6,5 @@ Installations
 
    local
    spack
-   ThetaKNL (ALCF) <theta>
-   ThetaGPU (ALCF) <thetagpu>
-   cooley
+   Argonne Leadership Computing Facility (ALCF) <alcf>
+   National Energy Research Scientific Computing (NERSC) <nersc>
