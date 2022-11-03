@@ -940,7 +940,7 @@ class Optimizer(object):
         # after being "told" n_initial_points we switch from sampling
         # random points to using a surrogate model
         if fit and self._n_initial_points <= 0 and self.base_estimator_ is not None:
-            transformed_bounds = np.array(self.space.transformed_bounds)
+            transformed_bounds = self.space.transformed_bounds
             est = clone(self.base_estimator_)
 
             # handle failures
@@ -964,6 +964,8 @@ class Optimizer(object):
                 if len(self.bi) > 0:
                     bi = np.asarray(self.bi).reshape(-1, 1)
                     Xtt = np.hstack((Xtt, bi))
+                    max_budget = np.max(bi)
+                    transformed_bounds.append((max_budget, max_budget))
 
                 # preprocessing of output space
                 yi = self.objective_scaler.fit_transform(
@@ -1062,11 +1064,6 @@ class Optimizer(object):
                     elif self.acq_optimizer == "lbfgs":
                         x0 = X[np.argsort(values)[: self.n_restarts_optimizer]]
 
-                        bounds = self.space.transformed_bounds
-                        if len(self.bi) > 0:
-                            max_bi = np.max(self.bi)
-                            bounds.append((max_bi, max_bi))
-
                         with warnings.catch_warnings():
                             warnings.simplefilter("ignore")
                             results = Parallel(n_jobs=self.n_jobs)(
@@ -1079,7 +1076,7 @@ class Optimizer(object):
                                         cand_acq_func,
                                         self.acq_func_kwargs,
                                     ),
-                                    bounds=bounds,
+                                    bounds=transformed_bounds,
                                     approx_grad=False,
                                     maxiter=20,
                                 )
@@ -1094,6 +1091,7 @@ class Optimizer(object):
                     # precision errors.
                     if not self.space.is_categorical:
                         if not self.space.is_config_space:
+                            transformed_bounds = np.asarray(transformed_bounds)
                             next_x = np.clip(
                                 next_x,
                                 transformed_bounds[:, 0],
