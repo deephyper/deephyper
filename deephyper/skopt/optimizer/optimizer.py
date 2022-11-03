@@ -31,6 +31,7 @@ from ..utils import (
     is_2Dlistlike,
     is_listlike,
     normalize_dimensions,
+    cook_objective_scaler,
 )
 
 
@@ -228,6 +229,7 @@ class Optimizer(object):
         sample_strategy="quantile",
         moo_scalarization_strategy="Chebyshev",
         moo_scalarization_weight=None,
+        objective_scaler="auto",
     ):
         args = locals().copy()
         del args["self"]
@@ -296,6 +298,12 @@ class Optimizer(object):
             self.base_estimator_ = MultiOutputRegressor(base_estimator)
         else:
             self.base_estimator_ = base_estimator
+
+        # preprocessing of target variable
+        self.objective_scaler_ = objective_scaler
+        self.objective_scaler = cook_objective_scaler(
+            objective_scaler, self.base_estimator_
+        )
 
         # Configure optimizer
 
@@ -429,6 +437,10 @@ class Optimizer(object):
         self._sample_max_size = sample_max_size
         self._sample_strategy = sample_strategy
 
+        # parameters for multifidelity
+        self._use_multifidelity = False
+        self.bi = []
+
     def copy(self, random_state=None):
         """Create a shallow copy of an instance of the optimizer.
 
@@ -455,6 +467,7 @@ class Optimizer(object):
             sample_max_size=self._sample_max_size,
             sample_strategy=self._sample_strategy,
             moo_scalarization_strategy=self._moo_scalarization_strategy[idx:],
+            objective_scaler=self.objective_scaler_,
         )
 
         optimizer._initial_samples = self._initial_samples
@@ -465,8 +478,10 @@ class Optimizer(object):
 
         if hasattr(self, "gains_"):
             optimizer.gains_ = np.copy(self.gains_)
+
         if self.Xi:
-            optimizer._tell(self.Xi, self.yi)
+            budget = None if len(self.bi) == 0 else self.bi
+            optimizer._tell(self.Xi, self.yi, budget=budget)
 
         return optimizer
 
@@ -501,10 +516,14 @@ class Optimizer(object):
                flavours of `cl_x` strategies.
 
         """
-        if n_points is None:
+        if n_points is None or n_points == 1:
             x = self._ask()
             self.sampled.append(x)
-            return x
+
+            if n_points is None:
+                return x
+            else:
+                return [x]
 
         if n_points > 0 and (
             self._n_initial_points > 0 or self.base_estimator_ is None
@@ -543,56 +562,66 @@ class Optimizer(object):
             )
 
         # handle one-shot strategies (topk, softmax)
-        if hasattr(self, "_last_X") and strategy == "topk":
-            idx = np.argsort(self._last_values)[:n_points]
-            next_samples = self._last_X[idx].tolist()
+        if hasattr(self, "_last_X") and strategy in ["topk", "boltzmann"]:
 
-            # to track sampled values and avoid duplicates
-            self.sampled.extend(next_samples)
+            if strategy == "topk":
+                idx = np.argsort(self._last_values)[:n_points]
+                next_samples = self._last_X[idx].tolist()
 
-            return next_samples
+                # to track sampled values and avoid duplicates
+                self.sampled.extend(next_samples)
 
-        if hasattr(self, "_last_X") and strategy == "boltzmann":
-            values = -self._last_values
+                return next_samples
 
-            self._min_value = (
-                self._min_value
-                if self._min_value is None
-                else min(values.min(), self._min_value)
-            )
-            self._max_value = (
-                self._max_value
-                if self._max_value is None
-                else max(values.max(), self._max_value)
-            )
+            elif strategy == "boltmann":
+                values = -self._last_values
 
-            idx = [np.argmax(values)]
-            max_trials = 100
-            trials = 0
+                self._min_value = (
+                    self._min_value
+                    if self._min_value is None
+                    else min(values.min(), self._min_value)
+                )
+                self._max_value = (
+                    self._max_value
+                    if self._max_value is None
+                    else max(values.max(), self._max_value)
+                )
 
-            while len(idx) < n_points:
+                idx = [np.argmax(values)]
+                max_trials = 100
+                trials = 0
 
-                t = len(self.sampled)
-                if t == 0:
-                    beta = 0
-                else:
-                    beta = (
-                        self.boltzmann_gamma
-                        * np.log(t)
-                        / np.abs(self._max_value - self._min_value)
-                    )
+                while len(idx) < n_points:
 
-                probs = boltzman_distribution(values, beta)
+                    t = len(self.sampled)
+                    if t == 0:
+                        beta = 0
+                    else:
+                        beta = (
+                            self.boltzmann_gamma
+                            * np.log(t)
+                            / np.abs(self._max_value - self._min_value)
+                        )
 
-                new_idx = np.argmax(self.rng.multinomial(1, probs))
+                    probs = boltzman_distribution(values, beta)
 
-                if self.filter_duplicated and new_idx in idx and trials < max_trials:
-                    trials += 1
-                else:
-                    idx.append(new_idx)
-                    self.sampled.append(self._last_X[new_idx].tolist())
+                    new_idx = np.argmax(self.rng.multinomial(1, probs))
 
-            return self._last_X[idx].tolist()
+                    if (
+                        self.filter_duplicated
+                        and new_idx in idx
+                        and trials < max_trials
+                    ):
+                        trials += 1
+                    else:
+                        idx.append(new_idx)
+                        self.sampled.append(self._last_X[new_idx].tolist())
+
+                return self._last_X[idx].tolist()
+            else:
+                raise ValueError(
+                    f"'{strategy}' is not a valid multi-point acquisition strategy!"
+                )
 
         # q-ACQ multi point acquisition for centralized setting
         if hasattr(self, "_est") and self.acq_func == "qLCB":
@@ -601,6 +630,12 @@ class Optimizer(object):
             X_c = self.space.imp_const.fit_transform(
                 self.space.transform(X_s)
             )  # candidates
+
+            # add budget to input space if used
+            if len(self.bi) > 0:
+                max_budget = np.full((len(X_c), 1), fill_value=np.max(self.bi))
+                X_c = np.hstack((X_c, max_budget))
+
             mu, std = self._est.predict(X_c, return_std=True)
             kappa = self.acq_func_kwargs.get("kappa", 1.96)
             kappas = self.rng.exponential(kappa, size=n_points)
@@ -622,6 +657,7 @@ class Optimizer(object):
         opt = self.copy(random_state=self.rng.randint(0, np.iinfo(np.int32).max))
 
         X = []
+        max_budget = None if len(self.bi) == 0 else np.max(self.bi)
         for i in range(n_points):
             x = opt.ask()
             self.sampled.append(x)
@@ -650,9 +686,9 @@ class Optimizer(object):
             if "ps" in self.acq_func:
                 # Use `_tell()` instead of `tell()` to prevent repeated
                 # log transformations of the computation times.
-                opt._tell(x, (y_lie, t_lie))
+                opt._tell(x, (y_lie, t_lie), budget=max_budget)
             else:
-                opt._tell(x, y_lie)
+                opt._tell(x, y_lie, budget=max_budget)
 
         self.cache_ = {(n_points, strategy): X}  # cache_ the result
 
@@ -804,7 +840,7 @@ class Optimizer(object):
             # return point computed from last call to tell()
             return next_x
 
-    def tell(self, x, y, fit=True):
+    def tell(self, x, y, fit=True, budget=None):
         """Record an observation (or several) of the objective function.
 
         Provide values of the objective function at points suggested by
@@ -830,6 +866,9 @@ class Optimizer(object):
             Fit a model to observed evaluations of the objective. A model will
             only be fitted after `n_initial_points` points have been told to
             the optimizer irrespective of the value of `fit`.
+
+        budget : scalar or list, default: None
+            Value of the budget used to observe the corresponding objective.
         """
         if self.space.is_config_space:
             pass
@@ -838,6 +877,10 @@ class Optimizer(object):
 
         self._check_y_is_valid(x, y)
 
+        # budget and y are checked in similar ways
+        if budget is not None:
+            self._check_y_is_valid(x, budget)
+
         # take the logarithm of the computation times
         if "ps" in self.acq_func:
             if is_2Dlistlike(x):
@@ -845,9 +888,9 @@ class Optimizer(object):
             elif is_listlike(x):
                 y = list(y)
                 y[1] = log(y[1])
-        return self._tell(x, y, fit=fit)
+        return self._tell(x, y, fit=fit, budget=budget)
 
-    def _tell(self, x, y, fit=True):
+    def _tell(self, x, y, fit=True, budget=None):
         """Perform the actual work of incorporating one or more new points.
         See `tell()` for the full description.
 
@@ -877,6 +920,20 @@ class Optimizer(object):
                 "not compatible." % (type(x), type(y))
             )
 
+        if budget is not None:
+            if type(budget) is list:
+                pass
+            elif type(budget) is float or type(budget) is int:
+                budget = [budget]
+            else:
+                raise ValueError(
+                    "The 'budget' should be composed of int or float values matching the shape of 'y'."
+                )
+
+            self.bi.extend(budget)
+
+            assert len(self.bi) == len(self.yi)
+
         # optimizer learned something new - discard cache
         self.cache_ = {}
 
@@ -898,7 +955,21 @@ class Optimizer(object):
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
+
+                # preprocessing of input space
                 Xtt = self.space.imp_const.fit_transform(self.space.transform(Xi))
+                Xtt = np.asarray(Xtt)
+
+                # add budget as input
+                if len(self.bi) > 0:
+                    bi = np.asarray(self.bi).reshape(-1, 1)
+                    Xtt = np.hstack((Xtt, bi))
+
+                # preprocessing of output space
+                yi = self.objective_scaler.fit_transform(
+                    np.reshape(yi, (-1, 1))
+                ).reshape(-1)
+
                 est.fit(Xtt, yi)
 
             # for qLCB save the fitted estimator and skip the selection
@@ -924,6 +995,12 @@ class Optimizer(object):
                 X_s = self._filter_duplicated(X_s)
 
                 X = self.space.imp_const.fit_transform(self.space.transform(X_s))
+
+                # add max budget as input for all samples
+                if len(self.bi) > 0:
+                    max_budget = np.full((len(X), 1), fill_value=np.max(self.bi))
+                    X = np.hstack((X, max_budget))
+
                 self.next_xs_ = []
                 for cand_acq_func in self.cand_acq_funcs_:
                     values = _gaussian_acquisition(
@@ -935,7 +1012,8 @@ class Optimizer(object):
                     )
 
                     # cache these values in case the strategy of ask is one-shot
-                    self._last_X = X
+                    # if budget is used we need to remove it from input space
+                    self._last_X = X[:, :-1] if len(self.bi) > 0 else X
                     self._last_values = values
 
                     # Find the minimum of the acquisition function by randomly
@@ -984,6 +1062,11 @@ class Optimizer(object):
                     elif self.acq_optimizer == "lbfgs":
                         x0 = X[np.argsort(values)[: self.n_restarts_optimizer]]
 
+                        bounds = self.space.transformed_bounds
+                        if len(self.bi) > 0:
+                            max_bi = np.max(self.bi)
+                            bounds.append((max_bi, max_bi))
+
                         with warnings.catch_warnings():
                             warnings.simplefilter("ignore")
                             results = Parallel(n_jobs=self.n_jobs)(
@@ -996,7 +1079,7 @@ class Optimizer(object):
                                         cand_acq_func,
                                         self.acq_func_kwargs,
                                     ),
-                                    bounds=self.space.transformed_bounds,
+                                    bounds=bounds,
                                     approx_grad=False,
                                     maxiter=20,
                                 )
@@ -1016,7 +1099,12 @@ class Optimizer(object):
                                 transformed_bounds[:, 0],
                                 transformed_bounds[:, 1],
                             )
-                    self.next_xs_.append(next_x)
+
+                    # if budget is used we need to remove the feature from the input space
+                    if len(self.bi) > 0:
+                        self.next_xs_.append(next_x[:-1])
+                    else:
+                        self.next_xs_.append(next_x)
 
                 if self.acq_func == "gp_hedge":
                     logits = np.array(self.gains_)

@@ -92,6 +92,7 @@ class CBO(Search):
         moo_scalarization_strategy: str = "Chebyshev",
         moo_scalarization_weight=None,
         scheduler=None,
+        objective_scaler="auto",
         **kwargs,
     ):
 
@@ -228,6 +229,7 @@ class CBO(Search):
             random_state=self._random_state,
             moo_scalarization_strategy=self._moo_scalarization_strategy,
             moo_scalarization_weight=self._moo_scalarization_weight,
+            objective_scaler=objective_scaler,
         )
 
         self._gather_type = "ALL" if sync_communication else "BATCH"
@@ -335,10 +337,18 @@ class CBO(Search):
                 logging.info("Transforming received configurations to list...")
                 t1 = time.time()
 
-                opt_X = []
-                opt_y = []
-                for cfg, obj in new_results:
+                opt_X = []  # input configuration
+                opt_y = []  # objective value
+                opt_b = []  # budget (optional)
+                # for cfg, obj in new_results:
+                for job_i in new_results:
+                    cfg, obj = job_i
                     x = list(cfg.values())
+
+                    # retrieve budget consumed by job
+                    if job_i.budget is not None:
+                        opt_b.append(job_i.budget)
+
                     if np.all(np.isreal(obj)):
                         opt_X.append(x)
                         opt_y.append(np.negative(obj).tolist())  # !maximizing
@@ -363,7 +373,8 @@ class CBO(Search):
                 t1 = time.time()
 
                 if len(opt_y) > 0:
-                    self._opt.tell(opt_X, opt_y)
+                    opt_b = None if len(opt_b) == 0 else opt_b
+                    self._opt.tell(opt_X, opt_y, budget=opt_b)
                     logging.info(f"Fitting took {time.time() - t1:.4f} sec.")
 
                 logging.info(f"Asking {num_new_local_results} new configurations...")

@@ -248,6 +248,10 @@ class Evaluator:
 
         # if the user returns other information than the objective
         if isinstance(job.result, dict) and "objective" in job.result:
+
+            if "budget" in job.result:
+                job.budget = job.result.pop("budget")
+
             job.other = {k: v for k, v in job.result.items() if k != "objective"}
             job.result = job.result["objective"]
 
@@ -387,11 +391,17 @@ class Evaluator:
                     for i in range(self.num_objective):
                         result[f"objective_{i}"] = obj
 
+            # job id and rank
             result["job_id"] = job.id
 
             if isinstance(job.rank, int):
                 result["rank"] = job.rank
 
+            # budget
+            if job.budget is not None:
+                result["budget"] = job.budget
+
+            # profiling
             result["timestamp_submit"] = job.timestamp_submit
             result["timestamp_gather"] = job.timestamp_gather
 
@@ -405,8 +415,8 @@ class Evaluator:
             if isinstance(job.other, dict):
                 result.update(job.other)
 
-            if "p:optuna_trial" in result:
-                result.pop("p:optuna_trial")
+            # if "p:optuna_trial" in result:
+            #     result.pop("p:optuna_trial")
 
             resultsList.append(result)
 

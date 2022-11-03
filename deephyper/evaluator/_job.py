@@ -26,8 +26,9 @@ class Job:
         self.timestamp_submit = None  # in seconds
         self.timestamp_gather = None  # in seconds
         self.status = self.READY
-        self.result = None
-        self.other = None
+        self.result = None  # objective values
+        self.other = None  # other data returned to be logged
+        self.budget = None  # consumed budget
 
     def __repr__(self) -> str:
         if self.rank is not None:
