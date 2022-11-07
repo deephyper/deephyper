@@ -832,8 +832,13 @@ class CBO(Search):
         """
         res = {}
         hps_names = self._problem.hyperparameter_names
-        for i in range(len(x)):
-            res[hps_names[i]] = x[i]
+
+        # to enforce native python types instead of numpy types
+        x = map(lambda xi: getattr(xi, "tolist", lambda: xi)(), x)
+
+        for hps_name, xi in zip(hps_names, x):
+            res[hps_name] = xi
+
         return res
 
 
