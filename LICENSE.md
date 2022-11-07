@@ -1,7 +1,5 @@
-Copyright 2018, Argonne National Laboratory
+Copyright (c) 2018-2022, UChicago Argonne, LLC and the DeepHyper Development Team
 All Rights Reserved
-DeepHyper, Version 0.1
-Prasanna Balaprakash, Romain Egele, Misha Salim, Venkat Vishwanath, and Stefan Wild.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 
