@@ -29,8 +29,8 @@ Then, create a conda environment:
 
 .. code-block:: console
 
-    $ conda create -n dhenv python=3.9 -y
-    $ conda activate dhenv
+    $ conda create -n dh python=3.9 -y
+    $ conda activate dh
     $ conda install gxx_linux-64 gcc_linux-64
 
 
@@ -40,11 +40,30 @@ Now a crucial step is to install CUDA aware mpi4py, following the instructions g
 
     $ MPICC="cc -target-accel=nvidia80 -shared" CC=nvc CFLAGS="-noswitcherror" pip install --force --no-cache-dir --no-binary=mpi4py mpi4py
 
-Then we install deephyper and other packages if required:
+Perlmutter (as of November 2022) lacks support for a few mpi4py functionalities such as the MPI_Mprobe. More details are provided on the NERSC issues `page <https://docs.nersc.gov/current/#ongoing-issues>`_. The workaround is to disable using matched probes to receive objects as follows: 
+
+.. code-block:: console
+
+    $ export MPI4PY_RC_RECV_MPROBE='False'
+
+
+Then we install some of the other dependencies:
+    
+.. code-block:: console
+
+    $ pip install tensorflow==2.9.2
+    $ pip install kiwisolver
+    $ pip install cycler
+    $ pip install matplotlib
+    $ pip install progressbar2
+    $ pip install networkx[default]
+
+Finally we install deephyper:
 
 .. code-block:: console
 
     $ pip install deephyper
+
 
 Finally you can verify the version of the installed deephyper package:
 
@@ -61,4 +80,7 @@ Do not forget to reload the installed dependencies each time you want to use Dee
     module load PrgEnv-nvidia cudatoolkit python
     module load cudnn/8.2.0
     source /global/common/software/nersc/pm-2022q3/sw/python/3.9-anaconda-2021.11/etc/profile.d/conda.sh
+    export MPI4PY_RC_RECV_MPROBE='False'
     conda activate dh
+    
+    

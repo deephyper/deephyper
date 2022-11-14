@@ -547,7 +547,7 @@ class CBO(Search):
             import sdv
         except ModuleNotFoundError:
             raise deephyper.core.exceptions.MissingRequirementError(
-                "Installing 'sdv' is required to use 'fit_generative_model' please run 'pip install sdv'"
+                "Installing 'sdv' is required to use 'fit_generative_model' please run 'pip install \"deephyper[sdv]\"'"
             )
 
         if type(df) is str and df[-4:] == ".csv":
@@ -569,21 +569,18 @@ class CBO(Search):
             q = q_max
 
         # check single or multiple objectives
+        hp_cols = [k for k in df.columns if "p:" == k[:2]]
         if "objective" in df.columns:
             # filter failures
             if pd.api.types.is_string_dtype(df.objective):
                 df = df[~df.objective.str.startswith("F")]
                 df.objective = df.objective.astype(float)
 
-            # print(df.objective.values)
             q_val = np.quantile(df.objective.values, q)
             req_df = df.loc[df["objective"] > q_val]
-            req_df = req_df.drop(
-                columns=["job_id", "objective", "timestamp_submit", "timestamp_gather"]
-            )
         else:
             # filter failures
-            objcol = df.filter(regex=r"^objective_\d+$").columns
+            objcol = list(df.filter(regex=r"^objective_\d+$").columns)
             for col in objcol:
                 if pd.api.types.is_string_dtype(df[col]):
                     df = df[~df[col].str.startswith("F")]
@@ -591,10 +588,9 @@ class CBO(Search):
 
             top = non_dominated_set_ranked(-np.asarray(df[objcol]), 1.0 - q)
             req_df = df.loc[top]
-            req_df = req_df.drop(columns=objcol)
-            req_df = req_df.drop(
-                columns=["job_id", "timestamp_submit", "timestamp_gather"]
-            )
+
+        req_df = req_df[hp_cols]
+        req_df = req_df.rename(columns={k: k[2:] for k in hp_cols})
 
         # constraints
         scalar_constraints = []
@@ -611,7 +607,9 @@ class CBO(Search):
                     req_df[hp_name] = req_df[hp_name].astype("O")
                 else:
                     scalar_constraints.append(
-                        sdv.constraints.Between(hp_name, hp.lower, hp.upper)
+                        sdv.constraints.ScalarRange(
+                            hp_name, hp.lower, hp.upper, strict_boundaries=True
+                        )
                     )
 
         with warnings.catch_warnings():

@@ -56,12 +56,16 @@ REQUIRED_POPT = ["xgboost"]
 # !Requirements for Automated Deep Ensemble with Uncertainty Quantification (AutoDEUQ)
 REQUIRED_AUTODEUQ = REQUIRED_NAS + ["ray"]
 
+# !Transfer Learning for Bayesian Optimization with SVD
+REQUIRED_TL_SDV = ["sdv>=0.17.1"]
+
 
 # What packages are optional?
 EXTRAS = {
     "nas": REQUIRED_NAS,  # neural architecture search
     "popt": REQUIRED_POPT,  # pipeline optimization for ml
-    "autodeuq": REQUIRED_AUTODEUQ,  # automated deep ensemble with uncertainty quantificationm
+    "autodeuq": REQUIRED_AUTODEUQ,  # automated deep ensemble with uncertainty quantification
+    "sdv": REQUIRED_TL_SDV,  # transfer learning for bayesian optimization
     "dev": [
         # Test
         "codecov",

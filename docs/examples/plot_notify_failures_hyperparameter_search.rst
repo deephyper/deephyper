@@ -99,7 +99,7 @@ Then, we define a centralized Bayesian optimization (CBO) search (i.e., master-w
         # for failure_strategy in ["min"]:
         print(f"Executing failure strategy: {failure_strategy}")
         evaluator = Evaluator.create(
-            run, method="serial", method_kwargs={"callbacks": [TqdmCallback(max_evals)]}
+            run, method="serial", method_kwargs={"callbacks": [TqdmCallback()]}
         )
         search = CBO(
             problem,
@@ -121,189 +121,59 @@ Then, we define a centralized Bayesian optimization (CBO) search (i.e., master-w
  .. code-block:: none
 
     Executing failure strategy: ignore
+      0%|          | 0/30 [00:00<?, ?it/s]      3%|3         | 1/30 [00:00<00:00, 3366.22it/s, failures=1, objective=None]      7%|6         | 2/30 [00:00<00:00, 132.20it/s, failures=1, objective=16]        10%|#         | 3/30 [00:00<00:00, 112.23it/s, failures=2, objective=16]     13%|#3        | 4/30 [00:00<00:00, 105.91it/s, failures=2, objective=16]     17%|#6        | 5/30 [00:00<00:00, 102.96it/s, failures=2, objective=32]     20%|##        | 6/30 [00:00<00:00, 101.04it/s, failures=3, objective=32]     23%|##3       | 7/30 [00:00<00:00, 47.14it/s, failures=3, objective=32]      23%|##3       | 7/30 [00:00<00:00, 47.14it/s, failures=3, objective=32]     27%|##6       | 8/30 [00:00<00:00, 47.14it/s, failures=3, objective=32]     30%|###       | 9/30 [00:00<00:00, 47.14it/s, failures=3, objective=32]     33%|###3      | 10/30 [00:00<00:00, 47.14it/s, failures=3, objective=32]     37%|###6      | 11/30 [00:00<00:00, 47.14it/s, failures=4, objective=32]     40%|####      | 12/30 [00:00<00:00, 47.14it/s, failures=4, objective=32]     43%|####3     | 13/30 [00:00<00:00, 47.14it/s, failures=4, objective=32]     47%|####6     | 14/30 [00:00<00:00, 48.29it/s, failures=4, objective=32]     47%|####6     | 14/30 [00:00<00:00, 48.29it/s, failures=5, objective=32]     50%|#####     | 15/30 [00:00<00:00, 48.29it/s, failures=5, objective=32]     53%|#####3    | 16/30 [00:00<00:00, 48.29it/s, failures=6, objective=32]     57%|#####6    | 17/30 [00:00<00:00, 48.29it/s, failures=7, objective=32]     60%|######    | 18/30 [00:00<00:00, 48.29it/s, failures=8, objective=32]     63%|######3   | 19/30 [00:00<00:00, 34.91it/s, failures=8, objective=32]     63%|######3   | 19/30 [00:00<00:00, 34.91it/s, failures=9, objective=32]     67%|######6   | 20/30 [00:00<00:00, 34.91it/s, failures=10, objective=32]     70%|#######   | 21/30 [00:00<00:00, 34.91it/s, failures=11, objective=32]     73%|#######3  | 22/30 [00:00<00:00, 34.91it/s, failures=12, objective=32]     77%|#######6  | 23/30 [00:00<00:00, 34.91it/s, failures=13, objective=32]     80%|########  | 24/30 [00:00<00:00, 34.91it/s, failures=14, objective=32]     83%|########3 | 25/30 [00:00<00:00, 34.91it/s, failures=15, objective=32]     87%|########6 | 26/30 [00:00<00:00, 34.91it/s, failures=16, objective=32]     90%|######### | 27/30 [00:00<00:00, 34.91it/s, failures=17, objective=32]     93%|#########3| 28/30 [00:00<00:00, 34.91it/s, failures=18, objective=32]     97%|#########6| 29/30 [00:00<00:00, 34.91it/s, failures=19, objective=32]    100%|##########| 30/30 [00:00<00:00, 34.91it/s, failures=20, objective=32]Executing failure strategy: mean
 
       0%|          | 0/30 [00:00<?, ?it/s]
-      3%|3         | 1/30 [00:00<00:00, 115.63it/s, objective=None]
-      7%|6         | 2/30 [00:00<00:00, 100.03it/s, objective=16]  
-     10%|#         | 3/30 [00:00<00:00, 95.91it/s, objective=16] 
-     13%|#3        | 4/30 [00:00<00:00, 93.57it/s, objective=16]
-     17%|#6        | 5/30 [00:00<00:00, 92.89it/s, objective=32]
-     20%|##        | 6/30 [00:00<00:00, 92.23it/s, objective=32]
-     23%|##3       | 7/30 [00:00<00:00, 50.17it/s, objective=32]
-     23%|##3       | 7/30 [00:00<00:00, 50.17it/s, objective=32]
-     27%|##6       | 8/30 [00:00<00:00, 50.17it/s, objective=32]
-     30%|###       | 9/30 [00:00<00:00, 50.17it/s, objective=32]
-     33%|###3      | 10/30 [00:00<00:00, 50.17it/s, objective=32]
-     37%|###6      | 11/30 [00:00<00:00, 50.17it/s, objective=32]
-     40%|####      | 12/30 [00:00<00:00, 50.17it/s, objective=32]
-     43%|####3     | 13/30 [00:00<00:00, 47.45it/s, objective=32]
-     43%|####3     | 13/30 [00:00<00:00, 47.45it/s, objective=32]
-     47%|####6     | 14/30 [00:00<00:00, 47.45it/s, objective=32]
-     50%|#####     | 15/30 [00:00<00:00, 47.45it/s, objective=32]
-     53%|#####3    | 16/30 [00:00<00:00, 47.45it/s, objective=32]
-     57%|#####6    | 17/30 [00:00<00:00, 47.45it/s, objective=32]
-     60%|######    | 18/30 [00:00<00:00, 20.45it/s, objective=32]
-     60%|######    | 18/30 [00:00<00:00, 20.45it/s, objective=32]
-     63%|######3   | 19/30 [00:00<00:00, 20.45it/s, objective=32]
-     67%|######6   | 20/30 [00:00<00:00, 20.45it/s, objective=32]
-     70%|#######   | 21/30 [00:00<00:00, 20.45it/s, objective=32]
-     73%|#######3  | 22/30 [00:00<00:00, 20.45it/s, objective=32]
-     77%|#######6  | 23/30 [00:00<00:00, 20.45it/s, objective=32]
-     80%|########  | 24/30 [00:00<00:00, 20.45it/s, objective=32]
-     83%|########3 | 25/30 [00:00<00:00, 20.45it/s, objective=32]
-     87%|########6 | 26/30 [00:00<00:00, 20.45it/s, objective=32]
-     90%|######### | 27/30 [00:00<00:00, 20.45it/s, objective=32]
-     93%|#########3| 28/30 [00:00<00:00, 20.45it/s, objective=32]
-     97%|#########6| 29/30 [00:00<00:00, 20.45it/s, objective=32]
-    100%|##########| 30/30 [00:00<00:00, 20.45it/s, objective=32]Executing failure strategy: mean
+      3%|3         | 1/30 [00:00<00:00, 38130.04it/s, failures=1, objective=None]
+      7%|6         | 2/30 [00:00<00:00, 180.59it/s, failures=1, objective=16]    
+     10%|#         | 3/30 [00:00<00:00, 136.75it/s, failures=2, objective=16]
+     13%|#3        | 4/30 [00:00<00:00, 121.90it/s, failures=2, objective=16]    100%|##########| 30/30 [00:00<00:00, 48.74it/s, failures=20, objective=32]
 
-
-      0%|          | 0/30 [00:00<?, ?it/s]    100%|##########| 30/30 [00:00<00:00, 40.87it/s, objective=32]
-
-
-      3%|3         | 1/30 [00:00<00:02, 13.83it/s, objective=None]
-
-      7%|6         | 2/30 [00:00<00:01, 23.90it/s, objective=16]  
-
-     10%|#         | 3/30 [00:00<00:00, 31.63it/s, objective=16]
-
-     13%|#3        | 4/30 [00:00<00:00, 37.78it/s, objective=16]
-
-     13%|#3        | 4/30 [00:00<00:00, 37.78it/s, objective=16]
-
-     17%|#6        | 5/30 [00:00<00:00, 37.78it/s, objective=32]
-
-     20%|##        | 6/30 [00:00<00:00, 37.78it/s, objective=32]
-
-     23%|##3       | 7/30 [00:00<00:00, 37.78it/s, objective=32]
-
-     27%|##6       | 8/30 [00:00<00:00, 37.14it/s, objective=32]
-
-     27%|##6       | 8/30 [00:00<00:00, 37.14it/s, objective=32]
-
-     30%|###       | 9/30 [00:00<00:00, 37.14it/s, objective=32]
-
-     33%|###3      | 10/30 [00:00<00:00, 37.14it/s, objective=32]
-
-     37%|###6      | 11/30 [00:00<00:00, 37.14it/s, objective=32]
-
-     40%|####      | 12/30 [00:00<00:01, 13.69it/s, objective=32]
-
-     40%|####      | 12/30 [00:00<00:01, 13.69it/s, objective=32]
-
-     43%|####3     | 13/30 [00:00<00:01, 13.69it/s, objective=32]
-
-     47%|####6     | 14/30 [00:01<00:01, 13.69it/s, objective=32]
-
-     50%|#####     | 15/30 [00:01<00:01,  8.03it/s, objective=32]
-
-     50%|#####     | 15/30 [00:01<00:01,  8.03it/s, objective=32]
-
-     53%|#####3    | 16/30 [00:01<00:01,  8.03it/s, objective=32]
-
-     57%|#####6    | 17/30 [00:01<00:02,  6.36it/s, objective=32]
-
-     57%|#####6    | 17/30 [00:01<00:02,  6.36it/s, objective=32]
-
-     60%|######    | 18/30 [00:02<00:01,  6.36it/s, objective=32]
-
-     63%|######3   | 19/30 [00:02<00:01,  5.51it/s, objective=32]
-
-     63%|######3   | 19/30 [00:02<00:01,  5.51it/s, objective=32]
-
-     67%|######6   | 20/30 [00:02<00:01,  5.34it/s, objective=32]
-
-     67%|######6   | 20/30 [00:02<00:01,  5.34it/s, objective=32]
-
-     70%|#######   | 21/30 [00:02<00:01,  5.15it/s, objective=32]
-
-     70%|#######   | 21/30 [00:02<00:01,  5.15it/s, objective=32]
-
-     73%|#######3  | 22/30 [00:03<00:01,  4.97it/s, objective=32]
-
-     73%|#######3  | 22/30 [00:03<00:01,  4.97it/s, objective=32]
-
-     77%|#######6  | 23/30 [00:03<00:01,  4.52it/s, objective=32]
-
-     77%|#######6  | 23/30 [00:03<00:01,  4.52it/s, objective=32]
-
-     80%|########  | 24/30 [00:03<00:01,  4.51it/s, objective=32]
-
-     80%|########  | 24/30 [00:03<00:01,  4.51it/s, objective=32]
-
-     83%|########3 | 25/30 [00:03<00:01,  4.48it/s, objective=32]
-
-     83%|########3 | 25/30 [00:03<00:01,  4.48it/s, objective=32]
-
-     87%|########6 | 26/30 [00:04<00:00,  4.12it/s, objective=32]
-
-     87%|########6 | 26/30 [00:04<00:00,  4.12it/s, objective=32]
-
-     90%|######### | 27/30 [00:04<00:00,  4.18it/s, objective=32]
-
-     90%|######### | 27/30 [00:04<00:00,  4.18it/s, objective=32]
-
-     93%|#########3| 28/30 [00:04<00:00,  4.22it/s, objective=32]
-
-     93%|#########3| 28/30 [00:04<00:00,  4.22it/s, objective=32]
-
-     97%|#########6| 29/30 [00:04<00:00,  3.92it/s, objective=32]
-
-     97%|#########6| 29/30 [00:04<00:00,  3.92it/s, objective=32]
-
-    100%|##########| 30/30 [00:05<00:00,  4.05it/s, objective=32]
-
-    100%|##########| 30/30 [00:05<00:00,  4.05it/s, objective=32]Executing failure strategy: min
-
-      0%|          | 0/30 [00:00<?, ?it/s]    100%|##########| 30/30 [00:05<00:00,  5.83it/s, objective=32]
-
-      3%|3         | 1/30 [00:00<00:00, 112.65it/s, objective=None]
-      7%|6         | 2/30 [00:00<00:00, 99.76it/s, objective=16]   
-     10%|#         | 3/30 [00:00<00:00, 96.69it/s, objective=16]
-     13%|#3        | 4/30 [00:00<00:00, 95.57it/s, objective=16]
-     17%|#6        | 5/30 [00:00<00:00, 43.04it/s, objective=16]
-     17%|#6        | 5/30 [00:00<00:00, 43.04it/s, objective=32]
-     20%|##        | 6/30 [00:00<00:00, 43.04it/s, objective=32]
-     23%|##3       | 7/30 [00:00<00:00, 43.04it/s, objective=32]
-     27%|##6       | 8/30 [00:00<00:00, 43.04it/s, objective=32]
-     30%|###       | 9/30 [00:00<00:00, 43.04it/s, objective=32]
-     33%|###3      | 10/30 [00:00<00:00, 43.04it/s, objective=32]
-     37%|###6      | 11/30 [00:00<00:00, 23.13it/s, objective=32]
-     37%|###6      | 11/30 [00:00<00:00, 23.13it/s, objective=32]
-     40%|####      | 12/30 [00:00<00:00, 23.13it/s, objective=32]
-     43%|####3     | 13/30 [00:00<00:00, 23.13it/s, objective=32]
-     47%|####6     | 14/30 [00:01<00:01, 10.02it/s, objective=32]
-     47%|####6     | 14/30 [00:01<00:01, 10.02it/s, objective=32]
-     50%|#####     | 15/30 [00:01<00:01, 10.02it/s, objective=32]
-     53%|#####3    | 16/30 [00:01<00:01,  7.33it/s, objective=32]
-     53%|#####3    | 16/30 [00:01<00:01,  7.33it/s, objective=32]
-     57%|#####6    | 17/30 [00:01<00:01,  7.33it/s, objective=32]
-     60%|######    | 18/30 [00:02<00:02,  5.99it/s, objective=32]
-     60%|######    | 18/30 [00:02<00:02,  5.99it/s, objective=32]
-     63%|######3   | 19/30 [00:02<00:01,  5.68it/s, objective=32]
-     63%|######3   | 19/30 [00:02<00:01,  5.68it/s, objective=32]
-     67%|######6   | 20/30 [00:02<00:01,  5.39it/s, objective=32]
-     67%|######6   | 20/30 [00:02<00:01,  5.39it/s, objective=32]
-     70%|#######   | 21/30 [00:02<00:01,  4.80it/s, objective=32]
-     70%|#######   | 21/30 [00:02<00:01,  4.80it/s, objective=32]
-     73%|#######3  | 22/30 [00:03<00:01,  4.71it/s, objective=32]
-     73%|#######3  | 22/30 [00:03<00:01,  4.71it/s, objective=32]
-     77%|#######6  | 23/30 [00:03<00:01,  4.63it/s, objective=32]
-     77%|#######6  | 23/30 [00:03<00:01,  4.63it/s, objective=32]
-     80%|########  | 24/30 [00:03<00:01,  4.56it/s, objective=32]
-     80%|########  | 24/30 [00:03<00:01,  4.56it/s, objective=32]
-     83%|########3 | 25/30 [00:03<00:01,  4.17it/s, objective=32]
-     83%|########3 | 25/30 [00:03<00:01,  4.17it/s, objective=32]
-     87%|########6 | 26/30 [00:04<00:00,  4.23it/s, objective=32]
-     87%|########6 | 26/30 [00:04<00:00,  4.23it/s, objective=32]
-     90%|######### | 27/30 [00:04<00:00,  4.26it/s, objective=32]
-     90%|######### | 27/30 [00:04<00:00,  4.26it/s, objective=32]
-     93%|#########3| 28/30 [00:04<00:00,  3.93it/s, objective=32]
-     93%|#########3| 28/30 [00:04<00:00,  3.93it/s, objective=32]
-     97%|#########6| 29/30 [00:04<00:00,  4.01it/s, objective=32]
-     97%|#########6| 29/30 [00:04<00:00,  4.01it/s, objective=32]
-    100%|##########| 30/30 [00:05<00:00,  4.05it/s, objective=32]
-    100%|##########| 30/30 [00:05<00:00,  4.05it/s, objective=32]
+     17%|#6        | 5/30 [00:00<00:00, 45.34it/s, failures=2, objective=16] 
+     17%|#6        | 5/30 [00:00<00:00, 45.34it/s, failures=2, objective=32]
+     20%|##        | 6/30 [00:00<00:00, 45.34it/s, failures=3, objective=32]
+     23%|##3       | 7/30 [00:00<00:00, 45.34it/s, failures=3, objective=32]
+     27%|##6       | 8/30 [00:00<00:00, 45.34it/s, failures=3, objective=32]
+     30%|###       | 9/30 [00:00<00:00, 45.34it/s, failures=3, objective=32]
+     33%|###3      | 10/30 [00:00<00:00, 45.34it/s, failures=3, objective=32]
+     37%|###6      | 11/30 [00:00<00:00, 23.59it/s, failures=3, objective=32]
+     37%|###6      | 11/30 [00:00<00:00, 23.59it/s, failures=3, objective=32]
+     40%|####      | 12/30 [00:00<00:00, 23.59it/s, failures=3, objective=32]
+     43%|####3     | 13/30 [00:00<00:00, 23.59it/s, failures=3, objective=32]
+     47%|####6     | 14/30 [00:01<00:01, 10.48it/s, failures=3, objective=32]
+     47%|####6     | 14/30 [00:01<00:01, 10.48it/s, failures=3, objective=32]
+     50%|#####     | 15/30 [00:01<00:01, 10.48it/s, failures=3, objective=32]
+     53%|#####3    | 16/30 [00:01<00:01,  7.55it/s, failures=3, objective=32]
+     53%|#####3    | 16/30 [00:01<00:01,  7.55it/s, failures=3, objective=32]
+     57%|#####6    | 17/30 [00:01<00:01,  7.55it/s, failures=3, objective=32]
+     60%|######    | 18/30 [00:02<00:01,  6.24it/s, failures=3, objective=32]
+     60%|######    | 18/30 [00:02<00:01,  6.24it/s, failures=3, objective=32]
+     63%|######3   | 19/30 [00:02<00:01,  5.97it/s, failures=3, objective=32]
+     63%|######3   | 19/30 [00:02<00:01,  5.97it/s, failures=4, objective=32]
+     67%|######6   | 20/30 [00:02<00:01,  5.69it/s, failures=4, objective=32]
+     67%|######6   | 20/30 [00:02<00:01,  5.69it/s, failures=5, objective=32]
+     70%|#######   | 21/30 [00:02<00:01,  5.44it/s, failures=5, objective=32]
+     70%|#######   | 21/30 [00:02<00:01,  5.44it/s, failures=5, objective=32]
+     73%|#######3  | 22/30 [00:02<00:01,  4.88it/s, failures=5, objective=32]
+     73%|#######3  | 22/30 [00:02<00:01,  4.88it/s, failures=5, objective=32]
+     77%|#######6  | 23/30 [00:03<00:01,  4.83it/s, failures=5, objective=32]
+     77%|#######6  | 23/30 [00:03<00:01,  4.83it/s, failures=5, objective=32]
+     80%|########  | 24/30 [00:03<00:01,  4.77it/s, failures=5, objective=32]
+     80%|########  | 24/30 [00:03<00:01,  4.77it/s, failures=5, objective=32]
+     83%|########3 | 25/30 [00:03<00:01,  4.73it/s, failures=5, objective=32]
+     83%|########3 | 25/30 [00:03<00:01,  4.73it/s, failures=5, objective=32]
+     87%|########6 | 26/30 [00:03<00:00,  4.35it/s, failures=5, objective=32]
+     87%|########6 | 26/30 [00:03<00:00,  4.35it/s, failures=5, objective=32]
+     90%|######### | 27/30 [00:04<00:00,  4.42it/s, failures=5, objective=32]
+     90%|######### | 27/30 [00:04<00:00,  4.42it/s, failures=5, objective=32]
+     93%|#########3| 28/30 [00:04<00:00,  4.42it/s, failures=5, objective=32]
+     93%|#########3| 28/30 [00:04<00:00,  4.42it/s, failures=6, objective=32]
+     97%|#########6| 29/30 [00:04<00:00,  4.35it/s, failures=6, objective=32]
+     97%|#########6| 29/30 [00:04<00:00,  4.35it/s, failures=7, objective=32]
+    100%|##########| 30/30 [00:04<00:00,  3.99it/s, failures=7, objective=32]
+    100%|##########| 30/30 [00:04<00:00,  3.99it/s, failures=8, objective=32]Executing failure strategy: min
+      0%|          | 0/30 [00:00<?, ?it/s]      3%|3         | 1/30 [00:00<00:00, 59074.70it/s, failures=1, objective=None]      7%|6         | 2/30 [00:00<00:00, 181.61it/s, failures=1, objective=16]         10%|#         | 3/30 [00:00<00:00, 136.64it/s, failures=2, objective=16]     13%|#3        | 4/30 [00:00<00:00, 121.89it/s, failures=2, objective=16]     17%|#6        | 5/30 [00:00<00:00, 114.54it/s, failures=2, objective=32]    100%|##########| 30/30 [00:05<00:00,  5.96it/s, failures=8, objective=32]
+     20%|##        | 6/30 [00:00<00:00, 49.25it/s, failures=2, objective=32]      20%|##        | 6/30 [00:00<00:00, 49.25it/s, failures=3, objective=32]     23%|##3       | 7/30 [00:00<00:00, 49.25it/s, failures=3, objective=32]     27%|##6       | 8/30 [00:00<00:00, 49.25it/s, failures=3, objective=32]     30%|###       | 9/30 [00:00<00:00, 49.25it/s, failures=3, objective=32]     33%|###3      | 10/30 [00:00<00:00, 49.25it/s, failures=3, objective=32]     37%|###6      | 11/30 [00:00<00:00, 28.14it/s, failures=3, objective=32]     37%|###6      | 11/30 [00:00<00:00, 28.14it/s, failures=3, objective=32]     40%|####      | 12/30 [00:00<00:00, 28.14it/s, failures=4, objective=32]     43%|####3     | 13/30 [00:00<00:00, 28.14it/s, failures=4, objective=32]     47%|####6     | 14/30 [00:01<00:00, 28.14it/s, failures=5, objective=32]     50%|#####     | 15/30 [00:01<00:01,  9.08it/s, failures=5, objective=32]     50%|#####     | 15/30 [00:01<00:01,  9.08it/s, failures=5, objective=32]     53%|#####3    | 16/30 [00:01<00:01,  9.08it/s, failures=5, objective=32]     57%|#####6    | 17/30 [00:01<00:01,  7.03it/s, failures=5, objective=32]     57%|#####6    | 17/30 [00:01<00:01,  7.03it/s, failures=5, objective=32]     60%|######    | 18/30 [00:02<00:01,  7.03it/s, failures=5, objective=32]     63%|######3   | 19/30 [00:02<00:01,  6.28it/s, failures=5, objective=32]     63%|######3   | 19/30 [00:02<00:01,  6.28it/s, failures=5, objective=32]     67%|######6   | 20/30 [00:02<00:01,  6.28it/s, failures=6, objective=32]     70%|#######   | 21/30 [00:02<00:01,  5.52it/s, failures=6, objective=32]     70%|#######   | 21/30 [00:02<00:01,  5.52it/s, failures=6, objective=32]     73%|#######3  | 22/30 [00:02<00:01,  5.38it/s, failures=6, objective=32]     73%|#######3  | 22/30 [00:02<00:01,  5.38it/s, failures=7, objective=32]     77%|#######6  | 23/30 [00:03<00:01,  4.93it/s, failures=7, objective=32]     77%|#######6  | 23/30 [00:03<00:01,  4.93it/s, failures=7, objective=32]     80%|########  | 24/30 [00:03<00:01,  4.87it/s, failures=7, objective=32]     80%|########  | 24/30 [00:03<00:01,  4.87it/s, failures=7, objective=32]     83%|########3 | 25/30 [00:03<00:01,  4.82it/s, failures=7, objective=32]     83%|########3 | 25/30 [00:03<00:01,  4.82it/s, failures=7, objective=32]     87%|########6 | 26/30 [00:03<00:00,  4.79it/s, failures=7, objective=32]     87%|########6 | 26/30 [00:03<00:00,  4.79it/s, failures=7, objective=32]     90%|######### | 27/30 [00:04<00:00,  4.40it/s, failures=7, objective=32]     90%|######### | 27/30 [00:04<00:00,  4.40it/s, failures=7, objective=32]     93%|#########3| 28/30 [00:04<00:00,  4.46it/s, failures=7, objective=32]     93%|#########3| 28/30 [00:04<00:00,  4.46it/s, failures=7, objective=32]     97%|#########6| 29/30 [00:04<00:00,  4.50it/s, failures=7, objective=32]     97%|#########6| 29/30 [00:04<00:00,  4.50it/s, failures=7, objective=32]    100%|##########| 30/30 [00:04<00:00,  4.52it/s, failures=7, objective=32]    100%|##########| 30/30 [00:04<00:00,  4.52it/s, failures=7, objective=32]
 
 
 
@@ -350,7 +220,7 @@ Finally we plot the collected results
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  11.158 seconds)
+   **Total running time of the script:** ( 0 minutes  12.565 seconds)
 
 
 .. _sphx_glr_download_examples_plot_notify_failures_hyperparameter_search.py:
