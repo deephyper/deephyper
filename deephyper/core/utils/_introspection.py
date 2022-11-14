@@ -59,21 +59,17 @@ def get_init_params_as_json(obj):
     """
     if hasattr(obj, "_init_params"):
         base_init_params = obj._init_params
+        base_init_params.pop("self")
     else:
         base_init_params = dict()
     params = dict()
-    for key in _get_init_param_names(obj):
-        if hasattr(obj, f"_{key}"):
-            value = getattr(obj, f"_{key}")
-        elif hasattr(obj, f"{key}"):
-            value = getattr(obj, f"{key}")
-        else:
-            value = base_init_params.get(key, None)
-        if hasattr(value, "to_json"):
-            value = value.to_json()
-        try:
-            json.dumps(value)
-        except Exception:
-            value = type(value).__name__
-        params[key] = value
+    for k, v in base_init_params.items():
+        if "__" not in k:
+            if hasattr(v, "to_json"):
+                params[k] = v.to_json()
+            else:
+                try:
+                    params[k] = json.loads(json.dumps(v))
+                except Exception:
+                    params[k] = "NA"
     return params

@@ -23,14 +23,12 @@ def profile(run_function):
     """
 
     @wraps(run_function)
-    def wrapper(*args, **kwargs):
+    def wrapper(job, *args, **kwargs):
         timestamp_start = time.time()
-        objective = run_function(*args, **kwargs)
+        job.storage.store_job_metadata(job.id, "timestamp_start", timestamp_start)
+        results = run_function(job, *args, **kwargs)
         timestamp_end = time.time()
-        return {
-            "objective": objective,
-            "timestamp_start": timestamp_start,
-            "timestamp_end": timestamp_end,
-        }
+        job.storage.store_job_metadata(job.id, "timestamp_end", timestamp_end)
+        return results
 
     return wrapper

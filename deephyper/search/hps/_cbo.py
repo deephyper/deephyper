@@ -27,9 +27,9 @@ MAP_filter_failures = {"min": "max"}
 
 
 # schedulers
-def scheduler_periodic_exponential_decay(i, eta_0, periode, rate):
+def scheduler_periodic_exponential_decay(i, eta_0, periode, rate, delay):
     """Periodic exponential decay scheduler for exploration-exploitation."""
-    eta_i = eta_0 * np.exp(-rate * (i % periode))
+    eta_i = eta_0 * np.exp(-rate * ((i - 1 - delay) % periode))
     return eta_i
 
 
@@ -237,6 +237,7 @@ class CBO(Search):
         # scheduler policy
         self.scheduler = None
         if type(scheduler) is dict:
+            scheduler = scheduler.copy()
             scheduler_type = scheduler.pop("type", None)
             assert scheduler_type in ["periodic-exp-decay"]
 
@@ -244,6 +245,7 @@ class CBO(Search):
                 scheduler_params = {
                     "periode": 25,
                     "rate": 0.1,
+                    "delay": n_initial_points,
                 }
                 scheduler_func = scheduler_periodic_exponential_decay
 

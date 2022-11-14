@@ -1,10 +1,13 @@
 import copy
+import json
 
 import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh
+import numpy as np
+from ConfigSpace.read_and_write import json as cs_json
+
 import deephyper.core.exceptions as dh_exceptions
 import deephyper.skopt
-import numpy as np
 
 
 def convert_to_skopt_dim(cs_hp, surrogate_model=None):
@@ -296,3 +299,8 @@ class HpProblem:
         """The default configuration as a dictionnary."""
         config = self._space.get_default_configuration().get_dictionary()
         return config
+
+    def to_json(self):
+        """Returns a dict version of the space which can be saved as JSON."""
+        json_format = json.loads(cs_json.write(self._space))
+        return json_format

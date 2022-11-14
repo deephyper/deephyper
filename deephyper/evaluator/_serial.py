@@ -1,9 +1,7 @@
-import copy
 import logging
 
 from deephyper.evaluator._evaluator import Evaluator
-
-ray_initializer = None
+from deephyper.evaluator._job import RunningJob, Job
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +21,11 @@ class SerialEvaluator(Evaluator):
         num_workers: int = 1,
         callbacks: list = None,
         run_function_kwargs: dict = None,
+        storage=None,
     ):
-        super().__init__(run_function, num_workers, callbacks, run_function_kwargs)
+        super().__init__(
+            run_function, num_workers, callbacks, run_function_kwargs, storage
+        )
 
         self.num_workers = num_workers
 
@@ -35,9 +36,11 @@ class SerialEvaluator(Evaluator):
         else:
             logger.info(f"Serial Evaluator will execute {self.run_function}")
 
-    async def execute(self, job):
+    async def execute(self, job: Job):
 
-        sol = self.run_function(copy.deepcopy(job.config), **self.run_function_kwargs)
+        running_job = RunningJob(job.id, job.config, self._storage)
+
+        sol = self.run_function(running_job, **self.run_function_kwargs)
 
         job.result = sol
 

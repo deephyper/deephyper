@@ -1,5 +1,9 @@
 import copy
 
+from typing import Hashable
+
+from deephyper.evaluator.storage import Storage
+
 
 class Job:
     """Represents an evaluation executed by the ``Evaluator`` class.
@@ -19,7 +23,6 @@ class Job:
         self.id = id
         self.rank = None
         self.config = copy.deepcopy(config)
-        self.config["job_id"] = self.id
         self.run_function = run_function
         self.timestamp_start = None  # in seconds
         self.timestamp_end = None  # in seconds
@@ -39,3 +42,13 @@ class Job:
     def __getitem__(self, index):
         cfg = copy.deepcopy(self.config)
         return (cfg, self.result)[index]
+
+
+class RunningJob:
+    def __init__(self, id: Hashable, parameters: dict, storage: Storage) -> None:
+        self.id = id
+        self.parameters = parameters
+        self.storage = storage
+
+    def __getitem__(self, k):
+        return self.parameters[k]

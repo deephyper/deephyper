@@ -14,8 +14,8 @@ from typing import Dict, List
 import numpy as np
 from deephyper.evaluator._job import Job
 from deephyper.skopt.optimizer import OBJECTIVE_VALUE_FAILURE
-from deephyper.core.utils._introspection import get_init_params_as_json
 from deephyper.core.utils._timeout import terminate_on_timeout
+from deephyper.evaluator.storage import MemoryStorage
 
 EVALUATORS = {
     "mpipool": "_mpi_pool.MPIPoolEvaluator",
@@ -60,6 +60,8 @@ class Evaluator:
         run_function (callable): functions to be executed by the ``Evaluator``.
         num_workers (int, optional): Number of parallel workers available for the ``Evaluator``. Defaults to 1.
         callbacks (list, optional): A list of callbacks to trigger custom actions at the creation or completion of jobs. Defaults to None.
+        run_function_kwargs (dict, optional): Static keyword arguments to pass to the ``run_function`` when executed.
+        storage (Storage, optional): Storage used by the evaluator. Defaults to ``MemoryStorage``.
     """
 
     FAIL_RETURN_VALUE = OBJECTIVE_VALUE_FAILURE
@@ -73,6 +75,7 @@ class Evaluator:
         num_workers: int = 1,
         callbacks: list = None,
         run_function_kwargs: dict = None,
+        storage=None,
     ):
         self.run_function = run_function  # User-defined run function.
         self.run_function_kwargs = (
@@ -82,7 +85,6 @@ class Evaluator:
         # Number of parallel workers available
         self.num_workers = num_workers
         self.jobs = []  # Job objects currently submitted.
-        self.n_jobs = 0
         self._tasks_running = []  # List of AsyncIO Task objects currently running.
         self._tasks_done = []  # Temp list to hold completed tasks from asyncio.
         self._tasks_pending = []  # Temp list to hold pending tasks from asyncio.
@@ -101,6 +103,10 @@ class Evaluator:
         # manage timeout of the search
         self._time_timeout_set = None
         self._timeout = None
+
+        # storage mechanism
+        self._storage = MemoryStorage() if storage is None else storage
+        self._search_id = self._storage.create_new_search()
 
         # to avoid "RuntimeError: This event loop is already running"
         if not (Evaluator.NEST_ASYNCIO_PATCHED) and _test_ipython_interpretor():
@@ -127,7 +133,7 @@ class Evaluator:
 
     def to_json(self):
         """Returns a json version of the evaluator."""
-        out = {"type": type(self).__name__, **get_init_params_as_json(self)}
+        out = {"type": type(self).__name__, "num_workers": self.num_workers}
         return out
 
     @staticmethod
@@ -192,7 +198,9 @@ class Evaluator:
         for config in configs:
 
             # Create a Job object from the input configuration
-            new_job = Job(self.n_jobs, config, self.run_function)
+            job_id = self._storage.create_new_job(self._search_id)
+            self._storage.store_job_in(job_id, args=(config,))
+            new_job = Job(job_id, config, self.run_function)
 
             if self._timeout:
                 time_consumed = time.time() - self._time_timeout_set
@@ -202,7 +210,6 @@ class Evaluator:
                     terminate_on_timeout, time_left, new_job.run_function
                 )
 
-            self.n_jobs += 1
             self.jobs.append(new_job)
 
             self._on_launch(new_job)
@@ -222,13 +229,21 @@ class Evaluator:
     def _on_done(self, job):
         """Called after a job has completed."""
         job.status = job.DONE
-        job.config.pop("job_id")
 
         job.timestamp_gather = time.time() - self.timestamp
 
         if np.isscalar(job.result):
             if np.isreal(job.result) and not (np.isfinite(job.result)):
                 job.result = Evaluator.FAIL_RETURN_VALUE
+
+        # store data in storage
+        self._storage.store_job_out(job.id, job.result)
+        self._storage.store_job_metadata(
+            job.id, "timestamp_submit", job.timestamp_submit
+        )
+        self._storage.store_job_metadata(
+            job.id, "timestamp_gather", job.timestamp_gather
+        )
 
         # call callbacks
         for cb in self._callbacks:
@@ -237,14 +252,6 @@ class Evaluator:
     async def _execute(self, job):
 
         job = await self.execute(job)
-
-        # code to manage the profile decorator
-        profile_keys = ["objective", "timestamp_start", "timestamp_end"]
-        if isinstance(job.result, dict) and all(k in job.result for k in profile_keys):
-            profile = job.result
-            job.result = profile["objective"]
-            job.timestamp_start = profile["timestamp_start"] - self.timestamp
-            job.timestamp_end = profile["timestamp_end"] - self.timestamp
 
         # if the user returns other information than the objective
         if isinstance(job.result, dict) and "objective" in job.result:
@@ -414,9 +421,6 @@ class Evaluator:
 
             if isinstance(job.other, dict):
                 result.update(job.other)
-
-            # if "p:optuna_trial" in result:
-            #     result.pop("p:optuna_trial")
 
             resultsList.append(result)
 
