@@ -39,7 +39,7 @@ for failure_strategy in ["ignore", "mean", "min"]:
     # for failure_strategy in ["min"]:
     print(f"Executing failure strategy: {failure_strategy}")
     evaluator = Evaluator.create(
-        run, method="serial", method_kwargs={"callbacks": [TqdmCallback(max_evals)]}
+        run, method="serial", method_kwargs={"callbacks": [TqdmCallback()]}
     )
     search = CBO(
         problem,

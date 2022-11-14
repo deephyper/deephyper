@@ -49,24 +49,24 @@ from deephyper.search.hps import CBO
 results = {}
 max_evals = 20
 evaluator_small = Evaluator.create(
-    run_small, method="serial", method_kwargs={"callbacks": [TqdmCallback(max_evals)]}
+    run_small, method="serial", method_kwargs={"callbacks": [TqdmCallback()]}
 )
 search_small = CBO(problem_small, evaluator_small, random_state=42)
 results["Small"] = search_small.search(max_evals)
 
 # %%
 evaluator_large = Evaluator.create(
-    run_large, method="serial", method_kwargs={"callbacks": [TqdmCallback(max_evals)]}
+    run_large, method="serial", method_kwargs={"callbacks": [TqdmCallback()]}
 )
 search_large = CBO(problem_large, evaluator_large, random_state=42)
 results["Large"] = search_large.search(max_evals)
 
 # %%
 evaluator_large_tl = Evaluator.create(
-    run_large, method="serial", method_kwargs={"callbacks": [TqdmCallback(max_evals)]}
+    run_large, method="serial", method_kwargs={"callbacks": [TqdmCallback()]}
 )
 search_large_tl = CBO(problem_large, evaluator_large_tl, random_state=42)
-search_large_tl.fit_generative_model(results["Large"])
+search_large_tl.fit_generative_model(results["Small"])
 results["Large+TL"] = search_large_tl.search(max_evals)
 
 # %%
@@ -77,8 +77,8 @@ plt.figure()
 
 for strategy, df in results.items():
     x = [i for i in range(len(df))]
-    plt.scatter(x, df.objective, label=strategy)
-    plt.plot(x, df.objective.cummax())
+    plt.scatter(x, df.objective, label=strategy, alpha=0.5)
+    plt.plot(x, df.objective.cummax(), alpha=0.5)
 
 plt.xlabel("Time (sec.)")
 plt.ylabel("Objective")

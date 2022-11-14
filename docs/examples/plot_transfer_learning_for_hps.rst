@@ -128,7 +128,7 @@ Then, we define setup the search and execute it:
     results = {}
     max_evals = 20
     evaluator_small = Evaluator.create(
-        run_small, method="serial", method_kwargs={"callbacks": [TqdmCallback(max_evals)]}
+        run_small, method="serial", method_kwargs={"callbacks": [TqdmCallback()]}
     )
     search_small = CBO(problem_small, evaluator_small, random_state=42)
     results["Small"] = search_small.search(max_evals)
@@ -143,7 +143,7 @@ Then, we define setup the search and execute it:
 
  .. code-block:: none
 
-      0%|          | 0/20 [00:00<?, ?it/s]      5%|5         | 1/20 [00:00<00:00, 102.30it/s, objective=-35.2]     10%|#         | 2/20 [00:00<00:00, 103.58it/s, objective=-23.6]     15%|#5        | 3/20 [00:00<00:00, 109.31it/s, objective=-23.6]     20%|##        | 4/20 [00:00<00:00, 113.04it/s, objective=-23.6]     25%|##5       | 5/20 [00:00<00:00, 115.63it/s, objective=-23.6]     30%|###       | 6/20 [00:00<00:00, 48.86it/s, objective=-23.6]      30%|###       | 6/20 [00:00<00:00, 48.86it/s, objective=-.545]     35%|###5      | 7/20 [00:00<00:00, 48.86it/s, objective=-.545]     40%|####      | 8/20 [00:00<00:00, 48.86it/s, objective=-.545]     45%|####5     | 9/20 [00:00<00:00, 48.86it/s, objective=-.545]     50%|#####     | 10/20 [00:00<00:00, 48.86it/s, objective=-.545]     55%|#####5    | 11/20 [00:00<00:00, 23.38it/s, objective=-.545]     55%|#####5    | 11/20 [00:00<00:00, 23.38it/s, objective=-.469]     60%|######    | 12/20 [00:00<00:00, 23.38it/s, objective=-.469]     65%|######5   | 13/20 [00:00<00:00, 23.38it/s, objective=-.469]     70%|#######   | 14/20 [00:01<00:00, 10.03it/s, objective=-.469]     70%|#######   | 14/20 [00:01<00:00, 10.03it/s, objective=-.469]     75%|#######5  | 15/20 [00:01<00:00, 10.03it/s, objective=-.469]     80%|########  | 16/20 [00:01<00:00,  7.28it/s, objective=-.469]     80%|########  | 16/20 [00:01<00:00,  7.28it/s, objective=-.469]     85%|########5 | 17/20 [00:01<00:00,  7.28it/s, objective=-.469]     90%|######### | 18/20 [00:02<00:00,  5.87it/s, objective=-.469]     90%|######### | 18/20 [00:02<00:00,  5.87it/s, objective=-.469]     95%|#########5| 19/20 [00:02<00:00,  5.52it/s, objective=-.469]     95%|#########5| 19/20 [00:02<00:00,  5.52it/s, objective=-.469]    100%|##########| 20/20 [00:02<00:00,  5.18it/s, objective=-.469]    100%|##########| 20/20 [00:02<00:00,  5.18it/s, objective=-.469]
+      0%|          | 0/20 [00:00<?, ?it/s]      5%|5         | 1/20 [00:00<00:00, 10894.30it/s, failures=0, objective=-35.2]     10%|#         | 2/20 [00:00<00:00, 196.12it/s, failures=0, objective=-23.6]       15%|#5        | 3/20 [00:00<00:00, 171.98it/s, failures=0, objective=-23.6]     20%|##        | 4/20 [00:00<00:00, 162.69it/s, failures=0, objective=-23.6]     25%|##5       | 5/20 [00:00<00:00, 158.97it/s, failures=0, objective=-23.6]     30%|###       | 6/20 [00:00<00:00, 156.15it/s, failures=0, objective=-.545]     35%|###5      | 7/20 [00:00<00:00, 53.52it/s, failures=0, objective=-.545]      35%|###5      | 7/20 [00:00<00:00, 53.52it/s, failures=0, objective=-.545]     40%|####      | 8/20 [00:00<00:00, 53.52it/s, failures=0, objective=-.545]     45%|####5     | 9/20 [00:00<00:00, 53.52it/s, failures=0, objective=-.545]     50%|#####     | 10/20 [00:00<00:00, 53.52it/s, failures=0, objective=-.545]     55%|#####5    | 11/20 [00:00<00:00, 53.52it/s, failures=0, objective=-.469]     60%|######    | 12/20 [00:00<00:00, 53.52it/s, failures=0, objective=-.469]     65%|######5   | 13/20 [00:00<00:00, 13.14it/s, failures=0, objective=-.469]     65%|######5   | 13/20 [00:00<00:00, 13.14it/s, failures=0, objective=-.469]     70%|#######   | 14/20 [00:01<00:00, 13.14it/s, failures=0, objective=-.469]     75%|#######5  | 15/20 [00:01<00:00, 13.14it/s, failures=0, objective=-.469]     80%|########  | 16/20 [00:01<00:00,  7.85it/s, failures=0, objective=-.469]     80%|########  | 16/20 [00:01<00:00,  7.85it/s, failures=0, objective=-.469]     85%|########5 | 17/20 [00:01<00:00,  7.85it/s, failures=0, objective=-.469]     90%|######### | 18/20 [00:02<00:00,  6.56it/s, failures=0, objective=-.469]     90%|######### | 18/20 [00:02<00:00,  6.56it/s, failures=0, objective=-.469]     95%|#########5| 19/20 [00:02<00:00,  6.56it/s, failures=0, objective=-.469]    100%|##########| 20/20 [00:02<00:00,  5.42it/s, failures=0, objective=-.469]    100%|##########| 20/20 [00:02<00:00,  5.42it/s, failures=0, objective=-.469]
 
 
 
@@ -152,7 +152,7 @@ Then, we define setup the search and execute it:
 .. code-block:: default
 
     evaluator_large = Evaluator.create(
-        run_large, method="serial", method_kwargs={"callbacks": [TqdmCallback(max_evals)]}
+        run_large, method="serial", method_kwargs={"callbacks": [TqdmCallback()]}
     )
     search_large = CBO(problem_large, evaluator_large, random_state=42)
     results["Large"] = search_large.search(max_evals)
@@ -169,32 +169,32 @@ Then, we define setup the search and execute it:
 
 
       0%|          | 0/20 [00:00<?, ?it/s]
-      5%|5         | 1/20 [00:00<00:00, 126.68it/s, objective=-58.7]
-     10%|#         | 2/20 [00:00<00:00, 24.55it/s, objective=-58.7] 
-     15%|#5        | 3/20 [00:00<00:00, 32.13it/s, objective=-58.7]
-     20%|##        | 4/20 [00:00<00:00, 38.02it/s, objective=-58.7]
-     20%|##        | 4/20 [00:00<00:00, 38.02it/s, objective=-30.2]
-     25%|##5       | 5/20 [00:00<00:00, 38.02it/s, objective=-30.2]
-     30%|###       | 6/20 [00:00<00:00, 38.02it/s, objective=-30.2]
-     35%|###5      | 7/20 [00:00<00:00, 38.02it/s, objective=-30.2]
-     40%|####      | 8/20 [00:00<00:00, 38.02it/s, objective=-30.2]
-     45%|####5     | 9/20 [00:00<00:00, 39.85it/s, objective=-30.2]
-     45%|####5     | 9/20 [00:00<00:00, 39.85it/s, objective=-30.2]
-     50%|#####     | 10/20 [00:00<00:00, 39.85it/s, objective=-1.84]
-     55%|#####5    | 11/20 [00:00<00:00, 39.85it/s, objective=-1.84]
-     60%|######    | 12/20 [00:00<00:00, 39.85it/s, objective=-1.84]
-     65%|######5   | 13/20 [00:00<00:00, 10.81it/s, objective=-1.84]
-     65%|######5   | 13/20 [00:00<00:00, 10.81it/s, objective=-1.84]
-     70%|#######   | 14/20 [00:01<00:00, 10.81it/s, objective=-1.84]
-     75%|#######5  | 15/20 [00:01<00:00, 10.81it/s, objective=-.26] 
-     80%|########  | 16/20 [00:01<00:00,  6.96it/s, objective=-.26]
-     80%|########  | 16/20 [00:01<00:00,  6.96it/s, objective=-.26]
-     85%|########5 | 17/20 [00:01<00:00,  6.96it/s, objective=-.26]
-     90%|######### | 18/20 [00:02<00:00,  6.00it/s, objective=-.26]
-     90%|######### | 18/20 [00:02<00:00,  6.00it/s, objective=-.26]
-     95%|#########5| 19/20 [00:02<00:00,  6.00it/s, objective=-.26]
-    100%|##########| 20/20 [00:02<00:00,  5.13it/s, objective=-.26]
-    100%|##########| 20/20 [00:02<00:00,  5.13it/s, objective=-.26]
+      5%|5         | 1/20 [00:00<00:00, 35848.75it/s, failures=0, objective=-58.7]
+     10%|#         | 2/20 [00:00<00:00, 184.64it/s, failures=0, objective=-58.7]  
+     15%|#5        | 3/20 [00:00<00:00, 140.12it/s, failures=0, objective=-58.7]
+     20%|##        | 4/20 [00:00<00:00, 124.92it/s, failures=0, objective=-30.2]
+     25%|##5       | 5/20 [00:00<00:00, 116.68it/s, failures=0, objective=-30.2]
+     30%|###       | 6/20 [00:00<00:00, 48.75it/s, failures=0, objective=-30.2] 
+     30%|###       | 6/20 [00:00<00:00, 48.75it/s, failures=0, objective=-30.2]
+     35%|###5      | 7/20 [00:00<00:00, 48.75it/s, failures=0, objective=-30.2]
+     40%|####      | 8/20 [00:00<00:00, 48.75it/s, failures=0, objective=-30.2]
+     45%|####5     | 9/20 [00:00<00:00, 48.75it/s, failures=0, objective=-30.2]
+     50%|#####     | 10/20 [00:00<00:00, 48.75it/s, failures=0, objective=-1.84]
+     55%|#####5    | 11/20 [00:00<00:00, 26.15it/s, failures=0, objective=-1.84]
+     55%|#####5    | 11/20 [00:00<00:00, 26.15it/s, failures=0, objective=-1.84]
+     60%|######    | 12/20 [00:00<00:00, 26.15it/s, failures=0, objective=-1.84]
+     65%|######5   | 13/20 [00:00<00:00, 26.15it/s, failures=0, objective=-1.34]
+     70%|#######   | 14/20 [00:01<00:00, 26.15it/s, failures=0, objective=-1.34]
+     75%|#######5  | 15/20 [00:01<00:00,  8.32it/s, failures=0, objective=-1.34]
+     75%|#######5  | 15/20 [00:01<00:00,  8.32it/s, failures=0, objective=-1.34]
+     80%|########  | 16/20 [00:01<00:00,  8.32it/s, failures=0, objective=-1.34]
+     85%|########5 | 17/20 [00:01<00:00,  6.45it/s, failures=0, objective=-1.34]
+     85%|########5 | 17/20 [00:01<00:00,  6.45it/s, failures=0, objective=-1.34]
+     90%|######### | 18/20 [00:02<00:00,  6.45it/s, failures=0, objective=-1.34]
+     95%|#########5| 19/20 [00:02<00:00,  5.60it/s, failures=0, objective=-1.34]
+     95%|#########5| 19/20 [00:02<00:00,  5.60it/s, failures=0, objective=-1.34]
+    100%|##########| 20/20 [00:02<00:00,  5.00it/s, failures=0, objective=-1.34]
+    100%|##########| 20/20 [00:02<00:00,  5.00it/s, failures=0, objective=-1.34]
 
 
 
@@ -203,10 +203,10 @@ Then, we define setup the search and execute it:
 .. code-block:: default
 
     evaluator_large_tl = Evaluator.create(
-        run_large, method="serial", method_kwargs={"callbacks": [TqdmCallback(max_evals)]}
+        run_large, method="serial", method_kwargs={"callbacks": [TqdmCallback()]}
     )
     search_large_tl = CBO(problem_large, evaluator_large_tl, random_state=42)
-    search_large_tl.fit_generative_model(results["Large"])
+    search_large_tl.fit_generative_model(results["Small"])
     results["Large+TL"] = search_large_tl.search(max_evals)
 
 
@@ -219,139 +219,349 @@ Then, we define setup the search and execute it:
 
  .. code-block:: none
 
+    /Users/romainegele/Documents/Argonne/deephyper/deephyper/search/hps/_cbo.py:552: UserWarning: The value of q=0.9 is replaced by q_max=0.5 because a minimum of 10 results are required to perform transfer-learning!
+      warnings.warn(
+    [<sdv.constraints.tabular.ScalarRange object at 0x2a7452130>]
 
 
-      0%|          | 0/20 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
+      0%|          | 0/100 [00:00<?, ?it/s]
+
+    Sampling rows:   0%|          | 0/100 [00:00<?, ?it/s]    Sampling rows: 100%|##########| 100/100 [00:00<00:00, 14671.04it/s]
 
 
-      5%|5         | 1/20 [00:01<00:19,  1.01s/it]
+      0%|          | 0/10000 [00:00<?, ?it/s]
 
-      5%|5         | 1/20 [00:01<00:19,  1.01s/it, objective=-.204]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
-
-
-     10%|#         | 2/20 [00:01<00:18,  1.01s/it, objective=-.132]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 208719.61it/s]
 
 
-     15%|#5        | 3/20 [00:01<00:05,  3.01it/s, objective=-.132]
+      0%|          | 0/20 [00:00<?, ?it/s]
 
-     15%|#5        | 3/20 [00:01<00:05,  3.01it/s, objective=-.132]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
-
-
-     20%|##        | 4/20 [00:01<00:05,  3.01it/s, objective=-.123]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
+      5%|5         | 1/20 [00:00<00:00, 26214.40it/s, failures=0, objective=-35.2]
 
 
-     25%|##5       | 5/20 [00:01<00:02,  5.12it/s, objective=-.123]
-
-     25%|##5       | 5/20 [00:01<00:02,  5.12it/s, objective=-.123]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
+      0%|          | 0/10000 [00:00<?, ?it/s]
 
 
-     30%|###       | 6/20 [00:01<00:02,  5.12it/s, objective=-.11] /Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 206620.03it/s]
 
 
-     35%|###5      | 7/20 [00:01<00:02,  6.37it/s, objective=-.11]
-
-     35%|###5      | 7/20 [00:01<00:02,  6.37it/s, objective=-.11]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
+     10%|#         | 2/20 [00:00<00:00, 31.59it/s, failures=0, objective=-25.8]   
 
 
-     40%|####      | 8/20 [00:01<00:01,  6.37it/s, objective=-.11]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
+      0%|          | 0/10000 [00:00<?, ?it/s]
 
 
-     45%|####5     | 9/20 [00:01<00:01,  8.13it/s, objective=-.11]
-
-     45%|####5     | 9/20 [00:01<00:01,  8.13it/s, objective=-.11]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
-
-
-     50%|#####     | 10/20 [00:01<00:01,  8.13it/s, objective=-.11]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
-    /Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 207891.99it/s]
 
 
-     55%|#####5    | 11/20 [00:02<00:01,  6.72it/s, objective=-.11]
+     15%|#5        | 3/20 [00:00<00:00, 23.81it/s, failures=0, objective=-25.8]
 
-     55%|#####5    | 11/20 [00:02<00:01,  6.72it/s, objective=-.11]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
-    /Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
+     15%|#5        | 3/20 [00:00<00:00, 23.81it/s, failures=0, objective=-24.9]
 
 
-     60%|######    | 12/20 [00:02<00:01,  4.98it/s, objective=-.11]
-
-     60%|######    | 12/20 [00:02<00:01,  4.98it/s, objective=-.0295]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
-    /Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
+      0%|          | 0/10000 [00:00<?, ?it/s]
 
 
-     65%|######5   | 13/20 [00:02<00:01,  4.34it/s, objective=-.0295]
-
-     65%|######5   | 13/20 [00:02<00:01,  4.34it/s, objective=-.0295]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
-    /Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 204780.00it/s]
 
 
-     70%|#######   | 14/20 [00:03<00:01,  3.90it/s, objective=-.0295]
-
-     70%|#######   | 14/20 [00:03<00:01,  3.90it/s, objective=-.0295]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
-    /Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
+     20%|##        | 4/20 [00:00<00:00, 23.81it/s, failures=0, objective=-24.9]
 
 
-     75%|#######5  | 15/20 [00:03<00:01,  3.61it/s, objective=-.0295]
-
-     75%|#######5  | 15/20 [00:03<00:01,  3.61it/s, objective=-.0295]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
-    /Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
+      0%|          | 0/10000 [00:00<?, ?it/s]
 
 
-     80%|########  | 16/20 [00:03<00:01,  3.17it/s, objective=-.0295]
-
-     80%|########  | 16/20 [00:03<00:01,  3.17it/s, objective=-.0295]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
-    /Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 212486.02it/s]
 
 
-     85%|########5 | 17/20 [00:04<00:00,  3.09it/s, objective=-.0295]
-
-     85%|########5 | 17/20 [00:04<00:00,  3.09it/s, objective=-.0295]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
-    /Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
+     25%|##5       | 5/20 [00:00<00:00, 23.81it/s, failures=0, objective=-24.9]
 
 
-     90%|######### | 18/20 [00:04<00:00,  3.04it/s, objective=-.0295]
-
-     90%|######### | 18/20 [00:04<00:00,  3.04it/s, objective=-.0295]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
-    /Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
+      0%|          | 0/10000 [00:00<?, ?it/s]
 
 
-     95%|#########5| 19/20 [00:04<00:00,  2.99it/s, objective=-.0295]
-
-     95%|#########5| 19/20 [00:04<00:00,  2.99it/s, objective=-.0295]/Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
-    /Users/romainegele/miniforge3/envs/dh-0.4/lib/python3.8/site-packages/sdv/tabular/base.py:250: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-      sampled = previous_rows.append(sampled, ignore_index=True)
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 208004.36it/s]
 
 
-    100%|##########| 20/20 [00:05<00:00,  2.77it/s, objective=-.0295]
+     30%|###       | 6/20 [00:00<00:00, 18.73it/s, failures=0, objective=-24.9]
 
-    100%|##########| 20/20 [00:05<00:00,  2.77it/s, objective=-.0295]
+     30%|###       | 6/20 [00:00<00:00, 18.73it/s, failures=0, objective=-1.18]
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 207496.03it/s]
+
+
+     35%|###5      | 7/20 [00:00<00:00, 18.73it/s, failures=0, objective=-1.18]
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 216745.33it/s]
+
+
+     40%|####      | 8/20 [00:00<00:00, 17.93it/s, failures=0, objective=-1.18]
+
+     40%|####      | 8/20 [00:00<00:00, 17.93it/s, failures=0, objective=-1.18]
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 214519.36it/s]
+
+
+     45%|####5     | 9/20 [00:00<00:00, 17.93it/s, failures=0, objective=-1.18]
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 216229.10it/s]
+
+
+     50%|#####     | 10/20 [00:00<00:00, 14.09it/s, failures=0, objective=-1.18]
+
+     50%|#####     | 10/20 [00:00<00:00, 14.09it/s, failures=0, objective=-1.18]
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 216376.35it/s]
+
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 214873.23it/s]
+
+
+     55%|#####5    | 11/20 [00:00<00:00, 14.09it/s, failures=0, objective=-1.18]
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 215082.59it/s]
+
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 215307.82it/s]
+
+
+     60%|######    | 12/20 [00:01<00:01,  6.45it/s, failures=0, objective=-1.18]
+
+     60%|######    | 12/20 [00:01<00:01,  6.45it/s, failures=0, objective=-1.18]
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 215592.24it/s]
+
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 215516.92it/s]
+
+
+     65%|######5   | 13/20 [00:01<00:01,  6.45it/s, failures=0, objective=-1.18]
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 214209.31it/s]
+
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 215253.68it/s]
+
+
+     70%|#######   | 14/20 [00:02<00:01,  4.50it/s, failures=0, objective=-1.18]
+
+     70%|#######   | 14/20 [00:02<00:01,  4.50it/s, failures=0, objective=-1.18]
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 213215.13it/s]
+
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 214980.06it/s]
+
+
+     75%|#######5  | 15/20 [00:02<00:01,  4.13it/s, failures=0, objective=-1.18]
+
+     75%|#######5  | 15/20 [00:02<00:01,  4.13it/s, failures=0, objective=-1.18]
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 215077.07it/s]
+
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 214597.29it/s]
+
+
+     80%|########  | 16/20 [00:02<00:01,  3.82it/s, failures=0, objective=-1.18]
+
+     80%|########  | 16/20 [00:02<00:01,  3.82it/s, failures=0, objective=-1.18]
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 214800.60it/s]
+
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 215145.47it/s]
+
+
+     85%|########5 | 17/20 [00:03<00:00,  3.56it/s, failures=0, objective=-1.18]
+
+     85%|########5 | 17/20 [00:03<00:00,  3.56it/s, failures=0, objective=-1.18]
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 214786.30it/s]
+
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 215646.56it/s]
+
+
+     90%|######### | 18/20 [00:03<00:00,  3.31it/s, failures=0, objective=-1.18]
+
+     90%|######### | 18/20 [00:03<00:00,  3.31it/s, failures=0, objective=-1.18]
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 216154.44it/s]
+
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 213770.42it/s]
+
+
+     95%|#########5| 19/20 [00:03<00:00,  3.00it/s, failures=0, objective=-1.18]
+
+     95%|#########5| 19/20 [00:03<00:00,  3.00it/s, failures=0, objective=-1.18]
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 214832.51it/s]
+
+
+
+      0%|          | 0/10000 [00:00<?, ?it/s]
+
+
+    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
+      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
+    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 214860.02it/s]
+
+
+    100%|##########| 20/20 [00:04<00:00,  2.97it/s, failures=0, objective=-1.18]
+
+    100%|##########| 20/20 [00:04<00:00,  2.97it/s, failures=0, objective=-1.18]
 
 
 
@@ -369,8 +579,8 @@ Finally, we compare the results and quickly see that transfer-learning provided 
 
     for strategy, df in results.items():
         x = [i for i in range(len(df))]
-        plt.scatter(x, df.objective, label=strategy)
-        plt.plot(x, df.objective.cummax())
+        plt.scatter(x, df.objective, label=strategy, alpha=0.5)
+        plt.plot(x, df.objective.cummax(), alpha=0.5)
 
     plt.xlabel("Time (sec.)")
     plt.ylabel("Objective")
@@ -392,7 +602,7 @@ Finally, we compare the results and quickly see that transfer-learning provided 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  12.576 seconds)
+   **Total running time of the script:** ( 0 minutes  12.852 seconds)
 
 
 .. _sphx_glr_download_examples_plot_transfer_learning_for_hps.py:
