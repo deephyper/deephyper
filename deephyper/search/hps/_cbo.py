@@ -534,7 +534,7 @@ class CBO(Search):
             import sdv
         except ModuleNotFoundError:
             raise deephyper.core.exceptions.MissingRequirementError(
-                "Installing 'sdv' is required to use 'fit_generative_model' please run 'pip install sdv>=0.17.1'"
+                "Installing 'sdv' is required to use 'fit_generative_model' please run 'pip install \"deephyper[sdv]\"'"
             )
 
         if type(df) is str and df[-4:] == ".csv":
@@ -598,8 +598,6 @@ class CBO(Search):
                             hp_name, hp.lower, hp.upper, strict_boundaries=True
                         )
                     )
-
-        print(scalar_constraints)
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
