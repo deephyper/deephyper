@@ -1,7 +1,15 @@
 import unittest
 import pytest
 
+from deephyper.evaluator import Evaluator, RunningJob
 from deephyper.evaluator.storage import MemoryStorage
+
+
+def run_0(job: RunningJob) -> dict:
+    return {
+        "objective": job.parameters["x"],
+        "metadata": {"storage_id": id(job.storage)},
+    }
 
 
 @pytest.mark.fast
@@ -61,7 +69,34 @@ class TestMemoryStorage(unittest.TestCase):
         job_id0_data = storage.load_job(job_id0)
         self.assertEqual(job_id0_data["metadata"], {"timestamp": 10})
 
+    def test_with_evaluator(self):
+        storage = MemoryStorage()
+
+        # serial evaluator
+        evaluator = Evaluator.create(
+            run_0, method="serial", method_kwargs={"storage": storage}
+        )
+        evaluator.submit([{"x": 0}])
+        job_done = evaluator.gather("ALL")[0]
+        assert job_done.metadata["storage_id"] == id(storage)
+
+        # thread evaluator
+        evaluator = Evaluator.create(
+            run_0, method="thread", method_kwargs={"storage": storage}
+        )
+        evaluator.submit([{"x": 0}])
+        job_done = evaluator.gather("ALL")[0]
+        assert job_done.metadata["storage_id"] == id(storage)
+
+        # process evaluator
+        evaluator = Evaluator.create(
+            run_0, method="process", method_kwargs={"storage": storage}
+        )
+        evaluator.submit([{"x": 0}])
+        job_done = evaluator.gather("ALL")[0]
+        assert job_done.metadata["storage_id"] != id(storage)
+
 
 if __name__ == "__main__":
     test = TestMemoryStorage()
-    test.test_basic()
+    test.test_with_evaluator()

@@ -1,7 +1,10 @@
 import logging
 
+from typing import Callable
+
 from deephyper.evaluator._evaluator import Evaluator
-from deephyper.evaluator._job import RunningJob, Job
+from deephyper.evaluator._job import Job
+from deephyper.evaluator.storage import Storage
 
 logger = logging.getLogger(__name__)
 
@@ -17,11 +20,11 @@ class SerialEvaluator(Evaluator):
 
     def __init__(
         self,
-        run_function,
+        run_function: Callable,
         num_workers: int = 1,
         callbacks: list = None,
         run_function_kwargs: dict = None,
-        storage=None,
+        storage: Storage = None,
     ):
         super().__init__(
             run_function, num_workers, callbacks, run_function_kwargs, storage
@@ -36,12 +39,12 @@ class SerialEvaluator(Evaluator):
         else:
             logger.info(f"Serial Evaluator will execute {self.run_function}")
 
-    async def execute(self, job: Job):
+    async def execute(self, job: Job) -> Job:
 
-        running_job = RunningJob(job.id, job.config, self._storage)
+        running_job = job.create_running_job(self._storage, self._stopper)
 
-        sol = self.run_function(running_job, **self.run_function_kwargs)
+        output = self.run_function(running_job, **self.run_function_kwargs)
 
-        job.result = sol
+        job.set_output(output)
 
         return job

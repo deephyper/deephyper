@@ -440,6 +440,7 @@ class Optimizer(object):
         # parameters for multifidelity
         self._use_multifidelity = False
         self.bi = []
+        self.bi_count = {}
 
     def copy(self, random_state=None):
         """Create a shallow copy of an instance of the optimizer.
@@ -890,6 +891,67 @@ class Optimizer(object):
                 y[1] = log(y[1])
         return self._tell(x, y, fit=fit, budget=budget)
 
+    def _get_predict_budget(self):
+        """Compute budget to use to maximise the acquisition function."""
+        bi_count = sorted([(b, c) for b, c in self.bi_count.items()], reverse=True)
+        budget_list, count_list = list(zip(*bi_count))
+        enough_observed = np.asarray(count_list) >= self.n_initial_points_
+        if any(enough_observed):
+            idx = np.argmax(enough_observed)
+        else:
+            idx = np.argmax(count_list)
+        pred_budget = budget_list[idx]
+        # print(f"{pred_budget=}")
+        return pred_budget
+
+    def _compute_sample_weigths(self, bi):
+        """Compute weights with respect to budgets (imbalance)."""
+        # n_samples = len(bi)
+        # n_budgets = len(self.bi_count)
+        # max_budget = max(self.bi_count.keys())
+        # print(f"{max_budget}")
+        # v2
+        # budget_weight = {
+        #     k: (n_samples / (n_budgets * b)) * (np.exp(k) / np.exp(max_budget))
+        #     for k, b in self.bi_count.items()
+        # }
+
+        # v1
+        # budget_weight = {
+        #     b: (np.exp(b) / np.exp(max_budget)) for b, c in self.bi_count.items()
+        # }
+        # sample_weight = [budget_weight[b] for b in bi]
+
+        # print(budget_weight)
+        # print(f"c={self.bi_count}")
+        # print(f"b={bi[:10]}")
+        # print(f"w={sample_weight[:10]}")
+        # v3
+        sample_weight = None
+        return sample_weight
+
+    def _resample_with_budget(self, Xi, yi, bi):
+        return Xi, yi, bi
+        groups = {}
+        for i, b in enumerate(bi):
+            g = groups.get(b, [])
+            if len(g) == 0:
+                groups[b] = g
+            g.append(i)
+        max_b = max(groups.keys())
+        num_with_max_b = len(groups[max_b])
+        nXi, nyi, nbi = [], [], []
+        for b, g in groups.items():
+            if b == max_b:
+                indexes = np.arange(len(g))
+            else:
+                indexes = self.rng.randint(low=0, high=len(g), size=num_with_max_b)
+            for idx in indexes:
+                nXi.append(Xi[g[idx]])
+                nyi.append(yi[g[idx]])
+                nbi.append(b)
+        return nXi, nyi, nbi
+
     def _tell(self, x, y, fit=True, budget=None):
         """Perform the actual work of incorporating one or more new points.
         See `tell()` for the full description.
@@ -931,6 +993,8 @@ class Optimizer(object):
                 )
 
             self.bi.extend(budget)
+            for budget_i in budget:
+                self.bi_count[budget_i] = self.bi_count.get(budget_i, 0) + 1
 
             assert len(self.bi) == len(self.yi)
 
@@ -962,17 +1026,29 @@ class Optimizer(object):
 
                 # add budget as input
                 if len(self.bi) > 0:
-                    bi = np.asarray(self.bi).reshape(-1, 1)
+                    bi = self.bi
+                    # print(len(Xtt))
+                    # Xtt, yi, bi = self._resample_with_budget(Xtt, yi, self.bi)
+                    # print(len(Xtt))
+                    # print()
+
+                    pred_budget = self._get_predict_budget()
+                    transformed_bounds.append((pred_budget, pred_budget))
+
+                    # sample_weight = self._compute_sample_weigths(bi)
+                    sample_weight = None
+
+                    bi = np.asarray(bi).reshape(-1, 1)
                     Xtt = np.hstack((Xtt, bi))
-                    max_budget = np.max(bi)
-                    transformed_bounds.append((max_budget, max_budget))
+                else:
+                    sample_weight = None
 
                 # preprocessing of output space
                 yi = self.objective_scaler.fit_transform(
                     np.reshape(yi, (-1, 1))
                 ).reshape(-1)
 
-                est.fit(Xtt, yi)
+                est.fit(Xtt, yi, sample_weight=sample_weight)
 
             # for qLCB save the fitted estimator and skip the selection
             if self.acq_func == "qLCB":
@@ -1000,8 +1076,8 @@ class Optimizer(object):
 
                 # add max budget as input for all samples
                 if len(self.bi) > 0:
-                    max_budget = np.full((len(X), 1), fill_value=np.max(self.bi))
-                    X = np.hstack((X, max_budget))
+                    pred_budget = np.full((len(X), 1), fill_value=pred_budget)
+                    X = np.hstack((X, pred_budget))
 
                 self.next_xs_ = []
                 for cand_acq_func in self.cand_acq_funcs_:

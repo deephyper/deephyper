@@ -3,8 +3,13 @@ import functools
 import logging
 import sys
 import traceback
+
+from typing import Callable
+
 from deephyper.core.exceptions import RunFunctionError
 from deephyper.evaluator._evaluator import Evaluator
+from deephyper.evaluator._job import Job
+from deephyper.evaluator.storage import Storage
 
 import mpi4py
 
@@ -13,7 +18,6 @@ mpi4py.rc.initialize = False
 mpi4py.rc.finalize = True
 from mpi4py import MPI  # noqa: E402
 from mpi4py.futures import MPICommExecutor  # noqa: E402
-
 
 logger = logging.getLogger(__name__)
 
@@ -46,15 +50,18 @@ class MPICommEvaluator(Evaluator):
 
     def __init__(
         self,
-        run_function,
+        run_function: Callable,
         num_workers: int = None,
         callbacks=None,
         run_function_kwargs=None,
+        storage: Storage = None,
         comm=None,
         root=0,
         abort_on_exit=False,
     ):
-        super().__init__(run_function, num_workers, callbacks, run_function_kwargs)
+        super().__init__(
+            run_function, num_workers, callbacks, run_function_kwargs, storage
+        )
         if not MPI.Is_initialized():
             MPI.Init_thread()
 
@@ -82,11 +89,13 @@ class MPICommEvaluator(Evaluator):
             self.executor.__exit__(type, value, traceback)
             self.master_executor = None
 
-    async def execute(self, job):
+    async def execute(self, job: Job) -> Job:
         async with self.sem:
 
+            running_job = job.create_running_job(self._storage, self._stopper)
+
             run_function = functools.partial(
-                job.run_function, job.config, **self.run_function_kwargs
+                job.run_function, running_job, **self.run_function_kwargs
             )
 
             code, sol = await self.loop.run_in_executor(
@@ -99,6 +108,6 @@ class MPICommEvaluator(Evaluator):
                 print(sol, file=sys.stderr)
                 raise RunFunctionError
 
-            job.result = sol
+            job.set_output(sol)
 
         return job

@@ -42,8 +42,16 @@ def convert_to_skopt_dim(cs_hp, surrogate_model=None):
             transform="onehot" if surrogate_model_type == "distance_based" else "label",
         )
     elif isinstance(cs_hp, csh.OrdinalHyperparameter):
+        categories = list(cs_hp.sequence)
+        if all(
+            isinstance(x, (int, np.integer)) or isinstance(x, (float, np.floating))
+            for x in categories
+        ):
+            transform = "identity"
+        else:
+            transform = "label"
         skopt_dim = deephyper.skopt.space.Categorical(
-            categories=list(cs_hp.sequence), name=cs_hp.name, transform="label"
+            categories=categories, name=cs_hp.name, transform=transform
         )
     else:
         raise TypeError(f"Cannot convert hyperparameter of type {type(cs_hp)}")

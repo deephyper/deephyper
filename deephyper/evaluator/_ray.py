@@ -1,6 +1,10 @@
 import logging
 import ray
+
+from typing import Callable
 from deephyper.evaluator._evaluator import Evaluator
+from deephyper.evaluator._job import Job
+from deephyper.evaluator.storage import Storage
 
 ray_initializer = None
 
@@ -25,9 +29,10 @@ class RayEvaluator(Evaluator):
 
     def __init__(
         self,
-        run_function,
-        callbacks=None,
-        run_function_kwargs=None,
+        run_function: Callable,
+        callbacks: list = None,
+        run_function_kwargs: dict = None,
+        storage: Storage = None,
         address: str = None,
         password: str = None,
         num_cpus: int = None,
@@ -38,7 +43,9 @@ class RayEvaluator(Evaluator):
         ray_kwargs: dict = None,
         num_workers: int = None,
     ):
-        super().__init__(run_function, num_workers, callbacks, run_function_kwargs)
+        super().__init__(
+            run_function, num_workers, callbacks, run_function_kwargs, storage
+        )
         # get the __init__ parameters
         self._init_params = locals()
 
@@ -82,12 +89,14 @@ class RayEvaluator(Evaluator):
             # max_calls=1,
         )(self.run_function)
 
-    async def execute(self, job):
+    async def execute(self, job: Job) -> Job:
 
-        sol = await self._remote_run_function.remote(
-            job.config, **self.run_function_kwargs
+        running_job = job.create_running_job(self._storage, self._stopper)
+
+        output = await self._remote_run_function.remote(
+            running_job, **self.run_function_kwargs
         )
 
-        job.result = sol
+        job.set_output(output)
 
         return job

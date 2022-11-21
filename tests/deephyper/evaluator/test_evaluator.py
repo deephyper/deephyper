@@ -5,12 +5,12 @@ import pandas as pd
 import pytest
 
 
-def run(config, y=0):
-    return config["x"] + y
+def run(job, y=0):
+    return job["x"] + y
 
 
-def run_many_results(config, y=0):
-    return {"x": config["x"], "y": y}
+def run_many_results(job, y=0):
+    return {"objective": job["x"], "metadata": {"y": y}}
 
 
 class TestEvaluator(unittest.TestCase):
@@ -51,7 +51,13 @@ class TestEvaluator(unittest.TestCase):
         results = pd.read_csv("results.csv")
         assert all(
             results.columns
-            == ["p:x", "objective", "job_id", "timestamp_submit", "timestamp_gather"]
+            == [
+                "p:x",
+                "objective",
+                "job_id",
+                "m:timestamp_submit",
+                "m:timestamp_gather",
+            ]
         )
         assert len(results) == 10
         assert results["objective"][0] == 42.0
@@ -67,7 +73,13 @@ class TestEvaluator(unittest.TestCase):
         results = pd.read_csv("results.csv")
         assert all(
             results.columns
-            == ["p:x", "objective", "job_id", "timestamp_submit", "timestamp_gather"]
+            == [
+                "p:x",
+                "objective",
+                "job_id",
+                "m:timestamp_submit",
+                "m:timestamp_gather",
+            ]
         )
         assert len(results) == 10
         assert results["objective"][0] == "F_out_of_memory"
@@ -83,7 +95,13 @@ class TestEvaluator(unittest.TestCase):
         results = pd.read_csv("results.csv")
         assert all(
             results.columns
-            == ["p:x", "objective", "job_id", "timestamp_submit", "timestamp_gather"]
+            == [
+                "p:x",
+                "objective",
+                "job_id",
+                "m:timestamp_submit",
+                "m:timestamp_gather",
+            ]
         )
         assert len(results) == 10
         assert results["objective"][0] == 42.0
@@ -92,8 +110,7 @@ class TestEvaluator(unittest.TestCase):
         def run(config):
             return {
                 "objective": 42.0,
-                "num_epochs_trained": 25,
-                "num_parameters": 420000,
+                "metadata": {"num_epochs_trained": 25, "num_parameters": 420000},
             }
 
         evaluator = SerialEvaluator(run)
@@ -101,22 +118,23 @@ class TestEvaluator(unittest.TestCase):
         evaluator.gather(type="ALL")
         evaluator.dump_evals()
         results = pd.read_csv("results.csv")
+        print(results)
         assert all(
             results.columns
             == [
                 "p:x",
                 "objective",
                 "job_id",
-                "timestamp_submit",
-                "timestamp_gather",
-                "num_epochs_trained",
-                "num_parameters",
+                "m:timestamp_submit",
+                "m:timestamp_gather",
+                "m:num_epochs_trained",
+                "m:num_parameters",
             ]
         )
         assert len(results) == 10
         assert results["objective"][0] == 42.0
-        assert results["num_epochs_trained"][0] == 25
-        assert results["num_parameters"][0] == 420000
+        assert results["m:num_epochs_trained"][0] == 25
+        assert results["m:num_parameters"][0] == 420000
 
         # dict with reserved keywords (when @profile decorator is used)
         from deephyper.evaluator import profile
@@ -136,10 +154,10 @@ class TestEvaluator(unittest.TestCase):
                 "p:x",
                 "objective",
                 "job_id",
-                "timestamp_submit",
-                "timestamp_gather",
-                "timestamp_start",
-                "timestamp_end",
+                "m:timestamp_submit",
+                "m:timestamp_gather",
+                "m:timestamp_start",
+                "m:timestamp_end",
             ]
         )
         assert len(results) == 10
@@ -150,8 +168,10 @@ class TestEvaluator(unittest.TestCase):
         def run(config):
             return {
                 "objective": 42.0,
-                "num_epochs_trained": 25,
-                "num_parameters": 420000,
+                "metadata": {
+                    "num_epochs_trained": 25,
+                    "num_parameters": 420000,
+                },
             }
 
         evaluator = SerialEvaluator(run)
@@ -165,18 +185,18 @@ class TestEvaluator(unittest.TestCase):
                 "p:x",
                 "objective",
                 "job_id",
-                "timestamp_submit",
-                "timestamp_gather",
-                "timestamp_start",
-                "timestamp_end",
-                "num_epochs_trained",
-                "num_parameters",
+                "m:timestamp_submit",
+                "m:timestamp_gather",
+                "m:timestamp_start",
+                "m:timestamp_end",
+                "m:num_epochs_trained",
+                "m:num_parameters",
             ]
         )
         assert len(results) == 10
         assert results["objective"][0] == 42.0
-        assert results["num_epochs_trained"][0] == 25
-        assert results["num_parameters"][0] == 420000
+        assert results["m:num_epochs_trained"][0] == 25
+        assert results["m:num_parameters"][0] == 420000
 
         # tuple of float for multi-objective optimization (will appear as "objective_0" and "objective_1" in the resulting dataframe)
         def run(config):
@@ -198,8 +218,8 @@ class TestEvaluator(unittest.TestCase):
                 "objective_0",
                 "objective_1",
                 "job_id",
-                "timestamp_submit",
-                "timestamp_gather",
+                "m:timestamp_submit",
+                "m:timestamp_gather",
             ]
         )
         assert len(results) == 10
@@ -227,8 +247,7 @@ class TestEvaluator(unittest.TestCase):
         jobs.sort(key=lambda j: j.config["x"])
         for config, job in zip(configs, jobs):
             assert config["x"] == job.config["x"]
-            assert config["x"] == job.result
-
+            assert config["x"] == job.objective
         evaluator.submit(configs)
         jobs = evaluator.gather("BATCH", size=1)
         assert 1 <= len(jobs) and len(jobs) <= len(configs)
@@ -246,7 +265,7 @@ class TestEvaluator(unittest.TestCase):
         jobs.sort(key=lambda j: j.config["x"])
         for config, job in zip(configs, jobs):
             assert config["x"] == job.config["x"]
-            assert job.result == config["x"] + 1
+            assert job.objective == config["x"] + 1
 
         evaluator.submit(configs)
         jobs = evaluator.gather("BATCH", size=1)
@@ -267,9 +286,9 @@ class TestEvaluator(unittest.TestCase):
         jobs.sort(key=lambda j: j.config["x"])
         for config, job in zip(configs, jobs):
             assert config["x"] == job.config["x"]
-            assert type(job.result) is dict
-            assert job.result["x"] == config["x"]
-            assert job.result["y"] == 0
+            assert type(job.output) is dict
+            assert job.objective == config["x"]
+            assert job.metadata["y"] == 0
 
     @pytest.mark.fast
     @pytest.mark.hps
@@ -305,4 +324,4 @@ class TestEvaluator(unittest.TestCase):
 
 if __name__ == "__main__":
     test = TestEvaluator()
-    test.test_ray()
+    test.test_run_function_standards()

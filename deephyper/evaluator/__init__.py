@@ -21,9 +21,9 @@ The return value of the ``run``-function respect the following standards (but th
     # dict
     return {"objective": 42.0}
     # dict with additional information
-    return {"objective": 42.0, "num_epochs_trained": 25, "num_parameters": 420000}
+    return {"objective": 42.0, "metadata": {"num_epochs_trained": 25, "num_parameters": 420000}}
     # dict with reserved keywords (when @profile decorator is used)
-    return {"objective": 42.0, "timestamp_start": ..., "timestamp_end": ...}
+    return {"objective": 42.0, "metadata": {"timestamp_start": ..., "timestamp_end": ...}"
     # tuple of float for multi-objective optimization (will appear as "objective_0" and "objective_1" in the resulting dataframe)
     return 42.0, 0.42
 

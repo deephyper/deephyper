@@ -8,6 +8,7 @@ import os
 
 from deephyper.evaluator._evaluator import Evaluator
 from deephyper.evaluator._encoder import Encoder
+from deephyper.evaluator.storage import Storage
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +32,11 @@ class SubprocessEvaluator(Evaluator):
         num_workers: int = 1,
         callbacks: list = None,
         run_function_kwargs: dict = None,
+        storage: Storage = None,
     ):
-        super().__init__(run_function, num_workers, callbacks, run_function_kwargs)
+        super().__init__(
+            run_function, num_workers, callbacks, run_function_kwargs, storage
+        )
         self.sem = asyncio.Semaphore(num_workers)
 
         if hasattr(run_function, "__name__") and hasattr(run_function, "__module__"):
@@ -77,10 +81,11 @@ class SubprocessEvaluator(Evaluator):
             retval = retval_bytes.replace(
                 b"'", b'"'
             )  # For dictionaries, replace single quotes with double quotes!
-            sol = json.loads(retval)
+            print(f"{retval=}")
+            output = json.loads(retval)
 
             await proc.wait()
 
-            job.result = sol
+            job.set_output(output)
 
         return job

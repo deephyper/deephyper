@@ -93,6 +93,7 @@ class CBO(Search):
         moo_scalarization_weight=None,
         scheduler=None,
         objective_scaler="auto",
+        stopper=None,
         **kwargs,
     ):
 
@@ -199,7 +200,9 @@ class CBO(Search):
             and len(self._problem.space.get_forbiddens()) == 0
             and len(self._problem.space.get_conditions()) == 0
         ):
-            self._opt_space = convert_to_skopt_space(self._problem.space)
+            self._opt_space = convert_to_skopt_space(
+                self._problem.space, surrogate_model=surrogate_model
+            )
         else:
             self._opt_space = self._problem.space
 
@@ -257,6 +260,9 @@ class CBO(Search):
             logging.info(
                 f"Set up scheduler '{scheduler_type}' with parameters '{scheduler_params}'"
             )
+
+        # stopper
+        self._evaluator._stopper = stopper
 
     def _setup_optimizer(self):
         if self._fitted:
@@ -347,24 +353,31 @@ class CBO(Search):
                     cfg, obj = job_i
                     x = list(cfg.values())
 
-                    # retrieve budget consumed by job
-                    if job_i.budget is not None:
-                        opt_b.append(job_i.budget)
-
-                    if np.all(np.isreal(obj)):
-                        opt_X.append(x)
-                        opt_y.append(np.negative(obj).tolist())  # !maximizing
-                    elif (type(obj) is str and "F" == obj[0]) or np.any(
-                        type(objval) is str and "F" == objval[0] for objval in obj
-                    ):
-                        if (
-                            self._opt_kwargs["acq_optimizer_kwargs"]["filter_failures"]
-                            == "ignore"
-                        ):
-                            continue
-                        else:
+                    # retrieve budget consumed by job with multiple observations
+                    if job_i.observations is not None:
+                        for b, y in zip(*job_i.observations):
                             opt_X.append(x)
-                            opt_y.append("F")
+                            opt_b.append(b)
+                            opt_y.append(-y)
+
+                    # single observation returned without budget
+                    else:
+                        if np.all(np.isreal(obj)):
+                            opt_X.append(x)
+                            opt_y.append(np.negative(obj).tolist())  # !maximizing
+                        elif (type(obj) is str and "F" == obj[0]) or np.any(
+                            type(objval) is str and "F" == objval[0] for objval in obj
+                        ):
+                            if (
+                                self._opt_kwargs["acq_optimizer_kwargs"][
+                                    "filter_failures"
+                                ]
+                                == "ignore"
+                            ):
+                                continue
+                            else:
+                                opt_X.append(x)
+                                opt_y.append("F")
 
                 logging.info(f"Transformation took {time.time() - t1:.4f} sec.")
 

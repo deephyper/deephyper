@@ -3,6 +3,15 @@ from typing import Any, Dict, Hashable, List, Tuple
 
 
 class Storage(abc.ABC):
+    """An abstract interface representing a storage client."""
+
+    def __init__(self) -> None:
+        self.connected = False
+
+    @abc.abstractmethod
+    def connect(self):
+        """Connect the storage client to the storage service."""
+
     @abc.abstractmethod
     def create_new_search(self) -> Hashable:
         """Create a new search in the store and returns its identifier.

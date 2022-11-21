@@ -4,24 +4,41 @@ import redis
 
 from deephyper.evaluator.storage._storage import Storage
 
-# from redis_om import JsonModel, Field, EmbeddedJsonModel
-
-
-# class JobModel(EmbeddedJsonModel):
-#     job_id: str = Field(index=True)
-
-# class SearchModel(EmbeddedJsonModel):
-#     search_id: str = Field(index=True)
-#     job_id_counter: int = 0
-#     jobs: List[JobModel] = list()
-
 
 class RedisStorage(Storage):
-    def __init__(self) -> None:
+    def __init__(self, host="localhost", port=6379, db=0) -> None:
         super().__init__()
 
-        self._redis = redis.Redis(charset="utf-8", decode_responses=True)
-        self._redis.set("search_id_counter", 0)
+        self._host = host
+        self._port = port
+        self._db = db
+
+        self._redis = None
+
+    def connect(self):
+        self._redis = redis.Redis(
+            host=self._host,
+            port=self._port,
+            db=self._db,
+            charset="utf-8",
+            decode_responses=True,
+        )
+        self.connected = True
+        self._redis.setnx("search_id_counter", 0)
+
+    def __getstate__(self):
+        state = {
+            "_host": self._host,
+            "_port": self._port,
+            "_db": self._db,
+            "_redis": None,
+            "connected": False,
+        }
+        return state
+
+    def __setstate__(self, newstate):
+        self.__dict__.update(newstate)
+        self.connect()
 
     def create_new_search(self) -> Hashable:
         """Create a new search in the store and returns its identifier.
@@ -146,3 +163,17 @@ class RedisStorage(Storage):
         """
         data = self._redis.json().get(f"job:{job_id}", ".")
         return data
+
+    def load_metadata_from_all_jobs(self, search_id, key):
+        search_id
+        jobs_ids = self.load_all_job_ids(search_id)
+        values = []
+        for job_id in jobs_ids:
+            try:
+                value = self._redis.json().get(f"job:{job_id}", f".metadata.{key}")
+            except redis.exceptions.ResponseError:
+                value = None
+
+            if value is not None:
+                values.append(value)
+        return values

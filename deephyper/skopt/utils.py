@@ -830,12 +830,12 @@ def cook_objective_scaler(scaler, base_estimator):
         check_inverse=True,
     )
     pipeline = make_pipeline(MinMaxScaler(), scaler_log)
-    scalers["minmax:log"] = pipeline
+    scalers["minmaxlog"] = pipeline
 
     if scaler == "auto":
 
         if isinstance(base_estimator, RandomForestRegressor):
-            scaler = "minmax:log"
+            scaler = "minmaxlog"
         else:
             scaler = "identity"
 

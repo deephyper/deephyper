@@ -1,13 +1,25 @@
 import unittest
 import pytest
 
-from deephyper.evaluator.storage._redis_storage import RedisStorage
+from deephyper.evaluator import Evaluator, RunningJob
+
+
+def run_0(job: RunningJob) -> dict:
+    if not (job.storage.connected):
+        job.storage.connect()
+    job.storage.store_job_metadata(job.id, "foo", 0)
+    return {
+        "objective": job.parameters["x"],
+        "metadata": {"storage_id": id(job.storage)},
+    }
 
 
 @pytest.mark.fast
 @pytest.mark.hps
+@pytest.mark.redis
 class TestRedisStorage(unittest.TestCase):
     def test_basic(self):
+        from deephyper.evaluator.storage._redis_storage import RedisStorage
 
         # Creation of the database
         storage = RedisStorage()
@@ -62,7 +74,41 @@ class TestRedisStorage(unittest.TestCase):
         job_id0_data = storage.load_job(job_id0)
         self.assertEqual(job_id0_data["metadata"], {"timestamp": 10})
 
+    def test_with_evaluator(self):
+        from deephyper.evaluator.storage._redis_storage import RedisStorage
+
+        storage = RedisStorage()
+        storage.connect()
+        storage._redis.flushdb()
+
+        # serial evaluator
+        evaluator = Evaluator.create(
+            run_0, method="serial", method_kwargs={"storage": storage}
+        )
+        evaluator.submit([{"x": 0}])
+        job_done = evaluator.gather("ALL")[0]
+        assert job_done.metadata["storage_id"] == id(storage)
+
+        # thread evaluator
+        evaluator = Evaluator.create(
+            run_0, method="thread", method_kwargs={"storage": storage}
+        )
+        evaluator.submit([{"x": 0}])
+        job_done = evaluator.gather("ALL")[0]
+        assert job_done.metadata["storage_id"] == id(storage)
+
+        # process evaluator
+        evaluator = Evaluator.create(
+            run_0, method="process", method_kwargs={"storage": storage}
+        )
+        evaluator.submit([{"x": 0}])
+        job_done = evaluator.gather("ALL")[0]
+        assert job_done.metadata["storage_id"] != id(storage)
+
+        data = evaluator._storage.load_search(evaluator._search_id)
+        assert data[0]["metadata"]["foo"] == 0
+
 
 if __name__ == "__main__":
     test = TestRedisStorage()
-    test.test_basic()
+    test.test_with_evaluator()

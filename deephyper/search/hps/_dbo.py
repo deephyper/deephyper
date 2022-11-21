@@ -68,6 +68,7 @@ class DBO(CBO):
         moo_scalarization_weight=None,
         scheduler=None,
         objective_scaler="auto",
+        stopper=None,
         **kwargs,
     ):
         # get the __init__ parameters
@@ -85,8 +86,10 @@ class DBO(CBO):
         if acq_optimizer == "auto":
             if acq_func[0] == "q":
                 acq_optimizer = "sampling"
+            elif acq_func[0] == "b":
+                acq_optimizer == "boltzmann_sampling"
             else:
-                acq_optimizer = "boltzmann_sampling"
+                acq_optimizer = "sampling"
 
         if acq_func[0] == "q":
             # kappa = scipy.stats.truncexpon.rvs(kappa, size=self._evaluator.size)[
@@ -101,13 +104,9 @@ class DBO(CBO):
             xi = scipy.stats.expon.rvs(
                 size=self._evaluator.size, scale=xi, random_state=random_state
             )[self._evaluator.rank]
-            # kappa = random_state.exponential(kappa, size=self._evaluator.size)[
-            #    self._evaluator.rank
-            # ]
-            # xi = random_state.exponential(xi, size=self._evaluator.size)[
-            #    self._evaluator.rank
-            # ]
             acq_func = acq_func[1:]
+        elif acq_func[0] == "b":
+            acq_func[0] = acq_func[1:]
 
         # set random state for given rank
         random_state = np.random.RandomState(
@@ -143,6 +142,7 @@ class DBO(CBO):
                 moo_scalarization_weight=moo_scalarization_weight,
                 scheduler=scheduler,
                 objective_scaler=objective_scaler,
+                stopper=stopper,
                 **kwargs,
             )
         self._evaluator.comm.Barrier()
@@ -173,6 +173,7 @@ class DBO(CBO):
                 moo_scalarization_weight=moo_scalarization_weight,
                 scheduler=scheduler,
                 objective_scaler=objective_scaler,
+                stopper=stopper,
                 **kwargs,
             )
         self._evaluator.comm.Barrier()

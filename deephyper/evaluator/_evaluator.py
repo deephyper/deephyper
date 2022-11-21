@@ -95,6 +95,7 @@ class Evaluator:
         self.loop = None  # Event loop for asyncio.
         self._start_dumping = False
         self.num_objective = None  # record if multi-objective are recorded
+        self._stopper = None  # stopper object
 
         self._callbacks = [] if callbacks is None else callbacks
 
@@ -106,6 +107,8 @@ class Evaluator:
 
         # storage mechanism
         self._storage = MemoryStorage() if storage is None else storage
+        if not (self._storage.connected):
+            self._storage.connect()
         self._search_id = self._storage.create_new_search()
 
         # to avoid "RuntimeError: This event loop is already running"
@@ -220,7 +223,7 @@ class Evaluator:
         """Called after a job is started."""
         job.status = job.RUNNING
 
-        job.timestamp_submit = time.time() - self.timestamp
+        job.output["metadata"]["timestamp_submit"] = time.time() - self.timestamp
 
         # call callbacks
         for cb in self._callbacks:
@@ -230,20 +233,16 @@ class Evaluator:
         """Called after a job has completed."""
         job.status = job.DONE
 
-        job.timestamp_gather = time.time() - self.timestamp
+        job.output["metadata"]["timestamp_gather"] = time.time() - self.timestamp
 
-        if np.isscalar(job.result):
-            if np.isreal(job.result) and not (np.isfinite(job.result)):
-                job.result = Evaluator.FAIL_RETURN_VALUE
+        if np.isscalar(job.objective):
+            if np.isreal(job.objective) and not (np.isfinite(job.objective)):
+                job.output["objective"] = Evaluator.FAIL_RETURN_VALUE
 
         # store data in storage
-        self._storage.store_job_out(job.id, job.result)
-        self._storage.store_job_metadata(
-            job.id, "timestamp_submit", job.timestamp_submit
-        )
-        self._storage.store_job_metadata(
-            job.id, "timestamp_gather", job.timestamp_gather
-        )
+        self._storage.store_job_out(job.id, job.objective)
+        for k, v in job.metadata.items():
+            self._storage.store_job_metadata(job.id, k, v)
 
         # call callbacks
         for cb in self._callbacks:
@@ -253,14 +252,10 @@ class Evaluator:
 
         job = await self.execute(job)
 
-        # if the user returns other information than the objective
-        if isinstance(job.result, dict) and "objective" in job.result:
-
-            if "budget" in job.result:
-                job.budget = job.result.pop("budget")
-
-            job.other = {k: v for k, v in job.result.items() if k != "objective"}
-            job.result = job.result["objective"]
+        if not (isinstance(job.output, dict)):
+            raise ValueError(
+                "The output of the job is not standard. Check if `job.set_output(output) was correctly used when defining the Evaluator class."
+            )
 
         return job
 
@@ -374,10 +369,7 @@ class Evaluator:
             result = {f"p:{k}": v for k, v in result.items()}
 
             # when the returned value of the run-function is a dict we flatten it to add in csv
-            if isinstance(job.result, dict):
-                result.update(job.result)
-            else:
-                result["objective"] = job.result
+            result["objective"] = job.objective
 
             # when the objective is a tuple (multi-objective) we create 1 column per tuple-element
             if isinstance(result["objective"], tuple):
@@ -399,28 +391,17 @@ class Evaluator:
                         result[f"objective_{i}"] = obj
 
             # job id and rank
-            result["job_id"] = job.id
+            result["job_id"] = int(job.id.split(".")[1])
 
             if isinstance(job.rank, int):
                 result["rank"] = job.rank
 
-            # budget
-            if job.budget is not None:
-                result["budget"] = job.budget
-
             # profiling
-            result["timestamp_submit"] = job.timestamp_submit
-            result["timestamp_gather"] = job.timestamp_gather
-
-            if job.timestamp_start is not None and job.timestamp_end is not None:
-                result["timestamp_start"] = job.timestamp_start
-                result["timestamp_end"] = job.timestamp_end
+            metadata = {f"m:{k}": v for k, v in job.metadata.items()}
+            result.update(metadata)
 
             if hasattr(job, "dequed"):
-                result["dequed"] = ",".join(job.dequed)
-
-            if isinstance(job.other, dict):
-                result.update(job.other)
+                result["m:dequed"] = ",".join(job.dequed)
 
             resultsList.append(result)
 

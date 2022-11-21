@@ -11,6 +11,17 @@ class MemoryStorage(Storage):
         self._search_id_counter = 0
         self._data = {}
 
+    def connect(self):
+        self.connected = True
+
+    def __getstate__(self):
+        state = {"_search_id_counter": 0, "_data": {}, "connected": False}
+        return state
+
+    def __setstate__(self, newstate):
+        self.__dict__.update(newstate)
+        self.connect()
+
     def create_new_search(self) -> Hashable:
         """Create a new search in the store and returns its identifier.
 
@@ -40,6 +51,7 @@ class MemoryStorage(Storage):
             "in": None,
             "out": None,
             "metadata": {},
+            "intermediate": {"budget": [], "objective": []},
         }
         return job_id
 
@@ -87,6 +99,24 @@ class MemoryStorage(Storage):
         search_id, partial_id = job_id.split(".")
         self._data[search_id]["data"][partial_id]["metadata"][key] = value
 
+    # def push_job_objective(
+    #     self, job_id: Hashable, budget: float, objective: Union[str, float, int, tuple]
+    # ) -> None:
+    #     """Push an objective value for the job at a corresponding budget.
+
+    #     Args:
+    #         job_id (Hashable): The identifier of the job.
+    #         budget (float): The budget at which the objective was observed.
+    #         objective (Union[str, float, int, tuple]): The observed objective value.
+    #     """
+    #     search_id, partial_id = job_id.split(".")
+    #     self._data[search_id]["data"][partial_id]["intermediate"]["budget"].append(
+    #         budget
+    #     )
+    #     self._data[search_id]["data"][partial_id]["intermediate"]["objective"].append(
+    #         objective
+    #     )
+
     def load_all_search_ids(self) -> List[Hashable]:
         """Loads the identifiers of all recorded searches.
 
@@ -132,3 +162,12 @@ class MemoryStorage(Storage):
         search_id, partial_id = job_id.split(".")
         data = self._data[search_id]["data"][partial_id]
         return copy.deepcopy(data)
+
+    def load_metadata_from_all_jobs(self, search_id, key):
+        search_id
+        values = []
+        for job_data_i in self._data[search_id]["data"].values():
+            value_i = job_data_i["metadata"].get(key, None)
+            if value_i is not None:
+                values.append(value_i)
+        return values

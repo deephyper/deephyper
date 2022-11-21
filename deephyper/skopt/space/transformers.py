@@ -19,11 +19,17 @@ class Transformer(object):
 class Identity(Transformer):
     """Identity transform."""
 
+    def __init__(self, type_func=None) -> None:
+        self.type_func = type_func
+
     def transform(self, X):
         return X
 
     def inverse_transform(self, Xt):
-        return Xt
+        if self.type_func:
+            return [self.type_func(Xt[0])]
+        else:
+            return Xt
 
 
 class ToInteger(Transformer):
