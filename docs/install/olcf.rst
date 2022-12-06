@@ -18,6 +18,7 @@ Install DeepHyper:
 When submiting/allocating a job to SLURM, make sure you activate the virtual environment in your script:
 
 .. code-block:: console
+
     $ module load ... #your modules
     $ module load cray-python
     $ source $PWD/environ_dh/bin/activate
