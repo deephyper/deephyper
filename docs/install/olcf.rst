@@ -1,28 +1,28 @@
+Oak Ridge Leadership Computing Facility (OLCF)
+**********************************************
+
 Crusher
-*****
+=======
 
-`Crusher <https://docs.olcf.ornl.gov/systems/crusher_quick_start_guide.html>`_ a DOE supercomputer at OLCF
+`Crusher <https://docs.olcf.ornl.gov/systems/crusher_quick_start_guide.html>`_ is a DOE supercomputer at OLCF.
 
-Install DeepHyper:
+To install DeepHyper on Crusher after connecting to the system run the following commands:
 
 .. code-block:: console
 
     $ module load cray-python
-    $ python3.9 -m venv $PWD/environ_dh python=3.9
-    $ source environ_dh/bin/activate
-    $ git clone -b develop https://github.com/deephyper/deephyper.git
-    $ pip install --no-cache-dir -e "deephyper/"
-    $ pip install parse
-    $ pip install sdv
+    $ python3.9 -m venv dh-env python=3.9
+    $ source dh-env/bin/activate
+    $ pip install deephyper
     
-When submiting/allocating a job to SLURM, make sure you activate the virtual environment in your script:
+When submiting/allocating a job to the Slurm scheduler, make sure you activate the previously created Python virtual environment in your script:
 
 .. code-block:: console
 
-    $ module load ... #your modules
+    $ module load ... # Load other modules you require to use
     $ module load cray-python
-    $ source $PWD/environ_dh/bin/activate
+    $ source dh-env/bin/activate # Assuming to be in the same directory as when we execute the previous set of commands
 
 .. warning::
 
-    The Crusher installation will only provide the default DeepHyper installation (i.e., hyperparameter optimization). All features will not be included by default.
+    The Crusher installation will only provide the default DeepHyper installation (i.e., hyperparameter optimization). All features will not be included by default (transfer learning, ...). Check out the local installation page for further details.
