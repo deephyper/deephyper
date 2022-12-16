@@ -232,7 +232,8 @@ class RandomForestRegressor(ForestRegressor):
         splitter="random"
     ):
         super().__init__(
-            base_estimator=DecisionTreeRegressor(splitter=splitter),
+            # !keyword-argument changing from sklearn==1.2.0, positional fixed it!
+            DecisionTreeRegressor(splitter=splitter),
             n_estimators=n_estimators,
             estimator_params=(
                 "criterion",
