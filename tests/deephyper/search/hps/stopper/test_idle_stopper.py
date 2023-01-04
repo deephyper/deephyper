@@ -6,12 +6,12 @@ import numpy as np
 from deephyper.evaluator import RunningJob
 from deephyper.problem import HpProblem
 from deephyper.search.hps import CBO
-from deephyper.stopper import SuccessiveHalvingStopper
+from deephyper.stopper import IdleStopper
 
 
 def run(job: RunningJob) -> dict:
 
-    assert isinstance(job.stopper, SuccessiveHalvingStopper)
+    assert isinstance(job.stopper, IdleStopper)
 
     max_budget = 50
     objective_i = 0
@@ -38,7 +38,7 @@ class TestSHAStopper(unittest.TestCase):
         problem = HpProblem()
         problem.add_hyperparameter((0.0, 10.0), "x")
 
-        stopper = SuccessiveHalvingStopper(min_budget=1, reduction_factor=3)
+        stopper = IdleStopper()
         search = CBO(
             problem, run, surrogate_model="DUMMY", stopper=stopper, random_state=42
         )
@@ -51,7 +51,7 @@ class TestSHAStopper(unittest.TestCase):
         assert "objective" in results.columns
 
         budgets = np.sort(np.unique(results["m:budget"].to_numpy())).tolist()
-        assert budgets == [1, 3, 9, 50]
+        assert budgets == [50]
 
 
 if __name__ == "__main__":

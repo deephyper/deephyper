@@ -45,7 +45,6 @@ def standardize_run_function_output(
     objective = np.asarray(output["objective"])
     if objective.ndim == 2:
         output["objective"] = objective[1, -1].tolist()
-        # output["metadata"]["budget"] = objective[0, -1].tolist()
         output["observations"] = objective.tolist()
 
     return output

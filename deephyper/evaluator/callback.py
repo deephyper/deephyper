@@ -18,7 +18,6 @@ class Callback:
         Args:
             job (Job): The created job.
         """
-        ...
 
     def on_done(self, job):
         """Called each time a Job is completed by the Evaluator.
@@ -26,7 +25,13 @@ class Callback:
         Args:
             job (Job): The completed job.
         """
-        ...
+
+    def on_done_other(self, job):
+        """Called each time a Job is collected from an other process.
+
+        Args:
+            job (Job): The completed Job.
+        """
 
 
 class ProfilingCallback(Callback):
@@ -79,6 +84,9 @@ class LoggerCallback(Callback):
         self._best_objective = None
         self._n_done = 0
 
+    def on_done_other(self, job):
+        self.on_done(job)
+
     def on_done(self, job):
         self._n_done += 1
         # Test if multi objectives are received
@@ -127,6 +135,9 @@ class TqdmCallback(Callback):
     def set_max_evals(self, max_evals):
         self._max_evals = max_evals
         self._tqdm = None
+
+    def on_done_other(self, job):
+        self.on_done(job)
 
     def on_done(self, job):
 
@@ -178,6 +189,9 @@ class SearchEarlyStopping(Callback):
         self._n_lower = 0
         self._patience = patience
         self._objective_func = objective_func
+
+    def on_done_other(self, job):
+        self.on_done(job)
 
     def on_done(self, job):
         job_objective = self._objective_func(job)

@@ -64,6 +64,9 @@ class CBO(Search):
         max_failures (int, optional): Maximum number of failed configurations allowed before observing a valid objective value when ``filter_failures`` is not equal to ``"ignore"``. Defaults to ``100``.
         moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "AugChebyshev", "PBI", "Quadratic", "rLinear", "rChebyshev", "rAugChebyshev", "rPBI", "rQuadratic"]``. Defaults to ``"Chebyshev"``.
         moo_scalarization_weight (list, optional): Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions. Defaults to ``None``.
+        scheduler (dict, callable, optional): a method to manage the the value of ``kappa, xi`` with iterations. Defaults to ``None`` which does not use any scheduler.
+        objective_scaler (str, optional): a way to map the objective space to some other support for example to normalize it. Defaults to ``"auto"`` which automatically set it to "identity" for any surrogate model except "RF" which will use "minmaxlog".
+        stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the function. Defaults to ``None`` which does not use any stopper.
     """
 
     def __init__(
@@ -355,10 +358,32 @@ class CBO(Search):
 
                     # retrieve budget consumed by job with multiple observations
                     if job_i.observations is not None:
-                        for b, y in zip(*job_i.observations):
-                            opt_X.append(x)
-                            opt_b.append(b)
-                            opt_y.append(-y)
+                        # # TODO: use ALC to reduce the problem to a scalar maximization/estimation
+                        from deephyper.stopper._lcmodel_stopper import (
+                            area_learning_curve,
+                        )
+
+                        # z_values: are the steps z from the budget function b(z)
+                        # the job observations returns the observed (budgets, objectives)
+                        # steps can be deduced from the length of these lists
+                        # y_values: are the objective f(b(z))
+                        _, y_values = np.array(job_i.observations)
+                        z_values = np.arange(len(y_values)) + 1
+                        y_values = -y_values
+                        y = area_learning_curve(
+                            z_values, y_values, z_max=self._evaluator._stopper.max_steps
+                        )
+                        # print(f"{b_values[-5:]=}")
+                        # print(f"{y_values[-5:]=}")
+                        # print(f"alc={y}")
+                        opt_X.append(x)
+                        opt_y.append(y)
+
+                        # TODO: the following approach will not scale!
+                        # for b, y in zip(*job_i.observations):
+                        #     opt_X.append(x)
+                        #     opt_b.append(b)
+                        #     opt_y.append(-y)
 
                     # single observation returned without budget
                     else:

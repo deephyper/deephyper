@@ -823,7 +823,7 @@ def cook_objective_scaler(scaler, base_estimator):
     pipeline = FunctionTransformer(func=lambda x: x, inverse_func=lambda x: x)
     scalers["identity"] = pipeline
 
-    # minmax:log
+    # minmaxlog
     scaler_log = FunctionTransformer(
         func=lambda x: np.log(x + 1e-12),
         inverse_func=lambda x: np.exp(x) - 1e-12,

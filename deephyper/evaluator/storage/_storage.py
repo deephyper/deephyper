@@ -1,5 +1,14 @@
 import abc
-from typing import Any, Dict, Hashable, List, Tuple
+import importlib
+import logging
+from typing import Any, Dict, Hashable, List, Tuple, TypeVar
+
+StorageType = TypeVar("StorageType", bound="Storage")
+
+STORAGES = {
+    "memory": "_memory_storage.MemoryStorage",
+    "redis": "_redis_storage.RedisStorage",
+}
 
 
 class Storage(abc.ABC):
@@ -8,8 +17,40 @@ class Storage(abc.ABC):
     def __init__(self) -> None:
         self.connected = False
 
+    def connect(self) -> StorageType:
+        """Connect the storage client to the storage service."""
+        self._connect()
+        return self
+
+    @staticmethod
+    def create(method: str = "local_memory", method_kwargs: Dict = None) -> StorageType:
+
+        method_kwargs = method_kwargs if method_kwargs else {}
+
+        logging.info(
+            f"Creating Storage(method={method}, method_kwargs={method_kwargs}..."
+        )
+
+        if method not in STORAGES.keys():
+            val = ", ".join(STORAGES)
+            raise ValueError(
+                f'The method "{method}" is not a valid method for an Evaluator!'
+                f" Choose among the following evalutor types: "
+                f"{val}."
+            )
+
+        # create the evaluator
+        mod_name, attr_name = STORAGES[method].split(".")
+        mod = importlib.import_module(f"deephyper.evaluator.storage.{mod_name}")
+        storage_cls = getattr(mod, attr_name)
+        storage = storage_cls(**method_kwargs)
+
+        logging.info("Creation done")
+
+        return storage
+
     @abc.abstractmethod
-    def connect(self):
+    def _connect(self):
         """Connect the storage client to the storage service."""
 
     @abc.abstractmethod
@@ -30,6 +71,27 @@ class Storage(abc.ABC):
 
         Returns:
             Hashable: The created identifier of the job.
+        """
+
+    @abc.abstractmethod
+    def store_search_value(
+        self, search_id: Hashable, key: Hashable, value: Any
+    ) -> None:
+        """Stores the value corresponding to key for search_id.
+
+        Args:
+            search_id (Hashable): The identifier of the job.
+            key (Hashable): A key to use to store the value.
+            value (Any): The value to store.
+        """
+
+    @abc.abstractmethod
+    def load_search_value(self, search_id: Hashable, key: Hashable) -> Any:
+        """Loads the value corresponding to key for search_id.
+
+        Args:
+            search_id (Hashable): The identifier of the job.
+            key (Hashable): A key to use to access the value.
         """
 
     @abc.abstractmethod
@@ -112,4 +174,40 @@ class Storage(abc.ABC):
 
         Returns:
             dict: The corresponding data of the job.
+        """
+
+    @abc.abstractmethod
+    def load_metadata_from_all_jobs(
+        self, search_id: Hashable, key: Hashable
+    ) -> List[Any]:
+        """Loads a given metadata value from all jobs.
+
+        Args:
+            search_id (Hashable): The identifier of the search.
+            key (Hashable): The identifier of the value.
+
+        Returns:
+            List[Any]: A list of all the retrieved metadata values.
+        """
+
+    @abc.abstractmethod
+    def load_out_from_all_jobs(self, search_id: Hashable) -> List[Any]:
+        """Loads the output value from all jobs.
+
+        Args:
+            search_id (Hashable): The identifier of the search.
+
+        Returns:
+            List[Any]: A list of all the retrieved output values.
+        """
+
+    @abc.abstractmethod
+    def load_jobs(self, job_ids: List[Hashable]) -> dict:
+        """Load all data from a given list of jobs' identifiers.
+
+        Args:
+            job_ids (list): The list of job identifiers.
+
+        Returns:
+            dict: A dictionnary of the retrieved values where the keys are the identifier of jobs.
         """

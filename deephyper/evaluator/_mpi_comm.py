@@ -4,7 +4,7 @@ import logging
 import sys
 import traceback
 
-from typing import Callable
+from typing import Callable, Hashable
 
 from deephyper.core.exceptions import RunFunctionError
 from deephyper.evaluator._evaluator import Evaluator
@@ -55,12 +55,18 @@ class MPICommEvaluator(Evaluator):
         callbacks=None,
         run_function_kwargs=None,
         storage: Storage = None,
+        search_id: Hashable = None,
         comm=None,
         root=0,
         abort_on_exit=False,
     ):
         super().__init__(
-            run_function, num_workers, callbacks, run_function_kwargs, storage
+            run_function=run_function,
+            num_workers=num_workers,
+            callbacks=callbacks,
+            run_function_kwargs=run_function_kwargs,
+            storage=storage,
+            search_id=search_id,
         )
         if not MPI.Is_initialized():
             MPI.Init_thread()

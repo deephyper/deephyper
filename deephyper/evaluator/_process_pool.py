@@ -2,7 +2,7 @@ import asyncio
 import functools
 import logging
 from concurrent.futures import ProcessPoolExecutor
-from typing import Callable
+from typing import Callable, Hashable
 
 from deephyper.evaluator._evaluator import Evaluator
 from deephyper.evaluator._job import Job
@@ -27,9 +27,15 @@ class ProcessPoolEvaluator(Evaluator):
         callbacks: list = None,
         run_function_kwargs: dict = None,
         storage: Storage = None,
+        search_id: Hashable = None,
     ):
         super().__init__(
-            run_function, num_workers, callbacks, run_function_kwargs, storage
+            run_function=run_function,
+            num_workers=num_workers,
+            callbacks=callbacks,
+            run_function_kwargs=run_function_kwargs,
+            storage=storage,
+            search_id=search_id,
         )
         self.sem = asyncio.Semaphore(num_workers)
         # !creating the exector once here is crutial to avoid repetitive overheads

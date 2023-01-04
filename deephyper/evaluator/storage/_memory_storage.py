@@ -11,7 +11,7 @@ class MemoryStorage(Storage):
         self._search_id_counter = 0
         self._data = {}
 
-    def connect(self):
+    def _connect(self):
         self.connected = True
 
     def __getstate__(self):
@@ -163,7 +163,39 @@ class MemoryStorage(Storage):
         data = self._data[search_id]["data"][partial_id]
         return copy.deepcopy(data)
 
-    def load_metadata_from_all_jobs(self, search_id, key):
+    def store_search_value(
+        self, search_id: Hashable, key: Hashable, value: Any
+    ) -> None:
+        """Stores the value corresponding to key for search_id.
+
+        Args:
+            search_id (Hashable): The identifier of the job.
+            key (Hashable): A key to use to store the value.
+            value (Any): The value to store.
+        """
+        self._data[search_id][key] = value
+
+    def load_search_value(self, search_id: Hashable, key: Hashable) -> Any:
+        """Loads the value corresponding to key for search_id.
+
+        Args:
+            search_id (Hashable): The identifier of the job.
+            key (Hashable): A key to use to access the value.
+        """
+        return self._data[search_id][key]
+
+    def load_metadata_from_all_jobs(
+        self, search_id: Hashable, key: Hashable
+    ) -> List[Any]:
+        """Loads a given metadata value from all jobs.
+
+        Args:
+            search_id (Hashable): The identifier of the search.
+            key (Hashable): The identifier of the value.
+
+        Returns:
+            List[Any]: A list of all the retrieved metadata values.
+        """
         search_id
         values = []
         for job_data_i in self._data[search_id]["data"].values():
@@ -171,3 +203,35 @@ class MemoryStorage(Storage):
             if value_i is not None:
                 values.append(value_i)
         return values
+
+    def load_out_from_all_jobs(self, search_id: Hashable) -> List[Any]:
+        """Loads the output value from all jobs.
+
+        Args:
+            search_id (Hashable): The identifier of the search.
+
+        Returns:
+            List[Any]: A list of all the retrieved output values.
+        """
+        values = []
+        for job_data_i in self._data[search_id]["data"].values():
+            value_i = job_data_i["out"]
+            if value_i is not None:
+                values.append(value_i)
+        return values
+
+    def load_jobs(self, job_ids: List[Hashable]) -> dict:
+        """Load all data from a given list of jobs' identifiers.
+
+        Args:
+            job_ids (list): The list of job identifiers.
+
+        Returns:
+            dict: A dictionnary of the retrieved values where the keys are the identifier of jobs.
+        """
+        data = {}
+        for job_id in job_ids:
+            search_id, partial_id = job_id.split(".")
+            job_data = self._data[search_id]["data"][partial_id]
+            data[job_id] = job_data
+        return data

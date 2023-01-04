@@ -1,3 +1,5 @@
+import pickle
+
 from typing import Any, Dict, Hashable, List, Tuple
 
 import redis
@@ -15,7 +17,7 @@ class RedisStorage(Storage):
 
         self._redis = None
 
-    def connect(self):
+    def _connect(self):
         self._redis = redis.Redis(
             host=self._host,
             port=self._port,
@@ -164,7 +166,44 @@ class RedisStorage(Storage):
         data = self._redis.json().get(f"job:{job_id}", ".")
         return data
 
-    def load_metadata_from_all_jobs(self, search_id, key):
+    def store_search_value(
+        self, search_id: Hashable, key: Hashable, value: Any
+    ) -> None:
+        """Stores the value corresponding to key for search_id.
+
+        Args:
+            search_id (Hashable): The identifier of the job.
+            key (Hashable): A key to use to store the value.
+            value (Any): The value to store.
+        """
+        key = f"{search_id}.{key}"
+        value = pickle.dumps(value)
+        self._redis.set(key, value)
+
+    def load_search_value(self, search_id: Hashable, key: Hashable) -> Any:
+        """Loads the value corresponding to key for search_id.
+
+        Args:
+            search_id (Hashable): The identifier of the job.
+            key (Hashable): A key to use to access the value.
+        """
+        key = f"{search_id}.{key}"
+        value = self._redis.get(key)
+        value = pickle.loads(value)
+        return value
+
+    def load_metadata_from_all_jobs(
+        self, search_id: Hashable, key: Hashable
+    ) -> List[Any]:
+        """Loads a given metadata value from all jobs.
+
+        Args:
+            search_id (Hashable): The identifier of the search.
+            key (Hashable): The identifier of the value.
+
+        Returns:
+            List[Any]: A list of all the retrieved metadata values.
+        """
         search_id
         jobs_ids = self.load_all_job_ids(search_id)
         values = []
@@ -177,3 +216,37 @@ class RedisStorage(Storage):
             if value is not None:
                 values.append(value)
         return values
+
+    def load_out_from_all_jobs(self, search_id: Hashable) -> List[Any]:
+        """Loads the output value from all jobs.
+
+        Args:
+            search_id (Hashable): The identifier of the search.
+
+        Returns:
+            List[Any]: A list of all the retrieved output values.
+        """
+        jobs_ids = self.load_all_job_ids(search_id)
+        values = []
+        for job_id in jobs_ids:
+            try:
+                value = self._redis.json().get(f"job:{job_id}", ".out")
+            except redis.exceptions.ResponseError:
+                value = None
+
+            if value is not None:
+                values.append(value)
+        return values
+
+    def load_jobs(self, job_ids: List[Hashable]) -> dict:
+        """Load all data from a given list of jobs' identifiers.
+
+        Args:
+            job_ids (list): The list of job identifiers.
+
+        Returns:
+            dict: A dictionnary of the retrieved values where the keys are the identifier of jobs.
+        """
+        job_ids = map(lambda jid: f"job:{jid}", job_ids)
+        data = self._redis.json().mget(job_ids, ".")
+        return data

@@ -6,6 +6,8 @@ import re
 import json
 import os
 
+from typing import Hashable
+
 from deephyper.evaluator._evaluator import Evaluator
 from deephyper.evaluator._encoder import Encoder
 from deephyper.evaluator.storage import Storage
@@ -24,6 +26,9 @@ class SubprocessEvaluator(Evaluator):
         run_function (callable): functions to be executed by the ``Evaluator``.
         num_workers (int, optional): Number of parallel processes used to compute the ``run_function``. Defaults to 1.
         callbacks (list, optional): A list of callbacks to trigger custom actions at the creation or completion of jobs. Defaults to None.
+        run_function_kwargs (dict, optional): Static keyword arguments to pass to the ``run_function`` when executed.
+        storage (Storage, optional): Storage used by the evaluator. Defaults to ``MemoryStorage``.
+        search_id (Hashable, optional): The id of the search to use in the corresponding storage. If ``None`` it will create a new search identifier when initializing the search.
     """
 
     def __init__(
@@ -33,9 +38,15 @@ class SubprocessEvaluator(Evaluator):
         callbacks: list = None,
         run_function_kwargs: dict = None,
         storage: Storage = None,
+        search_id: Hashable = None,
     ):
         super().__init__(
-            run_function, num_workers, callbacks, run_function_kwargs, storage
+            run_function=run_function,
+            num_workers=num_workers,
+            callbacks=callbacks,
+            run_function_kwargs=run_function_kwargs,
+            storage=storage,
+            search_id=search_id,
         )
         self.sem = asyncio.Semaphore(num_workers)
 

@@ -1,32 +1,31 @@
-import copy
-
 import numpy as np
 
 from deephyper.stopper._stopper import Stopper
 
 
 class SuccessiveHalvingStopper(Stopper):
+    """Stopper based on the asynchronous successive halving algorithm."""
+
     def __init__(
         self,
-        min_budget: float = 1,
+        max_steps: int,
+        min_steps: float = 1,
         reduction_factor: float = 3,
         min_early_stopping_rate: float = 0,
         min_competing: int = 0,
         min_fully_completed=0,
     ) -> None:
-        super().__init__()
-        self._min_budget = min_budget
+        super().__init__(max_steps=max_steps)
+        self.min_steps = min_steps
         self._reduction_factor = reduction_factor
         self._min_early_stopping_rate = min_early_stopping_rate
         self._min_competing = min_competing
         self._min_fully_completed = min_fully_completed
 
         self._rung = 0
-        self._budget = min_budget
-        self._objective = None
 
     def _compute_halting_budget(self):
-        return self._min_budget * self._reduction_factor ** (
+        return self.min_steps + self._reduction_factor ** (
             self._min_early_stopping_rate + self._rung
         )
 
@@ -45,14 +44,15 @@ class SuccessiveHalvingStopper(Stopper):
         return num
 
     def observe(self, budget: float, objective: float):
+        super().observe(budget, objective)
+        # self._budget = self.observed_budgets[-1]
+        # self._objective = self.observed_objectives[-1]
         self._budget = budget
         self._objective = objective
 
         halting_budget = self._compute_halting_budget()
 
         if self._budget >= halting_budget:
-            super().observe(budget, objective)
-
             # casting float to str to avoid numerical rounding of database
             # e.g. for Redis: The precision of the output is fixed at 17 digits
             # after the decimal point regardless of the actual internal precision
@@ -63,40 +63,38 @@ class SuccessiveHalvingStopper(Stopper):
 
     def stop(self) -> bool:
 
+        # Enforce Pre-conditions Before Applying Successive Halving
+        if super().stop():
+            return True
+
+        # Compute when is the next Halting Budget
         halting_budget = self._compute_halting_budget()
 
         if self._budget < halting_budget:
             return False
 
-        else:
+        # Check if the minimum number of fully completed budgets has been done
+        if self._num_fully_completed() < self._min_fully_completed:
+            self._rung += 1
+            return False
 
-            if self._num_fully_completed() < self._min_fully_completed:
-                self._rung += 1
-                return False
+        # Check if the minimum number of competitors is verified
+        competing_objectives = np.sort(self._get_competiting_objectives())
+        num_competing = len(competing_objectives)
 
-            competing_objectives = np.sort(self._get_competiting_objectives())
-            num_competing = len(competing_objectives)
+        if num_competing < self._min_competing:
+            return True
 
-            if num_competing < self._min_competing:
-                return True
+        # Performe Successive Halving
+        k = num_competing // self._reduction_factor
 
-            k = num_competing // self._reduction_factor
+        # Promote if best when there is less than reduction_factor competing values
+        if k == 0:
+            k = 1
 
-            # promote if best when there is less than reduction_factor competing values
-            if k == 0:
-                k = 1
+        top_k_worst_objective = competing_objectives[-k]
 
-            top_k_worst_objective = competing_objectives[-k]
-
-            promotable = self._objective >= top_k_worst_objective
-            if promotable:
-                self._rung += 1
-            return not (promotable)
-
-    @property
-    def observations(self) -> list:
-        obs = copy.deepcopy(super().observations)
-        if self._budget > obs[0][-1]:
-            obs[0].append(self._budget)
-            obs[1].append(self._objective)
-        return obs
+        promotable = self._objective >= top_k_worst_objective
+        if promotable:
+            self._rung += 1
+        return not (promotable)

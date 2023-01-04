@@ -9,13 +9,13 @@ import os
 import sys
 import time
 import warnings
-from typing import Dict, List
+from typing import Dict, List, Hashable
 
 import numpy as np
 from deephyper.evaluator._job import Job
 from deephyper.skopt.optimizer import OBJECTIVE_VALUE_FAILURE
 from deephyper.core.utils._timeout import terminate_on_timeout
-from deephyper.evaluator.storage import MemoryStorage
+from deephyper.evaluator.storage import Storage, MemoryStorage
 
 EVALUATORS = {
     "mpipool": "_mpi_pool.MPIPoolEvaluator",
@@ -62,6 +62,7 @@ class Evaluator:
         callbacks (list, optional): A list of callbacks to trigger custom actions at the creation or completion of jobs. Defaults to None.
         run_function_kwargs (dict, optional): Static keyword arguments to pass to the ``run_function`` when executed.
         storage (Storage, optional): Storage used by the evaluator. Defaults to ``MemoryStorage``.
+        search_id (Hashable, optional): The id of the search to use in the corresponding storage. If ``None`` it will create a new search identifier when initializing the search.
     """
 
     FAIL_RETURN_VALUE = OBJECTIVE_VALUE_FAILURE
@@ -75,7 +76,8 @@ class Evaluator:
         num_workers: int = 1,
         callbacks: list = None,
         run_function_kwargs: dict = None,
-        storage=None,
+        storage: Storage = None,
+        search_id: Hashable = None,
     ):
         self.run_function = run_function  # User-defined run function.
         self.run_function_kwargs = (
@@ -89,6 +91,7 @@ class Evaluator:
         self._tasks_done = []  # Temp list to hold completed tasks from asyncio.
         self._tasks_pending = []  # Temp list to hold pending tasks from asyncio.
         self.jobs_done = []  # List used to store all jobs completed by the evaluator.
+        self.job_id_gathered = []  # List of jobs'id gathered by the evaluator.
         self.timestamp = (
             time.time()
         )  # Recorded time of when this evaluator interface was created.
@@ -109,7 +112,16 @@ class Evaluator:
         self._storage = MemoryStorage() if storage is None else storage
         if not (self._storage.connected):
             self._storage.connect()
-        self._search_id = self._storage.create_new_search()
+
+        if search_id is None:
+            self._search_id = self._storage.create_new_search()
+        else:
+            if search_id in self._storage.load_all_search_ids():
+                self._search_id = search_id
+            else:
+                raise ValueError(
+                    f"The given search_id={search_id} does not exist in the linked storage."
+                )
 
         # to avoid "RuntimeError: This event loop is already running"
         if not (Evaluator.NEST_ASYNCIO_PATCHED) and _test_ipython_interpretor():
@@ -305,7 +317,7 @@ class Evaluator:
         logging.info(f"gather({type}, size={size}) starts...")
         assert type in ["ALL", "BATCH"], f"Unsupported gather operation: {type}."
 
-        results = []
+        local_results = []
 
         if type == "ALL":
             size = len(self._tasks_running)  # Get all tasks.
@@ -314,14 +326,47 @@ class Evaluator:
         for task in self._tasks_done:
             job = task.result()
             self._on_done(job)
-            results.append(job)
+            local_results.append(job)
             self.jobs_done.append(job)
             self._tasks_running.remove(task)
+            self.job_id_gathered.append(job.id)
 
         self._tasks_done = []
         self._tasks_pending = []
-        logging.info("gather done")
-        return results
+
+        # access storage to return results from other processes
+        job_id_all = self._storage.load_all_job_ids(self._search_id)
+        job_id_not_gathered = np.setdiff1d(job_id_all, self.job_id_gathered).tolist()
+
+        other_results = []
+        if len(job_id_not_gathered) > 0:
+            jobs_data = self._storage.load_jobs(job_id_not_gathered)
+
+            for job_id, job_data in zip(job_id_not_gathered, jobs_data):
+                if job_data and job_data["out"]:
+                    job = Job(
+                        id=job_id, config=job_data["in"]["args"][0], run_function=None
+                    )
+                    job.status = Job.DONE
+                    job.output["metadata"].update(job_data["metadata"])
+                    job.output["objective"] = job_data["out"]
+                    self.job_id_gathered.append(job_id)
+                    self.jobs_done.append(job)
+                    other_results.append(job)
+
+                    for cb in self._callbacks:
+                        cb.on_done_other(job)
+
+        if len(other_results) == 0:
+            logging.info(f"gather done - {len(local_results)} job(s)")
+
+            return local_results
+        else:
+            logging.info(
+                f"gather done - {len(local_results)} local(s) and {len(other_results)} other(s) job(s), "
+            )
+
+            return local_results, other_results
 
     def decode(self, key):
         """Decode the key following a JSON format to return a dict."""
