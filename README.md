@@ -69,7 +69,7 @@ if __name__ == "__main__":
     # define the evaluator to distribute the computation
     evaluator = Evaluator.create(
         run,
-        method="subprocess",
+        method="process",
         method_kwargs={
             "num_workers": 2,
         },
@@ -98,6 +98,18 @@ Which outputs the following where the best ``x`` found is clearly around ``0``.
 98 -0.000073      99 -5.387088e-09         27.460253         27.774704
 99  0.697162     100 -4.860350e-01         27.768153         28.142431
 ```
+
+We also asked [ChatGPT](https://chat.openai.com) to explain this example and here is the reply:
+
+"The code defines a function `run` that takes a dictionary `config` as input and returns the negative of `x` squared. The `if` block at the end of the code defines a black-box optimization process using the `CBO` (Centralized Bayesian Optimization) algorithm from the `deephyper` library.
+
+The optimization process is defined as follows:
+
+1. A hyperparameter optimization problem is created using the `HpProblem` class from `deephyper`. In this case, the problem has a single continuous hyperparameter `x` that ranges from -10.0 to 10.0.
+2. An evaluator is created using the `Evaluator.create` method. The evaluator will be used to evaluate the function `run` with different configurations of the hyperparameters in the optimization problem. The evaluator uses the `process` method to distribute the evaluations across multiple worker processes, in this case 2 worker processes.
+3. A search object is created using the `CBO` class and the problem and evaluator defined earlier. The `CBO` algorithm is a derivative-free optimization method that uses a Bayesian optimization approach to explore the hyperparameter space.
+4. The optimization process is executed by calling the `search.search` method, which performs the evaluations of the `run` function with different configurations of the hyperparameters until a maximum number of evaluations (100 in this case) is reached.
+5. The results of the optimization process, including the optimal configuration of the hyperparameters and the corresponding objective value, are printed to the console."
 
 ## How do I learn more?
 
