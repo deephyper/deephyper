@@ -22,6 +22,7 @@ platform_infos = platform.platform()
 REQUIRED = [
     "ConfigSpace>=0.4.20",
     "dm-tree",
+    "jax>=0.3.25",
     "Jinja2<3.1",
     # "joblib>=0.10.3",
     # "matplotlib>=3.0.3", # analytics
