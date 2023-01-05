@@ -901,7 +901,6 @@ class Optimizer(object):
         else:
             idx = np.argmax(count_list)
         pred_budget = budget_list[idx]
-        # print(f"{pred_budget=}")
         return pred_budget
 
     def _compute_sample_weigths(self, bi):

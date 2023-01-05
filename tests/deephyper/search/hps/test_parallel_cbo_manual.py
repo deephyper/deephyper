@@ -40,7 +40,7 @@ def _test_parallel_cbo_manual():
         print(f"{search_id}")
 
     search_id = comm.bcast(search_id)
-    print(f"{rank=} - {search_id=}")
+    print(f"rank={rank} - search_id={search_id}")
 
     if rank > 0:
         evaluator = SerialEvaluator(run, storage=storage, search_id=search_id)

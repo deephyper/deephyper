@@ -373,9 +373,6 @@ class CBO(Search):
                         y = area_learning_curve(
                             z_values, y_values, z_max=self._evaluator._stopper.max_steps
                         )
-                        # print(f"{b_values[-5:]=}")
-                        # print(f"{y_values[-5:]=}")
-                        # print(f"alc={y}")
                         opt_X.append(x)
                         opt_y.append(y)
 
