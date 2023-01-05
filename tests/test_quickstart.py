@@ -21,7 +21,7 @@ class QuickStartTest(unittest.TestCase):
         # define the evaluator to distribute the computation
         evaluator = Evaluator.create(
             run,
-            method="subprocess",
+            method="process",
             method_kwargs={
                 "num_workers": 2,
             },

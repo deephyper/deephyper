@@ -56,7 +56,7 @@ def run(config: dict):
 
 
 # Necessary IF statement otherwise it will enter in a infinite loop
-# when loading the 'run' function from a subprocess
+# when loading the 'run' function from a new process
 if __name__ == "__main__":
     from deephyper.problem import HpProblem
     from deephyper.search.hps import CBO

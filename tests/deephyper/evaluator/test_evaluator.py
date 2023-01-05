@@ -307,11 +307,6 @@ class TestEvaluator(unittest.TestCase):
 
     @pytest.mark.fast
     @pytest.mark.hps
-    def test_subprocess(self):
-        self.execute_evaluator("subprocess")
-
-    @pytest.mark.fast
-    @pytest.mark.hps
     @pytest.mark.ray
     def test_ray(self):
         try:

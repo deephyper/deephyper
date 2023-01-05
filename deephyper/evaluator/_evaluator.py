@@ -23,7 +23,6 @@ EVALUATORS = {
     "process": "_process_pool.ProcessPoolEvaluator",
     "ray": "_ray.RayEvaluator",
     "serial": "_serial.SerialEvaluator",
-    "subprocess": "_subprocess.SubprocessEvaluator",
     "thread": "_thread_pool.ThreadPoolEvaluator",
 }
 
@@ -157,7 +156,7 @@ class Evaluator:
 
         Args:
             run_function (function): the function to execute in parallel.
-            method (str, optional): the backend to use in ``["serial", "thread", "process", "subprocess", "ray", "mpicomm", "mpipool"]``. Defaults to ``"serial"``.
+            method (str, optional): the backend to use in ``["serial", "thread", "process", "ray", "mpicomm"]``. Defaults to ``"serial"``.
             method_kwargs (dict, optional): configuration dictionnary of the corresponding backend. Keys corresponds to the keyword arguments of the corresponding implementation. Defaults to "{}".
 
         Raises:

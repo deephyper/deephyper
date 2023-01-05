@@ -11,7 +11,7 @@ DeepHyper provides an infrastructure that targets experimental research in NAS a
 It comprises three main modules:
 
 * :mod:`deephyper.problem`: Tools for defining neural architecture and hyper-parameter search problems.
-* :mod:`deephyper.evaluator` : A simple interface to dispatch model evaluation tasks. Implementations range from `subprocess` for laptop experiments to `ray` for large-scale runs on HPC systems.
+* :mod:`deephyper.evaluator` : A simple interface to dispatch model evaluation tasks. Implementations range from `process` for laptop experiments to `ray` for large-scale runs on HPC systems.
 * :mod:`deephyper.search`: Search methods for NAS and HPS.  By extending the generic `Search` class, one can easily add new NAS or HPS methods to DeepHyper.
 
 
