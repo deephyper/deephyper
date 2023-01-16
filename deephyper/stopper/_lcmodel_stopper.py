@@ -4,11 +4,13 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 import numpy as np
+import numpyro
+import numpyro.distributions as dist
+from numpyro.infer import MCMC, NUTS
 from scipy.optimize import least_squares
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils import check_random_state
 from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
-from joblib import Parallel, delayed
 
 from deephyper.stopper._stopper import Stopper
 
@@ -28,24 +30,24 @@ def f_lin2(z, b, rho):
 
 
 def f_loglin2(z, b, rho):
-    Z = jnp.log(z)
+    Z = jnp.log(b(z))
     Y = rho[1] * Z + rho[0]
     y = jnp.exp(Y)
-    return -y  # !maximization
+    return -y
 
 
 def f_loglin3(z, b, rho):
-    Z = jnp.log(z)
+    Z = jnp.log(b(z))
     Y = rho[2] * jnp.power(Z, 2) + rho[1] * Z + rho[0]
     y = jnp.exp(Y)
-    return -y  # !maximization
+    return -y
 
 
 def f_loglin4(z, b, rho):
-    Z = jnp.log(z)
+    Z = jnp.log(b(z))
     Y = rho[3] * jnp.power(Z, 3) + rho[2] * jnp.power(Z, 2) + rho[1] * Z + rho[0]
     y = jnp.exp(Y)
-    return -y  # !maximization
+    return -y
 
 
 def f_pow3(z, b, rho):
@@ -58,6 +60,43 @@ def f_mmf4(z, b, rho):
     )
 
 
+def f_vapor3(z, b, rho):
+    return rho[0] + rho[1] / b(z) + rho[2] * np.log(b(z))
+
+
+def f_logloglin2(z, b, rho):
+    return jnp.log(rho[0] * jnp.log(b(z)) + rho[1])
+
+
+def f_hill3(z, b, rho):
+    ymax, eta, kappa = rho
+    return ymax * (b(z) ** eta) / (kappa * eta + b(z) ** eta)
+
+
+def f_logpow3(z, b, rho):
+    return rho[0] / (1 + (b(z) / jnp.exp(rho[1])) ** rho[2])
+
+
+def f_pow4(z, b, rho):
+    return rho[2] - (rho[0] * b(z) + rho[1]) ** (-rho[3])
+
+
+def f_exp4(z, b, rho):
+    return rho[2] - jnp.exp(-rho[0] * (b(z) ** rho[3]) + rho[1])
+
+
+def f_janoschek4(z, b, rho):
+    return rho[0] - (rho[0] - rho[1]) * jnp.exp(-rho[2] * (b(z) ** rho[3]))
+
+
+def f_weibull4(z, b, rho):
+    return rho[0] - (rho[0] - rho[1]) * jnp.exp(-((rho[2] * b(z)) ** rho[3]))
+
+
+def f_ilog2(z, b, rho):
+    return rho[1] - (rho[0] / jnp.log(b(z) + 1))
+
+
 # Utility to estimate parameters of learning curve model
 # The combination of "partial" and "static_argnums" is necessary
 # with the "f" lambda function passed as argument
@@ -67,151 +106,106 @@ def residual_least_square(rho, f, z, y):
     return f(z, rho) - y
 
 
-def fit_learning_curve_model_least_square(
-    f, nparams, z_train, y_train, use_jac=True, max_trials=100, random_state=None
-):
-    """The learning curve model is assumed to be modeled by 'f' with
-    interface f(z, rho).
-    """
-
-    random_state = check_random_state(random_state)
-
-    z_train = np.asarray(z_train)
-    y_train = np.asarray(y_train)
-
-    # compute the jacobian
-    # using the true jacobian is important to avoid problems
-    # with numerical errors and approximations! indeed the scale matters
-    # a lot when approximating with finite differences
-    def fun_wrapper(rho, f, z, y):
-        return np.array(residual_least_square(rho, f, z, y))
-
-    jac_residual = partial(jax.jit, static_argnums=(1,))(
-        jax.jacfwd(residual_least_square, argnums=0)
-    )
-
-    def jac_wrapper(rho, f, z, y):
-        return np.array(jac_residual(rho, f, z, y))
-
-    results = []
-    mse_hist = []
-
-    for _ in range(max_trials):
-
-        rho_init = random_state.randn(nparams)
-
-        try:
-            res_lsq = least_squares(
-                fun_wrapper,
-                rho_init,
-                args=(f, z_train, y_train),
-                method="lm",
-                jac=jac_wrapper if use_jac else "2-point",
-            )
-        except ValueError:
-            continue
-
-        mse_res_lsq = np.mean(res_lsq.fun**2)
-        mse_hist.append(mse_res_lsq)
-        results.append(res_lsq.x)
-
-    i_best = np.nanargmin(mse_hist)
-    res = results[i_best]
-    return res
+def prob_model(z=None, y=None, f=None, rho_mu_prior=None, num_obs=None):
+    rho_mu_prior = jnp.array(rho_mu_prior)
+    rho_sigma_prior = 1.0
+    rho = numpyro.sample("rho", dist.Normal(rho_mu_prior, rho_sigma_prior))
+    sigma = numpyro.sample("sigma", dist.Exponential(1.0))  # introducing noise
+    # sigma = 0.1
+    mu = f(z[:num_obs], rho)
+    numpyro.sample("obs", dist.Normal(mu, sigma), obs=y[:num_obs])
 
 
-def fit_ensemble_members(
-    f,
-    nparams,
-    z_train,
-    y_train,
-    ensemble_size=10,
-    max_trials_per_fit=5,
-    n_jobs=-1,
-    random_state=None,
-):
-
-    random_state = check_random_state(random_state)
-    random_states = random_state.randint(low=0, high=2**32, size=ensemble_size)
-
-    def f_wrapper(seed):
-        return fit_learning_curve_model_least_square(
-            f,
-            nparams,
-            z_train,
-            y_train,
-            max_trials=max_trials_per_fit,
-            random_state=seed,
-        )
-
-    rho_hat_list = Parallel(n_jobs=n_jobs)(
-        delayed(f_wrapper)(seed) for seed in random_states
-    )
-    return np.array(rho_hat_list)
+@partial(jax.jit, static_argnums=(0,))
+def predict_moments_from_posterior(f, X, posterior_samples):
+    vf_model = jax.vmap(f, in_axes=(None, 0))
+    posterior_mu = vf_model(X, posterior_samples)
+    mean_mu = jnp.mean(posterior_mu, axis=0)
+    std_mu = jnp.std(posterior_mu, axis=0)
+    return mean_mu, std_mu
 
 
-def predict_ensemble_members(f, z, rho, return_std=True, n_jobs=-1):
-    def f_wrapper(rho):
-        return f(z, rho)
-
-    y_list = Parallel(n_jobs=n_jobs)(delayed(f_wrapper)(rho_i) for rho_i in rho)
-    y_list = np.array(y_list)
-
-    mean_y_last = np.nanmean(y_list[:, -1])
-    std_y_last = np.nanstd(y_list[:, -1])
-
-    # remove outliers in case some least-squares estimations were not stable
-    kappa = 3
-    upper_bound = mean_y_last + kappa * std_y_last
-    lower_bound = mean_y_last - kappa * std_y_last
-    selection = (lower_bound < y_list[:, -1]) & (y_list[:, -1] < upper_bound)
-
-    mean_y = np.nanmean(y_list[selection], axis=0)
-    if return_std:
-        std_y = np.nanstd(y_list[selection], axis=0)
-        return mean_y, std_y
-    return mean_y
-
-
-class LearningCurveRegressor(BaseEstimator, RegressorMixin):
+class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
     def __init__(
         self,
-        f_model=f_mmf4,
-        f_model_num_params=4,
+        f_model=f_loglin3,
+        f_model_num_params=3,
         b_model=b_lin2,
-        ensemble_size=15,
-        max_trials_per_member_fit=5,
+        max_trials_ls_fit=10,
+        mcmc_num_warmup=200,
+        mcmc_num_samples=1_000,
         n_jobs=-1,
         random_state=None,
+        verbose=0,
+        batch_size=100,
     ):
         self.b_model = b_model
         self.f_model = lambda z, rho: f_model(z, self.b_model, rho)
         self.f_nparams = f_model_num_params
-        self.ensemble_size = ensemble_size
-        self.max_trials_per_member_fit = max_trials_per_member_fit
+        self.mcmc_num_warmup = mcmc_num_warmup
+        self.mcmc_num_samples = mcmc_num_samples
+        self.max_trials_ls_fit = max_trials_ls_fit
         self.n_jobs = n_jobs
         self.random_state = check_random_state(random_state)
+        self.verbose = verbose
+        self.rho_mu_prior_ = np.zeros((self.f_nparams,))
 
-    def fit(self, X, y):
+        self.batch_size = batch_size
+        self.X_ = np.zeros((self.batch_size,))
+        self.y_ = np.zeros((self.batch_size,))
+
+    def fit(self, X, y, update_prior=True):
 
         check_X_y(X, y, ensure_2d=False)
 
-        self.rho_hat_ = fit_ensemble_members(
-            self.f_model,
-            self.f_nparams,
-            X,
-            y,
-            ensemble_size=self.ensemble_size,
-            max_trials_per_fit=self.max_trials_per_member_fit,
-            n_jobs=self.n_jobs,
-            random_state=self.random_state,
-        )
+        # !Trick for performance to avoid performign JIT again and again
+        # !This will fix the shape of inputs of the model for numpyro
+        # !see https://github.com/pyro-ppl/numpyro/issues/441
+        num_samples = len(X)
+        assert num_samples <= self.batch_size
+        self.X_[:num_samples] = X[:]
+        self.y_[:num_samples] = y[:]
 
-        assert len(self.rho_hat_) == self.ensemble_size
+        if update_prior:
+            self.rho_mu_prior_[:] = self._fit_learning_curve_model_least_square(X, y)[:]
+
+        if not (hasattr(self, "kernel_")):
+            self.kernel_ = NUTS(
+                model=lambda z, y, rho_mu_prior: prob_model(
+                    z, y, self.f_model, rho_mu_prior, num_obs=num_samples
+                ),
+            )
+
+            self.mcmc_ = MCMC(
+                self.kernel_,
+                num_warmup=self.mcmc_num_warmup,
+                num_samples=self.mcmc_num_samples,
+                progress_bar=self.verbose,
+                jit_model_args=True,
+            )
+
+        seed = self.random_state.randint(low=0, high=2**32)
+        rng_key = jax.random.PRNGKey(seed)
+        self.mcmc_.run(rng_key, z=self.X_, y=self.y_, rho_mu_prior=self.rho_mu_prior_)
+
+        if self.verbose:
+            self.mcmc_.print_summary()
 
         return self
 
     def predict(self, X, return_std=True):
+
+        posterior_samples = self.predict_posterior_samples(X)
+
+        mean_mu = jnp.mean(posterior_samples, axis=0)
+
+        if return_std:
+            std_mu = jnp.std(posterior_samples, axis=0)
+            return mean_mu, std_mu
+
+        return mean_mu
+
+    def predict_posterior_samples(self, X):
 
         # Check if fit has been called
         check_is_fitted(self)
@@ -219,26 +213,93 @@ class LearningCurveRegressor(BaseEstimator, RegressorMixin):
         # Input validation
         X = check_array(X, ensure_2d=False)
 
-        pred = predict_ensemble_members(
-            self.f_model, X, self.rho_hat_, return_std=return_std, n_jobs=self.n_jobs
-        )
+        posterior_samples = self.mcmc_.get_samples()
+        vf_model = jax.vmap(self.f_model, in_axes=(None, 0))
+        posterior_mu = vf_model(X, posterior_samples["rho"])
 
-        return pred
+        return posterior_mu
 
+    def prob(self, X, condition):
+        """Compute the approximate probability of P(cond(m(X_i), y_i))
+        where m is the current fitted model and cond a condition.
 
-def u_log_from_curve(b, y, z_max, delta=1e-5):
-    assert len(b) == len(y)
-    assert len(b) > 1
+        Args:
+            X (np.array): An array of inputs.
+            condition (callable): A function defining the condition to test.
 
-    values = [0]
-    for i in range(1, len(b)):
-        z = i + 1
-        delta_yi = y[i] - y[i - 1]
-        delta_bi = b[i] - b[i - 1]
-        value_i = (z / z_max) * (np.log(delta_yi) - np.log(delta_bi) - np.log(delta))
-        values.append(value_i)
+        Returns:
+            array: an array of shape X.
+        """
 
-    return values
+        # Check if fit has been called
+        check_is_fitted(self)
+
+        # Input validation
+        X = check_array(X, ensure_2d=False)
+
+        posterior_samples = self.mcmc_.get_samples()
+        vf_model = jax.vmap(self.f_model, in_axes=(None, 0))
+        posterior_mu = vf_model(X, posterior_samples["rho"])
+
+        prob = jnp.mean(condition(posterior_mu), axis=0)
+
+        return prob
+
+    def _fit_learning_curve_model_least_square(
+        self,
+        z_train,
+        y_train,
+    ):
+        """The learning curve model is assumed to be modeled by 'f' with
+        interface f(z, rho).
+        """
+
+        seed = self.random_state.randint(low=0, high=2**32)
+        random_state = check_random_state(seed)
+
+        z_train = np.asarray(z_train)
+        y_train = np.asarray(y_train)
+
+        # compute the jacobian
+        # using the true jacobian is important to avoid problems
+        # with numerical errors and approximations! indeed the scale matters
+        # a lot when approximating with finite differences
+        def fun_wrapper(rho, f, z, y):
+            return np.array(residual_least_square(rho, f, z, y))
+
+        if not (hasattr(self, "jac_residual_ls_")):
+            self.jac_residual_ls_ = partial(jax.jit, static_argnums=(1,))(
+                jax.jacfwd(residual_least_square, argnums=0)
+            )
+
+        def jac_wrapper(rho, f, z, y):
+            return np.array(self.jac_residual_ls_(rho, f, z, y))
+
+        results = []
+        mse_hist = []
+
+        for _ in range(self.max_trials_ls_fit):
+
+            rho_init = random_state.randn(self.f_nparams)
+
+            try:
+                res_lsq = least_squares(
+                    fun_wrapper,
+                    rho_init,
+                    args=(self.f_model, z_train, y_train),
+                    method="lm",
+                    jac=jac_wrapper,
+                )
+            except ValueError:
+                continue
+
+            mse_res_lsq = np.mean(res_lsq.fun**2)
+            mse_hist.append(mse_res_lsq)
+            results.append(res_lsq.x)
+
+        i_best = np.nanargmin(mse_hist)
+        res = results[i_best]
+        return res
 
 
 def area_learning_curve(z, f, z_max) -> float:
@@ -260,10 +321,12 @@ class LCModelStopper(Stopper):
         self,
         max_steps: int,
         min_steps: int = 1,
-        lc_model="loglin3",
-        maximize_utility=False,
-        kappa=1.96,
-        delta=1e-4,
+        lc_model="mmf4",
+        min_done_for_outlier_detection=10,
+        iqr_factor_for_outlier_detection=1.5,
+        prob_promotion=0.9,
+        early_stopping_patience=0.25,
+        objective_returned="last",
         random_state=None,
     ) -> None:
         super().__init__(max_steps=max_steps)
@@ -272,18 +335,19 @@ class LCModelStopper(Stopper):
         lc_model = "f_" + lc_model
         lc_model_num_params = int(lc_model[-1])
         lc_model = getattr(sys.modules[__name__], lc_model)
-        self.lc_model = LearningCurveRegressor(
-            f_model=lc_model,
-            f_model_num_params=lc_model_num_params,
-            ensemble_size=20,
-            max_trials_per_member_fit=10,
-            random_state=random_state,
-        )
-        self.kappa = kappa
-        self.delta = delta
-
-        self.maximize_utility = maximize_utility
         self.min_obs_to_fit = lc_model_num_params
+
+        self.min_done_for_outlier_detection = min_done_for_outlier_detection
+        self.iqr_factor_for_outlier_detection = iqr_factor_for_outlier_detection
+
+        self.prob_promotion = prob_promotion
+        if type(early_stopping_patience) is int:
+            self.early_stopping_patience = early_stopping_patience
+        elif type(early_stopping_patience) is float:
+            self.early_stopping_patience = int(early_stopping_patience * self.max_steps)
+        else:
+            raise ValueError("early_stopping_patience must be int or float")
+        self.objective_returned = objective_returned
 
         self._rung = 0
 
@@ -291,43 +355,19 @@ class LCModelStopper(Stopper):
         max_rung = np.floor(
             np.log(self.max_steps / self.min_steps) / np.log(self.min_obs_to_fit)
         )
-        self.max_steps_ = self.min_steps * self.min_obs_to_fit**max_rung
-        self._step_max_utility = self.max_steps_
+        self.max_steps_ = int(self.min_steps * self.min_obs_to_fit**max_rung)
+
+        self.lc_model = BayesianLearningCurveRegressor(
+            f_model=lc_model,
+            f_model_num_params=lc_model_num_params,
+            random_state=random_state,
+            batch_size=self.max_steps_,
+        )
+
+        self._lc_objectives = []
 
     def _compute_halting_step(self):
         return self.min_steps * self.min_obs_to_fit**self._rung
-
-    def _fit_and_predict_lc_model_performance(self):
-        """Estimate the LC Model and Predict the performance at b.
-
-        Returns:
-            (step, objective): a tuple of (step, objective) at which the estimation was made.
-        """
-
-        # By default (no utility used) predict at the last possible step.
-        z_pred = self.max_steps
-        z_opt = self.max_steps_
-
-        z_train, y_train = self.observations
-        z_train, y_train = np.asarray(z_train), np.asarray(y_train)
-
-        self.lc_model.fit(z_train, y_train)
-
-        if self.maximize_utility:
-            z_range = np.arange(self.min_steps, self.max_steps + 1)
-            mean_pred, std_pred = self.lc_model.predict(z_range)
-            ucb_pred = mean_pred[-1] + self.kappa * std_pred[-1]
-            scores = u_log_from_curve(
-                z_range, mean_pred, z_max=self.max_steps, delta=self.delta
-            )
-            idx_max = np.nanargmax(scores)
-            z_opt = z_range[idx_max]
-            self._step_max_utility = z_pred
-        else:
-            mean_pred, std_pred = self.lc_model.predict([z_pred])
-            ucb_pred = mean_pred[0] + self.kappa * std_pred[0]
-
-        return z_opt, ucb_pred
 
     def _retrieve_best_objective(self) -> float:
         search_id, _ = self.job.id.split(".")
@@ -340,7 +380,7 @@ class LCModelStopper(Stopper):
         if len(objectives) > 0:
             return np.max(objectives)
         else:
-            return None
+            return np.max(self.observations[1])
 
     def _get_competiting_objectives(self, rung) -> list:
         search_id, _ = self.job.id.split(".")
@@ -353,7 +393,16 @@ class LCModelStopper(Stopper):
     def observe(self, budget: float, objective: float):
         super().observe(budget, objective)
         self._budget = self.observed_budgets[-1]
-        self._objective = self.observed_objectives[-1]
+        self._lc_objectives.append(self.objective)
+        self._objective = self._lc_objectives[-1]
+
+        # For Early-Stopping based on Patience
+        if (
+            not (hasattr(self, "_local_best_objective"))
+            or self._objective > self._local_best_objective
+        ):
+            self._local_best_objective = self._objective
+            self._local_best_step = self.step
 
         halting_step = self._compute_halting_step()
         if self._budget >= halting_step:
@@ -363,54 +412,89 @@ class LCModelStopper(Stopper):
 
     def stop(self) -> bool:
 
-        if not (hasattr(self, "best_objective")):
-            # print("START")
-            self.best_objective = self._retrieve_best_objective()
-
         # Enforce Pre-conditions Before Learning-Curve based Early Discarding
         if super().stop():
+            print("Stopped after reaching the maximum number of steps.")
+            self.infos_stopped = "max steps reached"
+            return True
+
+        if self.step - self._local_best_step >= self.early_stopping_patience:
+            print(
+                f"Stopped after reaching {self.early_stopping_patience} steps without improvement."
+            )
+            self.infos_stopped = "early stopping"
             return True
 
         # This condition will enforce the stopper to stop the evaluation at the first step
         # for the first evaluation (The FABOLAS method does the same, bias the first samples with
         # small budgets)
-        if self.best_objective is None:
-            return True
+        self.best_objective = self._retrieve_best_objective()
 
         halting_step = self._compute_halting_step()
         if self.step < max(self.min_steps, self.min_obs_to_fit):
 
             if self.step >= halting_step:
-                # TODO: make fixed parameter accessible
                 competing_objectives = self._get_competiting_objectives(self._rung)
-                if len(competing_objectives) > 10:
-                    q_objective = np.quantile(competing_objectives, q=0.33)
-                    if self._objective < q_objective:
+                if len(competing_objectives) > self.min_done_for_outlier_detection:
+                    q1 = np.quantile(
+                        competing_objectives,
+                        q=0.25,
+                    )
+                    q3 = np.quantile(
+                        competing_objectives,
+                        q=0.75,
+                    )
+                    iqr = q3 - q1
+                    # lower than the minimum of a box plot
+                    if (
+                        self._objective
+                        < q1 - self.iqr_factor_for_outlier_detection * iqr
+                    ):
+                        print(
+                            f"Stopped early because of abnormally low objective: {self._objective}"
+                        )
+                        self.infos_stopped = "outlier"
                         return True
                 self._rung += 1
 
             return False
 
         # Check if the halting budget condition is met
-        if self.step < halting_step and self.step < self._step_max_utility:
+        if self.step < halting_step:
             return False
 
         # Check if the evaluation should be stopped based on LC-Model
 
         # Fit and predict the performance of the learning curve model
-        z_opt, y_pred = self._fit_and_predict_lc_model_performance()
-        # print(f"{z_opt=} - {y_pred=} - best={self.best_objective}")
+        z_train = self.observed_budgets
+        y_train = self._lc_objectives
+        z_train, y_train = np.asarray(z_train), np.asarray(y_train)
+        self.lc_model.fit(z_train, y_train, update_prior=True)
 
         # Check if the configuration is promotable based on its predicted objective value
-        promotable = (self.best_objective is None or y_pred > self.best_objective) and (
-            self.step < z_opt
-        )
+        p = self.lc_model.prob(
+            X=[self.max_steps], condition=lambda y_hat: y_hat <= self.best_objective
+        )[0]
 
         # Return whether the configuration should be stopped
-        if promotable:
+        if p <= self.prob_promotion:
             self._rung += 1
+        else:
+            print(
+                f"Stopped because the probability of performing worse is {p} > {self.prob_promotion}"
+            )
+            self.infos_stopped = f"prob={p:.3f}"
 
-            if self.step >= self.max_steps_:
-                return True
+            return True
 
-        return not (promotable)
+    @property
+    def objective(self):
+        if self.objective_returned == "last":
+            return self.observations[-1][-1]
+        elif self.objective_returned == "best":
+            return max(self.observations[-1])
+        elif self.objective_returned == "alc":
+            z, y = self.observations
+            return area_learning_curve(z, y, z_max=self.max_steps)
+        else:
+            raise ValueError("objective_returned must be one of 'last', 'best', 'alc'")

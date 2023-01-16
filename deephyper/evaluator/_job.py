@@ -108,9 +108,9 @@ class RunningJob:
             return False
 
     @property
-    def observations(self):
+    def objective(self):
         """If the RunningJob is using a Stopper then it will return observations from the it. Otherwise it will simply return the last objective value recorded."""
         if self.stopper:
-            return self.stopper.observations
+            return self.stopper.objective
         else:
             return self.obs
