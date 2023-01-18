@@ -53,3 +53,7 @@ class Stopper(abc.ABC):
     def observations(self) -> list:
         obs = [self.observed_budgets, self.observed_objectives]
         return copy.deepcopy(obs)
+
+    @property
+    def objective(self):
+        return self.observations[-1][-1]
