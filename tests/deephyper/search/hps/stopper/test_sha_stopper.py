@@ -24,7 +24,7 @@ def run(job: RunningJob) -> dict:
             break
 
     return {
-        "objective": job.observations,
+        "objective": job.objective,
         "metadata": {"budget": budget_i, "stopped": budget_i < max_budget},
     }
 
