@@ -38,7 +38,7 @@ class TestSHAStopper(unittest.TestCase):
         problem = HpProblem()
         problem.add_hyperparameter((0.0, 10.0), "x")
 
-        stopper = SuccessiveHalvingStopper(min_budget=1, reduction_factor=3)
+        stopper = SuccessiveHalvingStopper(max_steps=50, reduction_factor=3)
         search = CBO(
             problem, run, surrogate_model="DUMMY", stopper=stopper, random_state=42
         )
