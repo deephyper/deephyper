@@ -1,4 +1,5 @@
 from typing import Union
+from numbers import Number
 
 import numpy as np
 
@@ -24,8 +25,15 @@ def standardize_run_function_output(
     """
 
     # output returned a single objective value
-    if isinstance(output, (int, float, str)):
-        output = {"objective": output}
+    if np.isscalar(output):
+        if isinstance(output, str):
+            output = {"objective": output}
+        elif isinstance(output, Number):
+            output = {"objective": float(output)}
+        else:
+            raise TypeError(
+                f"The output of the run-function cannot be of type {type(output)} it should be either a string or a number."
+            )
 
     # output only returned objective values as tuple or list
     elif isinstance(output, (tuple, list)):
