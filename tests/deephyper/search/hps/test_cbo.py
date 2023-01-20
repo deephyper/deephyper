@@ -231,7 +231,29 @@ class CBOTest(unittest.TestCase):
         duration = time.time() - t1
         assert duration < 1.5
 
+    def test_initial_points(self):
+        from deephyper.problem import HpProblem
+        from deephyper.search.hps import CBO
+
+        problem = HpProblem()
+        problem.add_hyperparameter((0.0, 10.0), "x")
+
+        def run(config):
+            return config["x"]
+
+        search = CBO(
+            problem,
+            run,
+            initial_points=[problem.default_configuration],
+            random_state=42,
+            surrogate_model="DUMMY",
+        )
+
+        result = search.search(10)
+        assert len(result) == 10
+        assert result.loc[0, "objective"] == problem.default_configuration["x"]
+
 
 if __name__ == "__main__":
     test = CBOTest()
-    test.test_timeout()
+    test.test_initial_points()

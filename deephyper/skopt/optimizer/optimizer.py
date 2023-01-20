@@ -817,9 +817,9 @@ class Optimizer(object):
                 return self._ask_random_points()
             else:
                 # The samples are evaluated starting form initial_samples[0]
-                return self._initial_samples[
-                    len(self._initial_samples) - self._n_initial_points
-                ]
+                x = self._initial_samples[0]
+                self._initial_samples = self._initial_samples[1:]
+                return x
 
         else:
             if not self.models:
