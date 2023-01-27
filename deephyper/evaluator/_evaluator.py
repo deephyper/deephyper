@@ -341,7 +341,8 @@ class Evaluator:
         if len(job_id_not_gathered) > 0:
             jobs_data = self._storage.load_jobs(job_id_not_gathered)
 
-            for job_id, job_data in zip(job_id_not_gathered, jobs_data):
+            for job_id in job_id_not_gathered:
+                job_data = jobs_data[job_id]
                 if job_data and job_data["out"]:
                     job = Job(
                         id=job_id, config=job_data["in"]["args"][0], run_function=None

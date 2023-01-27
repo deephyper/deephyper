@@ -234,7 +234,6 @@ class TestEvaluator(unittest.TestCase):
         method_kwargs = {"num_workers": 1}
         if method == "ray":
             import os
-            import sys
 
             HERE = os.path.dirname(os.path.abspath(__file__))
             method_kwargs["ray_kwargs"] = {"runtime_env": {"working_dir": HERE}}
@@ -319,4 +318,4 @@ class TestEvaluator(unittest.TestCase):
 
 if __name__ == "__main__":
     test = TestEvaluator()
-    test.test_run_function_standards()
+    test.test_thread()

@@ -23,6 +23,7 @@ class TestRedisStorage(unittest.TestCase):
 
         # Creation of the database
         storage = RedisStorage()
+        storage.connect()
         storage._redis.flushdb()  # empty the db before using it
         search_id0 = storage.create_new_search()
         job_id0 = storage.create_new_job(search_id0)

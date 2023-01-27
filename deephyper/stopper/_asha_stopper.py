@@ -25,7 +25,7 @@ class SuccessiveHalvingStopper(Stopper):
         self._rung = 0
 
     def _compute_halting_budget(self):
-        return self.min_steps + self._reduction_factor ** (
+        return (self.min_steps - 1) + self._reduction_factor ** (
             self._min_early_stopping_rate + self._rung
         )
 
@@ -45,8 +45,6 @@ class SuccessiveHalvingStopper(Stopper):
 
     def observe(self, budget: float, objective: float):
         super().observe(budget, objective)
-        # self._budget = self.observed_budgets[-1]
-        # self._objective = self.observed_objectives[-1]
         self._budget = budget
         self._objective = objective
 
