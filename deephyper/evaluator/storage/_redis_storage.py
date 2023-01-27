@@ -247,6 +247,7 @@ class RedisStorage(Storage):
         Returns:
             dict: A dictionnary of the retrieved values where the keys are the identifier of jobs.
         """
-        job_ids = map(lambda jid: f"job:{jid}", job_ids)
-        data = self._redis.json().mget(job_ids, ".")
+        redis_job_ids = map(lambda jid: f"job:{jid}", job_ids)
+        data = self._redis.json().mget(redis_job_ids, ".")
+        data = {k: v for k, v in zip(job_ids, data)}
         return data

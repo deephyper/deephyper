@@ -130,6 +130,8 @@ class Search(abc.ABC):
         try:
             self._search(max_evals, timeout)
         except SearchTerminationError:
+            # self._evaluator.loop.shutdown_asyncgens()
+            # self._evaluator.loop.close()
             if "saved_keys" in dir(self):
                 self._evaluator.dump_evals(saved_keys=self.saved_keys)
             else:

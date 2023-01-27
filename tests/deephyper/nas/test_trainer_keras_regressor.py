@@ -14,7 +14,6 @@ class TrainerKerasRegressorTest(unittest.TestCase):
         import numpy as np
         from deephyper.nas.trainer import BaseTrainer
         from deephyper.test.nas.linearReg.problem import Problem
-        from tensorflow.keras.utils import plot_model
 
         config = Problem.space
 
@@ -31,7 +30,6 @@ class TrainerKerasRegressorTest(unittest.TestCase):
         kwargs = config["load_data"].get("kwargs")
         (tX, ty), (vX, vy) = load_data() if kwargs is None else load_data(**kwargs)
 
-        print("[PARAM] Data loaded")
         # Set data shape
         input_shape = np.shape(tX)[1:]  # interested in shape of data not in length
         output_shape = np.shape(ty)[1:]
@@ -42,7 +40,6 @@ class TrainerKerasRegressorTest(unittest.TestCase):
             input_shape, output_shape, **config["search_space"]["kwargs"]
         ).build()
         arch_seq = [random() for i in range(search_space.num_nodes)]
-        print("arch_seq: ", arch_seq)
         search_space.set_ops(arch_seq)
         search_space.plot("trainer_keras_regressor_test.dot")
 
@@ -55,12 +52,11 @@ class TrainerKerasRegressorTest(unittest.TestCase):
             config["preprocessing"] = None
 
         model = search_space.create_model()
-        plot_model(model, to_file="trainer_keras_regressor_test.png", show_shapes=True)
 
         trainer = BaseTrainer(config=config, model=model)
 
         res = trainer.train()
-        assert res != sys.float_info.max
+        assert res != sys.float_info.max and type(res) is dict
 
     def test_trainer_regressor_train_valid_with_multiple_ndarray_inputs(self):
         import sys
@@ -70,7 +66,6 @@ class TrainerKerasRegressorTest(unittest.TestCase):
         import numpy as np
         from deephyper.nas.trainer import BaseTrainer
         from deephyper.test.nas.linearRegMultiInputs.problem import Problem
-        from tensorflow.keras.utils import plot_model
 
         config = Problem.space
 
@@ -87,7 +82,6 @@ class TrainerKerasRegressorTest(unittest.TestCase):
         kwargs = config["load_data"].get("kwargs")
         (tX, ty), (vX, vy) = load_data() if kwargs is None else load_data(**kwargs)
 
-        print("[PARAM] Data loaded")
         # Set data shape
         # interested in shape of data not in length
         input_shape = [np.shape(itX)[1:] for itX in tX]
@@ -99,7 +93,6 @@ class TrainerKerasRegressorTest(unittest.TestCase):
             input_shape, output_shape, **config["search_space"]["kwargs"]
         ).build()
         arch_seq = [random() for i in range(search_space.num_nodes)]
-        print("arch_seq: ", arch_seq)
         search_space.set_ops(arch_seq)
         search_space.plot("trainer_keras_regressor_test.dot")
 
@@ -112,12 +105,11 @@ class TrainerKerasRegressorTest(unittest.TestCase):
             config["preprocessing"] = None
 
         model = search_space.create_model()
-        plot_model(model, to_file="trainer_keras_regressor_test.png", show_shapes=True)
 
         trainer = BaseTrainer(config=config, model=model)
 
         res = trainer.train()
-        assert res != sys.float_info.max
+        assert res != sys.float_info.max and type(res) is dict
 
     def test_trainer_regressor_train_valid_with_multiple_generator_inputs(self):
         import sys
@@ -126,7 +118,6 @@ class TrainerKerasRegressorTest(unittest.TestCase):
         from deephyper.nas.trainer import BaseTrainer
         from deephyper.test.nas.linearReg.problem import Problem
         from deephyper.test.nas.linearRegMultiInputsGen import Problem
-        from tensorflow.keras.utils import plot_model
 
         config = Problem.space
 
@@ -139,12 +130,11 @@ class TrainerKerasRegressorTest(unittest.TestCase):
         config["hyperparameters"]["num_epochs"] = 2
 
         model = search_space.sample()
-        plot_model(model, to_file="trainer_keras_regressor_test.png", show_shapes=True)
 
         trainer = BaseTrainer(config=config, model=model)
 
         res = trainer.train()
-        assert res != sys.float_info.max
+        assert res != sys.float_info.max and type(res) is dict
 
 
 if __name__ == "__main__":

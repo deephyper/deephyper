@@ -20,7 +20,8 @@ class RegevoMixedTest(unittest.TestCase):
         )
 
         res1 = search.search(max_evals=4)
-        res1_array = res1[["arch_seq"]].to_numpy()
+        print(res1)
+        res1_array = res1[["p:arch_seq"]].to_numpy()
 
         search = RegularizedEvolutionMixed(
             linearReg.Problem,
@@ -28,7 +29,7 @@ class RegevoMixedTest(unittest.TestCase):
             random_state=42,
         )
         res2 = search.search(max_evals=4)
-        res2_array = res2[["arch_seq"]].to_numpy()
+        res2_array = res2[["p:arch_seq"]].to_numpy()
 
         assert np.array_equal(res1_array, res2_array)
 
@@ -48,7 +49,7 @@ class RegevoMixedTest(unittest.TestCase):
         )
 
         res1 = search.search(max_evals=4)
-        res1_array = res1[["arch_seq"]].to_numpy()
+        res1_array = res1[["p:arch_seq"]].to_numpy()
 
         search = RegularizedEvolutionMixed(
             linearRegHybrid.Problem,
@@ -56,6 +57,11 @@ class RegevoMixedTest(unittest.TestCase):
             random_state=42,
         )
         res2 = search.search(max_evals=4)
-        res2_array = res2[["arch_seq"]].to_numpy()
+        res2_array = res2[["p:arch_seq"]].to_numpy()
 
         assert np.array_equal(res1_array, res2_array)
+
+
+if __name__ == "__main__":
+    test = RegevoMixedTest()
+    test.test_regovomixed_without_hp()

@@ -18,7 +18,6 @@ from deephyper.core.utils._timeout import terminate_on_timeout
 from deephyper.evaluator.storage import Storage, MemoryStorage
 
 EVALUATORS = {
-    "mpipool": "_mpi_pool.MPIPoolEvaluator",
     "mpicomm": "_mpi_comm.MPICommEvaluator",
     "process": "_process_pool.ProcessPoolEvaluator",
     "ray": "_ray.RayEvaluator",

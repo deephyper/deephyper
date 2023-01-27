@@ -44,6 +44,10 @@ class Job:
         return (cfg, self.objective)[index]
 
     @property
+    def result(self):
+        return self.objective
+
+    @property
     def objective(self):
         """Objective returned by the run-function."""
         return self.output["objective"]
@@ -93,7 +97,32 @@ class RunningJob:
         return self.parameters
 
     def __getitem__(self, k):
+        """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
+
+        if k == "job_id":
+            return int(self.id.split(".")[-1])
+
         return self.parameters[k]
+
+    def get(self, k, default=None):
+        """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
+        return self.parameters.get(k, default)
+
+    def __contains__(self, k):
+        """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
+        return k in self.parameters
+
+    def keys(self):
+        """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
+        return self.parameters.keys()
+
+    def values(self):
+        """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
+        return self.parameters.values()
+
+    def items(self):
+        """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
+        return self.parameters.items()
 
     def record(self, budget: float, objective: float):
         if self.stopper:

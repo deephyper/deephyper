@@ -1,7 +1,6 @@
 import asyncio
 import functools
 import logging
-import sys
 import traceback
 
 from typing import Callable, Hashable
@@ -59,6 +58,8 @@ class MPICommEvaluator(Evaluator):
         comm=None,
         root=0,
         abort_on_exit=False,
+        wait_on_exit=True,
+        cancel_jobs_on_exit=True,
     ):
         super().__init__(
             run_function=run_function,
@@ -74,6 +75,8 @@ class MPICommEvaluator(Evaluator):
         self.comm = comm if comm else MPI.COMM_WORLD
         self.root = root
         self.abort_on_exit = abort_on_exit
+        self.wait_on_exit = wait_on_exit
+        self.cancel_jobs_on_exit = cancel_jobs_on_exit
         self.num_workers = self.comm.Get_size() - 1  # 1 rank is the master
         self.sem = asyncio.Semaphore(self.num_workers)
         logging.info(f"Creating MPICommExecutor with {self.num_workers} max_workers...")
@@ -90,10 +93,17 @@ class MPICommEvaluator(Evaluator):
 
     def __exit__(self, type, value, traceback):
         if self.abort_on_exit:
-            self.comm.Abort()
+            self.comm.Abort(1)
         else:
-            self.executor.__exit__(type, value, traceback)
-            self.master_executor = None
+            if (
+                self.master_executor
+                and hasattr(self.executor, "_executor")
+                and self.executor._executor is not None
+            ):
+                self.executor._executor.shutdown(
+                    wait=self.wait_on_exit, cancel_futures=self.cancel_jobs_on_exit
+                )
+                self.executor._executor = None
 
     async def execute(self, job: Job) -> Job:
         async with self.sem:
@@ -110,9 +120,14 @@ class MPICommEvaluator(Evaluator):
 
             # check if exception happened in worker
             if code == 1:
-                sol += "\nException happening in remote rank was propagated to root process.\n"
-                print(sol, file=sys.stderr)
-                raise RunFunctionError
+                if "SearchTerminationError" in sol:
+                    pass
+                else:
+                    format_msg = "\n\n/**** START OF REMOTE ERROR ****/\n\n"
+                    format_msg += sol
+                    format_msg += "\nException happening in remote rank was propagated to root process.\n"
+                    format_msg += "\n/**** END OF REMOTE ERROR ****/\n"
+                    raise RunFunctionError(format_msg)
 
             job.set_output(sol)
 
