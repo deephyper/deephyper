@@ -1,11 +1,19 @@
 import logging
 
-import scipy.stats
+import mpi4py
 import numpy as np
-from deephyper.search.hps._cbo import CBO
-from deephyper.evaluator import Evaluator, SerialEvaluator
-from deephyper.evaluator.callback import TqdmCallback
+import scipy.stats
 
+# !To avoid initializing MPI when module is imported (MPI is optional)
+mpi4py.rc.initialize = False
+mpi4py.rc.finalize = True
+from mpi4py import MPI  # noqa: E402
+
+from deephyper.evaluator import Evaluator  # noqa: E402
+from deephyper.evaluator.callback import TqdmCallback  # noqa: E402
+from deephyper.evaluator.storage import Storage  # noqa: E402
+from deephyper.search.hps._cbo import CBO  # noqa: E402
+from deephyper.stopper import Stopper  # noqa: E402
 
 MAP_acq_func = {
     "UCB": "LCB",
@@ -13,32 +21,35 @@ MAP_acq_func = {
 
 
 class DBO(CBO):
-    """Distributed Bayesian Optimization Search.
+    """Distributed Bayesian Optimization Search using MPI to launch parallel search instances.
 
     Args:
         problem (HpProblem): Hyperparameter problem describing the search space to explore.
-        run_function (callable): A callable instance which represents the black-box function we want to evaluate.
+        evaluator (Evaluator): An ``Evaluator`` instance responsible of distributing the tasks.
         random_state (int, optional): Random seed. Defaults to ``None``.
         log_dir (str, optional): Log directory where search's results are saved. Defaults to ``"."``.
         verbose (int, optional): Indicate the verbosity level of the search. Defaults to ``0``.
-        comm (optional): The MPI communicator to use. Defaults to ``None``.
-        run_function_kwargs (dict): Keyword arguments to pass to the run-function. Defaults to ``None``.
-        n_jobs (int, optional): Parallel processes per rank to use for optimization updates (e.g., model re-fitting). Not used in ``surrogate_model`` if passed as own sklearn regressor. Defaults to ``1``.
-        surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Type of the surrogate model to use. Can be a value in ``["RF", "GP", "ET", "GBRT", "DUMMY"]`` or a sklearn regressor. ``"DUMMY"`` can be used of random-search, ``"GP"`` for Gaussian-Process (efficient with few iterations such as a hundred sequentially but bottleneck when scaling because of its cubic complexity w.r.t. the number of evaluations), "``"RF"`` for the Random-Forest regressor (log-linear complexity with respect to the number of evaluations). Defaults to ``"RF"``.
+        surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Surrogate model used by the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "GBRT", "DUMMY"]`` or a sklearn regressor. ``"RF"`` is for Random-Forest which is the best compromise between speed and quality when performing a lot of parallel evaluations, i.e., reaching more than hundreds of evaluations. ``"GP"`` is for Gaussian-Process which is the best choice when maximizing the quality of iteration but quickly slow down when reaching hundreds of evaluations, also it does not support conditional search space. ``"ET"`` is for Extra-Tree, faster than random forest but with worse mean estimate and poor uncertainty quantification capabilities. ``"GBRT"`` is for Gradient-Boosting Regression Tree, it has better mean estimate than other tree-based method worse uncertainty quantification capabilities and slower than ``"RF"``. Defaults to ``"RF"``.
+        acq_func (str, optional): Acquisition function used by the Bayesian optimization. Can be a value in ``["UCB", "EI", "PI", "gp_hedge"]``. Defaults to ``"UCB"``.
+        acq_optimizer (str, optional): Method used to minimze the acquisition function. Can be a value in ``["sampling", "lbfgs"]``. Defaults to ``"auto"``.
+        kappa (float, optional): Manage the exploration/exploitation tradeoff for the "UCB" acquisition function. Defaults to ``1.96`` which corresponds to 95% of the confidence interval.
+        xi (float, optional): Manage the exploration/exploitation tradeoff of ``"EI"`` and ``"PI"`` acquisition function. Defaults to ``0.001``.
+        n_points (int, optional): The number of configurations sampled from the search space to infer each batch of new evaluated configurations.
+        filter_duplicated (bool, optional): Force the optimizer to sample unique points until the search space is "exhausted" in the sens that no new unique points can be found given the sampling size ``n_points``. Defaults to ``True``.
+        multi_point_strategy (str, optional): Definition of the constant value use for the Liar strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max", "qUCB"]``. All ``"cl_..."`` strategies follow the constant-liar scheme, where if $N$ new points are requested, the surrogate model is re-fitted $N-1$ times with lies (respectively, the minimum, mean and maximum objective found so far; for multiple objectives, these are the minimum, mean and maximum of the individual objectives) to infer the acquisition function. Constant-Liar strategy have poor scalability because of this repeated re-fitting. The ``"qUCB"`` strategy is much more efficient by sampling a new $kappa$ value for each new requested point without re-fitting the model, but it is only compatible with ``acq_func == "UCB"``. Defaults to ``"cl_max"``.
+        n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the Bayesian optimization. A value of ``-1`` will use all available cores. Not used in ``surrogate_model`` if passed as own sklearn regressor. Defaults to ``1``.
         n_initial_points (int, optional): Number of collected objectives required before fitting the surrogate-model. Defaults to ``10``.
         initial_point_generator (str, optional): Sets an initial points generator. Can be either ``["random", "sobol", "halton", "hammersly", "lhs", "grid"]``. Defaults to ``"random"``.
-        lazy_socket_allocation (bool, optional): If `True` then MPI communication socket are initialized only when used for the first time, otherwise the initialization is forced when creating the instance. Defaults to ``False``.
-        sync_communication (bool, optional): If `True`  workers communicate synchronously, otherwise workers communicate asynchronously. Defaults to ``False``.
-        sync_communication_freq (int, optional): Manage the frequency at which workers should communicate their results in the case of synchronous communication. Defaults to ``10``.
-        checkpoint_file (str): Name of the file in ``log_dir`` where results are checkpointed. Defaults to ``"results.csv"``.
-        checkpoint_freq (int): Frequency at which results are checkpointed. Defaults to ``1``.
-        acq_func (str): Acquisition function to use. If ``"UCB"`` then the upper confidence bound is used, if ``"EI"`` then the expected-improvement is used, if ``"PI"`` then the probability of improvement is used, if ``"gp_hedge"`` then probabilistically choose one of the above.
-        acq_optimizer (str): Method use to optimise the acquisition function. If ``"sampling"`` then random-samples are drawn and infered for optimization, if ``"lbfgs"`` gradient-descent is used. Defaults to ``"auto"``.
-        kappa (float): Exploration/exploitation value for UCB-acquisition function, the higher the more exploration, the smaller the more exploitation. Defaults to ``1.96`` which corresponds to a 95% confidence interval.
-        xi (float): Exploration/exploitation value for EI and PI-acquisition functions, the higher the more exploration, the smaller the more exploitation. Defaults to ``0.001``.
-        sample_max_size (int): Maximum size of the number of samples used to re-fit the surrogate model. Defaults to ``-1`` for infinite sample size.
-        sample_strategy (str): Sub-sampling strategy to re-fit the surrogate model. If ``"quantile"`` then sub-sampling is performed based on the quantile of the collected objective values. Defaults to ``"quantile"``.
-
+        initial_points (List[Dict], optional): A list of initial points to evaluate where each point is a dictionnary where keys are names of hyperparameters and values their corresponding choice. Defaults to ``None`` for them to be generated randomly from the search space.
+        sync_communcation (bool, optional): Performs the search in a batch-synchronous manner. Defaults to ``False`` for asynchronous updates.
+        filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. If ``"ignore"`` is passed then failed configurations will be filtered-out and not passed to the surrogate model. For multiple objectives, failure of any single objective will lead to treating that configuration as failed and each of these multiple objective will be replaced by their individual ``"min"`` or ``"mean"`` of past configurations. Defaults to ``"mean"`` to replace by failed configurations by the running mean of objectives.
+        max_failures (int, optional): Maximum number of failed configurations allowed before observing a valid objective value when ``filter_failures`` is not equal to ``"ignore"``. Defaults to ``100``.
+        moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "AugChebyshev", "PBI", "Quadratic", "rLinear", "rChebyshev", "rAugChebyshev", "rPBI", "rQuadratic"]``. Defaults to ``"Chebyshev"``.
+        moo_scalarization_weight (list, optional): Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions. Defaults to ``None``.
+        scheduler (dict, callable, optional): a method to manage the the value of ``kappa, xi`` with iterations. Defaults to ``None`` which does not use any scheduler.
+        objective_scaler (str, optional): a way to map the objective space to some other support for example to normalize it. Defaults to ``"auto"`` which automatically set it to "identity" for any surrogate model except "RF" which will use "minmaxlog".
+        stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the function. Defaults to ``None`` which does not use any stopper.
+        comm (Comm, optional): communicator used with MPI. Defaults to ``None`` for  ``COMM_WORLD``.
     """
 
     def __init__(
@@ -67,10 +78,20 @@ class DBO(CBO):
         moo_scalarization_strategy: str = "Chebyshev",
         moo_scalarization_weight=None,
         scheduler=None,
+        objective_scaler="auto",
+        stopper: Stopper = None,
+        comm: MPI.Comm = None,
         **kwargs,
     ):
         # get the __init__ parameters
         _init_params = locals()
+
+        if not MPI.Is_initialized():
+            MPI.Init_thread()
+
+        self.comm = comm if comm else MPI.COMM_WORLD
+        self.rank = self.comm.Get_rank()
+        self.size = self.comm.Get_size()
 
         self.check_evaluator(evaluator)
 
@@ -84,8 +105,10 @@ class DBO(CBO):
         if acq_optimizer == "auto":
             if acq_func[0] == "q":
                 acq_optimizer = "sampling"
+            elif acq_func[0] == "b":
+                acq_optimizer == "boltzmann_sampling"
             else:
-                acq_optimizer = "boltzmann_sampling"
+                acq_optimizer = "sampling"
 
         if acq_func[0] == "q":
             # kappa = scipy.stats.truncexpon.rvs(kappa, size=self._evaluator.size)[
@@ -95,105 +118,151 @@ class DBO(CBO):
             #     self._evaluator.rank
             # ]
             kappa = scipy.stats.expon.rvs(
-                size=self._evaluator.size, scale=kappa, random_state=random_state
+                size=self.size, scale=kappa, random_state=random_state
             )[self._evaluator.rank]
             xi = scipy.stats.expon.rvs(
-                size=self._evaluator.size, scale=xi, random_state=random_state
+                size=self.size, scale=xi, random_state=random_state
             )[self._evaluator.rank]
-            # kappa = random_state.exponential(kappa, size=self._evaluator.size)[
-            #    self._evaluator.rank
-            # ]
-            # xi = random_state.exponential(xi, size=self._evaluator.size)[
-            #    self._evaluator.rank
-            # ]
             acq_func = acq_func[1:]
+        elif acq_func[0] == "b":
+            acq_func[0] = acq_func[1:]
 
         # set random state for given rank
         random_state = np.random.RandomState(
-            random_state.randint(low=0, high=2**32, size=self._evaluator.size)[
-                self._evaluator.rank
-            ]
+            random_state.randint(low=0, high=2**32, size=self.size)[self.rank]
         )
 
-        if self._evaluator.rank == 0:
+        if self.rank == 0:
             super().__init__(
-                problem,
-                evaluator,
-                random_state,
-                log_dir,
-                verbose,
-                surrogate_model,
-                acq_func,
-                acq_optimizer,
-                kappa,
-                xi,
-                n_points,
-                filter_duplicated,
-                update_prior,
-                multi_point_strategy,
-                n_jobs,
-                n_initial_points,
-                initial_point_generator,
-                initial_points,
-                sync_communication,
-                filter_failures,
-                max_failures,
-                moo_scalarization_strategy,
-                moo_scalarization_weight,
-                scheduler,
+                problem=problem,
+                evaluator=evaluator,
+                random_state=random_state,
+                log_dir=log_dir,
+                verbose=verbose,
+                surrogate_model=surrogate_model,
+                acq_func=acq_func,
+                acq_optimizer=acq_optimizer,
+                kappa=kappa,
+                xi=xi,
+                n_points=n_points,
+                filter_duplicated=filter_duplicated,
+                update_prior=update_prior,
+                multi_point_strategy=multi_point_strategy,
+                n_jobs=n_jobs,
+                n_initial_points=n_initial_points,
+                initial_point_generator=initial_point_generator,
+                initial_points=initial_points,
+                sync_communication=sync_communication,
+                filter_failures=filter_failures,
+                max_failures=max_failures,
+                moo_scalarization_strategy=moo_scalarization_strategy,
+                moo_scalarization_weight=moo_scalarization_weight,
+                scheduler=scheduler,
+                objective_scaler=objective_scaler,
+                stopper=stopper,
                 **kwargs,
             )
-        self._evaluator.comm.Barrier()
-        if self._evaluator.rank != 0:
+        self.comm.Barrier()
+        if self.rank > 0:
             super().__init__(
-                problem,
-                evaluator,
-                random_state,
-                log_dir,
-                verbose,
-                surrogate_model,
-                acq_func,
-                acq_optimizer,
-                kappa,
-                xi,
-                n_points,
-                filter_duplicated,
-                update_prior,
-                multi_point_strategy,
-                n_jobs,
-                n_initial_points,
-                initial_point_generator,
-                initial_points,
-                sync_communication,
-                filter_failures,
-                max_failures,
-                moo_scalarization_strategy,
-                moo_scalarization_weight,
-                scheduler,
+                problem=problem,
+                evaluator=evaluator,
+                random_state=random_state,
+                log_dir=log_dir,
+                verbose=verbose,
+                surrogate_model=surrogate_model,
+                acq_func=acq_func,
+                acq_optimizer=acq_optimizer,
+                kappa=kappa,
+                xi=xi,
+                n_points=n_points,
+                filter_duplicated=filter_duplicated,
+                update_prior=update_prior,
+                multi_point_strategy=multi_point_strategy,
+                n_jobs=n_jobs,
+                n_initial_points=n_initial_points,
+                initial_point_generator=initial_point_generator,
+                initial_points=initial_points,
+                sync_communication=sync_communication,
+                filter_failures=filter_failures,
+                max_failures=max_failures,
+                moo_scalarization_strategy=moo_scalarization_strategy,
+                moo_scalarization_weight=moo_scalarization_weight,
+                scheduler=scheduler,
+                objective_scaler=objective_scaler,
+                stopper=stopper,
                 **kwargs,
             )
-        self._evaluator.comm.Barrier()
+
+        self.comm.Barrier()
 
         # Replace CBO _init_params by DBO _init_params
         self._init_params = _init_params
 
         logging.info(
-            f"DBO has {self._evaluator.num_total_workers} worker(s) with {self._evaluator.num_workers} local worker(s) per rank"
+            f"DBO rank {self.rank} has {self._evaluator.num_workers} local worker(s)"
         )
 
     def check_evaluator(self, evaluator):
-        super().check_evaluator(evaluator)
 
-        if not (isinstance(evaluator, Evaluator)) and callable(evaluator):
-            from deephyper.evaluator._distributed import distributed
+        if not (isinstance(evaluator, Evaluator)):
 
-            self._evaluator = distributed(backend="mpi")(SerialEvaluator)(evaluator)
-            if self._evaluator.rank == 0:
-                self._evaluator._callbacks.append(TqdmCallback())
-        else:
-            if not ("Distributed" in type(evaluator).__name__):
-                raise ValueError(
-                    "The evaluator is not distributed! Use deephyper.evaluator.distributed(backend)(evaluator_class)!"
+            if callable(evaluator):
+                self.bootsrap_evaluator(
+                    run_function=evaluator,
+                    evaluator_type="serial",
+                    storage_type="redis",
                 )
 
+            else:
+                raise TypeError(
+                    f"The evaluator shoud be an instance of deephyper.evaluator.Evaluator by is {type(evaluator)}!"
+                )
+        else:
             self._evaluator = evaluator
+
+    def bootsrap_evaluator(
+        self,
+        run_function,
+        evaluator_type: str = "serial",
+        evaluator_kwargs: dict = None,
+        storage_type: str = "redis",
+        storage_kwargs: dict = None,
+    ):
+
+        evaluator_kwargs = evaluator_kwargs if evaluator_kwargs else {}
+        storage_kwargs = storage_kwargs if storage_kwargs else {}
+
+        storage = Storage.create(storage_type, storage_kwargs).connect()
+        search_id = None
+        if self.rank == 0:
+            search_id = storage.create_new_search()
+        search_id = self.comm.bcast(search_id)
+
+        if "callbacks" not in evaluator_kwargs:
+            if self.rank == 0:
+                callbacks = [TqdmCallback()]
+            else:
+                callbacks = []
+            evaluator_kwargs["callbacks"] = callbacks
+
+        # all processes are using the same search_id
+        evaluator_kwargs["storage"] = storage
+        evaluator_kwargs["search_id"] = search_id
+
+        self._evaluator = Evaluator.create(
+            run_function,
+            method=evaluator_type,
+            method_kwargs=evaluator_kwargs,
+        )
+
+        # all ranks synchronise with timestamp on root rank
+        self._evaluator.timestamp = self.comm.bcast(self._evaluator.timestamp)
+
+        # replace dump_evals of evaluator by empty function to avoid concurrent writtings in file
+        if self.rank > 0:
+
+            def dumps_evals(*args, **kwargs):
+                pass
+
+            self._evaluator.dump_evals = dumps_evals

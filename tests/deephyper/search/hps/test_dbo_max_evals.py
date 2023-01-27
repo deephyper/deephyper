@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import pytest
 
@@ -8,14 +9,9 @@ SCRIPT = os.path.abspath(__file__)
 import deephyper.test
 
 
-def _test_dbo_timeout():
+def _test_dbo_max_evals():
     import time
     import numpy as np
-
-    from mpi4py import MPI
-
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
 
     from deephyper.problem import HpProblem
     from deephyper.search.hps import DBO
@@ -35,36 +31,43 @@ def _test_dbo_timeout():
         y = term1 + term2 + a + np.exp(1)
         return y
 
-    def run(config):
+    def run(job):
+        config = job.parameters
         x = np.array([config[f"x{i}"] for i in range(d)])
         x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
         return -ackley(x)
 
+    log_dir = "log-dbo"
     search = DBO(
         hp_problem,
         run,
-        log_dir="log-dbo",
+        log_dir=log_dir,
     )
 
-    timeout = 2
-    if rank == 0:
+    max_evals = 40
+    if search.rank == 0:
         t1 = time.time()
-        results = search.search(timeout=timeout)
-        duration = time.time() - t1
+        results = search.search(max_evals=max_evals)
     else:
-        search.search(timeout=timeout)
+        search.search(max_evals=max_evals)
+    search.comm.Barrier()
+    if search.rank == 0:
+        assert len(results) >= max_evals
+        print("TEST-RESULT:", len(results))
+        shutil.rmtree(log_dir)
 
 
 @pytest.mark.fast
 @pytest.mark.hps
 @pytest.mark.mpi
+@pytest.mark.redis
 def test_dbo_timeout():
-    command = f"time mpirun -np 4 {PYTHON} {SCRIPT} _test_dbo_timeout"
+    command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_dbo_max_evals"
     result = deephyper.test.run(command, live_output=False)
-    result = result.stderr.replace("\n", "").split(" ")
-    i = result.index("sys")
-    t = float(result[i - 1])
-    assert t < 3
+    result = result.stdout.split(" ")
+    i = result.index("TEST-RESULT:")
+    val = result[i + 1][:2]
+    assert int(val) >= 40
 
 
 if __name__ == "__main__":

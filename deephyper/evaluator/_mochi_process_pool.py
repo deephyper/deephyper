@@ -119,12 +119,13 @@ class MochiEvaluator(Evaluator):
 
             target_address = self._qworker_addresses.popleft()
 
+            running_job = job.create_running_job(self._storage, self._stopper)
+
             run_function = functools.partial(
                 margo_client,
                 self._protocol,
                 target_address,
-                job.run_function,
-                job.config,
+                running_job,
                 **self.run_function_kwargs,
             )
 

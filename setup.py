@@ -22,10 +22,12 @@ platform_infos = platform.platform()
 REQUIRED = [
     "ConfigSpace>=0.4.20",
     "dm-tree",
+    "jax[cpu]>=0.3.25",
     "Jinja2<3.1",
     # "joblib>=0.10.3",
     # "matplotlib>=3.0.3", # analytics
     "numpy",  # ==1.19.4",  # working with 1.20.1
+    "numpyro[cpu]",
     # "openml>=0.10.2", # benchmarks sub-module
     "pandas>=0.24.2",
     "packaging",
@@ -54,7 +56,7 @@ else:  # x86_64
 REQUIRED_POPT = ["xgboost"]
 
 # !Requirements for Automated Deep Ensemble with Uncertainty Quantification (AutoDEUQ)
-REQUIRED_AUTODEUQ = REQUIRED_NAS + ["ray"]
+REQUIRED_AUTODEUQ = REQUIRED_NAS + ["ray[default]>=1.3.0"]
 
 # !Transfer Learning for Bayesian Optimization with SVD
 REQUIRED_TL_SDV = ["sdv>=0.17.1"]

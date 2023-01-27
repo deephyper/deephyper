@@ -18,7 +18,6 @@ class Callback:
         Args:
             job (Job): The created job.
         """
-        ...
 
     def on_done(self, job):
         """Called each time a Job is completed by the Evaluator.
@@ -26,7 +25,13 @@ class Callback:
         Args:
             job (Job): The completed job.
         """
-        ...
+
+    def on_done_other(self, job):
+        """Called each time a Job is collected from an other process.
+
+        Args:
+            job (Job): The completed Job.
+        """
 
 
 class ProfilingCallback(Callback):
@@ -79,32 +84,37 @@ class LoggerCallback(Callback):
         self._best_objective = None
         self._n_done = 0
 
+    def on_done_other(self, job):
+        self.on_done(job)
+
     def on_done(self, job):
         self._n_done += 1
         # Test if multi objectives are received
-        if np.ndim(job.result) > 0:
-            if np.isreal(job.result).all():
+        if np.ndim(job.objective) > 0:
+            if np.isreal(job.objective).all():
                 if self._best_objective is None:
-                    self._best_objective = np.sum(job.result)
+                    self._best_objective = np.sum(job.objective)
                 else:
-                    self._best_objective = max(np.sum(job.result), self._best_objective)
+                    self._best_objective = max(
+                        np.sum(job.objective), self._best_objective
+                    )
 
                 print(
-                    f"[{self._n_done:05d}] -- best sum(objective): {self._best_objective:.5f} -- received sum(objective): {np.sum(job.result):.5f}"
+                    f"[{self._n_done:05d}] -- best sum(objective): {self._best_objective:.5f} -- received sum(objective): {np.sum(job.objective):.5f}"
                 )
-            elif np.any(type(res) is str and "F" == res[0] for res in job.result):
-                print(f"[{self._n_done:05d}] -- received failure: {job.result}")
-        elif np.isreal(job.result):
+            elif np.any(type(res) is str and "F" == res[0] for res in job.objective):
+                print(f"[{self._n_done:05d}] -- received failure: {job.objective}")
+        elif np.isreal(job.objective):
             if self._best_objective is None:
-                self._best_objective = job.result
+                self._best_objective = job.objective
             else:
-                self._best_objective = max(job.result, self._best_objective)
+                self._best_objective = max(job.objective, self._best_objective)
 
             print(
-                f"[{self._n_done:05d}] -- best objective: {self._best_objective:.5f} -- received objective: {job.result:.5f}"
+                f"[{self._n_done:05d}] -- best objective: {self._best_objective:.5f} -- received objective: {job.objective:.5f}"
             )
-        elif type(job.result) is str and "F" == job.result[0]:
-            print(f"[{self._n_done:05d}] -- received failure: {job.result}")
+        elif type(job.objective) is str and "F" == job.objective[0]:
+            print(f"[{self._n_done:05d}] -- received failure: {job.objective}")
 
 
 class TqdmCallback(Callback):
@@ -126,6 +136,9 @@ class TqdmCallback(Callback):
         self._max_evals = max_evals
         self._tqdm = None
 
+    def on_done_other(self, job):
+        self.on_done(job)
+
     def on_done(self, job):
 
         if self._tqdm is None:
@@ -137,23 +150,25 @@ class TqdmCallback(Callback):
         self._n_done += 1
         self._tqdm.update(1)
         # Test if multi objectives are received
-        if np.ndim(job.result) > 0:
-            if np.isreal(job.result).all():
+        if np.ndim(job.objective) > 0:
+            if np.isreal(job.objective).all():
                 if self._best_objective is None:
-                    self._best_objective = np.sum(job.result)
+                    self._best_objective = np.sum(job.objective)
                 else:
-                    self._best_objective = max(np.sum(job.result), self._best_objective)
+                    self._best_objective = max(
+                        np.sum(job.objective), self._best_objective
+                    )
             else:
                 self._n_failures += 1
             self._tqdm.set_postfix(
                 {"failures": self._n_failures, "sum(objective)": self._best_objective}
             )
         else:
-            if np.isreal(job.result):
+            if np.isreal(job.objective):
                 if self._best_objective is None:
-                    self._best_objective = job.result
+                    self._best_objective = job.objective
                 else:
-                    self._best_objective = max(job.result, self._best_objective)
+                    self._best_objective = max(job.objective, self._best_objective)
             else:
                 self._n_failures += 1
             self._tqdm.set_postfix(
@@ -174,6 +189,9 @@ class SearchEarlyStopping(Callback):
         self._n_lower = 0
         self._patience = patience
         self._objective_func = objective_func
+
+    def on_done_other(self, job):
+        self.on_done(job)
 
     def on_done(self, job):
         job_objective = self._objective_func(job)
