@@ -18,7 +18,9 @@ For other developers, it is better to use Github Pull Requests so that the submi
 Installation
 ============
 
-The installation of the development dependencies (e.g., code formatting, linter, documentation) uses the ``[dev]`` marker. It is also important to install the _pre-commit_ environment before starting to develop to run static code-checks (e.g., syntax and format) before each commit.
+The installation of the development dependencies (e.g., code formatting, linter, documentation) uses the ``[dev]`` marker. It is also important to install the _pre-commit_ environment before starting to develop to run static code-checks (e.g., syntax and format) before each commit. In addition, before cloning the repository from Github ``git-lfs`` needs to be installed (see more on `Installing Git Large File System <https://docs.github.com/en/repositories/working-with-files/managing-large-files/installing-git-large-file-storage>`_).
+
+Git Large File System (LFS) is used to store all files which are necessary and not quickly retrievable such as figures derived from tutorials or data for testing. 
 
 .. code-block:: console
 
