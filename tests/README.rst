@@ -13,21 +13,29 @@ Follow the :ref:`local-dev-installation`.
 Running Tests
 =============
 
-Tests are marked with possible marks such as:
+Tests corresponding to  ``deephyper`` modules are located in the ``tests`` folder. These tests are marked with possible marks such as:
 
-- fast
-- slow
-- hps
-- nas
-- mpi
-- ray
-- redis
+- fast: tests that are fast to run.
+- slow: tests that are slow to run.
+- hps: tests that are related to hyperparameter search.
+- nas: tests that are related to neural architecture search.
+- mpi: tests that require MPI.
+- ray: tests that require Ray.
+- redis: tests that require Redis.
 
 To run corresponding tests these markers can be used such as:
 
 .. code-block:: console
 
     pytest --run fast,hps tests/
+
+Testing Notebooks
+=================
+
+To test notebooks the ``develop`` branch of deephyper can be installed with pip by using the following command::
+
+    pip install -e git+https://github.com/deephyper/deephyper.git@develop#egg=deephyper
+
 
 Writting Tests
 ==============
