@@ -36,7 +36,7 @@ class Stopper(abc.ABC):
 
     @property
     def step(self):
-        return self._count_steps
+        return self.observed_budgets[-1]
 
     def observe(self, budget: float, objective: float):
         self._count_steps += 1
