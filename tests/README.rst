@@ -67,3 +67,7 @@ Each test function creating data (files or directly) should use a temporary dire
     def test_median_stopper(tmp_path):
         ...
 
+
+.. note::
+
+    If you want to know more about temporary directory or file check the Pytest documentation: `How to use temporary directories and files in tests <https://docs.pytest.org/en/latest/how-to/tmp_path.html>`_.
