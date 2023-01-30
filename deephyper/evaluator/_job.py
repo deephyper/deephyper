@@ -1,4 +1,5 @@
 import copy
+from collections.abc import MutableMapping
 
 from typing import Hashable
 
@@ -71,7 +72,7 @@ class Job:
         return rjob
 
 
-class RunningJob:
+class RunningJob(MutableMapping):
     def __init__(
         self,
         id: Hashable = None,
@@ -92,37 +93,60 @@ class RunningJob:
         self.stopper = stopper
         self.obs = None
 
-    @property
-    def config(self):
-        return self.parameters
+    # @property
+    # def config(self):
+    #     return self.parameters
 
-    def __getitem__(self, k):
-        """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
+    def __getitem__(self, key):
 
-        if k == "job_id":
+        if key == "job_id":
             return int(self.id.split(".")[-1])
 
-        return self.parameters[k]
+        return self.parameters[key]
 
-    def get(self, k, default=None):
-        """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
-        return self.parameters.get(k, default)
+    def __setitem__(self, key, value):
 
-    def __contains__(self, k):
-        """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
-        return k in self.parameters
+        if key == "job_id":
+            raise KeyError("Cannot change the 'job_id' of a running job.")
 
-    def keys(self):
-        """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
-        return self.parameters.keys()
+        self.parameters[key] = value
 
-    def values(self):
-        """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
-        return self.parameters.values()
+    def __delitem__(self, key):
+        del self.parameters[key]
 
-    def items(self):
-        """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
-        return self.parameters.items()
+    def __iter__(self):
+        return iter(self.parameters)
+
+    def __len__(self):
+        return len(self.parameters)
+
+    # def __getitem__(self, k):
+    #     """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
+
+    #     if k == "job_id":
+    #         return int(self.id.split(".")[-1])
+
+    #     return self.parameters[k]
+
+    # def get(self, k, default=None):
+    #     """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
+    #     return self.parameters.get(k, default)
+
+    # def __contains__(self, k):
+    #     """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
+    #     return k in self.parameters
+
+    # def keys(self):
+    #     """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
+    #     return self.parameters.keys()
+
+    # def values(self):
+    #     """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
+    #     return self.parameters.values()
+
+    # def items(self):
+    #     """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
+    #     return self.parameters.items()
 
     def record(self, budget: float, objective: float):
         if self.stopper:

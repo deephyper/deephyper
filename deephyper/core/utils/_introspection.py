@@ -59,7 +59,8 @@ def get_init_params_as_json(obj):
     """
     if hasattr(obj, "_init_params"):
         base_init_params = obj._init_params
-        base_init_params.pop("self")
+        if "self" in base_init_params:
+            base_init_params.pop("self")
     else:
         base_init_params = dict()
     params = dict()

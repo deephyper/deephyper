@@ -34,7 +34,7 @@ Testing Notebooks
 
 To test notebooks the ``develop`` branch of deephyper can be installed with pip by using the following command::
 
-    pip install -e git+https://github.com/deephyper/deephyper.git@develop#egg=deephyper
+    !pip install -e "git+https://github.com/deephyper/deephyper.git@develop#egg=deephyper"
 
 
 Writting Tests

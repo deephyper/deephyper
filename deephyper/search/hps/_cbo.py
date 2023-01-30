@@ -545,7 +545,7 @@ class CBO(Search):
         if self._opt is None:
             self._setup_optimizer()
 
-        hp_names = self._problem.hyperparameter_names
+        hp_names = [f"p:{name}" for name in self._problem.hyperparameter_names]
         try:
             x = df[hp_names].values.tolist()
             # check single or multiple objectives
