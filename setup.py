@@ -30,6 +30,7 @@ REQUIRED = [
     "numpyro[cpu]",
     "pandas>=0.24.2",
     "packaging",
+    "parse",
     # "ray[default]>=1.3.0", # evaluator and ensemble
     "scikit-learn>=0.23.1",
     "scipy>=1.7",
