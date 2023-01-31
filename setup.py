@@ -32,7 +32,7 @@ REQUIRED = [
     "packaging",
     # "ray[default]>=1.3.0", # evaluator and ensemble
     "scikit-learn>=0.23.1",
-    "scipy>=1.9.1",
+    "scipy>=1.7",
     "tqdm>=4.64.0",
     "pyyaml",
     "tinydb",
