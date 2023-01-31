@@ -28,12 +28,11 @@ REQUIRED = [
     # "matplotlib>=3.0.3", # analytics
     "numpy",  # ==1.19.4",  # working with 1.20.1
     "numpyro[cpu]",
-    # "openml>=0.10.2", # benchmarks sub-module
     "pandas>=0.24.2",
     "packaging",
     # "ray[default]>=1.3.0", # evaluator and ensemble
     "scikit-learn>=0.23.1",
-    "scipy>=0.19.1",
+    "scipy>=1.9.1",
     "tqdm>=4.64.0",
     "pyyaml",
     "tinydb",

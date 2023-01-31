@@ -5,6 +5,11 @@ from deephyper.evaluator.storage._storage import Storage
 
 
 class MemoryStorage(Storage):
+    """Storage client for local in-memory storage.
+
+    This backend does not allow to share the data between evaluators running in different processes.
+    """
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -98,24 +103,6 @@ class MemoryStorage(Storage):
         """
         search_id, partial_id = job_id.split(".")
         self._data[search_id]["data"][partial_id]["metadata"][key] = value
-
-    # def push_job_objective(
-    #     self, job_id: Hashable, budget: float, objective: Union[str, float, int, tuple]
-    # ) -> None:
-    #     """Push an objective value for the job at a corresponding budget.
-
-    #     Args:
-    #         job_id (Hashable): The identifier of the job.
-    #         budget (float): The budget at which the objective was observed.
-    #         objective (Union[str, float, int, tuple]): The observed objective value.
-    #     """
-    #     search_id, partial_id = job_id.split(".")
-    #     self._data[search_id]["data"][partial_id]["intermediate"]["budget"].append(
-    #         budget
-    #     )
-    #     self._data[search_id]["data"][partial_id]["intermediate"]["objective"].append(
-    #         objective
-    #     )
 
     def load_all_search_ids(self) -> List[Hashable]:
         """Loads the identifiers of all recorded searches.

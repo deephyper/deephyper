@@ -24,6 +24,18 @@ class Storage(abc.ABC):
 
     @staticmethod
     def create(method: str = "local_memory", method_kwargs: Dict = None) -> StorageType:
+        """Static method allowing the creation of a storage client.
+
+        Args:
+            method (str, optional): the type of storage client. Defaults to "local_memory".
+            method_kwargs (Dict, optional): the client keyword-arguments parameters. Defaults to None.
+
+        Raises:
+            ValueError: if the type of requested storage client is not valid.
+
+        Returns:
+            Storage: the created storage client.
+        """
 
         method_kwargs = method_kwargs if method_kwargs else {}
 

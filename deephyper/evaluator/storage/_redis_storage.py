@@ -8,6 +8,16 @@ from deephyper.evaluator.storage._storage import Storage
 
 
 class RedisStorage(Storage):
+    """Storage client for Redis.
+
+    The Redis server should be started with the Redis-JSON module loaded.
+
+    Args:
+        host (str, optional): The host of the Redis server. Defaults to "localhost".
+        port (int, optional): The port of the Redis server. Defaults to 6379.
+        db (int, optional): The database of the Redis server. Defaults to 0.
+    """
+
     def __init__(self, host="localhost", port=6379, db=0) -> None:
         super().__init__()
 

@@ -1,5 +1,4 @@
 import os
-import shutil
 import sys
 import pytest
 
@@ -9,7 +8,7 @@ SCRIPT = os.path.abspath(__file__)
 import deephyper.test
 
 
-def _test_dbo_max_evals():
+def _test_dbo_max_evals(tmp_path):
     import time
     import numpy as np
 
@@ -37,11 +36,10 @@ def _test_dbo_max_evals():
         x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
         return -ackley(x)
 
-    log_dir = "log-dbo"
     search = DBO(
         hp_problem,
         run,
-        log_dir=log_dir,
+        log_dir=tmp_path,
     )
 
     max_evals = 40
@@ -53,24 +51,21 @@ def _test_dbo_max_evals():
     search.comm.Barrier()
     if search.rank == 0:
         assert len(results) >= max_evals
-        print("TEST-RESULT:", len(results))
-        shutil.rmtree(log_dir)
+        print("DEEPHYPER-OUTPUT:", float(len(results)))
 
 
 @pytest.mark.fast
 @pytest.mark.hps
 @pytest.mark.mpi
 @pytest.mark.redis
-def test_dbo_timeout():
-    command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_dbo_max_evals"
+def test_dbo_timeout(tmp_path):
+    command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_dbo_max_evals {tmp_path}"
     result = deephyper.test.run(command, live_output=False)
-    result = result.stdout.split(" ")
-    i = result.index("TEST-RESULT:")
-    val = result[i + 1][:2]
+    val = deephyper.test.parse_result(result.stdout)
     assert int(val) >= 40
 
 
 if __name__ == "__main__":
-    func = sys.argv[-1]
+    func = sys.argv[-2]
     func = globals()[func]
-    func()
+    func(sys.argv[-1])
