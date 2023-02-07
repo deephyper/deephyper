@@ -61,6 +61,7 @@ EXTRAS = {
     "autodeuq": REQUIRED_AUTODEUQ,  # automated deep ensemble with uncertainty quantification
     "jax-cpu": ["jax[cpu]>=0.3.25", "numpyro[cpu]"],
     "jax-cuda": ["jax[cuda]>=0.3.25", "numpyro[cuda]"],
+    "hps": [],  # hyperparameter search (already the base requirements)
     "nas": REQUIRED_NAS,  # neural architecture search
     "xgboost": ["xgboost"],  # for automl with scikit-learn
     "sdv": REQUIRED_TL_SDV,  # transfer learning for bayesian optimization,
@@ -101,6 +102,14 @@ EXTRAS = {
     ],
     "hvd": ["horovod>=0.21.3", "mpi4py>=3.0.0"],
 }
+
+# Default dependencies for DeepHyper
+DEFAULT_DEPENDENCIES = REQUIRED
+DEFAULT_DEPENDENCIES += EXTRAS["nas"]
+DEFAULT_DEPENDENCIES += EXTRAS["autodeuq"]
+DEFAULT_DEPENDENCIES += EXTRAS["sdv"]
+DEFAULT_DEPENDENCIES += EXTRAS["jax-cpu"]
+EXTRAS["default"] = DEFAULT_DEPENDENCIES
 
 # Useful commands to build/upload the wheel to PyPI
 
