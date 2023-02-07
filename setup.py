@@ -59,11 +59,11 @@ REQUIRED_TL_SDV = ["sdv>=0.17.1"]
 # What packages are optional?
 EXTRAS = {
     "autodeuq": REQUIRED_AUTODEUQ,  # automated deep ensemble with uncertainty quantification
+    "automl": ["xgboost"],  # for automl with scikit-learn
     "jax-cpu": ["jax[cpu]>=0.3.25", "numpyro[cpu]"],
     "jax-cuda": ["jax[cuda]>=0.3.25", "numpyro[cuda]"],
     "hps": [],  # hyperparameter search (already the base requirements)
     "nas": REQUIRED_NAS,  # neural architecture search
-    "xgboost": ["xgboost"],  # for automl with scikit-learn
     "sdv": REQUIRED_TL_SDV,  # transfer learning for bayesian optimization,
     "mpi": ["mpi4py>=3.1.3"],
     "ray": ["ray[default]>=1.3.0"],
