@@ -7,7 +7,6 @@ from deephyper.stopper._stopper import Stopper
 from deephyper.stopper._asha_stopper import SuccessiveHalvingStopper
 from deephyper.stopper._median_stopper import MedianStopper
 from deephyper.stopper._idle_stopper import IdleStopper
-from deephyper.stopper._lcmodel_stopper import LCModelStopper
 from deephyper.stopper._const_stopper import ConstantStopper
 
 
@@ -16,6 +15,14 @@ __all__ = [
     "Stopper",
     "SuccessiveHalvingStopper",
     "MedianStopper",
-    "LCModelStopper",
     "ConstantStopper",
 ]
+
+
+try:
+
+    from deephyper.stopper._lcmodel_stopper import LCModelStopper  # noqa: F401
+
+    __all__.append("LCModelStopper")
+except ImportError:
+    pass
