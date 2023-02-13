@@ -1,7 +1,7 @@
 Local
 *****
 
-DeepHyper installation requires ``Python>=3.7``. By default, only hyperparameter search features will be installed. For other features, see below.
+DeepHyper installation requires ``Python>=3.7``. By default, only hyperparameter search features will be installed. For other features, see :ref:`_local-other-features`.
 
 .. note:: All other packages required for your model need to be installed in the same environment.
 
@@ -121,25 +121,14 @@ Follow the :ref:`local-conda-environment` installation and replace ``pip install
     $ cd deephyper/ && git checkout develop
     $ pip install -e ".[dev,analytics]"
 
+.. _local-other-features:
+
 Other features.
 =================
 
-# MPI features
-Deephyper can use MPI to paralellze evaluations during the excution of search algorithms. To use MPI features, an implementation of the MPI interface, such as `openmpi` is required.
+The above installation contains the basic hyperparameter search. DeepHyper also supports parallelized evaluations, neural architecture search, automated Deep Ensemble, Uncertainty Quantification, and Transfer learning.
 
-.. code-block:: console
-
-    $ pip install mpi4py
-
-# Ray features
-Deephyper can use `Ray <https://docs.ray.io/en/latest/ray-overview/installation.html>`_ to parallelize evaluations during the excution of search algorithms. Ray is also required for `deephyper.ensemble` library. To use Ray features, the `ray` package must be installed 
-
-.. code-block:: console
-
-    $ pip install ray
-
-
-To enable other features:
+To enable these features:
 
 .. code-block:: console
     
