@@ -1,7 +1,9 @@
 Local
 *****
 
-DeepHyper installation requires ``Python>=3.7``. By default, only hyperparameter search features will be installed.
+DeepHyper installation requires ``Python>=3.7``. By default, only hyperparameter search features will be installed. For other features, see :ref:`_local-other-features`.
+
+.. note:: All other packages required for your model need to be installed in the same environment.
 
 .. _local-conda-environment:
 
@@ -26,7 +28,7 @@ Finally install DeepHyper in the previously created ``dh`` environment:
 .. code-block:: console
 
     $ pip install pip --upgrade
-    $ pip install deephyper["analytics"]
+    $ pip install deephyper["analytics"] # install the core packages. 
 
 MacOS
 -----
@@ -118,3 +120,27 @@ Follow the :ref:`local-conda-environment` installation and replace ``pip install
     $ git clone https://github.com/deephyper/deephyper.git
     $ cd deephyper/ && git checkout develop
     $ pip install -e ".[dev,analytics]"
+
+.. _local-other-features:
+
+Other features.
+=================
+
+The above installation contains the basic hyperparameter search. DeepHyper also supports parallelized evaluations, neural architecture search, automated Deep Ensemble, Uncertainty Quantification, and Transfer learning.
+
+To enable these features:
+
+.. code-block:: console
+    
+    $ pip install "deephyper[default]" # Install HPS, NAS, AutoDEUQ, Transfer-Learning for HPS, LCE Stopper,
+    $ pip install "deephyper[hps]" # Install Hyperparameter Search.
+    $ pip install "deephyper[nas]" # Install Neural Architecture Search.
+    $ pip install "deephyper[autodeuq]" # Install Automated Deep Ensemble with Uncertainty Quantification.
+    $ pip install "deephyper[jax-cpu]" # Install JAX with CPU support for Learning Curve Extrapolation Stopper.
+    $ pip install "deephyper[jax-cuda]" # Install JAX with GPU (cuda) support for Learning Curve Extrapolation Stopper.
+    $ pip install "deephyper[automl]" # Install Automated Machine Learning features.
+    $ pip install "deephyper[mpi]" # Install MPI features for MPICommEvaluator.
+    $ pip install "deephyper[ray]" # Install Ray features for RayEvaluator.
+    $ pip install "deephyper[redis]" # Install Redis Client for RedisStorage with Distributed Search.
+    $ pip install "deephyper[analytics]" # Install Analytics tools (for developers).
+    $ pip install "deephyper[dev]" # Install Developer Stack (tests, documentation, etc...)
