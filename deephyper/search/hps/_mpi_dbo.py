@@ -20,7 +20,7 @@ MAP_acq_func = {
 }
 
 
-class DBO(CBO):
+class MPIDistributedBO(CBO):
     """Distributed Bayesian Optimization Search using MPI to launch parallel search instances.
 
     Args:
@@ -66,7 +66,7 @@ class DBO(CBO):
         xi: float = 0.001,
         n_points: int = 10000,
         filter_duplicated: bool = True,
-        update_prior: bool = False,
+        update_prior: bool = False,  # TODO: check what this is doing?
         multi_point_strategy: str = "cl_max",
         n_jobs: int = 1,
         n_initial_points: int = 10,
@@ -202,10 +202,12 @@ class DBO(CBO):
         if not (isinstance(evaluator, Evaluator)):
 
             if callable(evaluator):
-                self.bootsrap_evaluator(
+                self._evaluator = self.bootstrap_evaluator(
                     run_function=evaluator,
                     evaluator_type="serial",
                     storage_type="redis",
+                    comm=self.comm,
+                    root=0,
                 )
 
             else:
@@ -215,48 +217,56 @@ class DBO(CBO):
         else:
             self._evaluator = evaluator
 
-    def bootsrap_evaluator(
-        self,
+    @staticmethod
+    def bootstrap_evaluator(
         run_function,
         evaluator_type: str = "serial",
         evaluator_kwargs: dict = None,
         storage_type: str = "redis",
         storage_kwargs: dict = None,
+        comm=None,
+        root=0,
     ):
+        comm = comm if comm is None else MPI.COMM_WORLD
+        rank = comm.Get_rank()
 
         evaluator_kwargs = evaluator_kwargs if evaluator_kwargs else {}
         storage_kwargs = storage_kwargs if storage_kwargs else {}
 
         storage = Storage.create(storage_type, storage_kwargs).connect()
         search_id = None
-        if self.rank == 0:
+        if rank == root:
             search_id = storage.create_new_search()
-        search_id = self.comm.bcast(search_id)
+        search_id = comm.bcast(search_id)
 
-        if "callbacks" not in evaluator_kwargs:
-            if self.rank == 0:
-                callbacks = [TqdmCallback()]
-            else:
-                callbacks = []
-            evaluator_kwargs["callbacks"] = callbacks
+        callbacks = []
+        if "callbacks" in evaluator_kwargs:
+            callbacks = evaluator_kwargs["callbacks"]
+
+        if rank == root and not (any(isinstance(cb, TqdmCallback) for cb in callbacks)):
+            callbacks.append(TqdmCallback())
+
+        evaluator_kwargs["callbacks"] = callbacks
 
         # all processes are using the same search_id
         evaluator_kwargs["storage"] = storage
         evaluator_kwargs["search_id"] = search_id
 
-        self._evaluator = Evaluator.create(
+        evaluator = Evaluator.create(
             run_function,
             method=evaluator_type,
             method_kwargs=evaluator_kwargs,
         )
 
         # all ranks synchronise with timestamp on root rank
-        self._evaluator.timestamp = self.comm.bcast(self._evaluator.timestamp)
+        evaluator.timestamp = comm.bcast(evaluator.timestamp)
 
         # replace dump_evals of evaluator by empty function to avoid concurrent writtings in file
-        if self.rank > 0:
+        if rank != root:
 
             def dumps_evals(*args, **kwargs):
                 pass
 
-            self._evaluator.dump_evals = dumps_evals
+            evaluator.dump_evals = dumps_evals
+
+        return evaluator
