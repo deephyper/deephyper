@@ -64,7 +64,7 @@ EXTRAS = {
     "jax-cuda": ["jax[cuda]>=0.3.25", "numpyro[cuda]"],
     "hps": [],  # hyperparameter search (already the base requirements)
     "nas": REQUIRED_NAS,  # neural architecture search
-    "sdv": REQUIRED_TL_SDV,  # transfer learning for bayesian optimization,
+    "hps-tl": REQUIRED_TL_SDV,  # transfer learning for bayesian optimization,
     "mpi": ["mpi4py>=3.1.3"],
     "ray": ["ray[default]>=1.3.0"],
     "redis": ["redis[hiredis]"],
@@ -107,7 +107,7 @@ EXTRAS = {
 DEFAULT_DEPENDENCIES = REQUIRED
 DEFAULT_DEPENDENCIES += EXTRAS["nas"]
 DEFAULT_DEPENDENCIES += EXTRAS["autodeuq"]
-DEFAULT_DEPENDENCIES += EXTRAS["sdv"]
+DEFAULT_DEPENDENCIES += EXTRAS["hps-tl"]
 DEFAULT_DEPENDENCIES += EXTRAS["jax-cpu"]
 EXTRAS["default"] = DEFAULT_DEPENDENCIES
 

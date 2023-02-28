@@ -84,7 +84,7 @@ Table of Contents
     :titlesonly:
     :caption: Get Started
 
-    install/index
+    Install <install/index>
     tutorials/index
     examples/index
     F.A.Q. <faq>
