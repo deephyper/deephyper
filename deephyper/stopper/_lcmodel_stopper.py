@@ -415,7 +415,7 @@ class LCModelStopper(Stopper):
     def _get_competiting_objectives(self, rung) -> list:
         search_id, _ = self.job.id.split(".")
         values = self.job.storage.load_metadata_from_all_jobs(
-            search_id, f"completed_rung_{rung}"
+            search_id, f"_completed_rung_{rung}"
         )
         values = [float(v) for v in values]
         return values
@@ -437,7 +437,7 @@ class LCModelStopper(Stopper):
         halting_step = self._compute_halting_step()
         if self._budget >= halting_step:
             self.job.storage.store_job_metadata(
-                self.job.id, f"completed_rung_{self._rung}", str(self._objective)
+                self.job.id, f"_completed_rung_{self._rung}", str(self._objective)
             )
 
     def stop(self) -> bool:

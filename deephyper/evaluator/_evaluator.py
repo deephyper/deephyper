@@ -440,8 +440,9 @@ class Evaluator:
             if isinstance(job.rank, int):
                 result["rank"] = job.rank
 
-            # profiling
-            metadata = {f"m:{k}": v for k, v in job.metadata.items()}
+            # Profiling and other
+            # methdata keys starting with "_" are not saved (considered as internal)
+            metadata = {f"m:{k}": v for k, v in job.metadata.items() if k[0] != "_"}
             result.update(metadata)
 
             if hasattr(job, "dequed"):

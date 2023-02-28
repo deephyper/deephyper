@@ -32,7 +32,7 @@ class SuccessiveHalvingStopper(Stopper):
     def _get_competiting_objectives(self) -> list:
         search_id, _ = self.job.id.split(".")
         values = self.job.storage.load_metadata_from_all_jobs(
-            search_id, f"completed_rung_{self._rung}"
+            search_id, f"_completed_rung_{self._rung}"
         )
         values = [float(v) for v in values]
         return values
@@ -56,7 +56,7 @@ class SuccessiveHalvingStopper(Stopper):
             # after the decimal point regardless of the actual internal precision
             # of the computation.
             self.job.storage.store_job_metadata(
-                self.job.id, f"completed_rung_{self._rung}", str(self._objective)
+                self.job.id, f"_completed_rung_{self._rung}", str(self._objective)
             )
 
     def stop(self) -> bool:
