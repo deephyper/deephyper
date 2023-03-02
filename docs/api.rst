@@ -11,3 +11,4 @@
    deephyper.problem
    deephyper.search
    deephyper.sklearn
+   deephyper.stopper
