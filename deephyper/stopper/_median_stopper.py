@@ -4,6 +4,8 @@ from deephyper.stopper._stopper import Stopper
 
 
 class MedianStopper(Stopper):
+    """Stopper based on the median of observed objectives at similar budgets."""
+
     def __init__(
         self,
         max_steps: int,

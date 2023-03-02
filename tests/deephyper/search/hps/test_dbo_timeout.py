@@ -14,7 +14,7 @@ def _test_dbo_timeout():
     import numpy as np
 
     from deephyper.problem import HpProblem
-    from deephyper.search.hps import DBO
+    from deephyper.search.hps import MPIDistributedBO
 
     d = 10
     domain = (-32.768, 32.768)
@@ -38,7 +38,7 @@ def _test_dbo_timeout():
         return -ackley(x)
 
     log_dir = "log-dbo"
-    search = DBO(
+    search = MPIDistributedBO(
         hp_problem,
         run,
         log_dir=log_dir,

@@ -13,7 +13,7 @@ def _test_dbo_max_evals(tmp_path):
     import numpy as np
 
     from deephyper.problem import HpProblem
-    from deephyper.search.hps import DBO
+    from deephyper.search.hps import MPIDistributedBO
 
     d = 10
     domain = (-32.768, 32.768)
@@ -36,7 +36,7 @@ def _test_dbo_max_evals(tmp_path):
         x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
         return -ackley(x)
 
-    search = DBO(
+    search = MPIDistributedBO(
         hp_problem,
         run,
         log_dir=tmp_path,

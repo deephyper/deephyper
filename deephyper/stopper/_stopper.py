@@ -36,24 +36,36 @@ class Stopper(abc.ABC):
 
     @property
     def step(self):
+        """Last observed step."""
         return self.observed_budgets[-1]
 
-    def observe(self, budget: float, objective: float):
-        self._count_steps += 1
+    def observe(self, budget: float, objective: float) -> None:
+        """Observe a new objective value.
 
+        Args:
+            budget (float): the budget used to obtain the objective (e.g., the number of epochs).
+            objective (float): the objective value to observe (e.g, the accuracy).
+        """
         objective = self.transform_objective(objective)
 
         self.observed_budgets.append(budget)
         self.observed_objectives.append(objective)
 
     def stop(self) -> bool:
-        return self._count_steps >= self.max_steps
+        """Returns ``True`` if the evaluation should be stopped and ``False`` otherwise.
+
+        Returns:
+            bool: ``(step >= max_steps)``.
+        """
+        return self.step >= self.max_steps
 
     @property
     def observations(self) -> list:
+        """Returns a copy of the list of observations with 0-index the budgets and 1-index the objectives."""
         obs = [self.observed_budgets, self.observed_objectives]
         return copy.deepcopy(obs)
 
     @property
     def objective(self):
+        """Last observed objective."""
         return self.observations[-1][-1]

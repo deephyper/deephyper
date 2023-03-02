@@ -104,6 +104,7 @@ Table of Contents
     Problem <_autosummary/deephyper.problem>
     Search <_autosummary/deephyper.search>
     Sklearn <_autosummary/deephyper.sklearn>
+    Stopper <_autosummary/deephyper.stopper>
 
 .. toctree::
     :maxdepth: 2

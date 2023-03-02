@@ -194,7 +194,7 @@ class MPIDistributedBO(CBO):
         self._init_params = _init_params
 
         logging.info(
-            f"DBO rank {self.rank} has {self._evaluator.num_workers} local worker(s)"
+            f"MPIDistributedBO rank {self.rank} has {self._evaluator.num_workers} local worker(s)"
         )
 
     def check_evaluator(self, evaluator):
