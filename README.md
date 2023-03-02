@@ -16,33 +16,22 @@ DeepHyper is a powerful Python package for automating machine learning tasks, pa
 
 ## Install instructions
 
-From PyPI:
+Installation with `pip`:
 
-```bash
+```console
+# For the most basic set of features (hyperparameter search)
 pip install deephyper
+
+# For the default set of features including:
+# - hyperparameter search with transfer-learning
+# - neural architecture search
+# - deep ensembles
+# - Ray-based distributed computing
+# - Learning-curve extrapolation for multi-fidelity hyperparameter search
+pip install "deephyper[default]"
 ```
 
-From Github:
-
-```bash
-git clone https://github.com/deephyper/deephyper.git
-pip install -e deephyper/
-```
-
-If you want to install deephyper with test and documentation packages:
-
-From PyPI:
-
-```bash
-pip install 'deephyper[dev]'
-```
-
-From Github:
-
-```bash
-git clone https://github.com/deephyper/deephyper.git
-pip install -e 'deephyper/[dev]'
-```
+More details about the installation process can be found at [DeepHyper Installations](https://deephyper.readthedocs.io/en/latest/install/index.html).
 
 ## Quickstart
 
@@ -51,8 +40,18 @@ pip install -e 'deephyper/[dev]'
 The black-box function named `run` is defined by taking an input dictionnary named `config` which contains the different variables to optimize. Then the run-function is binded to an `Evaluator` in charge of distributing the computation of multiple evaluations. Finally, a Bayesian search named `CBO` is created and executed to find the values of config which maximize the return value of `run(config)`.
 
 ```python
-def run(config: dict):
-    return -config["x"]**2
+def run(job):
+    # The suggested parameters are accessible in job.parameters (dict)
+    x = job.parameters["x"]
+    b = job.parameters["b"]
+
+    if job.parameters["function"] == "linear":
+        y = x + b
+    elif job.parameters["function"] == "cubic":
+        y = x**3 + b
+
+    # Maximization!
+    return y
 
 
 # Necessary IF statement otherwise it will enter in a infinite loop
@@ -64,7 +63,9 @@ if __name__ == "__main__":
 
     # define the variable you want to optimize
     problem = HpProblem()
-    problem.add_hyperparameter((-10.0, 10.0), "x")
+    problem.add_hyperparameter((-10.0, 10.0), "x") # real parameter
+    problem.add_hyperparameter((0, 10), "b") # discrete parameter
+    problem.add_hyperparameter(["linear", "cubic"], "function") # categorical parameter
 
     # define the evaluator to distribute the computation
     evaluator = Evaluator.create(
@@ -76,40 +77,39 @@ if __name__ == "__main__":
     )
 
     # define your search and execute it
-    search = CBO(problem, evaluator)
+    search = CBO(problem, evaluator, random_state=42)
 
     results = search.search(max_evals=100)
     print(results)
 ```
 
-Which outputs the following where the best ``x`` found is clearly around ``0``.
+Which outputs the following results where the best parameters are with `function == "cubic"`, 
+`x == 9.99` and `b == 10`.
 
 ```verbatim
-         p:x  job_id     objective  timestamp_submit  timestamp_gather
-0  -7.744105       1 -5.997117e+01          0.011047          0.037649
-1  -9.058254       2 -8.205196e+01          0.011054          0.056398
-2  -1.959750       3 -3.840621e+00          0.049750          0.073166
-3  -5.150553       4 -2.652819e+01          0.065681          0.089355
-4  -6.697095       5 -4.485108e+01          0.082465          0.158050
-..       ...     ...           ...               ...               ...
-95 -0.034096      96 -1.162566e-03         26.479630         26.795639
-96 -0.034204      97 -1.169901e-03         26.789255         27.155481
-97 -0.037873      98 -1.434366e-03         27.148506         27.466934
-98 -0.000073      99 -5.387088e-09         27.460253         27.774704
-99  0.697162     100 -4.860350e-01         27.768153         28.142431
+    p:b p:function       p:x    objective  job_id  m:timestamp_submit  m:timestamp_gather
+0     7     linear  8.831019    15.831019       1            0.064874            1.430992
+1     4     linear  9.788889    13.788889       0            0.064862            1.453012
+2     0      cubic  2.144989     9.869049       2            1.452692            1.468436
+3     9     linear -9.236860    -0.236860       3            1.468123            1.483654
+4     2      cubic -9.783865  -934.550818       4            1.483340            1.588162
+..  ...        ...       ...          ...     ...                 ...                 ...
+95    6      cubic  9.862098   965.197192      95           13.538506           13.671872
+96   10      cubic  9.997512  1009.253866      96           13.671596           13.884530
+97    6      cubic  9.965615   995.719961      97           13.884188           14.020144
+98    5      cubic  9.998324  1004.497422      98           14.019737           14.154467
+99    9      cubic  9.995800  1007.740379      99           14.154169           14.289366
 ```
 
-We also asked [ChatGPT](https://chat.openai.com) to explain this example and here is the reply:
-
-"The code defines a function `run` that takes a dictionary `config` as input and returns the negative of `x` squared. The `if` block at the end of the code defines a black-box optimization process using the `CBO` (Centralized Bayesian Optimization) algorithm from the `deephyper` library.
+The code defines a function `run` that takes a RunningJob `job` as input and returns the maximized objective `y`. The `if` block at the end of the code defines a black-box optimization process using the `CBO` (Centralized Bayesian Optimization) algorithm from the `deephyper` library.
 
 The optimization process is defined as follows:
 
-1. A hyperparameter optimization problem is created using the `HpProblem` class from `deephyper`. In this case, the problem has a single continuous hyperparameter `x` that ranges from -10.0 to 10.0.
-2. An evaluator is created using the `Evaluator.create` method. The evaluator will be used to evaluate the function `run` with different configurations of the hyperparameters in the optimization problem. The evaluator uses the `process` method to distribute the evaluations across multiple worker processes, in this case 2 worker processes.
-3. A search object is created using the `CBO` class and the problem and evaluator defined earlier. The `CBO` algorithm is a derivative-free optimization method that uses a Bayesian optimization approach to explore the hyperparameter space.
+1. A hyperparameter optimization problem is created using the `HpProblem` class from `deephyper`. In this case, the problem has a three variables. The `x` hyperparameter is a real variable in a range from -10.0 to 10.0. The `b` hyperparameter is a discrete variable in a range from 0 to 10. The `function` hyperparameter is a categorical variable with two possible values.
+2. An evaluator is created using the `Evaluator.create` method. The evaluator will be used to evaluate the function `run` with different configurations of suggested hyperparameters in the optimization problem. The evaluator uses the `process` method to distribute the evaluations across multiple worker processes, in this case 2 worker processes.
+3. A search object is created using the `CBO` class, the problem and evaluator defined earlier. The `CBO` algorithm is a derivative-free optimization method that uses a Bayesian optimization approach to explore the hyperparameter space.
 4. The optimization process is executed by calling the `search.search` method, which performs the evaluations of the `run` function with different configurations of the hyperparameters until a maximum number of evaluations (100 in this case) is reached.
-5. The results of the optimization process, including the optimal configuration of the hyperparameters and the corresponding objective value, are printed to the console."
+5. The results of the optimization process, including the optimal configuration of the hyperparameters and the corresponding objective value, are printed to the console.
 
 ## How do I learn more?
 
