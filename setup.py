@@ -23,18 +23,14 @@ REQUIRED = [
     "ConfigSpace>=0.4.20",
     "dm-tree",
     "Jinja2<3.1",
-    # "joblib>=0.10.3",
-    # "matplotlib>=3.0.3", # analytics
     "numpy",  # ==1.19.4",  # working with 1.20.1
-    # "openml>=0.10.2", # benchmarks sub-module
     "pandas>=0.24.2",
     "packaging",
-    # "ray[default]>=1.3.0", # evaluator and ensemble
+    "parse",
     "scikit-learn>=0.23.1",
-    "scipy>=0.19.1",
+    "scipy>=1.7",
     "tqdm>=4.64.0",
     "pyyaml",
-    "tinydb",
 ]
 
 
@@ -45,23 +41,33 @@ REQUIRED_NAS_PLATFORM = {
     "default": ["tensorflow>=2.0.0", "tensorflow_probability"],
     "macOS-arm64": ["tensorflow_probability~=0.14"],
 }
-if "macOS" in platform_infos and "arm64" in platform_infos:
-    REQUIRED_NAS = REQUIRED_NAS + REQUIRED_NAS_PLATFORM["macOS-arm64"]
-else:  # x86_64
-    REQUIRED_NAS = REQUIRED_NAS + REQUIRED_NAS_PLATFORM["default"]
+# if "macOS" in platform_infos and "arm64" in platform_infos:
+#     REQUIRED_NAS = REQUIRED_NAS + REQUIRED_NAS_PLATFORM["macOS-arm64"]
+# else:  # x86_64
+REQUIRED_NAS = REQUIRED_NAS + REQUIRED_NAS_PLATFORM["default"]
 
 # !Requirements for Pipeline Optimization for ML (popt)
 REQUIRED_POPT = ["xgboost"]
 
 # !Requirements for Automated Deep Ensemble with Uncertainty Quantification (AutoDEUQ)
-REQUIRED_AUTODEUQ = REQUIRED_NAS + ["ray"]
+REQUIRED_AUTODEUQ = REQUIRED_NAS + ["ray[default]>=1.3.0"]
+
+# !Transfer Learning for Bayesian Optimization with SVD
+REQUIRED_TL_SDV = ["sdv>=0.17.1"]
 
 
 # What packages are optional?
 EXTRAS = {
+    "autodeuq": REQUIRED_AUTODEUQ,  # automated deep ensemble with uncertainty quantification
+    "automl": ["xgboost"],  # for automl with scikit-learn
+    "jax-cpu": ["jax[cpu]>=0.3.25", "numpyro[cpu]"],
+    "jax-cuda": ["jax[cuda]>=0.3.25", "numpyro[cuda]"],
+    "hps": [],  # hyperparameter search (already the base requirements)
     "nas": REQUIRED_NAS,  # neural architecture search
-    "popt": REQUIRED_POPT,  # pipeline optimization for ml
-    "autodeuq": REQUIRED_AUTODEUQ,  # automated deep ensemble with uncertainty quantificationm
+    "hps-tl": REQUIRED_TL_SDV,  # transfer learning for bayesian optimization,
+    "mpi": ["mpi4py>=3.1.3"],
+    "ray": ["ray[default]>=1.3.0"],
+    "redis": ["redis[hiredis]"],
     "dev": [
         # Test
         "codecov",
@@ -92,9 +98,18 @@ EXTRAS = {
         "nbconvert<6",
         "streamlit",
         "streamlit-aggrid",
+        "tinydb",
     ],
     "hvd": ["horovod>=0.21.3", "mpi4py>=3.0.0"],
 }
+
+# Default dependencies for DeepHyper
+DEFAULT_DEPENDENCIES = REQUIRED[:]
+DEFAULT_DEPENDENCIES += EXTRAS["nas"]
+DEFAULT_DEPENDENCIES += EXTRAS["autodeuq"]
+DEFAULT_DEPENDENCIES += EXTRAS["hps-tl"]
+DEFAULT_DEPENDENCIES += EXTRAS["jax-cpu"]
+EXTRAS["default"] = DEFAULT_DEPENDENCIES
 
 # Useful commands to build/upload the wheel to PyPI
 

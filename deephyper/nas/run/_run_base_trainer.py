@@ -21,7 +21,10 @@ from deephyper.nas.trainer import BaseTrainer
 logger = logging.getLogger(__name__)
 
 
-def run_base_trainer(config):
+def run_base_trainer(job):
+
+    config = job.parameters
+    config["job_id"] = job.id
 
     tf.keras.backend.clear_session()
     # tf.config.optimizer.set_jit(True)

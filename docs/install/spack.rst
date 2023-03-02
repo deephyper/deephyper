@@ -1,9 +1,29 @@
 Spack
 *****
 
-`Spack <https://spack.readthedocs.io/en/latest/>`_ is package management tool designed for large supercomputing centers.
+`Spack <https://spack.readthedocs.io/en/latest/>`_ is a package management tool designed to support multiple versions and configurations of software on a wide variety of platforms and environments.
 
-After installing Spack on your system the following command can be executed to install DeepHyper:
+
+Start by installing Spack on your system. The following command will install Spack in the current directory:
+
+.. code-block:: console
+    
+    $ git clone -c feature.manyFiles=true https://github.com/spack/spack.git
+    $ . ./spack/share/spack/setup-env.sh
+
+Download the deephyper Spack package repository:
+
+.. code-block:: console
+
+    $ git clone https://github.com/deephyper/deephyper-spack-packages.git
+    $ spack repo add deephyper-spack-packages
+
+Create a new environment for DeepHyper:
+
+.. code-block:: console
+
+    $ spack env create deephyper
+    $ spack env activate deephyper
 
 .. code-block:: console
 

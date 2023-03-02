@@ -44,6 +44,14 @@ def to_json(d: dict):
 
 
 def parse_subprocess_result(result):
+    """Utility to parse a result from a subprocess of the format `"DH-OUTPUT:..."`.
+
+    Args:
+        result: object returned by a subpross with ``stdout`` and ``stderr`` attributes.
+
+    Return:
+        The parsed value or raise an exception if an error happened.
+    """
     stdout = result.stdout
     stderr = result.stderr
     try:

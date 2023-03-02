@@ -33,7 +33,7 @@ The black-box function named ``run`` is defined by taking an input dictionnary n
 
 
     # Necessary IF statement otherwise it will enter in a infinite loop
-    # when loading the 'run' function from a subprocess
+    # when loading the 'run' function from a process
     if __name__ == "__main__":
         from deephyper.problem import HpProblem
         from deephyper.search.hps import CBO
@@ -46,7 +46,7 @@ The black-box function named ``run`` is defined by taking an input dictionnary n
         # define the evaluator to distribute the computation
         evaluator = Evaluator.create(
             run,
-            method="subprocess",
+            method="process",
             method_kwargs={
                 "num_workers": 2,
             },
@@ -84,7 +84,7 @@ Table of Contents
     :titlesonly:
     :caption: Get Started
 
-    install/index
+    Install <install/index>
     tutorials/index
     examples/index
     F.A.Q. <faq>

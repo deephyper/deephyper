@@ -12,7 +12,6 @@ def pytest_addoption(parser):
 
 def pytest_collection_modifyitems(config, items):
 
-    available_marks = {"fast", "slow", "hps", "nas", "ray", "mpi4py"}
     selected_marks = set(config.getoption("--run").split(","))
     get_markers = lambda item: {m.name for m in item.iter_markers()}
 

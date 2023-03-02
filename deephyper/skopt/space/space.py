@@ -798,7 +798,10 @@ class Categorical(Dimension):
                 ]
             )
         else:
-            self.transformer = Identity()
+            if all(isinstance(x, (int, np.integer)) for x in self.categories):
+                self.transformer = Identity(type_func=lambda x: int(x))
+            else:
+                self.transformer = Identity()
             self.transformer.fit(self.categories)
         if transform == "normalize":
             self._rvs = _uniform_inclusive(0.0, 1.0)
@@ -824,7 +827,9 @@ class Categorical(Dimension):
         else:
             prior = self.prior
 
-        return "Categorical(categories={}, prior={})".format(cats, prior)
+        return "Categorical(categories={}, prior={}, transform={})".format(
+            cats, prior, self.transform_
+        )
 
     def inverse_transform(self, Xt):
         """Inverse transform samples from the warped space back into the

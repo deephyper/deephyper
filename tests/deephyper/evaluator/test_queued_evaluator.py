@@ -34,7 +34,7 @@ class TestQueuedEvaluator(unittest.TestCase):
 
             jobs = evaluator.gather("ALL")
 
-            results.append(jobs[0].result)
+            results.append(jobs[0].objective)
 
         assert results == [1, 2, 3, 4, 1, 2, 3, 4]
 

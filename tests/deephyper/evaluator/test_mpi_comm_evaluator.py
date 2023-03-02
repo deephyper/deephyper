@@ -15,7 +15,7 @@ def run(config):
     job_id = config["job_id"]
     print(f"job {job_id}...")
     if job_id > 3:
-        time.sleep(10)
+        time.sleep(2)
     print(f"job {job_id} done!", flush=True)
     return config["x"]
 
@@ -25,8 +25,9 @@ def _test_mpicomm_evaluator():
 
     configs = [{"x": i} for i in range(8)]
 
+    t1 = time.time()
     with Evaluator.create(
-        run, method="mpicomm", method_kwargs={"abort_on_exit": True}
+        run, method="mpicomm", method_kwargs={"abort_on_exit": False}
     ) as evaluator:
         if evaluator is not None:
             print(configs)
@@ -36,6 +37,8 @@ def _test_mpicomm_evaluator():
             print("gather", flush=True)
             objectives = sorted([job.result for job in results])
             assert objectives == list(range(4))
+    duration = time.time() - t1
+    print("duration:", duration)
 
 
 @pytest.mark.fast

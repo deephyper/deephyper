@@ -35,7 +35,7 @@ class RegevoTest(unittest.TestCase):
         )
 
         res1 = search.search(max_evals=4)
-        res1_array = res1[["arch_seq"]].to_numpy()
+        res1_array = res1[["p:arch_seq"]].to_numpy()
 
         search = RegularizedEvolution(
             linearReg.Problem,
@@ -43,6 +43,6 @@ class RegevoTest(unittest.TestCase):
             random_state=42,
         )
         res2 = search.search(max_evals=4)
-        res2_array = res2[["arch_seq"]].to_numpy()
+        res2_array = res2[["p:arch_seq"]].to_numpy()
 
         assert np.array_equal(res1_array, res2_array)

@@ -19,6 +19,12 @@ class SearchTerminationError(RuntimeError):
 class RunFunctionError(RuntimeError):
     """Raised when error occurs in run-function"""
 
+    def __init__(self, msg: str = None) -> None:
+        self.msg = msg
+
+    def __str__(self) -> str:
+        return self.msg
+
 
 class MissingRequirementError(RuntimeError):
     """Raised when a requirement is not installed properly."""

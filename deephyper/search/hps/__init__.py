@@ -5,8 +5,8 @@ from deephyper.search.hps._cbo import CBO, AMBS
 __all__ = ["CBO", "AMBS"]
 
 try:
-    from deephyper.search.hps._dbo import DBO  # noqa: F401
+    from deephyper.search.hps._mpi_dbo import MPIDistributedBO  # noqa: F401
 
-    __all__.append("DBO")
+    __all__.append("MPIDistributedBO")
 except ImportError:
     pass
