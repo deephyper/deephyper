@@ -5,7 +5,15 @@ from tensorflow.keras.callbacks import Callback
 
 class TFKerasStopperCallback(Callback):
     def __init__(self, job, monitor="val_loss", mode="min") -> None:
-        """_summary_
+        """Callback to use in conjonction with a DeepHyper ``RunningJob`` to stop the training when the ``Stopper`` is triggered.
+
+        .. code-block:: python
+
+            def run(job):
+                callback = TFKerasStopperCallback(job, ...)
+                ...
+                model.fit(..., callbacks=[callback])
+                ...
 
         Args:
             job (RunningJob): The running job created by DeepHyper.
