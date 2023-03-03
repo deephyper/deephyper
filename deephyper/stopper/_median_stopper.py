@@ -13,6 +13,7 @@ class MedianStopper(Stopper):
         min_competing: int = 0,
         min_fully_completed: int = 0,
         interval_steps: int = 1,
+        epsilon: float = 1e-10,
     ) -> None:
         super().__init__(max_steps=max_steps)
 
@@ -20,6 +21,7 @@ class MedianStopper(Stopper):
         self._min_competing = min_competing
         self._min_fully_completed = min_fully_completed
         self._interval_steps = interval_steps
+        self.epsilon = epsilon
 
         self._rung = 0
 
@@ -39,8 +41,8 @@ class MedianStopper(Stopper):
 
     def _num_fully_completed(self) -> int:
         search_id, _ = self.job.id.split(".")
-        stopped = self.job.storage.load_metadata_from_all_jobs(search_id, "stopped")
-        num = sum(int(not (s)) for s in stopped)
+        stopped = self.job.storage.load_metadata_from_all_jobs(search_id, "_completed")
+        num = sum(int(s) for s in stopped)
         return num
 
     def observe(self, budget: float, objective: float):
@@ -54,7 +56,7 @@ class MedianStopper(Stopper):
             # after the decimal point regardless of the actual internal precision
             # of the computation.
             self.job.storage.store_job_metadata(
-                self.job.id, f"_completed_rung_{self._rung}", str(self._objective)
+                self.job.id, f"_completed_rung_{self._rung}", self._objective
             )
 
     def stop(self) -> bool:
@@ -66,7 +68,10 @@ class MedianStopper(Stopper):
         if not (self._is_halting_budget()):
             return False
 
-        if self._num_fully_completed() < self._min_fully_completed:
+        if (
+            self._min_fully_completed > 0
+            and self._num_fully_completed() < self._min_fully_completed
+        ):
             return False
 
         # Apply Median Pruning
@@ -78,7 +83,7 @@ class MedianStopper(Stopper):
 
         median_objective = np.median(competing_objectives)
 
-        promotable = self._objective >= median_objective
+        promotable = self._objective + self.epsilon >= median_objective
         if promotable:
             self._rung += 1
         return not (promotable)

@@ -331,19 +331,19 @@ class LCModelStopper(Stopper):
         $ jax>=0.3.25
         $ numpyro
 
-        Args:
-            max_steps (int): The maximum number of training steps which can be performed.
-            min_steps (int, optional): The minimum number of training steps which can be performed. Defaults to ``1``.
-            lc_model (str, optional): The parameteric learning model to use. It should be a string in the following list: ``["lin2", "loglin2", "loglin3", "loglin4", "pow3","mmf4", "vapor3", "logloglin2", "hill3", "logpow3", "pow4", "exp4", "janoschek4", "weibull4", "ilog2"]``. The number in the name corresponds to the number of parameters of the parametric model. Defaults to ``"mmf4"``.
-            min_done_for_outlier_detection (int, optional): The minimum number of observed scores at the same step to check for if it is a lower-bound outlier. Defaults to ``10``.
-            iqr_factor_for_outlier_detection (float, optional): The IQR factor for outlier detection. The higher it is the more inclusive the condition will be (i.e. if set very large it is likely not going to detect any outliers). Defaults to ``1.5``.
-            prob_promotion (float, optional): The threshold probabily to stop the iterations. If the current learning curve has a probability greater than ``prob_promotion`` to be worse that the best observed score accross all evaluations then the current iterations are stopped. Defaults to ``0.9`` (i.e. probability of 0.9 of being worse).
-            early_stopping_patience (float, optional): The patience of the early stopping condition. If it is an ``int`` it is directly corresponding to a number of iterations. If it is a ``float`` then it is corresponding to a proportion between [0,1] w.r.t. ``max_steps``. Defaults to ``0.25`` (i.e. 25% of ``max_steps``).
-            objective_returned (str, optional): The returned objective. It can be a value in ``["last", "max", "alc"]`` where ``"last"`` corresponds to the last observed score, ``"max"`` corresponds to the maximum observed score and ``"alc"`` corresponds to the area under the learning curve. Defaults to "last".
-            random_state (int or np.RandomState, optional): The random state of estimation process. Defaults to ``None``.
+    Args:
+        max_steps (int): The maximum number of training steps which can be performed.
+        min_steps (int, optional): The minimum number of training steps which can be performed. Defaults to ``1``.
+        lc_model (str, optional): The parameteric learning model to use. It should be a string in the following list: ``["lin2", "loglin2", "loglin3", "loglin4", "pow3","mmf4", "vapor3", "logloglin2", "hill3", "logpow3", "pow4", "exp4", "janoschek4", "weibull4", "ilog2"]``. The number in the name corresponds to the number of parameters of the parametric model. Defaults to ``"mmf4"``.
+        min_done_for_outlier_detection (int, optional): The minimum number of observed scores at the same step to check for if it is a lower-bound outlier. Defaults to ``10``.
+        iqr_factor_for_outlier_detection (float, optional): The IQR factor for outlier detection. The higher it is the more inclusive the condition will be (i.e. if set very large it is likely not going to detect any outliers). Defaults to ``1.5``.
+        prob_promotion (float, optional): The threshold probabily to stop the iterations. If the current learning curve has a probability greater than ``prob_promotion`` to be worse that the best observed score accross all evaluations then the current iterations are stopped. Defaults to ``0.9`` (i.e. probability of 0.9 of being worse).
+        early_stopping_patience (float, optional): The patience of the early stopping condition. If it is an ``int`` it is directly corresponding to a number of iterations. If it is a ``float`` then it is corresponding to a proportion between [0,1] w.r.t. ``max_steps``. Defaults to ``0.25`` (i.e. 25% of ``max_steps``).
+        objective_returned (str, optional): The returned objective. It can be a value in ``["last", "max", "alc"]`` where ``"last"`` corresponds to the last observed score, ``"max"`` corresponds to the maximum observed score and ``"alc"`` corresponds to the area under the learning curve. Defaults to "last".
+        random_state (int or np.RandomState, optional): The random state of estimation process. Defaults to ``None``.
 
-        Raises:
-            ValueError: parameters are not valid.
+    Raises:
+        ValueError: parameters are not valid.
     """
 
     def __init__(
@@ -437,21 +437,17 @@ class LCModelStopper(Stopper):
         halting_step = self._compute_halting_step()
         if self._budget >= halting_step:
             self.job.storage.store_job_metadata(
-                self.job.id, f"_completed_rung_{self._rung}", str(self._objective)
+                self.job.id, f"_completed_rung_{self._rung}", self._objective
             )
 
     def stop(self) -> bool:
 
         # Enforce Pre-conditions Before Learning-Curve based Early Discarding
         if super().stop():
-            print("Stopped after reaching the maximum number of steps.")
             self.infos_stopped = "max steps reached"
             return True
 
         if self.step - self._local_best_step >= self.early_stopping_patience:
-            print(
-                f"Stopped after reaching {self.early_stopping_patience} steps without improvement."
-            )
             self.infos_stopped = "early stopping"
             return True
 
@@ -480,9 +476,6 @@ class LCModelStopper(Stopper):
                         self._objective
                         < q1 - self.iqr_factor_for_outlier_detection * iqr
                     ):
-                        print(
-                            f"Stopped early because of abnormally low objective: {self._objective}"
-                        )
                         self.infos_stopped = "outlier"
                         return True
                 self._rung += 1
@@ -510,9 +503,6 @@ class LCModelStopper(Stopper):
         if p <= self.prob_promotion:
             self._rung += 1
         else:
-            print(
-                f"Stopped because the probability of performing worse is {p} > {self.prob_promotion}"
-            )
             self.infos_stopped = f"prob={p:.3f}"
 
             return True

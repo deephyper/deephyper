@@ -18,7 +18,7 @@ def standardize_run_function_output(
     >>> {"objective": (0, 0), "metadata": {...}}
 
     Args:
-        output (_type_): _description_
+        output (Union[str, float, tuple, list, dict]): the output of the run-function.
 
     Returns:
         dict: standardized output of the function.
