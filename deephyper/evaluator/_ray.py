@@ -1,6 +1,10 @@
 import logging
 import ray
+
+from typing import Callable, Hashable
 from deephyper.evaluator._evaluator import Evaluator
+from deephyper.evaluator._job import Job
+from deephyper.evaluator.storage import Storage
 
 ray_initializer = None
 
@@ -13,6 +17,9 @@ class RayEvaluator(Evaluator):
     Args:
         run_function (callable): functions to be executed by the ``Evaluator``.
         callbacks (list, optional): A list of callbacks to trigger custom actions at the creation or completion of jobs. Defaults to None.
+        run_function_kwargs (dict, optional): Static keyword arguments to pass to the ``run_function`` when executed.
+        storage (Storage, optional): Storage used by the evaluator. Defaults to ``MemoryStorage``.
+        search_id (Hashable, optional): The id of the search to use in the corresponding storage. If ``None`` it will create a new search identifier when initializing the search.
         address (str, optional): address of the Ray-head. Defaults to None, if no Ray-head was started.
         password (str, optional): password to connect ot the Ray-head. Defaults to None, if the default Ray-password is used.
         num_cpus (int, optional): number of CPUs available in the Ray-cluster. Defaults to None, if the Ray-cluster was already started it will be automatically computed.
@@ -25,9 +32,11 @@ class RayEvaluator(Evaluator):
 
     def __init__(
         self,
-        run_function,
-        callbacks=None,
-        run_function_kwargs=None,
+        run_function: Callable,
+        callbacks: list = None,
+        run_function_kwargs: dict = None,
+        storage: Storage = None,
+        search_id: Hashable = None,
         address: str = None,
         password: str = None,
         num_cpus: int = None,
@@ -38,7 +47,14 @@ class RayEvaluator(Evaluator):
         ray_kwargs: dict = None,
         num_workers: int = None,
     ):
-        super().__init__(run_function, num_workers, callbacks, run_function_kwargs)
+        super().__init__(
+            run_function=run_function,
+            num_workers=num_workers,
+            callbacks=callbacks,
+            run_function_kwargs=run_function_kwargs,
+            storage=storage,
+            search_id=search_id,
+        )
         # get the __init__ parameters
         self._init_params = locals()
 
@@ -82,12 +98,14 @@ class RayEvaluator(Evaluator):
             # max_calls=1,
         )(self.run_function)
 
-    async def execute(self, job):
+    async def execute(self, job: Job) -> Job:
 
-        sol = await self._remote_run_function.remote(
-            job.config, **self.run_function_kwargs
+        running_job = job.create_running_job(self._storage, self._stopper)
+
+        output = await self._remote_run_function.remote(
+            running_job, **self.run_function_kwargs
         )
 
-        job.result = sol
+        job.set_output(output)
 
         return job

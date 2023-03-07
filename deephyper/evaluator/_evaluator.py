@@ -9,21 +9,19 @@ import os
 import sys
 import time
 import warnings
-from typing import Dict, List
+from typing import Dict, List, Hashable
 
 import numpy as np
 from deephyper.evaluator._job import Job
 from deephyper.skopt.optimizer import OBJECTIVE_VALUE_FAILURE
-from deephyper.core.utils._introspection import get_init_params_as_json
 from deephyper.core.utils._timeout import terminate_on_timeout
+from deephyper.evaluator.storage import Storage, MemoryStorage
 
 EVALUATORS = {
-    "mpipool": "_mpi_pool.MPIPoolEvaluator",
     "mpicomm": "_mpi_comm.MPICommEvaluator",
     "process": "_process_pool.ProcessPoolEvaluator",
     "ray": "_ray.RayEvaluator",
     "serial": "_serial.SerialEvaluator",
-    "subprocess": "_subprocess.SubprocessEvaluator",
     "thread": "_thread_pool.ThreadPoolEvaluator",
 }
 
@@ -60,6 +58,9 @@ class Evaluator:
         run_function (callable): functions to be executed by the ``Evaluator``.
         num_workers (int, optional): Number of parallel workers available for the ``Evaluator``. Defaults to 1.
         callbacks (list, optional): A list of callbacks to trigger custom actions at the creation or completion of jobs. Defaults to None.
+        run_function_kwargs (dict, optional): Static keyword arguments to pass to the ``run_function`` when executed.
+        storage (Storage, optional): Storage used by the evaluator. Defaults to ``MemoryStorage``.
+        search_id (Hashable, optional): The id of the search to use in the corresponding storage. If ``None`` it will create a new search identifier when initializing the search.
     """
 
     FAIL_RETURN_VALUE = OBJECTIVE_VALUE_FAILURE
@@ -73,6 +74,8 @@ class Evaluator:
         num_workers: int = 1,
         callbacks: list = None,
         run_function_kwargs: dict = None,
+        storage: Storage = None,
+        search_id: Hashable = None,
     ):
         self.run_function = run_function  # User-defined run function.
         self.run_function_kwargs = (
@@ -82,17 +85,18 @@ class Evaluator:
         # Number of parallel workers available
         self.num_workers = num_workers
         self.jobs = []  # Job objects currently submitted.
-        self.n_jobs = 0
         self._tasks_running = []  # List of AsyncIO Task objects currently running.
         self._tasks_done = []  # Temp list to hold completed tasks from asyncio.
         self._tasks_pending = []  # Temp list to hold pending tasks from asyncio.
         self.jobs_done = []  # List used to store all jobs completed by the evaluator.
+        self.job_id_gathered = []  # List of jobs'id gathered by the evaluator.
         self.timestamp = (
             time.time()
         )  # Recorded time of when this evaluator interface was created.
         self.loop = None  # Event loop for asyncio.
         self._start_dumping = False
         self.num_objective = None  # record if multi-objective are recorded
+        self._stopper = None  # stopper object
 
         self._callbacks = [] if callbacks is None else callbacks
 
@@ -101,6 +105,21 @@ class Evaluator:
         # manage timeout of the search
         self._time_timeout_set = None
         self._timeout = None
+
+        # storage mechanism
+        self._storage = MemoryStorage() if storage is None else storage
+        if not (self._storage.connected):
+            self._storage.connect()
+
+        if search_id is None:
+            self._search_id = self._storage.create_new_search()
+        else:
+            if search_id in self._storage.load_all_search_ids():
+                self._search_id = search_id
+            else:
+                raise ValueError(
+                    f"The given search_id={search_id} does not exist in the linked storage."
+                )
 
         # to avoid "RuntimeError: This event loop is already running"
         if not (Evaluator.NEST_ASYNCIO_PATCHED) and _test_ipython_interpretor():
@@ -127,7 +146,7 @@ class Evaluator:
 
     def to_json(self):
         """Returns a json version of the evaluator."""
-        out = {"type": type(self).__name__, **get_init_params_as_json(self)}
+        out = {"type": type(self).__name__, "num_workers": self.num_workers}
         return out
 
     @staticmethod
@@ -136,7 +155,7 @@ class Evaluator:
 
         Args:
             run_function (function): the function to execute in parallel.
-            method (str, optional): the backend to use in ``["serial", "thread", "process", "subprocess", "ray", "mpicomm", "mpipool"]``. Defaults to ``"serial"``.
+            method (str, optional): the backend to use in ``["serial", "thread", "process", "ray", "mpicomm"]``. Defaults to ``"serial"``.
             method_kwargs (dict, optional): configuration dictionnary of the corresponding backend. Keys corresponds to the keyword arguments of the corresponding implementation. Defaults to "{}".
 
         Raises:
@@ -192,7 +211,9 @@ class Evaluator:
         for config in configs:
 
             # Create a Job object from the input configuration
-            new_job = Job(self.n_jobs, config, self.run_function)
+            job_id = self._storage.create_new_job(self._search_id)
+            self._storage.store_job_in(job_id, args=(config,))
+            new_job = Job(job_id, config, self.run_function)
 
             if self._timeout:
                 time_consumed = time.time() - self._time_timeout_set
@@ -202,7 +223,6 @@ class Evaluator:
                     terminate_on_timeout, time_left, new_job.run_function
                 )
 
-            self.n_jobs += 1
             self.jobs.append(new_job)
 
             self._on_launch(new_job)
@@ -213,7 +233,7 @@ class Evaluator:
         """Called after a job is started."""
         job.status = job.RUNNING
 
-        job.timestamp_submit = time.time() - self.timestamp
+        job.output["metadata"]["timestamp_submit"] = time.time() - self.timestamp
 
         # call callbacks
         for cb in self._callbacks:
@@ -222,13 +242,17 @@ class Evaluator:
     def _on_done(self, job):
         """Called after a job has completed."""
         job.status = job.DONE
-        job.config.pop("job_id")
 
-        job.timestamp_gather = time.time() - self.timestamp
+        job.output["metadata"]["timestamp_gather"] = time.time() - self.timestamp
 
-        if np.isscalar(job.result):
-            if np.isreal(job.result) and not (np.isfinite(job.result)):
-                job.result = Evaluator.FAIL_RETURN_VALUE
+        if np.isscalar(job.objective):
+            if np.isreal(job.objective) and not (np.isfinite(job.objective)):
+                job.output["objective"] = Evaluator.FAIL_RETURN_VALUE
+
+        # store data in storage
+        self._storage.store_job_out(job.id, job.objective)
+        for k, v in job.metadata.items():
+            self._storage.store_job_metadata(job.id, k, v)
 
         # call callbacks
         for cb in self._callbacks:
@@ -238,18 +262,10 @@ class Evaluator:
 
         job = await self.execute(job)
 
-        # code to manage the profile decorator
-        profile_keys = ["objective", "timestamp_start", "timestamp_end"]
-        if isinstance(job.result, dict) and all(k in job.result for k in profile_keys):
-            profile = job.result
-            job.result = profile["objective"]
-            job.timestamp_start = profile["timestamp_start"] - self.timestamp
-            job.timestamp_end = profile["timestamp_end"] - self.timestamp
-
-        # if the user returns other information than the objective
-        if isinstance(job.result, dict) and "objective" in job.result:
-            job.other = {k: v for k, v in job.result.items() if k != "objective"}
-            job.result = job.result["objective"]
+        if not (isinstance(job.output, dict)):
+            raise ValueError(
+                "The output of the job is not standard. Check if `job.set_output(output) was correctly used when defining the Evaluator class."
+            )
 
         return job
 
@@ -299,7 +315,7 @@ class Evaluator:
         logging.info(f"gather({type}, size={size}) starts...")
         assert type in ["ALL", "BATCH"], f"Unsupported gather operation: {type}."
 
-        results = []
+        local_results = []
 
         if type == "ALL":
             size = len(self._tasks_running)  # Get all tasks.
@@ -308,14 +324,48 @@ class Evaluator:
         for task in self._tasks_done:
             job = task.result()
             self._on_done(job)
-            results.append(job)
+            local_results.append(job)
             self.jobs_done.append(job)
             self._tasks_running.remove(task)
+            self.job_id_gathered.append(job.id)
 
         self._tasks_done = []
         self._tasks_pending = []
-        logging.info("gather done")
-        return results
+
+        # access storage to return results from other processes
+        job_id_all = self._storage.load_all_job_ids(self._search_id)
+        job_id_not_gathered = np.setdiff1d(job_id_all, self.job_id_gathered).tolist()
+
+        other_results = []
+        if len(job_id_not_gathered) > 0:
+            jobs_data = self._storage.load_jobs(job_id_not_gathered)
+
+            for job_id in job_id_not_gathered:
+                job_data = jobs_data[job_id]
+                if job_data and job_data["out"]:
+                    job = Job(
+                        id=job_id, config=job_data["in"]["args"][0], run_function=None
+                    )
+                    job.status = Job.DONE
+                    job.output["metadata"].update(job_data["metadata"])
+                    job.output["objective"] = job_data["out"]
+                    self.job_id_gathered.append(job_id)
+                    self.jobs_done.append(job)
+                    other_results.append(job)
+
+                    for cb in self._callbacks:
+                        cb.on_done_other(job)
+
+        if len(other_results) == 0:
+            logging.info(f"gather done - {len(local_results)} job(s)")
+
+            return local_results
+        else:
+            logging.info(
+                f"gather done - {len(local_results)} local(s) and {len(other_results)} other(s) job(s), "
+            )
+
+            return local_results, other_results
 
     def decode(self, key):
         """Decode the key following a JSON format to return a dict."""
@@ -363,10 +413,7 @@ class Evaluator:
             result = {f"p:{k}": v for k, v in result.items()}
 
             # when the returned value of the run-function is a dict we flatten it to add in csv
-            if isinstance(job.result, dict):
-                result.update(job.result)
-            else:
-                result["objective"] = job.result
+            result["objective"] = job.objective
 
             # when the objective is a tuple (multi-objective) we create 1 column per tuple-element
             if isinstance(result["objective"], tuple):
@@ -387,26 +434,19 @@ class Evaluator:
                     for i in range(self.num_objective):
                         result[f"objective_{i}"] = obj
 
-            result["job_id"] = job.id
+            # job id and rank
+            result["job_id"] = int(job.id.split(".")[1])
 
             if isinstance(job.rank, int):
                 result["rank"] = job.rank
 
-            result["timestamp_submit"] = job.timestamp_submit
-            result["timestamp_gather"] = job.timestamp_gather
-
-            if job.timestamp_start is not None and job.timestamp_end is not None:
-                result["timestamp_start"] = job.timestamp_start
-                result["timestamp_end"] = job.timestamp_end
+            # Profiling and other
+            # methdata keys starting with "_" are not saved (considered as internal)
+            metadata = {f"m:{k}": v for k, v in job.metadata.items() if k[0] != "_"}
+            result.update(metadata)
 
             if hasattr(job, "dequed"):
-                result["dequed"] = ",".join(job.dequed)
-
-            if isinstance(job.other, dict):
-                result.update(job.other)
-
-            if "p:optuna_trial" in result:
-                result.pop("p:optuna_trial")
+                result["m:dequed"] = ",".join(job.dequed)
 
             resultsList.append(result)
 

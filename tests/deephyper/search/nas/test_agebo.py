@@ -39,7 +39,7 @@ class AgEBOTest(unittest.TestCase):
 
         res1 = search.search(max_evals=4)
         res1_array = res1[
-            ["arch_seq", "batch_size", "learning_rate", "optimizer"]
+            ["p:arch_seq", "p:batch_size", "p:learning_rate", "p:optimizer"]
         ].to_numpy()
 
         search = AgEBO(
@@ -49,7 +49,7 @@ class AgEBOTest(unittest.TestCase):
         )
         res2 = search.search(max_evals=4)
         res2_array = res2[
-            ["arch_seq", "batch_size", "learning_rate", "optimizer"]
+            ["p:arch_seq", "p:batch_size", "p:learning_rate", "p:optimizer"]
         ].to_numpy()
 
         assert np.array_equal(res1_array, res2_array)

@@ -21,9 +21,9 @@ The return value of the ``run``-function respect the following standards (but th
     # dict
     return {"objective": 42.0}
     # dict with additional information
-    return {"objective": 42.0, "num_epochs_trained": 25, "num_parameters": 420000}
+    return {"objective": 42.0, "metadata": {"num_epochs_trained": 25, "num_parameters": 420000}}
     # dict with reserved keywords (when @profile decorator is used)
-    return {"objective": 42.0, "timestamp_start": ..., "timestamp_end": ...}
+    return {"objective": 42.0, "metadata": {"timestamp_start": ..., "timestamp_end": ...}"
     # tuple of float for multi-objective optimization (will appear as "objective_0" and "objective_1" in the resulting dataframe)
     return 42.0, 0.42
 
@@ -31,10 +31,9 @@ The return value of the ``run``-function respect the following standards (but th
 """
 
 from deephyper.evaluator._evaluator import EVALUATORS, Evaluator
-from deephyper.evaluator._job import Job
+from deephyper.evaluator._job import Job, RunningJob
 from deephyper.evaluator._process_pool import ProcessPoolEvaluator
 from deephyper.evaluator._serial import SerialEvaluator
-from deephyper.evaluator._subprocess import SubprocessEvaluator
 from deephyper.evaluator._thread_pool import ThreadPoolEvaluator
 from deephyper.evaluator._queued import queued
 from deephyper.evaluator._decorator import profile
@@ -44,11 +43,11 @@ __all__ = [
     "Evaluator",
     "EVALUATORS",
     "Job",
+    "RunningJob",
     "ProcessPoolEvaluator",
     "profile",
     "queued",
     "SerialEvaluator",
-    "SubprocessEvaluator",
     "ThreadPoolEvaluator",
     "to_json",
     "parse_subprocess_result",

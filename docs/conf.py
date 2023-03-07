@@ -276,6 +276,7 @@ autodoc_mock_imports = [
     "nbformat",
     "networkx",
     "ray",
+    "redis",
     "sklearn",
     "skopt",
     "tensorflow_probability",

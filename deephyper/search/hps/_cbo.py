@@ -27,9 +27,9 @@ MAP_filter_failures = {"min": "max"}
 
 
 # schedulers
-def scheduler_periodic_exponential_decay(i, eta_0, periode, rate):
+def scheduler_periodic_exponential_decay(i, eta_0, periode, rate, delay):
     """Periodic exponential decay scheduler for exploration-exploitation."""
-    eta_i = eta_0 * np.exp(-rate * (i % periode))
+    eta_i = eta_0 * np.exp(-rate * ((i - 1 - delay) % periode))
     return eta_i
 
 
@@ -64,6 +64,9 @@ class CBO(Search):
         max_failures (int, optional): Maximum number of failed configurations allowed before observing a valid objective value when ``filter_failures`` is not equal to ``"ignore"``. Defaults to ``100``.
         moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "AugChebyshev", "PBI", "Quadratic", "rLinear", "rChebyshev", "rAugChebyshev", "rPBI", "rQuadratic"]``. Defaults to ``"Chebyshev"``.
         moo_scalarization_weight (list, optional): Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions. Defaults to ``None``.
+        scheduler (dict, callable, optional): a method to manage the the value of ``kappa, xi`` with iterations. Defaults to ``None`` which does not use any scheduler.
+        objective_scaler (str, optional): a way to map the objective space to some other support for example to normalize it. Defaults to ``"auto"`` which automatically set it to "identity" for any surrogate model except "RF" which will use "minmaxlog".
+        stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the function. Defaults to ``None`` which does not use any stopper.
     """
 
     def __init__(
@@ -92,6 +95,8 @@ class CBO(Search):
         moo_scalarization_strategy: str = "Chebyshev",
         moo_scalarization_weight=None,
         scheduler=None,
+        objective_scaler="auto",
+        stopper=None,
         **kwargs,
     ):
 
@@ -198,7 +203,9 @@ class CBO(Search):
             and len(self._problem.space.get_forbiddens()) == 0
             and len(self._problem.space.get_conditions()) == 0
         ):
-            self._opt_space = convert_to_skopt_space(self._problem.space)
+            self._opt_space = convert_to_skopt_space(
+                self._problem.space, surrogate_model=surrogate_model
+            )
         else:
             self._opt_space = self._problem.space
 
@@ -228,6 +235,7 @@ class CBO(Search):
             random_state=self._random_state,
             moo_scalarization_strategy=self._moo_scalarization_strategy,
             moo_scalarization_weight=self._moo_scalarization_weight,
+            objective_scaler=objective_scaler,
         )
 
         self._gather_type = "ALL" if sync_communication else "BATCH"
@@ -235,6 +243,7 @@ class CBO(Search):
         # scheduler policy
         self.scheduler = None
         if type(scheduler) is dict:
+            scheduler = scheduler.copy()
             scheduler_type = scheduler.pop("type", None)
             assert scheduler_type in ["periodic-exp-decay"]
 
@@ -242,6 +251,7 @@ class CBO(Search):
                 scheduler_params = {
                     "periode": 25,
                     "rate": 0.1,
+                    "delay": n_initial_points,
                 }
                 scheduler_func = scheduler_periodic_exponential_decay
 
@@ -253,6 +263,9 @@ class CBO(Search):
             logging.info(
                 f"Set up scheduler '{scheduler_type}' with parameters '{scheduler_params}'"
             )
+
+        # stopper
+        self._evaluator._stopper = stopper
 
     def _setup_optimizer(self):
         if self._fitted:
@@ -335,24 +348,58 @@ class CBO(Search):
                 logging.info("Transforming received configurations to list...")
                 t1 = time.time()
 
-                opt_X = []
-                opt_y = []
-                for cfg, obj in new_results:
+                opt_X = []  # input configuration
+                opt_y = []  # objective value
+                opt_b = []  # budget (optional)
+                # for cfg, obj in new_results:
+                for job_i in new_results:
+                    cfg, obj = job_i
                     x = list(cfg.values())
-                    if np.all(np.isreal(obj)):
+
+                    # retrieve budget consumed by job with multiple observations
+                    if job_i.observations is not None:
+                        # # TODO: use ALC to reduce the problem to a scalar maximization/estimation
+                        from deephyper.stopper._lcmodel_stopper import (
+                            area_learning_curve,
+                        )
+
+                        # z_values: are the steps z from the budget function b(z)
+                        # the job observations returns the observed (budgets, objectives)
+                        # steps can be deduced from the length of these lists
+                        # y_values: are the objective f(b(z))
+                        _, y_values = np.array(job_i.observations)
+                        z_values = np.arange(len(y_values)) + 1
+                        y_values = -y_values
+                        y = area_learning_curve(
+                            z_values, y_values, z_max=self._evaluator._stopper.max_steps
+                        )
                         opt_X.append(x)
-                        opt_y.append(np.negative(obj).tolist())  # !maximizing
-                    elif (type(obj) is str and "F" == obj[0]) or np.any(
-                        type(objval) is str and "F" == objval[0] for objval in obj
-                    ):
-                        if (
-                            self._opt_kwargs["acq_optimizer_kwargs"]["filter_failures"]
-                            == "ignore"
-                        ):
-                            continue
-                        else:
+                        opt_y.append(y)
+
+                        # TODO: the following approach will not scale!
+                        # for b, y in zip(*job_i.observations):
+                        #     opt_X.append(x)
+                        #     opt_b.append(b)
+                        #     opt_y.append(-y)
+
+                    # single observation returned without budget
+                    else:
+                        if np.all(np.isreal(obj)):
                             opt_X.append(x)
-                            opt_y.append("F")
+                            opt_y.append(np.negative(obj).tolist())  # !maximizing
+                        elif (type(obj) is str and "F" == obj[0]) or np.any(
+                            type(objval) is str and "F" == objval[0] for objval in obj
+                        ):
+                            if (
+                                self._opt_kwargs["acq_optimizer_kwargs"][
+                                    "filter_failures"
+                                ]
+                                == "ignore"
+                            ):
+                                continue
+                            else:
+                                opt_X.append(x)
+                                opt_y.append("F")
 
                 logging.info(f"Transformation took {time.time() - t1:.4f} sec.")
 
@@ -363,7 +410,8 @@ class CBO(Search):
                 t1 = time.time()
 
                 if len(opt_y) > 0:
-                    self._opt.tell(opt_X, opt_y)
+                    opt_b = None if len(opt_b) == 0 else opt_b
+                    self._opt.tell(opt_X, opt_y, budget=opt_b)
                     logging.info(f"Fitting took {time.time() - t1:.4f} sec.")
 
                 logging.info(f"Asking {num_new_local_results} new configurations...")
@@ -497,7 +545,7 @@ class CBO(Search):
         if self._opt is None:
             self._setup_optimizer()
 
-        hp_names = self._problem.hyperparameter_names
+        hp_names = [f"p:{name}" for name in self._problem.hyperparameter_names]
         try:
             x = df[hp_names].values.tolist()
             # check single or multiple objectives
@@ -819,8 +867,13 @@ class CBO(Search):
         """
         res = {}
         hps_names = self._problem.hyperparameter_names
-        for i in range(len(x)):
-            res[hps_names[i]] = x[i]
+
+        # to enforce native python types instead of numpy types
+        x = map(lambda xi: getattr(xi, "tolist", lambda: xi)(), x)
+
+        for hps_name, xi in zip(hps_names, x):
+            res[hps_name] = xi
+
         return res
 
 

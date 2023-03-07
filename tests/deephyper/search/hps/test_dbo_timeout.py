@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import pytest
 
@@ -12,13 +13,8 @@ def _test_dbo_timeout():
     import time
     import numpy as np
 
-    from mpi4py import MPI
-
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
-
     from deephyper.problem import HpProblem
-    from deephyper.search.hps import DBO
+    from deephyper.search.hps import MPIDistributedBO
 
     d = 10
     domain = (-32.768, 32.768)
@@ -35,29 +31,37 @@ def _test_dbo_timeout():
         y = term1 + term2 + a + np.exp(1)
         return y
 
-    def run(config):
+    def run(job):
+        config = job.parameters
         x = np.array([config[f"x{i}"] for i in range(d)])
         x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
         return -ackley(x)
 
-    search = DBO(
+    log_dir = "log-dbo"
+    search = MPIDistributedBO(
         hp_problem,
         run,
-        log_dir="log-dbo",
+        log_dir=log_dir,
     )
 
     timeout = 2
-    if rank == 0:
+    if search.rank == 0:
         t1 = time.time()
         results = search.search(timeout=timeout)
         duration = time.time() - t1
+        assert duration < timeout + 1
     else:
         search.search(timeout=timeout)
+    search.comm.Barrier()
+    if search.rank == 0:
+        print("\n", results)
+        shutil.rmtree(log_dir)
 
 
 @pytest.mark.fast
 @pytest.mark.hps
 @pytest.mark.mpi
+@pytest.mark.redis
 def test_dbo_timeout():
     command = f"time mpirun -np 4 {PYTHON} {SCRIPT} _test_dbo_timeout"
     result = deephyper.test.run(command, live_output=False)

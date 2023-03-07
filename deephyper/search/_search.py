@@ -54,27 +54,26 @@ class Search(abc.ABC):
         self._verbose = verbose
 
     def check_evaluator(self, evaluator):
-        if not (isinstance(evaluator, Evaluator)) and callable(evaluator):
-            self._evaluator = Evaluator.create(
-                evaluator,
-                method="serial",
-                method_kwargs={"callbacks": [TqdmCallback()]},
-            )
+        if not (isinstance(evaluator, Evaluator)):
+
+            if callable(evaluator):
+                self._evaluator = Evaluator.create(
+                    evaluator,
+                    method="serial",
+                    method_kwargs={"callbacks": [TqdmCallback()]},
+                )
+            else:
+                raise TypeError(
+                    f"The evaluator shoud be an instance of deephyper.evaluator.Evaluator by is {type(evaluator)}!"
+                )
         else:
             self._evaluator = evaluator
 
     def to_json(self):
         """Returns a json version of the search object."""
-        # Total number of workers
-        if hasattr(self._evaluator, "num_total_workers"):
-            num_workers = self._evaluator.num_total_workers
-        else:
-            num_workers = self._evaluator.num_workers
-
         json_self = {
             "search": {
                 "type": type(self).__name__,
-                "num_workers": num_workers,
                 **get_init_params_as_json(self),
             },
             "calls": self._call_args,
@@ -151,3 +150,8 @@ class Search(abc.ABC):
             max_evals (int, optional): The maximum number of evaluations of the run function to perform before stopping the search. Defaults to -1, will run indefinitely.
             timeout (int, optional): The time budget of the search before stopping.Defaults to None, will not impose a time budget.
         """
+
+    @property
+    def search_id(self):
+        """The identifier of the search used by the evaluator."""
+        return self._evaluator._search_id

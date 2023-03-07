@@ -9,59 +9,29 @@
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/deephyper.svg?label=Pypi%20downloads)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/deephyper/tutorials/blob/main/tutorials/colab/DeepHyper_101.ipynb)
 <!-- [![Build Status](https://travis-ci.com/deephyper/deephyper.svg?branch=develop)](https://travis-ci.com/deephyper/deephyper) -->
+
 ## What is DeepHyper?
-DeepHyper is a software package that uses learning, optimization, and parallel computing to automate the design and development of machine learning (ML) models for scientific and engineering applications. DeepHyper reduces the barrier to entry for using AI/ML model development by reducing manually intensive trial-and-error efforts for developing predictive models. The package performs four key functions:
 
-1. pipeline optimization for ML (DeepHyper/POPT)
-2. neural architecture search (DeepHyper/NAS)
-3. hyperparameter search (DeepHyper/HPS)
-4. ensemble uncertainty quantification (DeepHyper/AutoDEUQ)
-
-### Pipeline optimization for ML (DeepHyper/POPT)
-
-Predictive modeling with classical ML methods typically requires a pipeline of methods such as data preprocessing, data balancing, data splitting, variable importance analysis, variable selection, classification/regression algorithm selection, and cross-validation methods. Because of the myriad choices available for each method, employing an effective ML pipeline is beyond most scientists and engineers; therefore, they tend to resort to rules of thumb, often resulting in non-robust models. DeepHyper provides an interface to model the search space of the pipeline. It uses an intelligent search algorithm that samples a small number of pipeline configurations and progressively fits a surrogate model over the configuration-performance space until it exhausts the user-defined maximum number of evaluations. The asynchronous aspect allows the search to avoid waiting for all the evaluation results before proceeding to the next iteration. When an evaluation is finished, the data are used to retrain the surrogate model, which is then used to bias the search toward the promising configurations. The framework uses a master/worker computational paradigm, where one master node fits the surrogate model and generates promising pipeline configurations and worker nodes perform the computationally expensive evaluations and return the outputs to the master node.
-
-### Hyperparameter search (DeepHyper/HPS)
-
-ML methods used for predictive modeling typically require user-specified values for hyperparameters, which include the number of hidden layers and units per layer, sparsity/overfitting regularization parameters, batch size, learning rate, type of initialization, optimizer, and activation function specification. Traditionally, to find performance-optimizing hyperparameter settings, researchers have used a trial-and-error process or a brute-force grid/random search. Such approaches lead to far-from-optimal performance, however, or are impractical for addressing large numbers of hyperparameters. DeepHyper provides a set of scalable hyperparameter search methods for automatically searching for high-performing hyperparameters for a given DNN architecture. DeepHyper uses an asynchronous model-based search that relies on fitting a dynamically updated surrogate model that tries to learn the relationship between the hyperparameter configurations (input) and their validation errors (output). The surrogate model is cheap to evaluate and can be used to prune the search space and identify promising regions, where the model then is iteratively refined by obtaining new outputs at inputs that are predicted by the model to be high-performing.
-
-### Neural architecture search (DeepHyper/NAS)
-
-Scientific data sets are diverse and often require data-set-specific DNN models. Nevertheless, designing high-performing DNN architecture for a given data set is an expert-driven, time-consuming, trial-and-error manual task. To that end, DeepHyper provides a NAS for automatically identifying high-performing DNN architectures for a given set of training data. DeepHyper adopts an evolutionary algorithm that generates a population of DNN architectures, trains them concurrently by using multiple nodes, and improves the population by performing mutations on the existing architectures within a population. To reduce the training time of each architecture evaluation, DeepHyper adopts a distributed data-parallel training technique, splitting the training data and distributing the shards to multiple processing units. Multiple models with the same architecture are trained on different data shards, and the gradients from each model are averaged and used to update the weights of all the models. To maintain accuracy and reduce training time, DeepHyper combines aging evolution and an asynchronous Bayesian optimization method for tuning the hyperparameters of the data-parallel training simultaneously.
-
-### Ensemble uncertainty quantification (DeepHyper/AutoDEUQ)
-
-Uncertainty quantification in DNN predictions is of paramount importance for confident scientific utilization of DL. Prediction with uncertainty quantification is vital when DNN learning deployments are performed on unseen datasets that may not be from the distribution of the training data. In such cases, confidence estimates are essential for deciding when to discard predictions from neural networks, because of their proclivity to extrapolation. More importantly, DeepHyper/AutoDEUQ sheds light on learning systems that are frequently dismissed as black-box within the scientific community, and it paves the way for greater model trustworthiness. To that end, DeepHyper/AutoDEUQ employs a scalable deep-ensemble approach for uncertainty quantification. The approach involves constructing several models with varying architectures, independently, on the training dataset. Parallel independent runs of DeepHyper/NAS are used, wherein each NAS run starts with different initialization and randomization of datasets. The best model candidates suggested by the parallel search are then utilized in an ensemble setting for quantifying the model uncertainty. Furthermore, each generated model can be configured to use various data likelihood options. The quantiles of these function values can be used to compute calibrated prediction intervals to capture data uncertainty.
+DeepHyper is a powerful Python package for automating machine learning tasks, particularly focused on optimizing hyperparameters, searching for optimal neural architectures, and quantifying uncertainty through the use of deep ensembles. With DeepHyper, users can easily perform these tasks on a single machine or distributed across multiple machines, making it ideal for use in a variety of environments. Whether you're a beginner looking to optimize your machine learning models or an experienced data scientist looking to streamline your workflow, DeepHyper has something to offer. So why wait? Start using DeepHyper today and take your machine learning skills to the next level!
 
 ## Install instructions
 
-From PyPI:
+Installation with `pip`:
 
-```bash
+```console
+# For the most basic set of features (hyperparameter search)
 pip install deephyper
+
+# For the default set of features including:
+# - hyperparameter search with transfer-learning
+# - neural architecture search
+# - deep ensembles
+# - Ray-based distributed computing
+# - Learning-curve extrapolation for multi-fidelity hyperparameter search
+pip install "deephyper[default]"
 ```
 
-From Github:
-
-```bash
-git clone https://github.com/deephyper/deephyper.git
-pip install -e deephyper/
-```
-
-If you want to install deephyper with test and documentation packages:
-
-From PyPI:
-
-```bash
-pip install 'deephyper[dev]'
-```
-
-From Github:
-
-```bash
-git clone https://github.com/deephyper/deephyper.git
-pip install -e 'deephyper/[dev]'
-```
+More details about the installation process can be found at [DeepHyper Installations](https://deephyper.readthedocs.io/en/latest/install/index.html).
 
 ## Quickstart
 
@@ -70,12 +40,22 @@ pip install -e 'deephyper/[dev]'
 The black-box function named `run` is defined by taking an input dictionnary named `config` which contains the different variables to optimize. Then the run-function is binded to an `Evaluator` in charge of distributing the computation of multiple evaluations. Finally, a Bayesian search named `CBO` is created and executed to find the values of config which maximize the return value of `run(config)`.
 
 ```python
-def run(config: dict):
-    return -config["x"]**2
+def run(job):
+    # The suggested parameters are accessible in job.parameters (dict)
+    x = job.parameters["x"]
+    b = job.parameters["b"]
+
+    if job.parameters["function"] == "linear":
+        y = x + b
+    elif job.parameters["function"] == "cubic":
+        y = x**3 + b
+
+    # Maximization!
+    return y
 
 
 # Necessary IF statement otherwise it will enter in a infinite loop
-# when loading the 'run' function from a subprocess
+# when loading the 'run' function from a new process
 if __name__ == "__main__":
     from deephyper.problem import HpProblem
     from deephyper.search.hps import CBO
@@ -83,40 +63,53 @@ if __name__ == "__main__":
 
     # define the variable you want to optimize
     problem = HpProblem()
-    problem.add_hyperparameter((-10.0, 10.0), "x")
+    problem.add_hyperparameter((-10.0, 10.0), "x") # real parameter
+    problem.add_hyperparameter((0, 10), "b") # discrete parameter
+    problem.add_hyperparameter(["linear", "cubic"], "function") # categorical parameter
 
     # define the evaluator to distribute the computation
     evaluator = Evaluator.create(
         run,
-        method="subprocess",
+        method="process",
         method_kwargs={
             "num_workers": 2,
         },
     )
 
     # define your search and execute it
-    search = CBO(problem, evaluator)
+    search = CBO(problem, evaluator, random_state=42)
 
     results = search.search(max_evals=100)
     print(results)
 ```
 
-Which outputs the following where the best ``x`` found is clearly around ``0``.
+Which outputs the following results where the best parameters are with `function == "cubic"`, 
+`x == 9.99` and `b == 10`.
 
 ```verbatim
-         p:x  job_id     objective  timestamp_submit  timestamp_gather
-0  -7.744105       1 -5.997117e+01          0.011047          0.037649
-1  -9.058254       2 -8.205196e+01          0.011054          0.056398
-2  -1.959750       3 -3.840621e+00          0.049750          0.073166
-3  -5.150553       4 -2.652819e+01          0.065681          0.089355
-4  -6.697095       5 -4.485108e+01          0.082465          0.158050
-..       ...     ...           ...               ...               ...
-95 -0.034096      96 -1.162566e-03         26.479630         26.795639
-96 -0.034204      97 -1.169901e-03         26.789255         27.155481
-97 -0.037873      98 -1.434366e-03         27.148506         27.466934
-98 -0.000073      99 -5.387088e-09         27.460253         27.774704
-99  0.697162     100 -4.860350e-01         27.768153         28.142431
+    p:b p:function       p:x    objective  job_id  m:timestamp_submit  m:timestamp_gather
+0     7     linear  8.831019    15.831019       1            0.064874            1.430992
+1     4     linear  9.788889    13.788889       0            0.064862            1.453012
+2     0      cubic  2.144989     9.869049       2            1.452692            1.468436
+3     9     linear -9.236860    -0.236860       3            1.468123            1.483654
+4     2      cubic -9.783865  -934.550818       4            1.483340            1.588162
+..  ...        ...       ...          ...     ...                 ...                 ...
+95    6      cubic  9.862098   965.197192      95           13.538506           13.671872
+96   10      cubic  9.997512  1009.253866      96           13.671596           13.884530
+97    6      cubic  9.965615   995.719961      97           13.884188           14.020144
+98    5      cubic  9.998324  1004.497422      98           14.019737           14.154467
+99    9      cubic  9.995800  1007.740379      99           14.154169           14.289366
 ```
+
+The code defines a function `run` that takes a RunningJob `job` as input and returns the maximized objective `y`. The `if` block at the end of the code defines a black-box optimization process using the `CBO` (Centralized Bayesian Optimization) algorithm from the `deephyper` library.
+
+The optimization process is defined as follows:
+
+1. A hyperparameter optimization problem is created using the `HpProblem` class from `deephyper`. In this case, the problem has a three variables. The `x` hyperparameter is a real variable in a range from -10.0 to 10.0. The `b` hyperparameter is a discrete variable in a range from 0 to 10. The `function` hyperparameter is a categorical variable with two possible values.
+2. An evaluator is created using the `Evaluator.create` method. The evaluator will be used to evaluate the function `run` with different configurations of suggested hyperparameters in the optimization problem. The evaluator uses the `process` method to distribute the evaluations across multiple worker processes, in this case 2 worker processes.
+3. A search object is created using the `CBO` class, the problem and evaluator defined earlier. The `CBO` algorithm is a derivative-free optimization method that uses a Bayesian optimization approach to explore the hyperparameter space.
+4. The optimization process is executed by calling the `search.search` method, which performs the evaluations of the `run` function with different configurations of the hyperparameters until a maximum number of evaluations (100 in this case) is reached.
+5. The results of the optimization process, including the optimal configuration of the hyperparameters and the corresponding objective value, are printed to the console.
 
 ## How do I learn more?
 

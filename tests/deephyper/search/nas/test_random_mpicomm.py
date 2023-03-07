@@ -1,10 +1,16 @@
+import os
+import sys
+import time
+
 import pytest
 
+PYTHON = sys.executable
+SCRIPT = os.path.abspath(__file__)
 
-@pytest.mark.fast
-@pytest.mark.nas
-@pytest.mark.mpi
-def test_random_search_mpicomm():
+import deephyper.test
+
+
+def _test_random_search_mpicomm():
     """Example to execute:
 
     mpirun -np 4 python test_random_mpicomm.py
@@ -24,8 +30,23 @@ def test_random_search_mpicomm():
                 log_dir="log-random-mpicomm",
                 random_state=42,
             )
+            t1 = time.time()
             res = search.search(timeout=2)
+            duration = time.time() - t1
+
+            assert len(res) >= 1
+            assert duration < 3
+
+
+@pytest.mark.slow
+@pytest.mark.nas
+@pytest.mark.mpi
+def test_mpicomm_evaluator():
+    command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_random_search_mpicomm"
+    result = deephyper.test.run(command, live_output=True)
 
 
 if __name__ == "__main__":
-    test_random_search_mpicomm()
+    func = sys.argv[-1]
+    func = globals()[func]
+    func()

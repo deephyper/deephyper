@@ -5,6 +5,9 @@ from scipy.optimize import OptimizeResult
 from scipy.optimize import minimize as sp_minimize
 from sklearn.base import is_regressor
 from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.preprocessing import FunctionTransformer
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.pipeline import make_pipeline
 from joblib import dump as dump_
 from joblib import load as load_
 from collections import OrderedDict
@@ -810,3 +813,38 @@ def use_named_args(dimensions):
         return wrapper
 
     return decorator
+
+
+def cook_objective_scaler(scaler, base_estimator):
+    """Prepare a Scikit-Learn preprocessing pipeline to map the output objective to a different space."""
+    scalers = {}
+
+    # identity
+    pipeline = FunctionTransformer(func=lambda x: x, inverse_func=lambda x: x)
+    scalers["identity"] = pipeline
+
+    # minmaxlog
+    scaler_log = FunctionTransformer(
+        func=lambda x: np.log(x + 1e-12),
+        inverse_func=lambda x: np.exp(x) - 1e-12,
+        check_inverse=True,
+    )
+    pipeline = make_pipeline(MinMaxScaler(), scaler_log)
+    scalers["minmaxlog"] = pipeline
+
+    if scaler == "auto":
+
+        if isinstance(base_estimator, RandomForestRegressor):
+            scaler = "minmaxlog"
+        else:
+            scaler = "identity"
+
+    if type(scaler) is str:
+        if scaler in scalers:
+            return scalers[scaler]
+        else:
+            raise ValueError(
+                f"Objective scaler should be a sklearn.pipeline.Pipeline or a value in {list(scalers.keys())}"
+            )
+    else:
+        return scaler
