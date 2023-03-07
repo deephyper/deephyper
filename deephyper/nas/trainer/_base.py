@@ -388,7 +388,7 @@ class BaseTrainer:
                 f"The learning_rate parameter is not found amoung optimiser arguments: {opti_parameters}"
             )
 
-        if "epsilon" in opti_parameters:
+        if "epsilon" in opti_parameters and self.optimizer_eps is not None:
             params["epsilon"] = self.optimizer_eps
 
         if "momentum" in opti_parameters:
