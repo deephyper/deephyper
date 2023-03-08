@@ -36,9 +36,7 @@ Install with ``pip``
     # - Learning-curve extrapolation for multi-fidelity hyperparameter search
     pip install "deephyper[default]"
 
-More details about the installation process can be found at DeepHyper Installations <install/index>.
-
-
+More details about the installation process can be found at `DeepHyper Installations <https://deephyper.readthedocs.io/en/latest/install/index.html>`_.
 
 
 Quick Start
