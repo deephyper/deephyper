@@ -1,5 +1,8 @@
 import logging
+import math
 import pickle
+
+from numbers import Number
 
 from typing import Any, Dict, Hashable, List, Tuple
 
@@ -94,7 +97,7 @@ class RedisStorage(Storage):
         Args:
             job_id (Hashable): The identifier of the job.
             key (Hashable): A key to use to store the value.
-            value (Any): The value to store.
+            value (Any): The value to store. A "nan" float value is stored as a str "NaN".
         """
         self._redis.json().set(f"job:{job_id}", f".{key}", value)
 
@@ -118,6 +121,8 @@ class RedisStorage(Storage):
             job_id (Hashable): The identifier of the job.
             value (Any): The value to store.
         """
+        if isinstance(value, Number) and math.isnan(value):
+            value = "NaN"
         logging.info(f"Storing output for job:{job_id} with value:{value}")
         self.store_job(job_id, key="out", value=value)
 
@@ -129,6 +134,8 @@ class RedisStorage(Storage):
             key (Hashable): A key to use to store the metadata of the given job.
             value (Any): The value to store.
         """
+        if isinstance(value, Number) and math.isnan(value):
+            value = "NaN"
         logging.info(
             f"Storing metadata for job:{job_id} with key:{key} and value:{value}"
         )

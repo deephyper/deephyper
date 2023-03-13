@@ -75,6 +75,11 @@ class TestRedisStorage(unittest.TestCase):
         job_id0_data = storage.load_job(job_id0)
         self.assertEqual(job_id0_data["metadata"], {"timestamp": 10})
 
+        # Storing metadata of job with a NaN value
+        storage.store_job_metadata(job_id0, "nan_value", float("nan"))
+        job_id0_data = storage.load_job(job_id0)
+        self.assertEqual(job_id0_data["metadata"]["nan_value"], "NaN")
+
     def test_with_evaluator(self):
         from deephyper.evaluator.storage._redis_storage import RedisStorage
 
@@ -112,4 +117,4 @@ class TestRedisStorage(unittest.TestCase):
 
 if __name__ == "__main__":
     test = TestRedisStorage()
-    test.test_with_evaluator()
+    test.test_basic()
