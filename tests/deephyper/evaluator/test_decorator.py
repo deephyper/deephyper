@@ -5,8 +5,28 @@ from deephyper.evaluator import profile
 
 
 @profile
-def run_profile(config):
-    return config["x"]
+def run_scalar_output(job):
+    return 0
+
+
+@profile
+def run_dict_without_metadata_output(job):
+    return {"objective": 0}
+
+
+@profile
+def run_dict_with_none_metadata_output(job):
+    return {"objective": 0, "metadata": None}
+
+
+@profile
+def run_dict_with_empty_dict_metadata_output(job):
+    return {"objective": 0, "metadata": {}}
+
+
+@profile
+def run_dict_with_metadata_output(job):
+    return {"objective": 0, "metadata": {"foo": 0}}
 
 
 @pytest.mark.fast
@@ -14,8 +34,54 @@ def run_profile(config):
 class TestDecorator(unittest.TestCase):
     def test_profile(self):
 
-        output = run_profile({"x": 0})
+        # Scalar output
+        output = run_scalar_output({"x": 0})
 
+        assert "objective" in output
+        assert 0 == output["objective"]
+        assert "metadata" in output
         assert "timestamp_end" in output["metadata"]
         assert "timestamp_start" in output["metadata"]
+
+        # Dict output without metadata
+        output = run_dict_without_metadata_output({"x": 0})
+
+        assert "objective" in output
         assert 0 == output["objective"]
+        assert "metadata" in output
+        assert "timestamp_end" in output["metadata"]
+        assert "timestamp_start" in output["metadata"]
+
+        # Dict output with None metadata
+        output = run_dict_with_none_metadata_output({"x": 0})
+
+        assert "objective" in output
+        assert 0 == output["objective"]
+        assert "metadata" in output
+        assert "timestamp_end" in output["metadata"]
+        assert "timestamp_start" in output["metadata"]
+
+        # Dict output with empty dict metadata
+        output = run_dict_with_empty_dict_metadata_output({"x": 0})
+
+        assert "objective" in output
+        assert 0 == output["objective"]
+        assert "metadata" in output
+        assert "timestamp_end" in output["metadata"]
+        assert "timestamp_start" in output["metadata"]
+
+        # Dict output with metadata
+        output = run_dict_with_metadata_output({"x": 0})
+
+        assert "objective" in output
+        assert 0 == output["objective"]
+        assert "metadata" in output
+        assert "timestamp_end" in output["metadata"]
+        assert "timestamp_start" in output["metadata"]
+        assert "foo" in output["metadata"]
+        assert 0 == output["metadata"]["foo"]
+
+
+if __name__ == "__main__":
+    test = TestDecorator()
+    test.test_profile()
