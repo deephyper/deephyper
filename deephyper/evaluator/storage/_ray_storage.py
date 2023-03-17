@@ -1,81 +1,51 @@
-import abc
-import importlib
-import logging
-from typing import Any, Dict, Hashable, List, Tuple, TypeVar
+import ray
 
-StorageType = TypeVar("StorageType", bound="Storage")
+from typing import Any, Dict, Hashable, List, Tuple
 
-STORAGES = {
-    "memory": "_memory_storage.MemoryStorage",
-    "redis": "_redis_storage.RedisStorage",
-}
+from deephyper.evaluator.storage._storage import Storage
+from deephyper.evaluator.storage._memory_storage import MemoryStorage
 
 
-class Storage(abc.ABC):
-    """An abstract interface representing a storage client."""
+class RayStorage(Storage):
+
+    ray_storage_counter = 0
 
     def __init__(self) -> None:
-        self.connected = False
+        super().__init__()
 
-    def connect(self) -> StorageType:
-        """Connect the storage client to the storage service."""
-        self._connect()
-        if not (self.connected):
-            raise RuntimeError("Connection to storage service failed.")
-        return self
+        self.actor_name = f"{RayStorage.ray_storage_counter}"
+        RayStorage.ray_storage_counter += 1
+        self.memory_storage_actor = None
 
-    @staticmethod
-    def create(method: str = "memory", method_kwargs: Dict = None) -> StorageType:
-        """Static method allowing the creation of a storage client.
+    def _connect(self):
+        if self.memory_storage_actor is None:
+            self.memory_storage_actor = (
+                ray.remote(MemoryStorage)
+                .options(name=self.actor_name, namespace="deephyper")
+                .remote()
+            )
+        else:
+            self.memory_storage_actor = ray.get_actor(self.actor_name)
+        self.connected = True
 
-        Args:
-            method (str, optional): the type of storage client in ``["memory", "redis"]``. Defaults to "memory".
-            method_kwargs (Dict, optional): the client keyword-arguments parameters. Defaults to None.
+    def __getstate__(self):
+        state = {"connected": self.connected, "actor_name": self.actor_name}
+        return state
 
-        Raises:
-            ValueError: if the type of requested storage client is not valid.
-
-        Returns:
-            Storage: the created storage client.
-        """
-
-        method_kwargs = method_kwargs if method_kwargs else {}
-
-        logging.info(
-            f"Creating Storage(method={method}, method_kwargs={method_kwargs}..."
+    def __setstate__(self, newstate):
+        self.__dict__.update(newstate)
+        self.memory_storage_actor = ray.get_actor(
+            self.actor_name, namespace="deephyper"
         )
 
-        if method not in STORAGES.keys():
-            val = ", ".join(STORAGES)
-            raise ValueError(
-                f'The method "{method}" is not a valid method for an Evaluator!'
-                f" Choose among the following evalutor types: "
-                f"{val}."
-            )
-
-        # create the evaluator
-        mod_name, attr_name = STORAGES[method].split(".")
-        mod = importlib.import_module(f"deephyper.evaluator.storage.{mod_name}")
-        storage_cls = getattr(mod, attr_name)
-        storage = storage_cls(**method_kwargs)
-
-        logging.info("Creation done")
-
-        return storage
-
-    @abc.abstractmethod
-    def _connect(self):
-        """Connect the storage client to the storage service."""
-
-    @abc.abstractmethod
     def create_new_search(self) -> Hashable:
         """Create a new search in the store and returns its identifier.
 
         Returns:
             Hashable: The identifier of the search.
         """
+        return ray.get(self.memory_storage_actor.create_new_search.remote())
 
-    @abc.abstractmethod
     def create_new_job(self, search_id: Hashable) -> Hashable:
         """Creates a new job in the store and returns its identifier.
 
@@ -86,8 +56,8 @@ class Storage(abc.ABC):
         Returns:
             Hashable: The created identifier of the job.
         """
+        return ray.get(self.memory_storage_actor.create_new_job.remote(search_id))
 
-    @abc.abstractmethod
     def store_search_value(
         self, search_id: Hashable, key: Hashable, value: Any
     ) -> None:
@@ -98,8 +68,10 @@ class Storage(abc.ABC):
             key (Hashable): A key to use to store the value.
             value (Any): The value to store.
         """
+        ray.get(
+            self.memory_storage_actor.store_search_value.remote(search_id, key, value)
+        )
 
-    @abc.abstractmethod
     def load_search_value(self, search_id: Hashable, key: Hashable) -> Any:
         """Loads the value corresponding to key for search_id.
 
@@ -107,8 +79,10 @@ class Storage(abc.ABC):
             search_id (Hashable): The identifier of the job.
             key (Hashable): A key to use to access the value.
         """
+        return ray.get(
+            self.memory_storage_actor.load_search_value.remote(search_id, key)
+        )
 
-    @abc.abstractmethod
     def store_job(self, job_id: Hashable, key: Hashable, value: Any) -> None:
         """Stores the value corresponding to key for job_id.
 
@@ -117,8 +91,8 @@ class Storage(abc.ABC):
             key (Hashable): A key to use to store the value.
             value (Any): The value to store.
         """
+        ray.get(self.memory_storage_actor.store_job.remote(job_id, key, value))
 
-    @abc.abstractmethod
     def store_job_in(
         self, job_id: Hashable, args: Tuple = None, kwargs: Dict = None
     ) -> None:
@@ -129,8 +103,8 @@ class Storage(abc.ABC):
             args (Optional[Tuple], optional): The positional arguments. Defaults to None.
             kwargs (Optional[Dict], optional): The keyword arguments. Defaults to None.
         """
+        ray.get(self.memory_storage_actor.store_job_in.remote(job_id, args, kwargs))
 
-    @abc.abstractmethod
     def store_job_out(self, job_id: Hashable, value: Any) -> None:
         """Stores the output value of the executed job.
 
@@ -138,8 +112,8 @@ class Storage(abc.ABC):
             job_id (Hashable): The identifier of the job.
             value (Any): The value to store.
         """
+        ray.get(self.memory_storage_actor.store_job_out.remote(job_id, value))
 
-    @abc.abstractmethod
     def store_job_metadata(self, job_id: Hashable, key: Hashable, value: Any) -> None:
         """Stores other metadata related to the execution of the job.
 
@@ -148,16 +122,16 @@ class Storage(abc.ABC):
             key (Hashable): A key to use to store the metadata of the given job.
             value (Any): The value to store.
         """
+        ray.get(self.memory_storage_actor.store_job_metadata.remote(job_id, key, value))
 
-    @abc.abstractmethod
     def load_all_search_ids(self) -> List[Hashable]:
         """Loads the identifiers of all recorded searches.
 
         Returns:
             List[Hashable]: A list of identifiers of all the recorded searches.
         """
+        return ray.get(self.memory_storage_actor.load_all_search_ids.remote())
 
-    @abc.abstractmethod
     def load_all_job_ids(self, search_id: Hashable) -> List[Hashable]:
         """Loads the identifiers of all recorded jobs in the search.
 
@@ -167,8 +141,8 @@ class Storage(abc.ABC):
         Returns:
             List[Hashable]: A list of identifiers of all the jobs.
         """
+        return ray.get(self.memory_storage_actor.load_all_job_ids.remote(search_id))
 
-    @abc.abstractmethod
     def load_search(self, search_id: Hashable) -> dict:
         """Loads the data of a search.
 
@@ -178,8 +152,8 @@ class Storage(abc.ABC):
         Returns:
             dict: The corresponding data of the search.
         """
+        return ray.get(self.memory_storage_actor.load_search.remote(search_id))
 
-    @abc.abstractmethod
     def load_job(self, job_id: Hashable) -> dict:
         """Loads the data of a job.
 
@@ -189,8 +163,8 @@ class Storage(abc.ABC):
         Returns:
             dict: The corresponding data of the job.
         """
+        return ray.get(self.memory_storage_actor.load_job.remote(job_id))
 
-    @abc.abstractmethod
     def load_metadata_from_all_jobs(
         self, search_id: Hashable, key: Hashable
     ) -> List[Any]:
@@ -203,8 +177,10 @@ class Storage(abc.ABC):
         Returns:
             List[Any]: A list of all the retrieved metadata values.
         """
+        return ray.get(
+            self.memory_storage_actor.load_metadata_from_all_jobs.remote(search_id, key)
+        )
 
-    @abc.abstractmethod
     def load_out_from_all_jobs(self, search_id: Hashable) -> List[Any]:
         """Loads the output value from all jobs.
 
@@ -214,8 +190,10 @@ class Storage(abc.ABC):
         Returns:
             List[Any]: A list of all the retrieved output values.
         """
+        return ray.get(
+            self.memory_storage_actor.load_out_from_all_jobs.remote(search_id)
+        )
 
-    @abc.abstractmethod
     def load_jobs(self, job_ids: List[Hashable]) -> dict:
         """Load all data from a given list of jobs' identifiers.
 
@@ -225,3 +203,4 @@ class Storage(abc.ABC):
         Returns:
             dict: A dictionnary of the retrieved values where the keys are the identifier of jobs.
         """
+        return ray.get(self.memory_storage_actor.load_jobs.remote(job_ids))

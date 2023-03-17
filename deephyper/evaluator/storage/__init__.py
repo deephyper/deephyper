@@ -11,3 +11,11 @@ try:
     __all__.append("RedisStorage")
 except ImportError:
     pass
+
+# optional import for RayStorage
+try:
+    from deephyper.evaluator.storage._ray_storage import RayStorage  # noqa: F401
+
+    __all__.append("RayStorage")
+except ImportError:
+    pass
