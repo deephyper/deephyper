@@ -6,7 +6,19 @@ from deephyper.stopper._stopper import Stopper
 
 
 class MedianStopper(Stopper):
-    """Stopper based on the median of observed objectives at similar budgets."""
+    """Stopper based on the median of observed objectives at similar budgets.
+
+    .. list-table::
+        :widths: 25 25 25
+        :header-rows: 1
+
+        * - Single-Objective
+          - Multi-Objectives
+          - Failures
+        * - ✅
+          - ❌
+          - ❌
+    """
 
     def __init__(
         self,

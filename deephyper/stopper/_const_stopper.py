@@ -4,6 +4,17 @@ from deephyper.stopper._stopper import Stopper
 class ConstantStopper(Stopper):
     """Constant stopping policy which will stop the evaluation of a configuration at a fixed step.
 
+    .. list-table::
+        :widths: 25 25 25
+        :header-rows: 1
+
+        * - Single-Objective
+          - Multi-Objectives
+          - Failures
+        * - ✅
+          - ❌
+          - ✅
+
     Args:
         max_steps (int): the maximum number of steps which should be performed to evaluate the configuration fully.
         stop_step (int): the step at which to stop the evaluation.

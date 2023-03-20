@@ -317,7 +317,20 @@ def area_learning_curve(z, f, z_max) -> float:
 
 class LCModelStopper(Stopper):
     """Stopper based on learning curve extrapolation (LCE) to evaluate if the iterations of the learning algorithm
-    should be stopped. The LCE is based on a parametric learning curve model (LCM) which is modeling the score as a function of the number of training steps. Training steps can correspond to the number of training epochs, the number of training batches, the number of observed samples or any other quantity that is iterated through during the training process. The LCE is based on the following steps:
+    should be stopped.
+
+    .. list-table::
+        :widths: 25 25 25
+        :header-rows: 1
+
+        * - Single-Objective
+          - Multi-Objectives
+          - Failures
+        * - ✅
+          - ❌
+          - ❌
+
+    The LCE is based on a parametric learning curve model (LCM) which is modeling the score as a function of the number of training steps. Training steps can correspond to the number of training epochs, the number of training batches, the number of observed samples or any other quantity that is iterated through during the training process. The LCE is based on the following steps:
 
     1. An early stopping condition is always checked first. If the early stopping condition is met, the LCE is not applied.
     2. Then, some safeguard conditions are checked to ensure that the LCE can be applied (number of observed steps must be greater or equal to the number of parameters of the LCM).

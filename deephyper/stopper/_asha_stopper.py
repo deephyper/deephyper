@@ -8,13 +8,20 @@ from deephyper.stopper._stopper import Stopper
 class SuccessiveHalvingStopper(Stopper):
     """Stopper based on the Asynchronous Successive Halving algorithm (ASHA).
 
+    .. list-table::
+        :widths: 25 25 25
+        :header-rows: 1
+
+        * - Single-Objective
+          - Multi-Objectives
+          - Failures
+        * - ✅
+          - ❌
+          - ✅
+
     The Successive Halving (SHA) was proposed in `Non-stochastic Best Arm IdentiÞcation and Hyperparameter Optimization <http://proceedings.mlr.press/v51/jamieson16.pdf>`_ in the context of a fixed number of hyperparameter configurations. The SHA algorithm was synchronous at the time and therefore not efficient when using parallel ressources. The Sucessive Halving algorithm was then extended to be asynchronous in `A System for Massively Parallel Hyperparameter Tuning <https://arxiv.org/abs/1810.05934>`_.
 
     Halving is a technique to reduce the number of configurations to evaluate by a factor of ``reduction_factor``. The halving schedule is following a geometric progression. The first halving step is done after ``min_steps`` steps. The next halving step is done after ``min_steps * reduction_factor`` steps. The next halving step is done after ``min_steps * reduction_factor^2`` steps. And so on.
-
-    .. warning::
-
-        This stopper is not compatible with multi-objective optimization. However, it is compatible with failed observations. When a job fails, all previous observations of the same jobs are also considered as failures.
 
     Args:
         max_steps (int): The maximum number of steps to run the evaluation (e.g., number of epochs).

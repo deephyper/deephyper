@@ -7,6 +7,7 @@ from deephyper.evaluator.storage._memory_storage import MemoryStorage
 
 
 class RayStorage(Storage):
+    """Storage class using Ray actors. The RayStorage is wrapping the MemoryStorage class to be a Ray actor."""
 
     ray_storage_counter = 0
 
