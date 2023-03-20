@@ -12,6 +12,10 @@ class SuccessiveHalvingStopper(Stopper):
 
     Halving is a technique to reduce the number of configurations to evaluate by a factor of ``reduction_factor``. The halving schedule is following a geometric progression. The first halving step is done after ``min_steps`` steps. The next halving step is done after ``min_steps * reduction_factor`` steps. The next halving step is done after ``min_steps * reduction_factor^2`` steps. And so on.
 
+    .. warning::
+
+        This stopper is not compatible with multi-objective optimization. However, it is compatible with failed observations. When a job fails, all previous observations of the same jobs are also considered as failures.
+
     Args:
         max_steps (int): The maximum number of steps to run the evaluation (e.g., number of epochs).
         min_steps (float, optional): The minimum number of steps to run the evaluation. Defaults to 1.
@@ -40,6 +44,7 @@ class SuccessiveHalvingStopper(Stopper):
         self.epsilon = epsilon
 
         self._rung = 0
+        self._list_completed_rung = []
 
     def _compute_halting_budget(self):
         return (self.min_steps - 1) + self._reduction_factor ** (
@@ -66,6 +71,7 @@ class SuccessiveHalvingStopper(Stopper):
         self._budget = budget
         self._objective = objective
 
+        # Compute when is the next Halting Budget
         halting_budget = self._compute_halting_budget()
 
         if self._budget >= halting_budget:
@@ -76,6 +82,14 @@ class SuccessiveHalvingStopper(Stopper):
             self.job.storage.store_job_metadata(
                 self.job.id, f"_completed_rung_{self._rung}", self._objective
             )
+            self._list_completed_rung.append(self._rung)
+
+        # A failure was observed consider all previous rungs as failed
+        if not (isinstance(self._objective, Number)):
+            for rung in self._list_completed_rung:
+                self.job.storage.store_job_metadata(
+                    self.job.id, f"_completed_rung_{rung}", self._objective
+                )
 
     def stop(self) -> bool:
 

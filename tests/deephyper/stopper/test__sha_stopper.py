@@ -1,6 +1,7 @@
 import pytest
 
 import numpy as np
+import pandas as pd
 
 from deephyper.evaluator import RunningJob
 from deephyper.problem import HpProblem
@@ -63,11 +64,10 @@ def run_with_failures(job: RunningJob) -> dict:
 
     max_budget = 50
     objective_i = 0
-    print("job.id", job.id)
     for budget_i in range(1, max_budget + 1):
         objective_i += job["x"]
 
-        if int(job.id.split(".")[1]) % 2 == 0:
+        if objective_i >= 450:
             objective_i = "F"
 
         job.record(budget_i, objective_i)
@@ -92,22 +92,30 @@ def test_successive_halving_stopper_with_failing_evaluations(tmp_path):
     search = CBO(
         problem,
         run_with_failures,
-        surrogate_model="DUMMY",
+        surrogate_model="RF",
         stopper=stopper,
         random_state=42,
+        filter_failures="mean",
         log_dir=tmp_path,
     )
 
-    results = search.search(max_evals=30)
+    results = search.search(max_evals=50)
 
-    print(results)
-    # assert "m:budget" in results.columns
-    # assert "m:stopped" in results.columns
-    # assert "p:x" in results.columns
-    # assert "objective" in results.columns
+    assert "m:budget" in results.columns
+    assert "m:stopped" in results.columns
+    assert "p:x" in results.columns
+    assert "objective" in results.columns
 
-    # budgets = np.sort(np.unique(results["m:budget"].to_numpy())).tolist()
-    # assert budgets == [1, 3, 9, 50]
+    assert pd.api.types.is_string_dtype(results.objective)
+
+    results = results[~results.objective.str.startswith("F")]
+    results.objective = results.objective.astype(float)
+
+    # The constraint inside the run-function should make the job fail if > 450
+    assert results.objective.max() < 450
+
+    # Test the optimization worked
+    assert results.objective.max() > 449
 
 
 if __name__ == "__main__":
