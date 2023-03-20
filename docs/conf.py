@@ -155,7 +155,7 @@ html_theme_options = {
     "use_download_button": True,
     # sidebar settings
     "show_navbar_depth": 1,
-    "logo_only": True,
+    # "logo_only": True,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
