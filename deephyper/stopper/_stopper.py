@@ -1,6 +1,8 @@
 import abc
 import copy
 
+from numbers import Number
+
 
 class Stopper(abc.ABC):
     """An abstract class describing the interface of a Stopper.
@@ -62,9 +64,13 @@ class Stopper(abc.ABC):
             self._stop_was_called = True
             self.job.storage.store_job_metadata(self.job.id, "_completed", False)
 
+        if not (isinstance(self.observations[-1][-1], Number)):
+            return True
+
         if self.step >= self.max_steps:
             self.job.storage.store_job_metadata(self.job.id, "_completed", True)
             return True
+
         return False
 
     @property
