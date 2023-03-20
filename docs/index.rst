@@ -7,12 +7,6 @@
 DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neural Networks
 ******************************************************************************************
 
-.. image:: _static/logo/medium.png
-    :scale: 100%
-    :alt: logo
-    :align: center
-
-
 .. automodule:: deephyper
 
 What is DeepHyper
@@ -163,11 +157,6 @@ Table of Contents
     developer_guides/dev
     developer_guides/doc
     developer_guides/tests_link
-
-
-
-
-
 
 
 Indices and tables
