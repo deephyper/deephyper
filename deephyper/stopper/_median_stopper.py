@@ -1,3 +1,5 @@
+from numbers import Number
+
 import numpy as np
 
 from deephyper.stopper._stopper import Stopper
@@ -36,7 +38,8 @@ class MedianStopper(Stopper):
         values = self.job.storage.load_metadata_from_all_jobs(
             search_id, f"_completed_rung_{self._rung}"
         )
-        values = [float(v) for v in values]
+        # Filter out non numerical values (e.g., "F" for failed jobs)
+        values = [v for v in values if isinstance(v, Number)]
         return values
 
     def _num_fully_completed(self) -> int:

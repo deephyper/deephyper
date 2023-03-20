@@ -1,5 +1,6 @@
 import sys
 from functools import partial
+from numbers import Number
 
 import jax
 import jax.numpy as jnp
@@ -402,11 +403,11 @@ class LCModelStopper(Stopper):
     def _retrieve_best_objective(self) -> float:
         search_id, _ = self.job.id.split(".")
         objectives = []
+
         for obj in self.job.storage.load_out_from_all_jobs(search_id):
-            try:
-                objectives.append(float(obj))
-            except ValueError:
-                pass
+            if isinstance(obj, Number):
+                objectives.append(obj)
+
         if len(objectives) > 0:
             return np.max(objectives)
         else:
@@ -417,7 +418,8 @@ class LCModelStopper(Stopper):
         values = self.job.storage.load_metadata_from_all_jobs(
             search_id, f"_completed_rung_{rung}"
         )
-        values = [float(v) for v in values]
+        # Filter out non numerical values (e.g., "F" for failed jobs)
+        values = [v for v in values if isinstance(v, Number)]
         return values
 
     def observe(self, budget: float, objective: float):
