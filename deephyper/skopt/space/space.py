@@ -880,6 +880,8 @@ class Categorical(Dimension):
             N = len(self.categories)
             if self.transform_ == "label":
                 return 0.0, float(N - 1)
+            elif self.transform_ == "identity":
+                return min(self.categories), max(self.categories)
             else:
                 return 0.0, 1.0
         else:

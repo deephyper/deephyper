@@ -347,5 +347,32 @@ def test_cbo_checkpoint_restart(tmp_path):
     assert len(new_results_b) == 6
 
 
+@pytest.mark.hps
+def test_cbo_categorical_variable(tmp_path):
+    from deephyper.problem import HpProblem
+    from deephyper.search.hps import CBO
+    from deephyper.evaluator import SerialEvaluator
+
+    problem = HpProblem()
+    problem.add_hyperparameter([32, 64, 96], "x", default_value=64)
+    problem.add_hyperparameter((0.0, 10.0), "y", default_value=5.0)
+
+    def run(config):
+        return config["x"] + config["y"]
+
+    # test pause-continue of the search
+    search = CBO(
+        problem,
+        SerialEvaluator(run, callbacks=[]),
+        initial_points=[problem.default_configuration],
+        random_state=42,
+        surrogate_model="RF",
+        log_dir=tmp_path,
+    )
+
+    results = search.search(25)
+    assert results.objective.max() >= 105
+
+
 if __name__ == "__main__":
-    test_cbo_checkpoint_restart(tmp_path=".")
+    test_cbo_categorical_variable(tmp_path=".")
