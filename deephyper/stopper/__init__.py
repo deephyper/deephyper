@@ -49,7 +49,7 @@ a lot of computation time. If evaluated fully, each configuration would take abo
 to compute only a maximum of 10 configurations (because we set a timeout of 10). However, with the stopper we managed
 to perform 15 evaluations instead.
 
-.. code-block:: verbatim
+.. code-block:: console
 
               p:x    objective  job_id  m:timestamp_submit  m:timestamp_gather  m:i_stopped
     0   79.654299  7965.429869       0            0.016269            1.234227           99

@@ -25,4 +25,4 @@ class ConstantStopper(Stopper):
         self.stop_step = stop_step
 
     def stop(self) -> bool:
-        return super().stop() or self.stop_step <= self._count_steps
+        return super().stop() or self.stop_step <= self.stop_step
