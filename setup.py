@@ -86,7 +86,7 @@ EXTRAS = {
         "nbsphinx",
         "sphinx>=4,<7",
         "sphinx-book-theme==1.0.0",
-        "pydata-sphinx-theme>=0.13.3",
+        "pydata-sphinx-theme==0.13.1",
         "sphinx-copybutton",
         "sphinx-gallery",
         "sphinx_lfs_content",
