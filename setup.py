@@ -70,7 +70,7 @@ EXTRAS = {
     "redis": ["redis[hiredis]"],
     "dev": [
         # Test
-        "codecov",
+        "codecov==2.1.12",
         "pytest",
         "pytest-cov",
         # Packaging
