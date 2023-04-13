@@ -119,6 +119,11 @@ The optimization process is defined as follows:
 5. The results of the optimization process, including the optimal configuration of the hyperparameters and the corresponding objective value, are printed to the console.
 
 
+Software Architecture
+=====================
+
+
+
 Table of Contents
 =================
 
@@ -157,6 +162,7 @@ Table of Contents
     developer_guides/dev
     developer_guides/doc
     developer_guides/tests_link
+    developer_guides/software_architecture
 
 
 Indices and tables
