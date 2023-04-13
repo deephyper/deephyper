@@ -1,5 +1,6 @@
 """
 DeepHyper's software architecture is designed to be modular and extensible. It is built on top of the following main sub-packages:
+
 * :mod:`deephyper.ensemble`: Tools to build ensembles of neural networks with uncertainty quantification.
 * :mod:`deephyper.nas`: Tools to define neural architecture search space and evaluation strategy.
 * :mod:`deephyper.problem`: Tools for defining neural architecture and hyper-parameter search problems.
