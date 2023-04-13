@@ -1,18 +1,11 @@
 """
-DeepHyper is a distributed machine learning (`AutoML <https://en.wikipedia.org/wiki/Automated_machine_learning>`_) package for automating the development of deep neural networks for scientific applications. It can run on a single laptop as well as on 1,000 of nodes.
-
-It comprises different tools such as:
-
-* Optimizing hyper-parameters for a given black-box function.
-* Neural architecture search to discover high-performing deep neural network with variable operations and connections.
-* Automated machine learning, to easily experiment many learning algorithms from Scikit-Learn.
-
-DeepHyper provides an infrastructure that targets experimental research in NAS and HPS methods, scalability, and portability across diverse supercomputers.
-It comprises three main modules:
-
+DeepHyper's software architecture is designed to be modular and extensible. It is built on top of the following main sub-packages:
+* :mod:`deephyper.ensemble`: Tools to build ensembles of neural networks with uncertainty quantification.
+* :mod:`deephyper.nas`: Tools to define neural architecture search space and evaluation strategy.
 * :mod:`deephyper.problem`: Tools for defining neural architecture and hyper-parameter search problems.
-* :mod:`deephyper.evaluator` : A simple interface to dispatch model evaluation tasks. Implementations range from `process` for laptop experiments to `ray` for large-scale runs on HPC systems.
-* :mod:`deephyper.search`: Search methods for NAS and HPS.  By extending the generic `Search` class, one can easily add new NAS or HPS methods to DeepHyper.
+* :mod:`deephyper.evaluator` : Tools to distribute the evaluation of tasks (e.g., neural network trainings).
+* :mod:`deephyper.search`: Tools to define search strategies for neural architecture search and hyper-parameter optimization.
+* :mod:`deephyper.stopper`: Tools to define multi-fidelity strategies for neural architecture and hyper-parameter optimization.
 
 
 DeepHyper installation requires **Python >= 3.7**.

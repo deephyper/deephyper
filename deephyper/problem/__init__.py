@@ -1,4 +1,6 @@
-"""This module provides tools to define hyperparameter and neural architecture search problems. Some features of this module are based on the `ConfigSpace <https://automl.github.io/ConfigSpace/master/>`_ project.
+"""This sub-package provides tools to define hyperparameter and neural architecture search problems. Some features of this module are based on the `ConfigSpace <https://automl.github.io/ConfigSpace/master/>`_ project. The main classes provided by this module are:
+* :class:`deephyper.problem.HpProblem`: A class to define a hyperparameter search problem.
+* :class:`deephyper.problem.NaProblem`: A class to define a neural architecture search problem.
 """
 from ConfigSpace import *  # noqa: F401, F403
 

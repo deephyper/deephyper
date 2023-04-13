@@ -3,15 +3,15 @@
     You can adapt this file completely to your liking, but it should at least
     contain the root `toctree` directive.
 
-******************************************************************************************
-DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neural Networks
-******************************************************************************************
+***********************************************************************************************
+DeepHyper: Distributed Neural Architecture and Hyperparameter Optimization for Machine Learning
+***********************************************************************************************
+
+DeepHyper is a powerful Python package for automating machine learning tasks, particularly focused on optimizing hyperparameters, searching for optimal neural architectures, and quantifying uncertainty through the deep ensembles. With DeepHyper, users can easily perform these tasks on a single machine or distributed across multiple machines, making it ideal for use in a variety of environments. Whether you're a beginner looking to optimize your machine learning models or an experienced data scientist looking to streamline your workflow, DeepHyper has something to offer. So why wait? Start using DeepHyper today and take your machine learning skills to the next level!
+
+DeepHyper is specialized for machine learning tasks but it can also be used for generic black-box and gray-box optimization problems of expensive functions.
 
 .. automodule:: deephyper
-
-What is DeepHyper
-=================
-DeepHyper is a powerful Python package for automating machine learning tasks, particularly focused on optimizing hyperparameters, searching for optimal neural architectures, and quantifying uncertainty through the use of deep ensembles. With DeepHyper, users can easily perform these tasks on a single machine or distributed across multiple machines, making it ideal for use in a variety of environments. Whether you're a beginner looking to optimize your machine learning models or an experienced data scientist looking to streamline your workflow, DeepHyper has something to offer. So why wait? Start using DeepHyper today and take your machine learning skills to the next level!
 
 Install instructions
 ====================
