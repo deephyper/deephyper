@@ -65,5 +65,12 @@ echo "spack env activate redisjson" >> activate-dhenv.sh
 
 # Create Redis configuration
 touch redis.conf
+
+# Accept all connections from the network
 echo "bind 0.0.0.0" >> redis.conf
+
+# Add the RedisJSON module to the configuration file
 cat $(spack find --path redisjson | grep -o "/.*/redisjson.*")/redis.conf >> redis.conf
+
+# Disable protected mode (i.e., no password required when connecting to Redis)
+echo "protected-mode no" >> redis.conf
