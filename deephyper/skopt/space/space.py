@@ -5,6 +5,7 @@ import yaml
 from scipy.stats.distributions import randint
 from scipy.stats.distributions import rv_discrete
 from scipy.stats.distributions import uniform, truncnorm
+from scipy.stats import gaussian_kde
 
 from sklearn.utils import check_random_state
 from sklearn.utils.fixes import sp_version
@@ -471,6 +472,38 @@ class Real(Dimension):
             )
         return abs(a - b)
 
+    def update_prior(self, X, y):
+        """Fit a Kernel Density Estimator to the data to increase density of samples around regions of interest instead of uniform random-sampling."""
+
+        X = np.array(X)
+        y = np.array(y)
+
+        q = 0.9  # quantile assuming minimization
+        y_ = np.quantile(y, q)  # threshold
+        X_low = X[y <= y_]
+        self._kde = gaussian_kde(X_low)
+
+    def rvs(self, n_samples=1, random_state=None):
+        """Draw random samples.
+        Parameters
+        ----------
+        n_samples : int or None
+            The number of samples to be drawn.
+        random_state : int, RandomState instance, or None (default)
+            Set random state to something other than None for reproducible
+            results.
+        """
+        rng = check_random_state(random_state)
+
+        if hasattr(self, "_kde"):
+            # samples = self._kde.sample(n_samples, random_state=rng).reshape(-1)
+            samples = self._kde.resample(n_samples, rng).reshape(-1)
+            samples = np.clip(samples, self.low, self.high)
+        else:
+            samples = self._rvs.rvs(size=n_samples, random_state=rng)
+
+        return self.inverse_transform(samples)
+
 
 class Integer(Dimension):
     """Search space dimension that can take on integer values.
@@ -615,7 +648,6 @@ class Integer(Dimension):
                     [Identity(), Normalize(self.low, self.high, is_int=True)]
                 )
             else:
-
                 self.transformer = Pipeline(
                     [
                         LogN(self.base),
@@ -932,7 +964,6 @@ class Space(object):
     """
 
     def __init__(self, dimensions, model_sdv=None):
-
         # attributes used when a ConfigurationSpace from ConfigSpace is given
         self.is_config_space = False
         self.config_space_samples = None
@@ -1474,3 +1505,13 @@ class Space(object):
             distance += dim.distance(a, b)
 
         return distance
+
+    def update_prior(self, X, y):
+        """Update the prior of the dimensions. Instead of doing random-sampling, a kernel density estimation is fit on the region of interest and
+        sampling is performed from this distribution."""
+        y = np.array(y)
+
+        for i, dim in enumerate(self.dimensions):
+            Xi = [x[i] for x in X]
+            if hasattr(dim, "update_prior"):
+                dim.update_prior(Xi, y)
