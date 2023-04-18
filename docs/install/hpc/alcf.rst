@@ -31,9 +31,6 @@ Then to verify the installation do:
 
 .. _polaris-from-source:
 
-This script creates a conda environment activation script ``activate-dhenv.sh`` in the build directory, which can be sourced
-to activate the created environment, and a ``redis.conf`` file, which should be referenced when starting a Redis storage server.
-
 Installation from source
 ------------------------
 
@@ -43,6 +40,9 @@ This installation procedure shows you how to build DeepHyper from source on Pola
     :language: bash
     :caption: **file**: ``install/alcf/polaris.sh``
     :linenos:
+
+This script creates a conda environment activation script ``activate-dhenv.sh`` in the build directory, which can be sourced
+to activate the created environment, and a ``redis.conf`` file, which should be referenced when starting a Redis storage server.
 
 Theta
 =====
