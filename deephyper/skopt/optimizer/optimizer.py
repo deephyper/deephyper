@@ -338,6 +338,9 @@ class Optimizer(object):
         self.n_restarts_optimizer = acq_optimizer_kwargs.get("n_restarts_optimizer", 5)
         self.n_jobs = acq_optimizer_kwargs.get("n_jobs", 1)
         self.update_prior = acq_optimizer_kwargs.get("update_prior", False)
+        self.update_prior_quantile = acq_optimizer_kwargs.get(
+            "update_prior_quantile", 0.9
+        )
         self.filter_duplicated = acq_optimizer_kwargs.get("filter_duplicated", True)
         self.boltzmann_gamma = acq_optimizer_kwargs.get("boltzmann_gamma", 1)
         self.boltzmann_psucc = acq_optimizer_kwargs.get("boltzmann_psucc", 0)
@@ -1049,7 +1052,7 @@ class Optimizer(object):
 
                 # update prior
                 if self.update_prior:
-                    self.space.update_prior(Xtt, yi)
+                    self.space.update_prior(Xtt, yi, q=self.update_prior_quantile)
 
             # for qLCB save the fitted estimator and skip the selection
             if self.acq_func == "qLCB":

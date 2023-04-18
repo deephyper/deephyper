@@ -472,13 +472,12 @@ class Real(Dimension):
             )
         return abs(a - b)
 
-    def update_prior(self, X, y):
+    def update_prior(self, X, y, q=0.9):
         """Fit a Kernel Density Estimator to the data to increase density of samples around regions of interest instead of uniform random-sampling."""
 
         X = np.array(X)
         y = np.array(y)
 
-        q = 0.9  # quantile assuming minimization
         y_ = np.quantile(y, q)  # threshold
         X_low = X[y <= y_]
         self._kde = gaussian_kde(X_low)
@@ -1506,7 +1505,7 @@ class Space(object):
 
         return distance
 
-    def update_prior(self, X, y):
+    def update_prior(self, X, y, q=0.9):
         """Update the prior of the dimensions. Instead of doing random-sampling, a kernel density estimation is fit on the region of interest and
         sampling is performed from this distribution."""
         y = np.array(y)
@@ -1514,4 +1513,4 @@ class Space(object):
         for i, dim in enumerate(self.dimensions):
             Xi = [x[i] for x in X]
             if hasattr(dim, "update_prior"):
-                dim.update_prior(Xi, y)
+                dim.update_prior(Xi, y, q=q)
