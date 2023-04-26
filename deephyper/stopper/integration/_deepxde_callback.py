@@ -1,8 +1,8 @@
 import warnings
 from deepxde.callbacks import Callback
 
-class DeepXDEStopperCallback(Callback):
 
+class DeepXDEStopperCallback(Callback):
     def __init__(self, job, mode="min", monitor="loss_test"):
         super().__init__()
         """Callback to use in conjonction with a DeepHyper ``RunningJob`` to stop the training when the ``Stopper`` is triggered.
@@ -32,7 +32,7 @@ class DeepXDEStopperCallback(Callback):
     def on_epoch_end(self):
         self.budget += 1
         self.observe_and_stop(self.budget)
-    
+
     def observe_and_stop(self, budget):
         objective = self.get_monitor_value()
 

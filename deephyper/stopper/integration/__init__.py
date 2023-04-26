@@ -4,10 +4,10 @@ from deephyper.stopper.integration._deepxde_callback import DeepXDEStopperCallba
 
 
 try:
-
     from deephyper.stopper.integration._tf_keras_callback import (  # noqa: F401
-        TFKerasStopperCallback, 
+        TFKerasStopperCallback,
     )
+
     __all__.append("TFKerasStopperCallback")
 
 except ImportError:
