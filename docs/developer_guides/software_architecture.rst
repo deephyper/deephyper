@@ -72,4 +72,4 @@ Finally, it is also possible to mix the **centralized** and **distributed** exec
     :alt: deephyper mixed execution with two centralized executions distributed on two nodes each with four workers 
     :align: center
     
-    **Figure 7**: Execution of a search with a mix of centralized and distributed executions. Two centralized executions each with 4 workers are distributed on 2 nodes. This scheme is using the :class:`dseephyper.search.hps.MPIDistributedBO` and the :class:`deephyper.evaluator.ProcessPoolEvaluator`.
+    **Figure 7**: Execution of a search with a mix of centralized and distributed executions. Two centralized executions each with 4 workers are distributed on 2 nodes. This scheme is using the :class:`deephyper.search.hps.MPIDistributedBO` and the :class:`deephyper.evaluator.ProcessPoolEvaluator`.
