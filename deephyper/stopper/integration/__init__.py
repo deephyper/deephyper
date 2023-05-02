@@ -1,6 +1,12 @@
 """DeepHyper's stopper integration module with common machine learning libraries."""
-__all__ = ["DeepXDEStopperCallback"]
-from deephyper.stopper.integration._deepxde_callback import DeepXDEStopperCallback
+__all__ = []
+
+try:
+    from deephyper.stopper.integration._deepxde_callback import DeepXDEStopperCallback
+
+    __all__.append("DeepXDEStopperCallback")
+except ImportError:
+    pass
 
 
 try:

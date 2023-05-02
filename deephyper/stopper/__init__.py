@@ -74,7 +74,6 @@ from deephyper.stopper._asha_stopper import SuccessiveHalvingStopper
 from deephyper.stopper._median_stopper import MedianStopper
 from deephyper.stopper._idle_stopper import IdleStopper
 from deephyper.stopper._const_stopper import ConstantStopper
-from deephyper.stopper._lcmodel_stopper import LCModelStopper
 
 
 __all__ = [
@@ -83,7 +82,6 @@ __all__ = [
     "SuccessiveHalvingStopper",
     "MedianStopper",
     "ConstantStopper",
-    "LCModelStopper",
 ]
 
 
