@@ -195,10 +195,17 @@ def is_2Dlistlike(x):
 
 def check_x_in_space(x, space):
     if is_2Dlistlike(x):
-        if not np.all([p in space for p in x]):
-            raise ValueError("Not all points are within the bounds of" " the space.")
-        if any([len(p) != len(space.dimensions) for p in x]):
-            raise ValueError("Not all points have the same dimensions as" " the space.")
+        for p in x:
+            if p not in space:
+                raise ValueError(
+                    "Point (%s) is not within the bounds of"
+                    " the space (%s)." % (p, space.bounds)
+                )
+            if len(p) != len(space.dimensions):
+                raise ValueError(
+                    "Dimensions of point (%s) and space (%s) do not match"
+                    % (p, space.bounds)
+                )
     elif is_listlike(x):
         print(x)
         if x not in space:
