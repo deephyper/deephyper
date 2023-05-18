@@ -562,23 +562,31 @@ class CBO(Search):
 
         return df
 
-    def fit_surrogate(self, df, context_yaml_file=None):
-
+    def fit_surrogate(self, df, context_yaml_file_or_datatypes=None):
         """Fit the surrogate model of the search from a checkpointed Dataframe.
 
         Args:
             df (str|DataFrame): a checkpoint from a previous search.
-
-        Example Usage:
-
+            context_yaml_file_or_datatypes (str|list): Context file in YAML format or list of ConfigSpace hyperparameter types.
+            
+        Example Usages:
+        
         >>> search = CBO(problem, evaluator)
-        >>> search.fit_surrogate("results.csv")
+        >>> search.fit_surrogate("results.csv")  # without context_yaml_file_or_datatypes argument
+
+        >>> search.fit_surrogate("results.csv", "config.yaml")  # with YAML file as context_yaml_file_or_datatypes argument
+
+        >>> search.fit_surrogate("results.csv", ['categorical', 'normal_int', 'uniform_float'])  # with list of types as context_yaml_file_or_datatypes argument
         """
-        if type(df) is str and df[-4:] == ".csv":
+        if isinstance(df, str) and df.endswith(".csv"):
+            # If context is a list, just set "datatypes = context_yaml_file_or_datatypes"
+            if isinstance(context_yaml_file_or_datatypes, list):
+                datatypes = context_yaml_file_or_datatypes
+
             # Check if the context yaml file is specified and exists
-            if context_yaml_file and os.path.isfile(context_yaml_file): 
+            elif context_yaml_file_or_datatypes and os.path.isfile(context_yaml_file_or_datatypes):
                 # Load YAML file
-                with open(context_yaml_file, 'r') as file:
+                with open(context_yaml_file_or_datatypes, 'r') as file:
                     data = yaml.safe_load(file)
 
                 # Extract problem hyperparameters
