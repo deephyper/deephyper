@@ -7,6 +7,9 @@ import ConfigSpace as CS
 import ConfigSpace.hyperparameters as csh
 import numpy as np
 import pandas as pd
+import csv
+import os
+import yaml
 
 import deephyper.core.exceptions
 import deephyper.skopt
@@ -524,7 +527,43 @@ class CBO(Search):
                 print("Not supported type" + str(type(cond)))
         return cond_new
 
-    def fit_surrogate(self, df):
+    def clean_dataframe(self, df):
+        # Ensure the DataFrame is of correct type
+        if not isinstance(df, pd.DataFrame):
+            raise ValueError("Provided object is not a pandas DataFrame")
+
+        # Check if objective columns exist
+        if "objective" not in df.columns and not any(df.filter(regex=r"^objective_\d+$").columns):
+            raise ValueError("Objective column(s) missing from DataFrame")
+
+        # Convert objective columns to numeric if they're not
+        if "objective" in df.columns:
+            df['objective'] = pd.to_numeric(df['objective'], errors='coerce')
+        else:
+            for column in df.filter(regex=r"^objective_\d+$").columns:
+                df[column] = pd.to_numeric(df[column], errors='coerce')
+
+        # Get rows with NaN values
+        nan_rows_df = df[df.isna().any(axis=1)]
+        nan_rows_count = len(nan_rows_df)
+        
+        # Remove rows with NaN values
+        df.dropna(inplace=True)
+
+        # Check and transform objective function values to ensure they can be processed with np.negative
+        try:
+            objective_values = df['objective'].tolist() if "objective" in df.columns else df.filter(regex=r"^objective_\d+$").values.tolist()
+            [np.negative(value).tolist() for value in objective_values]
+        except numpy.core._exceptions._UFuncNoLoopError:
+            problematic_values = [value for value in objective_values if not np.issubdtype(type(value), np.number)]
+            print(f"Number of problematic objective function values: {len(problematic_values)}")
+            print(f"Examples problematic objective function values: {problematic_values[:5]}")
+            raise
+
+        return df
+
+    def fit_surrogate(self, df, context_yaml_file=None):
+
         """Fit the surrogate model of the search from a checkpointed Dataframe.
 
         Args:
@@ -536,8 +575,58 @@ class CBO(Search):
         >>> search.fit_surrogate("results.csv")
         """
         if type(df) is str and df[-4:] == ".csv":
-            df = pd.read_csv(df)
+            # Check if the context yaml file is specified and exists
+            if context_yaml_file and os.path.isfile(context_yaml_file): 
+                # Load YAML file
+                with open(context_yaml_file, 'r') as file:
+                    data = yaml.safe_load(file)
+
+                # Extract problem hyperparameters
+                hyperparameters = data['search']['problem']['hyperparameters']
+
+                # Extract types
+                datatypes = [param['type'] for param in hyperparameters]
+
+
+            # Read the CSV file and get the header row
+            with open(df, 'r') as f:
+                reader = csv.reader(f) 
+                header_row = next(reader)
+                num_columns = len(header_row)
+                
+                dtype_dict = {}
+                for name, datatype in zip(header_row, datatypes):
+                    if datatype == 'categorical':
+                        dtype_dict[name] = str
+                    elif datatype.endswith('_int'):
+                        dtype_dict[name] = int
+                    elif datatype.endswith('_float'):
+                        dtype_dict[name] = float
+                    else:
+                        dtype_dict[name] = None  # Default: let pandas infer the type
+
+                rows_to_skip = []
+                skipped_rows = []
+                for i, row in enumerate(reader, start=1):  # Start enumeration at 1 due to header row
+                    # Add rows with different number of columns, identical to header, or missing data to skip list
+                    if len(row) != num_columns or row == header_row or any(x == '' for x in row): 
+                        rows_to_skip.append(i)
+                        if len(skipped_rows) < 15:  # Limiting the skipped_rows examples to 15
+                            skipped_rows.append(row)
+
+            # Convert skipped_rows to a DataFrame for better visualisation and print it
+            skipped_rows_df = pd.DataFrame(skipped_rows, columns=header_row)
+            #print("Row numbers to be skipped: ", rows_to_skip)
+            #print("Examples of skipped rows: ")
+            #with pd.option_context('display.max_columns', None):
+            #    print(skipped_rows_df)
+
+
+            # Read the CSV file again, skipping problematic rows
+            df = pd.read_csv(df, skiprows=rows_to_skip, dtype=dtype_dict)
+
         assert isinstance(df, pd.DataFrame)
+        df = self.clean_dataframe(df)
 
         self._fitted = True
 
