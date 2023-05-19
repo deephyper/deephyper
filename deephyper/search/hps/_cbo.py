@@ -571,22 +571,16 @@ class CBO(Search):
         >>> search.fit_surrogate("results.csv", ['categorical', 'normal_int', 'uniform_float'])  # with list of types as context_yaml_file_or_datatypes argument
         """
         if isinstance(df, str) and df.endswith(".csv"):
-            # If context is a list, just set "datatypes = context_yaml_file_or_datatypes"
             if isinstance(context_yaml_file_or_datatypes, list):
                 datatypes = context_yaml_file_or_datatypes
 
-            # Check if the context yaml file is specified and exists
             elif context_yaml_file_or_datatypes and os.path.isfile(
                 context_yaml_file_or_datatypes
             ):
-                # Load YAML file
                 with open(context_yaml_file_or_datatypes, "r") as file:
                     data = yaml.safe_load(file)
-
-                # Extract problem hyperparameters
                 hyperparameters = data["search"]["problem"]["hyperparameters"]
-
-                # Extract types
+                # Extract ConfigSpace hyperparameter types
                 datatypes = [param["type"] for param in hyperparameters]
 
             # Read the CSV file and get the header row
