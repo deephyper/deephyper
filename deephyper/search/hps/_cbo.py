@@ -564,6 +564,8 @@ class CBO(Search):
         Example Usages:
 
         >>> search = CBO(problem, evaluator)
+        >>> search.fit_surrogate(df) # with the checkpoint as a dataframe
+
         >>> search.fit_surrogate("results.csv")  # without context_yaml_file_or_datatypes argument
 
         >>> search.fit_surrogate("results.csv", "config.yaml")  # with YAML file as context_yaml_file_or_datatypes argument
