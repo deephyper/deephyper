@@ -416,7 +416,6 @@ class Evaluator:
             result["objective"] = job.objective
 
             # when the objective is a tuple (multi-objective) we create 1 column per tuple-element
-            print(type(result["objective"]))
             if isinstance(result["objective"], tuple) or isinstance(result["objective"], list):
                 obj = result.pop("objective")
 
