@@ -337,6 +337,10 @@ class Optimizer(object):
         self.n_points = acq_optimizer_kwargs.get("n_points", 10000)
         self.n_restarts_optimizer = acq_optimizer_kwargs.get("n_restarts_optimizer", 5)
         self.n_jobs = acq_optimizer_kwargs.get("n_jobs", 1)
+        self.update_prior = acq_optimizer_kwargs.get("update_prior", False)
+        self.update_prior_quantile = acq_optimizer_kwargs.get(
+            "update_prior_quantile", 0.9
+        )
         self.filter_duplicated = acq_optimizer_kwargs.get("filter_duplicated", True)
         self.boltzmann_gamma = acq_optimizer_kwargs.get("boltzmann_gamma", 1)
         self.boltzmann_psucc = acq_optimizer_kwargs.get("boltzmann_psucc", 0)
@@ -354,7 +358,6 @@ class Optimizer(object):
             if isinstance(self.base_estimator_, GaussianProcessRegressor):
                 raise RuntimeError("GP estimator is not available with ConfigSpace!")
         else:
-
             # normalize space if GP regressor
             if isinstance(self.base_estimator_, GaussianProcessRegressor):
                 dimensions = normalize_dimensions(dimensions)
@@ -564,7 +567,6 @@ class Optimizer(object):
 
         # handle one-shot strategies (topk, softmax)
         if hasattr(self, "_last_X") and strategy in ["topk", "boltzmann"]:
-
             if strategy == "topk":
                 idx = np.argsort(self._last_values)[:n_points]
                 next_samples = self._last_X[idx].tolist()
@@ -593,7 +595,6 @@ class Optimizer(object):
                 trials = 0
 
                 while len(idx) < n_points:
-
                     t = len(self.sampled)
                     if t == 0:
                         beta = 0
@@ -760,7 +761,6 @@ class Optimizer(object):
         return yi
 
     def _sample(self, X, y):
-
         X = np.asarray(X, dtype="O")
         y = np.asarray(y)
         size = y.shape[0]
@@ -1047,7 +1047,12 @@ class Optimizer(object):
                     np.reshape(yi, (-1, 1))
                 ).reshape(-1)
 
+                # fit surrogate model
                 est.fit(Xtt, yi, sample_weight=sample_weight)
+
+                # update prior
+                if self.update_prior:
+                    self.space.update_prior(Xtt, yi, q=self.update_prior_quantile)
 
             # for qLCB save the fitted estimator and skip the selection
             if self.acq_func == "qLCB":
@@ -1099,7 +1104,6 @@ class Optimizer(object):
                         next_x = X[np.argmin(values)]
 
                     elif self.acq_optimizer == "boltzmann_sampling":
-
                         p = self.rng.uniform()
                         if p <= self.boltzmann_psucc:
                             next_x = X[np.argmin(values)]

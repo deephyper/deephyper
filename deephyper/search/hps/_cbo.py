@@ -54,6 +54,8 @@ class CBO(Search):
         xi (float, optional): Manage the exploration/exploitation tradeoff of ``"EI"`` and ``"PI"`` acquisition function. Defaults to ``0.001``.
         n_points (int, optional): The number of configurations sampled from the search space to infer each batch of new evaluated configurations.
         filter_duplicated (bool, optional): Force the optimizer to sample unique points until the search space is "exhausted" in the sens that no new unique points can be found given the sampling size ``n_points``. Defaults to ``True``.
+        update_prior (bool, optional): Update the prior of the surrogate model with the new evaluated points. Defaults to ``False``.
+        update_prior_quantile (float, optional): The quantile used to update the prior. Defaults to ``0.1``.
         multi_point_strategy (str, optional): Definition of the constant value use for the Liar strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max", "qUCB"]``. All ``"cl_..."`` strategies follow the constant-liar scheme, where if $N$ new points are requested, the surrogate model is re-fitted $N-1$ times with lies (respectively, the minimum, mean and maximum objective found so far; for multiple objectives, these are the minimum, mean and maximum of the individual objectives) to infer the acquisition function. Constant-Liar strategy have poor scalability because of this repeated re-fitting. The ``"qUCB"`` strategy is much more efficient by sampling a new $kappa$ value for each new requested point without re-fitting the model, but it is only compatible with ``acq_func == "UCB"``. Defaults to ``"cl_max"``.
         n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the Bayesian optimization. A value of ``-1`` will use all available cores. Not used in ``surrogate_model`` if passed as own sklearn regressor. Defaults to ``1``.
         n_initial_points (int, optional): Number of collected objectives required before fitting the surrogate-model. Defaults to ``10``.
@@ -84,6 +86,7 @@ class CBO(Search):
         n_points: int = 10000,
         filter_duplicated: bool = True,
         update_prior: bool = False,
+        update_prior_quantile: float = 0.1,
         multi_point_strategy: str = "cl_max",
         n_jobs: int = 1,  # 32 is good for Theta
         n_initial_points: int = 10,
@@ -99,7 +102,6 @@ class CBO(Search):
         stopper=None,
         **kwargs,
     ):
-
         super().__init__(problem, evaluator, random_state, log_dir, verbose)
         # get the __init__ parameters
         self._init_params = locals()
@@ -220,6 +222,7 @@ class CBO(Search):
                 "n_points": n_points,
                 "filter_duplicated": filter_duplicated,
                 "update_prior": update_prior,
+                "update_prior_quantile": 1 - update_prior_quantile,
                 "n_jobs": n_jobs,
                 "filter_failures": MAP_filter_failures.get(
                     filter_failures, filter_failures
@@ -283,7 +286,6 @@ class CBO(Search):
             self._opt.acq_func_kwargs.update(values)
 
     def _search(self, max_evals, timeout):
-
         if self._opt is None:
             self._setup_optimizer()
 
@@ -333,7 +335,6 @@ class CBO(Search):
             num_local_evals_done += num_new_local_results
 
             if num_new_local_results > 0:
-
                 logging.info("Dumping evaluations...")
                 t1 = time.time()
                 self._evaluator.dump_evals(log_dir=self._log_dir)
@@ -470,13 +471,11 @@ class CBO(Search):
                 random_state=random_state,
             )
         elif name == "GBRT":
-
             gbrt = GradientBoostingRegressor(n_estimators=30, loss="quantile")
             surrogate = deephyper.skopt.learning.GradientBoostingQuantileRegressor(
                 base_estimator=gbrt, n_jobs=n_jobs, random_state=random_state
             )
         elif name == "MF":
-
             try:
                 surrogate = deephyper.skopt.learning.MondrianForestRegressor(
                     n_estimators=100, n_jobs=n_jobs, random_state=random_state

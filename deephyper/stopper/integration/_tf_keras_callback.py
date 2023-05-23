@@ -30,12 +30,10 @@ class TFKerasStopperCallback(Callback):
         self.budget = 0
 
     def on_epoch_end(self, epoch, logs=None):
-
         self.budget += 1
         self.observe_and_stop(self.budget, logs)
 
     def observe_and_stop(self, budget, logs):
-
         if logs is None:
             return
 

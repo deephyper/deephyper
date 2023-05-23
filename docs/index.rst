@@ -41,7 +41,7 @@ Quick Start
    :alt: Open In Colab
    :align: center
 
-The black-box function named ``run`` is defined by taking an input dictionnary named ``config`` which contains the different variables to optimize. Then the run-function is binded to an ``Evaluator`` in charge of distributing the computation of multiple evaluations. Finally, a Bayesian search named ``CBO`` is created and executed to find the values of config which maximize the return value of ``run(config)``.
+The black-box function named ``run`` is defined by taking an input dictionnary named ``config`` which contains the different variables to optimize. Then the run-function is binded to an ``Evaluator`` in charge of distributing the computation of multiple evaluations. Finally, a Bayesian search named ``CBO`` is created and executed to find the values of config which **MAXIMIZE** the return value of ``run(config)``.
 
 .. code-block:: python
 
@@ -118,11 +118,7 @@ The optimization process is defined as follows:
    
 5. The results of the optimization process, including the optimal configuration of the hyperparameters and the corresponding objective value, are printed to the console.
 
-
-Software Architecture
-=====================
-
-
+.. warning:: All search algorithms are MAXIMIZING the objective function. If you want to MINIMIZE the objective function, you have to return the negative of you objective.
 
 Table of Contents
 =================
