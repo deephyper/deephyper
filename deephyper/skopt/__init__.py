@@ -3,6 +3,25 @@ Scikit-Optimize, or `skopt`, is a simple and efficient library to
 minimize (very) expensive and noisy black-box functions. It implements
 several methods for sequential model-based optimization. `skopt` is reusable
 in many contexts and accessible.
+
+This fork of skopt 0.9.8 has been modified for compatibility with
+DeepHyper. It should not be called directly since its parameters are
+set from within the ``Search`` class. Note that for the base optimizer class,
+numerous additional options have been added to support additional features
+of DeepHyper. Additional subdirectories have been added containing code
+to support these features.
+
+In general, the ``Optimizer`` class defines the basic functionality, which
+is used by the ``base_minimize``, ``dummy_minimize``, ``forest_minimize``,
+and ``gp_minimize`` functions. From within DeepHyper ``Search``, the
+``surrogate_model`` (str type) argument selects which of these functions
+is called.
+Other notable classes include ``acquisition`` and ``sampler``, defined by
+similar str arguments in DeepHyper ``Search``.
+
+The multiobjective functionality (defined by DeepHyper ``Search``'s
+``moo_scalarization_strategy`` arguments) is defined in the ``moo`` module,
+and used by the ``Optimizer``.
 """
 try:
     # This variable is injected in the __builtins__ by the build
