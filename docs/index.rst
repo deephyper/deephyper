@@ -148,6 +148,7 @@ Table of Contents
     Problem <_autosummary/deephyper.problem>
     Search <_autosummary/deephyper.search>
     Sklearn <_autosummary/deephyper.sklearn>
+    Skopt <_autosummary/deephyper.skopt>
     Stopper <_autosummary/deephyper.stopper>
 
 .. toctree::

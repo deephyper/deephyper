@@ -59,153 +59,154 @@ OBJECTIVE_VALUE_FAILURE = "F"
 
 
 class Optimizer(object):
-    """Run bayesian optimisation loop.
+    """Run bayesian optimisation loop in DeepHyper.
 
-    An `Optimizer` represents the steps of a bayesian optimisation loop. To
+    An ``Optimizer`` represents the steps of a bayesian optimisation loop. To
     use it you need to provide your own loop mechanism. The various
-    optimisers provided by `skopt` use this class under the hood.
+    optimisers provided by ``skopt`` use this class under the hood.
 
-    Use this class directly if you want to control the iterations of your
-    bayesian optimisation loop.
+    Do not call this class directly, it is used for "Ask" and "Tell" in
+    DeepHyper's bayesian optimisation loop.
 
-    Parameters
-    ----------
-    dimensions : list, shape (n_dims,)
-        List of search space dimensions.
-        Each search dimension can be defined either as
+    Args:
+        dimensions (list): List of search space dimensions.
+            Each search dimension can be defined either as
 
-        - a `(lower_bound, upper_bound)` tuple (for `Real` or `Integer`
-          dimensions),
-        - a `(lower_bound, upper_bound, "prior")` tuple (for `Real`
-          dimensions),
-        - as a list of categories (for `Categorical` dimensions), or
-        - an instance of a `Dimension` object (`Real`, `Integer` or
-          `Categorical`).
+            - a `(lower_bound, upper_bound)` tuple (for `Real` or `Integer`
+              dimensions),
+            - a `(lower_bound, upper_bound, "prior")` tuple (for `Real`
+              dimensions),
+            - as a list of categories (for `Categorical` dimensions), or
+            - an instance of a `Dimension` object (`Real`, `Integer` or
+              `Categorical`).
 
-    base_estimator : `"GP"`, `"RF"`, `"ET"`, `"GBRT"` or sklearn regressor, \
-            default: `"GP"`
-        Should inherit from :obj:`sklearn.base.RegressorMixin`.
-        In addition the `predict` method, should have an optional `return_std`
-        argument, which returns `std(Y | x)` along with `E[Y | x]`.
-        If base_estimator is one of ["GP", "RF", "ET", "GBRT"], a default
-        surrogate model of the corresponding type is used corresponding to what
-        is used in the minimize functions.
+        base_estimator (str, optional): One of
+            `"GP"`, `"RF"`, `"ET"`, `"GBRT"` or sklearn
+            regressor, default: `"GP"`
+            Should inherit from :obj:`sklearn.base.RegressorMixin`.
+            In addition the `predict` method, should have an optional
+            `return_std` argument, which returns `std(Y | x)` along with
+            `E[Y | x]`.
+            If base_estimator is one of ["GP", "RF", "ET", "GBRT"], a default
+            surrogate model of the corresponding type is used corresponding to
+            what is used in the minimize functions.
 
-    n_random_starts : int, default: 10
-        .. deprecated:: 0.6
-            use `n_initial_points` instead.
+        n_random_starts (int, optional): default is 10
+            .. deprecated:: 0.6 use `n_initial_points` instead.
 
-    n_initial_points : int, default: 10
-        Number of evaluations of `func` with initialization points
-        before approximating it with `base_estimator`. Initial point
-        generator can be changed by setting `initial_point_generator`.
+        n_initial_points (int, optional):
+            Number of evaluations of `func` with initialization points
+            before approximating it with `base_estimator`. Initial point
+            generator can be changed by setting `initial_point_generator`.
+            Default is 10.
 
-    initial_points : list, default: None
+        initial_points (list, optional): default is None
 
-    initial_point_generator : str, InitialPointGenerator instance, \
-            default: `"random"`
-        Sets a initial points generator. Can be either
+        initial_point_generator (str, optional): InitialPointGenerator instance
+            Default is `"random"`.
+            Sets a initial points generator. Can be either
 
-        - `"random"` for uniform random numbers,
-        - `"sobol"` for a Sobol' sequence,
-        - `"halton"` for a Halton sequence,
-        - `"hammersly"` for a Hammersly sequence,
-        - `"lhs"` for a latin hypercube sequence,
-        - `"grid"` for a uniform grid sequence
+            - `"random"` for uniform random numbers,
+            - `"sobol"` for a Sobol' sequence,
+            - `"halton"` for a Halton sequence,
+            - `"hammersly"` for a Hammersly sequence,
+            - `"lhs"` for a latin hypercube sequence,
+            - `"grid"` for a uniform grid sequence
 
-    acq_func : string, default: `"gp_hedge"`
-        Function to minimize over the posterior distribution. Can be either
+        acq_func (string, optional): Default is `"gp_hedge"`.
+            Function to minimize over the posterior distribution.
+            Can be either
 
-        - `"LCB"` for lower confidence bound.
-        - `"EI"` for negative expected improvement.
-        - `"PI"` for negative probability of improvement.
-        - `"gp_hedge"` Probabilistically choose one of the above three
-          acquisition functions at every iteration.
+            - `"LCB"` for lower confidence bound.
+            - `"EI"` for negative expected improvement.
+            - `"PI"` for negative probability of improvement.
+            - `"gp_hedge"` Probabilistically choose one of the above three
+              acquisition functions at every iteration.
 
-          - The gains `g_i` are initialized to zero.
-          - At every iteration,
+              - The gains `g_i` are initialized to zero.
+              - At every iteration,
 
-            - Each acquisition function is optimised independently to
-              propose an candidate point `X_i`.
-            - Out of all these candidate points, the next point `X_best` is
-              chosen by :math:`softmax(\\eta g_i)`
-            - After fitting the surrogate model with `(X_best, y_best)`,
-              the gains are updated such that :math:`g_i -= \\mu(X_i)`
+                - Each acquisition function is optimised independently to
+                  propose an candidate point `X_i`.
+                - Out of all these candidate points, the next point `X_best` is
+                  chosen by :math:`softmax(\\eta g_i)`
+                - After fitting the surrogate model with `(X_best, y_best)`,
+                  the gains are updated such that :math:`g_i -= \\mu(X_i)`
 
-        - `"EIps"` for negated expected improvement per second to take into
-          account the function compute time. Then, the objective function is
-          assumed to return two values, the first being the objective value and
-          the second being the time taken in seconds.
-        - `"PIps"` for negated probability of improvement per second. The
-          return type of the objective function is assumed to be similar to
-          that of `"EIps"`
+            - `"EIps"` for negated expected improvement per second to take into
+              account the function compute time. Then, the objective function is
+              assumed to return two values, the first being the objective value and
+              the second being the time taken in seconds.
+            - `"PIps"` for negated probability of improvement per second. The
+              return type of the objective function is assumed to be similar to
+              that of `"EIps"`
 
-    acq_optimizer : string, `"sampling"` or `"lbfgs"`, default: `"auto"`
-        Method to minimize the acquisition function. The fit model
-        is updated with the optimal value obtained by optimizing `acq_func`
-        with `acq_optimizer`.
+        acq_optimizer (string, optional): `"sampling"` or `"lbfgs"`, default is `"auto"`
+            Method to minimize the acquisition function. The fit model
+            is updated with the optimal value obtained by optimizing `acq_func`
+            with `acq_optimizer`.
 
-        - If set to `"auto"`, then `acq_optimizer` is configured on the
-          basis of the base_estimator and the space searched over.
-          If the space is Categorical or if the estimator provided based on
-          tree-models then this is set to be `"sampling"`.
-        - If set to `"sampling"`, then `acq_func` is optimized by computing
-          `acq_func` at `n_points` randomly sampled points.
-        - If set to `"lbfgs"`, then `acq_func` is optimized by
+            - If set to `"auto"`, then `acq_optimizer` is configured on the
+              basis of the base_estimator and the space searched over.
+              If the space is Categorical or if the estimator provided based on
+              tree-models then this is set to be `"sampling"`.
+            - If set to `"sampling"`, then `acq_func` is optimized by computing
+              `acq_func` at `n_points` randomly sampled points.
+            - If set to `"lbfgs"`, then `acq_func` is optimized by
 
-          - Sampling `n_restarts_optimizer` points randomly.
-          - `"lbfgs"` is run for 20 iterations with these points as initial
-            points to find local minima.
-          - The optimal of these local minima is used to update the prior.
+              - Sampling `n_restarts_optimizer` points randomly.
+              - `"lbfgs"` is run for 20 iterations with these points as initial
+                points to find local minima.
+              - The optimal of these local minima is used to update the prior.
 
-    random_state : int, RandomState instance, or None (default)
-        Set random state to something other than None for reproducible
-        results.
+        random_state (int, optional): RandomState instance, or None (default)
+            Set random state to something other than None for reproducible
+            results.
 
-    n_jobs : int, default: 1
-        The number of jobs to run in parallel in the base_estimator,
-        if the base_estimator supports n_jobs as parameter and
-        base_estimator was given as string.
-        If -1, then the number of jobs is set to the number of cores.
+        n_jobs (int, optional): Default is 1.
+            The number of jobs to run in parallel in the base_estimator,
+            if the base_estimator supports n_jobs as parameter and
+            base_estimator was given as string.
+            If -1, then the number of jobs is set to the number of cores.
 
-    acq_func_kwargs : dict
-        Additional arguments to be passed to the acquisition function.
+        acq_func_kwargs (dict, optional):
+            Additional arguments to be passed to the acquisition function.
 
-    acq_optimizer_kwargs : dict
-        Additional arguments to be passed to the acquisition optimizer.
+        acq_optimizer_kwargs (dict, optional):
+            Additional arguments to be passed to the acquisition optimizer.
 
-    model_queue_size : int or None, default: None
-        Keeps list of models only as long as the argument given. In the
-        case of None, the list has no capped length.
+        model_queue_size (int or None, optional): Default is None.
+            Keeps list of models only as long as the argument given. In the
+            case of None, the list has no capped length.
 
-    model_sdv : Model or None, default None
-        A Model from Synthetic-Data-Vault.
+        model_sdv (Model or None, optional): Default None
+            A Model from Synthetic-Data-Vault.
 
-    moo_scalarization_strategy : string, default: `"Chebyshev"`
-        Function to convert multiple objectives into a single scalar value. Can be either
+        moo_scalarization_strategy (string, optional): Default is `"Chebyshev"`
+            Function to convert multiple objectives into a single scalar value. Can be either
 
-        - `"Linear"` for linear/convex combination.
-        - `"Chebyshev"` for Chebyshev or weighted infinity norm.
-        - `"AugChebyshev"` for Chebyshev norm augmented with a weighted 1-norm.
-        - `"PBI"` for penalized boundary intersection.
-        - `"Quadratic"` for quadratic combination (2-norm).
-        - `"rLinear"`, `"rChebyshev"`, `"rAugChebyshev"`, `"rPBI"`, `"rQuadratic"` where the corresponding weights are randomly perturbed in every iteration.
+            - `"Linear"` for linear/convex combination.
+            - `"Chebyshev"` for Chebyshev or weighted infinity norm.
+            - `"AugChebyshev"` for Chebyshev norm augmented with a weighted 1-norm.
+            - `"PBI"` for penalized boundary intersection.
+            - `"Quadratic"` for quadratic combination (2-norm).
+            - `"rLinear"`, `"rChebyshev"`, `"rAugChebyshev"`, `"rPBI"`, `"rQuadratic"` where the corresponding weights are randomly perturbed in every iteration.
 
-    moo_scalarization_weight: array, default: `None`
-        Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions.
+        moo_scalarization_weight (array, optional) Default is `None`.
+            Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions.
+            When set to `None`, a uniform weighting is generated.
 
-    Attributes
-    ----------
-    Xi : list
-        Points at which objective has been evaluated.
-    yi : scalar
-        Values of objective at corresponding points in `Xi`.
-    models : list
-        Regression models used to fit observations and compute acquisition
-        function.
-    space : Space
-        An instance of :class:`deephyper.skopt.space.Space`. Stores parameter search
-        space used to sample points, bounds, and type of parameters.
+    Attributes:
+        Xi (list):
+            Points at which objective has been evaluated.
+        yi (scalar):
+            Values of objective at corresponding points in `Xi`.
+        models (list):
+            Regression models used to fit observations and compute acquisition
+            function.
+        space (Space):
+            An instance of `deephyper.skopt.space.Space`. Stores parameter search
+            space used to sample points, bounds, and type of parameters.
 
     """
 

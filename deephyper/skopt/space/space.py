@@ -64,40 +64,39 @@ def check_dimension(dimension, transform=None):
 
     If ``dimension`` is already a ``Dimension`` instance, return it.
 
-    Parameters
-    ----------
-    dimension : Dimension
-        Search space Dimension.
-        Each search dimension can be defined either as
+    Args:
+        dimension (Dimension):
+            Search space Dimension.
+            Each search dimension can be defined either as
 
-        - a `(lower_bound, upper_bound)` tuple (for `Real` or `Integer`
-          dimensions),
-        - a `(lower_bound, upper_bound, "prior")` tuple (for `Real`
-          dimensions),
-        - as a list of categories (for `Categorical` dimensions), or
-        - an instance of a `Dimension` object (`Real`, `Integer` or
-          `Categorical`).
+            - a `(lower_bound, upper_bound)` tuple (for `Real` or `Integer`
+              dimensions),
+            - a `(lower_bound, upper_bound, "prior")` tuple (for `Real`
+              dimensions),
+            - as a list of categories (for `Categorical` dimensions), or
+            - an instance of a `Dimension` object (`Real`, `Integer` or
+              `Categorical`).
 
-    transform : "identity", "normalize", "string", "label", "onehot" optional
-        - For `Categorical` dimensions, the following transformations are
-          supported.
+        transform (str): One of
+            "identity", "normalize", "string", "label", "onehot" optional
 
-          - "onehot" (default) one-hot transformation of the original space.
-          - "label" integer transformation of the original space
-          - "string" string transformation of the original space.
-          - "identity" same as the original space.
+            - For `Categorical` dimensions, the following transformations are
+              supported.
 
-        - For `Real` and `Integer` dimensions, the following transformations
-          are supported.
+              - "onehot" (default) one-hot transformation of the original space.
+              - "label" integer transformation of the original space
+              - "string" string transformation of the original space.
+              - "identity" same as the original space.
 
-          - "identity", (default) the transformed space is the same as the
-            original space.
-          - "normalize", the transformed space is scaled to be between 0 and 1.
+            - For `Real` and `Integer` dimensions, the following transformations
+              are supported.
 
-    Returns
-    -------
-    dimension : Dimension
-        Dimension instance.
+              - "identity", (default) the transformed space is the same as the
+                original space.
+              - "normalize", the transformed space is scaled to be between 0 and 1.
+
+        Returns:
+            dimension (Dimension): Dimension instance.
     """
     if isinstance(dimension, Dimension):
         return dimension

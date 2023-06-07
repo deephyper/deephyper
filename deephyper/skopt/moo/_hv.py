@@ -20,7 +20,29 @@ from ._pf import non_dominated_set
 
 def hypervolume(pointset, ref):
     """Compute the absolute hypervolume of a *pointset* according to the
-    reference point *ref*.
+    reference point *ref*. I.e., the total hypervolume between the pointset
+    and ref.
+
+    Warning: This function works for **minimization** problems, not
+    maximization problems. You may need to use the negatives of the objective
+    values returned by DeepHyper.
+
+    Note: This function uses 3rd party code by Simon Wessing (TU Dortmund),
+    and distributed under a GPL v3+ license.
+
+    Args:
+        pointset (array or list): Array or list of size (n_points, n_objectives)
+        ref (array or list): Array or list of size (n_objectives) specifying
+            an objective value to use as the reference point. Every point in
+            pointset must be greater than the reference point, or the
+            computation will quietly fail and produce garbage values.
+            Note that when comparing convergence between multiple algorithms,
+            the *same* reference point must be used for all comparisons.
+            Such a reference point may be nontrivial to obtain in practice.
+
+    Returns:
+        float: The total hypervolume that is contained between the points in
+        pointset and the reference point.
     """
     nds = non_dominated_set(pointset, return_mask=True)
     hv = _HyperVolume(ref)

@@ -3,6 +3,47 @@ Scikit-Optimize, or `skopt`, is a simple and efficient library to
 minimize (very) expensive and noisy black-box functions. It implements
 several methods for sequential model-based optimization. `skopt` is reusable
 in many contexts and accessible.
+
+This fork of skopt 0.9.8 has been modified for compatibility with
+DeepHyper. It should not be called directly since its parameters are
+set from within the :class:`deephyper.search.Search` class.
+Note that numerous additional options have been added to support additional
+features of DeepHyper.
+Additional subdirectories have been added containing code
+to support these features.
+
+**Note that DeepHyper users should not need to directly interact with the
+interfaces in this module. All options are set from the Search class.**
+The one exception to this are the utility functions and additional
+multiobjective documentation provided in
+:mod:`deephyper.skopt.moo`, which may be of external interest.
+
+This module is included for the purpose of:
+
+ 1. optimization developers to understand DeepHyper's optimization techniques and
+ 2. additional documentation -- because certain optimization-related features
+    (such as multiobjective features in :mod:`deephyper.skopt.moo`)
+    are too nuanced to fully documented in the :class:`deephyper.search.Search`
+    class's docstrings, and can be better understood through their
+    documentation pages here.
+
+Also note that although DeepHyper generally deals in maximization problems,
+this module is for *minimization*.
+Each search class should automatically convert the problems appropriately
+before referencing this module.
+
+In general, the :class:`deephyper.skopt.optimizer.optimizer.Optimizer` class defines the basic functionality, which
+is used by the functions in :mod:`deephyper.skopt.optimizer`.
+From within DeepHyper :class:`deephyper.search.Search`, the
+``surrogate_model`` (str type) argument selects which of these functions
+is called.
+Other notable modules include :mod:`deephyper.skopt.acquisition` and
+:mod:`deephyper.skopt.sampler`, selected by similar str arguments in
+:class:`deephyper.search.Search`.
+
+The multiobjective functionality (defined by :class:`deephyper.search.Search`'s
+``moo_scalarization_strategy`` arg) is defined in the
+:mod:`deephyper.skopt.moo` module, and used by the :class:`deephyper.skopt.optimizer.optimizer.Optimizer`.
 """
 try:
     # This variable is injected in the __builtins__ by the build

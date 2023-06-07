@@ -43,7 +43,10 @@ class MoScalarFunction(abc.ABC):
             self._check_shape(weight)
             self._weight = np.asarray(weight)
         else:
-            self._weight = self._rng.rand(self._n_objectives)
+            # Uniformly sample from the probability simplex using Remark 1.3
+            # from https://arxiv.org/pdf/1909.06406.pdf
+            # and the inverse exponential CDF: F_inv(p) = -log(1 - p).
+            self._weight = -np.log(1.0 - self._rng.rand(self._n_objectives))
         self._weight /= np.sum(self._weight)
         self._scaling = np.ones(self._n_objectives)
 
