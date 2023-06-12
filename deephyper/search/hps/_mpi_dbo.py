@@ -130,6 +130,7 @@ class MPIDistributedBO(CBO):
         )
 
         if self.rank == 0:
+            logging.info(f"MPIDistributedBO has {self.size} rank(s)")
             super().__init__(
                 problem=problem,
                 evaluator=evaluator,
