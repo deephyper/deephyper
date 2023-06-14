@@ -98,6 +98,7 @@ class MPIDistributedBO(CBO):
 
         self.check_evaluator(evaluator)
 
+        # TODO: should use self._random_state already given in super class!!!
         if type(random_state) is int:
             random_state = np.random.RandomState(random_state)
         elif isinstance(random_state, np.random.RandomState):
