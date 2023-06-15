@@ -95,14 +95,14 @@ class MPIDistributedOptuna(Search):
 
         # Set different random state for given rank
         self._random_state = np.random.RandomState(
-            self._random_state.randint(low=0, high=2**32, size=self.size)[self.rank]
+            self._random_state.randint(low=0, high=2**31, size=self.size)[self.rank]
         )
 
         # Setup the sampler
         if isinstance(sampler, optuna.samplers.BaseSampler):
             pass
         elif isinstance(sampler, str):
-            sampler_seed = self._random_state.randint(2**32)
+            sampler_seed = self._random_state.randint(2**31)
             if sampler == "TPE":
                 sampler = optuna.samplers.TPESampler(seed=sampler_seed)
             elif sampler == "CMAES":

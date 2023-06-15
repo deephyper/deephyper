@@ -115,7 +115,7 @@ class CBO(Search):
             base_estimator = self._get_surrogate_model(
                 surrogate_model,
                 n_jobs,
-                random_state=self._random_state.randint(0, 2**32),
+                random_state=self._random_state.randint(0, 2**31),
             )
         elif is_regressor(surrogate_model):
             base_estimator = surrogate_model
@@ -764,7 +764,7 @@ class CBO(Search):
             )[0]
             best_param = res_df.iloc[best_index]
 
-        cst_new = CS.ConfigurationSpace(seed=self._random_state.randint(0, 2**32))
+        cst_new = CS.ConfigurationSpace(seed=self._random_state.randint(0, 2**31))
         hp_names = cst.get_hyperparameter_names()
         for hp_name in hp_names:
             hp = cst.get_hyperparameter(hp_name)

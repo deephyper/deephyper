@@ -156,7 +156,6 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         self.y_ = np.zeros((self.batch_size,))
 
     def fit(self, X, y, update_prior=True):
-
         check_X_y(X, y, ensure_2d=False)
 
         # !Trick for performance to avoid performign JIT again and again
@@ -185,7 +184,7 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
                 jit_model_args=True,
             )
 
-        seed = self.random_state.randint(low=0, high=2**32)
+        seed = self.random_state.randint(low=0, high=2**31)
         rng_key = jax.random.PRNGKey(seed)
         self.mcmc_.run(rng_key, z=self.X_, y=self.y_, rho_mu_prior=self.rho_mu_prior_)
 
@@ -195,7 +194,6 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         return self
 
     def predict(self, X, return_std=True):
-
         posterior_samples = self.predict_posterior_samples(X)
 
         mean_mu = jnp.mean(posterior_samples, axis=0)
@@ -207,7 +205,6 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         return mean_mu
 
     def predict_posterior_samples(self, X):
-
         # Check if fit has been called
         check_is_fitted(self)
 
@@ -255,7 +252,7 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         interface f(z, rho).
         """
 
-        seed = self.random_state.randint(low=0, high=2**32)
+        seed = self.random_state.randint(low=0, high=2**31)
         random_state = check_random_state(seed)
 
         z_train = np.asarray(z_train)
@@ -280,7 +277,6 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         mse_hist = []
 
         for _ in range(self.max_trials_ls_fit):
-
             rho_init = random_state.randn(self.f_nparams)
 
             try:
@@ -372,7 +368,6 @@ class LCModelStopper(Stopper):
         objective_returned="last",
         random_state=None,
     ) -> None:
-
         super().__init__(max_steps=max_steps)
         self.min_steps = min_steps
 
@@ -456,7 +451,6 @@ class LCModelStopper(Stopper):
             )
 
     def stop(self) -> bool:
-
         # Enforce Pre-conditions Before Learning-Curve based Early Discarding
         if super().stop():
             self.infos_stopped = "max steps reached"
@@ -473,7 +467,6 @@ class LCModelStopper(Stopper):
 
         halting_step = self._compute_halting_step()
         if self.step < max(self.min_steps, self.min_obs_to_fit):
-
             if self.step >= halting_step:
                 competing_objectives = self._get_competiting_objectives(self._rung)
                 if len(competing_objectives) > self.min_done_for_outlier_detection:
