@@ -904,28 +904,6 @@ class Optimizer(object):
         pred_budget = budget_list[idx]
         return pred_budget
 
-    def _resample_with_budget(self, Xi, yi, bi):
-        return Xi, yi, bi
-        groups = {}
-        for i, b in enumerate(bi):
-            g = groups.get(b, [])
-            if len(g) == 0:
-                groups[b] = g
-            g.append(i)
-        max_b = max(groups.keys())
-        num_with_max_b = len(groups[max_b])
-        nXi, nyi, nbi = [], [], []
-        for b, g in groups.items():
-            if b == max_b:
-                indexes = np.arange(len(g))
-            else:
-                indexes = self.rng.randint(low=0, high=len(g), size=num_with_max_b)
-            for idx in indexes:
-                nXi.append(Xi[g[idx]])
-                nyi.append(yi[g[idx]])
-                nbi.append(b)
-        return nXi, nyi, nbi
-
     def _tell(self, x, y, fit=True, budget=None):
         """Perform the actual work of incorporating one or more new points.
         See `tell()` for the full description.

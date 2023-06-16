@@ -377,12 +377,6 @@ class CBO(Search):
                         opt_X.append(x)
                         opt_y.append(y)
 
-                        # TODO: the following approach will not scale!
-                        # for b, y in zip(*job_i.observations):
-                        #     opt_X.append(x)
-                        #     opt_b.append(b)
-                        #     opt_y.append(-y)
-
                     # single observation returned without budget
                     else:
                         if np.all(np.isreal(obj)):

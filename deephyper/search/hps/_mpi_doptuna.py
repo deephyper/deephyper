@@ -16,6 +16,7 @@ from optuna.trial import FrozenTrial, TrialState
 mpi4py.rc.initialize = False
 mpi4py.rc.finalize = True
 from mpi4py import MPI  # noqa: E402
+
 from deephyper.core.exceptions import SearchTerminationError  # noqa: E402
 from deephyper.core.utils._timeout import terminate_on_timeout  # noqa: E402
 from deephyper.evaluator import RunningJob  # noqa: E402
@@ -61,7 +62,7 @@ class CheckpointSaverCallback:
 
 
 # Supported samplers
-supported_samplers = ["TPE", "CMAES", "NSGAII", "MOTPE", "DUMMY"]
+supported_samplers = ["TPE", "CMAES", "NSGAII", "DUMMY"]
 
 
 class MPIDistributedOptuna(Search):
@@ -73,13 +74,17 @@ class MPIDistributedOptuna(Search):
         log_dir: str = ".",
         verbose: int = 0,
         sampler: Union[str, optuna.samplers.BaseSampler] = "TPE",
-        # pruner: Union[str, optuna.pruners.BasePruner] = None,
+        n_objectives: int = 1,
         study_name: str = None,
         storage: Union[str, optuna.storages.BaseStorage] = None,
         comm: MPI.Comm = None,
         **kwargs,
     ):
         super().__init__(problem, evaluator, random_state, log_dir, verbose)
+
+        optuna.logging.set_verbosity(
+            optuna.logging.DEBUG if self._verbose else optuna.logging.ERROR
+        )
 
         self._evaluator = evaluator
 
@@ -109,8 +114,6 @@ class MPIDistributedOptuna(Search):
                 sampler = optuna.samplers.CmaEsSampler(seed=sampler_seed)
             elif sampler == "NSGAII":
                 sampler = optuna.samplers.NSGAIISampler(seed=sampler_seed)
-            elif sampler == "MOTPE":
-                sampler = optuna.samplers.MOTPESampler(seed=sampler_seed)
             elif sampler == "DUMMY":
                 sampler = optuna.samplers.RandomSampler(seed=sampler_seed)
             else:
@@ -122,10 +125,16 @@ class MPIDistributedOptuna(Search):
                 f"Sampler is of type {type(sampler)} but must be a str or optuna.samplers.BaseSampler!"
             )
 
+        self._n_objectives = n_objectives
+
         study_params = dict(
             study_name=study_name,
             storage=storage,
             sampler=sampler,
+            direction="maximize" if self._n_objectives == 1 else None,
+            directions=["maximize" for _ in range(self._n_objectives)]
+            if self._n_objectives > 1
+            else None,
             # pruner=pruner,  # TODO: include pruners
         )
         self.pruner = None  # TODO: include pruners
@@ -134,7 +143,7 @@ class MPIDistributedOptuna(Search):
         # Root rank creates study and initilize the timestamp
         if self.rank == 0:
             self.timestamp = time.time()
-            self.study = optuna.create_study(direction="maximize", **study_params)
+            self.study = optuna.create_study(**study_params)
 
         if self.size > 1:
             self.timestamp = comm.bcast(self.timestamp)
@@ -153,8 +162,6 @@ class MPIDistributedOptuna(Search):
         return self._search(max_evals, timeout)
 
     def _search(self, max_evals, timeout):
-        print(f"{max_evals=}")
-
         def objective_wrapper(trial):
             config = optuna_suggest_from_configspace(trial, self._problem.space)
             if self.pruner is None:

@@ -28,15 +28,11 @@ class Search(abc.ABC):
     def __init__(
         self, problem, evaluator, random_state=None, log_dir=".", verbose=0, **kwargs
     ):
-
         # get the __init__ parameters
         self._init_params = locals()
         self._call_args = []
 
         self._problem = copy.deepcopy(problem)
-
-        # if a callable is directly passed wrap it around the serial evaluator
-        self.check_evaluator(evaluator)
 
         self._seed = None
         if type(random_state) is int:
@@ -53,14 +49,18 @@ class Search(abc.ABC):
 
         self._verbose = verbose
 
+        # if a callable is directly passed wrap it around the serial evaluator
+        self.check_evaluator(evaluator)
+
     def check_evaluator(self, evaluator):
         if not (isinstance(evaluator, Evaluator)):
-
             if callable(evaluator):
                 self._evaluator = Evaluator.create(
                     evaluator,
                     method="serial",
-                    method_kwargs={"callbacks": [TqdmCallback()]},
+                    method_kwargs={
+                        "callbacks": [TqdmCallback()] if self._verbose else []
+                    },
                 )
             else:
                 raise TypeError(
