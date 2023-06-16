@@ -904,54 +904,6 @@ class Optimizer(object):
         pred_budget = budget_list[idx]
         return pred_budget
 
-    def _compute_sample_weigths(self, bi):
-        """Compute weights with respect to budgets (imbalance)."""
-        # n_samples = len(bi)
-        # n_budgets = len(self.bi_count)
-        # max_budget = max(self.bi_count.keys())
-        # print(f"{max_budget}")
-        # v2
-        # budget_weight = {
-        #     k: (n_samples / (n_budgets * b)) * (np.exp(k) / np.exp(max_budget))
-        #     for k, b in self.bi_count.items()
-        # }
-
-        # v1
-        # budget_weight = {
-        #     b: (np.exp(b) / np.exp(max_budget)) for b, c in self.bi_count.items()
-        # }
-        # sample_weight = [budget_weight[b] for b in bi]
-
-        # print(budget_weight)
-        # print(f"c={self.bi_count}")
-        # print(f"b={bi[:10]}")
-        # print(f"w={sample_weight[:10]}")
-        # v3
-        sample_weight = None
-        return sample_weight
-
-    def _resample_with_budget(self, Xi, yi, bi):
-        return Xi, yi, bi
-        groups = {}
-        for i, b in enumerate(bi):
-            g = groups.get(b, [])
-            if len(g) == 0:
-                groups[b] = g
-            g.append(i)
-        max_b = max(groups.keys())
-        num_with_max_b = len(groups[max_b])
-        nXi, nyi, nbi = [], [], []
-        for b, g in groups.items():
-            if b == max_b:
-                indexes = np.arange(len(g))
-            else:
-                indexes = self.rng.randint(low=0, high=len(g), size=num_with_max_b)
-            for idx in indexes:
-                nXi.append(Xi[g[idx]])
-                nyi.append(yi[g[idx]])
-                nbi.append(b)
-        return nXi, nyi, nbi
-
     def _tell(self, x, y, fit=True, budget=None):
         """Perform the actual work of incorporating one or more new points.
         See `tell()` for the full description.
@@ -1027,21 +979,12 @@ class Optimizer(object):
                 # add budget as input
                 if len(self.bi) > 0:
                     bi = self.bi
-                    # print(len(Xtt))
-                    # Xtt, yi, bi = self._resample_with_budget(Xtt, yi, self.bi)
-                    # print(len(Xtt))
-                    # print()
 
                     pred_budget = self._get_predict_budget()
                     transformed_bounds.append((pred_budget, pred_budget))
 
-                    # sample_weight = self._compute_sample_weigths(bi)
-                    sample_weight = None
-
                     bi = np.asarray(bi).reshape(-1, 1)
                     Xtt = np.hstack((Xtt, bi))
-                else:
-                    sample_weight = None
 
                 # preprocessing of output space
                 yi = self.objective_scaler.fit_transform(
@@ -1049,7 +992,7 @@ class Optimizer(object):
                 ).reshape(-1)
 
                 # fit surrogate model
-                est.fit(Xtt, yi, sample_weight=sample_weight)
+                est.fit(Xtt, yi)
 
                 # update prior
                 if self.update_prior:

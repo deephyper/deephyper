@@ -125,7 +125,7 @@ class AgEBO(RegularizedEvolution):
         self._liar_strategy = MAP_liar_strategy.get(liar_strategy, liar_strategy)
 
         base_estimator = self._get_surrogate_model(
-            surrogate_model, n_jobs, random_state=self._random_state.randint(0, 2**32)
+            surrogate_model, n_jobs, random_state=self._random_state.randint(0, 2**31)
         )
         self._hp_opt = None
         self._hp_opt_kwargs = dict(
@@ -149,7 +149,6 @@ class AgEBO(RegularizedEvolution):
         self._hp_opt = deephyper.skopt.Optimizer(**self._hp_opt_kwargs)
 
     def _saved_keys(self, job):
-
         res = {"arch_seq": str(job.config["arch_seq"])}
         hp_names = self._problem._hp_space._space.get_hyperparameter_names()
 
@@ -162,7 +161,6 @@ class AgEBO(RegularizedEvolution):
         return res
 
     def _search(self, max_evals, timeout):
-
         if self._hp_opt is None:
             self._setup_hp_optimizer()
 
@@ -175,7 +173,6 @@ class AgEBO(RegularizedEvolution):
 
         # Main loop
         while max_evals < 0 or num_evals_done < max_evals:
-
             # Collecting finished evaluations
             new_results = list(self._evaluator.gather(self._gather_type, size=1))
 
@@ -235,10 +232,8 @@ class AgEBO(RegularizedEvolution):
                         self._evaluator.submit(new_configs)
 
                 else:  # If the population is too small keep increasing it
-
                     # For each new parent/result we create a child from it
                     for new_i in range(len(new_results)):
-
                         new_i_hp_values = self._problem.extract_hp_values(
                             config=new_results[new_i][0]
                         )

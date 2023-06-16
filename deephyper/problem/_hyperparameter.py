@@ -11,7 +11,6 @@ import deephyper.skopt
 
 
 def convert_to_skopt_dim(cs_hp, surrogate_model=None):
-
     if surrogate_model in ["RF", "ET", "GBRT"]:
         # models not sensitive to the metric space such as trees
         surrogate_model_type = "rule_based"
@@ -151,7 +150,6 @@ def check_hyperparameter(parameter, name=None, default_value=None):
         elif all([isinstance(p, (int, float)) for p in parameter]):
             return csh.OrdinalHyperparameter(name, sequence=parameter, **kwargs)
     elif type(parameter) is dict:  # Integer or Real distribution
-
         # Normal
         if "mu" in parameter and "sigma" in parameter:
             if type(parameter["mu"]) is float:
@@ -180,7 +178,6 @@ class HpProblem:
     """
 
     def __init__(self, config_space=None):
-
         if config_space is not None and not (
             isinstance(config_space, cs.ConfigurationSpace)
         ):

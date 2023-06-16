@@ -98,6 +98,7 @@ class MPIDistributedBO(CBO):
 
         self.check_evaluator(evaluator)
 
+        # TODO: should use self._random_state already given in super class!!!
         if type(random_state) is int:
             random_state = np.random.RandomState(random_state)
         elif isinstance(random_state, np.random.RandomState):
@@ -126,10 +127,11 @@ class MPIDistributedBO(CBO):
 
         # set random state for given rank
         random_state = np.random.RandomState(
-            random_state.randint(low=0, high=2**32, size=self.size)[self.rank]
+            random_state.randint(low=0, high=2**31, size=self.size)[self.rank]
         )
 
         if self.rank == 0:
+            logging.info(f"MPIDistributedBO has {self.size} rank(s)")
             super().__init__(
                 problem=problem,
                 evaluator=evaluator,
