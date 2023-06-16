@@ -62,7 +62,7 @@ class CheckpointSaverCallback:
 
 
 # Supported samplers
-supported_samplers = ["TPE", "CMAES", "NSGAII", "DUMMY"]
+supported_samplers = ["TPE", "CMAES", "NSGAII", "DUMMY", "BOTORCH"]
 
 
 class MPIDistributedOptuna(Search):
@@ -116,6 +116,10 @@ class MPIDistributedOptuna(Search):
                 sampler = optuna.samplers.NSGAIISampler(seed=sampler_seed)
             elif sampler == "DUMMY":
                 sampler = optuna.samplers.RandomSampler(seed=sampler_seed)
+            elif sampler == "BOTORCH":
+                from optuna.integration import BoTorchSampler
+
+                sampler = BoTorchSampler(seed=sampler_seed)
             else:
                 raise ValueError(
                     f"Requested unknown sampler {sampler} should be one of {supported_samplers}"
