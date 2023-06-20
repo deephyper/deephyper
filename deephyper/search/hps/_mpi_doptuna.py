@@ -197,12 +197,9 @@ class MPIDistributedOptuna(Search):
             return output["objective"]
 
         def optimize_wrapper(duration):
-            self.study.optimize(
-                objective_wrapper,
-                n_trials=max_evals,
-                timeout=duration,
-                callbacks=[
-                    MaxTrialsCallback(max_evals),
+            callbacks = [MaxTrialsCallback(max_evals)]
+            if self.rank == 0:
+                callbacks += [
                     CheckpointSaverCallback(
                         self._log_dir,
                         states=(
@@ -210,8 +207,14 @@ class MPIDistributedOptuna(Search):
                             optuna.trial.TrialState.PRUNED,
                             optuna.trial.TrialState.FAIL,
                         ),
-                    ),
-                ],
+                    )
+                ]
+
+            self.study.optimize(
+                objective_wrapper,
+                n_trials=max_evals,
+                timeout=duration,
+                callbacks=callbacks,
             )
 
         if timeout is None:
@@ -225,15 +228,18 @@ class MPIDistributedOptuna(Search):
             except SearchTerminationError:
                 pass
 
-        all_trials = self.study.get_trials(
-            deepcopy=True,
-            states=[
-                optuna.trial.TrialState.COMPLETE,
-                optuna.trial.TrialState.PRUNED,
-                optuna.trial.TrialState.FAIL,
-            ],
-        )
+        if self.rank == 0:
+            all_trials = self.study.get_trials(
+                deepcopy=True,
+                states=[
+                    optuna.trial.TrialState.COMPLETE,
+                    optuna.trial.TrialState.PRUNED,
+                    optuna.trial.TrialState.FAIL,
+                ],
+            )
 
-        results = pd.DataFrame([t.user_attrs["results"] for t in all_trials])
-        results.to_csv(os.path.join(self._log_dir, "results.csv"))
-        return results
+            results = pd.DataFrame([t.user_attrs["results"] for t in all_trials])
+            results.to_csv(os.path.join(self._log_dir, "results.csv"))
+            return results
+        else:
+            return None
