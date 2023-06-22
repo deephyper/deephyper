@@ -628,7 +628,9 @@ class Optimizer(object):
 
         # q-ACQ multi point acquisition for centralized setting
         if hasattr(self, "_est") and self.acq_func == "qLCB":
-            X_s = self.space.rvs(n_samples=self.n_points, random_state=self.rng)
+            X_s = self.space.rvs(
+                n_samples=self.n_points, random_state=self.rng, n_jobs=self.n_jobs
+            )
             X_s = self._filter_duplicated(X_s)
             X_c = self.space.imp_const.fit_transform(
                 self.space.transform(X_s)
@@ -795,7 +797,9 @@ class Optimizer(object):
         return X, y
 
     def _ask_random_points(self, size=None):
-        samples = self.space.rvs(n_samples=self.n_points, random_state=self.rng)
+        samples = self.space.rvs(
+            n_samples=self.n_points, random_state=self.rng, n_jobs=self.n_jobs
+        )
 
         samples = self._filter_duplicated(samples)
 
@@ -1016,7 +1020,9 @@ class Optimizer(object):
 
                 # even with BFGS as optimizer we want to sample a large number
                 # of points and then pick the best ones as starting points
-                X_s = self.space.rvs(n_samples=self.n_points, random_state=self.rng)
+                X_s = self.space.rvs(
+                    n_samples=self.n_points, random_state=self.rng, n_jobs=self.n_jobs
+                )
 
                 X_s = self._filter_duplicated(X_s)
 
