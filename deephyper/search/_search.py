@@ -45,7 +45,7 @@ class Search(abc.ABC):
 
         # Create logging directory if does not exist
         self._log_dir = os.path.abspath(log_dir)
-        pathlib.Path(log_dir).mkdir(parents=False, exist_ok=True)
+        pathlib.Path(log_dir).mkdir(parents=True, exist_ok=True)
 
         self._verbose = verbose
 
