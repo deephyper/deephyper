@@ -1,9 +1,35 @@
+import threading
+
 import numpy as np
 from sklearn.ensemble import ExtraTreesRegressor as _sk_ExtraTreesRegressor
-from sklearn.ensemble._forest import ForestRegressor, DecisionTreeRegressor
+from sklearn.ensemble._forest import DecisionTreeRegressor, ForestRegressor
+from sklearn.utils.parallel import Parallel, delayed
 
 
-def _return_std(X, n_outputs, trees, predictions, min_variance):
+def _accumulate_prediction(tree, X, min_variance, out, lock):
+    """
+    This is a utility function for joblib's Parallel.
+
+    It can't go locally in ForestClassifier or ForestRegressor, because joblib
+    complains that it cannot pickle it when placed there.
+    """
+
+    mean_tree = tree.predict(X).T
+    var_tree = tree.tree_.impurity[tree.apply(X)]
+
+    # This rounding off is done in accordance with the
+    # adjustment done in section 4.3.3
+    # of http://arxiv.org/pdf/1211.0906v2.pdf to account
+    # for cases such as leaves with 1 sample in which there
+    # is zero variance.
+    var_tree = np.maximum(var_tree, min_variance) + np.square(mean_tree)
+
+    with lock:
+        out[0] += mean_tree
+        out[1] += var_tree
+
+
+def _return_mean_and_std(X, n_outputs, trees, min_variance, n_jobs):
     """
     Returns `std(Y | X)`.
 
@@ -35,34 +61,22 @@ def _return_std(X, n_outputs, trees, predictions, min_variance):
     """
     # This derives std(y | x) as described in 4.3.2 of arXiv:1211.0906
 
-    flat = len(predictions.shape) == 1
-    if flat:
-        predictions = predictions.reshape(-1, 1)
-
+    mean = np.zeros((n_outputs, len(X)))
     std = np.zeros((n_outputs, len(X)))
 
-    for tree in trees:
-        var_tree = tree.tree_.impurity[tree.apply(X)]
+    # Parallel loop
+    lock = threading.Lock()
+    Parallel(n_jobs=n_jobs, verbose=0, require="sharedmem")(
+        delayed(_accumulate_prediction)(tree, X, min_variance, [mean, std], lock)
+        for tree in trees
+    )
 
-        # This rounding off is done in accordance with the
-        # adjustment done in section 4.3.3
-        # of http://arxiv.org/pdf/1211.0906v2.pdf to account
-        # for cases such as leaves with 1 sample in which there
-        # is zero variance.
-        var_tree[var_tree < min_variance] = min_variance
-        mean_tree = tree.predict(X).T
-        std += var_tree + mean_tree**2
-
-    std = std.T
+    mean, std = mean.T, std.T
+    mean /= len(trees)
     std /= len(trees)
-    std -= predictions**2.0
-    std[std < 0.0] = 0.0
-    std = std**0.5
+    std = np.sqrt(np.maximum(std - np.square(mean), 0.0))
 
-    if flat:
-        std = std.reshape(-1)
-
-    return std
+    return mean.reshape(-1), std.reshape(-1)
 
 
 class RandomForestRegressor(ForestRegressor):
@@ -269,7 +283,7 @@ class RandomForestRegressor(ForestRegressor):
         self.min_variance = min_variance
         self.splitter = splitter
 
-    def predict(self, X, return_std=False, forestci=False):
+    def predict(self, X, return_std=False):
         """Predict continuous output for X.
 
         Parameters
@@ -291,21 +305,20 @@ class RandomForestRegressor(ForestRegressor):
             is set to "mse", then `std[i] ~= std(y | X[i])`.
 
         """
-        mean = super(RandomForestRegressor, self).predict(X)
-
         if return_std:
             if self.criterion != "squared_error":
                 raise ValueError(
                     "Expected impurity to be 'squared_error', got %s instead"
                     % self.criterion
                 )
-
-            std = _return_std(
-                X, self.n_outputs_, self.estimators_, mean, self.min_variance
+            mean, std = _return_mean_and_std(
+                X, self.n_outputs_, self.estimators_, self.min_variance, self.n_jobs
             )
-
             return mean, std
-        return mean
+        else:
+            mean = super(RandomForestRegressor, self).predict(X)
+
+            return mean
 
 
 class ExtraTreesRegressor(_sk_ExtraTreesRegressor):
@@ -511,17 +524,17 @@ class ExtraTreesRegressor(_sk_ExtraTreesRegressor):
             Standard deviation of `y` at `X`. If criterion
             is set to "squared_error", then `std[i] ~= std(y | X[i])`.
         """
-        mean = super(ExtraTreesRegressor, self).predict(X)
-
         if return_std:
             if self.criterion != "squared_error":
                 raise ValueError(
                     "Expected impurity to be 'squared_error', got %s instead"
                     % self.criterion
                 )
-            std = _return_std(
-                X, self.n_outputs_, self.estimators_, mean, self.min_variance
+            mean, std = _return_mean_and_std(
+                X, self.n_outputs_, self.estimators_, self.min_variance, self.n_jobs
             )
             return mean, std
+        else:
+            mean = super(ExtraTreesRegressor, self).predict(X)
 
-        return mean
+            return mean
