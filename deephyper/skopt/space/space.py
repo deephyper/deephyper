@@ -1240,7 +1240,7 @@ class Space(object):
                 # Joblib parallel optimization
                 # Draw
 
-                columns = np.zeros((n_samples, len(self.dimensions)))
+                columns = np.zeros((n_samples, len(self.dimensions)), dtype="O")
                 random_states = rng.randint(
                     low=0, high=2**31, size=len(self.dimensions)
                 )
