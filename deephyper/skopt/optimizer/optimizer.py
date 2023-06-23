@@ -881,8 +881,6 @@ class Optimizer(object):
 
         self._check_y_is_valid(x, y)
 
-        # TODO: Can reset scalarizations here I think?
-
         # budget and y are checked in similar ways
         if budget is not None:
             self._check_y_is_valid(x, budget)
