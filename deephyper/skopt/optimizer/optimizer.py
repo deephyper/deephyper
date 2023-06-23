@@ -408,6 +408,7 @@ class Optimizer(object):
             "AugChebyshev",
             "PBI",
             "Quadratic",
+            "random",
         ]
         moo_scalarization_strategy_allowed = moo_scalarization_strategy_allowed + [
             f"r{s}" for s in moo_scalarization_strategy_allowed
@@ -454,8 +455,6 @@ class Optimizer(object):
         random_state : int, RandomState instance, or None (default)
             Set the random state of the copy.
         """
-        idx = 1 if self._moo_scalarization_strategy.startswith("r") else 0
-
         optimizer = Optimizer(
             dimensions=self.config_space
             if hasattr(self, "config_space")
@@ -471,15 +470,14 @@ class Optimizer(object):
             model_sdv=self.model_sdv,
             sample_max_size=self._sample_max_size,
             sample_strategy=self._sample_strategy,
-            moo_scalarization_strategy=self._moo_scalarization_strategy[idx:],
+            moo_scalarization_strategy=self._moo_scalarization_strategy,
+            moo_scalarization_weight=self._moo_scalarization_weight,
             objective_scaler=self.objective_scaler_,
         )
 
         optimizer._initial_samples = self._initial_samples
 
         optimizer.sampled = self.sampled[:]
-
-        optimizer._moo_scalar_function = self._moo_scalar_function
 
         if hasattr(self, "gains_"):
             optimizer.gains_ = np.copy(self.gains_)
@@ -628,7 +626,9 @@ class Optimizer(object):
 
         # q-ACQ multi point acquisition for centralized setting
         if hasattr(self, "_est") and self.acq_func == "qLCB":
-            X_s = self.space.rvs(n_samples=self.n_points, random_state=self.rng)
+            X_s = self.space.rvs(
+                n_samples=self.n_points, random_state=self.rng, n_jobs=self.n_jobs
+            )
             X_s = self._filter_duplicated(X_s)
             X_c = self.space.imp_const.fit_transform(
                 self.space.transform(X_s)
@@ -795,7 +795,9 @@ class Optimizer(object):
         return X, y
 
     def _ask_random_points(self, size=None):
-        samples = self.space.rvs(n_samples=self.n_points, random_state=self.rng)
+        samples = self.space.rvs(
+            n_samples=self.n_points, random_state=self.rng, n_jobs=self.n_jobs
+        )
 
         samples = self._filter_duplicated(samples)
 
@@ -1018,7 +1020,9 @@ class Optimizer(object):
 
                 # even with BFGS as optimizer we want to sample a large number
                 # of points and then pick the best ones as starting points
-                X_s = self.space.rvs(n_samples=self.n_points, random_state=self.rng)
+                X_s = self.space.rvs(
+                    n_samples=self.n_points, random_state=self.rng, n_jobs=self.n_jobs
+                )
 
                 X_s = self._filter_duplicated(X_s)
 
@@ -1235,6 +1239,14 @@ class Optimizer(object):
                 "rPBI": MoPBIFunction,
                 "rQuadratic": MoQuadraticFunction,
             }
+            moo_function_names = [
+                "rLinear",
+                "rChebyshev",
+                "rAugChebyshev",
+                "rPBI",
+                "rQuadratic",
+            ]
+
             n_objectives = 1 if np.ndim(yi[0]) == 0 else len(yi[0])
             if self._moo_scalarization_weight is not None:
                 if (
@@ -1250,12 +1262,25 @@ class Optimizer(object):
             else:
                 weight = np.ones(n_objectives) / n_objectives
 
-            self._moo_scalar_function = moo_function[self._moo_scalarization_strategy](
-                n_objectives=n_objectives,
-                weight=weight,
-                random_state=self.rng,
-            )
+            if self._moo_scalarization_strategy == "random":
+                idx = self.rng.choice(
+                    a=np.arange(len(moo_function_names)),
+                    p=[0.05, 0.4, 0.4, 0.05, 0.1],
+                )
+                self._moo_scalar_function = moo_function[moo_function_names[idx]](
+                    n_objectives=n_objectives,
+                    weight=weight,
+                    random_state=self.rng,
+                )
+            else:
+                self._moo_scalar_function = moo_function[
+                    self._moo_scalarization_strategy
+                ](
+                    n_objectives=n_objectives,
+                    weight=weight,
+                    random_state=self.rng,
+                )
 
         # compute normalization constants
         self._moo_scalar_function.normalize(yi)
-        return [self._moo_scalar_function.scalarize(yv) for yv in yi]
+        return np.asarray(list(map(self._moo_scalar_function.scalarize, yi)))

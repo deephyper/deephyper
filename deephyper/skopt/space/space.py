@@ -9,6 +9,7 @@ from scipy.stats import gaussian_kde
 
 from sklearn.utils import check_random_state
 from sklearn.utils.fixes import sp_version
+from sklearn.utils.parallel import Parallel, delayed
 
 
 if type(sp_version) is not tuple:  # Version object since sklearn>=2.3.x
@@ -939,6 +940,12 @@ class Categorical(Dimension):
         return 1 if a != b else 0
 
 
+def _sample_dimension(dim, i, n_samples, random_state, out):
+    """Wrapper to sample dimension for joblib parallelization."""
+
+    out[0][:, i] = dim.rvs(n_samples=n_samples, random_state=random_state)
+
+
 class Space(object):
     """Initialize a search space from given specifications.
 
@@ -1158,7 +1165,7 @@ class Space(object):
 
         return space
 
-    def rvs(self, n_samples=1, random_state=None):
+    def rvs(self, n_samples=1, random_state=None, n_jobs=1):
         """Draw random samples.
 
         The samples are in the original space. They need to be transformed
@@ -1215,15 +1222,6 @@ class Space(object):
                     cf = deactivate_inactive_hyperparameters(conf, self.config_space)
                     confs[idx] = cf.get_dictionary()
 
-                    # TODO: remove because debug instructions
-                    # check if other conditions are not met; generate valid 1-exchange neighbor; need to test and develop the logic
-                    # print('conf invalid...generating valid 1-exchange neighbor')
-                    # neighborhood = get_one_exchange_neighbourhood(cf,1)
-                    # for new_config in neighborhood:
-                    #     print(new_config)
-                    #     print(new_config.is_valid_configuration())
-                    #     confs[idx] = new_config.get_dictionary()
-
             for idx, conf in enumerate(confs):
                 point = []
                 for hps_name in hps_names:
@@ -1238,13 +1236,26 @@ class Space(object):
             return req_points
         else:
             if self.model_sdv is None:
+                # Regular sampling without transfer learning from flat search space
+                # Joblib parallel optimization
                 # Draw
-                columns = []
-                for dim in self.dimensions:
-                    columns.append(dim.rvs(n_samples=n_samples, random_state=rng))
 
-                # Transpose
-                return _transpose_list_array(columns)
+                columns = np.zeros((n_samples, len(self.dimensions)), dtype="O")
+                random_states = rng.randint(
+                    low=0, high=2**31, size=len(self.dimensions)
+                )
+                Parallel(n_jobs=n_jobs, verbose=0, require="sharedmem")(
+                    delayed(_sample_dimension)(
+                        dim,
+                        i,
+                        n_samples,
+                        np.random.RandomState(random_states[i]),
+                        [columns],
+                    )
+                    for i, dim in enumerate(self.dimensions)
+                )
+
+                return columns.tolist()
             else:
                 confs = self.model_sdv.sample(n_samples)  # sample from SDV
 
@@ -1327,10 +1338,11 @@ class Space(object):
         # Repack as an array
         Xt = np.hstack([np.asarray(c).reshape((len(X), -1)) for c in columns])
 
-        if False and self.is_config_space:
-            self.imp_const.fit(Xt)
-            Xtt = self.imp_const.transform(Xt)
-            Xt = Xtt
+        # TODO: old code to be removed
+        # if False and self.is_config_space:
+        #     self.imp_const.fit(Xt)
+        #     Xtt = self.imp_const.transform(Xt)
+        #     Xt = Xtt
 
         return Xt
 

@@ -155,6 +155,7 @@ class CBO(Search):
             "AugChebyshev",
             "PBI",
             "Quadratic",
+            "random",
         ]
         moo_scalarization_strategy_allowed = moo_scalarization_strategy_allowed + [
             f"r{s}" for s in moo_scalarization_strategy_allowed

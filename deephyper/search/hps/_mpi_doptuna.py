@@ -182,7 +182,9 @@ class MPIDistributedOptuna(Search):
                 )
 
             data = {f"p:{k}": v for k, v in config.items()}
-            if isinstance(output["objective"], list):
+            if isinstance(output["objective"], list) or isinstance(
+                output["objective"], tuple
+            ):
                 for i, obj in enumerate(output["objective"]):
                     data[f"objective_{i}"] = obj
             else:
