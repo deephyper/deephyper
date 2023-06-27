@@ -1,38 +1,36 @@
 import numbers
+
 import numpy as np
 import yaml
-
-from scipy.stats.distributions import randint
-from scipy.stats.distributions import rv_discrete
-from scipy.stats.distributions import uniform, truncnorm
 from scipy.stats import gaussian_kde
-
+from scipy.stats.distributions import randint, rv_discrete, truncnorm, uniform
 from sklearn.utils import check_random_state
-from sklearn.utils.fixes import sp_version
-from sklearn.utils.parallel import Parallel, delayed
 
+# from sklearn.utils.fixes import sp_version
 
-if type(sp_version) is not tuple:  # Version object since sklearn>=2.3.x
-    if hasattr(sp_version, "release"):
-        sp_version = sp_version.release
-    else:
-        sp_version = sp_version._version.release
+from deephyper.core.utils.joblib import Parallel, delayed
 
-
-from .transformers import CategoricalEncoder
-from .transformers import StringEncoder
-from .transformers import LabelEncoder
-from .transformers import Normalize
-from .transformers import Identity
-from .transformers import LogN
-from .transformers import Pipeline
-from .transformers import ToInteger
+# if type(sp_version) is not tuple:  # Version object since sklearn>=2.3.x
+#     if hasattr(sp_version, "release"):
+#         sp_version = sp_version.release
+#     else:
+#         sp_version = sp_version._version.release
 
 
 import ConfigSpace as CS
 from ConfigSpace.util import deactivate_inactive_hyperparameters
-
 from sklearn.impute import SimpleImputer
+
+from .transformers import (
+    CategoricalEncoder,
+    Identity,
+    LabelEncoder,
+    LogN,
+    Normalize,
+    Pipeline,
+    StringEncoder,
+    ToInteger,
+)
 
 
 # helper class to be able to print [1, ..., 4] instead of [1, '...', 4]

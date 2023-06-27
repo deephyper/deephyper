@@ -6,11 +6,12 @@ from numbers import Number
 import ConfigSpace as CS
 import numpy as np
 import pandas as pd
-from joblib import Parallel, delayed
 from scipy.optimize import fmin_l_bfgs_b
 from sklearn.base import clone, is_regressor
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.utils import check_random_state
+
+from deephyper.core.utils.joblib import Parallel, delayed
 
 from ..acquisition import _gaussian_acquisition, gaussian_acquisition_1D
 from ..learning import GaussianProcessRegressor
@@ -26,12 +27,12 @@ from ..utils import (
     check_x_in_space,
     cook_estimator,
     cook_initial_point_generator,
+    cook_objective_scaler,
     create_result,
     has_gradients,
     is_2Dlistlike,
     is_listlike,
     normalize_dimensions,
-    cook_objective_scaler,
 )
 
 
