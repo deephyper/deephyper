@@ -62,7 +62,7 @@ def pull_tutorials(github_link, dest_dir, tutorial_branch):
     os.system(f"rm -rf {dest_dir}/.git")
 
 
-# pull_tutorials(tutorials_github_link, tutorials_dest_dir, tutorial_branch)
+pull_tutorials(tutorials_github_link, tutorials_dest_dir, tutorial_branch)
 
 # -- General configuration ---------------------------------------------------
 
