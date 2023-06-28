@@ -8,7 +8,7 @@ from sklearn.utils import check_random_state
 
 # from sklearn.utils.fixes import sp_version
 
-from deephyper.core.utils.joblib import Parallel, delayed
+from deephyper.core.utils.joblib_utils import Parallel, delayed
 
 # if type(sp_version) is not tuple:  # Version object since sklearn>=2.3.x
 #     if hasattr(sp_version, "release"):
