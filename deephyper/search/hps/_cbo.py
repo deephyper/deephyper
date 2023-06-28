@@ -1,5 +1,6 @@
 import functools
 import logging
+import numbers
 import time
 import warnings
 
@@ -352,7 +353,6 @@ class CBO(Search):
 
                 opt_X = []  # input configuration
                 opt_y = []  # objective value
-                opt_b = []  # budget (optional)
                 # for cfg, obj in new_results:
                 for job_i in new_results:
                     cfg, obj = job_i
@@ -360,7 +360,7 @@ class CBO(Search):
 
                     # retrieve budget consumed by job with multiple observations
                     if job_i.observations is not None:
-                        # # TODO: use ALC to reduce the problem to a scalar maximization/estimation
+                        # TODO: use ALC to reduce the problem to a scalar maximization/estimation
                         from deephyper.stopper._lcmodel_stopper import (
                             area_learning_curve,
                         )
@@ -380,11 +380,13 @@ class CBO(Search):
 
                     # single observation returned without budget
                     else:
-                        if np.all(np.isreal(obj)):
+                        if isinstance(obj, numbers.Number) or all(
+                            isinstance(obj_i, numbers.Number) for obj_i in obj
+                        ):
                             opt_X.append(x)
                             opt_y.append(np.negative(obj).tolist())  # !maximizing
-                        elif (type(obj) is str and "F" == obj[0]) or np.any(
-                            type(objval) is str and "F" == objval[0] for objval in obj
+                        elif (type(obj) is str and "F" == obj[0]) or any(
+                            type(obj_i) is str and "F" == obj_i[0] for obj_i in obj
                         ):
                             if (
                                 self._opt_kwargs["acq_optimizer_kwargs"][
@@ -406,8 +408,7 @@ class CBO(Search):
                 t1 = time.time()
 
                 if len(opt_y) > 0:
-                    opt_b = None if len(opt_b) == 0 else opt_b
-                    self._opt.tell(opt_X, opt_y, budget=opt_b)
+                    self._opt.tell(opt_X, opt_y)
                     logging.info(f"Fitting took {time.time() - t1:.4f} sec.")
 
                 logging.info(f"Asking {num_new_local_results} new configurations...")

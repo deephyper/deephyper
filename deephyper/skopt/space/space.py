@@ -997,7 +997,12 @@ class Space(object):
                 self.hps_names.append(x.name)
                 if isinstance(x, CS.hyperparameters.CategoricalHyperparameter):
                     categories = list(x.choices)
-                    prior = list(x.probabilities)
+
+                    if x.probabilities is None:
+                        prior = np.ones((len(categories),)) / len(categories)
+                    else:
+                        prior = list(x.probabilities)
+
                     if x.name in cond_hps:
                         categories.append("NA")
 
