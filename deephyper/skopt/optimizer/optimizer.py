@@ -733,9 +733,7 @@ class Optimizer(object):
             list: the filtered list.
         """
         if self.filter_failures in ["mean", "max"]:
-            yi_no_failure = [
-                v for v in yi if np.ndim(v) > 0 or v != OBJECTIVE_VALUE_FAILURE
-            ]
+            yi_no_failure = [v for v in yi if v != OBJECTIVE_VALUE_FAILURE]
 
             # when yi_no_failure is empty all configurations are failures
             if len(yi_no_failure) == 0:
@@ -744,14 +742,11 @@ class Optimizer(object):
                 # constant value for the acq. func. to return anything
                 yi_failed_value = 0
             elif self.filter_failures == "mean":
-                yi_failed_value = np.mean(yi_no_failure, axis=0).tolist()
+                yi_failed_value = np.mean(yi_no_failure).tolist()
             else:
-                yi_failed_value = np.max(yi_no_failure, axis=0).tolist()
+                yi_failed_value = np.max(yi_no_failure).tolist()
 
-            yi = [
-                v if np.ndim(v) > 0 or v != OBJECTIVE_VALUE_FAILURE else yi_failed_value
-                for v in yi
-            ]
+            yi = [v if v != OBJECTIVE_VALUE_FAILURE else yi_failed_value for v in yi]
 
         return yi
 
@@ -925,7 +920,40 @@ class Optimizer(object):
             # Convert multiple objectives to single scalar
             if any(isinstance(v, list) == 1 for v in yi):
                 # Multi-Objective Optimization
+
+                if "F" in yi:
+                    yi = np.asarray(yi)
+                    mask_no_failures = np.where(yi != "F")
+                    yi[mask_no_failures] = self.objective_scaler.fit_transform(
+                        np.asarray(yi[mask_no_failures].tolist())
+                    ).tolist()
+                    yi = yi.tolist()
+                else:
+                    yi = self.objective_scaler.fit_transform(np.asarray(yi)).tolist()
+
                 yi = self._moo_scalarize(yi)
+
+            else:
+                # Single-Objective Optimization
+
+                if "F" in yi:
+                    # ! dtype="O" is key to avoid converting data to string
+                    yi = np.asarray(yi, dtype="O")
+                    mask_no_failures = np.where(yi != "F")
+                    yi[mask_no_failures] = (
+                        self.objective_scaler.fit_transform(
+                            np.asarray(yi[mask_no_failures].tolist()).reshape(-1, 1)
+                        )
+                        .reshape(-1)
+                        .tolist()
+                    )
+                    yi = yi.tolist()
+                else:
+                    yi = (
+                        self.objective_scaler.fit_transform(np.reshape(yi, (-1, 1)))
+                        .reshape(-1)
+                        .tolist()
+                    )
 
             # Handle failures
             yi = self._filter_failures(yi)
@@ -941,9 +969,9 @@ class Optimizer(object):
                 Xtt = np.asarray(Xtt)
 
                 # preprocessing of output space
-                yi = self.objective_scaler.fit_transform(
-                    np.reshape(yi, (-1, 1))
-                ).reshape(-1)
+                # yi = self.objective_scaler.fit_transform(
+                #     np.reshape(yi, (-1, 1))
+                # ).reshape(-1)
 
                 # fit surrogate model
                 est.fit(Xtt, yi)
@@ -1224,5 +1252,5 @@ class Optimizer(object):
                 )
 
         # compute normalization constants
-        self._moo_scalar_function.normalize(yi_filtered)
+        self._moo_scalar_function.set_utopia_point(yi_filtered)
         return [self._moo_scalar_function.scalarize(y) if y != "F" else "F" for y in yi]
