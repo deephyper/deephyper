@@ -47,6 +47,7 @@ class MoScalarFunction(abc.ABC):
             # and the inverse exponential CDF: F_inv(p) = -log(1 - p).
             self._weight = -np.log(1.0 - self._rng.rand(self._n_objectives))
         self._weight /= np.sum(self._weight)
+        self._scaling = np.ones(self._n_objectives)
 
     def _check_shape(self, y):
         """Check if the shape of y is consistent with the object."""
@@ -72,8 +73,11 @@ class MoScalarFunction(abc.ABC):
             return y
         return self._scalarize(y)
 
-    def set_utopia_point(self, yi):
-        """Compute the theoretical best if there were not trade-offs between objectives (minimizing all objectives).
+    def normalize(self, yi):
+        """Compute normalization constants based on the history of evaluated objective values.
+
+        Args:
+            yi (array): Array of evaluated objective values.
 
         Raises:
             ValueError: Raised if yi is not a list of scalars each of length _n_objectives.
@@ -82,8 +86,10 @@ class MoScalarFunction(abc.ABC):
         if np.ndim(yi) != 2:
             raise ValueError(f"Expected yi to be a 2D-array but is {yi}!")
 
+        y_max = np.max(yi, axis=0)
         y_min = np.min(yi, axis=0)
         self._utopia_point = y_min
+        self._scaling = 1.0 / np.maximum(y_max - y_min, 1e-6)
 
     @abc.abstractmethod
     def _scalarize(self, y):
@@ -140,7 +146,7 @@ class MoChebyshevFunction(MoScalarFunction):
         super().__init__(n_objectives, weight, utopia_point, random_state)
 
     def _scalarize(self, y):
-        y = np.asarray(y) - self._utopia_point
+        y = np.multiply(self._scaling, np.asarray(y) - self._utopia_point)
         return np.max(np.multiply(self._weight, np.abs(y)))
 
 
@@ -168,7 +174,7 @@ class MoPBIFunction(MoScalarFunction):
         self._penalty = np.abs(penalty) if np.isreal(penalty) else 100.0
 
     def _scalarize(self, y):
-        y = np.asarray(y) - self._utopia_point
+        y = np.multiply(self._scaling, np.asarray(y) - self._utopia_point)
         d1 = np.dot(self._weight, y) / self._weightnorm
         d2 = np.linalg.norm(y - (d1 * self._weight), 1)
         return d1 + (self._penalty * d2)
@@ -197,7 +203,7 @@ class MoAugmentedChebyshevFunction(MoScalarFunction):
         self._alpha = np.abs(alpha) if np.isreal(alpha) else 0.001
 
     def _scalarize(self, y):
-        y = np.asarray(y) - self._utopia_point
+        y = np.multiply(self._scaling, np.asarray(y) - self._utopia_point)
         y = np.multiply(self._weight, np.abs(y))
         return np.max(y) + (self._alpha * np.linalg.norm(y, 1))
 
@@ -229,5 +235,5 @@ class MoQuadraticFunction(MoScalarFunction):
         ).dot(U.T)
 
     def _scalarize(self, y):
-        y = np.asarray(y) - self._utopia_point
+        y = np.multiply(self._scaling, np.asarray(y) - self._utopia_point)
         return y.T.dot(self._Q).dot(y)

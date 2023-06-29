@@ -968,11 +968,6 @@ class Optimizer(object):
                 Xtt = self.space.imp_const.fit_transform(self.space.transform(Xi))
                 Xtt = np.asarray(Xtt)
 
-                # preprocessing of output space
-                # yi = self.objective_scaler.fit_transform(
-                #     np.reshape(yi, (-1, 1))
-                # ).reshape(-1)
-
                 # fit surrogate model
                 est.fit(Xtt, yi)
 
@@ -1252,5 +1247,5 @@ class Optimizer(object):
                 )
 
         # compute normalization constants
-        self._moo_scalar_function.set_utopia_point(yi_filtered)
+        self._moo_scalar_function.normalize(yi_filtered)
         return [self._moo_scalar_function.scalarize(y) if y != "F" else "F" for y in yi]
