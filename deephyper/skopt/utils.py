@@ -67,7 +67,11 @@ def create_result(Xi, yi, space=None, rng=None, specs=None, models=None):
         OptimizeResult instance with the required information.
     """
     res = OptimizeResult()
-    yi = np.asarray(yi)
+
+    # Filter out failures
+    Xi = np.asarray([x for x, y in zip(Xi, yi) if y != "F"])
+    yi = np.asarray([y for y in yi if y != "F"])
+
     if np.ndim(yi) == 2:
         res.log_time = np.ravel(yi[:, 1])
         yi = np.ravel(yi[:, 0])
@@ -833,7 +837,6 @@ def cook_objective_scaler(scaler, base_estimator):
     scalers["minmaxlog"] = pipeline
 
     if scaler == "auto":
-
         if isinstance(base_estimator, RandomForestRegressor):
             scaler = "minmaxlog"
         else:
