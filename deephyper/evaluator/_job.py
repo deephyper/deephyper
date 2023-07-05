@@ -46,6 +46,7 @@ class Job:
 
     @property
     def result(self):
+        """Alias for the objective property."""
         return self.objective
 
     @property
@@ -89,7 +90,6 @@ class RunningJob(MutableMapping):
         storage: Storage = None,
         stopper: Stopper = None,
     ) -> None:
-
         self.id = id
         self.parameters = parameters
 
@@ -104,14 +104,12 @@ class RunningJob(MutableMapping):
         self.obs = None
 
     def __getitem__(self, key):
-
         if key == "job_id":
             return int(self.id.split(".")[-1])
 
         return self.parameters[key]
 
     def __setitem__(self, key, value):
-
         if key == "job_id":
             raise KeyError("Cannot change the 'job_id' of a running job.")
 
@@ -127,12 +125,20 @@ class RunningJob(MutableMapping):
         return len(self.parameters)
 
     def record(self, budget: float, objective: float):
+        """Records the current ``budget`` and ``objective`` values in the object and
+        pass it to the stopper if one is being used.
+
+        Args:
+            budget (float): the budget used.
+            objective (float): the objective value obtained.
+        """
         if self.stopper:
             self.stopper.observe(budget, objective)
         else:
             self.obs = objective
 
-    def stopped(self):
+    def stopped(self) -> bool:
+        """Returns True if the RunningJob is using a Stopper and it is stopped. Otherwise it will return False."""
         if self.stopper:
             return self.stopper.stop()
         else:
