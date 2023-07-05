@@ -10,6 +10,5 @@
    deephyper.nas
    deephyper.problem
    deephyper.search
-   deephyper.sklearn
    deephyper.skopt
    deephyper.stopper

@@ -1,26 +1,26 @@
+from collections import OrderedDict
 from copy import deepcopy
 from functools import wraps
+
 import numpy as np
+from joblib import dump as dump_
+from joblib import load as load_
 from scipy.optimize import OptimizeResult
 from scipy.optimize import minimize as sp_minimize
 from sklearn.base import is_regressor
 from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.preprocessing import FunctionTransformer
-from sklearn.preprocessing import MinMaxScaler
 from sklearn.pipeline import make_pipeline
-from joblib import dump as dump_
-from joblib import load as load_
-from collections import OrderedDict
-from .learning import ExtraTreesRegressor
-from .learning import GaussianProcessRegressor
-from .learning import GradientBoostingQuantileRegressor
-from .learning import RandomForestRegressor
-from .learning.gaussian_process.kernels import ConstantKernel
-from .learning.gaussian_process.kernels import HammingKernel
-from .learning.gaussian_process.kernels import Matern
-from .sampler import Sobol, Lhs, Hammersly, Halton, Grid
-from .sampler import InitialPointGenerator
-from .space import Space, Dimension
+from sklearn.preprocessing import FunctionTransformer, MinMaxScaler
+
+from .learning import (
+    ExtraTreesRegressor,
+    GaussianProcessRegressor,
+    GradientBoostingQuantileRegressor,
+    RandomForestRegressor,
+)
+from .learning.gaussian_process.kernels import ConstantKernel, HammingKernel, Matern
+from .sampler import Grid, Halton, Hammersly, InitialPointGenerator, Lhs, Sobol
+from .space import Dimension, Space
 
 # Try to import Mondrian Forest
 MF_INSTALLED = False

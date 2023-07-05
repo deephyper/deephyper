@@ -1,4 +1,3 @@
-import warnings
 from deepxde.callbacks import Callback
 
 

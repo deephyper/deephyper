@@ -20,8 +20,8 @@ multiobjective documentation provided in
 
 This module is included for the purpose of:
 
- 1. optimization developers to understand DeepHyper's optimization techniques and
- 2. additional documentation -- because certain optimization-related features
+1. optimization developers to understand DeepHyper's optimization techniques and
+2. additional documentation -- because certain optimization-related features
     (such as multiobjective features in :mod:`deephyper.skopt.moo`)
     are too nuanced to fully documented in the :class:`deephyper.search.Search`
     class's docstrings, and can be better understood through their

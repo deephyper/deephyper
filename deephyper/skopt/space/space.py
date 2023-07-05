@@ -1,25 +1,15 @@
 import numbers
 
+import ConfigSpace as CS
 import numpy as np
 import yaml
+from ConfigSpace.util import deactivate_inactive_hyperparameters
 from scipy.stats import gaussian_kde
 from scipy.stats.distributions import randint, rv_discrete, truncnorm, uniform
+from sklearn.impute import SimpleImputer
 from sklearn.utils import check_random_state
 
-# from sklearn.utils.fixes import sp_version
-
 from deephyper.core.utils.joblib_utils import Parallel, delayed
-
-# if type(sp_version) is not tuple:  # Version object since sklearn>=2.3.x
-#     if hasattr(sp_version, "release"):
-#         sp_version = sp_version.release
-#     else:
-#         sp_version = sp_version._version.release
-
-
-import ConfigSpace as CS
-from ConfigSpace.util import deactivate_inactive_hyperparameters
-from sklearn.impute import SimpleImputer
 
 from .transformers import (
     CategoricalEncoder,

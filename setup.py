@@ -83,7 +83,7 @@ EXTRAS = {
         "ipython",
         "nbsphinx",
         "sphinx>=4,<7",
-        "sphinx-book-theme==1.0.0",
+        "sphinx-book-theme==1.0.1",
         "pydata-sphinx-theme==0.13.1",
         "sphinx-copybutton",
         "sphinx-gallery",
