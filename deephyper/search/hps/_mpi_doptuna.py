@@ -63,6 +63,7 @@ class CheckpointSaverCallback:
 
 # Supported samplers
 supported_samplers = ["TPE", "CMAES", "NSGAII", "DUMMY", "BOTORCH"]
+supported_pruners = ["NOP", "SHA", "HB", "MED"]
 
 
 class MPIDistributedOptuna(Search):
@@ -74,6 +75,7 @@ class MPIDistributedOptuna(Search):
         log_dir: str = ".",
         verbose: int = 0,
         sampler: Union[str, optuna.samplers.BaseSampler] = "TPE",
+        pruner: Union[str, optuna.pruners.BasePruner] = "NOP",
         n_objectives: int = 1,
         study_name: str = None,
         storage: Union[str, optuna.storages.BaseStorage] = None,
@@ -129,15 +131,36 @@ class MPIDistributedOptuna(Search):
                 f"Sampler is of type {type(sampler)} but must be a str or optuna.samplers.BaseSampler!"
             )
 
+        # Setup the pruner
+        if isinstance(pruner, optuna.pruners.BasePruner):
+            pass
+        elif isinstance(pruner, str):
+            if pruner == "NOP":
+                pruner = optuna.pruners.NopPruner()
+            elif pruner == "SHA":
+                pruner = optuna.pruners.SuccessiveHalvingPruner()
+            elif pruner == "HB":
+                pruner = optuna.pruners.HyperbandPruner()
+            elif pruner == "MED":
+                pruner = optuna.pruners.MedianPruner()
+            else:
+                raise ValueError(
+                    f"Requested unknown pruner {pruner} should be one of {supported_pruners}"
+                )
+        else:
+            raise TypeError(
+                f"Pruner is of type {type(pruner)} but must be a str or optuna.pruners.BasePruner!"
+            )
+        self.pruner = pruner
+
         self._n_objectives = n_objectives
 
         study_params = dict(
             study_name=study_name,
             storage=storage,
             sampler=sampler,
-            # pruner=pruner,  # TODO: include pruners
+            pruner=pruner,
         )
-        self.pruner = None  # TODO: include pruners
 
         if self.rank == 0:
             if self._n_objectives > 1:
@@ -199,7 +222,11 @@ class MPIDistributedOptuna(Search):
             return output["objective"]
 
         def optimize_wrapper(duration):
-            callbacks = [MaxTrialsCallback(max_evals)]
+            callbacks = []
+
+            if max_evals > 0:
+                callbacks.append(MaxTrialsCallback(max_evals))
+
             if self.rank == 0:
                 callbacks += [
                     CheckpointSaverCallback(
@@ -214,14 +241,17 @@ class MPIDistributedOptuna(Search):
 
             self.study.optimize(
                 objective_wrapper,
-                n_trials=max_evals,
+                n_trials=max_evals if max_evals > 0 else None,
                 timeout=duration,
                 callbacks=callbacks,
             )
 
+        print(f"{self.rank=}, {max_evals=}, {timeout=}", flush=True)
         if timeout is None:
+            logging.info(f"Running without timeout and max_evals={max_evals}")
             optimize_wrapper(None)
         else:
+            logging.info(f"Running with timeout={timeout} and max_evals={max_evals}")
             optimize = functools.partial(
                 terminate_on_timeout, timeout, optimize_wrapper
             )
