@@ -1,26 +1,26 @@
+from collections import OrderedDict
 from copy import deepcopy
 from functools import wraps
+
 import numpy as np
+from joblib import dump as dump_
+from joblib import load as load_
 from scipy.optimize import OptimizeResult
 from scipy.optimize import minimize as sp_minimize
 from sklearn.base import is_regressor
 from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.preprocessing import FunctionTransformer
-from sklearn.preprocessing import MinMaxScaler
 from sklearn.pipeline import make_pipeline
-from joblib import dump as dump_
-from joblib import load as load_
-from collections import OrderedDict
-from .learning import ExtraTreesRegressor
-from .learning import GaussianProcessRegressor
-from .learning import GradientBoostingQuantileRegressor
-from .learning import RandomForestRegressor
-from .learning.gaussian_process.kernels import ConstantKernel
-from .learning.gaussian_process.kernels import HammingKernel
-from .learning.gaussian_process.kernels import Matern
-from .sampler import Sobol, Lhs, Hammersly, Halton, Grid
-from .sampler import InitialPointGenerator
-from .space import Space, Dimension
+from sklearn.preprocessing import FunctionTransformer, MinMaxScaler
+
+from .learning import (
+    ExtraTreesRegressor,
+    GaussianProcessRegressor,
+    GradientBoostingQuantileRegressor,
+    RandomForestRegressor,
+)
+from .learning.gaussian_process.kernels import ConstantKernel, HammingKernel, Matern
+from .sampler import Grid, Halton, Hammersly, InitialPointGenerator, Lhs, Sobol
+from .space import Dimension, Space
 
 # Try to import Mondrian Forest
 MF_INSTALLED = False
@@ -67,7 +67,11 @@ def create_result(Xi, yi, space=None, rng=None, specs=None, models=None):
         OptimizeResult instance with the required information.
     """
     res = OptimizeResult()
-    yi = np.asarray(yi)
+
+    # Filter out failures
+    Xi = np.asarray([x for x, y in zip(Xi, yi) if y != "F"])
+    yi = np.asarray([y for y in yi if y != "F"])
+
     if np.ndim(yi) == 2:
         res.log_time = np.ravel(yi[:, 1])
         yi = np.ravel(yi[:, 0])
@@ -823,6 +827,10 @@ def cook_objective_scaler(scaler, base_estimator):
     pipeline = FunctionTransformer(func=lambda x: x, inverse_func=lambda x: x)
     scalers["identity"] = pipeline
 
+    # minmax
+    pipeline = make_pipeline(MinMaxScaler())
+    scalers["minmax"] = pipeline
+
     # minmaxlog
     scaler_log = FunctionTransformer(
         func=lambda x: np.log(x + 1e-12),
@@ -833,7 +841,6 @@ def cook_objective_scaler(scaler, base_estimator):
     scalers["minmaxlog"] = pipeline
 
     if scaler == "auto":
-
         if isinstance(base_estimator, RandomForestRegressor):
             scaler = "minmaxlog"
         else:

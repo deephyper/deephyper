@@ -3,7 +3,8 @@ import threading
 import numpy as np
 from sklearn.ensemble import ExtraTreesRegressor as _sk_ExtraTreesRegressor
 from sklearn.ensemble._forest import DecisionTreeRegressor, ForestRegressor
-from sklearn.utils.parallel import Parallel, delayed
+
+from deephyper.core.utils.joblib_utils import Parallel, delayed
 
 
 def _accumulate_prediction(tree, X, min_variance, out, lock):

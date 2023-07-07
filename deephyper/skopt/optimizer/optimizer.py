@@ -6,11 +6,12 @@ from numbers import Number
 import ConfigSpace as CS
 import numpy as np
 import pandas as pd
-from joblib import Parallel, delayed
 from scipy.optimize import fmin_l_bfgs_b
 from sklearn.base import clone, is_regressor
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.utils import check_random_state
+
+from deephyper.core.utils.joblib_utils import Parallel, delayed
 
 from ..acquisition import _gaussian_acquisition, gaussian_acquisition_1D
 from ..learning import GaussianProcessRegressor
@@ -26,12 +27,12 @@ from ..utils import (
     check_x_in_space,
     cook_estimator,
     cook_initial_point_generator,
+    cook_objective_scaler,
     create_result,
     has_gradients,
     is_2Dlistlike,
     is_listlike,
     normalize_dimensions,
-    cook_objective_scaler,
 )
 
 
@@ -483,8 +484,7 @@ class Optimizer(object):
             optimizer.gains_ = np.copy(self.gains_)
 
         if self.Xi:
-            budget = None if len(self.bi) == 0 else self.bi
-            optimizer._tell(self.Xi, self.yi, budget=budget)
+            optimizer._tell(self.Xi, self.yi)
 
         return optimizer
 
@@ -634,11 +634,6 @@ class Optimizer(object):
                 self.space.transform(X_s)
             )  # candidates
 
-            # add budget to input space if used
-            if len(self.bi) > 0:
-                max_budget = np.full((len(X_c), 1), fill_value=np.max(self.bi))
-                X_c = np.hstack((X_c, max_budget))
-
             mu, std = self._est.predict(X_c, return_std=True)
             kappa = self.acq_func_kwargs.get("kappa", 1.96)
             kappas = self.rng.exponential(kappa, size=n_points)
@@ -660,7 +655,6 @@ class Optimizer(object):
         opt = self.copy(random_state=self.rng.randint(0, np.iinfo(np.int32).max))
 
         X = []
-        max_budget = None if len(self.bi) == 0 else np.max(self.bi)
         for i in range(n_points):
             x = opt.ask()
             self.sampled.append(x)
@@ -689,9 +683,9 @@ class Optimizer(object):
             if "ps" in self.acq_func:
                 # Use `_tell()` instead of `tell()` to prevent repeated
                 # log transformations of the computation times.
-                opt._tell(x, (y_lie, t_lie), budget=max_budget)
+                opt._tell(x, (y_lie, t_lie))
             else:
-                opt._tell(x, y_lie, budget=max_budget)
+                opt._tell(x, y_lie)
 
         self.cache_ = {(n_points, strategy): X}  # cache_ the result
 
@@ -739,9 +733,7 @@ class Optimizer(object):
             list: the filtered list.
         """
         if self.filter_failures in ["mean", "max"]:
-            yi_no_failure = [
-                v for v in yi if np.ndim(v) > 0 or v != OBJECTIVE_VALUE_FAILURE
-            ]
+            yi_no_failure = [v for v in yi if v != OBJECTIVE_VALUE_FAILURE]
 
             # when yi_no_failure is empty all configurations are failures
             if len(yi_no_failure) == 0:
@@ -750,14 +742,11 @@ class Optimizer(object):
                 # constant value for the acq. func. to return anything
                 yi_failed_value = 0
             elif self.filter_failures == "mean":
-                yi_failed_value = np.mean(yi_no_failure, axis=0).tolist()
+                yi_failed_value = np.mean(yi_no_failure).tolist()
             else:
-                yi_failed_value = np.max(yi_no_failure, axis=0).tolist()
+                yi_failed_value = np.max(yi_no_failure).tolist()
 
-            yi = [
-                v if np.ndim(v) > 0 or v != OBJECTIVE_VALUE_FAILURE else yi_failed_value
-                for v in yi
-            ]
+            yi = [v if v != OBJECTIVE_VALUE_FAILURE else yi_failed_value for v in yi]
 
         return yi
 
@@ -844,7 +833,7 @@ class Optimizer(object):
             # return point computed from last call to tell()
             return next_x
 
-    def tell(self, x, y, fit=True, budget=None):
+    def tell(self, x, y, fit=True):
         """Record an observation (or several) of the objective function.
 
         Provide values of the objective function at points suggested by
@@ -870,9 +859,6 @@ class Optimizer(object):
             Fit a model to observed evaluations of the objective. A model will
             only be fitted after `n_initial_points` points have been told to
             the optimizer irrespective of the value of `fit`.
-
-        budget : scalar or list, default: None
-            Value of the budget used to observe the corresponding objective.
         """
         if self.space.is_config_space:
             pass
@@ -881,10 +867,6 @@ class Optimizer(object):
 
         self._check_y_is_valid(x, y)
 
-        # budget and y are checked in similar ways
-        if budget is not None:
-            self._check_y_is_valid(x, budget)
-
         # take the logarithm of the computation times
         if "ps" in self.acq_func:
             if is_2Dlistlike(x):
@@ -892,21 +874,9 @@ class Optimizer(object):
             elif is_listlike(x):
                 y = list(y)
                 y[1] = log(y[1])
-        return self._tell(x, y, fit=fit, budget=budget)
+        return self._tell(x, y, fit=fit)
 
-    def _get_predict_budget(self):
-        """Compute budget to use to maximise the acquisition function."""
-        bi_count = sorted([(b, c) for b, c in self.bi_count.items()], reverse=True)
-        budget_list, count_list = list(zip(*bi_count))
-        enough_observed = np.asarray(count_list) >= self.n_initial_points_
-        if any(enough_observed):
-            idx = np.argmax(enough_observed)
-        else:
-            idx = np.argmax(count_list)
-        pred_budget = budget_list[idx]
-        return pred_budget
-
-    def _tell(self, x, y, fit=True, budget=None):
+    def _tell(self, x, y, fit=True):
         """Perform the actual work of incorporating one or more new points.
         See `tell()` for the full description.
 
@@ -936,22 +906,6 @@ class Optimizer(object):
                 "not compatible." % (type(x), type(y))
             )
 
-        if budget is not None:
-            if type(budget) is list:
-                pass
-            elif type(budget) is float or type(budget) is int:
-                budget = [budget]
-            else:
-                raise ValueError(
-                    "The 'budget' should be composed of int or float values matching the shape of 'y'."
-                )
-
-            self.bi.extend(budget)
-            for budget_i in budget:
-                self.bi_count[budget_i] = self.bi_count.get(budget_i, 0) + 1
-
-            assert len(self.bi) == len(self.yi)
-
         # optimizer learned something new - discard cache
         self.cache_ = {}
 
@@ -961,12 +915,48 @@ class Optimizer(object):
             transformed_bounds = self.space.transformed_bounds
             est = clone(self.base_estimator_)
 
-            # handle failures
-            yi = self._filter_failures(self.yi)
+            yi = self.yi
 
-            # convert multiple objectives to single scalar
-            if np.ndim(yi) > 1 and np.shape(yi)[1] > 1:
+            # Convert multiple objectives to single scalar
+            if any(isinstance(v, list) == 1 for v in yi):
+                # Multi-Objective Optimization
+
+                if "F" in yi:
+                    yi = np.asarray(yi)
+                    mask_no_failures = np.where(yi != "F")
+                    yi[mask_no_failures] = self.objective_scaler.fit_transform(
+                        np.asarray(yi[mask_no_failures].tolist())
+                    ).tolist()
+                    yi = yi.tolist()
+                else:
+                    yi = self.objective_scaler.fit_transform(np.asarray(yi)).tolist()
+
                 yi = self._moo_scalarize(yi)
+
+            else:
+                # Single-Objective Optimization
+
+                if "F" in yi:
+                    # ! dtype="O" is key to avoid converting data to string
+                    yi = np.asarray(yi, dtype="O")
+                    mask_no_failures = np.where(yi != "F")
+                    yi[mask_no_failures] = (
+                        self.objective_scaler.fit_transform(
+                            np.asarray(yi[mask_no_failures].tolist()).reshape(-1, 1)
+                        )
+                        .reshape(-1)
+                        .tolist()
+                    )
+                    yi = yi.tolist()
+                else:
+                    yi = (
+                        self.objective_scaler.fit_transform(np.reshape(yi, (-1, 1)))
+                        .reshape(-1)
+                        .tolist()
+                    )
+
+            # Handle failures
+            yi = self._filter_failures(yi)
 
             # handle size of the sample fit to the estimator
             Xi, yi = self._sample(self.Xi, yi)
@@ -977,21 +967,6 @@ class Optimizer(object):
                 # preprocessing of input space
                 Xtt = self.space.imp_const.fit_transform(self.space.transform(Xi))
                 Xtt = np.asarray(Xtt)
-
-                # add budget as input
-                if len(self.bi) > 0:
-                    bi = self.bi
-
-                    pred_budget = self._get_predict_budget()
-                    transformed_bounds.append((pred_budget, pred_budget))
-
-                    bi = np.asarray(bi).reshape(-1, 1)
-                    Xtt = np.hstack((Xtt, bi))
-
-                # preprocessing of output space
-                yi = self.objective_scaler.fit_transform(
-                    np.reshape(yi, (-1, 1))
-                ).reshape(-1)
 
                 # fit surrogate model
                 est.fit(Xtt, yi)
@@ -1026,11 +1001,6 @@ class Optimizer(object):
 
                 X = self.space.imp_const.fit_transform(self.space.transform(X_s))
 
-                # add max budget as input for all samples
-                if len(self.bi) > 0:
-                    pred_budget = np.full((len(X), 1), fill_value=pred_budget)
-                    X = np.hstack((X, pred_budget))
-
                 self.next_xs_ = []
                 for cand_acq_func in self.cand_acq_funcs_:
                     values = _gaussian_acquisition(
@@ -1042,8 +1012,7 @@ class Optimizer(object):
                     )
 
                     # cache these values in case the strategy of ask is one-shot
-                    # if budget is used we need to remove it from input space
-                    self._last_X = X[:, :-1] if len(self.bi) > 0 else X
+                    self._last_X = X
                     self._last_values = values
 
                     # Find the minimum of the acquisition function by randomly
@@ -1125,11 +1094,7 @@ class Optimizer(object):
                                 transformed_bounds[:, 1],
                             )
 
-                    # if budget is used we need to remove the feature from the input space
-                    if len(self.bi) > 0:
-                        self.next_xs_.append(next_x[:-1])
-                    else:
-                        self.next_xs_.append(next_x)
+                    self.next_xs_.append(next_x)
 
                 if self.acq_func == "gp_hedge":
                     logits = np.array(self.gains_)
@@ -1245,7 +1210,9 @@ class Optimizer(object):
                 "rQuadratic",
             ]
 
-            n_objectives = 1 if np.ndim(yi[0]) == 0 else len(yi[0])
+            yi_filtered = np.asarray([v for v in yi if v != "F"])
+            n_objectives = 1 if np.ndim(yi_filtered[0]) == 0 else len(yi_filtered[0])
+
             if self._moo_scalarization_weight is not None:
                 if (
                     not is_listlike(self._moo_scalarization_weight)
@@ -1280,5 +1247,5 @@ class Optimizer(object):
                 )
 
         # compute normalization constants
-        self._moo_scalar_function.normalize(yi)
-        return np.asarray(list(map(self._moo_scalar_function.scalarize, yi)))
+        self._moo_scalar_function.normalize(yi_filtered)
+        return [self._moo_scalar_function.scalarize(y) if y != "F" else "F" for y in yi]

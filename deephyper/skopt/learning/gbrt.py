@@ -1,10 +1,9 @@
 import numpy as np
-
-from sklearn.base import clone
-from sklearn.base import BaseEstimator, RegressorMixin
+from sklearn.base import BaseEstimator, RegressorMixin, clone
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.utils import check_random_state
-from joblib import Parallel, delayed
+
+from deephyper.core.utils.joblib_utils import Parallel, delayed
 
 
 def _parallel_fit(regressor, X, y):

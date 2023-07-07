@@ -13,19 +13,20 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-import sys
+
+# import sys
 
 import git
 import sphinx_book_theme
 
 
-sys.path.insert(0, os.path.abspath(".."))
+# sys.path.insert(0, os.path.abspath(".."))
 
 
 # -- Project information -----------------------------------------------------
 
 project = "DeepHyper"
-copyright = "2018-2022, Argonne"
+copyright = "2018-2023, Argonne"
 author = "Argonne"
 
 # The short X.Y version
@@ -62,7 +63,7 @@ def pull_tutorials(github_link, dest_dir, tutorial_branch):
     os.system(f"rm -rf {dest_dir}/.git")
 
 
-# pull_tutorials(tutorials_github_link, tutorials_dest_dir, tutorial_branch)
+pull_tutorials(tutorials_github_link, tutorials_dest_dir, tutorial_branch)
 
 # -- General configuration ---------------------------------------------------
 
@@ -269,24 +270,35 @@ todo_include_todos = True
 
 # makes sphinx do a mock import of mpi4py so it’s not broken when you try to do auto-docs and import mpi4py
 autodoc_mock_imports = [
+    "deepxde",
     "horovod",
     "jax",
-    "joblib",
+    # "joblib",
     "matplotlib",
     "mpi4py",
-    "nbformat",
+    # "nbformat",
     "networkx",
     "numpyro",
     "ray",
     "redis",
     "sklearn",
-    "skopt",
     "tensorflow_probability",
     "tensorflow",
-    "tqdm",
+    "tinydb",  # TODO: to be removed when analytics are updated
+    # "tqdm",
     "xgboost",
 ]
-autosummary_mock_imports = autodoc_mock_imports
+autosummary_mock_imports = autodoc_mock_imports + [
+    "ConfigSpace",
+    "deephyper.skopt.learning.gaussian_process",
+    "deephyper.skopt.learning.tests",
+    "deephyper.skopt.plots",
+    "deephyper.sklearn",
+    "deephyper.test",
+    "joblib",
+    "scipy.optimize",
+    "tqdm",
+]
 
 # Remove <BLANKLINE>
 trim_doctest_flags = True

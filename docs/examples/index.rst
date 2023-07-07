@@ -15,12 +15,12 @@ Below is a gallery of examples on how to use DeepHyper.
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="**Author(s)**: Romain Egele.">
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
 
 .. only:: html
 
   .. image:: /examples/images/thumb/sphx_glr_plot_from_serial_to_parallel_hyperparameter_search_thumb.png
-    :alt: From Serial to Parallel Evaluations
+    :alt:
 
   :ref:`sphx_glr_examples_plot_from_serial_to_parallel_hyperparameter_search.py`
 
@@ -32,12 +32,12 @@ Below is a gallery of examples on how to use DeepHyper.
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="**Author(s)**: Romain Egele.">
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
 
 .. only:: html
 
   .. image:: /examples/images/thumb/sphx_glr_plot_notify_failures_hyperparameter_search_thumb.png
-    :alt: Notify Failures in Hyperparameter optimization
+    :alt:
 
   :ref:`sphx_glr_examples_plot_notify_failures_hyperparameter_search.py`
 
@@ -49,12 +49,12 @@ Below is a gallery of examples on how to use DeepHyper.
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="**Author(s)**: Romain Egele.">
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
 
 .. only:: html
 
   .. image:: /examples/images/thumb/sphx_glr_plot_transfer_learning_for_hps_thumb.png
-    :alt: Transfer Learning for Hyperparameter Search
+    :alt:
 
   :ref:`sphx_glr_examples_plot_transfer_learning_for_hps.py`
 
@@ -66,12 +66,12 @@ Below is a gallery of examples on how to use DeepHyper.
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="**Author(s)**: Romain Egele.">
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
 
 .. only:: html
 
   .. image:: /examples/images/thumb/sphx_glr_plot_profile_worker_utilization_thumb.png
-    :alt: Profile the Worker Utilization
+    :alt:
 
   :ref:`sphx_glr_examples_plot_profile_worker_utilization.py`
 

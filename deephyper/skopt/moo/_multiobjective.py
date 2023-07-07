@@ -1,7 +1,6 @@
 import abc
 
 import numpy as np
-from deephyper.skopt.utils import is_listlike
 
 
 class MoScalarFunction(abc.ABC):
@@ -57,7 +56,7 @@ class MoScalarFunction(abc.ABC):
             or (np.ndim(y) == 1 and np.shape(y)[0] == self._n_objectives)
         ):
             raise ValueError(
-                f"expected y to be a scalar or 1-D array of length {self._n_objectives}"
+                f"Expected y to be a scalar or 1-D array of length {self._n_objectives}"
             )
 
     def scalarize(self, y):
@@ -83,10 +82,10 @@ class MoScalarFunction(abc.ABC):
         Raises:
             ValueError: Raised if yi is not a list of scalars each of length _n_objectives.
         """
-        if not is_listlike(yi):
-            raise ValueError("expected yi to be a list")
-        for y in yi:
-            self._check_shape(y)
+
+        if np.ndim(yi) != 2:
+            raise ValueError(f"Expected yi to be a 2D-array but is {yi}!")
+
         y_max = np.max(yi, axis=0)
         y_min = np.min(yi, axis=0)
         self._utopia_point = y_min
