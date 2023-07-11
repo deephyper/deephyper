@@ -50,7 +50,7 @@ class ExhaustedFailures(RuntimeError):
         return "The search has reached its quota of failures! Check if the type of failure is expected or the value of ``max_failures`` in the search algorithm."
 
 
-def boltzman_distribution(x, beta=1):
+def boltzmann_distribution(x, beta=1):
     x = np.exp(beta * x)
     x = x / np.sum(x)
     return x
@@ -604,7 +604,7 @@ class Optimizer(object):
                             / np.abs(self._max_value - self._min_value)
                         )
 
-                    probs = boltzman_distribution(values, beta)
+                    probs = boltzmann_distribution(values, beta)
 
                     new_idx = np.argmax(self.rng.multinomial(1, probs))
 
@@ -1048,7 +1048,7 @@ class Optimizer(object):
                                     / np.abs(self._max_value - self._min_value)
                                 )
 
-                            probs = boltzman_distribution(values, beta)
+                            probs = boltzmann_distribution(values, beta)
 
                             idx = np.argmax(self.rng.multinomial(1, probs))
 
