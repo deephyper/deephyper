@@ -44,6 +44,7 @@ from ._multiobjective import (
     MoLinearFunction,
     MoPBIFunction,
     MoQuadraticFunction,
+    MoScalarFunction,
 )
 from ._pf import (
     is_pareto_efficient,
@@ -52,6 +53,14 @@ from ._pf import (
     pareto_front,
 )
 
+moo_functions = {
+    "Linear": MoLinearFunction,
+    "Chebyshev": MoChebyshevFunction,
+    "AugChebyshev": MoAugmentedChebyshevFunction,
+    "PBI": MoPBIFunction,
+    "Quadratic": MoQuadraticFunction,
+}
+
 __all__ = [
     "hypervolume",
     "MoLinearFunction",
@@ -59,7 +68,9 @@ __all__ = [
     "MoChebyshevFunction",
     "MoPBIFunction",
     "MoQuadraticFunction",
+    "MoScalarFunction",
     "is_pareto_efficient",
+    "moo_functions",
     "non_dominated_set",
     "non_dominated_set_ranked",
     "pareto_front",

@@ -13,7 +13,11 @@ import deephyper.core.exceptions
 import deephyper.skopt
 from deephyper.problem._hyperparameter import convert_to_skopt_space
 from deephyper.search._search import Search
-from deephyper.skopt.moo import non_dominated_set, non_dominated_set_ranked
+from deephyper.skopt.moo import (
+    non_dominated_set,
+    non_dominated_set_ranked,
+    MoScalarFunction,
+)
 
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.base import is_regressor
@@ -96,7 +100,7 @@ class CBO(Search):
         sync_communication: bool = False,
         filter_failures: str = "mean",
         max_failures: int = 100,
-        moo_scalarization_strategy: str = "rChebyshev",
+        moo_scalarization_strategy: str = "Chebyshev",
         moo_scalarization_weight=None,
         scheduler=None,
         objective_scaler="auto",
@@ -161,9 +165,12 @@ class CBO(Search):
         moo_scalarization_strategy_allowed = moo_scalarization_strategy_allowed + [
             f"r{s}" for s in moo_scalarization_strategy_allowed
         ]
-        if not (moo_scalarization_strategy in moo_scalarization_strategy_allowed):
+        if not (
+            moo_scalarization_strategy in moo_scalarization_strategy_allowed
+            or isinstance(moo_scalarization_strategy, MoScalarFunction)
+        ):
             raise ValueError(
-                f"Parameter 'moo_scalarization_strategy={acq_func}' should have a value in {moo_scalarization_strategy_allowed}!"
+                f"Parameter 'moo_scalarization_strategy={moo_scalarization_strategy}' should have a value in {moo_scalarization_strategy_allowed} or be a subclass of deephyper.skopt.moo.MoScalarFunction!"
             )
         self._moo_scalarization_strategy = moo_scalarization_strategy
         self._moo_scalarization_weight = moo_scalarization_weight

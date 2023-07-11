@@ -2,6 +2,8 @@ import abc
 
 import numpy as np
 
+from ..utils import is_listlike
+
 
 class MoScalarFunction(abc.ABC):
     """Abstract class representing a scalarizing function.
@@ -38,16 +40,28 @@ class MoScalarFunction(abc.ABC):
             self._check_shape(utopia_point)
             self._utopia_point = np.asarray(utopia_point)
 
-        if weight is not None:
-            self._check_shape(weight)
-            self._weight = np.asarray(weight)
-        else:
+        # Record the passed weight vector.
+        self.weight = weight
+        self._weight = None
+        self.update_weight()
+
+        self._scaling = np.ones(self._n_objectives)
+
+    def update_weight(self):
+        if self.weight == "random" or self.weight is None:
             # Uniformly sample from the probability simplex using Remark 1.3
             # from https://arxiv.org/pdf/1909.06406.pdf
             # and the inverse exponential CDF: F_inv(p) = -log(1 - p).
             self._weight = -np.log(1.0 - self._rng.rand(self._n_objectives))
+            # self._weight = self._rng.dirichlet([1.0 for _ in range(self._n_objectives)])
+        elif self.weight == "uniform":
+            self._weight = np.ones(self._n_objectives)
+        elif is_listlike(self.weight):
+            self._check_shape(self.weight)
+            self._weight = np.asarray(self.weight)
+        else:
+            raise ValueError(f"Invalid weight value: {self.weight}")
         self._weight /= np.sum(self._weight)
-        self._scaling = np.ones(self._n_objectives)
 
     def _check_shape(self, y):
         """Check if the shape of y is consistent with the object."""
@@ -167,11 +181,14 @@ class MoPBIFunction(MoScalarFunction):
         weight=None,
         utopia_point=None,
         random_state=None,
-        penalty: float = 100.0,
+        penalty: float = 5.0,
     ):
+        self._penalty = np.abs(penalty) if np.isreal(penalty) else 5.0
         super().__init__(n_objectives, weight, utopia_point, random_state)
+
+    def update_weight(self):
+        super().update_weight()
         self._weightnorm = np.linalg.norm(self._weight) ** 2
-        self._penalty = np.abs(penalty) if np.isreal(penalty) else 100.0
 
     def _scalarize(self, y):
         y = np.multiply(self._scaling, np.asarray(y) - self._utopia_point)
@@ -199,8 +216,8 @@ class MoAugmentedChebyshevFunction(MoScalarFunction):
         random_state=None,
         alpha: float = 0.001,
     ):
-        super().__init__(n_objectives, weight, utopia_point, random_state)
         self._alpha = np.abs(alpha) if np.isreal(alpha) else 0.001
+        super().__init__(n_objectives, weight, utopia_point, random_state)
 
     def _scalarize(self, y):
         y = np.multiply(self._scaling, np.asarray(y) - self._utopia_point)
@@ -227,9 +244,12 @@ class MoQuadraticFunction(MoScalarFunction):
         random_state=None,
         alpha: float = 10.0,
     ):
-        super().__init__(n_objectives, weight, utopia_point, random_state)
-        U, _, _ = np.linalg.svd(self._weight.reshape(-1, 1), full_matrices=True)
         self._alpha = np.abs(alpha) if np.isreal(alpha) else 10.0
+        super().__init__(n_objectives, weight, utopia_point, random_state)
+
+    def update_weight(self):
+        super().update_weight()
+        U, _, _ = np.linalg.svd(self._weight.reshape(-1, 1), full_matrices=True)
         self._Q = U.dot(
             np.diag([self._alpha if j > 0 else 1.0 for j in range(self._n_objectives)])
         ).dot(U.T)
