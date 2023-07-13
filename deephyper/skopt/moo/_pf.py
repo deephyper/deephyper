@@ -14,17 +14,29 @@ def is_pareto_efficient(new_obj, objvals):
     return np.all(np.any(np.asarray(new_obj) < objvals, axis=1))
 
 
-def pareto_front(y):
+def pareto_front(y, sort=False):
     """Extract the pareto front (actual objective values of the non-dominated set).
 
     Args:
-        y (array or list): Array or list of size (n_points, n_objectives)
+        y (array or list): Array or list of size (n_points, n_objectives).
+        sort (bool, optional): Whether to sort the pareto front (practical to plot in 2D or 3D). Defaults to False.
 
     Returns:
         array: Subarray of y representing the pareto front.
     """
     nds = non_dominated_set(y, return_mask=False)
-    return y[nds]
+    pf = y[nds]
+
+    if sort:
+        n_objectives = y.shape[1]
+        pf = np.array(
+            [tuple(row) for row in pf],
+            dtype=[(f"objective_{i}", float) for i in range(n_objectives)],
+        )
+        pf.sort(order=[f"objective_{i}" for i in range(n_objectives)])
+        pf = np.array([list(row) for row in pf])
+
+    return pf
 
 
 def non_dominated_set_ranked(y, fraction, return_mask=True):
