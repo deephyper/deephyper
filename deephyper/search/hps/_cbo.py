@@ -459,6 +459,8 @@ class CBO(Search):
             )
 
         if name == "RF":
+            # TODO: for better performance the RF surrogate could be fit with a bootstrap sample of size max 1_000
+            # However this should be refreshed each time when creating the estimator
             surrogate = deephyper.skopt.learning.RandomForestRegressor(
                 # n_estimators=100,
                 # max_features=1,

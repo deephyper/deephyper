@@ -45,8 +45,6 @@ class MoScalarFunction(abc.ABC):
         self._weight = None
         self.update_weight()
 
-        self._scaling = np.ones(self._n_objectives)
-
     def update_weight(self):
         if self.weight == "random" or self.weight is None:
             # Uniformly sample from the probability simplex using Remark 1.3
@@ -82,9 +80,7 @@ class MoScalarFunction(abc.ABC):
         Returns:
             float: The converted scalar value.
         """
-        self._check_shape(y)
-        if np.ndim(y) == 0:
-            return y
+        y = np.asarray(y)
         return self._scalarize(y)
 
     def normalize(self, yi):
@@ -100,10 +96,7 @@ class MoScalarFunction(abc.ABC):
         if np.ndim(yi) != 2:
             raise ValueError(f"Expected yi to be a 2D-array but is {yi}!")
 
-        y_max = np.max(yi, axis=0)
-        y_min = np.min(yi, axis=0)
-        self._utopia_point = y_min
-        self._scaling = 1.0 / np.maximum(y_max - y_min, 1e-6)
+        self._utopia_point = np.min(yi, axis=0)
 
     @abc.abstractmethod
     def _scalarize(self, y):
@@ -137,7 +130,7 @@ class MoLinearFunction(MoScalarFunction):
         super().__init__(n_objectives, weight, utopia_point, random_state)
 
     def _scalarize(self, y):
-        return np.dot(self._weight, np.asarray(y))
+        return np.dot(self._weight, y)
 
 
 class MoChebyshevFunction(MoScalarFunction):
@@ -160,7 +153,6 @@ class MoChebyshevFunction(MoScalarFunction):
         super().__init__(n_objectives, weight, utopia_point, random_state)
 
     def _scalarize(self, y):
-        y = np.multiply(self._scaling, np.asarray(y) - self._utopia_point)
         return np.max(np.multiply(self._weight, np.abs(y)))
 
 
@@ -191,7 +183,6 @@ class MoPBIFunction(MoScalarFunction):
         self._weightnorm = np.linalg.norm(self._weight) ** 2
 
     def _scalarize(self, y):
-        y = np.multiply(self._scaling, np.asarray(y) - self._utopia_point)
         d1 = np.dot(self._weight, y) / self._weightnorm
         d2 = np.linalg.norm(y - (d1 * self._weight), 1)
         return d1 + (self._penalty * d2)
@@ -220,7 +211,6 @@ class MoAugmentedChebyshevFunction(MoScalarFunction):
         super().__init__(n_objectives, weight, utopia_point, random_state)
 
     def _scalarize(self, y):
-        y = np.multiply(self._scaling, np.asarray(y) - self._utopia_point)
         y = np.multiply(self._weight, np.abs(y))
         return np.max(y) + (self._alpha * np.linalg.norm(y, 1))
 
@@ -255,5 +245,4 @@ class MoQuadraticFunction(MoScalarFunction):
         ).dot(U.T)
 
     def _scalarize(self, y):
-        y = np.multiply(self._scaling, np.asarray(y) - self._utopia_point)
         return y.T.dot(self._Q).dot(y)
