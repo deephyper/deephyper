@@ -145,22 +145,8 @@ class Search(abc.ABC):
             logging.warning(f"Could not find results file at {path_results}!")
             return df_results
 
-        # Check if Multi-Objective Optimization was performed to save the pareto front
-        objective_columns = [
-            col for col in df_results.columns if col.startswith("objective")
-        ]
-        if len(objective_columns) > 1:
-            if pd.api.types.is_string_dtype(df_results[objective_columns[0]]):
-                mask_no_failures = ~df_results[objective_columns[0]].str.startswith("F")
-            else:
-                mask_no_failures = np.ones(len(df_results), dtype=bool)
-            objectives = -df_results.loc[
-                mask_no_failures, objective_columns
-            ].values.astype(float)
-            mask_pareto_front = non_dominated_set(objectives)
-            df_results["pareto_efficient"] = False
-            df_results.loc[mask_no_failures, "pareto_efficient"] = mask_pareto_front
-            df_results.to_csv(path_results, index=False)
+        df_results = self.extend_results_with_pareto_efficient(df_results)
+        df_results.to_csv(path_results, index=False)
 
         return df_results
 
@@ -177,3 +163,27 @@ class Search(abc.ABC):
     def search_id(self):
         """The identifier of the search used by the evaluator."""
         return self._evaluator._search_id
+
+    def extend_results_with_pareto_efficient(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Extend the results DataFrame with a column ``pareto_efficient`` which is ``True`` if the point is Pareto efficient.
+
+        Args:
+            df (pd.DataFrame): the input results DataFrame.
+
+        Returns:
+            pd.DataFrame: the extended results DataFrame.
+        """
+        # Check if Multi-Objective Optimization was performed to save the pareto front
+        objective_columns = [col for col in df.columns if col.startswith("objective")]
+        if len(objective_columns) > 1:
+            if pd.api.types.is_string_dtype(df[objective_columns[0]]):
+                mask_no_failures = ~df[objective_columns[0]].str.startswith("F")
+            else:
+                mask_no_failures = np.ones(len(df), dtype=bool)
+            objectives = -df.loc[mask_no_failures, objective_columns].values.astype(
+                float
+            )
+            mask_pareto_front = non_dominated_set(objectives)
+            df["pareto_efficient"] = False
+            df.loc[mask_no_failures, "pareto_efficient"] = mask_pareto_front
+        return df
