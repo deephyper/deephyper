@@ -185,7 +185,6 @@ class Optimizer(object):
             - `"AugChebyshev"` for Chebyshev norm augmented with a weighted 1-norm.
             - `"PBI"` for penalized boundary intersection.
             - `"Quadratic"` for quadratic combination (2-norm).
-            - `"rLinear"`, `"rChebyshev"`, `"rAugChebyshev"`, `"rPBI"`, `"rQuadratic"` where the corresponding weights are randomly perturbed in every iteration.
 
         moo_scalarization_weight (array, optional) Default is `None`.
             Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions.
