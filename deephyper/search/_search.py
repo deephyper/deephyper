@@ -1,6 +1,7 @@
 import abc
 import copy
 import functools
+import logging
 import os
 import pathlib
 
@@ -12,6 +13,7 @@ from deephyper.core.utils._introspection import get_init_params_as_json
 from deephyper.core.utils._timeout import terminate_on_timeout
 from deephyper.evaluator import Evaluator
 from deephyper.evaluator.callback import TqdmCallback
+from deephyper.skopt.moo import non_dominated_set
 
 
 class Search(abc.ABC):
@@ -135,12 +137,32 @@ class Search(abc.ABC):
             else:
                 self._evaluator.dump_evals(log_dir=self._log_dir)
 
-        try:
-            path_results = os.path.join(self._log_dir, "results.csv")
+        df_results = None
+        path_results = os.path.join(self._log_dir, "results.csv")
+        if os.path.exists(path_results):
             df_results = pd.read_csv(path_results)
+        else:
+            logging.warning(f"Could not find results file at {path_results}!")
             return df_results
-        except FileNotFoundError:
-            return None
+
+        # Check if Multi-Objective Optimization was performed to save the pareto front
+        objective_columns = [
+            col for col in df_results.columns if col.startswith("objective")
+        ]
+        if len(objective_columns) > 1:
+            if pd.api.types.is_string_dtype(df_results[objective_columns[0]]):
+                mask_no_failures = ~df_results[objective_columns[0]].str.startswith("F")
+            else:
+                mask_no_failures = np.ones(len(df_results), dtype=bool)
+            objectives = -df_results.loc[
+                mask_no_failures, objective_columns
+            ].values.astype(float)
+            mask_pareto_front = non_dominated_set(objectives)
+            df_results["pareto_efficient"] = False
+            df_results.loc[mask_no_failures, "pareto_efficient"] = mask_pareto_front
+            df_results.to_csv(path_results, index=False)
+
+        return df_results
 
     @abc.abstractmethod
     def _search(self, max_evals, timeout):
