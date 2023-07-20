@@ -915,10 +915,10 @@ class Optimizer(object):
                     # Multi-Objective Optimization
 
                     if "F" in yi:
-                        yi = np.asarray(yi)
+                        yi = np.asarray(yi, dtype="O")
                         mask_no_failures = np.where(yi != "F")
                         yi[mask_no_failures] = self.objective_scaler.fit_transform(
-                            np.asarray(yi[mask_no_failures].tolist())
+                            yi[mask_no_failures].tolist()
                         ).tolist()
                         yi = yi.tolist()
                     else:
