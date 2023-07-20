@@ -468,7 +468,16 @@ class Real(Dimension):
 
         y_ = np.quantile(y, q)  # threshold
         X_low = X[y <= y_]
-        self._kde = gaussian_kde(X_low)
+
+        # It is possible that fitting the Gaussian Kernel Density Estimator
+        # triggers an error, for example if all values of X_low are the same.
+        # In this case, we fall back to uniform sampling or we reuse the last
+        # fitted self._kde.
+        try:
+            kde = gaussian_kde(X_low)
+            self._kde = kde
+        except np.linalg.LinAlgError:
+            pass
 
     def rvs(self, n_samples=1, random_state=None):
         """Draw random samples.
@@ -483,7 +492,6 @@ class Real(Dimension):
         rng = check_random_state(random_state)
 
         if hasattr(self, "_kde"):
-            # samples = self._kde.sample(n_samples, random_state=rng).reshape(-1)
             samples = self._kde.resample(n_samples, rng).reshape(-1)
             samples = np.clip(samples, self.low, self.high)
         else:

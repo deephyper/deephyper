@@ -23,7 +23,7 @@ REQUIRED = [
     "ConfigSpace>=0.4.20",
     "dm-tree",
     "Jinja2<3.1",
-    "numpy",  # ==1.19.4",  # working with 1.20.1
+    "numpy>=1.20",  # ==1.19.4",  # working with 1.20.1
     "pandas>=0.24.2",
     "packaging",
     "parse",

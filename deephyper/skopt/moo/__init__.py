@@ -18,7 +18,7 @@ one will need to solve multiple *different* scalarizations in parallel.
 This can be achieved by using one of the 5 scalarization strategies with
 randomized weights.
 When initializing the :class:`deephyper.search.Search` class, set
-``moo_scalarization_strategy=["rLinear", "rChebyshev", "rAugChebyshev", "rPBI", "rQuadratic"]``.
+``moo_scalarization_weight=None``.
 DeepHyper will randomly generate new scalarization weights for each
 candidate point.
 This can be slightly more expensive than solving with a fixed scalarization
@@ -44,6 +44,7 @@ from ._multiobjective import (
     MoLinearFunction,
     MoPBIFunction,
     MoQuadraticFunction,
+    MoScalarFunction,
 )
 from ._pf import (
     is_pareto_efficient,
@@ -52,6 +53,14 @@ from ._pf import (
     pareto_front,
 )
 
+moo_functions = {
+    "Linear": MoLinearFunction,
+    "Chebyshev": MoChebyshevFunction,
+    "AugChebyshev": MoAugmentedChebyshevFunction,
+    "PBI": MoPBIFunction,
+    "Quadratic": MoQuadraticFunction,
+}
+
 __all__ = [
     "hypervolume",
     "MoLinearFunction",
@@ -59,7 +68,9 @@ __all__ = [
     "MoChebyshevFunction",
     "MoPBIFunction",
     "MoQuadraticFunction",
+    "MoScalarFunction",
     "is_pareto_efficient",
+    "moo_functions",
     "non_dominated_set",
     "non_dominated_set_ranked",
     "pareto_front",

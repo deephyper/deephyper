@@ -1,6 +1,7 @@
 import abc
 import copy
 import functools
+import logging
 import os
 import pathlib
 
@@ -12,6 +13,7 @@ from deephyper.core.utils._introspection import get_init_params_as_json
 from deephyper.core.utils._timeout import terminate_on_timeout
 from deephyper.evaluator import Evaluator
 from deephyper.evaluator.callback import TqdmCallback
+from deephyper.skopt.moo import non_dominated_set
 
 
 class Search(abc.ABC):
@@ -135,12 +137,18 @@ class Search(abc.ABC):
             else:
                 self._evaluator.dump_evals(log_dir=self._log_dir)
 
-        try:
-            path_results = os.path.join(self._log_dir, "results.csv")
+        df_results = None
+        path_results = os.path.join(self._log_dir, "results.csv")
+        if os.path.exists(path_results):
             df_results = pd.read_csv(path_results)
+        else:
+            logging.warning(f"Could not find results file at {path_results}!")
             return df_results
-        except FileNotFoundError:
-            return None
+
+        df_results = self.extend_results_with_pareto_efficient(df_results)
+        df_results.to_csv(path_results, index=False)
+
+        return df_results
 
     @abc.abstractmethod
     def _search(self, max_evals, timeout):
@@ -155,3 +163,27 @@ class Search(abc.ABC):
     def search_id(self):
         """The identifier of the search used by the evaluator."""
         return self._evaluator._search_id
+
+    def extend_results_with_pareto_efficient(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Extend the results DataFrame with a column ``pareto_efficient`` which is ``True`` if the point is Pareto efficient.
+
+        Args:
+            df (pd.DataFrame): the input results DataFrame.
+
+        Returns:
+            pd.DataFrame: the extended results DataFrame.
+        """
+        # Check if Multi-Objective Optimization was performed to save the pareto front
+        objective_columns = [col for col in df.columns if col.startswith("objective")]
+        if len(objective_columns) > 1:
+            if pd.api.types.is_string_dtype(df[objective_columns[0]]):
+                mask_no_failures = ~df[objective_columns[0]].str.startswith("F")
+            else:
+                mask_no_failures = np.ones(len(df), dtype=bool)
+            objectives = -df.loc[mask_no_failures, objective_columns].values.astype(
+                float
+            )
+            mask_pareto_front = non_dominated_set(objectives)
+            df["pareto_efficient"] = False
+            df.loc[mask_no_failures, "pareto_efficient"] = mask_pareto_front
+        return df

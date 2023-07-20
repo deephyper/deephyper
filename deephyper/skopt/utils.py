@@ -10,8 +10,7 @@ from scipy.optimize import minimize as sp_minimize
 from sklearn.base import is_regressor
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import FunctionTransformer, MinMaxScaler
-
+from sklearn.preprocessing import FunctionTransformer, MinMaxScaler, QuantileTransformer
 from .learning import (
     ExtraTreesRegressor,
     GaussianProcessRegressor,
@@ -828,7 +827,7 @@ def cook_objective_scaler(scaler, base_estimator):
     scalers["identity"] = pipeline
 
     # minmax
-    pipeline = make_pipeline(MinMaxScaler())
+    pipeline = MinMaxScaler()
     scalers["minmax"] = pipeline
 
     # minmaxlog
@@ -840,9 +839,21 @@ def cook_objective_scaler(scaler, base_estimator):
     pipeline = make_pipeline(MinMaxScaler(), scaler_log)
     scalers["minmaxlog"] = pipeline
 
+    # log
+    pipeline = FunctionTransformer(
+        func=lambda x: np.log(x - x.min(axis=0) + 1),
+        inverse_func=None,
+        check_inverse=False,
+    )
+    scalers["log"] = pipeline
+
+    # quantile-uniform
+    pipeline = QuantileTransformer(output_distribution="uniform")
+    scalers["quantile-uniform"] = pipeline
+
     if scaler == "auto":
         if isinstance(base_estimator, RandomForestRegressor):
-            scaler = "minmaxlog"
+            scaler = "quantile-uniform"
         else:
             scaler = "identity"
 

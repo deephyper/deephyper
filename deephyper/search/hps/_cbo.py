@@ -13,7 +13,12 @@ import deephyper.core.exceptions
 import deephyper.skopt
 from deephyper.problem._hyperparameter import convert_to_skopt_space
 from deephyper.search._search import Search
-from deephyper.skopt.moo import non_dominated_set, non_dominated_set_ranked
+from deephyper.skopt.moo import (
+    non_dominated_set,
+    non_dominated_set_ranked,
+    MoScalarFunction,
+    moo_functions,
+)
 
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.base import is_regressor
@@ -65,10 +70,10 @@ class CBO(Search):
         sync_communcation (bool, optional): Performs the search in a batch-synchronous manner. Defaults to ``False`` for asynchronous updates.
         filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. If ``"ignore"`` is passed then failed configurations will be filtered-out and not passed to the surrogate model. For multiple objectives, failure of any single objective will lead to treating that configuration as failed and each of these multiple objective will be replaced by their individual ``"min"`` or ``"mean"`` of past configurations. Defaults to ``"mean"`` to replace by failed configurations by the running mean of objectives.
         max_failures (int, optional): Maximum number of failed configurations allowed before observing a valid objective value when ``filter_failures`` is not equal to ``"ignore"``. Defaults to ``100``.
-        moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "AugChebyshev", "PBI", "Quadratic", "rLinear", "rChebyshev", "rAugChebyshev", "rPBI", "rQuadratic"]``. Defaults to ``"rChebyshev"``. Typically, randomized methods should be used to capture entire Pareto front, unless there is a known target solution a priori. Additional details on each scalarization can be found in :mod:`deephyper.skopt.moo`.
-        moo_scalarization_weight (list, optional): Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions. Defaults to ``None``. Only set if you want to fix the scalarization weights for a multiobjective HPS.
+        moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "AugChebyshev", "PBI", "Quadratic"]``. Defaults to ``"Chebyshev"``. Typically, randomized methods should be used to capture entire Pareto front, unless there is a known target solution a priori. Additional details on each scalarization can be found in :mod:`deephyper.skopt.moo`.
+        moo_scalarization_weight (list, optional): Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions. Defaults to ``None`` for randomized weights. Only set if you want to fix the scalarization weights for a multiobjective HPS.
         scheduler (dict, callable, optional): a method to manage the the value of ``kappa, xi`` with iterations. Defaults to ``None`` which does not use any scheduler.
-        objective_scaler (str, optional): a way to map the objective space to some other support for example to normalize it. Defaults to ``"auto"`` which automatically set it to "identity" for any surrogate model except "RF" which will use "minmaxlog".
+        objective_scaler (str, optional): a way to map the objective space to some other support for example to normalize it. Defaults to ``"auto"`` which automatically set it to "identity" for any surrogate model except "RF" which will use "quantile-uniform".
         stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the function. Defaults to ``None`` which does not use any stopper.
     """
 
@@ -96,7 +101,7 @@ class CBO(Search):
         sync_communication: bool = False,
         filter_failures: str = "mean",
         max_failures: int = 100,
-        moo_scalarization_strategy: str = "rChebyshev",
+        moo_scalarization_strategy: str = "Chebyshev",
         moo_scalarization_weight=None,
         scheduler=None,
         objective_scaler="auto",
@@ -150,20 +155,13 @@ class CBO(Search):
                 f"Parameter max_failures={max_failures} should be an integer value!"
             )
 
-        moo_scalarization_strategy_allowed = [
-            "Linear",
-            "Chebyshev",
-            "AugChebyshev",
-            "PBI",
-            "Quadratic",
-            "random",
-        ]
-        moo_scalarization_strategy_allowed = moo_scalarization_strategy_allowed + [
-            f"r{s}" for s in moo_scalarization_strategy_allowed
-        ]
-        if not (moo_scalarization_strategy in moo_scalarization_strategy_allowed):
+        moo_scalarization_strategy_allowed = list(moo_functions.keys())
+        if not (
+            moo_scalarization_strategy in moo_scalarization_strategy_allowed
+            or isinstance(moo_scalarization_strategy, MoScalarFunction)
+        ):
             raise ValueError(
-                f"Parameter 'moo_scalarization_strategy={acq_func}' should have a value in {moo_scalarization_strategy_allowed}!"
+                f"Parameter 'moo_scalarization_strategy={moo_scalarization_strategy}' should have a value in {moo_scalarization_strategy_allowed} or be a subclass of deephyper.skopt.moo.MoScalarFunction!"
             )
         self._moo_scalarization_strategy = moo_scalarization_strategy
         self._moo_scalarization_weight = moo_scalarization_weight
@@ -452,6 +450,8 @@ class CBO(Search):
             )
 
         if name == "RF":
+            # TODO: for better performance the RF surrogate could be fit with a bootstrap sample of size max 1_000
+            # However this should be refreshed each time when creating the estimator
             surrogate = deephyper.skopt.learning.RandomForestRegressor(
                 # n_estimators=100,
                 # max_features=1,

@@ -276,8 +276,11 @@ class MPIDistributedOptuna(Search):
                 ],
             )
 
-            results = pd.DataFrame([t.user_attrs["results"] for t in all_trials])
-            results.to_csv(os.path.join(self._log_dir, "results.csv"))
-            return results
+            df_results = pd.DataFrame([t.user_attrs["results"] for t in all_trials])
+
+            df_results = self.extend_results_with_pareto_efficient(df_results)
+
+            df_results.to_csv(os.path.join(self._log_dir, "results.csv"))
+            return df_results
         else:
             return None
