@@ -27,7 +27,7 @@ REQUIRED = [
     "pandas>=0.24.2",
     "packaging",
     "parse",
-    "scikit-learn>=1.2.2",
+    "scikit-learn>=0.23.1",
     "scipy>=1.7",
     "tqdm>=4.64.0",
     "pyyaml",
