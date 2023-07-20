@@ -402,16 +402,17 @@ class Optimizer(object):
         # Initialize lower bounds for objectives
         if moo_lower_bounds is None:
             self._moo_lower_bounds = None
-        elif (
-            isinstance(moo_lower_bounds, list)
-            and all([isinstance(lbi, float)
-                     or isinstance(lbi, int)
-                     or lbi is None
-                     for lbi in moo_lower_bounds])
+        elif isinstance(moo_lower_bounds, list) and all(
+            [
+                isinstance(lbi, float) or isinstance(lbi, int) or lbi is None
+                for lbi in moo_lower_bounds
+            ]
         ):
             self._moo_lower_bounds = moo_lower_bounds
         else:
-            raise ValueError(f"Parameter 'moo_lower_bounds={moo_lower_bounds}' is invalid. Must be None or a list")
+            raise ValueError(
+                f"Parameter 'moo_lower_bounds={moo_lower_bounds}' is invalid. Must be None or a list"
+            )
 
         # Initialize the moo scalarization strategy
         moo_scalarization_strategy_allowed = list(moo_functions.keys()) + [
@@ -948,13 +949,23 @@ class Optimizer(object):
                         # Need to transform lower bounds too
                         # (also negate to upper bounds because minimizing)
                         if self._moo_lower_bounds is not None:
-                            bi = [[-lb if lb is not None else 0
-                                   for lb in self._moo_lower_bounds]]
-                            bi = self.objective_scaler.transform(
-                                np.asarray(bi)
-                            ).flatten().tolist()
+                            bi = [
+                                [
+                                    -lb if lb is not None else 0
+                                    for lb in self._moo_lower_bounds
+                                ]
+                            ]
+                            bi = (
+                                self.objective_scaler.transform(np.asarray(bi))
+                                .flatten()
+                                .tolist()
+                            )
                             for i in range(len(bi)):
-                                bi[i] = bi[i] if self._moo_lower_bounds[i] is not None else np.infty
+                                bi[i] = (
+                                    bi[i]
+                                    if self._moo_lower_bounds[i] is not None
+                                    else np.infty
+                                )
                         yi = self._moo_penalize(yi, bi)
                     yi = self._moo_scalarize(yi)
 
@@ -1216,10 +1227,10 @@ class Optimizer(object):
         Returns:
             list: the penalized list.
         """
-        #print(yi[0], bi) # DEBUG uncomment
+        # print(yi[0], bi) # DEBUG uncomment
         pi = np.sum(np.maximum(np.asarray(yi) - np.asarray(bi), 0), axis=1)
         yi = np.add(np.asarray(yi).T, pi).T.tolist()
-        #print(yi[0]) # DEBUG uncomment
+        # print(yi[0]) # DEBUG uncomment
         return yi
 
     def _moo_scalarize(self, yi):

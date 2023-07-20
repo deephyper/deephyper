@@ -160,16 +160,17 @@ class CBO(Search):
         # Initialize lower bounds for objectives
         if moo_lower_bounds is None:
             self._moo_lower_bounds = None
-        elif (
-            isinstance(moo_lower_bounds, list)
-            and all([isinstance(lbi, float)
-                     or isinstance(lbi, int)
-                     or lbi is None
-                     for lbi in moo_lower_bounds])
+        elif isinstance(moo_lower_bounds, list) and all(
+            [
+                isinstance(lbi, float) or isinstance(lbi, int) or lbi is None
+                for lbi in moo_lower_bounds
+            ]
         ):
             self._moo_lower_bounds = moo_lower_bounds
         else:
-            raise ValueError(f"Parameter 'moo_lower_bounds={moo_lower_bounds}' is invalid. Must be None or a list")
+            raise ValueError(
+                f"Parameter 'moo_lower_bounds={moo_lower_bounds}' is invalid. Must be None or a list"
+            )
 
         moo_scalarization_strategy_allowed = list(moo_functions.keys())
         if not (
