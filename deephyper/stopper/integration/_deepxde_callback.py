@@ -27,6 +27,7 @@ class DeepXDEStopperCallback(Callback):
         self.mode = mode
 
         self.budget = 0
+        self.stopped = False
 
     def on_epoch_end(self):
         self.budget += 1
@@ -41,6 +42,7 @@ class DeepXDEStopperCallback(Callback):
         self.job.record(budget, objective)
         if self.job.stopped():
             self.model.stop_training = True
+            self.stopped = True
 
     def get_monitor_value(self):
         if self.monitor == "loss_train":
