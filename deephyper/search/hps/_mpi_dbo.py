@@ -46,6 +46,7 @@ class MPIDistributedBO(CBO):
         sync_communcation (bool, optional): Performs the search in a batch-synchronous manner. Defaults to ``False`` for asynchronous updates.
         filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. If ``"ignore"`` is passed then failed configurations will be filtered-out and not passed to the surrogate model. For multiple objectives, failure of any single objective will lead to treating that configuration as failed and each of these multiple objective will be replaced by their individual ``"min"`` or ``"mean"`` of past configurations. Defaults to ``"mean"`` to replace by failed configurations by the running mean of objectives.
         max_failures (int, optional): Maximum number of failed configurations allowed before observing a valid objective value when ``filter_failures`` is not equal to ``"ignore"``. Defaults to ``100``.
+        moo_lower_bounds (list, optional): List of lower bounds on the interesting range of objective values. Must be the same length as the number of obejctives. Defaults to ``None``, i.e., no bounds. Can bound only a single objective by providing ``None`` for all other values. For example, ``moo_lower_bounds=[None, 0.5, None]`` will explore all tradeoffs for the objectives at index 0 and 2, but only consider scores for objective 1 that exceed 0.5.
         moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "AugChebyshev", "PBI", "Quadratic"]``. Defaults to ``"Chebyshev"``. Typically, randomized methods should be used to capture entire Pareto front, unless there is a known target solution a priori. Additional details on each scalarization can be found in :mod:`deephyper.skopt.moo`.
         moo_scalarization_weight (list, optional): Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions. Defaults to ``None`` for randomized weights. Only set if you want to fix the scalarization weights for a multiobjective HPS.
         scheduler (dict, callable, optional): a method to manage the the value of ``kappa, xi`` with iterations. Defaults to ``None`` which does not use any scheduler.
@@ -78,6 +79,7 @@ class MPIDistributedBO(CBO):
         sync_communication: bool = False,
         filter_failures: str = "mean",
         max_failures: int = 100,
+        moo_lower_bounds=None,
         moo_scalarization_strategy: str = "Chebyshev",
         moo_scalarization_weight=None,
         scheduler=None,
@@ -154,6 +156,7 @@ class MPIDistributedBO(CBO):
                 sync_communication=sync_communication,
                 filter_failures=filter_failures,
                 max_failures=max_failures,
+                moo_lower_bounds=moo_lower_bounds,
                 moo_scalarization_strategy=moo_scalarization_strategy,
                 moo_scalarization_weight=moo_scalarization_weight,
                 scheduler=scheduler,
@@ -186,6 +189,7 @@ class MPIDistributedBO(CBO):
                 sync_communication=sync_communication,
                 filter_failures=filter_failures,
                 max_failures=max_failures,
+                moo_lower_bounds=moo_lower_bounds,
                 moo_scalarization_strategy=moo_scalarization_strategy,
                 moo_scalarization_weight=moo_scalarization_weight,
                 scheduler=scheduler,
