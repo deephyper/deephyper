@@ -1183,7 +1183,14 @@ class Optimizer(object):
         return result
 
     def _moo_scalarize(self, yi):
-        yi_filtered = np.asarray([v for v in yi if v != "F"])
+        has_failures = "F" in yi
+        if has_failures:
+            yi = np.asarray(yi, dtype="O")
+            mask_no_failures = np.where(yi != "F")
+            yi_filtered = yi[mask_no_failures]
+        else:
+            yi_filtered = np.asarray(yi)
+
         n_objectives = 1 if np.ndim(yi_filtered[0]) == 0 else len(yi_filtered[0])
 
         # Fit scaler
@@ -1196,34 +1203,34 @@ class Optimizer(object):
                 m if b is None else b for m, b in zip(y_max, self._moo_upper_bounds)
             ]
 
-            # Strategy 1: penalty after scaling
-            # upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
-            # yi_filtered = self.objective_scaler.transform(yi_filtered)
-            # penalty = np.sum(np.maximum(yi_filtered - upper_bounds, 0), axis=1)
+            # ! Strategy 1: penalty after scaling
+            upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
+            yi_filtered = self.objective_scaler.transform(yi_filtered)
+            penalty = np.sum(2 * np.maximum(yi_filtered - upper_bounds, 0), axis=1)
             # print("-> y:", yi_filtered[-1])
             # print("-> p:", penalty[-1])
             # print()
-            # yi_filtered = np.add(yi_filtered.T, penalty).T
+            yi_filtered = np.add(yi_filtered.T, penalty).T
 
-            # Strategy 2: penalty before scaling
+            # ! Strategy 2: penalty before scaling
             # penalty = np.maximum(yi_filtered - upper_bounds, 0)
             # yi_filtered = yi_filtered + penalty
             # yi_filtered = self.objective_scaler.transform(yi_filtered)
 
-            # Strategy 3: replace values above upper bounds with y_max
-            yi_filtered = self.objective_scaler.transform(yi_filtered)
-            y_max_scaled = self.objective_scaler.transform([y_max])[0]
-            upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
+            # ! Strategy 3: replace values above upper bounds with y_max
+            # yi_filtered = self.objective_scaler.transform(yi_filtered)
+            # y_max_scaled = self.objective_scaler.transform([y_max])[0]
+            # upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
 
-            # S.3.A: Replacing only the objective which breaks the bound
+            # *S.3.A: Replacing only the objective which breaks the bound
             # mask = yi_filtered > upper_bounds
             # yi_filtered[mask] = np.tile(y_max_scaled, yi_filtered.shape[0]).reshape(
             #     yi_filtered.shape
             # )[mask]
 
-            # S.3.B: Replacing all objectives if any of them breaks the bound
-            mask = (yi_filtered > upper_bounds).any(axis=1)
-            yi_filtered[mask] = y_max_scaled
+            # *S.3.B: Replacing all objectives if any of them breaks the bound
+            # mask = (yi_filtered > upper_bounds).any(axis=1)
+            # yi_filtered[mask] = y_max_scaled
 
         else:
             yi_filtered = self.objective_scaler.transform(yi_filtered)
@@ -1246,6 +1253,10 @@ class Optimizer(object):
 
         # compute normalization constants
         self._moo_scalar_function.normalize(yi_filtered)
+        yi_filtered = [self._moo_scalar_function.scalarize(y) for y in yi_filtered]
 
-        sy = [self._moo_scalar_function.scalarize(y) if y != "F" else "F" for y in yi]
-        return sy
+        if has_failures:
+            yi[mask_no_failures] = yi_filtered
+            return yi.tolist()
+        else:
+            return yi_filtered
