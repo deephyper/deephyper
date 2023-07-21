@@ -1231,6 +1231,7 @@ class Optimizer(object):
             # yi_filtered[mask] = y_max_scaled
 
             # Strategy 4: "leaky" penalty after scaling
+            penalty_param = 2.0
             leak_param = self.rng.uniform()
 
             upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
@@ -1241,7 +1242,7 @@ class Optimizer(object):
                     augmented_lower_bounds[i] = -np.infty  # No leaky rewards
             yi_filtered = self.objective_scaler.transform(yi_filtered)
             penalty = np.sum(
-                np.maximum(yi_filtered - upper_bounds, 0), axis=1
+                penalty_param * np.maximum(yi_filtered - upper_bounds, 0), axis=1
             ) + np.sum(
                 leak_param * np.minimum(yi_filtered - augmented_lower_bounds, 0), axis=1
             )
