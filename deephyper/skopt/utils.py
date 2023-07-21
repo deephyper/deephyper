@@ -74,9 +74,14 @@ def create_result(Xi, yi, space=None, rng=None, specs=None, models=None):
     if np.ndim(yi) == 2:
         res.log_time = np.ravel(yi[:, 1])
         yi = np.ravel(yi[:, 0])
-    best = np.argmin(yi)
-    res.x = Xi[best]
-    res.fun = yi[best]
+
+    if len(yi) == 0:
+        res.x = None
+        res.fun = "F"
+    else:
+        best = np.argmin(yi)
+        res.x = Xi[best]
+        res.fun = yi[best]
     res.func_vals = yi
     res.x_iters = Xi
     res.models = models
