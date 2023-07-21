@@ -1199,9 +1199,7 @@ class Optimizer(object):
             # augmented_lower_bounds = [
             #     m if b is None else b for m, b in zip(y_min, self._moo_upper_bounds)
             # ]
-            upper_bounds = [
-                0.0 if b is None else b for b in self._moo_upper_bounds
-            ]
+            upper_bounds = [0.0 if b is None else b for b in self._moo_upper_bounds]
 
             # Strategy 1: penalty after scaling
             # upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
@@ -1239,15 +1237,13 @@ class Optimizer(object):
             augmented_lower_bounds = upper_bounds.copy()
             for i, b in enumerate(self._moo_upper_bounds):
                 if b is None:
-                    upper_bounds[i] = np.infty # Allow to go higher
-                    augmented_lower_bounds[i] = -np.infty # No leaky rewards
+                    upper_bounds[i] = np.infty  # Allow to go higher
+                    augmented_lower_bounds[i] = -np.infty  # No leaky rewards
             yi_filtered = self.objective_scaler.transform(yi_filtered)
-            penalty = (
-                np.sum(np.maximum(yi_filtered - upper_bounds, 0), axis=1)
-                + np.sum(
-                    leak_param * np.minimum(yi_filtered - augmented_lower_bounds, 0),
-                    axis=1
-                )
+            penalty = np.sum(
+                np.maximum(yi_filtered - upper_bounds, 0), axis=1
+            ) + np.sum(
+                leak_param * np.minimum(yi_filtered - augmented_lower_bounds, 0), axis=1
             )
             # print("-> y:", yi_filtered[-1])
             # print("-> b:", upper_bounds)
