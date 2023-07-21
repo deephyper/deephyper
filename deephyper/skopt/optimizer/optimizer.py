@@ -1273,5 +1273,8 @@ class Optimizer(object):
         # compute normalization constants
         self._moo_scalar_function.normalize(yi_filtered)
 
-        sy = [self._moo_scalar_function.scalarize(y) if y != "F" else "F" for y in yi_filtered]
+        sy = [
+            self._moo_scalar_function.scalarize(y) if y != "F" else "F"
+            for y in yi_filtered
+        ]
         return sy
