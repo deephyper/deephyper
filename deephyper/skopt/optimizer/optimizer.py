@@ -1191,9 +1191,16 @@ class Optimizer(object):
 
         # Penality
         if self._moo_upper_bounds is not None:
-            y_max = yi_filtered.max(axis=0)
+            # y_max = yi_filtered.max(axis=0)
+            # y_min = yi_filtered.min(axis=0)
+            # upper_bounds = [
+            #     m if b is None else b for m, b in zip(y_max, self._moo_upper_bounds)
+            # ]
+            # augmented_lower_bounds = [
+            #     m if b is None else b for m, b in zip(y_min, self._moo_upper_bounds)
+            # ]
             upper_bounds = [
-                m if b is None else b for m, b in zip(y_max, self._moo_upper_bounds)
+                0.0 if b is None else b for b in self._moo_upper_bounds
             ]
 
             # Strategy 1: penalty after scaling
@@ -1211,9 +1218,9 @@ class Optimizer(object):
             # yi_filtered = self.objective_scaler.transform(yi_filtered)
 
             # Strategy 3: replace values above upper bounds with y_max
-            yi_filtered = self.objective_scaler.transform(yi_filtered)
-            y_max_scaled = self.objective_scaler.transform([y_max])[0]
-            upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
+            # yi_filtered = self.objective_scaler.transform(yi_filtered)
+            # y_max_scaled = self.objective_scaler.transform([y_max])[0]
+            # upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
 
             # S.3.A: Replacing only the objective which breaks the bound
             # mask = yi_filtered > upper_bounds
@@ -1222,9 +1229,31 @@ class Optimizer(object):
             # )[mask]
 
             # S.3.B: Replacing all objectives if any of them breaks the bound
-            mask = (yi_filtered > upper_bounds).any(axis=1)
-            yi_filtered[mask] = y_max_scaled
+            # mask = (yi_filtered > upper_bounds).any(axis=1)
+            # yi_filtered[mask] = y_max_scaled
 
+            # Strategy 4: "leaky" penalty after scaling
+            leak_param = self.rng.uniform()
+
+            upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
+            augmented_lower_bounds = upper_bounds.copy()
+            for i, b in enumerate(self._moo_upper_bounds):
+                if b is None:
+                    upper_bounds[i] = np.infty # Allow to go higher
+                    augmented_lower_bounds[i] = -np.infty # No leaky rewards
+            yi_filtered = self.objective_scaler.transform(yi_filtered)
+            penalty = (
+                np.sum(np.maximum(yi_filtered - upper_bounds, 0), axis=1)
+                + np.sum(
+                    leak_param * np.minimum(yi_filtered - augmented_lower_bounds, 0),
+                    axis=1
+                )
+            )
+            # print("-> y:", yi_filtered[-1])
+            # print("-> b:", upper_bounds)
+            # print("-> p:", penalty[-1])
+            # print()
+            yi_filtered = np.add(yi_filtered.T, penalty).T
         else:
             yi_filtered = self.objective_scaler.transform(yi_filtered)
 
@@ -1247,5 +1276,5 @@ class Optimizer(object):
         # compute normalization constants
         self._moo_scalar_function.normalize(yi_filtered)
 
-        sy = [self._moo_scalar_function.scalarize(y) if y != "F" else "F" for y in yi]
+        sy = [self._moo_scalar_function.scalarize(y) if y != "F" else "F" for y in yi_filtered]
         return sy
