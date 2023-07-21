@@ -159,14 +159,14 @@ class CBO(Search):
 
         # Initialize lower bounds for objectives
         if moo_lower_bounds is None:
-            self._moo_lower_bounds = None
+            self._moo_upper_bounds = None
         elif isinstance(moo_lower_bounds, list) and all(
-            [
-                isinstance(lbi, float) or isinstance(lbi, int) or lbi is None
+            [isinstance(lbi, numbers.Number) or lbi is None for lbi in moo_lower_bounds]
+        ):
+            self._moo_upper_bounds = [
+                -lbi if isinstance(lbi, numbers.Number) else None
                 for lbi in moo_lower_bounds
             ]
-        ):
-            self._moo_lower_bounds = moo_lower_bounds
         else:
             raise ValueError(
                 f"Parameter 'moo_lower_bounds={moo_lower_bounds}' is invalid. Must be None or a list"
@@ -253,7 +253,7 @@ class CBO(Search):
             n_initial_points=self._n_initial_points,
             initial_points=self._initial_points,
             random_state=self._random_state,
-            moo_lower_bounds=self._moo_lower_bounds,
+            moo_upper_bounds=self._moo_upper_bounds,
             moo_scalarization_strategy=self._moo_scalarization_strategy,
             moo_scalarization_weight=self._moo_scalarization_weight,
             objective_scaler=objective_scaler,

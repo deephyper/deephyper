@@ -1,7 +1,7 @@
 import sys
 import warnings
 from math import log
-from numbers import Number
+import numbers
 
 import ConfigSpace as CS
 import numpy as np
@@ -222,7 +222,7 @@ class Optimizer(object):
         model_sdv=None,
         sample_max_size=-1,
         sample_strategy="quantile",
-        moo_lower_bounds=None,
+        moo_upper_bounds=None,
         moo_scalarization_strategy="Chebyshev",
         moo_scalarization_weight=None,
         objective_scaler="auto",
@@ -400,18 +400,15 @@ class Optimizer(object):
         # TODO: would be nicer to factorize the moo code with `cook_moo_scaler(...)`
 
         # Initialize lower bounds for objectives
-        if moo_lower_bounds is None:
-            self._moo_lower_bounds = None
-        elif isinstance(moo_lower_bounds, list) and all(
-            [
-                isinstance(lbi, float) or isinstance(lbi, int) or lbi is None
-                for lbi in moo_lower_bounds
-            ]
+        if moo_upper_bounds is None:
+            self._moo_upper_bounds = None
+        elif isinstance(moo_upper_bounds, list) and all(
+            [isinstance(lbi, numbers.Number) or lbi is None for lbi in moo_upper_bounds]
         ):
-            self._moo_lower_bounds = moo_lower_bounds
+            self._moo_upper_bounds = moo_upper_bounds
         else:
             raise ValueError(
-                f"Parameter 'moo_lower_bounds={moo_lower_bounds}' is invalid. Must be None or a list"
+                f"Parameter 'moo_upper_bounds={moo_upper_bounds}' is invalid. Must be None or a list"
             )
 
         # Initialize the moo scalarization strategy
@@ -478,7 +475,7 @@ class Optimizer(object):
             model_sdv=self.model_sdv,
             sample_max_size=self._sample_max_size,
             sample_strategy=self._sample_strategy,
-            moo_lower_bounds=self._moo_lower_bounds,
+            moo_upper_bounds=self._moo_upper_bounds,
             moo_scalarization_strategy=self._moo_scalarization_strategy,
             moo_scalarization_weight=self._moo_scalarization_weight,
             objective_scaler=self.objective_scaler_,
@@ -895,20 +892,22 @@ class Optimizer(object):
             if is_2Dlistlike(x):
                 self.Xi.extend(x)
                 self.yi.extend(y)
-                self._n_initial_points -= len(y)
+                self._n_initial_points -= len([v for v in self.yi if v != "F"])
             elif is_listlike(x):
                 self.Xi.append(x)
                 self.yi.append(y)
-                self._n_initial_points -= 1
+                if y != "F":
+                    self._n_initial_points -= 1
         # if y isn't a scalar it means we have been handed a batch of points
         elif is_listlike(y) and is_2Dlistlike(x):
             self.Xi.extend(x)
             self.yi.extend(y)
-            self._n_initial_points -= len(y)
+            self._n_initial_points -= len([v for v in self.yi if v != "F"])
         elif is_listlike(x):
             self.Xi.append(x)
             self.yi.append(y)
-            self._n_initial_points -= 1
+            if y != "F":
+                self._n_initial_points -= 1
         else:
             raise ValueError(
                 "Type of arguments `x` (%s) and `y` (%s) "
@@ -933,40 +932,6 @@ class Optimizer(object):
                 if any(isinstance(v, list) for v in yi):
                     # Multi-Objective Optimization
 
-                    if "F" in yi:
-                        yi = np.asarray(yi, dtype="O")
-                        mask_no_failures = np.where(yi != "F")
-                        yi[mask_no_failures] = self.objective_scaler.fit_transform(
-                            yi[mask_no_failures].tolist()
-                        ).tolist()
-                        yi = yi.tolist()
-                    else:
-                        yi = self.objective_scaler.fit_transform(
-                            np.asarray(yi)
-                        ).tolist()
-
-                    if self._moo_lower_bounds:
-                        # Need to transform lower bounds too
-                        # (also negate to upper bounds because minimizing)
-                        if self._moo_lower_bounds is not None:
-                            bi = [
-                                [
-                                    -lb if lb is not None else 0
-                                    for lb in self._moo_lower_bounds
-                                ]
-                            ]
-                            bi = (
-                                self.objective_scaler.transform(np.asarray(bi))
-                                .flatten()
-                                .tolist()
-                            )
-                            for i in range(len(bi)):
-                                bi[i] = (
-                                    bi[i]
-                                    if self._moo_lower_bounds[i] is not None
-                                    else np.infty
-                                )
-                        yi = self._moo_penalize(yi, bi)
                     yi = self._moo_scalarize(yi)
 
                 else:
@@ -1163,14 +1128,14 @@ class Optimizer(object):
         elif is_listlike(y) and is_2Dlistlike(x):
             for y_value in y:
                 if (
-                    not isinstance(y_value, Number)
+                    not isinstance(y_value, numbers.Number)
                     and not is_listlike(y_value)
                     and y_value != OBJECTIVE_VALUE_FAILURE
                 ):
                     raise ValueError("expected y to be a 1-D or 2-D list of scalars")
 
         elif is_listlike(x):
-            if not isinstance(y, Number) and not is_listlike(y):
+            if not isinstance(y, numbers.Number) and not is_listlike(y):
                 raise ValueError("`func` should return a scalar or tuple of scalars")
 
         else:
@@ -1217,25 +1182,51 @@ class Optimizer(object):
         result.specs = self.specs
         return result
 
-    def _moo_penalize(self, yi, bi):
-        """Penalize "bad" objective values that violate the bounds in ``bi``.
-
-        Args:
-            yi (list): a list of objectives.
-            bi (list): a list of upper bounds on yi.
-
-        Returns:
-            list: the penalized list.
-        """
-        # print(yi[0], bi) # DEBUG uncomment
-        pi = np.sum(np.maximum(np.asarray(yi) - np.asarray(bi), 0), axis=1)
-        yi = np.add(np.asarray(yi).T, pi).T.tolist()
-        # print(yi[0]) # DEBUG uncomment
-        return yi
-
     def _moo_scalarize(self, yi):
         yi_filtered = np.asarray([v for v in yi if v != "F"])
         n_objectives = 1 if np.ndim(yi_filtered[0]) == 0 else len(yi_filtered[0])
+
+        # Fit scaler
+        self.objective_scaler.fit(yi_filtered)
+
+        # Penality
+        if self._moo_upper_bounds is not None:
+            y_max = yi_filtered.max(axis=0)
+            upper_bounds = [
+                m if b is None else b for m, b in zip(y_max, self._moo_upper_bounds)
+            ]
+
+            # Strategy 1: penalty after scaling
+            # upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
+            # yi_filtered = self.objective_scaler.transform(yi_filtered)
+            # penalty = np.sum(np.maximum(yi_filtered - upper_bounds, 0), axis=1)
+            # print("-> y:", yi_filtered[-1])
+            # print("-> p:", penalty[-1])
+            # print()
+            # yi_filtered = np.add(yi_filtered.T, penalty).T
+
+            # Strategy 2: penalty before scaling
+            # penalty = np.maximum(yi_filtered - upper_bounds, 0)
+            # yi_filtered = yi_filtered + penalty
+            # yi_filtered = self.objective_scaler.transform(yi_filtered)
+
+            # Strategy 3: replace values above upper bounds with y_max
+            yi_filtered = self.objective_scaler.transform(yi_filtered)
+            y_max_scaled = self.objective_scaler.transform([y_max])[0]
+            upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
+
+            # S.3.A: Replacing only the objective which breaks the bound
+            # mask = yi_filtered > upper_bounds
+            # yi_filtered[mask] = np.tile(y_max_scaled, yi_filtered.shape[0]).reshape(
+            #     yi_filtered.shape
+            # )[mask]
+
+            # S.3.B: Replacing all objectives if any of them breaks the bound
+            mask = (yi_filtered > upper_bounds).any(axis=1)
+            yi_filtered[mask] = y_max_scaled
+
+        else:
+            yi_filtered = self.objective_scaler.transform(yi_filtered)
 
         # The object is created here because the number of objectives `n_objectives`
         # is inferred from observed data.
