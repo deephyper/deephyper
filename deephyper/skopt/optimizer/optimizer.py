@@ -1209,13 +1209,13 @@ class Optimizer(object):
             upper_bounds = [0.0 if b is None else b for b in self._moo_upper_bounds]
 
             # ! Strategy 1: penalty after scaling
-            upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
-            yi_filtered = self.objective_scaler.transform(yi_filtered)
-            penalty = np.sum(2 * np.maximum(yi_filtered - upper_bounds, 0), axis=1)
+            # upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
+            # yi_filtered = self.objective_scaler.transform(yi_filtered)
+            # penalty = np.sum(2 * np.maximum(yi_filtered - upper_bounds, 0), axis=1)
             # print("-> y:", yi_filtered[-1])
             # print("-> p:", penalty[-1])
             # print()
-            yi_filtered = np.add(yi_filtered.T, penalty).T
+            # yi_filtered = np.add(yi_filtered.T, penalty).T
 
             # ! Strategy 2: penalty before scaling
             # penalty = np.maximum(yi_filtered - upper_bounds, 0)
