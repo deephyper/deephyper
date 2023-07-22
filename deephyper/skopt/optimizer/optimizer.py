@@ -1198,19 +1198,24 @@ class Optimizer(object):
 
         # Penality
         if self._moo_upper_bounds is not None:
-            y_max = yi_filtered.max(axis=0)
-            upper_bounds = [
-                m if b is None else b for m, b in zip(y_max, self._moo_upper_bounds)
-            ]
+            # y_max = yi_filtered.max(axis=0)
+            # y_min = yi_filtered.min(axis=0)
+            # upper_bounds = [
+            #     m if b is None else b for m, b in zip(y_max, self._moo_upper_bounds)
+            # ]
+            # augmented_lower_bounds = [
+            #     m if b is None else b for m, b in zip(y_min, self._moo_upper_bounds)
+            # ]
+            upper_bounds = [0.0 if b is None else b for b in self._moo_upper_bounds]
 
             # ! Strategy 1: penalty after scaling
-            upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
-            yi_filtered = self.objective_scaler.transform(yi_filtered)
-            penalty = np.sum(2 * np.maximum(yi_filtered - upper_bounds, 0), axis=1)
+            # upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
+            # yi_filtered = self.objective_scaler.transform(yi_filtered)
+            # penalty = np.sum(2 * np.maximum(yi_filtered - upper_bounds, 0), axis=1)
             # print("-> y:", yi_filtered[-1])
             # print("-> p:", penalty[-1])
             # print()
-            yi_filtered = np.add(yi_filtered.T, penalty).T
+            # yi_filtered = np.add(yi_filtered.T, penalty).T
 
             # ! Strategy 2: penalty before scaling
             # penalty = np.maximum(yi_filtered - upper_bounds, 0)
@@ -1232,6 +1237,27 @@ class Optimizer(object):
             # mask = (yi_filtered > upper_bounds).any(axis=1)
             # yi_filtered[mask] = y_max_scaled
 
+            # Strategy 4: "leaky" penalty after scaling
+            penalty_param = 2.0
+            leak_param = self.rng.uniform()
+
+            upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
+            augmented_lower_bounds = upper_bounds.copy()
+            for i, b in enumerate(self._moo_upper_bounds):
+                if b is None:
+                    upper_bounds[i] = np.infty  # Allow to go higher
+                    augmented_lower_bounds[i] = -np.infty  # No leaky rewards
+            yi_filtered = self.objective_scaler.transform(yi_filtered)
+            penalty = np.sum(
+                penalty_param * np.maximum(yi_filtered - upper_bounds, 0), axis=1
+            ) + np.sum(
+                leak_param * np.minimum(yi_filtered - augmented_lower_bounds, 0), axis=1
+            )
+            # print("-> y:", yi_filtered[-1])
+            # print("-> b:", upper_bounds)
+            # print("-> p:", penalty[-1])
+            # print()
+            yi_filtered = np.add(yi_filtered.T, penalty).T
         else:
             yi_filtered = self.objective_scaler.transform(yi_filtered)
 
