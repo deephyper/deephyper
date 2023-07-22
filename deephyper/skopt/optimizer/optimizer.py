@@ -1187,7 +1187,7 @@ class Optimizer(object):
         if has_failures:
             yi = np.asarray(yi, dtype="O")
             mask_no_failures = np.where(yi != "F")
-            yi_filtered = yi[mask_no_failures]
+            yi_filtered = np.asarray(yi[mask_no_failures].tolist())
         else:
             yi_filtered = np.asarray(yi)
 
