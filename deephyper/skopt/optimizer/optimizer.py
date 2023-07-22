@@ -892,7 +892,7 @@ class Optimizer(object):
             if is_2Dlistlike(x):
                 self.Xi.extend(x)
                 self.yi.extend(y)
-                self._n_initial_points -= len([v for v in self.yi if v != "F"])
+                self._n_initial_points -= len([v for v in y if v != "F"])
             elif is_listlike(x):
                 self.Xi.append(x)
                 self.yi.append(y)
@@ -902,7 +902,7 @@ class Optimizer(object):
         elif is_listlike(y) and is_2Dlistlike(x):
             self.Xi.extend(x)
             self.yi.extend(y)
-            self._n_initial_points -= len([v for v in self.yi if v != "F"])
+            self._n_initial_points -= len([v for v in y if v != "F"])
         elif is_listlike(x):
             self.Xi.append(x)
             self.yi.append(y)
