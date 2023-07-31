@@ -1,4 +1,5 @@
 import collections
+import numbers
 
 from deephyper.search.nas._base import NeuralArchitectureSearch
 
@@ -105,7 +106,8 @@ class RegularizedEvolution(NeuralArchitectureSearch):
                     self._evaluator.submit(self._gen_random_batch(size=num_received))
 
     def _select_parent(self, sample: list) -> list:
-        cfg, _ = max(sample, key=lambda x: x[1])
+        filtered_sample = [s for s in sample if isinstance(s[1], numbers.Number)]
+        cfg, _ = max(filtered_sample, key=lambda x: x[1])
         return cfg["arch_seq"]
 
     def _gen_random_batch(self, size: int) -> list:
