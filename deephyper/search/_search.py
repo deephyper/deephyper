@@ -143,6 +143,7 @@ class Search(abc.ABC):
             return None
 
         self.extend_results_with_pareto_efficient(path_results)
+
         df_results = pd.read_csv(path_results)
 
         return df_results
@@ -161,17 +162,17 @@ class Search(abc.ABC):
         """The identifier of the search used by the evaluator."""
         return self._evaluator._search_id
 
-    def extend_results_with_pareto_efficient(self, df: pd.DataFrame) -> pd.DataFrame:
+    def extend_results_with_pareto_efficient(self, df_path: str):
         """Extend the results DataFrame with a column ``pareto_efficient`` which is ``True`` if the point is Pareto efficient.
 
         Args:
             df (pd.DataFrame): the input results DataFrame.
-
-        Returns:
-            pd.DataFrame: the extended results DataFrame.
         """
+        df = pd.read_csv(df_path)
+
         # Check if Multi-Objective Optimization was performed to save the pareto front
         objective_columns = [col for col in df.columns if col.startswith("objective")]
+
         if len(objective_columns) > 1:
             if pd.api.types.is_string_dtype(df[objective_columns[0]]):
                 mask_no_failures = ~df[objective_columns[0]].str.startswith("F")
@@ -183,4 +184,4 @@ class Search(abc.ABC):
             mask_pareto_front = non_dominated_set(objectives)
             df["pareto_efficient"] = False
             df.loc[mask_no_failures, "pareto_efficient"] = mask_pareto_front
-        return df
+            df.to_csv(df_path, index=False)
