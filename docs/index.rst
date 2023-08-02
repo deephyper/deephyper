@@ -140,6 +140,7 @@ Table of Contents
 .. toctree::
     :caption: API Reference
 
+    Analysis <_autosummary/deephyper.analysis>
     Core <_autosummary/deephyper.core>
     Ensemble <_autosummary/deephyper.ensemble>
     Evaluator <_autosummary/deephyper.evaluator>
