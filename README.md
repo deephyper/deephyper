@@ -125,6 +125,18 @@ Find all the list of contributors on the [DeepHyper Authors](https://deephyper.g
 
 ## Citing DeepHyper
 
+If you wish to cite the Software, please use the following:
+
+```
+@misc{deephyper_software,
+title = {"DeepHyper: A Python Package for Scalable Neural Architecture and Hyperparameter Search"},
+author = {{DeepHyper Development Team}},
+organization = {DeepHyper Team},
+year = 2018,
+url = {https://github.com/deephyper/deephyper}
+} 
+```
+
 Find all our publications on the [Research & Publication](https://deephyper.github.io/papers) page of the Documentation.
 
 ## How can I participate?
@@ -138,7 +150,7 @@ Optionally, please include in your first patch a credit for yourself in the list
 
 The DeepHyper Team uses git-flow to organize the development: [Git-Flow cheatsheet](https://danielkummer.github.io/git-flow-cheatsheet/). For tests we are using: [Pytest](https://docs.pytest.org/en/latest/).
 
-## Acknowledgements
+## Acknowledgments
 
 * Scalable Data-Efficient Learning for Scientific Domains, U.S. Department of Energy 2018 Early Career Award funded by the Advanced Scientific Computing Research program within the DOE Office of Science (2018--Present)
 * Argonne Leadership Computing Facility: This research used resources of the Argonne Leadership Computing Facility, which is a DOE Office of Science User Facility supported under Contract DE-AC02-06CH11357.
