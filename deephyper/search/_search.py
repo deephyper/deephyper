@@ -137,16 +137,13 @@ class Search(abc.ABC):
             else:
                 self._evaluator.dump_evals(log_dir=self._log_dir)
 
-        df_results = None
         path_results = os.path.join(self._log_dir, "results.csv")
-        if os.path.exists(path_results):
-            df_results = pd.read_csv(path_results)
-        else:
+        if not (os.path.exists(path_results)):
             logging.warning(f"Could not find results file at {path_results}!")
-            return df_results
+            return None
 
-        df_results = self.extend_results_with_pareto_efficient(df_results)
-        df_results.to_csv(path_results, index=False)
+        self.extend_results_with_pareto_efficient(path_results)
+        df_results = pd.read_csv(path_results)
 
         return df_results
 

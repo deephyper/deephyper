@@ -2,6 +2,7 @@ import logging
 
 import mpi4py
 import numpy as np
+import pandas as pd
 import scipy.stats
 
 # !To avoid initializing MPI when module is imported (MPI is optional)
@@ -278,3 +279,15 @@ class MPIDistributedBO(CBO):
             evaluator.dump_evals = dumps_evals
 
         return evaluator
+
+    def extend_results_with_pareto_efficient(self, df_path) -> pd.DataFrame:
+        """Extend the results DataFrame with a column ``pareto_efficient`` which is ``True`` if the point is Pareto efficient.
+
+        Args:
+            df_path (pd.DataFrame): the path to results DataFrame.
+        """
+        if self.rank == 0:
+            df_results = pd.read_csv(df_path)
+            df_results = super().extend_results_with_pareto_efficient(df_results)
+            df_results.to_csv(df_path, index=False)
+        self.comm.Barrier()
