@@ -1,5 +1,5 @@
+import functools
 import time
-from functools import wraps
 
 # !info [why is it important to use "wraps"]
 # !http://gael-varoquaux.info/programming/decoration-in-python-done-right-decorating-and-pickling.html
@@ -7,7 +7,7 @@ from functools import wraps
 from deephyper.evaluator._run_function_utils import standardize_run_function_output
 
 
-def profile(run_function):
+def profile(*args, **kwargs):
     """Decorator to use on a ``run_function`` to profile its execution-time. It is to be used such as:
 
     .. code-block::
@@ -23,18 +23,43 @@ def profile(run_function):
     Returns:
         function: a decorated function.
     """
+    memory = kwargs.get("memory", False)
 
-    @wraps(run_function)
-    def wrapper(job, *args, **kwargs):
-        timestamp_start = time.time()
-        output = run_function(job, *args, **kwargs)
-        timestamp_end = time.time()
+    def profile_inner(func):
+        @functools.wraps(func)
+        def wrapper(job, *args, **kwargs):
+            timestamp_start = time.time()
 
-        output = standardize_run_function_output(output)
-        metadata = {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end}
-        metadata.update(output["metadata"])
-        output["metadata"] = metadata
+            if memory:
+                import tracemalloc
 
-        return output
+                tracemalloc.start()
 
-    return wrapper
+            output = func(job, *args, **kwargs)
+
+            if memory:
+                _, memory_peak = tracemalloc.get_traced_memory()
+                tracemalloc.stop()
+
+            timestamp_end = time.time()
+
+            output = standardize_run_function_output(output)
+            metadata = {
+                "timestamp_start": timestamp_start,
+                "timestamp_end": timestamp_end,
+            }
+
+            if memory:
+                metadata["memory"] = memory_peak
+
+            metadata.update(output["metadata"])
+            output["metadata"] = metadata
+
+            return output
+
+        return wrapper
+
+    if len(args) > 0 and callable(args[0]):
+        return profile_inner(args[0])
+    else:
+        return profile_inner
