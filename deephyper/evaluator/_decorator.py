@@ -8,7 +8,7 @@ from deephyper.evaluator._run_function_utils import standardize_run_function_out
 
 
 def profile(*args, **kwargs):
-    """Decorator to use on a ``run_function`` to profile its execution-time and memory.
+    """Decorator to use on a ``run_function`` to profile its execution-time and peak memory usage.
 
     By default, only the run-time is measured, for example by using the decorator as follows:
 
