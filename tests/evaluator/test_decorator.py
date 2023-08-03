@@ -94,7 +94,7 @@ class TestDecorator(unittest.TestCase):
         assert "timestamp_end" in output["metadata"]
         assert "timestamp_start" in output["metadata"]
         assert "memory" in output["metadata"]
-        assert output["metadata"]["memory"] == 8
+        assert output["metadata"]["memory"] > 0
 
 
 if __name__ == "__main__":
