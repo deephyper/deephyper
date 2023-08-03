@@ -8,7 +8,9 @@ from deephyper.evaluator._run_function_utils import standardize_run_function_out
 
 
 def profile(*args, **kwargs):
-    """Decorator to use on a ``run_function`` to profile its execution-time. It is to be used such as:
+    """Decorator to use on a ``run_function`` to profile its execution-time and memory.
+
+    By default, only the run-time is measured, for example by using the decorator as follows:
 
     .. code-block::
 
@@ -17,8 +19,17 @@ def profile(*args, **kwargs):
             ...
             return y
 
+    If the ``memory`` argument is set to ``True``, the memory usage is also measured, for example by using the decorator as follows:
+
+    .. code-block::
+
+        @profile(memory=True)
+        def run(config):
+            ...
+            return y
+
     Args:
-        run_function (function): the function to decorate.
+        memory (bool): If ``True``, the memory usage is measured. Defaults to ``False``.
 
     Returns:
         function: a decorated function.
