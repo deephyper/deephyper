@@ -50,6 +50,7 @@ class MoScalarFunction(abc.ABC):
             # Uniformly sample from the probability simplex using Remark 1.3
             # from https://arxiv.org/pdf/1909.06406.pdf
             # and the inverse exponential CDF: F_inv(p) = -log(1 - p).
+            # Can be checked with plot similar to Fig. 3 in http://www.cs.cmu.edu/~nasmith/papers/smith+tromble.tr04.pdf
             self._weight = -np.log(1.0 - self._rng.rand(self._n_objectives))
             # self._weight = self._rng.dirichlet([1.0 for _ in range(self._n_objectives)])
         elif self.weight == "uniform":

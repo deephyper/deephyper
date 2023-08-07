@@ -853,7 +853,14 @@ def cook_objective_scaler(scaler, base_estimator):
     scalers["log"] = pipeline
 
     # quantile-uniform
-    pipeline = QuantileTransformer(output_distribution="uniform")
+    rounding = FunctionTransformer(
+        func=lambda x: np.around(x, decimals=100),
+        inverse_func=lambda x: x,
+        check_inverse=False,
+    )
+    pipeline = make_pipeline(
+        rounding, QuantileTransformer(output_distribution="uniform")
+    )
     scalers["quantile-uniform"] = pipeline
 
     if scaler == "auto":

@@ -38,7 +38,7 @@ def profile(*args, **kwargs):
 
     def profile_inner(func):
         @functools.wraps(func)
-        def wrapper(job, *args, **kwargs):
+        def wrapper(*args, **kwargs):
             timestamp_start = time.time()
 
             if memory:
@@ -46,7 +46,7 @@ def profile(*args, **kwargs):
 
                 tracemalloc.start()
 
-            output = func(job, *args, **kwargs)
+            output = func(*args, **kwargs)
 
             if memory:
                 _, memory_peak = tracemalloc.get_traced_memory()
