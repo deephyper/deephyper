@@ -20,11 +20,11 @@ class Search(abc.ABC):
     """Abstract class which represents a search algorithm.
 
     Args:
-        problem ([type]): [description]
-        evaluator ([type]): [description]
-        random_state ([type], optional): [description]. Defaults to None.
-        log_dir (str, optional): [description]. Defaults to ".".
-        verbose (int, optional): [description]. Defaults to 0.
+        problem: object describing the search/optimization problem.
+        evaluator: object describing the evaluation process.
+        random_state (np.random.RandomState, optional): Initial random state of the search. Defaults to ``None``.
+        log_dir (str, optional): Path to the directoy where results of the search are stored. Defaults to ``"."``.
+        verbose (int, optional): Use verbose mode. Defaults to ``0``.
     """
 
     def __init__(

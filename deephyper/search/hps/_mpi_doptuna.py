@@ -67,6 +67,30 @@ supported_pruners = ["NOP", "SHA", "HB", "MED"]
 
 
 class MPIDistributedOptuna(Search):
+    """Wrapper for Optuna to run distributed optimization with MPI.
+
+    Args:
+        problem (HpProblem): Hyperparameter problem describing the search space to explore.
+        evaluator (Evaluator): An ``Evaluator`` instance responsible of distributing the tasks.
+        random_state (int, optional): Random seed. Defaults to ``None``.
+        log_dir (str, optional): Log directory where search's results are saved. Defaults to ``"."``.
+        verbose (int, optional): Indicate the verbosity level of the search. Defaults to ``0``.
+        sampler (Union[str, optuna.samplers.BaseSampler], optional): Optimization strategy to suggest new hyperparameter configurations. Defaults to ``"TPE"``.
+        pruner (Union[str, optuna.pruners.BasePruner], optional): Pruning strategy to perform early discarding of unpromizing configuraitons. Defaults to ``None``.
+        n_objectives (int, optional): Number of objectives to optimize. Defaults to ``1``.
+        study_name (str, optional): Name of the study in the database used by Optuna. Defaults to ``None``.
+        storage (Union[str, optuna.storages.BaseStorage], optional): Database used by Optuna. Defaults to ``None``.
+        checkpoint (bool, optional): If results should be checkpointed regularly to the ``log_dir``. Defaults to ``True``.
+        comm (MPI.Comm, optional): The MPI communicator. Defaults to ``None``.
+
+    Raises:
+        ValueError: _description_
+        TypeError: _description_
+        ValueError: _description_
+        ValueError: _description_
+        TypeError: _description_
+    """
+
     def __init__(
         self,
         problem,
@@ -79,6 +103,7 @@ class MPIDistributedOptuna(Search):
         n_objectives: int = 1,
         study_name: str = None,
         storage: Union[str, optuna.storages.BaseStorage] = None,
+        checkpoint: bool = True,
         comm: MPI.Comm = None,
         **kwargs,
     ):
@@ -162,6 +187,8 @@ class MPIDistributedOptuna(Search):
                 )
         self.pruner = pruner
 
+        self._checkpoint = checkpoint
+
         study_params = dict(
             study_name=study_name,
             storage=storage,
@@ -235,16 +262,17 @@ class MPIDistributedOptuna(Search):
                 callbacks.append(MaxTrialsCallback(max_evals))
 
             if self.rank == 0:
-                callbacks += [
-                    CheckpointSaverCallback(
-                        self._log_dir,
-                        states=(
-                            optuna.trial.TrialState.COMPLETE,
-                            optuna.trial.TrialState.PRUNED,
-                            optuna.trial.TrialState.FAIL,
-                        ),
-                    )
-                ]
+                if self._checkpoint:
+                    callbacks += [
+                        CheckpointSaverCallback(
+                            self._log_dir,
+                            states=(
+                                optuna.trial.TrialState.COMPLETE,
+                                optuna.trial.TrialState.PRUNED,
+                                optuna.trial.TrialState.FAIL,
+                            ),
+                        )
+                    ]
 
             self.study.optimize(
                 objective_wrapper,
