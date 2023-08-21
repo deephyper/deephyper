@@ -160,6 +160,7 @@ Table of Contents
     developer_guides/dev
     developer_guides/doc
     developer_guides/tests_link
+    developer_guides/build
     developer_guides/software_architecture
 
 
