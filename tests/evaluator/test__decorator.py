@@ -31,7 +31,8 @@ def run_dict_with_metadata_output(job):
 
 @profile(memory=True)
 def run_scalar_output_with_memory(job):
-    return 0
+    x = [0]
+    return x[0]
 
 
 @pytest.mark.fast
