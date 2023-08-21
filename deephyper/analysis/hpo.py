@@ -1,3 +1,5 @@
+"""Visualization tools for Hyperparameter Optimization.
+"""
 import matplotlib.pyplot as plt
 
 
