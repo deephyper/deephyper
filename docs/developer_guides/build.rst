@@ -42,7 +42,11 @@ Then,
 8. Make sure to be on the correct branch/tag
 
 **For final release only**:
+
 9. build and publish the wheel to `https://test.pypi.org/`: `python setup.py testupload`
+
 10. try to install the wheel upload to Test PyPI: `python setup.py testinstall`
+
 11. build and publish the wheel to `https://pypi.org/`: `python setup.py upload`
+
 12. try to install the wheel upload to PyPI: `pip install deephyper==$VERSION`
