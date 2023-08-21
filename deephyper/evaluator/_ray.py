@@ -80,12 +80,20 @@ class RayEvaluator(Evaluator):
         self.num_cpus_per_task = num_cpus_per_task
         self.num_gpus_per_task = num_gpus_per_task
 
-        self.num_cpus = int(
-            sum([node["Resources"].get("CPU", 0) for node in ray.nodes()])
-        )
-        self.num_gpus = int(
-            sum([node["Resources"].get("GPU", 0) for node in ray.nodes()])
-        )
+        if num_cpus is None:
+            self.num_cpus = int(
+                sum([node["Resources"].get("CPU", 0) for node in ray.nodes()])
+            )
+        else:
+            self.num_cpus = num_cpus
+
+        if num_gpus is None:
+            self.num_gpus = int(
+                sum([node["Resources"].get("GPU", 0) for node in ray.nodes()])
+            )
+        else:
+            self.num_gpus = num_gpus
+
         if self.num_workers is None or self.num_workers == -1:
             self.num_workers = int(self.num_cpus // self.num_cpus_per_task)
 
