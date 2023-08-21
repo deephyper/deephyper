@@ -91,14 +91,15 @@ class TestRayStorage(unittest.TestCase):
         from deephyper.evaluator.storage._ray_storage import RayStorage
 
         # Init Ray
-        # if not(ray.is_initialized()):
-        ray.init()
+        if not (ray.is_initialized()):
+            ray.init()
 
         # Creation of the database
         storage = RayStorage()
         storage.connect()
 
         # serial evaluator
+        print("serial evaluator")
         evaluator = Evaluator.create(
             run_0, method="serial", method_kwargs={"storage": storage}
         )
@@ -107,6 +108,7 @@ class TestRayStorage(unittest.TestCase):
         assert job_done.metadata["storage_id"] == id(storage)
 
         # thread evaluator
+        print("thread evaluator")
         evaluator = Evaluator.create(
             run_0, method="thread", method_kwargs={"storage": storage}
         )
@@ -115,6 +117,7 @@ class TestRayStorage(unittest.TestCase):
         assert job_done.metadata["storage_id"] == id(storage)
 
         # process evaluator
+        print("process evaluator")
         evaluator = Evaluator.create(
             run_0, method="process", method_kwargs={"storage": storage}
         )

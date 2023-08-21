@@ -7,13 +7,18 @@ from deephyper.evaluator.storage._memory_storage import MemoryStorage
 
 
 class RayStorage(Storage):
-    """Storage class using Ray actors. The RayStorage is wrapping the MemoryStorage class to be a Ray actor."""
+    """Storage class using Ray actors. The RayStorage is wrapping the MemoryStorage class to be a Ray actor.
+
+    Args:
+        address (str, optional): address of the Ray-head. Defaults to ``"auto"``, to connect to the local head node.
+    """
 
     ray_storage_counter = 0
 
-    def __init__(self) -> None:
+    def __init__(self, address="auto") -> None:
         super().__init__()
 
+        self.address = address
         self.actor_name = f"{RayStorage.ray_storage_counter}"
         RayStorage.ray_storage_counter += 1
         self.memory_storage_actor = None
@@ -30,11 +35,19 @@ class RayStorage(Storage):
         self.connected = True
 
     def __getstate__(self):
-        state = {"connected": self.connected, "actor_name": self.actor_name}
+        state = {
+            "connected": self.connected,
+            "actor_name": self.actor_name,
+            "address": self.address,
+        }
         return state
 
     def __setstate__(self, newstate):
         self.__dict__.update(newstate)
+
+        if not (ray.is_initialized()):
+            ray.init(address=self.address)
+
         self.memory_storage_actor = ray.get_actor(
             self.actor_name, namespace="deephyper"
         )
