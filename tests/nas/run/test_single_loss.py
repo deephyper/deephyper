@@ -33,6 +33,7 @@ def load_data(dim=10):
 
 @pytest.mark.nas
 def test_single_loss():
+    from deephyper.evaluator import RunningJob
     from deephyper.nas.run import run_base_trainer
     from deephyper.problem import NaProblem
     from deephyper.nas.spacelib.tabular import OneLayerSpace
@@ -53,7 +54,8 @@ def test_single_loss():
     # Baseline
     config["arch_seq"] = [0.5]
 
-    run_base_trainer(config)
+    job = RunningJob(id=0, parameters=config)
+    result = run_base_trainer(job)
 
 
 if __name__ == "__main__":

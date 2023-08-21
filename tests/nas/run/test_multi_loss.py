@@ -33,6 +33,7 @@ def load_data(dim=100):
 
 @pytest.mark.nas
 def test_multi_loss():
+    from deephyper.evaluator import RunningJob
     from deephyper.nas.run import run_base_trainer
     from deephyper.problem import NaProblem
     from deephyper.nas.spacelib.tabular import SupervisedRegAutoEncoderSpace
@@ -56,7 +57,8 @@ def test_multi_loss():
     # Baseline
     config["arch_seq"] = [0.5] * 19
 
-    result = run_base_trainer(config)
+    job = RunningJob(id=0, parameters=config)
+    result = run_base_trainer(job)
 
 
 if __name__ == "__main__":
