@@ -84,7 +84,11 @@ def run_slow(job: RunningJob) -> dict:
 @pytest.mark.ray
 def test_successive_halving_stopper_with_ray(tmp_path):
     import os
+    import ray
     from deephyper.evaluator import Evaluator
+
+    if ray.is_initialized():
+        ray.shutdown()
 
     evaluator = Evaluator.create(
         run_slow,
