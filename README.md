@@ -12,9 +12,9 @@
 
 ## What is DeepHyper?
 
-DeepHyper is a powerful Python package for automating machine learning tasks, particularly focused on optimizing hyperparameters, searching for optimal neural architectures, and quantifying uncertainty through the use of deep ensembles. With DeepHyper, users can easily perform these tasks on a single machine or distributed across multiple machines, making it ideal for use in a variety of environments. Whether you're a beginner looking to optimize your machine learning models or an experienced data scientist looking to streamline your workflow, DeepHyper has something to offer. So why wait? Start using DeepHyper today and take your machine learning skills to the next level!
+DeepHyper is a powerful Python package for automating machine learning tasks, particularly focused on optimizing hyperparameters, searching for optimal neural architectures, and quantifying uncertainty through the use of deep ensembles. With DeepHyper, users can easily perform these tasks on a single machine or distributed across multiple machines, making it ideal for use in a variety of environments. Whether you're a beginner looking to optimize your machine learning models or an experienced data scientist looking to streamline your workflow, DeepHyper has something to offer. So why wait? Start using DeepHyper today and take your machine-learning skills to the next level!
 
-## Install instructions
+## Install Instructions
 
 Installation with `pip`:
 
@@ -37,7 +37,7 @@ More details about the installation process can be found at [DeepHyper Installat
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/deephyper/tutorials/blob/main/tutorials/colab/DeepHyper_101.ipynb)
 
-The black-box function named `run` is defined by taking an input dictionnary named `config` which contains the different variables to optimize. Then the run-function is binded to an `Evaluator` in charge of distributing the computation of multiple evaluations. Finally, a Bayesian search named `CBO` is created and executed to find the values of config which **MAXIMIZE** the return value of `run(config)`.
+The black-box function named `run` is defined by taking an input dictionary named `config`` which contains the different variables to optimize. Then the run-function is bound to an `Evaluator` in charge of distributing the computation of multiple evaluations. Finally, a Bayesian search named `CBO` is created and executed to find the values of config which **MAXIMIZE** the return value of `run(config)`.
 
 ```python
 def run(job):
@@ -105,8 +105,8 @@ The code defines a function `run` that takes a RunningJob `job` as input and ret
 
 The optimization process is defined as follows:
 
-1. A hyperparameter optimization problem is created using the `HpProblem` class from `deephyper`. In this case, the problem has a three variables. The `x` hyperparameter is a real variable in a range from -10.0 to 10.0. The `b` hyperparameter is a discrete variable in a range from 0 to 10. The `function` hyperparameter is a categorical variable with two possible values.
-2. An evaluator is created using the `Evaluator.create` method. The evaluator will be used to evaluate the function `run` with different configurations of suggested hyperparameters in the optimization problem. The evaluator uses the `process` method to distribute the evaluations across multiple worker processes, in this case 2 worker processes.
+1. A hyperparameter optimization problem is created using the `HpProblem` class from `deephyper`. In this case, the problem has three variables. The `x` hyperparameter is a real variable in a range from -10.0 to 10.0. The `b` hyperparameter is a discrete variable in a range from 0 to 10. The `function` hyperparameter is a categorical variable with two possible values.
+2. An evaluator is created using the `Evaluator.create` method. The evaluator will be used to evaluate the function `run` with different configurations of suggested hyperparameters in the optimization problem. The evaluator uses the `process` method to distribute the evaluations across multiple worker processes, in this case, 2 worker processes.
 3. A search object is created using the `CBO` class, the problem and evaluator defined earlier. The `CBO` algorithm is a derivative-free optimization method that uses a Bayesian optimization approach to explore the hyperparameter space.
 4. The optimization process is executed by calling the `search.search` method, which performs the evaluations of the `run` function with different configurations of the hyperparameters until a maximum number of evaluations (100 in this case) is reached.
 5. The results of the optimization process, including the optimal configuration of the hyperparameters and the corresponding objective value, are printed to the console.
@@ -121,7 +121,7 @@ The optimization process is defined as follows:
 
 ## Contributions
 
-Find all the list of contributors on the [DeepHyper Authors](https://deephyper.github.io/aboutus) page of the Documentation.
+Find the list of contributors on the [DeepHyper Authors](https://deephyper.github.io/aboutus) page of the Documentation.
 
 ## Citing DeepHyper
 
