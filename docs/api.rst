@@ -3,6 +3,7 @@
    :template: custom-module-template.rst
    :recursive:
 
+   deephyper.analysis 
    deephyper.core
    deephyper.ensemble
    deephyper.evaluator
@@ -10,5 +11,5 @@
    deephyper.nas
    deephyper.problem
    deephyper.search
-   deephyper.sklearn
+   deephyper.skopt
    deephyper.stopper

@@ -20,6 +20,8 @@ class Storage(abc.ABC):
     def connect(self) -> StorageType:
         """Connect the storage client to the storage service."""
         self._connect()
+        if not (self.connected):
+            raise RuntimeError("Connection to storage service failed.")
         return self
 
     @staticmethod

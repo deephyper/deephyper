@@ -1,5 +1,6 @@
 import functools
 import logging
+import numbers
 import time
 import warnings
 
@@ -12,7 +13,12 @@ import deephyper.core.exceptions
 import deephyper.skopt
 from deephyper.problem._hyperparameter import convert_to_skopt_space
 from deephyper.search._search import Search
-from deephyper.skopt.moo import non_dominated_set, non_dominated_set_ranked
+from deephyper.skopt.moo import (
+    non_dominated_set,
+    non_dominated_set_ranked,
+    MoScalarFunction,
+    moo_functions,
+)
 
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.base import is_regressor
@@ -54,6 +60,8 @@ class CBO(Search):
         xi (float, optional): Manage the exploration/exploitation tradeoff of ``"EI"`` and ``"PI"`` acquisition function. Defaults to ``0.001``.
         n_points (int, optional): The number of configurations sampled from the search space to infer each batch of new evaluated configurations.
         filter_duplicated (bool, optional): Force the optimizer to sample unique points until the search space is "exhausted" in the sens that no new unique points can be found given the sampling size ``n_points``. Defaults to ``True``.
+        update_prior (bool, optional): Update the prior of the surrogate model with the new evaluated points. Defaults to ``False``. Should be set to ``True`` when all objectives and parameters are continuous.
+        update_prior_quantile (float, optional): The quantile used to update the prior. Defaults to ``0.1``.
         multi_point_strategy (str, optional): Definition of the constant value use for the Liar strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max", "qUCB"]``. All ``"cl_..."`` strategies follow the constant-liar scheme, where if $N$ new points are requested, the surrogate model is re-fitted $N-1$ times with lies (respectively, the minimum, mean and maximum objective found so far; for multiple objectives, these are the minimum, mean and maximum of the individual objectives) to infer the acquisition function. Constant-Liar strategy have poor scalability because of this repeated re-fitting. The ``"qUCB"`` strategy is much more efficient by sampling a new $kappa$ value for each new requested point without re-fitting the model, but it is only compatible with ``acq_func == "UCB"``. Defaults to ``"cl_max"``.
         n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the Bayesian optimization. A value of ``-1`` will use all available cores. Not used in ``surrogate_model`` if passed as own sklearn regressor. Defaults to ``1``.
         n_initial_points (int, optional): Number of collected objectives required before fitting the surrogate-model. Defaults to ``10``.
@@ -62,10 +70,11 @@ class CBO(Search):
         sync_communcation (bool, optional): Performs the search in a batch-synchronous manner. Defaults to ``False`` for asynchronous updates.
         filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. If ``"ignore"`` is passed then failed configurations will be filtered-out and not passed to the surrogate model. For multiple objectives, failure of any single objective will lead to treating that configuration as failed and each of these multiple objective will be replaced by their individual ``"min"`` or ``"mean"`` of past configurations. Defaults to ``"mean"`` to replace by failed configurations by the running mean of objectives.
         max_failures (int, optional): Maximum number of failed configurations allowed before observing a valid objective value when ``filter_failures`` is not equal to ``"ignore"``. Defaults to ``100``.
-        moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "AugChebyshev", "PBI", "Quadratic", "rLinear", "rChebyshev", "rAugChebyshev", "rPBI", "rQuadratic"]``. Defaults to ``"Chebyshev"``.
-        moo_scalarization_weight (list, optional): Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions. Defaults to ``None``.
+        moo_lower_bounds (list, optional): List of lower bounds on the interesting range of objective values. Must be the same length as the number of obejctives. Defaults to ``None``, i.e., no bounds. Can bound only a single objective by providing ``None`` for all other values. For example, ``moo_lower_bounds=[None, 0.5, None]`` will explore all tradeoffs for the objectives at index 0 and 2, but only consider scores for objective 1 that exceed 0.5.
+        moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "AugChebyshev", "PBI", "Quadratic"]``. Defaults to ``"Chebyshev"``. Typically, randomized methods should be used to capture entire Pareto front, unless there is a known target solution a priori. Additional details on each scalarization can be found in :mod:`deephyper.skopt.moo`.
+        moo_scalarization_weight (list, optional): Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions. Defaults to ``None`` for randomized weights. Only set if you want to fix the scalarization weights for a multiobjective HPS.
         scheduler (dict, callable, optional): a method to manage the the value of ``kappa, xi`` with iterations. Defaults to ``None`` which does not use any scheduler.
-        objective_scaler (str, optional): a way to map the objective space to some other support for example to normalize it. Defaults to ``"auto"`` which automatically set it to "identity" for any surrogate model except "RF" which will use "minmaxlog".
+        objective_scaler (str, optional): a way to map the objective space to some other support for example to normalize it. Defaults to ``"auto"`` which automatically set it to "identity" for any surrogate model except "RF" which will use "quantile-uniform".
         stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the function. Defaults to ``None`` which does not use any stopper.
     """
 
@@ -84,6 +93,7 @@ class CBO(Search):
         n_points: int = 10000,
         filter_duplicated: bool = True,
         update_prior: bool = False,
+        update_prior_quantile: float = 0.1,
         multi_point_strategy: str = "cl_max",
         n_jobs: int = 1,  # 32 is good for Theta
         n_initial_points: int = 10,
@@ -92,6 +102,7 @@ class CBO(Search):
         sync_communication: bool = False,
         filter_failures: str = "mean",
         max_failures: int = 100,
+        moo_lower_bounds=None,
         moo_scalarization_strategy: str = "Chebyshev",
         moo_scalarization_weight=None,
         scheduler=None,
@@ -99,7 +110,6 @@ class CBO(Search):
         stopper=None,
         **kwargs,
     ):
-
         super().__init__(problem, evaluator, random_state, log_dir, verbose)
         # get the __init__ parameters
         self._init_params = locals()
@@ -113,7 +123,7 @@ class CBO(Search):
             base_estimator = self._get_surrogate_model(
                 surrogate_model,
                 n_jobs,
-                random_state=self._random_state.randint(0, 2**32),
+                random_state=self._random_state.randint(0, 2**31),
             )
         elif is_regressor(surrogate_model):
             base_estimator = surrogate_model
@@ -147,19 +157,28 @@ class CBO(Search):
                 f"Parameter max_failures={max_failures} should be an integer value!"
             )
 
-        moo_scalarization_strategy_allowed = [
-            "Linear",
-            "Chebyshev",
-            "AugChebyshev",
-            "PBI",
-            "Quadratic",
-        ]
-        moo_scalarization_strategy_allowed = moo_scalarization_strategy_allowed + [
-            f"r{s}" for s in moo_scalarization_strategy_allowed
-        ]
-        if not (moo_scalarization_strategy in moo_scalarization_strategy_allowed):
+        # Initialize lower bounds for objectives
+        if moo_lower_bounds is None:
+            self._moo_upper_bounds = None
+        elif isinstance(moo_lower_bounds, list) and all(
+            [isinstance(lbi, numbers.Number) or lbi is None for lbi in moo_lower_bounds]
+        ):
+            self._moo_upper_bounds = [
+                -lbi if isinstance(lbi, numbers.Number) else None
+                for lbi in moo_lower_bounds
+            ]
+        else:
             raise ValueError(
-                f"Parameter 'moo_scalarization_strategy={acq_func}' should have a value in {moo_scalarization_strategy_allowed}!"
+                f"Parameter 'moo_lower_bounds={moo_lower_bounds}' is invalid. Must be None or a list"
+            )
+
+        moo_scalarization_strategy_allowed = list(moo_functions.keys())
+        if not (
+            moo_scalarization_strategy in moo_scalarization_strategy_allowed
+            or isinstance(moo_scalarization_strategy, MoScalarFunction)
+        ):
+            raise ValueError(
+                f"Parameter 'moo_scalarization_strategy={moo_scalarization_strategy}' should have a value in {moo_scalarization_strategy_allowed} or be a subclass of deephyper.skopt.moo.MoScalarFunction!"
             )
         self._moo_scalarization_strategy = moo_scalarization_strategy
         self._moo_scalarization_weight = moo_scalarization_weight
@@ -220,6 +239,7 @@ class CBO(Search):
                 "n_points": n_points,
                 "filter_duplicated": filter_duplicated,
                 "update_prior": update_prior,
+                "update_prior_quantile": 1 - update_prior_quantile,
                 "n_jobs": n_jobs,
                 "filter_failures": MAP_filter_failures.get(
                     filter_failures, filter_failures
@@ -233,6 +253,7 @@ class CBO(Search):
             n_initial_points=self._n_initial_points,
             initial_points=self._initial_points,
             random_state=self._random_state,
+            moo_upper_bounds=self._moo_upper_bounds,
             moo_scalarization_strategy=self._moo_scalarization_strategy,
             moo_scalarization_weight=self._moo_scalarization_weight,
             objective_scaler=objective_scaler,
@@ -283,7 +304,6 @@ class CBO(Search):
             self._opt.acq_func_kwargs.update(values)
 
     def _search(self, max_evals, timeout):
-
         if self._opt is None:
             self._setup_optimizer()
 
@@ -333,7 +353,6 @@ class CBO(Search):
             num_local_evals_done += num_new_local_results
 
             if num_new_local_results > 0:
-
                 logging.info("Dumping evaluations...")
                 t1 = time.time()
                 self._evaluator.dump_evals(log_dir=self._log_dir)
@@ -350,7 +369,6 @@ class CBO(Search):
 
                 opt_X = []  # input configuration
                 opt_y = []  # objective value
-                opt_b = []  # budget (optional)
                 # for cfg, obj in new_results:
                 for job_i in new_results:
                     cfg, obj = job_i
@@ -358,7 +376,7 @@ class CBO(Search):
 
                     # retrieve budget consumed by job with multiple observations
                     if job_i.observations is not None:
-                        # # TODO: use ALC to reduce the problem to a scalar maximization/estimation
+                        # TODO: use ALC to reduce the problem to a scalar maximization/estimation
                         from deephyper.stopper._lcmodel_stopper import (
                             area_learning_curve,
                         )
@@ -376,19 +394,15 @@ class CBO(Search):
                         opt_X.append(x)
                         opt_y.append(y)
 
-                        # TODO: the following approach will not scale!
-                        # for b, y in zip(*job_i.observations):
-                        #     opt_X.append(x)
-                        #     opt_b.append(b)
-                        #     opt_y.append(-y)
-
                     # single observation returned without budget
                     else:
-                        if np.all(np.isreal(obj)):
+                        if isinstance(obj, numbers.Number) or all(
+                            isinstance(obj_i, numbers.Number) for obj_i in obj
+                        ):
                             opt_X.append(x)
                             opt_y.append(np.negative(obj).tolist())  # !maximizing
-                        elif (type(obj) is str and "F" == obj[0]) or np.any(
-                            type(objval) is str and "F" == objval[0] for objval in obj
+                        elif (type(obj) is str and "F" == obj[0]) or any(
+                            type(obj_i) is str and "F" == obj_i[0] for obj_i in obj
                         ):
                             if (
                                 self._opt_kwargs["acq_optimizer_kwargs"][
@@ -410,8 +424,7 @@ class CBO(Search):
                 t1 = time.time()
 
                 if len(opt_y) > 0:
-                    opt_b = None if len(opt_b) == 0 else opt_b
-                    self._opt.tell(opt_X, opt_y, budget=opt_b)
+                    self._opt.tell(opt_X, opt_y)
                     logging.info(f"Fitting took {time.time() - t1:.4f} sec.")
 
                 logging.info(f"Asking {num_new_local_results} new configurations...")
@@ -455,6 +468,8 @@ class CBO(Search):
             )
 
         if name == "RF":
+            # TODO: for better performance the RF surrogate could be fit with a bootstrap sample of size max 1_000
+            # However this should be refreshed each time when creating the estimator
             surrogate = deephyper.skopt.learning.RandomForestRegressor(
                 # n_estimators=100,
                 # max_features=1,
@@ -470,13 +485,11 @@ class CBO(Search):
                 random_state=random_state,
             )
         elif name == "GBRT":
-
             gbrt = GradientBoostingRegressor(n_estimators=30, loss="quantile")
             surrogate = deephyper.skopt.learning.GradientBoostingQuantileRegressor(
                 base_estimator=gbrt, n_jobs=n_jobs, random_state=random_state
             )
         elif name == "MF":
-
             try:
                 surrogate = deephyper.skopt.learning.MondrianForestRegressor(
                     n_estimators=100, n_jobs=n_jobs, random_state=random_state
@@ -765,7 +778,7 @@ class CBO(Search):
             )[0]
             best_param = res_df.iloc[best_index]
 
-        cst_new = CS.ConfigurationSpace(seed=self._random_state.randint(0, 2**32))
+        cst_new = CS.ConfigurationSpace(seed=self._random_state.randint(0, 2**31))
         hp_names = cst.get_hyperparameter_names()
         for hp_name in hp_names:
             hp = cst.get_hyperparameter(hp_name)

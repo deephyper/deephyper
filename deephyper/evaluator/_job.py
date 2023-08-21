@@ -46,6 +46,7 @@ class Job:
 
     @property
     def result(self):
+        """Alias for the objective property."""
         return self.objective
 
     @property
@@ -73,6 +74,15 @@ class Job:
 
 
 class RunningJob(MutableMapping):
+    """A RunningJob is adapted Job object that is passed to the run-function as input.
+
+    Args:
+        id (Hashable, optional): The identifier of the job in the Storage. Defaults to None.
+        parameters (dict, optional): The dictionnary of hyperparameters suggested. Defaults to None.
+        storage (Storage, optional): The storage client used for the search. Defaults to None.
+        stopper (Stopper, optional): The stopper object used for the evaluation. Defaults to None.
+    """
+
     def __init__(
         self,
         id: Hashable = None,
@@ -93,19 +103,13 @@ class RunningJob(MutableMapping):
         self.stopper = stopper
         self.obs = None
 
-    # @property
-    # def config(self):
-    #     return self.parameters
-
     def __getitem__(self, key):
-
         if key == "job_id":
             return int(self.id.split(".")[-1])
 
         return self.parameters[key]
 
     def __setitem__(self, key, value):
-
         if key == "job_id":
             raise KeyError("Cannot change the 'job_id' of a running job.")
 
@@ -120,41 +124,21 @@ class RunningJob(MutableMapping):
     def __len__(self):
         return len(self.parameters)
 
-    # def __getitem__(self, k):
-    #     """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
-
-    #     if k == "job_id":
-    #         return int(self.id.split(".")[-1])
-
-    #     return self.parameters[k]
-
-    # def get(self, k, default=None):
-    #     """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
-    #     return self.parameters.get(k, default)
-
-    # def __contains__(self, k):
-    #     """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
-    #     return k in self.parameters
-
-    # def keys(self):
-    #     """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
-    #     return self.parameters.keys()
-
-    # def values(self):
-    #     """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
-    #     return self.parameters.values()
-
-    # def items(self):
-    #     """This method is present to simulate the behaviour of a dict. It is used in the ``run_function`` of the ``Evaluator`` class."""
-    #     return self.parameters.items()
-
     def record(self, budget: float, objective: float):
+        """Records the current ``budget`` and ``objective`` values in the object and
+        pass it to the stopper if one is being used.
+
+        Args:
+            budget (float): the budget used.
+            objective (float): the objective value obtained.
+        """
         if self.stopper:
             self.stopper.observe(budget, objective)
         else:
             self.obs = objective
 
-    def stopped(self):
+    def stopped(self) -> bool:
+        """Returns True if the RunningJob is using a Stopper and it is stopped. Otherwise it will return False."""
         if self.stopper:
             return self.stopper.stop()
         else:

@@ -140,7 +140,6 @@ class TqdmCallback(Callback):
         self.on_done(job)
 
     def on_done(self, job):
-
         if self._tqdm is None:
             if self._max_evals:
                 self._tqdm = tqdm(total=self._max_evals)
@@ -151,7 +150,7 @@ class TqdmCallback(Callback):
         self._tqdm.update(1)
         # Test if multi objectives are received
         if np.ndim(job.objective) > 0:
-            if np.isreal(job.objective).all():
+            if not (any(not (np.isreal(objective_i)) for objective_i in job.objective)):
                 if self._best_objective is None:
                     self._best_objective = np.sum(job.objective)
                 else:

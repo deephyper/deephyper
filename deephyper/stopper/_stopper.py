@@ -1,6 +1,8 @@
 import abc
 import copy
 
+from numbers import Number
+
 
 class Stopper(abc.ABC):
     """An abstract class describing the interface of a Stopper.
@@ -12,12 +14,13 @@ class Stopper(abc.ABC):
     def __init__(self, max_steps: int) -> None:
         assert max_steps > 0
         self.max_steps = max_steps
-        self._count_steps = 0
         self.job = None
 
         # Initialize list to collect observations
         self.observed_budgets = []
         self.observed_objectives = []
+
+        self._stop_was_called = False
 
     def to_json(self):
         """Returns a dict version of the stopper which can be saved as JSON."""
@@ -57,7 +60,18 @@ class Stopper(abc.ABC):
         Returns:
             bool: ``(step >= max_steps)``.
         """
-        return self.step >= self.max_steps
+        if not (self._stop_was_called):
+            self._stop_was_called = True
+            self.job.storage.store_job_metadata(self.job.id, "_completed", False)
+
+        if not (isinstance(self.observations[-1][-1], Number)):
+            return True
+
+        if self.step >= self.max_steps:
+            self.job.storage.store_job_metadata(self.job.id, "_completed", True)
+            return True
+
+        return False
 
     @property
     def observations(self) -> list:

@@ -3,21 +3,15 @@
     You can adapt this file completely to your liking, but it should at least
     contain the root `toctree` directive.
 
-******************************************************************************************
-DeepHyper: Scalable Neural Architecture and Hyperparameter Search for Deep Neural Networks
-******************************************************************************************
+***********************************************************************************************
+DeepHyper: Distributed Neural Architecture and Hyperparameter Optimization for Machine Learning
+***********************************************************************************************
 
-.. image:: _static/logo/medium.png
-    :scale: 100%
-    :alt: logo
-    :align: center
+DeepHyper is a powerful Python package for automating machine learning tasks, particularly focused on optimizing hyperparameters, searching for optimal neural architectures, and quantifying uncertainty through the deep ensembles. With DeepHyper, users can easily perform these tasks on a single machine or distributed across multiple machines, making it ideal for use in a variety of environments. Whether you're a beginner looking to optimize your machine learning models or an experienced data scientist looking to streamline your workflow, DeepHyper has something to offer. So why wait? Start using DeepHyper today and take your machine learning skills to the next level!
 
+DeepHyper is specialized for machine learning tasks but it can also be used for generic black-box and gray-box optimization problems of expensive functions.
 
 .. automodule:: deephyper
-
-What is DeepHyper
-=================
-DeepHyper is a powerful Python package for automating machine learning tasks, particularly focused on optimizing hyperparameters, searching for optimal neural architectures, and quantifying uncertainty through the use of deep ensembles. With DeepHyper, users can easily perform these tasks on a single machine or distributed across multiple machines, making it ideal for use in a variety of environments. Whether you're a beginner looking to optimize your machine learning models or an experienced data scientist looking to streamline your workflow, DeepHyper has something to offer. So why wait? Start using DeepHyper today and take your machine learning skills to the next level!
 
 Install instructions
 ====================
@@ -47,7 +41,7 @@ Quick Start
    :alt: Open In Colab
    :align: center
 
-The black-box function named ``run`` is defined by taking an input dictionnary named ``config`` which contains the different variables to optimize. Then the run-function is binded to an ``Evaluator`` in charge of distributing the computation of multiple evaluations. Finally, a Bayesian search named ``CBO`` is created and executed to find the values of config which maximize the return value of ``run(config)``.
+The black-box function named ``run`` is defined by taking an input dictionnary named ``config`` which contains the different variables to optimize. Then the run-function is binded to an ``Evaluator`` in charge of distributing the computation of multiple evaluations. Finally, a Bayesian search named ``CBO`` is created and executed to find the values of config which **MAXIMIZE** the return value of ``run(config)``.
 
 .. code-block:: python
 
@@ -124,6 +118,7 @@ The optimization process is defined as follows:
    
 5. The results of the optimization process, including the optimal configuration of the hyperparameters and the corresponding objective value, are printed to the console.
 
+.. warning:: All search algorithms are MAXIMIZING the objective function. If you want to MINIMIZE the objective function, you have to return the negative of you objective.
 
 Table of Contents
 =================
@@ -145,6 +140,7 @@ Table of Contents
 .. toctree::
     :caption: API Reference
 
+    Analysis <_autosummary/deephyper.analysis>
     Core <_autosummary/deephyper.core>
     Ensemble <_autosummary/deephyper.ensemble>
     Evaluator <_autosummary/deephyper.evaluator>
@@ -153,6 +149,7 @@ Table of Contents
     Problem <_autosummary/deephyper.problem>
     Search <_autosummary/deephyper.search>
     Sklearn <_autosummary/deephyper.sklearn>
+    Skopt <_autosummary/deephyper.skopt>
     Stopper <_autosummary/deephyper.stopper>
 
 .. toctree::
@@ -163,11 +160,8 @@ Table of Contents
     developer_guides/dev
     developer_guides/doc
     developer_guides/tests_link
-
-
-
-
-
+    developer_guides/build
+    developer_guides/software_architecture
 
 
 Indices and tables

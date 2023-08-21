@@ -1,4 +1,8 @@
+import logging
+import math
 import pickle
+
+from numbers import Number
 
 from typing import Any, Dict, Hashable, List, Tuple
 
@@ -28,6 +32,7 @@ class RedisStorage(Storage):
         self._redis = None
 
     def _connect(self):
+        logging.info(f"Connecting to Redis server {self._host}:{self._port}...")
         self._redis = redis.Redis(
             host=self._host,
             port=self._port,
@@ -61,6 +66,7 @@ class RedisStorage(Storage):
         search_id_counter = self._redis.incr("search_id_counter", amount=1) - 1
         search_id = f"{search_id_counter}"  # converting to str
         self._redis.rpush("search_id_list", search_id)
+        logging.info(f"Created new search:{search_id}")
         return search_id
 
     def create_new_job(self, search_id: Hashable) -> Hashable:
@@ -82,6 +88,7 @@ class RedisStorage(Storage):
         self._redis.json().set(
             f"job:{job_id}", ".", {"in": None, "metadata": {}, "out": None}
         )
+        logging.info(f"Created new job:{job_id}")
         return job_id
 
     def store_job(self, job_id: Hashable, key: Hashable, value: Any) -> None:
@@ -90,7 +97,7 @@ class RedisStorage(Storage):
         Args:
             job_id (Hashable): The identifier of the job.
             key (Hashable): A key to use to store the value.
-            value (Any): The value to store.
+            value (Any): The value to store. A "nan" float value is stored as a str "NaN".
         """
         self._redis.json().set(f"job:{job_id}", f".{key}", value)
 
@@ -104,6 +111,7 @@ class RedisStorage(Storage):
             args (Optional[Tuple], optional): The positional arguments. Defaults to None.
             kwargs (Optional[Dict], optional): The keyword arguments. Defaults to None.
         """
+        logging.info(f"Storing input for job:{job_id} with value:{(args, kwargs)}")
         self.store_job(job_id, key="in", value={"args": args, "kwargs": kwargs})
 
     def store_job_out(self, job_id: Hashable, value: Any) -> None:
@@ -113,6 +121,9 @@ class RedisStorage(Storage):
             job_id (Hashable): The identifier of the job.
             value (Any): The value to store.
         """
+        if isinstance(value, Number) and math.isnan(value):
+            value = "NaN"
+        logging.info(f"Storing output for job:{job_id} with value:{value}")
         self.store_job(job_id, key="out", value=value)
 
     def store_job_metadata(self, job_id: Hashable, key: Hashable, value: Any) -> None:
@@ -123,6 +134,11 @@ class RedisStorage(Storage):
             key (Hashable): A key to use to store the metadata of the given job.
             value (Any): The value to store.
         """
+        if isinstance(value, Number) and math.isnan(value):
+            value = "NaN"
+        logging.info(
+            f"Storing metadata for job:{job_id} with key:{key} and value:{value}"
+        )
         self._redis.json().set(f"job:{job_id}", f".metadata.{key}", value)
 
     def load_all_search_ids(self) -> List[Hashable]:

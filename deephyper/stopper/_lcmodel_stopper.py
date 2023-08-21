@@ -1,5 +1,6 @@
 import sys
 from functools import partial
+from numbers import Number
 
 import jax
 import jax.numpy as jnp
@@ -155,7 +156,6 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         self.y_ = np.zeros((self.batch_size,))
 
     def fit(self, X, y, update_prior=True):
-
         check_X_y(X, y, ensure_2d=False)
 
         # !Trick for performance to avoid performign JIT again and again
@@ -184,7 +184,7 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
                 jit_model_args=True,
             )
 
-        seed = self.random_state.randint(low=0, high=2**32)
+        seed = self.random_state.randint(low=0, high=2**31)
         rng_key = jax.random.PRNGKey(seed)
         self.mcmc_.run(rng_key, z=self.X_, y=self.y_, rho_mu_prior=self.rho_mu_prior_)
 
@@ -194,7 +194,6 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         return self
 
     def predict(self, X, return_std=True):
-
         posterior_samples = self.predict_posterior_samples(X)
 
         mean_mu = jnp.mean(posterior_samples, axis=0)
@@ -206,7 +205,6 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         return mean_mu
 
     def predict_posterior_samples(self, X):
-
         # Check if fit has been called
         check_is_fitted(self)
 
@@ -254,7 +252,7 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         interface f(z, rho).
         """
 
-        seed = self.random_state.randint(low=0, high=2**32)
+        seed = self.random_state.randint(low=0, high=2**31)
         random_state = check_random_state(seed)
 
         z_train = np.asarray(z_train)
@@ -279,7 +277,6 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         mse_hist = []
 
         for _ in range(self.max_trials_ls_fit):
-
             rho_init = random_state.randn(self.f_nparams)
 
             try:
@@ -316,7 +313,20 @@ def area_learning_curve(z, f, z_max) -> float:
 
 class LCModelStopper(Stopper):
     """Stopper based on learning curve extrapolation (LCE) to evaluate if the iterations of the learning algorithm
-    should be stopped. The LCE is based on a parametric learning curve model (LCM) which is modeling the score as a function of the number of training steps. Training steps can correspond to the number of training epochs, the number of training batches, the number of observed samples or any other quantity that is iterated through during the training process. The LCE is based on the following steps:
+    should be stopped.
+
+    .. list-table::
+        :widths: 25 25 25
+        :header-rows: 1
+
+        * - Single-Objective
+          - Multi-Objectives
+          - Failures
+        * - ✅
+          - ❌
+          - ❌
+
+    The LCE is based on a parametric learning curve model (LCM) which is modeling the score as a function of the number of training steps. Training steps can correspond to the number of training epochs, the number of training batches, the number of observed samples or any other quantity that is iterated through during the training process. The LCE is based on the following steps:
 
     1. An early stopping condition is always checked first. If the early stopping condition is met, the LCE is not applied.
     2. Then, some safeguard conditions are checked to ensure that the LCE can be applied (number of observed steps must be greater or equal to the number of parameters of the LCM).
@@ -331,19 +341,19 @@ class LCModelStopper(Stopper):
         $ jax>=0.3.25
         $ numpyro
 
-        Args:
-            max_steps (int): The maximum number of training steps which can be performed.
-            min_steps (int, optional): The minimum number of training steps which can be performed. Defaults to ``1``.
-            lc_model (str, optional): The parameteric learning model to use. It should be a string in the following list: ``["lin2", "loglin2", "loglin3", "loglin4", "pow3","mmf4", "vapor3", "logloglin2", "hill3", "logpow3", "pow4", "exp4", "janoschek4", "weibull4", "ilog2"]``. The number in the name corresponds to the number of parameters of the parametric model. Defaults to ``"mmf4"``.
-            min_done_for_outlier_detection (int, optional): The minimum number of observed scores at the same step to check for if it is a lower-bound outlier. Defaults to ``10``.
-            iqr_factor_for_outlier_detection (float, optional): The IQR factor for outlier detection. The higher it is the more inclusive the condition will be (i.e. if set very large it is likely not going to detect any outliers). Defaults to ``1.5``.
-            prob_promotion (float, optional): The threshold probabily to stop the iterations. If the current learning curve has a probability greater than ``prob_promotion`` to be worse that the best observed score accross all evaluations then the current iterations are stopped. Defaults to ``0.9`` (i.e. probability of 0.9 of being worse).
-            early_stopping_patience (float, optional): The patience of the early stopping condition. If it is an ``int`` it is directly corresponding to a number of iterations. If it is a ``float`` then it is corresponding to a proportion between [0,1] w.r.t. ``max_steps``. Defaults to ``0.25`` (i.e. 25% of ``max_steps``).
-            objective_returned (str, optional): The returned objective. It can be a value in ``["last", "max", "alc"]`` where ``"last"`` corresponds to the last observed score, ``"max"`` corresponds to the maximum observed score and ``"alc"`` corresponds to the area under the learning curve. Defaults to "last".
-            random_state (int or np.RandomState, optional): The random state of estimation process. Defaults to ``None``.
+    Args:
+        max_steps (int): The maximum number of training steps which can be performed.
+        min_steps (int, optional): The minimum number of training steps which can be performed. Defaults to ``1``.
+        lc_model (str, optional): The parameteric learning model to use. It should be a string in the following list: ``["lin2", "loglin2", "loglin3", "loglin4", "pow3","mmf4", "vapor3", "logloglin2", "hill3", "logpow3", "pow4", "exp4", "janoschek4", "weibull4", "ilog2"]``. The number in the name corresponds to the number of parameters of the parametric model. Defaults to ``"mmf4"``.
+        min_done_for_outlier_detection (int, optional): The minimum number of observed scores at the same step to check for if it is a lower-bound outlier. Defaults to ``10``.
+        iqr_factor_for_outlier_detection (float, optional): The IQR factor for outlier detection. The higher it is the more inclusive the condition will be (i.e. if set very large it is likely not going to detect any outliers). Defaults to ``1.5``.
+        prob_promotion (float, optional): The threshold probabily to stop the iterations. If the current learning curve has a probability greater than ``prob_promotion`` to be worse that the best observed score accross all evaluations then the current iterations are stopped. Defaults to ``0.9`` (i.e. probability of 0.9 of being worse).
+        early_stopping_patience (float, optional): The patience of the early stopping condition. If it is an ``int`` it is directly corresponding to a number of iterations. If it is a ``float`` then it is corresponding to a proportion between [0,1] w.r.t. ``max_steps``. Defaults to ``0.25`` (i.e. 25% of ``max_steps``).
+        objective_returned (str, optional): The returned objective. It can be a value in ``["last", "max", "alc"]`` where ``"last"`` corresponds to the last observed score, ``"max"`` corresponds to the maximum observed score and ``"alc"`` corresponds to the area under the learning curve. Defaults to "last".
+        random_state (int or np.RandomState, optional): The random state of estimation process. Defaults to ``None``.
 
-        Raises:
-            ValueError: parameters are not valid.
+    Raises:
+        ValueError: parameters are not valid.
     """
 
     def __init__(
@@ -358,7 +368,6 @@ class LCModelStopper(Stopper):
         objective_returned="last",
         random_state=None,
     ) -> None:
-
         super().__init__(max_steps=max_steps)
         self.min_steps = min_steps
 
@@ -402,11 +411,11 @@ class LCModelStopper(Stopper):
     def _retrieve_best_objective(self) -> float:
         search_id, _ = self.job.id.split(".")
         objectives = []
+
         for obj in self.job.storage.load_out_from_all_jobs(search_id):
-            try:
-                objectives.append(float(obj))
-            except ValueError:
-                pass
+            if isinstance(obj, Number):
+                objectives.append(obj)
+
         if len(objectives) > 0:
             return np.max(objectives)
         else:
@@ -417,7 +426,8 @@ class LCModelStopper(Stopper):
         values = self.job.storage.load_metadata_from_all_jobs(
             search_id, f"_completed_rung_{rung}"
         )
-        values = [float(v) for v in values]
+        # Filter out non numerical values (e.g., "F" for failed jobs)
+        values = [v for v in values if isinstance(v, Number)]
         return values
 
     def observe(self, budget: float, objective: float):
@@ -437,21 +447,16 @@ class LCModelStopper(Stopper):
         halting_step = self._compute_halting_step()
         if self._budget >= halting_step:
             self.job.storage.store_job_metadata(
-                self.job.id, f"_completed_rung_{self._rung}", str(self._objective)
+                self.job.id, f"_completed_rung_{self._rung}", self._objective
             )
 
     def stop(self) -> bool:
-
         # Enforce Pre-conditions Before Learning-Curve based Early Discarding
         if super().stop():
-            print("Stopped after reaching the maximum number of steps.")
             self.infos_stopped = "max steps reached"
             return True
 
         if self.step - self._local_best_step >= self.early_stopping_patience:
-            print(
-                f"Stopped after reaching {self.early_stopping_patience} steps without improvement."
-            )
             self.infos_stopped = "early stopping"
             return True
 
@@ -462,7 +467,6 @@ class LCModelStopper(Stopper):
 
         halting_step = self._compute_halting_step()
         if self.step < max(self.min_steps, self.min_obs_to_fit):
-
             if self.step >= halting_step:
                 competing_objectives = self._get_competiting_objectives(self._rung)
                 if len(competing_objectives) > self.min_done_for_outlier_detection:
@@ -480,9 +484,6 @@ class LCModelStopper(Stopper):
                         self._objective
                         < q1 - self.iqr_factor_for_outlier_detection * iqr
                     ):
-                        print(
-                            f"Stopped early because of abnormally low objective: {self._objective}"
-                        )
                         self.infos_stopped = "outlier"
                         return True
                 self._rung += 1
@@ -510,9 +511,6 @@ class LCModelStopper(Stopper):
         if p <= self.prob_promotion:
             self._rung += 1
         else:
-            print(
-                f"Stopped because the probability of performing worse is {p} > {self.prob_promotion}"
-            )
             self.infos_stopped = f"prob={p:.3f}"
 
             return True

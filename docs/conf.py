@@ -13,19 +13,20 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-import sys
+
+# import sys
 
 import git
 import sphinx_book_theme
 
 
-sys.path.insert(0, os.path.abspath(".."))
+# sys.path.insert(0, os.path.abspath(".."))
 
 
 # -- Project information -----------------------------------------------------
 
 project = "DeepHyper"
-copyright = "2018-2022, Argonne"
+copyright = "2018-2023, Argonne"
 author = "Argonne"
 
 # The short X.Y version
@@ -113,7 +114,7 @@ master_doc = "index"
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -155,7 +156,7 @@ html_theme_options = {
     "use_download_button": True,
     # sidebar settings
     "show_navbar_depth": 1,
-    "logo_only": True,
+    # "logo_only": True,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -269,22 +270,35 @@ todo_include_todos = True
 
 # makes sphinx do a mock import of mpi4py so it’s not broken when you try to do auto-docs and import mpi4py
 autodoc_mock_imports = [
+    "deepxde",
     "horovod",
-    "joblib",
+    "jax",
+    # "joblib",
     "matplotlib",
     "mpi4py",
-    "nbformat",
+    # "nbformat",
     "networkx",
+    "numpyro",
     "ray",
     "redis",
     "sklearn",
-    "skopt",
     "tensorflow_probability",
     "tensorflow",
-    "tqdm",
+    "tinydb",  # TODO: to be removed when analytics are updated
+    # "tqdm",
     "xgboost",
 ]
-autosummary_mock_imports = autodoc_mock_imports
+autosummary_mock_imports = autodoc_mock_imports + [
+    "ConfigSpace",
+    "deephyper.skopt.learning.gaussian_process",
+    "deephyper.skopt.learning.tests",
+    "deephyper.skopt.plots",
+    "deephyper.sklearn",
+    "deephyper.test",
+    "joblib",
+    "scipy.optimize",
+    "tqdm",
+]
 
 # Remove <BLANKLINE>
 trim_doctest_flags = True

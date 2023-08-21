@@ -36,6 +36,8 @@ class MPIDistributedBO(CBO):
         xi (float, optional): Manage the exploration/exploitation tradeoff of ``"EI"`` and ``"PI"`` acquisition function. Defaults to ``0.001``.
         n_points (int, optional): The number of configurations sampled from the search space to infer each batch of new evaluated configurations.
         filter_duplicated (bool, optional): Force the optimizer to sample unique points until the search space is "exhausted" in the sens that no new unique points can be found given the sampling size ``n_points``. Defaults to ``True``.
+        update_prior (bool, optional): Update the prior of the surrogate model with the new evaluated points. Defaults to ``False``. Should be set to ``True`` when all objectives and parameters are continuous.
+        update_prior_quantile (float, optional): The quantile used to update the prior. Defaults to ``0.1``.
         multi_point_strategy (str, optional): Definition of the constant value use for the Liar strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max", "qUCB"]``. All ``"cl_..."`` strategies follow the constant-liar scheme, where if $N$ new points are requested, the surrogate model is re-fitted $N-1$ times with lies (respectively, the minimum, mean and maximum objective found so far; for multiple objectives, these are the minimum, mean and maximum of the individual objectives) to infer the acquisition function. Constant-Liar strategy have poor scalability because of this repeated re-fitting. The ``"qUCB"`` strategy is much more efficient by sampling a new $kappa$ value for each new requested point without re-fitting the model, but it is only compatible with ``acq_func == "UCB"``. Defaults to ``"cl_max"``.
         n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the Bayesian optimization. A value of ``-1`` will use all available cores. Not used in ``surrogate_model`` if passed as own sklearn regressor. Defaults to ``1``.
         n_initial_points (int, optional): Number of collected objectives required before fitting the surrogate-model. Defaults to ``10``.
@@ -44,10 +46,11 @@ class MPIDistributedBO(CBO):
         sync_communcation (bool, optional): Performs the search in a batch-synchronous manner. Defaults to ``False`` for asynchronous updates.
         filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. If ``"ignore"`` is passed then failed configurations will be filtered-out and not passed to the surrogate model. For multiple objectives, failure of any single objective will lead to treating that configuration as failed and each of these multiple objective will be replaced by their individual ``"min"`` or ``"mean"`` of past configurations. Defaults to ``"mean"`` to replace by failed configurations by the running mean of objectives.
         max_failures (int, optional): Maximum number of failed configurations allowed before observing a valid objective value when ``filter_failures`` is not equal to ``"ignore"``. Defaults to ``100``.
-        moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "AugChebyshev", "PBI", "Quadratic", "rLinear", "rChebyshev", "rAugChebyshev", "rPBI", "rQuadratic"]``. Defaults to ``"Chebyshev"``.
-        moo_scalarization_weight (list, optional): Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions. Defaults to ``None``.
+        moo_lower_bounds (list, optional): List of lower bounds on the interesting range of objective values. Must be the same length as the number of obejctives. Defaults to ``None``, i.e., no bounds. Can bound only a single objective by providing ``None`` for all other values. For example, ``moo_lower_bounds=[None, 0.5, None]`` will explore all tradeoffs for the objectives at index 0 and 2, but only consider scores for objective 1 that exceed 0.5.
+        moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "AugChebyshev", "PBI", "Quadratic"]``. Defaults to ``"Chebyshev"``. Typically, randomized methods should be used to capture entire Pareto front, unless there is a known target solution a priori. Additional details on each scalarization can be found in :mod:`deephyper.skopt.moo`.
+        moo_scalarization_weight (list, optional): Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions. Defaults to ``None`` for randomized weights. Only set if you want to fix the scalarization weights for a multiobjective HPS.
         scheduler (dict, callable, optional): a method to manage the the value of ``kappa, xi`` with iterations. Defaults to ``None`` which does not use any scheduler.
-        objective_scaler (str, optional): a way to map the objective space to some other support for example to normalize it. Defaults to ``"auto"`` which automatically set it to "identity" for any surrogate model except "RF" which will use "minmaxlog".
+        objective_scaler (str, optional): a way to map the objective space to some other support for example to normalize it. Defaults to ``"auto"`` which automatically set it to "identity" for any surrogate model except "RF" which will use "quantile-uniform".
         stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the function. Defaults to ``None`` which does not use any stopper.
         comm (Comm, optional): communicator used with MPI. Defaults to ``None`` for  ``COMM_WORLD``.
     """
@@ -66,7 +69,8 @@ class MPIDistributedBO(CBO):
         xi: float = 0.001,
         n_points: int = 10000,
         filter_duplicated: bool = True,
-        update_prior: bool = False,  # TODO: check what this is doing?
+        update_prior: bool = False,
+        update_prior_quantile: float = 0.1,
         multi_point_strategy: str = "cl_max",
         n_jobs: int = 1,
         n_initial_points: int = 10,
@@ -75,6 +79,7 @@ class MPIDistributedBO(CBO):
         sync_communication: bool = False,
         filter_failures: str = "mean",
         max_failures: int = 100,
+        moo_lower_bounds=None,
         moo_scalarization_strategy: str = "Chebyshev",
         moo_scalarization_weight=None,
         scheduler=None,
@@ -123,10 +128,11 @@ class MPIDistributedBO(CBO):
 
         # set random state for given rank
         random_state = np.random.RandomState(
-            random_state.randint(low=0, high=2**32, size=self.size)[self.rank]
+            random_state.randint(low=0, high=2**31, size=self.size)[self.rank]
         )
 
         if self.rank == 0:
+            logging.info(f"MPIDistributedBO has {self.size} rank(s)")
             super().__init__(
                 problem=problem,
                 evaluator=evaluator,
@@ -141,6 +147,7 @@ class MPIDistributedBO(CBO):
                 n_points=n_points,
                 filter_duplicated=filter_duplicated,
                 update_prior=update_prior,
+                update_prior_quantile=update_prior_quantile,
                 multi_point_strategy=multi_point_strategy,
                 n_jobs=n_jobs,
                 n_initial_points=n_initial_points,
@@ -149,6 +156,7 @@ class MPIDistributedBO(CBO):
                 sync_communication=sync_communication,
                 filter_failures=filter_failures,
                 max_failures=max_failures,
+                moo_lower_bounds=moo_lower_bounds,
                 moo_scalarization_strategy=moo_scalarization_strategy,
                 moo_scalarization_weight=moo_scalarization_weight,
                 scheduler=scheduler,
@@ -172,6 +180,7 @@ class MPIDistributedBO(CBO):
                 n_points=n_points,
                 filter_duplicated=filter_duplicated,
                 update_prior=update_prior,
+                update_prior_quantile=update_prior_quantile,
                 multi_point_strategy=multi_point_strategy,
                 n_jobs=n_jobs,
                 n_initial_points=n_initial_points,
@@ -180,6 +189,7 @@ class MPIDistributedBO(CBO):
                 sync_communication=sync_communication,
                 filter_failures=filter_failures,
                 max_failures=max_failures,
+                moo_lower_bounds=moo_lower_bounds,
                 moo_scalarization_strategy=moo_scalarization_strategy,
                 moo_scalarization_weight=moo_scalarization_weight,
                 scheduler=scheduler,
@@ -198,9 +208,7 @@ class MPIDistributedBO(CBO):
         )
 
     def check_evaluator(self, evaluator):
-
         if not (isinstance(evaluator, Evaluator)):
-
             if callable(evaluator):
                 self._evaluator = self.bootstrap_evaluator(
                     run_function=evaluator,
@@ -270,3 +278,13 @@ class MPIDistributedBO(CBO):
             evaluator.dump_evals = dumps_evals
 
         return evaluator
+
+    def extend_results_with_pareto_efficient(self, df_path: str):
+        """Extend the results DataFrame with a column ``pareto_efficient`` which is ``True`` if the point is Pareto efficient.
+
+        Args:
+            df_path (pd.DataFrame): the path to results DataFrame.
+        """
+        if self.rank == 0:
+            super().extend_results_with_pareto_efficient(df_path)
+        self.comm.Barrier()

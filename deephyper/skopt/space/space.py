@@ -1,36 +1,26 @@
 import numbers
-import numpy as np
-import yaml
-
-from scipy.stats.distributions import randint
-from scipy.stats.distributions import rv_discrete
-from scipy.stats.distributions import uniform, truncnorm
-
-from sklearn.utils import check_random_state
-from sklearn.utils.fixes import sp_version
-
-
-if type(sp_version) is not tuple:  # Version object since sklearn>=2.3.x
-    if hasattr(sp_version, "release"):
-        sp_version = sp_version.release
-    else:
-        sp_version = sp_version._version.release
-
-
-from .transformers import CategoricalEncoder
-from .transformers import StringEncoder
-from .transformers import LabelEncoder
-from .transformers import Normalize
-from .transformers import Identity
-from .transformers import LogN
-from .transformers import Pipeline
-from .transformers import ToInteger
-
 
 import ConfigSpace as CS
+import numpy as np
+import yaml
 from ConfigSpace.util import deactivate_inactive_hyperparameters
-
+from scipy.stats import gaussian_kde
+from scipy.stats.distributions import randint, rv_discrete, truncnorm, uniform
 from sklearn.impute import SimpleImputer
+from sklearn.utils import check_random_state
+
+from deephyper.core.utils.joblib_utils import Parallel, delayed
+
+from .transformers import (
+    CategoricalEncoder,
+    Identity,
+    LabelEncoder,
+    LogN,
+    Normalize,
+    Pipeline,
+    StringEncoder,
+    ToInteger,
+)
 
 
 # helper class to be able to print [1, ..., 4] instead of [1, '...', 4]
@@ -63,40 +53,39 @@ def check_dimension(dimension, transform=None):
 
     If ``dimension`` is already a ``Dimension`` instance, return it.
 
-    Parameters
-    ----------
-    dimension : Dimension
-        Search space Dimension.
-        Each search dimension can be defined either as
+    Args:
+        dimension (Dimension):
+            Search space Dimension.
+            Each search dimension can be defined either as
 
-        - a `(lower_bound, upper_bound)` tuple (for `Real` or `Integer`
-          dimensions),
-        - a `(lower_bound, upper_bound, "prior")` tuple (for `Real`
-          dimensions),
-        - as a list of categories (for `Categorical` dimensions), or
-        - an instance of a `Dimension` object (`Real`, `Integer` or
-          `Categorical`).
+            - a `(lower_bound, upper_bound)` tuple (for `Real` or `Integer`
+              dimensions),
+            - a `(lower_bound, upper_bound, "prior")` tuple (for `Real`
+              dimensions),
+            - as a list of categories (for `Categorical` dimensions), or
+            - an instance of a `Dimension` object (`Real`, `Integer` or
+              `Categorical`).
 
-    transform : "identity", "normalize", "string", "label", "onehot" optional
-        - For `Categorical` dimensions, the following transformations are
-          supported.
+        transform (str): One of
+            "identity", "normalize", "string", "label", "onehot" optional
 
-          - "onehot" (default) one-hot transformation of the original space.
-          - "label" integer transformation of the original space
-          - "string" string transformation of the original space.
-          - "identity" same as the original space.
+            - For `Categorical` dimensions, the following transformations are
+              supported.
 
-        - For `Real` and `Integer` dimensions, the following transformations
-          are supported.
+              - "onehot" (default) one-hot transformation of the original space.
+              - "label" integer transformation of the original space
+              - "string" string transformation of the original space.
+              - "identity" same as the original space.
 
-          - "identity", (default) the transformed space is the same as the
-            original space.
-          - "normalize", the transformed space is scaled to be between 0 and 1.
+            - For `Real` and `Integer` dimensions, the following transformations
+              are supported.
 
-    Returns
-    -------
-    dimension : Dimension
-        Dimension instance.
+              - "identity", (default) the transformed space is the same as the
+                original space.
+              - "normalize", the transformed space is scaled to be between 0 and 1.
+
+        Returns:
+            dimension (Dimension): Dimension instance.
     """
     if isinstance(dimension, Dimension):
         return dimension
@@ -471,6 +460,45 @@ class Real(Dimension):
             )
         return abs(a - b)
 
+    def update_prior(self, X, y, q=0.9):
+        """Fit a Kernel Density Estimator to the data to increase density of samples around regions of interest instead of uniform random-sampling."""
+
+        X = np.array(X)
+        y = np.array(y)
+
+        y_ = np.quantile(y, q)  # threshold
+        X_low = X[y <= y_]
+
+        # It is possible that fitting the Gaussian Kernel Density Estimator
+        # triggers an error, for example if all values of X_low are the same.
+        # In this case, we fall back to uniform sampling or we reuse the last
+        # fitted self._kde.
+        try:
+            kde = gaussian_kde(X_low)
+            self._kde = kde
+        except np.linalg.LinAlgError:
+            pass
+
+    def rvs(self, n_samples=1, random_state=None):
+        """Draw random samples.
+        Parameters
+        ----------
+        n_samples : int or None
+            The number of samples to be drawn.
+        random_state : int, RandomState instance, or None (default)
+            Set random state to something other than None for reproducible
+            results.
+        """
+        rng = check_random_state(random_state)
+
+        if hasattr(self, "_kde"):
+            samples = self._kde.resample(n_samples, rng).reshape(-1)
+            samples = np.clip(samples, self.low, self.high)
+        else:
+            samples = self._rvs.rvs(size=n_samples, random_state=rng)
+
+        return self.inverse_transform(samples)
+
 
 class Integer(Dimension):
     """Search space dimension that can take on integer values.
@@ -615,7 +643,6 @@ class Integer(Dimension):
                     [Identity(), Normalize(self.low, self.high, is_int=True)]
                 )
             else:
-
                 self.transformer = Pipeline(
                     [
                         LogN(self.base),
@@ -880,6 +907,8 @@ class Categorical(Dimension):
             N = len(self.categories)
             if self.transform_ == "label":
                 return 0.0, float(N - 1)
+            elif self.transform_ == "identity":
+                return min(self.categories), max(self.categories)
             else:
                 return 0.0, 1.0
         else:
@@ -907,6 +936,12 @@ class Categorical(Dimension):
         return 1 if a != b else 0
 
 
+def _sample_dimension(dim, i, n_samples, random_state, out):
+    """Wrapper to sample dimension for joblib parallelization."""
+
+    out[0][:, i] = dim.rvs(n_samples=n_samples, random_state=random_state)
+
+
 class Space(object):
     """Initialize a search space from given specifications.
 
@@ -930,7 +965,6 @@ class Space(object):
     """
 
     def __init__(self, dimensions, model_sdv=None):
-
         # attributes used when a ConfigurationSpace from ConfigSpace is given
         self.is_config_space = False
         self.config_space_samples = None
@@ -961,7 +995,12 @@ class Space(object):
                 self.hps_names.append(x.name)
                 if isinstance(x, CS.hyperparameters.CategoricalHyperparameter):
                     categories = list(x.choices)
-                    prior = list(x.probabilities)
+
+                    if x.probabilities is None:
+                        prior = np.ones((len(categories),)) / len(categories)
+                    else:
+                        prior = list(x.probabilities)
+
                     if x.name in cond_hps:
                         categories.append("NA")
 
@@ -1127,7 +1166,7 @@ class Space(object):
 
         return space
 
-    def rvs(self, n_samples=1, random_state=None):
+    def rvs(self, n_samples=1, random_state=None, n_jobs=1):
         """Draw random samples.
 
         The samples are in the original space. They need to be transformed
@@ -1184,15 +1223,6 @@ class Space(object):
                     cf = deactivate_inactive_hyperparameters(conf, self.config_space)
                     confs[idx] = cf.get_dictionary()
 
-                    # TODO: remove because debug instructions
-                    # check if other conditions are not met; generate valid 1-exchange neighbor; need to test and develop the logic
-                    # print('conf invalid...generating valid 1-exchange neighbor')
-                    # neighborhood = get_one_exchange_neighbourhood(cf,1)
-                    # for new_config in neighborhood:
-                    #     print(new_config)
-                    #     print(new_config.is_valid_configuration())
-                    #     confs[idx] = new_config.get_dictionary()
-
             for idx, conf in enumerate(confs):
                 point = []
                 for hps_name in hps_names:
@@ -1207,13 +1237,26 @@ class Space(object):
             return req_points
         else:
             if self.model_sdv is None:
+                # Regular sampling without transfer learning from flat search space
+                # Joblib parallel optimization
                 # Draw
-                columns = []
-                for dim in self.dimensions:
-                    columns.append(dim.rvs(n_samples=n_samples, random_state=rng))
 
-                # Transpose
-                return _transpose_list_array(columns)
+                columns = np.zeros((n_samples, len(self.dimensions)), dtype="O")
+                random_states = rng.randint(
+                    low=0, high=2**31, size=len(self.dimensions)
+                )
+                Parallel(n_jobs=n_jobs, verbose=0, require="sharedmem")(
+                    delayed(_sample_dimension)(
+                        dim,
+                        i,
+                        n_samples,
+                        np.random.RandomState(random_states[i]),
+                        [columns],
+                    )
+                    for i, dim in enumerate(self.dimensions)
+                )
+
+                return columns.tolist()
             else:
                 confs = self.model_sdv.sample(n_samples)  # sample from SDV
 
@@ -1296,10 +1339,11 @@ class Space(object):
         # Repack as an array
         Xt = np.hstack([np.asarray(c).reshape((len(X), -1)) for c in columns])
 
-        if False and self.is_config_space:
-            self.imp_const.fit(Xt)
-            Xtt = self.imp_const.transform(Xt)
-            Xt = Xtt
+        # TODO: old code to be removed
+        # if False and self.is_config_space:
+        #     self.imp_const.fit(Xt)
+        #     Xtt = self.imp_const.transform(Xt)
+        #     Xt = Xtt
 
         return Xt
 
@@ -1472,3 +1516,13 @@ class Space(object):
             distance += dim.distance(a, b)
 
         return distance
+
+    def update_prior(self, X, y, q=0.9):
+        """Update the prior of the dimensions. Instead of doing random-sampling, a kernel density estimation is fit on the region of interest and
+        sampling is performed from this distribution."""
+        y = np.array(y)
+
+        for i, dim in enumerate(self.dimensions):
+            Xi = [x[i] for x in X]
+            if hasattr(dim, "update_prior"):
+                dim.update_prior(Xi, y, q=q)

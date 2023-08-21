@@ -1,9 +1,5 @@
 :orphan:
 
-
-
-.. _sphx_glr_examples:
-
 Examples
 ========
 
@@ -14,14 +10,76 @@ Below is a gallery of examples on how to use DeepHyper.
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="**Author(s)**: Romain Egele.">
+    <div class="sphx-glr-thumbnails">
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
 
 .. only:: html
 
- .. figure:: /examples/images/thumb/sphx_glr_plot_from_serial_to_parallel_hyperparameter_search_thumb.png
-     :alt: From Serial to Parallel Evaluations
+  .. image:: /examples/images/thumb/sphx_glr_plot_from_serial_to_parallel_hyperparameter_search_thumb.png
+    :alt:
 
-     :ref:`sphx_glr_examples_plot_from_serial_to_parallel_hyperparameter_search.py`
+  :ref:`sphx_glr_examples_plot_from_serial_to_parallel_hyperparameter_search.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">From Serial to Parallel Evaluations</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
+
+.. only:: html
+
+  .. image:: /examples/images/thumb/sphx_glr_plot_notify_failures_hyperparameter_search_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_plot_notify_failures_hyperparameter_search.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Notify Failures in Hyperparameter optimization</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
+
+.. only:: html
+
+  .. image:: /examples/images/thumb/sphx_glr_plot_transfer_learning_for_hps_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_plot_transfer_learning_for_hps.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Transfer Learning for Hyperparameter Search</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
+
+.. only:: html
+
+  .. image:: /examples/images/thumb/sphx_glr_plot_profile_worker_utilization_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_plot_profile_worker_utilization.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Profile the Worker Utilization</div>
+    </div>
+
 
 .. raw:: html
 
@@ -32,90 +90,22 @@ Below is a gallery of examples on how to use DeepHyper.
    :hidden:
 
    /examples/plot_from_serial_to_parallel_hyperparameter_search
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="**Author(s)**: Romain Egele.">
-
-.. only:: html
-
- .. figure:: /examples/images/thumb/sphx_glr_plot_notify_failures_hyperparameter_search_thumb.png
-     :alt: Notify Failures in Hyperparameter optimization
-
-     :ref:`sphx_glr_examples_plot_notify_failures_hyperparameter_search.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
    /examples/plot_notify_failures_hyperparameter_search
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="**Author(s)**: Romain Egele.">
-
-.. only:: html
-
- .. figure:: /examples/images/thumb/sphx_glr_plot_transfer_learning_for_hps_thumb.png
-     :alt: Transfer Learning for Hyperparameter Search
-
-     :ref:`sphx_glr_examples_plot_transfer_learning_for_hps.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
    /examples/plot_transfer_learning_for_hps
+   /examples/plot_profile_worker_utilization
 
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="**Author(s)**: Romain Egele.">
 
 .. only:: html
 
- .. figure:: /examples/images/thumb/sphx_glr_plot_profile_worker_utilization_thumb.png
-     :alt: Profile the Worker Utilization
+  .. container:: sphx-glr-footer sphx-glr-footer-gallery
 
-     :ref:`sphx_glr_examples_plot_profile_worker_utilization.py`
+    .. container:: sphx-glr-download sphx-glr-download-python
 
-.. raw:: html
+      :download:`Download all examples in Python source code: examples_python.zip </examples/examples_python.zip>`
 
-    </div>
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-
-.. toctree::
-   :hidden:
-
-   /examples/plot_profile_worker_utilization
-.. raw:: html
-
-    <div class="sphx-glr-clear"></div>
-
-
-
-.. only :: html
-
- .. container:: sphx-glr-footer
-    :class: sphx-glr-footer-gallery
-
-
-  .. container:: sphx-glr-download sphx-glr-download-python
-
-    :download:`Download all examples in Python source code: examples_python.zip </examples/examples_python.zip>`
-
-
-
-  .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-    :download:`Download all examples in Jupyter notebooks: examples_jupyter.zip </examples/examples_jupyter.zip>`
+      :download:`Download all examples in Jupyter notebooks: examples_jupyter.zip </examples/examples_jupyter.zip>`
 
 
 .. only:: html

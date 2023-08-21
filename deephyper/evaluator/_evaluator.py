@@ -95,6 +95,7 @@ class Evaluator:
         )  # Recorded time of when this evaluator interface was created.
         self.loop = None  # Event loop for asyncio.
         self._start_dumping = False
+        self._columns_dumped = None  # columns names dumped in csv file
         self.num_objective = None  # record if multi-objective are recorded
         self._stopper = None  # stopper object
 
@@ -209,7 +210,6 @@ class Evaluator:
 
     async def _run_jobs(self, configs):
         for config in configs:
-
             # Create a Job object from the input configuration
             job_id = self._storage.create_new_job(self._search_id)
             self._storage.store_job_in(job_id, args=(config,))
@@ -259,7 +259,6 @@ class Evaluator:
             cb.on_done(job)
 
     async def _execute(self, job):
-
         job = await self.execute(job)
 
         if not (isinstance(job.output, dict)):
@@ -400,7 +399,6 @@ class Evaluator:
         resultsList = []
 
         for job in self.jobs_done:
-
             if saved_keys is None:
                 result = copy.deepcopy(job.config)
             elif type(saved_keys) is list:
@@ -416,7 +414,9 @@ class Evaluator:
             result["objective"] = job.objective
 
             # when the objective is a tuple (multi-objective) we create 1 column per tuple-element
-            if isinstance(result["objective"], tuple):
+            if isinstance(result["objective"], tuple) or isinstance(
+                result["objective"], list
+            ):
                 obj = result.pop("objective")
 
                 if self.num_objective is None:
@@ -425,7 +425,6 @@ class Evaluator:
                 for i, objval in enumerate(obj):
                     result[f"objective_{i}"] = objval
             else:
-
                 if self.num_objective is None:
                     self.num_objective = 1
 
@@ -455,11 +454,15 @@ class Evaluator:
         if len(resultsList) != 0:
             mode = "a" if self._start_dumping else "w"
             with open(os.path.join(log_dir, filename), mode) as fp:
-                columns = resultsList[0].keys()
-                writer = csv.DictWriter(fp, columns)
+                if not (self._start_dumping):
+                    self._columns_dumped = resultsList[0].keys()
+
+                writer = csv.DictWriter(fp, self._columns_dumped, extrasaction="ignore")
+
                 if not (self._start_dumping):
                     writer.writeheader()
                     self._start_dumping = True
+
                 writer.writerows(resultsList)
 
         logging.info("dump_evals done")

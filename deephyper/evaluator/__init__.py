@@ -6,8 +6,11 @@ An example ``run``-function is:
 
 .. code-block:: python
 
-    def run(config: dict) -> float:
+    def run(job: RunningJob) -> Union[float, str, Dict]:
+
+        config = job.parameters
         y = config["x"]**2
+
         return y
 
 The return value of the ``run``-function respect the following standards (but the feature is not necessarily supported by all search algorithms, such as multi-objective optimization):

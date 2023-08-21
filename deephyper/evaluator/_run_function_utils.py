@@ -18,7 +18,7 @@ def standardize_run_function_output(
     >>> {"objective": (0, 0), "metadata": {...}}
 
     Args:
-        output (_type_): _description_
+        output (Union[str, float, tuple, list, dict]): the output of the run-function.
 
     Returns:
         dict: standardized output of the function.
@@ -47,7 +47,14 @@ def standardize_run_function_output(
             f"The output of the run-function cannot be of type {type(output)}"
         )
 
-    output["metadata"] = output.get("metadata", dict())
+    metadata = output.get("metadata", dict())
+    if metadata is None:
+        metadata = dict()
+    elif not isinstance(metadata, dict):
+        raise TypeError(
+            f"The metadata of the run-function cannot be of type {type(metadata)}"
+        )
+    output["metadata"] = metadata
 
     # check if multiple observations returned
     objective = np.asarray(output["objective"])

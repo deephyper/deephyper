@@ -11,7 +11,7 @@ DeepHyper is a Python package containing different modules that can be installed
    conda <conda>
    docker <docker>
    jupyter <jupyter>
-   pip <pip>
+   pip (default) <pip>
    spack <spack>
 
 .. toctree::

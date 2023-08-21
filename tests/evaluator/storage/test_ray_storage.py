@@ -1,3 +1,4 @@
+import math
 import unittest
 import pytest
 
@@ -16,15 +17,20 @@ def run_0(job: RunningJob) -> dict:
 
 @pytest.mark.fast
 @pytest.mark.hps
-@pytest.mark.redis
-class TestRedisStorage(unittest.TestCase):
+@pytest.mark.ray
+class TestRayStorage(unittest.TestCase):
     def test_basic(self):
-        from deephyper.evaluator.storage._redis_storage import RedisStorage
+        import ray
+        from deephyper.evaluator.storage._ray_storage import RayStorage
+
+        # Init Ray
+        if not (ray.is_initialized()):
+            ray.init()
 
         # Creation of the database
-        storage = RedisStorage()
+        storage = RayStorage()
         storage.connect()
-        storage._redis.flushdb()  # empty the db before using it
+
         search_id0 = storage.create_new_search()
         job_id0 = storage.create_new_job(search_id0)
         job_id1 = storage.create_new_job(search_id=search_id0)
@@ -60,7 +66,7 @@ class TestRedisStorage(unittest.TestCase):
         job_id0_data = storage.load_job(job_id0)
         self.assertIn("args", job_id0_data["in"])
         self.assertIn("kwargs", job_id0_data["in"])
-        self.assertEqual(job_id0_data["in"]["args"], [1, 2])
+        self.assertEqual(job_id0_data["in"]["args"], (1, 2))
         self.assertEqual(job_id0_data["in"]["kwargs"], {"foo": 0})
 
         # Storing outputs of job
@@ -75,14 +81,25 @@ class TestRedisStorage(unittest.TestCase):
         job_id0_data = storage.load_job(job_id0)
         self.assertEqual(job_id0_data["metadata"], {"timestamp": 10})
 
-    def test_with_evaluator(self):
-        from deephyper.evaluator.storage._redis_storage import RedisStorage
+        # Storing metadata of job with a NaN value
+        storage.store_job_metadata(job_id0, "nan_value", float("nan"))
+        job_id0_data = storage.load_job(job_id0)
+        self.assertTrue(math.isnan(job_id0_data["metadata"]["nan_value"]))
 
-        storage = RedisStorage()
+    def test_with_evaluator(self):
+        import ray
+        from deephyper.evaluator.storage._ray_storage import RayStorage
+
+        # Init Ray
+        if not (ray.is_initialized()):
+            ray.init()
+
+        # Creation of the database
+        storage = RayStorage()
         storage.connect()
-        storage._redis.flushdb()
 
         # serial evaluator
+        print("serial evaluator")
         evaluator = Evaluator.create(
             run_0, method="serial", method_kwargs={"storage": storage}
         )
@@ -91,6 +108,7 @@ class TestRedisStorage(unittest.TestCase):
         assert job_done.metadata["storage_id"] == id(storage)
 
         # thread evaluator
+        print("thread evaluator")
         evaluator = Evaluator.create(
             run_0, method="thread", method_kwargs={"storage": storage}
         )
@@ -99,6 +117,7 @@ class TestRedisStorage(unittest.TestCase):
         assert job_done.metadata["storage_id"] == id(storage)
 
         # process evaluator
+        print("process evaluator")
         evaluator = Evaluator.create(
             run_0, method="process", method_kwargs={"storage": storage}
         )
@@ -107,9 +126,9 @@ class TestRedisStorage(unittest.TestCase):
         assert job_done.metadata["storage_id"] != id(storage)
 
         data = evaluator._storage.load_search(evaluator._search_id)
-        assert data[0]["metadata"]["foo"] == 0
+        assert data["0"]["metadata"]["foo"] == 0
 
 
 if __name__ == "__main__":
-    test = TestRedisStorage()
+    test = TestRayStorage()
     test.test_with_evaluator()

@@ -1,37 +1,32 @@
 import sys
 import warnings
 from math import log
-from numbers import Number
+import numbers
 
 import ConfigSpace as CS
 import numpy as np
 import pandas as pd
-from joblib import Parallel, delayed
 from scipy.optimize import fmin_l_bfgs_b
 from sklearn.base import clone, is_regressor
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.utils import check_random_state
 
+from deephyper.core.utils.joblib_utils import Parallel, delayed
+
 from ..acquisition import _gaussian_acquisition, gaussian_acquisition_1D
 from ..learning import GaussianProcessRegressor
-from ..moo import (
-    MoAugmentedChebyshevFunction,
-    MoChebyshevFunction,
-    MoLinearFunction,
-    MoPBIFunction,
-    MoQuadraticFunction,
-)
+from ..moo import MoScalarFunction, moo_functions
 from ..space import Categorical, Space
 from ..utils import (
     check_x_in_space,
     cook_estimator,
     cook_initial_point_generator,
+    cook_objective_scaler,
     create_result,
     has_gradients,
     is_2Dlistlike,
     is_listlike,
     normalize_dimensions,
-    cook_objective_scaler,
 )
 
 
@@ -49,7 +44,7 @@ class ExhaustedFailures(RuntimeError):
         return "The search has reached its quota of failures! Check if the type of failure is expected or the value of ``max_failures`` in the search algorithm."
 
 
-def boltzman_distribution(x, beta=1):
+def boltzmann_distribution(x, beta=1):
     x = np.exp(beta * x)
     x = x / np.sum(x)
     return x
@@ -59,153 +54,153 @@ OBJECTIVE_VALUE_FAILURE = "F"
 
 
 class Optimizer(object):
-    """Run bayesian optimisation loop.
+    """Run bayesian optimisation loop in DeepHyper.
 
-    An `Optimizer` represents the steps of a bayesian optimisation loop. To
+    An ``Optimizer`` represents the steps of a bayesian optimisation loop. To
     use it you need to provide your own loop mechanism. The various
-    optimisers provided by `skopt` use this class under the hood.
+    optimisers provided by ``skopt`` use this class under the hood.
 
-    Use this class directly if you want to control the iterations of your
-    bayesian optimisation loop.
+    Do not call this class directly, it is used for "Ask" and "Tell" in
+    DeepHyper's bayesian optimisation loop.
 
-    Parameters
-    ----------
-    dimensions : list, shape (n_dims,)
-        List of search space dimensions.
-        Each search dimension can be defined either as
+    Args:
+        dimensions (list): List of search space dimensions.
+            Each search dimension can be defined either as
 
-        - a `(lower_bound, upper_bound)` tuple (for `Real` or `Integer`
-          dimensions),
-        - a `(lower_bound, upper_bound, "prior")` tuple (for `Real`
-          dimensions),
-        - as a list of categories (for `Categorical` dimensions), or
-        - an instance of a `Dimension` object (`Real`, `Integer` or
-          `Categorical`).
+            - a `(lower_bound, upper_bound)` tuple (for `Real` or `Integer`
+              dimensions),
+            - a `(lower_bound, upper_bound, "prior")` tuple (for `Real`
+              dimensions),
+            - as a list of categories (for `Categorical` dimensions), or
+            - an instance of a `Dimension` object (`Real`, `Integer` or
+              `Categorical`).
 
-    base_estimator : `"GP"`, `"RF"`, `"ET"`, `"GBRT"` or sklearn regressor, \
-            default: `"GP"`
-        Should inherit from :obj:`sklearn.base.RegressorMixin`.
-        In addition the `predict` method, should have an optional `return_std`
-        argument, which returns `std(Y | x)` along with `E[Y | x]`.
-        If base_estimator is one of ["GP", "RF", "ET", "GBRT"], a default
-        surrogate model of the corresponding type is used corresponding to what
-        is used in the minimize functions.
+        base_estimator (str, optional): One of
+            `"GP"`, `"RF"`, `"ET"`, `"GBRT"` or sklearn
+            regressor, default: `"GP"`
+            Should inherit from :obj:`sklearn.base.RegressorMixin`.
+            In addition the `predict` method, should have an optional
+            `return_std` argument, which returns `std(Y | x)` along with
+            `E[Y | x]`.
+            If base_estimator is one of ["GP", "RF", "ET", "GBRT"], a default
+            surrogate model of the corresponding type is used corresponding to
+            what is used in the minimize functions.
 
-    n_random_starts : int, default: 10
-        .. deprecated:: 0.6
-            use `n_initial_points` instead.
+        n_random_starts (int, optional): default is 10
+            .. deprecated:: 0.6 use `n_initial_points` instead.
 
-    n_initial_points : int, default: 10
-        Number of evaluations of `func` with initialization points
-        before approximating it with `base_estimator`. Initial point
-        generator can be changed by setting `initial_point_generator`.
+        n_initial_points (int, optional):
+            Number of evaluations of `func` with initialization points
+            before approximating it with `base_estimator`. Initial point
+            generator can be changed by setting `initial_point_generator`.
+            Default is 10.
 
-    initial_points : list, default: None
+        initial_points (list, optional): default is None
 
-    initial_point_generator : str, InitialPointGenerator instance, \
-            default: `"random"`
-        Sets a initial points generator. Can be either
+        initial_point_generator (str, optional): InitialPointGenerator instance
+            Default is `"random"`.
+            Sets a initial points generator. Can be either
 
-        - `"random"` for uniform random numbers,
-        - `"sobol"` for a Sobol' sequence,
-        - `"halton"` for a Halton sequence,
-        - `"hammersly"` for a Hammersly sequence,
-        - `"lhs"` for a latin hypercube sequence,
-        - `"grid"` for a uniform grid sequence
+            - `"random"` for uniform random numbers,
+            - `"sobol"` for a Sobol' sequence,
+            - `"halton"` for a Halton sequence,
+            - `"hammersly"` for a Hammersly sequence,
+            - `"lhs"` for a latin hypercube sequence,
+            - `"grid"` for a uniform grid sequence
 
-    acq_func : string, default: `"gp_hedge"`
-        Function to minimize over the posterior distribution. Can be either
+        acq_func (string, optional): Default is `"gp_hedge"`.
+            Function to minimize over the posterior distribution.
+            Can be either
 
-        - `"LCB"` for lower confidence bound.
-        - `"EI"` for negative expected improvement.
-        - `"PI"` for negative probability of improvement.
-        - `"gp_hedge"` Probabilistically choose one of the above three
-          acquisition functions at every iteration.
+            - `"LCB"` for lower confidence bound.
+            - `"EI"` for negative expected improvement.
+            - `"PI"` for negative probability of improvement.
+            - `"gp_hedge"` Probabilistically choose one of the above three
+              acquisition functions at every iteration.
 
-          - The gains `g_i` are initialized to zero.
-          - At every iteration,
+              - The gains `g_i` are initialized to zero.
+              - At every iteration,
 
-            - Each acquisition function is optimised independently to
-              propose an candidate point `X_i`.
-            - Out of all these candidate points, the next point `X_best` is
-              chosen by :math:`softmax(\\eta g_i)`
-            - After fitting the surrogate model with `(X_best, y_best)`,
-              the gains are updated such that :math:`g_i -= \\mu(X_i)`
+                - Each acquisition function is optimised independently to
+                  propose an candidate point `X_i`.
+                - Out of all these candidate points, the next point `X_best` is
+                  chosen by :math:`softmax(\\eta g_i)`
+                - After fitting the surrogate model with `(X_best, y_best)`,
+                  the gains are updated such that :math:`g_i -= \\mu(X_i)`
 
-        - `"EIps"` for negated expected improvement per second to take into
-          account the function compute time. Then, the objective function is
-          assumed to return two values, the first being the objective value and
-          the second being the time taken in seconds.
-        - `"PIps"` for negated probability of improvement per second. The
-          return type of the objective function is assumed to be similar to
-          that of `"EIps"`
+            - `"EIps"` for negated expected improvement per second to take into
+              account the function compute time. Then, the objective function is
+              assumed to return two values, the first being the objective value and
+              the second being the time taken in seconds.
+            - `"PIps"` for negated probability of improvement per second. The
+              return type of the objective function is assumed to be similar to
+              that of `"EIps"`
 
-    acq_optimizer : string, `"sampling"` or `"lbfgs"`, default: `"auto"`
-        Method to minimize the acquisition function. The fit model
-        is updated with the optimal value obtained by optimizing `acq_func`
-        with `acq_optimizer`.
+        acq_optimizer (string, optional): `"sampling"` or `"lbfgs"`, default is `"auto"`
+            Method to minimize the acquisition function. The fit model
+            is updated with the optimal value obtained by optimizing `acq_func`
+            with `acq_optimizer`.
 
-        - If set to `"auto"`, then `acq_optimizer` is configured on the
-          basis of the base_estimator and the space searched over.
-          If the space is Categorical or if the estimator provided based on
-          tree-models then this is set to be `"sampling"`.
-        - If set to `"sampling"`, then `acq_func` is optimized by computing
-          `acq_func` at `n_points` randomly sampled points.
-        - If set to `"lbfgs"`, then `acq_func` is optimized by
+            - If set to `"auto"`, then `acq_optimizer` is configured on the
+              basis of the base_estimator and the space searched over.
+              If the space is Categorical or if the estimator provided based on
+              tree-models then this is set to be `"sampling"`.
+            - If set to `"sampling"`, then `acq_func` is optimized by computing
+              `acq_func` at `n_points` randomly sampled points.
+            - If set to `"lbfgs"`, then `acq_func` is optimized by
 
-          - Sampling `n_restarts_optimizer` points randomly.
-          - `"lbfgs"` is run for 20 iterations with these points as initial
-            points to find local minima.
-          - The optimal of these local minima is used to update the prior.
+              - Sampling `n_restarts_optimizer` points randomly.
+              - `"lbfgs"` is run for 20 iterations with these points as initial
+                points to find local minima.
+              - The optimal of these local minima is used to update the prior.
 
-    random_state : int, RandomState instance, or None (default)
-        Set random state to something other than None for reproducible
-        results.
+        random_state (int, optional): RandomState instance, or None (default)
+            Set random state to something other than None for reproducible
+            results.
 
-    n_jobs : int, default: 1
-        The number of jobs to run in parallel in the base_estimator,
-        if the base_estimator supports n_jobs as parameter and
-        base_estimator was given as string.
-        If -1, then the number of jobs is set to the number of cores.
+        n_jobs (int, optional): Default is 1.
+            The number of jobs to run in parallel in the base_estimator,
+            if the base_estimator supports n_jobs as parameter and
+            base_estimator was given as string.
+            If -1, then the number of jobs is set to the number of cores.
 
-    acq_func_kwargs : dict
-        Additional arguments to be passed to the acquisition function.
+        acq_func_kwargs (dict, optional):
+            Additional arguments to be passed to the acquisition function.
 
-    acq_optimizer_kwargs : dict
-        Additional arguments to be passed to the acquisition optimizer.
+        acq_optimizer_kwargs (dict, optional):
+            Additional arguments to be passed to the acquisition optimizer.
 
-    model_queue_size : int or None, default: None
-        Keeps list of models only as long as the argument given. In the
-        case of None, the list has no capped length.
+        model_queue_size (int or None, optional): Default is None.
+            Keeps list of models only as long as the argument given. In the
+            case of None, the list has no capped length.
 
-    model_sdv : Model or None, default None
-        A Model from Synthetic-Data-Vault.
+        model_sdv (Model or None, optional): Default None
+            A Model from Synthetic-Data-Vault.
 
-    moo_scalarization_strategy : string, default: `"Chebyshev"`
-        Function to convert multiple objectives into a single scalar value. Can be either
+        moo_scalarization_strategy (string, optional): Default is `"Chebyshev"`
+            Function to convert multiple objectives into a single scalar value. Can be either
 
-        - `"Linear"` for linear/convex combination.
-        - `"Chebyshev"` for Chebyshev or weighted infinity norm.
-        - `"AugChebyshev"` for Chebyshev norm augmented with a weighted 1-norm.
-        - `"PBI"` for penalized boundary intersection.
-        - `"Quadratic"` for quadratic combination (2-norm).
-        - `"rLinear"`, `"rChebyshev"`, `"rAugChebyshev"`, `"rPBI"`, `"rQuadratic"` where the corresponding weights are randomly perturbed in every iteration.
+            - `"Linear"` for linear/convex combination.
+            - `"Chebyshev"` for Chebyshev or weighted infinity norm.
+            - `"AugChebyshev"` for Chebyshev norm augmented with a weighted 1-norm.
+            - `"PBI"` for penalized boundary intersection.
+            - `"Quadratic"` for quadratic combination (2-norm).
 
-    moo_scalarization_weight: array, default: `None`
-        Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions.
+        moo_scalarization_weight (array, optional) Default is `None`.
+            Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions.
+            When set to `None`, a uniform weighting is generated.
 
-    Attributes
-    ----------
-    Xi : list
-        Points at which objective has been evaluated.
-    yi : scalar
-        Values of objective at corresponding points in `Xi`.
-    models : list
-        Regression models used to fit observations and compute acquisition
-        function.
-    space : Space
-        An instance of :class:`deephyper.skopt.space.Space`. Stores parameter search
-        space used to sample points, bounds, and type of parameters.
+    Attributes:
+        Xi (list):
+            Points at which objective has been evaluated.
+        yi (scalar):
+            Values of objective at corresponding points in `Xi`.
+        models (list):
+            Regression models used to fit observations and compute acquisition
+            function.
+        space (Space):
+            An instance of `deephyper.skopt.space.Space`. Stores parameter search
+            space used to sample points, bounds, and type of parameters.
 
     """
 
@@ -227,6 +222,7 @@ class Optimizer(object):
         model_sdv=None,
         sample_max_size=-1,
         sample_strategy="quantile",
+        moo_upper_bounds=None,
         moo_scalarization_strategy="Chebyshev",
         moo_scalarization_weight=None,
         objective_scaler="auto",
@@ -337,6 +333,10 @@ class Optimizer(object):
         self.n_points = acq_optimizer_kwargs.get("n_points", 10000)
         self.n_restarts_optimizer = acq_optimizer_kwargs.get("n_restarts_optimizer", 5)
         self.n_jobs = acq_optimizer_kwargs.get("n_jobs", 1)
+        self.update_prior = acq_optimizer_kwargs.get("update_prior", False)
+        self.update_prior_quantile = acq_optimizer_kwargs.get(
+            "update_prior_quantile", 0.9
+        )
         self.filter_duplicated = acq_optimizer_kwargs.get("filter_duplicated", True)
         self.boltzmann_gamma = acq_optimizer_kwargs.get("boltzmann_gamma", 1)
         self.boltzmann_psucc = acq_optimizer_kwargs.get("boltzmann_psucc", 0)
@@ -354,7 +354,6 @@ class Optimizer(object):
             if isinstance(self.base_estimator_, GaussianProcessRegressor):
                 raise RuntimeError("GP estimator is not available with ConfigSpace!")
         else:
-
             # normalize space if GP regressor
             if isinstance(self.base_estimator_, GaussianProcessRegressor):
                 dimensions = normalize_dimensions(dimensions)
@@ -398,17 +397,28 @@ class Optimizer(object):
             )
 
         # For multiobjective optimization
-        moo_scalarization_strategy_allowed = [
-            "Linear",
-            "Chebyshev",
-            "AugChebyshev",
-            "PBI",
-            "Quadratic",
+        # TODO: would be nicer to factorize the moo code with `cook_moo_scaler(...)`
+
+        # Initialize lower bounds for objectives
+        if moo_upper_bounds is None:
+            self._moo_upper_bounds = None
+        elif isinstance(moo_upper_bounds, list) and all(
+            [isinstance(lbi, numbers.Number) or lbi is None for lbi in moo_upper_bounds]
+        ):
+            self._moo_upper_bounds = moo_upper_bounds
+        else:
+            raise ValueError(
+                f"Parameter 'moo_upper_bounds={moo_upper_bounds}' is invalid. Must be None or a list"
+            )
+
+        # Initialize the moo scalarization strategy
+        moo_scalarization_strategy_allowed = list(moo_functions.keys()) + [
+            f"r{s}" for s in moo_functions.keys()
         ]
-        moo_scalarization_strategy_allowed = moo_scalarization_strategy_allowed + [
-            f"r{s}" for s in moo_scalarization_strategy_allowed
-        ]
-        if not (moo_scalarization_strategy in moo_scalarization_strategy_allowed):
+        if not (
+            moo_scalarization_strategy in moo_scalarization_strategy_allowed
+            or isinstance(moo_scalarization_strategy, MoScalarFunction)
+        ):
             raise ValueError(
                 f"Parameter 'moo_scalarization_strategy={acq_func}' should have a value in {moo_scalarization_strategy_allowed}!"
             )
@@ -450,8 +460,6 @@ class Optimizer(object):
         random_state : int, RandomState instance, or None (default)
             Set the random state of the copy.
         """
-        idx = 1 if self._moo_scalarization_strategy.startswith("r") else 0
-
         optimizer = Optimizer(
             dimensions=self.config_space
             if hasattr(self, "config_space")
@@ -467,7 +475,9 @@ class Optimizer(object):
             model_sdv=self.model_sdv,
             sample_max_size=self._sample_max_size,
             sample_strategy=self._sample_strategy,
-            moo_scalarization_strategy=self._moo_scalarization_strategy[idx:],
+            moo_upper_bounds=self._moo_upper_bounds,
+            moo_scalarization_strategy=self._moo_scalarization_strategy,
+            moo_scalarization_weight=self._moo_scalarization_weight,
             objective_scaler=self.objective_scaler_,
         )
 
@@ -475,14 +485,11 @@ class Optimizer(object):
 
         optimizer.sampled = self.sampled[:]
 
-        optimizer._moo_scalar_function = self._moo_scalar_function
-
         if hasattr(self, "gains_"):
             optimizer.gains_ = np.copy(self.gains_)
 
         if self.Xi:
-            budget = None if len(self.bi) == 0 else self.bi
-            optimizer._tell(self.Xi, self.yi, budget=budget)
+            optimizer._tell(self.Xi, self.yi)
 
         return optimizer
 
@@ -564,7 +571,6 @@ class Optimizer(object):
 
         # handle one-shot strategies (topk, softmax)
         if hasattr(self, "_last_X") and strategy in ["topk", "boltzmann"]:
-
             if strategy == "topk":
                 idx = np.argsort(self._last_values)[:n_points]
                 next_samples = self._last_X[idx].tolist()
@@ -593,7 +599,6 @@ class Optimizer(object):
                 trials = 0
 
                 while len(idx) < n_points:
-
                     t = len(self.sampled)
                     if t == 0:
                         beta = 0
@@ -604,7 +609,7 @@ class Optimizer(object):
                             / np.abs(self._max_value - self._min_value)
                         )
 
-                    probs = boltzman_distribution(values, beta)
+                    probs = boltzmann_distribution(values, beta)
 
                     new_idx = np.argmax(self.rng.multinomial(1, probs))
 
@@ -625,22 +630,19 @@ class Optimizer(object):
                 )
 
         # q-ACQ multi point acquisition for centralized setting
-        if hasattr(self, "_est") and self.acq_func == "qLCB":
-            X_s = self.space.rvs(n_samples=self.n_points, random_state=self.rng)
+        if len(self.models) > 0 and strategy == "qLCB":
+            X_s = self.space.rvs(
+                n_samples=self.n_points, random_state=self.rng, n_jobs=self.n_jobs
+            )
             X_s = self._filter_duplicated(X_s)
             X_c = self.space.imp_const.fit_transform(
                 self.space.transform(X_s)
             )  # candidates
 
-            # add budget to input space if used
-            if len(self.bi) > 0:
-                max_budget = np.full((len(X_c), 1), fill_value=np.max(self.bi))
-                X_c = np.hstack((X_c, max_budget))
-
-            mu, std = self._est.predict(X_c, return_std=True)
+            mu, std = self.models[-1].predict(X_c, return_std=True)
             kappa = self.acq_func_kwargs.get("kappa", 1.96)
-            kappas = self.rng.exponential(kappa, size=n_points)
-            X = []
+            kappas = self.rng.exponential(kappa, size=n_points - 1)
+            X = [self._next_x]
             for kappa in kappas:
                 values = mu - kappa * std
                 idx = np.argmin(values)
@@ -658,7 +660,6 @@ class Optimizer(object):
         opt = self.copy(random_state=self.rng.randint(0, np.iinfo(np.int32).max))
 
         X = []
-        max_budget = None if len(self.bi) == 0 else np.max(self.bi)
         for i in range(n_points):
             x = opt.ask()
             self.sampled.append(x)
@@ -687,9 +688,9 @@ class Optimizer(object):
             if "ps" in self.acq_func:
                 # Use `_tell()` instead of `tell()` to prevent repeated
                 # log transformations of the computation times.
-                opt._tell(x, (y_lie, t_lie), budget=max_budget)
+                opt._tell(x, (y_lie, t_lie))
             else:
-                opt._tell(x, y_lie, budget=max_budget)
+                opt._tell(x, y_lie)
 
         self.cache_ = {(n_points, strategy): X}  # cache_ the result
 
@@ -737,9 +738,7 @@ class Optimizer(object):
             list: the filtered list.
         """
         if self.filter_failures in ["mean", "max"]:
-            yi_no_failure = [
-                v for v in yi if np.ndim(v) > 0 or v != OBJECTIVE_VALUE_FAILURE
-            ]
+            yi_no_failure = [v for v in yi if v != OBJECTIVE_VALUE_FAILURE]
 
             # when yi_no_failure is empty all configurations are failures
             if len(yi_no_failure) == 0:
@@ -748,19 +747,15 @@ class Optimizer(object):
                 # constant value for the acq. func. to return anything
                 yi_failed_value = 0
             elif self.filter_failures == "mean":
-                yi_failed_value = np.mean(yi_no_failure, axis=0).tolist()
+                yi_failed_value = np.mean(yi_no_failure).tolist()
             else:
-                yi_failed_value = np.max(yi_no_failure, axis=0).tolist()
+                yi_failed_value = np.max(yi_no_failure).tolist()
 
-            yi = [
-                v if np.ndim(v) > 0 or v != OBJECTIVE_VALUE_FAILURE else yi_failed_value
-                for v in yi
-            ]
+            yi = [v if v != OBJECTIVE_VALUE_FAILURE else yi_failed_value for v in yi]
 
         return yi
 
     def _sample(self, X, y):
-
         X = np.asarray(X, dtype="O")
         y = np.asarray(y)
         size = y.shape[0]
@@ -794,7 +789,9 @@ class Optimizer(object):
         return X, y
 
     def _ask_random_points(self, size=None):
-        samples = self.space.rvs(n_samples=self.n_points, random_state=self.rng)
+        samples = self.space.rvs(
+            n_samples=self.n_points, random_state=self.rng, n_jobs=self.n_jobs
+        )
 
         samples = self._filter_duplicated(samples)
 
@@ -841,7 +838,7 @@ class Optimizer(object):
             # return point computed from last call to tell()
             return next_x
 
-    def tell(self, x, y, fit=True, budget=None):
+    def tell(self, x, y, fit=True):
         """Record an observation (or several) of the objective function.
 
         Provide values of the objective function at points suggested by
@@ -867,9 +864,6 @@ class Optimizer(object):
             Fit a model to observed evaluations of the objective. A model will
             only be fitted after `n_initial_points` points have been told to
             the optimizer irrespective of the value of `fit`.
-
-        budget : scalar or list, default: None
-            Value of the budget used to observe the corresponding objective.
         """
         if self.space.is_config_space:
             pass
@@ -878,10 +872,6 @@ class Optimizer(object):
 
         self._check_y_is_valid(x, y)
 
-        # budget and y are checked in similar ways
-        if budget is not None:
-            self._check_y_is_valid(x, budget)
-
         # take the logarithm of the computation times
         if "ps" in self.acq_func:
             if is_2Dlistlike(x):
@@ -889,69 +879,10 @@ class Optimizer(object):
             elif is_listlike(x):
                 y = list(y)
                 y[1] = log(y[1])
-        return self._tell(x, y, fit=fit, budget=budget)
 
-    def _get_predict_budget(self):
-        """Compute budget to use to maximise the acquisition function."""
-        bi_count = sorted([(b, c) for b, c in self.bi_count.items()], reverse=True)
-        budget_list, count_list = list(zip(*bi_count))
-        enough_observed = np.asarray(count_list) >= self.n_initial_points_
-        if any(enough_observed):
-            idx = np.argmax(enough_observed)
-        else:
-            idx = np.argmax(count_list)
-        pred_budget = budget_list[idx]
-        return pred_budget
+        return self._tell(x, y, fit=fit)
 
-    def _compute_sample_weigths(self, bi):
-        """Compute weights with respect to budgets (imbalance)."""
-        # n_samples = len(bi)
-        # n_budgets = len(self.bi_count)
-        # max_budget = max(self.bi_count.keys())
-        # print(f"{max_budget}")
-        # v2
-        # budget_weight = {
-        #     k: (n_samples / (n_budgets * b)) * (np.exp(k) / np.exp(max_budget))
-        #     for k, b in self.bi_count.items()
-        # }
-
-        # v1
-        # budget_weight = {
-        #     b: (np.exp(b) / np.exp(max_budget)) for b, c in self.bi_count.items()
-        # }
-        # sample_weight = [budget_weight[b] for b in bi]
-
-        # print(budget_weight)
-        # print(f"c={self.bi_count}")
-        # print(f"b={bi[:10]}")
-        # print(f"w={sample_weight[:10]}")
-        # v3
-        sample_weight = None
-        return sample_weight
-
-    def _resample_with_budget(self, Xi, yi, bi):
-        return Xi, yi, bi
-        groups = {}
-        for i, b in enumerate(bi):
-            g = groups.get(b, [])
-            if len(g) == 0:
-                groups[b] = g
-            g.append(i)
-        max_b = max(groups.keys())
-        num_with_max_b = len(groups[max_b])
-        nXi, nyi, nbi = [], [], []
-        for b, g in groups.items():
-            if b == max_b:
-                indexes = np.arange(len(g))
-            else:
-                indexes = self.rng.randint(low=0, high=len(g), size=num_with_max_b)
-            for idx in indexes:
-                nXi.append(Xi[g[idx]])
-                nyi.append(yi[g[idx]])
-                nbi.append(b)
-        return nXi, nyi, nbi
-
-    def _tell(self, x, y, fit=True, budget=None):
+    def _tell(self, x, y, fit=True):
         """Perform the actual work of incorporating one or more new points.
         See `tell()` for the full description.
 
@@ -961,41 +892,27 @@ class Optimizer(object):
             if is_2Dlistlike(x):
                 self.Xi.extend(x)
                 self.yi.extend(y)
-                self._n_initial_points -= len(y)
+                self._n_initial_points -= len([v for v in y if v != "F"])
             elif is_listlike(x):
                 self.Xi.append(x)
                 self.yi.append(y)
-                self._n_initial_points -= 1
+                if y != "F":
+                    self._n_initial_points -= 1
         # if y isn't a scalar it means we have been handed a batch of points
         elif is_listlike(y) and is_2Dlistlike(x):
             self.Xi.extend(x)
             self.yi.extend(y)
-            self._n_initial_points -= len(y)
+            self._n_initial_points -= len([v for v in y if v != "F"])
         elif is_listlike(x):
             self.Xi.append(x)
             self.yi.append(y)
-            self._n_initial_points -= 1
+            if y != "F":
+                self._n_initial_points -= 1
         else:
             raise ValueError(
                 "Type of arguments `x` (%s) and `y` (%s) "
                 "not compatible." % (type(x), type(y))
             )
-
-        if budget is not None:
-            if type(budget) is list:
-                pass
-            elif type(budget) is float or type(budget) is int:
-                budget = [budget]
-            else:
-                raise ValueError(
-                    "The 'budget' should be composed of int or float values matching the shape of 'y'."
-                )
-
-            self.bi.extend(budget)
-            for budget_i in budget:
-                self.bi_count[budget_i] = self.bi_count.get(budget_i, 0) + 1
-
-            assert len(self.bi) == len(self.yi)
 
         # optimizer learned something new - discard cache
         self.cache_ = {}
@@ -1006,12 +923,41 @@ class Optimizer(object):
             transformed_bounds = self.space.transformed_bounds
             est = clone(self.base_estimator_)
 
-            # handle failures
-            yi = self._filter_failures(self.yi)
+            yi = self.yi
 
-            # convert multiple objectives to single scalar
-            if np.ndim(yi) > 1 and np.shape(yi)[1] > 1:
-                yi = self._moo_scalarize(yi)
+            # Convert multiple objectives to single scalar
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+
+                if any(isinstance(v, list) for v in yi):
+                    # Multi-Objective Optimization
+
+                    yi = self._moo_scalarize(yi)
+
+                else:
+                    # Single-Objective Optimization
+
+                    if "F" in yi:
+                        # ! dtype="O" is key to avoid converting data to string
+                        yi = np.asarray(yi, dtype="O")
+                        mask_no_failures = np.where(yi != "F")
+                        yi[mask_no_failures] = (
+                            self.objective_scaler.fit_transform(
+                                np.asarray(yi[mask_no_failures].tolist()).reshape(-1, 1)
+                            )
+                            .reshape(-1)
+                            .tolist()
+                        )
+                        yi = yi.tolist()
+                    else:
+                        yi = (
+                            self.objective_scaler.fit_transform(np.reshape(yi, (-1, 1)))
+                            .reshape(-1)
+                            .tolist()
+                        )
+
+            # Handle failures
+            yi = self._filter_failures(yi)
 
             # handle size of the sample fit to the estimator
             Xi, yi = self._sample(self.Xi, yi)
@@ -1023,173 +969,141 @@ class Optimizer(object):
                 Xtt = self.space.imp_const.fit_transform(self.space.transform(Xi))
                 Xtt = np.asarray(Xtt)
 
-                # add budget as input
-                if len(self.bi) > 0:
-                    bi = self.bi
-                    # print(len(Xtt))
-                    # Xtt, yi, bi = self._resample_with_budget(Xtt, yi, self.bi)
-                    # print(len(Xtt))
-                    # print()
+                # fit surrogate model
+                est.fit(Xtt, yi)
 
-                    pred_budget = self._get_predict_budget()
-                    transformed_bounds.append((pred_budget, pred_budget))
+                # update prior
+                if self.update_prior:
+                    self.space.update_prior(Xtt, yi, q=self.update_prior_quantile)
 
-                    # sample_weight = self._compute_sample_weigths(bi)
-                    sample_weight = None
-
-                    bi = np.asarray(bi).reshape(-1, 1)
-                    Xtt = np.hstack((Xtt, bi))
-                else:
-                    sample_weight = None
-
-                # preprocessing of output space
-                yi = self.objective_scaler.fit_transform(
-                    np.reshape(yi, (-1, 1))
-                ).reshape(-1)
-
-                est.fit(Xtt, yi, sample_weight=sample_weight)
-
-            # for qLCB save the fitted estimator and skip the selection
-            if self.acq_func == "qLCB":
-                self._est = est
+            if self.max_model_queue_size is None:
+                self.models.append(est)
+            elif len(self.models) < self.max_model_queue_size:
+                self.models.append(est)
             else:
-                if hasattr(self, "next_xs_") and self.acq_func == "gp_hedge":
-                    self.gains_ -= est.predict(np.vstack(self.next_xs_))
+                # Maximum list size obtained, remove oldest model.
+                self.models.pop(0)
+                self.models.append(est)
 
-                if self.max_model_queue_size is None:
-                    self.models.append(est)
-                elif len(self.models) < self.max_model_queue_size:
-                    self.models.append(est)
-                else:
-                    # Maximum list size obtained, remove oldest model.
-                    self.models.pop(0)
-                    self.models.append(est)
+            if hasattr(self, "next_xs_") and self.acq_func == "gp_hedge":
+                self.gains_ -= est.predict(np.vstack(self.next_xs_))
 
-                # even with BFGS as optimizer we want to sample a large number
-                # of points and then pick the best ones as starting points
-                X_s = self.space.rvs(n_samples=self.n_points, random_state=self.rng)
+            # even with BFGS as optimizer we want to sample a large number
+            # of points and then pick the best ones as starting points
+            X_s = self.space.rvs(
+                n_samples=self.n_points, random_state=self.rng, n_jobs=self.n_jobs
+            )
 
-                X_s = self._filter_duplicated(X_s)
+            X_s = self._filter_duplicated(X_s)
 
-                X = self.space.imp_const.fit_transform(self.space.transform(X_s))
+            X = self.space.imp_const.fit_transform(self.space.transform(X_s))
 
-                # add max budget as input for all samples
-                if len(self.bi) > 0:
-                    pred_budget = np.full((len(X), 1), fill_value=pred_budget)
-                    X = np.hstack((X, pred_budget))
+            self.next_xs_ = []
+            for cand_acq_func in self.cand_acq_funcs_:
+                values = _gaussian_acquisition(
+                    X=X,
+                    model=est,
+                    y_opt=np.min(yi),
+                    acq_func=cand_acq_func,
+                    acq_func_kwargs=self.acq_func_kwargs,
+                )
 
-                self.next_xs_ = []
-                for cand_acq_func in self.cand_acq_funcs_:
-                    values = _gaussian_acquisition(
-                        X=X,
-                        model=est,
-                        y_opt=np.min(yi),
-                        acq_func=cand_acq_func,
-                        acq_func_kwargs=self.acq_func_kwargs,
-                    )
+                # cache these values in case the strategy of ask is one-shot
+                self._last_X = X
+                self._last_values = values
 
-                    # cache these values in case the strategy of ask is one-shot
-                    # if budget is used we need to remove it from input space
-                    self._last_X = X[:, :-1] if len(self.bi) > 0 else X
-                    self._last_values = values
+                # Find the minimum of the acquisition function by randomly
+                # sampling points from the space
+                if self.acq_optimizer == "sampling":
+                    next_x = X[np.argmin(values)]
 
-                    # Find the minimum of the acquisition function by randomly
-                    # sampling points from the space
-                    if self.acq_optimizer == "sampling":
+                elif self.acq_optimizer == "boltzmann_sampling":
+                    p = self.rng.uniform()
+                    if p <= self.boltzmann_psucc:
                         next_x = X[np.argmin(values)]
-
-                    elif self.acq_optimizer == "boltzmann_sampling":
-
-                        p = self.rng.uniform()
-                        if p <= self.boltzmann_psucc:
-                            next_x = X[np.argmin(values)]
-                        else:
-                            values = -values
-
-                            self._min_value = (
-                                self._min_value
-                                if self._min_value is None
-                                else min(values.min(), self._min_value)
-                            )
-                            self._max_value = (
-                                self._max_value
-                                if self._max_value is None
-                                else max(values.max(), self._max_value)
-                            )
-
-                            t = len(self.Xi)
-                            if t == 0:
-                                beta = 0
-                            else:
-                                beta = (
-                                    self.boltzmann_gamma
-                                    * np.log(t)
-                                    / np.abs(self._max_value - self._min_value)
-                                )
-
-                            probs = boltzman_distribution(values, beta)
-
-                            idx = np.argmax(self.rng.multinomial(1, probs))
-
-                            next_x = X[idx]
-
-                    # Use BFGS to find the mimimum of the acquisition function, the
-                    # minimization starts from `n_restarts_optimizer` different
-                    # points and the best minimum is used
-                    elif self.acq_optimizer == "lbfgs":
-                        x0 = X[np.argsort(values)[: self.n_restarts_optimizer]]
-
-                        with warnings.catch_warnings():
-                            warnings.simplefilter("ignore")
-                            results = Parallel(n_jobs=self.n_jobs)(
-                                delayed(fmin_l_bfgs_b)(
-                                    gaussian_acquisition_1D,
-                                    x,
-                                    args=(
-                                        est,
-                                        np.min(yi),
-                                        cand_acq_func,
-                                        self.acq_func_kwargs,
-                                    ),
-                                    bounds=transformed_bounds,
-                                    approx_grad=False,
-                                    maxiter=20,
-                                )
-                                for x in x0
-                            )
-
-                        cand_xs = np.array([r[0] for r in results])
-                        cand_acqs = np.array([r[1] for r in results])
-                        next_x = cand_xs[np.argmin(cand_acqs)]
-
-                    # lbfgs should handle this but just in case there are
-                    # precision errors.
-                    if not self.space.is_categorical:
-                        if not self.space.is_config_space:
-                            transformed_bounds = np.asarray(transformed_bounds)
-                            next_x = np.clip(
-                                next_x,
-                                transformed_bounds[:, 0],
-                                transformed_bounds[:, 1],
-                            )
-
-                    # if budget is used we need to remove the feature from the input space
-                    if len(self.bi) > 0:
-                        self.next_xs_.append(next_x[:-1])
                     else:
-                        self.next_xs_.append(next_x)
+                        values = -values
 
-                if self.acq_func == "gp_hedge":
-                    logits = np.array(self.gains_)
-                    logits -= np.max(logits)
-                    exp_logits = np.exp(self.eta * logits)
-                    probs = exp_logits / np.sum(exp_logits)
-                    next_x = self.next_xs_[np.argmax(self.rng.multinomial(1, probs))]
-                else:
-                    next_x = self.next_xs_[0]
+                        self._min_value = (
+                            self._min_value
+                            if self._min_value is None
+                            else min(values.min(), self._min_value)
+                        )
+                        self._max_value = (
+                            self._max_value
+                            if self._max_value is None
+                            else max(values.max(), self._max_value)
+                        )
 
-                # note the need for [0] at the end
-                self._next_x = self.space.inverse_transform(next_x.reshape((1, -1)))[0]
+                        t = len(self.Xi)
+                        if t == 0:
+                            beta = 0
+                        else:
+                            beta = (
+                                self.boltzmann_gamma
+                                * np.log(t)
+                                / np.abs(self._max_value - self._min_value)
+                            )
+
+                        probs = boltzmann_distribution(values, beta)
+
+                        idx = np.argmax(self.rng.multinomial(1, probs))
+
+                        next_x = X[idx]
+
+                # Use BFGS to find the mimimum of the acquisition function, the
+                # minimization starts from `n_restarts_optimizer` different
+                # points and the best minimum is used
+                elif self.acq_optimizer == "lbfgs":
+                    x0 = X[np.argsort(values)[: self.n_restarts_optimizer]]
+
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
+                        results = Parallel(n_jobs=self.n_jobs)(
+                            delayed(fmin_l_bfgs_b)(
+                                gaussian_acquisition_1D,
+                                x,
+                                args=(
+                                    est,
+                                    np.min(yi),
+                                    cand_acq_func,
+                                    self.acq_func_kwargs,
+                                ),
+                                bounds=transformed_bounds,
+                                approx_grad=False,
+                                maxiter=20,
+                            )
+                            for x in x0
+                        )
+
+                    cand_xs = np.array([r[0] for r in results])
+                    cand_acqs = np.array([r[1] for r in results])
+                    next_x = cand_xs[np.argmin(cand_acqs)]
+
+                # lbfgs should handle this but just in case there are
+                # precision errors.
+                if not self.space.is_categorical:
+                    if not self.space.is_config_space:
+                        transformed_bounds = np.asarray(transformed_bounds)
+                        next_x = np.clip(
+                            next_x,
+                            transformed_bounds[:, 0],
+                            transformed_bounds[:, 1],
+                        )
+
+                self.next_xs_.append(next_x)
+
+            if self.acq_func == "gp_hedge":
+                logits = np.array(self.gains_)
+                logits -= np.max(logits)
+                exp_logits = np.exp(self.eta * logits)
+                probs = exp_logits / np.sum(exp_logits)
+                next_x = self.next_xs_[np.argmax(self.rng.multinomial(1, probs))]
+            else:
+                next_x = self.next_xs_[0]
+
+            # note the need for [0] at the end
+            self._next_x = self.space.inverse_transform(next_x.reshape((1, -1)))[0]
 
         # Pack results
         result = create_result(
@@ -1214,14 +1128,14 @@ class Optimizer(object):
         elif is_listlike(y) and is_2Dlistlike(x):
             for y_value in y:
                 if (
-                    not isinstance(y_value, Number)
+                    not isinstance(y_value, numbers.Number)
                     and not is_listlike(y_value)
                     and y_value != OBJECTIVE_VALUE_FAILURE
                 ):
                     raise ValueError("expected y to be a 1-D or 2-D list of scalars")
 
         elif is_listlike(x):
-            if not isinstance(y, Number) and not is_listlike(y):
+            if not isinstance(y, numbers.Number) and not is_listlike(y):
                 raise ValueError("`func` should return a scalar or tuple of scalars")
 
         else:
@@ -1269,43 +1183,103 @@ class Optimizer(object):
         return result
 
     def _moo_scalarize(self, yi):
-        if (
-            self._moo_scalar_function is None
-            or self._moo_scalarization_strategy.startswith("r")
-        ):
-            moo_function = {
-                "Linear": MoLinearFunction,
-                "Chebyshev": MoChebyshevFunction,
-                "AugChebyshev": MoAugmentedChebyshevFunction,
-                "PBI": MoPBIFunction,
-                "Quadratic": MoQuadraticFunction,
-                "rLinear": MoLinearFunction,
-                "rChebyshev": MoChebyshevFunction,
-                "rAugChebyshev": MoAugmentedChebyshevFunction,
-                "rPBI": MoPBIFunction,
-                "rQuadratic": MoQuadraticFunction,
-            }
-            n_objectives = 1 if np.ndim(yi[0]) == 0 else len(yi[0])
-            if self._moo_scalarization_weight is not None:
-                if (
-                    not is_listlike(self._moo_scalarization_weight)
-                    or len(self._moo_scalarization_weight) != n_objectives
-                ):
-                    raise ValueError(
-                        "expected moo_scalarization_weight to be a list of length equal to the number of objectives"
-                    )
-                weight = np.asarray_chkfinite(self._moo_scalarization_weight)
-            elif self._moo_scalarization_strategy.startswith("r"):
-                weight = None
-            else:
-                weight = np.ones(n_objectives) / n_objectives
+        has_failures = "F" in yi
+        if has_failures:
+            yi = np.asarray(yi, dtype="O")
+            mask_no_failures = np.where(yi != "F")
+            yi_filtered = np.asarray(yi[mask_no_failures].tolist())
+        else:
+            yi_filtered = np.asarray(yi)
 
-            self._moo_scalar_function = moo_function[self._moo_scalarization_strategy](
-                n_objectives=n_objectives,
-                weight=weight,
-                random_state=self.rng,
-            )
+        n_objectives = 1 if np.ndim(yi_filtered[0]) == 0 else len(yi_filtered[0])
+
+        # Fit scaler
+        self.objective_scaler.fit(yi_filtered)
+
+        # Penality
+        if self._moo_upper_bounds is not None:
+            y_max = yi_filtered.max(axis=0)
+            # y_min = yi_filtered.min(axis=0)
+            upper_bounds = [
+                m if b is None else b for m, b in zip(y_max, self._moo_upper_bounds)
+            ]
+
+            # ! Strategy 1: penalty after scaling
+            upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
+            yi_filtered = self.objective_scaler.transform(yi_filtered)
+            penalty = np.sum(2 * np.maximum(yi_filtered - upper_bounds, 0), axis=1)
+            # print("-> y:", yi_filtered[-1])
+            # print("-> p:", penalty[-1])
+            # print()
+            yi_filtered = np.add(yi_filtered.T, penalty).T
+
+            # ! Strategy 2: penalty before scaling
+            # penalty = np.maximum(yi_filtered - upper_bounds, 0)
+            # yi_filtered = yi_filtered + penalty
+            # yi_filtered = self.objective_scaler.transform(yi_filtered)
+
+            # ! Strategy 3: replace values above upper bounds with y_max
+            # yi_filtered = self.objective_scaler.transform(yi_filtered)
+            # y_max_scaled = self.objective_scaler.transform([y_max])[0]
+            # upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
+
+            # *S.3.A: Replacing only the objective which breaks the bound
+            # mask = yi_filtered > upper_bounds
+            # yi_filtered[mask] = np.tile(y_max_scaled, yi_filtered.shape[0]).reshape(
+            #     yi_filtered.shape
+            # )[mask]
+
+            # *S.3.B: Replacing all objectives if any of them breaks the bound
+            # mask = (yi_filtered > upper_bounds).any(axis=1)
+            # yi_filtered[mask] = y_max_scaled
+
+            # Strategy 4: "leaky" penalty after scaling
+            # upper_bounds = [0.0 if b is None else b for b in self._moo_upper_bounds]
+            # penalty_param = 2.0
+            # leak_param = self.rng.uniform()
+
+            # upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
+            # augmented_lower_bounds = upper_bounds.copy()
+            # for i, b in enumerate(self._moo_upper_bounds):
+            #     if b is None:
+            #         upper_bounds[i] = np.infty  # Allow to go higher
+            #         augmented_lower_bounds[i] = -np.infty  # No leaky rewards
+            # yi_filtered = self.objective_scaler.transform(yi_filtered)
+            # penalty = np.sum(
+            #     penalty_param * np.maximum(yi_filtered - upper_bounds, 0), axis=1
+            # ) + np.sum(
+            #     leak_param * np.minimum(yi_filtered - augmented_lower_bounds, 0), axis=1
+            # )
+            # # print("-> y:", yi_filtered[-1])
+            # # print("-> b:", upper_bounds)
+            # # print("-> p:", penalty[-1])
+            # # print()
+            # yi_filtered = np.add(yi_filtered.T, penalty).T
+        else:
+            yi_filtered = self.objective_scaler.transform(yi_filtered)
+
+        # The object is created here because the number of objectives `n_objectives`
+        # is inferred from observed data.
+        if self._moo_scalar_function is None:
+            if isinstance(self._moo_scalarization_strategy, str):
+                self._moo_scalar_function = moo_functions[
+                    self._moo_scalarization_strategy
+                ](
+                    n_objectives=n_objectives,
+                    weight=self._moo_scalarization_weight,
+                    random_state=self.rng,
+                )
+            elif isinstance(self._moo_scalarization_strategy, MoScalarFunction):
+                self._moo_scalar_function = self._moo_scalarization_strategy
+
+        self._moo_scalar_function.update_weight()
 
         # compute normalization constants
-        self._moo_scalar_function.normalize(yi)
-        return [self._moo_scalar_function.scalarize(yv) for yv in yi]
+        self._moo_scalar_function.normalize(yi_filtered)
+        yi_filtered = [self._moo_scalar_function.scalarize(y) for y in yi_filtered]
+
+        if has_failures:
+            yi[mask_no_failures] = yi_filtered
+            return yi.tolist()
+        else:
+            return yi_filtered

@@ -1,6 +1,7 @@
 import abc
 import copy
 import functools
+import logging
 import os
 import pathlib
 
@@ -12,31 +13,28 @@ from deephyper.core.utils._introspection import get_init_params_as_json
 from deephyper.core.utils._timeout import terminate_on_timeout
 from deephyper.evaluator import Evaluator
 from deephyper.evaluator.callback import TqdmCallback
+from deephyper.skopt.moo import non_dominated_set
 
 
 class Search(abc.ABC):
     """Abstract class which represents a search algorithm.
 
     Args:
-        problem ([type]): [description]
-        evaluator ([type]): [description]
-        random_state ([type], optional): [description]. Defaults to None.
-        log_dir (str, optional): [description]. Defaults to ".".
-        verbose (int, optional): [description]. Defaults to 0.
+        problem: object describing the search/optimization problem.
+        evaluator: object describing the evaluation process.
+        random_state (np.random.RandomState, optional): Initial random state of the search. Defaults to ``None``.
+        log_dir (str, optional): Path to the directoy where results of the search are stored. Defaults to ``"."``.
+        verbose (int, optional): Use verbose mode. Defaults to ``0``.
     """
 
     def __init__(
         self, problem, evaluator, random_state=None, log_dir=".", verbose=0, **kwargs
     ):
-
         # get the __init__ parameters
         self._init_params = locals()
         self._call_args = []
 
         self._problem = copy.deepcopy(problem)
-
-        # if a callable is directly passed wrap it around the serial evaluator
-        self.check_evaluator(evaluator)
 
         self._seed = None
         if type(random_state) is int:
@@ -49,18 +47,22 @@ class Search(abc.ABC):
 
         # Create logging directory if does not exist
         self._log_dir = os.path.abspath(log_dir)
-        pathlib.Path(log_dir).mkdir(parents=False, exist_ok=True)
+        pathlib.Path(log_dir).mkdir(parents=True, exist_ok=True)
 
         self._verbose = verbose
 
+        # if a callable is directly passed wrap it around the serial evaluator
+        self.check_evaluator(evaluator)
+
     def check_evaluator(self, evaluator):
         if not (isinstance(evaluator, Evaluator)):
-
             if callable(evaluator):
                 self._evaluator = Evaluator.create(
                     evaluator,
                     method="serial",
-                    method_kwargs={"callbacks": [TqdmCallback()]},
+                    method_kwargs={
+                        "callbacks": [TqdmCallback()] if self._verbose else []
+                    },
                 )
             else:
                 raise TypeError(
@@ -135,12 +137,16 @@ class Search(abc.ABC):
             else:
                 self._evaluator.dump_evals(log_dir=self._log_dir)
 
-        try:
-            path_results = os.path.join(self._log_dir, "results.csv")
-            df_results = pd.read_csv(path_results)
-            return df_results
-        except FileNotFoundError:
+        path_results = os.path.join(self._log_dir, "results.csv")
+        if not (os.path.exists(path_results)):
+            logging.warning(f"Could not find results file at {path_results}!")
             return None
+
+        self.extend_results_with_pareto_efficient(path_results)
+
+        df_results = pd.read_csv(path_results)
+
+        return df_results
 
     @abc.abstractmethod
     def _search(self, max_evals, timeout):
@@ -155,3 +161,27 @@ class Search(abc.ABC):
     def search_id(self):
         """The identifier of the search used by the evaluator."""
         return self._evaluator._search_id
+
+    def extend_results_with_pareto_efficient(self, df_path: str):
+        """Extend the results DataFrame with a column ``pareto_efficient`` which is ``True`` if the point is Pareto efficient.
+
+        Args:
+            df (pd.DataFrame): the input results DataFrame.
+        """
+        df = pd.read_csv(df_path)
+
+        # Check if Multi-Objective Optimization was performed to save the pareto front
+        objective_columns = [col for col in df.columns if col.startswith("objective")]
+
+        if len(objective_columns) > 1:
+            if pd.api.types.is_string_dtype(df[objective_columns[0]]):
+                mask_no_failures = ~df[objective_columns[0]].str.startswith("F")
+            else:
+                mask_no_failures = np.ones(len(df), dtype=bool)
+            objectives = -df.loc[mask_no_failures, objective_columns].values.astype(
+                float
+            )
+            mask_pareto_front = non_dominated_set(objectives)
+            df["pareto_efficient"] = False
+            df.loc[mask_no_failures, "pareto_efficient"] = mask_pareto_front
+            df.to_csv(df_path, index=False)

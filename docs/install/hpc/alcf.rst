@@ -15,7 +15,7 @@ This installation procedure shows you how to access the installed DeepHyper modu
 
 .. code-block:: console
 
-    $ module load conda/2022-07-19
+    $ module load conda/2022-09-08
     $ conda activate base
 
 Then to verify the installation do:
@@ -25,7 +25,27 @@ Then to verify the installation do:
     $ python
     >>> import deephyper
     >>> deephyper.__version__
-    '0.3.0'
+    '0.4.2'
+
+.. warning:: The ``deephyper`` installation provided in the conda module is not always up to date. If you need a more recent version of DeepHyper, please refer to the :ref:`conda-environment` installation procedure.
+
+.. _polaris-from-source:
+
+This script creates a conda environment activation script ``activate-dhenv.sh`` in the build directory, which can be sourced
+to activate the created environment, and a ``redis.conf`` file, which should be referenced when starting a Redis storage server.
+
+Installation from source
+------------------------
+
+This installation procedure shows you how to build DeepHyper from source on Polaris. This installation, will provide DeepHyper's default set of features with MPI backend for the `Evaluator` and the Redis backend for the `Storage`. After logging in Polaris, the following script can be executed from a `build` directory:
+
+.. literalinclude:: ../../../install/alcf/polaris.sh
+    :language: bash
+    :caption: **file**: ``install/alcf/polaris.sh``
+    :linenos:
+
+This script creates a conda environment activation script ``activate-dhenv.sh`` in the build directory, which can be sourced
+to activate the created environment, and a ``redis.conf`` file, which should be referenced when starting a Redis storage server.
 
 Theta
 =====

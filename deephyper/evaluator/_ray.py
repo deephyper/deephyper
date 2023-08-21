@@ -1,10 +1,12 @@
 import logging
+
 import ray
 
 from typing import Callable, Hashable
+
 from deephyper.evaluator._evaluator import Evaluator
 from deephyper.evaluator._job import Job
-from deephyper.evaluator.storage import Storage
+from deephyper.evaluator.storage import Storage, RayStorage
 
 ray_initializer = None
 
@@ -18,7 +20,7 @@ class RayEvaluator(Evaluator):
         run_function (callable): functions to be executed by the ``Evaluator``.
         callbacks (list, optional): A list of callbacks to trigger custom actions at the creation or completion of jobs. Defaults to None.
         run_function_kwargs (dict, optional): Static keyword arguments to pass to the ``run_function`` when executed.
-        storage (Storage, optional): Storage used by the evaluator. Defaults to ``MemoryStorage``.
+        storage (Storage, optional): Storage used by the evaluator. Defaults to ``RayStorage``.
         search_id (Hashable, optional): The id of the search to use in the corresponding storage. If ``None`` it will create a new search identifier when initializing the search.
         address (str, optional): address of the Ray-head. Defaults to None, if no Ray-head was started.
         password (str, optional): password to connect ot the Ray-head. Defaults to None, if the default Ray-password is used.
@@ -47,17 +49,10 @@ class RayEvaluator(Evaluator):
         ray_kwargs: dict = None,
         num_workers: int = None,
     ):
-        super().__init__(
-            run_function=run_function,
-            num_workers=num_workers,
-            callbacks=callbacks,
-            run_function_kwargs=run_function_kwargs,
-            storage=storage,
-            search_id=search_id,
-        )
         # get the __init__ parameters
         self._init_params = locals()
 
+        #
         ray_kwargs = {} if ray_kwargs is None else ray_kwargs
         if address is not None:
             ray_kwargs["address"] = address
@@ -73,15 +68,32 @@ class RayEvaluator(Evaluator):
         if not (ray.is_initialized()):
             ray.init(**ray_kwargs)
 
+        super().__init__(
+            run_function=run_function,
+            num_workers=num_workers,
+            callbacks=callbacks,
+            run_function_kwargs=run_function_kwargs,
+            storage=storage if storage is not None else RayStorage(),
+            search_id=search_id,
+        )
+
         self.num_cpus_per_task = num_cpus_per_task
         self.num_gpus_per_task = num_gpus_per_task
 
-        self.num_cpus = int(
-            sum([node["Resources"].get("CPU", 0) for node in ray.nodes()])
-        )
-        self.num_gpus = int(
-            sum([node["Resources"].get("GPU", 0) for node in ray.nodes()])
-        )
+        if num_cpus is None:
+            self.num_cpus = int(
+                sum([node["Resources"].get("CPU", 0) for node in ray.nodes()])
+            )
+        else:
+            self.num_cpus = num_cpus
+
+        if num_gpus is None:
+            self.num_gpus = int(
+                sum([node["Resources"].get("GPU", 0) for node in ray.nodes()])
+            )
+        else:
+            self.num_gpus = num_gpus
+
         if self.num_workers is None or self.num_workers == -1:
             self.num_workers = int(self.num_cpus // self.num_cpus_per_task)
 
@@ -99,7 +111,6 @@ class RayEvaluator(Evaluator):
         )(self.run_function)
 
     async def execute(self, job: Job) -> Job:
-
         running_job = job.create_running_job(self._storage, self._stopper)
 
         output = await self._remote_run_function.remote(
