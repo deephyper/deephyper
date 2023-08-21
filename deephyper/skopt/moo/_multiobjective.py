@@ -9,16 +9,18 @@ class MoScalarFunction(abc.ABC):
     """Abstract class representing a scalarizing function.
 
     Args:
-        n_objectives (int, optional): Number of objective functions. Defaults to 1.
-        weight (float or 1-D array, optional): Array of weights for each objective function. Defaults to None.
-        utopia_point (float or 1-D array, optional): Array of reference values for each objective function. Defaults to None.
-        random_state (int, optional): Random seed. Defaults to None.
+        n_objectives (int, optional): Number of objective functions. Defaults to ``1``.
+        weight (float or 1-D array, optional): Array of weights for each objective function. Defaults to ``None``.
+        weight_sampling_periode (int, optional): Sampling periode for the weight vector. Defaults to ``5``.
+        utopia_point (float or 1-D array, optional): Array of reference values for each objective function. Defaults to ``None``.
+        random_state (int, optional): Random seed. Defaults to ``None``.
     """
 
     def __init__(
         self,
         n_objectives: int = 1,
         weight=None,
+        weight_sampling_periode: int = 1,
         utopia_point=None,
         random_state=None,
     ):
@@ -42,25 +44,31 @@ class MoScalarFunction(abc.ABC):
 
         # Record the passed weight vector.
         self.weight = weight
+        self.weight_sampling_periode = weight_sampling_periode
+        self.counter_weight_sampling = -1
         self._weight = None
         self.update_weight()
 
     def update_weight(self):
+        self.counter_weight_sampling += 1
+        if self.counter_weight_sampling % self.weight_sampling_periode != 0:
+            return
+
         if self.weight == "random" or self.weight is None:
             # Uniformly sample from the probability simplex using Remark 1.3
             # from https://arxiv.org/pdf/1909.06406.pdf
             # and the inverse exponential CDF: F_inv(p) = -log(1 - p).
             # Can be checked with plot similar to Fig. 3 in http://www.cs.cmu.edu/~nasmith/papers/smith+tromble.tr04.pdf
             self._weight = -np.log(1.0 - self._rng.rand(self._n_objectives))
+            self._weight /= np.sum(self._weight)
             # self._weight = self._rng.dirichlet([1.0 for _ in range(self._n_objectives)])
         elif self.weight == "uniform":
-            self._weight = np.ones(self._n_objectives)
+            self._weight = np.ones(self._n_objectives) / self._n_objectives
         elif is_listlike(self.weight):
             self._check_shape(self.weight)
             self._weight = np.asarray(self.weight)
         else:
             raise ValueError(f"Invalid weight value: {self.weight}")
-        self._weight /= np.sum(self._weight)
 
     def _check_shape(self, y):
         """Check if the shape of y is consistent with the object."""
@@ -115,20 +123,24 @@ class MoLinearFunction(MoScalarFunction):
     """This scalarizing function linearly combines the individual objective values (after automatically scaling them in [0, 1]).
 
     Args:
-        n_objectives (int, optional): Number of objective functions. Defaults to 1.
-        weight (float or 1-D array, optional): Array of weights for each objective function. Defaults to None.
-        utopia_point (float or 1-D array, optional): Array of reference values for each objective function. Defaults to None.
-        random_state (int, optional): Random seed. Defaults to None.
+        n_objectives (int, optional): Number of objective functions. Defaults to ``1``.
+        weight (float or 1-D array, optional): Array of weights for each objective function. Defaults to ``None``.
+        weight_sampling_periode (int, optional): Sampling periode for the weight vector. Defaults to ``5``.
+        utopia_point (float or 1-D array, optional): Array of reference values for each objective function. Defaults to ``None``.
+        random_state (int, optional): Random seed. Defaults to ``None``.
     """
 
     def __init__(
         self,
         n_objectives: int = 1,
         weight=None,
+        weight_sampling_periode: int = 1,
         utopia_point=None,
         random_state=None,
     ):
-        super().__init__(n_objectives, weight, utopia_point, random_state)
+        super().__init__(
+            n_objectives, weight, weight_sampling_periode, utopia_point, random_state
+        )
 
     def _scalarize(self, y):
         return np.dot(self._weight, y)
@@ -138,20 +150,24 @@ class MoChebyshevFunction(MoScalarFunction):
     """This scalarizing function computes a weighted infinity-norm of the individual objective values (after automatically scaling them in [0, 1]).
 
     Args:
-        n_objectives (int, optional): Number of objective functions. Defaults to 1.
-        weight (float or 1-D array, optional): Array of weights for each objective function. Defaults to None.
-        utopia_point (float or 1-D array, optional): Array of reference values for each objective function. Defaults to None.
-        random_state (int, optional): Random seed. Defaults to None.
+        n_objectives (int, optional): Number of objective functions. Defaults to ``1``.
+        weight (float or 1-D array, optional): Array of weights for each objective function. Defaults to ``None``.
+        weight_sampling_periode (int, optional): Sampling periode for the weight vector. Defaults to ``5``.
+        utopia_point (float or 1-D array, optional): Array of reference values for each objective function. Defaults to ``None``.
+        random_state (int, optional): Random seed. Defaults to ``None``.
     """
 
     def __init__(
         self,
         n_objectives: int = 1,
         weight=None,
+        weight_sampling_periode: int = 1,
         utopia_point=None,
         random_state=None,
     ):
-        super().__init__(n_objectives, weight, utopia_point, random_state)
+        super().__init__(
+            n_objectives, weight, weight_sampling_periode, utopia_point, random_state
+        )
 
     def _scalarize(self, y):
         return np.max(np.multiply(self._weight, np.abs(y)))
@@ -161,23 +177,27 @@ class MoPBIFunction(MoScalarFunction):
     """This scalarizing function computes the projection of the objective vector along a reference vector and adds a penalty term to minimize deviations from the projected point to the attainable objective set. See https://doi.org/10.1109/TEVC.2007.892759
 
     Args:
-        n_objectives (int, optional): Number of objective functions. Defaults to 1.
-        weight (float or 1-D array, optional): Array of weights for each objective function. Defaults to None.
-        utopia_point (float or 1-D array, optional): Array of reference values for each objective function. Defaults to None.
-        random_state (int, optional): Random seed. Defaults to None.
-        penalty (float, optional): Value of penalty parameter. Defaults to 100.0.
+        n_objectives (int, optional): Number of objective functions. Defaults to ``1``.
+        weight (float or 1-D array, optional): Array of weights for each objective function. Defaults to ```None``.
+        weight_sampling_periode (int, optional): Sampling periode for the weight vector. Defaults to ``5``.
+        utopia_point (float or 1-D array, optional): Array of reference values for each objective function. Defaults to ``None``.
+        random_state (int, optional): Random seed. Defaults to ``None``.
+        penalty (float, optional): Value of penalty parameter. Defaults to ``100.0``.
     """
 
     def __init__(
         self,
         n_objectives: int = 1,
         weight=None,
+        weight_sampling_periode: int = 1,
         utopia_point=None,
         random_state=None,
         penalty: float = 5.0,
     ):
         self._penalty = np.abs(penalty) if np.isreal(penalty) else 5.0
-        super().__init__(n_objectives, weight, utopia_point, random_state)
+        super().__init__(
+            n_objectives, weight, weight_sampling_periode, utopia_point, random_state
+        )
 
     def update_weight(self):
         super().update_weight()
@@ -193,23 +213,27 @@ class MoAugmentedChebyshevFunction(MoScalarFunction):
     """This scalarizing function computes a sum of weighted infinity- and 1-norms of the individual objective values (after automatically scaling them in [0, 1]).
 
     Args:
-        n_objectives (int, optional): Number of objective functions. Defaults to 1.
-        weight (float or 1-D array, optional): Array of weights for each objective function. Defaults to None.
-        utopia_point (float or 1-D array, optional): Array of reference values for each objective function. Defaults to None.
-        random_state (int, optional): Random seed. Defaults to None.
-        penalty (float, optional): Value of weight given to 1-norm. Defaults to 0.001.
+        n_objectives (int, optional): Number of objective functions. Defaults to ``1``.
+        weight (float or 1-D array, optional): Array of weights for each objective function. Defaults to ``None``.
+        weight_sampling_periode (int, optional): Sampling periode for the weight vector. Defaults to ``5``.
+        utopia_point (float or 1-D array, optional): Array of reference values for each objective function. Defaults to ``None``.
+        random_state (int, optional): Random seed. Defaults to ``None``.
+        penalty (float, optional): Value of weight given to 1-norm. Defaults to ``0.001``.
     """
 
     def __init__(
         self,
         n_objectives: int = 1,
         weight=None,
+        weight_sampling_periode: int = 1,
         utopia_point=None,
         random_state=None,
         alpha: float = 0.001,
     ):
         self._alpha = np.abs(alpha) if np.isreal(alpha) else 0.001
-        super().__init__(n_objectives, weight, utopia_point, random_state)
+        super().__init__(
+            n_objectives, weight, weight_sampling_periode, utopia_point, random_state
+        )
 
     def _scalarize(self, y):
         y = np.multiply(self._weight, np.abs(y))
@@ -220,23 +244,27 @@ class MoQuadraticFunction(MoScalarFunction):
     """This scalarizing function quadratically combines the individual objective values (after automatically scaling them in [0, 1]). It can be interpreted a smoother version of `MoChebyshevFunction`.
 
     Args:
-        n_objectives (int, optional): Number of objective functions. Defaults to 1.
-        weight (float or 1-D array, optional): Array of weights for each objective function. Defaults to None.
-        utopia_point (float or 1-D array, optional): Array of reference values for each objective function. Defaults to None.
-        random_state (int, optional): Random seed. Defaults to None.
-        penalty (float, optional): Value of smoothness parameter. Larger values make it less smooth. Defaults to 10.0.
+        n_objectives (int, optional): Number of objective functions. Defaults to ``1``.
+        weight (float or 1-D array, optional): Array of weights for each objective function. Defaults to ``None``.
+        weight_sampling_periode (int, optional): Sampling periode for the weight vector. Defaults to ``5``.
+        utopia_point (float or 1-D array, optional): Array of reference values for each objective function. Defaults to ``None``.
+        random_state (int, optional): Random seed. Defaults to ``None``.
+        penalty (float, optional): Value of smoothness parameter. Larger values make it less smooth. Defaults to ``10.0``.
     """
 
     def __init__(
         self,
         n_objectives: int = 1,
         weight=None,
+        weight_sampling_periode: int = 1,
         utopia_point=None,
         random_state=None,
         alpha: float = 10.0,
     ):
         self._alpha = np.abs(alpha) if np.isreal(alpha) else 10.0
-        super().__init__(n_objectives, weight, utopia_point, random_state)
+        super().__init__(
+            n_objectives, weight, weight_sampling_periode, utopia_point, random_state
+        )
 
     def update_weight(self):
         super().update_weight()
