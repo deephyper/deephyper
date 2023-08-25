@@ -37,7 +37,8 @@ DeepHyper supports distributed computation with different backends. ``MPI`` demo
     $ pip install "deephyper[mpi]" # Install MPI features for MPICommEvaluator.
     $ pip install "deephyper[ray]" # Install Ray features for RayEvaluator.
     $ pip install "deephyper[redis]" # Install Redis Client for RedisStorage with Distributed Search.
+    $ pip install "deephyper[redis-hiredis]" # Install Redis with Hiredis for better performance.
 
-For ``Redis`` we advice to follow the `Redis official installation guide <https://redis.io/topics/quickstart>`_ to install the client/server features. Then, the ``RedisJson`` also needs to be installed by following the `Redis JSON official installation guide <https://redis.io/docs/stack/json/>`_.
+For ``Redis`` we advice to follow the `Redis official installation guide <https://redis.io/topics/quickstart>`_ to install the client/server features. Then, the ``RedisJson`` also needs to be installed by following the `Redis JSON official installation guide <https://redis.io/docs/stack/json/>`_. To make the installation easier we provide a Spack package ``redisjson`` for which installation instruction are detailed at :ref:`Redis Server Install`.
 
 For ``MPI`` we advice to follow the `MPI official installation guide <https://www.open-mpi.org/faq/?category=building>`_ to install the client/server features. But, in many centers an ``MPI`` installation will already be provided or it can also be installed through a package manager (e.g., ``apt`` or ``brew``).
