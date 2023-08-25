@@ -6,7 +6,7 @@ import numbers
 import ConfigSpace as CS
 import numpy as np
 import pandas as pd
-from scipy.optimize import fmin_l_bfgs_b
+from scipy.optimize import fmin_l_bfgs_b, differential_evolution
 from sklearn.base import clone, is_regressor
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.utils import check_random_state
@@ -310,14 +310,14 @@ class Optimizer(object):
             else:
                 acq_optimizer = "sampling"
 
-        if acq_optimizer not in ["lbfgs", "sampling", "boltzmann_sampling"]:
+        if acq_optimizer not in ["lbfgs", "sampling", "boltzmann_sampling", "diffevo"]:
             raise ValueError(
                 "Expected acq_optimizer to be 'lbfgs' or "
                 "'sampling' or 'softmax_sampling', got {0}".format(acq_optimizer)
             )
 
         if not has_gradients(self.base_estimator_) and not (
-            "sampling" in acq_optimizer
+            acq_optimizer in ["sampling", "boltzmann_sampling", "diffevo"]
         ):
             raise ValueError(
                 "The regressor {0} should run with a 'sampling' "
@@ -999,6 +999,11 @@ class Optimizer(object):
             X = self.space.imp_const.fit_transform(self.space.transform(X_s))
 
             self.next_xs_ = []
+            do_optimize_periode = 8
+            do_sampling = (self.acq_optimizer == "sampling") or (
+                (self.acq_optimizer == "diffevo")
+                and (len(self.Xi) % do_optimize_periode != 0)
+            )
             for cand_acq_func in self.cand_acq_funcs_:
                 values = _gaussian_acquisition(
                     X=X,
@@ -1014,7 +1019,7 @@ class Optimizer(object):
 
                 # Find the minimum of the acquisition function by randomly
                 # sampling points from the space
-                if self.acq_optimizer == "sampling":
+                if do_sampling:
                     next_x = X[np.argmin(values)]
 
                 elif self.acq_optimizer == "boltzmann_sampling":
@@ -1079,6 +1084,43 @@ class Optimizer(object):
                     cand_xs = np.array([r[0] for r in results])
                     cand_acqs = np.array([r[1] for r in results])
                     next_x = cand_xs[np.argmin(cand_acqs)]
+
+                elif self.acq_optimizer == "diffevo" and not (do_sampling):
+                    # TODO: vectorized differential evolution
+                    # https://pymoo.org/customization/mixed.html
+                    # https://pymoo.org/interface/problem.html
+
+                    # self.space.dimensions
+                    # integrality = [dim for dim in self.space.dimensions]
+
+                    # Not sure why: but setting n_jobs to 1 is faster for diffevo
+                    n_jobs = 1
+                    if hasattr(est, "n_jobs"):
+                        n_jobs = est.n_jobs
+                        est.n_jobs = 1
+
+                    popsize = 15
+                    N = len(transformed_bounds)
+                    S = N * popsize
+                    results = differential_evolution(
+                        func=lambda x, *args: _gaussian_acquisition(
+                            x.reshape(len(transformed_bounds), -1).T, *args
+                        ),
+                        bounds=transformed_bounds,
+                        args=(est, None, cand_acq_func, False, self.acq_func_kwargs),
+                        vectorized=True,
+                        updating="deferred",
+                        polish=False,
+                        popsize=popsize,
+                        init=X[np.argsort(values)[:S]],
+                        strategy="best1bin",
+                        seed=self.rng.randint(0, np.iinfo(np.int32).max),
+                    )
+
+                    if hasattr(est, "n_jobs"):
+                        est.n_jobs = n_jobs
+
+                    next_x = results.x
 
                 # lbfgs should handle this but just in case there are
                 # precision errors.
