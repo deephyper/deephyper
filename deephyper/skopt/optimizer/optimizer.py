@@ -6,7 +6,7 @@ import numbers
 import ConfigSpace as CS
 import numpy as np
 import pandas as pd
-from scipy.optimize import fmin_l_bfgs_b, differential_evolution
+from scipy.optimize import fmin_l_bfgs_b
 from sklearn.base import clone, is_regressor
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.utils import check_random_state
@@ -1090,37 +1090,84 @@ class Optimizer(object):
                     # https://pymoo.org/customization/mixed.html
                     # https://pymoo.org/interface/problem.html
 
-                    # self.space.dimensions
-                    # integrality = [dim for dim in self.space.dimensions]
+                    # !Attempt with PYMOO
+                    from pymoo.optimize import minimize
+                    from pymoo.core.mixed import MixedVariableGA
+                    from deephyper.skopt.optimizer._pymoo import DeepHyperProblem
+                    from pymoo.core.population import Population
 
-                    # Not sure why: but setting n_jobs to 1 is faster for diffevo
-                    n_jobs = 1
-                    if hasattr(est, "n_jobs"):
-                        n_jobs = est.n_jobs
-                        est.n_jobs = 1
+                    # print(transformed_bounds)
+                    # exit()
 
-                    popsize = 15
-                    N = len(transformed_bounds)
-                    S = N * popsize
-                    results = differential_evolution(
-                        func=lambda x, *args: _gaussian_acquisition(
-                            x.reshape(len(transformed_bounds), -1).T, *args
+                    pop = 50
+                    idx_sorted = np.argsort(values)
+                    initial_sampling = X[idx_sorted[:pop]]
+                    initial_sampling = list(
+                        map(
+                            lambda x: dict(zip(self.space.dimension_names, x)),
+                            initial_sampling,
+                        )
+                    )
+                    # initial_sampling = np.array(initial_sampling)
+                    init_pop = Population.new(
+                        "X",
+                        initial_sampling,
+                        "F",
+                        values[idx_sorted[:pop]].reshape(
+                            -1,
                         ),
-                        bounds=transformed_bounds,
-                        args=(est, None, cand_acq_func, False, self.acq_func_kwargs),
-                        vectorized=True,
-                        updating="deferred",
-                        polish=False,
-                        popsize=popsize,
-                        init=X[np.argsort(values)[:S]],
-                        strategy="best1bin",
-                        seed=self.rng.randint(0, np.iinfo(np.int32).max),
                     )
 
-                    if hasattr(est, "n_jobs"):
-                        est.n_jobs = n_jobs
+                    args = (est, None, cand_acq_func, False, self.acq_func_kwargs)
+                    pymoo_problem = DeepHyperProblem(
+                        space=self.space,
+                        acq_func=lambda x: _gaussian_acquisition(x, *args),
+                    )
+                    pymoo_algorithm = MixedVariableGA(pop=pop, sampling=init_pop)
 
-                    next_x = results.x
+                    res = minimize(
+                        pymoo_problem,
+                        pymoo_algorithm,
+                        termination=("n_evals", 1000),
+                        seed=self.rng.randint(0, np.iinfo(np.int32).max),
+                        verbose=False,
+                    )
+                    next_x = [res.X[name] for name in self.space.dimension_names]
+                    next_x = np.array(next_x)
+
+                    # !Attempt with Diff Evo from Scipy
+                    # from scipy.optimize import differential_evolution
+                    # # self.space.dimensions
+                    # # integrality = [dim for dim in self.space.dimensions]
+
+                    # # Not sure why: but setting n_jobs to 1 is faster for diffevo
+                    # n_jobs = 1
+                    # if hasattr(est, "n_jobs"):
+                    #     n_jobs = est.n_jobs
+                    #     est.n_jobs = 1
+
+                    # popsize = 15
+                    # N = len(transformed_bounds)
+                    # S = N * popsize
+                    # results = differential_evolution(
+                    #     func=lambda x, *args: _gaussian_acquisition(
+                    #         x.reshape(len(transformed_bounds), -1).T, *args
+                    #     ),
+                    #     bounds=transformed_bounds,
+                    #     args=(est, None, cand_acq_func, False, self.acq_func_kwargs),
+                    #     vectorized=True,
+                    #     updating="deferred",
+                    #     polish=False,
+                    #     popsize=popsize,
+                    #     init=X[np.argsort(values)[:S]],
+                    #     strategy="best1bin",
+                    #     seed=self.rng.randint(0, np.iinfo(np.int32).max),
+                    # )
+
+                    # if hasattr(est, "n_jobs"):
+                    #     est.n_jobs = n_jobs
+
+                    # next_x = results.x
 
                 # lbfgs should handle this but just in case there are
                 # precision errors.
