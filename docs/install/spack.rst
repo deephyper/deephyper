@@ -1,8 +1,7 @@
 Spack
 *****
 
-`Spack <https://spack.readthedocs.io/en/latest/>`_ is a package management tool designed to support multiple versions and configurations of software on a wide variety of platforms and environments.
-
+`Spack <https://spack.readthedocs.io/en/latest/>`_ is a package management tool designed to support multiple versions and configurations of software on a wide variety of platforms and environments. We use Spack to build from source some dependencies of DeepHyper.
 
 Start by installing Spack on your system. The following command will install Spack in the current directory:
 
@@ -11,25 +10,48 @@ Start by installing Spack on your system. The following command will install Spa
     $ git clone -c feature.manyFiles=true https://github.com/spack/spack.git
     $ . ./spack/share/spack/setup-env.sh
 
-Download the deephyper Spack package repository:
+
+.. _Redis Server Install:
+
+Redis Server & RedisJSON
+========================
+
+Create a Spack environment where the redis-server will be installed:
+
+.. code-block:: console
+
+    $ spack env create redisjson
+    $ spack env activate redisjson
+
+Download the deephyper Spack package repository and add it to the environment:
 
 .. code-block:: console
 
     $ git clone https://github.com/deephyper/deephyper-spack-packages.git
     $ spack repo add deephyper-spack-packages
 
-Create a new environment for DeepHyper:
+Then, add the ``redisjson`` Spack package to the environment:
 
 .. code-block:: console
 
-    $ spack env create deephyper
-    $ spack env activate deephyper
+    $ spack add redisjson
+
+Finally, install:
+
+.. code-block:: console
+    
+    $ spack install
+
+Now that the Redis server is installed and the RedisJSON pluging is compiled you can start the Redis server using the appropriate ``redis.conf``. The following commands will create a ``redis.conf`` file which configures the server to listen on all interfaces, and also load the RedisJSON plugin:
 
 .. code-block:: console
 
-    $ spack install py-deephyper
-    $ spack load py-deephyper
+    $ touch redis.conf
+    $ echo "bind 0.0.0.0" >> redis.conf
+    $ cat $(spack find --path redisjson | grep -o "/.*/redisjson.*")/redis.conf >> redis.conf
 
-.. warning::
+Finally, start the Redis server:
 
-    The Spack installation will only provide the default DeepHyper installation (i.e., hyperparameter optimization). All features will not be included by default.
+.. code-block:: console
+
+    $ redis-server redis.conf

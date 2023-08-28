@@ -67,7 +67,8 @@ EXTRAS = {
     "hps-tl": REQUIRED_TL_SDV,  # transfer learning for bayesian optimization,
     "mpi": ["mpi4py>=3.1.3"],
     "ray": ["ray[default]>=1.3.0"],
-    "redis": ["redis[hiredis]"],
+    "redis": ["redis"],
+    "redis-hiredis": ["redis[hiredis]"],
     "dev": [
         # Test
         "pytest",
