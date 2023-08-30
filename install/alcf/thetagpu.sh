@@ -16,16 +16,11 @@
 # The script will also create a file named `activate-dhenv.sh` that will
 # Setup the environment each time it is sourced `source activate-dhenv.sh`.
 
-set -xe
+set -x
 
 # Load modules available on the current system
 module load llvm/main-20220317
-module load conda/2021-11-30
-module load openmpi/openmpi-4.0.5
-
-# Install conda
-# wget https://repo.anaconda.com/miniconda/Miniconda3-py310_23.1.0-1-Linux-x86_64.sh -O miniconda.sh
-# bash miniconda.sh -b -p $PWD/miniconda
+module load conda/2023-01-11
 
 # Copy the base conda environment
 conda create -p dhenv --clone base -y
@@ -54,11 +49,14 @@ spack install
 
 # Install mpi4py
 git clone https://github.com/mpi4py/mpi4py.git
-cd mpi4py/
+pushd mpi4py/
 MPICC=mpicc python setup.py install
+popd
 
 # Install the DeepHyper's Python package
-git clone -b master https://github.com/deephyper/deephyper.git
+git clone -b develop https://github.com/deephyper/deephyper.git
+
+# Install DeepHyper with MPI and Redis backends
 pip install -e "deephyper/[default,mpi,redis-hiredis]"
 
 # Create activation script
