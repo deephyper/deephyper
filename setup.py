@@ -28,7 +28,7 @@ REQUIRED = [
     "packaging",
     "parse",
     "scikit-learn>=0.23.1",
-    "scipy>=1.7",
+    "scipy>=1.10",
     "tqdm>=4.64.0",
     "pyyaml",
 ]
