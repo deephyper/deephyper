@@ -1,8 +1,3 @@
-.. deephyper documentation master file, created by
-    sphinx-quickstart on Thu Sep 27 13:32:19 2018.
-    You can adapt this file completely to your liking, but it should at least
-    contain the root `toctree` directive.
-
 ***********************************************************************************************
 DeepHyper: Distributed Neural Architecture and Hyperparameter Optimization for Machine Learning
 ***********************************************************************************************
