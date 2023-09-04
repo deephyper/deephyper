@@ -54,7 +54,7 @@ MPICC=mpicc python setup.py install
 popd
 
 # Install the DeepHyper's Python package
-git clone -b develop https://github.com/deephyper/deephyper.git
+git clone -b master https://github.com/deephyper/deephyper.git
 
 # Install DeepHyper with MPI and Redis backends
 pip install -e "deephyper/[default,mpi,redis-hiredis]"
