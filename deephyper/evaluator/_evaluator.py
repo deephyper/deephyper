@@ -458,7 +458,13 @@ class Evaluator:
                 if not (self._start_dumping):
                     # Waiting to start receiving non-failed jobs before dumping results
                     for result in resultsList:
-                        if type(result["objective"]) is not str:
+                        if (
+                            "objective" in result
+                            and type(result["objective"]) is not str
+                        ) or (
+                            "objective_0" in result
+                            and type(result["objective_0"]) is not str
+                        ):
                             self._columns_dumped = result.keys()
 
                 if self._columns_dumped is not None:
