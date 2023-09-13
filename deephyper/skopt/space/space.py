@@ -1058,8 +1058,12 @@ class Space(object):
                     )
                     space.append(param)
                     self.hps_type[x.name] = "Real"
+                elif isinstance(x, CS.hyperparameters.Constant):
+                    param = Categorical([x.value], name=x.name, transform="label")
+                    space.append(param)
+                    self.hps_type[x.name] = "Categorical"
                 else:
-                    raise ValueError("Unknown Hyperparameter type.")
+                    raise ValueError(f"Unknown Hyperparameter type: {type(x)}")
             dimensions = space
         self.dimensions = [check_dimension(dim) for dim in dimensions]
 
