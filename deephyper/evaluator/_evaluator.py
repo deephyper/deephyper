@@ -453,16 +453,29 @@ class Evaluator:
 
         if len(resultsList) != 0:
             mode = "a" if self._start_dumping else "w"
+
             with open(os.path.join(log_dir, filename), mode) as fp:
                 if not (self._start_dumping):
-                    self._columns_dumped = resultsList[0].keys()
+                    # Waiting to start receiving non-failed jobs before dumping results
+                    for result in resultsList:
+                        if (
+                            "objective" in result
+                            and type(result["objective"]) is not str
+                        ) or (
+                            "objective_0" in result
+                            and type(result["objective_0"]) is not str
+                        ):
+                            self._columns_dumped = result.keys()
 
-                writer = csv.DictWriter(fp, self._columns_dumped, extrasaction="ignore")
+                if self._columns_dumped is not None:
+                    writer = csv.DictWriter(
+                        fp, self._columns_dumped, extrasaction="ignore"
+                    )
 
-                if not (self._start_dumping):
-                    writer.writeheader()
-                    self._start_dumping = True
+                    if not (self._start_dumping):
+                        writer.writeheader()
+                        self._start_dumping = True
 
-                writer.writerows(resultsList)
+                    writer.writerows(resultsList)
 
         logging.info("dump_evals done")
