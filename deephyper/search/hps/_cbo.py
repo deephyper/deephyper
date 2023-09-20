@@ -53,7 +53,8 @@ class CBO(Search):
         verbose (int, optional): Indicate the verbosity level of the search. Defaults to ``0``.
         surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Surrogate model used by the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "GBRT", "DUMMY"]`` or a sklearn regressor. ``"RF"`` is for Random-Forest which is the best compromise between speed and quality when performing a lot of parallel evaluations, i.e., reaching more than hundreds of evaluations. ``"GP"`` is for Gaussian-Process which is the best choice when maximizing the quality of iteration but quickly slow down when reaching hundreds of evaluations, also it does not support conditional search space. ``"ET"`` is for Extra-Tree, faster than random forest but with worse mean estimate and poor uncertainty quantification capabilities. ``"GBRT"`` is for Gradient-Boosting Regression Tree, it has better mean estimate than other tree-based method worse uncertainty quantification capabilities and slower than ``"RF"``. Defaults to ``"RF"``.
         acq_func (str, optional): Acquisition function used by the Bayesian optimization. Can be a value in ``["UCB", "EI", "PI", "gp_hedge"]``. Defaults to ``"UCB"``.
-        acq_optimizer (str, optional): Method used to minimze the acquisition function. Can be a value in ``["sampling", "lbfgs"]``. Defaults to ``"auto"``.
+        acq_optimizer (str, optional): Method used to minimze the acquisition function. Can be a value in ``["sampling", "lbfgs", "ga"]``. Defaults to ``"auto"``.
+        acq_optimizer_freq (int, optional): Frequency of optimization calls for the acquisition function. Defaults to ``10``, using optimizer every ``10`` surrogate model updates.
         kappa (float, optional): Manage the exploration/exploitation tradeoff for the "UCB" acquisition function. Defaults to ``1.96`` which corresponds to 95% of the confidence interval.
         xi (float, optional): Manage the exploration/exploitation tradeoff of ``"EI"`` and ``"PI"`` acquisition function. Defaults to ``0.001``.
         n_points (int, optional): The number of configurations sampled from the search space to infer each batch of new evaluated configurations.
@@ -86,9 +87,10 @@ class CBO(Search):
         surrogate_model="RF",
         acq_func: str = "UCB",
         acq_optimizer: str = "auto",
+        acq_optimizer_freq: int = 10,
         kappa: float = 1.96,
         xi: float = 0.001,
-        n_points: int = 10000,
+        n_points: int = 10_000,
         filter_duplicated: bool = True,
         update_prior: bool = False,
         update_prior_quantile: float = 0.1,
@@ -243,7 +245,7 @@ class CBO(Search):
                     filter_failures, filter_failures
                 ),
                 "max_failures": max_failures,
-                "boltzmann_gamma": 1,
+                "acq_optimizer_freq": acq_optimizer_freq,
             },
             # acquisition function
             acq_func=MAP_acq_func.get(acq_func, acq_func),

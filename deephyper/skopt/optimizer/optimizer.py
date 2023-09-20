@@ -310,19 +310,19 @@ class Optimizer(object):
             else:
                 acq_optimizer = "sampling"
 
-        if acq_optimizer not in ["lbfgs", "sampling", "boltzmann_sampling", "diffevo"]:
+        if acq_optimizer not in ["lbfgs", "sampling", "ga"]:
             raise ValueError(
                 "Expected acq_optimizer to be 'lbfgs' or "
-                "'sampling' or 'softmax_sampling', got {0}".format(acq_optimizer)
+                "'sampling' or 'ga', got {0}".format(acq_optimizer)
             )
 
         if not has_gradients(self.base_estimator_) and not (
-            acq_optimizer in ["sampling", "boltzmann_sampling", "diffevo"]
+            acq_optimizer in ["sampling", "ga"]
         ):
             raise ValueError(
                 "The regressor {0} should run with a 'sampling' "
                 "acq_optimizer such as "
-                "'sampling' or 'softmax_sampling'.".format(type(base_estimator))
+                "'sampling' or 'ga'.".format(type(base_estimator))
             )
         self.acq_optimizer = acq_optimizer
 
@@ -330,7 +330,7 @@ class Optimizer(object):
         if acq_optimizer_kwargs is None:
             acq_optimizer_kwargs = dict()
 
-        self.n_points = acq_optimizer_kwargs.get("n_points", 10000)
+        self.n_points = acq_optimizer_kwargs.get("n_points", 10_000)
         self.n_restarts_optimizer = acq_optimizer_kwargs.get("n_restarts_optimizer", 5)
         self.n_jobs = acq_optimizer_kwargs.get("n_jobs", 1)
         self.update_prior = acq_optimizer_kwargs.get("update_prior", False)
@@ -338,10 +338,9 @@ class Optimizer(object):
             "update_prior_quantile", 0.9
         )
         self.filter_duplicated = acq_optimizer_kwargs.get("filter_duplicated", True)
-        self.boltzmann_gamma = acq_optimizer_kwargs.get("boltzmann_gamma", 1)
-        self.boltzmann_psucc = acq_optimizer_kwargs.get("boltzmann_psucc", 0)
         self.filter_failures = acq_optimizer_kwargs.get("filter_failures", "mean")
         self.max_failures = acq_optimizer_kwargs.get("max_failures", 100)
+        self.acq_optimizer_freq = acq_optimizer_kwargs.get("acq_optimizer_freq", 1)
         self.acq_optimizer_kwargs = acq_optimizer_kwargs
 
         # Configure search space
@@ -447,10 +446,8 @@ class Optimizer(object):
         self._sample_max_size = sample_max_size
         self._sample_strategy = sample_strategy
 
-        # parameters for multifidelity
-        self._use_multifidelity = False
-        self.bi = []
-        self.bi_count = {}
+        # Count number of surrogate model fittings
+        self._counter_fit = 0
 
     def copy(self, random_state=None):
         """Create a shallow copy of an instance of the optimizer.
@@ -491,9 +488,11 @@ class Optimizer(object):
         if self.Xi:
             optimizer._tell(self.Xi, self.yi)
 
+        optimizer._counter_fit = self._counter_fit
+
         return optimizer
 
-    def ask(self, n_points=None, strategy="cl_min"):
+    def ask(self, n_points=None, strategy="cl_min", strategy_kwargs=None):
         """Query point or multiple points at which objective should be evaluated.
 
         n_points : int or None, default: None
@@ -533,6 +532,8 @@ class Optimizer(object):
             else:
                 return [x]
 
+        strategy_kwargs = strategy_kwargs or {}
+
         if n_points > 0 and (
             self._n_initial_points > 0 or self.base_estimator_ is None
         ):
@@ -545,9 +546,6 @@ class Optimizer(object):
                 X = X + self._ask_random_points(size=(n_points - n))
             self.sampled.extend(X)
             return X
-
-        if self.acq_func == "qLCB":
-            strategy = "qLCB"
 
         supported_strategies = [
             "cl_min",
@@ -580,7 +578,9 @@ class Optimizer(object):
 
                 return next_samples
 
-            elif strategy == "boltmann":
+            elif strategy == "boltzmann":
+                gamma = strategy_kwargs.get("gamma", 1.0)
+
                 values = -self._last_values
 
                 self._min_value = (
@@ -604,7 +604,7 @@ class Optimizer(object):
                         beta = 0
                     else:
                         beta = (
-                            self.boltzmann_gamma
+                            gamma
                             * np.log(t)
                             / np.abs(self._max_value - self._min_value)
                         )
@@ -999,11 +999,11 @@ class Optimizer(object):
             X = self.space.imp_const.fit_transform(self.space.transform(X_s))
 
             self.next_xs_ = []
-            do_optimize_periode = 8
-            do_sampling = (self.acq_optimizer == "sampling") or (
-                (self.acq_optimizer == "diffevo")
-                and (len(self.Xi) % do_optimize_periode != 0)
+
+            do_only_sampling = (self.acq_optimizer == "sampling") or (
+                self._counter_fit % self.acq_optimizer_freq != 0
             )
+
             for cand_acq_func in self.cand_acq_funcs_:
                 values = _gaussian_acquisition(
                     X=X,
@@ -1019,42 +1019,8 @@ class Optimizer(object):
 
                 # Find the minimum of the acquisition function by randomly
                 # sampling points from the space
-                if do_sampling:
+                if do_only_sampling:
                     next_x = X[np.argmin(values)]
-
-                elif self.acq_optimizer == "boltzmann_sampling":
-                    p = self.rng.uniform()
-                    if p <= self.boltzmann_psucc:
-                        next_x = X[np.argmin(values)]
-                    else:
-                        values = -values
-
-                        self._min_value = (
-                            self._min_value
-                            if self._min_value is None
-                            else min(values.min(), self._min_value)
-                        )
-                        self._max_value = (
-                            self._max_value
-                            if self._max_value is None
-                            else max(values.max(), self._max_value)
-                        )
-
-                        t = len(self.Xi)
-                        if t == 0:
-                            beta = 0
-                        else:
-                            beta = (
-                                self.boltzmann_gamma
-                                * np.log(t)
-                                / np.abs(self._max_value - self._min_value)
-                            )
-
-                        probs = boltzmann_distribution(values, beta)
-
-                        idx = np.argmax(self.rng.multinomial(1, probs))
-
-                        next_x = X[idx]
 
                 # Use BFGS to find the mimimum of the acquisition function, the
                 # minimization starts from `n_restarts_optimizer` different
@@ -1085,19 +1051,15 @@ class Optimizer(object):
                     cand_acqs = np.array([r[1] for r in results])
                     next_x = cand_xs[np.argmin(cand_acqs)]
 
-                elif self.acq_optimizer == "diffevo" and not (do_sampling):
+                elif self.acq_optimizer == "ga":
                     # TODO: vectorized differential evolution
                     # https://pymoo.org/customization/mixed.html
                     # https://pymoo.org/interface/problem.html
 
-                    # !Attempt with PYMOO
                     from pymoo.optimize import minimize
                     from pymoo.core.mixed import MixedVariableGA
                     from deephyper.skopt.optimizer._pymoo import DeepHyperProblem
                     from pymoo.core.population import Population
-
-                    # print(transformed_bounds)
-                    # exit()
 
                     pop = 50
                     idx_sorted = np.argsort(values)
@@ -1108,7 +1070,6 @@ class Optimizer(object):
                             initial_sampling,
                         )
                     )
-                    # initial_sampling = np.array(initial_sampling)
                     init_pop = Population.new(
                         "X",
                         initial_sampling,
@@ -1135,40 +1096,6 @@ class Optimizer(object):
                     next_x = [res.X[name] for name in self.space.dimension_names]
                     next_x = np.array(next_x)
 
-                    # !Attempt with Diff Evo from Scipy
-                    # from scipy.optimize import differential_evolution
-                    # # self.space.dimensions
-                    # # integrality = [dim for dim in self.space.dimensions]
-
-                    # # Not sure why: but setting n_jobs to 1 is faster for diffevo
-                    # n_jobs = 1
-                    # if hasattr(est, "n_jobs"):
-                    #     n_jobs = est.n_jobs
-                    #     est.n_jobs = 1
-
-                    # popsize = 15
-                    # N = len(transformed_bounds)
-                    # S = N * popsize
-                    # results = differential_evolution(
-                    #     func=lambda x, *args: _gaussian_acquisition(
-                    #         x.reshape(len(transformed_bounds), -1).T, *args
-                    #     ),
-                    #     bounds=transformed_bounds,
-                    #     args=(est, None, cand_acq_func, False, self.acq_func_kwargs),
-                    #     vectorized=True,
-                    #     updating="deferred",
-                    #     polish=False,
-                    #     popsize=popsize,
-                    #     init=X[np.argsort(values)[:S]],
-                    #     strategy="best1bin",
-                    #     seed=self.rng.randint(0, np.iinfo(np.int32).max),
-                    # )
-
-                    # if hasattr(est, "n_jobs"):
-                    #     est.n_jobs = n_jobs
-
-                    # next_x = results.x
-
                 # lbfgs should handle this but just in case there are
                 # precision errors.
                 if not self.space.is_categorical:
@@ -1193,6 +1120,7 @@ class Optimizer(object):
 
             # note the need for [0] at the end
             self._next_x = self.space.inverse_transform(next_x.reshape((1, -1)))[0]
+            self._counter_fit += 1
 
         # Pack results
         result = create_result(
