@@ -410,10 +410,6 @@ class Real(Dimension):
         if isinstance(inv_transform, list):
             inv_transform = np.array(inv_transform)
 
-        # PB commenting clip
-        # print(inv_transform)
-        # inv_transform = np.clip(inv_transform, self.low, self.high).astype(self.dtype)
-
         if self.dtype == float or self.dtype == "float":
             # necessary, otherwise the type is converted to a numpy type
             return getattr(inv_transform, "tolist")()

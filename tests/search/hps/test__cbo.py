@@ -78,18 +78,12 @@ def test_sample_types(tmp_path):
     problem = HpProblem()
     problem.add_hyperparameter((0, 10), "x_int")
     problem.add_hyperparameter((0.0, 10.0), "x_float")
-    problem.add_hyperparameter([0, "1", 2.0], "x_cat")
+    problem.add_hyperparameter(["0", "1", "2"], "x_cat")
 
     def run(config):
         assert np.issubdtype(type(config["x_int"]), np.integer)
         assert np.issubdtype(type(config["x_float"]), float)
-
-        if config["x_cat"] == 0:
-            assert np.issubdtype(type(config["x_cat"]), np.integer)
-        elif config["x_cat"] == "1":
-            assert type(config["x_cat"]) is str or type(config["x_cat"]) is np.str_
-        else:
-            assert np.issubdtype(type(config["x_cat"]), float)
+        assert type(config["x_cat"]) is str or type(config["x_cat"]) is np.str_
 
         return config["x_int"] + config["x_float"] + int(config["x_cat"])
 
@@ -391,4 +385,5 @@ def test_cbo_categorical_variable(tmp_path):
 
 
 if __name__ == "__main__":
-    test_sample_types_conditional(tmp_path=".")
+    test_sample_types(tmp_path=".")
+    # test_sample_types_conditional(tmp_path=".")

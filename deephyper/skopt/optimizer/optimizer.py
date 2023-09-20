@@ -352,7 +352,7 @@ class Optimizer(object):
         if isinstance(dimensions, Space):
             self.space = dimensions
             self.space.model_sdv = self.model_sdv
-        elif isinstance(dimensions, [list, tuple]):
+        elif isinstance(dimensions, (list, tuple)):
             self.space = Space(dimensions, model_sdv=self.model_sdv)
 
         # normalize space if GP regressor
