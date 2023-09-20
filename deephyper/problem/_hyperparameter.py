@@ -198,6 +198,9 @@ class HpProblem:
         prob = repr(self._space)
         return prob
 
+    def __len__(self):
+        return len(self.hyperparameter_names)
+
     def add_hyperparameter(
         self, value, name: str = None, default_value=None
     ) -> csh.Hyperparameter:
