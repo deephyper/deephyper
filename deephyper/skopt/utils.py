@@ -618,9 +618,8 @@ def normalize_dimensions(dimensions):
          NOTE: The upper and lower bounds are inclusive for `Integer`
          dimensions.
     """
-    space = Space(dimensions)
     transformed_dimensions = []
-    for dimension in space.dimensions:
+    for dimension in dimensions:
         # check if dimension is of a Dimension instance
         if isinstance(dimension, Dimension):
             # Change the transformer to normalize
@@ -630,7 +629,7 @@ def normalize_dimensions(dimensions):
         else:
             raise RuntimeError("Unknown dimension type " "(%s)" % type(dimension))
 
-    return Space(transformed_dimensions)
+    return transformed_dimensions
 
 
 def check_list_types(x, types):

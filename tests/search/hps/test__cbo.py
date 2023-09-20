@@ -72,7 +72,6 @@ def test_cbo_random_seed(tmp_path):
 @pytest.mark.hps
 def test_sample_types(tmp_path):
     import numpy as np
-    from deephyper.evaluator import Evaluator
     from deephyper.problem import HpProblem
     from deephyper.search.hps import CBO
 
@@ -82,7 +81,6 @@ def test_sample_types(tmp_path):
     problem.add_hyperparameter([0, "1", 2.0], "x_cat")
 
     def run(config):
-
         assert np.issubdtype(type(config["x_int"]), np.integer)
         assert np.issubdtype(type(config["x_float"]), float)
 
@@ -93,24 +91,26 @@ def test_sample_types(tmp_path):
         else:
             assert np.issubdtype(type(config["x_cat"]), float)
 
-        return 0
-
-    create_evaluator = lambda: Evaluator.create(run, method="serial")
+        return config["x_int"] + config["x_float"] + int(config["x_cat"])
 
     results = CBO(
         problem,
-        create_evaluator(),
+        run,
+        n_initial_points=5,
         random_state=42,
         surrogate_model="DUMMY",
         log_dir=tmp_path,
+        verbose=0,
     ).search(10)
 
     results = CBO(
         problem,
-        create_evaluator(),
+        run,
+        n_initial_points=5,
         random_state=42,
         surrogate_model="RF",
         log_dir=tmp_path,
+        verbose=0,
     ).search(10)
 
 
@@ -126,28 +126,29 @@ def test_sample_types_no_cat(tmp_path):
     problem.add_hyperparameter((0.0, 10.0), "x_float")
 
     def run(config):
-
         assert np.issubdtype(type(config["x_int"]), np.integer)
         assert np.issubdtype(type(config["x_float"]), float)
 
-        return 0
-
-    create_evaluator = lambda: Evaluator.create(run, method="serial")
+        return config["x_int"] + config["x_float"]
 
     results = CBO(
         problem,
-        create_evaluator(),
+        run,
         random_state=42,
+        n_initial_points=5,
         surrogate_model="DUMMY",
         log_dir=tmp_path,
+        verbose=0,
     ).search(10)
 
     results = CBO(
         problem,
-        create_evaluator(),
+        run,
         random_state=42,
+        n_initial_points=5,
         surrogate_model="RF",
         log_dir=tmp_path,
+        verbose=0,
     ).search(10)
 
 
@@ -216,40 +217,55 @@ def test_sample_types_conditional(tmp_path):
     # choices
     choice = problem.add_hyperparameter(
         name="choice",
-        value=["choice1", "choice2"],
+        value=["choice1", "choice2", "choice3"],
     )
 
     # integers
     x1_int = problem.add_hyperparameter(name="x1_int", value=(1, 10))
 
-    x2_int = problem.add_hyperparameter(name="x2_int", value=(1, 10))
+    x2_float = problem.add_hyperparameter(name="x2_int", value=(1.0, 10.0))
+
+    x3_cat = problem.add_hyperparameter(name="x3_cat", value=["1", "2", "3"])
 
     # conditions
     cond_1 = cs.EqualsCondition(x1_int, choice, "choice1")
-
-    cond_2 = cs.EqualsCondition(x2_int, choice, "choice2")
-
-    problem.add_condition(cond_1)
-    problem.add_condition(cond_2)
+    cond_2 = cs.EqualsCondition(x2_float, choice, "choice2")
+    cond_3 = cs.EqualsCondition(x3_cat, choice, "choice3")
+    problem.add_conditions([cond_1, cond_2, cond_3])
 
     def run(config):
-
         if config["choice"] == "choice1":
             assert np.issubdtype(type(config["x1_int"]), np.integer)
+            y = config["x1_int"] ** 2
+        elif config["choice"] == "choice2":
+            assert np.issubdtype(type(config["x2_int"]), float)
+            y = config["x2_int"] ** 2 + 1
         else:
-            assert np.issubdtype(type(config["x2_int"]), np.integer)
+            assert type(config["x3_cat"]) is str or type(config["x3_cat"]) is np.str_
+            y = int(config["x3_cat"]) ** 2 + 2
 
-        return 0
-
-    create_evaluator = lambda: Evaluator.create(run, method="serial")
+        return y
 
     results = CBO(
         problem,
-        create_evaluator(),
+        run,
         random_state=42,
         surrogate_model="DUMMY",
         log_dir=tmp_path,
+        verbose=0,
     ).search(10)
+    print(results)
+
+    results = CBO(
+        problem,
+        run,
+        random_state=42,
+        n_initial_points=5,
+        surrogate_model="RF",
+        log_dir=tmp_path,
+        verbose=1,
+    ).search(20)
+    print(results)
 
 
 @pytest.mark.hps
@@ -375,4 +391,4 @@ def test_cbo_categorical_variable(tmp_path):
 
 
 if __name__ == "__main__":
-    test_cbo_categorical_variable(tmp_path=".")
+    test_sample_types_conditional(tmp_path=".")

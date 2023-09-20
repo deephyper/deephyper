@@ -6,7 +6,6 @@ import yaml
 from ConfigSpace.util import deactivate_inactive_hyperparameters
 from scipy.stats import gaussian_kde
 from scipy.stats.distributions import randint, rv_discrete, truncnorm, uniform
-from sklearn.impute import SimpleImputer
 from sklearn.utils import check_random_state
 
 from deephyper.core.utils.joblib_utils import Parallel, delayed
@@ -21,6 +20,11 @@ from .transformers import (
     StringEncoder,
     ToInteger,
 )
+
+# Special Values for Inactive Parameters
+VALUE_INACTIVE_CATEGORICAL = "NA"
+VALUE_INACTIVE_INTEGER = np.nan
+VALUE_INACTIVE_REAL = np.nan
 
 
 # helper class to be able to print [1, ..., 4] instead of [1, '...', 4]
@@ -152,7 +156,7 @@ def check_dimension(dimension, transform=None):
     )
 
 
-class Dimension(object):
+class Dimension:
     """Base class for search space dimensions."""
 
     prior = None
@@ -942,7 +946,7 @@ def _sample_dimension(dim, i, n_samples, random_state, out):
     out[0][:, i] = dim.rvs(n_samples=n_samples, random_state=random_state)
 
 
-class Space(object):
+class Space:
     """Initialize a search space from given specifications.
 
     Parameters
@@ -964,105 +968,14 @@ class Space(object):
             dimensions.
     """
 
-    def __init__(self, dimensions, model_sdv=None):
-        # attributes used when a ConfigurationSpace from ConfigSpace is given
-        self.is_config_space = False
-        self.config_space_samples = None
-        self.config_space_explored = False
-
-        self.imp_const = SimpleImputer(
-            missing_values=np.nan, strategy="constant", fill_value=-1000
-        )
-        self.imp_const_inv = SimpleImputer(
-            missing_values=-1000, strategy="constant", fill_value=np.nan
-        )
-
+    def __init__(self, dimensions, model_sdv=None, config_space=None):
         # attribute used when a generative model is used to sample
         self.model_sdv = model_sdv
 
-        self.hps_names = []
+        # attribute use when a config space is used to sample
+        assert config_space is None or isinstance(config_space, CS.ConfigurationSpace)
+        self.config_space = config_space
 
-        if isinstance(dimensions, CS.ConfigurationSpace):
-            self.is_config_space = True
-            self.config_space = dimensions
-            self.hps_type = {}
-
-            hps = self.config_space.get_hyperparameters()
-            cond_hps = self.config_space.get_all_conditional_hyperparameters()
-
-            space = []
-            for x in hps:
-                self.hps_names.append(x.name)
-                if isinstance(x, CS.hyperparameters.CategoricalHyperparameter):
-                    categories = list(x.choices)
-
-                    if x.probabilities is None:
-                        prior = np.ones((len(categories),)) / len(categories)
-                    else:
-                        prior = list(x.probabilities)
-
-                    if x.name in cond_hps:
-                        categories.append("NA")
-
-                        # remove p from prior
-                        p = 1 / len(categories)
-                        pi = p / (len(categories) - 1)
-                        prior = [prior_i - pi for prior_i in prior]
-                        prior.append(p)
-                    param = Categorical(categories, prior=prior, name=x.name)
-                    space.append(param)
-                    self.hps_type[x.name] = "Categorical"
-                elif isinstance(x, CS.hyperparameters.OrdinalHyperparameter):
-                    vals = list(x.sequence)
-                    if x.name in cond_hps:
-                        vals.append("NA")
-                    param = Categorical(vals, name=x.name)
-                    space.append(param)
-                    self.hps_type[x.name] = "Categorical"
-                elif isinstance(x, CS.hyperparameters.UniformIntegerHyperparameter):
-                    prior = "uniform"
-                    if x.log:
-                        prior = "log-uniform"
-                    param = Integer(x.lower, x.upper, prior=prior, name=x.name)
-                    space.append(param)
-                    self.hps_type[x.name] = "Integer"
-                elif isinstance(x, CS.hyperparameters.NormalIntegerHyperparameter):
-                    prior = "uniform"
-                    if x.log:
-                        prior = "log-uniform"
-                    param = Integer(x.lower, x.upper, prior=prior, name=x.name)
-                    space.append(param)
-                    self.hps_type[x.name] = "Integer"
-                elif isinstance(x, CS.hyperparameters.UniformFloatHyperparameter):
-                    prior = "uniform"
-                    if x.log:
-                        prior = "log-uniform"
-                    param = Real(x.lower, x.upper, prior=prior, name=x.name)
-                    space.append(param)
-                    self.hps_type[x.name] = "Real"
-                elif isinstance(x, CS.hyperparameters.NormalFloatHyperparameter):
-                    prior = "normal"
-                    if x.log:
-                        raise ValueError(
-                            "Unsupported 'log' transformation for NormalFloatHyperparameter."
-                        )
-                    param = Real(
-                        x.lower,
-                        x.upper,
-                        prior=prior,
-                        name=x.name,
-                        loc=x.mu,
-                        scale=x.sigma,
-                    )
-                    space.append(param)
-                    self.hps_type[x.name] = "Real"
-                elif isinstance(x, CS.hyperparameters.Constant):
-                    param = Categorical([x.value], name=x.name, transform="label")
-                    space.append(param)
-                    self.hps_type[x.name] = "Categorical"
-                else:
-                    raise ValueError(f"Unknown Hyperparameter type: {type(x)}")
-            dimensions = space
         self.dimensions = [check_dimension(dim) for dim in dimensions]
 
     def __eq__(self, other):
@@ -1190,7 +1103,7 @@ class Space(object):
         """
 
         rng = check_random_state(random_state)
-        if self.is_config_space:
+        if self.config_space:
             req_points = []
 
             hps_names = self.config_space.get_hyperparameter_names()
@@ -1227,12 +1140,13 @@ class Space(object):
 
             for idx, conf in enumerate(confs):
                 point = []
-                for hps_name in hps_names:
-                    val = np.nan
-                    if self.hps_type[hps_name] == "Categorical":
-                        val = "NA"
+                for i, hps_name in enumerate(hps_names):
+                    # If the parameter is inactive due to some conditions then we attribute the
+                    # lower bound value to break symmetries and enforce the same representation.
                     if hps_name in conf.keys():
                         val = conf[hps_name]
+                    else:
+                        val = self.dimensions[i].bounds[0]
                     point.append(val)
                 req_points.append(point)
 
@@ -1341,12 +1255,6 @@ class Space(object):
         # Repack as an array
         Xt = np.hstack([np.asarray(c).reshape((len(X), -1)) for c in columns])
 
-        # TODO: old code to be removed
-        # if False and self.is_config_space:
-        #     self.imp_const.fit(Xt)
-        #     Xtt = self.imp_const.transform(Xt)
-        #     Xt = Xtt
-
         return Xt
 
     def inverse_transform(self, Xt):
@@ -1363,8 +1271,6 @@ class Space(object):
         X : list of lists, shape=(n_samples, n_dims)
             The original samples.
         """
-
-        Xt = self.imp_const_inv.fit_transform(Xt)
 
         # Inverse transform
         columns = []

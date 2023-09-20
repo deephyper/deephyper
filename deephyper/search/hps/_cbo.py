@@ -227,17 +227,10 @@ class CBO(Search):
         )
         self._fitted = False
 
-        # check if it is possible to convert the ConfigSpace to standard skopt Space
-        if (
-            isinstance(self._problem.space, CS.ConfigurationSpace)
-            and len(self._problem.space.get_forbiddens()) == 0
-            and len(self._problem.space.get_conditions()) == 0
-        ):
-            self._opt_space = convert_to_skopt_space(
-                self._problem.space, surrogate_model=surrogate_model
-            )
-        else:
-            self._opt_space = self._problem.space
+        # Map the ConfigSpace to Skop Space
+        self._opt_space = convert_to_skopt_space(
+            self._problem.space, surrogate_model=surrogate_model
+        )
 
         self._opt = None
         self._opt_kwargs = dict(
