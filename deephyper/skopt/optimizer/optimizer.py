@@ -3,7 +3,6 @@ import warnings
 from math import log
 import numbers
 
-import ConfigSpace as CS
 import numpy as np
 import pandas as pd
 from scipy.optimize import fmin_l_bfgs_b
@@ -344,23 +343,24 @@ class Optimizer(object):
         self.acq_optimizer_kwargs = acq_optimizer_kwargs
 
         # Configure search space
-
-        if type(dimensions) is CS.ConfigurationSpace:
-            # Save the config space to do a real copy of the Optimizer
-            self.config_space = dimensions
-            self.config_space.seed(self.rng.get_state()[1][0])
-
-            if isinstance(self.base_estimator_, GaussianProcessRegressor):
-                raise RuntimeError("GP estimator is not available with ConfigSpace!")
-        else:
-            # normalize space if GP regressor
-            if isinstance(self.base_estimator_, GaussianProcessRegressor):
-                dimensions = normalize_dimensions(dimensions)
+        if isinstance(self.base_estimator_, GaussianProcessRegressor):
+            dimensions = normalize_dimensions(dimensions)
 
         # keep track of the generative model from sdv
         self.model_sdv = model_sdv
 
-        self.space = Space(dimensions, model_sdv=self.model_sdv)
+        if isinstance(dimensions, Space):
+            self.space = dimensions
+            self.space.model_sdv = self.model_sdv
+        elif isinstance(dimensions, (list, tuple)):
+            self.space = Space(dimensions, model_sdv=self.model_sdv)
+
+        # normalize space if GP regressor
+        if isinstance(self.base_estimator_, GaussianProcessRegressor):
+            self.space.dimensions = normalize_dimensions(self.space.dimensions)
+
+        if self.space.config_space:
+            self.space.config_space.seed(self.rng.get_state()[1][0])
 
         self._initial_samples = [] if initial_points is None else initial_points[:]
         self._initial_point_generator = cook_initial_point_generator(
@@ -458,9 +458,7 @@ class Optimizer(object):
             Set the random state of the copy.
         """
         optimizer = Optimizer(
-            dimensions=self.config_space
-            if hasattr(self, "config_space")
-            else self.space.dimensions,
+            dimensions=self.space,
             base_estimator=self.base_estimator_,
             n_initial_points=self.n_initial_points_,
             initial_point_generator=self._initial_point_generator,
@@ -709,10 +707,7 @@ class Optimizer(object):
         if self.filter_duplicated:
             # check duplicated values
 
-            if hasattr(self, "config_space"):
-                hps_names = self.config_space.get_hyperparameter_names()
-            else:
-                hps_names = self.space.dimension_names
+            hps_names = self.space.dimension_names
 
             df_samples = pd.DataFrame(data=samples, columns=hps_names, dtype="O")
             df_samples = df_samples[~df_samples.duplicated(keep="first")]
@@ -826,14 +821,11 @@ class Optimizer(object):
 
             next_x = self._next_x
             if next_x is not None:
-                if not self.space.is_config_space:
-                    min_delta_x = min(
-                        [self.space.distance(next_x, xi) for xi in self.Xi]
+                min_delta_x = min([self.space.distance(next_x, xi) for xi in self.Xi])
+                if abs(min_delta_x) <= 1e-8:
+                    warnings.warn(
+                        "The objective has been evaluated " "at this point before."
                     )
-                    if abs(min_delta_x) <= 1e-8:
-                        warnings.warn(
-                            "The objective has been evaluated " "at this point before."
-                        )
 
             # return point computed from last call to tell()
             return next_x
@@ -865,10 +857,7 @@ class Optimizer(object):
             only be fitted after `n_initial_points` points have been told to
             the optimizer irrespective of the value of `fit`.
         """
-        if self.space.is_config_space:
-            pass
-        else:
-            check_x_in_space(x, self.space)
+        check_x_in_space(x, self.space)
 
         self._check_y_is_valid(x, y)
 
@@ -966,7 +955,7 @@ class Optimizer(object):
                 warnings.simplefilter("ignore")
 
                 # preprocessing of input space
-                Xtt = self.space.imp_const.fit_transform(self.space.transform(Xi))
+                Xtt = self.space.transform(Xi)
                 Xtt = np.asarray(Xtt)
 
                 # fit surrogate model
@@ -996,7 +985,7 @@ class Optimizer(object):
 
             X_s = self._filter_duplicated(X_s)
 
-            X = self.space.imp_const.fit_transform(self.space.transform(X_s))
+            X = self.space.transform(X_s)
 
             self.next_xs_ = []
 
@@ -1099,13 +1088,12 @@ class Optimizer(object):
                 # lbfgs should handle this but just in case there are
                 # precision errors.
                 if not self.space.is_categorical:
-                    if not self.space.is_config_space:
-                        transformed_bounds = np.asarray(transformed_bounds)
-                        next_x = np.clip(
-                            next_x,
-                            transformed_bounds[:, 0],
-                            transformed_bounds[:, 1],
-                        )
+                    transformed_bounds = np.asarray(transformed_bounds)
+                    next_x = np.clip(
+                        next_x,
+                        transformed_bounds[:, 0],
+                        transformed_bounds[:, 1],
+                    )
 
                 self.next_xs_.append(next_x)
 

@@ -67,8 +67,6 @@ def convert_to_skopt_space(cs_space, surrogate_model=None):
 
     Raises:
         TypeError: if the input space is not a ConfigurationSpace.
-        RuntimeError: if the input space contains forbiddens.
-        RuntimeError: if the input space contains conditions
 
     Returns:
         deephyper.skopt.space.Space: a scikit-optimize Space.
@@ -78,18 +76,18 @@ def convert_to_skopt_space(cs_space, surrogate_model=None):
     if not (isinstance(cs_space, cs.ConfigurationSpace)):
         raise TypeError("Input space should be of type ConfigurationSpace")
 
-    if len(cs_space.get_conditions()) > 0:
-        raise RuntimeError("Cannot convert a ConfigSpace with Conditions!")
-
-    if len(cs_space.get_forbiddens()) > 0:
-        raise RuntimeError("Cannot convert a ConfigSpace with Forbiddens!")
+    sample_with_config_space = (
+        len(cs_space.get_conditions()) > 0 or len(cs_space.get_forbiddens()) > 0
+    )
 
     # convert the ConfigSpace to deephyper.skopt.space.Space
     dimensions = []
     for hp in cs_space.get_hyperparameters():
         dimensions.append(convert_to_skopt_dim(hp, surrogate_model))
 
-    skopt_space = deephyper.skopt.space.Space(dimensions)
+    skopt_space = deephyper.skopt.space.Space(
+        dimensions, config_space=cs_space if sample_with_config_space else None
+    )
     return skopt_space
 
 
