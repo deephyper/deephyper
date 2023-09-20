@@ -52,6 +52,11 @@ def convert_to_skopt_dim(cs_hp, surrogate_model=None):
         skopt_dim = deephyper.skopt.space.Categorical(
             categories=categories, name=cs_hp.name, transform=transform
         )
+    elif isinstance(cs_hp, csh.Constant):
+        categories = [cs_hp.value]
+        skopt_dim = deephyper.skopt.space.Categorical(
+            categories=categories, name=cs_hp.name, transform="label"
+        )
     else:
         raise TypeError(f"Cannot convert hyperparameter of type {type(cs_hp)}")
 
