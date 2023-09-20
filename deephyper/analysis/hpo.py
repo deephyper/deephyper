@@ -1,6 +1,36 @@
 """Visualization tools for Hyperparameter Optimization.
 """
 import matplotlib.pyplot as plt
+import pandas as pd
+
+
+def filter_failed_objectives(df: pd.DataFrame) -> pd.DataFrame:
+    """Filter out lines from the DataFrame with failed objectives.
+
+    Args:
+        df (pd.DataFrame): the results of a Hyperparameter Search.
+    Returns:
+        pd.DataFrame: the results of a Hyperparameter Search without failed objectives.
+    """
+    if pd.api.types.is_string_dtype(df.objective):
+        df = df[~df.objective.str.startswith("F")]
+        df.objective = df.objective.astype(float)
+    return df
+
+
+def parameters_at_max(df: pd.DataFrame) -> dict:
+    """Return the parameters at the maximum of the objective function.
+
+    Args:
+        results (pd.DataFrame): the results of a Hyperparameter Search.
+
+    Returns:
+        dict: the parameters at the maximum of the objective function.
+    """
+    df = filter_failed_objectives(df)
+    config = df.iloc[df.objective.argmax()].to_dict()
+    config = {k[2:]: v for k, v in config.items() if k.startswith("p:")}
+    return config
 
 
 def plot_search_trajectory_single_objective_hpo(results, ax=None, **kwargs):
