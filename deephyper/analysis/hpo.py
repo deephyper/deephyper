@@ -22,7 +22,7 @@ def parameters_at_max(df: pd.DataFrame) -> dict:
     """Return the parameters at the maximum of the objective function.
 
     Args:
-        results (pd.DataFrame): the results of a Hyperparameter Search.
+        df (pd.DataFrame): the results of a Hyperparameter Search.
 
     Returns:
         dict: the parameters at the maximum of the objective function.
