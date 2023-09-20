@@ -19,8 +19,6 @@ from deephyper.skopt.moo import (
     MoScalarFunction,
     moo_functions,
 )
-
-from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.base import is_regressor
 from deephyper.skopt.utils import use_named_args
 
@@ -33,9 +31,20 @@ MAP_filter_failures = {"min": "max"}
 
 
 # schedulers
-def scheduler_periodic_exponential_decay(i, eta_0, periode, rate, delay):
-    """Periodic exponential decay scheduler for exploration-exploitation."""
-    eta_i = eta_0 * np.exp(-rate * ((i - 1 - delay) % periode))
+def scheduler_periodic_exponential_decay(i, eta_0, period, rate, delay):
+    """Periodic exponential decay scheduler for exploration-exploitation.
+
+    Args:
+        i (int): current iteration.
+        eta_0 (float): initial value of the parameters ``[kappa, xi]`` to decay.
+        period (int): period of the decay.
+        rate (float): rate of the decay.
+        delay (int): delay of the decay (decaying starts after ``delay`` iterations).
+
+    Returns:
+        tuple: an iterable of length 2 with the updated values at iteration ``i`` for ``[kappa, xi]``.
+    """
+    eta_i = eta_0 * np.exp(-rate * ((i - 1 - delay) % period))
     return eta_i
 
 
@@ -55,7 +64,8 @@ class CBO(Search):
         verbose (int, optional): Indicate the verbosity level of the search. Defaults to ``0``.
         surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Surrogate model used by the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "GBRT", "DUMMY"]`` or a sklearn regressor. ``"RF"`` is for Random-Forest which is the best compromise between speed and quality when performing a lot of parallel evaluations, i.e., reaching more than hundreds of evaluations. ``"GP"`` is for Gaussian-Process which is the best choice when maximizing the quality of iteration but quickly slow down when reaching hundreds of evaluations, also it does not support conditional search space. ``"ET"`` is for Extra-Tree, faster than random forest but with worse mean estimate and poor uncertainty quantification capabilities. ``"GBRT"`` is for Gradient-Boosting Regression Tree, it has better mean estimate than other tree-based method worse uncertainty quantification capabilities and slower than ``"RF"``. Defaults to ``"RF"``.
         acq_func (str, optional): Acquisition function used by the Bayesian optimization. Can be a value in ``["UCB", "EI", "PI", "gp_hedge"]``. Defaults to ``"UCB"``.
-        acq_optimizer (str, optional): Method used to minimze the acquisition function. Can be a value in ``["sampling", "lbfgs"]``. Defaults to ``"auto"``.
+        acq_optimizer (str, optional): Method used to minimze the acquisition function. Can be a value in ``["sampling", "lbfgs", "ga"]``. Defaults to ``"auto"``.
+        acq_optimizer_freq (int, optional): Frequency of optimization calls for the acquisition function. Defaults to ``10``, using optimizer every ``10`` surrogate model updates.
         kappa (float, optional): Manage the exploration/exploitation tradeoff for the "UCB" acquisition function. Defaults to ``1.96`` which corresponds to 95% of the confidence interval.
         xi (float, optional): Manage the exploration/exploitation tradeoff of ``"EI"`` and ``"PI"`` acquisition function. Defaults to ``0.001``.
         n_points (int, optional): The number of configurations sampled from the search space to infer each batch of new evaluated configurations.
@@ -73,7 +83,7 @@ class CBO(Search):
         moo_lower_bounds (list, optional): List of lower bounds on the interesting range of objective values. Must be the same length as the number of obejctives. Defaults to ``None``, i.e., no bounds. Can bound only a single objective by providing ``None`` for all other values. For example, ``moo_lower_bounds=[None, 0.5, None]`` will explore all tradeoffs for the objectives at index 0 and 2, but only consider scores for objective 1 that exceed 0.5.
         moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "AugChebyshev", "PBI", "Quadratic"]``. Defaults to ``"Chebyshev"``. Typically, randomized methods should be used to capture entire Pareto front, unless there is a known target solution a priori. Additional details on each scalarization can be found in :mod:`deephyper.skopt.moo`.
         moo_scalarization_weight (list, optional): Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions. Defaults to ``None`` for randomized weights. Only set if you want to fix the scalarization weights for a multiobjective HPS.
-        scheduler (dict, callable, optional): a method to manage the the value of ``kappa, xi`` with iterations. Defaults to ``None`` which does not use any scheduler.
+        scheduler (dict, callable, optional): a function to manage the value of ``kappa, xi`` with iterations. Defaults to ``None`` which does not use any scheduler. The periodic exponential decay scheduler can be used with  ``scheduler={"type": "periodic-exp-decay", "period": 30, "rate": 0.1}``. The scheduler can also be a callable function with signature ``scheduler(i, eta_0, **kwargs)`` where ``i`` is the current iteration, ``eta_0`` is the initial value of ``[kappa, xi]`` and ``kwargs`` are other fixed parameters of the function.
         objective_scaler (str, optional): a way to map the objective space to some other support for example to normalize it. Defaults to ``"auto"`` which automatically set it to "identity" for any surrogate model except "RF" which will use "quantile-uniform".
         stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the function. Defaults to ``None`` which does not use any stopper.
     """
@@ -88,9 +98,10 @@ class CBO(Search):
         surrogate_model="RF",
         acq_func: str = "UCB",
         acq_optimizer: str = "auto",
+        acq_optimizer_freq: int = 10,
         kappa: float = 1.96,
         xi: float = 0.001,
-        n_points: int = 10000,
+        n_points: int = 10_000,
         filter_duplicated: bool = True,
         update_prior: bool = False,
         update_prior_quantile: float = 0.1,
@@ -118,7 +129,7 @@ class CBO(Search):
         if not (type(n_jobs) is int):
             raise ValueError(f"Parameter n_jobs={n_jobs} should be an integer value!")
 
-        surrogate_model_allowed = ["RF", "ET", "GBRT", "DUMMY", "GP", "MF"]
+        surrogate_model_allowed = ["RF", "ET", "GBRT", "DUMMY", "GP", "MF", "HGBRT"]
         if surrogate_model in surrogate_model_allowed:
             base_estimator = self._get_surrogate_model(
                 surrogate_model,
@@ -245,7 +256,7 @@ class CBO(Search):
                     filter_failures, filter_failures
                 ),
                 "max_failures": max_failures,
-                "boltzmann_gamma": 1,
+                "acq_optimizer_freq": acq_optimizer_freq,
             },
             # acquisition function
             acq_func=MAP_acq_func.get(acq_func, acq_func),
@@ -261,7 +272,7 @@ class CBO(Search):
 
         self._gather_type = "ALL" if sync_communication else "BATCH"
 
-        # scheduler policy
+        # Scheduler policy
         self.scheduler = None
         if type(scheduler) is dict:
             scheduler = scheduler.copy()
@@ -270,7 +281,7 @@ class CBO(Search):
 
             if scheduler_type == "periodic-exp-decay":
                 scheduler_params = {
-                    "periode": 25,
+                    "period": 25,
                     "rate": 0.1,
                     "delay": n_initial_points,
                 }
@@ -284,6 +295,9 @@ class CBO(Search):
             logging.info(
                 f"Set up scheduler '{scheduler_type}' with parameters '{scheduler_params}'"
             )
+        elif callable(scheduler):
+            self.scheduler = functools.partial(scheduler, eta_0=np.array([kappa, xi]))
+            logging.info(f"Set up scheduler '{scheduler}'")
 
         # stopper
         self._evaluator._stopper = stopper
@@ -461,7 +475,7 @@ class CBO(Search):
         Raises:
             ValueError: when the name of the surrogate model is unknown.
         """
-        accepted_names = ["RF", "ET", "GBRT", "DUMMY", "GP", "MF"]
+        accepted_names = ["RF", "ET", "GBRT", "DUMMY", "GP", "MF", "HGBRT"]
         if not (name in accepted_names):
             raise ValueError(
                 f"Unknown surrogate model {name}, please choose among {accepted_names}."
@@ -471,28 +485,54 @@ class CBO(Search):
             # TODO: for better performance the RF surrogate could be fit with a bootstrap sample of size max 1_000
             # However this should be refreshed each time when creating the estimator
             surrogate = deephyper.skopt.learning.RandomForestRegressor(
-                # n_estimators=100,
-                # max_features=1,
-                # min_samples_leaf=3,
+                n_estimators=100,
+                bootstrap=True,
+                min_samples_split=10,
                 n_jobs=n_jobs,
                 random_state=random_state,
             )
         elif name == "ET":
             surrogate = deephyper.skopt.learning.ExtraTreesRegressor(
-                # n_estimators=100,
-                # min_samples_leaf=3,
+                n_estimators=100,
+                bootstrap=True,
+                min_samples_split=10,
                 n_jobs=n_jobs,
                 random_state=random_state,
             )
         elif name == "GBRT":
+            from sklearn.ensemble import GradientBoostingRegressor
+
             gbrt = GradientBoostingRegressor(n_estimators=30, loss="quantile")
+            surrogate = deephyper.skopt.learning.GradientBoostingQuantileRegressor(
+                base_estimator=gbrt, n_jobs=n_jobs, random_state=random_state
+            )
+        elif name == "HGBRT":
+            from sklearn.ensemble import HistGradientBoostingRegressor
+
+            # Check wich parameters are categorical
+            categorical_features = []
+            for hp_name in self._problem.space:
+                hp = self._problem.space.get_hyperparameter(hp_name)
+
+                categorical_features.append(
+                    isinstance(hp, csh.CategoricalHyperparameter)
+                    # or isinstance(hp, csh.OrdinalHyperparameter)
+                )
+
+            gbrt = HistGradientBoostingRegressor(
+                loss="quantile", categorical_features=categorical_features
+            )
             surrogate = deephyper.skopt.learning.GradientBoostingQuantileRegressor(
                 base_estimator=gbrt, n_jobs=n_jobs, random_state=random_state
             )
         elif name == "MF":
             try:
                 surrogate = deephyper.skopt.learning.MondrianForestRegressor(
-                    n_estimators=100, n_jobs=n_jobs, random_state=random_state
+                    n_estimators=100,
+                    bootstrap=True,
+                    min_samples_split=10,
+                    n_jobs=n_jobs,
+                    random_state=random_state,
                 )
             except AttributeError:
                 raise deephyper.core.exceptions.MissingRequirementError(

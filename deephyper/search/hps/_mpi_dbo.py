@@ -32,6 +32,7 @@ class MPIDistributedBO(CBO):
         surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Surrogate model used by the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "GBRT", "DUMMY"]`` or a sklearn regressor. ``"RF"`` is for Random-Forest which is the best compromise between speed and quality when performing a lot of parallel evaluations, i.e., reaching more than hundreds of evaluations. ``"GP"`` is for Gaussian-Process which is the best choice when maximizing the quality of iteration but quickly slow down when reaching hundreds of evaluations, also it does not support conditional search space. ``"ET"`` is for Extra-Tree, faster than random forest but with worse mean estimate and poor uncertainty quantification capabilities. ``"GBRT"`` is for Gradient-Boosting Regression Tree, it has better mean estimate than other tree-based method worse uncertainty quantification capabilities and slower than ``"RF"``. Defaults to ``"RF"``.
         acq_func (str, optional): Acquisition function used by the Bayesian optimization. Can be a value in ``["UCB", "EI", "PI", "gp_hedge"]``. Defaults to ``"UCB"``.
         acq_optimizer (str, optional): Method used to minimze the acquisition function. Can be a value in ``["sampling", "lbfgs"]``. Defaults to ``"auto"``.
+        acq_optimizer_freq (int, optional): Frequency of optimization calls for the acquisition function. Defaults to ``10``, using optimizer every ``10`` surrogate model updates.
         kappa (float, optional): Manage the exploration/exploitation tradeoff for the "UCB" acquisition function. Defaults to ``1.96`` which corresponds to 95% of the confidence interval.
         xi (float, optional): Manage the exploration/exploitation tradeoff of ``"EI"`` and ``"PI"`` acquisition function. Defaults to ``0.001``.
         n_points (int, optional): The number of configurations sampled from the search space to infer each batch of new evaluated configurations.
@@ -49,7 +50,7 @@ class MPIDistributedBO(CBO):
         moo_lower_bounds (list, optional): List of lower bounds on the interesting range of objective values. Must be the same length as the number of obejctives. Defaults to ``None``, i.e., no bounds. Can bound only a single objective by providing ``None`` for all other values. For example, ``moo_lower_bounds=[None, 0.5, None]`` will explore all tradeoffs for the objectives at index 0 and 2, but only consider scores for objective 1 that exceed 0.5.
         moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "AugChebyshev", "PBI", "Quadratic"]``. Defaults to ``"Chebyshev"``. Typically, randomized methods should be used to capture entire Pareto front, unless there is a known target solution a priori. Additional details on each scalarization can be found in :mod:`deephyper.skopt.moo`.
         moo_scalarization_weight (list, optional): Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions. Defaults to ``None`` for randomized weights. Only set if you want to fix the scalarization weights for a multiobjective HPS.
-        scheduler (dict, callable, optional): a method to manage the the value of ``kappa, xi`` with iterations. Defaults to ``None`` which does not use any scheduler.
+        scheduler (dict, callable, optional): a function to manage the value of ``kappa, xi`` with iterations. Defaults to ``None`` which does not use any scheduler. The periodic exponential decay scheduler can be used with  ``scheduler={"type": "periodic-exp-decay", "period": 30, "rate": 0.1}``. The scheduler can also be a callable function with signature ``scheduler(i, eta_0, **kwargs)`` where ``i`` is the current iteration, ``eta_0`` is the initial value of ``[kappa, xi]`` and ``kwargs`` are other fixed parameters of the function.
         objective_scaler (str, optional): a way to map the objective space to some other support for example to normalize it. Defaults to ``"auto"`` which automatically set it to "identity" for any surrogate model except "RF" which will use "quantile-uniform".
         stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the function. Defaults to ``None`` which does not use any stopper.
         comm (Comm, optional): communicator used with MPI. Defaults to ``None`` for  ``COMM_WORLD``.
@@ -65,6 +66,7 @@ class MPIDistributedBO(CBO):
         surrogate_model="RF",
         acq_func: str = "UCB",
         acq_optimizer: str = "auto",
+        acq_optimizer_freq: int = 10,
         kappa: float = 1.96,
         xi: float = 0.001,
         n_points: int = 10000,
@@ -107,14 +109,6 @@ class MPIDistributedBO(CBO):
         else:
             random_state = np.random.RandomState()
 
-        if acq_optimizer == "auto":
-            if acq_func[0] == "q":
-                acq_optimizer = "sampling"
-            elif acq_func[0] == "b":
-                acq_optimizer == "boltzmann_sampling"
-            else:
-                acq_optimizer = "sampling"
-
         if acq_func[0] == "q":
             kappa = scipy.stats.expon.rvs(
                 size=self.size, scale=kappa, random_state=random_state
@@ -142,6 +136,7 @@ class MPIDistributedBO(CBO):
                 surrogate_model=surrogate_model,
                 acq_func=acq_func,
                 acq_optimizer=acq_optimizer,
+                acq_optimizer_freq=acq_optimizer_freq,
                 kappa=kappa,
                 xi=xi,
                 n_points=n_points,
@@ -175,6 +170,7 @@ class MPIDistributedBO(CBO):
                 surrogate_model=surrogate_model,
                 acq_func=acq_func,
                 acq_optimizer=acq_optimizer,
+                acq_optimizer_freq=acq_optimizer_freq,
                 kappa=kappa,
                 xi=xi,
                 n_points=n_points,

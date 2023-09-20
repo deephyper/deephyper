@@ -11,7 +11,7 @@ import deephyper.skopt
 
 
 def convert_to_skopt_dim(cs_hp, surrogate_model=None):
-    if surrogate_model in ["RF", "ET", "GBRT"]:
+    if surrogate_model in ["RF", "ET", "GBRT", "HGBRT", "MF"]:
         # models not sensitive to the metric space such as trees
         surrogate_model_type = "rule_based"
     else:
@@ -197,6 +197,9 @@ class HpProblem:
     def __repr__(self):
         prob = repr(self._space)
         return prob
+
+    def __len__(self):
+        return len(self.hyperparameter_names)
 
     def add_hyperparameter(
         self, value, name: str = None, default_value=None

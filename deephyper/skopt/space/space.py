@@ -1027,14 +1027,12 @@ class Space(object):
                     space.append(param)
                     self.hps_type[x.name] = "Integer"
                 elif isinstance(x, CS.hyperparameters.NormalIntegerHyperparameter):
-                    # TODO
                     prior = "uniform"
                     if x.log:
                         prior = "log-uniform"
                     param = Integer(x.lower, x.upper, prior=prior, name=x.name)
                     space.append(param)
                     self.hps_type[x.name] = "Integer"
-                    # raise ValueError("NormalIntegerHyperparameter not implemented")
                 elif isinstance(x, CS.hyperparameters.UniformFloatHyperparameter):
                     prior = "uniform"
                     if x.log:
