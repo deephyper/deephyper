@@ -19,8 +19,6 @@ from deephyper.skopt.moo import (
     MoScalarFunction,
     moo_functions,
 )
-
-from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.base import is_regressor
 from deephyper.skopt.utils import use_named_args
 
@@ -118,7 +116,7 @@ class CBO(Search):
         if not (type(n_jobs) is int):
             raise ValueError(f"Parameter n_jobs={n_jobs} should be an integer value!")
 
-        surrogate_model_allowed = ["RF", "ET", "GBRT", "DUMMY", "GP", "MF"]
+        surrogate_model_allowed = ["RF", "ET", "GBRT", "DUMMY", "GP", "MF", "HGBRT"]
         if surrogate_model in surrogate_model_allowed:
             base_estimator = self._get_surrogate_model(
                 surrogate_model,
@@ -461,7 +459,7 @@ class CBO(Search):
         Raises:
             ValueError: when the name of the surrogate model is unknown.
         """
-        accepted_names = ["RF", "ET", "GBRT", "DUMMY", "GP", "MF"]
+        accepted_names = ["RF", "ET", "GBRT", "DUMMY", "GP", "MF", "HGBRT"]
         if not (name in accepted_names):
             raise ValueError(
                 f"Unknown surrogate model {name}, please choose among {accepted_names}."
@@ -471,28 +469,54 @@ class CBO(Search):
             # TODO: for better performance the RF surrogate could be fit with a bootstrap sample of size max 1_000
             # However this should be refreshed each time when creating the estimator
             surrogate = deephyper.skopt.learning.RandomForestRegressor(
-                # n_estimators=100,
-                # max_features=1,
-                # min_samples_leaf=3,
+                n_estimators=100,
+                bootstrap=True,
+                min_samples_split=10,
                 n_jobs=n_jobs,
                 random_state=random_state,
             )
         elif name == "ET":
             surrogate = deephyper.skopt.learning.ExtraTreesRegressor(
-                # n_estimators=100,
-                # min_samples_leaf=3,
+                n_estimators=100,
+                bootstrap=True,
+                min_samples_split=10,
                 n_jobs=n_jobs,
                 random_state=random_state,
             )
         elif name == "GBRT":
+            from sklearn.ensemble import GradientBoostingRegressor
+
             gbrt = GradientBoostingRegressor(n_estimators=30, loss="quantile")
+            surrogate = deephyper.skopt.learning.GradientBoostingQuantileRegressor(
+                base_estimator=gbrt, n_jobs=n_jobs, random_state=random_state
+            )
+        elif name == "HGBRT":
+            from sklearn.ensemble import HistGradientBoostingRegressor
+
+            # Check wich parameters are categorical
+            categorical_features = []
+            for hp_name in self._problem.space:
+                hp = self._problem.space.get_hyperparameter(hp_name)
+
+                categorical_features.append(
+                    isinstance(hp, csh.CategoricalHyperparameter)
+                    # or isinstance(hp, csh.OrdinalHyperparameter)
+                )
+
+            gbrt = HistGradientBoostingRegressor(
+                loss="quantile", categorical_features=categorical_features
+            )
             surrogate = deephyper.skopt.learning.GradientBoostingQuantileRegressor(
                 base_estimator=gbrt, n_jobs=n_jobs, random_state=random_state
             )
         elif name == "MF":
             try:
                 surrogate = deephyper.skopt.learning.MondrianForestRegressor(
-                    n_estimators=100, n_jobs=n_jobs, random_state=random_state
+                    n_estimators=100,
+                    bootstrap=True,
+                    min_samples_split=10,
+                    n_jobs=n_jobs,
+                    random_state=random_state,
                 )
             except AttributeError:
                 raise deephyper.core.exceptions.MissingRequirementError(

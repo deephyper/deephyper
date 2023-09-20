@@ -1,6 +1,6 @@
 import numpy as np
 from sklearn.base import BaseEstimator, RegressorMixin, clone
-from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble import GradientBoostingRegressor, HistGradientBoostingRegressor
 from sklearn.utils import check_random_state
 
 from deephyper.core.utils.joblib_utils import Parallel, delayed
@@ -68,9 +68,13 @@ class GradientBoostingQuantileRegressor(BaseEstimator, RegressorMixin):
         else:
             base_estimator = self.base_estimator
 
-            if not isinstance(base_estimator, GradientBoostingRegressor):
+            if not isinstance(
+                base_estimator,
+                (GradientBoostingRegressor, HistGradientBoostingRegressor),
+            ):
                 raise ValueError(
-                    "base_estimator has to be of type" " GradientBoostingRegressor."
+                    "base_estimator has to be of type"
+                    " GradientBoostingRegressor or HistGradientBoostingRegressor."
                 )
 
             if not base_estimator.loss == "quantile":
@@ -85,7 +89,11 @@ class GradientBoostingQuantileRegressor(BaseEstimator, RegressorMixin):
         regressors = []
         for q in self.quantiles:
             regressor = clone(base_estimator)
-            regressor.set_params(alpha=q)
+
+            if isinstance(regressor, GradientBoostingRegressor):
+                regressor.set_params(alpha=q)
+            elif isinstance(regressor, HistGradientBoostingRegressor):
+                regressor.set_params(quantile=q)
 
             regressors.append(regressor)
 
