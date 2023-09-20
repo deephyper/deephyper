@@ -31,9 +31,20 @@ MAP_filter_failures = {"min": "max"}
 
 
 # schedulers
-def scheduler_periodic_exponential_decay(i, eta_0, periode, rate, delay):
-    """Periodic exponential decay scheduler for exploration-exploitation."""
-    eta_i = eta_0 * np.exp(-rate * ((i - 1 - delay) % periode))
+def scheduler_periodic_exponential_decay(i, eta_0, period, rate, delay):
+    """Periodic exponential decay scheduler for exploration-exploitation.
+
+    Args:
+        i (int): current iteration.
+        eta_0 (float): initial value of the parameters ``[kappa, xi]`` to decay.
+        period (int): period of the decay.
+        rate (float): rate of the decay.
+        delay (int): delay of the decay (decaying starts after ``delay`` iterations).
+
+    Returns:
+        tuple: an iterable of length 2 with the updated values at iteration ``i`` for ``[kappa, xi]``.
+    """
+    eta_i = eta_0 * np.exp(-rate * ((i - 1 - delay) % period))
     return eta_i
 
 
@@ -72,7 +83,7 @@ class CBO(Search):
         moo_lower_bounds (list, optional): List of lower bounds on the interesting range of objective values. Must be the same length as the number of obejctives. Defaults to ``None``, i.e., no bounds. Can bound only a single objective by providing ``None`` for all other values. For example, ``moo_lower_bounds=[None, 0.5, None]`` will explore all tradeoffs for the objectives at index 0 and 2, but only consider scores for objective 1 that exceed 0.5.
         moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "AugChebyshev", "PBI", "Quadratic"]``. Defaults to ``"Chebyshev"``. Typically, randomized methods should be used to capture entire Pareto front, unless there is a known target solution a priori. Additional details on each scalarization can be found in :mod:`deephyper.skopt.moo`.
         moo_scalarization_weight (list, optional): Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions. Defaults to ``None`` for randomized weights. Only set if you want to fix the scalarization weights for a multiobjective HPS.
-        scheduler (dict, callable, optional): a method to manage the the value of ``kappa, xi`` with iterations. Defaults to ``None`` which does not use any scheduler.
+        scheduler (dict, callable, optional): a function to manage the value of ``kappa, xi`` with iterations. Defaults to ``None`` which does not use any scheduler. The periodic exponential decay scheduler can be used with  ``scheduler={"type": "periodic-exp-decay", "period": 30, "rate": 0.1}``. The scheduler can also be a callable function with signature ``scheduler(i, eta_0, **kwargs)`` where ``i`` is the current iteration, ``eta_0`` is the initial value of ``[kappa, xi]`` and ``kwargs`` are other fixed parameters of the function.
         objective_scaler (str, optional): a way to map the objective space to some other support for example to normalize it. Defaults to ``"auto"`` which automatically set it to "identity" for any surrogate model except "RF" which will use "quantile-uniform".
         stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the function. Defaults to ``None`` which does not use any stopper.
     """
@@ -261,7 +272,7 @@ class CBO(Search):
 
         self._gather_type = "ALL" if sync_communication else "BATCH"
 
-        # scheduler policy
+        # Scheduler policy
         self.scheduler = None
         if type(scheduler) is dict:
             scheduler = scheduler.copy()
@@ -270,7 +281,7 @@ class CBO(Search):
 
             if scheduler_type == "periodic-exp-decay":
                 scheduler_params = {
-                    "periode": 25,
+                    "period": 25,
                     "rate": 0.1,
                     "delay": n_initial_points,
                 }
@@ -284,6 +295,9 @@ class CBO(Search):
             logging.info(
                 f"Set up scheduler '{scheduler_type}' with parameters '{scheduler_params}'"
             )
+        elif callable(scheduler):
+            self.scheduler = functools.partial(scheduler, eta_0=np.array([kappa, xi]))
+            logging.info(f"Set up scheduler '{scheduler}'")
 
         # stopper
         self._evaluator._stopper = stopper
