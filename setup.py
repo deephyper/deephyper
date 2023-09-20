@@ -30,6 +30,7 @@ REQUIRED = [
     "scikit-learn>=0.23.1",
     "scipy>=1.10",
     "tqdm>=4.64.0",
+    "pymoo>=0.6.0",
     "pyyaml",
 ]
 
