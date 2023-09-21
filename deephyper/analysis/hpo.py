@@ -23,7 +23,9 @@ def filter_failed_objectives(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFra
             df_with_failures = df[mask]
 
             df_without_failures = df[~mask]
-            df_without_failures.objective = df_without_failures.objective.astype(float)
+            df_without_failures.loc[
+                :, "objective"
+            ] = df_without_failures.objective.astype(float)
         else:
             df_without_failures = df
             df_with_failures = df[np.zeros(len(df), dtype=bool)]
