@@ -21,11 +21,6 @@ from .transformers import (
     ToInteger,
 )
 
-# Special Values for Inactive Parameters
-VALUE_INACTIVE_CATEGORICAL = "NA"
-VALUE_INACTIVE_INTEGER = np.nan
-VALUE_INACTIVE_REAL = np.nan
-
 
 # helper class to be able to print [1, ..., 4] instead of [1, '...', 4]
 class _Ellipsis:
