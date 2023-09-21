@@ -633,9 +633,7 @@ class Optimizer(object):
                 n_samples=self.n_points, random_state=self.rng, n_jobs=self.n_jobs
             )
             X_s = self._filter_duplicated(X_s)
-            X_c = self.space.imp_const.fit_transform(
-                self.space.transform(X_s)
-            )  # candidates
+            X_c = self.space.transform(X_s)  # candidates
 
             mu, std = self.models[-1].predict(X_c, return_std=True)
             kappa = self.acq_func_kwargs.get("kappa", 1.96)

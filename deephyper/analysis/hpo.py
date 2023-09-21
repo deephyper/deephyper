@@ -2,6 +2,7 @@
 """
 from typing import Tuple
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 
@@ -14,14 +15,35 @@ def filter_failed_objectives(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFra
     Returns:
         Tuple[pd.DataFrame, pd.DataFrame]: ``df_without_failures, df_with_failures`` the first are results of a Hyperparameter Search without failed objectives and the second are results of Hyperparameter search with failed objectives.
     """
-    if pd.api.types.is_string_dtype(df.objective):
-        # Single-Objective
-        mask = df.objective.str.startswith("F")
+    # Single-Objective
+    if "objective" in df.columns:
+        if pd.api.types.is_string_dtype(df.objective):
+            mask = df.objective.str.startswith("F")
+
+            df_with_failures = df[mask]
+
+            df_without_failures = df[~mask]
+            df_without_failures.objective = df_without_failures.objective.astype(float)
+        else:
+            df_without_failures = df
+            df_with_failures = df[np.zeros(len(df), dtype=bool)]
+
+    # Multi-Objective
+    elif "objective_0" in df.columns:
+        objcol = list(df.filter(regex=r"^objective_\d+$").columns)
+
+        mask = np.zeros(len(df), dtype=bool)
+        for col in objcol:
+            if pd.api.types.is_string_dtype(df[col]):
+                mask = mask | df[col].str.startswith("F")
 
         df_with_failures = df[mask]
-
         df_without_failures = df[~mask]
-        df_without_failures.objective = df_without_failures.objective.astype(float)
+        df_without_failures.loc[:, objcol] = df_without_failures[objcol].astype(float)
+    else:
+        raise ValueError(
+            "The DataFrame does not contain neither a column named 'objective' nor columns named 'objective_<int>'."
+        )
 
     return df_without_failures, df_with_failures
 
