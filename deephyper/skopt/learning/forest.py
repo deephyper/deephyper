@@ -7,6 +7,90 @@ from sklearn.ensemble._forest import DecisionTreeRegressor, ForestRegressor
 from deephyper.core.utils.joblib_utils import Parallel, delayed
 
 
+def _accumulate_prediction_disentangled(tree, X, min_variance, out, lock):
+    """
+    This is a utility function for joblib's Parallel.
+
+    It can't go locally in ForestClassifier or ForestRegressor, because joblib
+    complains that it cannot pickle it when placed there.
+    """
+
+    mean_tree = tree.predict(X).T
+    var_tree = tree.tree_.impurity[tree.apply(X)]
+
+    # This rounding off is done in accordance with the
+    # adjustment done in section 4.3.3
+    # of http://arxiv.org/pdf/1211.0906v2.pdf to account
+    # for cases such as leaves with 1 sample in which there
+    # is zero variance.
+    var_tree = np.maximum(var_tree, min_variance)
+
+    with lock:
+        out[0] += mean_tree
+        out[1] += var_tree
+        out[2] += mean_tree**2
+
+
+def _return_mean_and_std_distentangled(X, n_outputs, trees, min_variance, n_jobs):
+    """
+    Returns `std(Y | X)`.
+
+    Can be calculated by E[Var(Y | Tree)] + Var(E[Y | Tree]) where
+    P(Tree) is `1 / len(trees)`.
+
+    Parameters
+    ----------
+    X : array-like, shape=(n_samples, n_features)
+        Input data.
+
+    n_outputs: int.
+        Number of outputs.
+
+    trees : list, shape=(n_estimators,)
+        List of fit sklearn trees as obtained from the ``estimators_``
+        attribute of a fit RandomForestRegressor or ExtraTreesRegressor.
+
+    predictions : array-like, shape=(n_samples,)
+        Prediction of each data point as returned by RandomForestRegressor
+        or ExtraTreesRegressor.
+
+    Returns
+    -------
+    std : array-like, shape=(n_samples,)
+        Standard deviation of `y` at `X`. If criterion
+        is set to "mse", then `std[i] ~= std(y | X[i])`.
+
+    """
+    # This derives std(y | x) as described in 4.3.2 of arXiv:1211.0906
+
+    mean = np.zeros((n_outputs, len(X)))
+    std_al = np.zeros((n_outputs, len(X)))
+    std_ep = np.zeros((n_outputs, len(X)))
+
+    # Parallel loop
+    lock = threading.Lock()
+    Parallel(n_jobs=n_jobs, verbose=0, require="sharedmem")(
+        delayed(_accumulate_prediction_disentangled)(
+            tree, X, min_variance, [mean, std_al, std_ep], lock
+        )
+        for tree in trees
+    )
+
+    mean, std_al, std_ep = mean.T, std_al.T, std_ep.T
+    mean /= len(trees)
+
+    std_al /= len(trees)
+    std_ep = std_ep / len(trees) - mean**2
+
+    std_al[std_al <= 0.0] = 0.0
+    std_al **= 0.5
+
+    std_ep[std_ep <= 0.0] = 0.0
+    std_ep **= 0.5
+
+    return mean.reshape(-1), std_al.reshape(-1), std_ep.reshape(-1)
+
+
 def _accumulate_prediction(tree, X, min_variance, out, lock):
     """
     This is a utility function for joblib's Parallel.
@@ -283,7 +367,7 @@ class RandomForestRegressor(ForestRegressor):
         self.min_variance = min_variance
         self.splitter = splitter
 
-    def predict(self, X, return_std=False):
+    def predict(self, X, return_std=False, disentangled_std=False):
         """Predict continuous output for X.
 
         Parameters
@@ -311,10 +395,16 @@ class RandomForestRegressor(ForestRegressor):
                     "Expected impurity to be 'squared_error', got %s instead"
                     % self.criterion
                 )
-            mean, std = _return_mean_and_std(
-                X, self.n_outputs_, self.estimators_, self.min_variance, self.n_jobs
-            )
-            return mean, std
+            if disentangled_std:
+                mean, std_al, std_ep = _return_mean_and_std_distentangled(
+                    X, self.n_outputs_, self.estimators_, self.min_variance, self.n_jobs
+                )
+                return mean, std_al, std_ep
+            else:
+                mean, std = _return_mean_and_std(
+                    X, self.n_outputs_, self.estimators_, self.min_variance, self.n_jobs
+                )
+                return mean, std
         else:
             mean = super(RandomForestRegressor, self).predict(X)
 
