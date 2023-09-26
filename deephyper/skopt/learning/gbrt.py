@@ -97,7 +97,7 @@ class GradientBoostingQuantileRegressor(BaseEstimator, RegressorMixin):
 
             regressors.append(regressor)
 
-        self.regressors_ = Parallel(n_jobs=self.n_jobs, backend="threading")(
+        self.regressors_ = Parallel(n_jobs=self.n_jobs, prefer="threads")(
             delayed(_parallel_fit)(regressor, X, y) for regressor in regressors
         )
 
@@ -132,7 +132,10 @@ class GradientBoostingQuantileRegressor(BaseEstimator, RegressorMixin):
             low = self.regressors_[self.quantiles.index(0.16)].predict(X)
             high = self.regressors_[self.quantiles.index(0.84)].predict(X)
             mean = self.regressors_[self.quantiles.index(0.5)].predict(X)
-            return mean, ((high - low) / 2.0)
+            std = (high - low) / 2.0
+            # This avoids NaN when computing the Negative Log-likelihood
+            std[std <= 0.01] = 0.01
+            return mean, std
 
         # return the mean
         return self.regressors_[self.quantiles.index(0.5)].predict(X)
