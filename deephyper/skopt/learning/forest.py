@@ -312,7 +312,7 @@ class RandomForestRegressor(ForestRegressor):
         *,
         criterion="squared_error",
         max_depth=None,
-        min_samples_split=2,
+        min_samples_split=10,
         min_samples_leaf=1,
         min_weight_fraction_leaf=0.0,
         max_features=1.0,
@@ -388,6 +388,7 @@ class RandomForestRegressor(ForestRegressor):
             Standard deviation of `y` at `X`. If criterion
             is set to "mse", then `std[i] ~= std(y | X[i])`.
 
+        disentangled_std : the std is returned disentangled between aleatoric and epistemic.
         """
         if return_std:
             if self.criterion != "squared_error":
@@ -556,10 +557,10 @@ class ExtraTreesRegressor(_sk_ExtraTreesRegressor):
 
     def __init__(
         self,
-        n_estimators=10,
+        n_estimators=100,
         criterion="squared_error",
         max_depth=None,
-        min_samples_split=2,
+        min_samples_split=10,
         min_samples_leaf=1,
         min_weight_fraction_leaf=0.0,
         max_features=1.0,
@@ -572,6 +573,7 @@ class ExtraTreesRegressor(_sk_ExtraTreesRegressor):
         verbose=0,
         warm_start=False,
         min_variance=0.0,
+        max_samples=None,
     ):
         self.min_variance = min_variance
         super(ExtraTreesRegressor, self).__init__(
@@ -590,9 +592,10 @@ class ExtraTreesRegressor(_sk_ExtraTreesRegressor):
             random_state=random_state,
             verbose=verbose,
             warm_start=warm_start,
+            max_samples=max_samples,
         )
 
-    def predict(self, X, return_std=False):
+    def predict(self, X, return_std=False, disentangled_std=False):
         """
         Predict continuous output for X.
 
@@ -620,10 +623,16 @@ class ExtraTreesRegressor(_sk_ExtraTreesRegressor):
                     "Expected impurity to be 'squared_error', got %s instead"
                     % self.criterion
                 )
-            mean, std = _return_mean_and_std(
-                X, self.n_outputs_, self.estimators_, self.min_variance, self.n_jobs
-            )
-            return mean, std
+            if disentangled_std:
+                mean, std_al, std_ep = _return_mean_and_std_distentangled(
+                    X, self.n_outputs_, self.estimators_, self.min_variance, self.n_jobs
+                )
+                return mean, std_al, std_ep
+            else:
+                mean, std = _return_mean_and_std(
+                    X, self.n_outputs_, self.estimators_, self.min_variance, self.n_jobs
+                )
+                return mean, std
         else:
             mean = super(ExtraTreesRegressor, self).predict(X)
 
