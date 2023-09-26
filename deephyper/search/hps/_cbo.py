@@ -31,12 +31,13 @@ MAP_filter_failures = {"min": "max"}
 
 
 # schedulers
-def scheduler_periodic_exponential_decay(i, eta_0, period, rate, delay):
+def scheduler_periodic_exponential_decay(i, eta_0, num_dim, period, rate, delay):
     """Periodic exponential decay scheduler for exploration-exploitation.
 
     Args:
         i (int): current iteration.
         eta_0 (float): initial value of the parameters ``[kappa, xi]`` to decay.
+        num_dim (int): number of dimensions of the search space.
         period (int): period of the decay.
         rate (float): rate of the decay.
         delay (int): delay of the decay (decaying starts after ``delay`` iterations).
@@ -46,6 +47,23 @@ def scheduler_periodic_exponential_decay(i, eta_0, period, rate, delay):
     """
     eta_i = eta_0 * np.exp(-rate * ((i - 1 - delay) % period))
     return eta_i
+
+
+def scheduler_bandit(i, eta_0, num_dim, delta=0.05, lamb=0.2):
+    """Bandit scheduler for exploration-exploitation. Only valid for the UCB acquisition function.
+
+    Args:
+        i (int): current iteration.
+        eta_0 (float): initial value of the parameters ``[kappa, xi]`` to decay.
+        num_dim (int): number of dimensions of the search space.
+        delta (float): confidence level.
+        lamb (float): factor of the initial scheduler. Defaults to ``0.2``.
+
+    Returns:
+        tuple: an iterable of length 2 with the updated values at iteration ``i`` for ``[kappa, xi]``.
+    """
+    beta_i = 2 * np.log(num_dim * i**2 * np.pi**2 / (6 * delta)) * lamb
+    return np.sqrt(beta_i)
 
 
 class CBO(Search):
@@ -279,11 +297,16 @@ class CBO(Search):
                     "delay": n_initial_points,
                 }
                 scheduler_func = scheduler_periodic_exponential_decay
+            if scheduler_type == "bandit":
+                scheduler_params = {"delta": 0.05, "lamb": 0.2}
 
             scheduler_params.update(scheduler)
             eta_0 = np.array([kappa, xi])
             self.scheduler = functools.partial(
-                scheduler_func, eta_0=eta_0, **scheduler_params
+                scheduler_func,
+                eta_0=eta_0,
+                num_dim=len(self._problem),
+                **scheduler_params,
             )
             logging.info(
                 f"Set up scheduler '{scheduler_type}' with parameters '{scheduler_params}'"
