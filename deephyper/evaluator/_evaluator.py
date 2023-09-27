@@ -16,6 +16,7 @@ from deephyper.evaluator._job import Job
 from deephyper.skopt.optimizer import OBJECTIVE_VALUE_FAILURE
 from deephyper.core.utils._timeout import terminate_on_timeout
 from deephyper.evaluator.storage import Storage, MemoryStorage
+from deephyper.core.exceptions import MaximumJobsSpawnReached
 
 EVALUATORS = {
     "mpicomm": "_mpi_comm.MPICommEvaluator",
@@ -93,6 +94,8 @@ class Evaluator:
         self.timestamp = (
             time.time()
         )  # Recorded time of when this evaluator interface was created.
+        self.max_num_jobs_spawn = -1  # Maximum number of jobs to spawn.
+        self.num_jobs_spawn_counter = 0  # Counter of jobs spawned.
         self.loop = None  # Event loop for asyncio.
         self._start_dumping = False
         self._columns_dumped = None  # columns names dumped in csv file
@@ -144,6 +147,10 @@ class Evaluator:
         is exhausted."""
         self._time_timeout_set = time.time()
         self._timeout = timeout
+
+    def set_max_num_jobs_spawn(self, max_num_jobs_spawn: int):
+        self.max_num_jobs_spawn = max_num_jobs_spawn
+        self.num_jobs_spawn_counter = 0
 
     def to_json(self):
         """Returns a json version of the evaluator."""
@@ -210,6 +217,16 @@ class Evaluator:
 
     async def _run_jobs(self, configs):
         for config in configs:
+
+            if (
+                self.max_num_jobs_spawn > 0
+                and self.num_jobs_spawn_counter >= self.max_num_jobs_spawn
+            ):
+                logging.info(
+                    f"Maximum number of jobs to spawn reached ({self.max_num_jobs_spawn})"
+                )
+                raise MaximumJobsSpawnReached
+
             # Create a Job object from the input configuration
             job_id = self._storage.create_new_job(self._search_id)
             self._storage.store_job_in(job_id, args=(config,))
@@ -238,6 +255,8 @@ class Evaluator:
         # call callbacks
         for cb in self._callbacks:
             cb.on_launch(job)
+
+        self.num_jobs_spawn_counter += 1
 
     def _on_done(self, job):
         """Called after a job has completed."""
