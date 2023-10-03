@@ -49,7 +49,7 @@ def scheduler_periodic_exponential_decay(i, eta_0, num_dim, period, rate, delay)
     return eta_i
 
 
-def scheduler_bandit(i, eta_0, num_dim, delta=0.05, lamb=0.2):
+def scheduler_bandit(i, eta_0, num_dim, delta=0.05, lamb=0.2, delay=0):
     """Bandit scheduler for exploration-exploitation. Only valid for the UCB acquisition function.
 
     Args:
@@ -58,12 +58,17 @@ def scheduler_bandit(i, eta_0, num_dim, delta=0.05, lamb=0.2):
         num_dim (int): number of dimensions of the search space.
         delta (float): confidence level.
         lamb (float): factor of the initial scheduler. Defaults to ``0.2``.
+        delay (int): delay of the scheduler (decaying starts after ``delay`` iterations).
 
     Returns:
         tuple: an iterable of length 2 with the updated values at iteration ``i`` for ``[kappa, xi]``.
     """
+    i = np.maximum(i + 1 - delay, 1)
     beta_i = 2 * np.log(num_dim * i**2 * np.pi**2 / (6 * delta)) * lamb
-    return np.sqrt(beta_i)
+    beta_i = np.sqrt(beta_i)
+    eta_i = eta_0[:]
+    eta_i[0] = beta_i
+    return eta_i
 
 
 class CBO(Search):
@@ -298,7 +303,11 @@ class CBO(Search):
                 }
                 scheduler_func = scheduler_periodic_exponential_decay
             if scheduler_type == "bandit":
-                scheduler_params = {"delta": 0.05, "lamb": 0.2}
+                scheduler_params = {
+                    "delta": 0.05,
+                    "lamb": 0.2,
+                    "delay": n_initial_points,
+                }
 
             scheduler_params.update(scheduler)
             eta_0 = np.array([kappa, xi])
