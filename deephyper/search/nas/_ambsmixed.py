@@ -2,8 +2,10 @@ import logging
 
 import ConfigSpace as CS
 import numpy as np
+
 import deephyper.skopt
 from deephyper.problem import HpProblem
+from deephyper.problem._hyperparameter import convert_to_skopt_space
 from deephyper.search.nas._base import NeuralArchitectureSearch
 
 # Adapt minimization -> maximization with DeepHyper
@@ -110,9 +112,14 @@ class AMBSMixed(NeuralArchitectureSearch):
             surrogate_model, n_jobs, random_state=self._random_state.get_state()[1][0]
         )
 
+        # Map the ConfigSpace to Skop Space
+        self._hp_opt_space = convert_to_skopt_space(
+            self._problem._hp_space._space, surrogate_model=surrogate_model
+        )
+
         self._opt = None
         self._opt_kwargs = dict(
-            dimensions=self._space,
+            dimensions=self._hp_opt_space,
             base_estimator=base_estimator,
             acq_func=MAP_acq_func.get(acq_func, acq_func),
             acq_optimizer="sampling",

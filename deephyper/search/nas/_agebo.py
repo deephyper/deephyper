@@ -1,7 +1,9 @@
 import collections
 
-import deephyper.skopt
 import numpy as np
+
+import deephyper.skopt
+from deephyper.problem._hyperparameter import convert_to_skopt_space
 from deephyper.search.nas._regevo import RegularizedEvolution
 
 # Adapt minimization -> maximization with DeepHyper
@@ -127,6 +129,12 @@ class AgEBO(RegularizedEvolution):
         base_estimator = self._get_surrogate_model(
             surrogate_model, n_jobs, random_state=self._random_state.randint(0, 2**31)
         )
+
+        # Map the ConfigSpace to Skop Space
+        self._hp_opt_space = convert_to_skopt_space(
+            self._problem._hp_space._space, surrogate_model=surrogate_model
+        )
+
         self._hp_opt = None
         self._hp_opt_kwargs = dict(
             acq_optimizer="sampling",
@@ -134,7 +142,7 @@ class AgEBO(RegularizedEvolution):
                 "n_points": n_points,
                 "filter_duplicated": False,
             },
-            dimensions=self._problem._hp_space._space,
+            dimensions=self._hp_opt_space,
             base_estimator=base_estimator,
             acq_func=MAP_acq_func.get(acq_func, acq_func),
             acq_func_kwargs={"xi": xi, "kappa": kappa},
