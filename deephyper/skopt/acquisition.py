@@ -46,12 +46,18 @@ def _gaussian_acquisition(
     if per_second:
         model, time_model = model.estimators_
 
-    if acq_func == "LCB":
-        func_and_grad = gaussian_lcb(X, model, kappa, return_grad)
-        if return_grad:
-            acq_vals, acq_grad = func_and_grad
+    if acq_func in ["LCB", "LCBs", "LCBd"]:
+        if acq_func == "LCB":
+            func_and_grad = gaussian_lcb(X, model, kappa, return_grad)
+
+            if return_grad:
+                acq_vals, acq_grad = func_and_grad
+            else:
+                acq_vals = func_and_grad
+        elif acq_func == "LCBs":
+            acq_vals = gaussian_lcbs(X, model, kappa)
         else:
-            acq_vals = func_and_grad
+            acq_vals = gaussian_lcb_deterministic(X, model, kappa)
 
     elif acq_func in ["EI", "PI", "EIps", "PIps"]:
         if acq_func in ["EI", "EIps"]:
@@ -66,7 +72,6 @@ def _gaussian_acquisition(
             acq_vals = -func_and_grad
 
         if acq_func in ["EIps", "PIps"]:
-
             if return_grad:
                 mu, std, mu_grad, std_grad = time_model.predict(
                     X, return_std=True, return_mean_grad=True, return_std_grad=True
@@ -85,6 +90,12 @@ def _gaussian_acquisition(
             if return_grad:
                 acq_grad *= inv_t
                 acq_grad += acq_vals * (-mu_grad + std * std_grad)
+
+    elif acq_func in ["MES", "MESs"]:
+        if acq_func == "MES":
+            acq_vals = -gaussian_mes(X, model)
+        else:
+            acq_vals = -gaussian_mess(X, model)
 
     else:
         raise ValueError("Acquisition function not implemented.")
@@ -151,6 +162,105 @@ def gaussian_lcb(X, model, kappa=1.96, return_grad=False):
             if kappa == "inf":
                 return -std
             return mu - kappa * std
+
+
+# TODO: LCB Scaling by noise
+def gaussian_lcbs(X, model, kappa=1.96):
+    """
+    Use the lower confidence bound to estimate the acquisition
+    values.
+
+    The trade-off between exploitation and exploration is left to
+    be controlled by the user through the parameter ``kappa``.
+
+    Parameters
+    ----------
+    X : array-like, shape (n_samples, n_features)
+        Values where the acquisition function should be computed.
+
+    model : sklearn estimator that implements predict with ``return_std``
+        The fit estimator that approximates the function through the
+        method ``predict``.
+        It should have a ``return_std`` parameter that returns the standard
+        deviation.
+
+    kappa : float, default 1.96 or 'inf'
+        Controls how much of the variance in the predicted values should be
+        taken into account. If set to be very high, then we are favouring
+        exploration over exploitation and vice versa.
+        If set to 'inf', the acquisition function will only use the variance
+        which is useful in a pure exploration setting.
+        Useless if ``method`` is not set to "LCB".
+
+    return_grad : boolean, optional
+        Whether or not to return the grad. Implemented only for the case where
+        ``X`` is a single sample.
+
+    Returns
+    -------
+    values : array-like, shape (X.shape[0],)
+        Acquisition function values computed at X.
+
+    grad : array-like, shape (n_samples, n_features)
+        Gradient at X.
+    """
+    # Compute posterior.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        mu, std_al, std_ep = model.predict(X, return_std=True, disentangled_std=True)
+        if kappa == "inf":
+            return -std_ep
+        return mu - kappa * std_ep / std_al
+
+
+def gaussian_lcb_deterministic(X, model, kappa=1.96):
+    """
+    Use the lower confidence bound to estimate the acquisition
+    values.
+
+    The trade-off between exploitation and exploration is left to
+    be controlled by the user through the parameter ``kappa``.
+
+    Parameters
+    ----------
+    X : array-like, shape (n_samples, n_features)
+        Values where the acquisition function should be computed.
+
+    model : sklearn estimator that implements predict with ``return_std``
+        The fit estimator that approximates the function through the
+        method ``predict``.
+        It should have a ``return_std`` parameter that returns the standard
+        deviation.
+
+    kappa : float, default 1.96 or 'inf'
+        Controls how much of the variance in the predicted values should be
+        taken into account. If set to be very high, then we are favouring
+        exploration over exploitation and vice versa.
+        If set to 'inf', the acquisition function will only use the variance
+        which is useful in a pure exploration setting.
+        Useless if ``method`` is not set to "LCB".
+
+    return_grad : boolean, optional
+        Whether or not to return the grad. Implemented only for the case where
+        ``X`` is a single sample.
+
+    Returns
+    -------
+    values : array-like, shape (X.shape[0],)
+        Acquisition function values computed at X.
+
+    grad : array-like, shape (n_samples, n_features)
+        Gradient at X.
+    """
+    # Compute posterior.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        mu, _, std_ep = model.predict(X, return_std=True, disentangled_std=True)
+        if kappa == "inf":
+            return -std_ep
+        return mu - kappa * std_ep
 
 
 def gaussian_pi(X, model, y_opt=0.0, xi=0.01, return_grad=False):
@@ -326,5 +436,164 @@ def gaussian_ei(X, model, y_opt=0.0, xi=0.01, return_grad=False):
 
         grad = exploit_grad + explore_grad
         return values, grad
+
+    return values
+
+
+# TODO: Max-Value Entropy Acquisition Function
+def gaussian_mes(X, model, k_samples=100):
+    """
+    Use the max-value entropy to calculate the acquisition values.
+    Article: https://arxiv.org/abs/1703.01968
+    Source implementation: https://github.com/zi-w/Max-value-Entropy-Search/blob/master/acFuns/evaluateMES.m
+
+    The conditional probability `P(y=f(x) | x)` form a gaussian with a certain
+    mean and standard deviation approximated by the model.
+
+    The EI condition is derived by computing ``E[u(f(x))]``
+    where ``u(f(x)) = 0``, if ``f(x) > y_opt`` and ``u(f(x)) = y_opt - f(x)``,
+    if``f(x) < y_opt``.
+
+    This solves one of the issues of the PI condition by giving a reward
+    proportional to the amount of improvement got.
+
+    Note that the value returned by this function should be maximized to
+    obtain the ``X`` with maximum improvement.
+
+    Parameters
+    ----------
+    X : array-like, shape=(n_samples, n_features)
+        Values where the acquisition function should be computed.
+
+    model : sklearn estimator that implements predict with ``return_std``
+        The fit estimator that approximates the function through the
+        method ``predict``.
+        It should have a ``return_std`` parameter that returns the standard
+        deviation.
+
+    y_opt : float, default 0
+        Previous minimum value which we would like to improve upon.
+
+    xi : float, default=0.01
+        Controls how much improvement one wants over the previous best
+        values. Useful only when ``method`` is set to "EI"
+
+    return_grad : boolean, optional
+        Whether or not to return the grad. Implemented only for the case where
+        ``X`` is a single sample.
+
+    Returns
+    -------
+    values : array-like, shape=(X.shape[0],)
+        Acquisition function values computed at X.
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        mu, std = model.predict(X, return_std=True)
+        mu *= -1
+
+    # check dimensionality of mu, std so we can divide them below
+    if (mu.ndim != 1) or (std.ndim != 1):
+        raise ValueError(
+            "mu, std_al, std_ep are {}-dimensional and {}-dimensional, "
+            "however both must be 1-dimensional. Did you train "
+            "your model with an (N, 1) vector instead of an "
+            "(N,) vector?".format(mu.ndim, std.ndim)
+        )
+
+    values = np.zeros_like(mu)
+    eps = 1e-10
+    std = np.maximum(std, eps)
+    for _ in range(k_samples):
+        y_sample = norm.rvs(loc=mu, scale=std)
+        gamma = (np.max(y_sample) - mu) / std
+        pdfgamma = np.maximum(norm.pdf(gamma), eps)
+        cdfgamma = np.maximum(norm.cdf(gamma), eps)
+        values += 0.5 * gamma * pdfgamma / cdfgamma - np.log(cdfgamma)
+    values /= k_samples
+
+    return values
+
+
+# TODO: Max-Value Entropy with Aleatoric UQ
+def gaussian_mess(X, model, k_samples=100):
+    """
+    Use the max-value entropy to calculate the acquisition values.
+    https://arxiv.org/abs/1703.01968
+
+    The conditional probability `P(y=f(x) | x)` form a gaussian with a certain
+    mean and standard deviation approximated by the model.
+
+    The EI condition is derived by computing ``E[u(f(x))]``
+    where ``u(f(x)) = 0``, if ``f(x) > y_opt`` and ``u(f(x)) = y_opt - f(x)``,
+    if``f(x) < y_opt``.
+
+    This solves one of the issues of the PI condition by giving a reward
+    proportional to the amount of improvement got.
+
+    Note that the value returned by this function should be maximized to
+    obtain the ``X`` with maximum improvement.
+
+    Parameters
+    ----------
+    X : array-like, shape=(n_samples, n_features)
+        Values where the acquisition function should be computed.
+
+    model : sklearn estimator that implements predict with ``return_std``
+        The fit estimator that approximates the function through the
+        method ``predict``.
+        It should have a ``return_std`` parameter that returns the standard
+        deviation.
+
+    y_opt : float, default 0
+        Previous minimum value which we would like to improve upon.
+
+    xi : float, default=0.01
+        Controls how much improvement one wants over the previous best
+        values. Useful only when ``method`` is set to "EI"
+
+    return_grad : boolean, optional
+        Whether or not to return the grad. Implemented only for the case where
+        ``X`` is a single sample.
+
+    Returns
+    -------
+    values : array-like, shape=(X.shape[0],)
+        Acquisition function values computed at X.
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        try:
+            mu, std_al, std_ep = model.predict(
+                X, return_std=True, disentangled_std=True
+            )
+            mu = -mu
+            std = std_ep
+        except TypeError:
+            mu, std = model.predict(X, return_std=True)
+            std_ep = std_al = std
+
+    # check dimensionality of mu, std so we can divide them below
+    if (mu.ndim != 1) or (std_al.ndim != 1) or (std_ep.ndim != 1):
+        raise ValueError(
+            "mu, std_al, std_ep are {}-dimensional, {}-dimensional and {}-dimensional, "
+            "however both must be 1-dimensional. Did you train "
+            "your model with an (N, 1) vector instead of an "
+            "(N,) vector?".format(mu.ndim, std_al.ndim, std_ep.ndim)
+        )
+
+    values = np.zeros_like(mu)
+    eps = 1e-10
+    for _ in range(k_samples):
+        y_sample = norm.rvs(loc=mu, scale=std)
+        y_opt = np.max(y_sample)
+        gamma = (y_opt - mu) / std
+        pdfgamma = np.maximum(norm.pdf(gamma), eps)
+        cdfgamma = np.maximum(norm.cdf(gamma), eps)
+        cdfgamma_al = np.maximum(norm.cdf((y_opt - mu) / std_al), eps)
+        values += 0.5 * gamma * pdfgamma / cdfgamma - np.log(cdfgamma_al)
+    values /= k_samples
 
     return values

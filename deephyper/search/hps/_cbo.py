@@ -25,7 +25,8 @@ from deephyper.skopt.utils import use_named_args
 # Adapt minimization -> maximization with DeepHyper
 MAP_multi_point_strategy = {"cl_min": "cl_max", "cl_max": "cl_min", "qUCB": "qLCB"}
 
-MAP_acq_func = {"UCB": "LCB", "qUCB": "qLCB"}
+# TODO: check if qUCB is still valid
+MAP_acq_func = {"UCB": "LCB", "qUCB": "qLCB", "UCBs": "LCBs", "UCBd": "LCBd"}
 
 MAP_filter_failures = {"min": "max"}
 
@@ -85,7 +86,7 @@ class CBO(Search):
         random_state (int, optional): Random seed. Defaults to ``None``.
         log_dir (str, optional): Log directory where search's results are saved. Defaults to ``"."``.
         verbose (int, optional): Indicate the verbosity level of the search. Defaults to ``0``.
-        surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Surrogate model used by the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "GBRT", "DUMMY"]`` or a sklearn regressor. ``"RF"`` is for Random-Forest which is the best compromise between speed and quality when performing a lot of parallel evaluations, i.e., reaching more than hundreds of evaluations. ``"GP"`` is for Gaussian-Process which is the best choice when maximizing the quality of iteration but quickly slow down when reaching hundreds of evaluations, also it does not support conditional search space. ``"ET"`` is for Extra-Tree, faster than random forest but with worse mean estimate and poor uncertainty quantification capabilities. ``"GBRT"`` is for Gradient-Boosting Regression Tree, it has better mean estimate than other tree-based method worse uncertainty quantification capabilities and slower than ``"RF"``. Defaults to ``"RF"``.
+        surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Surrogate model used by the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "MF", "GBRT", "DUMMY"]`` or a sklearn regressor. ``"ET"`` is for Extremely Randomized Trees which is the best compromise between speed and quality when performing a lot of parallel evaluations, i.e., reaching more than hundreds of evaluations. ``"GP"`` is for Gaussian-Process which is the best choice when maximizing the quality of iteration but quickly slow down when reaching hundreds of evaluations, also it does not support conditional search space. ``"RF"`` is for Random-Forest, slower than extremely randomized trees but with better mean estimate and worse epistemic uncertainty quantification capabilities. ``"GBRT"`` is for Gradient-Boosting Regression Tree, it has better mean estimate than other tree-based method worse uncertainty quantification capabilities and slower than ``"RF"``. Defaults to ``"ET"``.
         acq_func (str, optional): Acquisition function used by the Bayesian optimization. Can be a value in ``["UCB", "EI", "PI", "gp_hedge"]``. Defaults to ``"UCB"``.
         acq_optimizer (str, optional): Method used to minimze the acquisition function. Can be a value in ``["sampling", "lbfgs", "ga"]``. Defaults to ``"auto"``.
         acq_optimizer_freq (int, optional): Frequency of optimization calls for the acquisition function. Defaults to ``10``, using optimizer every ``10`` surrogate model updates.
@@ -118,7 +119,7 @@ class CBO(Search):
         random_state: int = None,
         log_dir: str = ".",
         verbose: int = 0,
-        surrogate_model="RF",
+        surrogate_model="ET",
         acq_func: str = "UCB",
         acq_optimizer: str = "auto",
         acq_optimizer_freq: int = 10,
@@ -166,7 +167,17 @@ class CBO(Search):
                 f"Parameter 'surrogate_model={surrogate_model}' should have a value in {surrogate_model_allowed}, or be a sklearn regressor!"
             )
 
-        acq_func_allowed = ["UCB", "EI", "PI", "gp_hedge", "qUCB"]
+        acq_func_allowed = [
+            "UCB",
+            "EI",
+            "PI",
+            "gp_hedge",
+            "qUCB",
+            "UCBs",
+            "UCBd",
+            "MES",
+            "MESs",
+        ]
         if not (acq_func in acq_func_allowed):
             raise ValueError(
                 f"Parameter 'acq_func={acq_func}' should have a value in {acq_func_allowed}!"
@@ -289,11 +300,12 @@ class CBO(Search):
         self._gather_type = "ALL" if sync_communication else "BATCH"
 
         # Scheduler policy
+        scheduler = {"type": "bandit"} if scheduler is None else scheduler
         self.scheduler = None
         if type(scheduler) is dict:
             scheduler = scheduler.copy()
             scheduler_type = scheduler.pop("type", None)
-            assert scheduler_type in ["periodic-exp-decay"]
+            assert scheduler_type in ["periodic-exp-decay", "bandit"]
 
             if scheduler_type == "periodic-exp-decay":
                 scheduler_params = {
@@ -302,12 +314,13 @@ class CBO(Search):
                     "delay": n_initial_points,
                 }
                 scheduler_func = scheduler_periodic_exponential_decay
-            if scheduler_type == "bandit":
+            elif scheduler_type == "bandit":
                 scheduler_params = {
                     "delta": 0.05,
                     "lamb": 0.2,
                     "delay": n_initial_points,
                 }
+                scheduler_func = scheduler_bandit
 
             scheduler_params.update(scheduler)
             eta_0 = np.array([kappa, xi])
@@ -512,15 +525,16 @@ class CBO(Search):
             surrogate = deephyper.skopt.learning.RandomForestRegressor(
                 n_estimators=100,
                 bootstrap=True,
-                min_samples_split=10,
+                min_samples_split=2,
                 n_jobs=n_jobs,
+                splitter="best",
                 random_state=random_state,
             )
         elif name == "ET":
             surrogate = deephyper.skopt.learning.ExtraTreesRegressor(
                 n_estimators=100,
                 bootstrap=True,
-                min_samples_split=10,
+                min_samples_split=2,
                 n_jobs=n_jobs,
                 random_state=random_state,
             )
@@ -554,8 +568,8 @@ class CBO(Search):
             try:
                 surrogate = deephyper.skopt.learning.MondrianForestRegressor(
                     n_estimators=100,
-                    bootstrap=True,
-                    min_samples_split=10,
+                    bootstrap=False,
+                    min_samples_split=6,
                     n_jobs=n_jobs,
                     random_state=random_state,
                 )
@@ -965,7 +979,7 @@ class AMBS(CBO):
         random_state: int = None,
         log_dir: str = ".",
         verbose: int = 0,
-        surrogate_model="RF",
+        surrogate_model="ET",
         acq_func: str = "UCB",
         acq_optimizer: str = "auto",
         kappa: float = 1.96,

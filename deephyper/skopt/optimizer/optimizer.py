@@ -237,7 +237,20 @@ class Optimizer(object):
         self.acq_func = acq_func
         self.acq_func_kwargs = acq_func_kwargs
 
-        allowed_acq_funcs = ["gp_hedge", "EI", "LCB", "qLCB", "PI", "EIps", "PIps"]
+        allowed_acq_funcs = [
+            "gp_hedge",
+            "EI",
+            "LCB",
+            "qLCB",  # TODO: check if valid
+            "PI",
+            "EIps",
+            "PIps",
+            # TODO: new acquisition functions
+            "LCBs",
+            "LCBd",
+            "MES",
+            "MESs",
+        ]
         if self.acq_func not in allowed_acq_funcs:
             raise ValueError(
                 "expected acq_func to be in %s, got %s"
@@ -247,7 +260,7 @@ class Optimizer(object):
         # treat hedging method separately
         if self.acq_func == "gp_hedge":
             self.cand_acq_funcs_ = ["EI", "LCB", "PI"]
-            self.gains_ = np.zeros(3)
+            self.gains_ = np.zeros(len(self.cand_acq_funcs_))
         else:
             self.cand_acq_funcs_ = [self.acq_func]
 
@@ -309,20 +322,20 @@ class Optimizer(object):
             else:
                 acq_optimizer = "sampling"
 
-        if acq_optimizer not in ["lbfgs", "sampling", "ga"]:
+        if acq_optimizer not in ["lbfgs", "sampling", "ga", "cobyqa", "ga+cobyqa"]:
             raise ValueError(
                 "Expected acq_optimizer to be 'lbfgs' or "
                 "'sampling' or 'ga', got {0}".format(acq_optimizer)
             )
 
-        if not has_gradients(self.base_estimator_) and not (
-            acq_optimizer in ["sampling", "ga"]
-        ):
-            raise ValueError(
-                "The regressor {0} should run with a 'sampling' "
-                "acq_optimizer such as "
-                "'sampling' or 'ga'.".format(type(base_estimator))
-            )
+        # if not has_gradients(self.base_estimator_) and not (
+        #     acq_optimizer in ["sampling", "ga", "cobyqa", "ga+cobyqa"]
+        # ):
+        #     raise ValueError(
+        #         "The regressor {0} should run with a 'sampling' "
+        #         "acq_optimizer such as "
+        #         "'sampling' or 'ga'.".format(type(base_estimator))
+        #     )
         self.acq_optimizer = acq_optimizer
 
         # record other arguments
@@ -354,6 +367,8 @@ class Optimizer(object):
             self.space.model_sdv = self.model_sdv
         elif isinstance(dimensions, (list, tuple)):
             self.space = Space(dimensions, model_sdv=self.model_sdv)
+        else:
+            raise ValueError("Dimensions should be a list or an instance of Space.")
 
         # normalize space if GP regressor
         if isinstance(self.base_estimator_, GaussianProcessRegressor):
@@ -1026,9 +1041,12 @@ class Optimizer(object):
                                     np.min(yi),
                                     cand_acq_func,
                                     self.acq_func_kwargs,
+                                    has_gradients(self.base_estimator_),
                                 ),
                                 bounds=transformed_bounds,
-                                approx_grad=False,
+                                # TODO: Use approximated gradient when not available
+                                # approx_grad=False,
+                                approx_grad=not (has_gradients(self.base_estimator_)),
                                 maxiter=20,
                             )
                             for x in x0
@@ -1038,7 +1056,7 @@ class Optimizer(object):
                     cand_acqs = np.array([r[1] for r in results])
                     next_x = cand_xs[np.argmin(cand_acqs)]
 
-                elif self.acq_optimizer == "ga":
+                elif self.acq_optimizer == "ga" or self.acq_optimizer == "ga+cobyqa":
                     # TODO: vectorized differential evolution
                     # https://pymoo.org/customization/mixed.html
                     # https://pymoo.org/interface/problem.html
@@ -1066,22 +1084,90 @@ class Optimizer(object):
                         ),
                     )
 
-                    args = (est, None, cand_acq_func, False, self.acq_func_kwargs)
+                    args = (est, np.min(yi), cand_acq_func, False, self.acq_func_kwargs)
                     pymoo_problem = DeepHyperProblem(
                         space=self.space,
                         acq_func=lambda x: _gaussian_acquisition(x, *args),
                     )
                     pymoo_algorithm = MixedVariableGA(pop=pop, sampling=init_pop)
 
-                    res = minimize(
+                    res_ga = minimize(
                         pymoo_problem,
                         pymoo_algorithm,
-                        termination=("n_evals", 1000),
+                        termination=("n_gen", 50),
                         seed=self.rng.randint(0, np.iinfo(np.int32).max),
                         verbose=False,
                     )
-                    next_x = [res.X[name] for name in self.space.dimension_names]
+                    next_x = [res_ga.X[name] for name in self.space.dimension_names]
                     next_x = np.array(next_x)
+
+                    if self.acq_optimizer == "ga+cobyqa":
+                        import cobyqa
+
+                        x0 = res_ga.pop.get("X")[: self.n_restarts_optimizer]
+                        xl, xu = list(zip(*transformed_bounds))
+                        args = (
+                            est,
+                            np.min(yi),
+                            cand_acq_func,
+                            self.acq_func_kwargs,
+                            False,
+                        )
+
+                        with warnings.catch_warnings():
+                            warnings.simplefilter("ignore")
+                            res_cobyqa = Parallel(n_jobs=self.n_jobs)(
+                                delayed(cobyqa.minimize)(
+                                    gaussian_acquisition_1D,
+                                    x0=np.array(list(x.values())),
+                                    args=(
+                                        est,
+                                        np.min(yi),
+                                        cand_acq_func,
+                                        self.acq_func_kwargs,
+                                        False,
+                                    ),
+                                    xl=xl,
+                                    xu=xu,
+                                    options={"max_eval": 30},
+                                )
+                                for x in x0
+                            )
+
+                        cand_xs = np.array([r.x for r in res_cobyqa])
+                        cand_acqs = np.array([r.fun for r in res_cobyqa])
+                        next_x = cand_xs[np.argmin(cand_acqs)]
+
+                elif self.acq_optimizer == "cobyqa":
+                    import cobyqa
+
+                    x0 = X[np.argsort(values)[: self.n_restarts_optimizer]]
+                    xl, xu = list(zip(*transformed_bounds))
+                    args = (est, np.min(yi), cand_acq_func, self.acq_func_kwargs, False)
+
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
+                        results = Parallel(n_jobs=self.n_jobs)(
+                            delayed(cobyqa.minimize)(
+                                gaussian_acquisition_1D,
+                                x0=x,
+                                args=(
+                                    est,
+                                    np.min(yi),
+                                    cand_acq_func,
+                                    self.acq_func_kwargs,
+                                    False,
+                                ),
+                                xl=xl,
+                                xu=xu,
+                                options={"max_eval": 30},
+                            )
+                            for x in x0
+                        )
+
+                    cand_xs = np.array([r.x for r in results])
+                    cand_acqs = np.array([r.fun for r in results])
+                    next_x = cand_xs[np.argmin(cand_acqs)]
 
                 # lbfgs should handle this but just in case there are
                 # precision errors.
