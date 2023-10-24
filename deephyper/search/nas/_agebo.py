@@ -222,6 +222,10 @@ class AgEBO(RegularizedEvolution):
                             config=new_results[new_i][0]
                         )
                         new_i_y = new_results[new_i][1]
+
+                        if new_i_y == "F":
+                            new_i_y = -np.inf
+
                         hp_results_X.append(new_i_hp_values)
                         hp_results_y.append(-new_i_y)
 
