@@ -322,14 +322,21 @@ class Optimizer(object):
             else:
                 acq_optimizer = "sampling"
 
-        if acq_optimizer not in ["lbfgs", "sampling", "ga", "cobyqa", "ga+cobyqa"]:
+        if acq_optimizer not in [
+            "lbfgs",
+            "sampling",
+            "mixedga",
+            "ga",
+            "cobyqa",
+        ]:
             raise ValueError(
                 "Expected acq_optimizer to be 'lbfgs' or "
                 "'sampling' or 'ga', got {0}".format(acq_optimizer)
             )
 
+        # TODO: clean this
         # if not has_gradients(self.base_estimator_) and not (
-        #     acq_optimizer in ["sampling", "ga", "cobyqa", "ga+cobyqa"]
+        #     acq_optimizer in ["sampling", "mixedga", "cobyqa", "ga+cobyqa"]
         # ):
         #     raise ValueError(
         #         "The regressor {0} should run with a 'sampling' "
@@ -345,6 +352,17 @@ class Optimizer(object):
         self.n_points = acq_optimizer_kwargs.get("n_points", 10_000)
         self.n_restarts_optimizer = acq_optimizer_kwargs.get("n_restarts_optimizer", 5)
         self.n_jobs = acq_optimizer_kwargs.get("n_jobs", 1)
+
+        # PyMOO
+        self._pymoo_pop_size = acq_optimizer_kwargs.get("pop_size", 100)
+        self._pymoo_termination_kwargs = {
+            "xtol": acq_optimizer_kwargs.get("xtol", 1e-3),
+            "ftol": acq_optimizer_kwargs.get("ftol", 1e-3),
+            "period": acq_optimizer_kwargs.get("period", 15),
+            "n_max_gen": acq_optimizer_kwargs.get("n_max_gen", 1000),
+        }
+
+        # TODO: "update_prior" to be removed, this mechanism is too prone to "overfitting" (local minima problems)
         self.update_prior = acq_optimizer_kwargs.get("update_prior", False)
         self.update_prior_quantile = acq_optimizer_kwargs.get(
             "update_prior_quantile", 0.9
@@ -1056,19 +1074,25 @@ class Optimizer(object):
                     cand_acqs = np.array([r[1] for r in results])
                     next_x = cand_xs[np.argmin(cand_acqs)]
 
-                elif self.acq_optimizer == "ga" or self.acq_optimizer == "ga+cobyqa":
+                elif self.acq_optimizer == "mixedga":
                     # TODO: vectorized differential evolution
                     # https://pymoo.org/customization/mixed.html
                     # https://pymoo.org/interface/problem.html
 
                     from pymoo.optimize import minimize
                     from pymoo.core.mixed import MixedVariableGA
-                    from deephyper.skopt.optimizer._pymoo import DeepHyperProblem
+                    from deephyper.skopt.optimizer._pymoo import (
+                        PyMOOMixedVectorizedProblem,
+                        DefaultSingleObjectiveMixedTermination,
+                    )
                     from pymoo.core.population import Population
+                    from pymoo.termination.default import (
+                        DefaultSingleObjectiveTermination,
+                    )
 
-                    pop = 50
+                    pop = self._pymoo_pop_size
                     idx_sorted = np.argsort(values)
-                    initial_sampling = X[idx_sorted[:pop]]
+                    initial_sampling = [X_s[i] for i in idx_sorted[:pop]]
                     initial_sampling = list(
                         map(
                             lambda x: dict(zip(self.space.dimension_names, x)),
@@ -1079,64 +1103,74 @@ class Optimizer(object):
                         "X",
                         initial_sampling,
                         "F",
-                        values[idx_sorted[:pop]].reshape(
-                            -1,
-                        ),
+                        values[idx_sorted[:pop]].reshape(-1),
                     )
 
                     args = (est, np.min(yi), cand_acq_func, False, self.acq_func_kwargs)
-                    pymoo_problem = DeepHyperProblem(
+                    problem = PyMOOMixedVectorizedProblem(
                         space=self.space,
-                        acq_func=lambda x: _gaussian_acquisition(x, *args),
+                        acq_func=lambda x: _gaussian_acquisition(
+                            self.space.transform(x), *args
+                        ),
                     )
-                    pymoo_algorithm = MixedVariableGA(pop=pop, sampling=init_pop)
+                    algorithm = MixedVariableGA(pop=pop, sampling=init_pop)
 
                     res_ga = minimize(
-                        pymoo_problem,
-                        pymoo_algorithm,
-                        termination=("n_gen", 50),
+                        problem,
+                        algorithm,
+                        termination=DefaultSingleObjectiveMixedTermination(
+                            **self._pymoo_termination_kwargs
+                        ),
                         seed=self.rng.randint(0, np.iinfo(np.int32).max),
                         verbose=False,
                     )
+
                     next_x = [res_ga.X[name] for name in self.space.dimension_names]
-                    next_x = np.array(next_x)
+                    next_x = self.space.transform(np.array([next_x]))[0]
 
-                    if self.acq_optimizer == "ga+cobyqa":
-                        import cobyqa
+                elif self.acq_optimizer == "ga":
+                    from pymoo.algorithms.soo.nonconvex.ga import GA
+                    from pymoo.core.population import Population
+                    from pymoo.optimize import minimize
+                    from deephyper.skopt.optimizer._pymoo import PyMOORealProblem
+                    from pymoo.termination.default import (
+                        DefaultSingleObjectiveTermination,
+                    )
 
-                        x0 = res_ga.pop.get("X")[: self.n_restarts_optimizer]
-                        xl, xu = list(zip(*transformed_bounds))
-                        args = (
-                            est,
-                            np.min(yi),
-                            cand_acq_func,
-                            self.acq_func_kwargs,
-                            False,
-                        )
+                    xl, xu = list(zip(*transformed_bounds))
+                    xl, xu = np.asarray(xl), np.asarray(xu)
 
-                        with warnings.catch_warnings():
-                            warnings.simplefilter("ignore")
-                            res_cobyqa = Parallel(n_jobs=self.n_jobs)(
-                                delayed(cobyqa.minimize)(
-                                    gaussian_acquisition_1D,
-                                    x0=np.array(list(x.values())),
-                                    args=(
-                                        est,
-                                        np.min(yi),
-                                        cand_acq_func,
-                                        self.acq_func_kwargs,
-                                        False,
-                                    ),
-                                    xl=xl,
-                                    xu=xu,
-                                    options={"max_eval": 30},
-                                )
-                                for x in x0
-                            )
+                    args = (est, np.min(yi), cand_acq_func, False, self.acq_func_kwargs)
+                    problem = PyMOORealProblem(
+                        n_var=len(xl),
+                        xl=xl,
+                        xu=xu,
+                        acq_func=lambda x: _gaussian_acquisition(x, *args),
+                    )
 
-                        cand_xs = np.array([r.x for r in res_cobyqa])
-                        cand_acqs = np.array([r.fun for r in res_cobyqa])
-                        next_x = cand_xs[np.argmin(cand_acqs)]
+                    pop = self._pymoo_pop_size
+                    idx_sorted = np.argsort(values)
+                    initial_sampling = X[idx_sorted[:pop]]
+                    init_pop = Population.new(
+                        "X",
+                        initial_sampling,
+                        "F",
+                        values[idx_sorted[:pop]].reshape(-1),
+                    )
+
+                    algorithm = GA(pop=pop, sampling=init_pop)
+
+                    res = minimize(
+                        problem,
+                        algorithm,
+                        termination=DefaultSingleObjectiveTermination(
+                            **self._pymoo_termination_kwargs
+                        ),
+                        seed=self.rng.randint(0, np.iinfo(np.int32).max),
+                        verbose=False,
+                    )
+
+                    next_x = res.X
 
                 elif self.acq_optimizer == "cobyqa":
                     import cobyqa

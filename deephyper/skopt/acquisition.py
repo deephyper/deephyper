@@ -164,7 +164,7 @@ def gaussian_lcb(X, model, kappa=1.96, return_grad=False):
             return mu - kappa * std
 
 
-# TODO: LCB Scaling by noise
+# TODO: LCB stochastic
 def gaussian_lcbs(X, model, kappa=1.96):
     """
     Use the lower confidence bound to estimate the acquisition
@@ -211,6 +211,7 @@ def gaussian_lcbs(X, model, kappa=1.96):
         mu, std_al, std_ep = model.predict(X, return_std=True, disentangled_std=True)
         if kappa == "inf":
             return -std_ep
+        # TODO replace `std_al` - std error!
         return mu - kappa * std_ep / std_al
 
 

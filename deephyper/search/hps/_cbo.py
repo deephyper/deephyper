@@ -509,6 +509,7 @@ class CBO(Search):
         Args:
             name (str): name of the surrogate model.
             n_jobs (int): number of parallel processes to distribute the computation of the surrogate model.
+            random_state (int): random seed.
 
         Raises:
             ValueError: when the name of the surrogate model is unknown.
