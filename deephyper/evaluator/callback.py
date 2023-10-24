@@ -181,13 +181,23 @@ class SearchEarlyStopping(Callback):
     Args:
         patience (int, optional): The number of not improving evaluations to wait for before stopping the search. Defaults to 10.
         objective_func (callable, optional): A function that takes a ``Job`` has input and returns the maximized scalar value monitored by this callback. Defaults to ``lambda j: j.result``.
+        threshold (float, optional): The threshold to reach before activating the patience to stop the search. Defaults to ``None``, patience is reinitialized after each improving observation.
+        verbose (bool, optional): Activation or deactivate the verbose mode. Defaults to ``True``.
     """
 
-    def __init__(self, patience: int = 10, objective_func=lambda j: j.result):
+    def __init__(
+        self,
+        patience: int = 10,
+        objective_func=lambda j: j.result,
+        threshold: float = None,
+        verbose: bool = 1,
+    ):
         self._best_objective = None
         self._n_lower = 0
         self._patience = patience
         self._objective_func = objective_func
+        self._threshold = threshold
+        self._verbose = verbose
 
     def on_done_other(self, job):
         self.on_done(job)
@@ -201,16 +211,26 @@ class SearchEarlyStopping(Callback):
             self._best_objective = job_objective
         else:
             if job_objective > self._best_objective:
-                print(
-                    f"Objective has improved from {self._best_objective:.5f} -> {job_objective:.5f}"
-                )
+                if self._verbose:
+                    print(
+                        f"Objective has improved from {self._best_objective:.5f} -> {job_objective:.5f}"
+                    )
                 self._best_objective = job_objective
                 self._n_lower = 0
             else:
                 self._n_lower += 1
 
         if self._n_lower >= self._patience:
-            print(
-                f"Stopping the search because it did not improve for the last {self._patience} evaluations!"
-            )
-            raise deephyper.core.exceptions.SearchTerminationError
+            if self._threshold is None:
+                if self._verbose:
+                    print(
+                        f"Stopping the search because it did not improve for the last {self._patience} evaluations!"
+                    )
+                raise deephyper.core.exceptions.SearchTerminationError
+            else:
+                if self._best_objective > self._threshold:
+                    if self._verbose:
+                        print(
+                            f"Stopping the search because it did not improve for the last {self._patience} evaluations!"
+                        )
+                    raise deephyper.core.exceptions.SearchTerminationError
