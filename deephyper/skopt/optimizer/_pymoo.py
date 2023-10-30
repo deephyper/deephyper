@@ -15,6 +15,8 @@ import deephyper.skopt.space as skopt_space
 def convert_space_to_pymoo_mixed(space):
     """Convert a DeepHyper space to a pymoo space.
 
+    Optimizing in the source input space.
+
     Args:
         space (Space): from deephyper.skopt.space.
 
@@ -24,29 +26,15 @@ def convert_space_to_pymoo_mixed(space):
     pymoo_space = OrderedDict()
     for dim in space.dimensions:
         if isinstance(dim, skopt_space.Real):
-            pymoo_dim = Real(bounds=(dim.low, dim.high))
+            pymoo_dim = Real(bounds=dim.bounds)
             pymoo_space[dim.name] = pymoo_dim
         elif isinstance(dim, skopt_space.Integer):
-            pymoo_dim = Integer(bounds=(dim.low, dim.high))
+            pymoo_dim = Integer(bounds=dim.bounds)
             pymoo_space[dim.name] = pymoo_dim
         elif isinstance(dim, skopt_space.Categorical):
-            if dim.transformed_size == 1:
-                if dim.transform_ == "label":
-                    options = [i for i in range(len(dim.categories))]
-                elif dim.transform_ == "identity":
-                    options = dim.categories
-                else:
-                    # TODO
-                    print(f"{dim.name=}")
-                    print(f"{dim.transform_=}")
-                    raise NotImplementedError
-                pymoo_dim = Choice(options=options)
-                pymoo_space[dim.name] = pymoo_dim
-            else:
-                # TODO:
-                print(f"{dim.name=}")
-                print(f"{dim.transformed_size=}")
-                raise NotImplementedError
+            options = dim.categories
+            pymoo_dim = Choice(options=options)
+            pymoo_space[dim.name] = pymoo_dim
         else:
             raise ValueError(f"Unknown dimension type {type(dim)}")
     return pymoo_space
@@ -54,14 +42,14 @@ def convert_space_to_pymoo_mixed(space):
 
 class PyMOOMixedVectorizedProblem(Problem):
     def __init__(self, space, acq_func=None, **kwargs):
-        vars = convert_space_to_pymoo_mixed(space)
-        super().__init__(vars=vars, n_obj=1, **kwargs)
+        super().__init__(vars=convert_space_to_pymoo_mixed(space), n_obj=1, **kwargs)
         self.acq_func = acq_func
+        self.vars_names = space.dimension_names
 
     def _evaluate(self, x, out, *args, **kwargs):
         if x.ndim == 2:
             x = x[0]
-        x = np.array(list(map(lambda v: list(v.values()), x)))
+        x = np.asarray(list(map(lambda xi: [xi[k] for k in self.vars_names], x)))
         y = self.acq_func(x).reshape(-1)
         out["F"] = y
 

@@ -1,7 +1,7 @@
+import numbers
 import sys
 import warnings
 from math import log
-import numbers
 
 import numpy as np
 import pandas as pd
@@ -373,10 +373,6 @@ class Optimizer(object):
         self.acq_optimizer_freq = acq_optimizer_kwargs.get("acq_optimizer_freq", 1)
         self.acq_optimizer_kwargs = acq_optimizer_kwargs
 
-        # Configure search space
-        if isinstance(self.base_estimator_, GaussianProcessRegressor):
-            dimensions = normalize_dimensions(dimensions)
-
         # keep track of the generative model from sdv
         self.model_sdv = model_sdv
 
@@ -387,6 +383,10 @@ class Optimizer(object):
             self.space = Space(dimensions, model_sdv=self.model_sdv)
         else:
             raise ValueError("Dimensions should be a list or an instance of Space.")
+
+        transformer = self.space.get_transformer()
+
+        self.space.set_transformer(transformer)
 
         # normalize space if GP regressor
         if isinstance(self.base_estimator_, GaussianProcessRegressor):
@@ -401,7 +401,6 @@ class Optimizer(object):
         )
 
         if self._initial_point_generator is not None:
-            transformer = self.space.get_transformer()
             self._initial_samples = (
                 self._initial_samples
                 + self._initial_point_generator.generate(
@@ -410,7 +409,6 @@ class Optimizer(object):
                     random_state=self.rng.randint(0, np.iinfo(np.int32).max),
                 )
             )
-            self.space.set_transformer(transformer)
 
         # record categorical and non-categorical indices
         self._cat_inds = []
@@ -662,20 +660,21 @@ class Optimizer(object):
 
         # q-ACQ multi point acquisition for centralized setting
         if len(self.models) > 0 and strategy == "qLCB":
-            X_s = self.space.rvs(
+            Xsample = self.space.rvs(
                 n_samples=self.n_points, random_state=self.rng, n_jobs=self.n_jobs
             )
-            X_s = self._filter_duplicated(X_s)
-            X_c = self.space.transform(X_s)  # candidates
 
-            mu, std = self.models[-1].predict(X_c, return_std=True)
+            Xsample = self._filter_duplicated(Xsample)
+            Xsample_transformed = self.space.transform(Xsample)
+
+            mu, std = self.models[-1].predict(Xsample_transformed, return_std=True)
             kappa = self.acq_func_kwargs.get("kappa", 1.96)
             kappas = self.rng.exponential(kappa, size=n_points - 1)
             X = [self._next_x]
             for kappa in kappas:
                 values = mu - kappa * std
                 idx = np.argmin(values)
-                X.append(X_s[idx])
+                X.append(Xsample[idx])
             return X
 
         # Caching the result with n_points not None. If some new parameters
@@ -815,16 +814,16 @@ class Optimizer(object):
         return X, y
 
     def _ask_random_points(self, size=None):
-        samples = self.space.rvs(
+        Xsamples = self.space.rvs(
             n_samples=self.n_points, random_state=self.rng, n_jobs=self.n_jobs
         )
 
-        samples = self._filter_duplicated(samples)
+        Xsamples = self._filter_duplicated(Xsamples)
 
         if size is None:
-            return samples[0]
+            return Xsamples[0]
         else:
-            return samples[:size]
+            return Xsamples[:size]
 
     def _ask(self):
         """Suggest next point at which to evaluate the objective.
@@ -982,19 +981,61 @@ class Optimizer(object):
             # handle size of the sample fit to the estimator
             Xi, yi = self._sample(self.Xi, yi)
 
+            # Preprocessing of input space
+            Xtransformed = np.asarray(self.space.transform(Xi))
+
+            # print("Xi: ", list(Xi[0]))
+            # print("Xt: ", list(Xtransformed[0]))
+            # TODO: feature importance
+            # if len(Xi) % 25 == 0 and len(Xi) >= 25:
+            #     from sklearn.model_selection import train_test_split
+
+            #     Xtransformed, Xval, yi, yval = train_test_split(
+            #         Xtransformed,
+            #         yi,
+            #         test_size=0.2,
+            #         random_state=self.rng.randint(0, np.iinfo(np.int32).max),
+            #     )
+
+            # Fit surrogate model on transformed data
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
 
-                # preprocessing of input space
-                Xtt = self.space.transform(Xi)
-                Xtt = np.asarray(Xtt)
+                est.fit(Xtransformed, yi)
 
-                # fit surrogate model
-                est.fit(Xtt, yi)
+            # TODO: to be removed
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
 
-                # update prior
+                # Update sampling prior
                 if self.update_prior:
-                    self.space.update_prior(Xtt, yi, q=self.update_prior_quantile)
+                    self.space.update_prior(
+                        Xtransformed, yi, q=self.update_prior_quantile
+                    )
+
+            # TODO: feature importance
+            # if len(Xi) % 25 == 0 and len(Xi) >= 25:
+            #     from sklearn.inspection import permutation_importance
+
+            #     est_score = est.score(Xval, yval)
+            #     print(f"Score: {est_score}")
+            #     var_importance = permutation_importance(
+            #         est,
+            #         Xval,
+            #         yval,
+            #         n_repeats=10,
+            #         random_state=self.rng.randint(0, np.iinfo(np.int32).max),
+            #     )
+
+            #     # var_importance_upper_bound = var_importance.importances_mean + 1.96 * var_importance.importances_std
+            #     # var_importance_fraction = var_importance_upper_bound / est_score
+            #     var_importance_fraction = var_importance.importances_mean / est_score
+            #     for i in range(len(var_importance_fraction)):
+            #         # if var_importance_fraction[i] < 0.05:
+            #         print(
+            #             f"dim {self.space.dimension_names[i]}: {var_importance_fraction[i]:.4f}"
+            #         )
+            #     print()
 
             if self.max_model_queue_size is None:
                 self.models.append(est)
@@ -1010,13 +1051,13 @@ class Optimizer(object):
 
             # even with BFGS as optimizer we want to sample a large number
             # of points and then pick the best ones as starting points
-            X_s = self.space.rvs(
+            Xsample = self.space.rvs(
                 n_samples=self.n_points, random_state=self.rng, n_jobs=self.n_jobs
             )
 
-            X_s = self._filter_duplicated(X_s)
+            Xsample = self._filter_duplicated(Xsample)
 
-            X = self.space.transform(X_s)
+            Xsample_transformed = self.space.transform(Xsample)
 
             self.next_xs_ = []
 
@@ -1026,7 +1067,7 @@ class Optimizer(object):
 
             for cand_acq_func in self.cand_acq_funcs_:
                 values = _gaussian_acquisition(
-                    X=X,
+                    X=Xsample_transformed,
                     model=est,
                     y_opt=np.min(yi),
                     acq_func=cand_acq_func,
@@ -1034,19 +1075,21 @@ class Optimizer(object):
                 )
 
                 # cache these values in case the strategy of ask is one-shot
-                self._last_X = X
+                self._last_X = Xsample_transformed
                 self._last_values = values
 
                 # Find the minimum of the acquisition function by randomly
                 # sampling points from the space
                 if do_only_sampling:
-                    next_x = X[np.argmin(values)]
+                    next_x = Xsample_transformed[np.argmin(values)]
 
                 # Use BFGS to find the mimimum of the acquisition function, the
                 # minimization starts from `n_restarts_optimizer` different
                 # points and the best minimum is used
                 elif self.acq_optimizer == "lbfgs":
-                    x0 = X[np.argsort(values)[: self.n_restarts_optimizer]]
+                    x0 = Xsample_transformed[
+                        np.argsort(values)[: self.n_restarts_optimizer]
+                    ]
 
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore")
@@ -1079,20 +1122,21 @@ class Optimizer(object):
                     # https://pymoo.org/customization/mixed.html
                     # https://pymoo.org/interface/problem.html
 
-                    from pymoo.optimize import minimize
                     from pymoo.core.mixed import MixedVariableGA
-                    from deephyper.skopt.optimizer._pymoo import (
-                        PyMOOMixedVectorizedProblem,
-                        DefaultSingleObjectiveMixedTermination,
-                    )
                     from pymoo.core.population import Population
+                    from pymoo.optimize import minimize
                     from pymoo.termination.default import (
                         DefaultSingleObjectiveTermination,
                     )
 
+                    from deephyper.skopt.optimizer._pymoo import (
+                        DefaultSingleObjectiveMixedTermination,
+                        PyMOOMixedVectorizedProblem,
+                    )
+
                     pop = self._pymoo_pop_size
                     idx_sorted = np.argsort(values)
-                    initial_sampling = [X_s[i] for i in idx_sorted[:pop]]
+                    initial_sampling = [Xsample[i] for i in idx_sorted[:pop]]
                     initial_sampling = list(
                         map(
                             lambda x: dict(zip(self.space.dimension_names, x)),
@@ -1126,16 +1170,17 @@ class Optimizer(object):
                     )
 
                     next_x = [res_ga.X[name] for name in self.space.dimension_names]
-                    next_x = self.space.transform(np.array([next_x]))[0]
+                    next_x = self.space.transform([next_x])[0]
 
                 elif self.acq_optimizer == "ga":
                     from pymoo.algorithms.soo.nonconvex.ga import GA
                     from pymoo.core.population import Population
                     from pymoo.optimize import minimize
-                    from deephyper.skopt.optimizer._pymoo import PyMOORealProblem
                     from pymoo.termination.default import (
                         DefaultSingleObjectiveTermination,
                     )
+
+                    from deephyper.skopt.optimizer._pymoo import PyMOORealProblem
 
                     xl, xu = list(zip(*transformed_bounds))
                     xl, xu = np.asarray(xl), np.asarray(xu)
@@ -1150,7 +1195,7 @@ class Optimizer(object):
 
                     pop = self._pymoo_pop_size
                     idx_sorted = np.argsort(values)
-                    initial_sampling = X[idx_sorted[:pop]]
+                    initial_sampling = Xsample_transformed[idx_sorted[:pop]]
                     init_pop = Population.new(
                         "X",
                         initial_sampling,
@@ -1175,7 +1220,9 @@ class Optimizer(object):
                 elif self.acq_optimizer == "cobyqa":
                     import cobyqa
 
-                    x0 = X[np.argsort(values)[: self.n_restarts_optimizer]]
+                    x0 = Xsample_transformed[
+                        np.argsort(values)[: self.n_restarts_optimizer]
+                    ]
                     xl, xu = list(zip(*transformed_bounds))
                     args = (est, np.min(yi), cand_acq_func, self.acq_func_kwargs, False)
 
@@ -1225,7 +1272,7 @@ class Optimizer(object):
                 next_x = self.next_xs_[0]
 
             # note the need for [0] at the end
-            self._next_x = self.space.inverse_transform(next_x.reshape((1, -1)))[0]
+            self._next_x = self.space.inverse_transform(next_x.reshape(1, -1))[0]
             self._counter_fit += 1
 
         # Pack results
