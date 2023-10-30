@@ -308,12 +308,28 @@ class CBO(Search):
             assert scheduler_type in ["periodic-exp-decay", "bandit"]
 
             if scheduler_type == "periodic-exp-decay":
+                rate = scheduler.get("rate", None)
+                period = scheduler.get("period", None)
+
+                # Automatically retrieve the "decay rate" of the scheduler by solving
+                # the equation: eta_0 * exp(-rate * period) = eta_final
+                if rate is None:
+                    if "UCB" in acq_func:
+                        kappa_final = scheduler.pop("kappa_final", 0.1)
+                        rate = -1 / period * np.log(kappa_final / kappa)
+                    elif "EI" in acq_func or "PI" in acq_func:
+                        xi_final = scheduler.pop("xi_final", 0.0001)
+                        rate = -1 / period * np.log(xi_final / xi)
+                    else:
+                        rate = 0.1
+
                 scheduler_params = {
-                    "period": 25,
-                    "rate": 0.1,
+                    "period": period,
+                    "rate": rate,
                     "delay": n_initial_points,
                 }
                 scheduler_func = scheduler_periodic_exponential_decay
+
             elif scheduler_type == "bandit":
                 scheduler_params = {
                     "delta": 0.05,
@@ -566,11 +582,13 @@ class CBO(Search):
                 base_estimator=gbrt, n_jobs=n_jobs, random_state=random_state
             )
         elif name == "MF":
+            # TODO:
+            # self._surrogate_model_kwargs
             try:
                 surrogate = deephyper.skopt.learning.MondrianForestRegressor(
                     n_estimators=100,
                     bootstrap=False,
-                    min_samples_split=6,
+                    min_samples_split=10,
                     n_jobs=n_jobs,
                     random_state=random_state,
                 )
