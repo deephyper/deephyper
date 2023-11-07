@@ -49,7 +49,9 @@ class PyMOOMixedVectorizedProblem(Problem):
     def _evaluate(self, x, out, *args, **kwargs):
         if x.ndim == 2:
             x = x[0]
-        x = np.asarray(list(map(lambda xi: [xi[k] for k in self.vars_names], x)))
+
+        # !Using np.array blindly can lead to errors by mapping types to string
+        x = list(map(lambda xi: [xi[k] for k in self.vars_names], x))
         y = self.acq_func(x).reshape(-1)
         out["F"] = y
 
