@@ -102,7 +102,7 @@ class CBO(Search):
         initial_point_generator (str, optional): Sets an initial points generator. Can be either ``["random", "sobol", "halton", "hammersly", "lhs", "grid"]``. Defaults to ``"random"``.
         initial_points (List[Dict], optional): A list of initial points to evaluate where each point is a dictionnary where keys are names of hyperparameters and values their corresponding choice. Defaults to ``None`` for them to be generated randomly from the search space.
         sync_communcation (bool, optional): Performs the search in a batch-synchronous manner. Defaults to ``False`` for asynchronous updates.
-        filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. If ``"ignore"`` is passed then failed configurations will be filtered-out and not passed to the surrogate model. For multiple objectives, failure of any single objective will lead to treating that configuration as failed and each of these multiple objective will be replaced by their individual ``"min"`` or ``"mean"`` of past configurations. Defaults to ``"mean"`` to replace by failed configurations by the running mean of objectives.
+        filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. If ``"ignore"`` is passed then failed configurations will be filtered-out and not passed to the surrogate model. For multiple objectives, failure of any single objective will lead to treating that configuration as failed and each of these multiple objective will be replaced by their individual ``"min"`` or ``"mean"`` of past configurations. Defaults to ``"min"`` to replace failed configurations objectives by the running min of all objectives.
         max_failures (int, optional): Maximum number of failed configurations allowed before observing a valid objective value when ``filter_failures`` is not equal to ``"ignore"``. Defaults to ``100``.
         moo_lower_bounds (list, optional): List of lower bounds on the interesting range of objective values. Must be the same length as the number of obejctives. Defaults to ``None``, i.e., no bounds. Can bound only a single objective by providing ``None`` for all other values. For example, ``moo_lower_bounds=[None, 0.5, None]`` will explore all tradeoffs for the objectives at index 0 and 2, but only consider scores for objective 1 that exceed 0.5.
         moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "AugChebyshev", "PBI", "Quadratic"]``. Defaults to ``"Chebyshev"``. Typically, randomized methods should be used to capture entire Pareto front, unless there is a known target solution a priori. Additional details on each scalarization can be found in :mod:`deephyper.skopt.moo`.
@@ -120,6 +120,7 @@ class CBO(Search):
         log_dir: str = ".",
         verbose: int = 0,
         surrogate_model="ET",
+        surrogate_model_kwargs: dict = None,  # TODO: documentation
         acq_func: str = "UCB",
         acq_optimizer: str = "auto",
         acq_optimizer_freq: int = 10,
@@ -135,7 +136,7 @@ class CBO(Search):
         initial_point_generator: str = "random",
         initial_points=None,
         sync_communication: bool = False,
-        filter_failures: str = "mean",
+        filter_failures: str = "min",
         max_failures: int = 100,
         moo_lower_bounds=None,
         moo_scalarization_strategy: str = "Chebyshev",
@@ -153,12 +154,22 @@ class CBO(Search):
         if not (type(n_jobs) is int):
             raise ValueError(f"Parameter n_jobs={n_jobs} should be an integer value!")
 
-        surrogate_model_allowed = ["RF", "ET", "GBRT", "DUMMY", "GP", "MF", "HGBRT"]
+        surrogate_model_allowed = [
+            "RF",
+            "ET",
+            "GBRT",
+            "DUMMY",
+            "GP",
+            "MF",
+            "HGBRT",
+            "BT",
+        ]
         if surrogate_model in surrogate_model_allowed:
             base_estimator = self._get_surrogate_model(
                 surrogate_model,
-                n_jobs,
+                n_jobs=n_jobs,
                 random_state=self._random_state.randint(0, 2**31),
+                surrogate_model_kwargs=surrogate_model_kwargs,
             )
         elif is_regressor(surrogate_model):
             base_estimator = surrogate_model
@@ -518,7 +529,11 @@ class CBO(Search):
                 logging.info(f"Submition took {time.time() - t1:.4f} sec.")
 
     def _get_surrogate_model(
-        self, name: str, n_jobs: int = None, random_state: int = None
+        self,
+        name: str,
+        n_jobs: int = 1,
+        random_state: int = None,
+        surrogate_model_kwargs: dict = None,
     ):
         """Get a surrogate model from Scikit-Optimize.
 
@@ -526,42 +541,99 @@ class CBO(Search):
             name (str): name of the surrogate model.
             n_jobs (int): number of parallel processes to distribute the computation of the surrogate model.
             random_state (int): random seed.
+            surrogate_model_kwargs (dict): additional parameters to pass to the surrogate model.
+
+        Returns:
+            sklearn.base.RegressorMixin: a surrogate model capabable of predicting y_mean and y_std.
 
         Raises:
             ValueError: when the name of the surrogate model is unknown.
         """
-        accepted_names = ["RF", "ET", "GBRT", "DUMMY", "GP", "MF", "HGBRT"]
+
+        # Check if the surrogate model is supported
+        accepted_names = ["RF", "ET", "GBRT", "DUMMY", "GP", "MF", "HGBRT", "BT"]
         if not (name in accepted_names):
             raise ValueError(
                 f"Unknown surrogate model {name}, please choose among {accepted_names}."
             )
 
-        if name == "RF":
-            # TODO: for better performance the RF surrogate could be fit with a bootstrap sample of size max 1_000
-            # However this should be refreshed each time when creating the estimator
-            surrogate = deephyper.skopt.learning.RandomForestRegressor(
+        if surrogate_model_kwargs is None:
+            surrogate_model_kwargs = {}
+
+        # Define default surrogate model parameters
+        if name in ["RF", "ET", "BT", "MF"]:
+            default_surrogate_model_kwargs = dict(
                 n_estimators=100,
-                bootstrap=True,
-                min_samples_split=2,
-                n_jobs=n_jobs,
-                splitter="best",
-                random_state=random_state,
-            )
-        elif name == "ET":
-            surrogate = deephyper.skopt.learning.ExtraTreesRegressor(
-                n_estimators=100,
-                bootstrap=True,
-                min_samples_split=2,
+                min_samples_split=10,
                 n_jobs=n_jobs,
                 random_state=random_state,
             )
         elif name == "GBRT":
+            default_surrogate_model_kwargs = dict(
+                n_estimtaors=10,
+                n_jobs=n_jobs,
+                random_state=random_state,
+            )
+        elif name == "HGBRT":
+            default_surrogate_model_kwargs = dict(
+                n_jobs=n_jobs,
+                random_state=random_state,
+            )
+        else:
+            default_surrogate_model_kwargs = {}
+
+        default_surrogate_model_kwargs.update(surrogate_model_kwargs)
+
+        # Model: Random Forest from L. Breiman
+        if name == "RF":
+            surrogate = deephyper.skopt.learning.RandomForestRegressor(
+                bootstrap=True,
+                splitter="best",
+                max_features="sqrt",
+                **default_surrogate_model_kwargs,
+            )
+        # Model: Bagging Trees
+        elif name == "BT":
+            surrogate = deephyper.skopt.learning.RandomForestRegressor(
+                bootstrap=True,
+                splitter="best",
+                max_features=1.0,
+                **default_surrogate_model_kwargs,
+            )
+        # Model: Extremely Randomized Forest
+        elif name == "ET":
+            surrogate = deephyper.skopt.learning.RandomForestRegressor(
+                bootstrap=True,
+                splitter="random",
+                max_features="sqrt",
+                **default_surrogate_model_kwargs,
+            )
+        # Model: Mondrian Forest
+        elif name == "MF":
+            try:
+                surrogate = deephyper.skopt.learning.MondrianForestRegressor(
+                    bootstrap=False,
+                    **default_surrogate_model_kwargs,
+                )
+            except AttributeError:
+                raise deephyper.core.exceptions.MissingRequirementError(
+                    "Installing 'deephyper/scikit-garden' is required to use MondrianForest (MF) regressor as a surrogate model!"
+                )
+        # Model: Gradient Boosting Regression Tree (based on quantiles)
+        # https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingRegressor.html
+        elif name == "GBRT":
             from sklearn.ensemble import GradientBoostingRegressor
 
-            gbrt = GradientBoostingRegressor(n_estimators=30, loss="quantile")
-            surrogate = deephyper.skopt.learning.GradientBoostingQuantileRegressor(
-                base_estimator=gbrt, n_jobs=n_jobs, random_state=random_state
+            gbrt = GradientBoostingRegressor(
+                n_estimators=default_surrogate_model_kwargs.pop("n_estimators"),
+                loss="quantile",
             )
+            surrogate = deephyper.skopt.learning.GradientBoostingQuantileRegressor(
+                base_estimator=gbrt,
+                **default_surrogate_model_kwargs,
+            )
+        # Model: Histogram-based Gradient Boosting Regression Tree (based on quantiles)
+        # https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingRegressor.html
         elif name == "HGBRT":
             from sklearn.ensemble import HistGradientBoostingRegressor
 
@@ -579,23 +651,9 @@ class CBO(Search):
                 loss="quantile", categorical_features=categorical_features
             )
             surrogate = deephyper.skopt.learning.GradientBoostingQuantileRegressor(
-                base_estimator=gbrt, n_jobs=n_jobs, random_state=random_state
+                base_estimator=gbrt,
+                **default_surrogate_model_kwargs,
             )
-        elif name == "MF":
-            # TODO:
-            # self._surrogate_model_kwargs
-            try:
-                surrogate = deephyper.skopt.learning.MondrianForestRegressor(
-                    n_estimators=100,
-                    bootstrap=False,
-                    min_samples_split=10,
-                    n_jobs=n_jobs,
-                    random_state=random_state,
-                )
-            except AttributeError:
-                raise deephyper.core.exceptions.MissingRequirementError(
-                    "Installing 'deephyper/scikit-garden' is required to use MondrianForest (MF) regressor as a surrogate model!"
-                )
         else:  # for DUMMY and GP
             surrogate = name
 
