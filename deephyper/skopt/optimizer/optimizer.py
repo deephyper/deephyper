@@ -241,15 +241,16 @@ class Optimizer(object):
             "gp_hedge",
             "EI",
             "LCB",
-            "qLCB",  # TODO: check if valid
             "PI",
+            "MES",
             "EIps",
             "PIps",
             # TODO: new acquisition functions
-            "LCBs",
+            "gp_hedged",
+            "EId",
             "LCBd",
-            "MES",
-            "MESs",
+            "PId",
+            "MESd",
         ]
         if self.acq_func not in allowed_acq_funcs:
             raise ValueError(
@@ -258,8 +259,11 @@ class Optimizer(object):
             )
 
         # treat hedging method separately
-        if self.acq_func == "gp_hedge":
+        if "gp_hedge" in self.acq_func:
             self.cand_acq_funcs_ = ["EI", "LCB", "PI"]
+            if self.acq_func[-1] == "d":
+                # add "d" to the end of the name
+                self.cand_acq_funcs_ = [k + "d" for k in self.cand_acq_funcs_]
             self.gains_ = np.zeros(len(self.cand_acq_funcs_))
         else:
             self.cand_acq_funcs_ = [self.acq_func]
@@ -334,15 +338,6 @@ class Optimizer(object):
                 "'sampling' or 'ga', got {0}".format(acq_optimizer)
             )
 
-        # TODO: clean this
-        # if not has_gradients(self.base_estimator_) and not (
-        #     acq_optimizer in ["sampling", "mixedga", "cobyqa", "ga+cobyqa"]
-        # ):
-        #     raise ValueError(
-        #         "The regressor {0} should run with a 'sampling' "
-        #         "acq_optimizer such as "
-        #         "'sampling' or 'ga'.".format(type(base_estimator))
-        #     )
         self.acq_optimizer = acq_optimizer
 
         # record other arguments
@@ -389,7 +384,10 @@ class Optimizer(object):
         self.space.set_transformer(transformer)
 
         # normalize space if GP regressor
-        if isinstance(self.base_estimator_, GaussianProcessRegressor):
+        if (
+            isinstance(self.base_estimator_, GaussianProcessRegressor)
+            or type(self.base_estimator_).__name__ == "MondrianForestRegressor"
+        ):
             self.space.dimensions = normalize_dimensions(self.space.dimensions)
 
         if self.space.config_space:
@@ -479,6 +477,12 @@ class Optimizer(object):
 
         # Count number of surrogate model fittings
         self._counter_fit = 0
+
+        # TODO: Mondrian Forest partial_fit
+        self.partial_fit = False
+        # if type(self.base_estimator_).__name__ == "MondrianForestRegressor":
+        #     self.partial_fit = True
+        #     self.base_estimator_.fit = self.base_estimator_.partial_fit
 
     def copy(self, random_state=None):
         """Create a shallow copy of an instance of the optimizer.
@@ -911,22 +915,30 @@ class Optimizer(object):
             if is_2Dlistlike(x):
                 self.Xi.extend(x)
                 self.yi.extend(y)
-                self._n_initial_points -= len([v for v in y if v != "F"])
+                n_new_points = len([v for v in y if v != "F"])
+                self._n_initial_points -= n_new_points
             elif is_listlike(x):
                 self.Xi.append(x)
                 self.yi.append(y)
                 if y != "F":
-                    self._n_initial_points -= 1
+                    n_new_points = 1
+                    self._n_initial_points -= n_new_points
+                else:
+                    n_new_points = 0
         # if y isn't a scalar it means we have been handed a batch of points
         elif is_listlike(y) and is_2Dlistlike(x):
             self.Xi.extend(x)
             self.yi.extend(y)
-            self._n_initial_points -= len([v for v in y if v != "F"])
+            n_new_points = len([v for v in y if v != "F"])
+            self._n_initial_points -= n_new_points
         elif is_listlike(x):
             self.Xi.append(x)
             self.yi.append(y)
             if y != "F":
-                self._n_initial_points -= 1
+                n_new_points = 1
+                self._n_initial_points -= n_new_points
+            else:
+                n_new_points = 0
         else:
             raise ValueError(
                 "Type of arguments `x` (%s) and `y` (%s) "
@@ -940,7 +952,12 @@ class Optimizer(object):
         # random points to using a surrogate model
         if fit and self._n_initial_points <= 0 and self.base_estimator_ is not None:
             transformed_bounds = self.space.transformed_bounds
-            est = clone(self.base_estimator_)
+
+            # TODO: partial fit
+            if self.partial_fit:
+                est = self.base_estimator_
+            else:
+                est = clone(self.base_estimator_)
 
             yi = self.yi
 
@@ -984,8 +1001,6 @@ class Optimizer(object):
             # Preprocessing of input space
             Xtransformed = np.asarray(self.space.transform(Xi))
 
-            # print("Xi: ", list(Xi[0]))
-            # print("Xt: ", list(Xtransformed[0]))
             # TODO: feature importance
             # if len(Xi) % 25 == 0 and len(Xi) >= 25:
             #     from sklearn.model_selection import train_test_split
@@ -1001,7 +1016,11 @@ class Optimizer(object):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
 
-                est.fit(Xtransformed, yi)
+                # TODO: partial fit
+                if self.partial_fit:
+                    est.fit(Xtransformed[-n_new_points:], yi[-n_new_points:])
+                else:
+                    est.fit(Xtransformed, yi)
 
             # TODO: to be removed
             with warnings.catch_warnings():
@@ -1046,7 +1065,7 @@ class Optimizer(object):
                 self.models.pop(0)
                 self.models.append(est)
 
-            if hasattr(self, "next_xs_") and self.acq_func == "gp_hedge":
+            if hasattr(self, "next_xs_") and "gp_hedge" in self.acq_func:
                 self.gains_ -= est.predict(np.vstack(self.next_xs_))
 
             # even with BFGS as optimizer we want to sample a large number
@@ -1218,6 +1237,8 @@ class Optimizer(object):
                     next_x = res.X
 
                 elif self.acq_optimizer == "cobyqa":
+                    # TODO:
+                    # - normalization in [0,1] when COBYQA is used
                     import cobyqa
 
                     x0 = Xsample_transformed[
@@ -1226,6 +1247,13 @@ class Optimizer(object):
                     xl, xu = list(zip(*transformed_bounds))
                     args = (est, np.min(yi), cand_acq_func, self.acq_func_kwargs, False)
 
+                    # max_evals: defines the maximum budget but the algorithm stops before (possibly)
+                    # depending on the final radius of the trust-region (input by the user) and the current one
+                    # if the current-radius becomes smaller than the user set radius then the procedure stops
+                    # by default this radius is set to 1e-6
+                    # this stopping criteria relates in spirit to a "xtol" (tolerance on input convergence)
+                    # 2n+1 is the initial number of samples required to fit the trust-region optimaly for COBYQA
+                    #   - option 'npt', (n+1)(n+2)/2 > npt > n+1
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore")
                         results = Parallel(n_jobs=self.n_jobs)(
@@ -1241,7 +1269,11 @@ class Optimizer(object):
                                 ),
                                 xl=xl,
                                 xu=xu,
-                                options={"max_eval": 30},
+                                options={
+                                    "max_eval": 2 * len(self.space.dimension_names)
+                                    + 1
+                                    + 100
+                                },
                             )
                             for x in x0
                         )
@@ -1262,7 +1294,7 @@ class Optimizer(object):
 
                 self.next_xs_.append(next_x)
 
-            if self.acq_func == "gp_hedge":
+            if "gp_hedge" in self.acq_func:
                 logits = np.array(self.gains_)
                 logits -= np.max(logits)
                 exp_logits = np.exp(self.eta * logits)

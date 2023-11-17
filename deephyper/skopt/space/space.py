@@ -1239,9 +1239,7 @@ class Space:
             The transformed samples.
         """
         # Pack by dimension
-        columns = []
-        for dim in self.dimensions:
-            columns.append([])
+        columns = [list() for _ in self.dimensions]
 
         for i in range(len(X)):
             for j in range(self.n_dims):

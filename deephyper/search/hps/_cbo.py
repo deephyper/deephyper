@@ -26,7 +26,7 @@ from deephyper.skopt.utils import use_named_args
 MAP_multi_point_strategy = {"cl_min": "cl_max", "cl_max": "cl_min", "qUCB": "qLCB"}
 
 # TODO: check if qUCB is still valid
-MAP_acq_func = {"UCB": "LCB", "qUCB": "qLCB", "UCBs": "LCBs", "UCBd": "LCBd"}
+MAP_acq_func = {"UCB": "LCB", "UCBd": "LCBd"}
 
 MAP_filter_failures = {"min": "max"}
 
@@ -182,12 +182,14 @@ class CBO(Search):
             "UCB",
             "EI",
             "PI",
+            "MES",
             "gp_hedge",
             "qUCB",
-            "UCBs",
             "UCBd",
-            "MES",
-            "MESs",
+            "EId",
+            "PId",
+            "MESd",
+            "gp_hedged",
         ]
         if not (acq_func in acq_func_allowed):
             raise ValueError(
@@ -564,7 +566,9 @@ class CBO(Search):
         if name in ["RF", "ET", "BT", "MF"]:
             default_surrogate_model_kwargs = dict(
                 n_estimators=100,
-                min_samples_split=10,
+                max_samples=0.8,
+                min_samples_split=2,
+                bootstrap=True,
                 n_jobs=n_jobs,
                 random_state=random_state,
             )
@@ -587,7 +591,6 @@ class CBO(Search):
         # Model: Random Forest from L. Breiman
         if name == "RF":
             surrogate = deephyper.skopt.learning.RandomForestRegressor(
-                bootstrap=True,
                 splitter="best",
                 max_features="sqrt",
                 **default_surrogate_model_kwargs,
@@ -595,7 +598,6 @@ class CBO(Search):
         # Model: Bagging Trees
         elif name == "BT":
             surrogate = deephyper.skopt.learning.RandomForestRegressor(
-                bootstrap=True,
                 splitter="best",
                 max_features=1.0,
                 **default_surrogate_model_kwargs,
@@ -603,7 +605,6 @@ class CBO(Search):
         # Model: Extremely Randomized Forest
         elif name == "ET":
             surrogate = deephyper.skopt.learning.RandomForestRegressor(
-                bootstrap=True,
                 splitter="random",
                 max_features="sqrt",
                 **default_surrogate_model_kwargs,
@@ -612,7 +613,6 @@ class CBO(Search):
         elif name == "MF":
             try:
                 surrogate = deephyper.skopt.learning.MondrianForestRegressor(
-                    bootstrap=False,
                     **default_surrogate_model_kwargs,
                 )
             except AttributeError:
