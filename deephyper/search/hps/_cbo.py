@@ -155,14 +155,18 @@ class CBO(Search):
             raise ValueError(f"Parameter n_jobs={n_jobs} should be an integer value!")
 
         surrogate_model_allowed = [
+            # Trees
             "RF",
             "ET",
-            "GBRT",
-            "DUMMY",
-            "GP",
+            "TB",
+            "RS",
             "MF",
+            # Other models
+            "GBRT",
+            "GP",
             "HGBRT",
-            "BT",
+            # Random Search
+            "DUMMY",
         ]
         if surrogate_model in surrogate_model_allowed:
             base_estimator = self._get_surrogate_model(
@@ -553,7 +557,7 @@ class CBO(Search):
         """
 
         # Check if the surrogate model is supported
-        accepted_names = ["RF", "ET", "GBRT", "DUMMY", "GP", "MF", "HGBRT", "BT"]
+        accepted_names = ["RF", "ET", "TB", "RS", "GBRT", "DUMMY", "GP", "MF", "HGBRT"]
         if not (name in accepted_names):
             raise ValueError(
                 f"Unknown surrogate model {name}, please choose among {accepted_names}."
@@ -563,15 +567,42 @@ class CBO(Search):
             surrogate_model_kwargs = {}
 
         # Define default surrogate model parameters
-        if name in ["RF", "ET", "BT", "MF"]:
+        if name in ["RF", "ET", "TB", "RS", "MF"]:
             default_surrogate_model_kwargs = dict(
                 n_estimators=100,
                 max_samples=0.8,
-                min_samples_split=2,
-                bootstrap=True,
+                min_samples_split=2,  # Aleatoric Variance will be 0
                 n_jobs=n_jobs,
                 random_state=random_state,
             )
+
+            # From https://link.springer.com/article/10.1007/s10994-006-6226-1
+            # We follow parameters indicated at: p. 8, Sec. 2.2.2
+            # Model: Random Forest from L. Breiman
+            if name == "RF":
+                default_surrogate_model_kwargs["splitter"] = "best"
+                default_surrogate_model_kwargs["max_features"] = "sqrt"
+                default_surrogate_model_kwargs["bootstrap"] = True
+            # Model: Extremely Randomized Forest
+            elif name == "ET":
+                default_surrogate_model_kwargs["splitter"] = "random"
+                default_surrogate_model_kwargs["max_features"] = 1.0
+                default_surrogate_model_kwargs["bootstrap"] = False
+                default_surrogate_model_kwargs["max_samples"] = None
+            # Model: Tree Bagging
+            elif name == "TB":
+                default_surrogate_model_kwargs["bootstrap"] = True
+                default_surrogate_model_kwargs["splitter"] = "best"
+                default_surrogate_model_kwargs["max_features"] = 1.0
+            elif name == "RS":
+                default_surrogate_model_kwargs["splitter"] = "best"
+                default_surrogate_model_kwargs["bootstrap"] = False
+                default_surrogate_model_kwargs["max_samples"] = None
+                default_surrogate_model_kwargs["max_features"] = "sqrt"
+            elif name == "MF":
+                default_surrogate_model_kwargs["bootstrap"] = False
+                default_surrogate_model_kwargs["max_samples"] = None
+
         elif name == "GBRT":
             default_surrogate_model_kwargs = dict(
                 n_estimtaors=10,
@@ -588,27 +619,11 @@ class CBO(Search):
 
         default_surrogate_model_kwargs.update(surrogate_model_kwargs)
 
-        # Model: Random Forest from L. Breiman
-        if name == "RF":
+        if name in ["RF", "TB", "RS", "ET"]:
             surrogate = deephyper.skopt.learning.RandomForestRegressor(
-                splitter="best",
-                max_features="sqrt",
                 **default_surrogate_model_kwargs,
             )
-        # Model: Bagging Trees
-        elif name == "BT":
-            surrogate = deephyper.skopt.learning.RandomForestRegressor(
-                splitter="best",
-                max_features=1.0,
-                **default_surrogate_model_kwargs,
-            )
-        # Model: Extremely Randomized Forest
-        elif name == "ET":
-            surrogate = deephyper.skopt.learning.RandomForestRegressor(
-                splitter="random",
-                max_features="sqrt",
-                **default_surrogate_model_kwargs,
-            )
+
         # Model: Mondrian Forest
         elif name == "MF":
             try:

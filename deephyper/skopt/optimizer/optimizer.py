@@ -1237,8 +1237,6 @@ class Optimizer(object):
                     next_x = res.X
 
                 elif self.acq_optimizer == "cobyqa":
-                    # TODO:
-                    # - normalization in [0,1] when COBYQA is used
                     import cobyqa
 
                     x0 = Xsample_transformed[
@@ -1272,7 +1270,8 @@ class Optimizer(object):
                                 options={
                                     "max_eval": 2 * len(self.space.dimension_names)
                                     + 1
-                                    + 100
+                                    + 100,
+                                    "scale": True,
                                 },
                             )
                             for x in x0
