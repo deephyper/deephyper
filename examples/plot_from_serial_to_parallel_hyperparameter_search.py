@@ -46,10 +46,14 @@ if __name__ == "__main__":
         method="serial",
         method_kwargs={"callbacks": [TqdmCallback()]},
     )
-
+    print("Running serial search...")
     results = {}
     serial_search = CBO(problem, serial_evaluator, random_state=42)
     results["serial"] = serial_search.search(timeout=timeout)
+    results["serial"]["m:timestamp_end"] = (
+        results["serial"]["m:timestamp_end"]
+        - results["serial"]["m:timestamp_start"].iloc[0]
+    )
 
 # %%
 # After, executing the serial-search for 2 minutes we can create a parallel search which uses the ``"process"``-evaluator and defines 5 parallel workers. The search is also executed for 2 minutes.
@@ -59,9 +63,13 @@ if __name__ == "__main__":
         method="process",
         method_kwargs={"num_workers": 5, "callbacks": [TqdmCallback()]},
     )
-
+    print("Running parallel search...")
     parallel_search = CBO(problem, parallel_evaluator, random_state=42)
     results["parallel"] = parallel_search.search(timeout=timeout)
+    results["parallel"]["m:timestamp_end"] = (
+        results["parallel"]["m:timestamp_end"]
+        - results["parallel"]["m:timestamp_start"].iloc[0]
+    )
 
 # %%
 # Finally, we plot the results from the collected DataFrame. The execution time is used as the x-axis which help-us vizualise the advantages of the parallel search.
