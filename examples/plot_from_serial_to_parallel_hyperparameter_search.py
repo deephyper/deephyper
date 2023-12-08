@@ -71,8 +71,8 @@ if __name__ == "__main__":
     plt.figure()
 
     for strategy, df in results.items():
-        plt.scatter(df.timestamp_end, df.objective, label=strategy)
-        plt.plot(df.timestamp_end, df.objective.cummax())
+        plt.scatter(df["m:timestamp_end"], df.objective, label=strategy)
+        plt.plot(df["m:timestamp_end"], df.objective.cummax())
 
     plt.xlabel("Time (sec.)")
     plt.ylabel("Objective")
