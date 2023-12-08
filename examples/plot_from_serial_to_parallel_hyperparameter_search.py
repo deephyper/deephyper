@@ -20,6 +20,10 @@ After defining the black-box we can continue with the definition of our main scr
 """
 import black_box_util as black_box
 
+from deephyper.analysis._matplotlib import update_matplotlib_rc
+
+update_matplotlib_rc()
+
 
 # %%
 # Then we define the variable(s) we want to optimize. For this problem we optimize Ackley in a 2-dimensional search space, the true minimul is located at ``(0, 0)``.
