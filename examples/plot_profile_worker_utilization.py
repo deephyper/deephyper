@@ -68,8 +68,8 @@ if __name__ == "__main__":
         history = []
 
         for _, row in df.iterrows():
-            history.append((row["timestamp_start"], 1))
-            history.append((row["timestamp_end"], -1))
+            history.append((row["m:timestamp_start"], 1))
+            history.append((row["m:timestamp_end"], -1))
 
         history = sorted(history, key=lambda v: v[0])
         nb_workers = 0
@@ -85,8 +85,8 @@ if __name__ == "__main__":
     plt.figure()
 
     plt.subplot(2, 1, 1)
-    plt.scatter(results.timestamp_end, results.objective)
-    plt.plot(results.timestamp_end, results.objective.cummax())
+    plt.scatter(results["m:timestamp_end"], results.objective)
+    plt.plot(results["m:timestamp_end"], results.objective.cummax())
     plt.xlabel("Time (sec.)")
     plt.ylabel("Objective")
     plt.grid()
