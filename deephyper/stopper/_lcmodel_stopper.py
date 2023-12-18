@@ -284,7 +284,7 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
                     fun_wrapper,
                     rho_init,
                     args=(self.f_model, z_train, y_train),
-                    method="lm",
+                    method="lm" if len(z_train) >= self.f_nparams else "trf",
                     jac=jac_wrapper,
                 )
             except ValueError:
@@ -343,7 +343,7 @@ class LCModelStopper(Stopper):
 
     Args:
         max_steps (int): The maximum number of training steps which can be performed.
-        min_steps (int, optional): The minimum number of training steps which can be performed. Defaults to ``1``.
+        min_steps (int, optional): The minimum number of training steps which can be performed. Defaults to ``4``. It is better to have at least as many steps as the number of parameters of the fitted learning curve model. For example, if ``lc_model="mmf4"`` then ``min_steps`` should be at least ``4``.
         lc_model (str, optional): The parameteric learning model to use. It should be a string in the following list: ``["lin2", "loglin2", "loglin3", "loglin4", "pow3","mmf4", "vapor3", "logloglin2", "hill3", "logpow3", "pow4", "exp4", "janoschek4", "weibull4", "ilog2"]``. The number in the name corresponds to the number of parameters of the parametric model. Defaults to ``"mmf4"``.
         min_done_for_outlier_detection (int, optional): The minimum number of observed scores at the same step to check for if it is a lower-bound outlier. Defaults to ``10``.
         iqr_factor_for_outlier_detection (float, optional): The IQR factor for outlier detection. The higher it is the more inclusive the condition will be (i.e. if set very large it is likely not going to detect any outliers). Defaults to ``1.5``.
