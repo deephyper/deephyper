@@ -280,6 +280,7 @@ def test_timeout(tmp_path):
             time.sleep(2)
         return config["x"]
 
+    # Test Timeout without max_evals
     search = CBO(
         problem, run, random_state=42, surrogate_model="DUMMY", log_dir=tmp_path
     )
@@ -287,6 +288,17 @@ def test_timeout(tmp_path):
     t1 = time.time()
     result = search.search(timeout=1)
     duration = time.time() - t1
+    assert duration < 1.5
+
+    # Test Timeout with max_evals (this should be like an "max_evals or timeout" condition)
+    search = CBO(
+        problem, run, random_state=42, surrogate_model="DUMMY", log_dir=tmp_path
+    )
+
+    t1 = time.time()
+    result = search.search(max_evals=10, timeout=1, max_evals_strict=True)
+    duration = time.time() - t1
+    print(duration)
     assert duration < 1.5
 
 
@@ -385,5 +397,6 @@ def test_cbo_categorical_variable(tmp_path):
 
 
 if __name__ == "__main__":
-    test_sample_types(tmp_path=".")
+    # test_sample_types(tmp_path=".")
     # test_sample_types_conditional(tmp_path=".")
+    test_timeout(tmp_path=".")
