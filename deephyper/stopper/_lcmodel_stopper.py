@@ -169,6 +169,8 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         # Min-Max Scaling
         self.y_min_ = self.y_[:num_samples].min()
         self.y_max_ = self.y_[:num_samples].max()
+        if abs(self.y_min_ - self.y_max_) <= 1e-8:  # avoid division by zero
+            self.y_max_ = self.y_min_ + 1
         self.y_[:num_samples] = (self.y_[:num_samples] - self.y_min_) / (
             self.y_max_ - self.y_min_
         )
