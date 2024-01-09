@@ -166,6 +166,13 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         self.X_[:num_samples] = X[:]
         self.y_[:num_samples] = y[:]
 
+        # Min-Max Scaling
+        self.y_min_ = self.y_[:num_samples].min()
+        self.y_max_ = self.y_[:num_samples].max()
+        self.y_[:num_samples] = (self.y_[:num_samples] - self.y_min_) / (
+            self.y_max_ - self.y_min_
+        )
+
         if update_prior:
             self.rho_mu_prior_[:] = self._fit_learning_curve_model_least_square(X, y)[:]
 
@@ -215,6 +222,9 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         vf_model = jax.vmap(self.f_model, in_axes=(None, 0))
         posterior_mu = vf_model(X, posterior_samples["rho"])
 
+        # Inverse Min-Max Scaling
+        posterior_mu = posterior_mu * (self.y_max_ - self.y_min_) + self.y_min_
+
         return posterior_mu
 
     def prob(self, X, condition):
@@ -228,16 +238,7 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         Returns:
             array: an array of shape X.
         """
-
-        # Check if fit has been called
-        check_is_fitted(self)
-
-        # Input validation
-        X = check_array(X, ensure_2d=False)
-
-        posterior_samples = self.mcmc_.get_samples()
-        vf_model = jax.vmap(self.f_model, in_axes=(None, 0))
-        posterior_mu = vf_model(X, posterior_samples["rho"])
+        posterior_mu = self.predict_posterior_samples(X)
 
         prob = jnp.mean(condition(posterior_mu), axis=0)
 
