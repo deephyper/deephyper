@@ -52,7 +52,7 @@ def f_loglin4(z, b, rho):
 
 
 def f_pow3(z, b, rho):
-    return rho[0] - rho[1] * b(z) ** -rho[2]
+    return rho[0] - rho[1] * b(z) ** rho[2]
 
 
 def f_mmf4(z, b, rho):
@@ -98,6 +98,10 @@ def f_ilog2(z, b, rho):
     return rho[1] - (rho[0] / jnp.log(b(z) + 1))
 
 
+def f_arctan3(z, b, rho):
+    return 2 / jnp.pi * jnp.arctan(rho[0] * jnp.pi / 2 * b(z) + rho[1]) - rho[2]
+
+
 # Utility to estimate parameters of learning curve model
 # The combination of "partial" and "static_argnums" is necessary
 # with the "f" lambda function passed as argument
@@ -127,10 +131,26 @@ def predict_moments_from_posterior(f, X, posterior_samples):
 
 
 class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
+    """Probabilistic model for learning curve regression.
+
+    Args:
+        f_model (_type_, optional): The model function to use. Defaults to `f_power3` for a Power-Law with 3 parameters.
+        f_model_nparams (int, optional): The number of parameters of the model. Defaults to `3`.
+        b_model (_type_, optional): The mapping from steps to budgets. Defaults to `b_lin2` for a linear model which corresponds to the identity function.
+        max_trials_ls_fit (int, optional): The number of least-square fits that should be tried. Defaults to `10`.
+        mcmc_num_warmup (int, optional): The number of warmup steps in MCMC. Defaults to `200`.
+        mcmc_num_samples (_type_, optional): The number of samples in MCMC. Defaults to `1_000`.
+        n_jobs (int, optional): The number of parallel threads to use in MCMC. Defaults to `-1` for as many threads as available cores on local CPU.
+        random_state (int, optional): A random state. Defaults to `None`.
+        verbose (int, optional): Wether or not to use the verbose mode. Defaults to `0` to deactive it.
+        batch_size (int, optional): The expected maximum length of the X, y arrays (used in the `fit(X, y)` method) in order to preallocate memory and compile the code only once. Defaults to `100`.
+        min_max_scaling (bool, optional): Wether or not to use min-max scaling in [0,1] for `y` values. Defaults to False.
+    """
+
     def __init__(
         self,
-        f_model=f_loglin3,
-        f_model_num_params=3,
+        f_model=f_pow3,
+        f_model_nparams=3,
         b_model=b_lin2,
         max_trials_ls_fit=10,
         mcmc_num_warmup=200,
@@ -139,21 +159,24 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         random_state=None,
         verbose=0,
         batch_size=100,
+        min_max_scaling=False,
     ):
         self.b_model = b_model
         self.f_model = lambda z, rho: f_model(z, self.b_model, rho)
-        self.f_nparams = f_model_num_params
+        self.f_model_nparams = f_model_nparams
         self.mcmc_num_warmup = mcmc_num_warmup
         self.mcmc_num_samples = mcmc_num_samples
         self.max_trials_ls_fit = max_trials_ls_fit
         self.n_jobs = n_jobs
         self.random_state = check_random_state(random_state)
         self.verbose = verbose
-        self.rho_mu_prior_ = np.zeros((self.f_nparams,))
+        self.rho_mu_prior_ = np.zeros((self.f_model_nparams,))
 
         self.batch_size = batch_size
         self.X_ = np.zeros((self.batch_size,))
         self.y_ = np.zeros((self.batch_size,))
+
+        self.min_max_scaling = min_max_scaling
 
     def fit(self, X, y, update_prior=True):
         check_X_y(X, y, ensure_2d=False)
@@ -167,22 +190,38 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         self.y_[:num_samples] = y[:]
 
         # Min-Max Scaling
-        self.y_min_ = self.y_[:num_samples].min()
-        self.y_max_ = self.y_[:num_samples].max()
-        if abs(self.y_min_ - self.y_max_) <= 1e-8:  # avoid division by zero
-            self.y_max_ = self.y_min_ + 1
-        self.y_[:num_samples] = (self.y_[:num_samples] - self.y_min_) / (
-            self.y_max_ - self.y_min_
-        )
+        if not (self.min_max_scaling):
+            self.y_min_ = 0
+            self.y_max_ = 1
+        else:
+            self.y_min_ = self.y_[:num_samples].min()
+            self.y_max_ = self.y_[:num_samples].max()
+            if abs(self.y_min_ - self.y_max_) <= 1e-8:  # avoid division by zero
+                self.y_max_ = self.y_min_ + 1
+            self.y_[:num_samples] = (self.y_[:num_samples] - self.y_min_) / (
+                self.y_max_ - self.y_min_
+            )
 
         if update_prior:
-            self.rho_mu_prior_[:] = self._fit_learning_curve_model_least_square(X, y)[:]
+            self.rho_mu_prior_[:] = self._fit_learning_curve_model_least_square(
+                X, y, verbose=self.verbose
+            )[:]
+
+            if self.verbose:
+                print(f"rho_mu_prior: {self.rho_mu_prior_}")
 
         if not (hasattr(self, "kernel_")):
             self.kernel_ = NUTS(
                 model=lambda z, y, rho_mu_prior: prob_model(
-                    z, y, self.f_model, rho_mu_prior, num_obs=num_samples
+                    z,
+                    y,
+                    self.f_model,
+                    rho_mu_prior,
+                    num_obs=num_samples,
                 ),
+                adapt_step_size=True,
+                step_size=0.05,
+                max_tree_depth=20,
             )
 
             self.mcmc_ = MCMC(
@@ -250,6 +289,7 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         self,
         z_train,
         y_train,
+        verbose=0,
     ):
         """The learning curve model is assumed to be modeled by 'f' with
         interface f(z, rho).
@@ -279,15 +319,20 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         results = []
         mse_hist = []
 
-        for _ in range(self.max_trials_ls_fit):
-            rho_init = random_state.randn(self.f_nparams)
+        for i in range(self.max_trials_ls_fit):
+            if verbose:
+                print(
+                    f"Least-Square fit - trial {i+1}/{self.max_trials_ls_fit}: ", end=""
+                )
+
+            rho_init = random_state.randn(self.f_model_nparams)
 
             try:
                 res_lsq = least_squares(
                     fun_wrapper,
                     rho_init,
                     args=(self.f_model, z_train, y_train),
-                    method="lm" if len(z_train) >= self.f_nparams else "trf",
+                    method="lm" if len(z_train) >= self.f_model_nparams else "trf",
                     jac=jac_wrapper,
                 )
             except ValueError:
@@ -296,6 +341,12 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
             mse_res_lsq = np.mean(res_lsq.fun**2)
             mse_hist.append(mse_res_lsq)
             results.append(res_lsq.x)
+
+            if verbose:
+                print(f"mse={mse_res_lsq:.3f}")
+
+            if mse_res_lsq < 1e-8:
+                break
 
         i_best = np.nanargmin(mse_hist)
         res = results[i_best]
@@ -401,7 +452,7 @@ class LCModelStopper(Stopper):
 
         self.lc_model = BayesianLearningCurveRegressor(
             f_model=lc_model,
-            f_model_num_params=lc_model_num_params,
+            f_model_nparams=lc_model_num_params,
             random_state=random_state,
             batch_size=self.max_steps_,
         )
