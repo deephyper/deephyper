@@ -134,12 +134,12 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
     """Probabilistic model for learning curve regression.
 
     Args:
-        f_model (_type_, optional): The model function to use. Defaults to `f_power3` for a Power-Law with 3 parameters.
+        f_model (callable, optional): The model function to use. Defaults to `f_power3` for a Power-Law with 3 parameters.
         f_model_nparams (int, optional): The number of parameters of the model. Defaults to `3`.
-        b_model (_type_, optional): The mapping from steps to budgets. Defaults to `b_lin2` for a linear model which corresponds to the identity function.
+        b_model (callable, optional): The mapping from steps to budgets. Defaults to `b_lin2` for a linear model which corresponds to the identity function.
         max_trials_ls_fit (int, optional): The number of least-square fits that should be tried. Defaults to `10`.
         mcmc_num_warmup (int, optional): The number of warmup steps in MCMC. Defaults to `200`.
-        mcmc_num_samples (_type_, optional): The number of samples in MCMC. Defaults to `1_000`.
+        mcmc_num_samples (int, optional): The number of samples in MCMC. Defaults to `1_000`.
         n_jobs (int, optional): The number of parallel threads to use in MCMC. Defaults to `-1` for as many threads as available cores on local CPU.
         random_state (int, optional): A random state. Defaults to `None`.
         verbose (int, optional): Wether or not to use the verbose mode. Defaults to `0` to deactive it.

@@ -14,18 +14,19 @@ def is_pareto_efficient(new_obj, objvals):
     return np.all(np.any(np.asarray(new_obj) < objvals, axis=1))
 
 
-def pareto_front(y, sort=False):
+def pareto_front(y, sort=False, return_idx=False):
     """Extract the pareto front (actual objective values of the non-dominated set).
 
     Args:
         y (array or list): Array or list of size (n_points, n_objectives).
         sort (bool, optional): Whether to sort the pareto front (practical to plot in 2D or 3D). Defaults to False.
+        return_idx (bool, optional): Whether to return the indices of the pareto front in the original array. Defaults to False.
 
     Returns:
         array: Subarray of y representing the pareto front.
     """
-    nds = non_dominated_set(y, return_mask=False)
-    pf = y[nds]
+    nds_idx = non_dominated_set(y, return_mask=False)
+    pf = y[nds_idx]
 
     if sort:
         n_objectives = y.shape[1]
@@ -33,9 +34,13 @@ def pareto_front(y, sort=False):
             [tuple(row) for row in pf],
             dtype=[(f"objective_{i}", float) for i in range(n_objectives)],
         )
-        pf.sort(order=[f"objective_{i}" for i in range(n_objectives)])
+        sorted_idx = pf.argsort(order=[f"objective_{i}" for i in range(n_objectives)])
+        pf = pf[sorted_idx]
         pf = np.array([list(row) for row in pf])
+        nds_idx = nds_idx[sorted_idx]
 
+    if return_idx:
+        return pf, nds_idx
     return pf
 
 
