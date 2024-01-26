@@ -91,8 +91,9 @@ def plot_search_trajectory_single_objective_hpo(
         x_success, x_failed = x[mask_success], x[mask_failed]
         y_success = results.objective[mask_success].astype(float)
     else:
+        x = np.arange(len(results))
+        x_success = x
         x_failed = np.array([])
-        x_success = np.arange(len(results))
         y_success = results.objective
 
     y_min, y_max = y_success.min(), y_success.max()
