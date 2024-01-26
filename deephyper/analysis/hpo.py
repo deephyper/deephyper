@@ -90,6 +90,10 @@ def plot_search_trajectory_single_objective_hpo(
         mask_success = np.where(~results.objective.str.startswith("F"))[0]
         x_success, x_failed = x[mask_success], x[mask_failed]
         y_success = results.objective[mask_success].astype(float)
+    else:
+        x_failed = np.array([])
+        x_success = np.arange(len(results))
+        y_success = results.objective
 
     y_min, y_max = y_success.min(), y_success.max()
     y_min = y_min - 0.05 * (y_max - y_min)
@@ -108,7 +112,7 @@ def plot_search_trajectory_single_objective_hpo(
     ax.plot(x_success, y_success.cummax())
     ax.scatter(x_success, y_success, **scatter_kwargs, label="Successes")
 
-    if show_failures:
+    if show_failures and len(x_failed) > 0:
         ax.scatter(
             x_failed,
             np.full_like(x_failed, y_min),
