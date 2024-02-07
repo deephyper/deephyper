@@ -154,13 +154,21 @@ def fit_learning_curve_model_least_square(
     return res
 
 
-def prob_model(z, y, f=None, rho_mu_prior=None, num_obs=None):
-    rho_sigma_prior = 1.0
+def prob_model(
+    z,
+    y,
+    f=None,
+    rho_mu_prior=None,
+    rho_sigma_prior=1.0,
+    y_sigma_prior=1.0,
+    num_obs=None,
+):
     rho = numpyro.sample("rho", dist.Normal(rho_mu_prior, rho_sigma_prior))
-    sigma = numpyro.sample("sigma", dist.Exponential(1.0))  # introducing noise
-    # sigma = 0.1
-    mu = f(z[:num_obs], rho)
-    numpyro.sample("obs", dist.Normal(mu, sigma), obs=y[:num_obs])
+    y_sigma = numpyro.sample(
+        "sigma", dist.Exponential(y_sigma_prior)
+    )  # introducing noise
+    y_mu = f(z[:num_obs], rho)
+    numpyro.sample("obs", dist.Normal(y_mu, y_sigma), obs=y[:num_obs])
 
 
 @partial(jax.jit, static_argnums=(0,))
