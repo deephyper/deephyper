@@ -41,7 +41,7 @@ def update_matplotlib_rc(width=252 * 1.8, fraction=1.0, fontsize=10):
             "figure.subplot.bottom": 0.5,
             # Use LaTeX to write all text
             "text.usetex": True,
-            "font.family": "serif",
+            # "font.family": "serif",
             # Use 10pt font in plots, to match 10pt font in document
             "axes.labelsize": fontsize,
             "font.size": fontsize,

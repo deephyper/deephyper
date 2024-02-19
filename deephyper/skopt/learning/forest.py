@@ -331,7 +331,7 @@ class RandomForestRegressor(ForestRegressor):
     ):
         super().__init__(
             # !keyword-argument changing from sklearn==1.2.0, positional fixed it!
-            DecisionTreeRegressor(splitter=splitter),
+            DecisionTreeRegressor(),
             n_estimators=n_estimators,
             estimator_params=(
                 "criterion",
@@ -344,6 +344,7 @@ class RandomForestRegressor(ForestRegressor):
                 "min_impurity_decrease",
                 "random_state",
                 "ccp_alpha",
+                "splitter",
             ),
             bootstrap=bootstrap,
             oob_score=oob_score,
