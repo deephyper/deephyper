@@ -64,7 +64,7 @@ class MPIDistributedBO(CBO):
         log_dir: str = ".",
         verbose: int = 0,
         surrogate_model="ET",
-        acq_func: str = "qUCB",
+        acq_func: str = "qUCBd",
         acq_optimizer: str = "auto",
         acq_optimizer_freq: int = 10,
         kappa: float = 1.96,

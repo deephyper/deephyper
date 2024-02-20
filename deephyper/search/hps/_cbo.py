@@ -121,7 +121,7 @@ class CBO(Search):
         verbose: int = 0,
         surrogate_model="ET",
         surrogate_model_kwargs: dict = None,  # TODO: documentation
-        acq_func: str = "UCB",
+        acq_func: str = "UCBd",
         acq_optimizer: str = "auto",
         acq_optimizer_freq: int = 10,
         kappa: float = 1.96,
