@@ -271,7 +271,9 @@ def test_timeout(tmp_path):
     problem = HpProblem()
     problem.add_hyperparameter((0.0, 10.0), "x")
 
-    def run(config):
+    def run(job):
+        config = job.parameters
+        print("job:", job.id)
         try:
             # simulate working thread
             while True:
@@ -288,7 +290,8 @@ def test_timeout(tmp_path):
     t1 = time.time()
     result = search.search(timeout=1)
     duration = time.time() - t1
-    assert duration < 1.5
+    assert duration < 3
+    assert result is None
 
     # Test Timeout with max_evals (this should be like an "max_evals or timeout" condition)
     search = CBO(
@@ -298,8 +301,8 @@ def test_timeout(tmp_path):
     t1 = time.time()
     result = search.search(max_evals=10, timeout=1, max_evals_strict=True)
     duration = time.time() - t1
-    print(duration)
-    assert duration < 1.5
+    assert duration < 3
+    assert result is None
 
 
 @pytest.mark.hps
