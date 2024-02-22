@@ -51,6 +51,20 @@ class Search(abc.ABC):
         self._log_dir = os.path.abspath(log_dir)
         pathlib.Path(log_dir).mkdir(parents=True, exist_ok=True)
 
+        self._path_results = os.path.join(self._log_dir, "results.csv")
+        if os.path.exists(self._path_results):
+            str_current_time = time.strftime("%Y%m%d-%H%M%S")
+            path_results_renamed = self._path_results.replace(
+                ".", f"_{str_current_time}."
+            )
+            logging.warning(
+                f"Results file already exists, it will be renamed to {path_results_renamed}"
+            )
+            os.rename(
+                self._path_results,
+                path_results_renamed,
+            )
+
         self._verbose = verbose
 
         # if a callable is directly passed wrap it around the serial evaluator
@@ -125,18 +139,6 @@ class Search(abc.ABC):
         Returns:
             DataFrame: a pandas DataFrame containing the evaluations performed or ``None`` if the search could not evaluate any configuration.
         """
-        path_results = os.path.join(self._log_dir, "results.csv")
-        if os.path.exists(path_results):
-            str_current_time = time.strftime("%Y%m%d-%H%M%S")
-            path_results_renamed = path_results.replace(".", f"_{str_current_time}.")
-            logging.warning(
-                f"Results file already exists, it will be renamed to {path_results_renamed}"
-            )
-            os.rename(
-                path_results,
-                path_results_renamed,
-            )
-
         self._set_timeout(timeout)
         if max_evals_strict:
             self._evaluator.set_max_num_jobs_spawn(max_evals)
@@ -163,13 +165,13 @@ class Search(abc.ABC):
             else:
                 self._evaluator.dump_evals(log_dir=self._log_dir)
 
-        if not (os.path.exists(path_results)):
-            logging.warning(f"Could not find results file at {path_results}!")
+        if not (os.path.exists(self._path_results)):
+            logging.warning(f"Could not find results file at {self._path_results}!")
             return None
 
-        self.extend_results_with_pareto_efficient(path_results)
+        self.extend_results_with_pareto_efficient(self._path_results)
 
-        df_results = pd.read_csv(path_results)
+        df_results = pd.read_csv(self._path_results)
 
         return df_results
 
