@@ -1,5 +1,6 @@
 """Visualization tools for Hyperparameter Optimization.
 """
+
 from typing import Tuple
 import matplotlib.pyplot as plt
 import numpy as np
@@ -126,7 +127,98 @@ def plot_search_trajectory_single_objective_hpo(
     ax.set_ylabel("Objective")
     ax.legend()
     ax.grid(True)
-    # ax.set_ylim(y_min, y_max)
+    ax.set_xlim(x.min(), x.max())
+
+    return fig, ax
+
+
+def compile_worker_activity(results, profile_type="submit/gather"):
+    """Compute the number of active workers.
+
+    Args:
+        results (pd.DataFrame): the results of a Hyperparameter Search.
+        profile_type (str, optional): the type of profile to build. It can be `"submit/gather"` or `"start/end"`. Defaults to "submit/gather".
+
+    Returns:
+        timestamps, n_jobs_active: a list of timestamps and a list of the number of active jobs at each timestamp.
+    """
+    if profile_type == "submit/gather":
+        key_start, key_end = "m:timestamp_submit", "m:timestamp_gather"
+    elif profile_type == "start/end":
+        key_start, key_end = "m:timestamp_start", "m:timestamp_end"
+    else:
+        raise ValueError(
+            f"Unknown profile_type='{profile_type}' it should be one of ['submit/gather', 'start/end']."
+        )
+
+    if key_start not in results.columns or key_end not in results.columns:
+        raise ValueError(
+            f"Columns '{key_start}' and '{key_end}' are not present in the DataFrame."
+        )
+
+    results = results.sort_values(by=[key_start], ascending=True)
+
+    history = []
+
+    for _, row in results.iterrows():
+        history.append((row[key_start], 1))
+        history.append((row[key_end], -1))
+
+    history = sorted(history, key=lambda v: v[0])
+    nb_workers = 0
+    timestamp = np.zeros((len(history) + 1,))
+    n_jobs_running = np.zeros((len(history) + 1,))
+    for i, (time, incr) in enumerate(history):
+        nb_workers += incr
+        timestamp[i + 1] = time
+        n_jobs_running[i + 1] = nb_workers
+
+    return timestamp, n_jobs_running
+
+
+def plot_worker_utilization(
+    results,
+    num_workers: int = None,
+    profile_type: str = "submit/gather",
+    ax=None,
+    **kwargs,
+):
+    """Plot the worker utilization of a search.
+
+    Args:
+        results (pd.DataFrame): the results of a Hyperparameter Search.
+        num_workers (int, optional): the number of workers. If passed the normalized utilization will be shown (/num_workers). Otherwise, the raw number of active workers is shown. Defaults to ``None``.
+        profile_type (str, optional): the type of profile to build. It can be `"submit/gather"` or `"start/end"`. Defaults to "submit/gather".
+        ax (matplotlib.pyplot.axes): the axes to use for the plot.
+
+    Returns:
+        (matplotlib.pyplot.figure, matplotlib.pyplot.axes): the figure and axes of the plot.
+    """
+
+    x, y = compile_worker_activity(results, profile_type=profile_type)
+
+    if num_workers:
+        y = y / num_workers
+
+    plot_kwargs = dict()
+    plot_kwargs.update(kwargs)
+
+    fig = plt.gcf()
+    if fig is None:
+        fig = plt.figure()
+
+    if ax is None:
+        ax = fig.gca()
+
+    ax.plot(x, y, **plot_kwargs)
+
+    ax.set_xlabel("Time (sec.)")
+    if num_workers:
+        ax.set_ylabel("Utilization")
+    else:
+        ax.set_ylabel("Active Workers")
+    ax.legend()
+    ax.grid(True)
     ax.set_xlim(x.min(), x.max())
 
     return fig, ax
