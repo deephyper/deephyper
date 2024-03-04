@@ -478,11 +478,8 @@ class Optimizer(object):
         # Count number of surrogate model fittings
         self._counter_fit = 0
 
-        # TODO: Mondrian Forest partial_fit
-        self.partial_fit = False
-        # if type(self.base_estimator_).__name__ == "MondrianForestRegressor":
-        #     self.partial_fit = True
-        #     self.base_estimator_.fit = self.base_estimator_.partial_fit
+        # TODO: to monitor the BO
+        self._last_est = None
 
     def copy(self, random_state=None):
         """Create a shallow copy of an instance of the optimizer.
@@ -953,11 +950,7 @@ class Optimizer(object):
         if fit and self._n_initial_points <= 0 and self.base_estimator_ is not None:
             transformed_bounds = self.space.transformed_bounds
 
-            # TODO: partial fit
-            if self.partial_fit:
-                est = self.base_estimator_
-            else:
-                est = clone(self.base_estimator_)
+            est = clone(self.base_estimator_)
 
             yi = self.yi
 
@@ -1016,11 +1009,7 @@ class Optimizer(object):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
 
-                # TODO: partial fit
-                if self.partial_fit:
-                    est.fit(Xtransformed[-n_new_points:], yi[-n_new_points:])
-                else:
-                    est.fit(Xtransformed, yi)
+                self._last_est = est.fit(Xtransformed, yi)
 
             # TODO: to be removed
             with warnings.catch_warnings():

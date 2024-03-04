@@ -434,7 +434,8 @@ def gaussian_mes(X, model, k_samples=10, deterministic=False):
         else:
             mu, std = model.predict(X, return_std=True)
 
-        # MES is defined for a maximization problem (we map minimization to maximization)
+        # MES is defined for a maximization problem but the model prediction are for minimization
+        # we map minimization to maximization by multiplying by -1
         mu *= -1
 
     # check dimensionality of mu, std so we can divide them below
