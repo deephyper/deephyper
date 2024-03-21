@@ -45,6 +45,10 @@ class Job:
         return (cfg, self.objective)[index]
 
     @property
+    def parameters(self):
+        return self.config
+
+    @property
     def result(self):
         """Alias for the objective property."""
         return self.objective

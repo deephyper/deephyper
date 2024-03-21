@@ -20,6 +20,10 @@ After defining the black-box we can continue with the definition of our main scr
 """
 import black_box_util as black_box
 
+from deephyper.analysis._matplotlib import update_matplotlib_rc
+
+update_matplotlib_rc()
+
 
 # %%
 # Then we define the variable(s) we want to optimize. For this problem we optimize Ackley in a 2-dimensional search space, the true minimul is located at ``(0, 0)``.
@@ -46,10 +50,14 @@ if __name__ == "__main__":
         method="serial",
         method_kwargs={"callbacks": [TqdmCallback()]},
     )
-
+    print("Running serial search...")
     results = {}
     serial_search = CBO(problem, serial_evaluator, random_state=42)
     results["serial"] = serial_search.search(timeout=timeout)
+    results["serial"]["m:timestamp_end"] = (
+        results["serial"]["m:timestamp_end"]
+        - results["serial"]["m:timestamp_start"].iloc[0]
+    )
 
 # %%
 # After, executing the serial-search for 2 minutes we can create a parallel search which uses the ``"process"``-evaluator and defines 5 parallel workers. The search is also executed for 2 minutes.
@@ -59,9 +67,13 @@ if __name__ == "__main__":
         method="process",
         method_kwargs={"num_workers": 5, "callbacks": [TqdmCallback()]},
     )
-
+    print("Running parallel search...")
     parallel_search = CBO(problem, parallel_evaluator, random_state=42)
     results["parallel"] = parallel_search.search(timeout=timeout)
+    results["parallel"]["m:timestamp_end"] = (
+        results["parallel"]["m:timestamp_end"]
+        - results["parallel"]["m:timestamp_start"].iloc[0]
+    )
 
 # %%
 # Finally, we plot the results from the collected DataFrame. The execution time is used as the x-axis which help-us vizualise the advantages of the parallel search.
@@ -71,8 +83,8 @@ if __name__ == "__main__":
     plt.figure()
 
     for strategy, df in results.items():
-        plt.scatter(df.timestamp_end, df.objective, label=strategy)
-        plt.plot(df.timestamp_end, df.objective.cummax())
+        plt.scatter(df["m:timestamp_end"], df.objective, label=strategy)
+        plt.plot(df["m:timestamp_end"], df.objective.cummax())
 
     plt.xlabel("Time (sec.)")
     plt.ylabel("Objective")

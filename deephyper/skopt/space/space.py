@@ -2,10 +2,10 @@ import numbers
 
 import ConfigSpace as CS
 import numpy as np
+import scipy.stats as ss
 import yaml
 from ConfigSpace.util import deactivate_inactive_hyperparameters
 from scipy.stats import gaussian_kde
-from scipy.stats.distributions import randint, rv_discrete, truncnorm, uniform
 from sklearn.utils import check_random_state
 
 from deephyper.core.utils.joblib_utils import Parallel, delayed
@@ -221,13 +221,13 @@ def _uniform_inclusive(loc=0.0, scale=1.0):
     # like scipy.stats.distributions but inclusive of `high`
     # XXX scale + 1. might not actually be a float after scale if
     # XXX scale is very large.
-    return uniform(loc=loc, scale=np.nextafter(scale, scale + 1.0))
+    return ss.uniform(loc=loc, scale=np.nextafter(scale, scale + 1.0))
 
 
 def _normal_inclusive(loc=0.0, scale=1.0, lower=-2, upper=2):
     assert lower <= upper
     a, b = (lower - loc) / scale, (upper - loc) / scale
-    return truncnorm(a, b, loc=loc, scale=scale)
+    return ss.truncnorm(a, b, loc=loc, scale=scale)
 
 
 class Real(Dimension):
@@ -435,7 +435,10 @@ class Real(Dimension):
             if self.prior == "uniform":
                 return self.low, self.high
             else:
-                return np.log10(self.low), np.log10(self.high)
+                return (
+                    np.log10(self.low) / self.log_base,
+                    np.log10(self.high) / self.log_base,
+                )
 
     def distance(self, a, b):
         """Compute distance between point `a` and `b`.
@@ -649,7 +652,7 @@ class Integer(Dimension):
                 )
         else:
             if self.prior == "uniform":
-                self._rvs = randint(self.low, self.high + 1)
+                self._rvs = ss.randint(self.low, self.high + 1)
                 self.transformer = Identity()
             elif self.prior == "normal":
                 self._rvs = _normal_inclusive(self.loc, self.scale, self.low, self.high)
@@ -721,7 +724,10 @@ class Integer(Dimension):
             if self.prior == "uniform":
                 return self.low, self.high
             else:
-                return np.log10(self.low), np.log10(self.high)
+                return (
+                    np.log10(self.low) / self.log_base,
+                    np.log10(self.high) / self.log_base,
+                )
 
     def distance(self, a, b):
         """Compute distance between point `a` and `b`.
@@ -829,7 +835,9 @@ class Categorical(Dimension):
             self._rvs = _uniform_inclusive(0.0, 1.0)
         else:
             # XXX check that sum(prior) == 1
-            self._rvs = rv_discrete(values=(range(len(self.categories)), self.prior_))
+            self._rvs = ss.rv_discrete(
+                values=(range(len(self.categories)), self.prior_)
+            )
 
     def __eq__(self, other):
         return (
@@ -1231,9 +1239,7 @@ class Space:
             The transformed samples.
         """
         # Pack by dimension
-        columns = []
-        for dim in self.dimensions:
-            columns.append([])
+        columns = [list() for _ in self.dimensions]
 
         for i in range(len(X)):
             for j in range(self.n_dims):

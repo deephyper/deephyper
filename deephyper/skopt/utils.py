@@ -475,7 +475,7 @@ def cook_initial_point_generator(generator, **kwargs):
         elif generator == "lhs":
             generator = Lhs()
         elif generator == "grid":
-            generator = Grid()
+            generator = Grid(border="include")
         elif generator == "random":
             return None
     generator.set_params(**kwargs)

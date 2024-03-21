@@ -7,7 +7,7 @@ import jax.numpy as jnp
 import numpy as np
 import numpyro
 import numpyro.distributions as dist
-from numpyro.infer import MCMC, NUTS
+from numpyro.infer import MCMC, NUTS, BarkerMH
 from scipy.optimize import least_squares
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils import check_random_state
@@ -16,86 +16,73 @@ from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
 from deephyper.stopper._stopper import Stopper
 
 
-# Budget allocation models
-def b_lin2(z, nu=[1, 1]):
-    return nu[1] * (z - 1) + nu[0]
-
-
-def b_exp2(z, nu=[1, 2]):
-    return nu[0] * jnp.power(nu[1], z - 1)
-
-
 # Learning curves models
-def f_lin2(z, b, rho):
-    return rho[1] * b(z) + rho[0]
+@jax.jit
+def f_lin2(z, rho):
+    return rho[1] * z + rho[0]
 
 
-def f_loglin2(z, b, rho):
-    Z = jnp.log(b(z))
-    Y = rho[1] * Z + rho[0]
-    y = jnp.exp(Y)
-    return -y
+@jax.jit
+def f_pow3(z, rho):
+    return rho[0] - rho[1] * z ** rho[2]
 
 
-def f_loglin3(z, b, rho):
-    Z = jnp.log(b(z))
-    Y = rho[2] * jnp.power(Z, 2) + rho[1] * Z + rho[0]
-    y = jnp.exp(Y)
-    return -y
-
-
-def f_loglin4(z, b, rho):
-    Z = jnp.log(b(z))
-    Y = rho[3] * jnp.power(Z, 3) + rho[2] * jnp.power(Z, 2) + rho[1] * Z + rho[0]
-    y = jnp.exp(Y)
-    return -y
-
-
-def f_pow3(z, b, rho):
-    return rho[0] - rho[1] * b(z) ** -rho[2]
-
-
-def f_mmf4(z, b, rho):
-    return (rho[0] * rho[1] + rho[2] * jnp.power(b(z), rho[3])) / (
-        rho[1] + jnp.power(b(z), rho[3])
+@jax.jit
+def f_mmf4(z, rho):
+    return (rho[0] * rho[1] + rho[2] * jnp.power(z, rho[3])) / (
+        rho[1] + jnp.power(z, rho[3])
     )
 
 
-def f_vapor3(z, b, rho):
-    return rho[0] + rho[1] / b(z) + rho[2] * np.log(b(z))
+@jax.jit
+def f_vapor3(z, rho):
+    return rho[0] + rho[1] / z + rho[2] * np.log(z)
 
 
-def f_logloglin2(z, b, rho):
-    return jnp.log(rho[0] * jnp.log(b(z)) + rho[1])
+@jax.jit
+def f_logloglin2(z, rho):
+    return jnp.log(rho[0] * jnp.log(z) + rho[1])
 
 
-def f_hill3(z, b, rho):
+@jax.jit
+def f_hill3(z, rho):
     ymax, eta, kappa = rho
-    return ymax * (b(z) ** eta) / (kappa * eta + b(z) ** eta)
+    return ymax * (z**eta) / (kappa * eta + z**eta)
 
 
-def f_logpow3(z, b, rho):
-    return rho[0] / (1 + (b(z) / jnp.exp(rho[1])) ** rho[2])
+@jax.jit
+def f_logpow3(z, rho):
+    return rho[0] / (1 + (z / jnp.exp(rho[1])) ** rho[2])
 
 
-def f_pow4(z, b, rho):
-    return rho[2] - (rho[0] * b(z) + rho[1]) ** (-rho[3])
+@jax.jit
+def f_pow4(z, rho):
+    return rho[2] - (rho[0] * z + rho[1]) ** (-rho[3])
 
 
-def f_exp4(z, b, rho):
-    return rho[2] - jnp.exp(-rho[0] * (b(z) ** rho[3]) + rho[1])
+@jax.jit
+def f_exp4(z, rho):
+    return rho[2] - jnp.exp(-rho[0] * (z ** rho[3]) + rho[1])
 
 
-def f_janoschek4(z, b, rho):
-    return rho[0] - (rho[0] - rho[1]) * jnp.exp(-rho[2] * (b(z) ** rho[3]))
+@jax.jit
+def f_janoschek4(z, rho):
+    return rho[0] - (rho[0] - rho[1]) * jnp.exp(-rho[2] * (z ** rho[3]))
 
 
-def f_weibull4(z, b, rho):
-    return rho[0] - (rho[0] - rho[1]) * jnp.exp(-((rho[2] * b(z)) ** rho[3]))
+@jax.jit
+def f_weibull4(z, rho):
+    return rho[0] - (rho[0] - rho[1]) * jnp.exp(-((rho[2] * z) ** rho[3]))
 
 
-def f_ilog2(z, b, rho):
-    return rho[1] - (rho[0] / jnp.log(b(z) + 1))
+@jax.jit
+def f_ilog2(z, rho):
+    return rho[1] - (rho[0] / jnp.log(z + 1))
+
+
+@jax.jit
+def f_arctan3(z, rho):
+    return 2 / jnp.pi * jnp.arctan(rho[0] * jnp.pi / 2 * z + rho[1]) - rho[2]
 
 
 # Utility to estimate parameters of learning curve model
@@ -104,17 +91,84 @@ def f_ilog2(z, b, rho):
 @partial(jax.jit, static_argnums=(1,))
 def residual_least_square(rho, f, z, y):
     """Residual for least squares."""
-    return f(z, rho) - y
+    y_pred = f(z, rho)
+    y_pred = jnp.where(y_pred == 0.0, y_pred, 0.0)
+    return y_pred - y
 
 
-def prob_model(z=None, y=None, f=None, rho_mu_prior=None, num_obs=None):
-    rho_mu_prior = jnp.array(rho_mu_prior)
-    rho_sigma_prior = 1.0
+@partial(jax.jit, static_argnums=(1,))
+def jac_residual_least_square(rho, f, z, y):
+    """Jacobian of the residual for least squares."""
+    return jax.jacfwd(residual_least_square, argnums=0)(rho, f, z, y)
+
+
+def fit_learning_curve_model_least_square(
+    z_train,
+    y_train,
+    f_model,
+    f_model_nparams,
+    max_trials_ls_fit=10,
+    random_state=None,
+    verbose=0,
+):
+    """The learning curve model is assumed to be modeled by 'f' with
+    interface f(z, rho).
+    """
+
+    random_state = check_random_state(random_state)
+
+    results = []
+    mse_hist = []
+
+    rho_init = np.zeros((f_model_nparams,))
+
+    for i in range(max_trials_ls_fit):
+        if verbose:
+            print(f"Least-Square fit - trial {i+1}/{max_trials_ls_fit}: ", end="")
+
+        rho_init[:] = random_state.randn(f_model_nparams)[:]
+
+        try:
+            res_lsq = least_squares(
+                residual_least_square,
+                rho_init,
+                args=(f_model, z_train, y_train),
+                method="lm" if len(z_train) >= f_model_nparams else "trf",
+                jac=jac_residual_least_square,
+            )
+        except ValueError:
+            continue
+
+        mse_res_lsq = np.mean(res_lsq.fun**2)
+        mse_hist.append(mse_res_lsq)
+        results.append(res_lsq.x)
+
+        if verbose:
+            print(f"mse={mse_res_lsq:.3f}")
+
+        if mse_res_lsq < 1e-8:
+            break
+
+    i_best = np.nanargmin(mse_hist)
+    res = results[i_best]
+    return res
+
+
+def prob_model(
+    z,
+    y,
+    f=None,
+    rho_mu_prior=None,
+    rho_sigma_prior=1.0,
+    y_sigma_prior=1.0,
+    num_obs=None,
+):
     rho = numpyro.sample("rho", dist.Normal(rho_mu_prior, rho_sigma_prior))
-    sigma = numpyro.sample("sigma", dist.Exponential(1.0))  # introducing noise
-    # sigma = 0.1
-    mu = f(z[:num_obs], rho)
-    numpyro.sample("obs", dist.Normal(mu, sigma), obs=y[:num_obs])
+    y_sigma = numpyro.sample(
+        "sigma", dist.Exponential(y_sigma_prior)
+    )  # introducing noise
+    y_mu = f(z[:num_obs], rho)
+    numpyro.sample("obs", dist.Normal(y_mu, y_sigma), obs=y[:num_obs])
 
 
 @partial(jax.jit, static_argnums=(0,))
@@ -127,33 +181,51 @@ def predict_moments_from_posterior(f, X, posterior_samples):
 
 
 class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
+    """Probabilistic model for learning curve regression.
+
+    Args:
+        f_model (callable, optional): The model function to use. Defaults to `f_power3` for a Power-Law with 3 parameters.
+        f_model_nparams (int, optional): The number of parameters of the model. Defaults to `3`.
+        max_trials_ls_fit (int, optional): The number of least-square fits that should be tried. Defaults to `10`.
+        mcmc_kernel (str, optional): The MCMC kernel to use. It should be a string in the following list: `["NUTS", "BarkerMH"]`. Defaults to `"NUTS"`.
+        mcmc_num_warmup (int, optional): The number of warmup steps in MCMC. Defaults to `200`.
+        mcmc_num_samples (int, optional): The number of samples in MCMC. Defaults to `1_000`.
+        random_state (int, optional): A random state. Defaults to `None`.
+        verbose (int, optional): Wether or not to use the verbose mode. Defaults to `0` to deactive it.
+        batch_size (int, optional): The expected maximum length of the X, y arrays (used in the `fit(X, y)` method) in order to preallocate memory and compile the code only once. Defaults to `100`.
+        min_max_scaling (bool, optional): Wether or not to use min-max scaling in [0,1] for `y` values. Defaults to False.
+    """
+
     def __init__(
         self,
-        f_model=f_loglin3,
-        f_model_num_params=3,
-        b_model=b_lin2,
+        f_model=f_pow3,
+        f_model_nparams=3,
         max_trials_ls_fit=10,
+        mcmc_kernel="NUTS",
+        mcmc_num_chains=1,
         mcmc_num_warmup=200,
         mcmc_num_samples=1_000,
-        n_jobs=-1,
         random_state=None,
         verbose=0,
-        batch_size=100,
+        batch_size=1_000,
+        min_max_scaling=False,
     ):
-        self.b_model = b_model
-        self.f_model = lambda z, rho: f_model(z, self.b_model, rho)
-        self.f_nparams = f_model_num_params
+        self.f_model = f_model
+        self.f_model_nparams = f_model_nparams
+        self.mcmc_kernel = mcmc_kernel
+        self.mcmc_num_chains = mcmc_num_chains
         self.mcmc_num_warmup = mcmc_num_warmup
         self.mcmc_num_samples = mcmc_num_samples
         self.max_trials_ls_fit = max_trials_ls_fit
-        self.n_jobs = n_jobs
         self.random_state = check_random_state(random_state)
         self.verbose = verbose
-        self.rho_mu_prior_ = np.zeros((self.f_nparams,))
+        self.rho_mu_prior_ = np.zeros((self.f_model_nparams,))
 
         self.batch_size = batch_size
         self.X_ = np.zeros((self.batch_size,))
         self.y_ = np.zeros((self.batch_size,))
+
+        self.min_max_scaling = min_max_scaling
 
     def fit(self, X, y, update_prior=True):
         check_X_y(X, y, ensure_2d=False)
@@ -165,28 +237,77 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         assert num_samples <= self.batch_size
         self.X_[:num_samples] = X[:]
         self.y_[:num_samples] = y[:]
+        self.X_[num_samples:] = 0.0
+        self.y_[num_samples:] = 0.0
+
+        # Min-Max Scaling
+        if not (self.min_max_scaling):
+            self.y_min_ = 0
+            self.y_max_ = 1
+        else:
+            self.y_min_ = self.y_[:num_samples].min()
+            self.y_max_ = self.y_[:num_samples].max()
+            if abs(self.y_min_ - self.y_max_) <= 1e-8:  # avoid division by zero
+                self.y_max_ = self.y_min_ + 1
+            self.y_[:num_samples] = (self.y_[:num_samples] - self.y_min_) / (
+                self.y_max_ - self.y_min_
+            )
 
         if update_prior:
-            self.rho_mu_prior_[:] = self._fit_learning_curve_model_least_square(X, y)[:]
+            self.rho_mu_prior_[:] = fit_learning_curve_model_least_square(
+                self.X_,
+                self.y_,
+                f_model=self.f_model,
+                f_model_nparams=self.f_model_nparams,
+                max_trials_ls_fit=self.max_trials_ls_fit,
+                random_state=self.random_state,
+                verbose=self.verbose,
+            )[:]
+
+            if self.verbose:
+                print(f"rho_mu_prior: {self.rho_mu_prior_}")
 
         if not (hasattr(self, "kernel_")):
-            self.kernel_ = NUTS(
-                model=lambda z, y, rho_mu_prior: prob_model(
-                    z, y, self.f_model, rho_mu_prior, num_obs=num_samples
-                ),
-            )
+            target_accept_prob = 0.8
+            step_size = 0.05
+            if self.mcmc_kernel == "NUTS":
+                self.kernel_ = NUTS(
+                    model=lambda z, y: prob_model(
+                        z,
+                        y,
+                        f=self.f_model,
+                        rho_mu_prior=self.rho_mu_prior_,
+                        num_obs=num_samples,
+                    ),
+                    target_accept_prob=target_accept_prob,
+                    step_size=step_size,
+                )
+            elif self.mcmc_kernel == "BarkerMH":
+                self.kernel_ = BarkerMH(
+                    model=lambda z, y: prob_model(
+                        z,
+                        y,
+                        f=self.f_model,
+                        rho_mu_prior=self.rho_mu_prior_,
+                        num_obs=num_samples,
+                    ),
+                    target_accept_prob=target_accept_prob,
+                    step_size=step_size,
+                )
+            else:
+                raise ValueError(f"Unknown MCMC kernel: {self.mcmc_kernel}")
 
             self.mcmc_ = MCMC(
                 self.kernel_,
+                num_chains=self.mcmc_num_chains,
                 num_warmup=self.mcmc_num_warmup,
                 num_samples=self.mcmc_num_samples,
                 progress_bar=self.verbose,
-                jit_model_args=True,
             )
 
         seed = self.random_state.randint(low=0, high=2**31)
         rng_key = jax.random.PRNGKey(seed)
-        self.mcmc_.run(rng_key, z=self.X_, y=self.y_, rho_mu_prior=self.rho_mu_prior_)
+        self.mcmc_.run(rng_key, z=self.X_, y=self.y_)
 
         if self.verbose:
             self.mcmc_.print_summary()
@@ -215,6 +336,9 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         vf_model = jax.vmap(self.f_model, in_axes=(None, 0))
         posterior_mu = vf_model(X, posterior_samples["rho"])
 
+        # Inverse Min-Max Scaling
+        posterior_mu = posterior_mu * (self.y_max_ - self.y_min_) + self.y_min_
+
         return posterior_mu
 
     def prob(self, X, condition):
@@ -228,75 +352,11 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         Returns:
             array: an array of shape X.
         """
-
-        # Check if fit has been called
-        check_is_fitted(self)
-
-        # Input validation
-        X = check_array(X, ensure_2d=False)
-
-        posterior_samples = self.mcmc_.get_samples()
-        vf_model = jax.vmap(self.f_model, in_axes=(None, 0))
-        posterior_mu = vf_model(X, posterior_samples["rho"])
+        posterior_mu = self.predict_posterior_samples(X)
 
         prob = jnp.mean(condition(posterior_mu), axis=0)
 
         return prob
-
-    def _fit_learning_curve_model_least_square(
-        self,
-        z_train,
-        y_train,
-    ):
-        """The learning curve model is assumed to be modeled by 'f' with
-        interface f(z, rho).
-        """
-
-        seed = self.random_state.randint(low=0, high=2**31)
-        random_state = check_random_state(seed)
-
-        z_train = np.asarray(z_train)
-        y_train = np.asarray(y_train)
-
-        # compute the jacobian
-        # using the true jacobian is important to avoid problems
-        # with numerical errors and approximations! indeed the scale matters
-        # a lot when approximating with finite differences
-        def fun_wrapper(rho, f, z, y):
-            return np.array(residual_least_square(rho, f, z, y))
-
-        if not (hasattr(self, "jac_residual_ls_")):
-            self.jac_residual_ls_ = partial(jax.jit, static_argnums=(1,))(
-                jax.jacfwd(residual_least_square, argnums=0)
-            )
-
-        def jac_wrapper(rho, f, z, y):
-            return np.array(self.jac_residual_ls_(rho, f, z, y))
-
-        results = []
-        mse_hist = []
-
-        for _ in range(self.max_trials_ls_fit):
-            rho_init = random_state.randn(self.f_nparams)
-
-            try:
-                res_lsq = least_squares(
-                    fun_wrapper,
-                    rho_init,
-                    args=(self.f_model, z_train, y_train),
-                    method="lm",
-                    jac=jac_wrapper,
-                )
-            except ValueError:
-                continue
-
-            mse_res_lsq = np.mean(res_lsq.fun**2)
-            mse_hist.append(mse_res_lsq)
-            results.append(res_lsq.x)
-
-        i_best = np.nanargmin(mse_hist)
-        res = results[i_best]
-        return res
 
 
 def area_learning_curve(z, f, z_max) -> float:
@@ -343,7 +403,7 @@ class LCModelStopper(Stopper):
 
     Args:
         max_steps (int): The maximum number of training steps which can be performed.
-        min_steps (int, optional): The minimum number of training steps which can be performed. Defaults to ``1``.
+        min_steps (int, optional): The minimum number of training steps which can be performed. Defaults to ``4``. It is better to have at least as many steps as the number of parameters of the fitted learning curve model. For example, if ``lc_model="mmf4"`` then ``min_steps`` should be at least ``4``.
         lc_model (str, optional): The parameteric learning model to use. It should be a string in the following list: ``["lin2", "loglin2", "loglin3", "loglin4", "pow3","mmf4", "vapor3", "logloglin2", "hill3", "logpow3", "pow4", "exp4", "janoschek4", "weibull4", "ilog2"]``. The number in the name corresponds to the number of parameters of the parametric model. Defaults to ``"mmf4"``.
         min_done_for_outlier_detection (int, optional): The minimum number of observed scores at the same step to check for if it is a lower-bound outlier. Defaults to ``10``.
         iqr_factor_for_outlier_detection (float, optional): The IQR factor for outlier detection. The higher it is the more inclusive the condition will be (i.e. if set very large it is likely not going to detect any outliers). Defaults to ``1.5``.
@@ -361,10 +421,12 @@ class LCModelStopper(Stopper):
         max_steps: int,
         min_steps: int = 1,
         lc_model="mmf4",
+        min_obs_to_fit_lc_model=4,
         min_done_for_outlier_detection=10,
         iqr_factor_for_outlier_detection=1.5,
         prob_promotion=0.9,
         early_stopping_patience=0.25,
+        reduction_factor=3,
         objective_returned="last",
         random_state=None,
     ) -> None:
@@ -372,9 +434,10 @@ class LCModelStopper(Stopper):
         self.min_steps = min_steps
 
         lc_model = "f_" + lc_model
-        lc_model_num_params = int(lc_model[-1])
-        lc_model = getattr(sys.modules[__name__], lc_model)
-        self.min_obs_to_fit = lc_model_num_params
+        self._f_model = getattr(sys.modules[__name__], lc_model)
+        self._f_model_nparams = int(lc_model[-1])
+        self._min_obs_to_fit_lc_model = min_obs_to_fit_lc_model
+        self._reduction_factor = reduction_factor
 
         self.min_done_for_outlier_detection = min_done_for_outlier_detection
         self.iqr_factor_for_outlier_detection = iqr_factor_for_outlier_detection
@@ -390,23 +453,28 @@ class LCModelStopper(Stopper):
 
         self._rung = 0
 
-        # compute the step at which to stop based on steps allocation policy
-        max_rung = np.floor(
-            np.log(self.max_steps / self.min_steps) / np.log(self.min_obs_to_fit)
-        )
-        self.max_steps_ = int(self.min_steps * self.min_obs_to_fit**max_rung)
-
-        self.lc_model = BayesianLearningCurveRegressor(
-            f_model=lc_model,
-            f_model_num_params=lc_model_num_params,
-            random_state=random_state,
-            batch_size=self.max_steps_,
-        )
+        self._random_state = random_state
+        self._batch_size = 100
+        self.lc_model = None
 
         self._lc_objectives = []
 
+    def _refresh_lc_model(self):
+        batch_has_increased = False
+        if self._batch_size < len(self.observed_budgets):
+            self._batch_size += 100
+            batch_has_increased = True
+
+        if self.lc_model is None or batch_has_increased:
+            self.lc_model = BayesianLearningCurveRegressor(
+                f_model=self._f_model,
+                f_model_nparams=self._f_model_nparams,
+                random_state=self._random_state,
+                batch_size=self._batch_size,
+            )
+
     def _compute_halting_step(self):
-        return self.min_steps * self.min_obs_to_fit**self._rung
+        return (self.min_steps - 1) * self._reduction_factor**self._rung
 
     def _retrieve_best_objective(self) -> float:
         search_id, _ = self.job.id.split(".")
@@ -466,7 +534,13 @@ class LCModelStopper(Stopper):
         self.best_objective = self._retrieve_best_objective()
 
         halting_step = self._compute_halting_step()
-        if self.step < max(self.min_steps, self.min_obs_to_fit):
+
+        if self.step < self.min_steps:
+            if self.step >= halting_step:
+                self._rung += 1
+            return False
+
+        if self.step < self._min_obs_to_fit_lc_model:
             if self.step >= halting_step:
                 competing_objectives = self._get_competiting_objectives(self._rung)
                 if len(competing_objectives) > self.min_done_for_outlier_detection:
@@ -497,6 +571,8 @@ class LCModelStopper(Stopper):
         # Check if the evaluation should be stopped based on LC-Model
 
         # Fit and predict the performance of the learning curve model
+        self._refresh_lc_model()
+
         z_train = self.observed_budgets
         y_train = self._lc_objectives
         z_train, y_train = np.asarray(z_train), np.asarray(y_train)
@@ -526,3 +602,54 @@ class LCModelStopper(Stopper):
             return area_learning_curve(z, y, z_max=self.max_steps)
         else:
             raise ValueError("objective_returned must be one of 'last', 'best', 'alc'")
+
+
+def test_bayesian_lce_model():
+    import cProfile
+    from pstats import SortKey
+
+    import time
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    def f(z):
+        return f_pow3(z, [1, -1, 0.125])
+
+    z = np.arange(1, 1000)
+
+    y = f(z)
+    # y = y + rng.normal(0, 0.01, size=y.shape)
+
+    t_start = time.time()
+    with cProfile.Profile() as pr:
+        for r in range(20):
+            model = BayesianLearningCurveRegressor(batch_size=100, verbose=0)
+            for i in range(1, 20):
+                model.fit(z[:i], y[:i])
+                y_pred, y_std = model.predict(z)
+                y_min, y_max = y_pred - y_std, y_pred + y_std
+
+        pr.print_stats(SortKey.TIME)
+
+    t_end = time.time()
+    duration = t_end - t_start
+
+    print(f"duration: {duration:.3f} sec")
+
+    plt.figure()
+    plt.plot(z, y, label="f_pow3")
+    plt.plot(z, y_pred, label="$\\hat{y}$", color="C2")
+    plt.fill_between(z, y_min, y_max, color="C2", alpha=0.5)
+    plt.legend()
+    plt.show()
+
+
+# if __name__ == "__main__":
+#     test_bayesian_lce_model()
+#     rho = np.ones((3,))
+#     z = np.arange(1000)
+#     y = np.zeros((1000,))
+
+#     out = jac_residual_least_square(rho, f_pow3, z, y)
+#     out = jac_residual_least_square(rho, f_pow3, z, y)
+#     out = jac_residual_least_square(rho, f_pow3, z, y)
