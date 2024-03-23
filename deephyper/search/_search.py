@@ -64,6 +64,7 @@ class Search(abc.ABC):
                 self._path_results,
                 path_results_renamed,
             )
+            self._evaluator._columns_dumped = None
 
         self._verbose = verbose
 
