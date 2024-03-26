@@ -18,8 +18,8 @@
 .. _sphx_glr_examples_plot_experimental_design.py:
 
 
-Profile the Worker Utilization
-==============================
+Standard Experimental Design (Grid Search)
+==========================================
 
 **Author(s)**: Romain Egele.
 
@@ -124,7 +124,7 @@ Note that `n_points` and `max_evals` take the same value here.
 
  .. code-block:: none
 
-    WARNING:root:Results file already exists, it will be renamed to /Users/romainegele/Documents/Argonne/deephyper/examples/results_20240326-162520.csv
+    WARNING:root:Results file already exists, it will be renamed to /Users/romainegele/Documents/Argonne/deephyper/examples/results_20240326-172239.csv
 
 
 
@@ -161,7 +161,7 @@ Finally, we plot the results from the collected DataFrame.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 4.601 seconds)
+   **Total running time of the script:** (0 minutes 3.929 seconds)
 
 
 .. _sphx_glr_download_examples_plot_experimental_design.py:

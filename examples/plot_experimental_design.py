@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Profile the Worker Utilization
-==============================
+Standard Experimental Design (Grid Search)
+==========================================
 
 **Author(s)**: Romain Egele.
 
