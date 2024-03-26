@@ -713,6 +713,10 @@ class Optimizer(object):
                 y_lie = np.max(opt_yi, axis=0) if opt_yi else 0.0  # CL-max lie
                 t_lie = np.max(ti) if ti is not None else log(sys.float_info.max)
 
+            # Converts both numpy scalar or arrays, it is necessary to avoid y_lie
+            # being an array triggering an issue in _tell
+            y_lie = y_lie.tolist()
+
             # Lie to the optimizer.
             if "ps" in self.acq_func:
                 # Use `_tell()` instead of `tell()` to prevent repeated
