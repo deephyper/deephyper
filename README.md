@@ -129,11 +129,11 @@ If you wish to cite the Software, please use the following:
 
 ```
 @misc{deephyper_software,
-title = {"DeepHyper: A Python Package for Scalable Neural Architecture and Hyperparameter Search"},
-author = {{DeepHyper Development Team}},
-organization = {DeepHyper Team},
-year = 2018,
-url = {https://github.com/deephyper/deephyper}
+    title = {"DeepHyper: A Python Package for Scalable Neural Architecture and Hyperparameter Search"},
+    author = {Balaprakash, Prasanna and Egele, Romain and Salim, Misha and Maulik, Romit and Vishwanath, Venkat and Wild, Stefan and others}
+    organization = {DeepHyper Team},
+    year = 2018,
+    url = {https://github.com/deephyper/deephyper}
 } 
 ```
 
