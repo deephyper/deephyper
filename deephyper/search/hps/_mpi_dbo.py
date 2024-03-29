@@ -112,10 +112,10 @@ class MPIDistributedBO(CBO):
         if acq_func[0] == "q":
             kappa = scipy.stats.expon.rvs(
                 size=self.size, scale=kappa, random_state=random_state
-            )[self._evaluator.rank]
+            )[self.rank]
             xi = scipy.stats.expon.rvs(
                 size=self.size, scale=xi, random_state=random_state
-            )[self._evaluator.rank]
+            )[self.rank]
             acq_func = acq_func[1:]
         elif acq_func[0] == "b":
             acq_func[0] = acq_func[1:]
