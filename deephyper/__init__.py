@@ -1,5 +1,5 @@
 """
-DeepHyper's software architecture is designed to be modular and extensible. It is built on top of the following main sub-packages:
+DeepHyper's software architecture is designed to be modular and extensible. It is built on top of the following main subpackages:
 
 * :mod:`deephyper.ensemble`: Tools to build ensembles of neural networks with uncertainty quantification.
 * :mod:`deephyper.nas`: Tools to define neural architecture search space and evaluation strategy.
@@ -12,6 +12,7 @@ DeepHyper's software architecture is designed to be modular and extensible. It i
 DeepHyper installation requires **Python >= 3.7**.
 
 """
+
 import warnings
 from deephyper.__version__ import __version__, __version_suffix__  # noqa: F401
 

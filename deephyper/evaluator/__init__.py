@@ -1,5 +1,5 @@
 """
-This evaluator sub-package provides a common interface to execute isolated tasks with different parallel backends and system properties. This interface is used by search algorithm to perform black-box optimization (the black-box being represented by the ``run``-function).
+This evaluator subpackage provides a common interface to execute isolated tasks with different parallel backends and system properties. This interface is used by search algorithm to perform black-box optimization (the black-box being represented by the ``run``-function).
 An ``Evaluator``, when instanciated, is bound to a ``run``-function which takes as first argument a dictionnary and optionally has other keyword-arguments. The ``run``-function has to return a Python serializable value (under ``pickle`` protocol). In it's most basic form the return value is a ``float``.
 
 An example ``run``-function is:

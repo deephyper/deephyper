@@ -10,10 +10,24 @@ from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.ticker import MaxNLocator
 
 from deephyper.analysis import rank
-from deephyper.analysis._paxplot import pax_parallel
+from deephyper.analysis.hps._paxplot import pax_parallel
 
 
-def filter_failed_objectives(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def read_results_from_csv(file_path: str) -> pd.DataFrame:
+    """Read the results of a Hyperparameter Search from a CSV file.
+
+    Args:
+        file_path (str): the path to the CSV file.
+
+    Returns:
+        pd.DataFrame: the results of a Hyperparameter Search.
+    """
+    return pd.read_csv(file_path, index_col=None)
+
+
+def filter_failed_objectives(
+    df: pd.DataFrame,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Filter out lines from the DataFrame with failed objectives.
 
     Args:
@@ -24,15 +38,15 @@ def filter_failed_objectives(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFra
     """
     # Single-Objective
     if "objective" in df.columns:
-        if pd.api.types.is_string_dtype(df.objective):
-            mask = df.objective.str.startswith("F")
+        if pd.api.types.is_string_dtype(df["objective"]):
+            mask = df["objective"].str.startswith("F")
 
             df_with_failures = df[mask]
 
             df_without_failures = df[~mask]
-            df_without_failures.loc[
-                :, "objective"
-            ] = df_without_failures.objective.astype(float)
+            df_without_failures.loc[:, "objective"] = df_without_failures[
+                "objective"
+            ].astype(float)
         else:
             df_without_failures = df
             df_with_failures = df[np.zeros(len(df), dtype=bool)]
@@ -77,31 +91,32 @@ def parameters_at_max(
     return config, value
 
 
-def plot_search_trajectory_single_objective_hpo(
-    results, show_failures: bool = True, ax=None, **kwargs
+def plot_search_trajectory_single_objective_hps(
+    results, show_failures: bool = True, column="objective", ax=None, **kwargs
 ):
     """Plot the search trajectory of a Single-Objective Hyperparameter Search.
 
     Args:
         results (pd.DataFrame): the results of a Hyperparameter Search.
         show_failures (bool, optional): whether to show the failed objectives. Defaults to ``True``.
+        column (str, optional): the column to use for the y-axis of the plot. Defaults to ``"objective"``.
         ax (matplotlib.pyplot.axes): the axes to use for the plot.
 
     Returns:
         (matplotlib.pyplot.figure, matplotlib.pyplot.axes): the figure and axes of the plot.
     """
 
-    if results.objective.dtype != np.float64:
+    if results[column].dtype != np.float64:
         x = np.arange(len(results))
-        mask_failed = np.where(results.objective.str.startswith("F"))[0]
-        mask_success = np.where(~results.objective.str.startswith("F"))[0]
+        mask_failed = np.where(results[column].str.startswith("F"))[0]
+        mask_success = np.where(~results[column].str.startswith("F"))[0]
         x_success, x_failed = x[mask_success], x[mask_failed]
-        y_success = results.objective[mask_success].astype(float)
+        y_success = results[column][mask_success].astype(float)
     else:
         x = np.arange(len(results))
         x_success = x
         x_failed = np.array([])
-        y_success = results.objective
+        y_success = results[column]
 
     y_min, y_max = y_success.min(), y_success.max()
     y_min = y_min - 0.05 * (y_max - y_min)
@@ -223,7 +238,6 @@ def plot_worker_utilization(
         ax.set_ylabel("Utilization")
     else:
         ax.set_ylabel("Active Workers")
-    ax.legend()
     ax.grid(True)
     ax.set_xlim(x.min(), x.max())
 

@@ -1,2 +1,2 @@
-"""Sub-package providing tools for automl.
+"""Subpackage providing tools for automl.
 """

@@ -2,7 +2,7 @@
 Create a DeepHyper Problem
 --------------------------
 
-Command line to create a new problem sub-package in a DeepHyper projet package.
+Command line to create a new problem subpackage in a DeepHyper projet package.
 
 It can be used with:
 
@@ -10,6 +10,7 @@ It can be used with:
 
     $ deephyper new-problem hps problem_name
 """
+
 import glob
 import os
 import pathlib
