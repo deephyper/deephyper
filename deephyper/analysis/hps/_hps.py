@@ -3,14 +3,12 @@
 
 from typing import Tuple
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib.colors import LinearSegmentedColormap
-from matplotlib.ticker import MaxNLocator
 
-from deephyper.analysis import rank
-from deephyper.analysis.hps._paxplot import pax_parallel
+# from deephyper.analysis import rank
 
 
 def read_results_from_csv(file_path: str) -> pd.DataFrame:
@@ -244,60 +242,28 @@ def plot_worker_utilization(
     return fig, ax
 
 
-def add_colorbar_px(paxfig, data, cmap="viridis", colorbar_kwargs={}):
+class RealNormalizer:
+    def fit(self, x):
+        self.x_min = np.min(x)
+        self.x_max = np.max(x)
 
-    # Attribute
-    paxfig._pax_colorbar = True
+    def transform(self, x):
+        # min-max
+        return x - self.x_min / (self.x_max - self.x_min)
 
-    # Local vars
-    n_lines = len(paxfig.axes[0].lines)
-    n_axes = len(paxfig.axes)
+    def inverse_transform(self, x):
+        return x * (self.x_max - self.x_min) + self.x_min
 
-    vmin = data.min()
-    vmax = data.max()
-    # Change line colors
-    for i in range(n_lines):
-        # Get value
-        # Get color
-        # color = paxfig._get_color_gradient(scale_val, 0, 1, cmap)
-        color = (data[i] - vmin) / (vmax - vmin)
-        # Assign color to line
-        for j in paxfig.axes[:-1]:
-            j.lines[i].set_color(cmap(color))
 
-    # Create blank axis for colorbar
-    width_ratios = paxfig.axes[0].get_gridspec().get_width_ratios()
-    new_n_axes = n_axes + 1
-    new_width_ratios = width_ratios + [0.5]
-    gs = paxfig.add_gridspec(1, new_n_axes, width_ratios=new_width_ratios)
-    ax_colorbar = paxfig.add_subplot(gs[0, n_axes])
-
-    # Create colorbar
-    sm = plt.cm.ScalarMappable(
-        norm=plt.Normalize(vmin=data.min(), vmax=data.max()), cmap=cmap
-    )
-    cbar = paxfig.colorbar(
-        sm, orientation="vertical", ax=ax_colorbar, **colorbar_kwargs
-    )
-    cbar.locator = MaxNLocator(integer=True)
-    cbar.update_ticks()
-
-    main_ax_pos = paxfig.axes[-1].get_position()
-    cbar_ax = cbar.ax
-    cbar_ax.set_position(
-        [
-            main_ax_pos.x1 + 0.03,  # X position (left)
-            main_ax_pos.y0,  # Y position (bottom)
-            0.02,  # Width of colorbar
-            main_ax_pos.height,  # Height of colorbar
-        ]
-    )
-
-    # Figure formatting
-    for i in range(n_axes):
-        paxfig.axes[i].set_subplotspec(gs[0:1, i : i + 1])
-    ax_colorbar.set_axis_off()
-    return paxfig
+class ColumnNormalizer:
+    def fit(self, x):
+        if np.all(np.issubdtype(x, np.number)):  # float or int
+            if np.all(np.issubdtype(x, np.integer)):  # int
+                pass
+            else:  # mixed of floats and ints
+                pass
+        else:  # categories
+            pass
 
 
 def plot_parallel_coordinate(
@@ -335,88 +301,36 @@ def plot_parallel_coordinate(
         if results[col].dtype == bool:
             results[col] = results[col].astype(str)
 
-    results = results[cols]
+    column_values = results[cols].values
+    objective_values = results[objective_column].values
 
-    plt.rcParams["font.family"] = "Arial"
-    plt.rcParams["xtick.labelsize"] = 12  # Set the X-axis tick label font size
-    plt.rcParams["ytick.labelsize"] = 12
-    plt.rcParams["font.size"] = 16
-    plt.rcParams["axes.linewidth"] = 1
-    plt.rcParams["font.weight"] = "bold"
-    plt.rcParams["axes.labelweight"] = "bold"
-    plt.rcParams["axes.titleweight"] = "bold"
+    cmap = mpl.colormaps["plasma"]
 
-    cmap = LinearSegmentedColormap.from_list(
-        "my_gradient",
-        (
-            # Edit this gradient at https://eltos.github.io/gradient/#0:00D0FF-33.3:0000FF-66.7:FF0000-100:FFD800
-            (0.000, (0.000, 0.816, 1.000)),
-            (0.333, (0.000, 0.000, 1.000)),
-            (0.667, (1.000, 0.000, 0.000)),
-            (1.000, (1.000, 0.847, 0.000)),
-        ),
-    )
+    fig, ax = plt.subplots(1, len(cols) - 1, sharey=False)
 
-    # Add labels
-    def convertCols(cols):
-        names = []
-        for c in cols:
-            c = c.replace("p:", "")
-            c = c.replace("_", " ")
-            c = c.split()
-            c = [word.capitalize() for word in c]
-            names.append(" ".join(c))
-        return names
+    x = np.arange(0, len(cols)).tolist()
 
-    cols = convertCols(cols)
+    for i in range(len(cols) - 1):
+        for j in range(len(results)):
+            y = column_values[j].tolist()
+            ax[i].plot(x, y, color=cmap(objective_values[j]))
 
-    if highlight:
+        # Set x-axis
+        if i == len(cols) - 2:
+            # Objective axis
+            ax[i].set_xticks(ticks=x, labels=["" for _ in x], rotation=45)
+        else:
+            ax[i].set_xticks(ticks=x, labels=cols, rotation=45)
+            ax[i].set_yticks([])
 
-        # Split data
-        paxfig = pax_parallel(n_axes=len(cols))
-        if rank_mode == "min":
-            df_highlight = results[results[objective_column] < constant_predictor]
-            df_highlight["rank"] = rank(df_highlight[objective_column])
-            df_grey = results[results[objective_column] >= constant_predictor]
-        elif rank_mode == "max":
-            df_highlight = results[results[objective_column] > constant_predictor]
-            df_highlight["rank"] = rank(-df_highlight[objective_column])
-            df_grey = results[results[objective_column] <= constant_predictor]
+        ax[i].set_xlim([x[i], x[i] + 1])
+        ax[i].set_yticks([])
 
-        paxfig.plot(df_highlight.to_numpy()[:, :-1], line_kwargs={"alpha": 0.5})
+    norm = mpl.cm.ScalarMappable(norm=None, cmap=cmap)
+    norm.set_clim(objective_values.min(), objective_values.max())
+    plt.colorbar(mappable=norm, ax=ax[-1], label=objective_column)
 
-        paxfig.set_labels(cols)
-
-        paxfig = add_colorbar_px(
-            paxfig=paxfig,
-            data=df_highlight["rank"].to_numpy(),
-            # data=df_highlight['rank'].to_numpy(),
-            cmap=cmap,
-            colorbar_kwargs={"label": "Rank"},
-        )
-
-        try:
-            paxfig.plot(
-                df_grey.to_numpy(),
-                line_kwargs={"alpha": 0.1, "color": "grey", "zorder": 0},
-            )
-        except:  # noqa
-            pass
-
-    else:
-        paxfig = pax_parallel(n_axes=len(cols))
-        paxfig.plot(results[cols].to_numpy(), line_kwargs={"alpha": 0.5})
-
-        # Add colorbar
-        color_col = len(cols) - 1
-        paxfig.add_colorbar(
-            ax_idx=color_col, cmap=cmap, colorbar_kwargs={"label": "Rank"}
-        )
-
-    fig = plt.gcf()
-    ax = fig.gca()
-    # h = 4
-    # fig.set_size_inches((len(paxfig.axes) / 2.0) * h, h)
-    # plt.show()
+    plt.tight_layout()
+    plt.subplots_adjust(wspace=0)
 
     return fig, ax
