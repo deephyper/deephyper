@@ -126,7 +126,7 @@ class SuccessiveHalvingStopper(Stopper):
             return True
 
         # Performe Successive Halving
-        k = num_competing // self._reduction_factor
+        k = int(num_competing // self._reduction_factor)
 
         # Promote if best when there is less than reduction_factor competing values
         if k == 0:

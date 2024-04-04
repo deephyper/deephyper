@@ -11,7 +11,7 @@ import deephyper.skopt
 
 
 def convert_to_skopt_dim(cs_hp, surrogate_model=None):
-    if surrogate_model in ["RF", "ET", "GBRT"]:
+    if surrogate_model in ["RF", "ET", "GBRT", "HGBRT", "MF", "BT"]:
         # models not sensitive to the metric space such as trees
         surrogate_model_type = "rule_based"
     else:
@@ -52,6 +52,11 @@ def convert_to_skopt_dim(cs_hp, surrogate_model=None):
         skopt_dim = deephyper.skopt.space.Categorical(
             categories=categories, name=cs_hp.name, transform=transform
         )
+    elif isinstance(cs_hp, csh.Constant):
+        categories = [cs_hp.value]
+        skopt_dim = deephyper.skopt.space.Categorical(
+            categories=categories, name=cs_hp.name, transform="label"
+        )
     else:
         raise TypeError(f"Cannot convert hyperparameter of type {type(cs_hp)}")
 
@@ -67,8 +72,6 @@ def convert_to_skopt_space(cs_space, surrogate_model=None):
 
     Raises:
         TypeError: if the input space is not a ConfigurationSpace.
-        RuntimeError: if the input space contains forbiddens.
-        RuntimeError: if the input space contains conditions
 
     Returns:
         deephyper.skopt.space.Space: a scikit-optimize Space.
@@ -78,18 +81,18 @@ def convert_to_skopt_space(cs_space, surrogate_model=None):
     if not (isinstance(cs_space, cs.ConfigurationSpace)):
         raise TypeError("Input space should be of type ConfigurationSpace")
 
-    if len(cs_space.get_conditions()) > 0:
-        raise RuntimeError("Cannot convert a ConfigSpace with Conditions!")
-
-    if len(cs_space.get_forbiddens()) > 0:
-        raise RuntimeError("Cannot convert a ConfigSpace with Forbiddens!")
+    sample_with_config_space = (
+        len(cs_space.get_conditions()) > 0 or len(cs_space.get_forbiddens()) > 0
+    )
 
     # convert the ConfigSpace to deephyper.skopt.space.Space
     dimensions = []
     for hp in cs_space.get_hyperparameters():
         dimensions.append(convert_to_skopt_dim(hp, surrogate_model))
 
-    skopt_space = deephyper.skopt.space.Space(dimensions)
+    skopt_space = deephyper.skopt.space.Space(
+        dimensions, config_space=cs_space if sample_with_config_space else None
+    )
     return skopt_space
 
 
@@ -197,6 +200,9 @@ class HpProblem:
     def __repr__(self):
         prob = repr(self._space)
         return prob
+
+    def __len__(self):
+        return len(self.hyperparameter_names)
 
     def add_hyperparameter(
         self, value, name: str = None, default_value=None

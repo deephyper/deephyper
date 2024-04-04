@@ -13,7 +13,11 @@ class DeephyperRuntimeError(RuntimeError):
 
 
 class SearchTerminationError(RuntimeError):
-    """Raised when a search receives SIGALARM"""
+    """Raised when a search is terminated."""
+
+
+class MaximumJobsSpawnReached(SearchTerminationError):
+    """Raised when the maximum number of jobs is reached."""
 
 
 class RunFunctionError(RuntimeError):

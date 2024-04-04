@@ -4,11 +4,13 @@ import functools
 import logging
 import os
 import pathlib
+import time
 
 import numpy as np
 import pandas as pd
 import yaml
-from deephyper.core.exceptions import SearchTerminationError
+
+from deephyper.core.exceptions import MaximumJobsSpawnReached, SearchTerminationError
 from deephyper.core.utils._introspection import get_init_params_as_json
 from deephyper.core.utils._timeout import terminate_on_timeout
 from deephyper.evaluator import Evaluator
@@ -48,6 +50,22 @@ class Search(abc.ABC):
         # Create logging directory if does not exist
         self._log_dir = os.path.abspath(log_dir)
         pathlib.Path(log_dir).mkdir(parents=True, exist_ok=True)
+
+        self._path_results = os.path.join(self._log_dir, "results.csv")
+        if os.path.exists(self._path_results):
+            str_current_time = time.strftime("%Y%m%d-%H%M%S")
+            path_results_renamed = self._path_results.replace(
+                ".", f"_{str_current_time}."
+            )
+            logging.warning(
+                f"Results file already exists, it will be renamed to {path_results_renamed}"
+            )
+            os.rename(
+                self._path_results,
+                path_results_renamed,
+            )
+            evaluator._columns_dumped = None
+            evaluator._start_dumping = False
 
         self._verbose = verbose
 
@@ -90,7 +108,11 @@ class Search(abc.ABC):
             yaml.dump(context, file)
 
     def _set_timeout(self, timeout=None):
-        """If the `timeout` parameter is valid. Run the search in an other thread and trigger a timeout when this thread exhaust the allocated time budget."""
+        """If the `timeout` parameter is valid. Run the search in an other thread and trigger a timeout when this thread exhaust the allocated time budget.
+
+        Args:
+            timeout (int, optional): The time budget (in seconds) of the search before stopping. Defaults to ``None``, will not impose a time budget.
+        """
 
         if timeout is not None:
             if type(timeout) is not int:
@@ -106,18 +128,22 @@ class Search(abc.ABC):
                 terminate_on_timeout, timeout, self._search
             )
 
-    def search(self, max_evals: int = -1, timeout: int = None):
+    def search(
+        self, max_evals: int = -1, timeout: int = None, max_evals_strict: bool = False
+    ):
         """Execute the search algorithm.
 
         Args:
             max_evals (int, optional): The maximum number of evaluations of the run function to perform before stopping the search. Defaults to ``-1``, will run indefinitely.
             timeout (int, optional): The time budget (in seconds) of the search before stopping. Defaults to ``None``, will not impose a time budget.
+            max_evals_strict (bool, optional): If ``True`` the search will not spawn more than ``max_evals`` jobs. Defaults to ``False``.
 
         Returns:
             DataFrame: a pandas DataFrame containing the evaluations performed or ``None`` if the search could not evaluate any configuration.
         """
-
         self._set_timeout(timeout)
+        if max_evals_strict:
+            self._evaluator.set_max_num_jobs_spawn(max_evals)
 
         # save the search call arguments for the context
         self._call_args.append({"timeout": timeout, "max_evals": max_evals})
@@ -131,25 +157,28 @@ class Search(abc.ABC):
 
         try:
             self._search(max_evals, timeout)
-        except SearchTerminationError:
+        except SearchTerminationError as exc:
+            # Collect remaining jobs
+            if max_evals_strict and isinstance(exc, MaximumJobsSpawnReached):
+                self._evaluator.gather("ALL")
+
             if "saved_keys" in dir(self):
                 self._evaluator.dump_evals(saved_keys=self.saved_keys)
             else:
                 self._evaluator.dump_evals(log_dir=self._log_dir)
 
-        path_results = os.path.join(self._log_dir, "results.csv")
-        if not (os.path.exists(path_results)):
-            logging.warning(f"Could not find results file at {path_results}!")
+        if not (os.path.exists(self._path_results)):
+            logging.warning(f"Could not find results file at {self._path_results}!")
             return None
 
-        self.extend_results_with_pareto_efficient(path_results)
+        self.extend_results_with_pareto_efficient(self._path_results)
 
-        df_results = pd.read_csv(path_results)
+        df_results = pd.read_csv(self._path_results)
 
         return df_results
 
     @abc.abstractmethod
-    def _search(self, max_evals, timeout):
+    def _search(self, max_evals, timeout, max_evals_strict=False):
         """Search algorithm to be implemented.
 
         Args:

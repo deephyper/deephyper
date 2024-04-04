@@ -5,7 +5,12 @@ from scipy.stats import norm
 
 
 def gaussian_acquisition_1D(
-    X, model, y_opt=None, acq_func="LCB", acq_func_kwargs=None, return_grad=True
+    X,
+    model,
+    y_opt=None,
+    acq_func="LCB",
+    acq_func_kwargs=None,
+    return_grad=True,
 ):
     """
     A wrapper around the acquisition function that is called by fmin_l_bfgs_b.
@@ -23,7 +28,12 @@ def gaussian_acquisition_1D(
 
 
 def _gaussian_acquisition(
-    X, model, y_opt=None, acq_func="LCB", return_grad=False, acq_func_kwargs=None
+    X,
+    model,
+    y_opt=None,
+    acq_func="LCB",
+    return_grad=False,
+    acq_func_kwargs=None,
 ):
     """
     Wrapper so that the output of this function can be
@@ -36,6 +46,12 @@ def _gaussian_acquisition(
             "X is {}-dimensional, however," " it must be 2-dimensional.".format(X.ndim)
         )
 
+    # Check if the deterministic acquisition function variant should be used
+    deterministic = False
+    if "d" == acq_func[-1]:
+        deterministic = True
+        acq_func = acq_func[:-1]
+
     if acq_func_kwargs is None:
         acq_func_kwargs = dict()
     xi = acq_func_kwargs.get("xi", 0.01)
@@ -46,8 +62,11 @@ def _gaussian_acquisition(
     if per_second:
         model, time_model = model.estimators_
 
-    if acq_func == "LCB":
-        func_and_grad = gaussian_lcb(X, model, kappa, return_grad)
+    if acq_func in ["LCB"]:
+        func_and_grad = gaussian_lcb(
+            X, model, kappa, return_grad, deterministic=deterministic
+        )
+
         if return_grad:
             acq_vals, acq_grad = func_and_grad
         else:
@@ -55,9 +74,13 @@ def _gaussian_acquisition(
 
     elif acq_func in ["EI", "PI", "EIps", "PIps"]:
         if acq_func in ["EI", "EIps"]:
-            func_and_grad = gaussian_ei(X, model, y_opt, xi, return_grad)
+            func_and_grad = gaussian_ei(
+                X, model, y_opt, xi, return_grad, deterministic=deterministic
+            )
         else:
-            func_and_grad = gaussian_pi(X, model, y_opt, xi, return_grad)
+            func_and_grad = gaussian_pi(
+                X, model, y_opt, xi, return_grad, deterministic=deterministic
+            )
 
         if return_grad:
             acq_vals = -func_and_grad[0]
@@ -66,7 +89,6 @@ def _gaussian_acquisition(
             acq_vals = -func_and_grad
 
         if acq_func in ["EIps", "PIps"]:
-
             if return_grad:
                 mu, std, mu_grad, std_grad = time_model.predict(
                     X, return_std=True, return_mean_grad=True, return_std_grad=True
@@ -86,15 +108,22 @@ def _gaussian_acquisition(
                 acq_grad *= inv_t
                 acq_grad += acq_vals * (-mu_grad + std * std_grad)
 
+    elif acq_func in ["MES"]:
+        acq_vals = -gaussian_mes(X, model, deterministic=deterministic)
+        if return_grad:
+            raise NotImplementedError(
+                "Gradient not implemented for MES acquisition function."
+            )
     else:
         raise ValueError("Acquisition function not implemented.")
 
     if return_grad:
         return acq_vals, acq_grad
+
     return acq_vals
 
 
-def gaussian_lcb(X, model, kappa=1.96, return_grad=False):
+def gaussian_lcb(X, model, kappa=1.96, return_grad=False, deterministic=False):
     """
     Use the lower confidence bound to estimate the acquisition
     values.
@@ -147,13 +176,19 @@ def gaussian_lcb(X, model, kappa=1.96, return_grad=False):
             return mu - kappa * std, mu_grad - kappa * std_grad
 
         else:
-            mu, std = model.predict(X, return_std=True)
+            if deterministic:
+                mu, std_al, std_ep = model.predict(
+                    X, return_std=True, disentangled_std=True
+                )
+                std = std_ep
+            else:
+                mu, std = model.predict(X, return_std=True)
             if kappa == "inf":
                 return -std
             return mu - kappa * std
 
 
-def gaussian_pi(X, model, y_opt=0.0, xi=0.01, return_grad=False):
+def gaussian_pi(X, model, y_opt=0.0, xi=0.01, return_grad=False, deterministic=False):
     """
     Use the probability of improvement to calculate the acquisition values.
 
@@ -206,7 +241,13 @@ def gaussian_pi(X, model, y_opt=0.0, xi=0.01, return_grad=False):
                 X, return_std=True, return_mean_grad=True, return_std_grad=True
             )
         else:
-            mu, std = model.predict(X, return_std=True)
+            if deterministic:
+                mu, std_al, std_ep = model.predict(
+                    X, return_std=True, disentangled_std=True
+                )
+                std = std_ep
+            else:
+                mu, std = model.predict(X, return_std=True)
 
     # check dimensionality of mu, std so we can divide them below
     if (mu.ndim != 1) or (std.ndim != 1):
@@ -237,7 +278,7 @@ def gaussian_pi(X, model, y_opt=0.0, xi=0.01, return_grad=False):
     return values
 
 
-def gaussian_ei(X, model, y_opt=0.0, xi=0.01, return_grad=False):
+def gaussian_ei(X, model, y_opt=0.0, xi=0.01, return_grad=False, deterministic=False):
     """
     Use the expected improvement to calculate the acquisition values.
 
@@ -290,7 +331,13 @@ def gaussian_ei(X, model, y_opt=0.0, xi=0.01, return_grad=False):
             )
 
         else:
-            mu, std = model.predict(X, return_std=True)
+            if deterministic:
+                mu, std_al, std_ep = model.predict(
+                    X, return_std=True, disentangled_std=True
+                )
+                std = std_ep
+            else:
+                mu, std = model.predict(X, return_std=True)
 
     # check dimensionality of mu, std so we can divide them below
     if (mu.ndim != 1) or (std.ndim != 1):
@@ -326,5 +373,89 @@ def gaussian_ei(X, model, y_opt=0.0, xi=0.01, return_grad=False):
 
         grad = exploit_grad + explore_grad
         return values, grad
+
+    return values
+
+
+def gaussian_mes(X, model, k_samples=10, deterministic=False):
+    """
+    Use the max-value entropy to calculate the acquisition values.
+    Article: https://arxiv.org/abs/1703.01968
+    Source implementation: https://github.com/zi-w/Max-value-Entropy-Search/blob/master/acFuns/evaluateMES.m
+
+    The conditional probability `P(y=f(x) | x)` form a gaussian with a certain
+    mean and standard deviation approximated by the model.
+
+    The EI condition is derived by computing ``E[u(f(x))]``
+    where ``u(f(x)) = 0``, if ``f(x) > y_opt`` and ``u(f(x)) = y_opt - f(x)``,
+    if``f(x) < y_opt``.
+
+    This solves one of the issues of the PI condition by giving a reward
+    proportional to the amount of improvement got.
+
+    Note that the value returned by this function should be maximized to
+    obtain the ``X`` with maximum improvement.
+
+    Parameters
+    ----------
+    X : array-like, shape=(n_samples, n_features)
+        Values where the acquisition function should be computed.
+
+    model : sklearn estimator that implements predict with ``return_std``
+        The fit estimator that approximates the function through the
+        method ``predict``.
+        It should have a ``return_std`` parameter that returns the standard
+        deviation.
+
+    y_opt : float, default 0
+        Previous minimum value which we would like to improve upon.
+
+    xi : float, default=0.01
+        Controls how much improvement one wants over the previous best
+        values. Useful only when ``method`` is set to "EI"
+
+    return_grad : boolean, optional
+        Whether or not to return the grad. Implemented only for the case where
+        ``X`` is a single sample.
+
+    Returns
+    -------
+    values : array-like, shape=(X.shape[0],)
+        Acquisition function values computed at X.
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        if deterministic:
+            mu, std_al, std_ep = model.predict(
+                X, return_std=True, disentangled_std=True
+            )
+            std = std_ep
+        else:
+            mu, std = model.predict(X, return_std=True)
+
+        # MES is defined for a maximization problem but the model prediction are for minimization
+        # we map minimization to maximization by multiplying by -1
+        mu *= -1
+
+    # check dimensionality of mu, std so we can divide them below
+    if (mu.ndim != 1) or (std.ndim != 1):
+        raise ValueError(
+            "mu, std_al, std_ep are {}-dimensional and {}-dimensional, "
+            "however both must be 1-dimensional. Did you train "
+            "your model with an (N, 1) vector instead of an "
+            "(N,) vector?".format(mu.ndim, std.ndim)
+        )
+
+    values = np.zeros_like(mu)
+    eps = 1e-10
+    std = np.maximum(std, eps)
+    for _ in range(k_samples):
+        y_sample = norm.rvs(loc=mu, scale=std)
+        gamma = (np.max(y_sample) - mu) / std
+        pdfgamma = np.maximum(norm.pdf(gamma), eps)
+        cdfgamma = np.maximum(norm.cdf(gamma), eps)
+        values += 0.5 * gamma * pdfgamma / cdfgamma - np.log(cdfgamma)
+    values /= k_samples
 
     return values

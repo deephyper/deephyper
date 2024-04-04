@@ -19,23 +19,56 @@ from deephyper.skopt.moo import (
     MoScalarFunction,
     moo_functions,
 )
-
-from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.base import is_regressor
 from deephyper.skopt.utils import use_named_args
 
 # Adapt minimization -> maximization with DeepHyper
 MAP_multi_point_strategy = {"cl_min": "cl_max", "cl_max": "cl_min", "qUCB": "qLCB"}
 
-MAP_acq_func = {"UCB": "LCB", "qUCB": "qLCB"}
+# TODO: check if qUCB is still valid
+MAP_acq_func = {"UCB": "LCB", "UCBd": "LCBd"}
 
 MAP_filter_failures = {"min": "max"}
 
 
 # schedulers
-def scheduler_periodic_exponential_decay(i, eta_0, periode, rate, delay):
-    """Periodic exponential decay scheduler for exploration-exploitation."""
-    eta_i = eta_0 * np.exp(-rate * ((i - 1 - delay) % periode))
+def scheduler_periodic_exponential_decay(i, eta_0, num_dim, period, rate, delay):
+    """Periodic exponential decay scheduler for exploration-exploitation.
+
+    Args:
+        i (int): current iteration.
+        eta_0 (float): initial value of the parameters ``[kappa, xi]`` to decay.
+        num_dim (int): number of dimensions of the search space.
+        period (int): period of the decay.
+        rate (float): rate of the decay.
+        delay (int): delay of the decay (decaying starts after ``delay`` iterations).
+
+    Returns:
+        tuple: an iterable of length 2 with the updated values at iteration ``i`` for ``[kappa, xi]``.
+    """
+    eta_i = eta_0 * np.exp(-rate * ((i - 1 - delay) % period))
+    return eta_i
+
+
+def scheduler_bandit(i, eta_0, num_dim, delta=0.05, lamb=0.2, delay=0):
+    """Bandit scheduler for exploration-exploitation. Only valid for the UCB acquisition function.
+
+    Args:
+        i (int): current iteration.
+        eta_0 (float): initial value of the parameters ``[kappa, xi]`` to decay.
+        num_dim (int): number of dimensions of the search space.
+        delta (float): confidence level.
+        lamb (float): factor of the initial scheduler. Defaults to ``0.2``.
+        delay (int): delay of the scheduler (decaying starts after ``delay`` iterations).
+
+    Returns:
+        tuple: an iterable of length 2 with the updated values at iteration ``i`` for ``[kappa, xi]``.
+    """
+    i = np.maximum(i + 1 - delay, 1)
+    beta_i = 2 * np.log(num_dim * i**2 * np.pi**2 / (6 * delta)) * lamb
+    beta_i = np.sqrt(beta_i)
+    eta_i = eta_0[:]
+    eta_i[0] = beta_i
     return eta_i
 
 
@@ -53,9 +86,10 @@ class CBO(Search):
         random_state (int, optional): Random seed. Defaults to ``None``.
         log_dir (str, optional): Log directory where search's results are saved. Defaults to ``"."``.
         verbose (int, optional): Indicate the verbosity level of the search. Defaults to ``0``.
-        surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Surrogate model used by the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "GBRT", "DUMMY"]`` or a sklearn regressor. ``"RF"`` is for Random-Forest which is the best compromise between speed and quality when performing a lot of parallel evaluations, i.e., reaching more than hundreds of evaluations. ``"GP"`` is for Gaussian-Process which is the best choice when maximizing the quality of iteration but quickly slow down when reaching hundreds of evaluations, also it does not support conditional search space. ``"ET"`` is for Extra-Tree, faster than random forest but with worse mean estimate and poor uncertainty quantification capabilities. ``"GBRT"`` is for Gradient-Boosting Regression Tree, it has better mean estimate than other tree-based method worse uncertainty quantification capabilities and slower than ``"RF"``. Defaults to ``"RF"``.
+        surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Surrogate model used by the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "MF", "GBRT", "DUMMY"]`` or a sklearn regressor. ``"ET"`` is for Extremely Randomized Trees which is the best compromise between speed and quality when performing a lot of parallel evaluations, i.e., reaching more than hundreds of evaluations. ``"GP"`` is for Gaussian-Process which is the best choice when maximizing the quality of iteration but quickly slow down when reaching hundreds of evaluations, also it does not support conditional search space. ``"RF"`` is for Random-Forest, slower than extremely randomized trees but with better mean estimate and worse epistemic uncertainty quantification capabilities. ``"GBRT"`` is for Gradient-Boosting Regression Tree, it has better mean estimate than other tree-based method worse uncertainty quantification capabilities and slower than ``"RF"``. Defaults to ``"ET"``.
         acq_func (str, optional): Acquisition function used by the Bayesian optimization. Can be a value in ``["UCB", "EI", "PI", "gp_hedge"]``. Defaults to ``"UCB"``.
-        acq_optimizer (str, optional): Method used to minimze the acquisition function. Can be a value in ``["sampling", "lbfgs"]``. Defaults to ``"auto"``.
+        acq_optimizer (str, optional): Method used to minimze the acquisition function. Can be a value in ``["sampling", "lbfgs", "ga"]``. Defaults to ``"auto"``.
+        acq_optimizer_freq (int, optional): Frequency of optimization calls for the acquisition function. Defaults to ``10``, using optimizer every ``10`` surrogate model updates.
         kappa (float, optional): Manage the exploration/exploitation tradeoff for the "UCB" acquisition function. Defaults to ``1.96`` which corresponds to 95% of the confidence interval.
         xi (float, optional): Manage the exploration/exploitation tradeoff of ``"EI"`` and ``"PI"`` acquisition function. Defaults to ``0.001``.
         n_points (int, optional): The number of configurations sampled from the search space to infer each batch of new evaluated configurations.
@@ -68,12 +102,12 @@ class CBO(Search):
         initial_point_generator (str, optional): Sets an initial points generator. Can be either ``["random", "sobol", "halton", "hammersly", "lhs", "grid"]``. Defaults to ``"random"``.
         initial_points (List[Dict], optional): A list of initial points to evaluate where each point is a dictionnary where keys are names of hyperparameters and values their corresponding choice. Defaults to ``None`` for them to be generated randomly from the search space.
         sync_communcation (bool, optional): Performs the search in a batch-synchronous manner. Defaults to ``False`` for asynchronous updates.
-        filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. If ``"ignore"`` is passed then failed configurations will be filtered-out and not passed to the surrogate model. For multiple objectives, failure of any single objective will lead to treating that configuration as failed and each of these multiple objective will be replaced by their individual ``"min"`` or ``"mean"`` of past configurations. Defaults to ``"mean"`` to replace by failed configurations by the running mean of objectives.
+        filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. If ``"ignore"`` is passed then failed configurations will be filtered-out and not passed to the surrogate model. For multiple objectives, failure of any single objective will lead to treating that configuration as failed and each of these multiple objective will be replaced by their individual ``"min"`` or ``"mean"`` of past configurations. Defaults to ``"min"`` to replace failed configurations objectives by the running min of all objectives.
         max_failures (int, optional): Maximum number of failed configurations allowed before observing a valid objective value when ``filter_failures`` is not equal to ``"ignore"``. Defaults to ``100``.
         moo_lower_bounds (list, optional): List of lower bounds on the interesting range of objective values. Must be the same length as the number of obejctives. Defaults to ``None``, i.e., no bounds. Can bound only a single objective by providing ``None`` for all other values. For example, ``moo_lower_bounds=[None, 0.5, None]`` will explore all tradeoffs for the objectives at index 0 and 2, but only consider scores for objective 1 that exceed 0.5.
         moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "AugChebyshev", "PBI", "Quadratic"]``. Defaults to ``"Chebyshev"``. Typically, randomized methods should be used to capture entire Pareto front, unless there is a known target solution a priori. Additional details on each scalarization can be found in :mod:`deephyper.skopt.moo`.
         moo_scalarization_weight (list, optional): Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions. Defaults to ``None`` for randomized weights. Only set if you want to fix the scalarization weights for a multiobjective HPS.
-        scheduler (dict, callable, optional): a method to manage the the value of ``kappa, xi`` with iterations. Defaults to ``None`` which does not use any scheduler.
+        scheduler (dict, callable, optional): a function to manage the value of ``kappa, xi`` with iterations. Defaults to ``None`` which does not use any scheduler. The periodic exponential decay scheduler can be used with  ``scheduler={"type": "periodic-exp-decay", "period": 30, "rate": 0.1}``. The scheduler can also be a callable function with signature ``scheduler(i, eta_0, **kwargs)`` where ``i`` is the current iteration, ``eta_0`` is the initial value of ``[kappa, xi]`` and ``kwargs`` are other fixed parameters of the function. Instead of fixing the decay ``"rate"`` the final ``kappa`` or ``xi` can be used ``{"type": "periodic-exp-decay", "period": 25, "kappa_final": 1.96}``.
         objective_scaler (str, optional): a way to map the objective space to some other support for example to normalize it. Defaults to ``"auto"`` which automatically set it to "identity" for any surrogate model except "RF" which will use "quantile-uniform".
         stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the function. Defaults to ``None`` which does not use any stopper.
     """
@@ -85,12 +119,14 @@ class CBO(Search):
         random_state: int = None,
         log_dir: str = ".",
         verbose: int = 0,
-        surrogate_model="RF",
-        acq_func: str = "UCB",
+        surrogate_model="ET",
+        surrogate_model_kwargs: dict = None,  # TODO: documentation
+        acq_func: str = "UCBd",
         acq_optimizer: str = "auto",
+        acq_optimizer_freq: int = 10,
         kappa: float = 1.96,
         xi: float = 0.001,
-        n_points: int = 10000,
+        n_points: int = 10_000,
         filter_duplicated: bool = True,
         update_prior: bool = False,
         update_prior_quantile: float = 0.1,
@@ -100,7 +136,7 @@ class CBO(Search):
         initial_point_generator: str = "random",
         initial_points=None,
         sync_communication: bool = False,
-        filter_failures: str = "mean",
+        filter_failures: str = "min",
         max_failures: int = 100,
         moo_lower_bounds=None,
         moo_scalarization_strategy: str = "Chebyshev",
@@ -118,12 +154,26 @@ class CBO(Search):
         if not (type(n_jobs) is int):
             raise ValueError(f"Parameter n_jobs={n_jobs} should be an integer value!")
 
-        surrogate_model_allowed = ["RF", "ET", "GBRT", "DUMMY", "GP", "MF"]
+        surrogate_model_allowed = [
+            # Trees
+            "RF",
+            "ET",
+            "TB",
+            "RS",
+            "MF",
+            # Other models
+            "GBRT",
+            "GP",
+            "HGBRT",
+            # Random Search
+            "DUMMY",
+        ]
         if surrogate_model in surrogate_model_allowed:
             base_estimator = self._get_surrogate_model(
                 surrogate_model,
-                n_jobs,
+                n_jobs=n_jobs,
                 random_state=self._random_state.randint(0, 2**31),
+                surrogate_model_kwargs=surrogate_model_kwargs,
             )
         elif is_regressor(surrogate_model):
             base_estimator = surrogate_model
@@ -132,7 +182,19 @@ class CBO(Search):
                 f"Parameter 'surrogate_model={surrogate_model}' should have a value in {surrogate_model_allowed}, or be a sklearn regressor!"
             )
 
-        acq_func_allowed = ["UCB", "EI", "PI", "gp_hedge", "qUCB"]
+        acq_func_allowed = [
+            "UCB",
+            "EI",
+            "PI",
+            "MES",
+            "gp_hedge",
+            "qUCB",
+            "UCBd",
+            "EId",
+            "PId",
+            "MESd",
+            "gp_hedged",
+        ]
         if not (acq_func in acq_func_allowed):
             raise ValueError(
                 f"Parameter 'acq_func={acq_func}' should have a value in {acq_func_allowed}!"
@@ -216,17 +278,10 @@ class CBO(Search):
         )
         self._fitted = False
 
-        # check if it is possible to convert the ConfigSpace to standard skopt Space
-        if (
-            isinstance(self._problem.space, CS.ConfigurationSpace)
-            and len(self._problem.space.get_forbiddens()) == 0
-            and len(self._problem.space.get_conditions()) == 0
-        ):
-            self._opt_space = convert_to_skopt_space(
-                self._problem.space, surrogate_model=surrogate_model
-            )
-        else:
-            self._opt_space = self._problem.space
+        # Map the ConfigSpace to Skop Space
+        self._opt_space = convert_to_skopt_space(
+            self._problem.space, surrogate_model=surrogate_model
+        )
 
         self._opt = None
         self._opt_kwargs = dict(
@@ -245,7 +300,7 @@ class CBO(Search):
                     filter_failures, filter_failures
                 ),
                 "max_failures": max_failures,
-                "boltzmann_gamma": 1,
+                "acq_optimizer_freq": acq_optimizer_freq,
             },
             # acquisition function
             acq_func=MAP_acq_func.get(acq_func, acq_func),
@@ -261,29 +316,59 @@ class CBO(Search):
 
         self._gather_type = "ALL" if sync_communication else "BATCH"
 
-        # scheduler policy
+        # Scheduler policy
+        scheduler = {"type": "bandit"} if scheduler is None else scheduler
         self.scheduler = None
         if type(scheduler) is dict:
             scheduler = scheduler.copy()
             scheduler_type = scheduler.pop("type", None)
-            assert scheduler_type in ["periodic-exp-decay"]
+            assert scheduler_type in ["periodic-exp-decay", "bandit"]
 
             if scheduler_type == "periodic-exp-decay":
+                rate = scheduler.get("rate", None)
+                period = scheduler.get("period", None)
+
+                # Automatically retrieve the "decay rate" of the scheduler by solving
+                # the equation: eta_0 * exp(-rate * period) = eta_final
+                if rate is None:
+                    if "UCB" in acq_func:
+                        kappa_final = scheduler.pop("kappa_final", 0.1)
+                        rate = -1 / period * np.log(kappa_final / kappa)
+                    elif "EI" in acq_func or "PI" in acq_func:
+                        xi_final = scheduler.pop("xi_final", 0.0001)
+                        rate = -1 / period * np.log(xi_final / xi)
+                    else:
+                        rate = 0.1
+
                 scheduler_params = {
-                    "periode": 25,
-                    "rate": 0.1,
+                    "period": period,
+                    "rate": rate,
                     "delay": n_initial_points,
                 }
                 scheduler_func = scheduler_periodic_exponential_decay
 
+            elif scheduler_type == "bandit":
+                scheduler_params = {
+                    "delta": 0.05,
+                    "lamb": 0.2,
+                    "delay": n_initial_points,
+                }
+                scheduler_func = scheduler_bandit
+
             scheduler_params.update(scheduler)
             eta_0 = np.array([kappa, xi])
             self.scheduler = functools.partial(
-                scheduler_func, eta_0=eta_0, **scheduler_params
+                scheduler_func,
+                eta_0=eta_0,
+                num_dim=len(self._problem),
+                **scheduler_params,
             )
             logging.info(
                 f"Set up scheduler '{scheduler_type}' with parameters '{scheduler_params}'"
             )
+        elif callable(scheduler):
+            self.scheduler = functools.partial(scheduler, eta_0=np.array([kappa, xi]))
+            logging.info(f"Set up scheduler '{scheduler}'")
 
         # stopper
         self._evaluator._stopper = stopper
@@ -450,54 +535,140 @@ class CBO(Search):
                 logging.info(f"Submition took {time.time() - t1:.4f} sec.")
 
     def _get_surrogate_model(
-        self, name: str, n_jobs: int = None, random_state: int = None
+        self,
+        name: str,
+        n_jobs: int = 1,
+        random_state: int = None,
+        surrogate_model_kwargs: dict = None,
     ):
         """Get a surrogate model from Scikit-Optimize.
 
         Args:
             name (str): name of the surrogate model.
             n_jobs (int): number of parallel processes to distribute the computation of the surrogate model.
+            random_state (int): random seed.
+            surrogate_model_kwargs (dict): additional parameters to pass to the surrogate model.
+
+        Returns:
+            sklearn.base.RegressorMixin: a surrogate model capabable of predicting y_mean and y_std.
 
         Raises:
             ValueError: when the name of the surrogate model is unknown.
         """
-        accepted_names = ["RF", "ET", "GBRT", "DUMMY", "GP", "MF"]
+
+        # Check if the surrogate model is supported
+        accepted_names = ["RF", "ET", "TB", "RS", "GBRT", "DUMMY", "GP", "MF", "HGBRT"]
         if not (name in accepted_names):
             raise ValueError(
                 f"Unknown surrogate model {name}, please choose among {accepted_names}."
             )
 
-        if name == "RF":
-            # TODO: for better performance the RF surrogate could be fit with a bootstrap sample of size max 1_000
-            # However this should be refreshed each time when creating the estimator
-            surrogate = deephyper.skopt.learning.RandomForestRegressor(
-                # n_estimators=100,
-                # max_features=1,
-                # min_samples_leaf=3,
+        if surrogate_model_kwargs is None:
+            surrogate_model_kwargs = {}
+
+        # Define default surrogate model parameters
+        if name in ["RF", "ET", "TB", "RS", "MF"]:
+            default_surrogate_model_kwargs = dict(
+                n_estimators=100,
+                max_samples=0.8,
+                min_samples_split=2,  # Aleatoric Variance will be 0
                 n_jobs=n_jobs,
                 random_state=random_state,
             )
-        elif name == "ET":
-            surrogate = deephyper.skopt.learning.ExtraTreesRegressor(
-                # n_estimators=100,
-                # min_samples_leaf=3,
-                n_jobs=n_jobs,
-                random_state=random_state,
-            )
+
+            # From https://link.springer.com/article/10.1007/s10994-006-6226-1
+            # We follow parameters indicated at: p. 8, Sec. 2.2.2
+            # Model: Random Forest from L. Breiman
+            if name == "RF":
+                default_surrogate_model_kwargs["splitter"] = "best"
+                default_surrogate_model_kwargs["max_features"] = "sqrt"
+                default_surrogate_model_kwargs["bootstrap"] = True
+            # Model: Extremely Randomized Forest
+            elif name == "ET":
+                default_surrogate_model_kwargs["splitter"] = "random"
+                default_surrogate_model_kwargs["max_features"] = 1.0
+                default_surrogate_model_kwargs["bootstrap"] = False
+                default_surrogate_model_kwargs["max_samples"] = None
+            # Model: Tree Bagging
+            elif name == "TB":
+                default_surrogate_model_kwargs["bootstrap"] = True
+                default_surrogate_model_kwargs["splitter"] = "best"
+                default_surrogate_model_kwargs["max_features"] = 1.0
+            elif name == "RS":
+                default_surrogate_model_kwargs["splitter"] = "best"
+                default_surrogate_model_kwargs["bootstrap"] = False
+                default_surrogate_model_kwargs["max_samples"] = None
+                default_surrogate_model_kwargs["max_features"] = "sqrt"
+            elif name == "MF":
+                default_surrogate_model_kwargs["bootstrap"] = False
+                default_surrogate_model_kwargs["max_samples"] = None
+
         elif name == "GBRT":
-            gbrt = GradientBoostingRegressor(n_estimators=30, loss="quantile")
-            surrogate = deephyper.skopt.learning.GradientBoostingQuantileRegressor(
-                base_estimator=gbrt, n_jobs=n_jobs, random_state=random_state
+            default_surrogate_model_kwargs = dict(
+                n_estimtaors=10,
+                n_jobs=n_jobs,
+                random_state=random_state,
             )
+        elif name == "HGBRT":
+            default_surrogate_model_kwargs = dict(
+                n_jobs=n_jobs,
+                random_state=random_state,
+            )
+        else:
+            default_surrogate_model_kwargs = {}
+
+        default_surrogate_model_kwargs.update(surrogate_model_kwargs)
+
+        if name in ["RF", "TB", "RS", "ET"]:
+            surrogate = deephyper.skopt.learning.RandomForestRegressor(
+                **default_surrogate_model_kwargs,
+            )
+
+        # Model: Mondrian Forest
         elif name == "MF":
             try:
                 surrogate = deephyper.skopt.learning.MondrianForestRegressor(
-                    n_estimators=100, n_jobs=n_jobs, random_state=random_state
+                    **default_surrogate_model_kwargs,
                 )
             except AttributeError:
                 raise deephyper.core.exceptions.MissingRequirementError(
                     "Installing 'deephyper/scikit-garden' is required to use MondrianForest (MF) regressor as a surrogate model!"
                 )
+        # Model: Gradient Boosting Regression Tree (based on quantiles)
+        # https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingRegressor.html
+        elif name == "GBRT":
+            from sklearn.ensemble import GradientBoostingRegressor
+
+            gbrt = GradientBoostingRegressor(
+                n_estimators=default_surrogate_model_kwargs.pop("n_estimators"),
+                loss="quantile",
+            )
+            surrogate = deephyper.skopt.learning.GradientBoostingQuantileRegressor(
+                base_estimator=gbrt,
+                **default_surrogate_model_kwargs,
+            )
+        # Model: Histogram-based Gradient Boosting Regression Tree (based on quantiles)
+        # https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingRegressor.html
+        elif name == "HGBRT":
+            from sklearn.ensemble import HistGradientBoostingRegressor
+
+            # Check wich parameters are categorical
+            categorical_features = []
+            for hp_name in self._problem.space:
+                hp = self._problem.space.get_hyperparameter(hp_name)
+
+                categorical_features.append(
+                    isinstance(hp, csh.CategoricalHyperparameter)
+                    # or isinstance(hp, csh.OrdinalHyperparameter)
+                )
+
+            gbrt = HistGradientBoostingRegressor(
+                loss="quantile", categorical_features=categorical_features
+            )
+            surrogate = deephyper.skopt.learning.GradientBoostingQuantileRegressor(
+                base_estimator=gbrt,
+                **default_surrogate_model_kwargs,
+            )
         else:  # for DUMMY and GP
             surrogate = name
 
@@ -900,7 +1071,7 @@ class AMBS(CBO):
         random_state: int = None,
         log_dir: str = ".",
         verbose: int = 0,
-        surrogate_model="RF",
+        surrogate_model="ET",
         acq_func: str = "UCB",
         acq_optimizer: str = "auto",
         kappa: float = 1.96,

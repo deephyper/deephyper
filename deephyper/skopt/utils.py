@@ -208,7 +208,6 @@ def check_x_in_space(x, space):
         if any([len(p) != len(space.dimensions) for p in x]):
             raise ValueError("Not all points have the same dimensions as" " the space.")
     elif is_listlike(x):
-        print(x)
         if x not in space:
             raise ValueError(
                 "Point (%s) is not within the bounds of"
@@ -476,7 +475,7 @@ def cook_initial_point_generator(generator, **kwargs):
         elif generator == "lhs":
             generator = Lhs()
         elif generator == "grid":
-            generator = Grid()
+            generator = Grid(border="include")
         elif generator == "random":
             return None
     generator.set_params(**kwargs)
@@ -618,9 +617,8 @@ def normalize_dimensions(dimensions):
          NOTE: The upper and lower bounds are inclusive for `Integer`
          dimensions.
     """
-    space = Space(dimensions)
     transformed_dimensions = []
-    for dimension in space.dimensions:
+    for dimension in dimensions:
         # check if dimension is of a Dimension instance
         if isinstance(dimension, Dimension):
             # Change the transformer to normalize
@@ -630,7 +628,7 @@ def normalize_dimensions(dimensions):
         else:
             raise RuntimeError("Unknown dimension type " "(%s)" % type(dimension))
 
-    return Space(transformed_dimensions)
+    return transformed_dimensions
 
 
 def check_list_types(x, types):

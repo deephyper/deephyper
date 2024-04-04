@@ -27,6 +27,14 @@ DeepHyper is available on `PyPI <https://pypi.org/project/deephyper/>`_ and can 
     $ pip install "deephyper[analytics]" # Install Analytics tools (for developers).
     $ pip install "deephyper[dev]" # Install Developer Stack (tests, documentation, etc...)
 
+
+In Bayesian optimization, the Mondrian Forest surrogate model can be used. This model provides better uncertainty estimates used in the acquisition function. To install the Mondrian Forest surrogate model, you need to install the modified ``scikit-garden`` package from our repository. This package is not available on PyPI but can be installed through ``pip`` from the GitHub repository:
+
+.. code-block:: console
+
+    $ pip install "scikit-garden @ git+https://github.com/deephyper/scikit-garden@master"
+    
+
 Distributed Computation
 =======================
 

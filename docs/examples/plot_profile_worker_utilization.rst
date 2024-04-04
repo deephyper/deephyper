@@ -10,7 +10,7 @@
     .. note::
         :class: sphx-glr-download-link-note
 
-        Click :ref:`here <sphx_glr_download_examples_plot_profile_worker_utilization.py>`
+        :ref:`Go to the end <sphx_glr_download_examples_plot_profile_worker_utilization.py>`
         to download the full example code
 
 .. rst-class:: sphx-glr-example-title
@@ -38,12 +38,15 @@ We will use the ``time.sleep`` function to simulate a budget of 2 secondes of ex
 
 After defining the black-box we can continue with the definition of our main script:
 
-.. GENERATED FROM PYTHON SOURCE LINES 23-26
+.. GENERATED FROM PYTHON SOURCE LINES 23-29
 
 .. code-block:: default
 
     import black_box_util as black_box
 
+    from deephyper.analysis._matplotlib import update_matplotlib_rc
+
+    update_matplotlib_rc()
 
 
 
@@ -52,11 +55,11 @@ After defining the black-box we can continue with the definition of our main scr
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 27-28
+.. GENERATED FROM PYTHON SOURCE LINES 30-31
 
 Then we define the variable(s) we want to optimize. For this problem we optimize Ackley in a 2-dimensional search space, the true minimul is located at ``(0, 0)``.
 
-.. GENERATED FROM PYTHON SOURCE LINES 28-38
+.. GENERATED FROM PYTHON SOURCE LINES 31-41
 
 .. code-block:: default
 
@@ -76,8 +79,6 @@ Then we define the variable(s) we want to optimize. For this problem we optimize
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
 
@@ -89,11 +90,11 @@ Then we define the variable(s) we want to optimize. For this problem we optimize
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 39-40
+.. GENERATED FROM PYTHON SOURCE LINES 42-43
 
 Then we define a parallel search.
 
-.. GENERATED FROM PYTHON SOURCE LINES 40-60
+.. GENERATED FROM PYTHON SOURCE LINES 43-63
 
 .. code-block:: default
 
@@ -123,113 +124,82 @@ Then we define a parallel search.
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
 
-
     0it [00:00, ?it/s]
-
-    1it [00:00, 11915.64it/s, objective=-21.5]
-
-    2it [00:00,  3.21it/s, objective=-21.5]   
-
-    2it [00:00,  3.21it/s, objective=-21.2]
-
-    3it [00:01,  1.82it/s, objective=-21.2]
-
-    3it [00:01,  1.82it/s, objective=-20.6]
-
-    4it [00:01,  2.05it/s, objective=-20.6]
-
-    4it [00:01,  2.05it/s, objective=-20.6]
-
-    5it [00:03,  1.21it/s, objective=-20.6]
-
-    5it [00:03,  1.21it/s, objective=-19.9]
-
-    6it [00:03,  1.55it/s, objective=-19.9]
-
-    6it [00:03,  1.55it/s, objective=-19.9]
-
-    7it [00:04,  1.31it/s, objective=-19.9]
-
-    7it [00:04,  1.31it/s, objective=-19.9]
-
-    8it [00:05,  1.48it/s, objective=-19.9]
-
-    8it [00:05,  1.48it/s, objective=-19.9]
-
-    9it [00:06,  1.20it/s, objective=-19.9]
-
-    9it [00:06,  1.20it/s, objective=-19.9]
-
-    10it [00:06,  1.41it/s, objective=-19.9]
-
-    10it [00:06,  1.41it/s, objective=-19.9]
-
-    11it [00:07,  1.53it/s, objective=-19.9]
-
-    11it [00:07,  1.53it/s, objective=-19.9]
-
-    12it [00:08,  1.37it/s, objective=-19.9]
-
-    12it [00:08,  1.37it/s, objective=-19.9]
-
-    13it [00:10,  1.07s/it, objective=-19.9]
-
-    13it [00:10,  1.07s/it, objective=-11.3]
-
-    14it [00:10,  1.20it/s, objective=-11.3]
-
-    14it [00:10,  1.20it/s, objective=-11.3]
-
-    15it [00:10,  1.52it/s, objective=-11.3]
-
-    15it [00:10,  1.52it/s, objective=-11.3]
-
-    16it [00:11,  1.42it/s, objective=-11.3]
-
-    16it [00:11,  1.42it/s, objective=-11.3]
-
-    17it [00:13,  1.16s/it, objective=-11.3]
-
-    17it [00:13,  1.16s/it, objective=-11.3]
-
-    18it [00:13,  1.11it/s, objective=-11.3]
-
-    18it [00:13,  1.11it/s, objective=-10.7]
-
-    19it [00:13,  1.11it/s, objective=-10.7]
-
-    20it [00:14,  1.41it/s, objective=-10.7]
-
-    20it [00:14,  1.41it/s, objective=-10.5]
-
-    21it [00:15,  1.23it/s, objective=-10.5]
-
-    21it [00:15,  1.23it/s, objective=-9.85]
-
-    22it [00:16,  1.44it/s, objective=-9.85]
-
-    22it [00:16,  1.44it/s, objective=-9.85]
-
-    23it [00:17,  1.31it/s, objective=-9.85]
-
-    23it [00:17,  1.31it/s, objective=-9.85]
-
-    24it [00:17,  1.59it/s, objective=-9.85]
-
-    24it [00:17,  1.59it/s, objective=-9.85]
+    1it [00:00, 7037.42it/s, failures=0, objective=-19.8]
+    2it [00:00,  2.10it/s, failures=0, objective=-19.8]  
+    2it [00:00,  2.10it/s, failures=0, objective=-19.8]
+    3it [00:01,  2.27it/s, failures=0, objective=-19.8]
+    3it [00:01,  2.27it/s, failures=0, objective=-19.8]
+    4it [00:01,  2.46it/s, failures=0, objective=-19.8]
+    4it [00:01,  2.46it/s, failures=0, objective=-19.8]
+    5it [00:01,  2.46it/s, failures=0, objective=-19.8]
+    6it [00:03,  1.78it/s, failures=0, objective=-19.8]
+    6it [00:03,  1.78it/s, failures=0, objective=-19.8]
+    7it [00:03,  1.78it/s, failures=0, objective=-15.4]
+    8it [00:03,  2.55it/s, failures=0, objective=-15.4]
+    8it [00:03,  2.55it/s, failures=0, objective=-15.4]
+    9it [00:03,  2.55it/s, failures=0, objective=-15.4]
+    10it [00:04,  2.63it/s, failures=0, objective=-15.4]
+    10it [00:04,  2.63it/s, failures=0, objective=-15.4]
+    11it [00:04,  2.29it/s, failures=0, objective=-15.4]
+    11it [00:04,  2.29it/s, failures=0, objective=-15.4]
+    12it [00:05,  2.21it/s, failures=0, objective=-15.4]
+    12it [00:05,  2.21it/s, failures=0, objective=-15.4]
+    13it [00:05,  2.69it/s, failures=0, objective=-15.4]
+    13it [00:05,  2.69it/s, failures=0, objective=-12.6]
+    14it [00:06,  1.70it/s, failures=0, objective=-12.6]
+    14it [00:06,  1.70it/s, failures=0, objective=-12.6]
+    15it [00:07,  1.74it/s, failures=0, objective=-12.6]
+    15it [00:07,  1.74it/s, failures=0, objective=-12.6]
+    16it [00:07,  2.23it/s, failures=0, objective=-12.6]
+    16it [00:07,  2.23it/s, failures=0, objective=-12.6]
+    17it [00:07,  2.23it/s, failures=0, objective=-12.6]
+    18it [00:08,  1.73it/s, failures=0, objective=-12.6]
+    18it [00:08,  1.73it/s, failures=0, objective=-12.6]
+    19it [00:08,  1.73it/s, failures=0, objective=-5.88]
+    20it [00:09,  2.40it/s, failures=0, objective=-5.88]
+    20it [00:09,  2.40it/s, failures=0, objective=-5.62]
+    21it [00:09,  2.32it/s, failures=0, objective=-5.62]
+    21it [00:09,  2.32it/s, failures=0, objective=-5.62]
+    22it [00:09,  2.57it/s, failures=0, objective=-5.62]
+    22it [00:09,  2.57it/s, failures=0, objective=-5.62]
+    23it [00:10,  1.91it/s, failures=0, objective=-5.62]
+    23it [00:10,  1.91it/s, failures=0, objective=-5.62]
+    24it [00:11,  2.14it/s, failures=0, objective=-5.62]
+    24it [00:11,  2.14it/s, failures=0, objective=-5.62]
+    25it [00:11,  1.73it/s, failures=0, objective=-5.62]
+    25it [00:11,  1.73it/s, failures=0, objective=-5.62]
+    26it [00:12,  2.18it/s, failures=0, objective=-5.62]
+    26it [00:12,  2.18it/s, failures=0, objective=-5.62]
+    27it [00:12,  1.98it/s, failures=0, objective=-5.62]
+    27it [00:12,  1.98it/s, failures=0, objective=-5.62]
+    28it [00:12,  2.35it/s, failures=0, objective=-5.62]
+    28it [00:12,  2.35it/s, failures=0, objective=-5.62]
+    29it [00:14,  1.60it/s, failures=0, objective=-5.62]
+    29it [00:14,  1.60it/s, failures=0, objective=-5.62]
+    30it [00:14,  1.67it/s, failures=0, objective=-5.62]
+    30it [00:14,  1.67it/s, failures=0, objective=-5.62]
+    31it [00:14,  1.98it/s, failures=0, objective=-5.62]
+    31it [00:14,  1.98it/s, failures=0, objective=-5.62]
+    32it [00:15,  2.39it/s, failures=0, objective=-5.62]
+    32it [00:15,  2.39it/s, failures=0, objective=-5.62]
+    33it [00:16,  1.66it/s, failures=0, objective=-5.62]
+    33it [00:16,  1.66it/s, failures=0, objective=-5.62]
+    34it [00:16,  1.84it/s, failures=0, objective=-5.62]
+    34it [00:16,  1.84it/s, failures=0, objective=-5.62]
+    35it [00:16,  1.96it/s, failures=0, objective=-5.62]
+    35it [00:16,  1.96it/s, failures=0, objective=-5.62]
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 61-62
+.. GENERATED FROM PYTHON SOURCE LINES 64-65
 
 Finally, we plot the results from the collected DataFrame.
 
-.. GENERATED FROM PYTHON SOURCE LINES 62-108
+.. GENERATED FROM PYTHON SOURCE LINES 65-118
 
 .. code-block:: default
 
@@ -242,8 +212,8 @@ Finally, we plot the results from the collected DataFrame.
             history = []
 
             for _, row in df.iterrows():
-                history.append((row["timestamp_start"], 1))
-                history.append((row["timestamp_end"], -1))
+                history.append((row["m:timestamp_start"], 1))
+                history.append((row["m:timestamp_end"], -1))
 
             history = sorted(history, key=lambda v: v[0])
             nb_workers = 0
@@ -256,14 +226,20 @@ Finally, we plot the results from the collected DataFrame.
 
             return timestamp, n_jobs_running
 
+        t0 = results["m:timestamp_start"].iloc[0]
+        results["m:timestamp_start"] = results["m:timestamp_start"] - t0
+        results["m:timestamp_end"] = results["m:timestamp_end"] - t0
+        tmax = results["m:timestamp_end"].max()
+
         plt.figure()
 
         plt.subplot(2, 1, 1)
-        plt.scatter(results.timestamp_end, results.objective)
-        plt.plot(results.timestamp_end, results.objective.cummax())
+        plt.scatter(results["m:timestamp_end"], results.objective)
+        plt.plot(results["m:timestamp_end"], results.objective.cummax())
         plt.xlabel("Time (sec.)")
         plt.ylabel("Objective")
         plt.grid()
+        plt.xlim(0, tmax)
 
         plt.subplot(2, 1, 2)
         x, y = compile_profile(results)
@@ -275,8 +251,9 @@ Finally, we plot the results from the collected DataFrame.
             where="pre",
         )
         plt.ylim(0, 100)
+        plt.xlim(0, tmax)
         plt.xlabel("Time (sec.)")
-        plt.ylabel("Worker Utilization (%)")
+        plt.ylabel("Worker Utilization (\%)")
         plt.tight_layout()
         plt.show()
 
@@ -294,28 +271,25 @@ Finally, we plot the results from the collected DataFrame.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  20.101 seconds)
+   **Total running time of the script:** (0 minutes 22.543 seconds)
 
 
 .. _sphx_glr_download_examples_plot_profile_worker_utilization.py:
 
+.. only:: html
 
-.. only :: html
-
- .. container:: sphx-glr-footer
-    :class: sphx-glr-footer-example
+  .. container:: sphx-glr-footer sphx-glr-footer-example
 
 
 
-  .. container:: sphx-glr-download sphx-glr-download-python
 
-     :download:`Download Python source code: plot_profile_worker_utilization.py <plot_profile_worker_utilization.py>`
+    .. container:: sphx-glr-download sphx-glr-download-python
 
+      :download:`Download Python source code: plot_profile_worker_utilization.py <plot_profile_worker_utilization.py>`
 
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-  .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-     :download:`Download Jupyter notebook: plot_profile_worker_utilization.ipynb <plot_profile_worker_utilization.ipynb>`
+      :download:`Download Jupyter notebook: plot_profile_worker_utilization.ipynb <plot_profile_worker_utilization.ipynb>`
 
 
 .. only:: html

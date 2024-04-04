@@ -7,6 +7,90 @@ from sklearn.ensemble._forest import DecisionTreeRegressor, ForestRegressor
 from deephyper.core.utils.joblib_utils import Parallel, delayed
 
 
+def _accumulate_prediction_disentangled(tree, X, min_variance, out, lock):
+    """
+    This is a utility function for joblib's Parallel.
+
+    It can't go locally in ForestClassifier or ForestRegressor, because joblib
+    complains that it cannot pickle it when placed there.
+    """
+
+    mean_tree = tree.predict(X).T
+    var_tree = tree.tree_.impurity[tree.apply(X)]
+
+    # This rounding off is done in accordance with the
+    # adjustment done in section 4.3.3
+    # of http://arxiv.org/pdf/1211.0906v2.pdf to account
+    # for cases such as leaves with 1 sample in which there
+    # is zero variance.
+    var_tree = np.maximum(var_tree, min_variance)
+
+    with lock:
+        out[0] += mean_tree
+        out[1] += var_tree
+        out[2] += mean_tree**2
+
+
+def _return_mean_and_std_distentangled(X, n_outputs, trees, min_variance, n_jobs):
+    """
+    Returns `std(Y | X)`.
+
+    Can be calculated by E[Var(Y | Tree)] + Var(E[Y | Tree]) where
+    P(Tree) is `1 / len(trees)`.
+
+    Parameters
+    ----------
+    X : array-like, shape=(n_samples, n_features)
+        Input data.
+
+    n_outputs: int.
+        Number of outputs.
+
+    trees : list, shape=(n_estimators,)
+        List of fit sklearn trees as obtained from the ``estimators_``
+        attribute of a fit RandomForestRegressor or ExtraTreesRegressor.
+
+    predictions : array-like, shape=(n_samples,)
+        Prediction of each data point as returned by RandomForestRegressor
+        or ExtraTreesRegressor.
+
+    Returns
+    -------
+    std : array-like, shape=(n_samples,)
+        Standard deviation of `y` at `X`. If criterion
+        is set to "mse", then `std[i] ~= std(y | X[i])`.
+
+    """
+    # This derives std(y | x) as described in 4.3.2 of arXiv:1211.0906
+
+    mean = np.zeros((n_outputs, len(X)))
+    std_al = np.zeros((n_outputs, len(X)))
+    std_ep = np.zeros((n_outputs, len(X)))
+
+    # Parallel loop
+    lock = threading.Lock()
+    Parallel(n_jobs=n_jobs, verbose=0, require="sharedmem")(
+        delayed(_accumulate_prediction_disentangled)(
+            tree, X, min_variance, [mean, std_al, std_ep], lock
+        )
+        for tree in trees
+    )
+
+    mean, std_al, std_ep = mean.T, std_al.T, std_ep.T
+    mean /= len(trees)
+
+    std_al /= len(trees)
+    std_ep = std_ep / len(trees) - mean**2
+
+    std_al[std_al <= 0.0] = 0.0
+    std_al **= 0.5
+
+    std_ep[std_ep <= 0.0] = 0.0
+    std_ep **= 0.5
+
+    return mean.reshape(-1), std_al.reshape(-1), std_ep.reshape(-1)
+
+
 def _accumulate_prediction(tree, X, min_variance, out, lock):
     """
     This is a utility function for joblib's Parallel.
@@ -95,14 +179,13 @@ class RandomForestRegressor(ForestRegressor):
         reduction as feature selection criterion, and "mae" for the mean
         absolute error.
 
-    max_features : int, float, string or None, optional (default="auto")
+    max_features : int, float, string or None, optional (default="1.0")
         The number of features to consider when looking for the best split:
 
         - If int, then consider `max_features` features at each split.
         - If float, then `max_features` is a percentage and
           `int(max_features * n_features)` features are considered at each
           split.
-        - If "auto", then `max_features=n_features`.
         - If "sqrt", then `max_features=sqrt(n_features)`.
         - If "log2", then `max_features=log2(n_features)`.
         - If None, then `max_features=n_features`.
@@ -229,10 +312,10 @@ class RandomForestRegressor(ForestRegressor):
         *,
         criterion="squared_error",
         max_depth=None,
-        min_samples_split=2,
+        min_samples_split=10,
         min_samples_leaf=1,
         min_weight_fraction_leaf=0.0,
-        max_features="auto",
+        max_features=1.0,
         max_leaf_nodes=None,
         min_impurity_decrease=0.0,
         bootstrap=True,
@@ -248,7 +331,7 @@ class RandomForestRegressor(ForestRegressor):
     ):
         super().__init__(
             # !keyword-argument changing from sklearn==1.2.0, positional fixed it!
-            DecisionTreeRegressor(splitter=splitter),
+            DecisionTreeRegressor(),
             n_estimators=n_estimators,
             estimator_params=(
                 "criterion",
@@ -261,6 +344,7 @@ class RandomForestRegressor(ForestRegressor):
                 "min_impurity_decrease",
                 "random_state",
                 "ccp_alpha",
+                "splitter",
             ),
             bootstrap=bootstrap,
             oob_score=oob_score,
@@ -284,7 +368,7 @@ class RandomForestRegressor(ForestRegressor):
         self.min_variance = min_variance
         self.splitter = splitter
 
-    def predict(self, X, return_std=False):
+    def predict(self, X, return_std=False, disentangled_std=False):
         """Predict continuous output for X.
 
         Parameters
@@ -305,6 +389,7 @@ class RandomForestRegressor(ForestRegressor):
             Standard deviation of `y` at `X`. If criterion
             is set to "mse", then `std[i] ~= std(y | X[i])`.
 
+        disentangled_std : the std is returned disentangled between aleatoric and epistemic.
         """
         if return_std:
             if self.criterion != "squared_error":
@@ -312,10 +397,16 @@ class RandomForestRegressor(ForestRegressor):
                     "Expected impurity to be 'squared_error', got %s instead"
                     % self.criterion
                 )
-            mean, std = _return_mean_and_std(
-                X, self.n_outputs_, self.estimators_, self.min_variance, self.n_jobs
-            )
-            return mean, std
+            if disentangled_std:
+                mean, std_al, std_ep = _return_mean_and_std_distentangled(
+                    X, self.n_outputs_, self.estimators_, self.min_variance, self.n_jobs
+                )
+                return mean, std_al, std_ep
+            else:
+                mean, std = _return_mean_and_std(
+                    X, self.n_outputs_, self.estimators_, self.min_variance, self.n_jobs
+                )
+                return mean, std
         else:
             mean = super(RandomForestRegressor, self).predict(X)
 
@@ -467,13 +558,13 @@ class ExtraTreesRegressor(_sk_ExtraTreesRegressor):
 
     def __init__(
         self,
-        n_estimators=10,
+        n_estimators=100,
         criterion="squared_error",
         max_depth=None,
-        min_samples_split=2,
+        min_samples_split=10,
         min_samples_leaf=1,
         min_weight_fraction_leaf=0.0,
-        max_features="auto",
+        max_features=1.0,
         max_leaf_nodes=None,
         min_impurity_decrease=0.0,
         bootstrap=False,
@@ -483,6 +574,7 @@ class ExtraTreesRegressor(_sk_ExtraTreesRegressor):
         verbose=0,
         warm_start=False,
         min_variance=0.0,
+        max_samples=None,
     ):
         self.min_variance = min_variance
         super(ExtraTreesRegressor, self).__init__(
@@ -501,9 +593,10 @@ class ExtraTreesRegressor(_sk_ExtraTreesRegressor):
             random_state=random_state,
             verbose=verbose,
             warm_start=warm_start,
+            max_samples=max_samples,
         )
 
-    def predict(self, X, return_std=False):
+    def predict(self, X, return_std=False, disentangled_std=False):
         """
         Predict continuous output for X.
 
@@ -531,10 +624,16 @@ class ExtraTreesRegressor(_sk_ExtraTreesRegressor):
                     "Expected impurity to be 'squared_error', got %s instead"
                     % self.criterion
                 )
-            mean, std = _return_mean_and_std(
-                X, self.n_outputs_, self.estimators_, self.min_variance, self.n_jobs
-            )
-            return mean, std
+            if disentangled_std:
+                mean, std_al, std_ep = _return_mean_and_std_distentangled(
+                    X, self.n_outputs_, self.estimators_, self.min_variance, self.n_jobs
+                )
+                return mean, std_al, std_ep
+            else:
+                mean, std = _return_mean_and_std(
+                    X, self.n_outputs_, self.estimators_, self.min_variance, self.n_jobs
+                )
+                return mean, std
         else:
             mean = super(ExtraTreesRegressor, self).predict(X)
 

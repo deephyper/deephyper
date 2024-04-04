@@ -64,13 +64,16 @@ class TestEvaluator(unittest.TestCase):
 
         # str with "F" prefix for failed evaluation
         def run(config):
-            return "F_out_of_memory"
+            if config["x"] < 5:
+                return "F_out_of_memory"
+            else:
+                return 42.0
 
         evaluator = SerialEvaluator(run)
         evaluator.submit(configs)
         evaluator.gather(type="ALL")
         evaluator.dump_evals()
-        results = pd.read_csv("results.csv")
+        results = pd.read_csv("results.csv").sort_values(by="job_id")
         assert all(
             results.columns
             == [
@@ -82,7 +85,7 @@ class TestEvaluator(unittest.TestCase):
             ]
         )
         assert len(results) == 10
-        assert results["objective"][0] == "F_out_of_memory"
+        assert results.iloc[0]["objective"] == "F_out_of_memory"
 
         # dict
         def run(config):
@@ -318,4 +321,4 @@ class TestEvaluator(unittest.TestCase):
 
 if __name__ == "__main__":
     test = TestEvaluator()
-    test.test_thread()
+    test.test_run_function_standards()

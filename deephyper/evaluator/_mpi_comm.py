@@ -80,6 +80,12 @@ class MPICommEvaluator(Evaluator):
         self.num_workers = self.comm.Get_size() - 1  # 1 rank is the master
         self.sem = asyncio.Semaphore(self.num_workers)
         logging.info(f"Creating MPICommExecutor with {self.num_workers} max_workers...")
+
+        if self.num_workers == 0 and self.comm.Get_size() <= 1:
+            raise RuntimeError(
+                "No workers was detected because there was only 1 MPI rank. The number of MPI ranks must be greater than 1."
+            )
+
         self.executor = MPICommExecutor(comm=self.comm, root=self.root)
         self.master_executor = None
         logging.info("Creation of MPICommExecutor done")

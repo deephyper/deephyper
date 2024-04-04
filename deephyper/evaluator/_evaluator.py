@@ -16,6 +16,7 @@ from deephyper.evaluator._job import Job
 from deephyper.skopt.optimizer import OBJECTIVE_VALUE_FAILURE
 from deephyper.core.utils._timeout import terminate_on_timeout
 from deephyper.evaluator.storage import Storage, MemoryStorage
+from deephyper.core.exceptions import MaximumJobsSpawnReached
 
 EVALUATORS = {
     "mpicomm": "_mpi_comm.MPICommEvaluator",
@@ -93,6 +94,8 @@ class Evaluator:
         self.timestamp = (
             time.time()
         )  # Recorded time of when this evaluator interface was created.
+        self.max_num_jobs_spawn = -1  # Maximum number of jobs to spawn.
+        self.num_jobs_spawn_counter = 0  # Counter of jobs spawned.
         self.loop = None  # Event loop for asyncio.
         self._start_dumping = False
         self._columns_dumped = None  # columns names dumped in csv file
@@ -144,6 +147,10 @@ class Evaluator:
         is exhausted."""
         self._time_timeout_set = time.time()
         self._timeout = timeout
+
+    def set_max_num_jobs_spawn(self, max_num_jobs_spawn: int):
+        self.max_num_jobs_spawn = max_num_jobs_spawn
+        self.num_jobs_spawn_counter = 0
 
     def to_json(self):
         """Returns a json version of the evaluator."""
@@ -210,6 +217,16 @@ class Evaluator:
 
     async def _run_jobs(self, configs):
         for config in configs:
+
+            if (
+                self.max_num_jobs_spawn > 0
+                and self.num_jobs_spawn_counter >= self.max_num_jobs_spawn
+            ):
+                logging.info(
+                    f"Maximum number of jobs to spawn reached ({self.max_num_jobs_spawn})"
+                )
+                raise MaximumJobsSpawnReached
+
             # Create a Job object from the input configuration
             job_id = self._storage.create_new_job(self._search_id)
             self._storage.store_job_in(job_id, args=(config,))
@@ -238,6 +255,8 @@ class Evaluator:
         # call callbacks
         for cb in self._callbacks:
             cb.on_launch(job)
+
+        self.num_jobs_spawn_counter += 1
 
     def _on_done(self, job):
         """Called after a job has completed."""
@@ -453,16 +472,29 @@ class Evaluator:
 
         if len(resultsList) != 0:
             mode = "a" if self._start_dumping else "w"
+
             with open(os.path.join(log_dir, filename), mode) as fp:
                 if not (self._start_dumping):
-                    self._columns_dumped = resultsList[0].keys()
+                    # Waiting to start receiving non-failed jobs before dumping results
+                    for result in resultsList:
+                        if (
+                            "objective" in result
+                            and type(result["objective"]) is not str
+                        ) or (
+                            "objective_0" in result
+                            and type(result["objective_0"]) is not str
+                        ):
+                            self._columns_dumped = result.keys()
 
-                writer = csv.DictWriter(fp, self._columns_dumped, extrasaction="ignore")
+                if self._columns_dumped is not None:
+                    writer = csv.DictWriter(
+                        fp, self._columns_dumped, extrasaction="ignore"
+                    )
 
-                if not (self._start_dumping):
-                    writer.writeheader()
-                    self._start_dumping = True
+                    if not (self._start_dumping):
+                        writer.writeheader()
+                        self._start_dumping = True
 
-                writer.writerows(resultsList)
+                    writer.writerows(resultsList)
 
         logging.info("dump_evals done")

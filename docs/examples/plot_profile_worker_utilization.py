@@ -22,6 +22,9 @@ After defining the black-box we can continue with the definition of our main scr
 """
 import black_box_util as black_box
 
+from deephyper.analysis._matplotlib import update_matplotlib_rc
+
+update_matplotlib_rc()
 
 # %%
 # Then we define the variable(s) we want to optimize. For this problem we optimize Ackley in a 2-dimensional search space, the true minimul is located at ``(0, 0)``.
@@ -68,8 +71,8 @@ if __name__ == "__main__":
         history = []
 
         for _, row in df.iterrows():
-            history.append((row["timestamp_start"], 1))
-            history.append((row["timestamp_end"], -1))
+            history.append((row["m:timestamp_start"], 1))
+            history.append((row["m:timestamp_end"], -1))
 
         history = sorted(history, key=lambda v: v[0])
         nb_workers = 0
@@ -82,14 +85,20 @@ if __name__ == "__main__":
 
         return timestamp, n_jobs_running
 
+    t0 = results["m:timestamp_start"].iloc[0]
+    results["m:timestamp_start"] = results["m:timestamp_start"] - t0
+    results["m:timestamp_end"] = results["m:timestamp_end"] - t0
+    tmax = results["m:timestamp_end"].max()
+
     plt.figure()
 
     plt.subplot(2, 1, 1)
-    plt.scatter(results.timestamp_end, results.objective)
-    plt.plot(results.timestamp_end, results.objective.cummax())
+    plt.scatter(results["m:timestamp_end"], results.objective)
+    plt.plot(results["m:timestamp_end"], results.objective.cummax())
     plt.xlabel("Time (sec.)")
     plt.ylabel("Objective")
     plt.grid()
+    plt.xlim(0, tmax)
 
     plt.subplot(2, 1, 2)
     x, y = compile_profile(results)
@@ -101,7 +110,8 @@ if __name__ == "__main__":
         where="pre",
     )
     plt.ylim(0, 100)
+    plt.xlim(0, tmax)
     plt.xlabel("Time (sec.)")
-    plt.ylabel("Worker Utilization (%)")
+    plt.ylabel("Worker Utilization (\%)")
     plt.tight_layout()
     plt.show()

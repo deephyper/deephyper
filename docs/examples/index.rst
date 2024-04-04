@@ -19,14 +19,14 @@ Below is a gallery of examples on how to use DeepHyper.
 
 .. only:: html
 
-  .. image:: /examples/images/thumb/sphx_glr_plot_from_serial_to_parallel_hyperparameter_search_thumb.png
+  .. image:: /examples/images/thumb/sphx_glr_plot_experimental_design_thumb.png
     :alt:
 
-  :ref:`sphx_glr_examples_plot_from_serial_to_parallel_hyperparameter_search.py`
+  :ref:`sphx_glr_examples_plot_experimental_design.py`
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">From Serial to Parallel Evaluations</div>
+      <div class="sphx-glr-thumbnail-title">Standard Experimental Design (Grid Search)</div>
     </div>
 
 
@@ -70,6 +70,23 @@ Below is a gallery of examples on how to use DeepHyper.
 
 .. only:: html
 
+  .. image:: /examples/images/thumb/sphx_glr_plot_from_serial_to_parallel_hyperparameter_search_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_plot_from_serial_to_parallel_hyperparameter_search.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">From Serial to Parallel Evaluations</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
+
+.. only:: html
+
   .. image:: /examples/images/thumb/sphx_glr_plot_profile_worker_utilization_thumb.png
     :alt:
 
@@ -89,9 +106,10 @@ Below is a gallery of examples on how to use DeepHyper.
 .. toctree::
    :hidden:
 
-   /examples/plot_from_serial_to_parallel_hyperparameter_search
+   /examples/plot_experimental_design
    /examples/plot_notify_failures_hyperparameter_search
    /examples/plot_transfer_learning_for_hps
+   /examples/plot_from_serial_to_parallel_hyperparameter_search
    /examples/plot_profile_worker_utilization
 
 
