@@ -8,6 +8,10 @@ from deephyper.evaluator._run_function_utils import standardize_run_function_out
 from deephyper.stopper._stopper import Stopper
 
 
+class JobContext:
+    search = None
+
+
 class Job:
     """Represents an evaluation executed by the ``Evaluator`` class.
 
@@ -33,6 +37,7 @@ class Job:
             "metadata": {"timestamp_submit": None, "timestamp_gather": None},
         }
         self.observations = None
+        self.context = JobContext()
 
     def __repr__(self) -> str:
         if self.rank is not None:

@@ -51,6 +51,15 @@ class Search(abc.ABC):
         self._log_dir = os.path.abspath(log_dir)
         pathlib.Path(log_dir).mkdir(parents=True, exist_ok=True)
 
+        self._verbose = verbose
+
+        # if a callable is directly passed wrap it around the serial evaluator
+        self.check_evaluator(evaluator)
+
+        # Set the search object in the evaluator to be able to call it within callbacks
+        self._evaluator.search = self
+
+        # Check if results already exist
         self._path_results = os.path.join(self._log_dir, "results.csv")
         if os.path.exists(self._path_results):
             str_current_time = time.strftime("%Y%m%d-%H%M%S")
@@ -66,11 +75,6 @@ class Search(abc.ABC):
             )
             evaluator._columns_dumped = None
             evaluator._start_dumping = False
-
-        self._verbose = verbose
-
-        # if a callable is directly passed wrap it around the serial evaluator
-        self.check_evaluator(evaluator)
 
     def check_evaluator(self, evaluator):
         if not (isinstance(evaluator, Evaluator)):
