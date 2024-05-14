@@ -405,10 +405,12 @@ class LCModelStopper(Stopper):
         max_steps (int): The maximum number of training steps which can be performed.
         min_steps (int, optional): The minimum number of training steps which can be performed. Defaults to ``4``. It is better to have at least as many steps as the number of parameters of the fitted learning curve model. For example, if ``lc_model="mmf4"`` then ``min_steps`` should be at least ``4``.
         lc_model (str, optional): The parameteric learning model to use. It should be a string in the following list: ``["lin2", "loglin2", "loglin3", "loglin4", "pow3","mmf4", "vapor3", "logloglin2", "hill3", "logpow3", "pow4", "exp4", "janoschek4", "weibull4", "ilog2"]``. The number in the name corresponds to the number of parameters of the parametric model. Defaults to ``"mmf4"``.
+        min_obs_to_fit_lc_model (int, optional): The minimum number of observed scores to fit the learning curve model. Defaults to ``4`` because the ``"mmf4"`` model has 4 parameters.
         min_done_for_outlier_detection (int, optional): The minimum number of observed scores at the same step to check for if it is a lower-bound outlier. Defaults to ``10``.
         iqr_factor_for_outlier_detection (float, optional): The IQR factor for outlier detection. The higher it is the more inclusive the condition will be (i.e. if set very large it is likely not going to detect any outliers). Defaults to ``1.5``.
         prob_promotion (float, optional): The threshold probabily to stop the iterations. If the current learning curve has a probability greater than ``prob_promotion`` to be worse that the best observed score accross all evaluations then the current iterations are stopped. Defaults to ``0.9`` (i.e. probability of 0.9 of being worse).
         early_stopping_patience (float, optional): The patience of the early stopping condition. If it is an ``int`` it is directly corresponding to a number of iterations. If it is a ``float`` then it is corresponding to a proportion between [0,1] w.r.t. ``max_steps``. Defaults to ``0.25`` (i.e. 25% of ``max_steps``).
+        reduction_factor (int, optional): The reduction factor of the number of steps to wait before stopping the evaluation. Defaults to ``1`` to extrapolate the learning curve at every step.
         objective_returned (str, optional): The returned objective. It can be a value in ``["last", "max", "alc"]`` where ``"last"`` corresponds to the last observed score, ``"max"`` corresponds to the maximum observed score and ``"alc"`` corresponds to the area under the learning curve. Defaults to "last".
         random_state (int or np.RandomState, optional): The random state of estimation process. Defaults to ``None``.
 
@@ -426,7 +428,7 @@ class LCModelStopper(Stopper):
         iqr_factor_for_outlier_detection=1.5,
         prob_promotion=0.9,
         early_stopping_patience=0.25,
-        reduction_factor=3,
+        reduction_factor=1,
         objective_returned="last",
         random_state=None,
     ) -> None:
@@ -474,7 +476,7 @@ class LCModelStopper(Stopper):
             )
 
     def _compute_halting_step(self):
-        return (self.min_steps - 1) * self._reduction_factor**self._rung
+        return (self.min_steps - 1) + self._reduction_factor**self._rung
 
     def _retrieve_best_objective(self) -> float:
         search_id, _ = self.job.id.split(".")
