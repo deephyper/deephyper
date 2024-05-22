@@ -66,7 +66,7 @@ class Job:
     @property
     def metadata(self):
         """Metadata of the job stored in the output of run-function."""
-        return self.output["metadata"]
+        return self.output.get("metadata", dict())
 
     def set_output(self, output):
         output = standardize_run_function_output(output)
