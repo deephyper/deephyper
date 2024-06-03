@@ -22,7 +22,7 @@ platform_infos = platform.platform()
 REQUIRED = [
     "ConfigSpace>=0.4.20",
     "dm-tree",
-    "Jinja2<3.1",  # TODO: Check vulnerability issue
+    "Jinja2>=3.1.4",  # Related to security vulnerability: https://security.snyk.io/vuln/SNYK-PYTHON-JINJA2-6809379
     "numpy>=1.20",
     "pandas>=0.24.2",
     "packaging",
