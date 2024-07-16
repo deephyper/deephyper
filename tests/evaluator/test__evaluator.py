@@ -27,7 +27,7 @@ class TestEvaluator(unittest.TestCase):
         with pytest.raises(ValueError):
             evaluator = Evaluator.create(
                 run,
-                method="threadPool",
+                method="thread",
                 method_kwargs={
                     "num_workers": 1,
                 },

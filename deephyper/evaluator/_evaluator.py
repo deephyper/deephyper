@@ -101,6 +101,7 @@ class Evaluator:
         self._columns_dumped = None  # columns names dumped in csv file
         self.num_objective = None  # record if multi-objective are recorded
         self._stopper = None  # stopper object
+        self.search = None  # search instance
 
         self._callbacks = [] if callbacks is None else callbacks
 
@@ -231,6 +232,9 @@ class Evaluator:
             job_id = self._storage.create_new_job(self._search_id)
             self._storage.store_job_in(job_id, args=(config,))
             new_job = Job(job_id, config, self.run_function)
+
+            # Set the context of the job
+            new_job.context.search = self.search
 
             if self._timeout:
                 time_consumed = time.time() - self._time_timeout_set
