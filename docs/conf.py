@@ -293,7 +293,6 @@ autosummary_mock_imports = autodoc_mock_imports + [
     "deephyper.skopt.learning.gaussian_process",
     "deephyper.skopt.learning.tests",
     "deephyper.skopt.plots",
-    "deephyper.sklearn",
     "deephyper.test",
     "joblib",
     "scipy.optimize",

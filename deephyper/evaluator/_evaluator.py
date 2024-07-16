@@ -411,7 +411,7 @@ class Evaluator:
             return val
 
     def dump_evals(self, saved_keys=None, log_dir: str = ".", filename="results.csv"):
-        """Dump evaluations to a CSV file.
+        """Dump evaluations to a CSV file. This will reset the ``jobs_done`` attribute to an empty list.
 
         Args:
             saved_keys (list|callable): If ``None`` the whole ``job.config`` will be added as row of the CSV file. If a ``list`` filtered keys will be added as a row of the CSV file. If a ``callable`` the output dictionnary will be added as a row of the CSV file.
