@@ -30,6 +30,7 @@ REQUIRED = [
     "scikit-learn>=0.23.1",
     "scipy>=1.10",
     "tqdm>=4.64.0",
+    "psutil",
     "pymoo>=0.6.0",
     "pyyaml",
 ]
@@ -89,7 +90,7 @@ EXTRAS = {
         "pydata-sphinx-theme==0.13.3",
         "sphinx-copybutton",
         "sphinx-gallery",
-        "sphinx_lfs_content",
+        # "sphinx_lfs_content", # Try to not use lfs anymore
         "sphinx-togglebutton",
     ],
     "analytics": [
