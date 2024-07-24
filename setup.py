@@ -20,7 +20,7 @@ platform_infos = platform.platform()
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    "ConfigSpace>=0.4.20",
+    "ConfigSpace>=1.1.1",
     "dm-tree",
     "Jinja2>=3.1.4",  # Related to security vulnerability: https://security.snyk.io/vuln/SNYK-PYTHON-JINJA2-6809379
     "numpy>=1.26.0",
