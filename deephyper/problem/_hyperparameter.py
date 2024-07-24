@@ -1,10 +1,9 @@
 import copy
-import json
+import io
 
 import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh
 import numpy as np
-from ConfigSpace.read_and_write import json as cs_json
 
 import deephyper.core.exceptions as dh_exceptions
 import deephyper.skopt
@@ -82,12 +81,12 @@ def convert_to_skopt_space(cs_space, surrogate_model=None):
         raise TypeError("Input space should be of type ConfigurationSpace")
 
     sample_with_config_space = (
-        len(cs_space.get_conditions()) > 0 or len(cs_space.get_forbiddens()) > 0
+        len(cs_space.conditions) > 0 or len(cs_space.forbidden_clauses) > 0
     )
 
     # convert the ConfigSpace to deephyper.skopt.space.Space
     dimensions = []
-    for hp in cs_space.get_hyperparameters():
+    for hp in list(cs_space.values()):
         dimensions.append(convert_to_skopt_dim(hp, surrogate_model))
 
     skopt_space = deephyper.skopt.space.Space(
@@ -237,7 +236,7 @@ class HpProblem:
         if not (type(name) is str or name is None):
             raise dh_exceptions.problem.SpaceDimNameOfWrongType(name)
         csh_parameter = check_hyperparameter(value, name, default_value=default_value)
-        self._space.add_hyperparameter(csh_parameter)
+        self._space.add(csh_parameter)
         return csh_parameter
 
     def add_hyperparameters(self, hp_list):
@@ -249,7 +248,7 @@ class HpProblem:
         Returns:
             list: The list of added hyperparameters.
         """
-        return [self.add_hyperparameter(hp) for hp in hp_list]
+        return [self.add(hp) for hp in hp_list]
 
     def add_forbidden_clause(self, clause):
         """Add a `forbidden clause <https://automl.github.io/ConfigSpace/master/API-Doc.html#forbidden-clauses>`_ to the ``HpProblem``.
@@ -265,22 +264,22 @@ class HpProblem:
         Args:
             clause: a ConfigSpace forbidden clause.
         """
-        self._space.add_forbidden_clause(clause)
+        self._space.add(clause)
 
     def add_condition(self, condition):
         """Add a `condition <https://automl.github.io/ConfigSpace/master/API-Doc.html#conditions>`_ to the ``HpProblem``.
 
-        >>> from deephyper.problem import HpProblem
-        >>> import ConfigSpace as cs
-        >>> problem = HpProblem()
-        >>> x = problem.add_hyperparameter((0.0, 10.0), "x")
-        >>> y = problem.add_hyperparameter((1e-4, 1.0), "y")
-        >>> problem.add_condition(cs.LessThanCondition(y, x, 1.0))
-
-        Args:
-            condition: A ConfigSpace condition.
+                >>> from deephyper.problem import HpProblem
+                >>> import ConfigSpace as cs
+                >>> problem = HpProblem()
+                >>> x = problem.add_hyperparameter((0.0, 10.0), "x")
+                >>> y = problem.add_hyperparameter((1e-4, 1.0), "y")
+                >>> problem.add_condition(cs.LessThanCondition(y, x, 1.0))
+        s
+                Args:
+                    condition: A ConfigSpace condition.
         """
-        self._space.add_condition(condition)
+        self._space.add(condition)
 
     def add_conditions(self, conditions: list) -> None:
         """Add a list of `condition <https://automl.github.io/ConfigSpace/master/API-Doc.html#conditions>`_ to the ``HpProblem``.
@@ -288,7 +287,7 @@ class HpProblem:
         Args:
             conditions (list): A list of ConfigSpace conditions.
         """
-        self._space.add_conditions(conditions)
+        self._space.add(*conditions)
 
     @property
     def space(self):
@@ -298,20 +297,21 @@ class HpProblem:
     @property
     def hyperparameter_names(self):
         """The list of hyperparameters names."""
-        return self._space.get_hyperparameter_names()
+        return list(self._space.keys())
 
     def check_configuration(self, parameters: dict):
         """Check if a configuration is valid. Raise an error if not."""
-        config = cs.Configuration(self._space, parameters)
-        self._space.check_configuration(config)
+        # Check is included in the init of Configuration
+        cs.Configuration(self._space, parameters)
 
     @property
     def default_configuration(self):
         """The default configuration as a dictionnary."""
-        config = self._space.get_default_configuration().get_dictionary()
+        config = dict(self._space.get_default_configuration())
         return config
 
     def to_json(self):
         """Returns a dict version of the space which can be saved as JSON."""
-        json_format = json.loads(cs_json.write(self._space))
-        return json_format
+        buffer = io.StringIO()
+        self._space.to_json(buffer)
+        return buffer.getvalue()
