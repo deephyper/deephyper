@@ -217,9 +217,9 @@ def test_sample_types_conditional(tmp_path):
     # integers
     x1_int = problem.add_hyperparameter(name="x1_int", value=(1, 10))
 
-    x2_float = problem.add_hyperparameter(name="x2_int", value=(1.0, 10.0))
+    x2_float = problem.add_hyperparameter(name="x2_float", value=(1.0, 10.0))
 
-    x3_cat = problem.add_hyperparameter(name="x3_cat", value=["1", "2", "3"])
+    x3_cat = problem.add_hyperparameter(name="x3_cat", value=["1_", "2_", "3_"])
 
     # conditions
     cond_1 = cs.EqualsCondition(x1_int, choice, "choice1")
@@ -232,34 +232,50 @@ def test_sample_types_conditional(tmp_path):
             assert np.issubdtype(type(config["x1_int"]), np.integer)
             y = config["x1_int"] ** 2
         elif config["choice"] == "choice2":
-            assert np.issubdtype(type(config["x2_int"]), float)
-            y = config["x2_int"] ** 2 + 1
+            assert np.issubdtype(type(config["x2_float"]), float)
+            y = config["x2_float"] ** 2 + 1
         else:
             assert type(config["x3_cat"]) is str or type(config["x3_cat"]) is np.str_
-            y = int(config["x3_cat"]) ** 2 + 2
+            y = int(config["x3_cat"][:1]) ** 2 + 2
 
         return y
 
-    results = CBO(
+    # Test classic random search
+    search = CBO(
         problem,
         run,
         random_state=42,
         surrogate_model="DUMMY",
         log_dir=tmp_path,
         verbose=0,
-    ).search(10)
-    print(results)
+    )
+    results = search.search(10)
+    assert len(results) == 10
 
+    # Test search with transfer learning through generative model
+    search = CBO(
+        problem,
+        run,
+        random_state=42,
+        surrogate_model="DUMMY",
+        log_dir=tmp_path,
+        verbose=0,
+    )
+    search.fit_generative_model(results)
+    results = search.search(10)
+    assert len(results) == 10
+
+    # Test search with ET surrogate model
     results = CBO(
         problem,
         run,
         random_state=42,
         n_initial_points=5,
-        surrogate_model="RF",
+        surrogate_model="ET",
         log_dir=tmp_path,
         verbose=1,
     ).search(20)
-    print(results)
+    assert len(results) == 20
 
 
 @pytest.mark.hps
@@ -401,5 +417,5 @@ def test_cbo_categorical_variable(tmp_path):
 
 if __name__ == "__main__":
     # test_sample_types(tmp_path=".")
-    # test_sample_types_conditional(tmp_path=".")
-    test_timeout(tmp_path=".")
+    test_sample_types_conditional(tmp_path=".")
+    # test_timeout(tmp_path=".")

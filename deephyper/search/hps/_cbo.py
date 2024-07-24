@@ -820,6 +820,7 @@ class CBO(Search):
 
         # constraints
         scalar_constraints = []
+        columns_metadata = {}
         for hp_name in self._problem.space:
             if hp_name in req_df.columns:
                 hp = self._problem.space.get_hyperparameter(hp_name)
@@ -831,6 +832,7 @@ class CBO(Search):
                     hp, csh.OrdinalHyperparameter
                 ):
                     req_df[hp_name] = req_df[hp_name].astype("O")
+                    columns_metadata[hp_name] = {"sdtype": "categorical"}
                 else:
                     scalar_constraints.append(
                         {
@@ -839,15 +841,19 @@ class CBO(Search):
                                 "column_name": hp_name,
                                 "low_value": hp.lower,
                                 "high_value": hp.upper,
-                                "strict_boundaries": True,
+                                "strict_boundaries": False,
                             },
                         }
                     )
+                    columns_metadata[hp_name] = {"sdtype": "numerical"}
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             req_df_metadata = sdv.metadata.SingleTableMetadata()
             req_df_metadata.detect_from_dataframe(req_df)
+            # !The `detect_from_dataframe` seems to wrongly detect categorical in some cases
+            # !We enforce the following for safety
+            req_df_metadata.columns = columns_metadata
 
             model = TVAESynthesizer(
                 req_df_metadata,
