@@ -27,7 +27,7 @@ class TestEvaluator(unittest.TestCase):
         with pytest.raises(ValueError):
             evaluator = Evaluator.create(
                 run,
-                method="thread",
+                method="threads",
                 method_kwargs={
                     "num_workers": 1,
                 },
@@ -321,4 +321,5 @@ class TestEvaluator(unittest.TestCase):
 
 if __name__ == "__main__":
     test = TestEvaluator()
-    test.test_run_function_standards()
+    # test.test_run_function_standards()
+    test.test_wrong_evaluator()
