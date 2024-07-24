@@ -11,6 +11,7 @@ import pandas as pd
 
 import deephyper.core.exceptions
 import deephyper.skopt
+from deephyper.core.utils import CaptureSTD
 from deephyper.problem._hyperparameter import convert_to_skopt_space
 from deephyper.search._search import Search
 from deephyper.skopt.moo import (
@@ -20,7 +21,6 @@ from deephyper.skopt.moo import (
     moo_functions,
 )
 from sklearn.base import is_regressor
-from deephyper.skopt.utils import use_named_args
 
 # Adapt minimization -> maximization with DeepHyper
 MAP_multi_point_strategy = {"cl_min": "cl_max", "cl_max": "cl_min", "qUCB": "qLCB"}
@@ -745,7 +745,9 @@ class CBO(Search):
 
         self._opt.tell(x, [np.negative(yi).tolist() for yi in y])
 
-    def fit_generative_model(self, df, q=0.90, n_iter_optimize=0, n_samples=100):
+    def fit_generative_model(
+        self, df, q=0.90, n_samples=100, verbose=False, **generative_model_kwargs
+    ):
         """Learn the distribution of hyperparameters for the top-``(1-q)x100%`` configurations and sample from this distribution. It can be used for transfer learning. For multiobjective problems, this function computes the top-``(1-q)x100%`` configurations in terms of their ranking with respect to pareto efficiency: all points on the first non-dominated pareto front have rank 1 and in general, points on the k'th non-dominated front have rank k.
 
         Example Usage:
@@ -756,8 +758,9 @@ class CBO(Search):
         Args:
             df (str|DataFrame): a dataframe or path to CSV from a previous search.
             q (float, optional): the quantile defined the set of top configurations used to bias the search. Defaults to ``0.90`` which select the top-10% configurations from ``df``.
-            n_iter_optimize (int, optional): the number of iterations used to optimize the generative model which samples the data for the search. Defaults to ``0`` with no optimization for the generative model.
             n_samples (int, optional): the number of samples used to score the generative model.
+            verbose (bool, optional): If set to ``True`` it will print the score of the generative model. Defaults to ``False``.
+            generative_model_kwargs (dict, optional): additional parameters to pass to the generative model.
 
         Returns:
             tuple: ``score, model`` which are a metric which measures the quality of the learned generated-model and the generative model respectively.
@@ -769,6 +772,9 @@ class CBO(Search):
             raise deephyper.core.exceptions.MissingRequirementError(
                 "Installing 'sdv' is required to use 'fit_generative_model' please run 'pip install \"deephyper[sdv]\"'"
             )
+
+        from sdv.single_table import TVAESynthesizer
+        from sdv.evaluation.single_table import evaluate_quality
 
         if type(df) is str and df[-4:] == ".csv":
             df = pd.read_csv(df)
@@ -783,7 +789,7 @@ class CBO(Search):
         q_max = 1 - 10 / len(df)
         if q_max < q:
             warnings.warn(
-                f"The value of q={q} is replaced by q_max={q_max} because a minimum of 10 results are required to perform transfer-learning!",
+                f"The value of q={q} is replaced by q_max={q_max} because a minimum of 10 samples are required to perform transfer-learning!",
                 category=UserWarning,
             )
             q = q_max
@@ -827,75 +833,41 @@ class CBO(Search):
                     req_df[hp_name] = req_df[hp_name].astype("O")
                 else:
                     scalar_constraints.append(
-                        sdv.constraints.ScalarRange(
-                            hp_name, hp.lower, hp.upper, strict_boundaries=True
-                        )
+                        {
+                            "constraint_class": "ScalarRange",
+                            "constraint_parameters": {
+                                "column_name": hp_name,
+                                "low_value": hp.lower,
+                                "high_value": hp.upper,
+                                "strict_boundaries": True,
+                            },
+                        }
                     )
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
+            req_df_metadata = sdv.metadata.SingleTableMetadata()
+            req_df_metadata.detect_from_dataframe(req_df)
 
-            model = sdv.tabular.TVAE(constraints=scalar_constraints)
+            model = TVAESynthesizer(
+                req_df_metadata,
+                enforce_min_max_values=False,
+                verbose=False,
+                **generative_model_kwargs,
+            )
+            model.add_constraints(scalar_constraints)
             model.fit(req_df)
-            synthetic_data = model.sample(n_samples)
-            score = sdv.evaluation.evaluate(synthetic_data, req_df)
+            with CaptureSTD():
+                synthetic_data = model.sample(n_samples)
+            score = evaluate_quality(
+                real_data=req_df,
+                synthetic_data=synthetic_data,
+                metadata=req_df_metadata,
+                verbose=False,
+            ).get_score()
 
-            if n_iter_optimize > 0:
-                space = [
-                    deephyper.skopt.space.Integer(1, 20, name="epochs"),
-                    # deephyper.skopt.space.Integer(1, np.floor(req_df.shape[0]/10), name='batch_size'),
-                    deephyper.skopt.space.Integer(1, 8, name="embedding_dim"),
-                    deephyper.skopt.space.Integer(1, 8, name="compress_dims"),
-                    deephyper.skopt.space.Integer(1, 8, name="decompress_dims"),
-                    deephyper.skopt.space.Real(
-                        10**-8, 10**-4, "log-uniform", name="l2scale"
-                    ),
-                    deephyper.skopt.space.Integer(1, 5, name="loss_factor"),
-                ]
-
-                def model_fit(params):
-                    params["epochs"] = 10 * params["epochs"]
-                    # params['batch_size'] = 10*params['batch_size']
-                    params["embedding_dim"] = 2 ** params["embedding_dim"]
-                    params["compress_dims"] = [
-                        2 ** params["compress_dims"],
-                        2 ** params["compress_dims"],
-                    ]
-                    params["decompress_dims"] = [
-                        2 ** params["decompress_dims"],
-                        2 ** params["decompress_dims"],
-                    ]
-                    model = sdv.tabular.TVAE(**params)
-                    model.fit(req_df)
-                    synthetic_data = model.sample(n_samples)
-                    score = sdv.evaluation.evaluate(synthetic_data, req_df)
-                    return -score, model
-
-                @use_named_args(space)
-                def objective(**params):
-                    score, _ = model_fit(params)
-                    return score
-
-                # run sequential optimization of generative model hyperparameters
-                opt = deephyper.skopt.Optimizer(space)
-                for i in range(n_iter_optimize):
-                    x = opt.ask()
-                    y = objective(x)
-                    opt.tell(x, y)
-                    logging.info(f"iteration {i}: {x} -> {y}")
-
-                min_index = np.argmin(opt.yi)
-                best_params = opt.Xi[min_index]
-                logging.info(
-                    f"Min-Score of the SDV generative model: {opt.yi[min_index]}"
-                )
-
-                best_params = {d.name: v for d, v in zip(space, best_params)}
-                logging.info(
-                    f"Best configuration for SDV generative model: {best_params}"
-                )
-
-                score, model = model_fit(best_params)
+            if verbose:
+                print(f"Synthetic data score: {score}")
 
         # we pass the learned generative model from sdv to the
         # skopt Optimizer

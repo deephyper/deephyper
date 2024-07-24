@@ -23,7 +23,7 @@ REQUIRED = [
     "ConfigSpace>=0.4.20",
     "dm-tree",
     "Jinja2>=3.1.4",  # Related to security vulnerability: https://security.snyk.io/vuln/SNYK-PYTHON-JINJA2-6809379
-    "numpy>=1.20",
+    "numpy>=1.26.0",
     "pandas>=0.24.2",
     "packaging",
     "parse",
@@ -55,7 +55,7 @@ REQUIRED_POPT = ["xgboost"]
 REQUIRED_AUTODEUQ = REQUIRED_NAS + ["ray[default]>=1.3.0"]
 
 # !Transfer Learning for Bayesian Optimization with SVD
-REQUIRED_TL_SDV = ["sdv>=0.17.1"]
+REQUIRED_TL_SDV = ["sdv~=1.15.0"]
 
 
 # What packages are optional?

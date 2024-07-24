@@ -9,6 +9,7 @@ from scipy.stats import gaussian_kde
 from sklearn.utils import check_random_state
 
 from deephyper.core.utils.joblib_utils import Parallel, delayed
+from deephyper.core.utils import CaptureSTD
 
 from .transformers import (
     CategoricalEncoder,
@@ -1113,7 +1114,8 @@ class Space:
                 if n_samples == 1:
                     confs = [confs]
             else:
-                confs = self.model_sdv.sample(n_samples)
+                with CaptureSTD():
+                    confs = self.model_sdv.sample(n_samples)
 
                 sdv_names = confs.columns
 
@@ -1173,7 +1175,8 @@ class Space:
 
                 return columns.tolist()
             else:
-                confs = self.model_sdv.sample(n_samples)  # sample from SDV
+                with CaptureSTD():
+                    confs = self.model_sdv.sample(n_samples)  # sample from SDV
 
                 columns = []
                 for dim in self.dimensions:
