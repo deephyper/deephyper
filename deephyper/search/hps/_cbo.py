@@ -929,9 +929,9 @@ class CBO(Search):
             best_param = res_df.iloc[best_index]
 
         cst_new = CS.ConfigurationSpace(seed=self._random_state.randint(0, 2**31))
-        hp_names = cst.get_hyperparameter_names()
+        hp_names = list(cst.keys())
         for hp_name in hp_names:
-            hp = cst.get_hyperparameter(hp_name)
+            hp = cst[hp_name]
             if hp_name in res_df_names:
                 if (
                     type(hp) is csh.UniformIntegerHyperparameter
@@ -959,7 +959,7 @@ class CBO(Search):
                             lower=lower,
                             upper=upper,
                         )
-                    cst_new.add_hyperparameter(param_new)
+                    cst_new.add(param_new)
                 elif (
                     type(hp) is csh.CategoricalHyperparameter
                     or type(hp) is csh.OrdinalHyperparameter
@@ -975,18 +975,18 @@ class CBO(Search):
                     param_new = csh.CategoricalHyperparameter(
                         name=hp.name, choices=choices, weights=norm_weights
                     )
-                    cst_new.add_hyperparameter(param_new)
+                    cst_new.add(param_new)
                 else:
                     logging.warning(f"Not fitting {hp} because it is not supported!")
-                    cst_new.add_hyperparameter(hp)
+                    cst_new.add(hp)
             else:
                 logging.warning(
                     f"Not fitting {hp} because it was not found in the dataframe!"
                 )
-                cst_new.add_hyperparameter(hp)
+                cst_new.add(hp)
 
         # For conditions
-        for cond in cst.get_conditions():
+        for cond in cst.conditions():
             if type(cond) == CS.AndConjunction or type(cond) == CS.OrConjunction:
                 cond_list = []
                 for comp in cond.components:
@@ -999,10 +999,10 @@ class CBO(Search):
                     logging.warning(f"Condition {type(cond)} is not implemented!")
             else:
                 cond_new = self._return_cond(cond, cst_new)
-            cst_new.add_condition(cond_new)
+            cst_new.add(cond_new)
 
         # For forbiddens
-        for cond in cst.get_forbiddens():
+        for cond in cst.forbidden_clauses:
             if type(cond) is CS.ForbiddenAndConjunction:
                 cond_list = []
                 for comp in cond.components:
@@ -1015,7 +1015,7 @@ class CBO(Search):
                 cond_new = self._return_forbid(cond, cst_new)
             else:
                 logging.warning(f"Forbidden {type(cond)} is not implemented!")
-            cst_new.add_forbidden_clause(cond_new)
+            cst_new.add(cond_new)
 
         self._opt_kwargs["dimensions"] = cst_new
 
