@@ -4,6 +4,7 @@ import traceback
 import numpy as np
 import ray
 import tensorflow as tf
+import tf_keras as tfk
 import tensorflow_probability as tfp
 from deephyper.ensemble import BaseEnsemble
 from deephyper.nas.metrics import selectMetric
@@ -17,9 +18,7 @@ def nll(y, rv_y):
     return -rv_y.log_prob(y)
 
 
-cce_obj = tf.keras.losses.CategoricalCrossentropy(
-    reduction=tf.keras.losses.Reduction.NONE
-)
+cce_obj = tfk.losses.CategoricalCrossentropy(reduction=tfk.losses.Reduction.NONE)
 
 
 def cce(y_true, y_pred):
@@ -43,17 +42,18 @@ def model_predict(model_path, X, batch_size=32, verbose=0):
         array: The prediction based on the provided input data.
     """
     import tensorflow as tf
+    import tf_keras as tfk
     import tensorflow_probability as tfp
 
     # GPU Configuration if available
     set_memory_growth_for_visible_gpus(True)
-    tf.keras.backend.clear_session()
+    tfk.backend.clear_session()
     model_file = model_path.split("/")[-1]
 
     try:
         if verbose:
             print(f"Loading model {model_file}", end="\n", flush=True)
-        model = tf.keras.models.load_model(model_path, compile=False)
+        model = tfk.models.load_model(model_path, compile=False, safe_mode=False)
     except Exception:
         if verbose:
             print(f"Could not load model {model_file}", flush=True)
@@ -165,6 +165,8 @@ class UQBaggingEnsemble(BaseEnsemble):
         X_id = ray.put(X)
 
         model_files = self._list_files_in_model_dir()
+        if self.verbose:
+            print(f"Found {len(model_files)} possible models to build the ensemble.")
 
         def model_path(f):
             return os.path.join(self.model_dir, f)
@@ -273,7 +275,7 @@ class UQBaggingEnsembleRegressor(UQBaggingEnsemble):
         )
 
     def predict_var_decomposition(self, X):
-        """Execute an inference of the ensemble for the provided data with uncertainty quantification estimates. The **aleatoric uncertainty** corresponds to the expected value of learned variance of each model composing the ensemble :math:`\mathbf{E}[\sigma_\\theta^2(\mathbf{x})]`. The **epistemic uncertainty** corresponds to the variance of learned mean estimates of each model composing the ensemble :math:`\mathbf{V}[\mu_\\theta(\mathbf{x})]`.
+        r"""Execute an inference of the ensemble for the provided data with uncertainty quantification estimates. The **aleatoric uncertainty** corresponds to the expected value of learned variance of each model composing the ensemble :math:`\mathbf{E}[\sigma_\\theta^2(\mathbf{x})]`. The **epistemic uncertainty** corresponds to the variance of learned mean estimates of each model composing the ensemble :math:`\mathbf{V}[\mu_\\theta(\mathbf{x})]`.
 
         Args:
             X (array): An array of input data.
@@ -440,6 +442,8 @@ def greedy_caruana(loss_func, y_true, y_pred, k=2, verbose=0):
 
     :meta private:
     """
+    # print(f"{y_true=}")
+    # print(f"{y_pred=}")
     regression = np.shape(y_true)[-1] * 2 == np.shape(y_pred)[-1]
     n_models = np.shape(y_pred)[0]
     if regression:  # regression

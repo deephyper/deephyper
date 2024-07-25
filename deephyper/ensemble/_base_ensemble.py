@@ -41,7 +41,7 @@ class BaseEnsemble(abc.ABC):
         self.batch_size = batch_size
 
         if not (ray.is_initialized()):
-            ray.init(address=self.ray_address)
+            ray.init()
 
     def __repr__(self) -> str:
         out = ""
@@ -51,7 +51,9 @@ class BaseEnsemble(abc.ABC):
         return out
 
     def _list_files_in_model_dir(self):
-        return [f for f in os.listdir(self.model_dir) if f[-2:] == "h5"]
+        return [
+            f for f in os.listdir(self.model_dir) if f[-2:] == "h5" or f[-5:] == "keras"
+        ]
 
     @abc.abstractmethod
     def fit(self, X, y):
