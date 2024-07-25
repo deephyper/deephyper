@@ -146,4 +146,4 @@ class TestNaProblem(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    HpProblemTest().test_add_good_dim()
+    HpProblemTest().test_config_space_hp()

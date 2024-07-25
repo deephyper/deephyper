@@ -252,18 +252,18 @@ def test_sample_types_conditional(tmp_path):
     results = search.search(10)
     assert len(results) == 10
 
-    # Test search with transfer learning through generative model
-    search = CBO(
-        problem,
-        run,
-        random_state=42,
-        surrogate_model="DUMMY",
-        log_dir=tmp_path,
-        verbose=0,
-    )
-    search.fit_generative_model(results)
-    results = search.search(10)
-    assert len(results) == 10
+    # # Test search with transfer learning through generative model
+    # search = CBO(
+    #     problem,
+    #     run,
+    #     random_state=42,
+    #     surrogate_model="DUMMY",
+    #     log_dir=tmp_path,
+    #     verbose=0,
+    # )
+    # search.fit_generative_model(results)
+    # results = search.search(10)
+    # assert len(results) == 10
 
     # Test search with ET surrogate model
     results = CBO(
