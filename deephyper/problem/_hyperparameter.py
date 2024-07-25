@@ -248,7 +248,7 @@ class HpProblem:
         Returns:
             list: The list of added hyperparameters.
         """
-        return [self.add(hp) for hp in hp_list]
+        return [self.add_hyperparameter(hp) for hp in hp_list]
 
     def add_forbidden_clause(self, clause):
         """Add a `forbidden clause <https://automl.github.io/ConfigSpace/master/API-Doc.html#forbidden-clauses>`_ to the ``HpProblem``.
