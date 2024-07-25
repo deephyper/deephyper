@@ -48,9 +48,6 @@ REQUIRED_NAS_PLATFORM = {
 # else:  # x86_64
 REQUIRED_NAS = REQUIRED_NAS + REQUIRED_NAS_PLATFORM["default"]
 
-# !Requirements for Pipeline Optimization for ML (popt)
-REQUIRED_POPT = ["xgboost"]
-
 # !Requirements for Automated Deep Ensemble with Uncertainty Quantification (AutoDEUQ)
 REQUIRED_AUTODEUQ = REQUIRED_NAS + ["ray[default]>=1.3.0"]
 
@@ -61,7 +58,6 @@ REQUIRED_TL_SDV = ["sdv~=1.15.0"]
 # What packages are optional?
 EXTRAS = {
     "autodeuq": REQUIRED_AUTODEUQ,  # automated deep ensemble with uncertainty quantification
-    "automl": ["xgboost"],  # for automl with scikit-learn
     "jax-cpu": ["jax[cpu]>=0.3.25", "numpyro[cpu]"],
     "jax-cuda": ["jax[cuda]>=0.3.25", "numpyro[cuda]"],
     "hps": [],  # hyperparameter search (already the base requirements)
@@ -85,9 +81,9 @@ EXTRAS = {
         "GitPython",
         "ipython",
         "nbsphinx",
-        "sphinx>=4,<7",
-        "sphinx-book-theme==1.0.1",
-        "pydata-sphinx-theme==0.13.3",
+        "sphinx>=5",
+        "sphinx-book-theme==1.1.3",
+        "pydata-sphinx-theme==0.15.4",
         "sphinx-copybutton",
         "sphinx-gallery",
         # "sphinx_lfs_content", # Try to not use lfs anymore

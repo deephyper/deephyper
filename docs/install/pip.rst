@@ -21,7 +21,6 @@ DeepHyper is available on `PyPI <https://pypi.org/project/deephyper/>`_ and can 
     $ pip install "deephyper[hps-tl]" # Install Transfer-Learning for HPS.
     $ pip install "deephyper[jax-cpu]" # Install JAX with CPU support for Learning Curve Extrapolation Stopper.
     $ pip install "deephyper[jax-cuda]" # Install JAX with GPU (cuda) support for Learning Curve Extrapolation Stopper.
-    $ pip install "deephyper[automl]" # Install Automated Machine Learning features.
     
     $ # Others
     $ pip install "deephyper[analytics]" # Install Analytics tools (for developers).
