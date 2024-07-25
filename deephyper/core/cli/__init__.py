@@ -1,7 +1,7 @@
-# for the documentation
-from . import _cli, _hps, _nas, _new_problem, _start_project
+# For the documentation
+from . import _cli, _hps
 
-commands = [_cli, _hps, _nas, _new_problem, _start_project]
+commands = [_cli, _hps]
 
 __doc__ = ""
 

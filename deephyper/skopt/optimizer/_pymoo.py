@@ -8,8 +8,11 @@ from pymoo.termination.ftol import SingleObjectiveSpaceTermination
 from pymoo.termination.max_eval import MaximumFunctionCallTermination
 from pymoo.termination.max_gen import MaximumGenerationTermination
 from pymoo.termination.robust import RobustTermination
+from pymoo.config import Config
 
 import deephyper.skopt.space as skopt_space
+
+Config.warnings["not_compiled"] = False
 
 
 def convert_space_to_pymoo_mixed(space):

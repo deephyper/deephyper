@@ -20,16 +20,17 @@ platform_infos = platform.platform()
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    "ConfigSpace>=0.4.20",
+    "ConfigSpace>=1.1.1",
     "dm-tree",
     "Jinja2>=3.1.4",  # Related to security vulnerability: https://security.snyk.io/vuln/SNYK-PYTHON-JINJA2-6809379
-    "numpy>=1.20",
+    "numpy>=1.26.0",
     "pandas>=0.24.2",
     "packaging",
     "parse",
     "scikit-learn>=0.23.1",
     "scipy>=1.10",
     "tqdm>=4.64.0",
+    "psutil",
     "pymoo>=0.6.0",
     "pyyaml",
 ]
@@ -47,20 +48,16 @@ REQUIRED_NAS_PLATFORM = {
 # else:  # x86_64
 REQUIRED_NAS = REQUIRED_NAS + REQUIRED_NAS_PLATFORM["default"]
 
-# !Requirements for Pipeline Optimization for ML (popt)
-REQUIRED_POPT = ["xgboost"]
-
 # !Requirements for Automated Deep Ensemble with Uncertainty Quantification (AutoDEUQ)
 REQUIRED_AUTODEUQ = REQUIRED_NAS + ["ray[default]>=1.3.0"]
 
 # !Transfer Learning for Bayesian Optimization with SVD
-REQUIRED_TL_SDV = ["sdv>=0.17.1"]
+REQUIRED_TL_SDV = ["sdv~=1.15.0"]
 
 
 # What packages are optional?
 EXTRAS = {
     "autodeuq": REQUIRED_AUTODEUQ,  # automated deep ensemble with uncertainty quantification
-    "automl": ["xgboost"],  # for automl with scikit-learn
     "jax-cpu": ["jax[cpu]>=0.3.25", "numpyro[cpu]"],
     "jax-cuda": ["jax[cuda]>=0.3.25", "numpyro[cuda]"],
     "hps": [],  # hyperparameter search (already the base requirements)
@@ -84,22 +81,16 @@ EXTRAS = {
         "GitPython",
         "ipython",
         "nbsphinx",
-        "sphinx>=4,<7",
-        "sphinx-book-theme==1.0.1",
-        "pydata-sphinx-theme==0.13.3",
+        "sphinx>=5",
+        "sphinx-book-theme==1.1.3",
+        "pydata-sphinx-theme==0.15.4",
         "sphinx-copybutton",
         "sphinx-gallery",
-        "sphinx_lfs_content",
+        # "sphinx_lfs_content", # Try to not use lfs anymore
         "sphinx-togglebutton",
     ],
-    "analytics": [
-        "altair",
-        "jupyter",
-        "jupyter_contrib_nbextensions>=0.5.1",
-        "nbconvert<6",
-        "streamlit",
-        "streamlit-aggrid",
-        "tinydb",
+    "analysis": [
+        "matplotlib",
     ],
     "hvd": ["horovod>=0.21.3", "mpi4py>=3.0.0"],
 }

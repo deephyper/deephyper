@@ -12,6 +12,7 @@ Below is a gallery of examples on how to use DeepHyper.
 
     <div class="sphx-glr-thumbnails">
 
+.. thumbnail-parent-div-open
 
 .. raw:: html
 
@@ -97,6 +98,8 @@ Below is a gallery of examples on how to use DeepHyper.
       <div class="sphx-glr-thumbnail-title">Profile the Worker Utilization</div>
     </div>
 
+
+.. thumbnail-parent-div-close
 
 .. raw:: html
 
