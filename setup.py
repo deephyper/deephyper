@@ -89,14 +89,8 @@ EXTRAS = {
         # "sphinx_lfs_content", # Try to not use lfs anymore
         "sphinx-togglebutton",
     ],
-    "analytics": [
-        "altair",
-        "jupyter",
-        "jupyter_contrib_nbextensions>=0.5.1",
-        "nbconvert<6",
-        "streamlit",
-        "streamlit-aggrid",
-        "tinydb",
+    "analysis": [
+        "matplotlib",
     ],
     "hvd": ["horovod>=0.21.3", "mpi4py>=3.0.0"],
 }
