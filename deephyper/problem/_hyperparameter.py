@@ -308,6 +308,14 @@ class HpProblem:
     def default_configuration(self):
         """The default configuration as a dictionnary."""
         config = dict(self._space.get_default_configuration())
+        for hp_name, hp in self._space.items():
+            if hp_name not in config:
+                if isinstance(hp, csh.CategoricalHyperparameter):
+                    config[hp_name] = hp.choices[0]
+                elif isinstance(hp, csh.OrdinalHyperparameter):
+                    config[hp_name] = hp.sequence[0]
+                else:
+                    config[hp_name] = hp.lower
         return config
 
     def to_json(self):
