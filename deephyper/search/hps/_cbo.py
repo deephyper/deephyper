@@ -815,8 +815,10 @@ class CBO(Search):
             top = non_dominated_set_ranked(-np.asarray(df[objcol]), 1.0 - q)
             req_df = df.loc[top]
 
-        req_df = req_df[hp_cols]
-        req_df = req_df.rename(columns={k: k[2:] for k in hp_cols})
+        req_df = req_df[["job_id"] + hp_cols]
+        req_df = req_df.rename(
+            columns={k: k[2:] for k in hp_cols if k.startswith("p:")}
+        )
 
         # constraints
         scalar_constraints = []
@@ -846,14 +848,19 @@ class CBO(Search):
                         }
                     )
                     columns_metadata[hp_name] = {"sdtype": "numerical"}
+                    if isinstance(hp, csh.IntegerHyperparameter):
+                        req_df[hp_name] = req_df[hp_name].astype(int)
+                    elif isinstance(hp, csh.FloatHyperparameter):
+                        req_df[hp_name] = req_df[hp_name].astype(float)
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             req_df_metadata = sdv.metadata.SingleTableMetadata()
             req_df_metadata.detect_from_dataframe(req_df)
+            req_df_metadata.set_primary_key("job_id")
             # !The `detect_from_dataframe` seems to wrongly detect categorical in some cases
             # !We enforce the following for safety
-            req_df_metadata.columns = columns_metadata
+            req_df_metadata.update_columns_metadata(columns_metadata)
 
             model = TVAESynthesizer(
                 req_df_metadata,
