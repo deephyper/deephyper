@@ -5,16 +5,28 @@ Documentation on discrete latent variable enumeration in Pyro: http://pyro.ai/ex
 import abc
 from collections import OrderedDict
 
-import numpy as np
-import numpyro.distributions as dist
-
 import jax
+import jax.numpy as jnp
+import numpy as np
 import numpyro
+import numpyro.distributions as dist
 from numpyro.infer import HMC, MCMC, MixedHMC
+from typing import Union, List, Dict, Any
+
+from deephyper.space._constraint import BooleanConstraint
 
 
-class Space(abc.ABC):
+class Space:
+    """Used to define a search space composed of dimensions, distributions
+    and contraints.
+
+    Args:
+        name (str): the name of the search space.
+        seed (int, optional): the random seed of the search space. Defaults to ``None``.
+    """
+
     def __init__(self, name: str, seed: int = None):
+
         self.name = name
         self.dimensions = OrderedDict()
         self.constraints = OrderedDict()
@@ -92,7 +104,27 @@ class Space(abc.ABC):
             [isinstance(dim, ConstDimension) for dim in self.dimensions.values()]
         )
 
+    def is_feasible(self, parameters: Union[List, Dict]) -> bool:
+        """Check if the parameters are feasible with respect to the constraints."""
+        if isinstance(parameters, list):
+            parameters = {
+                name: value for name, value in zip(self.dimensions.keys(), parameters)
+            }
+        elif isinstance(parameters, dict):
+            pass
+        else:
+            raise ValueError(
+                f"parameters should be a list or a dict, got {type(parameters)}"
+            )
+        for cons in self.constraints.values():
+            if not cons.is_feasible(parameters):
+                return False
+        return True
+
     def sample(self, num_samples: int = None):
+        # TODO: parallelize with multiple chains on different devices
+        num_chains = 1
+
         def model():
 
             # Sample each dimension
@@ -102,12 +134,37 @@ class Space(abc.ABC):
                     # More details about Delta distribution used in ConstDimension
                     # url: https://forum.pyro.ai/t/cannot-find-valid-initial-parameters-with-delta-distribution/1636
                     numpyro.deterministic(name, 0.0)
+                elif isinstance(dim, IntDimension):
+                    parameters[name] = jnp.floor(
+                        numpyro.sample(name, dim.distribution)
+                    ).astype(jnp.int32)
                 else:
                     parameters[name] = numpyro.sample(name, dim.distribution)
 
             # Enforce constrains
-            for name, cons in self.constraints.items():
-                numpyro.factor(name, cons(parameters))
+            # Continuous constraints
+            for cons in self.constraints.values():
+                if not (isinstance(cons, BooleanConstraint)):
+                    numpyro.factor(name, cons(parameters))
+
+            # Boolean constraints
+            # !v1: all boolean constraints clauses are merged in one  SAT formula
+            # is_valid = jnp.ones((num_samples,), dtype=bool)
+            # for cons in self.constraints.values():
+            #     if isinstance(cons, BooleanConstraint):
+            #         is_valid = is_valid & cons.is_feasible(parameters)
+            # numpyro.factor(
+            #     "boolean_constraint_is_valid", 10 * jnp.where(is_valid, 1, 0)
+            # )
+
+            # !v2: each boolean constraint clause is mapped to a log-likelihood factor
+            for cons in self.constraints.values():
+                if isinstance(cons, BooleanConstraint):
+                    is_valid = cons.is_feasible(parameters)
+                    numpyro.factor(
+                        cons.name,
+                        cons.strength * jnp.where(is_valid, 1, 0),
+                    )
 
         if self.is_constant:
             samples = OrderedDict()
@@ -115,23 +172,32 @@ class Space(abc.ABC):
                 samples[name] = np.full((num_samples,), dim.value, dtype="O")
         else:
             if self._mcmc is None:
-                kernel = HMC(model, trajectory_length=1.2)
+                kernel = HMC(model, trajectory_length=1.5)
                 if self.is_mixed:
-                    kernel = MixedHMC(kernel, num_discrete_updates=20)
+                    kernel = MixedHMC(
+                        kernel,
+                        num_discrete_updates=None,
+                        random_walk=False,
+                        modified=False,
+                    )
                 self._mcmc = MCMC(
-                    kernel, num_warmup=1000, num_samples=num_samples, progress_bar=False
+                    kernel,
+                    num_warmup=1_000,
+                    num_chains=num_chains,
+                    num_samples=num_samples // num_chains,
+                    progress_bar=False,
                 )
             self._key, subkey = jax.random.split(self._key)
             self._mcmc.run(subkey)
             samples = self._mcmc.get_samples()
 
         # Checking which constraint are to be strictly enforced
-        feasible_indexes = np.ones((num_samples,), dtype=bool)
+        feasible_indexes = np.ones(
+            (num_samples // num_chains * num_chains,), dtype=bool
+        )
         for name, cons in self.constraints.items():
             if hasattr(cons, "is_strict") and cons.is_strict:
-                feasible_indexes = np.logical_and(
-                    feasible_indexes, cons.is_feasible(samples)
-                )
+                feasible_indexes = feasible_indexes & cons.is_feasible(samples)
 
         samples = np.asarray(
             [samples[name] for name in self.dimensions.keys()], dtype="O"
@@ -144,8 +210,16 @@ class Space(abc.ABC):
         return samples.T[feasible_indexes].tolist()
 
 
-class Dimension(abc.ABC):  #
+class Dimension(abc.ABC):
+    """Used to define a dimension of the search space.
+
+    Args:
+        name (str): the name of the dimension.
+        default_value (Any, optional): The default value of the dimension. Defaults to ``None``.
+    """
+
     def __init__(self, name: str, default_value=None):
+
         self.name = name
         self.default_value = (
             default_value  # Default value of a variable from this dimension.
@@ -162,6 +236,15 @@ class Dimension(abc.ABC):  #
 
 
 class IntDimension(Dimension):
+    """Used to define a discrete dimension of the search space.
+
+    Args:
+        name (str): the name of the dimension.
+        low (float): the lower bound of the dimension.
+        high (float): the upper bound of the dimension.
+        default_value (float, optional): The default value of the dimension. Defaults to ``None`` will attribute the lower bound as ``default_value``.
+    """
+
     def __init__(self, name: str, low: int, high: int, default_value: int = None):
         super().__init__(name, default_value)
         self.low = int(low)
@@ -178,6 +261,15 @@ class IntDimension(Dimension):
 
 
 class RealDimension(Dimension):
+    """Used to define a real dimension of the search space.
+
+    Args:
+        name (str): the name of the dimension.
+        low (float): the lower bound of the dimension.
+        high (float): the upper bound of the dimension.
+        default_value (float, optional): the default value of the dimension. Defaults to ``None`` will attribute the first categorical value of the list as ``default_value``.
+    """
+
     def __init__(self, name: str, low: float, high: float, default_value: float = None):
         super().__init__(name, default_value)
         self.low = float(low)
@@ -194,6 +286,15 @@ class RealDimension(Dimension):
 
 
 class CatDimension(Dimension):
+    """Used to defined a categorical dimension of the search space.
+
+    Args:
+        name (str): the name of the dimension.
+        categories (list): the list of categorical values.
+        default_value (_type_, optional): the default value of the dimension. Defaults to None.
+        ordered (bool, optional): _description_. Defaults to False.
+    """
+
     def __init__(
         self, name: str, categories: list, default_value=None, ordered: bool = False
     ):
@@ -241,7 +342,14 @@ class CatDimension(Dimension):
 
 
 class ConstDimension(Dimension):
-    def __init__(self, name: str, value):
+    """Used to defined a constant dimension of the search space.
+
+    Args:
+        name (str): the name of the dimension.
+        value (Any): the constant value.
+    """
+
+    def __init__(self, name: str, value: Any):
         super().__init__(name, default_value=value)
         self.distribution = dist.Delta()
         self.value = value
