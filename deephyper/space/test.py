@@ -1,6 +1,7 @@
 import unittest
 
 import numpy as np
+import jax.numpy as jnp
 
 
 class SpaceTest(unittest.TestCase):
@@ -228,8 +229,10 @@ class MochiSpaceTest(unittest.TestCase):
         # values = space.sample(num_samples=10)
         # print(np.asarray(values, dtype="O"))
 
-    def test_simple(self):
-        import jax.numpy as jnp
+
+class HyperparameterOptimizationTest(unittest.TestCase):
+    def test_variable_layers_with_decreasing_sizes_boolean_constraints(self):
+        import numpyro.distributions as dist
         from deephyper.space._space import (
             Space,
             IntDimension,
@@ -237,60 +240,101 @@ class MochiSpaceTest(unittest.TestCase):
         from deephyper.space._constraint import BooleanConstraint
 
         max_num_layers = 10
+        # space = Space("", seed=42)
         space = Space("")
-        space.add_dimension(IntDimension("num_layers", low=1, high=max_num_layers))
-        for i in range(max_num_layers):
+        space.add_dimension(IntDimension("n", low=1, high=max_num_layers))
+        for i in range(1, max_num_layers + 1):
             space.add_dimension(
-                IntDimension(f"layer_{i}_num_units", low=0, high=100, default_value=32)
+                IntDimension(f"l{i}", low=0, high=100, default_value=32)
             )
 
-        def layer_is_active(p):
-            condition = None
-            for i in range(max_num_layers):
-                condition_i = jnp.where(
-                    i < p["num_layers"],
-                    p[f"layer_{i}_num_units"] > 0,
-                    p[f"layer_{i}_num_units"] == 0,
+        for i in range(1, max_num_layers + 1):
+            space.add_constraint(
+                BooleanConstraint(
+                    f"l{i}_is_active | (n >= {i} and l{i} > 0) or (n < {i} and l{i} == 0)",
+                    lambda p, i=i: (
+                        ((p["n"] >= i) & (p[f"l{i}"] > 0))
+                        | ((p["n"] < i) & (p[f"l{i}"] == 0))
+                    ),
+                    strength=10,
+                    is_strict=True,
                 )
-                if condition is None:
-                    condition = condition_i
-                else:
-                    condition = jnp.logical_and(condition, condition_i)
-            return condition
-
-        space.add_constraint(
-            BooleanConstraint(
-                "layer_is_active",
-                layer_is_active,
-                # strength=-0,
-                is_strict=True,
             )
-        )
 
-        # for i in range(max_num_layers):
-        #     space.add_constraint(
-        #         BooleanConstraint(
-        #             f"layer_{i}_is_active",
-        #             lambda p: p[f"layer_{i}_num_units"] == 0,
-        #             # lambda p: jnp.where(
-        #             #     i < p["num_layers"],
-        #             #     p[f"layer_{i}_num_units"] == 0,
-        #             #     p[f"layer_{i}_num_units"] == 0,
-        #             # ),
-        #             strength=0,
-        #         ),
-        #     )
+        for i in range(1, max_num_layers):
+            space.add_constraint(
+                BooleanConstraint(
+                    f"(l{i} >= l{i+1}) or (l{i+1} == 0)",
+                    lambda p, i=i: ((p[f"l{i}"] >= p[f"l{i+1}"]) | (p[f"l{i+1}"] == 0)),
+                    strength=10,
+                    is_strict=True,
+                )
+            )
 
         print(space)
 
-        values = space.sample(num_samples=20_000)
-        print(np.asarray(values, dtype="O"))
-        print(len(values))
-        print(set(np.asarray(values, dtype="O")[:, 0]))
+        values = space.sample(num_samples=1_000)
+        assert len(values) > 0
+
+        print(jnp.asarray(values)[:10])
+
+        print(set(jnp.asarray(values)[:, 0].tolist()))
+
+    def test_int_parameters_sampled_as_continuous(self):
+        import numpyro.distributions as dist
+        from deephyper.space import (
+            Space,
+            IntDimension,
+        )
+        from deephyper.space._constraint import EqualityConstraint, InequalityConstraint
+
+        max_num_layers = 10
+        # space = Space("", seed=42)
+        space = Space("")
+        space.add_dimension(IntDimension("n", low=1, high=max_num_layers))
+        for i in range(1, max_num_layers + 1):
+            space.add_dimension(
+                IntDimension(f"l{i}", low=0, high=100, default_value=32)
+            )
+
+        # for i in range(1, max_num_layers + 1):
+        #     space.add_constraint(
+        #         BooleanConstraint(
+        #             f"l{i}_is_active | (n >= {i} and l{i} > 0) or (n < {i} and l{i} == 0)",
+        #             lambda p, i=i: (
+        #                 ((p["n"] >= i) & (p[f"l{i}"] > 0))
+        #                 | ((p["n"] < i) & (p[f"l{i}"] == 0))
+        #             ),
+        #             strength=10,
+        #             is_strict=True,
+        #         )
+        #     )
+
+        # f(x) <= 0
+        for i in range(1, max_num_layers):
+            space.add_constraint(
+                InequalityConstraint(
+                    f"(l{i} >= l{i+1})",
+                    lambda p, i=i: p[f"l{i+1}"] - p[f"l{i}"],
+                    strength=10,
+                    is_strict=True,
+                )
+            )
+
+        print(space)
+
+        values = space.sample(num_samples=1_000)
+        assert len(values) > 0
+
+        print(jnp.asarray(values)[:10])
+
+        print(set(jnp.asarray(values)[:, 0].tolist()))
 
 
 if __name__ == "__main__":
     # SpaceTest().test()
     # MochiSpaceTest().test_mercury_spec()
     # MochiSpaceTest().test_scheduler_spec()
-    MochiSpaceTest().test_simple()
+    # HyperparameterOptimizationTest().test_variable_layers_with_decreasing_sizes_boolean_constraints()
+    HyperparameterOptimizationTest().test_int_parameters_sampled_as_continuous()
+    # test_conditions()

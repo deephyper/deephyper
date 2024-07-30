@@ -135,9 +135,8 @@ class Space:
                     # url: https://forum.pyro.ai/t/cannot-find-valid-initial-parameters-with-delta-distribution/1636
                     numpyro.deterministic(name, 0.0)
                 elif isinstance(dim, IntDimension):
-                    parameters[name] = jnp.floor(
-                        numpyro.sample(name, dim.distribution)
-                    ).astype(jnp.int32)
+                    parameters[name] = numpyro.sample(name, dim.distribution)
+
                 else:
                     parameters[name] = numpyro.sample(name, dim.distribution)
 
@@ -185,7 +184,7 @@ class Space:
                     num_warmup=1_000,
                     num_chains=num_chains,
                     num_samples=num_samples // num_chains,
-                    progress_bar=False,
+                    progress_bar=True,
                 )
             self._key, subkey = jax.random.split(self._key)
             self._mcmc.run(subkey)
@@ -206,6 +205,8 @@ class Space:
         for i, dim in enumerate(self.dimensions.values()):
             if isinstance(dim, (CatDimension, ConstDimension)):
                 samples[i, :] = dim.inverse(samples[i, :])
+            elif isinstance(dim, IntDimension):
+                samples[i, :] = np.floor(samples[i, :]).astype(np.int32)
 
         return samples.T[feasible_indexes].tolist()
 

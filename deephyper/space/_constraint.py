@@ -34,6 +34,10 @@ class BooleanConstraint(Constraint):
 
 
 class InequalityConstraint(Constraint):
+    """
+    A constraint of the form f(x) <= 0
+    """
+
     def __init__(self, name: str, func, strength: float = 10, is_strict: bool = False):
         super().__init__(name)
         self.func = func
@@ -52,3 +56,26 @@ class InequalityConstraint(Constraint):
 
     def is_feasible(self, parameters: dict) -> bool:
         return self.func(parameters) <= 0
+
+
+class EqualityConstraint(Constraint):
+    def __init__(self, name: str, func, strength: float = 10, is_strict: bool = False):
+        super().__init__(name)
+        self.func = func
+        self.strength = strength
+        self.is_strict = is_strict
+
+    def __repr__(self) -> str:
+        out = super().__repr__()
+        out += " <= 0"
+        if self.is_strict:
+            out += " (strict)"
+        return out
+
+    def __call__(self, parameters: dict) -> float:
+        x = self.strength * self.func(parameters)
+        return -jnp.exp(x) - jnp.exp(-x) - 2
+
+    def is_feasible(self, parameters: dict) -> bool:
+        value = self.func(parameters)
+        return -1e-6 <= value and value <= 0 + 1e-6
