@@ -13,7 +13,7 @@ from typing import Dict, List, Hashable
 
 import numpy as np
 from deephyper.evaluator._job import Job
-from deephyper.skopt.optimizer import OBJECTIVE_VALUE_FAILURE
+from deephyper.hpo.skopt.optimizer import OBJECTIVE_VALUE_FAILURE
 from deephyper.core.utils._timeout import terminate_on_timeout
 from deephyper.evaluator.storage import Storage, MemoryStorage
 from deephyper.core.exceptions import MaximumJobsSpawnReached

@@ -6,7 +6,7 @@ import ConfigSpace.hyperparameters as csh
 import numpy as np
 
 import deephyper.core.exceptions as dh_exceptions
-import deephyper.skopt
+import deephyper.hpo.skopt
 
 
 def convert_to_skopt_dim(cs_hp, surrogate_model=None):
@@ -18,14 +18,14 @@ def convert_to_skopt_dim(cs_hp, surrogate_model=None):
         surrogate_model_type = "distance_based"
 
     if isinstance(cs_hp, csh.UniformIntegerHyperparameter):
-        skopt_dim = deephyper.skopt.space.Integer(
+        skopt_dim = deephyper.hpo.skopt.space.Integer(
             low=cs_hp.lower,
             high=cs_hp.upper,
             prior="log-uniform" if cs_hp.log else "uniform",
             name=cs_hp.name,
         )
     elif isinstance(cs_hp, csh.UniformFloatHyperparameter):
-        skopt_dim = deephyper.skopt.space.Real(
+        skopt_dim = deephyper.hpo.skopt.space.Real(
             low=cs_hp.lower,
             high=cs_hp.upper,
             prior="log-uniform" if cs_hp.log else "uniform",
@@ -34,7 +34,7 @@ def convert_to_skopt_dim(cs_hp, surrogate_model=None):
     elif isinstance(cs_hp, csh.CategoricalHyperparameter):
         # the transform is important if we don't want the complexity of trees
         # to explode with categorical variables
-        skopt_dim = deephyper.skopt.space.Categorical(
+        skopt_dim = deephyper.hpo.skopt.space.Categorical(
             categories=cs_hp.choices,
             name=cs_hp.name,
             transform="onehot" if surrogate_model_type == "distance_based" else "label",
@@ -48,12 +48,12 @@ def convert_to_skopt_dim(cs_hp, surrogate_model=None):
             transform = "identity"
         else:
             transform = "label"
-        skopt_dim = deephyper.skopt.space.Categorical(
+        skopt_dim = deephyper.hpo.skopt.space.Categorical(
             categories=categories, name=cs_hp.name, transform=transform
         )
     elif isinstance(cs_hp, csh.Constant):
         categories = [cs_hp.value]
-        skopt_dim = deephyper.skopt.space.Categorical(
+        skopt_dim = deephyper.hpo.skopt.space.Categorical(
             categories=categories, name=cs_hp.name, transform="label"
         )
     else:
@@ -73,7 +73,7 @@ def convert_to_skopt_space(cs_space, surrogate_model=None):
         TypeError: if the input space is not a ConfigurationSpace.
 
     Returns:
-        deephyper.skopt.space.Space: a scikit-optimize Space.
+        deephyper.hpo.skopt.space.Space: a scikit-optimize Space.
     """
 
     # verify pre-conditions
@@ -84,12 +84,12 @@ def convert_to_skopt_space(cs_space, surrogate_model=None):
         len(cs_space.conditions) > 0 or len(cs_space.forbidden_clauses) > 0
     )
 
-    # convert the ConfigSpace to deephyper.skopt.space.Space
+    # convert the ConfigSpace to deephyper.hpo.skopt.space.Space
     dimensions = []
     for hp in list(cs_space.values()):
         dimensions.append(convert_to_skopt_dim(hp, surrogate_model))
 
-    skopt_space = deephyper.skopt.space.Space(
+    skopt_space = deephyper.hpo.skopt.space.Space(
         dimensions, config_space=cs_space if sample_with_config_space else None
     )
     return skopt_space
