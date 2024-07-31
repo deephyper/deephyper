@@ -14,7 +14,7 @@ Frequently Asked Questions (F.A.Q.)
 Which search algorithm should I use?
 ------------------------------------
 
-* If you come with an existing machine learning pipeline, then it is better to use ``deephyper.search.hps`` algorithms such as ``CBO`` search (Centralized Bayesian Optimization) which can fine-tune this pipeline.
+* If you come with an existing machine learning pipeline, then it is better to use ``deephyper.hpo`` algorithms such as ``CBO`` search (Centralized Bayesian Optimization) which can fine-tune this pipeline.
 * If you come without an existing machine learning pipeline then it is better to use ``deephyper.search.nas`` algorithms which provides an existing supervised-learning pipeline.
 
 

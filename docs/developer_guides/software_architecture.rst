@@ -15,11 +15,11 @@ The architecture of DeepHyper is based on the following components:
 
 The blue boxes are components defined by the user. The orange boxes are the components that can be configured by the user but not necessarily. The arrows represent the data flow. 
 
-First, the user must provide a **search space** and an **objective function**. The search space is defined through the :mod:`deephyper.problem` module (with :class:`deephyper.problem.HpProblem` for hyperparameter optimization and :class:`deephyper.problem.NaProblem` for neural architecture search). The objective function is simply a Python function that returns the objective to maximize during optimization. This is where the logic to evaluate a suggested configuration is happening. It is commonly named the ``run``-function across the documentation. This ``run``-function must follow some standards which are detailed in the :mod:`deephyper.evaluator` module.
+First, the user must provide a **search space** and an **objective function**. The search space is defined through the :mod:`deephyper.hpo` module (with :class:`deephyper.hpo.HpProblem` for hyperparameter optimization and :class:`deephyper.hpo.NaProblem` for neural architecture search). The objective function is simply a Python function that returns the objective to maximize during optimization. This is where the logic to evaluate a suggested configuration is happening. It is commonly named the ``run``-function across the documentation. This ``run``-function must follow some standards which are detailed in the :mod:`deephyper.evaluator` module.
 
 Then, the user can choose how to **distribute the computation** of suggested tasks in parallel. This distributed computation is abstracted through the :class:`deephyper.evaluator.Evaluator` interface which provides the ``evaluator.submit(configurations)`` and ``results = evaluator.gather(...)`` methods. A panel of different backends is provided: serial (similar to sequential execution in local process), threads, process, MPI, and Ray. This interface to evaluate tasks in parallel is possibly synchronous or asynchronous by batch. Also, the :class:`deephyper.evaluator.Evaluator` uses the :class:`deephyper.evaluator.storage.Storage` interface to record and retrieve jobs metadata. A panel of different storage is provided: local memory, Redis, and Ray.
 
-Finally, the user can choose a **search strategy** to suggest new configurations to evaluate. These strategies are defined in the :mod:`deephyper.search` module and vary depending if the problem is for hyperparameter optimization (:mod:`deephyper.search.hps`) or neural architecture search (:mod:`deephyper.search.nas`).
+Finally, the user can choose a **search strategy** to suggest new configurations to evaluate. These strategies are defined in the :mod:`deephyper.search` module and vary depending if the problem is for hyperparameter optimization (:mod:`deephyper.hpo`) or neural architecture search (:mod:`deephyper.search.nas`).
 Under the hood, DeepHyper's search strategies call a fork of skopt (:mod:`deephyper.skopt`), where the generic optimizer workflow is defined (:mod:`deephyper.skopt.optimizer.optimizer`), along with acquisition funcitons (:mod:`deephyper.skopt.acquisition`), surrogate models (:mod:`deephyper.skopt.forest_minimize`), sampling techniques (:mod:`deephyper.skopt.sampler`), and multiobjective capabilities (:mod:`deephyper.skopt.moo`).
 
 Parallel Execution
@@ -50,21 +50,21 @@ Then, a **centralized execution** can be done through other evaluators such as :
     
     **Figure 4**: Execution of a centralized search (1 manager, 4 workers per node) with a :class:`deephyper.evaluator.MPICommEvaluator` on 2 nodes.
 
-The **centralized execution** has the disadvantage to have an overhead depending on the number of workers of the manager (optimizer). This can be problematic and lead to a bottleneck (e.g., with the constant liar scheme for Bayesian optimization) while often remaining more efficient with respect to optimization iterations (i.e., better improvement of the objective per iteration). The **distributed execution** is a way to mitigate this overhead dependency on the number of workers. In a **pure** distributed execution, 1 optimizer is attributed to each worker and each of these optimizers only has to suggest a new configuration to its corresponding worker. Therefore, the overhead of the optimizer when suggesting new configurations does not depend on the number of workers (good for scaling to more workers!). The distributed execution is illustrated in Figures 5 (1 node) and 6 (2 nodes). The :class:`deephyper.search.hps.MPIDistributedBO` is a wrapper around the Bayesian optimization strategy to do distributed execution through MPI.
+The **centralized execution** has the disadvantage to have an overhead depending on the number of workers of the manager (optimizer). This can be problematic and lead to a bottleneck (e.g., with the constant liar scheme for Bayesian optimization) while often remaining more efficient with respect to optimization iterations (i.e., better improvement of the objective per iteration). The **distributed execution** is a way to mitigate this overhead dependency on the number of workers. In a **pure** distributed execution, 1 optimizer is attributed to each worker and each of these optimizers only has to suggest a new configuration to its corresponding worker. Therefore, the overhead of the optimizer when suggesting new configurations does not depend on the number of workers (good for scaling to more workers!). The distributed execution is illustrated in Figures 5 (1 node) and 6 (2 nodes). The :class:`deephyper.hpo.MPIDistributedBO` is a wrapper around the Bayesian optimization strategy to do distributed execution through MPI.
 
 .. figure:: ../_static/figures/distributed-execution-1-node.png
     :scale: 25%
     :alt: deephyper distributed execution with four workers on one node
     :align: center
     
-    **Figure 5**: Execution of a distributed search (4 workers) with a :class:`deephyper.search.hps.MPIDistributedBO` and the :class:`deephyper.evaluator.SerialEvaluator` on 1 node.
+    **Figure 5**: Execution of a distributed search (4 workers) with a :class:`deephyper.hpo.MPIDistributedBO` and the :class:`deephyper.evaluator.SerialEvaluator` on 1 node.
 
 .. figure:: ../_static/figures/distributed-execution-2-nodes.png
     :scale: 25%
     :alt: deephyper distributed execution with four workers per node on two nodes
     :align: center
     
-    **Figure 6**: Execution of a distributed search (4 workers per node) with a :class:`deephyper.search.hps.MPIDistributedBO` and the :class:`deephyper.evaluator.SerialEvaluator` on 2 nodes.
+    **Figure 6**: Execution of a distributed search (4 workers per node) with a :class:`deephyper.hpo.MPIDistributedBO` and the :class:`deephyper.evaluator.SerialEvaluator` on 2 nodes.
 
 Finally, it is also possible to mix the **centralized** and **distributed** execution to manage the trade-off between iteration efficiency and scaling of the number of workers as presented in Figure 7.
 
@@ -73,4 +73,4 @@ Finally, it is also possible to mix the **centralized** and **distributed** exec
     :alt: deephyper mixed execution with two centralized executions distributed on two nodes each with four workers 
     :align: center
     
-    **Figure 7**: Execution of a search with a mix of centralized and distributed executions. Two centralized executions each with 4 workers are distributed on 2 nodes. This scheme is using the :class:`deephyper.search.hps.MPIDistributedBO` and the :class:`deephyper.evaluator.ProcessPoolEvaluator`.
+    **Figure 7**: Execution of a search with a mix of centralized and distributed executions. Two centralized executions each with 4 workers are distributed on 2 nodes. This scheme is using the :class:`deephyper.hpo.MPIDistributedBO` and the :class:`deephyper.evaluator.ProcessPoolEvaluator`.

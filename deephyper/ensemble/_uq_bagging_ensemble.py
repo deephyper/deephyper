@@ -4,12 +4,13 @@ import traceback
 import numpy as np
 import ray
 import tensorflow as tf
-import tf_keras as tfk
 import tensorflow_probability as tfp
-from deephyper.ensemble import BaseEnsemble
-from deephyper.nas.metrics import selectMetric
-from deephyper.nas.run._util import set_memory_growth_for_visible_gpus
+import tf_keras as tfk
+
 from deephyper.core.exceptions import DeephyperRuntimeError
+from deephyper.ensemble import BaseEnsemble
+from deephyper.nn.tensorflow.metrics import selectMetric
+from deephyper.nn.tensorflow.utils import set_memory_growth_for_visible_gpus
 
 
 def nll(y, rv_y):
@@ -41,8 +42,8 @@ def model_predict(model_path, X, batch_size=32, verbose=0):
         array: The prediction based on the provided input data.
     """
     import tensorflow as tf
-    import tf_keras as tfk
     import tensorflow_probability as tfp
+    import tf_keras as tfk
 
     # GPU Configuration if available
     set_memory_growth_for_visible_gpus(True)

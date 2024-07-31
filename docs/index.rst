@@ -57,8 +57,7 @@ The black-box function named ``run`` is defined by taking an input dictionnary n
     # Necessary IF statement otherwise it will enter in a infinite loop
     # when loading the 'run' function from a new process
     if __name__ == "__main__":
-        from deephyper.problem import HpProblem
-        from deephyper.search.hps import CBO
+        from deephyper.hpo import HpProblem, CBO
         from deephyper.evaluator import Evaluator
 
         # define the variable you want to optimize
@@ -141,10 +140,10 @@ Table of Contents
     Evaluator <_autosummary/deephyper.evaluator>
     Keras <_autosummary/deephyper.keras>
     NAS <_autosummary/deephyper.nas>
-    Problem <_autosummary/deephyper.problem>
+    Problem <_autosummary/deephyper.hpo>
     Search <_autosummary/deephyper.search>
     Skopt <_autosummary/deephyper.skopt>
-    Stopper <_autosummary/deephyper.stopper>
+    Stopper <_autosummary/deephyper.hpo.stopper>
 
 .. toctree::
     :maxdepth: 2

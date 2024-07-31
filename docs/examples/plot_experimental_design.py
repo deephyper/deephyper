@@ -15,7 +15,7 @@ update_matplotlib_rc()
 
 # %%
 # First we define the hyperparameter search space.
-from deephyper.problem import HpProblem
+from deephyper.hpo import HpProblem
 
 
 problem = HpProblem()
@@ -37,7 +37,7 @@ def run(job):
 # %%
 # Then we define the search. In this example, we use the `ExperimentalDesignSearch` class to generate points from a grid design. The `Evaluator` can also be used with this class to parallelize evalutions.
 # Note that `n_points` and `max_evals` take the same value here.
-from deephyper.search.hps import ExperimentalDesignSearch
+from deephyper.hpo import ExperimentalDesignSearch
 
 
 max_evals = 200

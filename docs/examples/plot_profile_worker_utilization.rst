@@ -11,7 +11,7 @@
         :class: sphx-glr-download-link-note
 
         :ref:`Go to the end <sphx_glr_download_examples_plot_profile_worker_utilization.py>`
-        to download the full example code
+        to download the full example code.
 
 .. rst-class:: sphx-glr-example-title
 
@@ -40,7 +40,7 @@ After defining the black-box we can continue with the definition of our main scr
 
 .. GENERATED FROM PYTHON SOURCE LINES 23-29
 
-.. code-block:: default
+.. code-block:: Python
 
     import black_box_util as black_box
 
@@ -61,9 +61,9 @@ Then we define the variable(s) we want to optimize. For this problem we optimize
 
 .. GENERATED FROM PYTHON SOURCE LINES 31-41
 
-.. code-block:: default
+.. code-block:: Python
 
-    from deephyper.problem import HpProblem
+    from deephyper.hpo import HpProblem
 
 
     nb_dim = 2
@@ -96,12 +96,12 @@ Then we define a parallel search.
 
 .. GENERATED FROM PYTHON SOURCE LINES 43-63
 
-.. code-block:: default
+.. code-block:: Python
 
     if __name__ == "__main__":
         from deephyper.evaluator import Evaluator
         from deephyper.evaluator.callback import TqdmCallback
-        from deephyper.search.hps import CBO
+        from deephyper.hpo import CBO
 
         timeout = 20
         num_workers = 4
@@ -127,71 +127,262 @@ Then we define a parallel search.
  .. code-block:: none
 
 
+
+
+
     0it [00:00, ?it/s]
-    1it [00:00, 7037.42it/s, failures=0, objective=-19.8]
-    2it [00:00,  2.10it/s, failures=0, objective=-19.8]  
-    2it [00:00,  2.10it/s, failures=0, objective=-19.8]
-    3it [00:01,  2.27it/s, failures=0, objective=-19.8]
-    3it [00:01,  2.27it/s, failures=0, objective=-19.8]
-    4it [00:01,  2.46it/s, failures=0, objective=-19.8]
-    4it [00:01,  2.46it/s, failures=0, objective=-19.8]
-    5it [00:01,  2.46it/s, failures=0, objective=-19.8]
-    6it [00:03,  1.78it/s, failures=0, objective=-19.8]
-    6it [00:03,  1.78it/s, failures=0, objective=-19.8]
-    7it [00:03,  1.78it/s, failures=0, objective=-15.4]
-    8it [00:03,  2.55it/s, failures=0, objective=-15.4]
-    8it [00:03,  2.55it/s, failures=0, objective=-15.4]
-    9it [00:03,  2.55it/s, failures=0, objective=-15.4]
-    10it [00:04,  2.63it/s, failures=0, objective=-15.4]
-    10it [00:04,  2.63it/s, failures=0, objective=-15.4]
-    11it [00:04,  2.29it/s, failures=0, objective=-15.4]
-    11it [00:04,  2.29it/s, failures=0, objective=-15.4]
-    12it [00:05,  2.21it/s, failures=0, objective=-15.4]
-    12it [00:05,  2.21it/s, failures=0, objective=-15.4]
-    13it [00:05,  2.69it/s, failures=0, objective=-15.4]
-    13it [00:05,  2.69it/s, failures=0, objective=-12.6]
-    14it [00:06,  1.70it/s, failures=0, objective=-12.6]
-    14it [00:06,  1.70it/s, failures=0, objective=-12.6]
-    15it [00:07,  1.74it/s, failures=0, objective=-12.6]
-    15it [00:07,  1.74it/s, failures=0, objective=-12.6]
-    16it [00:07,  2.23it/s, failures=0, objective=-12.6]
-    16it [00:07,  2.23it/s, failures=0, objective=-12.6]
-    17it [00:07,  2.23it/s, failures=0, objective=-12.6]
-    18it [00:08,  1.73it/s, failures=0, objective=-12.6]
-    18it [00:08,  1.73it/s, failures=0, objective=-12.6]
-    19it [00:08,  1.73it/s, failures=0, objective=-5.88]
-    20it [00:09,  2.40it/s, failures=0, objective=-5.88]
-    20it [00:09,  2.40it/s, failures=0, objective=-5.62]
-    21it [00:09,  2.32it/s, failures=0, objective=-5.62]
-    21it [00:09,  2.32it/s, failures=0, objective=-5.62]
-    22it [00:09,  2.57it/s, failures=0, objective=-5.62]
-    22it [00:09,  2.57it/s, failures=0, objective=-5.62]
-    23it [00:10,  1.91it/s, failures=0, objective=-5.62]
-    23it [00:10,  1.91it/s, failures=0, objective=-5.62]
-    24it [00:11,  2.14it/s, failures=0, objective=-5.62]
-    24it [00:11,  2.14it/s, failures=0, objective=-5.62]
-    25it [00:11,  1.73it/s, failures=0, objective=-5.62]
-    25it [00:11,  1.73it/s, failures=0, objective=-5.62]
-    26it [00:12,  2.18it/s, failures=0, objective=-5.62]
-    26it [00:12,  2.18it/s, failures=0, objective=-5.62]
-    27it [00:12,  1.98it/s, failures=0, objective=-5.62]
-    27it [00:12,  1.98it/s, failures=0, objective=-5.62]
-    28it [00:12,  2.35it/s, failures=0, objective=-5.62]
-    28it [00:12,  2.35it/s, failures=0, objective=-5.62]
-    29it [00:14,  1.60it/s, failures=0, objective=-5.62]
-    29it [00:14,  1.60it/s, failures=0, objective=-5.62]
-    30it [00:14,  1.67it/s, failures=0, objective=-5.62]
-    30it [00:14,  1.67it/s, failures=0, objective=-5.62]
-    31it [00:14,  1.98it/s, failures=0, objective=-5.62]
-    31it [00:14,  1.98it/s, failures=0, objective=-5.62]
-    32it [00:15,  2.39it/s, failures=0, objective=-5.62]
-    32it [00:15,  2.39it/s, failures=0, objective=-5.62]
-    33it [00:16,  1.66it/s, failures=0, objective=-5.62]
-    33it [00:16,  1.66it/s, failures=0, objective=-5.62]
-    34it [00:16,  1.84it/s, failures=0, objective=-5.62]
-    34it [00:16,  1.84it/s, failures=0, objective=-5.62]
-    35it [00:16,  1.96it/s, failures=0, objective=-5.62]
-    35it [00:16,  1.96it/s, failures=0, objective=-5.62]
+
+
+
+    1it [00:00, 2976.79it/s, failures=0, objective=-20.2]
+
+
+
+    2it [00:01,  1.60it/s, failures=0, objective=-20.2]  
+
+
+
+    2it [00:01,  1.60it/s, failures=0, objective=-19.8]
+
+
+
+    3it [00:01,  1.89it/s, failures=0, objective=-19.8]
+
+
+
+    3it [00:01,  1.89it/s, failures=0, objective=-19.8]
+
+
+
+    4it [00:01,  2.27it/s, failures=0, objective=-19.8]
+
+
+
+    4it [00:01,  2.27it/s, failures=0, objective=-19.8]
+
+
+
+    5it [00:02,  2.45it/s, failures=0, objective=-19.8]
+
+
+
+    5it [00:02,  2.45it/s, failures=0, objective=-19.8]
+
+
+
+    6it [00:03,  1.36it/s, failures=0, objective=-19.8]
+
+
+
+    6it [00:03,  1.36it/s, failures=0, objective=-19.8]
+
+
+
+    7it [00:03,  1.83it/s, failures=0, objective=-19.8]
+
+
+
+    7it [00:03,  1.83it/s, failures=0, objective=-19.8]
+
+
+
+    8it [00:04,  2.31it/s, failures=0, objective=-19.8]
+
+
+
+    8it [00:04,  2.31it/s, failures=0, objective=-15.4]
+
+
+
+    9it [00:04,  2.94it/s, failures=0, objective=-15.4]
+
+
+
+    9it [00:04,  2.94it/s, failures=0, objective=-15.4]
+
+
+
+    10it [00:05,  1.71it/s, failures=0, objective=-15.4]
+
+
+
+    10it [00:05,  1.71it/s, failures=0, objective=-15.4]
+
+
+
+    11it [00:05,  1.70it/s, failures=0, objective=-15.4]
+
+
+
+    11it [00:05,  1.70it/s, failures=0, objective=-15.4]
+
+
+
+    12it [00:06,  1.70it/s, failures=0, objective=-15.4]
+
+
+
+    12it [00:06,  1.70it/s, failures=0, objective=-15.4]
+
+
+
+    13it [00:06,  2.20it/s, failures=0, objective=-15.4]
+
+
+
+    13it [00:06,  2.20it/s, failures=0, objective=-12.6]
+
+
+
+    14it [00:07,  1.79it/s, failures=0, objective=-12.6]
+
+
+
+    14it [00:07,  1.79it/s, failures=0, objective=-12.6]
+
+
+
+    15it [00:07,  2.25it/s, failures=0, objective=-12.6]
+
+
+
+    15it [00:07,  2.25it/s, failures=0, objective=-12.6]
+
+
+
+    16it [00:08,  1.68it/s, failures=0, objective=-12.6]
+
+
+
+    16it [00:08,  1.68it/s, failures=0, objective=-12.6]
+
+
+
+    17it [00:09,  1.62it/s, failures=0, objective=-12.6]
+
+
+
+    17it [00:09,  1.62it/s, failures=0, objective=-12.6]
+
+
+
+    18it [00:09,  2.01it/s, failures=0, objective=-12.6]
+
+
+
+    18it [00:09,  2.01it/s, failures=0, objective=-6.84]
+
+
+
+    19it [00:09,  2.58it/s, failures=0, objective=-6.84]
+
+
+
+    19it [00:09,  2.58it/s, failures=0, objective=-6.37]
+
+
+
+    20it [00:10,  1.62it/s, failures=0, objective=-6.37]
+
+
+
+    20it [00:10,  1.62it/s, failures=0, objective=-5.35]
+
+
+
+    21it [00:11,  1.33it/s, failures=0, objective=-5.35]
+
+
+
+    21it [00:11,  1.33it/s, failures=0, objective=-5.35]
+
+
+
+    22it [00:12,  1.58it/s, failures=0, objective=-5.35]
+
+
+
+    22it [00:12,  1.58it/s, failures=0, objective=-5.35]
+
+
+
+    23it [00:12,  1.65it/s, failures=0, objective=-5.35]
+
+
+
+    23it [00:12,  1.65it/s, failures=0, objective=-5.35]
+
+
+
+    24it [00:12,  2.16it/s, failures=0, objective=-5.35]
+
+
+
+    24it [00:12,  2.16it/s, failures=0, objective=-5.35]
+
+
+
+    25it [00:13,  2.06it/s, failures=0, objective=-5.35]
+
+
+
+    25it [00:13,  2.06it/s, failures=0, objective=-5.35]
+
+
+
+    26it [00:14,  1.77it/s, failures=0, objective=-5.35]
+
+
+
+    26it [00:14,  1.77it/s, failures=0, objective=-5.35]
+
+
+
+    27it [00:14,  2.21it/s, failures=0, objective=-5.35]
+
+
+
+    27it [00:14,  2.21it/s, failures=0, objective=-5.35]
+
+
+
+    28it [00:14,  2.18it/s, failures=0, objective=-5.35]
+
+
+
+    28it [00:14,  2.18it/s, failures=0, objective=-5.35]
+
+
+
+    29it [00:15,  2.40it/s, failures=0, objective=-5.35]
+
+
+
+    29it [00:15,  2.40it/s, failures=0, objective=-5.35]
+
+
+
+    30it [00:16,  1.26it/s, failures=0, objective=-5.35]
+
+
+
+    30it [00:16,  1.26it/s, failures=0, objective=-5.35]
+
+
+
+    31it [00:16,  1.67it/s, failures=0, objective=-5.35]
+
+
+
+    31it [00:16,  1.67it/s, failures=0, objective=-5.35]
+
+
+
+    32it [00:17,  2.18it/s, failures=0, objective=-5.35]
+
+
+
+    32it [00:17,  2.18it/s, failures=0, objective=-5.35]
 
 
 
@@ -201,7 +392,7 @@ Finally, we plot the results from the collected DataFrame.
 
 .. GENERATED FROM PYTHON SOURCE LINES 65-118
 
-.. code-block:: default
+.. code-block:: Python
 
     if __name__ == "__main__":
         import matplotlib.pyplot as plt
@@ -253,7 +444,7 @@ Finally, we plot the results from the collected DataFrame.
         plt.ylim(0, 100)
         plt.xlim(0, tmax)
         plt.xlabel("Time (sec.)")
-        plt.ylabel("Worker Utilization (\%)")
+        plt.ylabel("Worker Utilization (\\%)")
         plt.tight_layout()
         plt.show()
 
@@ -271,7 +462,7 @@ Finally, we plot the results from the collected DataFrame.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 22.543 seconds)
+   **Total running time of the script:** (0 minutes 20.473 seconds)
 
 
 .. _sphx_glr_download_examples_plot_profile_worker_utilization.py:
@@ -280,16 +471,17 @@ Finally, we plot the results from the collected DataFrame.
 
   .. container:: sphx-glr-footer sphx-glr-footer-example
 
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-
+      :download:`Download Jupyter notebook: plot_profile_worker_utilization.ipynb <plot_profile_worker_utilization.ipynb>`
 
     .. container:: sphx-glr-download sphx-glr-download-python
 
       :download:`Download Python source code: plot_profile_worker_utilization.py <plot_profile_worker_utilization.py>`
 
-    .. container:: sphx-glr-download sphx-glr-download-jupyter
+    .. container:: sphx-glr-download sphx-glr-download-zip
 
-      :download:`Download Jupyter notebook: plot_profile_worker_utilization.ipynb <plot_profile_worker_utilization.ipynb>`
+      :download:`Download zipped: plot_profile_worker_utilization.zip <plot_profile_worker_utilization.zip>`
 
 
 .. only:: html
