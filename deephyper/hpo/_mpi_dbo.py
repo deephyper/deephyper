@@ -12,8 +12,8 @@ from mpi4py import MPI  # noqa: E402
 from deephyper.evaluator import Evaluator  # noqa: E402
 from deephyper.evaluator.callback import TqdmCallback  # noqa: E402
 from deephyper.evaluator.storage import Storage  # noqa: E402
-from deephyper.search.hps._cbo import CBO  # noqa: E402
-from deephyper.stopper import Stopper  # noqa: E402
+from deephyper.hpo._cbo import CBO  # noqa: E402
+from deephyper.hpo.stopper import Stopper  # noqa: E402
 
 MAP_acq_func = {
     "UCB": "LCB",

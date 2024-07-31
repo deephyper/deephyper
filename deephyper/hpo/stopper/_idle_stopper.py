@@ -1,4 +1,4 @@
-from deephyper.stopper._stopper import Stopper
+from deephyper.hpo.stopper._stopper import Stopper
 
 
 class IdleStopper(Stopper):

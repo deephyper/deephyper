@@ -172,7 +172,7 @@ def check_hyperparameter(parameter, name=None, default_value=None):
 class HpProblem:
     """Class to define an hyperparameter problem.
 
-    >>> from deephyper.problem import HpProblem
+    >>> from deephyper.hpo import HpProblem
     >>> problem = HpProblem()
 
     Args:
@@ -255,7 +255,7 @@ class HpProblem:
 
         For example if we want to optimize :math:`\\frac{1}{x}` where :math:`x` cannot be equal to 0:
 
-        >>> from deephyper.problem import HpProblem
+        >>> from deephyper.hpo import HpProblem
         >>> import ConfigSpace as cs
         >>> problem = HpProblem()
         >>> x = problem.add_hyperparameter((0.0, 10.0), "x")
@@ -269,7 +269,7 @@ class HpProblem:
     def add_condition(self, condition):
         """Add a `condition <https://automl.github.io/ConfigSpace/master/API-Doc.html#conditions>`_ to the ``HpProblem``.
 
-                >>> from deephyper.problem import HpProblem
+                >>> from deephyper.hpo import HpProblem
                 >>> import ConfigSpace as cs
                 >>> problem = HpProblem()
                 >>> x = problem.add_hyperparameter((0.0, 10.0), "x")

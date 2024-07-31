@@ -1,5 +1,5 @@
 from deephyper.nas.spacelib.tabular import OneLayerSpace
-from deephyper.problem import NaProblem
+from deephyper.hpo import NaProblem
 from deephyper.test.nas.linearReg.load_data import load_data
 
 Problem = NaProblem()

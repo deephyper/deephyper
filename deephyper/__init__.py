@@ -3,10 +3,10 @@ DeepHyper's software architecture is designed to be modular and extensible. It i
 
 * :mod:`deephyper.ensemble`: Tools to build ensembles of neural networks with uncertainty quantification.
 * :mod:`deephyper.nas`: Tools to define neural architecture search space and evaluation strategy.
-* :mod:`deephyper.problem`: Tools for defining neural architecture and hyper-parameter search problems.
+* :mod:`deephyper.hpo`: Tools for defining neural architecture and hyper-parameter search problems.
 * :mod:`deephyper.evaluator` : Tools to distribute the evaluation of tasks (e.g., neural network trainings).
 * :mod:`deephyper.search`: Tools to define search strategies for neural architecture search and hyper-parameter optimization.
-* :mod:`deephyper.stopper`: Tools to define multi-fidelity strategies for neural architecture and hyper-parameter optimization.
+* :mod:`deephyper.hpo.stopper`: Tools to define multi-fidelity strategies for neural architecture and hyper-parameter optimization.
 
 
 DeepHyper installation requires **Python >= 3.9**.

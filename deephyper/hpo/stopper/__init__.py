@@ -8,9 +8,9 @@ The ``Stopper`` class is the base class for all stoppers. It provides the interf
 
     import time
 
-    from deephyper.problem import HpProblem
-    from deephyper.search.hps import CBO
-    from deephyper.stopper import SuccessiveHalvingStopper
+    from deephyper.hpo import HpProblem
+    from deephyper.hpo import CBO
+    from deephyper.hpo.stopper import SuccessiveHalvingStopper
 
 
     def run(job):
@@ -69,11 +69,11 @@ to perform 15 evaluations instead.
     14  99.988566  9998.856623      14            8.376363            9.615355           99
 """
 
-from deephyper.stopper._stopper import Stopper
-from deephyper.stopper._asha_stopper import SuccessiveHalvingStopper
-from deephyper.stopper._median_stopper import MedianStopper
-from deephyper.stopper._idle_stopper import IdleStopper
-from deephyper.stopper._const_stopper import ConstantStopper
+from deephyper.hpo.stopper._stopper import Stopper
+from deephyper.hpo.stopper._asha_stopper import SuccessiveHalvingStopper
+from deephyper.hpo.stopper._median_stopper import MedianStopper
+from deephyper.hpo.stopper._idle_stopper import IdleStopper
+from deephyper.hpo.stopper._const_stopper import ConstantStopper
 
 
 __all__ = [
@@ -87,7 +87,7 @@ __all__ = [
 
 try:
 
-    from deephyper.stopper._lcmodel_stopper import LCModelStopper  # noqa: F401
+    from deephyper.hpo.stopper._lcmodel_stopper import LCModelStopper  # noqa: F401
 
     __all__.append("LCModelStopper")
 except ImportError:

@@ -2,7 +2,7 @@ from numbers import Number
 
 import numpy as np
 
-from deephyper.stopper._stopper import Stopper
+from deephyper.hpo.stopper._stopper import Stopper
 
 
 class MedianStopper(Stopper):

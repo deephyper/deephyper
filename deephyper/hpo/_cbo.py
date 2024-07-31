@@ -14,7 +14,7 @@ import deephyper.core.exceptions
 import deephyper.hpo.skopt
 from deephyper.core.utils import CaptureSTD
 from deephyper.hpo._search import Search
-from deephyper.problem._hyperparameter import convert_to_skopt_space
+from deephyper.hpo._problem import convert_to_skopt_space
 from deephyper.hpo.skopt.moo import (
     MoScalarFunction,
     moo_functions,
@@ -463,7 +463,7 @@ class CBO(Search):
                     # retrieve budget consumed by job with multiple observations
                     if job_i.observations is not None:
                         # TODO: use ALC to reduce the problem to a scalar maximization/estimation
-                        from deephyper.stopper._lcmodel_stopper import (
+                        from deephyper.hpo.stopper._lcmodel_stopper import (
                             area_learning_curve,
                         )
 

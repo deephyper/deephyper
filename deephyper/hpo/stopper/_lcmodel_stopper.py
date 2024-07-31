@@ -13,7 +13,7 @@ from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils import check_random_state
 from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
 
-from deephyper.stopper._stopper import Stopper
+from deephyper.hpo.stopper._stopper import Stopper
 
 
 # Learning curves models

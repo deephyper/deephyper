@@ -1,4 +1,4 @@
-from deephyper.problem import NaProblem
+from deephyper.hpo import NaProblem
 from deephyper.test.nas.linearRegMultiInputsGen.load_data import load_data
 from deephyper.nas.preprocessing import minmaxstdscaler
 from deephyper.nas.spacelib.tabular import OneLayerSpace

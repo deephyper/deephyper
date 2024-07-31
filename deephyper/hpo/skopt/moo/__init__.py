@@ -3,7 +3,7 @@
 DeepHyper solves multiobjective problems via scalarization.
 A *scalarization* is a function that reduces several objectives to a single
 target, which can be attained using any of DeepHyper's existing search
-strategies, such as :class:`deephyper.search.hps.CBO` or :class:`deephyper.search.hps.MPIDistributedBO`.
+strategies, such as :class:`deephyper.hpo.CBO` or :class:`deephyper.hpo.MPIDistributedBO`.
 
 If the user knows the tradeoff point that they would like to attain *a priori*,
 then DeepHyper can use a fixed scalarization by using one of our
@@ -37,6 +37,7 @@ We also provide 5 common multiobjective utility functions for calculating
 the hypervolume performance metric and extracting
 Pareto efficient/non dominated point sets.
 """
+
 from ._hv import hypervolume
 from ._multiobjective import (
     MoAugmentedChebyshevFunction,

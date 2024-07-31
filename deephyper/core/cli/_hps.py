@@ -52,6 +52,7 @@ Command line to execute hyperparameter search.
     --ray-ray-kwargs RAY_RAY_KWARGS
                             Type[dict]. Defaults to '{}'.
 """
+
 import argparse
 import logging
 import sys
@@ -61,8 +62,8 @@ from deephyper.core.utils import load_attr
 from deephyper.evaluator import EVALUATORS, Evaluator
 
 HPS_SEARCHES = {
-    "ambs": "deephyper.search.hps.AMBS",
-    "cbo": "deephyper.search.hps.CBO",
+    "ambs": "deephyper.hpo.AMBS",
+    "cbo": "deephyper.hpo.CBO",
 }
 
 
