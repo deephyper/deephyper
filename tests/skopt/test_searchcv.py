@@ -14,8 +14,8 @@ from sklearn.base import BaseEstimator
 from scipy.stats import rankdata
 import numpy as np
 from numpy.testing import assert_array_equal
-from deephyper.hpo.skopt.space import Real, Categorical, Integer
-from deephyper.hpo.skopt import BayesSearchCV
+from deephyper.skopt.space import Real, Categorical, Integer
+from deephyper.skopt import BayesSearchCV
 
 
 def _fit_svc(n_jobs=1, n_points=1, cv=None):

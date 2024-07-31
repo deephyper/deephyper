@@ -5,10 +5,10 @@ skopt, where constant liar parallelization strategy is used.
 from numpy.testing import assert_equal
 from numpy.testing import assert_raises
 
-from deephyper.hpo.skopt.space import Real
-from deephyper.hpo.skopt import Optimizer
-from deephyper.hpo.skopt.benchmarks import branin
-import deephyper.hpo.skopt.learning as sol
+from deephyper.skopt.space import Real
+from deephyper.skopt import Optimizer
+from deephyper.skopt.benchmarks import branin
+import deephyper.skopt.learning as sol
 
 from scipy.spatial.distance import pdist
 import pytest

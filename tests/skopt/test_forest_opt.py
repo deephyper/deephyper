@@ -2,12 +2,12 @@ from functools import partial
 from sklearn.tree import DecisionTreeClassifier
 import pytest
 
-from deephyper.hpo.skopt import gbrt_minimize
-from deephyper.hpo.skopt import forest_minimize
-from deephyper.hpo.skopt.benchmarks import bench1
-from deephyper.hpo.skopt.benchmarks import bench2
-from deephyper.hpo.skopt.benchmarks import bench3
-from deephyper.hpo.skopt.benchmarks import bench4
+from deephyper.skopt import gbrt_minimize
+from deephyper.skopt import forest_minimize
+from deephyper.skopt.benchmarks import bench1
+from deephyper.skopt.benchmarks import bench2
+from deephyper.skopt.benchmarks import bench3
+from deephyper.skopt.benchmarks import bench4
 
 
 MINIMIZERS = [

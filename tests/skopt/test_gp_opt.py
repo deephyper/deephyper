@@ -2,14 +2,14 @@ import numpy as np
 from numpy.testing import assert_array_equal
 import pytest
 
-from deephyper.hpo.skopt import gp_minimize
-from deephyper.hpo.skopt.benchmarks import bench1
-from deephyper.hpo.skopt.benchmarks import bench2
-from deephyper.hpo.skopt.benchmarks import bench3
-from deephyper.hpo.skopt.benchmarks import bench4
-from deephyper.hpo.skopt.benchmarks import branin
-from deephyper.hpo.skopt.space.space import Real, Categorical, Space
-from deephyper.hpo.skopt.utils import cook_estimator
+from deephyper.skopt import gp_minimize
+from deephyper.skopt.benchmarks import bench1
+from deephyper.skopt.benchmarks import bench2
+from deephyper.skopt.benchmarks import bench3
+from deephyper.skopt.benchmarks import bench4
+from deephyper.skopt.benchmarks import branin
+from deephyper.skopt.space.space import Real, Categorical, Space
+from deephyper.skopt.utils import cook_estimator
 
 
 def check_minimize(

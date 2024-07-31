@@ -13,16 +13,16 @@ from numpy.testing import assert_array_almost_equal
 from numpy.testing import assert_equal
 from numpy.testing import assert_raises
 
-from deephyper.hpo.skopt import dummy_minimize
-from deephyper.hpo.skopt import gp_minimize
-from deephyper.hpo.skopt import forest_minimize
-from deephyper.hpo.skopt import gbrt_minimize
-from deephyper.hpo.skopt.benchmarks import branin
-from deephyper.hpo.skopt.benchmarks import bench1
-from deephyper.hpo.skopt.benchmarks import bench4
-from deephyper.hpo.skopt.benchmarks import bench5
-from deephyper.hpo.skopt.callbacks import DeltaXStopper
-from deephyper.hpo.skopt.space import Space
+from deephyper.skopt import dummy_minimize
+from deephyper.skopt import gp_minimize
+from deephyper.skopt import forest_minimize
+from deephyper.skopt import gbrt_minimize
+from deephyper.skopt.benchmarks import branin
+from deephyper.skopt.benchmarks import bench1
+from deephyper.skopt.benchmarks import bench4
+from deephyper.skopt.benchmarks import bench5
+from deephyper.skopt.callbacks import DeltaXStopper
+from deephyper.skopt.space import Space
 
 
 # dummy_minimize does not support same parameters so

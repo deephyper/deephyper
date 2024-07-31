@@ -5,8 +5,8 @@ from numpy.testing import assert_raises
 from numpy.testing import assert_array_equal
 from numpy.testing import assert_equal
 from numpy.testing import assert_raises_regex
-from deephyper.hpo.skopt.space import LogN, Normalize
-from deephyper.hpo.skopt.space.transformers import StringEncoder, LabelEncoder, Identity
+from deephyper.skopt.space import LogN, Normalize
+from deephyper.skopt.space.transformers import StringEncoder, LabelEncoder, Identity
 
 
 @pytest.mark.hps

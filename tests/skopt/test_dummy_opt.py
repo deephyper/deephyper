@@ -1,8 +1,8 @@
 import pytest
-from deephyper.hpo.skopt import dummy_minimize
-from deephyper.hpo.skopt.benchmarks import bench1
-from deephyper.hpo.skopt.benchmarks import bench2
-from deephyper.hpo.skopt.benchmarks import bench3
+from deephyper.skopt import dummy_minimize
+from deephyper.skopt.benchmarks import bench1
+from deephyper.skopt.benchmarks import bench2
+from deephyper.skopt.benchmarks import bench3
 
 
 def check_minimize(func, y_opt, dimensions, margin, n_calls):

@@ -1,7 +1,7 @@
 import pytest
 
 import numpy as np
-from deephyper.hpo.skopt.learning import GaussianProcessRegressor
+from deephyper.skopt.learning import GaussianProcessRegressor
 
 
 @pytest.mark.hps

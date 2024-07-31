@@ -3,11 +3,11 @@ from itertools import product
 
 import pytest
 
-from deephyper.hpo.skopt import gp_minimize
-from deephyper.hpo.skopt import forest_minimize
-from deephyper.hpo.skopt import gbrt_minimize
-from deephyper.hpo.skopt import Optimizer
-from deephyper.hpo.skopt.learning import ExtraTreesRegressor
+from deephyper.skopt import gp_minimize
+from deephyper.skopt import forest_minimize
+from deephyper.skopt import gbrt_minimize
+from deephyper.skopt import Optimizer
+from deephyper.skopt.learning import ExtraTreesRegressor
 
 
 # dummy_minimize does not support same parameters so

@@ -4,8 +4,8 @@ import pytest
 from numpy.testing import assert_array_almost_equal
 from numpy.testing import assert_almost_equal
 
-from deephyper.hpo.skopt.benchmarks import branin
-from deephyper.hpo.skopt.benchmarks import hart6
+from deephyper.skopt.benchmarks import branin
+from deephyper.skopt.benchmarks import hart6
 
 
 @pytest.mark.hps

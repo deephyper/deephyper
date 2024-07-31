@@ -6,13 +6,13 @@ from numpy.testing import assert_array_equal
 from numpy.testing import assert_equal
 from numpy.testing import assert_raises
 
-from deephyper.hpo.skopt import gp_minimize
-from deephyper.hpo.skopt import forest_minimize
-from deephyper.hpo.skopt.benchmarks import bench1, bench1_with_time
-from deephyper.hpo.skopt.benchmarks import branin
-from deephyper.hpo.skopt.learning import ExtraTreesRegressor, RandomForestRegressor
-from deephyper.hpo.skopt.learning import GradientBoostingQuantileRegressor
-from deephyper.hpo.skopt.optimizer import Optimizer
+from deephyper.skopt import gp_minimize
+from deephyper.skopt import forest_minimize
+from deephyper.skopt.benchmarks import bench1, bench1_with_time
+from deephyper.skopt.benchmarks import branin
+from deephyper.skopt.learning import ExtraTreesRegressor, RandomForestRegressor
+from deephyper.skopt.learning import GradientBoostingQuantileRegressor
+from deephyper.skopt.optimizer import Optimizer
 from scipy.optimize import OptimizeResult
 
 
@@ -412,7 +412,7 @@ def test_defaults_are_equivalent():
 
 @pytest.mark.hps
 def test_dimensions_names():
-    from deephyper.hpo.skopt.space import Real, Categorical, Integer
+    from deephyper.skopt.space import Real, Categorical, Integer
 
     # create search space and optimizer
     space = [
@@ -435,7 +435,7 @@ def test_dimensions_names():
 
 @pytest.mark.hps
 def test_categorical_only():
-    from deephyper.hpo.skopt.space import Categorical
+    from deephyper.skopt.space import Categorical
 
     cat1 = Categorical([2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
     cat2 = Categorical([2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
@@ -462,8 +462,8 @@ def test_categorical_only():
 
 def test_categorical_only2():
     from numpy import linalg
-    from deephyper.hpo.skopt.space import Categorical
-    from deephyper.hpo.skopt.learning import GaussianProcessRegressor
+    from deephyper.skopt.space import Categorical
+    from deephyper.skopt.learning import GaussianProcessRegressor
 
     space = [Categorical([1, 2, 3]), Categorical([4, 5, 6])]
     opt = Optimizer(

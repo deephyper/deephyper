@@ -11,21 +11,21 @@ from numpy.testing import assert_array_equal
 from numpy.testing import assert_equal
 from numpy.testing import assert_raises
 from scipy import spatial
-from deephyper.hpo.skopt import Optimizer
-from deephyper.hpo.skopt.space import Space
-from deephyper.hpo.skopt.space import Real
-from deephyper.hpo.skopt.space import Integer
-from deephyper.hpo.skopt.space import Categorical
-from deephyper.hpo.skopt.space import check_dimension as space_check_dimension
-from deephyper.hpo.skopt.sampler.sobol import _bit_lo0, _bit_hi1
-from deephyper.hpo.skopt.sampler.halton import _van_der_corput_samples, _create_primes
-from deephyper.hpo.skopt.sampler import Hammersly, Halton, Lhs, Sobol, Grid
-from deephyper.hpo.skopt.sampler import InitialPointGenerator
-from deephyper.hpo.skopt.sampler.grid import _create_uniform_grid_include_border
-from deephyper.hpo.skopt.sampler.grid import _create_uniform_grid_exclude_border
-from deephyper.hpo.skopt.sampler.grid import _quadrature_combine
-from deephyper.hpo.skopt.sampler.grid import _create_uniform_grid_only_border
-from deephyper.hpo.skopt.utils import cook_initial_point_generator
+from deephyper.skopt import Optimizer
+from deephyper.skopt.space import Space
+from deephyper.skopt.space import Real
+from deephyper.skopt.space import Integer
+from deephyper.skopt.space import Categorical
+from deephyper.skopt.space import check_dimension as space_check_dimension
+from deephyper.skopt.sampler.sobol import _bit_lo0, _bit_hi1
+from deephyper.skopt.sampler.halton import _van_der_corput_samples, _create_primes
+from deephyper.skopt.sampler import Hammersly, Halton, Lhs, Sobol, Grid
+from deephyper.skopt.sampler import InitialPointGenerator
+from deephyper.skopt.sampler.grid import _create_uniform_grid_include_border
+from deephyper.skopt.sampler.grid import _create_uniform_grid_exclude_border
+from deephyper.skopt.sampler.grid import _quadrature_combine
+from deephyper.skopt.sampler.grid import _create_uniform_grid_only_border
+from deephyper.skopt.utils import cook_initial_point_generator
 
 
 LHS_TYPE = ["classic", "centered"]

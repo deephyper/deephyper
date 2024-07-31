@@ -8,16 +8,16 @@ from numpy.testing import assert_array_almost_equal
 from numpy.testing import assert_array_equal
 from numpy.testing import assert_raises
 
-from deephyper.hpo.skopt.acquisition import _gaussian_acquisition
-from deephyper.hpo.skopt.acquisition import gaussian_acquisition_1D
-from deephyper.hpo.skopt.acquisition import gaussian_ei
-from deephyper.hpo.skopt.acquisition import gaussian_lcb
-from deephyper.hpo.skopt.acquisition import gaussian_pi
-from deephyper.hpo.skopt.learning import GaussianProcessRegressor
-from deephyper.hpo.skopt.learning.gaussian_process.kernels import Matern
-from deephyper.hpo.skopt.learning.gaussian_process.kernels import WhiteKernel
-from deephyper.hpo.skopt.space import Space
-from deephyper.hpo.skopt.utils import cook_estimator
+from deephyper.skopt.acquisition import _gaussian_acquisition
+from deephyper.skopt.acquisition import gaussian_acquisition_1D
+from deephyper.skopt.acquisition import gaussian_ei
+from deephyper.skopt.acquisition import gaussian_lcb
+from deephyper.skopt.acquisition import gaussian_pi
+from deephyper.skopt.learning import GaussianProcessRegressor
+from deephyper.skopt.learning.gaussian_process.kernels import Matern
+from deephyper.skopt.learning.gaussian_process.kernels import WhiteKernel
+from deephyper.skopt.space import Space
+from deephyper.skopt.utils import cook_estimator
 
 
 class ConstSurrogate:

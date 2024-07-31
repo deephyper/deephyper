@@ -6,14 +6,14 @@ from sklearn.datasets import load_breast_cancer
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import cross_val_score
 from numpy.testing import assert_array_almost_equal
-from deephyper.hpo.skopt.space import Integer, Categorical
-from deephyper.hpo.skopt import plots, gp_minimize
+from deephyper.skopt.space import Integer, Categorical
+from deephyper.skopt import plots, gp_minimize
 import matplotlib.pyplot as plt
-from deephyper.hpo.skopt.benchmarks import bench3
-from deephyper.hpo.skopt import expected_minimum, expected_minimum_random_sampling
-from deephyper.hpo.skopt.plots import _evaluate_min_params, partial_dependence
-from deephyper.hpo.skopt.plots import partial_dependence_1D, partial_dependence_2D
-from deephyper.hpo.skopt import Optimizer
+from deephyper.skopt.benchmarks import bench3
+from deephyper.skopt import expected_minimum, expected_minimum_random_sampling
+from deephyper.skopt.plots import _evaluate_min_params, partial_dependence
+from deephyper.skopt.plots import partial_dependence_1D, partial_dependence_2D
+from deephyper.skopt import Optimizer
 
 
 def save_axes(ax, filename):

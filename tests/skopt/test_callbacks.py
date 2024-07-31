@@ -4,18 +4,18 @@ import numpy as np
 import os
 from collections import namedtuple
 
-from deephyper.hpo.skopt import dummy_minimize
-from deephyper.hpo.skopt import gp_minimize
-from deephyper.hpo.skopt.benchmarks import bench1
-from deephyper.hpo.skopt.benchmarks import bench3
-from deephyper.hpo.skopt.callbacks import TimerCallback
-from deephyper.hpo.skopt.callbacks import DeltaYStopper
-from deephyper.hpo.skopt.callbacks import DeadlineStopper
-from deephyper.hpo.skopt.callbacks import CheckpointSaver
-from deephyper.hpo.skopt.callbacks import HollowIterationsStopper
-from deephyper.hpo.skopt.callbacks import ThresholdStopper
+from deephyper.skopt import dummy_minimize
+from deephyper.skopt import gp_minimize
+from deephyper.skopt.benchmarks import bench1
+from deephyper.skopt.benchmarks import bench3
+from deephyper.skopt.callbacks import TimerCallback
+from deephyper.skopt.callbacks import DeltaYStopper
+from deephyper.skopt.callbacks import DeadlineStopper
+from deephyper.skopt.callbacks import CheckpointSaver
+from deephyper.skopt.callbacks import HollowIterationsStopper
+from deephyper.skopt.callbacks import ThresholdStopper
 
-from deephyper.hpo.skopt.utils import load
+from deephyper.skopt.utils import load
 
 
 @pytest.mark.hps

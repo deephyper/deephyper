@@ -6,26 +6,26 @@ from numpy.testing import assert_equal
 from numpy.testing import assert_raises
 import numpy as np
 
-from deephyper.hpo.skopt import gp_minimize, forest_minimize
-from deephyper.hpo.skopt import load
-from deephyper.hpo.skopt import dump
-from deephyper.hpo.skopt import expected_minimum, expected_minimum_random_sampling
-from deephyper.hpo.skopt.benchmarks import bench1
-from deephyper.hpo.skopt.benchmarks import bench3
-from deephyper.hpo.skopt.learning import ExtraTreesRegressor
-from deephyper.hpo.skopt import Optimizer
-from deephyper.hpo.skopt import Space
-from deephyper.hpo.skopt.space import Dimension
-from deephyper.hpo.skopt.utils import point_asdict
-from deephyper.hpo.skopt.utils import point_aslist
-from deephyper.hpo.skopt.utils import dimensions_aslist
-from deephyper.hpo.skopt.utils import has_gradients
-from deephyper.hpo.skopt.utils import cook_estimator
-from deephyper.hpo.skopt.utils import normalize_dimensions
-from deephyper.hpo.skopt.utils import use_named_args
-from deephyper.hpo.skopt.utils import check_list_types
-from deephyper.hpo.skopt.utils import check_dimension_names
-from deephyper.hpo.skopt.space import Real, Integer, Categorical
+from deephyper.skopt import gp_minimize, forest_minimize
+from deephyper.skopt import load
+from deephyper.skopt import dump
+from deephyper.skopt import expected_minimum, expected_minimum_random_sampling
+from deephyper.skopt.benchmarks import bench1
+from deephyper.skopt.benchmarks import bench3
+from deephyper.skopt.learning import ExtraTreesRegressor
+from deephyper.skopt import Optimizer
+from deephyper.skopt import Space
+from deephyper.skopt.space import Dimension
+from deephyper.skopt.utils import point_asdict
+from deephyper.skopt.utils import point_aslist
+from deephyper.skopt.utils import dimensions_aslist
+from deephyper.skopt.utils import has_gradients
+from deephyper.skopt.utils import cook_estimator
+from deephyper.skopt.utils import normalize_dimensions
+from deephyper.skopt.utils import use_named_args
+from deephyper.skopt.utils import check_list_types
+from deephyper.skopt.utils import check_dimension_names
+from deephyper.skopt.space import Real, Integer, Categorical
 
 
 def check_optimization_results_equality(res_1, res_2):

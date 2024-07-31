@@ -5,7 +5,7 @@ import numpy as np
 from deephyper.evaluator import RunningJob
 from deephyper.hpo import HpProblem
 from deephyper.hpo import CBO
-from deephyper.hpo.stopper import MedianStopper
+from deephyper.stopper import MedianStopper
 
 
 def run(job: RunningJob) -> dict:

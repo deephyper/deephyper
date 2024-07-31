@@ -7,7 +7,7 @@ import pandas as pd
 from deephyper.evaluator import RunningJob
 from deephyper.hpo import HpProblem
 from deephyper.hpo import CBO
-from deephyper.hpo.stopper import SuccessiveHalvingStopper
+from deephyper.stopper import SuccessiveHalvingStopper
 
 
 def run(job: RunningJob) -> dict:

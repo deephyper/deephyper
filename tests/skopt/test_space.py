@@ -10,13 +10,13 @@ from numpy.testing import assert_array_equal
 from numpy.testing import assert_equal
 from numpy.testing import assert_raises_regex
 
-from deephyper.hpo.skopt import Optimizer
-from deephyper.hpo.skopt.space import Space
-from deephyper.hpo.skopt.space import Real
-from deephyper.hpo.skopt.space import Integer
-from deephyper.hpo.skopt.space import Categorical
-from deephyper.hpo.skopt.space import check_dimension as space_check_dimension
-from deephyper.hpo.skopt.utils import normalize_dimensions
+from deephyper.skopt import Optimizer
+from deephyper.skopt.space import Space
+from deephyper.skopt.space import Real
+from deephyper.skopt.space import Integer
+from deephyper.skopt.space import Categorical
+from deephyper.skopt.space import check_dimension as space_check_dimension
+from deephyper.skopt.utils import normalize_dimensions
 
 
 def check_dimension(Dimension, vals, random_val):
