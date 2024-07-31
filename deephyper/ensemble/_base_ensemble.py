@@ -52,7 +52,9 @@ class BaseEnsemble(abc.ABC):
 
     def _list_files_in_model_dir(self):
         return [
-            f for f in os.listdir(self.model_dir) if f[-2:] == "h5" or f[-5:] == "keras"
+            f
+            for f in os.listdir(self.model_dir)
+            if f.endswith("h5") or f.endswith("keras")
         ]
 
     @abc.abstractmethod
