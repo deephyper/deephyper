@@ -65,10 +65,8 @@ except ImportError:
     pass
 
 try:
-    from deephyper.evaluator._distributed import distributed  # noqa: F401
     from deephyper.evaluator._mpi_comm import MPICommEvaluator  # noqa: F401
 
     __all__.append("MPICommEvaluator")
-    __all__.append("distributed")
 except ImportError:
     pass
