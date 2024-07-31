@@ -75,7 +75,7 @@ def profile(
 
     def decorator_profile(func):
 
-        if register:
+        if register and memory:
             register_inner_function_for_pickle(func)
 
         @functools.wraps(func)
