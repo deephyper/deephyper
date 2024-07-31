@@ -6,7 +6,7 @@ from inspect import isclass
 
 import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh
-import deephyper.hpo.skopt
+import deephyper.skopt
 import numpy as np
 from ConfigSpace.read_and_write import json as cs_json
 
@@ -29,7 +29,7 @@ class Encoder(json.JSONEncoder):
             return obj.tolist()
         elif isinstance(obj, types.FunctionType) or isclass(obj):
             return f"{obj.__module__}.{obj.__name__}"
-        elif isinstance(obj, deephyper.hpo.skopt.space.Dimension):
+        elif isinstance(obj, deephyper.skopt.space.Dimension):
             return str(obj)
         elif isinstance(obj, csh.Hyperparameter):
             return str(obj)

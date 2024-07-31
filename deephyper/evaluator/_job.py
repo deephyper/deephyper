@@ -5,7 +5,7 @@ from typing import Hashable
 
 from deephyper.evaluator.storage import Storage, MemoryStorage
 from deephyper.evaluator._run_function_utils import standardize_run_function_output
-from deephyper.hpo.stopper._stopper import Stopper
+from deephyper.stopper._stopper import Stopper
 
 
 class JobContext:

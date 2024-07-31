@@ -15,7 +15,7 @@ from deephyper.core.utils._introspection import get_init_params_as_json
 from deephyper.core.utils._timeout import terminate_on_timeout
 from deephyper.evaluator import Evaluator
 from deephyper.evaluator.callback import TqdmCallback
-from deephyper.hpo.skopt.moo import non_dominated_set
+from deephyper.skopt.moo import non_dominated_set
 
 
 class Search(abc.ABC):

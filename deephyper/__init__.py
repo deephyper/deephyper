@@ -19,7 +19,7 @@ from deephyper.__version__ import __version__, __version_suffix__  # noqa: F401
 name = "deephyper"
 version = __version__
 
-# Suppress warnings from deephyper.hpo.skopt using deprecated sklearn API
+# Suppress warnings from deephyper.skopt using deprecated sklearn API
 warnings.filterwarnings(
     "ignore", category=FutureWarning, message="sklearn.externals.joblib is deprecated"
 )

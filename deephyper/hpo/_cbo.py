@@ -11,11 +11,11 @@ import pandas as pd
 from sklearn.base import is_regressor
 
 import deephyper.core.exceptions
-import deephyper.hpo.skopt
+import deephyper.skopt
 from deephyper.core.utils import CaptureSTD
 from deephyper.hpo._search import Search
 from deephyper.hpo._problem import convert_to_skopt_space
-from deephyper.hpo.skopt.moo import (
+from deephyper.skopt.moo import (
     MoScalarFunction,
     moo_functions,
     non_dominated_set,
@@ -106,7 +106,7 @@ class CBO(Search):
         filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. If ``"ignore"`` is passed then failed configurations will be filtered-out and not passed to the surrogate model. For multiple objectives, failure of any single objective will lead to treating that configuration as failed and each of these multiple objective will be replaced by their individual ``"min"`` or ``"mean"`` of past configurations. Defaults to ``"min"`` to replace failed configurations objectives by the running min of all objectives.
         max_failures (int, optional): Maximum number of failed configurations allowed before observing a valid objective value when ``filter_failures`` is not equal to ``"ignore"``. Defaults to ``100``.
         moo_lower_bounds (list, optional): List of lower bounds on the interesting range of objective values. Must be the same length as the number of obejctives. Defaults to ``None``, i.e., no bounds. Can bound only a single objective by providing ``None`` for all other values. For example, ``moo_lower_bounds=[None, 0.5, None]`` will explore all tradeoffs for the objectives at index 0 and 2, but only consider scores for objective 1 that exceed 0.5.
-        moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "AugChebyshev", "PBI", "Quadratic"]``. Defaults to ``"Chebyshev"``. Typically, randomized methods should be used to capture entire Pareto front, unless there is a known target solution a priori. Additional details on each scalarization can be found in :mod:`deephyper.hpo.skopt.moo`.
+        moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "AugChebyshev", "PBI", "Quadratic"]``. Defaults to ``"Chebyshev"``. Typically, randomized methods should be used to capture entire Pareto front, unless there is a known target solution a priori. Additional details on each scalarization can be found in :mod:`deephyper.skopt.moo`.
         moo_scalarization_weight (list, optional): Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions. Defaults to ``None`` for randomized weights. Only set if you want to fix the scalarization weights for a multiobjective HPS.
         scheduler (dict, callable, optional): a function to manage the value of ``kappa, xi`` with iterations. Defaults to ``None`` which does not use any scheduler. The periodic exponential decay scheduler can be used with  ``scheduler={"type": "periodic-exp-decay", "period": 30, "rate": 0.1}``. The scheduler can also be a callable function with signature ``scheduler(i, eta_0, **kwargs)`` where ``i`` is the current iteration, ``eta_0`` is the initial value of ``[kappa, xi]`` and ``kwargs`` are other fixed parameters of the function. Instead of fixing the decay ``"rate"`` the final ``kappa`` or ``xi`` can be used ``{"type": "periodic-exp-decay", "period": 25, "kappa_final": 1.96}``.
         objective_scaler (str, optional): a way to map the objective space to some other support for example to normalize it. Defaults to ``"auto"`` which automatically set it to "identity" for any surrogate model except "RF" which will use "quantile-uniform".
@@ -241,7 +241,7 @@ class CBO(Search):
             or isinstance(moo_scalarization_strategy, MoScalarFunction)
         ):
             raise ValueError(
-                f"Parameter 'moo_scalarization_strategy={moo_scalarization_strategy}' should have a value in {moo_scalarization_strategy_allowed} or be a subclass of deephyper.hpo.skopt.moo.MoScalarFunction!"
+                f"Parameter 'moo_scalarization_strategy={moo_scalarization_strategy}' should have a value in {moo_scalarization_strategy_allowed} or be a subclass of deephyper.skopt.moo.MoScalarFunction!"
             )
         self._moo_scalarization_strategy = moo_scalarization_strategy
         self._moo_scalarization_weight = moo_scalarization_weight
@@ -377,7 +377,7 @@ class CBO(Search):
     def _setup_optimizer(self):
         if self._fitted:
             self._opt_kwargs["n_initial_points"] = 0
-        self._opt = deephyper.hpo.skopt.Optimizer(**self._opt_kwargs)
+        self._opt = deephyper.skopt.Optimizer(**self._opt_kwargs)
 
     def _apply_scheduler(self, i):
         """Apply scheduler policy and update corresponding values in Optimizer."""
@@ -463,7 +463,7 @@ class CBO(Search):
                     # retrieve budget consumed by job with multiple observations
                     if job_i.observations is not None:
                         # TODO: use ALC to reduce the problem to a scalar maximization/estimation
-                        from deephyper.hpo.stopper._lcmodel_stopper import (
+                        from deephyper.stopper._lcmodel_stopper import (
                             area_learning_curve,
                         )
 
@@ -621,14 +621,14 @@ class CBO(Search):
         default_surrogate_model_kwargs.update(surrogate_model_kwargs)
 
         if name in ["RF", "TB", "RS", "ET"]:
-            surrogate = deephyper.hpo.skopt.learning.RandomForestRegressor(
+            surrogate = deephyper.skopt.learning.RandomForestRegressor(
                 **default_surrogate_model_kwargs,
             )
 
         # Model: Mondrian Forest
         elif name == "MF":
             try:
-                surrogate = deephyper.hpo.skopt.learning.MondrianForestRegressor(
+                surrogate = deephyper.skopt.learning.MondrianForestRegressor(
                     **default_surrogate_model_kwargs,
                 )
             except AttributeError:
@@ -644,7 +644,7 @@ class CBO(Search):
                 n_estimators=default_surrogate_model_kwargs.pop("n_estimators"),
                 loss="quantile",
             )
-            surrogate = deephyper.hpo.skopt.learning.GradientBoostingQuantileRegressor(
+            surrogate = deephyper.skopt.learning.GradientBoostingQuantileRegressor(
                 base_estimator=gbrt,
                 **default_surrogate_model_kwargs,
             )
@@ -666,7 +666,7 @@ class CBO(Search):
             gbrt = HistGradientBoostingRegressor(
                 loss="quantile", categorical_features=categorical_features
             )
-            surrogate = deephyper.hpo.skopt.learning.GradientBoostingQuantileRegressor(
+            surrogate = deephyper.skopt.learning.GradientBoostingQuantileRegressor(
                 base_estimator=gbrt,
                 **default_surrogate_model_kwargs,
             )
