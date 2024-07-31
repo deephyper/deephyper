@@ -8,7 +8,7 @@ class HpProblemTest(unittest.TestCase):
     def test_add_good_dim(self):
         import ConfigSpace as cs
         import ConfigSpace.hyperparameters as csh
-        from deephyper.problem import HpProblem
+        from deephyper.hpo import HpProblem
 
         pb = HpProblem()
 
@@ -71,14 +71,14 @@ class HpProblemTest(unittest.TestCase):
         assert p9 == p9_csh
 
     def test_kwargs(self):
-        from deephyper.problem import HpProblem
+        from deephyper.hpo import HpProblem
 
         pb = HpProblem()
         pb.add_hyperparameter(value=(-10, 10), name="dim0")
 
     def test_dim_with_wrong_name(self):
         from deephyper.core.exceptions.problem import SpaceDimNameOfWrongType
-        from deephyper.problem import HpProblem
+        from deephyper.hpo import HpProblem
 
         pb = HpProblem()
         with pytest.raises(SpaceDimNameOfWrongType):
@@ -86,63 +86,13 @@ class HpProblemTest(unittest.TestCase):
 
     def test_config_space_hp(self):
         import ConfigSpace.hyperparameters as csh
-        from deephyper.problem import HpProblem
+        from deephyper.hpo import HpProblem
 
         alpha = csh.UniformFloatHyperparameter(name="alpha", lower=0, upper=1)
         beta = csh.UniformFloatHyperparameter(name="beta", lower=0, upper=1)
 
         pb = HpProblem()
         pb.add_hyperparameters([alpha, beta])
-
-
-@pytest.mark.nas
-class TestNaProblem(unittest.TestCase):
-    def test_search_space(self):
-
-        from deephyper.nas.spacelib.tabular import OneLayerSpace
-        from deephyper.problem import NaProblem
-
-        pb = NaProblem()
-
-        with pytest.raises(TypeError):
-            pb.search_space(space_class="a")
-
-        pb.search_space(OneLayerSpace)
-
-    def test_full_problem(self):
-        from deephyper.core.exceptions.problem import NaProblemError
-        from deephyper.nas.preprocessing import minmaxstdscaler
-        from deephyper.nas.spacelib.tabular import OneLayerSpace
-        from deephyper.problem import NaProblem
-
-        pb = NaProblem()
-
-        def load_data(prop):
-            return ([[10]], [1]), ([10], [1])
-
-        pb.load_data(load_data, prop=1.0)
-
-        pb.preprocessing(minmaxstdscaler)
-
-        pb.search_space(OneLayerSpace)
-
-        pb.hyperparameters(
-            batch_size=64,
-            learning_rate=0.001,
-            optimizer="adam",
-            num_epochs=10,
-            loss_metric="mse",
-        )
-
-        with pytest.raises(NaProblemError):
-            pb.objective("r2")
-
-        pb.loss("mse")
-        pb.metrics(["r2"])
-
-        possible_objective = ["loss", "val_loss", "r2", "val_r2"]
-        for obj in possible_objective:
-            pb.objective(obj)
 
 
 if __name__ == "__main__":
