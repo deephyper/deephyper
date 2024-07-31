@@ -33,6 +33,7 @@ def profile(
     memory_limit: int = -1,
     memory_tracing_interval: float = 0.1,
     raise_exception: bool = False,
+    register=True,
 ):
     """Decorator to use on a ``run_function`` to profile its execution-time and peak memory usage.
 
@@ -67,14 +68,15 @@ def profile(
         memory (bool): If ``True``, the memory usage is measured. The measured memory, in bytes, accounts for the whole process. Defaults to ``False``.
         memory_limit (int): In bytes, if set to a positive integer, the memory usage is measured at regular intervals and the function is interrupted if the memory usage exceeds the limit. If set to ``-1``, only the peak memory is measured. If the executed function is busy outside of the Python interpretor, this mechanism will not work properly. Defaults to ``-1``.
         memory_tracing_interval (float): In seconds, the interval at which the memory usage is measured. Defaults to ``0.1``.
-
+        register (bool): Register the called function to be pickalable and executed in a subprocess when the we use as decorator ``@profile``.
     Returns:
         function: a decorated function.
     """
 
     def decorator_profile(func):
 
-        register_inner_function_for_pickle(func)
+        if register:
+            register_inner_function_for_pickle(func)
 
         @functools.wraps(func)
         def wrapper_profile(*args, **kwargs):

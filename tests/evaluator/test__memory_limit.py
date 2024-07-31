@@ -16,9 +16,7 @@ def run(job):
     return sum(x)
 
 
-# @profile(memory=True, memory_limit=0.1 * 1024**3, memory_tracing_interval=0.01)
-# @profile(memory=True)
-def run_preprocessing(job):
+def _run_preprocessing(job):
     import numpy as np
 
     from sklearn.cluster import FeatureAgglomeration
@@ -41,25 +39,47 @@ def run_preprocessing(job):
     return {"objective": 0, "metadata": {"X_shape": X.shape}}
 
 
-class TestMemoryLimit(unittest.TestCase):
-    def test_memory_limit(self):
+@profile(memory=True, memory_limit=1024**3, memory_tracing_interval=0.01)
+def run_preprocessing_1(job):
+    return _run_preprocessing(job)
 
-        run_profiled = profile(
-            # memory=True, memory_limit=250 * (1024**2), memory_tracing_interval=0.01
-            memory=True,
-            memory_limit=1 * (1024**3),
-            memory_tracing_interval=0.01,
-        )(run_preprocessing)
-        evaluator = Evaluator.create(run_profiled, method="serial")
+
+def run_preprocessing_2(job):
+    return _run_preprocessing(job)
+
+
+class TestMemoryLimit(unittest.TestCase):
+    def test_memory_limit_with_profile_decorator(self):
+
+        evaluator = Evaluator.create(run_preprocessing_1, method="serial")
         tasks = [{"x": i} for i in range(1)]
         evaluator.submit(tasks)
         jobs = evaluator.gather("ALL")
         result = [job.result for job in jobs]
         metadata = [job.metadata for job in jobs]
-        print(f"{result=}")
-        print(f"{metadata=}")
+        assert result[0] == "F_memory_limit_exceeded"
+
+    def test_memory_limit_with_profile_decorator_as_function(self):
+
+        run_profiled = profile(
+            memory=True,
+            memory_limit=1024**3,
+            memory_tracing_interval=0.01,
+            register=False,  # !Required to make it work
+        )(run_preprocessing_2)
+        evaluator = Evaluator.create(
+            run_profiled,
+            method="serial",
+        )
+        tasks = [{"x": i} for i in range(1)]
+        evaluator.submit(tasks)
+        jobs = evaluator.gather("ALL")
+        result = [job.result for job in jobs]
+        metadata = [job.metadata for job in jobs]
+        assert result[0] == "F_memory_limit_exceeded"
 
 
 if __name__ == "__main__":
     test = TestMemoryLimit()
-    test.test_memory_limit()
+    # test.test_memory_limit_with_profile_decorator()
+    test.test_memory_limit_with_profile_decorator_as_function()
