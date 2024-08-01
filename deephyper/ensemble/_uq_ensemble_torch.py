@@ -3,14 +3,15 @@ import traceback
 
 import numpy as np
 import ray
-import tensorflow as tf
-import tensorflow_probability as tfp
-import tf_keras as tfk
-
-from deephyper.core.exceptions import DeephyperRuntimeError
+import torch
 from deephyper.ensemble import BaseEnsemble
-from deephyper.nn.tensorflow.metrics import selectMetric
-from deephyper.nn.tensorflow.utils import set_memory_growth_for_visible_gpus
+
+# TODO: selectMetric are metrics coded with tensorflow
+from deephyper.nn.torch.metrics import selectMetric
+
+# TODO: set_memory_... is using tensorflow
+# from deephyper.nas.run._util import set_memory_growth_for_visible_gpus
+from deephyper.core.exceptions import DeephyperRuntimeError
 
 
 def nll(y, rv_y):
@@ -18,16 +19,19 @@ def nll(y, rv_y):
     return -rv_y.log_prob(y)
 
 
-cce_obj = tfk.losses.CategoricalCrossentropy(reduction=tfk.losses.Reduction.NONE)
+cce_obj = torch.nn.CrossEntropyLoss(reduction=False)
 
 
 def cce(y_true, y_pred):
     """Categorical cross-entropy loss."""
-    return cce_obj(tf.broadcast_to(y_true, y_pred.shape), y_pred)
+    return cce_obj(torch.broadcast_to(y_true, y_pred.shape), y_pred)
+
+
+LOSSES = {"nll": nll, "cce": cce}
 
 
 @ray.remote(num_cpus=1)
-def model_predict(model_path, X, batch_size=32, verbose=0):
+def model_predict(model_path, X, batch_size=32, verbose=0, load_model_func=None):
     """Perform an inference of the model located at ``model_path``.
 
     :meta private:
@@ -37,23 +41,28 @@ def model_predict(model_path, X, batch_size=32, verbose=0):
         X (array): array of input data for which we perform the inference.
         batch_size (int, optional): Batch size used to perform the inferencec. Defaults to 32.
         verbose (int, optional): Verbose option. Defaults to 0.
+        load_model_func (callable, optional): Function to load the model. It takes as input the path to the model file and return the loaded model. Defaults to ``None`` for default model loading strategy.
 
     Returns:
         array: The prediction based on the provided input data.
     """
-    import tensorflow as tf
-    import tensorflow_probability as tfp
-    import tf_keras as tfk
+    import torch
+    from torch.utils.data import TensorDataset, DataLoader
 
     # GPU Configuration if available
-    set_memory_growth_for_visible_gpus(True)
-    tfk.backend.clear_session()
-    model_file = model_path.split("/")[-1]
+    # TODO: check if the following tensorflow function should be replaced
+    # set_memory_growth_for_visible_gpus(True)
+    # tfk.backend.clear_session()
+    model_file = os.path.basename(model_path)
 
     try:
         if verbose:
             print(f"Loading model {model_file}", end="\n", flush=True)
-        model = tfk.models.load_model(model_path, compile=False, safe_mode=False)
+        if load_model_func is None:
+            model = torch.load(model_path, weights_only=False)
+        else:
+            model = load_model_func(model_path)
+        model.eval()
     except Exception:
         if verbose:
             print(f"Could not load model {model_file}", flush=True)
@@ -63,31 +72,36 @@ def model_predict(model_path, X, batch_size=32, verbose=0):
     if model is None:
         return None
 
-    # dataset
+    # Create the dataset
     if type(X) is list:
-        dataset = tf.data.Dataset.from_tensor_slices(
-            {f"input_{i}": Xi for i, Xi in enumerate(X)}
-        )
+        # Multiple input arrays
+        dataset = TensorDataset(*(torch.from_numpy(Xi).float() for Xi in X))
     else:
-        dataset = tf.data.Dataset.from_tensor_slices(X)
-    dataset = dataset.batch(batch_size)
+        # Single input array
+        dataset = TensorDataset(torch.from_numpy(X).float())
+    dataset = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
     def batch_predict(dataset, convert_func=lambda x: x):
         y_list = []
-        for batch in dataset:
-            y = model(batch, training=False)
+        for (batch,) in dataset:
+            y = model(batch)
             y_list.append(convert_func(y))
         y = np.concatenate(y_list, axis=0)
         return y
 
-    y_dist = model(
-        next(iter(dataset)), training=False
-    )  # just to test the type of the output
-    if isinstance(y_dist, tfp.distributions.Distribution):
+    # Perform an inference to test the type of the output (Distribution or Tensor)
+    y_dist = model(next(iter(dataset))[0])
+    if isinstance(y_dist, torch.distributions.Distribution):
         if hasattr(y_dist, "loc") and hasattr(y_dist, "scale"):
 
             def convert_func(y_dist):
-                return np.concatenate([y_dist.loc, y_dist.scale], axis=-1)
+                return np.concatenate(
+                    [
+                        y_dist.loc.detach().numpy(),
+                        y_dist.scale.detach().numpy(),
+                    ],
+                    axis=-1,
+                )
 
             y = batch_predict(dataset, convert_func)
         else:
@@ -95,12 +109,12 @@ def model_predict(model_path, X, batch_size=32, verbose=0):
                 "Distribution doesn't have 'loc' or 'scale' attributes!"
             )
     else:
-        y = model.predict(X, batch_size=batch_size)
+        y = batch_predict(X, lambda x: x.detach().numpy())
 
     return y
 
 
-class UQBaggingEnsemble(BaseEnsemble):
+class _TorchUQEnsemble(BaseEnsemble):
     """Ensemble with uncertainty quantification based on uniform averaging of the predictions of each members.
 
     :meta private:
@@ -116,12 +130,13 @@ class UQBaggingEnsemble(BaseEnsemble):
         batch_size (int, optional): Batch size used batchify the inference of loaded models. Defaults to 32.
         selection (str, optional): Selection strategy to build the ensemble. Value in ``["topk", "caruana"]``. Default to ``topk``.
         mode (str, optional): Value in ``["regression", "classification"]``. Default to ``"regression"``.
+        load_model_func (callable, optional): Function to load checkpointed models. It takes as input the path to the model file and return the loaded model. Defaults to ``None`` for default model loading strategy.
     """
 
     def __init__(
         self,
         model_dir,
-        loss=nll,
+        loss,
         size=5,
         verbose=True,
         ray_address="",
@@ -130,7 +145,16 @@ class UQBaggingEnsemble(BaseEnsemble):
         batch_size=32,
         selection="topk",
         mode="regression",
+        load_model_func=None,
     ):
+        if type(loss) is str and loss in LOSSES:
+            loss = LOSSES[loss]
+        elif callable(loss):
+            pass
+        else:
+            raise ValueError(
+                f"loss={loss} is not a valid loss function. It should be a callable or a value in {list(LOSSES.keys())}."
+            )
         super().__init__(
             model_dir,
             loss,
@@ -145,12 +169,20 @@ class UQBaggingEnsemble(BaseEnsemble):
         self.selection = selection
         assert mode in ["regression", "classification"]
         self.mode = mode
+        self.load_model_func = load_model_func
 
     def __repr__(self) -> str:
         out = super().__repr__()
         out += f"Mode: {self.mode}\n"
         out += f"Selection: {self.selection}\n"
         return out
+
+    def _list_files_in_model_dir(self):
+        return [
+            f
+            for f in os.listdir(self.model_dir)
+            if f.endswith("pth") or f.endswith("pt")
+        ]
 
     def _select_members(self, loss_func, y_true, y_pred, k=2, verbose=0):
         if self.selection == "topk":
@@ -169,7 +201,7 @@ class UQBaggingEnsemble(BaseEnsemble):
             print(f"Found {len(model_files)} possible models to build the ensemble.")
 
         if len(model_files) == 0:
-            raise ValueError(f"No '*.keras' or '*.h5' files found in {self.model_dir}")
+            raise ValueError(f"No '*.torch' files found in {self.model_dir}")
 
         def model_path(f):
             return os.path.join(self.model_dir, f)
@@ -178,7 +210,13 @@ class UQBaggingEnsemble(BaseEnsemble):
             [
                 model_predict.options(
                     num_cpus=self.num_cpus, num_gpus=self.num_gpus
-                ).remote(model_path(f), X_id, self.batch_size, self.verbose)
+                ).remote(
+                    model_path(f),
+                    X_id,
+                    self.batch_size,
+                    self.verbose,
+                    self.load_model_func,
+                )
                 for f in model_files
             ]
         )
@@ -200,7 +238,13 @@ class UQBaggingEnsemble(BaseEnsemble):
             [
                 model_predict.options(
                     num_cpus=self.num_cpus, num_gpus=self.num_gpus
-                ).remote(model_path(f), X_id, self.batch_size, self.verbose)
+                ).remote(
+                    model_path(f),
+                    X_id,
+                    self.batch_size,
+                    self.verbose,
+                    self.load_model_func,
+                )
                 for f in self.members_files
             ]
         )
@@ -219,7 +263,7 @@ class UQBaggingEnsemble(BaseEnsemble):
             y_pred = scaler_y(y_pred)
             y = scaler_y(y)
 
-        scores["loss"] = tf.reduce_mean(self.loss(y, y_pred)).numpy()
+        scores["loss"] = torch.mean(self.loss(y, y_pred)).detach().numpy()
         if metrics:
             if type(metrics) is list:
                 for metric in metrics:
@@ -237,7 +281,7 @@ class UQBaggingEnsemble(BaseEnsemble):
         return scores
 
 
-class UQBaggingEnsembleRegressor(UQBaggingEnsemble):
+class _TorchUQEnsembleRegressor(_TorchUQEnsemble):
     """Ensemble with uncertainty quantification for regression based on uniform averaging of the predictions of each members.
 
     Args:
@@ -250,6 +294,7 @@ class UQBaggingEnsembleRegressor(UQBaggingEnsemble):
         num_gpus (int, optional): Number of GPUs allocated to load one model and predict. Defaults to None.
         batch_size (int, optional): Batch size used batchify the inference of loaded models. Defaults to 32.
         selection (str, optional): Selection strategy to build the ensemble. Value in ``[["topk", "caruana"]``. Default to ``topk``.
+        load_model_func (callable, optional): Function to load checkpointed models. It takes as input the path to the model file and return the loaded model. Defaults to ``None`` for default model loading strategy.
     """
 
     def __init__(
@@ -263,6 +308,7 @@ class UQBaggingEnsembleRegressor(UQBaggingEnsemble):
         num_gpus=None,
         batch_size=32,
         selection="topk",
+        load_model_func=None,
     ):
         super().__init__(
             model_dir,
@@ -275,6 +321,7 @@ class UQBaggingEnsembleRegressor(UQBaggingEnsemble):
             batch_size,
             selection,
             mode="regression",
+            load_model_func=load_model_func,
         )
 
     def predict_var_decomposition(self, X):
@@ -296,7 +343,13 @@ class UQBaggingEnsembleRegressor(UQBaggingEnsemble):
             [
                 model_predict.options(
                     num_cpus=self.num_cpus, num_gpus=self.num_gpus
-                ).remote(model_path(f), X_id, self.batch_size, self.verbose)
+                ).remote(
+                    model_path(f),
+                    X_id,
+                    self.batch_size,
+                    self.verbose,
+                    self.load_model_func,
+                )
                 for f in self.members_files
             ]
         )
@@ -321,7 +374,7 @@ class UQBaggingEnsembleRegressor(UQBaggingEnsemble):
         return y, aleatoric_unc, epistemic_unc
 
 
-class UQBaggingEnsembleClassifier(UQBaggingEnsemble):
+class _TorchUQEnsembleClassifier(_TorchUQEnsemble):
     """Ensemble with uncertainty quantification for classification based on uniform averaging of the predictions of each members.
 
     Args:
@@ -334,6 +387,7 @@ class UQBaggingEnsembleClassifier(UQBaggingEnsemble):
         num_gpus (int, optional): Number of GPUs allocated to load one model and predict. Defaults to None.
         batch_size (int, optional): Batch size used batchify the inference of loaded models. Defaults to 32.
         selection (str, optional): Selection strategy to build the ensemble. Value in ``[["topk", "caruana"]``. Default to ``topk``.
+        load_model_func (callable, optional): Function to load checkpointed models. It takes as input the path to the model file and return the loaded model. Defaults to ``None`` for default model loading strategy.
     """
 
     def __init__(
@@ -347,6 +401,7 @@ class UQBaggingEnsembleClassifier(UQBaggingEnsemble):
         num_gpus=None,
         batch_size=32,
         selection="topk",
+        load_model_func=None,
     ):
         super().__init__(
             model_dir,
@@ -359,6 +414,7 @@ class UQBaggingEnsembleClassifier(UQBaggingEnsemble):
             batch_size,
             selection,
             mode="classification",
+            load_model_func=load_model_func,
         )
 
 
@@ -378,14 +434,14 @@ def apply_metric(metric_name, y_true, y_pred) -> float:
     metric_func = selectMetric(metric_name)
 
     if type(y_true) is np.ndarray:
-        y_true = tf.convert_to_tensor(y_true, dtype=np.float32)
+        y_true = torch.from_numpy(y_true).float()
     if type(y_pred) is np.ndarray:
-        y_pred = tf.convert_to_tensor(y_pred, dtype=np.float32)
+        y_pred = torch.from_numpy(y_pred).float()
 
     metric = metric_func(y_true, y_pred)
-    if tf.size(metric) >= 1:
-        metric = tf.reduce_mean(metric)
-    return metric.numpy()
+    if metric.size(dim=0) >= 1:
+        metric = torch.mean(metric)
+    return metric.detach().numpy()
 
 
 def aggregate_predictions(y_pred, regression=True):
@@ -416,7 +472,9 @@ def aggregate_predictions(y_pred, regression=True):
         sum_loc_scale = np.square(loc) + np.square(scale)
         mean_scale = np.sqrt(np.mean(sum_loc_scale, axis=0) - np.square(mean_loc))
 
-        return tfp.distributions.Normal(loc=mean_loc, scale=mean_scale)
+        return torch.distributions.Normal(
+            loc=torch.from_numpy(mean_loc), scale=torch.from_numpy(mean_scale)
+        )
     else:  # classification
         agg_y_pred = np.mean(y_pred[:, :, :], axis=0)
         return agg_y_pred
@@ -427,13 +485,17 @@ def topk(loss_func, y_true, y_pred, k=2, verbose=0):
 
     :meta private:
     """
+    print(f"{np.shape(y_true)=}")
+    print(f"{np.shape(y_pred)=}")
     if np.shape(y_true)[-1] * 2 == np.shape(y_pred)[-1]:  # regression
         mid = np.shape(y_true)[-1]
-        y_pred = tfp.distributions.Normal(
-            loc=y_pred[:, :, :mid], scale=y_pred[:, :, mid:]
+        y_pred = torch.distributions.Normal(
+            loc=torch.from_numpy(y_pred[:, :, :mid]).float(),
+            scale=torch.from_numpy(y_pred[:, :, mid:]).float(),
         )
+    y_true = torch.from_numpy(y_true).float()
     # losses is of shape: (n_models, n_outputs)
-    losses = tf.reduce_mean(loss_func(y_true, y_pred), axis=1).numpy()
+    losses = torch.mean(loss_func(y_true, y_pred), axis=1).detach().numpy()
     if verbose:
         print(f"Top-{k} losses: {losses.reshape(-1)[:k]}")
     ensemble_members = np.argsort(losses, axis=0)[:k].reshape(-1).tolist()
@@ -456,16 +518,18 @@ def greedy_caruana(loss_func, y_true, y_pred, k=2, verbose=0):
         selection_std = selection[:]
         selection_loc[-1] = slice(0, mid)
         selection_std[-1] = slice(mid, np.shape(y_pred)[-1])
-        y_pred_ = tfp.distributions.Normal(
-            loc=y_pred[tuple(selection_loc)],
-            scale=y_pred[tuple(selection_std)],
+        y_pred_ = torch.distributions.Normal(
+            loc=torch.from_numpy(y_pred[tuple(selection_loc)]),
+            scale=torch.from_numpy(y_pred[tuple(selection_std)]),
         )
     else:
         y_pred_ = y_pred
 
-    losses = tf.reduce_mean(
-        tf.reshape(loss_func(y_true, y_pred_), [n_models, -1]), axis=1
-    ).numpy()
+    losses = (
+        torch.mean(torch.reshape(loss_func(y_true, y_pred_), [n_models, -1]), axis=1)
+        .detach()
+        .numpy()
+    )
     assert n_models == np.shape(losses)[0]
 
     i_min = np.nanargmin(losses)
@@ -475,7 +539,7 @@ def greedy_caruana(loss_func, y_true, y_pred, k=2, verbose=0):
         print(f"Loss: {loss_min:.3f} - Ensemble: {ensemble_members}")
 
     def loss(y_true, y_pred):
-        return tf.reduce_mean(loss_func(y_true, y_pred)).numpy()
+        return torch.mean(loss_func(y_true, y_pred)).detach().numpy()
 
     while len(np.unique(ensemble_members)) < k:
         losses = [

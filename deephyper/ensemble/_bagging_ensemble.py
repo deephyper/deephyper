@@ -6,8 +6,8 @@ import numpy as np
 import ray
 
 from deephyper.ensemble import BaseEnsemble
-from deephyper.nn.tensorflow.metrics import selectMetric
-from deephyper.nn.tensorflow.utils import set_memory_growth_for_visible_gpus
+from deephyper.nn.tf_keras2.metrics import selectMetric
+from deephyper.nn.tf_keras2.utils import set_memory_growth_for_visible_gpus
 
 
 def mse(y_true, y_pred):

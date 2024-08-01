@@ -43,13 +43,6 @@ class BaseEnsemble(abc.ABC):
         if not (ray.is_initialized()):
             ray.init()
 
-    def __repr__(self) -> str:
-        out = ""
-        out += f"Model Dir: {self.model_dir}\n"
-        out += f"Members files: {self.members_files}\n"
-        out += f"Ensemble size: {len(self.members_files)}/{self.size}\n"
-        return out
-
     def _list_files_in_model_dir(self):
         return [
             f
