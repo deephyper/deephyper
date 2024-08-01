@@ -1,8 +1,8 @@
+import functools
 import os
 import traceback
 
 import numpy as np
-import ray
 import torch
 from deephyper.ensemble import BaseEnsemble
 
@@ -30,7 +30,6 @@ def cce(y_true, y_pred):
 LOSSES = {"nll": nll, "cce": cce}
 
 
-@ray.remote(num_cpus=1)
 def model_predict(model_path, X, batch_size=32, verbose=0, load_model_func=None):
     """Perform an inference of the model located at ``model_path``.
 
@@ -139,13 +138,12 @@ class _TorchUQEnsemble(BaseEnsemble):
         loss,
         size=5,
         verbose=True,
-        ray_address="",
-        num_cpus=1,
-        num_gpus=None,
         batch_size=32,
         selection="topk",
         mode="regression",
         load_model_func=None,
+        evaluator_method="serial",
+        evaluator_method_kwargs=None,
     ):
         if type(loss) is str and loss in LOSSES:
             loss = LOSSES[loss]
@@ -160,22 +158,18 @@ class _TorchUQEnsemble(BaseEnsemble):
             loss,
             size,
             verbose,
-            ray_address,
-            num_cpus,
-            num_gpus,
             batch_size,
+            evaluator_method=evaluator_method,
+            evaluator_method_kwargs=evaluator_method_kwargs,
         )
         assert selection in ["topk", "caruana"]
         self.selection = selection
         assert mode in ["regression", "classification"]
         self.mode = mode
-        self.load_model_func = load_model_func
-
-    def __repr__(self) -> str:
-        out = super().__repr__()
-        out += f"Mode: {self.mode}\n"
-        out += f"Selection: {self.selection}\n"
-        return out
+        self._model_predict_func = functools.partial(
+            model_predict, load_model_func=load_model_func
+        )
+        self.init_evaluator()
 
     def _list_files_in_model_dir(self):
         return [
@@ -194,7 +188,6 @@ class _TorchUQEnsemble(BaseEnsemble):
         return func(loss_func, y_true, y_pred, k, verbose)
 
     def fit(self, X, y):
-        X_id = ray.put(X)
 
         model_files = self._list_files_in_model_dir()
         if self.verbose:
@@ -206,21 +199,9 @@ class _TorchUQEnsemble(BaseEnsemble):
         def model_path(f):
             return os.path.join(self.model_dir, f)
 
-        y_pred = ray.get(
-            [
-                model_predict.options(
-                    num_cpus=self.num_cpus, num_gpus=self.num_gpus
-                ).remote(
-                    model_path(f),
-                    X_id,
-                    self.batch_size,
-                    self.verbose,
-                    self.load_model_func,
-                )
-                for f in model_files
-            ]
+        y_pred = self.get_predictions_from_models(
+            X, (model_path(f) for f in model_files)
         )
-        y_pred = np.array([arr for arr in y_pred if arr is not None])
 
         self._members_indexes = self._select_members(
             self.loss, y_true=y, y_pred=y_pred, k=self.size
@@ -228,27 +209,12 @@ class _TorchUQEnsemble(BaseEnsemble):
         self.members_files = [model_files[i] for i in self._members_indexes]
 
     def predict(self, X) -> np.ndarray:
-        # make predictions
-        X_id = ray.put(X)
-
         def model_path(f):
             return os.path.join(self.model_dir, f)
 
-        y_pred = ray.get(
-            [
-                model_predict.options(
-                    num_cpus=self.num_cpus, num_gpus=self.num_gpus
-                ).remote(
-                    model_path(f),
-                    X_id,
-                    self.batch_size,
-                    self.verbose,
-                    self.load_model_func,
-                )
-                for f in self.members_files
-            ]
+        y_pred = self.get_predictions_from_models(
+            X, (model_path(f) for f in self.members_files)
         )
-        y_pred = np.array([arr for arr in y_pred if arr is not None])
 
         y = aggregate_predictions(y_pred, regression=(self.mode == "regression"))
 
@@ -303,25 +269,23 @@ class _TorchUQEnsembleRegressor(_TorchUQEnsemble):
         loss=nll,
         size=5,
         verbose=True,
-        ray_address="",
-        num_cpus=1,
-        num_gpus=None,
         batch_size=32,
         selection="topk",
         load_model_func=None,
+        evaluator_method="serial",
+        evaluator_method_kwargs=None,
     ):
         super().__init__(
             model_dir,
             loss,
             size,
             verbose,
-            ray_address,
-            num_cpus,
-            num_gpus,
             batch_size,
             selection,
             mode="regression",
             load_model_func=load_model_func,
+            evaluator_method=evaluator_method,
+            evaluator_method_kwargs=evaluator_method_kwargs,
         )
 
     def predict_var_decomposition(self, X):
@@ -334,26 +298,13 @@ class _TorchUQEnsembleRegressor(_TorchUQEnsemble):
             y, u1, u2: where ``y`` is the mixture distribution, ``u1`` is the aleatoric component of the variance of ``y`` and ``u2`` is the epistemic component of the variance of ``y``.
         """
         # make predictions
-        X_id = ray.put(X)
 
         def model_path(f):
             return os.path.join(self.model_dir, f)
 
-        y_pred = ray.get(
-            [
-                model_predict.options(
-                    num_cpus=self.num_cpus, num_gpus=self.num_gpus
-                ).remote(
-                    model_path(f),
-                    X_id,
-                    self.batch_size,
-                    self.verbose,
-                    self.load_model_func,
-                )
-                for f in self.members_files
-            ]
+        y_pred = y_pred = self.get_predictions_from_models(
+            X, (model_path(f) for f in self.members_files)
         )
-        y_pred = np.array([arr for arr in y_pred if arr is not None])
 
         y = aggregate_predictions(y_pred, regression=(self.mode == "regression"))
 
@@ -382,9 +333,6 @@ class _TorchUQEnsembleClassifier(_TorchUQEnsemble):
         loss (callable): a callable taking (y_true, y_pred) as input.
         size (int, optional): Number of unique models used in the ensemble. Defaults to 5.
         verbose (bool, optional): Verbose mode. Defaults to True.
-        ray_address (str, optional): Address of the Ray cluster. If "auto" it will try to connect to an existing cluster. If "" it will start a local Ray cluster. Defaults to "".
-        num_cpus (int, optional): Number of CPUs allocated to load one model and predict. Defaults to 1.
-        num_gpus (int, optional): Number of GPUs allocated to load one model and predict. Defaults to None.
         batch_size (int, optional): Batch size used batchify the inference of loaded models. Defaults to 32.
         selection (str, optional): Selection strategy to build the ensemble. Value in ``[["topk", "caruana"]``. Default to ``topk``.
         load_model_func (callable, optional): Function to load checkpointed models. It takes as input the path to the model file and return the loaded model. Defaults to ``None`` for default model loading strategy.
@@ -396,25 +344,23 @@ class _TorchUQEnsembleClassifier(_TorchUQEnsemble):
         loss=cce,
         size=5,
         verbose=True,
-        ray_address="",
-        num_cpus=1,
-        num_gpus=None,
         batch_size=32,
         selection="topk",
         load_model_func=None,
+        evaluator_method="serial",
+        evaluator_method_kwargs=None,
     ):
         super().__init__(
             model_dir,
             loss,
             size,
             verbose,
-            ray_address,
-            num_cpus,
-            num_gpus,
             batch_size,
             selection,
             mode="classification",
             load_model_func=load_model_func,
+            evaluator_method=evaluator_method,
+            evaluator_method_kwargs=evaluator_method_kwargs,
         )
 
 
@@ -485,14 +431,14 @@ def topk(loss_func, y_true, y_pred, k=2, verbose=0):
 
     :meta private:
     """
-    print(f"{np.shape(y_true)=}")
-    print(f"{np.shape(y_pred)=}")
     if np.shape(y_true)[-1] * 2 == np.shape(y_pred)[-1]:  # regression
         mid = np.shape(y_true)[-1]
         y_pred = torch.distributions.Normal(
             loc=torch.from_numpy(y_pred[:, :, :mid]).float(),
             scale=torch.from_numpy(y_pred[:, :, mid:]).float(),
         )
+    else:
+        y_pred = torch.from_numpy(y_pred).float()
     y_true = torch.from_numpy(y_true).float()
     # losses is of shape: (n_models, n_outputs)
     losses = torch.mean(loss_func(y_true, y_pred), axis=1).detach().numpy()
@@ -523,7 +469,8 @@ def greedy_caruana(loss_func, y_true, y_pred, k=2, verbose=0):
             scale=torch.from_numpy(y_pred[tuple(selection_std)]),
         )
     else:
-        y_pred_ = y_pred
+        y_pred_ = torch.from_numpy(y_pred).float()
+    y_true = torch.from_numpy(y_true).float()
 
     losses = (
         torch.mean(torch.reshape(loss_func(y_true, y_pred_), [n_models, -1]), axis=1)

@@ -1,8 +1,8 @@
+import functools
 import os
 import traceback
 
 import numpy as np
-import ray
 import tensorflow as tf
 import tensorflow_probability as tfp
 import tf_keras as tfk
@@ -29,7 +29,6 @@ def cce(y_true, y_pred):
 LOSSES = {"nll": nll, "cce": cce}
 
 
-@ray.remote(num_cpus=1)
 def model_predict(model_path, X, batch_size=32, verbose=0, load_model_func=None):
     """Perform an inference of the model located at ``model_path``.
 
@@ -132,13 +131,12 @@ class _TFKerasUQEnsemble(BaseEnsemble):
         loss,
         size=5,
         verbose=True,
-        ray_address="",
-        num_cpus=1,
-        num_gpus=None,
         batch_size=32,
         selection="topk",
         mode="regression",
         load_model_func=None,
+        evaluator_method="serial",
+        evaluator_method_kwargs=None,
     ):
         if type(loss) is str and loss in LOSSES:
             loss = LOSSES[loss]
@@ -153,22 +151,18 @@ class _TFKerasUQEnsemble(BaseEnsemble):
             loss,
             size,
             verbose,
-            ray_address,
-            num_cpus,
-            num_gpus,
             batch_size,
+            evaluator_method=evaluator_method,
+            evaluator_method_kwargs=evaluator_method_kwargs,
         )
         assert selection in ["topk", "caruana"]
         self.selection = selection
         assert mode in ["regression", "classification"]
         self.mode = mode
-        self.load_model_func = load_model_func
-
-    def __repr__(self) -> str:
-        out = super().__repr__()
-        out += f"Mode: {self.mode}\n"
-        out += f"Selection: {self.selection}\n"
-        return out
+        self._model_predict_func = functools.partial(
+            model_predict, load_model_func=load_model_func
+        )
+        self.init_evaluator()
 
     def _select_members(self, loss_func, y_true, y_pred, k=2, verbose=0):
         if self.selection == "topk":
@@ -180,7 +174,6 @@ class _TFKerasUQEnsemble(BaseEnsemble):
         return func(loss_func, y_true, y_pred, k, verbose)
 
     def fit(self, X, y):
-        X_id = ray.put(X)
 
         model_files = self._list_files_in_model_dir()
         if self.verbose:
@@ -192,21 +185,9 @@ class _TFKerasUQEnsemble(BaseEnsemble):
         def model_path(f):
             return os.path.join(self.model_dir, f)
 
-        y_pred = ray.get(
-            [
-                model_predict.options(
-                    num_cpus=self.num_cpus, num_gpus=self.num_gpus
-                ).remote(
-                    model_path(f),
-                    X_id,
-                    self.batch_size,
-                    self.verbose,
-                    self.load_model_func,
-                )
-                for f in model_files
-            ]
+        y_pred = self.get_predictions_from_models(
+            X, (model_path(f) for f in model_files)
         )
-        y_pred = np.array([arr for arr in y_pred if arr is not None])
 
         self._members_indexes = self._select_members(
             self.loss, y_true=y, y_pred=y_pred, k=self.size
@@ -214,27 +195,12 @@ class _TFKerasUQEnsemble(BaseEnsemble):
         self.members_files = [model_files[i] for i in self._members_indexes]
 
     def predict(self, X) -> np.ndarray:
-        # make predictions
-        X_id = ray.put(X)
-
         def model_path(f):
             return os.path.join(self.model_dir, f)
 
-        y_pred = ray.get(
-            [
-                model_predict.options(
-                    num_cpus=self.num_cpus, num_gpus=self.num_gpus
-                ).remote(
-                    model_path(f),
-                    X_id,
-                    self.batch_size,
-                    self.verbose,
-                    self.load_model_func,
-                )
-                for f in self.members_files
-            ]
+        y_pred = self.get_predictions_from_models(
+            X, (model_path(f) for f in self.members_files)
         )
-        y_pred = np.array([arr for arr in y_pred if arr is not None])
 
         y = aggregate_predictions(y_pred, regression=(self.mode == "regression"))
 
@@ -289,25 +255,23 @@ class _TFKerasUQEnsembleRegressor(_TFKerasUQEnsemble):
         loss=nll,
         size=5,
         verbose=True,
-        ray_address="",
-        num_cpus=1,
-        num_gpus=None,
         batch_size=32,
         selection="topk",
         load_model_func=None,
+        evaluator_method="serial",
+        evaluator_method_kwargs=None,
     ):
         super().__init__(
             model_dir,
             loss,
             size,
             verbose,
-            ray_address,
-            num_cpus,
-            num_gpus,
             batch_size,
             selection,
             mode="regression",
             load_model_func=load_model_func,
+            evaluator_method=evaluator_method,
+            evaluator_method_kwargs=evaluator_method_kwargs,
         )
 
     def predict_var_decomposition(self, X):
@@ -319,27 +283,13 @@ class _TFKerasUQEnsembleRegressor(_TFKerasUQEnsemble):
         Returns:
             y, u1, u2: where ``y`` is the mixture distribution, ``u1`` is the aleatoric component of the variance of ``y`` and ``u2`` is the epistemic component of the variance of ``y``.
         """
-        # make predictions
-        X_id = ray.put(X)
 
         def model_path(f):
             return os.path.join(self.model_dir, f)
 
-        y_pred = ray.get(
-            [
-                model_predict.options(
-                    num_cpus=self.num_cpus, num_gpus=self.num_gpus
-                ).remote(
-                    model_path(f),
-                    X_id,
-                    self.batch_size,
-                    self.verbose,
-                    self.load_model_func,
-                )
-                for f in self.members_files
-            ]
+        y_pred = self.get_predictions_from_models(
+            X, (model_path(f) for f in self.members_files)
         )
-        y_pred = np.array([arr for arr in y_pred if arr is not None])
 
         y = aggregate_predictions(y_pred, regression=(self.mode == "regression"))
 
@@ -382,25 +332,23 @@ class _TFKerasUQEnsembleClassifier(_TFKerasUQEnsemble):
         loss=cce,
         size=5,
         verbose=True,
-        ray_address="",
-        num_cpus=1,
-        num_gpus=None,
         batch_size=32,
         selection="topk",
         load_model_func=None,
+        evaluator_method="serial",
+        evaluator_method_kwargs=None,
     ):
         super().__init__(
             model_dir,
             loss,
             size,
             verbose,
-            ray_address,
-            num_cpus,
-            num_gpus,
             batch_size,
             selection,
             mode="classification",
             load_model_func=load_model_func,
+            evaluator_method=evaluator_method,
+            evaluator_method_kwargs=evaluator_method_kwargs,
         )
 
 
@@ -487,8 +435,6 @@ def greedy_caruana(loss_func, y_true, y_pred, k=2, verbose=0):
 
     :meta private:
     """
-    # print(f"{y_true=}")
-    # print(f"{y_pred=}")
     regression = np.shape(y_true)[-1] * 2 == np.shape(y_pred)[-1]
     n_models = np.shape(y_pred)[0]
     if regression:  # regression

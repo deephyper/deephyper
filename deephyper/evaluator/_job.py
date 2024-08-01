@@ -1,7 +1,7 @@
 import copy
 from collections.abc import MutableMapping
 
-from typing import Hashable
+from typing import Hashable, Callable
 
 from deephyper.evaluator.storage import Storage, MemoryStorage
 from deephyper.evaluator._run_function_utils import standardize_run_function_output
@@ -26,37 +26,57 @@ class Job:
     RUNNING = 1
     DONE = 2
 
-    def __init__(self, id, config: dict, run_function):
+    def __init__(self, id, args: dict, run_function: Callable):
         self.id = id
         self.rank = None
-        self.config = copy.deepcopy(config)
+        self.args = copy.deepcopy(args)
         self.run_function = run_function
         self.status = self.READY
-        self.output = {
-            "objective": None,
-            "metadata": {"timestamp_submit": None, "timestamp_gather": None},
-        }
+        self.output = None
+        self.metadata = dict()
         self.observations = None
         self.context = JobContext()
 
     def __repr__(self) -> str:
         if self.rank is not None:
-            return f"Job(id={self.id}, rank={self.rank}, status={self.status}, config={self.config})"
+            return f"Job(id={self.id}, rank={self.rank}, status={self.status}, args={self.args})"
         else:
-            return f"Job(id={self.id}, status={self.status}, config={self.config})"
-
-    def __getitem__(self, index):
-        cfg = copy.deepcopy(self.config)
-        return (cfg, self.objective)[index]
+            return f"Job(id={self.id}, status={self.status}, args={self.args})"
 
     @property
     def parameters(self):
-        return self.config
+        return self.args
 
     @property
     def result(self):
-        """Alias for the objective property."""
-        return self.objective
+        return self.output
+
+    def set_output(self, output):
+        self.output = output
+
+    def create_running_job(self, storage, stopper):
+        stopper = copy.deepcopy(stopper)
+        rjob = RunningJob(self.id, self.args, storage, stopper)
+        if stopper is not None and hasattr(stopper, "job"):
+            stopper.job = rjob
+        return rjob
+
+
+class HPOJob(Job):
+    def __init__(self, id, args: dict, run_function: Callable):
+        self.id = id
+        self.rank = None
+        self.args = copy.deepcopy(args)
+        self.run_function = run_function
+        self.status = self.READY
+        self.output = {"objective": None, "metadata": dict()}
+        self.metadata = dict()
+        self.observations = None
+        self.context = JobContext()
+
+    def __getitem__(self, index):
+        args = copy.deepcopy(self.args)
+        return (args, self.objective)[index]
 
     @property
     def objective(self):
@@ -68,18 +88,15 @@ class Job:
         """Metadata of the job stored in the output of run-function."""
         return self.output.get("metadata", dict())
 
+    @metadata.setter
+    def metadata(self, value):
+        self.output["metadata"] = value
+
     def set_output(self, output):
         output = standardize_run_function_output(output)
         self.output["objective"] = output["objective"]
         self.output["metadata"].update(output["metadata"])
         self.observations = output.get("observations", None)
-
-    def create_running_job(self, storage, stopper):
-        stopper = copy.deepcopy(stopper)
-        rjob = RunningJob(self.id, self.config, storage, stopper)
-        if stopper is not None and hasattr(stopper, "job"):
-            stopper.job = rjob
-        return rjob
 
 
 class RunningJob(MutableMapping):

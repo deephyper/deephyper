@@ -2,7 +2,14 @@ import abc
 import json
 import os
 
-import ray
+import numpy as np
+
+from deephyper.evaluator import Evaluator, RunningJob
+from deephyper.evaluator.storage import NullStorage
+
+
+def _wrapper_model_predict_func(job: RunningJob, model_predict_func: callable):
+    return model_predict_func(**job.parameters)
 
 
 class BaseEnsemble(abc.ABC):
@@ -13,9 +20,6 @@ class BaseEnsemble(abc.ABC):
         loss (callable): a callable taking (y_true, y_pred) as input.
         size (int, optional): Number of unique models used in the ensemble. Defaults to 5.
         verbose (bool, optional): Verbose mode. Defaults to True.
-        ray_address (str, optional): Address of the Ray cluster. If "auto" it will try to connect to an existing cluster. If "" it will start a local Ray cluster. Defaults to "".
-        num_cpus (int, optional): Number of CPUs allocated to load one model and predict. Defaults to 1.
-        num_gpus (int, optional): Number of GPUs allocated to load one model and predict. Defaults to None.
         batch_size (int, optional): Batch size used batchify the inference of loaded models. Defaults to 32.
     """
 
@@ -25,23 +29,61 @@ class BaseEnsemble(abc.ABC):
         loss,
         size=5,
         verbose=True,
-        ray_address="",
-        num_cpus=1,
-        num_gpus=None,
         batch_size=32,
+        evaluator_method="serial",
+        evaluator_method_kwargs=None,
     ):
         self.model_dir = os.path.abspath(model_dir)
         self.loss = loss
         self.members_files = []
         self.size = size
         self.verbose = verbose
-        self.ray_address = ray_address
-        self.num_cpus = num_cpus
-        self.num_gpus = num_gpus
         self.batch_size = batch_size
+        self._model_predict_func = None
+        self._evaluator = None
+        self.evaluator_method = evaluator_method
+        self.evaluator_method_kwargs = (
+            {} if evaluator_method_kwargs is None else evaluator_method_kwargs
+        )
 
-        if not (ray.is_initialized()):
-            ray.init()
+    def init_evaluator(self):
+        """Initialize an evaluator for the ensemble.
+
+        Returns:
+            Evaluator: An evaluator instance.
+        """
+        method_kwargs = {
+            "storage": NullStorage(),
+            "run_function_kwargs": {"model_predict_func": self._model_predict_func},
+        }
+        method_kwargs.update(self.evaluator_method_kwargs)
+        self._evaluator = Evaluator.create(
+            run_function=_wrapper_model_predict_func,
+            method=self.evaluator_method,
+            method_kwargs=method_kwargs,
+        )
+        self._evaluator.spawn_hpo_jobs = False
+
+    def get_predictions_from_models(self, X, model_files: list):
+
+        self._evaluator.submit(
+            [
+                {
+                    "model_path": path,
+                    "X": X,
+                    "batch_size": self.batch_size,
+                    "verbose": self.verbose,
+                }
+                for path in model_files
+            ]
+        )
+
+        jobs_done = self._evaluator.gather("ALL")
+        jobs_done = list(sorted(jobs_done, key=lambda j: j.id.split(".")[-1]))
+
+        y_pred = [job.result for job in jobs_done]
+        y_pred = np.array([arr for arr in y_pred if arr is not None])
+        return y_pred
 
     def _list_files_in_model_dir(self):
         return [

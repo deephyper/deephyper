@@ -64,28 +64,16 @@ class UQEnsemble(BaseEnsemble):
         self._ensemble.verbose = value
 
     @property
-    def ray_address(self):
-        return self._ensemble.ray_address
+    def evaluator_method(self):
+        return self._ensemble.evaluator_method
 
-    @ray_address.setter
+    @evaluator_method.setter
     def ray_address(self, value):
-        self._ensemble.ray_address = value
+        self._ensemble.evaluator_method = value
 
     @property
-    def num_cpus(self):
-        return self._ensemble.num_cpus
-
-    @num_cpus.setter
-    def num_cpus(self, value):
-        self._ensemble.num_cpus = value
-
-    @property
-    def num_gpus(self):
-        return self._ensemble.num_gpus
-
-    @num_gpus.setter
-    def num_gpus(self, value):
-        self._ensemble.num_gpus = value
+    def evaluator_method_kwargs(self):
+        return self._ensemble.evaluator_method_kwargs
 
     @property
     def batch_size(self):
@@ -159,12 +147,11 @@ class UQEnsembleRegressor(UQEnsemble):
         loss="nll",
         size=5,
         verbose=True,
-        ray_address="",
-        num_cpus=1,
-        num_gpus=None,
         batch_size=32,
         selection="topk",
         load_model_func=None,
+        evaluator_method="serial",
+        evaluator_method_kwargs=None,
     ):
 
         nn_backend = os.environ.get("DEEPHYPER_NN_BACKEND", "torch")
@@ -186,12 +173,11 @@ class UQEnsembleRegressor(UQEnsemble):
             loss=loss,
             size=size,
             verbose=verbose,
-            ray_address=ray_address,
-            num_cpus=num_cpus,
-            num_gpus=num_gpus,
             batch_size=batch_size,
             selection=selection,
             load_model_func=load_model_func,
+            evaluator_method=evaluator_method,
+            evaluator_method_kwargs=evaluator_method_kwargs,
         )
 
     def predict_var_decomposition(self, X):
@@ -228,12 +214,11 @@ class UQEnsembleClassifier(UQEnsemble):
         loss="cce",
         size=5,
         verbose=True,
-        ray_address="",
-        num_cpus=1,
-        num_gpus=None,
         batch_size=32,
         selection="topk",
         load_model_func=None,
+        evaluator_method="serial",
+        evaluator_method_kwargs=None,
     ):
 
         nn_backend = os.environ.get("DEEPHYPER_NN_BACKEND", "torch")
@@ -255,10 +240,9 @@ class UQEnsembleClassifier(UQEnsemble):
             loss=loss,
             size=size,
             verbose=verbose,
-            ray_address=ray_address,
-            num_cpus=num_cpus,
-            num_gpus=num_gpus,
             batch_size=batch_size,
             selection=selection,
             load_model_func=load_model_func,
+            evaluator_method=evaluator_method,
+            evaluator_method_kwargs=evaluator_method_kwargs,
         )
