@@ -1,3 +1,4 @@
+import abc
 import asyncio
 import copy
 import csv
@@ -12,7 +13,7 @@ import warnings
 from typing import Dict, List, Hashable
 
 import numpy as np
-from deephyper.evaluator._job import Job
+from deephyper.evaluator._job import Job, HPOJob
 from deephyper.skopt.optimizer import OBJECTIVE_VALUE_FAILURE
 from deephyper.core.utils._timeout import terminate_on_timeout
 from deephyper.evaluator.storage import Storage, MemoryStorage
@@ -52,7 +53,7 @@ def _test_ipython_interpretor() -> bool:
         return False  # Probably standard Python interpreter
 
 
-class Evaluator:
+class Evaluator(abc.ABC):
     """This ``Evaluator`` class asynchronously manages a series of Job objects to help execute given HPS or NAS tasks on various environments with differing system settings and properties.
 
     Args:
@@ -136,6 +137,8 @@ class Evaluator:
             nest_asyncio.apply()
             Evaluator.NEST_ASYNCIO_PATCHED = True
 
+        self._job_class = Job
+
     def __enter__(self):
         return self
 
@@ -194,6 +197,9 @@ class Evaluator:
 
         return evaluator
 
+    def _create_job(self, job_id, args, run_function) -> Job:
+        return self._job_class(job_id, args, run_function)
+
     async def _get_at_least_n_tasks(self, n):
         # If a user requests a batch size larger than the number of currently-running tasks, set n to the number of tasks running.
         if n > len(self._tasks_running):
@@ -216,8 +222,8 @@ class Evaluator:
                     self._tasks_running, return_when="FIRST_COMPLETED"
                 )
 
-    async def _run_jobs(self, configs):
-        for config in configs:
+    async def _run_jobs(self, args_list) -> int:
+        for args in args_list:
 
             if (
                 self.max_num_jobs_spawn > 0
@@ -228,10 +234,10 @@ class Evaluator:
                 )
                 raise MaximumJobsSpawnReached
 
-            # Create a Job object from the input configuration
+            # Create a Job object from the input arguments
             job_id = self._storage.create_new_job(self._search_id)
-            self._storage.store_job_in(job_id, args=(config,))
-            new_job = Job(job_id, config, self.run_function)
+            self._storage.store_job_in(job_id, args=(args,))
+            new_job = self._create_job(job_id, args, self.run_function)
 
             # Set the context of the job
             new_job.context.search = self.search
@@ -254,7 +260,7 @@ class Evaluator:
         """Called after a job is started."""
         job.status = job.RUNNING
 
-        job.output["metadata"]["timestamp_submit"] = time.time() - self.timestamp
+        job.metadata["timestamp_submit"] = time.time() - self.timestamp
 
         # call callbacks
         for cb in self._callbacks:
@@ -266,16 +272,17 @@ class Evaluator:
         """Called after a job has completed."""
         job.status = job.DONE
 
-        job.output["metadata"]["timestamp_gather"] = time.time() - self.timestamp
+        job.metadata["timestamp_gather"] = time.time() - self.timestamp
 
-        if np.isscalar(job.objective):
-            if np.isreal(job.objective) and not (np.isfinite(job.objective)):
-                job.output["objective"] = Evaluator.FAIL_RETURN_VALUE
+        if isinstance(job, HPOJob):
+            if np.isscalar(job.objective):
+                if np.isreal(job.objective) and not (np.isfinite(job.objective)):
+                    job.output["objective"] = Evaluator.FAIL_RETURN_VALUE
 
-        # store data in storage
-        self._storage.store_job_out(job.id, job.objective)
-        for k, v in job.metadata.items():
-            self._storage.store_job_metadata(job.id, k, v)
+            # store data in storage
+            self._storage.store_job_out(job.id, job.objective)
+            for k, v in job.metadata.items():
+                self._storage.store_job_metadata(job.id, k, v)
 
         # call callbacks
         for cb in self._callbacks:
@@ -284,28 +291,28 @@ class Evaluator:
     async def _execute(self, job):
         job = await self.execute(job)
 
-        if not (isinstance(job.output, dict)):
+        if isinstance(job, HPOJob) and not (isinstance(job.output, dict)):
             raise ValueError(
                 "The output of the job is not standard. Check if `job.set_output(output) was correctly used when defining the Evaluator class."
             )
 
         return job
 
+    @abc.abstractmethod
     async def execute(self, job) -> Job:
         """Execute the received job. To be implemented with a specific backend.
 
         Args:
             job (Job): the ``Job`` to be executed.
         """
-        raise NotImplementedError
 
-    def submit(self, configs: List[Dict]):
+    def submit(self, args_list: List[Dict]):
         """Send configurations to be evaluated by available workers.
 
         Args:
-            configs (List[Dict]): A list of dict which will be passed to the run function to be executed.
+            args_list (List[Dict]): A list of dict which will be passed to the run function to be executed.
         """
-        logging.info(f"submit {len(configs)} job(s) starts...")
+        logging.info(f"submit {len(args_list)} job(s) starts...")
         if self.loop is None:
             try:
                 # works if `timeout` is not set and code is running in main thread
@@ -313,7 +320,7 @@ class Evaluator:
             except RuntimeError:
                 # required when `timeout` is set because code is not running in main thread
                 self.loop = asyncio.new_event_loop()
-        self.loop.run_until_complete(self._run_jobs(configs))
+        self.loop.run_until_complete(self._run_jobs(args_list))
         logging.info("submit done")
 
     def gather(self, type, size=1):
@@ -350,7 +357,6 @@ class Evaluator:
             self.jobs_done.append(job)
             self._tasks_running.remove(task)
             self.job_id_gathered.append(job.id)
-
         self._tasks_done = []
         self._tasks_pending = []
 
@@ -365,8 +371,8 @@ class Evaluator:
             for job_id in job_id_not_gathered:
                 job_data = jobs_data[job_id]
                 if job_data and job_data["out"]:
-                    job = Job(
-                        id=job_id, config=job_data["in"]["args"][0], run_function=None
+                    job = self._create_job(
+                        job_id, job_data["in"]["args"][0], run_function=None
                     )
                     job.status = Job.DONE
                     job.output["metadata"].update(job_data["metadata"])
@@ -414,7 +420,7 @@ class Evaluator:
         """Dump evaluations to a CSV file. This will reset the ``jobs_done`` attribute to an empty list.
 
         Args:
-            saved_keys (list|callable): If ``None`` the whole ``job.config`` will be added as row of the CSV file. If a ``list`` filtered keys will be added as a row of the CSV file. If a ``callable`` the output dictionnary will be added as a row of the CSV file.
+            saved_keys (list|callable): If ``None`` the whole ``job.args`` will be added as row of the CSV file. If a ``list`` filtered keys will be added as a row of the CSV file. If a ``callable`` the output dictionnary will be added as a row of the CSV file.
             log_dir (str): directory where to dump the CSV file.
             filename (str): name of the file where to write the data.
         """
@@ -423,14 +429,14 @@ class Evaluator:
 
         for job in self.jobs_done:
             if saved_keys is None:
-                result = copy.deepcopy(job.config)
+                result = copy.deepcopy(job.args)
             elif type(saved_keys) is list:
-                decoded_key = copy.deepcopy(job.config)
+                decoded_key = copy.deepcopy(job.args)
                 result = {k: self.convert_for_csv(decoded_key[k]) for k in saved_keys}
             elif callable(saved_keys):
                 result = copy.deepcopy(saved_keys(job))
 
-            # add prefix for all keys found in "config"
+            # add prefix for all keys found in "args"
             result = {f"p:{k}": v for k, v in result.items()}
 
             # when the returned value of the run-function is a dict we flatten it to add in csv

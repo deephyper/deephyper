@@ -36,7 +36,7 @@ class TestEvaluator(unittest.TestCase):
     @pytest.mark.fast
     @pytest.mark.hps
     def test_run_function_standards(self):
-        from deephyper.evaluator import SerialEvaluator
+        from deephyper.evaluator import SerialEvaluator, HPOJob
 
         configs = [{"x": i} for i in range(10)]
 
@@ -45,6 +45,8 @@ class TestEvaluator(unittest.TestCase):
             return 42.0
 
         evaluator = SerialEvaluator(run)
+        evaluator._job_class = HPOJob
+
         evaluator.submit(configs)
         evaluator.gather(type="ALL")
         evaluator.dump_evals()
@@ -70,6 +72,7 @@ class TestEvaluator(unittest.TestCase):
                 return 42.0
 
         evaluator = SerialEvaluator(run)
+        evaluator._job_class = HPOJob
         evaluator.submit(configs)
         evaluator.gather(type="ALL")
         evaluator.dump_evals()
@@ -92,6 +95,7 @@ class TestEvaluator(unittest.TestCase):
             return {"objective": 42.0}
 
         evaluator = SerialEvaluator(run)
+        evaluator._job_class = HPOJob
         evaluator.submit(configs)
         evaluator.gather(type="ALL")
         evaluator.dump_evals()
@@ -117,23 +121,25 @@ class TestEvaluator(unittest.TestCase):
             }
 
         evaluator = SerialEvaluator(run)
+        evaluator._job_class = HPOJob
         evaluator.submit(configs)
         evaluator.gather(type="ALL")
         evaluator.dump_evals()
         results = pd.read_csv("results.csv")
-        print(results)
-        assert all(
-            results.columns
-            == [
-                "p:x",
-                "objective",
-                "job_id",
-                "m:timestamp_submit",
-                "m:timestamp_gather",
-                "m:num_epochs_trained",
-                "m:num_parameters",
-            ]
+        assert list(sorted(results.columns)) == list(
+            sorted(
+                [
+                    "p:x",
+                    "objective",
+                    "job_id",
+                    "m:timestamp_submit",
+                    "m:timestamp_gather",
+                    "m:num_epochs_trained",
+                    "m:num_parameters",
+                ]
+            )
         )
+
         assert len(results) == 10
         assert results["objective"][0] == 42.0
         assert results["m:num_epochs_trained"][0] == 25
@@ -147,21 +153,23 @@ class TestEvaluator(unittest.TestCase):
             return 42.0
 
         evaluator = SerialEvaluator(run)
+        evaluator._job_class = HPOJob
         evaluator.submit(configs)
         evaluator.gather(type="ALL")
         evaluator.dump_evals()
         results = pd.read_csv("results.csv")
-        assert all(
-            results.columns
-            == [
-                "p:x",
-                "objective",
-                "job_id",
-                "m:timestamp_submit",
-                "m:timestamp_gather",
-                "m:timestamp_start",
-                "m:timestamp_end",
-            ]
+        assert list(sorted(results.columns)) == list(
+            sorted(
+                [
+                    "p:x",
+                    "objective",
+                    "job_id",
+                    "m:timestamp_submit",
+                    "m:timestamp_gather",
+                    "m:timestamp_start",
+                    "m:timestamp_end",
+                ]
+            )
         )
         assert len(results) == 10
         assert results["objective"][0] == 42.0
@@ -178,23 +186,25 @@ class TestEvaluator(unittest.TestCase):
             }
 
         evaluator = SerialEvaluator(run)
+        evaluator._job_class = HPOJob
         evaluator.submit(configs)
         evaluator.gather(type="ALL")
         evaluator.dump_evals()
         results = pd.read_csv("results.csv")
-        assert all(
-            results.columns
-            == [
-                "p:x",
-                "objective",
-                "job_id",
-                "m:timestamp_submit",
-                "m:timestamp_gather",
-                "m:timestamp_start",
-                "m:timestamp_end",
-                "m:num_epochs_trained",
-                "m:num_parameters",
-            ]
+        assert list(sorted(results.columns)) == list(
+            sorted(
+                [
+                    "p:x",
+                    "objective",
+                    "job_id",
+                    "m:timestamp_submit",
+                    "m:timestamp_gather",
+                    "m:timestamp_start",
+                    "m:timestamp_end",
+                    "m:num_epochs_trained",
+                    "m:num_parameters",
+                ]
+            )
         )
         assert len(results) == 10
         assert results["objective"][0] == 42.0
@@ -209,21 +219,23 @@ class TestEvaluator(unittest.TestCase):
                 return "F_out_of_memory"
 
         evaluator = SerialEvaluator(run)
+        evaluator._job_class = HPOJob
         evaluator.num_objective = 2
         evaluator.submit(configs)
         evaluator.gather(type="ALL")
         evaluator.dump_evals()
         results = pd.read_csv("results.csv")
-        assert all(
-            results.columns
-            == [
-                "p:x",
-                "objective_0",
-                "objective_1",
-                "job_id",
-                "m:timestamp_submit",
-                "m:timestamp_gather",
-            ]
+        assert list(sorted(results.columns)) == list(
+            sorted(
+                [
+                    "p:x",
+                    "objective_0",
+                    "objective_1",
+                    "job_id",
+                    "m:timestamp_submit",
+                    "m:timestamp_gather",
+                ]
+            )
         )
         assert len(results) == 10
 
@@ -231,7 +243,7 @@ class TestEvaluator(unittest.TestCase):
         assert counter["42.0"] == 5 and counter["F_out_of_memory"] == 5
 
     def execute_evaluator(self, method):
-        from deephyper.evaluator import Evaluator
+        from deephyper.evaluator import Evaluator, HPOJob
 
         # without kwargs
         method_kwargs = {"num_workers": 1}
@@ -242,13 +254,14 @@ class TestEvaluator(unittest.TestCase):
             method_kwargs["ray_kwargs"] = {"runtime_env": {"working_dir": HERE}}
 
         evaluator = Evaluator.create(run, method=method, method_kwargs=method_kwargs)
+        evaluator._job_class = HPOJob
 
         configs = [{"x": i} for i in range(10)]
         evaluator.submit(configs)
         jobs = evaluator.gather("ALL")
-        jobs.sort(key=lambda j: j.config["x"])
+        jobs.sort(key=lambda j: j.args["x"])
         for config, job in zip(configs, jobs):
-            assert config["x"] == job.config["x"]
+            assert config["x"] == job.args["x"]
             assert config["x"] == job.objective
         evaluator.submit(configs)
         jobs = evaluator.gather("BATCH", size=1)
@@ -260,13 +273,14 @@ class TestEvaluator(unittest.TestCase):
             method=method,
             method_kwargs={"num_workers": 1, "run_function_kwargs": {"y": 1}},
         )
+        evaluator._job_class = HPOJob
 
         configs = [{"x": i} for i in range(10)]
         evaluator.submit(configs)
         jobs = evaluator.gather("ALL")
-        jobs.sort(key=lambda j: j.config["x"])
+        jobs.sort(key=lambda j: j.args["x"])
         for config, job in zip(configs, jobs):
-            assert config["x"] == job.config["x"]
+            assert config["x"] == job.args["x"]
             assert job.objective == config["x"] + 1
 
         evaluator.submit(configs)
@@ -281,13 +295,14 @@ class TestEvaluator(unittest.TestCase):
                 "num_workers": 1,
             },
         )
+        evaluator._job_class = HPOJob
 
         configs = [{"x": i} for i in range(10)]
         evaluator.submit(configs)
         jobs = evaluator.gather("ALL")
-        jobs.sort(key=lambda j: j.config["x"])
+        jobs.sort(key=lambda j: j.args["x"])
         for config, job in zip(configs, jobs):
-            assert config["x"] == job.config["x"]
+            assert config["x"] == job.args["x"]
             assert type(job.output) is dict
             assert job.objective == config["x"]
             assert job.metadata["y"] == 0

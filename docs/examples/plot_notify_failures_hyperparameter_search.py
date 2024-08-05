@@ -18,7 +18,7 @@ def run(config: dict) -> float:
 
 # %%
 # Then, we define the corresponding hyperparameter problem where ``x`` is the value to maximize and ``y`` is a value impact the appearance of failures.
-from deephyper.problem import HpProblem
+from deephyper.hpo import HpProblem
 
 problem = HpProblem()
 problem.add_hyperparameter([1, 2, 4, 8, 16, 32], "x")
@@ -29,7 +29,7 @@ print(problem)
 
 # %%
 # Then, we define a centralized Bayesian optimization (CBO) search (i.e., master-worker architecture) which uses the Random-Forest regressor as default surrogate model. We will compare the ``ignore`` strategy which filters-out failed configurations, the ``mean`` strategy which replaces a failure by the running mean of collected objectives and the ``min`` strategy which replaces by the running min of collected objectives.
-from deephyper.search.hps import CBO
+from deephyper.hpo import CBO
 from deephyper.evaluator import Evaluator
 from deephyper.evaluator.callback import TqdmCallback
 

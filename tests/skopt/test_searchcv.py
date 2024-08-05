@@ -139,7 +139,6 @@ def test_searchcv_runs(surrogate, n_jobs, n_points, cv=None):
 
 @pytest.mark.hps_slow_test
 def test_parallel_cv():
-
     """
     Test whether parallel jobs work
     """

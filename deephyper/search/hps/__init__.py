@@ -1,16 +1,11 @@
-"""Subpackage for hyperparameter search algorithms.
+__doc__ = """The ``deephyper.search.hps`` module is deprecated, use ``deephyper.hpo`` instead."""
+from deephyper.core.warnings import deprecated_api
 
-.. warning:: All search algorithms are MAXIMIZING the objective function. If you want to MINIMIZE the objective function, you have to return the negative of you objective.
-"""
-
-from deephyper.search.hps._cbo import CBO, AMBS
-from deephyper.search.hps._eds import ExperimentalDesignSearch
-
-__all__ = ["CBO", "AMBS", "ExperimentalDesignSearch"]
+from deephyper.hpo import CBO
 
 try:
-    from deephyper.search.hps._mpi_dbo import MPIDistributedBO  # noqa: F401
-
-    __all__.append("MPIDistributedBO")
+    from deephyper.hpo import MPIDistributedBO
 except ImportError:
     pass
+
+deprecated_api(__doc__)

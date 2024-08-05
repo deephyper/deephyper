@@ -27,7 +27,7 @@ update_matplotlib_rc()
 
 # %%
 # Then we define the variable(s) we want to optimize. For this problem we optimize Ackley in a 2-dimensional search space, the true minimul is located at ``(0, 0)``.
-from deephyper.problem import HpProblem
+from deephyper.hpo import HpProblem
 
 
 nb_dim = 2
@@ -41,7 +41,7 @@ problem
 if __name__ == "__main__":
     from deephyper.evaluator import Evaluator
     from deephyper.evaluator.callback import TqdmCallback
-    from deephyper.search.hps import CBO
+    from deephyper.hpo import CBO
 
     # we give a budget of 2 minutes for each search
     timeout = 120

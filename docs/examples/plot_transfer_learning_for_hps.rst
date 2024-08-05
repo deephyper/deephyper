@@ -10,8 +10,8 @@
     .. note::
         :class: sphx-glr-download-link-note
 
-        Click :ref:`here <sphx_glr_download_examples_plot_transfer_learning_for_hps.py>`
-        to download the full example code
+        :ref:`Go to the end <sphx_glr_download_examples_plot_transfer_learning_for_hps.py>`
+        to download the full example code.
 
 .. rst-class:: sphx-glr-example-title
 
@@ -29,7 +29,7 @@ Let us start by defining the run-functions of the small and large scale problems
 
 .. GENERATED FROM PYTHON SOURCE LINES 14-25
 
-.. code-block:: default
+.. code-block:: Python
 
     import functools
 
@@ -55,9 +55,9 @@ Then, we can define the hyperparameter problem space based on :math:`n`
 
 .. GENERATED FROM PYTHON SOURCE LINES 27-36
 
-.. code-block:: default
+.. code-block:: Python
 
-    from deephyper.problem import HpProblem
+    from deephyper.hpo import HpProblem
 
 
     N = 1
@@ -72,8 +72,6 @@ Then, we can define the hyperparameter problem space based on :math:`n`
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
 
@@ -86,7 +84,7 @@ Then, we can define the hyperparameter problem space based on :math:`n`
 
 .. GENERATED FROM PYTHON SOURCE LINES 37-43
 
-.. code-block:: default
+.. code-block:: Python
 
     N = 2
     problem_large = HpProblem()
@@ -99,8 +97,6 @@ Then, we can define the hyperparameter problem space based on :math:`n`
 
 
 .. rst-class:: sphx-glr-script-out
-
- Out:
 
  .. code-block:: none
 
@@ -119,11 +115,11 @@ Then, we define setup the search and execute it:
 
 .. GENERATED FROM PYTHON SOURCE LINES 45-57
 
-.. code-block:: default
+.. code-block:: Python
 
     from deephyper.evaluator import Evaluator
     from deephyper.evaluator.callback import TqdmCallback
-    from deephyper.search.hps import CBO
+    from deephyper.hpo import CBO
 
     results = {}
     max_evals = 20
@@ -139,17 +135,15 @@ Then, we define setup the search and execute it:
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
-      0%|          | 0/20 [00:00<?, ?it/s]      5%|5         | 1/20 [00:00<00:00, 10894.30it/s, failures=0, objective=-35.2]     10%|#         | 2/20 [00:00<00:00, 196.12it/s, failures=0, objective=-23.6]       15%|#5        | 3/20 [00:00<00:00, 171.98it/s, failures=0, objective=-23.6]     20%|##        | 4/20 [00:00<00:00, 162.69it/s, failures=0, objective=-23.6]     25%|##5       | 5/20 [00:00<00:00, 158.97it/s, failures=0, objective=-23.6]     30%|###       | 6/20 [00:00<00:00, 156.15it/s, failures=0, objective=-.545]     35%|###5      | 7/20 [00:00<00:00, 53.52it/s, failures=0, objective=-.545]      35%|###5      | 7/20 [00:00<00:00, 53.52it/s, failures=0, objective=-.545]     40%|####      | 8/20 [00:00<00:00, 53.52it/s, failures=0, objective=-.545]     45%|####5     | 9/20 [00:00<00:00, 53.52it/s, failures=0, objective=-.545]     50%|#####     | 10/20 [00:00<00:00, 53.52it/s, failures=0, objective=-.545]     55%|#####5    | 11/20 [00:00<00:00, 53.52it/s, failures=0, objective=-.469]     60%|######    | 12/20 [00:00<00:00, 53.52it/s, failures=0, objective=-.469]     65%|######5   | 13/20 [00:00<00:00, 13.14it/s, failures=0, objective=-.469]     65%|######5   | 13/20 [00:00<00:00, 13.14it/s, failures=0, objective=-.469]     70%|#######   | 14/20 [00:01<00:00, 13.14it/s, failures=0, objective=-.469]     75%|#######5  | 15/20 [00:01<00:00, 13.14it/s, failures=0, objective=-.469]     80%|########  | 16/20 [00:01<00:00,  7.85it/s, failures=0, objective=-.469]     80%|########  | 16/20 [00:01<00:00,  7.85it/s, failures=0, objective=-.469]     85%|########5 | 17/20 [00:01<00:00,  7.85it/s, failures=0, objective=-.469]     90%|######### | 18/20 [00:02<00:00,  6.56it/s, failures=0, objective=-.469]     90%|######### | 18/20 [00:02<00:00,  6.56it/s, failures=0, objective=-.469]     95%|#########5| 19/20 [00:02<00:00,  6.56it/s, failures=0, objective=-.469]    100%|##########| 20/20 [00:02<00:00,  5.42it/s, failures=0, objective=-.469]    100%|##########| 20/20 [00:02<00:00,  5.42it/s, failures=0, objective=-.469]
+      0%|          | 0/20 [00:00<?, ?it/s]      5%|▌         | 1/20 [00:00<00:00, 62601.55it/s, failures=0, objective=-3.23]     10%|█         | 2/20 [00:00<00:00, 335.62it/s, failures=0, objective=-3.23]       15%|█▌        | 3/20 [00:00<00:00, 245.30it/s, failures=0, objective=-1.22]     20%|██        | 4/20 [00:00<00:00, 224.90it/s, failures=0, objective=-1.22]     25%|██▌       | 5/20 [00:00<00:00, 204.73it/s, failures=0, objective=-1.22]     30%|███       | 6/20 [00:00<00:00, 188.61it/s, failures=0, objective=-1.22]     35%|███▌      | 7/20 [00:00<00:00, 187.45it/s, failures=0, objective=-1.22]     40%|████      | 8/20 [00:00<00:00, 182.07it/s, failures=0, objective=-0.754]     45%|████▌     | 9/20 [00:00<00:00, 181.35it/s, failures=0, objective=-0.754]     50%|█████     | 10/20 [00:00<00:00, 181.36it/s, failures=0, objective=-0.754]     55%|█████▌    | 11/20 [00:00<00:00, 79.03it/s, failures=0, objective=-0.754]      55%|█████▌    | 11/20 [00:00<00:00, 79.03it/s, failures=0, objective=-0.754]     60%|██████    | 12/20 [00:00<00:00, 79.03it/s, failures=0, objective=-0.754]     65%|██████▌   | 13/20 [00:00<00:00, 79.03it/s, failures=0, objective=-0.26]      70%|███████   | 14/20 [00:00<00:00, 79.03it/s, failures=0, objective=-0.0145]     75%|███████▌  | 15/20 [00:00<00:00, 79.03it/s, failures=0, objective=-0.0145]     80%|████████  | 16/20 [00:00<00:00, 79.03it/s, failures=0, objective=-0.0145]     85%|████████▌ | 17/20 [00:00<00:00, 79.03it/s, failures=0, objective=-0.0145]     90%|█████████ | 18/20 [00:00<00:00, 79.03it/s, failures=0, objective=-0.0145]     95%|█████████▌| 19/20 [00:00<00:00, 20.80it/s, failures=0, objective=-0.0145]     95%|█████████▌| 19/20 [00:00<00:00, 20.80it/s, failures=0, objective=-0.00148]    100%|██████████| 20/20 [00:00<00:00, 20.80it/s, failures=0, objective=-0.000458]
 
 
 
 .. GENERATED FROM PYTHON SOURCE LINES 58-64
 
-.. code-block:: default
+.. code-block:: Python
 
     evaluator_large = Evaluator.create(
         run_large, method="serial", method_kwargs={"callbacks": [TqdmCallback()]}
@@ -163,44 +157,38 @@ Then, we define setup the search and execute it:
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
 
       0%|          | 0/20 [00:00<?, ?it/s]
-      5%|5         | 1/20 [00:00<00:00, 35848.75it/s, failures=0, objective=-58.7]
-     10%|#         | 2/20 [00:00<00:00, 184.64it/s, failures=0, objective=-58.7]  
-     15%|#5        | 3/20 [00:00<00:00, 140.12it/s, failures=0, objective=-58.7]
-     20%|##        | 4/20 [00:00<00:00, 124.92it/s, failures=0, objective=-30.2]
-     25%|##5       | 5/20 [00:00<00:00, 116.68it/s, failures=0, objective=-30.2]
-     30%|###       | 6/20 [00:00<00:00, 48.75it/s, failures=0, objective=-30.2] 
-     30%|###       | 6/20 [00:00<00:00, 48.75it/s, failures=0, objective=-30.2]
-     35%|###5      | 7/20 [00:00<00:00, 48.75it/s, failures=0, objective=-30.2]
-     40%|####      | 8/20 [00:00<00:00, 48.75it/s, failures=0, objective=-30.2]
-     45%|####5     | 9/20 [00:00<00:00, 48.75it/s, failures=0, objective=-30.2]
-     50%|#####     | 10/20 [00:00<00:00, 48.75it/s, failures=0, objective=-1.84]
-     55%|#####5    | 11/20 [00:00<00:00, 26.15it/s, failures=0, objective=-1.84]
-     55%|#####5    | 11/20 [00:00<00:00, 26.15it/s, failures=0, objective=-1.84]
-     60%|######    | 12/20 [00:00<00:00, 26.15it/s, failures=0, objective=-1.84]
-     65%|######5   | 13/20 [00:00<00:00, 26.15it/s, failures=0, objective=-1.34]
-     70%|#######   | 14/20 [00:01<00:00, 26.15it/s, failures=0, objective=-1.34]
-     75%|#######5  | 15/20 [00:01<00:00,  8.32it/s, failures=0, objective=-1.34]
-     75%|#######5  | 15/20 [00:01<00:00,  8.32it/s, failures=0, objective=-1.34]
-     80%|########  | 16/20 [00:01<00:00,  8.32it/s, failures=0, objective=-1.34]
-     85%|########5 | 17/20 [00:01<00:00,  6.45it/s, failures=0, objective=-1.34]
-     85%|########5 | 17/20 [00:01<00:00,  6.45it/s, failures=0, objective=-1.34]
-     90%|######### | 18/20 [00:02<00:00,  6.45it/s, failures=0, objective=-1.34]
-     95%|#########5| 19/20 [00:02<00:00,  5.60it/s, failures=0, objective=-1.34]
-     95%|#########5| 19/20 [00:02<00:00,  5.60it/s, failures=0, objective=-1.34]
-    100%|##########| 20/20 [00:02<00:00,  5.00it/s, failures=0, objective=-1.34]
-    100%|##########| 20/20 [00:02<00:00,  5.00it/s, failures=0, objective=-1.34]
+      5%|▌         | 1/20 [00:00<00:00, 41943.04it/s, failures=0, objective=-48.8]
+     10%|█         | 2/20 [00:00<00:00, 189.68it/s, failures=0, objective=-40.3]  
+     15%|█▌        | 3/20 [00:00<00:00, 144.05it/s, failures=0, objective=-40.3]
+     20%|██        | 4/20 [00:00<00:00, 121.17it/s, failures=0, objective=-6.24]
+     25%|██▌       | 5/20 [00:00<00:00, 115.18it/s, failures=0, objective=-6.24]
+     30%|███       | 6/20 [00:00<00:00, 111.80it/s, failures=0, objective=-6.24]
+     35%|███▌      | 7/20 [00:00<00:00, 108.41it/s, failures=0, objective=-6.24]
+     40%|████      | 8/20 [00:00<00:00, 106.72it/s, failures=0, objective=-2.88]
+     45%|████▌     | 9/20 [00:00<00:00, 105.54it/s, failures=0, objective=-2.88]
+     50%|█████     | 10/20 [00:00<00:00, 103.60it/s, failures=0, objective=-2.88]
+     55%|█████▌    | 11/20 [00:00<00:00, 61.31it/s, failures=0, objective=-2.88] 
+     55%|█████▌    | 11/20 [00:00<00:00, 61.31it/s, failures=0, objective=-2.88]
+     60%|██████    | 12/20 [00:00<00:00, 61.31it/s, failures=0, objective=-2.88]
+     65%|██████▌   | 13/20 [00:00<00:00, 61.31it/s, failures=0, objective=-2.88]
+     70%|███████   | 14/20 [00:00<00:00, 61.31it/s, failures=0, objective=-0.00379]
+     75%|███████▌  | 15/20 [00:00<00:00, 61.31it/s, failures=0, objective=-0.00379]
+     80%|████████  | 16/20 [00:00<00:00, 61.31it/s, failures=0, objective=-0.00379]
+     85%|████████▌ | 17/20 [00:00<00:00, 61.31it/s, failures=0, objective=-0.00379]
+     90%|█████████ | 18/20 [00:00<00:00, 19.45it/s, failures=0, objective=-0.00379]
+     90%|█████████ | 18/20 [00:00<00:00, 19.45it/s, failures=0, objective=-0.00379]
+     95%|█████████▌| 19/20 [00:00<00:00, 19.45it/s, failures=0, objective=-0.00379]
+    100%|██████████| 20/20 [00:01<00:00, 19.45it/s, failures=0, objective=-0.00379]
 
 
 
 .. GENERATED FROM PYTHON SOURCE LINES 65-72
 
-.. code-block:: default
+.. code-block:: Python
 
     evaluator_large_tl = Evaluator.create(
         run_large, method="serial", method_kwargs={"callbacks": [TqdmCallback()]}
@@ -215,353 +203,89 @@ Then, we define setup the search and execute it:
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
-    /Users/romainegele/Documents/Argonne/deephyper/deephyper/search/hps/_cbo.py:552: UserWarning: The value of q=0.9 is replaced by q_max=0.5 because a minimum of 10 results are required to perform transfer-learning!
+    /Users/romainegele/Documents/Argonne/deephyper/deephyper/hpo/_cbo.py:791: UserWarning: The value of q=0.9 is replaced by q_max=0.5 because a minimum of 10 samples are required to perform transfer-learning!
       warnings.warn(
-    [<sdv.constraints.tabular.ScalarRange object at 0x2a7452130>]
-
-
-      0%|          | 0/100 [00:00<?, ?it/s]
-
-    Sampling rows:   0%|          | 0/100 [00:00<?, ?it/s]    Sampling rows: 100%|##########| 100/100 [00:00<00:00, 14671.04it/s]
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 208719.61it/s]
 
 
       0%|          | 0/20 [00:00<?, ?it/s]
 
-      5%|5         | 1/20 [00:00<00:00, 26214.40it/s, failures=0, objective=-35.2]
+      5%|▌         | 1/20 [00:00<00:00, 25115.59it/s, failures=0, objective=-35.3]
 
+     10%|█         | 2/20 [00:00<00:01, 13.65it/s, failures=0, objective=-35.3]   
 
-      0%|          | 0/10000 [00:00<?, ?it/s]
+     10%|█         | 2/20 [00:00<00:01, 13.65it/s, failures=0, objective=-23.8]
 
+     15%|█▌        | 3/20 [00:00<00:01, 13.65it/s, failures=0, objective=-23.8]
 
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 206620.03it/s]
+     20%|██        | 4/20 [00:00<00:01,  8.61it/s, failures=0, objective=-23.8]
 
+     20%|██        | 4/20 [00:00<00:01,  8.61it/s, failures=0, objective=-23.8]
 
-     10%|#         | 2/20 [00:00<00:00, 31.59it/s, failures=0, objective=-25.8]   
+     25%|██▌       | 5/20 [00:00<00:01,  8.01it/s, failures=0, objective=-23.8]
 
+     25%|██▌       | 5/20 [00:00<00:01,  8.01it/s, failures=0, objective=-23.8]
 
-      0%|          | 0/10000 [00:00<?, ?it/s]
+     30%|███       | 6/20 [00:00<00:01,  7.59it/s, failures=0, objective=-23.8]
 
+     30%|███       | 6/20 [00:00<00:01,  7.59it/s, failures=0, objective=-1]   
 
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 207891.99it/s]
+     35%|███▌      | 7/20 [00:01<00:04,  3.14it/s, failures=0, objective=-1]
 
+     35%|███▌      | 7/20 [00:01<00:04,  3.14it/s, failures=0, objective=-1]
 
-     15%|#5        | 3/20 [00:00<00:00, 23.81it/s, failures=0, objective=-25.8]
+     40%|████      | 8/20 [00:01<00:03,  3.73it/s, failures=0, objective=-1]
 
-     15%|#5        | 3/20 [00:00<00:00, 23.81it/s, failures=0, objective=-24.9]
+     40%|████      | 8/20 [00:01<00:03,  3.73it/s, failures=0, objective=-1]
 
+     45%|████▌     | 9/20 [00:01<00:02,  4.30it/s, failures=0, objective=-1]
 
-      0%|          | 0/10000 [00:00<?, ?it/s]
+     45%|████▌     | 9/20 [00:01<00:02,  4.30it/s, failures=0, objective=-1]
 
+     50%|█████     | 10/20 [00:01<00:02,  4.84it/s, failures=0, objective=-1]
 
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 204780.00it/s]
+     50%|█████     | 10/20 [00:01<00:02,  4.84it/s, failures=0, objective=-1]
 
+     55%|█████▌    | 11/20 [00:02<00:01,  4.71it/s, failures=0, objective=-1]
 
-     20%|##        | 4/20 [00:00<00:00, 23.81it/s, failures=0, objective=-24.9]
+     55%|█████▌    | 11/20 [00:02<00:01,  4.71it/s, failures=0, objective=-0.626]
 
+     60%|██████    | 12/20 [00:02<00:01,  4.61it/s, failures=0, objective=-0.626]
 
-      0%|          | 0/10000 [00:00<?, ?it/s]
+     60%|██████    | 12/20 [00:02<00:01,  4.61it/s, failures=0, objective=-0.457]
 
+     65%|██████▌   | 13/20 [00:02<00:01,  4.54it/s, failures=0, objective=-0.457]
 
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 212486.02it/s]
+     65%|██████▌   | 13/20 [00:02<00:01,  4.54it/s, failures=0, objective=-0.457]
 
+     70%|███████   | 14/20 [00:02<00:01,  4.48it/s, failures=0, objective=-0.457]
 
-     25%|##5       | 5/20 [00:00<00:00, 23.81it/s, failures=0, objective=-24.9]
+     70%|███████   | 14/20 [00:02<00:01,  4.48it/s, failures=0, objective=-0.303]
 
+     75%|███████▌  | 15/20 [00:03<00:01,  4.43it/s, failures=0, objective=-0.303]
 
-      0%|          | 0/10000 [00:00<?, ?it/s]
+     75%|███████▌  | 15/20 [00:03<00:01,  4.43it/s, failures=0, objective=-0.303]
 
+     80%|████████  | 16/20 [00:03<00:00,  4.36it/s, failures=0, objective=-0.303]
 
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 208004.36it/s]
+     80%|████████  | 16/20 [00:03<00:00,  4.36it/s, failures=0, objective=-0.303]
 
+     85%|████████▌ | 17/20 [00:03<00:00,  4.32it/s, failures=0, objective=-0.303]
 
-     30%|###       | 6/20 [00:00<00:00, 18.73it/s, failures=0, objective=-24.9]
+     85%|████████▌ | 17/20 [00:03<00:00,  4.32it/s, failures=0, objective=-0.303]
 
-     30%|###       | 6/20 [00:00<00:00, 18.73it/s, failures=0, objective=-1.18]
+     90%|█████████ | 18/20 [00:03<00:00,  4.31it/s, failures=0, objective=-0.303]
 
+     90%|█████████ | 18/20 [00:03<00:00,  4.31it/s, failures=0, objective=-0.303]
 
-      0%|          | 0/10000 [00:00<?, ?it/s]
+     95%|█████████▌| 19/20 [00:04<00:00,  4.30it/s, failures=0, objective=-0.303]
 
+     95%|█████████▌| 19/20 [00:04<00:00,  4.30it/s, failures=0, objective=-0.303]
 
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 207496.03it/s]
+    100%|██████████| 20/20 [00:04<00:00,  4.29it/s, failures=0, objective=-0.303]
 
-
-     35%|###5      | 7/20 [00:00<00:00, 18.73it/s, failures=0, objective=-1.18]
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 216745.33it/s]
-
-
-     40%|####      | 8/20 [00:00<00:00, 17.93it/s, failures=0, objective=-1.18]
-
-     40%|####      | 8/20 [00:00<00:00, 17.93it/s, failures=0, objective=-1.18]
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 214519.36it/s]
-
-
-     45%|####5     | 9/20 [00:00<00:00, 17.93it/s, failures=0, objective=-1.18]
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 216229.10it/s]
-
-
-     50%|#####     | 10/20 [00:00<00:00, 14.09it/s, failures=0, objective=-1.18]
-
-     50%|#####     | 10/20 [00:00<00:00, 14.09it/s, failures=0, objective=-1.18]
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 216376.35it/s]
-
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 214873.23it/s]
-
-
-     55%|#####5    | 11/20 [00:00<00:00, 14.09it/s, failures=0, objective=-1.18]
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 215082.59it/s]
-
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 215307.82it/s]
-
-
-     60%|######    | 12/20 [00:01<00:01,  6.45it/s, failures=0, objective=-1.18]
-
-     60%|######    | 12/20 [00:01<00:01,  6.45it/s, failures=0, objective=-1.18]
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 215592.24it/s]
-
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 215516.92it/s]
-
-
-     65%|######5   | 13/20 [00:01<00:01,  6.45it/s, failures=0, objective=-1.18]
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 214209.31it/s]
-
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 215253.68it/s]
-
-
-     70%|#######   | 14/20 [00:02<00:01,  4.50it/s, failures=0, objective=-1.18]
-
-     70%|#######   | 14/20 [00:02<00:01,  4.50it/s, failures=0, objective=-1.18]
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 213215.13it/s]
-
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 214980.06it/s]
-
-
-     75%|#######5  | 15/20 [00:02<00:01,  4.13it/s, failures=0, objective=-1.18]
-
-     75%|#######5  | 15/20 [00:02<00:01,  4.13it/s, failures=0, objective=-1.18]
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 215077.07it/s]
-
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 214597.29it/s]
-
-
-     80%|########  | 16/20 [00:02<00:01,  3.82it/s, failures=0, objective=-1.18]
-
-     80%|########  | 16/20 [00:02<00:01,  3.82it/s, failures=0, objective=-1.18]
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 214800.60it/s]
-
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 215145.47it/s]
-
-
-     85%|########5 | 17/20 [00:03<00:00,  3.56it/s, failures=0, objective=-1.18]
-
-     85%|########5 | 17/20 [00:03<00:00,  3.56it/s, failures=0, objective=-1.18]
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 214786.30it/s]
-
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 215646.56it/s]
-
-
-     90%|######### | 18/20 [00:03<00:00,  3.31it/s, failures=0, objective=-1.18]
-
-     90%|######### | 18/20 [00:03<00:00,  3.31it/s, failures=0, objective=-1.18]
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 216154.44it/s]
-
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 213770.42it/s]
-
-
-     95%|#########5| 19/20 [00:03<00:00,  3.00it/s, failures=0, objective=-1.18]
-
-     95%|#########5| 19/20 [00:03<00:00,  3.00it/s, failures=0, objective=-1.18]
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 214832.51it/s]
-
-
-
-      0%|          | 0/10000 [00:00<?, ?it/s]
-
-
-    Sampling rows:   0%|          | 0/10000 [00:00<?, ?it/s]/Users/romainegele/miniforge3/envs/dh-arm/lib/python3.9/site-packages/ctgan/data_transformer.py:188: FutureWarning: In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace instead of always setting a new array. To retain the old behavior, use either `df[df.columns[i]] = newvals` or, if columns are non-unique, `df.isetitem(i, newvals)`
-      data.iloc[:, 1] = np.argmax(column_data[:, 1:], axis=1)
-    Sampling rows: 100%|##########| 10000/10000 [00:00<00:00, 214860.02it/s]
-
-
-    100%|##########| 20/20 [00:04<00:00,  2.97it/s, failures=0, objective=-1.18]
-
-    100%|##########| 20/20 [00:04<00:00,  2.97it/s, failures=0, objective=-1.18]
+    100%|██████████| 20/20 [00:04<00:00,  4.29it/s, failures=0, objective=-0.303]
 
 
 
@@ -571,7 +295,7 @@ Finally, we compare the results and quickly see that transfer-learning provided 
 
 .. GENERATED FROM PYTHON SOURCE LINES 74-88
 
-.. code-block:: default
+.. code-block:: Python
 
     import matplotlib.pyplot as plt
 
@@ -602,28 +326,26 @@ Finally, we compare the results and quickly see that transfer-learning provided 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  12.852 seconds)
+   **Total running time of the script:** (0 minutes 8.590 seconds)
 
 
 .. _sphx_glr_download_examples_plot_transfer_learning_for_hps.py:
 
+.. only:: html
 
-.. only :: html
+  .. container:: sphx-glr-footer sphx-glr-footer-example
 
- .. container:: sphx-glr-footer
-    :class: sphx-glr-footer-example
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
+      :download:`Download Jupyter notebook: plot_transfer_learning_for_hps.ipynb <plot_transfer_learning_for_hps.ipynb>`
 
+    .. container:: sphx-glr-download sphx-glr-download-python
 
-  .. container:: sphx-glr-download sphx-glr-download-python
+      :download:`Download Python source code: plot_transfer_learning_for_hps.py <plot_transfer_learning_for_hps.py>`
 
-     :download:`Download Python source code: plot_transfer_learning_for_hps.py <plot_transfer_learning_for_hps.py>`
+    .. container:: sphx-glr-download sphx-glr-download-zip
 
-
-
-  .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-     :download:`Download Jupyter notebook: plot_transfer_learning_for_hps.ipynb <plot_transfer_learning_for_hps.ipynb>`
+      :download:`Download zipped: plot_transfer_learning_for_hps.zip <plot_transfer_learning_for_hps.zip>`
 
 
 .. only:: html

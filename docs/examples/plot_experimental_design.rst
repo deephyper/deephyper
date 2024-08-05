@@ -11,7 +11,7 @@
         :class: sphx-glr-download-link-note
 
         :ref:`Go to the end <sphx_glr_download_examples_plot_experimental_design.py>`
-        to download the full example code
+        to download the full example code.
 
 .. rst-class:: sphx-glr-example-title
 
@@ -27,7 +27,7 @@ This example demonstrates how to generate points from standard experimental desi
 
 .. GENERATED FROM PYTHON SOURCE LINES 10-16
 
-.. code-block:: default
+.. code-block:: Python
 
 
 
@@ -48,9 +48,9 @@ First we define the hyperparameter search space.
 
 .. GENERATED FROM PYTHON SOURCE LINES 18-29
 
-.. code-block:: default
+.. code-block:: Python
 
-    from deephyper.problem import HpProblem
+    from deephyper.hpo import HpProblem
 
 
     problem = HpProblem()
@@ -85,7 +85,7 @@ Then we define the black-box function to optimize.
 
 .. GENERATED FROM PYTHON SOURCE LINES 31-37
 
-.. code-block:: default
+.. code-block:: Python
 
     def run(job):
         config = job.parameters
@@ -107,9 +107,9 @@ Note that `n_points` and `max_evals` take the same value here.
 
 .. GENERATED FROM PYTHON SOURCE LINES 40-47
 
-.. code-block:: default
+.. code-block:: Python
 
-    from deephyper.search.hps import ExperimentalDesignSearch
+    from deephyper.hpo import ExperimentalDesignSearch
 
 
     max_evals = 200
@@ -124,7 +124,7 @@ Note that `n_points` and `max_evals` take the same value here.
 
  .. code-block:: none
 
-    WARNING:root:Results file already exists, it will be renamed to /Users/romainegele/Documents/Argonne/deephyper/examples/results_20240326-172239.csv
+    WARNING:root:Results file already exists, it will be renamed to /Users/romainegele/Documents/Argonne/deephyper/examples/results_20240731-192212.csv
 
 
 
@@ -135,7 +135,7 @@ Finally, we plot the results from the collected DataFrame.
 
 .. GENERATED FROM PYTHON SOURCE LINES 49-58
 
-.. code-block:: default
+.. code-block:: Python
 
     import matplotlib.pyplot as plt
 
@@ -161,7 +161,7 @@ Finally, we plot the results from the collected DataFrame.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 3.929 seconds)
+   **Total running time of the script:** (0 minutes 2.740 seconds)
 
 
 .. _sphx_glr_download_examples_plot_experimental_design.py:
@@ -170,16 +170,17 @@ Finally, we plot the results from the collected DataFrame.
 
   .. container:: sphx-glr-footer sphx-glr-footer-example
 
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-
+      :download:`Download Jupyter notebook: plot_experimental_design.ipynb <plot_experimental_design.ipynb>`
 
     .. container:: sphx-glr-download sphx-glr-download-python
 
       :download:`Download Python source code: plot_experimental_design.py <plot_experimental_design.py>`
 
-    .. container:: sphx-glr-download sphx-glr-download-jupyter
+    .. container:: sphx-glr-download sphx-glr-download-zip
 
-      :download:`Download Jupyter notebook: plot_experimental_design.ipynb <plot_experimental_design.ipynb>`
+      :download:`Download zipped: plot_experimental_design.zip <plot_experimental_design.zip>`
 
 
 .. only:: html

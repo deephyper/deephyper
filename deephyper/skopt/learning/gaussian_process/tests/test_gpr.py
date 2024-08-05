@@ -11,7 +11,9 @@ from deephyper.skopt.learning import GaussianProcessRegressor
 from deephyper.skopt.learning.gaussian_process.kernels import RBF
 from deephyper.skopt.learning.gaussian_process.kernels import Matern
 from deephyper.skopt.learning.gaussian_process.kernels import WhiteKernel
-from deephyper.skopt.learning.gaussian_process.gpr import _param_for_white_kernel_in_Sum
+from deephyper.skopt.learning.gaussian_process.gpr import (
+    _param_for_white_kernel_in_Sum,
+)
 
 rng = np.random.RandomState(0)
 X = rng.randn(5, 5)

@@ -3,8 +3,8 @@ import pytest
 import numpy as np
 
 from deephyper.evaluator import RunningJob
-from deephyper.problem import HpProblem
-from deephyper.search.hps import CBO
+from deephyper.hpo import HpProblem
+from deephyper.hpo import CBO
 from deephyper.stopper import MedianStopper
 
 
