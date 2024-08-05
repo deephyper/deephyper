@@ -83,7 +83,7 @@ EXTRAS = {
         "pydata-sphinx-theme==0.15.4",
         "sphinx-copybutton",
         "sphinx-gallery",
-        # "sphinx_lfs_content", # Try to not use lfs anymore
+        "sphinx_lfs_content",  # Try to not use lfs anymore
         "sphinx-togglebutton",
     ],
 }
