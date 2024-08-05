@@ -23,6 +23,7 @@ REQUIRED = [
     "ConfigSpace>=1.1.1",
     "dm-tree",
     "Jinja2>=3.1.4",  # Related to security vulnerability: https://security.snyk.io/vuln/SNYK-PYTHON-JINJA2-6809379
+    "matplotlib",
     "numpy>=1.26.0",
     "pandas>=0.24.2",
     "packaging",
@@ -55,10 +56,9 @@ REQUIRED_TL_SDV = ["sdv~=1.15.0"]
 EXTRAS = {
     "jax-cpu": ["jax[cpu]>=0.3.25", "numpyro[cpu]"],
     "jax-cuda": ["jax[cuda]>=0.3.25", "numpyro[cuda]"],
-    "hps": [],  # hyperparameter search (already the base requirements)
     "tf-keras2": REQUIRED_TF_KERAS_2,
     "torch": REQUIRED_TORCH,
-    "hps-tl": REQUIRED_TL_SDV,  # transfer learning for bayesian optimization,
+    "hpo-tl": REQUIRED_TL_SDV,  # Transfer Learning for bayesian optimization,
     "mpi": ["mpi4py>=3.1.3"],
     "ray": ["ray[default]>=1.3.0"],
     "redis": ["redis"],
@@ -85,17 +85,13 @@ EXTRAS = {
         # "sphinx_lfs_content", # Try to not use lfs anymore
         "sphinx-togglebutton",
     ],
-    "analysis": [
-        "matplotlib",
-    ],
-    "hvd": ["horovod>=0.21.3", "mpi4py>=3.0.0"],
 }
 
 # Default dependencies for DeepHyper
 DEFAULT_DEPENDENCIES = REQUIRED[:]
-DEFAULT_DEPENDENCIES += EXTRAS["nas"]
-DEFAULT_DEPENDENCIES += EXTRAS["autodeuq"]
-DEFAULT_DEPENDENCIES += EXTRAS["hps-tl"]
+DEFAULT_DEPENDENCIES += EXTRAS["tf_keras2"]
+DEFAULT_DEPENDENCIES += EXTRAS["torch"]
+DEFAULT_DEPENDENCIES += EXTRAS["hpo-tl"]
 DEFAULT_DEPENDENCIES += EXTRAS["jax-cpu"]
 EXTRAS["default"] = DEFAULT_DEPENDENCIES
 

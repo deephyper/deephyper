@@ -15,8 +15,8 @@ DeepHyper is available on `PyPI <https://pypi.org/project/deephyper/>`_ and can 
     $ pip install "deephyper[default]" # <=> "deephyper[hps,hps-tl,tf-keras2,jax-cpu]"
     
     $ # Isolated features
-    $ pip install "deephyper[hps]" # Install Hyperparameter Search.
-    $ pip install "deephyper[hps-tl]" # Install Transfer-Learning for HPS.
+    $ pip install "deephyper" # Install Hyperparameter Optimization (HPO).
+    $ pip install "deephyper[hpo-tl]" # Install Transfer-Learning for HPO.
     $ pip install "deephyper[jax-cpu]" # Install JAX with CPU support for Learning Curve Extrapolation Stopper.
     $ pip install "deephyper[jax-cuda]" # Install JAX with GPU (cuda) support for Learning Curve Extrapolation Stopper.
     $ pip install "deephyper[tf_keras2]" # Install DeepHyper with Tensorflow/Keras2 support.
