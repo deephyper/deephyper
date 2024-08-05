@@ -138,12 +138,9 @@ Table of Contents
     Core <_autosummary/deephyper.core>
     Ensemble <_autosummary/deephyper.ensemble>
     Evaluator <_autosummary/deephyper.evaluator>
-    Keras <_autosummary/deephyper.keras>
-    NAS <_autosummary/deephyper.nas>
-    Problem <_autosummary/deephyper.hpo>
-    Search <_autosummary/deephyper.search>
+    HPO <_autosummary/deephyper.hpo>
     Skopt <_autosummary/deephyper.skopt>
-    Stopper <_autosummary/deephyper.hpo.stopper>
+    Stopper <_autosummary/deephyper.stopper>
 
 .. toctree::
     :maxdepth: 2

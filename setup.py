@@ -36,20 +36,16 @@ REQUIRED = [
 ]
 
 
-# !Requirements for Neural Architecture Search (NAS)
-REQUIRED_NAS = ["networkx", "pydot"]
+# !Requirements for tensorflow with keras 2
+REQUIRED_TF_KERAS_2 = [
+    "tensorflow~=2.17.0",
+    "tensorflow_probability~=0.24.0",
+    "tf-keras~=2.17.0",
+]
 
-REQUIRED_NAS_PLATFORM = {
-    "default": ["tensorflow>=2.0.0", "tensorflow_probability"],
-    "macOS-arm64": ["tensorflow_probability~=0.14"],
-}
-# if "macOS" in platform_infos and "arm64" in platform_infos:
-#     REQUIRED_NAS = REQUIRED_NAS + REQUIRED_NAS_PLATFORM["macOS-arm64"]
-# else:  # x86_64
-REQUIRED_NAS = REQUIRED_NAS + REQUIRED_NAS_PLATFORM["default"]
+# !Requirements for torch
+REQUIRED_TORCH = ["torch>=2.0.0"]
 
-# !Requirements for Automated Deep Ensemble with Uncertainty Quantification (AutoDEUQ)
-REQUIRED_AUTODEUQ = REQUIRED_NAS + ["ray[default]>=1.3.0"]
 
 # !Transfer Learning for Bayesian Optimization with SVD
 REQUIRED_TL_SDV = ["sdv~=1.15.0"]
@@ -57,11 +53,11 @@ REQUIRED_TL_SDV = ["sdv~=1.15.0"]
 
 # What packages are optional?
 EXTRAS = {
-    "autodeuq": REQUIRED_AUTODEUQ,  # automated deep ensemble with uncertainty quantification
     "jax-cpu": ["jax[cpu]>=0.3.25", "numpyro[cpu]"],
     "jax-cuda": ["jax[cuda]>=0.3.25", "numpyro[cuda]"],
     "hps": [],  # hyperparameter search (already the base requirements)
-    "nas": REQUIRED_NAS,  # neural architecture search
+    "tf-keras2": REQUIRED_TF_KERAS_2,
+    "torch": REQUIRED_TORCH,
     "hps-tl": REQUIRED_TL_SDV,  # transfer learning for bayesian optimization,
     "mpi": ["mpi4py>=3.1.3"],
     "ray": ["ray[default]>=1.3.0"],
