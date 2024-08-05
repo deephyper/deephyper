@@ -137,7 +137,7 @@ class Evaluator(abc.ABC):
             nest_asyncio.apply()
             Evaluator.NEST_ASYNCIO_PATCHED = True
 
-        self.spawn_hpo_jobs = True
+        self._job_class = Job
 
     def __enter__(self):
         return self
@@ -198,9 +198,7 @@ class Evaluator(abc.ABC):
         return evaluator
 
     def _create_job(self, job_id, args, run_function) -> Job:
-        if self.spawn_hpo_jobs:
-            return HPOJob(job_id, args, run_function)
-        return Job(job_id, args, run_function)
+        return self._job_class(job_id, args, run_function)
 
     async def _get_at_least_n_tasks(self, n):
         # If a user requests a batch size larger than the number of currently-running tasks, set n to the number of tasks running.

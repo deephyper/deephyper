@@ -34,7 +34,7 @@ The return value of the ``run``-function respect the following standards (but th
 """
 
 from deephyper.evaluator._evaluator import EVALUATORS, Evaluator
-from deephyper.evaluator._job import Job, RunningJob
+from deephyper.evaluator._job import Job, RunningJob, HPOJob
 from deephyper.evaluator._process_pool import ProcessPoolEvaluator
 from deephyper.evaluator._serial import SerialEvaluator
 from deephyper.evaluator._thread_pool import ThreadPoolEvaluator
@@ -45,15 +45,16 @@ from deephyper.evaluator._encoder import to_json, parse_subprocess_result
 __all__ = [
     "Evaluator",
     "EVALUATORS",
+    "HPOJob",
     "Job",
-    "RunningJob",
+    "parse_subprocess_result",
     "ProcessPoolEvaluator",
     "profile",
     "queued",
+    "RunningJob",
     "SerialEvaluator",
     "ThreadPoolEvaluator",
     "to_json",
-    "parse_subprocess_result",
 ]
 
 try:

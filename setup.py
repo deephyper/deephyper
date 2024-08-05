@@ -66,6 +66,7 @@ EXTRAS = {
     "dev": [
         # Test
         "pytest",
+        "tox",
         # Packaging
         "twine",
         # Formatter and Linter
@@ -89,7 +90,7 @@ EXTRAS = {
 
 # Default dependencies for DeepHyper
 DEFAULT_DEPENDENCIES = REQUIRED[:]
-DEFAULT_DEPENDENCIES += EXTRAS["tf_keras2"]
+DEFAULT_DEPENDENCIES += EXTRAS["tf-keras2"]
 DEFAULT_DEPENDENCIES += EXTRAS["torch"]
 DEFAULT_DEPENDENCIES += EXTRAS["hpo-tl"]
 DEFAULT_DEPENDENCIES += EXTRAS["jax-cpu"]

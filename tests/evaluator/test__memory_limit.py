@@ -57,7 +57,7 @@ class TestMemoryLimit(unittest.TestCase):
         jobs = evaluator.gather("ALL")
         result = [job.result for job in jobs]
         metadata = [job.metadata for job in jobs]
-        assert result[0] == "F_memory_limit_exceeded"
+        assert result[0]["objective"] == "F_memory_limit_exceeded"
 
     def test_memory_limit_with_profile_decorator_as_function(self):
 
@@ -76,7 +76,7 @@ class TestMemoryLimit(unittest.TestCase):
         jobs = evaluator.gather("ALL")
         result = [job.result for job in jobs]
         metadata = [job.metadata for job in jobs]
-        assert result[0] == "F_memory_limit_exceeded"
+        assert result[0]["objective"] == "F_memory_limit_exceeded"
 
 
 if __name__ == "__main__":

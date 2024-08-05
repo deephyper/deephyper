@@ -1,7 +1,7 @@
 import unittest
 import pytest
 
-from deephyper.evaluator import Evaluator, RunningJob
+from deephyper.evaluator import Evaluator, RunningJob, HPOJob
 from deephyper.evaluator.storage import MemoryStorage
 
 
@@ -76,6 +76,7 @@ class TestMemoryStorage(unittest.TestCase):
         evaluator = Evaluator.create(
             run_0, method="serial", method_kwargs={"storage": storage}
         )
+        evaluator._job_class = HPOJob
         evaluator.submit([{"x": 0}])
         job_done = evaluator.gather("ALL")[0]
         assert job_done.metadata["storage_id"] == id(storage)
@@ -84,6 +85,7 @@ class TestMemoryStorage(unittest.TestCase):
         evaluator = Evaluator.create(
             run_0, method="thread", method_kwargs={"storage": storage}
         )
+        evaluator._job_class = HPOJob
         evaluator.submit([{"x": 0}])
         job_done = evaluator.gather("ALL")[0]
         assert job_done.metadata["storage_id"] == id(storage)
@@ -92,6 +94,7 @@ class TestMemoryStorage(unittest.TestCase):
         evaluator = Evaluator.create(
             run_0, method="process", method_kwargs={"storage": storage}
         )
+        evaluator._job_class = HPOJob
         evaluator.submit([{"x": 0}])
         job_done = evaluator.gather("ALL")[0]
         assert job_done.metadata["storage_id"] != id(storage)

@@ -62,7 +62,6 @@ class Ensemble(abc.ABC):
             method=self.evaluator_method,
             method_kwargs=method_kwargs,
         )
-        self._evaluator.spawn_hpo_jobs = False
 
     def get_predictions_from_models(self, X, model_files: list):
 

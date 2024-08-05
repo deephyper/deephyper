@@ -13,7 +13,7 @@ import yaml
 from deephyper.core.exceptions import MaximumJobsSpawnReached, SearchTerminationError
 from deephyper.core.utils._introspection import get_init_params_as_json
 from deephyper.core.utils._timeout import terminate_on_timeout
-from deephyper.evaluator import Evaluator
+from deephyper.evaluator import Evaluator, HPOJob
 from deephyper.evaluator.callback import TqdmCallback
 from deephyper.skopt.moo import non_dominated_set
 
@@ -92,6 +92,8 @@ class Search(abc.ABC):
                 )
         else:
             self._evaluator = evaluator
+
+        self._evaluator._job_class = HPOJob
 
     def to_json(self):
         """Returns a json version of the search object."""
