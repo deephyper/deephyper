@@ -10,7 +10,7 @@ from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.ticker import MaxNLocator
 
 from deephyper.analysis import rank
-from deephyper.analysis.hps._paxplot import pax_parallel
+from deephyper.analysis.hpo._paxplot import pax_parallel
 
 
 def read_results_from_csv(file_path: str) -> pd.DataFrame:

@@ -1,7 +1,7 @@
 """Subpackage for hyperparameter search analysis.
 """
 
-from ._hps import (
+from ._hpo import (
     filter_failed_objectives,
     parameters_at_max,
     plot_search_trajectory_single_objective_hps,
