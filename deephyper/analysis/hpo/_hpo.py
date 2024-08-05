@@ -91,13 +91,13 @@ def parameters_at_max(
     return config, value
 
 
-def plot_search_trajectory_single_objective_hps(
+def plot_search_trajectory_single_objective_hpo(
     results, show_failures: bool = True, column="objective", ax=None, **kwargs
 ):
-    """Plot the search trajectory of a Single-Objective Hyperparameter Search.
+    """Plot the search trajectory of a Single-Objective Hyperparameter Optimization.
 
     Args:
-        results (pd.DataFrame): the results of a Hyperparameter Search.
+        results (pd.DataFrame): the results of Hyperparameter Optimization.
         show_failures (bool, optional): whether to show the failed objectives. Defaults to ``True``.
         column (str, optional): the column to use for the y-axis of the plot. Defaults to ``"objective"``.
         ax (matplotlib.pyplot.axes): the axes to use for the plot.
