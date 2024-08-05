@@ -4,7 +4,7 @@ import traceback
 
 import numpy as np
 import torch
-from deephyper.ensemble import BaseEnsemble
+from deephyper.ensemble._ensemble import Ensemble
 
 # TODO: selectMetric are metrics coded with tensorflow
 from deephyper.nn.torch.metrics import selectMetric
@@ -113,7 +113,7 @@ def model_predict(model_path, X, batch_size=32, verbose=0, load_model_func=None)
     return y
 
 
-class _TorchUQEnsemble(BaseEnsemble):
+class _TorchUQEnsemble(Ensemble):
     """Ensemble with uncertainty quantification based on uniform averaging of the predictions of each members.
 
     :meta private:

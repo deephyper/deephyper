@@ -2,10 +2,10 @@ import os
 
 import numpy as np
 
-from deephyper.ensemble import BaseEnsemble
+from deephyper.ensemble._ensemble import Ensemble
 
 
-class UQEnsemble(BaseEnsemble):
+class UQEnsemble(Ensemble):
     """Ensemble with uncertainty quantification based on uniform averaging of the predictions of each members.
 
     :meta private:

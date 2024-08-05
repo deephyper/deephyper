@@ -12,7 +12,7 @@ def _wrapper_model_predict_func(job: RunningJob, model_predict_func: callable):
     return model_predict_func(**job.parameters)
 
 
-class BaseEnsemble(abc.ABC):
+class Ensemble(abc.ABC):
     """Base class for ensembles, every new ensemble algorithms needs to extend this class.
 
     Args:
