@@ -236,12 +236,12 @@ class Search(abc.ABC):
         if max_evals_strict:
 
             def num_evals():
-                self._evaluator.num_jobs_submitted
+                return self._evaluator.num_jobs_submitted
 
         else:
 
             def num_evals():
-                self._evaluator.num_jobs_gathered
+                return self._evaluator.num_jobs_gathered
 
         n_ask = self._evaluator.num_workers
         new_batch = self.ask(n_ask)

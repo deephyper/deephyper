@@ -1045,3 +1045,9 @@ class CBO(Search):
             res[hps_name] = xi
 
         return res
+
+    def _ask(self, n):
+        raise NotImplementedError
+
+    def _tell(self, results):
+        raise NotImplementedError
