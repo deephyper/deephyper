@@ -10,7 +10,9 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from deephyper.core.exceptions import MaximumJobsSpawnReached, SearchTerminationError
+from typing import List, Dict
+
+from deephyper.core.exceptions import SearchTerminationError
 from deephyper.core.utils._introspection import get_init_params_as_json
 from deephyper.core.utils._timeout import terminate_on_timeout
 from deephyper.evaluator import Evaluator, HPOJob
@@ -32,6 +34,7 @@ class Search(abc.ABC):
     def __init__(
         self, problem, evaluator, random_state=None, log_dir=".", verbose=0, **kwargs
     ):
+        # TODO: stopper should be an argument passed here... check CBO and generalize
         # get the __init__ parameters
         self._init_params = locals()
         self._call_args = []
@@ -75,6 +78,10 @@ class Search(abc.ABC):
             )
             evaluator._columns_dumped = None
             evaluator._start_dumping = False
+
+        # TODO: make this configurable by the user
+        self._gather_type = "BATCH"
+        self._gather_batch_size = 1
 
     def check_evaluator(self, evaluator):
         if not (isinstance(evaluator, Evaluator)):
@@ -149,7 +156,8 @@ class Search(abc.ABC):
         """
         self._set_timeout(timeout)
         if max_evals_strict:
-            self._evaluator.set_max_num_jobs_spawn(max_evals)
+            # TODO: should be replaced by a property with a setter?
+            self._evaluator.set_maximum_num_jobs_submitted(max_evals)
 
         # save the search call arguments for the context
         self._call_args.append({"timeout": timeout, "max_evals": max_evals})
@@ -163,15 +171,20 @@ class Search(abc.ABC):
 
         try:
             self._search(max_evals, timeout)
-        except SearchTerminationError as exc:
-            # Collect remaining jobs
-            if max_evals_strict and isinstance(exc, MaximumJobsSpawnReached):
-                self._evaluator.gather("ALL")
+        except SearchTerminationError:
+            pass
 
-            if "saved_keys" in dir(self):
-                self._evaluator.dump_evals(saved_keys=self.saved_keys)
-            else:
-                self._evaluator.dump_evals(log_dir=self._log_dir)
+        # Collect remaining jobs
+        num_submit = self._evaluator.num_jobs_submitted
+        num_gather = self._evaluator.num_jobs_gathered
+        while num_submit > num_gather:
+            time.sleep(0.01)
+            num_submit = self._evaluator.num_jobs_submitted
+            num_gather = self._evaluator.num_jobs_gathered
+
+            self._evaluator.gather("ALL")
+
+            self._evaluator.dump_evals(log_dir=self._log_dir)
 
         if not (os.path.exists(self._path_results)):
             logging.warning(f"Could not find results file at {self._path_results}!")
@@ -182,15 +195,6 @@ class Search(abc.ABC):
         df_results = pd.read_csv(self._path_results)
 
         return df_results
-
-    @abc.abstractmethod
-    def _search(self, max_evals, timeout, max_evals_strict=False):
-        """Search algorithm to be implemented.
-
-        Args:
-            max_evals (int, optional): The maximum number of evaluations of the run function to perform before stopping the search. Defaults to -1, will run indefinitely.
-            timeout (int, optional): The time budget of the search before stopping.Defaults to None, will not impose a time budget.
-        """
 
     @property
     def search_id(self):
@@ -220,3 +224,85 @@ class Search(abc.ABC):
             df["pareto_efficient"] = False
             df.loc[mask_no_failures, "pareto_efficient"] = mask_pareto_front
             df.to_csv(df_path, index=False)
+
+    def _search(self, max_evals, timeout, max_evals_strict=False):
+        """Search algorithm to be implemented.
+
+        Args:
+            max_evals (int): The maximum number of evaluations of the run function to perform before stopping the search. Defaults to -1, will run indefinitely.
+            timeout (int): The time budget of the search before stopping.Defaults to None, will not impose a time budget.
+            max_evals_strict (bool, optional): ...
+        """
+        if max_evals_strict:
+
+            def num_evals():
+                self._evaluator.num_jobs_submitted
+
+        else:
+
+            def num_evals():
+                self._evaluator.num_jobs_gathered
+
+        n_ask = self._evaluator.num_workers
+        new_batch = self.ask(n_ask)
+
+        self._evaluator.submit(new_batch)
+
+        while max_evals < 0 or num_evals() < max_evals:
+
+            new_results = self._evaluator.gather(
+                self._gather_type, self._gather_batch_size
+            )
+
+            self._evaluator.dump_evals(log_dir=self._log_dir)
+
+            # Check if results are received from other search instances
+            # connected to the same storage
+            if isinstance(new_results, tuple) and len(new_results) == 2:
+                local_results, other_results = new_results
+                new_results = local_results + other_results
+
+            self.tell(new_results)
+
+            n_ask = len(new_results)
+            new_batch = self.ask(n_ask)
+
+            self._evaluator.submit(new_batch)
+
+    def ask(self, n: int = 1) -> List[Dict]:
+        """Ask the search for new configurations to evaluate.
+
+        Args:
+            n (int, optional): The number of configurations to ask. Defaults to 1.
+
+        Returns:
+            List[Dict]: a list of hyperparameter configurations to evaluate.
+        """
+        return self._ask(n)
+
+    @abc.abstractmethod
+    def _ask(self, n: int = 1) -> List[Dict]:
+        """Ask the search for new configurations to evaluate.
+
+        Args:
+            n (int, optional): The number of configurations to ask. Defaults to 1.
+
+        Returns:
+            List[Dict]: a list of hyperparameter configurations to evaluate.
+        """
+
+    def tell(self, results: List[HPOJob]):
+        """Tell the search the results of the evaluations.
+
+        Args:
+            results (List[HPOJob]): a list of HPOJobs from which hyperparameters and objectives can be retrieved.
+        """
+        self._tell(results)
+
+    @abc.abstractmethod
+    def _tell(self, results: List[HPOJob]):
+        """Tell the search the results of the evaluations.
+
+        Args:
+            observations (List[HPOJob]): a list of HPOJobs from which hyperparameters and objectives can be retrieved.
+        """

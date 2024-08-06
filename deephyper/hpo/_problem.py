@@ -112,8 +112,12 @@ def check_hyperparameter(parameter, name=None, default_value=None):
         return parameter
 
     if not isinstance(parameter, (list, tuple, np.ndarray, dict)):
+
+        if isinstance(parameter, (int, float, str)):
+            return csh.Constant(name=name, value=parameter)
+
         raise ValueError(
-            "Shortcut definition of an hyper-parameter has to be a list, tuple, array or dict."
+            "Shortcut definition of an hyper-parameter has to be a type in [list, tuple, array, dict, float, int, str]."
         )
 
     if not (type(name) is str):

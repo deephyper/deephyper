@@ -202,7 +202,7 @@ class RedisStorage(Storage):
             key (Hashable): A key to use to store the value.
             value (Any): The value to store.
         """
-        key = f"{search_id}.{key}"
+        key = f"search:{search_id}.{key}"
         value = pickle.dumps(value)
         self._redis.set(key, value)
 
@@ -213,7 +213,7 @@ class RedisStorage(Storage):
             search_id (Hashable): The identifier of the job.
             key (Hashable): A key to use to access the value.
         """
-        key = f"{search_id}.{key}"
+        key = f"search:{search_id}.{key}"
         value = self._redis.get(key)
         value = pickle.loads(value)
         return value

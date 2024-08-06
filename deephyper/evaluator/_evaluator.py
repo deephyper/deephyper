@@ -95,8 +95,8 @@ class Evaluator(abc.ABC):
         self.timestamp = (
             time.time()
         )  # Recorded time of when this evaluator interface was created.
-        self.max_num_jobs_spawn = -1  # Maximum number of jobs to spawn.
-        self.num_jobs_spawn_counter = 0  # Counter of jobs spawned.
+        self.maximum_num_jobs_submitted = -1  # Maximum number of jobs to spawn.
+        self._num_jobs_offset = 0
         self.loop = None  # Event loop for asyncio.
         self._start_dumping = False
         self._columns_dumped = None  # columns names dumped in csv file
@@ -152,9 +152,22 @@ class Evaluator(abc.ABC):
         self._time_timeout_set = time.time()
         self._timeout = timeout
 
-    def set_max_num_jobs_spawn(self, max_num_jobs_spawn: int):
-        self.max_num_jobs_spawn = max_num_jobs_spawn
-        self.num_jobs_spawn_counter = 0
+    def set_maximum_num_jobs_submitted(self, maximum_num_jobs_submitted: int):
+        # TODO: use storage to count submitted and gathered jobs...
+        # TODO: should be a property with a setter?
+        self.maximum_num_jobs_submitted = maximum_num_jobs_submitted
+        self._num_jobs_offset = self.num_jobs_gathered
+
+    @property
+    def num_jobs_submitted(self):
+        job_outputs = self._storage.load_out_from_all_jobs(self._search_id)
+        return len(job_outputs) - self._num_jobs_offset
+
+    @property
+    def num_jobs_gathered(self):
+        job_outputs = self._storage.load_out_from_all_jobs(self._search_id)
+        job_outputs = [val for val in job_outputs if val != "null"]
+        return len(job_outputs) - self._num_jobs_offset
 
     def to_json(self):
         """Returns a json version of the evaluator."""
@@ -226,11 +239,11 @@ class Evaluator(abc.ABC):
         for args in args_list:
 
             if (
-                self.max_num_jobs_spawn > 0
-                and self.num_jobs_spawn_counter >= self.max_num_jobs_spawn
+                self.maximum_num_jobs_submitted > 0
+                and self.num_jobs_submitted >= self.maximum_num_jobs_submitted
             ):
                 logging.info(
-                    f"Maximum number of jobs to spawn reached ({self.max_num_jobs_spawn})"
+                    f"Maximum number of jobs to spawn reached ({self.maximum_num_jobs_submitted})"
                 )
                 raise MaximumJobsSpawnReached
 
@@ -262,11 +275,9 @@ class Evaluator(abc.ABC):
 
         job.metadata["timestamp_submit"] = time.time() - self.timestamp
 
-        # call callbacks
+        # Call callbacks
         for cb in self._callbacks:
             cb.on_launch(job)
-
-        self.num_jobs_spawn_counter += 1
 
     def _on_done(self, job):
         """Called after a job has completed."""
@@ -349,7 +360,9 @@ class Evaluator(abc.ABC):
         if type == "ALL":
             size = len(self._tasks_running)  # Get all tasks.
 
-        self.loop.run_until_complete(self._get_at_least_n_tasks(size))
+        if size > 0:
+            self.loop.run_until_complete(self._get_at_least_n_tasks(size))
+
         for task in self._tasks_done:
             job = task.result()
             self._on_done(job)
