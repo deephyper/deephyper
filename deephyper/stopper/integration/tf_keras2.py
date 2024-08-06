@@ -1,6 +1,6 @@
 import warnings
 
-from tensorflow.keras.callbacks import Callback
+from tf_keras.callbacks import Callback
 
 
 class TFKerasStopperCallback(Callback):

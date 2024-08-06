@@ -462,7 +462,7 @@ class CBO(Search):
 
                     # retrieve budget consumed by job with multiple observations
                     if job_i.observations is not None:
-                        # TODO: use ALC to reduce the problem to a scalar maximization/estimation
+                        # TODO: REMOVE
                         from deephyper.stopper._lcmodel_stopper import (
                             area_learning_curve,
                         )
