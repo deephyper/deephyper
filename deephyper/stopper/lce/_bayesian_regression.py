@@ -13,6 +13,23 @@ from sklearn.utils import check_random_state
 from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
 
 
+LC_MODELS = [
+    "lin2",
+    "pow3",
+    "mmf4",
+    "vapor3",
+    "logloglin2",
+    "hill3",
+    "logpow3",
+    "pow4",
+    "exp4",
+    "janoschek4",
+    "weibull4",
+    "ilog2",
+    "arctan3",
+]
+
+
 # Learning curves models
 @jax.jit
 def f_lin2(z, rho):
@@ -225,6 +242,16 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         self.min_max_scaling = min_max_scaling
 
     def fit(self, X, y, update_prior=True):
+        """Fit the model.
+
+        Args:
+            X (np.ndarray): a 1-D array of inputs.
+            y (_type_): a 1-D array of targets.
+            update_prior (bool, optional): A boolean indicating if the prior distribution should be updated using least-squares before running the Bayesian inference. Defaults to ``True``.
+
+        Raises:
+            ValueError: if input arguments are invalid.
+        """
         check_X_y(X, y, ensure_2d=False)
 
         # !Trick for performance to avoid performign JIT again and again
@@ -312,6 +339,15 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         return self
 
     def predict(self, X, return_std=True):
+        """Predict the mean and standard deviation of the model.
+
+        Args:
+            X (np.ndarray): a 1-D array of inputs.
+            return_std (bool, optional): A boolean indicating if the standard-deviation representing uncertainty in the prediction should be returned. Defaults to ``True``.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]: the mean prediction with shape ``(len(X),)`` and the standard deviation with shape ``(len(X),)`` if ``return_std`` is ``True``.
+        """
         posterior_samples = self.predict_posterior_samples(X)
 
         mean_mu = jnp.mean(posterior_samples, axis=0)
@@ -323,6 +359,14 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         return mean_mu
 
     def predict_posterior_samples(self, X):
+        """Predict the posterior samples of the model.
+
+        Args:
+            X (np.ndarray): a 1-D array of inputs.
+
+        Returns:
+            np.ndarray: a 2-D array of shape (n_samples, len(X)) where n_samples is the number of samples and len(X) is the length of the input array.
+        """
         # Check if fit has been called
         check_is_fitted(self)
 
@@ -357,4 +401,14 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
 
     @staticmethod
     def get_parametrics_model_func(name):
+        """Return the function of the learning curve model given its name.
+
+        Should be one of ``["lin2", "pow3", "mmf4", "vapor3", "logloglin2", "hill3", "logpow3", "pow4", "exp4", "janoschek4", "weibull4", "ilog2", "arctan3"]`` where the integer suffix indicates the number of parameters of the model.
+
+        Args:
+            name (str): The name of the learning curve model.
+
+        Returns:
+            callable: a function with signature ``f(x, rho)`` of the learning curve model where ``x`` is a possible input of the model and ``rho`` is a 1-D array for the parameters of the model with length equal to the number of parameters of the model (e.g., it is of length ``3`` for ``"pow3"``).
+        """
         return getattr(sys.modules[__name__], f"f_{name}")
