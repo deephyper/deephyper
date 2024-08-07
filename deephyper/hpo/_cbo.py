@@ -25,7 +25,6 @@ from deephyper.skopt.moo import (
 # Adapt minimization -> maximization with DeepHyper
 MAP_multi_point_strategy = {"cl_min": "cl_max", "cl_max": "cl_min", "qUCB": "qLCB"}
 
-# TODO: check if qUCB is still valid
 MAP_acq_func = {"UCB": "LCB", "UCBd": "LCBd"}
 
 MAP_filter_failures = {"min": "max"}
@@ -189,7 +188,6 @@ class CBO(Search):
             "PI",
             "MES",
             "gp_hedge",
-            "qUCB",
             "UCBd",
             "EId",
             "PId",
@@ -460,46 +458,22 @@ class CBO(Search):
                     cfg, obj = job_i
                     x = list(cfg.values())
 
-                    # retrieve budget consumed by job with multiple observations
-                    if job_i.observations is not None:
-                        # TODO: REMOVE
-                        from deephyper.stopper._lcmodel_stopper import (
-                            area_learning_curve,
-                        )
-
-                        # z_values: are the steps z from the budget function b(z)
-                        # the job observations returns the observed (budgets, objectives)
-                        # steps can be deduced from the length of these lists
-                        # y_values: are the objective f(b(z))
-                        _, y_values = np.array(job_i.observations)
-                        z_values = np.arange(len(y_values)) + 1
-                        y_values = -y_values
-                        y = area_learning_curve(
-                            z_values, y_values, z_max=self._evaluator._stopper.max_steps
-                        )
+                    if isinstance(obj, numbers.Number) or all(
+                        isinstance(obj_i, numbers.Number) for obj_i in obj
+                    ):
                         opt_X.append(x)
-                        opt_y.append(y)
-
-                    # single observation returned without budget
-                    else:
-                        if isinstance(obj, numbers.Number) or all(
-                            isinstance(obj_i, numbers.Number) for obj_i in obj
+                        opt_y.append(np.negative(obj).tolist())  # !maximizing
+                    elif (type(obj) is str and "F" == obj[0]) or any(
+                        type(obj_i) is str and "F" == obj_i[0] for obj_i in obj
+                    ):
+                        if (
+                            self._opt_kwargs["acq_optimizer_kwargs"]["filter_failures"]
+                            == "ignore"
                         ):
+                            continue
+                        else:
                             opt_X.append(x)
-                            opt_y.append(np.negative(obj).tolist())  # !maximizing
-                        elif (type(obj) is str and "F" == obj[0]) or any(
-                            type(obj_i) is str and "F" == obj_i[0] for obj_i in obj
-                        ):
-                            if (
-                                self._opt_kwargs["acq_optimizer_kwargs"][
-                                    "filter_failures"
-                                ]
-                                == "ignore"
-                            ):
-                                continue
-                            else:
-                                opt_X.append(x)
-                                opt_y.append("F")
+                            opt_y.append("F")
 
                 logging.info(f"Transformation took {time.time() - t1:.4f} sec.")
 
