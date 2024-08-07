@@ -10,6 +10,7 @@ from sklearn.base import clone, is_regressor
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.utils import check_random_state
 
+from ConfigSpace.util import deactivate_inactive_hyperparameters
 from deephyper.core.utils.joblib_utils import Parallel, delayed
 
 from ..acquisition import _gaussian_acquisition, gaussian_acquisition_1D
@@ -1298,6 +1299,21 @@ class Optimizer(object):
             # note the need for [0] at the end
             self._next_x = self.space.inverse_transform(next_x.reshape(1, -1))[0]
             self._counter_fit += 1
+
+            # Check if ConfigSpace is used to check for inactive hyperparameters
+            if self.space.config_space is not None:
+                next_x = {
+                    k: v for k, v in zip(self.space.dimension_names, self._next_x)
+                }
+                next_x = dict(
+                    deactivate_inactive_hyperparameters(next_x, self.space.config_space)
+                )
+                for i, hps_name in enumerate(self.space.dimension_names):
+                    # If the parameter is inactive due to some conditions then we attribute the
+                    # lower bound value to break symmetries and enforce the same representation.
+                    self._next_x[i] = next_x.get(
+                        hps_name, self.space.dimensions[i].bounds[0]
+                    )
 
         # Pack results
         result = create_result(
