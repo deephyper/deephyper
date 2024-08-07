@@ -8,8 +8,16 @@ from deephyper.hpo._eds import ExperimentalDesignSearch
 from deephyper.hpo._problem import HpProblem
 from deephyper.hpo._random import RandomSearch
 from deephyper.hpo._search import Search
+from deephyper.hpo._regevo import RegularizedEvolution
 
-__all__ = ["CBO", "ExperimentalDesignSearch", "HpProblem", "RandomSearch", "Search"]
+__all__ = [
+    "CBO",
+    "ExperimentalDesignSearch",
+    "HpProblem",
+    "RandomSearch",
+    "RegularizedEvolution",
+    "Search",
+]
 
 try:
     from deephyper.hpo._mpi_dbo import MPIDistributedBO  # noqa: F401
