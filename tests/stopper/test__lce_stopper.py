@@ -5,7 +5,6 @@ import pytest
 
 from deephyper.evaluator import RunningJob
 from deephyper.hpo import CBO, HpProblem
-from deephyper.stopper import LCModelStopper
 
 
 @pytest.mark.jax
@@ -40,6 +39,7 @@ def test_bayesian_learning_curve_regression():
 
 
 def run(job: RunningJob) -> dict:
+    from deephyper.stopper import LCModelStopper
 
     assert isinstance(job.stopper, LCModelStopper)
 
@@ -69,6 +69,7 @@ def run(job: RunningJob) -> dict:
 @pytest.mark.slow
 @pytest.mark.jax
 def test_lce_stopper(tmp_path):
+    from deephyper.stopper import LCModelStopper
 
     # define the variable you want to optimize
     problem = HpProblem()
@@ -100,4 +101,4 @@ def test_lce_stopper(tmp_path):
 
 if __name__ == "__main__":
     # test_bayesian_learning_curve_regression()
-    test_lce_stopper(".")
+    test_lce_stopper(tmp_path="/tmp/deephyper_test")
