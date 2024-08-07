@@ -12,11 +12,19 @@ class ExperimentalDesignSearch(CBO):
 
     Args:
         problem (HpProblem): Hyperparameter problem describing the search space to explore.
+
         evaluator (Evaluator): An ``Evaluator`` instance responsible of distributing the tasks.
+
         random_state (int, optional): Random seed. Defaults to ``None``.
+
         log_dir (str, optional): Log directory where search's results are saved. Defaults to ``"."``.
+
         verbose (int, optional): Indicate the verbosity level of the search. Defaults to ``0``.
+
+        stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the function. Defaults to ``None`` which does not use any stopper.
+
         n_points (int, optional): Number of points to sample. Defaults to ``None``.
+
         design (str, optional): Experimental design to use. Defaults to ``"random"``.
             - ``"random"`` for uniform random numbers.
             - ``"sobol"`` for a Sobol' sequence.
@@ -24,6 +32,7 @@ class ExperimentalDesignSearch(CBO):
             - ``"hammersly"`` for a Hammersly sequence.
             - ``"lhs"`` for a latin hypercube sequence.
             - ``"grid"`` for a uniform grid sequence.
+
         initial_points (list, optional): List of initial points to evaluate. Defaults to ``None``.
     """
 
@@ -34,6 +43,7 @@ class ExperimentalDesignSearch(CBO):
         random_state: int = None,
         log_dir: str = ".",
         verbose: int = 0,
+        stopper=None,
         n_points: int = None,
         design: str = "random",
         initial_points=None,
@@ -48,6 +58,7 @@ class ExperimentalDesignSearch(CBO):
             random_state,
             log_dir,
             verbose,
+            stopper,
             n_initial_points=n_points,
             initial_points=initial_points,
             initial_point_generator=design,

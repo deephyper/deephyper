@@ -32,14 +32,28 @@ class RandomSearch(Search):
 
     Args:
         problem: object describing the search/optimization problem.
+
         evaluator: object describing the evaluation process.
+
         random_state (np.random.RandomState, optional): Initial random state of the search. Defaults to ``None``.
+
         log_dir (str, optional): Path to the directoy where results of the search are stored. Defaults to ``"."``.
+
         verbose (int, optional): Use verbose mode. Defaults to ``0``.
+
+        stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the function. Defaults to ``None`` which does not use any stopper.
     """
 
-    def __init__(self, problem, evaluator, random_state=None, log_dir=".", verbose=0):
-        super().__init__(problem, evaluator, random_state, log_dir, verbose)
+    def __init__(
+        self,
+        problem,
+        evaluator,
+        random_state=None,
+        log_dir=".",
+        verbose=0,
+        stopper=None,
+    ):
+        super().__init__(problem, evaluator, random_state, log_dir, verbose, stopper)
         self._problem.space.seed(self._random_state.randint(0, 2**31))
 
     def _ask(self, n: int = 1) -> List[Dict]:

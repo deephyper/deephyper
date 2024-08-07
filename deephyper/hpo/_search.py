@@ -25,14 +25,27 @@ class Search(abc.ABC):
 
     Args:
         problem: object describing the search/optimization problem.
+
         evaluator: object describing the evaluation process.
+
         random_state (np.random.RandomState, optional): Initial random state of the search. Defaults to ``None``.
+
         log_dir (str, optional): Path to the directoy where results of the search are stored. Defaults to ``"."``.
+
         verbose (int, optional): Use verbose mode. Defaults to ``0``.
+
+        stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the function. Defaults to ``None`` which does not use any stopper.
     """
 
     def __init__(
-        self, problem, evaluator, random_state=None, log_dir=".", verbose=0, **kwargs
+        self,
+        problem,
+        evaluator,
+        random_state=None,
+        log_dir=".",
+        verbose=0,
+        stopper=None,
+        **kwargs,
     ):
         # TODO: stopper should be an argument passed here... check CBO and generalize
         # get the __init__ parameters
@@ -82,6 +95,8 @@ class Search(abc.ABC):
         # TODO: make this configurable by the user
         self._gather_type = "BATCH"
         self._gather_batch_size = 1
+
+        self._evaluator._stopper = stopper
 
     def check_evaluator(self, evaluator):
         if not (isinstance(evaluator, Evaluator)):

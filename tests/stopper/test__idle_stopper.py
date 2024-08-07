@@ -58,4 +58,4 @@ def test_idle_stopper(tmp_path):
 
 
 if __name__ == "__main__":
-    test_idle_stopper(tmp_path=".")
+    test_idle_stopper(tmp_path="/tmp/deephyper_test")
