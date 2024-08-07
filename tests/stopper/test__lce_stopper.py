@@ -8,6 +8,7 @@ from deephyper.hpo import CBO, HpProblem
 from deephyper.stopper import LCModelStopper
 
 
+@pytest.mark.jax
 def test_bayesian_learning_curve_regression():
     import matplotlib.pyplot as plt
 
@@ -64,7 +65,9 @@ def run(job: RunningJob) -> dict:
     }
 
 
+@pytest.mark.hps
 @pytest.mark.slow
+@pytest.mark.jax
 def test_lce_stopper(tmp_path):
 
     # define the variable you want to optimize
