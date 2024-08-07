@@ -251,16 +251,23 @@ class _TorchUQEnsembleRegressor(_TorchUQEnsemble):
     """Ensemble with uncertainty quantification for regression based on uniform averaging of the predictions of each members.
 
     Args:
-        model_dir (str): Path to directory containing saved Keras models in .h5 format.
-        loss (callable): a callable taking (y_true, y_pred) as input.
-        size (int, optional): Number of unique models used in the ensemble. Defaults to 5.
-        verbose (bool, optional): Verbose mode. Defaults to True.
-        ray_address (str, optional): Address of the Ray cluster. If "auto" it will try to connect to an existing cluster. If "" it will start a local Ray cluster. Defaults to "".
-        num_cpus (int, optional): Number of CPUs allocated to load one model and predict. Defaults to 1.
-        num_gpus (int, optional): Number of GPUs allocated to load one model and predict. Defaults to None.
+        model_dir (str): Path to directory containing saved models.
+
+        loss (callable): a callable taking (y_true, y_pred) as input. Defaults to ``"nll"``.
+
+        size (int, optional): Number of unique models used in the ensemble. Defaults to ``5``.
+
+        verbose (bool, optional): Verbose mode. Defaults to ``True``.
+
         batch_size (int, optional): Batch size used batchify the inference of loaded models. Defaults to 32.
-        selection (str, optional): Selection strategy to build the ensemble. Value in ``[["topk", "caruana"]``. Default to ``topk``.
+
+        selection (str, optional): Selection strategy to build the ensemble. Value in ``["topk", "caruana"]``. Default to ``topk``.
+
         load_model_func (callable, optional): Function to load checkpointed models. It takes as input the path to the model file and return the loaded model. Defaults to ``None`` for default model loading strategy.
+
+        evaluator_method (str, optional): Method used to run the (parallel) inferences of the members of the ensemble. Defaults to ``"serial"`` for sequential in-process execution.
+
+        evaluator_method_kwargs (dict, optional): Keyword arguments passed to the evaluator method. Defaults to ``None``.
     """
 
     def __init__(
@@ -329,13 +336,23 @@ class _TorchUQEnsembleClassifier(_TorchUQEnsemble):
     """Ensemble with uncertainty quantification for classification based on uniform averaging of the predictions of each members.
 
     Args:
-        model_dir (str): Path to directory containing saved Keras models in .h5 format.
-        loss (callable): a callable taking (y_true, y_pred) as input.
-        size (int, optional): Number of unique models used in the ensemble. Defaults to 5.
-        verbose (bool, optional): Verbose mode. Defaults to True.
+        model_dir (str): Path to directory containing saved models.
+
+        loss (callable): a callable taking (y_true, y_pred) as input. Defaults to ``"cce"``.
+
+        size (int, optional): Number of unique models used in the ensemble. Defaults to ``5``.
+
+        verbose (bool, optional): Verbose mode. Defaults to ``True``.
+
         batch_size (int, optional): Batch size used batchify the inference of loaded models. Defaults to 32.
-        selection (str, optional): Selection strategy to build the ensemble. Value in ``[["topk", "caruana"]``. Default to ``topk``.
+
+        selection (str, optional): Selection strategy to build the ensemble. Value in ``["topk", "caruana"]``. Default to ``topk``.
+
         load_model_func (callable, optional): Function to load checkpointed models. It takes as input the path to the model file and return the loaded model. Defaults to ``None`` for default model loading strategy.
+
+        evaluator_method (str, optional): Method used to run the (parallel) inferences of the members of the ensemble. Defaults to ``"serial"`` for sequential in-process execution.
+
+        evaluator_method_kwargs (dict, optional): Keyword arguments passed to the evaluator method. Defaults to ``None``.
     """
 
     def __init__(

@@ -20,7 +20,9 @@ class Ensemble(abc.ABC):
         loss (callable): a callable taking (y_true, y_pred) as input.
         size (int, optional): Number of unique models used in the ensemble. Defaults to 5.
         verbose (bool, optional): Verbose mode. Defaults to True.
-        batch_size (int, optional): Batch size used batchify the inference of loaded models. Defaults to 32.
+        batch_size (int, optional): Batch size used to batchify the inference of loaded models. Defaults to ``32``.
+        evaluator_method (str, optional): Method used to run the (parallel) inferences of the members of the ensemble. Defaults to ``"serial"`` for sequential in-process execution.
+        evaluator_method_kwargs (dict, optional): Keyword arguments passed to the evaluator method. Defaults to ``None``.
     """
 
     def __init__(

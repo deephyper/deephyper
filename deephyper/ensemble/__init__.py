@@ -1,4 +1,8 @@
-"""The ``ensemble`` module provides a way to build ensembles of checkpointed deep neural networks from ``tensorflow.keras``, with ``.h5`` format, to regularize and boost predictive performance as well as estimate better uncertainties.
+"""Sub-package to provides tools to build ensembles of models >
+
+For Tensorflow/Keras 2.0 models use the ``DEEPHYPER_NN_BACKEND=tf_keras2`` environment variable and make sure to use ``tf_keras`` package. Checkpointed models can have the extension ``.h5`` or ``.keras``.
+
+For PyTorch models use the ``DEEPHYPER_NN_BACKEND=torch`` environment variable. Checkpointed models can have the extension ``.pth``.
 """
 
 from deephyper.ensemble._ensemble import Ensemble
