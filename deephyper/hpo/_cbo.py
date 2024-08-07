@@ -124,8 +124,6 @@ class CBO(Search):
 
         initial_points (List[Dict], optional): A list of initial points to evaluate where each point is a dictionnary where keys are names of hyperparameters and values their corresponding choice. Defaults to ``None`` for them to be generated randomly from the search space.
 
-        sync_communcation (bool, optional): Performs the search in a batch-synchronous manner. Defaults to ``False`` for asynchronous updates.
-
         filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. If ``"ignore"`` is passed then failed configurations will be filtered-out and not passed to the surrogate model. For multiple objectives, failure of any single objective will lead to treating that configuration as failed and each of these multiple objective will be replaced by their individual ``"min"`` or ``"mean"`` of past configurations. Defaults to ``"min"`` to replace failed configurations objectives by the running min of all objectives.
 
         max_failures (int, optional): Maximum number of failed configurations allowed before observing a valid objective value when ``filter_failures`` is not equal to ``"ignore"``. Defaults to ``100``.
@@ -165,7 +163,6 @@ class CBO(Search):
         n_initial_points: int = 10,
         initial_point_generator: str = "random",
         initial_points=None,
-        sync_communication: bool = False,
         filter_failures: str = "min",
         max_failures: int = 100,
         moo_lower_bounds=None,
@@ -342,8 +339,6 @@ class CBO(Search):
             objective_scaler=objective_scaler,
         )
 
-        self._gather_type = "ALL" if sync_communication else "BATCH"
-
         # Scheduler policy
         scheduler = {"type": "bandit"} if scheduler is None else scheduler
         self.scheduler = None
@@ -446,7 +441,9 @@ class CBO(Search):
             # Collecting finished evaluations
             logging.info("Gathering jobs...")
             t1 = time.time()
-            new_results = self._evaluator.gather(self._gather_type, size=1)
+            new_results = self._evaluator.gather(
+                self.gather_type, size=self.gather_batch_size
+            )
             if isinstance(new_results, tuple) and len(new_results) == 2:
                 local_results, other_results = new_results
                 new_results = local_results + other_results

@@ -92,9 +92,9 @@ class Search(abc.ABC):
             evaluator._columns_dumped = None
             evaluator._start_dumping = False
 
-        # TODO: make this configurable by the user
-        self._gather_type = "BATCH"
-        self._gather_batch_size = 1
+        # Default setting is asynchronous
+        self.gather_type = "BATCH"
+        self.gather_batch_size = 1
 
         self._evaluator._stopper = stopper
 
@@ -266,7 +266,7 @@ class Search(abc.ABC):
         while max_evals < 0 or num_evals() < max_evals:
 
             new_results = self._evaluator.gather(
-                self._gather_type, self._gather_batch_size
+                self.gather_type, self.gather_batch_size
             )
 
             self._evaluator.dump_evals(log_dir=self._log_dir)

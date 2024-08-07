@@ -66,8 +66,6 @@ class MPIDistributedBO(CBO):
 
         initial_points (List[Dict], optional): A list of initial points to evaluate where each point is a dictionnary where keys are names of hyperparameters and values their corresponding choice. Defaults to ``None`` for them to be generated randomly from the search space.
 
-        sync_communcation (bool, optional): Performs the search in a batch-synchronous manner. Defaults to ``False`` for asynchronous updates.
-
         filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. If ``"ignore"`` is passed then failed configurations will be filtered-out and not passed to the surrogate model. For multiple objectives, failure of any single objective will lead to treating that configuration as failed and each of these multiple objective will be replaced by their individual ``"min"`` or ``"mean"`` of past configurations. Defaults to ``"mean"`` to replace by failed configurations by the running mean of objectives.
 
         max_failures (int, optional): Maximum number of failed configurations allowed before observing a valid objective value when ``filter_failures`` is not equal to ``"ignore"``. Defaults to ``100``.
@@ -108,7 +106,6 @@ class MPIDistributedBO(CBO):
         n_initial_points: int = 10,
         initial_point_generator: str = "random",
         initial_points=None,
-        sync_communication: bool = False,
         filter_failures: str = "mean",
         max_failures: int = 100,
         moo_lower_bounds=None,
@@ -178,7 +175,6 @@ class MPIDistributedBO(CBO):
                 n_initial_points=n_initial_points,
                 initial_point_generator=initial_point_generator,
                 initial_points=initial_points,
-                sync_communication=sync_communication,
                 filter_failures=filter_failures,
                 max_failures=max_failures,
                 moo_lower_bounds=moo_lower_bounds,
@@ -212,7 +208,6 @@ class MPIDistributedBO(CBO):
                 n_initial_points=n_initial_points,
                 initial_point_generator=initial_point_generator,
                 initial_points=initial_points,
-                sync_communication=sync_communication,
                 filter_failures=filter_failures,
                 max_failures=max_failures,
                 moo_lower_bounds=moo_lower_bounds,
