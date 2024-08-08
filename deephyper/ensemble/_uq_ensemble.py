@@ -69,10 +69,6 @@ class UQEnsemble(Ensemble):
     def evaluator_method(self):
         return self._ensemble.evaluator_method
 
-    @evaluator_method.setter
-    def ray_address(self, value):
-        self._ensemble.evaluator_method = value
-
     @property
     def evaluator_method_kwargs(self):
         return self._ensemble.evaluator_method_kwargs
