@@ -415,7 +415,68 @@ def test_cbo_categorical_variable(tmp_path):
     assert results.objective.max() >= 105
 
 
+@pytest.mark.slow
+@pytest.mark.hps
+def test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path):
+    import numpy as np
+    from deephyper.hpo import HpProblem
+    from deephyper.hpo import CBO
+    from deephyper.evaluator import Evaluator
+
+    from ConfigSpace import GreaterThanCondition
+
+    problem = HpProblem()
+
+    max_num_layers = 10
+    num_layers = problem.add_hyperparameter(
+        (1, max_num_layers), "num_layers", default_value=2
+    )
+
+    conditions = []
+    for i in range(max_num_layers):
+        layer_i_units = problem.add_hyperparameter(
+            (1, 100), f"layer_{i}_units", default_value=32
+        )
+
+        if i > 0:
+            conditions.extend(
+                [
+                    GreaterThanCondition(layer_i_units, num_layers, i),
+                ]
+            )
+
+    problem.add_conditions(conditions)
+    print(problem)
+
+    def run(job):
+        num_layers = job.parameters["num_layers"]
+        return sum(job.parameters[f"layer_{i}_units"] for i in range(num_layers))
+
+    search = CBO(
+        problem,
+        run,
+        random_state=42,
+        verbose=1,
+        log_dir=tmp_path,
+        acq_optimizer="mixedga",
+        acq_optimizer_freq=1,
+        kappa=5.0,
+        scheduler={"type": "periodic-exp-decay", "period": 25, "kappa_final": 0.0001},
+        objective_scaler="identity",
+    )
+    results = search.search(max_evals=100)
+
+    import matplotlib.pyplot as plt
+    from deephyper.analysis.hpo import plot_search_trajectory_single_objective_hpo
+
+    fig, ax = plot_search_trajectory_single_objective_hpo(results)
+    plt.show()
+
+
 if __name__ == "__main__":
     # test_sample_types(tmp_path=".")
-    test_sample_types_conditional(tmp_path=".")
+    # test_sample_types_conditional(tmp_path=".")
     # test_timeout(tmp_path=".")
+    test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(
+        tmp_path="/tmp/deephyper_test"
+    )

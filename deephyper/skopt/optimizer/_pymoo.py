@@ -1,7 +1,11 @@
 from collections import OrderedDict
 
 import numpy as np
+
+from ConfigSpace.util import deactivate_inactive_hyperparameters
+
 from pymoo.core.problem import ElementwiseProblem, Problem
+from pymoo.core.repair import Repair
 from pymoo.core.termination import Termination
 from pymoo.core.variable import Choice, Integer, Real
 from pymoo.termination.ftol import SingleObjectiveSpaceTermination
@@ -46,6 +50,7 @@ def convert_space_to_pymoo_mixed(space):
 class PyMOOMixedVectorizedProblem(Problem):
     def __init__(self, space, acq_func=None, **kwargs):
         super().__init__(vars=convert_space_to_pymoo_mixed(space), n_obj=1, **kwargs)
+        self.space = space
         self.acq_func = acq_func
         self.vars_names = space.dimension_names
 
@@ -54,7 +59,12 @@ class PyMOOMixedVectorizedProblem(Problem):
             x = x[0]
 
         # !Using np.array blindly can lead to errors by mapping types to string
-        x = list(map(lambda xi: [xi[k] for k in self.vars_names], x))
+        x = list(
+            map(
+                lambda xi: [xi[k] for k in self.vars_names],
+                x,
+            )
+        )
         y = self.acq_func(x).reshape(-1)
         out["F"] = y
 
@@ -106,3 +116,29 @@ class DefaultSingleObjectiveMixedTermination(DefaultMixedTermination):
             SingleObjectiveSpaceTermination(ftol, only_feas=True), period=period
         )
         super().__init__(f, n_max_gen)
+
+
+class ConfigSpaceRepair(Repair):
+    def __init__(self, space):
+        super().__init__()
+        self.space = space
+        self.config_space = self.space.config_space
+
+    def _do(self, problem, x, **kwargs):
+        def deactivate_inactive_dimensions(x: dict):
+            x = dict(deactivate_inactive_hyperparameters(x, self.config_space))
+            for i, hps_name in enumerate(self.space.dimension_names):
+                # If the parameter is inactive due to some conditions then we attribute the
+                # lower bound value to break symmetries and enforce the same representation.
+                x[hps_name] = x.get(hps_name, self.space.dimensions[i].bounds[0])
+            return x
+
+        if self.config_space:
+            x[:] = list(
+                map(
+                    lambda xi: deactivate_inactive_dimensions(xi),
+                    x,
+                )
+            )
+
+        return x

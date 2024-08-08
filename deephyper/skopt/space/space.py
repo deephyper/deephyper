@@ -1432,3 +1432,16 @@ class Space:
             Xi = [x[i] for x in X]
             if hasattr(dim, "update_prior"):
                 dim.update_prior(Xi, y, q=q)
+
+    def deactivate_inactive_dimensions(self, x):
+        x = x[:]
+        if self.config_space is not None:
+            x_dict = {k: v for k, v in zip(self.dimension_names, x)}
+            x_dict = dict(
+                deactivate_inactive_hyperparameters(x_dict, self.config_space)
+            )
+            for i, hps_name in enumerate(self.dimension_names):
+                # If the parameter is inactive due to some conditions then we attribute the
+                # lower bound value to break symmetries and enforce the same representation.
+                x[i] = x_dict.get(hps_name, self.dimensions[i].bounds[0])
+        return x
