@@ -65,7 +65,7 @@ class Ensemble(abc.ABC):
             method_kwargs=method_kwargs,
         )
 
-    def get_predictions_from_models(self, X, model_files: list):
+    def predict_with_models(self, X, model_files: list):
 
         self._evaluator.submit(
             [
@@ -80,7 +80,7 @@ class Ensemble(abc.ABC):
         )
 
         jobs_done = self._evaluator.gather("ALL")
-        jobs_done = list(sorted(jobs_done, key=lambda j: j.id.split(".")[-1]))
+        jobs_done = list(sorted(jobs_done, key=lambda j: int(j.id.split(".")[-1])))
 
         y_pred = [job.result for job in jobs_done]
         y_pred = np.array([arr for arr in y_pred if arr is not None])

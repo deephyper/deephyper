@@ -1,7 +1,5 @@
 from collections import OrderedDict
 
-from deephyper.core.utils import load_attr
-
 metrics_func = OrderedDict()
 
 metrics_obj = OrderedDict()
@@ -18,13 +16,9 @@ def selectMetric(name: str):
     """
     if callable(name):
         return name
-    if metrics_func.get(name) is None and metrics_obj.get(name) is None:
-        try:
-            return load_attr(name)
-        except Exception:
-            return name  # supposing it is referenced in keras metrics
+    elif name in metrics_func:
+        return metrics_func[name]
+    elif name in metrics_obj:
+        return metrics_obj[name]()
     else:
-        if name in metrics_func:
-            return metrics_func[name]
-        else:
-            return metrics_obj[name]()
+        raise ValueError(f"Metric '{name}' not found!")

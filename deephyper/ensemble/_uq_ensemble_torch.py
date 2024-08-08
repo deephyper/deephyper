@@ -199,9 +199,7 @@ class _TorchUQEnsemble(Ensemble):
         def model_path(f):
             return os.path.join(self.model_dir, f)
 
-        y_pred = self.get_predictions_from_models(
-            X, (model_path(f) for f in model_files)
-        )
+        y_pred = self.predict_with_models(X, (model_path(f) for f in model_files))
 
         self._members_indexes = self._select_members(
             self.loss, y_true=y, y_pred=y_pred, k=self.size
@@ -212,7 +210,7 @@ class _TorchUQEnsemble(Ensemble):
         def model_path(f):
             return os.path.join(self.model_dir, f)
 
-        y_pred = self.get_predictions_from_models(
+        y_pred = self.predict_with_models(
             X, (model_path(f) for f in self.members_files)
         )
 
@@ -309,7 +307,7 @@ class _TorchUQEnsembleRegressor(_TorchUQEnsemble):
         def model_path(f):
             return os.path.join(self.model_dir, f)
 
-        y_pred = y_pred = self.get_predictions_from_models(
+        y_pred = y_pred = self.predict_with_models(
             X, (model_path(f) for f in self.members_files)
         )
 
