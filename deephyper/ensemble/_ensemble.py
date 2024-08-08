@@ -66,6 +66,15 @@ class Ensemble(abc.ABC):
         )
 
     def predict_with_models(self, X, model_files: list):
+        """Given a sequence of models, this method will execute the inference of each model on the provided data.
+
+        Args:
+            X (np.ndarray): The input data.
+            model_files (list): the sequence of models.
+
+        Returns:
+            np.ndarray: the inference of shape (n_models, n_samples, n_outputs)
+        """
 
         self._evaluator.submit(
             [
