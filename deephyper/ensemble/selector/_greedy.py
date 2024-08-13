@@ -31,11 +31,13 @@ class GreedySelector(Selector):
         # Greedy steps
         while len(np.unique(selected_indices)) < self.k:
             losses = [
-                self.loss_func(
-                    y,
-                    self.aggregator.aggregate(
-                        [y_predictors[i] for i in selected_indices + [i]],
-                    ),
+                np.mean(
+                    self.loss_func(
+                        y,
+                        self.aggregator.aggregate(
+                            [y_predictors[i] for i in selected_indices + [i]],
+                        ),
+                    )
                 )
                 for i in range(n_predictors)  # iterate over all models
             ]

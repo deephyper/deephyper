@@ -1,5 +1,6 @@
 import abc
 
+import numpy as np
 import scipy.stats as ss
 
 
@@ -12,11 +13,21 @@ class Loss(abc.ABC):
 
 
 class SquaredError(Loss):
+    """The usual square loss ``(y_true - y_pred)**2`` used to estimate ``E[Y|X=x]``."""
 
     def __call__(self, y_true, y_pred):
         if isinstance(y_pred, dict):
             y_pred = y_pred["loc"]
-        return ((y_true - y_pred) ** 2).mean()
+        return np.square(y_true - y_pred)
+
+
+class AbsoluteError(Loss):
+    """The usual absolute loss ``(y_true - y_pred)**2`` used to estimate the median of ``P(Y|X=x)``."""
+
+    def __call__(self, y_true, y_pred):
+        if isinstance(y_pred, dict):
+            y_pred = y_pred["loc"]
+        return np.abs(y_true - y_pred)
 
 
 class NormalNegLogLikelihood(Loss):
@@ -25,5 +36,4 @@ class NormalNegLogLikelihood(Loss):
         self.dist = ss.norm
 
     def __call__(self, y_true, y_pred):
-        nll = -self.dist.logpdf(y_true, loc=y_pred["loc"], scale=y_pred["scale"]).mean()
-        return nll
+        return -self.dist.logpdf(y_true, loc=y_pred["loc"], scale=y_pred["scale"])
