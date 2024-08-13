@@ -4,6 +4,7 @@ import scipy.stats as ss
 
 
 class Loss(abc.ABC):
+    """Represents a loss function for ensembles."""
 
     @abc.abstractmethod
     def __call__(self, y_true, y_pred):
@@ -13,6 +14,8 @@ class Loss(abc.ABC):
 class SquaredError(Loss):
 
     def __call__(self, y_true, y_pred):
+        if isinstance(y_pred, dict):
+            y_pred = y_pred["loc"]
         return ((y_true - y_pred) ** 2).mean()
 
 
