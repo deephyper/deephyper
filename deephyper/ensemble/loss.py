@@ -37,3 +37,29 @@ class NormalNegLogLikelihood(Loss):
 
     def __call__(self, y_true, y_pred):
         return -self.dist.logpdf(y_true, loc=y_pred["loc"], scale=y_pred["scale"])
+
+
+class ZeroOneLoss(Loss):
+    """Zero-One loss function for classification."""
+
+    def __init__(self, from_proba=False):
+        self.from_proba = from_proba
+
+    def __call__(self, y_true, y_pred):
+        if self.from_proba:
+            return np.array(y_true != np.argmax(y_pred, axis=-1), dtype=float)
+        else:
+            return np.array(y_true != y_pred, dtype=float)
+
+
+class CategoricalCrossEntropy(Loss):
+    """Categorical-Cross Entropy (a.k.a., Log-Loss) function for classification."""
+
+    def __init__(self, from_proba=False):
+        self.from_proba = from_proba
+
+    def __call__(self, y_true, y_pred):
+        if self.from_proba:
+            return -np.log(y_pred[..., y_true])
+        else:
+            return -np.log(y_pred)
