@@ -29,7 +29,12 @@ class TorchPredictor(Predictor):
         training = self.module.training
         if training:
             self.module.eval()
-        y = self.module(X)
+
+        if hasattr(self.module, "predict_proba"):
+            y = self.module.predict_proba(X)
+        else:
+            y = self.module(X)
+
         self.module.train(training)
         y = self.post_process_predictions(y)
         return y

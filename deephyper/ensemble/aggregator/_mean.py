@@ -22,5 +22,5 @@ class MeanAggregator(Aggregator):
         Returns:
             np.array: Aggregated predictions of shape ``(n_samples, n_outputs)``.
         """
-        y = np.asarray(y)
-        return np.average(y, axis=0, weights=self.weights)
+        y = np.average(y, axis=0, weights=self.weights)
+        return y
