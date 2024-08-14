@@ -4,7 +4,7 @@ from typing import List
 
 
 class Aggregator(abc.ABC):
-    """Represents an aggregation function for the predictions of a set of predictors."""
+    """Base class that represents an aggregation function for the predictions of a set of predictors."""
 
     @abc.abstractmethod
     def aggregate(self, y: List):

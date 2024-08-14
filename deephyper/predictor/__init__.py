@@ -1,3 +1,5 @@
+"""Subpackage for predictor models."""
+
 from deephyper.predictor._predictor import (
     Predictor,
     PredictorLoader,

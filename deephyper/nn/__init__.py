@@ -1,1 +1,2 @@
-"""Sub-package for Neural Network utilities."""
+"""Subpackage for Neural Network utilities.
+"""

@@ -18,6 +18,16 @@ def _wrapper_predict_with_predictor(job: RunningJob):
 
 
 class EnsemblePredictor(Predictor):
+    """A predictor that is itself an ensemble of multiple predictors.
+
+    Args:
+        predictors (Sequence[Predictor]): the list of predictors to put in the ensemble.
+        aggregator (Aggregator): the aggregation function to fuse the predictions of the predictors into one prediction.
+        evaluator (str | Dict, optional): The parallel strategy to compute predictions from the list of predictions. If it is a ``str`` it must be a possible ``method`` of ``Evaluator.create(..., method=...)``. If it is a ``dict`` it must have two keys ``method`` and ``method_kwargs`` such as ``Evaluator.create(...)``. Defaults to ``None`` which is equivalent to ``evaluator="serial"`` for serial evaluations.
+
+    Raises:
+        ValueError: when the type of the ``evaluator`` argument is not ``str`` or ``dict``.
+    """
 
     def __init__(
         self,
@@ -25,6 +35,7 @@ class EnsemblePredictor(Predictor):
         aggregator: Aggregator,
         evaluator: str | Dict = None,
     ):
+
         self.predictors = predictors
         self.aggregator = aggregator
         self._evaluator = None
@@ -62,6 +73,14 @@ class EnsemblePredictor(Predictor):
         )
 
     def predict(self, X: np.ndarray):
+        """Compute the prediction of the ensemble.
+
+        Args:
+            X (np.ndarray): the input query for the prediction.
+
+        Returns:
+            np.ndarray: the target prediction.
+        """
         y_predictors = self.predictions_from_predictors(X, self.predictors)
 
         y = self.aggregator.aggregate(y_predictors)
@@ -70,6 +89,15 @@ class EnsemblePredictor(Predictor):
     def predictions_from_predictors(
         self, X: np.ndarray, predictors: Sequence[Predictor]
     ):
+        """Compute the predictions of a list of predictors.
+
+        Args:
+            X (np.ndarray): the input query for the predictions.
+            predictors (Sequence[Predictor]): the list of predictors to compute the predictions.
+
+        Returns:
+            List[np.ndarray]: the sequence of predictions in the same order that the list of predictors.
+        """
         self._evaluator.submit(
             [
                 {

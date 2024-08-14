@@ -1,15 +1,11 @@
 import abc
 from typing import Callable, Sequence
 
-import numpy as np
-
-from deephyper.predictor import Predictor
-from deephyper.ensemble.aggregator._aggregator import Aggregator
 from deephyper.ensemble.loss import Loss
 
 
 class Selector(abc.ABC):
-    """Represents an algorithm that select a subset of predictors from a set of available predictors in order to build an ensemble.
+    """Base class that represents an algorithm that select a subset of predictors from a set of available predictors in order to build an ensemble.
 
     Args:
         loss_func (Callable or Loss): a loss function that takes two arguments: the true target values and the predicted target values.

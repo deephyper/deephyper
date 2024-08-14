@@ -7,7 +7,7 @@ import numpy as np
 
 
 class Predictor(abc.ABC):
-    """Represents a model ``f(X) = y`` that can predict."""
+    """Base class that represents a model ``f(X) = y`` that can predict."""
 
     @abc.abstractmethod
     def predict(self, X: np.ndarray):

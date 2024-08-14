@@ -1,3 +1,6 @@
+"""Subpackage with aggregation functions for the predictions of set of predicting models.
+"""
+
 from deephyper.ensemble.aggregator._aggregator import Aggregator
 from deephyper.ensemble.aggregator._mean import MeanAggregator
 from deephyper.ensemble.aggregator._mixed_normal import MixedNormalAggregator
