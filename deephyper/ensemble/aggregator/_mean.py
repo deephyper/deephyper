@@ -17,7 +17,7 @@ class MeanAggregator(Aggregator):
         """Aggregate the predictions using the mean.
 
         Args:
-            y (np.array): Predictions array of shape ``(n_models, n_samples, n_outputs)``.
+            y (np.array): Predictions array of shape ``(n_predictors, n_samples, n_outputs)``.
 
         Returns:
             np.array: Aggregated predictions of shape ``(n_samples, n_outputs)``.

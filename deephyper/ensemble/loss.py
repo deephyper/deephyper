@@ -66,6 +66,8 @@ class ZeroOneLoss(Loss):
         self._predict_proba = predict_proba
 
     def __call__(self, y_true: np.ndarray, y_pred: np.ndarray | dict) -> np.ndarray:
+        if isinstance(y_pred, dict):
+            y_pred = y_pred["loc"]
         if self._predict_proba:
             return np.array(y_true != np.argmax(y_pred, axis=-1), dtype=float)
         else:
@@ -81,5 +83,9 @@ class CategoricalCrossEntropy(Loss):
     """
 
     def __call__(self, y_true: np.ndarray, y_pred: np.ndarray | dict) -> np.ndarray:
+        if isinstance(y_pred, dict):
+            y_pred = y_pred["loc"]
         prob = y_pred[np.arange(len(y_pred)), y_true]
+        eps = np.finfo(prob.dtype).eps
+        prob = np.clip(prob, eps, 1 - eps)
         return -np.log(prob)

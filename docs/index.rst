@@ -139,6 +139,7 @@ Table of Contents
     Ensemble <_autosummary/deephyper.ensemble>
     Evaluator <_autosummary/deephyper.evaluator>
     HPO <_autosummary/deephyper.hpo>
+    Predictor <_autosummary/deephyper.predictor>
     Skopt <_autosummary/deephyper.skopt>
     Stopper <_autosummary/deephyper.stopper>
 
