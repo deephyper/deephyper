@@ -32,8 +32,6 @@ class MixedCategoricalAggregator(Aggregator):
         # Categorical probabilities (n_predictors, n_samples, ..., n_classes)
         y_proba_models = np.asarray(y)
         y_proba_ensemble = np.mean(y_proba_models, axis=0)
-        n_classes = y_proba_models.shape[-1]  # For normalization with number of classes
-        # n_classes = 1
 
         agg = {
             "loc": y_proba_ensemble,
@@ -41,18 +39,18 @@ class MixedCategoricalAggregator(Aggregator):
 
         # Confidence of the ensemble: max probability of the ensemble
         if self.uncertainty_method == "confidence":
-            uncertainty = (1 - np.max(y_proba_ensemble, axis=-1)) * n_classes
+            uncertainty = 1 - np.max(y_proba_ensemble, axis=-1)
             if not self.decomposed_uncertainty:
                 agg["uncertainty"] = uncertainty
             else:
                 # Uncertainty of the mode: 1 - confidence(n_predictors, n_samples, ...)
-                y_aleatoric = (
-                    np.mean(1 - np.max(y_proba_models, axis=-1), axis=0) * n_classes
+                uncertainty_aleatoric = np.mean(
+                    1 - np.max(y_proba_models, axis=-1), axis=0
                 )
-                y_epistemic = uncertainty - y_aleatoric
+                uncertainty_epistemic = uncertainty - uncertainty_aleatoric
 
-                agg["uncertainty_aleatoric"] = y_aleatoric
-                agg["uncertainty_epistemic"] = y_epistemic
+                agg["uncertainty_aleatoric"] = uncertainty_aleatoric
+                agg["uncertainty_epistemic"] = uncertainty_epistemic
 
         # Entropy of the ensemble
         elif self.uncertainty_method == "entropy":
