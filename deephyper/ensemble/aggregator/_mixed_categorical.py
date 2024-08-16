@@ -7,9 +7,14 @@ from deephyper.ensemble.aggregator._aggregator import Aggregator
 class MixedCategoricalAggregator(Aggregator):
     """Aggregate a set of categorical distributions.
 
-    The return ``"uncertainty"`` is ``1 - confidence`` where ``confidence`` is the maximum probability of the ensemble.
+
 
     Args:
+        uncertainty_method (str, optional): Method to compute the uncertainty. Can be either ``"confidence"`` or ``"entropy"``. Default is ``"confidence"``.
+
+        - ``"confidence"``: The uncertainty is computed as ``1 - max(probability)`` of the aggregated categorical distribution of ensemble.
+        - ``"entropy"``: The uncertainty is computed as the ``entropy`` of of the aggregated categorical distribution of ensemble.
+
         decomposed_uncertainty (bool, optional): If ``True``, the uncertainty of the ensemble is decomposed into aleatoric and epistemic components. Default is ``False``.
     """
 
@@ -47,7 +52,11 @@ class MixedCategoricalAggregator(Aggregator):
                 uncertainty_aleatoric = np.mean(
                     1 - np.max(y_proba_models, axis=-1), axis=0
                 )
-                uncertainty_epistemic = uncertainty - uncertainty_aleatoric
+
+                # TODO: looking at the decomposition of Domingo et al. it is possible that we should take into consideration the coef c1 and c2 to compute the epistemic uncertainty
+                uncertainty_epistemic = np.maximum(
+                    0, uncertainty - uncertainty_aleatoric
+                )
 
                 agg["uncertainty_aleatoric"] = uncertainty_aleatoric
                 agg["uncertainty_epistemic"] = uncertainty_epistemic
@@ -61,6 +70,8 @@ class MixedCategoricalAggregator(Aggregator):
                 # Expectation over predictors in the ensemble
                 expected_entropy = np.mean(ss.entropy(y_proba_models, axis=-1), axis=0)
                 agg["uncertainty_aleatoric"] = expected_entropy
-                agg["uncertainty_epistemic"] = uncertainty - expected_entropy
+                agg["uncertainty_epistemic"] = np.maximum(
+                    0, uncertainty - expected_entropy
+                )
 
         return agg
