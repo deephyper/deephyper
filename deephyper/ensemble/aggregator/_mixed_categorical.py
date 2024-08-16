@@ -12,8 +12,8 @@ class MixedCategoricalAggregator(Aggregator):
     Args:
         uncertainty_method (str, optional): Method to compute the uncertainty. Can be either ``"confidence"`` or ``"entropy"``. Default is ``"confidence"``.
 
-        - ``"confidence"``: The uncertainty is computed as ``1 - max(probability)`` of the aggregated categorical distribution of ensemble.
-        - ``"entropy"``: The uncertainty is computed as the ``entropy`` of of the aggregated categorical distribution of ensemble.
+            - ``"confidence"``: The uncertainty is computed as ``1 - max(probability)`` of the aggregated categorical distribution of ensemble.
+            - ``"entropy"``: The uncertainty is computed as the ``entropy`` of of the aggregated categorical distribution of ensemble.
 
         decomposed_uncertainty (bool, optional): If ``True``, the uncertainty of the ensemble is decomposed into aleatoric and epistemic components. Default is ``False``.
     """
