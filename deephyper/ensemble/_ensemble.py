@@ -22,7 +22,11 @@ class EnsemblePredictor(Predictor):
 
     Args:
         predictors (Sequence[Predictor]): the list of predictors to put in the ensemble.
+
         aggregator (Aggregator): the aggregation function to fuse the predictions of the predictors into one prediction.
+
+        weights (Sequence[float], optional): the weights of the predictors in the aggregation. Defaults to ``None``.
+
         evaluator (str | Dict, optional): The parallel strategy to compute predictions from the list of predictions. If it is a ``str`` it must be a possible ``method`` of ``Evaluator.create(..., method=...)``. If it is a ``dict`` it must have two keys ``method`` and ``method_kwargs`` such as ``Evaluator.create(...)``. Defaults to ``None`` which is equivalent to ``evaluator="serial"`` for serial evaluations.
 
     Raises:
@@ -33,6 +37,7 @@ class EnsemblePredictor(Predictor):
         self,
         predictors: Sequence[Predictor],
         aggregator: Aggregator,
+        weights: Sequence[float] = None,
         evaluator: str | Dict = None,
     ):
 
@@ -83,7 +88,7 @@ class EnsemblePredictor(Predictor):
         """
         y_predictors = self.predictions_from_predictors(X, self.predictors)
 
-        y = self.aggregator.aggregate(y_predictors)
+        y = self.aggregator.aggregate(y_predictors, weights=self.weights)
         return y
 
     def predictions_from_predictors(

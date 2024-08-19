@@ -1,6 +1,8 @@
 import abc
 from typing import Callable, Sequence
 
+import numpy as np
+
 from deephyper.ensemble.loss import Loss
 
 
@@ -25,3 +27,10 @@ class Selector(abc.ABC):
         Returns:
             Sequence[int]: the sequence of selected predictors.
         """
+
+    def _reduce(self, scores: np.ndarray) -> float:
+        """Reduce the loss values to a single scalar value."""
+        return np.mean(scores)
+
+    def _evaluate(self, y_true, y_pred) -> float:
+        return self._reduce(self.loss_func(y_true, y_pred))

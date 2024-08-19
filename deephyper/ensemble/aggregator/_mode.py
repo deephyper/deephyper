@@ -1,3 +1,5 @@
+from typing import List
+
 import numpy as np
 
 from deephyper.ensemble.aggregator._aggregator import Aggregator
@@ -9,15 +11,18 @@ class ModeAggregator(Aggregator):
     This aggregator is useful when the ensemble is composed of predictors that output categorical distributions. The mode of the ensemble is the mode of the modes of the predictors. This minimizes the 0-1 loss.
     """
 
-    def aggregate(self, y):
+    def aggregate(self, y: List, weights: List = None):
         """Aggregate the predictions using the mode of categorical distribution.
 
         Args:
             y (np.array): Predictions array of shape ``(n_predictors, n_samples, n_outputs)``.
 
+            weights (list, optional): Weights of the predictors. Default is ``None``.
+
         Returns:
             np.array: Aggregated predictions of shape ``(n_samples, n_outputs)``.
         """
+        print(y)
         # Categorical probabilities (n_predictors, n_samples, ..., n_classes)
         y_proba_models = np.asarray(y)
         n_predictors = y_proba_models.shape[0]
@@ -33,6 +38,10 @@ class ModeAggregator(Aggregator):
                 for i in range(n_samples)
             ]
         )
+
+        if weights is not None:
+            counts = np.asarray(weights) * counts
+
         y_mode_ensemble = np.argmax(counts, axis=1)
 
         # Uncertainty of ensemble
