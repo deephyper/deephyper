@@ -21,4 +21,5 @@ class TopKSelector(Selector):
     def select(self, y, y_predictors) -> Sequence[int]:
         losses = [self._evaluate(y, y_pred_i) for y_pred_i in y_predictors]
         selected_indices = np.argsort(losses, axis=0)[: self.k].reshape(-1).tolist()
-        return selected_indices
+        selected_indices_weights = [1.0] * len(selected_indices)
+        return selected_indices, selected_indices_weights

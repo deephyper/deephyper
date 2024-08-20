@@ -58,10 +58,16 @@ class GreedySelector(Selector):
                     len(np.unique(selected_indices)) == 1
                     and selected_indices[0] == i_min_
                 ):  # numerical errors...
-                    return selected_indices
+                    break
                 loss_min = loss_min_
                 selected_indices.append(i_min_)
             else:
                 break
 
-        return selected_indices
+        selected_indices, selected_indices_weights = np.unique(
+            selected_indices, return_counts=True
+        )
+        selected_indices_weights = selected_indices_weights / np.sum(
+            selected_indices_weights
+        )
+        return selected_indices.tolist(), selected_indices_weights.tolist()

@@ -43,6 +43,7 @@ class EnsemblePredictor(Predictor):
 
         self.predictors = predictors
         self.aggregator = aggregator
+        self.weights = weights
         self._evaluator = None
 
         if evaluator is None:

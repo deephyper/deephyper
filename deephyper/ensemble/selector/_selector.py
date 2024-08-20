@@ -1,5 +1,5 @@
 import abc
-from typing import Callable, Sequence
+from typing import Callable, Sequence, Tuple
 
 import numpy as np
 
@@ -17,7 +17,7 @@ class Selector(abc.ABC):
         self.loss_func = loss_func
 
     @abc.abstractmethod
-    def select(self, y, y_predictors) -> Sequence[int]:
+    def select(self, y, y_predictors) -> Tuple[Sequence[int], Sequence[float]]:
         """The selection algorithms.
 
         Args:
@@ -26,6 +26,7 @@ class Selector(abc.ABC):
 
         Returns:
             Sequence[int]: the sequence of selected predictors.
+            Sequence[float]: the sequence of weights associated to the selected predictors.
         """
 
     def _reduce(self, scores: np.ndarray) -> float:
