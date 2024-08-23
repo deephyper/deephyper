@@ -1,5 +1,3 @@
-import time
-
 import pytest
 
 from ConfigSpace import NotEqualsCondition
@@ -71,6 +69,9 @@ def test_centralized_random_search():
     )
 
 
+@pytest.mark.fast
+@pytest.mark.hps
+@pytest.mark.redis
 def test_centralized_random_search_redis_storage():
     from deephyper.evaluator.storage import RedisStorage
 
@@ -91,9 +92,6 @@ def test_centralized_random_search_redis_storage():
     assert_results(results)
 
 
-@pytest.mark.fast
-@pytest.mark.hps
-@pytest.mark.redis
 def launch_serial_search_with_redis_storage(search_id, search_seed, is_master=False):
     from deephyper.evaluator.storage import RedisStorage
 

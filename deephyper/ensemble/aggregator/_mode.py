@@ -22,7 +22,7 @@ class ModeAggregator(Aggregator):
         Returns:
             np.array: Aggregated predictions of shape ``(n_samples, n_outputs)``.
         """
-        print(y)
+
         # Categorical probabilities (n_predictors, n_samples, ..., n_classes)
         y_proba_models = np.asarray(y)
         n_predictors = y_proba_models.shape[0]

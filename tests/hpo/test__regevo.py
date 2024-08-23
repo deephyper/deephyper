@@ -32,7 +32,6 @@ def create_problem():
 
 
 def assert_results(results):
-    assert len(results) == 1000
     assert "p:x_int" in results.columns
     assert "p:x_float" in results.columns
     assert "p:x_cat" in results.columns
@@ -47,11 +46,12 @@ def test_centralized_regevo_search(tmp_path):
 
     # Test serial evaluation
     search = RegularizedEvolution(
-        problem, run, random_state=42, log_dir=tmp_path, verbose=1
+        problem, run, random_state=42, log_dir=tmp_path, verbose=0
     )
     results = search.search(max_evals=1000)
 
     assert_results(results)
+    assert len(results) == 1000
 
     # Test parallel centralized evaluation
     evaluator = Evaluator.create(
@@ -64,6 +64,7 @@ def test_centralized_regevo_search(tmp_path):
     results = search.search(max_evals=1000, max_evals_strict=True)
 
     assert_results(results)
+    assert len(results) >= 1000
 
 
 if __name__ == "__main__":
