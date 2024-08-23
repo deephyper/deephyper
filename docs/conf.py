@@ -283,6 +283,7 @@ autodoc_mock_imports = [
     "sklearn",
     "tensorflow_probability",
     "tensorflow",
+    "torch",
     "tf_keras",
     # "tqdm",
     "xgboost",
