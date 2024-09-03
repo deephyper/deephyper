@@ -3,6 +3,7 @@ import logging
 import numbers
 import time
 import warnings
+from typing import Dict, List
 
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as csh
@@ -13,8 +14,9 @@ from sklearn.base import is_regressor
 import deephyper.core.exceptions
 import deephyper.skopt
 from deephyper.core.utils import CaptureSTD
-from deephyper.hpo._search import Search
+from deephyper.evaluator import HPOJob
 from deephyper.hpo._problem import convert_to_skopt_space
+from deephyper.hpo._search import Search
 from deephyper.skopt.moo import (
     MoScalarFunction,
     moo_functions,
@@ -393,6 +395,8 @@ class CBO(Search):
             self.scheduler = functools.partial(scheduler, eta_0=np.array([kappa, xi]))
             logging.info(f"Set up scheduler '{scheduler}'")
 
+        self._num_asked = 0
+
     def _setup_optimizer(self):
         if self._fitted:
             self._opt_kwargs["n_initial_points"] = 0
@@ -408,129 +412,70 @@ class CBO(Search):
             )
             self._opt.acq_func_kwargs.update(values)
 
-    def _search(self, max_evals, timeout):
+    def _ask(self, n: int = 1) -> List[Dict]:
+        """Ask the search for new configurations to evaluate.
+
+        Args:
+            n (int, optional): The number of configurations to ask. Defaults to 1.
+
+        Returns:
+            List[Dict]: a list of hyperparameter configurations to evaluate.
+        """
+        new_X = self._opt.ask(n_points=n)
+        new_samples = [self._to_dict(x) for x in new_X]
+        self._num_asked += n
+        return new_samples
+
+    def _tell(self, results: List[HPOJob]):
+        """Tell the search the results of the evaluations.
+
+        Args:
+            observations (dict): a dictionary containing the results of the evaluations.
+        """
+        # Transform configurations to list to fit optimizer
+        logging.info("Transforming received configurations to list...")
+        t1 = time.time()
+
+        opt_X = []  # input configuration
+        opt_y = []  # objective value
+        # for cfg, obj in new_results:
+        for job_i in results:
+            cfg, obj = job_i
+            x = list(cfg.values())
+
+            if isinstance(obj, numbers.Number) or all(
+                isinstance(obj_i, numbers.Number) for obj_i in obj
+            ):
+                opt_X.append(x)
+                opt_y.append(np.negative(obj).tolist())  # !maximizing
+            elif (type(obj) is str and "F" == obj[0]) or any(
+                type(obj_i) is str and "F" == obj_i[0] for obj_i in obj
+            ):
+                if (
+                    self._opt_kwargs["acq_optimizer_kwargs"]["filter_failures"]
+                    == "ignore"
+                ):
+                    continue
+                else:
+                    opt_X.append(x)
+                    opt_y.append("F")
+
+        logging.info(f"Transformation took {time.time() - t1:.4f} sec.")
+
+        # apply scheduler
+        self._apply_scheduler(self._num_asked)
+
+        if len(opt_y) > 0:
+            logging.info("Fitting the optimizer...")
+            t1 = time.time()
+            self._opt.tell(opt_X, opt_y)
+            logging.info(f"Fitting took {time.time() - t1:.4f} sec.")
+
+    def _search(self, max_evals, timeout, max_evals_strict=False):
         if self._opt is None:
             self._setup_optimizer()
 
-        num_evals_done = 0
-        num_local_evals_done = 0
-
-        logging.info(f"Asking {self._evaluator.num_workers} initial configurations...")
-        t1 = time.time()
-        new_X = self._opt.ask(n_points=self._evaluator.num_workers)
-        logging.info(f"Asking took {time.time() - t1:.4f} sec.")
-
-        # Transform list to dict configurations
-        logging.info("Transforming configurations to dict...")
-        t1 = time.time()
-        new_batch = []
-        for x in new_X:
-            new_cfg = self._to_dict(x)
-            new_batch.append(new_cfg)
-        logging.info(f"Transformation took {time.time() - t1:.4f} sec.")
-
-        # submit new configurations
-        logging.info(f"Submitting {len(new_batch)} configurations...")
-        t1 = time.time()
-        self._evaluator.submit(new_batch)
-        logging.info(f"Submition took {time.time() - t1:.4f} sec.")
-
-        # Main loop
-
-        while max_evals < 0 or num_evals_done < max_evals:
-            # Collecting finished evaluations
-            logging.info("Gathering jobs...")
-            t1 = time.time()
-            new_results = self._evaluator.gather(
-                self.gather_type, size=self.gather_batch_size
-            )
-            if isinstance(new_results, tuple) and len(new_results) == 2:
-                local_results, other_results = new_results
-                new_results = local_results + other_results
-                num_new_local_results = len(local_results)
-                num_new_other_results = len(other_results)
-                logging.info(
-                    f"Gathered {num_new_local_results} local job(s) and {num_new_other_results} other job(s) in {time.time() - t1:.4f} sec."
-                )
-            else:
-                num_new_local_results = len(new_results)
-                logging.info(
-                    f"Gathered {num_new_local_results} job(s) in {time.time() - t1:.4f} sec."
-                )
-            num_local_evals_done += num_new_local_results
-
-            if num_new_local_results > 0:
-                logging.info("Dumping evaluations...")
-                t1 = time.time()
-                self._evaluator.dump_evals(log_dir=self._log_dir)
-                logging.info(f"Dumping took {time.time() - t1:.4f} sec.")
-
-                num_evals_done += len(new_results)
-
-                if max_evals > 0 and num_evals_done >= max_evals:
-                    break
-
-                # Transform configurations to list to fit optimizer
-                logging.info("Transforming received configurations to list...")
-                t1 = time.time()
-
-                opt_X = []  # input configuration
-                opt_y = []  # objective value
-                # for cfg, obj in new_results:
-                for job_i in new_results:
-                    cfg, obj = job_i
-                    x = list(cfg.values())
-
-                    if isinstance(obj, numbers.Number) or all(
-                        isinstance(obj_i, numbers.Number) for obj_i in obj
-                    ):
-                        opt_X.append(x)
-                        opt_y.append(np.negative(obj).tolist())  # !maximizing
-                    elif (type(obj) is str and "F" == obj[0]) or any(
-                        type(obj_i) is str and "F" == obj_i[0] for obj_i in obj
-                    ):
-                        if (
-                            self._opt_kwargs["acq_optimizer_kwargs"]["filter_failures"]
-                            == "ignore"
-                        ):
-                            continue
-                        else:
-                            opt_X.append(x)
-                            opt_y.append("F")
-
-                logging.info(f"Transformation took {time.time() - t1:.4f} sec.")
-
-                # apply scheduler
-                self._apply_scheduler(i=num_local_evals_done)
-
-                logging.info("Fitting the optimizer...")
-                t1 = time.time()
-
-                if len(opt_y) > 0:
-                    self._opt.tell(opt_X, opt_y)
-                    logging.info(f"Fitting took {time.time() - t1:.4f} sec.")
-
-                logging.info(f"Asking {num_new_local_results} new configurations...")
-                t1 = time.time()
-                new_X = self._opt.ask(
-                    n_points=num_new_local_results, strategy=self._multi_point_strategy
-                )
-                logging.info(f"Asking took {time.time() - t1:.4f} sec.")
-
-                # Transform list to dict configurations
-                logging.info("Transforming configurations to dict...")
-                t1 = time.time()
-                new_batch = []
-                for x in new_X:
-                    new_cfg = self._to_dict(x)
-                    new_batch.append(new_cfg)
-                logging.info(f"Transformation took {time.time() - t1:.4f} sec.")
-
-                # submit new configurations
-                logging.info(f"Submitting {len(new_batch)} configurations...")
-                t1 = time.time()
-                self._evaluator.submit(new_batch)
-                logging.info(f"Submition took {time.time() - t1:.4f} sec.")
+        super()._search(max_evals, timeout, max_evals_strict)
 
     def _get_surrogate_model(
         self,
@@ -1042,9 +987,3 @@ class CBO(Search):
             res[hps_name] = xi
 
         return res
-
-    def _ask(self, n):
-        raise NotImplementedError
-
-    def _tell(self, results):
-        raise NotImplementedError

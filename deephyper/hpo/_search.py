@@ -261,28 +261,54 @@ class Search(abc.ABC):
         n_ask = self._evaluator.num_workers
         new_batch = self.ask(n_ask)
 
+        logging.info(f"Submitting {len(new_batch)} configurations...")
+        t1 = time.time()
+
         self._evaluator.submit(new_batch)
 
+        logging.info(f"Submition took {time.time() - t1:.4f} sec.")
+
         while max_evals < 0 or num_evals() < max_evals:
+
+            logging.info("Gathering jobs...")
+            t1 = time.time()
 
             new_results = self._evaluator.gather(
                 self.gather_type, self.gather_batch_size
             )
-
-            self._evaluator.dump_evals(log_dir=self._log_dir)
 
             # Check if results are received from other search instances
             # connected to the same storage
             if isinstance(new_results, tuple) and len(new_results) == 2:
                 local_results, other_results = new_results
                 new_results = local_results + other_results
+                logging.info(
+                    f"Gathered {len(local_results)} local job(s) and {len(other_results)} other job(s) in {time.time() - t1:.4f} sec."
+                )
+            else:
+                logging.info(
+                    f"Gathered {len(new_results)} job(s) in {time.time() - t1:.4f} sec."
+                )
 
+            logging.info("Dumping evaluations...")
+            t1 = time.time()
+            self._evaluator.dump_evals(log_dir=self._log_dir)
+            logging.info(f"Dumping took {time.time() - t1:.4f} sec.")
+
+            logging.info(f"Telling {len(new_results)} new result(s)...")
+            t1 = time.time()
             self.tell(new_results)
+            logging.info(f"Telling took {time.time() - t1:.4f} sec.")
 
             n_ask = len(new_results)
             new_batch = self.ask(n_ask)
 
+            logging.info(f"Submitting {len(new_batch)} configurations...")
+            t1 = time.time()
+
             self._evaluator.submit(new_batch)
+
+            logging.info(f"Submition took {time.time() - t1:.4f} sec.")
 
     def ask(self, n: int = 1) -> List[Dict]:
         """Ask the search for new configurations to evaluate.
@@ -293,7 +319,14 @@ class Search(abc.ABC):
         Returns:
             List[Dict]: a list of hyperparameter configurations to evaluate.
         """
-        return self._ask(n)
+        logging.info(f"Asking {self._evaluator.num_workers} initial configurations...")
+        t1 = time.time()
+
+        new_samples = self._ask(n)
+
+        logging.info(f"Asking took {time.time() - t1:.4f} sec.")
+
+        return new_samples
 
     @abc.abstractmethod
     def _ask(self, n: int = 1) -> List[Dict]:
