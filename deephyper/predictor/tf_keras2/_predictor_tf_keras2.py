@@ -10,7 +10,7 @@ from deephyper.predictor import Predictor, PredictorFileLoader
 
 
 class TFKeras2Predictor(Predictor):
-    """Represents a frozen torch model that can only predict."""
+    """Represents a frozen TensorFlow/Keras2 model that can only predict."""
 
     def __init__(self, model: tfk.Model):
         self.model = model
@@ -35,7 +35,7 @@ class TFKeras2Predictor(Predictor):
 
 
 class TFKeras2PredictorFileLoader(PredictorFileLoader):
-    """Loads a predictor from a file for the TensorFlow Keras 2 backend.
+    """Loads a predictor from a file for the TensorFlow/Keras2 backend.
 
     Args:
         path_predictor_file (str): the path to the predictor file.
