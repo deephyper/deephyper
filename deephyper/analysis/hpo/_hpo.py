@@ -44,9 +44,7 @@ def filter_failed_objectives(
             df_with_failures = df[mask]
 
             df_without_failures = df[~mask]
-            df_without_failures["objective"] = df_without_failures["objective"].astype(
-                float
-            )
+            df_without_failures = df_without_failures.astype({"objective": float})
         else:
             df_without_failures = df
             df_with_failures = df[np.zeros(len(df), dtype=bool)]
@@ -62,8 +60,9 @@ def filter_failed_objectives(
 
         df_with_failures = df[mask]
         df_without_failures = df[~mask]
-        for objcol_i in objcol:
-            df_without_failures[objcol_i] = df_without_failures[objcol_i].astype(float)
+        df_without_failures = df_without_failures.astype(
+            {objcol_i: float for objcol_i in objcol}
+        )
     else:
         raise ValueError(
             "The DataFrame does not contain neither a column named 'objective' nor columns named 'objective_<int>'."
