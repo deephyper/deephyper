@@ -44,9 +44,9 @@ def filter_failed_objectives(
             df_with_failures = df[mask]
 
             df_without_failures = df[~mask]
-            df_without_failures.loc[:, "objective"] = df_without_failures[
-                "objective"
-            ].astype(float)
+            df_without_failures["objective"] = df_without_failures["objective"].astype(
+                float
+            )
         else:
             df_without_failures = df
             df_with_failures = df[np.zeros(len(df), dtype=bool)]
@@ -62,13 +62,26 @@ def filter_failed_objectives(
 
         df_with_failures = df[mask]
         df_without_failures = df[~mask]
-        df_without_failures.loc[:, objcol] = df_without_failures[objcol].astype(float)
+        for objcol_i in objcol:
+            df_without_failures[objcol_i] = df_without_failures[objcol_i].astype(float)
     else:
         raise ValueError(
             "The DataFrame does not contain neither a column named 'objective' nor columns named 'objective_<int>'."
         )
 
     return df_without_failures, df_with_failures
+
+
+def parameters_from_row(row: pd.Series) -> dict:
+    """Extract the parameters from a row of a DataFrame.
+
+    Args:
+        row (pd.Series): a row of a DataFrame.
+
+    Returns:
+        dict: the parameters of the row.
+    """
+    return {k[2:]: v for k, v in row.to_dict().items() if k.startswith("p:")}
 
 
 def parameters_at_max(
@@ -86,8 +99,7 @@ def parameters_at_max(
     df, _ = filter_failed_objectives(df)
     idx = df[column].argmax()
     value = df.iloc[idx][column]
-    config = df.iloc[idx].to_dict()
-    config = {k[2:]: v for k, v in config.items() if k.startswith("p:")}
+    config = parameters_from_row(df.iloc[idx])
     return config, value
 
 

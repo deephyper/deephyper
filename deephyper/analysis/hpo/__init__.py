@@ -1,9 +1,10 @@
 """Subpackage for hyperparameter search analysis.
 """
 
-from ._hpo import (
+from deephyper.analysis.hpo._hpo import (
     filter_failed_objectives,
     parameters_at_max,
+    parameters_from_row,
     plot_search_trajectory_single_objective_hpo,
     plot_worker_utilization,
     read_results_from_csv,
@@ -12,6 +13,7 @@ from ._hpo import (
 __all__ = [
     "filter_failed_objectives",
     "parameters_at_max",
+    "parameters_from_row",
     "plot_search_trajectory_single_objective_hpo",
     "plot_worker_utilization",
     "read_results_from_csv",
