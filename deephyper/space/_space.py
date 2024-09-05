@@ -144,10 +144,11 @@ class Space:
             # Continuous constraints
             for cons in self.constraints.values():
                 if not (isinstance(cons, BooleanConstraint)):
-                    numpyro.factor(name, cons(parameters))
+                    numpyro.factor(cons.name, cons(parameters))
 
             # Boolean constraints
             # !v1: all boolean constraints clauses are merged in one  SAT formula
+            # !often returns 0 solutions
             # is_valid = jnp.ones((num_samples,), dtype=bool)
             # for cons in self.constraints.values():
             #     if isinstance(cons, BooleanConstraint):

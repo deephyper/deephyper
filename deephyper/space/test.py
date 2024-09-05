@@ -286,16 +286,20 @@ class HyperparameterOptimizationTest(unittest.TestCase):
             Space,
             IntDimension,
         )
-        from deephyper.space._constraint import EqualityConstraint, InequalityConstraint
+        from deephyper.space._constraint import (
+            EqualityConstraint,
+            InequalityConstraint,
+            BooleanConstraint,
+        )
 
-        max_num_layers = 10
+        max_num_layers = 5
         # space = Space("", seed=42)
         space = Space("")
         space.add_dimension(IntDimension("n", low=1, high=max_num_layers))
         for i in range(1, max_num_layers + 1):
-            space.add_dimension(
-                IntDimension(f"l{i}", low=0, high=100, default_value=32)
-            )
+            dim = IntDimension(f"l{i}", low=0, high=100, default_value=32)
+            # dim.distribution = dist.Uniform(0, 100)
+            space.add_dimension(dim)
 
         # for i in range(1, max_num_layers + 1):
         #     space.add_constraint(
@@ -311,12 +315,12 @@ class HyperparameterOptimizationTest(unittest.TestCase):
         #     )
 
         # f(x) <= 0
-        for i in range(1, max_num_layers):
+        for j in range(1, max_num_layers):
             space.add_constraint(
                 InequalityConstraint(
-                    f"(l{i} >= l{i+1})",
-                    lambda p, i=i: p[f"l{i+1}"] - p[f"l{i}"],
-                    strength=10,
+                    f"l{j+1} - l{j}",
+                    lambda p, i=j: p[f"l{i+1}"] - p[f"l{i}"],
+                    strength=1,
                     is_strict=True,
                 )
             )
