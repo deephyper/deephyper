@@ -2,7 +2,6 @@
 skopt, where constant liar parallelization strategy is used.
 """
 
-
 from numpy.testing import assert_equal
 from numpy.testing import assert_raises
 

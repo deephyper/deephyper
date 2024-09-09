@@ -5,7 +5,7 @@ import numpy as np
 
 
 def standardize_run_function_output(
-    output: Union[str, float, tuple, list, dict]
+    output: Union[str, float, tuple, list, dict],
 ) -> dict:
     """Transform the output of the run-function to its standard form.
 

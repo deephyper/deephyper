@@ -9,6 +9,7 @@ from scipy.stats import gaussian_kde
 from sklearn.utils import check_random_state
 
 from deephyper.core.utils.joblib_utils import Parallel, delayed
+from deephyper.core.utils import CaptureSTD
 
 from .transformers import (
     CategoricalEncoder,
@@ -1105,7 +1106,7 @@ class Space:
         if self.config_space:
             req_points = []
 
-            hps_names = self.config_space.get_hyperparameter_names()
+            hps_names = list(self.config_space.keys())
 
             if self.model_sdv is None:
                 confs = self.config_space.sample_configuration(n_samples)
@@ -1113,7 +1114,8 @@ class Space:
                 if n_samples == 1:
                     confs = [confs]
             else:
-                confs = self.model_sdv.sample(n_samples)
+                with CaptureSTD():
+                    confs = self.model_sdv.sample(n_samples)
 
                 sdv_names = confs.columns
 
@@ -1121,12 +1123,9 @@ class Space:
 
                 # randomly sample the new hyperparameters
                 for name in new_hps_names:
-                    hp = self.config_space.get_hyperparameter(name)
+                    hp = self.config_space[name]
                     rvs = []
-                    for i in range(n_samples):
-                        v = hp._sample(rng)
-                        rv = hp._transform(v)
-                        rvs.append(rv)
+                    rvs = hp.sample_value(n_samples, rng)
                     confs[name] = rvs
 
                 # reoder the column names
@@ -1135,14 +1134,15 @@ class Space:
                 confs = confs.to_dict("records")
                 for idx, conf in enumerate(confs):
                     cf = deactivate_inactive_hyperparameters(conf, self.config_space)
-                    confs[idx] = cf.get_dictionary()
+                    confs[idx] = dict(cf)
 
             for idx, conf in enumerate(confs):
                 point = []
+                point_as_dict = dict(conf)
                 for i, hps_name in enumerate(hps_names):
                     # If the parameter is inactive due to some conditions then we attribute the
                     # lower bound value to break symmetries and enforce the same representation.
-                    if hps_name in conf.keys():
+                    if hps_name in point_as_dict:
                         val = conf[hps_name]
                     else:
                         val = self.dimensions[i].bounds[0]
@@ -1173,7 +1173,8 @@ class Space:
 
                 return columns.tolist()
             else:
-                confs = self.model_sdv.sample(n_samples)  # sample from SDV
+                with CaptureSTD():
+                    confs = self.model_sdv.sample(n_samples)  # sample from SDV
 
                 columns = []
                 for dim in self.dimensions:
@@ -1431,3 +1432,16 @@ class Space:
             Xi = [x[i] for x in X]
             if hasattr(dim, "update_prior"):
                 dim.update_prior(Xi, y, q=q)
+
+    def deactivate_inactive_dimensions(self, x):
+        x = x[:]
+        if self.config_space is not None:
+            x_dict = {k: v for k, v in zip(self.dimension_names, x)}
+            x_dict = dict(
+                deactivate_inactive_hyperparameters(x_dict, self.config_space)
+            )
+            for i, hps_name in enumerate(self.dimension_names):
+                # If the parameter is inactive due to some conditions then we attribute the
+                # lower bound value to break symmetries and enforce the same representation.
+                x[i] = x_dict.get(hps_name, self.dimensions[i].bounds[0])
+        return x

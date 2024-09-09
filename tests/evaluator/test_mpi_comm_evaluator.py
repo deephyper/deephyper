@@ -47,6 +47,7 @@ def _test_mpicomm_evaluator():
 def test_mpicomm_evaluator():
     command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_mpicomm_evaluator"
     result = deephyper.test.run(command, live_output=False)
+    assert result.returncode == 0
 
 
 if __name__ == "__main__":

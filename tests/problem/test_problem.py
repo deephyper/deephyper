@@ -8,7 +8,7 @@ class HpProblemTest(unittest.TestCase):
     def test_add_good_dim(self):
         import ConfigSpace as cs
         import ConfigSpace.hyperparameters as csh
-        from deephyper.problem import HpProblem
+        from deephyper.hpo import HpProblem
 
         pb = HpProblem()
 
@@ -48,32 +48,37 @@ class HpProblemTest(unittest.TestCase):
         p6_csh = csh.CategoricalHyperparameter(name="p6", choices=["cat0", "cat1"])
         assert p6 == p6_csh
 
-        p7 = pb.add_hyperparameter({"mu": 0, "sigma": 1}, "p7")
-        p7_csh = csh.NormalIntegerHyperparameter(name="p7", mu=0, sigma=1)
+        p7 = pb.add_hyperparameter(
+            {"mu": 0, "sigma": 1, "lower": -10, "upper": 10}, "p7"
+        )
+        p7_csh = csh.NormalIntegerHyperparameter(
+            name="p7", mu=0, sigma=1, lower=-10, upper=10
+        )
         assert p7 == p7_csh
 
-        if cs.__version__ > "0.4.20":
-            p8 = pb.add_hyperparameter(
-                {"mu": 0, "sigma": 1, "lower": -5, "upper": 5}, "p8"
-            )
-            p8_csh = csh.NormalIntegerHyperparameter(
-                name="p8", mu=0, sigma=1, lower=-5, upper=5
-            )
-            assert p8 == p8_csh
+        p8 = pb.add_hyperparameter({"mu": 0, "sigma": 1, "lower": -5, "upper": 5}, "p8")
+        p8_csh = csh.NormalIntegerHyperparameter(
+            name="p8", mu=0, sigma=1, lower=-5, upper=5
+        )
+        assert p8 == p8_csh
 
-        p9 = pb.add_hyperparameter({"mu": 0.0, "sigma": 1.0}, "p9")
-        p9_csh = csh.NormalFloatHyperparameter(name="p9", mu=0, sigma=1)
+        p9 = pb.add_hyperparameter(
+            {"mu": 0.0, "sigma": 1.0, "lower": -10.0, "upper": 10.0}, "p9"
+        )
+        p9_csh = csh.NormalFloatHyperparameter(
+            name="p9", mu=0, sigma=1, lower=-10, upper=10
+        )
         assert p9 == p9_csh
 
     def test_kwargs(self):
-        from deephyper.problem import HpProblem
+        from deephyper.hpo import HpProblem
 
         pb = HpProblem()
         pb.add_hyperparameter(value=(-10, 10), name="dim0")
 
     def test_dim_with_wrong_name(self):
         from deephyper.core.exceptions.problem import SpaceDimNameOfWrongType
-        from deephyper.problem import HpProblem
+        from deephyper.hpo import HpProblem
 
         pb = HpProblem()
         with pytest.raises(SpaceDimNameOfWrongType):
@@ -81,7 +86,7 @@ class HpProblemTest(unittest.TestCase):
 
     def test_config_space_hp(self):
         import ConfigSpace.hyperparameters as csh
-        from deephyper.problem import HpProblem
+        from deephyper.hpo import HpProblem
 
         alpha = csh.UniformFloatHyperparameter(name="alpha", lower=0, upper=1)
         beta = csh.UniformFloatHyperparameter(name="beta", lower=0, upper=1)
@@ -90,51 +95,5 @@ class HpProblemTest(unittest.TestCase):
         pb.add_hyperparameters([alpha, beta])
 
 
-@pytest.mark.nas
-class TestNaProblem(unittest.TestCase):
-    def test_search_space(self):
-
-        from deephyper.nas.spacelib.tabular import OneLayerSpace
-        from deephyper.problem import NaProblem
-
-        pb = NaProblem()
-
-        with pytest.raises(TypeError):
-            pb.search_space(space_class="a")
-
-        pb.search_space(OneLayerSpace)
-
-    def test_full_problem(self):
-        from deephyper.core.exceptions.problem import NaProblemError
-        from deephyper.nas.preprocessing import minmaxstdscaler
-        from deephyper.nas.spacelib.tabular import OneLayerSpace
-        from deephyper.problem import NaProblem
-
-        pb = NaProblem()
-
-        def load_data(prop):
-            return ([[10]], [1]), ([10], [1])
-
-        pb.load_data(load_data, prop=1.0)
-
-        pb.preprocessing(minmaxstdscaler)
-
-        pb.search_space(OneLayerSpace)
-
-        pb.hyperparameters(
-            batch_size=64,
-            learning_rate=0.001,
-            optimizer="adam",
-            num_epochs=10,
-            loss_metric="mse",
-        )
-
-        with pytest.raises(NaProblemError):
-            pb.objective("r2")
-
-        pb.loss("mse")
-        pb.metrics(["r2"])
-
-        possible_objective = ["loss", "val_loss", "r2", "val_r2"]
-        for obj in possible_objective:
-            pb.objective(obj)
+if __name__ == "__main__":
+    HpProblemTest().test_config_space_hp()

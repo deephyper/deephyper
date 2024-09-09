@@ -45,6 +45,7 @@ The multiobjective functionality (defined by :class:`deephyper.search.Search`'s
 ``moo_scalarization_strategy`` arg) is defined in the
 :mod:`deephyper.skopt.moo` module, and used by the :class:`deephyper.skopt.optimizer.optimizer.Optimizer`.
 """
+
 try:
     # This variable is injected in the __builtins__ by the build
     # process. It is used to enable importing subpackages of sklearn when

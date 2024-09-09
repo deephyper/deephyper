@@ -331,7 +331,6 @@ class Optimizer(object):
             "sampling",
             "mixedga",
             "ga",
-            "cobyqa",
         ]:
             raise ValueError(
                 "Expected acq_optimizer to be 'lbfgs' or "
@@ -1134,7 +1133,11 @@ class Optimizer(object):
                     # https://pymoo.org/customization/mixed.html
                     # https://pymoo.org/interface/problem.html
 
-                    from pymoo.core.mixed import MixedVariableGA
+                    from pymoo.core.mixed import (
+                        MixedVariableGA,
+                        MixedVariableDuplicateElimination,
+                        MixedVariableMating,
+                    )
                     from pymoo.core.population import Population
                     from pymoo.optimize import minimize
                     from pymoo.termination.default import (
@@ -1144,6 +1147,7 @@ class Optimizer(object):
                     from deephyper.skopt.optimizer._pymoo import (
                         DefaultSingleObjectiveMixedTermination,
                         PyMOOMixedVectorizedProblem,
+                        ConfigSpaceRepair,
                     )
 
                     pop = self._pymoo_pop_size
@@ -1169,7 +1173,18 @@ class Optimizer(object):
                             self.space.transform(x), *args
                         ),
                     )
-                    algorithm = MixedVariableGA(pop=pop, sampling=init_pop)
+                    repair = ConfigSpaceRepair(self.space)
+                    eliminate_duplicates = MixedVariableDuplicateElimination()
+                    algorithm = MixedVariableGA(
+                        pop=pop,
+                        sampling=init_pop,
+                        mating=MixedVariableMating(
+                            eliminate_duplicates=eliminate_duplicates,
+                            repair=repair,
+                        ),
+                        repair=repair,
+                        eliminate_duplicates=eliminate_duplicates,
+                    )
 
                     res_ga = minimize(
                         problem,
@@ -1229,51 +1244,6 @@ class Optimizer(object):
 
                     next_x = res.X
 
-                elif self.acq_optimizer == "cobyqa":
-                    import cobyqa
-
-                    x0 = Xsample_transformed[
-                        np.argsort(values)[: self.n_restarts_optimizer]
-                    ]
-                    xl, xu = list(zip(*transformed_bounds))
-                    args = (est, np.min(yi), cand_acq_func, self.acq_func_kwargs, False)
-
-                    # max_evals: defines the maximum budget but the algorithm stops before (possibly)
-                    # depending on the final radius of the trust-region (input by the user) and the current one
-                    # if the current-radius becomes smaller than the user set radius then the procedure stops
-                    # by default this radius is set to 1e-6
-                    # this stopping criteria relates in spirit to a "xtol" (tolerance on input convergence)
-                    # 2n+1 is the initial number of samples required to fit the trust-region optimaly for COBYQA
-                    #   - option 'npt', (n+1)(n+2)/2 > npt > n+1
-                    with warnings.catch_warnings():
-                        warnings.simplefilter("ignore")
-                        results = Parallel(n_jobs=self.n_jobs)(
-                            delayed(cobyqa.minimize)(
-                                gaussian_acquisition_1D,
-                                x0=x,
-                                args=(
-                                    est,
-                                    np.min(yi),
-                                    cand_acq_func,
-                                    self.acq_func_kwargs,
-                                    False,
-                                ),
-                                xl=xl,
-                                xu=xu,
-                                options={
-                                    "max_eval": 2 * len(self.space.dimension_names)
-                                    + 1
-                                    + 100,
-                                    "scale": True,
-                                },
-                            )
-                            for x in x0
-                        )
-
-                    cand_xs = np.array([r.x for r in results])
-                    cand_acqs = np.array([r.fun for r in results])
-                    next_x = cand_xs[np.argmin(cand_acqs)]
-
                 # lbfgs should handle this but just in case there are
                 # precision errors.
                 if not self.space.is_categorical:
@@ -1297,6 +1267,10 @@ class Optimizer(object):
 
             # note the need for [0] at the end
             self._next_x = self.space.inverse_transform(next_x.reshape(1, -1))[0]
+
+            # For safety in case optimizers of the acq_func do not handle this
+            self._next_x = self.space.deactivate_inactive_dimensions(self._next_x)
+
             self._counter_fit += 1
 
         # Pack results

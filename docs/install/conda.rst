@@ -3,7 +3,7 @@
 Install DeepHyper with conda
 ****************************
 
-DeepHyper installation requires ``Python>=3.7``.
+DeepHyper installation requires ``Python>=3.9``.
 
 .. warning:: All packages required for your application need to be installed in the same environment.
 

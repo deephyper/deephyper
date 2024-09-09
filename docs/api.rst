@@ -7,9 +7,7 @@
    deephyper.core
    deephyper.ensemble
    deephyper.evaluator
-   deephyper.keras
-   deephyper.nas
-   deephyper.problem
-   deephyper.search
+   deephyper.hpo
+   deephyper.predictor
    deephyper.skopt
    deephyper.stopper

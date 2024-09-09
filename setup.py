@@ -20,52 +20,45 @@ platform_infos = platform.platform()
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    "ConfigSpace>=0.4.20",
+    "ConfigSpace>=1.1.1",
     "dm-tree",
-    "Jinja2<3.1",
-    "numpy>=1.20",  # ==1.19.4",  # working with 1.20.1
+    "Jinja2>=3.1.4",  # Related to security vulnerability: https://security.snyk.io/vuln/SNYK-PYTHON-JINJA2-6809379
+    "matplotlib",
+    "numpy>=1.26.0",
     "pandas>=0.24.2",
     "packaging",
     "parse",
     "scikit-learn>=0.23.1",
     "scipy>=1.10",
     "tqdm>=4.64.0",
+    "psutil",
     "pymoo>=0.6.0",
     "pyyaml",
 ]
 
 
-# !Requirements for Neural Architecture Search (NAS)
-REQUIRED_NAS = ["networkx", "pydot"]
+# !Requirements for tensorflow with keras 2
+REQUIRED_TF_KERAS_2 = [
+    "tensorflow~=2.17.0",
+    "tensorflow_probability~=0.24.0",
+    "tf-keras~=2.17.0",
+]
 
-REQUIRED_NAS_PLATFORM = {
-    "default": ["tensorflow>=2.0.0", "tensorflow_probability"],
-    "macOS-arm64": ["tensorflow_probability~=0.14"],
-}
-# if "macOS" in platform_infos and "arm64" in platform_infos:
-#     REQUIRED_NAS = REQUIRED_NAS + REQUIRED_NAS_PLATFORM["macOS-arm64"]
-# else:  # x86_64
-REQUIRED_NAS = REQUIRED_NAS + REQUIRED_NAS_PLATFORM["default"]
+# !Requirements for torch
+REQUIRED_TORCH = ["torch>=2.0.0"]
 
-# !Requirements for Pipeline Optimization for ML (popt)
-REQUIRED_POPT = ["xgboost"]
-
-# !Requirements for Automated Deep Ensemble with Uncertainty Quantification (AutoDEUQ)
-REQUIRED_AUTODEUQ = REQUIRED_NAS + ["ray[default]>=1.3.0"]
 
 # !Transfer Learning for Bayesian Optimization with SVD
-REQUIRED_TL_SDV = ["sdv>=0.17.1"]
+REQUIRED_TL_SDV = ["sdv~=1.15.0"]
 
 
 # What packages are optional?
 EXTRAS = {
-    "autodeuq": REQUIRED_AUTODEUQ,  # automated deep ensemble with uncertainty quantification
-    "automl": ["xgboost"],  # for automl with scikit-learn
     "jax-cpu": ["jax[cpu]>=0.3.25", "numpyro[cpu]"],
     "jax-cuda": ["jax[cuda]>=0.3.25", "numpyro[cuda]"],
-    "hps": [],  # hyperparameter search (already the base requirements)
-    "nas": REQUIRED_NAS,  # neural architecture search
-    "hps-tl": REQUIRED_TL_SDV,  # transfer learning for bayesian optimization,
+    "tf-keras2": REQUIRED_TF_KERAS_2,
+    "torch": REQUIRED_TORCH,
+    "hpo-tl": REQUIRED_TL_SDV,  # Transfer Learning for bayesian optimization,
     "mpi": ["mpi4py>=3.1.3"],
     "ray": ["ray[default]>=1.3.0"],
     "redis": ["redis"],
@@ -73,6 +66,7 @@ EXTRAS = {
     "dev": [
         # Test
         "pytest",
+        "tox",
         # Packaging
         "twine",
         # Formatter and Linter
@@ -84,31 +78,21 @@ EXTRAS = {
         "GitPython",
         "ipython",
         "nbsphinx",
-        "sphinx>=4,<7",
-        "sphinx-book-theme==1.0.1",
-        "pydata-sphinx-theme==0.13.3",
+        "sphinx>=5",
+        "sphinx-book-theme==1.1.3",
+        "pydata-sphinx-theme==0.15.4",
         "sphinx-copybutton",
         "sphinx-gallery",
-        "sphinx_lfs_content",
+        "sphinx_lfs_content",  # Try to not use lfs anymore
         "sphinx-togglebutton",
     ],
-    "analytics": [
-        "altair",
-        "jupyter",
-        "jupyter_contrib_nbextensions>=0.5.1",
-        "nbconvert<6",
-        "streamlit",
-        "streamlit-aggrid",
-        "tinydb",
-    ],
-    "hvd": ["horovod>=0.21.3", "mpi4py>=3.0.0"],
 }
 
 # Default dependencies for DeepHyper
 DEFAULT_DEPENDENCIES = REQUIRED[:]
-DEFAULT_DEPENDENCIES += EXTRAS["nas"]
-DEFAULT_DEPENDENCIES += EXTRAS["autodeuq"]
-DEFAULT_DEPENDENCIES += EXTRAS["hps-tl"]
+DEFAULT_DEPENDENCIES += EXTRAS["tf-keras2"]
+DEFAULT_DEPENDENCIES += EXTRAS["torch"]
+DEFAULT_DEPENDENCIES += EXTRAS["hpo-tl"]
 DEFAULT_DEPENDENCIES += EXTRAS["jax-cpu"]
 EXTRAS["default"] = DEFAULT_DEPENDENCIES
 

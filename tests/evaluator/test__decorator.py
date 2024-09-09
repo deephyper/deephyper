@@ -88,7 +88,6 @@ class TestDecorator(unittest.TestCase):
 
         # Scalar output with memory profiling
         output = run_scalar_output_with_memory({"x": 0})
-
         assert "objective" in output
         assert 0 == output["objective"]
         assert "metadata" in output

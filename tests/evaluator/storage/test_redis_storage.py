@@ -1,7 +1,7 @@
 import unittest
 import pytest
 
-from deephyper.evaluator import Evaluator, RunningJob
+from deephyper.evaluator import Evaluator, RunningJob, HPOJob
 
 
 def run_0(job: RunningJob) -> dict:
@@ -18,6 +18,10 @@ def run_0(job: RunningJob) -> dict:
 @pytest.mark.hps
 @pytest.mark.redis
 class TestRedisStorage(unittest.TestCase):
+    """
+    pip install "deephyper[redis-hiredis]"
+    """
+
     def test_basic(self):
         from deephyper.evaluator.storage._redis_storage import RedisStorage
 
@@ -91,6 +95,7 @@ class TestRedisStorage(unittest.TestCase):
         evaluator = Evaluator.create(
             run_0, method="serial", method_kwargs={"storage": storage}
         )
+        evaluator._job_class = HPOJob
         evaluator.submit([{"x": 0}])
         job_done = evaluator.gather("ALL")[0]
         assert job_done.metadata["storage_id"] == id(storage)
@@ -99,6 +104,7 @@ class TestRedisStorage(unittest.TestCase):
         evaluator = Evaluator.create(
             run_0, method="thread", method_kwargs={"storage": storage}
         )
+        evaluator._job_class = HPOJob
         evaluator.submit([{"x": 0}])
         job_done = evaluator.gather("ALL")[0]
         assert job_done.metadata["storage_id"] == id(storage)
@@ -107,6 +113,7 @@ class TestRedisStorage(unittest.TestCase):
         evaluator = Evaluator.create(
             run_0, method="process", method_kwargs={"storage": storage}
         )
+        evaluator._job_class = HPOJob
         evaluator.submit([{"x": 0}])
         job_done = evaluator.gather("ALL")[0]
         assert job_done.metadata["storage_id"] != id(storage)

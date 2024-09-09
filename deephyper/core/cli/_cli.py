@@ -6,23 +6,21 @@ It can be used in the shell with:
 
     $ deephyper --help
 
-    usage: deephyper [-h] {hps,nas,new-problem,ray-cluster,ray-submit,start-project} ...
+    usage: deephyper [-h] {hps} ...
 
     DeepHyper command line.
 
     positional arguments:
     {hps,nas,new-problem,ray-cluster,ray-submit,start-project}
         hps                 Command line to run hyperparameter search.
-        nas                 Command line to run neural architecture search.
-        new-problem         Tool to init an hyper-parameter search package or a neural architecture search problem folder.
-        start-project       Set up a new project folder for DeepHyper benchmarks
 
     optional arguments:
     -h, --help            show this help message and exit
 """
+
 import argparse
 
-from deephyper.core.cli import _hps, _nas, _new_problem, _start_project
+from deephyper.core.cli import _hps
 
 
 def create_parser():
@@ -35,15 +33,6 @@ def create_parser():
 
     # hyper-parameter search
     _hps.add_subparser(subparsers)
-
-    # neural architecture search cli
-    _nas.add_subparser(subparsers)
-
-    # new-problem
-    _new_problem.add_subparser(subparsers)
-
-    # start-project
-    _start_project.add_subparser(subparsers)
 
     return parser
 

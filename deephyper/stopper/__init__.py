@@ -8,8 +8,8 @@ The ``Stopper`` class is the base class for all stoppers. It provides the interf
 
     import time
 
-    from deephyper.problem import HpProblem
-    from deephyper.search.hps import CBO
+    from deephyper.hpo import HpProblem
+    from deephyper.hpo import CBO
     from deephyper.stopper import SuccessiveHalvingStopper
 
 

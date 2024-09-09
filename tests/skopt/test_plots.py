@@ -1,4 +1,5 @@
 """Scikit-optimize plotting tests."""
+
 import numpy as np
 import pytest
 from sklearn.datasets import load_breast_cancer

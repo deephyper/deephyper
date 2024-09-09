@@ -2,9 +2,9 @@ name: dh-arm
 channels:
   - conda-forge
 dependencies:
-  - python>=3.7
+  - python>=3.9
   - pip
   - msgpack-python
   - pandas
   - pip:
-    - -r requirements.macOS.arm64.txt
+      - -r requirements.macOS.arm64.txt

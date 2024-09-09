@@ -5,6 +5,7 @@ and are passed the results "so far". Callbacks can monitor progress, or stop
 the optimization early by returning `True`.
 
 """
+
 try:
     from collections.abc import Callable
 except ImportError:

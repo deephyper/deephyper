@@ -271,7 +271,6 @@ todo_include_todos = True
 # makes sphinx do a mock import of mpi4py so it’s not broken when you try to do auto-docs and import mpi4py
 autodoc_mock_imports = [
     "deepxde",
-    "horovod",
     "jax",
     # "joblib",
     "matplotlib",
@@ -284,7 +283,8 @@ autodoc_mock_imports = [
     "sklearn",
     "tensorflow_probability",
     "tensorflow",
-    "tinydb",  # TODO: to be removed when analytics are updated
+    "torch",
+    "tf_keras",
     # "tqdm",
     "xgboost",
 ]
@@ -293,7 +293,6 @@ autosummary_mock_imports = autodoc_mock_imports + [
     "deephyper.skopt.learning.gaussian_process",
     "deephyper.skopt.learning.tests",
     "deephyper.skopt.plots",
-    "deephyper.sklearn",
     "deephyper.test",
     "joblib",
     "scipy.optimize",

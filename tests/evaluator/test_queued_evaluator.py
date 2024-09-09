@@ -10,7 +10,7 @@ class TestQueuedEvaluator(unittest.TestCase):
     @pytest.mark.fast
     @pytest.mark.hps
     def test_queued_serial_evaluator(self):
-        from deephyper.evaluator import SerialEvaluator, queued
+        from deephyper.evaluator import SerialEvaluator, queued, HPOJob
 
         QueuedSerialEvaluator = queued(
             SerialEvaluator
@@ -23,6 +23,7 @@ class TestQueuedEvaluator(unittest.TestCase):
             queue=[1, 2, 3, 4],
             queue_pop_per_task=1,
         )
+        evaluator._job_class = HPOJob
 
         assert evaluator.num_workers == 1
         assert list(evaluator.queue) == [1, 2, 3, 4]
