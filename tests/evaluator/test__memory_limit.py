@@ -49,7 +49,6 @@ def run_preprocessing_2(job):
 
 
 class TestMemoryLimit(unittest.TestCase):
-
     def test_memory_limit_with_profile_decorator(self):
 
         evaluator = Evaluator.create(run_preprocessing_1, method="serial")
