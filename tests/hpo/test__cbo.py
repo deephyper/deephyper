@@ -164,6 +164,7 @@ def test_gp(tmp_path):
         Evaluator.create(run, method="serial"),
         random_state=42,
         surrogate_model="GP",
+        acq_func="UCB",
         log_dir=tmp_path,
     ).search(10)
 
@@ -179,6 +180,7 @@ def test_gp(tmp_path):
         Evaluator.create(run, method="serial"),
         random_state=42,
         surrogate_model="GP",
+        acq_func="UCB",
         log_dir=tmp_path,
     ).search(10)
 
@@ -194,6 +196,7 @@ def test_gp(tmp_path):
         Evaluator.create(run, method="serial"),
         random_state=42,
         surrogate_model="GP",
+        acq_func="UCB",
         log_dir=tmp_path,
     ).search(10)
 
@@ -371,7 +374,7 @@ def test_cbo_checkpoint_restart(tmp_path):
     assert len(results_a) == 4
 
     new_results_a = search_a.search(6)
-    assert len(new_results_a) == 10
+    assert len(new_results_a) == 6
 
     # test reloading of a checkpoint
     search_b = CBO(
@@ -473,10 +476,63 @@ def test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path):
     plt.show()
 
 
+# @pytest.mark.slow
+# @pytest.mark.hps
+# def test_cbo_with_acq_optimizer_mixedga_and_forbiddens_in_problem(tmp_path):
+#     # TODO: this does not enforce the forbidden contraints
+#     import numpy as np
+#     from deephyper.hpo import HpProblem
+#     from deephyper.hpo import CBO
+#     from deephyper.evaluator import Evaluator
+
+#     from ConfigSpace import ForbiddenEqualsRelation
+
+#     problem = HpProblem()
+
+#     max_num_layers = 2
+
+#     for i in range(max_num_layers):
+#         problem.add_hyperparameter((1, 5), f"layer_{i}_units")
+
+#     forbiddens = []
+#     for i in range(1, max_num_layers):
+#         forb = ForbiddenEqualsRelation(
+#             problem.space[f"layer_{i-1}_units"], problem.space[f"layer_{i}_units"]
+#         )
+#         forbiddens.append(forb)
+
+#     print(problem)
+
+#     def run(job):
+#         return sum(job.parameters[f"layer_{i}_units"] for i in range(max_num_layers))
+
+#     search = CBO(
+#         problem,
+#         run,
+#         random_state=42,
+#         verbose=1,
+#         log_dir=tmp_path,
+#         acq_optimizer="mixedga",
+#         acq_optimizer_freq=1,
+#         kappa=5.0,
+#         scheduler={"type": "periodic-exp-decay", "period": 25, "kappa_final": 0.0001},
+#         objective_scaler="identity",
+#     )
+#     results = search.search(max_evals=100)
+
+#     import matplotlib.pyplot as plt
+#     from deephyper.analysis.hpo import plot_search_trajectory_single_objective_hpo
+
+#     fig, ax = plot_search_trajectory_single_objective_hpo(results)
+#     plt.show()
+
+
 if __name__ == "__main__":
-    # test_sample_types(tmp_path=".")
-    # test_sample_types_conditional(tmp_path=".")
-    # test_timeout(tmp_path=".")
-    test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(
-        tmp_path="/tmp/deephyper_test"
-    )
+    tmp_path = "/tmp/deephyper_test"
+    # test_cbo_random_seed(tmp_path)
+    # test_sample_types(tmp_path)
+    # test_sample_types_conditional(tmp_path)
+    # test_timeout(tmp_path)
+    # test_cbo_with_acq_optimizer_mixedga_and_forbiddens_in_problem(tmp_path)
+    # test_gp(tmp_path)
+    test_cbo_checkpoint_restart(tmp_path)

@@ -23,8 +23,8 @@ def _run_preprocessing(job):
     from sklearn.preprocessing import PolynomialFeatures
     from sklearn.pipeline import Pipeline
 
-    n_features = 38  # * 2
-    n_samples = 16
+    n_features = 38 * 2
+    n_samples = 32
     X = np.random.rand(n_samples, n_features)
 
     pipeline = Pipeline(
@@ -49,6 +49,7 @@ def run_preprocessing_2(job):
 
 
 class TestMemoryLimit(unittest.TestCase):
+
     def test_memory_limit_with_profile_decorator(self):
 
         evaluator = Evaluator.create(run_preprocessing_1, method="serial")
