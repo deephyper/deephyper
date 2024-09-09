@@ -8,7 +8,6 @@
    deephyper.ensemble
    deephyper.evaluator
    deephyper.hpo
-   deephyper.nn
    deephyper.predictor
    deephyper.skopt
    deephyper.stopper
