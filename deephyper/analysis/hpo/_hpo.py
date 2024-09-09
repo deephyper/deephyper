@@ -1,7 +1,7 @@
 """Visualization tools for Hyperparameter Optimization.
 """
 
-from typing import Tuple
+from typing import Tuple, List
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -86,7 +86,7 @@ def parameters_from_row(row: pd.Series) -> dict:
 def parameters_at_max(
     df: pd.DataFrame, column: str = "objective"
 ) -> Tuple[dict, float]:
-    """Return the parameters at the maximum of the objective function.
+    """Return the parameters at the maximum of the given ``column`` function.
 
     Args:
         df (pd.DataFrame): the results of a Hyperparameter Search.
@@ -100,6 +100,24 @@ def parameters_at_max(
     value = df.iloc[idx][column]
     config = parameters_from_row(df.iloc[idx])
     return config, value
+
+
+def parameters_at_topk(
+    df: pd.DataFrame, column: str = "objective", k: int = 1
+) -> List[Tuple[dict, float]]:
+    """Return the parameters at the top-k of the given ``column``.
+
+    Args:
+        df (pd.DataFrame): the results of a Hyperparameter Search.
+        column (str, optional): the column to use for the maximization. Defaults to ``"objective"``.
+        k (int, optional): the number of top-k to return. Defaults to ``1``.
+
+    Returns:
+        List[Tuple[dict, float]]: the parameters at the maximum of the ``column`` and its corresponding value.
+    """
+    df, _ = filter_failed_objectives(df)
+    df = df.nlargest(k, columns=column)
+    return [(parameters_from_row(row), row[column]) for _, row in df.iterrows()]
 
 
 def plot_search_trajectory_single_objective_hpo(
