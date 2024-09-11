@@ -318,8 +318,15 @@ class HpProblem:
                     config[hp_name] = hp.choices[0]
                 elif isinstance(hp, csh.OrdinalHyperparameter):
                     config[hp_name] = hp.sequence[0]
-                else:
+                elif isinstance(hp, csh.Constant):
+                    config[hp_name] = hp.value
+                elif isinstance(
+                    hp,
+                    (csh.UniformIntegerHyperparameter, csh.UniformFloatHyperparameter),
+                ):
                     config[hp_name] = hp.lower
+                else:
+                    config[hp_name] = hp.default_value
         return config
 
     def to_json(self):
