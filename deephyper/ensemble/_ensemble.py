@@ -1,4 +1,3 @@
-import functools
 from typing import Dict, Sequence
 
 import numpy as np
@@ -16,7 +15,10 @@ def predict_with_predictor(predictor: Predictor | PredictorLoader, X: np.ndarray
 
 
 def _wrapper_predict_with_predictor(job: RunningJob):
-    return predict_with_predictor(**job.parameters)
+    try:
+        return predict_with_predictor(**job.parameters)
+    except Exception as exception:
+        return exception
 
 
 class EnsemblePredictor(Predictor):
@@ -119,5 +121,16 @@ class EnsemblePredictor(Predictor):
         jobs_done = self._evaluator.gather("ALL")
         jobs_done = list(sorted(jobs_done, key=lambda j: int(j.id.split(".")[-1])))
 
-        y_pred = [job.result for job in jobs_done]
+        y_pred = []
+        for i, job in enumerate(jobs_done):
+            if isinstance(job.result, Exception):
+                try:
+                    raise job.result
+                except:
+                    raise RuntimeError(
+                        f"Failed to call .predict(X) with predictors[{i}]: {predictors[i]}"
+                    )
+            else:
+                y_pred.append(job.result)
+
         return y_pred
