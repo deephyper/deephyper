@@ -94,9 +94,7 @@ class HPOJob(Job):
 
     def set_output(self, output):
         output = standardize_run_function_output(output)
-        self.output["objective"] = output["objective"]
-        self.output["metadata"].update(output["metadata"])
-        self.observations = output.get("observations", None)
+        self.output.update(output)
 
 
 class RunningJob(MutableMapping):
