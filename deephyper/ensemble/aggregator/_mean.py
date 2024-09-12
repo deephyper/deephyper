@@ -8,7 +8,7 @@ from deephyper.ensemble.aggregator._aggregator import Aggregator
 class MeanAggregator(Aggregator):
     """Aggregate the predictions using the average."""
 
-    def aggregate(self, y: np.ndarray | np.ma.MaskedArray, weights: List = None):
+    def aggregate(self, y: List[np.ndarray | np.ma.MaskedArray], weights: List = None):
         """Aggregate the predictions using the mean.
 
         Args:
