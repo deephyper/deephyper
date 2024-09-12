@@ -74,16 +74,14 @@ class GreedySelector(Selector):
             loss_min_ = losses[i_min_]
             it += 1
 
-            if loss_min_ < (loss_min - self.eps_tol):
-                if (
-                    len(np.unique(selected_indices)) == 1
-                    and selected_indices[0] == i_min_
-                ):  # numerical errors...
-                    break
-                loss_min = loss_min_
-                selected_indices.append(i_min_)
-            else:
+            # The second condition is related to numerical errors
+            if (loss_min_ >= (loss_min - self.eps_tol)) or (
+                len(np.unique(selected_indices)) == 1 and selected_indices[0] == i_min_
+            ):
                 break
+
+            loss_min = loss_min_
+            selected_indices.append(i_min_)
 
         selected_indices, selected_indices_weights = np.unique(
             selected_indices, return_counts=True
