@@ -12,7 +12,7 @@ from deephyper.evaluator.callback import Callback
 class OnlineSelector(Callback):
     """This class performs ensemble selection after each hyperparameter optimization job completion.
 
-    The ``run``-function passed to the ``Evaluator`` should return in its output the ``"online_ensemble"`` key. This key has for value a dictionnary that includes both the ``"y_pred"`` key (i.e., predictions of the predictor on which the selection algorithm is applied) and the ``"y_pred_idx"`` key (i.e., indexes of the considered sampled in ``y`` used to score the selection):
+    The ``run``-function passed to the ``Evaluator`` should return in its output the ``"online_selector"`` key. This key has for value a dictionnary that includes both the ``"y_pred"`` key (i.e., predictions of the predictor on which the selection algorithm is applied) and the ``"y_pred_idx"`` key (i.e., indexes of the considered sampled in ``y`` used to score the selection):
 
     .. code-block:: python
 
@@ -20,7 +20,7 @@ class OnlineSelector(Callback):
             ...
             return {
                 "objective": objective,
-                "online_ensemble": {"y_pred": y_pred, "y_pred_idx": idx},
+                "online_selector": {"y_pred": y_pred, "y_pred_idx": idx},
             }
 
     the ``y_pred`` and ``y_pred_idx`` have same first dimension.
@@ -33,7 +33,7 @@ class OnlineSelector(Callback):
         from deephyper.ensemble.loss import SquaredError
         from deephyper.ensemble.selector import GreedySelector
 
-        online_ensemble = OnlineSelector(
+        online_selector = OnlineSelector(
             y=valid_y,
             selector=GreedySelector(
                 loss_func=SquaredError(),
@@ -50,7 +50,7 @@ class OnlineSelector(Callback):
             run,
             method_kwargs={
                 "callbacks": [
-                    online_ensemble,
+                    online_selector,
                 ],
             },
         )
@@ -94,11 +94,11 @@ class OnlineSelector(Callback):
         # All mask entries set to 1 represent invalid values in a MaskedArray
         # The most import part of this class is to build the MaskedArray
         y_pred_mask = np.ones_like(self.y, dtype=int)
-        y_pred_mask[job.output["online_ensemble"]["y_pred_idx"]] = 0
+        y_pred_mask[job.output["online_selector"]["y_pred_idx"]] = 0
 
         y_pred = np.zeros_like(self.y, dtype=float)
-        y_pred[job.output["online_ensemble"]["y_pred_idx"]] = job.output[
-            "online_ensemble"
+        y_pred[job.output["online_selector"]["y_pred_idx"]] = job.output[
+            "online_selector"
         ]["y_pred"]
 
         m_y_pred = np.ma.masked_array(y_pred, mask=y_pred_mask)
