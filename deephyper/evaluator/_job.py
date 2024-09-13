@@ -94,6 +94,7 @@ class HPOJob(Job):
 
     def set_output(self, output):
         output = standardize_run_function_output(output)
+        self.output["metadata"].update(output.pop("metadata"))
         self.output.update(output)
 
 
