@@ -105,9 +105,10 @@ class OnlineSelector(Callback):
         self.y_predictors.append(m_y_pred)
 
         # Ensemble
-        self.selected_predictors_indexes, self.selected_predictors_weights = (
-            self.selector.select(self.y, self.y_predictors)
-        )
+        (
+            self.selected_predictors_indexes,
+            self.selected_predictors_weights,
+        ) = self.selector.select(self.y, self.y_predictors)
 
     def on_done_other(self, job):
         return self.on_done(job)
