@@ -429,25 +429,22 @@ class Evaluator(abc.ABC):
         else:
             return val
 
-    def dump_evals(self, saved_keys=None, log_dir: str = ".", filename="results.csv"):
+    def dump_evals(
+        self, log_dir: str = ".", filename="results.csv", flush: bool = False
+    ):
         """Dump evaluations to a CSV file. This will reset the ``jobs_done`` attribute to an empty list.
 
         Args:
-            saved_keys (list|callable): If ``None`` the whole ``job.args`` will be added as row of the CSV file. If a ``list`` filtered keys will be added as a row of the CSV file. If a ``callable`` the output dictionnary will be added as a row of the CSV file.
             log_dir (str): directory where to dump the CSV file.
             filename (str): name of the file where to write the data.
+            flush (bool): a boolean indicating if the results should be flushed (i.e., forcing the dumping).
         """
         logging.info("dump_evals starts...")
         resultsList = []
 
         for job in self.jobs_done:
-            if saved_keys is None:
-                result = copy.deepcopy(job.args)
-            elif type(saved_keys) is list:
-                decoded_key = copy.deepcopy(job.args)
-                result = {k: self.convert_for_csv(decoded_key[k]) for k in saved_keys}
-            elif callable(saved_keys):
-                result = copy.deepcopy(saved_keys(job))
+
+            result = copy.deepcopy(job.args)
 
             # add prefix for all keys found in "args"
             result = {f"p:{k}": v for k, v in result.items()}
@@ -491,21 +488,26 @@ class Evaluator(abc.ABC):
 
             resultsList.append(result)
 
-        self.jobs_done = []
-
         if len(resultsList) != 0:
             mode = "a" if self._start_dumping else "w"
 
             with open(os.path.join(log_dir, filename), mode) as fp:
                 if not (self._start_dumping):
-                    # Waiting to start receiving non-failed jobs before dumping results
                     for result in resultsList:
-                        if (
+
+                        # Waiting to start receiving non-failed jobs before dumping results
+                        is_single_obj_and_has_success = (
                             "objective" in result
                             and type(result["objective"]) is not str
-                        ) or (
+                        )
+                        is_multi_obj_and_has_success = (
                             "objective_0" in result
                             and type(result["objective_0"]) is not str
+                        )
+                        if (
+                            is_single_obj_and_has_success
+                            or is_multi_obj_and_has_success
+                            or flush
                         ):
                             self._columns_dumped = result.keys()
 
@@ -519,5 +521,6 @@ class Evaluator(abc.ABC):
                         self._start_dumping = True
 
                     writer.writerows(resultsList)
+                    self.jobs_done = []
 
         logging.info("dump_evals done")

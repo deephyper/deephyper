@@ -205,6 +205,9 @@ class Search(abc.ABC):
             logging.warning(f"Could not find results file at {self._path_results}!")
             return None
 
+        # Force dumping if all configurations were failed
+        self._evaluator.dump_evals(log_dir=self._log_dir, flush=True)
+
         self.extend_results_with_pareto_efficient(self._path_results)
 
         df_results = pd.read_csv(self._path_results)
