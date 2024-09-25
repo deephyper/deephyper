@@ -4,6 +4,17 @@ from deephyper.hpo._cbo import CBO
 class ExperimentalDesignSearch(CBO):
     """Centralized Experimental Design Search. It follows a manager-workers architecture where the manager runs the sampling process and workers execute parallel evaluations of the black-box function.
 
+    .. list-table::
+        :widths: 25 25 25
+        :header-rows: 1
+
+        * - Single-Objective
+          - Multi-Objectives
+          - Failures
+        * - ✅
+          - ✅
+          - ✅
+
     Example Usage:
 
         >>> max_evals = 100

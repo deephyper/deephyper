@@ -23,6 +23,17 @@ MAP_acq_func = {
 class MPIDistributedBO(CBO):
     """Distributed Bayesian Optimization Search using MPI to launch parallel search instances.
 
+    .. list-table::
+        :widths: 25 25 25
+        :header-rows: 1
+
+        * - Single-Objective
+          - Multi-Objectives
+          - Failures
+        * - ✅
+          - ✅
+          - ✅
+
     Args:
         problem (HpProblem): Hyperparameter problem describing the search space to explore.
 

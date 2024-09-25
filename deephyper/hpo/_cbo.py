@@ -76,6 +76,17 @@ def scheduler_bandit(i, eta_0, num_dim, delta=0.05, lamb=0.2, delay=0):
 class CBO(Search):
     """Centralized Bayesian Optimisation Search. It follows a manager-workers architecture where the manager runs the Bayesian optimization loop and workers execute parallel evaluations of the black-box function.
 
+    .. list-table::
+        :widths: 25 25 25
+        :header-rows: 1
+
+        * - Single-Objective
+          - Multi-Objectives
+          - Failures
+        * - ✅
+          - ✅
+          - ✅
+
     Example Usage:
 
         >>> search = CBO(problem, evaluator)
