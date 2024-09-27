@@ -322,7 +322,7 @@ class Search(abc.ABC):
         Returns:
             List[Dict]: a list of hyperparameter configurations to evaluate.
         """
-        logging.info(f"Asking {self._evaluator.num_workers} initial configurations...")
+        logging.info(f"Asking {n} configuration(s)...")
         t1 = time.time()
 
         new_samples = self._ask(n)
