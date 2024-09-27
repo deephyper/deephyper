@@ -37,6 +37,13 @@ class TestRedisStorage(unittest.TestCase):
         self.assertEqual(job_id0, "0.0")
         self.assertEqual(job_id1, "0.1")
 
+        job_ids = storage.load_all_job_ids(search_id0)
+        self.assertEqual(len(job_ids), 2)
+
+        # Check outputs of jobs
+        job_outputs = storage.load_out_from_all_jobs(search_id0)
+        self.assertEqual(len(job_outputs), 0)
+
         search_id1 = storage.create_new_search()
         job_id0 = storage.create_new_job(search_id1)
         job_id1 = storage.create_new_job(search_id=search_id1)

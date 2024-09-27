@@ -324,6 +324,34 @@ def test_timeout(tmp_path):
     assert result is None
 
 
+def run_max_evals(job):
+    config = job.parameters
+    return config["x"]
+
+
+@pytest.mark.hps
+def test_max_evals_strict(tmp_path):
+    from deephyper.hpo import HpProblem
+    from deephyper.hpo import CBO
+    from deephyper.evaluator import Evaluator
+
+    problem = HpProblem()
+    problem.add_hyperparameter((0.0, 10.0), "x")
+
+    evaluator = Evaluator.create(
+        run_max_evals, method="process", method_kwargs={"num_workers": 8}
+    )
+
+    # Test Timeout with max_evals (this should be like an "max_evals or timeout" condition)
+    search = CBO(
+        problem, evaluator, random_state=42, surrogate_model="DUMMY", log_dir=tmp_path
+    )
+
+    max_evals = 100
+    results = search.search(max_evals, max_evals_strict=True)
+    assert len(results) == max_evals
+
+
 @pytest.mark.hps
 def test_initial_points(tmp_path):
     from deephyper.hpo import HpProblem
@@ -535,4 +563,5 @@ if __name__ == "__main__":
     # test_timeout(tmp_path)
     # test_cbo_with_acq_optimizer_mixedga_and_forbiddens_in_problem(tmp_path)
     # test_gp(tmp_path)
-    test_cbo_checkpoint_restart(tmp_path)
+    # test_cbo_checkpoint_restart(tmp_path)
+    test_max_evals_strict(tmp_path)

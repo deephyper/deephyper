@@ -239,7 +239,7 @@ class RedisStorage(Storage):
             except redis.exceptions.ResponseError:
                 value = None
 
-            if value is not None:
+            if value is not None and value != "null":
                 values.append(value)
         return values
 
@@ -260,7 +260,7 @@ class RedisStorage(Storage):
             except redis.exceptions.ResponseError:
                 value = None
 
-            if value is not None:
+            if value is not None and value != "null":
                 values.append(value)
         return values
 

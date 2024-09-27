@@ -160,8 +160,8 @@ class Evaluator(abc.ABC):
 
     @property
     def num_jobs_submitted(self):
-        job_outputs = self._storage.load_out_from_all_jobs(self._search_id)
-        return len(job_outputs) - self._num_jobs_offset
+        job_ids = self._storage.load_all_job_ids(self._search_id)
+        return len(job_ids) - self._num_jobs_offset
 
     @property
     def num_jobs_gathered(self):
