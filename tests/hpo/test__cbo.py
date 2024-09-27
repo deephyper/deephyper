@@ -565,3 +565,4 @@ if __name__ == "__main__":
     # test_gp(tmp_path)
     # test_cbo_checkpoint_restart(tmp_path)
     test_max_evals_strict(tmp_path)
+    # test_initial_points(tmp_path)

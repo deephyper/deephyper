@@ -20,6 +20,10 @@ class MaximumJobsSpawnReached(SearchTerminationError):
     """Raised when the maximum number of jobs is reached."""
 
 
+class TimeoutReached(SearchTerminationError):
+    """Raised when the timeout of the search was reached."""
+
+
 class RunFunctionError(RuntimeError):
     """Raised when error occurs in run-function"""
 

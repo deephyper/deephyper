@@ -2,7 +2,7 @@ import multiprocessing
 import multiprocessing.pool
 
 
-from deephyper.core.exceptions import SearchTerminationError
+from deephyper.core.exceptions import TimeoutReached
 
 
 def terminate_on_timeout(timeout, func, *args, **kwargs):
@@ -25,6 +25,6 @@ def terminate_on_timeout(timeout, func, *args, **kwargs):
     try:
         return results.get(timeout)
     except multiprocessing.TimeoutError:
-        raise SearchTerminationError(f"Search timeout expired after: {timeout}")
+        raise TimeoutReached(f"Search timeout expired after: {timeout}")
     finally:
         pool.terminate()

@@ -373,7 +373,23 @@ class Evaluator(abc.ABC):
         self._tasks_done = []
         self._tasks_pending = []
 
-        # access storage to return results from other processes
+        # Access storage to return results from other processes
+        other_results = self.gather_other_jobs_done()
+
+        if len(other_results) == 0:
+            logging.info(f"gather done - {len(local_results)} job(s)")
+
+            return local_results
+        else:
+            logging.info(
+                f"gather done - {len(local_results)} local(s) and {len(other_results)} other(s) job(s), "
+            )
+
+            return local_results, other_results
+
+    def gather_other_jobs_done(self):
+        """Access storage to return results from other processes."""
+
         job_id_all = self._storage.load_all_job_ids(self._search_id)
         job_id_not_gathered = np.setdiff1d(job_id_all, self.job_id_gathered).tolist()
 
@@ -397,16 +413,7 @@ class Evaluator(abc.ABC):
                     for cb in self._callbacks:
                         cb.on_done_other(job)
 
-        if len(other_results) == 0:
-            logging.info(f"gather done - {len(local_results)} job(s)")
-
-            return local_results
-        else:
-            logging.info(
-                f"gather done - {len(local_results)} local(s) and {len(other_results)} other(s) job(s), "
-            )
-
-            return local_results, other_results
+        return other_results
 
     def decode(self, key):
         """Decode the key following a JSON format to return a dict."""
