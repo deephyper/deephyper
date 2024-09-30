@@ -10,11 +10,11 @@ class MeanAggregator(Aggregator):
     """Aggregate the predictions using the average.
 
     .. list-table::
-        :widths: 25 25 25
+        :widths: 25 25
         :header-rows: 1
 
         * - Array (Fixed Set)
-          - MaskArray
+          - MaskedArray
         * - ✅
           - ✅
 

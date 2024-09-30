@@ -191,8 +191,15 @@ class Search(abc.ABC):
             self._search(max_evals, timeout)
         except TimeoutReached:
             wait_all_running_jobs = False
+            logging.warning(
+                f"Search is being stopped because the allowed timeout has been reached."
+            )
+        except MaximumJobsSpawnReached:
+            logging.warning(
+                f"Search is being stopped because the maximum number of spawned jobs has been reached."
+            )
         except SearchTerminationError:
-            pass
+            logging.warning(f"Search has been requested to be stopped.")
 
         # Collect remaining jobs
         if wait_all_running_jobs:
