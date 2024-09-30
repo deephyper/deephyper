@@ -117,7 +117,7 @@ def launch_serial_search_with_redis_storage(search_id, search_seed, is_master=Fa
     if is_master:
         results = search.search(max_evals=max_evals, max_evals_strict=max_evals_strict)
     else:
-        evaluator.dump_evals = dump_evals
+        evaluator.dump_jobs_done_to_csv = dump_evals
         search.search(max_evals=max_evals, max_evals_strict=max_evals_strict)
 
     return results

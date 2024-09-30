@@ -212,17 +212,17 @@ class Search(abc.ABC):
 
                 self._evaluator.gather("ALL")
 
-                self._evaluator.dump_evals(self._log_dir)
+                self._evaluator.dump_jobs_done_to_csv(self._log_dir)
         else:
             self._evaluator.gather_other_jobs_done()
-            self._evaluator.dump_evals(self._log_dir)
+            self._evaluator.dump_jobs_done_to_csv(self._log_dir)
 
         if not (os.path.exists(self._path_results)):
             logging.warning(f"Could not find results file at {self._path_results}!")
             return None
 
         # Force dumping if all configurations were failed
-        self._evaluator.dump_evals(self._log_dir, flush=True)
+        self._evaluator.dump_jobs_done_to_csv(self._log_dir, flush=True)
 
         self.extend_results_with_pareto_efficient(self._path_results)
 
@@ -310,7 +310,7 @@ class Search(abc.ABC):
 
             logging.info("Dumping evaluations...")
             t1 = time.time()
-            self._evaluator.dump_evals(log_dir=self._log_dir)
+            self._evaluator.dump_jobs_done_to_csv(log_dir=self._log_dir)
             logging.info(f"Dumping took {time.time() - t1:.4f} sec.")
 
             logging.info(f"Telling {len(new_results)} new result(s)...")

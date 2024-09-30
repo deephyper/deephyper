@@ -18,6 +18,7 @@ from deephyper.skopt.optimizer import OBJECTIVE_VALUE_FAILURE
 from deephyper.core.utils._timeout import terminate_on_timeout
 from deephyper.evaluator.storage import Storage, MemoryStorage
 from deephyper.core.exceptions import MaximumJobsSpawnReached
+from deephyper.core.warnings import deprecated_api
 
 EVALUATORS = {
     "mpicomm": "_mpi_comm.MPICommEvaluator",
@@ -436,17 +437,88 @@ class Evaluator(abc.ABC):
         else:
             return val
 
-    def dump_evals(
-        self, log_dir: str = ".", filename="results.csv", flush: bool = False
+    def dump_jobs_done_to_csv(
+        self,
+        log_dir: str = ".",
+        filename="results.csv",
+        flush: bool = False,
     ):
-        """Dump evaluations to a CSV file. This will reset the ``jobs_done`` attribute to an empty list.
+        """Dump completed jobs to a CSV file. This will reset the ``Evaluator.jobs_done`` attribute to an empty list.
 
         Args:
             log_dir (str): directory where to dump the CSV file.
             filename (str): name of the file where to write the data.
             flush (bool): a boolean indicating if the results should be flushed (i.e., forcing the dumping).
         """
-        logging.info("dump_evals starts...")
+        logging.info("Dumping completed jobs to CSV...")
+        if self._job_class is HPOJob:
+            self._dump_jobs_done_to_csv_as_hpo_format(log_dir, filename, flush)
+        else:
+            self._dump_jobs_done_to_csv_as_regular_format(log_dir, filename, flush)
+        logging.info("Dumping done")
+
+    def _dump_jobs_done_to_csv_as_regular_format(
+        self, log_dir: str = ".", filename="results.csv", flush: bool = False
+    ):
+        records_list = []
+
+        for job in self.jobs_done:
+
+            # job id and rank
+            result = {"job_id": int(job.id.split(".")[1])}
+
+            # input arguments: add prefix for all keys found in "args"
+            result.update({f"p:{k}": v for k, v in job.args.items()})
+
+            # output
+            if isinstance(job.output, dict):
+                output = {f"o:{k}": v for k, v in job.output.items()}
+            else:
+                output = {"o:": job.output}
+            result.update(output)
+
+            # metadata
+            metadata = {f"m:{k}": v for k, v in job.metadata.items() if k[0] != "_"}
+            result.update(metadata)
+
+            if isinstance(job.rank, int):
+                result["m:rank"] = job.rank
+
+            if hasattr(job, "dequed"):
+                result["m:dequed"] = ",".join(job.dequed)
+
+            records_list.append(result)
+
+        if len(records_list) != 0:
+            mode = "a" if self._start_dumping else "w"
+
+            with open(os.path.join(log_dir, filename), mode) as fp:
+                if not (self._start_dumping):
+
+                    self._columns_dumped = records_list[0].keys()
+
+                if self._columns_dumped is not None:
+                    writer = csv.DictWriter(
+                        fp, self._columns_dumped, extrasaction="ignore"
+                    )
+
+                    if not (self._start_dumping):
+                        writer.writeheader()
+                        self._start_dumping = True
+
+                    writer.writerows(records_list)
+                    self.jobs_done = []
+
+    def _dump_jobs_done_to_csv_as_hpo_format(
+        self, log_dir: str = ".", filename="results.csv", flush: bool = False
+    ):
+        """Dump completed jobs to a CSV file. This will reset the ``Evaluator.jobs_done`` attribute to an empty list.
+
+        Args:
+            log_dir (str): directory where to dump the CSV file.
+            filename (str): name of the file where to write the data.
+            flush (bool): a boolean indicating if the results should be flushed (i.e., forcing the dumping).
+        """
         resultsList = []
 
         for job in self.jobs_done:
@@ -518,6 +590,8 @@ class Evaluator(abc.ABC):
                         ):
                             self._columns_dumped = result.keys()
 
+                            break
+
                 if self._columns_dumped is not None:
                     writer = csv.DictWriter(
                         fp, self._columns_dumped, extrasaction="ignore"
@@ -530,4 +604,10 @@ class Evaluator(abc.ABC):
                     writer.writerows(resultsList)
                     self.jobs_done = []
 
-        logging.info("dump_evals done")
+    def dump_evals(
+        self, log_dir: str = ".", filename="results.csv", flush: bool = False
+    ):
+        deprecated_api(
+            "The ``Evaluator.dump_evals(...)`` method is deprecated and will be removed. The ``Evaluator.dump_jobs_done_to_csv(...)`` method should be used instead."
+        )
+        self.dump_jobs_done_to_csv(log_dir, filename, flush)

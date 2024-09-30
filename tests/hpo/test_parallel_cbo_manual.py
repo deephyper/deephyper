@@ -48,7 +48,7 @@ def _test_parallel_cbo_manual():
         def dumps_evals(*args, **kwargs):
             pass
 
-        evaluator.dump_evals = dumps_evals
+        evaluator.dump_jobs_done_to_csv = dumps_evals
 
         search = CBO(problem, evaluator, random_state=42)
     comm.Barrier()

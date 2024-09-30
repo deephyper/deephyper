@@ -13,7 +13,7 @@ def run_many_results(job, y=0):
     return {"objective": job["x"], "metadata": {"y": y}}
 
 
-class TestEvaluator(unittest.TestCase):
+class TestEvaluatorWithHPOJob(unittest.TestCase):
     @pytest.mark.fast
     @pytest.mark.hps
     def test_import(self):
@@ -49,7 +49,7 @@ class TestEvaluator(unittest.TestCase):
 
         evaluator.submit(configs)
         evaluator.gather(type="ALL")
-        evaluator.dump_evals()
+        evaluator.dump_jobs_done_to_csv()
         results = pd.read_csv("results.csv")
         assert all(
             results.columns
@@ -75,7 +75,7 @@ class TestEvaluator(unittest.TestCase):
         evaluator._job_class = HPOJob
         evaluator.submit(configs)
         evaluator.gather(type="ALL")
-        evaluator.dump_evals()
+        evaluator.dump_jobs_done_to_csv()
         results = pd.read_csv("results.csv").sort_values(by="job_id")
         assert all(
             results.columns
@@ -98,7 +98,7 @@ class TestEvaluator(unittest.TestCase):
         evaluator._job_class = HPOJob
         evaluator.submit(configs)
         evaluator.gather(type="ALL")
-        evaluator.dump_evals()
+        evaluator.dump_jobs_done_to_csv()
         results = pd.read_csv("results.csv")
         assert all(
             results.columns
@@ -124,7 +124,7 @@ class TestEvaluator(unittest.TestCase):
         evaluator._job_class = HPOJob
         evaluator.submit(configs)
         evaluator.gather(type="ALL")
-        evaluator.dump_evals()
+        evaluator.dump_jobs_done_to_csv()
         results = pd.read_csv("results.csv")
         assert list(sorted(results.columns)) == list(
             sorted(
@@ -156,7 +156,7 @@ class TestEvaluator(unittest.TestCase):
         evaluator._job_class = HPOJob
         evaluator.submit(configs)
         evaluator.gather(type="ALL")
-        evaluator.dump_evals()
+        evaluator.dump_jobs_done_to_csv()
         results = pd.read_csv("results.csv")
         assert list(sorted(results.columns)) == list(
             sorted(
@@ -189,7 +189,7 @@ class TestEvaluator(unittest.TestCase):
         evaluator._job_class = HPOJob
         evaluator.submit(configs)
         evaluator.gather(type="ALL")
-        evaluator.dump_evals()
+        evaluator.dump_jobs_done_to_csv()
         results = pd.read_csv("results.csv")
         assert list(sorted(results.columns)) == list(
             sorted(
@@ -223,7 +223,7 @@ class TestEvaluator(unittest.TestCase):
         evaluator.num_objective = 2
         evaluator.submit(configs)
         evaluator.gather(type="ALL")
-        evaluator.dump_evals()
+        evaluator.dump_jobs_done_to_csv()
         results = pd.read_csv("results.csv")
         assert list(sorted(results.columns)) == list(
             sorted(
@@ -334,7 +334,49 @@ class TestEvaluator(unittest.TestCase):
                 raise e
 
 
+def run_job_scalar_output(job):
+    return 0
+
+
+def run_job_dict_output(job):
+    x1 = job.parameters["x1"]
+    x2 = job.parameters["x2"]
+    return {"y1": x1, "y2": x2, "list": [x1, x2], "dict": {"x1": x1, "x2": x2}}
+
+
+def test_evaluator_with_Job(tmp_path):
+    import os
+    import pandas as pd
+    from deephyper.evaluator import Evaluator
+
+    # Scalar output
+    evaluator = Evaluator.create(run_job_scalar_output, method="serial")
+    input_parameters = [{"x": i} for i in range(10)]
+    evaluator.submit(input_parameters)
+    jobs_done = evaluator.gather("ALL")
+    for jobi in jobs_done:
+        assert jobi.output == 0
+    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
+    df = pd.read_csv(os.path.join(tmp_path, "results.csv"))
+    assert len(df) == 10
+    assert len(df.columns) == 5
+
+    # Dict output
+    evaluator = Evaluator.create(run_job_dict_output, method="serial")
+    input_parameters = [{"x1": i, "x2": i + 1} for i in range(10)]
+    evaluator.submit(input_parameters)
+    jobs_done = evaluator.gather("ALL")
+    for jobi in jobs_done:
+        assert isinstance(jobi.output, dict)
+    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
+    df = pd.read_csv(os.path.join(tmp_path, "results.csv"))
+    assert len(df) == 10
+    assert len(df.columns) == 9
+
+
 if __name__ == "__main__":
-    test = TestEvaluator()
+    tmp_path = "/tmp/deephyper/"
+    # test = TestEvaluator()
     # test.test_run_function_standards()
-    test.test_wrong_evaluator()
+    # test.test_wrong_evaluator()
+    test_evaluator_with_Job(".")

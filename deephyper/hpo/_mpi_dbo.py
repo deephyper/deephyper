@@ -306,7 +306,7 @@ class MPIDistributedBO(CBO):
             def dumps_evals(*args, **kwargs):
                 pass
 
-            evaluator.dump_evals = dumps_evals
+            evaluator.dump_jobs_done_to_csv = dumps_evals
 
         return evaluator
 
