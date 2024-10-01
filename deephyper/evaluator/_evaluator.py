@@ -331,7 +331,7 @@ class Evaluator(abc.ABC):
         if self.loop is None:
             try:
                 # works if `timeout` is not set and code is running in main thread
-                self.loop = asyncio.get_event_loop()
+                self.loop = asyncio.get_running_loop()
             except RuntimeError:
                 # required when `timeout` is set because code is not running in main thread
                 self.loop = asyncio.new_event_loop()
@@ -439,6 +439,10 @@ class Evaluator(abc.ABC):
             return str(val)
         else:
             return val
+
+    def __del__(self):
+        if self.loop is not None:
+            self.loop.close()
 
     def dump_jobs_done_to_csv(
         self,
