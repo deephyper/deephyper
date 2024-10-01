@@ -311,11 +311,14 @@ class Evaluator(abc.ABC):
         return job
 
     @abc.abstractmethod
-    async def execute(self, job) -> Job:
+    async def execute(self, job: Job) -> Job:
         """Execute the received job. To be implemented with a specific backend.
 
         Args:
             job (Job): the ``Job`` to be executed.
+
+        Returns:
+            job: the update ``Job``.
         """
 
     def submit(self, args_list: List[Dict]):
@@ -481,12 +484,6 @@ class Evaluator(abc.ABC):
             metadata = {f"m:{k}": v for k, v in job.metadata.items() if k[0] != "_"}
             result.update(metadata)
 
-            if isinstance(job.rank, int):
-                result["m:rank"] = job.rank
-
-            if hasattr(job, "dequed"):
-                result["m:dequed"] = ",".join(job.dequed)
-
             records_list.append(result)
 
         if len(records_list) != 0:
@@ -554,16 +551,10 @@ class Evaluator(abc.ABC):
             # job id and rank
             result["job_id"] = int(job.id.split(".")[1])
 
-            if isinstance(job.rank, int):
-                result["rank"] = job.rank
-
             # Profiling and other
             # methdata keys starting with "_" are not saved (considered as internal)
             metadata = {f"m:{k}": v for k, v in job.metadata.items() if k[0] != "_"}
             result.update(metadata)
-
-            if hasattr(job, "dequed"):
-                result["m:dequed"] = ",".join(job.dequed)
 
             resultsList.append(result)
 

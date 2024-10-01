@@ -8,8 +8,6 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import CancelledError
 
-from deephyper.evaluator._run_function_utils import standardize_run_function_output
-
 
 def register_inner_function_for_pickle(func):
     """Register former decorated function under a new name to be called in subprocess within
@@ -128,17 +126,25 @@ def profile(
 
             timestamp_end = time.time()
 
-            output = standardize_run_function_output(output)
-            metadata = {
+            # Prepare new metadata
+            new_metadata = {
                 "timestamp_start": timestamp_start,
                 "timestamp_end": timestamp_end,
             }
-
             if memory:
-                metadata["memory"] = memory_peak
+                new_metadata["memory"] = memory_peak
 
-            metadata.update(output["metadata"])
-            output["metadata"] = metadata
+            # Format correctly the output to return metadata
+            if isinstance(output, dict):
+                if "output" in output:
+                    if "metadata" not in output:
+                        output["metadata"] = {}
+                else:
+                    output = {"output": output, "metadata": {}}
+            else:
+                output = {"output": output, "metadata": {}}
+
+            output["metadata"].update(new_metadata)
 
             return output
 

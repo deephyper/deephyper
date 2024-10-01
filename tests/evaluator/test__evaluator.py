@@ -4,6 +4,8 @@ from collections import Counter
 import pandas as pd
 import pytest
 
+from deephyper.evaluator import profile
+
 
 def run(job, y=0):
     return job["x"] + y
@@ -344,6 +346,18 @@ def run_job_dict_output(job):
     return {"y1": x1, "y2": x2, "list": [x1, x2], "dict": {"x1": x1, "x2": x2}}
 
 
+@profile
+def run_job_scalar_output_profiled(job):
+    return 0
+
+
+@profile
+def run_job_dict_output_profiled(job):
+    x1 = job.parameters["x1"]
+    x2 = job.parameters["x2"]
+    return {"y1": x1, "y2": x2, "list": [x1, x2], "dict": {"x1": x1, "x2": x2}}
+
+
 def test_evaluator_with_Job(tmp_path):
     import os
     import pandas as pd
@@ -373,10 +387,40 @@ def test_evaluator_with_Job(tmp_path):
     assert len(df) == 10
     assert len(df.columns) == 9
 
+    # Scalar output with profiled function
+    evaluator = Evaluator.create(run_job_scalar_output_profiled, method="serial")
+    input_parameters = [{"x": i} for i in range(10)]
+    evaluator.submit(input_parameters)
+    jobs_done = evaluator.gather("ALL")
+    for jobi in jobs_done:
+        assert jobi.output == 0
+        assert "timestamp_start" in jobi.metadata
+        assert "timestamp_end" in jobi.metadata
+    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
+    df = pd.read_csv(os.path.join(tmp_path, "results.csv"))
+    assert len(df) == 10
+    assert len(df.columns) == 7
+
+    # Dict output with profiled function
+    evaluator = Evaluator.create(run_job_dict_output_profiled, method="serial")
+    input_parameters = [{"x1": i, "x2": i + 1} for i in range(10)]
+    evaluator.submit(input_parameters)
+    jobs_done = evaluator.gather("ALL")
+    for jobi in jobs_done:
+        assert isinstance(jobi.output, dict)
+        assert jobi.output["y1"] == jobi.args["x1"]
+        assert jobi.output["y2"] == jobi.args["x2"]
+        assert "timestamp_start" in jobi.metadata
+        assert "timestamp_end" in jobi.metadata
+    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
+    df = pd.read_csv(os.path.join(tmp_path, "results.csv"))
+    assert len(df) == 10
+    assert len(df.columns) == 11
+
 
 if __name__ == "__main__":
     tmp_path = "/tmp/deephyper/"
-    # test = TestEvaluator()
-    # test.test_run_function_standards()
+    test = TestEvaluatorWithHPOJob()
+    test.test_run_function_standards()
     # test.test_wrong_evaluator()
-    test_evaluator_with_Job(".")
+    # test_evaluator_with_Job(".")
