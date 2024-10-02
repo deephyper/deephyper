@@ -35,7 +35,7 @@ def _test_mpicomm_evaluator():
 
             results = evaluator.gather(type="BATCH", size=4)
             print("gather", flush=True)
-            objectives = sorted([job.result for job in results])
+            objectives = sorted([job.output for job in results])
             assert objectives == list(range(4))
     duration = time.time() - t1
     print("duration:", duration)

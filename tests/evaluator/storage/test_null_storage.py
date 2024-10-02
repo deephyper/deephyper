@@ -25,7 +25,7 @@ class TestNullStorage(unittest.TestCase):
         evaluator.submit([{"x": i} for i in range(10)])
         jobs_done = evaluator.gather("ALL")
         inputs = list(map(lambda job: job.args, jobs_done))
-        results = list(map(lambda job: job.result, jobs_done))
+        results = list(map(lambda job: job.output, jobs_done))
         print(f"{inputs=}")
         print(f"{results=}")
 

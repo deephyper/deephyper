@@ -99,6 +99,7 @@ class Evaluator(abc.ABC):
         self.maximum_num_jobs_submitted = -1  # Maximum number of jobs to spawn.
         self._num_jobs_offset = 0
         self.loop = None  # Event loop for asyncio.
+        self.loop_is_new = False  # Indicates if the loop was created in sub-thread
         self._start_dumping = False
         self._columns_dumped = None  # columns names dumped in csv file
         self.num_objective = None  # record if multi-objective are recorded
@@ -335,6 +336,7 @@ class Evaluator(abc.ABC):
             except RuntimeError:
                 # required when `timeout` is set because code is not running in main thread
                 self.loop = asyncio.new_event_loop()
+                self.loop_is_new = True
         self.loop.run_until_complete(self._run_jobs(args_list))
         logging.info("submit done")
 
@@ -441,8 +443,9 @@ class Evaluator(abc.ABC):
             return val
 
     def __del__(self):
-        if self.loop is not None:
+        if self.loop is not None and self.loop_is_new:
             self.loop.close()
+            self.loop = None
 
     def dump_jobs_done_to_csv(
         self,

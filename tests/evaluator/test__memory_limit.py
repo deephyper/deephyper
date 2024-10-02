@@ -57,7 +57,7 @@ class TestMemoryLimit(unittest.TestCase):
         tasks = [{"x": i} for i in range(1)]
         evaluator.submit(tasks)
         jobs = evaluator.gather("ALL")
-        result = [job.result for job in jobs]
+        result = [job.output for job in jobs]
         metadata = [job.metadata for job in jobs]
         assert result[0]["objective"] == "F_memory_limit_exceeded"
 
@@ -77,7 +77,7 @@ class TestMemoryLimit(unittest.TestCase):
         tasks = [{"x": i} for i in range(1)]
         evaluator.submit(tasks)
         jobs = evaluator.gather("ALL")
-        result = [job.result for job in jobs]
+        result = [job.output for job in jobs]
         metadata = [job.metadata for job in jobs]
         assert result[0]["objective"] == "F_memory_limit_exceeded"
 

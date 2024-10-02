@@ -123,14 +123,14 @@ class EnsemblePredictor(Predictor):
 
         y_pred = []
         for i, job in enumerate(jobs_done):
-            if isinstance(job.result, Exception):
+            if isinstance(job.output, Exception):
                 try:
-                    raise job.result
+                    raise job.output
                 except:
                     raise RuntimeError(
                         f"Failed to call .predict(X) with predictors[{i}]: {predictors[i]}"
                     )
             else:
-                y_pred.append(job.result)
+                y_pred.append(job.output)
 
         return y_pred
