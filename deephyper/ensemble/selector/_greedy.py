@@ -1,6 +1,7 @@
-from typing import Callable, Sequence, List
+from typing import Callable, List, Sequence
 
 import numpy as np
+from sklearn.utils import check_random_state
 
 from deephyper.ensemble.aggregator._aggregator import Aggregator
 from deephyper.ensemble.selector._selector import Selector
@@ -14,13 +15,21 @@ class GreedySelector(Selector):
 
         aggregator (Aggregator): The aggregator to use to combine the predictions of the selected predictors.
 
-        k (int, optional): The number of predictors to select. Defaults to ``5``.
+        k (int, optional): The number of unique predictors to select for the ensemble. Defaults to ``5``.
 
         k_init (int, optional): Regularization parameter for greedy selection. It is the number of predictors to select in the initialization step. Defaults to ``1``.
 
-        max_it (int, optional): Maximum number of iterations. Defaults to ``-1``.
+        max_it (int, optional): Maximum number of iterations which also corresponds to the number of non-unique predictors added to the ensemble. Defaults to ``-1``.
 
         eps_tol (float, optional): Tolerance for the stopping criterion. Defaults to ``1e-3``.
+
+        with_replacement (bool, optional): Performs greedy selection with replacement of models already selected. Defaults to ``True``.
+
+        early_stopping (bool, optional): Stops the ensemble selection as soon as the loss stops improving. Defaults to ``True``.
+
+        bagging (bool, optional): Performanced boostrap resampling of available predictors at each iteration. This can be particularly useful when the dataset used for selection is small. Defaults to ``False``.
+
+        verbose (bool, optional): Turns on the verbose mode. Defaults to ``False``.
     """
 
     def __init__(
@@ -31,6 +40,11 @@ class GreedySelector(Selector):
         k_init: int = 5,
         max_it: int = -1,
         eps_tol: float = 1e-3,
+        with_replacement: bool = True,
+        early_stopping: bool = True,
+        bagging: bool = False,
+        random_state=None,
+        verbose: bool = False,
     ):
         super().__init__(loss_func)
         self.aggregator = aggregator
@@ -38,11 +52,17 @@ class GreedySelector(Selector):
         self.k_init = k_init
         self.max_it = max_it
         self.eps_tol = eps_tol
+        self.with_replacement = with_replacement
+        self.early_stopping = early_stopping
+        self.bagging = bagging
+        self.random_state = check_random_state(random_state)
+        self.verbose = verbose
 
     def _aggregate(self, y_predictors: np.ndarray, weights: List = None):
         return self.aggregator.aggregate(y_predictors, weights)
 
     def select(self, y, y_predictors) -> Sequence[int]:
+
         # Initialization
         losses = [self._evaluate(y, y_pred_i) for y_pred_i in y_predictors]
         selected_indices = np.argsort(losses)[: self.k_init].tolist()
@@ -51,6 +71,10 @@ class GreedySelector(Selector):
             y, self._aggregate([y_predictors[i] for i in selected_indices])
         )
         n_predictors = len(y_predictors)
+        bagged_predictors = None
+
+        if self.verbose:
+            print(f"Ensemble initialized with {selected_indices}")
 
         # Greedy steps
         it = 0
@@ -59,7 +83,24 @@ class GreedySelector(Selector):
         ) < self.k:
 
             losses = []
+
+            if self.bagging:
+                bagged_predictors = np.unique(
+                    self.random_state.randint(
+                        low=0, high=n_predictors, size=n_predictors
+                    )
+                )
+
             for i in range(n_predictors):
+
+                if not self.with_replacement and i in selected_indices:
+                    losses.append(np.nan)
+                    continue
+
+                if self.bagging and not (i in bagged_predictors):
+                    losses.append(np.nan)
+                    continue
+
                 indices_ = selected_indices + [i]
                 indices_, indices_weights_ = np.unique(indices_, return_counts=True)
                 indices_weights_ = indices_weights_ / np.sum(indices_weights_)
@@ -75,13 +116,18 @@ class GreedySelector(Selector):
             it += 1
 
             # The second condition is related to numerical errors
-            if (loss_min_ >= (loss_min - self.eps_tol)) or (
+            if (self.early_stopping and loss_min_ >= (loss_min - self.eps_tol)) or (
                 len(np.unique(selected_indices)) == 1 and selected_indices[0] == i_min_
             ):
+                if self.verbose:
+                    print(f"Step {it}, ensemble selection stopped")
                 break
 
             loss_min = loss_min_
             selected_indices.append(i_min_)
+
+            if self.verbose:
+                print(f"Step {it}, ensemble is {selected_indices}")
 
         selected_indices, selected_indices_weights = np.unique(
             selected_indices, return_counts=True
@@ -89,5 +135,10 @@ class GreedySelector(Selector):
         selected_indices_weights = selected_indices_weights / np.sum(
             selected_indices_weights
         )
+
+        if self.verbose:
+            print(
+                f"After {it} steps, the final ensemble is {selected_indices} with weights {selected_indices_weights}"
+            )
 
         return selected_indices.tolist(), selected_indices_weights.tolist()
