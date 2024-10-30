@@ -26,7 +26,7 @@ import sphinx_book_theme
 # -- Project information -----------------------------------------------------
 
 project = "DeepHyper"
-copyright = "2018-2023, Argonne"
+copyright = "2018-2024, Argonne"
 author = "Argonne"
 
 # The short X.Y version
