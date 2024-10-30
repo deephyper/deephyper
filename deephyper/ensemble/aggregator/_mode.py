@@ -8,6 +8,15 @@ from deephyper.ensemble.aggregator._aggregator import Aggregator
 class ModeAggregator(Aggregator):
     """Aggregate the predictions using the mode of categorical distribution of each predictor in the ensemble.
 
+    .. list-table::
+        :widths: 25 25
+        :header-rows: 1
+
+        * - Array (Fixed Set)
+          - MaskedArray
+        * - ✅
+          - ❌
+
     This aggregator is useful when the ensemble is composed of predictors that output categorical distributions. The mode of the ensemble is the mode of the modes of the predictors. This minimizes the 0-1 loss.
     """
 

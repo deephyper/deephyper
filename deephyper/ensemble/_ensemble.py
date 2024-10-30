@@ -1,4 +1,3 @@
-import functools
 from typing import Dict, Sequence
 
 import numpy as np
@@ -6,22 +5,27 @@ import numpy as np
 from deephyper.ensemble.aggregator import Aggregator
 from deephyper.evaluator import Evaluator, RunningJob
 from deephyper.evaluator.storage import NullStorage
-from deephyper.predictor import Predictor
+from deephyper.predictor import Predictor, PredictorLoader
 
 
-def predict_with_predictor(predictor: Predictor, X: np.ndarray):
+def predict_with_predictor(predictor: Predictor | PredictorLoader, X: np.ndarray):
+    if isinstance(predictor, PredictorLoader):
+        predictor = predictor.load()
     return predictor.predict(X)
 
 
 def _wrapper_predict_with_predictor(job: RunningJob):
-    return predict_with_predictor(**job.parameters)
+    try:
+        return predict_with_predictor(**job.parameters)
+    except Exception as exception:
+        return exception
 
 
 class EnsemblePredictor(Predictor):
     """A predictor that is itself an ensemble of multiple predictors.
 
     Args:
-        predictors (Sequence[Predictor]): the list of predictors to put in the ensemble.
+        predictors (Sequence[Predictor | PredictorLoader]): the list of predictors to put in the ensemble. The sequence can be composed of ``Predictor`` (i.e., the model is already loaded in memory) or ``PredictorLoader`` to perform the loading remotely and in parallel. In the later case, the ``.load()`` function is called for each inference.
 
         aggregator (Aggregator): the aggregation function to fuse the predictions of the predictors into one prediction.
 
@@ -35,7 +39,7 @@ class EnsemblePredictor(Predictor):
 
     def __init__(
         self,
-        predictors: Sequence[Predictor],
+        predictors: Sequence[Predictor | PredictorLoader],
         aggregator: Aggregator,
         weights: Sequence[float] = None,
         evaluator: str | Dict = None,
@@ -93,7 +97,7 @@ class EnsemblePredictor(Predictor):
         return y
 
     def predictions_from_predictors(
-        self, X: np.ndarray, predictors: Sequence[Predictor]
+        self, X: np.ndarray, predictors: Sequence[Predictor | PredictorLoader]
     ):
         """Compute the predictions of a list of predictors.
 
@@ -117,5 +121,16 @@ class EnsemblePredictor(Predictor):
         jobs_done = self._evaluator.gather("ALL")
         jobs_done = list(sorted(jobs_done, key=lambda j: int(j.id.split(".")[-1])))
 
-        y_pred = [job.result for job in jobs_done]
+        y_pred = []
+        for i, job in enumerate(jobs_done):
+            if isinstance(job.output, Exception):
+                try:
+                    raise job.output
+                except:
+                    raise RuntimeError(
+                        f"Failed to call .predict(X) with predictors[{i}]: {predictors[i]}"
+                    )
+            else:
+                y_pred.append(job.output)
+
         return y_pred

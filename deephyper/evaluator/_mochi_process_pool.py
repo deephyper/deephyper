@@ -131,7 +131,7 @@ class MochiEvaluator(Evaluator):
 
             sol = await self.loop.run_in_executor(self.executor, run_function)
 
-            job.result = sol
+            job.output = sol
 
             self._qworker_addresses.append(target_address)
 

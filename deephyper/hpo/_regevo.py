@@ -134,7 +134,7 @@ class RegularizedEvolution(Search):
                     )
                 )
                 hp_name = self._random_state.choice(active_hyperparameter_names)
-                hp = space.get_hyperparameter(hp_name)
+                hp = space[hp_name]
                 hp_value = hp.rvs(size=None, random_state=space.random)
 
                 child_sample[hp_name] = hp_value

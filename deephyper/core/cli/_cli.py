@@ -11,7 +11,7 @@ It can be used in the shell with:
     DeepHyper command line.
 
     positional arguments:
-    {hps,nas,new-problem,ray-cluster,ray-submit,start-project}
+    {hps}
         hps                 Command line to run hyperparameter search.
 
     optional arguments:

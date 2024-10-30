@@ -30,6 +30,17 @@ def get_inactive_value_of_hyperparameter(hp):
 class RandomSearch(Search):
     """Random search algorithm used as an example for the API to implement new search algorithms.
 
+    .. list-table::
+        :widths: 25 25 25
+        :header-rows: 1
+
+        * - Single-Objective
+          - Multi-Objectives
+          - Failures
+        * - ✅
+          - ✅
+          - ✅
+
     Args:
         problem: object describing the search/optimization problem.
 

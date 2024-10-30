@@ -19,7 +19,7 @@ class SklearnPredictor(Predictor):
 
     def predict(self, X):
         if self._predict_func == "predict":
-            y = self.model.predict()
+            y = self.model.predict(X)
         else:
             y = self.model.predict_proba(X)
         return y

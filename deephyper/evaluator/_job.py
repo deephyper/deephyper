@@ -1,10 +1,11 @@
 import copy
 from collections.abc import MutableMapping
+from numbers import Number
+from typing import Any, Callable, Hashable, Union
 
-from typing import Hashable, Callable
+import numpy as np
 
-from deephyper.evaluator.storage import Storage, MemoryStorage
-from deephyper.evaluator._run_function_utils import standardize_run_function_output
+from deephyper.evaluator.storage import MemoryStorage, Storage
 from deephyper.stopper._stopper import Stopper
 
 
@@ -17,7 +18,7 @@ class Job:
 
     Args:
         id (Any): unique identifier of the job. Usually an integer.
-        config (dict): argument dictionnary of the ``run_function``.
+        args (dict): argument dictionnary of the ``run_function``.
         run_function (callable): function executed by the ``Evaluator``
     """
 
@@ -28,31 +29,22 @@ class Job:
 
     def __init__(self, id, args: dict, run_function: Callable):
         self.id = id
-        self.rank = None
         self.args = copy.deepcopy(args)
         self.run_function = run_function
         self.status = self.READY
         self.output = None
         self.metadata = dict()
-        self.observations = None
         self.context = JobContext()
 
     def __repr__(self) -> str:
-        if self.rank is not None:
-            return f"Job(id={self.id}, rank={self.rank}, status={self.status}, args={self.args})"
+        return f"Job(id={self.id}, status={self.status}, args={self.args})"
+
+    def set_output(self, output: Any):
+        if isinstance(output, dict) and isinstance(output.get("metadata"), dict):
+            self.metadata.update(output.pop("metadata"))
+            self.output = output.get("output")
         else:
-            return f"Job(id={self.id}, status={self.status}, args={self.args})"
-
-    @property
-    def parameters(self):
-        return self.args
-
-    @property
-    def result(self):
-        return self.output
-
-    def set_output(self, output):
-        self.output = output
+            self.output = output
 
     def create_running_job(self, storage, stopper):
         stopper = copy.deepcopy(stopper)
@@ -64,15 +56,7 @@ class Job:
 
 class HPOJob(Job):
     def __init__(self, id, args: dict, run_function: Callable):
-        self.id = id
-        self.rank = None
-        self.args = copy.deepcopy(args)
-        self.run_function = run_function
-        self.status = self.READY
-        self.output = {"objective": None, "metadata": dict()}
-        self.metadata = dict()
-        self.observations = None
-        self.context = JobContext()
+        super().__init__(id, args, run_function)
 
     def __getitem__(self, index):
         args = copy.deepcopy(self.args)
@@ -83,20 +67,74 @@ class HPOJob(Job):
         """Objective returned by the run-function."""
         return self.output["objective"]
 
-    @property
-    def metadata(self):
-        """Metadata of the job stored in the output of run-function."""
-        return self.output.get("metadata", dict())
+    @staticmethod
+    def standardize_output(
+        output: Union[str, float, tuple, list, dict],
+    ) -> dict:
+        """Transform the output of the run-function to its standard form.
 
-    @metadata.setter
-    def metadata(self, value):
-        self.output["metadata"] = value
+        Possible return values of the run-function are:
+
+        >>> 0
+        >>> 0, 0
+        >>> "F_something"
+        >>> {"objective": 0 }
+        >>> {"objective": (0, 0), "metadata": {...}}
+
+        Args:
+            output (Union[str, float, tuple, list, dict]): the output of the run-function.
+
+        Returns:
+            dict: standardized output of the function.
+        """
+        # Start by checking if the format output/metadata was used
+        metadata = dict()
+        if isinstance(output, dict) and "output" in output:
+            metadata.update(output.pop("metadata", dict()))
+            output = output["output"]
+
+        # output returned a single objective value
+        if np.isscalar(output):
+            if isinstance(output, str):
+                output = {"objective": output}
+            elif isinstance(output, Number):
+                output = {"objective": float(output)}
+            else:
+                raise TypeError(
+                    f"When a scalar type, the output of the run-function cannot be of type {type(output)} it should either be a string or a number."
+                )
+
+        # output only returned objective values as tuple or list
+        elif isinstance(output, (tuple, list)):
+
+            output = {"objective": output}
+
+        elif isinstance(output, dict):
+
+            other_metadata = output.pop("metadata", dict())
+            if not isinstance(other_metadata, dict):
+                TypeError(
+                    f"The metadata returned by the run-function should be a dictionnary but are: {other_metadata}."
+                )
+            metadata.update(other_metadata)
+
+            if "objective" not in output:
+                raise ValueError(
+                    f"The output of the run-function should have a key 'objective' when it is a dictionnary."
+                )
+
+        else:
+
+            raise TypeError(
+                f"The output of the run-function cannot be of type {type(output)}"
+            )
+
+        return output, metadata
 
     def set_output(self, output):
-        output = standardize_run_function_output(output)
-        self.output["objective"] = output["objective"]
-        self.output["metadata"].update(output["metadata"])
-        self.observations = output.get("observations", None)
+        output, metadata = HPOJob.standardize_output(output)
+        self.output = output
+        self.metadata.update(metadata)
 
 
 class RunningJob(MutableMapping):

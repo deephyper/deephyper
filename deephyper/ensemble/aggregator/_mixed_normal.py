@@ -3,10 +3,20 @@ from typing import List
 import numpy as np
 
 from deephyper.ensemble.aggregator._aggregator import Aggregator
+from deephyper.ensemble.aggregator._mean import average
 
 
 class MixedNormalAggregator(Aggregator):
     """Aggregate a collection of predictions each representing a normal distribution.
+
+    .. list-table::
+        :widths: 25 25
+        :header-rows: 1
+
+        * - Array (Fixed Set)
+          - MaskedArray
+        * - ✅
+          - ❌
 
     Args:
         decomposed_scale (bool, optional): If ``True``, the scale of the mixture distribution is decomposed into aleatoric and epistemic components. Default is ``False``.
@@ -30,27 +40,25 @@ class MixedNormalAggregator(Aggregator):
         for yi in y:
             for k, v in yi.items():
                 y_dict[k].append(v)
-        y = {k: np.asarray(v) for k, v in y_dict.items()}
+        y = {k: v for k, v in y_dict.items()}
 
         loc = y["loc"]
         scale = y["scale"]
 
-        mean_loc = np.average(loc, weights=weights, axis=0)
-        agg = {
-            "loc": mean_loc,
-        }
+        mean_loc = average(loc, weights=weights, axis=0)
+        agg = {"loc": mean_loc}
 
         if not self.decomposed_scale:
             sum_loc_scale = np.square(loc) + np.square(scale)
             mean_scale = np.sqrt(
-                np.average(sum_loc_scale, weights=weights, axis=0) - np.square(mean_loc)
+                average(sum_loc_scale, weights=weights, axis=0) - np.square(mean_loc)
             )
             agg["scale"] = mean_scale
 
         else:
             # Here we assume that the mixture distribution is a normal distribution with a scale that is the sum of the aleatoric and epistemic scales. This is a significant approximation that could be improved by returning the true GMM.
             scale_aleatoric = np.sqrt(
-                np.average(np.square(scale), weights=weights, axis=0)
+                average(np.square(scale), weights=weights, axis=0)
             )
             scale_epistemic = np.sqrt(np.square(np.std(loc, axis=0)))
             agg["scale_aleatoric"] = scale_aleatoric

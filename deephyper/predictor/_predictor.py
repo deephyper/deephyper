@@ -43,6 +43,9 @@ class PredictorFileLoader(PredictorLoader):
     def __init__(self, path_predictor_file: str):
         self.path_predictor_file = path_predictor_file
 
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}('{self.path_predictor_file}')"
+
     @staticmethod
     def find_predictor_files(path_directory: str, file_extension: str) -> List[str]:
         """Finds the predictor files in a directory given a specific extension.

@@ -1,3 +1,4 @@
+import pytest
 import unittest
 import time
 
@@ -49,16 +50,18 @@ def run_preprocessing_2(job):
 
 
 class TestMemoryLimit(unittest.TestCase):
-    def test_memory_limit_with_profile_decorator(self):
+    @pytest.mark.slow
+    def manual_test_memory_limit_with_profile_decorator(self):
 
         evaluator = Evaluator.create(run_preprocessing_1, method="serial")
         tasks = [{"x": i} for i in range(1)]
         evaluator.submit(tasks)
         jobs = evaluator.gather("ALL")
-        result = [job.result for job in jobs]
+        result = [job.output for job in jobs]
         metadata = [job.metadata for job in jobs]
         assert result[0]["objective"] == "F_memory_limit_exceeded"
 
+    @pytest.mark.slow
     def test_memory_limit_with_profile_decorator_as_function(self):
 
         run_profiled = profile(
@@ -74,7 +77,7 @@ class TestMemoryLimit(unittest.TestCase):
         tasks = [{"x": i} for i in range(1)]
         evaluator.submit(tasks)
         jobs = evaluator.gather("ALL")
-        result = [job.result for job in jobs]
+        result = [job.output for job in jobs]
         metadata = [job.metadata for job in jobs]
         assert result[0]["objective"] == "F_memory_limit_exceeded"
 

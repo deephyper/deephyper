@@ -18,6 +18,7 @@ from deephyper.skopt.optimizer import OBJECTIVE_VALUE_FAILURE
 from deephyper.core.utils._timeout import terminate_on_timeout
 from deephyper.evaluator.storage import Storage, MemoryStorage
 from deephyper.core.exceptions import MaximumJobsSpawnReached
+from deephyper.core.warnings import deprecated_api
 
 EVALUATORS = {
     "mpicomm": "_mpi_comm.MPICommEvaluator",
@@ -98,6 +99,7 @@ class Evaluator(abc.ABC):
         self.maximum_num_jobs_submitted = -1  # Maximum number of jobs to spawn.
         self._num_jobs_offset = 0
         self.loop = None  # Event loop for asyncio.
+        self.loop_is_new = False  # Indicates if the loop was created in sub-thread
         self._start_dumping = False
         self._columns_dumped = None  # columns names dumped in csv file
         self.num_objective = None  # record if multi-objective are recorded
@@ -160,8 +162,8 @@ class Evaluator(abc.ABC):
 
     @property
     def num_jobs_submitted(self):
-        job_outputs = self._storage.load_out_from_all_jobs(self._search_id)
-        return len(job_outputs) - self._num_jobs_offset
+        job_ids = self._storage.load_all_job_ids(self._search_id)
+        return len(job_ids) - self._num_jobs_offset
 
     @property
     def num_jobs_gathered(self):
@@ -310,11 +312,14 @@ class Evaluator(abc.ABC):
         return job
 
     @abc.abstractmethod
-    async def execute(self, job) -> Job:
+    async def execute(self, job: Job) -> Job:
         """Execute the received job. To be implemented with a specific backend.
 
         Args:
             job (Job): the ``Job`` to be executed.
+
+        Returns:
+            job: the update ``Job``.
         """
 
     def submit(self, args_list: List[Dict]):
@@ -327,10 +332,11 @@ class Evaluator(abc.ABC):
         if self.loop is None:
             try:
                 # works if `timeout` is not set and code is running in main thread
-                self.loop = asyncio.get_event_loop()
+                self.loop = asyncio.get_running_loop()
             except RuntimeError:
                 # required when `timeout` is set because code is not running in main thread
                 self.loop = asyncio.new_event_loop()
+                self.loop_is_new = True
         self.loop.run_until_complete(self._run_jobs(args_list))
         logging.info("submit done")
 
@@ -373,7 +379,23 @@ class Evaluator(abc.ABC):
         self._tasks_done = []
         self._tasks_pending = []
 
-        # access storage to return results from other processes
+        # Access storage to return results from other processes
+        other_results = self.gather_other_jobs_done()
+
+        if len(other_results) == 0:
+            logging.info(f"gather done - {len(local_results)} job(s)")
+
+            return local_results
+        else:
+            logging.info(
+                f"gather done - {len(local_results)} local(s) and {len(other_results)} other(s) job(s), "
+            )
+
+            return local_results, other_results
+
+    def gather_other_jobs_done(self):
+        """Access storage to return results from other processes."""
+
         job_id_all = self._storage.load_all_job_ids(self._search_id)
         job_id_not_gathered = np.setdiff1d(job_id_all, self.job_id_gathered).tolist()
 
@@ -397,16 +419,7 @@ class Evaluator(abc.ABC):
                     for cb in self._callbacks:
                         cb.on_done_other(job)
 
-        if len(other_results) == 0:
-            logging.info(f"gather done - {len(local_results)} job(s)")
-
-            return local_results
-        else:
-            logging.info(
-                f"gather done - {len(local_results)} local(s) and {len(other_results)} other(s) job(s), "
-            )
-
-            return local_results, other_results
+        return other_results
 
     def decode(self, key):
         """Decode the key following a JSON format to return a dict."""
@@ -429,25 +442,92 @@ class Evaluator(abc.ABC):
         else:
             return val
 
-    def dump_evals(self, saved_keys=None, log_dir: str = ".", filename="results.csv"):
-        """Dump evaluations to a CSV file. This will reset the ``jobs_done`` attribute to an empty list.
+    def __del__(self):
+        if self.loop is not None and self.loop_is_new:
+            self.loop.close()
+            self.loop = None
+
+    def dump_jobs_done_to_csv(
+        self,
+        log_dir: str = ".",
+        filename="results.csv",
+        flush: bool = False,
+    ):
+        """Dump completed jobs to a CSV file. This will reset the ``Evaluator.jobs_done`` attribute to an empty list.
 
         Args:
-            saved_keys (list|callable): If ``None`` the whole ``job.args`` will be added as row of the CSV file. If a ``list`` filtered keys will be added as a row of the CSV file. If a ``callable`` the output dictionnary will be added as a row of the CSV file.
             log_dir (str): directory where to dump the CSV file.
             filename (str): name of the file where to write the data.
+            flush (bool): a boolean indicating if the results should be flushed (i.e., forcing the dumping).
         """
-        logging.info("dump_evals starts...")
+        logging.info("Dumping completed jobs to CSV...")
+        if self._job_class is HPOJob:
+            self._dump_jobs_done_to_csv_as_hpo_format(log_dir, filename, flush)
+        else:
+            self._dump_jobs_done_to_csv_as_regular_format(log_dir, filename, flush)
+        logging.info("Dumping done")
+
+    def _dump_jobs_done_to_csv_as_regular_format(
+        self, log_dir: str = ".", filename="results.csv", flush: bool = False
+    ):
+        records_list = []
+
+        for job in self.jobs_done:
+
+            # job id and rank
+            result = {"job_id": int(job.id.split(".")[1])}
+
+            # input arguments: add prefix for all keys found in "args"
+            result.update({f"p:{k}": v for k, v in job.args.items()})
+
+            # output
+            if isinstance(job.output, dict):
+                output = {f"o:{k}": v for k, v in job.output.items()}
+            else:
+                output = {"o:": job.output}
+            result.update(output)
+
+            # metadata
+            metadata = {f"m:{k}": v for k, v in job.metadata.items() if k[0] != "_"}
+            result.update(metadata)
+
+            records_list.append(result)
+
+        if len(records_list) != 0:
+            mode = "a" if self._start_dumping else "w"
+
+            with open(os.path.join(log_dir, filename), mode) as fp:
+                if not (self._start_dumping):
+
+                    self._columns_dumped = records_list[0].keys()
+
+                if self._columns_dumped is not None:
+                    writer = csv.DictWriter(
+                        fp, self._columns_dumped, extrasaction="ignore"
+                    )
+
+                    if not (self._start_dumping):
+                        writer.writeheader()
+                        self._start_dumping = True
+
+                    writer.writerows(records_list)
+                    self.jobs_done = []
+
+    def _dump_jobs_done_to_csv_as_hpo_format(
+        self, log_dir: str = ".", filename="results.csv", flush: bool = False
+    ):
+        """Dump completed jobs to a CSV file. This will reset the ``Evaluator.jobs_done`` attribute to an empty list.
+
+        Args:
+            log_dir (str): directory where to dump the CSV file.
+            filename (str): name of the file where to write the data.
+            flush (bool): a boolean indicating if the results should be flushed (i.e., forcing the dumping).
+        """
         resultsList = []
 
         for job in self.jobs_done:
-            if saved_keys is None:
-                result = copy.deepcopy(job.args)
-            elif type(saved_keys) is list:
-                decoded_key = copy.deepcopy(job.args)
-                result = {k: self.convert_for_csv(decoded_key[k]) for k in saved_keys}
-            elif callable(saved_keys):
-                result = copy.deepcopy(saved_keys(job))
+
+            result = copy.deepcopy(job.args)
 
             # add prefix for all keys found in "args"
             result = {f"p:{k}": v for k, v in result.items()}
@@ -478,36 +558,37 @@ class Evaluator(abc.ABC):
             # job id and rank
             result["job_id"] = int(job.id.split(".")[1])
 
-            if isinstance(job.rank, int):
-                result["rank"] = job.rank
-
             # Profiling and other
             # methdata keys starting with "_" are not saved (considered as internal)
             metadata = {f"m:{k}": v for k, v in job.metadata.items() if k[0] != "_"}
             result.update(metadata)
 
-            if hasattr(job, "dequed"):
-                result["m:dequed"] = ",".join(job.dequed)
-
             resultsList.append(result)
-
-        self.jobs_done = []
 
         if len(resultsList) != 0:
             mode = "a" if self._start_dumping else "w"
 
             with open(os.path.join(log_dir, filename), mode) as fp:
                 if not (self._start_dumping):
-                    # Waiting to start receiving non-failed jobs before dumping results
                     for result in resultsList:
-                        if (
+
+                        # Waiting to start receiving non-failed jobs before dumping results
+                        is_single_obj_and_has_success = (
                             "objective" in result
                             and type(result["objective"]) is not str
-                        ) or (
+                        )
+                        is_multi_obj_and_has_success = (
                             "objective_0" in result
                             and type(result["objective_0"]) is not str
+                        )
+                        if (
+                            is_single_obj_and_has_success
+                            or is_multi_obj_and_has_success
+                            or flush
                         ):
                             self._columns_dumped = result.keys()
+
+                            break
 
                 if self._columns_dumped is not None:
                     writer = csv.DictWriter(
@@ -519,5 +600,12 @@ class Evaluator(abc.ABC):
                         self._start_dumping = True
 
                     writer.writerows(resultsList)
+                    self.jobs_done = []
 
-        logging.info("dump_evals done")
+    def dump_evals(
+        self, log_dir: str = ".", filename="results.csv", flush: bool = False
+    ):
+        deprecated_api(
+            "The ``Evaluator.dump_evals(...)`` method is deprecated and will be removed. The ``Evaluator.dump_jobs_done_to_csv(...)`` method should be used instead."
+        )
+        self.dump_jobs_done_to_csv(log_dir, filename, flush)

@@ -13,6 +13,8 @@ import yaml
 from typing import List, Dict
 
 from deephyper.core.exceptions import SearchTerminationError
+from deephyper.core.exceptions import MaximumJobsSpawnReached
+from deephyper.core.exceptions import TimeoutReached
 from deephyper.core.utils._introspection import get_init_params_as_json
 from deephyper.core.utils._timeout import terminate_on_timeout
 from deephyper.evaluator import Evaluator, HPOJob
@@ -184,26 +186,43 @@ class Search(abc.ABC):
                 if isinstance(cb, TqdmCallback):
                     cb.set_max_evals(max_evals)
 
+        wait_all_running_jobs = True
         try:
             self._search(max_evals, timeout)
+        except TimeoutReached:
+            wait_all_running_jobs = False
+            logging.warning(
+                f"Search is being stopped because the allowed timeout has been reached."
+            )
+        except MaximumJobsSpawnReached:
+            logging.warning(
+                f"Search is being stopped because the maximum number of spawned jobs has been reached."
+            )
         except SearchTerminationError:
-            pass
+            logging.warning(f"Search has been requested to be stopped.")
 
         # Collect remaining jobs
-        num_submit = self._evaluator.num_jobs_submitted
-        num_gather = self._evaluator.num_jobs_gathered
-        while num_submit > num_gather:
-            time.sleep(0.01)
+        if wait_all_running_jobs:
             num_submit = self._evaluator.num_jobs_submitted
             num_gather = self._evaluator.num_jobs_gathered
+            while num_submit > num_gather:
+                time.sleep(0.01)
+                num_submit = self._evaluator.num_jobs_submitted
+                num_gather = self._evaluator.num_jobs_gathered
 
-            self._evaluator.gather("ALL")
+                self._evaluator.gather("ALL")
 
-            self._evaluator.dump_evals(log_dir=self._log_dir)
+                self._evaluator.dump_jobs_done_to_csv(self._log_dir)
+        else:
+            self._evaluator.gather_other_jobs_done()
+            self._evaluator.dump_jobs_done_to_csv(self._log_dir)
 
         if not (os.path.exists(self._path_results)):
             logging.warning(f"Could not find results file at {self._path_results}!")
             return None
+
+        # Force dumping if all configurations were failed
+        self._evaluator.dump_jobs_done_to_csv(self._log_dir, flush=True)
 
         self.extend_results_with_pareto_efficient(self._path_results)
 
@@ -259,16 +278,15 @@ class Search(abc.ABC):
                 return self._evaluator.num_jobs_gathered
 
         n_ask = self._evaluator.num_workers
-        new_batch = self.ask(n_ask)
-
-        logging.info(f"Submitting {len(new_batch)} configurations...")
-        t1 = time.time()
-
-        self._evaluator.submit(new_batch)
-
-        logging.info(f"Submition took {time.time() - t1:.4f} sec.")
 
         while max_evals < 0 or num_evals() < max_evals:
+
+            new_batch = self.ask(n_ask)
+
+            logging.info(f"Submitting {len(new_batch)} configurations...")
+            t1 = time.time()
+            self._evaluator.submit(new_batch)
+            logging.info(f"Submition took {time.time() - t1:.4f} sec.")
 
             logging.info("Gathering jobs...")
             t1 = time.time()
@@ -292,7 +310,7 @@ class Search(abc.ABC):
 
             logging.info("Dumping evaluations...")
             t1 = time.time()
-            self._evaluator.dump_evals(log_dir=self._log_dir)
+            self._evaluator.dump_jobs_done_to_csv(log_dir=self._log_dir)
             logging.info(f"Dumping took {time.time() - t1:.4f} sec.")
 
             logging.info(f"Telling {len(new_results)} new result(s)...")
@@ -301,14 +319,6 @@ class Search(abc.ABC):
             logging.info(f"Telling took {time.time() - t1:.4f} sec.")
 
             n_ask = len(new_results)
-            new_batch = self.ask(n_ask)
-
-            logging.info(f"Submitting {len(new_batch)} configurations...")
-            t1 = time.time()
-
-            self._evaluator.submit(new_batch)
-
-            logging.info(f"Submition took {time.time() - t1:.4f} sec.")
 
     def ask(self, n: int = 1) -> List[Dict]:
         """Ask the search for new configurations to evaluate.
@@ -319,7 +329,7 @@ class Search(abc.ABC):
         Returns:
             List[Dict]: a list of hyperparameter configurations to evaluate.
         """
-        logging.info(f"Asking {self._evaluator.num_workers} initial configurations...")
+        logging.info(f"Asking {n} configuration(s)...")
         t1 = time.time()
 
         new_samples = self._ask(n)

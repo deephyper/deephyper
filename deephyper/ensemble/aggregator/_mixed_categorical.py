@@ -4,11 +4,20 @@ import numpy as np
 import scipy.stats as ss
 
 from deephyper.ensemble.aggregator._aggregator import Aggregator
+from deephyper.ensemble.aggregator._mean import average
 
 
 class MixedCategoricalAggregator(Aggregator):
     """Aggregate a set of categorical distributions.
 
+    .. list-table::
+        :widths: 25 25
+        :header-rows: 1
+
+        * - Array (Fixed Set)
+          - MaskedArray
+        * - ✅
+          - ❌
 
 
     Args:
@@ -41,8 +50,8 @@ class MixedCategoricalAggregator(Aggregator):
             np.array: Aggregated predictions of shape ``(n_samples, n_outputs)``.
         """
         # Categorical probabilities (n_predictors, n_samples, ..., n_classes)
-        y_proba_models = np.asarray(y)
-        y_proba_ensemble = np.average(y_proba_models, weights=weights, axis=0)
+        y_proba_models = y
+        y_proba_ensemble = average(y_proba_models, weights=weights, axis=0)
 
         agg = {
             "loc": y_proba_ensemble,
