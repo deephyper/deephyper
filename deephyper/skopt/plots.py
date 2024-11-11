@@ -454,7 +454,7 @@ def _format_scatter_plot_axes(ax, space, ylabel, plot_dims, dim_labels=None):
                     ax_.set_xticklabels([])
                 # ... the bottom row
                 else:
-                    [l.set_rotation(45) for l in ax_.get_xticklabels()]
+                    [label.set_rotation(45) for label in ax_.get_xticklabels()]
                     ax_.set_xlabel(dim_labels[j])
 
                 # configure plot for linear vs log-scale

@@ -10,7 +10,7 @@ def load_attr(str_full_module):
     Returns:
         Any: the attribute.
     """
-    if type(str_full_module) == str:
+    if type(str_full_module) is str:
         split_full = str_full_module.split(".")
         str_module = ".".join(split_full[:-1])
         str_attr = split_full[-1]

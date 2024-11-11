@@ -120,7 +120,7 @@ def check_hyperparameter(parameter, name=None, default_value=None):
             "Shortcut definition of an hyper-parameter has to be a type in [list, tuple, array, dict, float, int, str]."
         )
 
-    if not (type(name) is str):
+    if type(name) is not str:
         raise ValueError("The 'name' of an hyper-parameter should be a string!")
 
     kwargs = {}

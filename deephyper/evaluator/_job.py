@@ -120,7 +120,7 @@ class HPOJob(Job):
 
             if "objective" not in output:
                 raise ValueError(
-                    f"The output of the run-function should have a key 'objective' when it is a dictionnary."
+                    "The output of the run-function should have a key 'objective' when it is a dictionnary."
                 )
 
         else:

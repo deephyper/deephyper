@@ -126,7 +126,7 @@ class EnsemblePredictor(Predictor):
             if isinstance(job.output, Exception):
                 try:
                     raise job.output
-                except:
+                except Exception:
                     raise RuntimeError(
                         f"Failed to call .predict(X) with predictors[{i}]: {predictors[i]}"
                     )

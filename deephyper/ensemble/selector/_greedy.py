@@ -97,7 +97,7 @@ class GreedySelector(Selector):
                     losses.append(np.nan)
                     continue
 
-                if self.bagging and not (i in bagged_predictors):
+                if self.bagging and i not in bagged_predictors:
                     losses.append(np.nan)
                     continue
 

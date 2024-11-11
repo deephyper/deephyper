@@ -190,7 +190,7 @@ class CBO(Search):
         self._init_params = locals()
 
         # check input parameters
-        if not (type(n_jobs) is int):
+        if type(n_jobs) is not int:
             raise ValueError(f"Parameter n_jobs={n_jobs} should be an integer value!")
 
         surrogate_model_allowed = [
@@ -233,7 +233,7 @@ class CBO(Search):
             "MESd",
             "gp_hedged",
         ]
-        if not (acq_func in acq_func_allowed):
+        if acq_func not in acq_func_allowed:
             raise ValueError(
                 f"Parameter 'acq_func={acq_func}' should have a value in {acq_func_allowed}!"
             )
@@ -244,15 +244,15 @@ class CBO(Search):
         if not (np.isscalar(xi)):
             raise ValueError("Parameter 'xi' should be a scalar value!")
 
-        if not (type(n_points) is int):
+        if type(n_points) is not int:
             raise ValueError("Parameter 'n_points' shoud be an integer value!")
 
-        if not (type(filter_duplicated) is bool):
+        if type(filter_duplicated) is not bool:
             raise ValueError(
                 f"Parameter filter_duplicated={filter_duplicated} should be a boolean value!"
             )
 
-        if not (type(max_failures) is int):
+        if type(max_failures) is not int:
             raise ValueError(
                 f"Parameter max_failures={max_failures} should be an integer value!"
             )
@@ -291,7 +291,7 @@ class CBO(Search):
             "boltzmann",
             "qUCB",
         ]
-        if not (multi_point_strategy in multi_point_strategy_allowed):
+        if multi_point_strategy not in multi_point_strategy_allowed:
             raise ValueError(
                 f"Parameter multi_point_strategy={multi_point_strategy} should have a value in {multi_point_strategy_allowed}!"
             )
@@ -512,7 +512,7 @@ class CBO(Search):
 
         # Check if the surrogate model is supported
         accepted_names = ["RF", "ET", "TB", "RS", "GBRT", "DUMMY", "GP", "MF", "HGBRT"]
-        if not (name in accepted_names):
+        if name not in accepted_names:
             raise ValueError(
                 f"Unknown surrogate model {name}, please choose among {accepted_names}."
             )
@@ -631,19 +631,19 @@ class CBO(Search):
     def _return_cond(self, cond, cst_new):
         parent = cst_new.get_hyperparameter(cond.parent.name)
         child = cst_new.get_hyperparameter(cond.child.name)
-        if type(cond) == CS.EqualsCondition:
+        if type(cond) is CS.EqualsCondition:
             value = cond.value
             cond_new = CS.EqualsCondition(child, parent, cond.value)
-        elif type(cond) == CS.GreaterThanCondition:
+        elif type(cond) is CS.GreaterThanCondition:
             value = cond.value
             cond_new = CS.GreaterThanCondition(child, parent, value)
-        elif type(cond) == CS.NotEqualsCondition:
+        elif type(cond) is CS.NotEqualsCondition:
             value = cond.value
             cond_new = CS.GreaterThanCondition(child, parent, value)
-        elif type(cond) == CS.LessThanCondition:
+        elif type(cond) is CS.LessThanCondition:
             value = cond.value
             cond_new = CS.GreaterThanCondition(child, parent, value)
-        elif type(cond) == CS.InCondition:
+        elif type(cond) is CS.InCondition:
             values = cond.values
             cond_new = CS.GreaterThanCondition(child, parent, values)
         else:
@@ -651,12 +651,12 @@ class CBO(Search):
         return cond_new
 
     def _return_forbid(self, cond, cst_new):
-        if type(cond) == CS.ForbiddenEqualsClause or type(cond) == CS.ForbiddenInClause:
+        if type(cond) is CS.ForbiddenEqualsClause or type(cond) is CS.ForbiddenInClause:
             hp = cst_new.get_hyperparameter(cond.hyperparameter.name)
-            if type(cond) == CS.ForbiddenEqualsClause:
+            if type(cond) is CS.ForbiddenEqualsClause:
                 value = cond.value
                 cond_new = CS.ForbiddenEqualsClause(hp, value)
-            elif type(cond) == CS.ForbiddenInClause:
+            elif type(cond) is CS.ForbiddenInClause:
                 values = cond.values
                 cond_new = CS.ForbiddenInClause(hp, values)
             else:
@@ -874,7 +874,7 @@ class CBO(Search):
                     df[col] = df[col].astype(float)
 
         cst = self._problem.space
-        if type(cst) != CS.ConfigurationSpace:
+        if type(cst) is not CS.ConfigurationSpace:
             logging.error(f"{type(cst)}: not supported for trainsfer learning")
 
         res_df = df
@@ -947,7 +947,7 @@ class CBO(Search):
 
         # For conditions
         for cond in cst.conditions():
-            if type(cond) == CS.AndConjunction or type(cond) == CS.OrConjunction:
+            if type(cond) is CS.AndConjunction or type(cond) is CS.OrConjunction:
                 cond_list = []
                 for comp in cond.components:
                     cond_list.append(self._return_cond(comp, cst_new))
