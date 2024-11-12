@@ -149,7 +149,8 @@ Table of Contents
     :maxdepth: 2
     :caption: Developer's Guide
 
-    developer_guides/index
+    developer_guides/contributing
+    developer_guides/software_architecture
     
 
 
