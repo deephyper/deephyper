@@ -133,6 +133,8 @@ Table of Contents
 
 .. toctree::
     :caption: API Reference
+    :maxdepth: 1
+    :titlesonly:
 
     Analysis <_autosummary/deephyper.analysis>
     Core <_autosummary/deephyper.core>
@@ -145,14 +147,10 @@ Table of Contents
 
 .. toctree::
     :maxdepth: 2
-    :caption: Developer Guides
-    :glob:
+    :caption: Developer's Guide
 
-    developer_guides/dev
-    developer_guides/doc
-    developer_guides/tests_link
-    developer_guides/build
-    developer_guides/software_architecture
+    developer_guides/index
+    
 
 
 Indices and tables
