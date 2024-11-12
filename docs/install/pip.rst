@@ -3,7 +3,7 @@
 Install DeepHyper with pip
 **************************
 
-DeepHyper installation requires ``Python>=3.9``.
+DeepHyper installation requires ``Python>=3.10``.
 
 .. warning:: All packages required for your application need to be installed in the same environment.
 

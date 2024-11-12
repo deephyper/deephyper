@@ -9,7 +9,7 @@ DeepHyper's software architecture is designed to be modular and extensible. It i
 * :mod:`deephyper.stopper`: Tools to define multi-fidelity strategies for hyperparameter optimization (HPO) and neural architecture search (NAS).
 
 
-DeepHyper installation requires **Python >= 3.9**.
+DeepHyper installation requires **Python >= 3.10**.
 
 """
 

@@ -2,7 +2,7 @@ FROM continuumio/miniconda3
 
 WORKDIR /app
 
-RUN conda create -n dh python=3.9 -y --quiet
+RUN conda create -n dh python=3.10 -y --quiet
 
 # Make RUN commands use the new environment:
 SHELL ["conda", "run", "-n", "dh", "/bin/bash", "-c"]
