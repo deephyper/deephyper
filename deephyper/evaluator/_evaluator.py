@@ -444,6 +444,8 @@ class Evaluator(abc.ABC):
 
     def __del__(self):
         if self.loop is not None and self.loop_is_new:
+            for t in self._tasks_running:
+                t.cancel()
             self.loop.close()
             self.loop = None
 
