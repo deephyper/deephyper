@@ -52,7 +52,6 @@ class ConstantGPRSurrogate(object):
         return self
 
 
-@pytest.mark.hps
 def test_acquisition_ei_correctness():
     # check that it works with a vector as well
     X = 10 * np.ones((4, 2))
@@ -60,7 +59,6 @@ def test_acquisition_ei_correctness():
     assert_array_almost_equal(ei, [0.1977966] * 4)
 
 
-@pytest.mark.hps
 def test_acquisition_pi_correctness():
     # check that it works with a vector as well
     X = 10 * np.ones((4, 2))
@@ -68,7 +66,6 @@ def test_acquisition_pi_correctness():
     assert_array_almost_equal(pi, [0.308538] * 4)
 
 
-@pytest.mark.hps
 def test_acquisition_variance_correctness():
     # check that it works with a vector as well
     X = 10 * np.ones((4, 2))
@@ -76,7 +73,6 @@ def test_acquisition_variance_correctness():
     assert_array_almost_equal(var, [-1.0] * 4)
 
 
-@pytest.mark.hps
 def test_acquisition_lcb_correctness():
     # check that it works with a vector as well
     X = 10 * np.ones((4, 2))
@@ -84,7 +80,6 @@ def test_acquisition_lcb_correctness():
     assert_array_almost_equal(lcb, [-0.3] * 4)
 
 
-@pytest.mark.hps
 def test_acquisition_api():
     rng = np.random.RandomState(0)
     X = rng.randn(10, 2)
@@ -106,7 +101,6 @@ def check_gradient_correctness(X_new, model, acq_func, y_opt):
     assert_array_almost_equal(analytic_grad, num_grad, 3)
 
 
-@pytest.mark.hps
 def test_acquisition_gradient():
     rng = np.random.RandomState(0)
     X = rng.randn(20, 5)
@@ -121,7 +115,6 @@ def test_acquisition_gradient():
         check_gradient_correctness(X_new, gpr, acq_func, np.max(y))
 
 
-@pytest.mark.hps
 def test_acquisition_gradient_cookbook():
     rng = np.random.RandomState(0)
     X = rng.randn(20, 5)
@@ -134,7 +127,6 @@ def test_acquisition_gradient_cookbook():
         check_gradient_correctness(X_new, gpr, acq_func, np.max(y))
 
 
-@pytest.mark.hps
 @pytest.mark.parametrize("acq_func", ["EIps", "PIps"])
 def test_acquisition_per_second(acq_func):
     X = np.reshape(np.linspace(4.0, 8.0, 10), (-1, 1))
@@ -162,7 +154,6 @@ def test_gaussian_acquisition_check_inputs():
     assert "it must be 2-dimensional" in err.value.args[0]
 
 
-@pytest.mark.hps
 @pytest.mark.parametrize("acq_func", ["EIps", "PIps"])
 def test_acquisition_per_second_gradient(acq_func):
     rng = np.random.RandomState(0)

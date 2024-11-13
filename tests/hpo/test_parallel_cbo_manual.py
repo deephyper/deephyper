@@ -66,7 +66,6 @@ def _test_parallel_cbo_manual():
 
 
 @pytest.mark.fast
-@pytest.mark.hps
 @pytest.mark.mpi
 @pytest.mark.redis
 def test_dbo_timeout():

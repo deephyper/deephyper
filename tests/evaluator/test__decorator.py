@@ -37,7 +37,6 @@ def run_scalar_output_with_memory(job):
 
 
 @pytest.mark.fast
-@pytest.mark.hps
 class TestDecorator(unittest.TestCase):
     def test_profile(self):
         # Scalar output

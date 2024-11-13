@@ -93,7 +93,13 @@ class RegularizedEvolution(Search):
 
         # Random sampling
         if len(self._population) < self.population_size:
-            new_samples = space.sample_configuration(size=n)
+            import warnings
+
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+                new_samples = space.sample_configuration(size=n)
+
             if not (isinstance(new_samples, list)):
                 new_samples = [new_samples]
 

@@ -76,7 +76,12 @@ class RandomSearch(Search):
         Returns:
             List[Dict]: a list of hyperparameter configurations to evaluate.
         """
-        new_samples = self._problem.space.sample_configuration(size=n)
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=DeprecationWarning)
+            new_samples = self._problem.space.sample_configuration(size=n)
+
         if not (isinstance(new_samples, list)):
             new_samples = [new_samples]
 

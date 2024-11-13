@@ -55,7 +55,6 @@ def _test_dbo_max_evals(tmp_path):
 
 
 @pytest.mark.fast
-@pytest.mark.hps
 @pytest.mark.mpi
 @pytest.mark.redis
 def test_dbo_timeout(tmp_path):

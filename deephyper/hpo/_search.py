@@ -217,6 +217,9 @@ class Search(abc.ABC):
             self._evaluator.gather_other_jobs_done()
             self._evaluator.dump_jobs_done_to_csv(self._log_dir)
 
+        self._evaluator.cancel_running_jobs()
+        # self._evaluator.close()
+
         if not (os.path.exists(self._path_results)):
             logging.warning(f"Could not find results file at {self._path_results}!")
             return None

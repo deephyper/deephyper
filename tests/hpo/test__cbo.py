@@ -1,7 +1,7 @@
 import pytest
 
 
-@pytest.mark.hps
+@pytest.mark.fast
 def test_cbo_random_seed(tmp_path):
     import numpy as np
     from deephyper.evaluator import Evaluator
@@ -69,7 +69,7 @@ def test_cbo_random_seed(tmp_path):
     assert np.array_equal(res1_array, res2_array)
 
 
-@pytest.mark.hps
+@pytest.mark.fast
 def test_sample_types(tmp_path):
     import numpy as np
     from deephyper.hpo import HpProblem
@@ -108,7 +108,7 @@ def test_sample_types(tmp_path):
     ).search(10)
 
 
-@pytest.mark.hps
+@pytest.mark.fast
 def test_sample_types_no_cat(tmp_path):
     import numpy as np
     from deephyper.evaluator import Evaluator
@@ -146,7 +146,7 @@ def test_sample_types_no_cat(tmp_path):
     ).search(10)
 
 
-@pytest.mark.hps
+@pytest.mark.fast
 def test_gp(tmp_path):
     from deephyper.evaluator import Evaluator
     from deephyper.hpo import HpProblem
@@ -201,7 +201,7 @@ def test_gp(tmp_path):
     ).search(10)
 
 
-@pytest.mark.hps
+@pytest.mark.fast
 def test_sample_types_conditional(tmp_path):
     import ConfigSpace as cs
     import numpy as np
@@ -281,7 +281,7 @@ def test_sample_types_conditional(tmp_path):
     assert len(results) == 20
 
 
-@pytest.mark.hps
+@pytest.mark.fast
 def test_timeout(tmp_path):
     import time
     from deephyper.hpo import HpProblem
@@ -292,12 +292,12 @@ def test_timeout(tmp_path):
 
     def run(job):
         config = job.parameters
-        print("job:", job.id)
         try:
             # simulate working thread
             while True:
                 1 + 1
-        except:  # simulate the catching of any exception here
+                time.sleep(0.2)
+        except Exception as e:  # simulate the catching of any exception here
             time.sleep(2)
         return config["x"]
 
@@ -329,7 +329,7 @@ def run_max_evals(job):
     return config["x"]
 
 
-@pytest.mark.hps
+@pytest.mark.fast
 def test_max_evals_strict(tmp_path):
     from deephyper.hpo import HpProblem
     from deephyper.hpo import CBO
@@ -352,7 +352,7 @@ def test_max_evals_strict(tmp_path):
     assert len(results) == max_evals
 
 
-@pytest.mark.hps
+@pytest.mark.fast
 def test_initial_points(tmp_path):
     from deephyper.hpo import HpProblem
     from deephyper.hpo import CBO
@@ -377,7 +377,7 @@ def test_initial_points(tmp_path):
     assert result.loc[0, "objective"] == problem.default_configuration["x"]
 
 
-@pytest.mark.hps
+@pytest.mark.fast
 def test_cbo_checkpoint_restart(tmp_path):
     from deephyper.hpo import HpProblem
     from deephyper.hpo import CBO
@@ -419,7 +419,7 @@ def test_cbo_checkpoint_restart(tmp_path):
     assert len(new_results_b) == 6
 
 
-@pytest.mark.hps
+@pytest.mark.fast
 def test_cbo_categorical_variable(tmp_path):
     from deephyper.hpo import HpProblem
     from deephyper.hpo import CBO
@@ -447,7 +447,6 @@ def test_cbo_categorical_variable(tmp_path):
 
 
 @pytest.mark.slow
-@pytest.mark.hps
 def test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path):
     import numpy as np
     from deephyper.hpo import HpProblem
@@ -505,7 +504,7 @@ def test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path):
 
 
 # @pytest.mark.slow
-# @pytest.mark.hps
+#
 # def test_cbo_with_acq_optimizer_mixedga_and_forbiddens_in_problem(tmp_path):
 #     # TODO: this does not enforce the forbidden contraints
 #     import numpy as np
@@ -556,13 +555,38 @@ def test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path):
 
 
 if __name__ == "__main__":
+    import logging
+
+    logging.basicConfig(
+        # filename=path_log_file, # optional if we want to store the logs to disk
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(filename)s:%(funcName)s - %(message)s",
+        force=True,
+    )
+
+    import time
+
     tmp_path = "/tmp/deephyper_test"
-    # test_cbo_random_seed(tmp_path)
-    # test_sample_types(tmp_path)
-    # test_sample_types_conditional(tmp_path)
-    # test_timeout(tmp_path)
-    # test_cbo_with_acq_optimizer_mixedga_and_forbiddens_in_problem(tmp_path)
-    # test_gp(tmp_path)
-    # test_cbo_checkpoint_restart(tmp_path)
-    test_max_evals_strict(tmp_path)
-    # test_initial_points(tmp_path)
+
+    scope = locals().copy()
+    # for k in scope:
+    for k in [
+        "test_timeout",
+        "test_max_evals_strict",
+    ]:
+        if k.startswith("test_"):
+
+            print(f"Running {k}")
+
+            test_func = scope[k]
+
+            t1 = time.time()
+            test_func(tmp_path)
+            duration = time.time() - t1
+
+            print(f"\t{duration:.2f} sec.")
+
+    # t1 = time.time()
+    # test_max_evals_strict(tmp_path)
+    # duration = time.time() - t1
+    # print(f"\t{duration:.2f} sec.")

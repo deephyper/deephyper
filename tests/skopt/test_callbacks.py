@@ -18,7 +18,6 @@ from deephyper.skopt.callbacks import ThresholdStopper
 from deephyper.skopt.utils import load
 
 
-@pytest.mark.hps
 def test_timer_callback():
     callback = TimerCallback()
     dummy_minimize(bench1, [(-1.0, 1.0)], callback=callback, n_calls=10)
@@ -26,7 +25,6 @@ def test_timer_callback():
     assert 0.0 < sum(callback.iter_time)
 
 
-@pytest.mark.hps
 def test_deltay_stopper():
     deltay = DeltaYStopper(0.2, 3)
 
@@ -37,7 +35,6 @@ def test_deltay_stopper():
     assert deltay(Result([0, 1])) is None
 
 
-@pytest.mark.hps
 def test_threshold_stopper():
     threshold = ThresholdStopper(3.0)
 
@@ -47,7 +44,6 @@ def test_threshold_stopper():
     assert threshold(Result([3.0, 3, 2.9, 0, 0.0]))
 
 
-@pytest.mark.hps
 def test_deadline_stopper():
     deadline = DeadlineStopper(0.0001)
     gp_minimize(bench3, [(-1.0, 1.0)], callback=deadline, n_calls=10, random_state=1)
@@ -60,7 +56,6 @@ def test_deadline_stopper():
     assert np.sum(deadline.iter_time) < deadline.total_time
 
 
-@pytest.mark.hps
 def test_hollow_iterations_stopper():
     Result = namedtuple("Result", ["func_vals"])
 
@@ -103,7 +98,6 @@ def test_hollow_iterations_stopper():
     assert len(result.func_vals) == 4
 
 
-@pytest.mark.hps
 def test_checkpoint_saver():
     checkpoint_path = "./test_checkpoint.pkl"
 

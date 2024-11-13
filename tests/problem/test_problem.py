@@ -3,7 +3,6 @@ import unittest
 import pytest
 
 
-@pytest.mark.hps
 class HpProblemTest(unittest.TestCase):
     def test_add_good_dim(self):
         import ConfigSpace as cs

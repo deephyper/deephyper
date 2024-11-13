@@ -42,14 +42,18 @@ ACQUISITION = ["LCB", "EI"]
 INITGEN = ["random", "lhs", "halton", "hammersly", "sobol"]
 
 
-@pytest.mark.hps_slow_test
+_slow_test
+
+
 @pytest.mark.parametrize("search", SEARCH)
 @pytest.mark.parametrize("acq", ACQUISITION)
 def test_gp_minimize_bench1(search, acq):
     check_minimize(bench1, 0.0, [(-2.0, 2.0)], search, acq, 0.05, 20)
 
 
-@pytest.mark.hps_slow_test
+_slow_test
+
+
 @pytest.mark.parametrize("search", ["sampling"])
 @pytest.mark.parametrize("acq", ["LCB"])
 @pytest.mark.parametrize("initgen", INITGEN)
@@ -57,21 +61,24 @@ def test_gp_minimize_bench1_initgen(search, acq, initgen):
     check_minimize(bench1, 0.0, [(-2.0, 2.0)], search, acq, 0.05, 20, init_gen=initgen)
 
 
-@pytest.mark.hps_slow_test
+_slow_test
+
+
 @pytest.mark.parametrize("search", SEARCH)
 @pytest.mark.parametrize("acq", ACQUISITION)
 def test_gp_minimize_bench2(search, acq):
     check_minimize(bench2, -5, [(-6.0, 6.0)], search, acq, 0.05, 20)
 
 
-@pytest.mark.hps_slow_test
+_slow_test
+
+
 @pytest.mark.parametrize("search", SEARCH)
 @pytest.mark.parametrize("acq", ACQUISITION)
 def test_gp_minimize_bench3(search, acq):
     check_minimize(bench3, -0.9, [(-2.0, 2.0)], search, acq, 0.05, 20)
 
 
-@pytest.mark.hps
 @pytest.mark.parametrize("search", ["sampling"])
 @pytest.mark.parametrize("acq", ACQUISITION)
 def test_gp_minimize_bench4(search, acq):
@@ -80,7 +87,6 @@ def test_gp_minimize_bench4(search, acq):
     check_minimize(bench4, 0, [("-2", "-1", "0", "1", "2")], search, acq, 1.05, 20)
 
 
-@pytest.mark.hps
 def test_n_jobs():
     r_single = gp_minimize(
         bench3,
@@ -106,13 +112,11 @@ def test_n_jobs():
     assert_array_equal(r_single.x_iters, r_double.x_iters)
 
 
-@pytest.mark.hps
 def test_gpr_default():
     """Smoke test that gp_minimize does not fail for default values."""
     gp_minimize(branin, ((-5.0, 10.0), (0.0, 15.0)), n_initial_points=2, n_calls=2)
 
 
-@pytest.mark.hps
 def test_use_given_estimator():
     """Test that gp_minimize does not use default estimator if one is passed
     in explicitly."""
@@ -132,7 +136,6 @@ def test_use_given_estimator():
     assert res["models"][-1].noise == noise_correct
 
 
-@pytest.mark.hps
 def test_use_given_estimator_with_max_model_size():
     """Test that gp_minimize does not use default estimator if one is passed
     in explicitly."""
@@ -153,7 +156,6 @@ def test_use_given_estimator_with_max_model_size():
     assert res["models"][-1].noise == noise_correct
 
 
-@pytest.mark.hps
 def test_categorical_integer():
     def f(params):
         return np.random.uniform()

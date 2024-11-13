@@ -16,7 +16,6 @@ def run_0(job: RunningJob) -> dict:
 
 
 @pytest.mark.fast
-@pytest.mark.hps
 @pytest.mark.ray
 class TestRayStorage(unittest.TestCase):
     def test_basic(self):

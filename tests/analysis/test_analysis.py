@@ -3,7 +3,6 @@ import pytest
 
 
 @pytest.mark.fast
-@pytest.mark.hps
 class TestAnalysis(unittest.TestCase):
     def test_rank(self):
         from deephyper.analysis import rank

@@ -10,7 +10,6 @@ def truth(X):
     return 0.5 * np.sin(1.75 * X[:, 0])
 
 
-@pytest.mark.hps
 def test_random_forest():
     # toy sample
     X = [[-2, -1], [-1, -1], [-1, -2], [1, 1], [1, 2], [2, 1]]
@@ -63,7 +62,6 @@ def test_random_forest():
     assert leaf_indices.shape == (len(X), clf.n_estimators)
 
 
-@pytest.mark.hps
 def test_extra_forest():
     # toy sample
     X = [[-2, -1], [-1, -1], [-1, -2], [1, 1], [1, 2], [2, 1]]

@@ -10,7 +10,6 @@ def run(job: RunningJob) -> dict:
 
 
 @pytest.mark.fast
-@pytest.mark.hps
 class TestNullStorage(unittest.TestCase):
     def test_basic(self):
 

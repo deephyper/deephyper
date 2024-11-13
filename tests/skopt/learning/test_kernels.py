@@ -77,7 +77,6 @@ def check_gradient_correctness(kernel, X, Y, step_size=1e-4):
     assert_array_almost_equal(X_grad, num_grad, decimal=3)
 
 
-@pytest.mark.hps
 @pytest.mark.parametrize("kernel", KERNELS)
 def test_gradient_correctness(kernel):
     rng = np.random.RandomState(0)
@@ -86,7 +85,6 @@ def test_gradient_correctness(kernel):
     check_gradient_correctness(kernel, X, Y)
 
 
-@pytest.mark.hps
 @pytest.mark.parametrize("random_state", [0, 1])
 @pytest.mark.parametrize("kernel", KERNELS)
 def test_gradient_finiteness(random_state, kernel):
@@ -101,7 +99,6 @@ def test_gradient_finiteness(random_state, kernel):
     check_gradient_correctness(kernel, X, Y, 1e-6)
 
 
-@pytest.mark.hps
 def test_distance_string():
     # Inspired by test_hamming_string_array in scipy.tests.test_distance
     a = np.array(
@@ -160,7 +157,6 @@ def test_distance_string():
     assert_array_almost_equal(-np.log(hm(X)) / 20.0, true_values)
 
 
-@pytest.mark.hps
 def test_isotropic_kernel():
     rng = np.random.RandomState(0)
     X = rng.randint(0, 4, (5, 3))
@@ -172,7 +168,6 @@ def test_isotropic_kernel():
     assert_array_almost_equal(scipy_dist, hm(X))
 
 
-@pytest.mark.hps
 def test_anisotropic_kernel():
     rng = np.random.RandomState(0)
     X = rng.randint(0, 4, (5, 3))
@@ -189,7 +184,6 @@ def test_anisotropic_kernel():
     assert_array_almost_equal(X_kernel, X_kernel_aniso)
 
 
-@pytest.mark.hps
 def test_kernel_gradient():
     rng = np.random.RandomState(0)
     hm = HammingKernel(length_scale=2.0)
@@ -219,7 +213,6 @@ def test_kernel_gradient():
     assert_array_almost_equal(K_gradient_approx, K_gradient, 4)
 
 
-@pytest.mark.hps
 def test_Y_is_not_None():
     rng = np.random.RandomState(0)
     hm = HammingKernel()
@@ -229,7 +222,6 @@ def test_Y_is_not_None():
     assert_array_equal(hm(X), hm(X, X))
 
 
-@pytest.mark.hps
 def test_gp_regressor():
     rng = np.random.RandomState(0)
     X = np.asarray(

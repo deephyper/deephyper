@@ -42,7 +42,6 @@ def _test_mpicomm_evaluator():
 
 
 @pytest.mark.fast
-@pytest.mark.hps
 @pytest.mark.mpi
 def test_mpicomm_evaluator():
     command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_mpicomm_evaluator"

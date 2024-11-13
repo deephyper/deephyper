@@ -29,7 +29,6 @@ def run(job: RunningJob) -> dict:
 
 
 @pytest.mark.fast
-@pytest.mark.hps
 def test_median_stopper_with_cbo(tmp_path):
 
     # define the variable you want to optimize
@@ -60,7 +59,6 @@ def test_median_stopper_with_cbo(tmp_path):
 
 
 @pytest.mark.fast
-@pytest.mark.hps
 def test_median_stopper_with_random_search(tmp_path):
 
     # define the variable you want to optimize

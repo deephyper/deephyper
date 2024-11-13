@@ -23,7 +23,9 @@ def save_axes(ax, filename):
     fig.savefig(filename)
 
 
-@pytest.mark.hps_slow_test
+_slow_test
+
+
 def test_plots_work():
     """Basic smoke tests to make sure plotting doesn't crash."""
     SPACE = [
@@ -99,7 +101,9 @@ def test_plots_work():
     # Look into how matplotlib does this.
 
 
-@pytest.mark.hps_slow_test
+_slow_test
+
+
 def test_plots_work_without_cat():
     """Basic smoke tests to make sure plotting doesn't crash."""
     SPACE = [
@@ -129,7 +133,6 @@ def test_plots_work_without_cat():
     # Look into how matplotlib does this.
 
 
-@pytest.mark.hps
 def test_evaluate_min_params():
     res = gp_minimize(
         bench3,

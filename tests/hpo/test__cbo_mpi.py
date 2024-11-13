@@ -41,7 +41,6 @@ def _test_mpi_timeout(tmp_path):
 
 
 @pytest.mark.fast
-@pytest.mark.hps
 @pytest.mark.mpi
 def test_mpi_timeout(tmp_path):
     command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_mpi_timeout {tmp_path}"

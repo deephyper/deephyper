@@ -8,7 +8,6 @@ def run(config, dequed=None):
 
 class TestQueuedEvaluator(unittest.TestCase):
     @pytest.mark.fast
-    @pytest.mark.hps
     def test_queued_serial_evaluator(self):
         from deephyper.evaluator import SerialEvaluator, queued, HPOJob
 
@@ -40,7 +39,6 @@ class TestQueuedEvaluator(unittest.TestCase):
         assert results == [1, 2, 3, 4, 1, 2, 3, 4]
 
     @pytest.mark.fast
-    @pytest.mark.hps
     @pytest.mark.ray
     def test_queued_ray_evaluator(self):
         try:
