@@ -44,7 +44,8 @@ def profile(
             ...
             return y
 
-    If the ``memory`` argument is set to ``True``, the memory usage is also measured, for example by using the decorator as follows:
+    If the ``memory`` argument is set to ``True``, the memory usage is also
+    measured, for example by using the decorator as follows:
 
     .. code-block::
 
@@ -53,7 +54,9 @@ def profile(
             ...
             return y
 
-    If the ``memory_limit` is used then the call will be cancelled (when possible) if the memory usage exceeds the limit, for example by using the decorator as follows:
+    If the ``memory_limit` is used then the call will be cancelled
+    (when possible) if the memory usage exceeds the limit, for example by
+    using the decorator as follows:
 
     .. code-block::
 
@@ -72,7 +75,6 @@ def profile(
     """
 
     def decorator_profile(func):
-
         if register and memory:
             register_inner_function_for_pickle(func)
 
@@ -82,7 +84,6 @@ def profile(
 
             # Measure peak memory
             if memory:
-
                 p = psutil.Process()  # get the current process
 
                 output = None
@@ -98,7 +99,6 @@ def profile(
                     memory_peak = p.memory_info().rss
 
                     while not future.done():
-
                         # in bytes (not the peak memory but last snapshot)
                         memory_peak = max(p.memory_info().rss, memory_peak)
 
@@ -121,7 +121,6 @@ def profile(
 
             # Regular call without memory profiling
             else:
-
                 output = func(*args, **kwargs)
 
             timestamp_end = time.time()

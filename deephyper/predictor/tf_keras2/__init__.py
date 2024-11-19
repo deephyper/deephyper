@@ -1,5 +1,4 @@
-"""Subpackage for the TensorFlow Keras 2 based predictors.
-"""
+"""Subpackage for the TensorFlow Keras 2 based predictors."""
 
 from deephyper.predictor.tf_keras2._predictor_tf_keras2 import (
     TFKeras2Predictor,

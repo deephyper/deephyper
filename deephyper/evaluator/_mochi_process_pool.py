@@ -71,7 +71,6 @@ class MochiEvaluator(Evaluator):
         self._size = self._comm.Get_size()
         self.executor = None
         if self._rank == 0:  # master
-
             self.sem = asyncio.Semaphore(num_workers)
             # !creating the exector once here is crutial to avoid repetitive overheads
             self.executor = ProcessPoolExecutor(max_workers=num_workers)
@@ -93,7 +92,6 @@ class MochiEvaluator(Evaluator):
             self._qworker_addresses = collections.deque(self._worker_addresses)
 
         else:  # workers
-
             margo_server(self._comm, self._protocol)
 
     def __enter__(self):
@@ -114,9 +112,7 @@ class MochiEvaluator(Evaluator):
                     address.shutdown()
 
     async def execute(self, job):
-
         async with self.sem:
-
             target_address = self._qworker_addresses.popleft()
 
             running_job = job.create_running_job(self._storage, self._stopper)

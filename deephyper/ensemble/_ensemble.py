@@ -44,7 +44,6 @@ class EnsemblePredictor(Predictor):
         weights: Sequence[float] = None,
         evaluator: str | Dict = None,
     ):
-
         self.predictors = predictors
         self.aggregator = aggregator
         self.weights = weights

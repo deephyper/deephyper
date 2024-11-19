@@ -1,5 +1,4 @@
-"""Visualization tools for Hyperparameter Optimization.
-"""
+"""Visualization tools for Hyperparameter Optimization."""
 
 from typing import Tuple, List
 
@@ -274,7 +273,6 @@ def plot_worker_utilization(
 
 
 def add_colorbar_px(paxfig, data, cmap="viridis", colorbar_kwargs={}):
-
     # Attribute
     paxfig._pax_colorbar = True
 
@@ -400,7 +398,6 @@ def plot_parallel_coordinate(
     cols = convertCols(cols)
 
     if highlight:
-
         # Split data
         paxfig = pax_parallel(n_axes=len(cols))
         if rank_mode == "min":

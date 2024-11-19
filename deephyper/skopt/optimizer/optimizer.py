@@ -419,8 +419,9 @@ class Optimizer(object):
         # Initialize storage for optimization
         if not isinstance(model_queue_size, (int, type(None))):
             raise TypeError(
-                "model_queue_size should be an int or None, "
-                "got {}".format(type(model_queue_size))
+                "model_queue_size should be an int or None, " "got {}".format(
+                    type(model_queue_size)
+                )
             )
 
         # For multiobjective optimization

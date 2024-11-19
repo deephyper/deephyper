@@ -106,7 +106,6 @@ class RegularizedEvolution(Search):
             for i, sample in enumerate(new_samples):
                 sample = dict(sample)
                 for hp_name in self._problem.hyperparameter_names:
-
                     # If the parameter is inactive due to some conditions then we attribute the
                     # lower bound value to break symmetries and enforce the same representation.
                     if hp_name not in sample:
@@ -124,7 +123,6 @@ class RegularizedEvolution(Search):
         else:
             new_samples = []
             for i in range(n):
-
                 samples_idxs = self._random_state.choice(
                     self.population_size, size=self.sample_size, replace=False
                 )
@@ -149,7 +147,6 @@ class RegularizedEvolution(Search):
                 )
 
                 for hp_name in self._problem.hyperparameter_names:
-
                     # If the parameter is inactive due to some conditions then we attribute the
                     # lower bound value to break symmetries and enforce the same representation.
                     if hp_name not in child_sample:

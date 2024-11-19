@@ -283,7 +283,6 @@ class Search(abc.ABC):
         n_ask = self._evaluator.num_workers
 
         while max_evals < 0 or num_evals() < max_evals:
-
             new_batch = self.ask(n_ask)
 
             logging.info(f"Submitting {len(new_batch)} configurations...")

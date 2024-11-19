@@ -18,9 +18,7 @@ def add_arguments_from_signature(parser, obj, prefix="", exclude=[]):
 
     for p_name, p in sig.parameters.items():
         if p.name not in exclude:
-
             if p.kind == inspect._POSITIONAL_OR_KEYWORD:
-
                 arg_format = f"--{prefix}{p_name.replace('_', '-')}"
                 arg_kwargs = {"help": ""}
 

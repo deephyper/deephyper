@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-""" Inspired by https://github.com/jonathf/chaospy/blob/master/chaospy/
+"""Inspired by https://github.com/jonathf/chaospy/blob/master/chaospy/
 distributions/sampler/sequences/hammersley.py
 """
+
 import numpy as np
 from .halton import Halton
 from ..space import Space

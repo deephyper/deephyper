@@ -49,7 +49,6 @@ class SerialEvaluator(Evaluator):
             logger.info(f"Serial Evaluator will execute {self.run_function}")
 
     async def execute(self, job: Job) -> Job:
-
         running_job = job.create_running_job(self._storage, self._stopper)
 
         output = self.run_function(running_job, **self.run_function_kwargs)

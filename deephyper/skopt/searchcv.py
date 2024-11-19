@@ -288,7 +288,6 @@ class BayesSearchCV(BaseSearchCV):
         error_score="raise",
         return_train_score=False,
     ):
-
         self.search_spaces = search_spaces
         self.n_iter = n_iter
         self.n_points = n_points
@@ -435,7 +434,6 @@ class BayesSearchCV(BaseSearchCV):
         total_iter = 0
 
         for elem in self.search_spaces:
-
             if isinstance(elem, tuple):
                 space, n_iter = elem
             else:

@@ -112,7 +112,6 @@ def check_hyperparameter(parameter, name=None, default_value=None):
         return parameter
 
     if not isinstance(parameter, (list, tuple, np.ndarray, dict)):
-
         if isinstance(parameter, (int, float, str)):
             return csh.Constant(name=name, value=parameter)
 
@@ -132,10 +131,13 @@ def check_hyperparameter(parameter, name=None, default_value=None):
             prior = "uniform"
         elif len(parameter) == 3:
             prior = parameter[2]
-            assert prior in [
-                "uniform",
-                "log-uniform",
-            ], f"Prior has to be 'uniform' or 'log-uniform' when {prior} was given for parameter '{name}'"
+            assert (
+                prior
+                in [
+                    "uniform",
+                    "log-uniform",
+                ]
+            ), f"Prior has to be 'uniform' or 'log-uniform' when {prior} was given for parameter '{name}'"
             parameter = parameter[:2]
 
         log = prior == "log-uniform"

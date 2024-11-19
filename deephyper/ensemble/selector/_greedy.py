@@ -8,7 +8,10 @@ from deephyper.ensemble.selector._selector import Selector
 
 
 class GreedySelector(Selector):
-    """Selection method implementing Greedy (a.k.a., Caruana) selection. This method iteratively and greedily selects the predictors that minimize the loss when aggregated together.
+    """Selection method implementing Greedy (a.k.a., Caruana) selection.
+
+    This method iteratively and greedily selects the predictors that minimize
+    the loss when aggregated together.
 
     Args:
         loss_func (Callable or Loss): a loss function that takes two arguments: the true target values and the predicted target values.
@@ -62,7 +65,6 @@ class GreedySelector(Selector):
         return self.aggregator.aggregate(y_predictors, weights)
 
     def select(self, y, y_predictors) -> Sequence[int]:
-
         # Initialization
         losses = [self._evaluate(y, y_pred_i) for y_pred_i in y_predictors]
         selected_indices = np.argsort(losses)[: self.k_init].tolist()
@@ -81,7 +83,6 @@ class GreedySelector(Selector):
         while (self.max_it < 0 or it < self.max_it) and len(
             np.unique(selected_indices)
         ) < self.k:
-
             losses = []
 
             if self.bagging:
@@ -92,7 +93,6 @@ class GreedySelector(Selector):
                 )
 
             for i in range(n_predictors):
-
                 if not self.with_replacement and i in selected_indices:
                     losses.append(np.nan)
                     continue

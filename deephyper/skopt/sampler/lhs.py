@@ -3,6 +3,7 @@ Lhs functions are inspired by
 https://github.com/clicumu/pyDOE2/blob/
 master/pyDOE2/doe_lhs.py
 """
+
 import numpy as np
 from sklearn.utils import check_random_state
 from scipy import spatial

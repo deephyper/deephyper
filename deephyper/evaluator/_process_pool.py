@@ -49,9 +49,7 @@ class ProcessPoolEvaluator(Evaluator):
             logger.info(f"ProcessPool Evaluator will execute {self.run_function}")
 
     async def execute(self, job: Job) -> Job:
-
         async with self.sem:
-
             running_job = job.create_running_job(self._storage, self._stopper)
 
             run_function = functools.partial(

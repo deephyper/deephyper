@@ -1,5 +1,6 @@
 # -*- encoding: UTF-8 -*-
 """Plotting functions."""
+
 import sys
 import numpy as np
 from itertools import count

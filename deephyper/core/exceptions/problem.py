@@ -1,5 +1,4 @@
-"""Exceptions related with problem definition.
-"""
+"""Exceptions related with problem definition."""
 
 from deephyper.core.exceptions import DeephyperError
 
