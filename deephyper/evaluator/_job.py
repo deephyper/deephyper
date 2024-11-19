@@ -1,5 +1,7 @@
 import copy
+import threading
 from collections.abc import MutableMapping
+from enum import Enum
 from numbers import Number
 from typing import Any, Callable, Hashable, Union
 
@@ -13,8 +15,19 @@ class JobContext:
     search = None
 
 
+class JobStatus(Enum):
+    """Represents the job status states."""
+
+    READY = 0
+    RUNNING = 1
+    DONE = 2
+    CANCELLING = 3  # The job has been requested to be cancelled but is still running.
+    CANCELLED = 4
+
+
 class Job:
     """Represents an evaluation executed by the ``Evaluator`` class.
+
 
     Args:
         id (Any): unique identifier of the job. Usually an integer.
@@ -22,19 +35,20 @@ class Job:
         run_function (callable): function executed by the ``Evaluator``
     """
 
-    # Job status states.
-    READY = 0
-    RUNNING = 1
-    DONE = 2
-
-    def __init__(self, id, args: dict, run_function: Callable):
+    def __init__(
+        self,
+        id: Hashable,
+        args: dict,
+        run_function: Callable,
+        storage: Storage,
+    ):
         self.id = id
         self.args = copy.deepcopy(args)
         self.run_function = run_function
-        self.status = self.READY
         self.output = None
         self.metadata = dict()
         self.context = JobContext()
+        self.storage = storage
 
     def __repr__(self) -> str:
         return f"Job(id={self.id}, status={self.status}, args={self.args})"
@@ -46,17 +60,25 @@ class Job:
         else:
             self.output = output
 
-    def create_running_job(self, storage, stopper):
+    def create_running_job(self, stopper):
         stopper = copy.deepcopy(stopper)
-        rjob = RunningJob(self.id, self.args, storage, stopper)
+        rjob = RunningJob(self.id, self.args, self.storage, stopper)
         if stopper is not None and hasattr(stopper, "job"):
             stopper.job = rjob
         return rjob
 
+    @property
+    def status(self) -> JobStatus:
+        return JobStatus(self.storage.load_job_status(self.id))
+
+    @status.setter
+    def status(self, job_status: JobStatus):
+        self.storage.store_job_status(self.id, job_status.value)
+
 
 class HPOJob(Job):
-    def __init__(self, id, args: dict, run_function: Callable):
-        super().__init__(id, args, run_function)
+    def __init__(self, id, args: dict, run_function: Callable, storage: Storage):
+        super().__init__(id, args, run_function, storage)
 
     def __getitem__(self, index):
         args = copy.deepcopy(self.args)
@@ -138,7 +160,7 @@ class HPOJob(Job):
 
 
 class RunningJob(MutableMapping):
-    """A RunningJob is adapted Job object that is passed to the run-function as input.
+    """A RunningJob is an adapted Job object that is passed to the run-function as input.
 
     Args:
         id (Hashable, optional): The identifier of the job in the Storage. Defaults to None.
@@ -187,6 +209,10 @@ class RunningJob(MutableMapping):
 
     def __len__(self):
         return len(self.parameters)
+
+    @property
+    def status(self):
+        return JobStatus(self.storage.load_job_status(self.id))
 
     def record(self, budget: float, objective: float):
         """Records the current ``budget`` and ``objective`` values in the object and

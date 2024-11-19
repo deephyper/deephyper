@@ -1,6 +1,6 @@
+import logging
 import multiprocessing
 import multiprocessing.pool
-
 
 from deephyper.core.exceptions import TimeoutReached
 
@@ -25,6 +25,8 @@ def terminate_on_timeout(timeout, func, *args, **kwargs):
     try:
         return results.get(timeout)
     except multiprocessing.TimeoutError:
-        raise TimeoutReached(f"Search timeout expired after: {timeout}")
+        msg = f"Search timeout expired after {timeout} sec."
+        logging.warning(msg)
+        raise TimeoutReached(msg)
     finally:
         pool.terminate()

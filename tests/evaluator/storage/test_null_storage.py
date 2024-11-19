@@ -5,7 +5,7 @@ from deephyper.evaluator import Evaluator, RunningJob
 from deephyper.evaluator.storage._null_storage import NullStorage
 
 
-def run(job: RunningJob) -> dict:
+async def run(job: RunningJob) -> dict:
     return job.parameters["x"] + 1
 
 
@@ -27,6 +27,7 @@ class TestNullStorage(unittest.TestCase):
         results = list(map(lambda job: job.output, jobs_done))
         print(f"{inputs=}")
         print(f"{results=}")
+        evaluator.close()
 
 
 if __name__ == "__main__":

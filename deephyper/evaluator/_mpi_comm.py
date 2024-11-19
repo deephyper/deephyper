@@ -29,6 +29,7 @@ def catch_exception(run_func):
     except Exception:
         code = 1
         result = traceback.format_exc()
+    print(f"{code=}, {result=}")
     return code, result
 
 

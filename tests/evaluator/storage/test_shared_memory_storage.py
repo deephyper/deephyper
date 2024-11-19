@@ -2,7 +2,7 @@ import unittest
 import pytest
 
 from deephyper.evaluator import Evaluator, RunningJob, HPOJob
-from deephyper.evaluator.storage import MemoryStorage
+from deephyper.evaluator.storage import SharedMemoryStorage
 
 
 async def run_async(job: RunningJob) -> dict:
@@ -20,11 +20,11 @@ def run_sync(job: RunningJob) -> dict:
 
 
 @pytest.mark.fast
-class TestMemoryStorage(unittest.TestCase):
+class TestSharedMemoryStorage(unittest.TestCase):
     def test_basic(self):
 
         # Creation of the database
-        storage = MemoryStorage()
+        storage = SharedMemoryStorage()
         search_id0 = storage.create_new_search()
         job_id0 = storage.create_new_job(search_id0)
         job_id1 = storage.create_new_job(search_id=search_id0)
@@ -76,7 +76,7 @@ class TestMemoryStorage(unittest.TestCase):
         self.assertEqual(job_id0_data["metadata"], {"timestamp": 10})
 
     def test_with_evaluator(self):
-        storage = MemoryStorage()
+        storage = SharedMemoryStorage()
 
         # serial evaluator
         evaluator = Evaluator.create(
@@ -110,5 +110,5 @@ class TestMemoryStorage(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    test = TestMemoryStorage()
+    test = TestSharedMemoryStorage()
     test.test_with_evaluator()

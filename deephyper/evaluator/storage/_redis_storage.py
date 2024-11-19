@@ -37,7 +37,7 @@ class RedisStorage(Storage):
             host=self._host,
             port=self._port,
             db=self._db,
-            charset="utf-8",
+            encoding="utf-8",
             decode_responses=True,
         )
         self.connected = True
@@ -86,7 +86,14 @@ class RedisStorage(Storage):
         job_id = f"{search_id}.{partial_id}"
         self._redis.rpush(f"search:{search_id}.job_id_list", job_id)
         self._redis.json().set(
-            f"job:{job_id}", ".", {"in": None, "metadata": {}, "out": None}
+            name=f"job:{job_id}",
+            path=".",
+            obj={
+                "status": 0,
+                "in": None,
+                "metadata": {},
+                "out": None,
+            },
         )
         logging.info(f"Created new job:{job_id}")
         return job_id
@@ -277,3 +284,23 @@ class RedisStorage(Storage):
         data = self._redis.json().mget(redis_job_ids, ".")
         data = {k: v for k, v in zip(job_ids, data)}
         return data
+
+    def store_job_status(self, job_id: Hashable, job_status: int):
+        """Stores the new job status.
+
+        Args:
+            job_id (Hashable): The job identifier.
+            job_status (int): The status of the job.
+        """
+        self.store_job(job_id, key="status", value=job_status)
+
+    def load_job_status(self, job_id: Hashable) -> int:
+        """Loads the status of a job.
+
+        Args:
+            job_id (Hashable): The job identifier.
+
+        Returns:
+            int: The status of the job.
+        """
+        return self._redis.json().get(f"job:{job_id}", ".status")

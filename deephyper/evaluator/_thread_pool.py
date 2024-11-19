@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Hashable
 
 from deephyper.evaluator._evaluator import Evaluator
-from deephyper.evaluator._job import Job
+from deephyper.evaluator._job import Job, JobStatus
 from deephyper.evaluator.storage import Storage
 
 logger = logging.getLogger(__name__)
@@ -43,7 +43,10 @@ class ThreadPoolEvaluator(Evaluator):
             search_id=search_id,
         )
         self.sem = asyncio.Semaphore(num_workers)
-        self.executor = ThreadPoolExecutor(max_workers=num_workers)
+        self.executor = ThreadPoolExecutor(
+            max_workers=num_workers,
+            thread_name_prefix="ThreadPoolEvaluator",
+        )
 
         if hasattr(run_function, "__name__") and hasattr(run_function, "__module__"):
             logger.info(
@@ -55,14 +58,32 @@ class ThreadPoolEvaluator(Evaluator):
     async def execute(self, job: Job) -> Job:
         async with self.sem:
 
-            running_job = job.create_running_job(self._storage, self._stopper)
+            job.status = JobStatus.RUNNING
+
+            running_job = job.create_running_job(self._stopper)
 
             run_function = functools.partial(
                 job.run_function, running_job, **self.run_function_kwargs
             )
 
-            output = await self.loop.run_in_executor(self.executor, run_function)
+            run_function_future = self.loop.run_in_executor(self.executor, run_function)
+
+            if self.timeout is not None:
+                try:
+                    output = await asyncio.wait_for(
+                        asyncio.shield(run_function_future), timeout=self.time_left
+                    )
+                except asyncio.TimeoutError:
+                    job.status = JobStatus.CANCELLING
+                    output = await run_function_future
+                    job.status = JobStatus.CANCELLED
+            else:
+                output = await run_function_future
 
             job.set_output(output)
 
         return job
+
+    def close(self):
+        logging.info("Closing ThreadPoolEvaluator")
+        self.loop.close()

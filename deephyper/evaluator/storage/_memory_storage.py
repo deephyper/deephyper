@@ -53,6 +53,7 @@ class MemoryStorage(Storage):
         job_id = f"{search_id}.{partial_id}"
         self._data[search_id]["job_id_counter"] += 1
         self._data[search_id]["data"][partial_id] = {
+            "status": 0,
             "in": None,
             "out": None,
             "metadata": {},
@@ -69,7 +70,6 @@ class MemoryStorage(Storage):
             value (Any): The value to store.
         """
         search_id, partial_id = job_id.split(".")
-
         self._data[search_id]["data"][partial_id][key] = value
 
     def store_job_in(
@@ -222,3 +222,23 @@ class MemoryStorage(Storage):
             job_data = self._data[search_id]["data"][partial_id]
             data[job_id] = job_data
         return data
+
+    def store_job_status(self, job_id: Hashable, job_status: int):
+        """Stores the new job status.
+
+        Args:
+            job_id (Hashable): The job identifier.
+            job_status (int): The status of the job.
+        """
+        self.store_job(job_id=job_id, key="status", value=job_status)
+
+    def load_job_status(self, job_id: Hashable) -> int:
+        """Loads the status of a job.
+
+        Args:
+            job_id (Hashable): The job identifier.
+
+        Returns:
+            int: The status of the job.
+        """
+        return self.load_job(job_id)["status"]

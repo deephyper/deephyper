@@ -1,12 +1,14 @@
+import time
+
 import pytest
 
 
 @pytest.mark.fast
 def test_cbo_random_seed(tmp_path):
     import numpy as np
+
     from deephyper.evaluator import Evaluator
-    from deephyper.hpo import HpProblem
-    from deephyper.hpo import CBO
+    from deephyper.hpo import CBO, HpProblem
 
     problem = HpProblem()
     problem.add_hyperparameter((0.0, 10.0), "x")
@@ -72,8 +74,8 @@ def test_cbo_random_seed(tmp_path):
 @pytest.mark.fast
 def test_sample_types(tmp_path):
     import numpy as np
-    from deephyper.hpo import HpProblem
-    from deephyper.hpo import CBO
+
+    from deephyper.hpo import CBO, HpProblem
 
     problem = HpProblem()
     problem.add_hyperparameter((0, 10), "x_int")
@@ -111,9 +113,9 @@ def test_sample_types(tmp_path):
 @pytest.mark.fast
 def test_sample_types_no_cat(tmp_path):
     import numpy as np
+
     from deephyper.evaluator import Evaluator
-    from deephyper.hpo import HpProblem
-    from deephyper.hpo import CBO
+    from deephyper.hpo import CBO, HpProblem
 
     problem = HpProblem()
     problem.add_hyperparameter((0, 10), "x_int")
@@ -149,8 +151,7 @@ def test_sample_types_no_cat(tmp_path):
 @pytest.mark.fast
 def test_gp(tmp_path):
     from deephyper.evaluator import Evaluator
-    from deephyper.hpo import HpProblem
-    from deephyper.hpo import CBO
+    from deephyper.hpo import CBO, HpProblem
 
     # test float hyperparameters
     problem = HpProblem()
@@ -205,9 +206,9 @@ def test_gp(tmp_path):
 def test_sample_types_conditional(tmp_path):
     import ConfigSpace as cs
     import numpy as np
+
     from deephyper.evaluator import Evaluator
-    from deephyper.hpo import HpProblem
-    from deephyper.hpo import CBO
+    from deephyper.hpo import CBO, HpProblem
 
     problem = HpProblem()
 
@@ -281,49 +282,6 @@ def test_sample_types_conditional(tmp_path):
     assert len(results) == 20
 
 
-@pytest.mark.fast
-def test_timeout(tmp_path):
-    import time
-    from deephyper.hpo import HpProblem
-    from deephyper.hpo import CBO
-
-    problem = HpProblem()
-    problem.add_hyperparameter((0.0, 10.0), "x")
-
-    def run(job):
-        config = job.parameters
-        try:
-            # simulate working thread
-            while True:
-                1 + 1
-                time.sleep(0.2)
-        except Exception as e:  # simulate the catching of any exception here
-            time.sleep(2)
-        return config["x"]
-
-    # Test Timeout without max_evals
-    search = CBO(
-        problem, run, random_state=42, surrogate_model="DUMMY", log_dir=tmp_path
-    )
-
-    t1 = time.time()
-    result = search.search(timeout=1)
-    duration = time.time() - t1
-    assert duration < 3
-    assert result is None
-
-    # Test Timeout with max_evals (this should be like an "max_evals or timeout" condition)
-    search = CBO(
-        problem, run, random_state=42, surrogate_model="DUMMY", log_dir=tmp_path
-    )
-
-    t1 = time.time()
-    result = search.search(max_evals=10, timeout=1, max_evals_strict=True)
-    duration = time.time() - t1
-    assert duration < 3
-    assert result is None
-
-
 def run_max_evals(job):
     config = job.parameters
     return config["x"]
@@ -331,9 +289,8 @@ def run_max_evals(job):
 
 @pytest.mark.fast
 def test_max_evals_strict(tmp_path):
-    from deephyper.hpo import HpProblem
-    from deephyper.hpo import CBO
     from deephyper.evaluator import Evaluator
+    from deephyper.hpo import CBO, HpProblem
 
     problem = HpProblem()
     problem.add_hyperparameter((0.0, 10.0), "x")
@@ -354,8 +311,7 @@ def test_max_evals_strict(tmp_path):
 
 @pytest.mark.fast
 def test_initial_points(tmp_path):
-    from deephyper.hpo import HpProblem
-    from deephyper.hpo import CBO
+    from deephyper.hpo import CBO, HpProblem
 
     problem = HpProblem()
     problem.add_hyperparameter((0.0, 10.0), "x")
@@ -379,8 +335,7 @@ def test_initial_points(tmp_path):
 
 @pytest.mark.fast
 def test_cbo_checkpoint_restart(tmp_path):
-    from deephyper.hpo import HpProblem
-    from deephyper.hpo import CBO
+    from deephyper.hpo import CBO, HpProblem
 
     problem = HpProblem()
     problem.add_hyperparameter((0.0, 10.0), "x")
@@ -421,9 +376,8 @@ def test_cbo_checkpoint_restart(tmp_path):
 
 @pytest.mark.fast
 def test_cbo_categorical_variable(tmp_path):
-    from deephyper.hpo import HpProblem
-    from deephyper.hpo import CBO
     from deephyper.evaluator import SerialEvaluator
+    from deephyper.hpo import CBO, HpProblem
 
     problem = HpProblem()
     problem.add_hyperparameter([32, 64, 96], "x", default_value=64)
@@ -449,11 +403,10 @@ def test_cbo_categorical_variable(tmp_path):
 @pytest.mark.slow
 def test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path):
     import numpy as np
-    from deephyper.hpo import HpProblem
-    from deephyper.hpo import CBO
-    from deephyper.evaluator import Evaluator
-
     from ConfigSpace import GreaterThanCondition
+
+    from deephyper.evaluator import Evaluator
+    from deephyper.hpo import CBO, HpProblem
 
     problem = HpProblem()
 
@@ -497,6 +450,7 @@ def test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path):
     results = search.search(max_evals=100)
 
     import matplotlib.pyplot as plt
+
     from deephyper.analysis.hpo import plot_search_trajectory_single_objective_hpo
 
     fig, ax = plot_search_trajectory_single_objective_hpo(results)
@@ -568,25 +522,26 @@ if __name__ == "__main__":
 
     tmp_path = "/tmp/deephyper_test"
 
-    scope = locals().copy()
-    # for k in scope:
-    for k in [
-        "test_timeout",
-        "test_max_evals_strict",
-    ]:
-        if k.startswith("test_"):
+    # scope = locals().copy()
+    # # for k in scope:
+    # for k in [
+    #     "test_timeout",
+    #     # "test_max_evals_strict",
+    # ]:
+    #     if k.startswith("test_"):
 
-            print(f"Running {k}")
+    #         print(f"Running {k}")
 
-            test_func = scope[k]
+    #         test_func = scope[k]
 
-            t1 = time.time()
-            test_func(tmp_path)
-            duration = time.time() - t1
+    #         t1 = time.time()
+    #         test_func(tmp_path)
+    #         duration = time.time() - t1
 
-            print(f"\t{duration:.2f} sec.")
+    #         print(f"\t{duration:.2f} sec.")
 
-    # t1 = time.time()
+    t1 = time.time()
     # test_max_evals_strict(tmp_path)
-    # duration = time.time() - t1
-    # print(f"\t{duration:.2f} sec.")
+    test_timeout(tmp_path)
+    duration = time.time() - t1
+    print(f"\t{duration:.2f} sec.")

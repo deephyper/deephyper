@@ -1,6 +1,6 @@
 import abc
 import copy
-import functools
+import inspect
 import logging
 import os
 import pathlib
@@ -16,7 +16,6 @@ from deephyper.core.exceptions import SearchTerminationError
 from deephyper.core.exceptions import MaximumJobsSpawnReached
 from deephyper.core.exceptions import TimeoutReached
 from deephyper.core.utils._introspection import get_init_params_as_json
-from deephyper.core.utils._timeout import terminate_on_timeout
 from deephyper.evaluator import Evaluator, HPOJob
 from deephyper.evaluator.callback import TqdmCallback
 from deephyper.skopt.moo import non_dominated_set
@@ -100,19 +99,30 @@ class Search(abc.ABC):
 
         self._evaluator._stopper = stopper
 
+        self.stopped = False
+
     def check_evaluator(self, evaluator):
+
         if not (isinstance(evaluator, Evaluator)):
+
             if callable(evaluator):
+
+                # Pick the adapted evaluator depending if the passed function is a coroutine
+                if inspect.iscoroutinefunction(evaluator):
+                    method = "serial"
+                else:
+                    method = "thread"
+
                 self._evaluator = Evaluator.create(
                     evaluator,
-                    method="serial",
+                    method=method,
                     method_kwargs={
                         "callbacks": [TqdmCallback()] if self._verbose else []
                     },
                 )
             else:
                 raise TypeError(
-                    f"The evaluator shoud be an instance of deephyper.evaluator.Evaluator by is {type(evaluator)}!"
+                    f"The evaluator shoud be of type deephyper.evaluator.Evaluator or Callable but it is  {type(evaluator)}!"
                 )
         else:
             self._evaluator = evaluator
@@ -152,11 +162,10 @@ class Search(abc.ABC):
             if timeout <= 0:
                 raise ValueError("'timeout' should be > 0!")
 
-        if np.isscalar(timeout) and timeout > 0:
-            self._evaluator.set_timeout(timeout)
-            self._search = functools.partial(
-                terminate_on_timeout, timeout, self._search
-            )
+        # if np.isscalar(timeout) and timeout > 0:
+        #     self._search = functools.partial(
+        #         terminate_on_timeout, timeout + 1, self._search
+        #     )
 
     def search(
         self, max_evals: int = -1, timeout: int = None, max_evals_strict: bool = False
@@ -171,6 +180,15 @@ class Search(abc.ABC):
         Returns:
             DataFrame: a pandas DataFrame containing the evaluations performed or ``None`` if the search could not evaluate any configuration.
         """
+        import asyncio
+
+        loop = self._evaluator.loop
+        if loop is not None:
+            print(f"{loop=}")
+            all_tasks = asyncio.all_tasks(loop)
+            print(f"{all_tasks=}")
+
+        self.stopped = False
         self._set_timeout(timeout)
         if max_evals_strict:
             # TODO: should be replaced by a property with a setter?
@@ -188,17 +206,22 @@ class Search(abc.ABC):
 
         wait_all_running_jobs = True
         try:
+            if np.isscalar(timeout) and timeout > 0:
+                self._evaluator.timeout = timeout
             self._search(max_evals, timeout)
         except TimeoutReached:
+            self.stopped = True
             wait_all_running_jobs = False
             logging.warning(
                 f"Search is being stopped because the allowed timeout has been reached."
             )
         except MaximumJobsSpawnReached:
+            self.stopped = True
             logging.warning(
                 f"Search is being stopped because the maximum number of spawned jobs has been reached."
             )
         except SearchTerminationError:
+            self.stopped = True
             logging.warning(f"Search has been requested to be stopped.")
 
         # Collect remaining jobs
@@ -217,8 +240,7 @@ class Search(abc.ABC):
             self._evaluator.gather_other_jobs_done()
             self._evaluator.dump_jobs_done_to_csv(self._log_dir)
 
-        self._evaluator.cancel_running_jobs()
-        # self._evaluator.close()
+        self._evaluator.close()
 
         if not (os.path.exists(self._path_results)):
             logging.warning(f"Could not find results file at {self._path_results}!")
@@ -282,7 +304,7 @@ class Search(abc.ABC):
 
         n_ask = self._evaluator.num_workers
 
-        while max_evals < 0 or num_evals() < max_evals:
+        while not self.stopped and (max_evals < 0 or num_evals() < max_evals):
 
             new_batch = self.ask(n_ask)
 
@@ -322,6 +344,9 @@ class Search(abc.ABC):
             logging.info(f"Telling took {time.time() - t1:.4f} sec.")
 
             n_ask = len(new_results)
+
+            if self._evaluator.time_left is not None and self._evaluator.time_left <= 0:
+                self.stopped = True
 
     def ask(self, n: int = 1) -> List[Dict]:
         """Ask the search for new configurations to evaluate.

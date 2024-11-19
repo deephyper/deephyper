@@ -2,7 +2,6 @@ import abc
 import asyncio
 import copy
 import csv
-import functools
 import importlib
 import json
 import logging
@@ -13,9 +12,8 @@ import warnings
 from typing import Dict, List, Hashable
 
 import numpy as np
-from deephyper.evaluator._job import Job, HPOJob
+from deephyper.evaluator._job import Job, HPOJob, JobStatus
 from deephyper.skopt.optimizer import OBJECTIVE_VALUE_FAILURE
-from deephyper.core.utils._timeout import terminate_on_timeout
 from deephyper.evaluator.storage import Storage, MemoryStorage
 from deephyper.core.exceptions import MaximumJobsSpawnReached
 from deephyper.core.warnings import deprecated_api
@@ -99,7 +97,6 @@ class Evaluator(abc.ABC):
         self.maximum_num_jobs_submitted = -1  # Maximum number of jobs to spawn.
         self._num_jobs_offset = 0
         self.loop = None  # Event loop for asyncio.
-        self.loop_is_new = False  # Indicates if the loop was created in sub-thread
         self._start_dumping = False
         self._columns_dumped = None  # columns names dumped in csv file
         self.num_objective = None  # record if multi-objective are recorded
@@ -116,7 +113,7 @@ class Evaluator(abc.ABC):
 
         # storage mechanism
         self._storage = MemoryStorage() if storage is None else storage
-        if not (self._storage.connected):
+        if not self._storage.is_connected():
             self._storage.connect()
 
         if search_id is None:
@@ -148,11 +145,27 @@ class Evaluator(abc.ABC):
         if hasattr(self, "executor"):
             self.executor.__exit__(type, value, traceback)
 
-    def set_timeout(self, timeout):
+    @property
+    def timeout(self):
+        return self._timeout
+
+    @timeout.setter
+    def timeout(self, value):
         """Set a timeout for the Evaluator. It will create task with a "time budget" and will kill the the task if this budget
-        is exhausted."""
+        is exhausted.
+        """
         self._time_timeout_set = time.time()
-        self._timeout = timeout
+        self._timeout = value
+
+    @property
+    def time_left(self):
+        if self.timeout is None:
+            val = None
+        else:
+            time_consumed = time.time() - self._time_timeout_set
+            val = self._timeout - time_consumed
+        logging.info(f"time_left={val}")
+        return val
 
     def set_maximum_num_jobs_submitted(self, maximum_num_jobs_submitted: int):
         # TODO: use storage to count submitted and gathered jobs...
@@ -212,10 +225,10 @@ class Evaluator(abc.ABC):
 
         return evaluator
 
-    def _create_job(self, job_id, args, run_function) -> Job:
-        return self._job_class(job_id, args, run_function)
+    def _create_job(self, job_id, args, run_function, storage) -> Job:
+        return self._job_class(job_id, args, run_function, storage)
 
-    async def _get_at_least_n_tasks(self, n):
+    async def _await_at_least_n_tasks(self, n):
         # If a user requests a batch size larger than the number of currently-running tasks, set n to the number of tasks running.
         if n > len(self._tasks_running):
             warnings.warn(
@@ -227,17 +240,25 @@ class Evaluator(abc.ABC):
         if n == len(self._tasks_running):
             try:
                 self._tasks_done, self._tasks_pending = await asyncio.wait(
-                    self._tasks_running, return_when="ALL_COMPLETED"
+                    self._tasks_running,
+                    # timeout=self.time_left,
+                    return_when="ALL_COMPLETED",
                 )
+            except asyncio.CancelledError:
+                logging.warning("Cancelled running tasks")
+                self._tasks_done = []
+                self._tasks_pending = self._tasks_running
             except ValueError:
                 raise ValueError("No jobs pending, call Evaluator.submit(jobs)!")
         else:
             while len(self._tasks_done) < n:
                 self._tasks_done, self._tasks_pending = await asyncio.wait(
-                    self._tasks_running, return_when="FIRST_COMPLETED"
+                    self._tasks_running,
+                    # timeout=self.time_left,
+                    return_when="FIRST_COMPLETED",
                 )
 
-    async def _run_jobs(self, args_list) -> int:
+    def _create_tasks(self, args_list: list) -> int:
         for args in args_list:
 
             if (
@@ -252,28 +273,24 @@ class Evaluator(abc.ABC):
             # Create a Job object from the input arguments
             job_id = self._storage.create_new_job(self._search_id)
             self._storage.store_job_in(job_id, args=(args,))
-            new_job = self._create_job(job_id, args, self.run_function)
+            new_job = self._create_job(job_id, args, self.run_function, self._storage)
 
             # Set the context of the job
+            # TODO: the notion of `search` in the storage should probably be updated to something
+            # TODO: like `group` or `campaign` because it can be used in a different context than the search
             new_job.context.search = self.search
-
-            if self._timeout:
-                time_consumed = time.time() - self._time_timeout_set
-                time_left = self._timeout - time_consumed
-                logging.info(f"Submitting job with {time_left} sec. time budget")
-                new_job.run_function = functools.partial(
-                    terminate_on_timeout, time_left, new_job.run_function
-                )
 
             self.jobs.append(new_job)
 
             self._on_launch(new_job)
+
+            # The task is created and automatically registered in the event loop when
             task = self.loop.create_task(self._execute(new_job))
             self._tasks_running.append(task)
 
     def _on_launch(self, job):
         """Called after a job is started."""
-        job.status = job.RUNNING
+        job.status = JobStatus.READY
 
         job.metadata["timestamp_submit"] = time.time() - self.timestamp
 
@@ -283,7 +300,8 @@ class Evaluator(abc.ABC):
 
     def _on_done(self, job):
         """Called after a job has completed."""
-        job.status = job.DONE
+        if job.status is JobStatus.RUNNING:
+            job.status = JobStatus.DONE
 
         job.metadata["timestamp_gather"] = time.time() - self.timestamp
 
@@ -322,6 +340,15 @@ class Evaluator(abc.ABC):
             job: the update ``Job``.
         """
 
+    def set_event_loop(self):
+        if self.loop is None or self.loop.is_closed():
+            try:
+                # works if `timeout` is not set and code is running in main thread
+                self.loop = asyncio.get_running_loop()
+            except RuntimeError:
+                # required when `timeout` is set because code is not running in main thread
+                self.loop = asyncio.new_event_loop()
+
     def submit(self, args_list: List[Dict]):
         """Send configurations to be evaluated by available workers.
 
@@ -329,15 +356,9 @@ class Evaluator(abc.ABC):
             args_list (List[Dict]): A list of dict which will be passed to the run function to be executed.
         """
         logging.info(f"submit {len(args_list)} job(s) starts...")
-        if self.loop is None:
-            try:
-                # works if `timeout` is not set and code is running in main thread
-                self.loop = asyncio.get_running_loop()
-            except RuntimeError:
-                # required when `timeout` is set because code is not running in main thread
-                self.loop = asyncio.new_event_loop()
-                self.loop_is_new = True
-        self.loop.run_until_complete(self._run_jobs(args_list))
+        self.set_event_loop()
+        # self.loop.run_until_complete(self._create_tasks(args_list))
+        self._create_tasks(args_list)
         logging.info("submit done")
 
     def gather(self, type, size=1):
@@ -367,9 +388,11 @@ class Evaluator(abc.ABC):
             size = len(self._tasks_running)  # Get all tasks.
 
         if size > 0:
-            self.loop.run_until_complete(self._get_at_least_n_tasks(size))
+            self.loop.run_until_complete(self._await_at_least_n_tasks(size))
 
         for task in self._tasks_done:
+            if task.cancelled():
+                continue
             job = task.result()
             self._on_done(job)
             local_results.append(job)
@@ -396,6 +419,8 @@ class Evaluator(abc.ABC):
     def gather_other_jobs_done(self):
         """Access storage to return results from other processes."""
 
+        logging.info("gather jobs from other processes")
+
         job_id_all = self._storage.load_all_job_ids(self._search_id)
         job_id_not_gathered = np.setdiff1d(job_id_all, self.job_id_gathered).tolist()
 
@@ -407,9 +432,13 @@ class Evaluator(abc.ABC):
                 job_data = jobs_data[job_id]
                 if job_data and job_data["out"]:
                     job = self._create_job(
-                        job_id, job_data["in"]["args"][0], run_function=None
+                        job_id,
+                        job_data["in"]["args"][0],
+                        run_function=None,
+                        storage=self._storage,
                     )
-                    job.status = Job.DONE
+                    if job.status is JobStatus.RUNNING:
+                        job.status = JobStatus.DONE
                     job.output["metadata"].update(job_data["metadata"])
                     job.output["objective"] = job_data["out"]
                     self.job_id_gathered.append(job_id)
@@ -442,10 +471,16 @@ class Evaluator(abc.ABC):
         else:
             return val
 
-    def __del__(self):
-        if self.loop is not None and self.loop_is_new:
+    def close(self):
+        logging.info("Closing Evaluator")
+        # Attempt to close tasks in loop
+        if not self.loop.is_closed():
             for t in self._tasks_running:
                 t.cancel()
+            self._tasks_running = []
+
+        # Attempt to close loop if not running
+        if not self.loop.is_running():
             self.loop.close()
             self.loop = None
 
@@ -476,8 +511,11 @@ class Evaluator(abc.ABC):
 
         for job in self.jobs_done:
 
-            # job id and rank
+            # Start with job.id
             result = {"job_id": int(job.id.split(".")[1])}
+
+            # Add job.status
+            result["job_status"] = job.status.name
 
             # input arguments: add prefix for all keys found in "args"
             result.update({f"p:{k}": v for k, v in job.args.items()})
@@ -557,8 +595,11 @@ class Evaluator(abc.ABC):
                     for i in range(self.num_objective):
                         result[f"objective_{i}"] = obj
 
-            # job id and rank
+            # Add job.id
             result["job_id"] = int(job.id.split(".")[1])
+
+            # Add job.status
+            result["job_status"] = job.status.name
 
             # Profiling and other
             # methdata keys starting with "_" are not saved (considered as internal)

@@ -4,8 +4,9 @@
 from deephyper.evaluator.storage._storage import Storage
 from deephyper.evaluator.storage._memory_storage import MemoryStorage
 from deephyper.evaluator.storage._null_storage import NullStorage
+from deephyper.evaluator.storage._shared_memory_storage import SharedMemoryStorage
 
-__all__ = ["Storage", "MemoryStorage", "NullStorage"]
+__all__ = ["Storage", "MemoryStorage", "NullStorage", "SharedMemoryStorage"]
 
 
 # optional import for RedisStorage

@@ -45,7 +45,7 @@ class RayStorage(Storage):
     def __setstate__(self, newstate):
         self.__dict__.update(newstate)
 
-        if not (ray.is_initialized()):
+        if not ray.is_initialized():
             ray.init(address=self.address)
 
         self.memory_storage_actor = ray.get_actor(
@@ -218,3 +218,23 @@ class RayStorage(Storage):
             dict: A dictionnary of the retrieved values where the keys are the identifier of jobs.
         """
         return ray.get(self.memory_storage_actor.load_jobs.remote(job_ids))
+
+    def store_job_status(self, job_id: Hashable, job_status: int):
+        """Stores the new job status.
+
+        Args:
+            job_id (Hashable): The job identifier.
+            job_status (int): The status of the job.
+        """
+        ray.get(self.memory_storage_actor.store_job_status.remote(job_id, job_status))
+
+    def load_job_status(self, job_id: Hashable) -> int:
+        """Loads the status of a job.
+
+        Args:
+            job_id (Hashable): The job identifier.
+
+        Returns:
+            int: The status of the job.
+        """
+        return ray.get(self.memory_storage_actor.load_job_status.remote(job_id))

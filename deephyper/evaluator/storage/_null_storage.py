@@ -171,3 +171,22 @@ class NullStorage(Storage):
             dict: A dictionnary of the retrieved values where the keys are the identifier of jobs.
         """
         return {}
+
+    def store_job_status(self, job_id: Hashable, job_status: int):
+        """Stores the new job status.
+
+        Args:
+            job_id (Hashable): The job identifier.
+            job_status (int): The status of the job.
+        """
+
+    def load_job_status(self, job_id: Hashable) -> int:
+        """Loads the status of a job.
+
+        Args:
+            job_id (Hashable): The job identifier.
+
+        Returns:
+            int: The status of the job.
+        """
+        return 0
