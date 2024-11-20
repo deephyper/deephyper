@@ -88,7 +88,6 @@ class RandomSearch(Search):
         for i, sample in enumerate(new_samples):
             sample = dict(sample)
             for hp_name in self._problem.hyperparameter_names:
-
                 # If the parameter is inactive due to some conditions then we attribute the
                 # lower bound value to break symmetries and enforce the same representation.
                 if hp_name not in sample:

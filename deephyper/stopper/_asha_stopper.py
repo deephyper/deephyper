@@ -99,7 +99,6 @@ class SuccessiveHalvingStopper(Stopper):
                 )
 
     def stop(self) -> bool:
-
         # Enforce Pre-conditions Before Applying Successive Halving
         if super().stop():
             return True

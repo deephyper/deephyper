@@ -1,5 +1,4 @@
-"""Subpackage for hyperparameter search analysis.
-"""
+"""Subpackage for hyperparameter search analysis."""
 
 from deephyper.analysis.hpo._hpo import (
     filter_failed_objectives,

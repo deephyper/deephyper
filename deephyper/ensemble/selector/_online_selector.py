@@ -12,7 +12,12 @@ from deephyper.evaluator.callback import Callback
 class OnlineSelector(Callback):
     """This class performs ensemble selection after each hyperparameter optimization job completion.
 
-    The ``run``-function passed to the ``Evaluator`` should return in its output the ``"online_selector"`` key. This key has for value a dictionnary that includes both the ``"y_pred"`` key (i.e., predictions of the predictor on which the selection algorithm is applied) and the ``"y_pred_idx"`` key (i.e., indexes of the considered sampled in ``y`` used to score the selection):
+    The ``run``-function passed to the ``Evaluator`` should return in its
+    output the ``"online_selector"`` key. This key has for value a
+    dictionnary that includes both the ``"y_pred"`` key (i.e., predictions of
+    the predictor on which the selection algorithm is applied) and the
+    ``"y_pred_idx"`` key (i.e., indexes of the considered sampled in ``y``
+    used to score the selection):
 
     .. code-block:: python
 
@@ -68,7 +73,6 @@ class OnlineSelector(Callback):
         ensemble: EnsemblePredictor,
         load_predictor_func: Callable,
     ):
-
         #: the data to use for the ``selector``.
         self.y: np.ndarray = y
         #: the ensemble selection algorithm.

@@ -86,7 +86,6 @@ __all__ = [
 
 
 try:
-
     from deephyper.stopper._lcmodel_stopper import LCModelStopper  # noqa: F401
 
     __all__.append("LCModelStopper")

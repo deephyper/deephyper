@@ -70,9 +70,7 @@ EXTRAS = {
         # Packaging
         "twine",
         # Formatter and Linter
-        "black==22.6.0",
-        "flake8==5.0.4",
-        "pre-commit",
+        "ruff",
         "rstcheck",
         # Documentation
         "GitPython",

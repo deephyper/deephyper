@@ -1,5 +1,5 @@
-"""Exceptions related with imports of modules/attributes/scripts.
-"""
+"""Exceptions related with imports of modules/attributes/scripts."""
+
 from deephyper.core.exceptions import DeephyperError
 
 
