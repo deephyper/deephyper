@@ -1,8 +1,6 @@
 name: Run checks and tests
 
-on:
-  - pull_request
-  - push
+on: [pull_request]
 
 jobs:
 
