@@ -1,6 +1,6 @@
 import abc
+import asyncio
 import copy
-import inspect
 import logging
 import os
 import pathlib
@@ -108,7 +108,7 @@ class Search(abc.ABC):
             if callable(evaluator):
 
                 # Pick the adapted evaluator depending if the passed function is a coroutine
-                if inspect.iscoroutinefunction(evaluator):
+                if asyncio.iscoroutinefunction(evaluator):
                     method = "serial"
                 else:
                     method = "thread"

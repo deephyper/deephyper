@@ -241,20 +241,18 @@ class Evaluator(abc.ABC):
             try:
                 self._tasks_done, self._tasks_pending = await asyncio.wait(
                     self._tasks_running,
-                    # timeout=self.time_left,
                     return_when="ALL_COMPLETED",
                 )
             except asyncio.CancelledError:
                 logging.warning("Cancelled running tasks")
                 self._tasks_done = []
-                self._tasks_pending = self._tasks_running
+                self._tasks_pending = []
             except ValueError:
                 raise ValueError("No jobs pending, call Evaluator.submit(jobs)!")
         else:
             while len(self._tasks_done) < n:
                 self._tasks_done, self._tasks_pending = await asyncio.wait(
                     self._tasks_running,
-                    # timeout=self.time_left,
                     return_when="FIRST_COMPLETED",
                 )
 
@@ -381,25 +379,13 @@ class Evaluator(abc.ABC):
         logging.info(f"gather({type}, size={size}) starts...")
         assert type in ["ALL", "BATCH"], f"Unsupported gather operation: {type}."
 
-        local_results = []
-
         if type == "ALL":
             size = len(self._tasks_running)  # Get all tasks.
 
         if size > 0:
             self.loop.run_until_complete(self._await_at_least_n_tasks(size))
 
-        for task in self._tasks_done:
-            if task.cancelled():
-                continue
-            job = task.result()
-            self._on_done(job)
-            local_results.append(job)
-            self.jobs_done.append(job)
-            self._tasks_running.remove(task)
-            self.job_id_gathered.append(job.id)
-        self._tasks_done = []
-        self._tasks_pending = []
+        local_results = self.process_local_tasks_done(self._tasks_done)
 
         # Access storage to return results from other processes
         other_results = self.gather_other_jobs_done()
@@ -470,13 +456,57 @@ class Evaluator(abc.ABC):
         else:
             return val
 
+    def process_local_tasks_done(self, tasks):
+        local_results = []
+        for task in tasks:
+
+            if task.cancelled():
+                continue
+
+            job = task.result()
+            self._on_done(job)
+            local_results.append(job)
+            self.jobs_done.append(job)
+            self._tasks_running.remove(task)
+            self.job_id_gathered.append(job.id)
+
+        self._tasks_done = []
+        self._tasks_pending = []
+
+        return local_results
+
+    async def _await_cancelling_of_running_tasks(self):
+        self._tasks_done, self._tasks_pending = await asyncio.wait(
+            self._tasks_running,
+            return_when="ALL_COMPLETED",
+        )
+        self._tasks_running = []
+
     def close(self):
         logging.info("Closing Evaluator")
         # Attempt to close tasks in loop
         if not self.loop.is_closed():
             for t in self._tasks_running:
                 t.cancel()
-            self._tasks_running = []
+
+            # Wait for tasks to be canceled
+            if len(self._tasks_running) > 0:
+                self.loop.run_until_complete(self._await_cancelling_of_running_tasks())
+                self.process_local_tasks_done(self._tasks_done)
+
+                for job in self.jobs:
+                    if job.status in [JobStatus.READY, JobStatus.RUNNING]:
+                        job.status = JobStatus.CANCELLED
+
+                        if isinstance(job, HPOJob):
+                            job.set_output("F_CANCELLED")
+
+                        self._on_done(job)
+                        self.jobs_done.append(job)
+                        self.job_id_gathered.append(job.id)
+
+        self._tasks_done = []
+        self._tasks_pending = []
 
         # Attempt to close loop if not running
         if not self.loop.is_running():

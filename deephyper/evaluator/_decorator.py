@@ -1,3 +1,4 @@
+import asyncio
 import functools
 import os
 import pickle
@@ -79,27 +80,18 @@ def profile(
             register_inner_function_for_pickle(func)
 
         @functools.wraps(func)
-        def wrapper_profile(*args, **kwargs):
+        async def async_wrapper_profile(*args, **kwargs):
             timestamp_start = time.time()
 
-            # Measure peak memory
             if memory:
-                p = psutil.Process()  # get the current process
-
+                p = psutil.Process()
                 output = None
 
-                # with ThreadPoolExecutor(max_workers=1) as executor:
                 with ProcessPoolExecutor(max_workers=1) as executor:
-                    future = executor.submit(os.getpid)
-                    pid = future.result()
-                    p = psutil.Process(pid)
-
                     future = executor.submit(func, *args, **kwargs)
-
                     memory_peak = p.memory_info().rss
 
                     while not future.done():
-                        # in bytes (not the peak memory but last snapshot)
                         memory_peak = max(p.memory_info().rss, memory_peak)
 
                         if memory_limit > 0 and memory_peak > memory_limit:
@@ -108,7 +100,57 @@ def profile(
                             output = "F_memory_limit_exceeded"
 
                             if raise_exception:
-                                raise CancelledError(
+                                raise MemoryError(
+                                    f"Memory limit exceeded: {memory_peak} > {memory_limit}"
+                                )
+
+                            break
+
+                        await asyncio.sleep(memory_tracing_interval)
+
+                    if output is None:
+                        output = future.result()
+            else:
+                output = await func(*args, **kwargs)
+
+            timestamp_end = time.time()
+            new_metadata = {
+                "timestamp_start": timestamp_start,
+                "timestamp_end": timestamp_end,
+            }
+            if memory:
+                new_metadata["memory"] = memory_peak
+
+            if isinstance(output, dict):
+                output.setdefault("metadata", {})
+            else:
+                output = {"output": output, "metadata": {}}
+
+            output["metadata"].update(new_metadata)
+            return output
+
+        @functools.wraps(func)
+        def sync_wrapper_profile(*args, **kwargs):
+            timestamp_start = time.time()
+
+            if memory:
+                p = psutil.Process()
+                output = None
+
+                with ProcessPoolExecutor(max_workers=1) as executor:
+                    future = executor.submit(func, *args, **kwargs)
+                    memory_peak = p.memory_info().rss
+
+                    while not future.done():
+                        memory_peak = max(p.memory_info().rss, memory_peak)
+
+                        if memory_limit > 0 and memory_peak > memory_limit:
+                            p.kill()
+                            future.cancel()
+                            output = "F_memory_limit_exceeded"
+
+                            if raise_exception:
+                                raise MemoryError(
                                     f"Memory limit exceeded: {memory_peak} > {memory_limit}"
                                 )
 
@@ -118,14 +160,10 @@ def profile(
 
                     if output is None:
                         output = future.result()
-
-            # Regular call without memory profiling
             else:
                 output = func(*args, **kwargs)
 
             timestamp_end = time.time()
-
-            # Prepare new metadata
             new_metadata = {
                 "timestamp_start": timestamp_start,
                 "timestamp_end": timestamp_end,
@@ -133,21 +171,18 @@ def profile(
             if memory:
                 new_metadata["memory"] = memory_peak
 
-            # Format correctly the output to return metadata
             if isinstance(output, dict):
-                if "output" in output:
-                    if "metadata" not in output:
-                        output["metadata"] = {}
-                else:
-                    output = {"output": output, "metadata": {}}
+                output.setdefault("metadata", {})
             else:
                 output = {"output": output, "metadata": {}}
 
             output["metadata"].update(new_metadata)
-
             return output
 
-        return wrapper_profile
+        if asyncio.iscoroutinefunction(func):
+            return async_wrapper_profile
+        else:
+            return sync_wrapper_profile
 
     if _func is None:
         return decorator_profile

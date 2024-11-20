@@ -40,6 +40,11 @@ class SerialEvaluator(Evaluator):
             search_id=search_id,
         )
 
+        if not asyncio.iscoroutinefunction(run_function):
+            raise ValueError(
+                f"The {run_function=} passed to the Serial Evaluator is not a coroutine (e.g., with 'async def' in its definition) either make it a coroutine function or use the Thread Evaluator instead."
+            )
+
         self.sem = asyncio.Semaphore(num_workers)
 
         if hasattr(run_function, "__name__") and hasattr(run_function, "__module__"):
