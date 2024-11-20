@@ -13,10 +13,11 @@ def test_cbo_random_seed(tmp_path):
     problem = HpProblem()
     problem.add_hyperparameter((0.0, 10.0), "x")
 
-    def run(config):
+    async def run_single_objective(config):
         return config["x"]
 
-    create_evaluator = lambda: Evaluator.create(run, method="serial")
+    def create_evaluator():
+        return Evaluator.create(run_single_objective, method="serial")
 
     search = CBO(
         problem,
@@ -42,10 +43,11 @@ def test_cbo_random_seed(tmp_path):
     assert np.array_equal(res1_array, res2_array)
 
     # test multi-objective
-    def run(config):
+    async def run_multi_objective(config):
         return config["x"], config["x"]
 
-    create_evaluator = lambda: Evaluator.create(run, method="serial")
+    def create_evaluator():
+        return Evaluator.create(run_multi_objective, method="serial")
 
     search = CBO(
         problem,
@@ -98,23 +100,24 @@ def test_sample_types(tmp_path):
         log_dir=tmp_path,
         verbose=0,
     ).search(10)
+    assert len(results) == 10
 
     results = CBO(
         problem,
         run,
         n_initial_points=5,
         random_state=42,
-        surrogate_model="RF",
+        surrogate_model="ET",
         log_dir=tmp_path,
         verbose=0,
     ).search(10)
+    assert len(results) == 10
 
 
 @pytest.mark.fast
 def test_sample_types_no_cat(tmp_path):
     import numpy as np
 
-    from deephyper.evaluator import Evaluator
     from deephyper.hpo import CBO, HpProblem
 
     problem = HpProblem()
@@ -136,6 +139,7 @@ def test_sample_types_no_cat(tmp_path):
         log_dir=tmp_path,
         verbose=0,
     ).search(10)
+    assert len(results) == 10
 
     results = CBO(
         problem,
@@ -146,6 +150,7 @@ def test_sample_types_no_cat(tmp_path):
         log_dir=tmp_path,
         verbose=0,
     ).search(10)
+    assert len(results) == 10
 
 
 @pytest.mark.fast
@@ -157,7 +162,7 @@ def test_gp(tmp_path):
     problem = HpProblem()
     problem.add_hyperparameter((0.0, 10.0), "x")
 
-    def run(config):
+    async def run(config):
         return config["x"]
 
     results = CBO(
@@ -168,14 +173,12 @@ def test_gp(tmp_path):
         acq_func="UCB",
         log_dir=tmp_path,
     ).search(10)
+    assert len(results) == 10
 
     # test int hyperparameters
     problem = HpProblem()
     problem.add_hyperparameter((0, 10), "x")
 
-    def run(config):
-        return config["x"]
-
     results = CBO(
         problem,
         Evaluator.create(run, method="serial"),
@@ -184,22 +187,24 @@ def test_gp(tmp_path):
         acq_func="UCB",
         log_dir=tmp_path,
     ).search(10)
+    assert len(results) == 10
 
     # test categorical hyperparameters
     problem = HpProblem()
     problem.add_hyperparameter([f"{i}" for i in range(10)], "x")
 
-    def run(config):
+    async def run_cast_output_int(config):
         return int(config["x"])
 
     results = CBO(
         problem,
-        Evaluator.create(run, method="serial"),
+        Evaluator.create(run_cast_output_int, method="serial"),
         random_state=42,
         surrogate_model="GP",
         acq_func="UCB",
         log_dir=tmp_path,
     ).search(10)
+    assert len(results) == 10
 
 
 @pytest.mark.fast
@@ -207,7 +212,6 @@ def test_sample_types_conditional(tmp_path):
     import ConfigSpace as cs
     import numpy as np
 
-    from deephyper.evaluator import Evaluator
     from deephyper.hpo import CBO, HpProblem
 
     problem = HpProblem()
@@ -383,7 +387,7 @@ def test_cbo_categorical_variable(tmp_path):
     problem.add_hyperparameter([32, 64, 96], "x", default_value=64)
     problem.add_hyperparameter((0.0, 10.0), "y", default_value=5.0)
 
-    def run(config):
+    async def run(config):
         return config["x"] + config["y"]
 
     # test pause-continue of the search
@@ -402,10 +406,8 @@ def test_cbo_categorical_variable(tmp_path):
 
 @pytest.mark.slow
 def test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path):
-    import numpy as np
     from ConfigSpace import GreaterThanCondition
 
-    from deephyper.evaluator import Evaluator
     from deephyper.hpo import CBO, HpProblem
 
     problem = HpProblem()
