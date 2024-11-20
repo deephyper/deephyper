@@ -45,7 +45,8 @@ def profile(
             ...
             return y
 
-    If the ``memory`` argument is set to ``True``, the memory usage is also measured, for example by using the decorator as follows:
+    If the ``memory`` argument is set to ``True``, the memory usage is also
+    measured, for example by using the decorator as follows:
 
     .. code-block::
 
@@ -54,7 +55,9 @@ def profile(
             ...
             return y
 
-    If the ``memory_limit` is used then the call will be cancelled (when possible) if the memory usage exceeds the limit, for example by using the decorator as follows:
+    If the ``memory_limit` is used then the call will be cancelled
+    (when possible) if the memory usage exceeds the limit, for example by
+    using the decorator as follows:
 
     .. code-block::
 
@@ -73,7 +76,6 @@ def profile(
     """
 
     def decorator_profile(func):
-
         if register and memory:
             register_inner_function_for_pickle(func)
 

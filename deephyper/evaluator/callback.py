@@ -1,5 +1,10 @@
-"""The callback module contains sub-classes of the ``Callback`` class used to trigger custom actions on the start and completion of jobs by the ``Evaluator``. Callbacks can be used with any Evaluator implementation.
+"""The callback module contains sub-classes of the ``Callback`` class.
+
+This ``Callback`` class is used to trigger custom actions on the start and
+completion of jobs by the ``Evaluator``. Callbacks can be used with any
+Evaluator implementation.
 """
+
 import deephyper.core.exceptions
 import numpy as np
 import pandas as pd
@@ -48,8 +53,7 @@ class ProfilingCallback(Callback):
     def __init__(self):
         self.history = []
 
-    def on_launch(self, job):
-        ...
+    def on_launch(self, job): ...
 
     def on_done(self, job):
         start = job.timestamp_submit

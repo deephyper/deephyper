@@ -44,7 +44,6 @@ class EnsemblePredictor(Predictor):
         weights: Sequence[float] = None,
         evaluator: str | Dict = None,
     ):
-
         self.predictors = predictors
         self.aggregator = aggregator
         self.weights = weights
@@ -126,7 +125,7 @@ class EnsemblePredictor(Predictor):
             if isinstance(job.output, Exception):
                 try:
                     raise job.output
-                except:
+                except Exception:
                     raise RuntimeError(
                         f"Failed to call .predict(X) with predictors[{i}]: {predictors[i]}"
                     )

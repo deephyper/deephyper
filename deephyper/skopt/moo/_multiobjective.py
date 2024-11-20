@@ -33,7 +33,7 @@ class MoScalarFunction(abc.ABC):
         else:
             self._rng = np.random.RandomState()
 
-        if not (type(n_objectives) is int):
+        if type(n_objectives) is not int:
             raise ValueError("Parameter 'n_objectives' shoud be an integer value!")
         self._n_objectives = n_objectives
 

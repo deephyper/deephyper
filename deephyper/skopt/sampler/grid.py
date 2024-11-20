@@ -2,6 +2,7 @@
 Inspired by https://github.com/jonathf/chaospy/blob/master/chaospy/
 distributions/sampler/sequences/grid.py
 """
+
 import numpy as np
 from .base import InitialPointGenerator
 from ..space import Space

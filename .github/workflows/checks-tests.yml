@@ -1,13 +1,11 @@
-name: Continuous integration
+name: Run checks and tests
 
-on:
-  - pull_request
-  - push
-
+on: [pull_request]
 
 jobs:
 
-  test:
+  checks-tests:
+
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -16,22 +14,30 @@ jobs:
           - "3.11"
           - "3.12"
           - "3.13"
+
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install tox pylint "black<23"
-      - name: Run Formatter
-        run: black --diff --check $(git ls-files '*.py')
-      - name: Run Linter
-        run: pylint --exit-zero $(git ls-files '*.py')
+          pip install tox ruff
+
+      - name: Run linter checks with ruff
+        run: ruff check examples deephyper
+
+      - name: Run formatter checks with ruff
+        run: ruff format --check examples deephyper
+
       - name: Run tests with tox
         run: tox -e py3
+
       - name: Upload coverage report
         if: ${{ matrix.python-version == 3.12 }} # Only upload coverage once
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v5

@@ -2,6 +2,7 @@
 Necessary to pass the global configuration to the joblib workers until
 https://github.com/joblib/joblib/issues/1071 is fixed.
 """
+
 import sklearn
 from packaging.version import parse as parse_version
 

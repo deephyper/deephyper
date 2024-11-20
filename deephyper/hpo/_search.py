@@ -213,12 +213,12 @@ class Search(abc.ABC):
             self.stopped = True
             wait_all_running_jobs = False
             logging.warning(
-                f"Search is being stopped because the allowed timeout has been reached."
+                "Search is being stopped because the allowed timeout has been reached."
             )
         except MaximumJobsSpawnReached:
             self.stopped = True
             logging.warning(
-                f"Search is being stopped because the maximum number of spawned jobs has been reached."
+                "Search is being stopped because the maximum number of spawned jobs has been reached."
             )
         except SearchTerminationError:
             self.stopped = True

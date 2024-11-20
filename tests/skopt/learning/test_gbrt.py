@@ -79,14 +79,14 @@ def test_gbrt_with_std():
     # just the median/mean
     assert_array_equal(model.predict(X_).shape, (len(X_)))
 
-    l, c, h = model.predict(X_, return_quantiles=True).T
-    assert_equal(l.shape, c.shape)
-    assert_equal(c.shape, h.shape)
-    assert_equal(l.shape[0], X_.shape[0])
+    a, b, c = model.predict(X_, return_quantiles=True).T
+    assert_equal(a.shape, b.shape)
+    assert_equal(b.shape, c.shape)
+    assert_equal(a.shape[0], X_.shape[0])
 
     mean, std = model.predict(X_, return_std=True)
-    assert_array_equal(mean, c)
-    assert_array_equal(std, (h - l) / 2.0)
+    assert_array_equal(mean, b)
+    assert_array_equal(std, (c - a) / 2.0)
 
 
 def test_gbrt_in_parallel():

@@ -59,7 +59,6 @@ class MixedCategoricalAggregator(Aggregator):
 
         # Confidence of the ensemble: max probability of the ensemble
         if self.uncertainty_method == "confidence":
-
             uncertainty = 1 - np.max(y_proba_ensemble, axis=-1)
 
             if not self.decomposed_uncertainty:
@@ -81,7 +80,6 @@ class MixedCategoricalAggregator(Aggregator):
 
         # Entropy of the ensemble
         elif self.uncertainty_method == "entropy":
-
             uncertainty = ss.entropy(y_proba_ensemble, axis=-1)
 
             if not self.decomposed_uncertainty:
