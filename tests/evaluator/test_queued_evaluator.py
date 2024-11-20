@@ -40,6 +40,8 @@ def test_queued_serial_evaluator():
 
     assert results == [1, 2, 3, 4, 1, 2, 3, 4]
 
+    evaluator.close()
+
 
 @pytest.mark.fast
 @pytest.mark.ray
@@ -49,7 +51,7 @@ def test_queued_ray_evaluator():
 
         HERE = os.path.dirname(os.path.abspath(__file__))
 
-        from deephyper.evaluator import RayEvaluator, queued
+        from deephyper.evaluator import RayEvaluator, queued, HPOJob
 
         QueuedRayEvaluator = queued(
             RayEvaluator
@@ -57,14 +59,15 @@ def test_queued_ray_evaluator():
 
         evaluator = QueuedRayEvaluator(
             run_sync,
-            num_cpus=1,
-            num_cpus_per_task=1,
+            # num_cpus=1,
+            # num_cpus_per_task=1,
             num_workers=1,
             ray_kwargs={"runtime_env": {"working_dir": HERE}},
             # queued arguments
             queue=[1, 2, 3, 4],
             queue_pop_per_task=1,
         )
+        evaluator._job_class = HPOJob
 
         assert evaluator.num_workers == 1
         assert list(evaluator.queue) == [1, 2, 3, 4]
@@ -76,10 +79,12 @@ def test_queued_ray_evaluator():
 
             jobs = evaluator.gather("ALL")
 
-            results.append(jobs[0].result)
+            results.append(jobs[0].objective)
 
         assert results == [1, 2, 3, 4, 1, 2, 3, 4]
     except ImportError as e:
         e_str = str(e)
         if "RayEvaluator" not in e_str:
             raise e
+
+    evaluator.close()

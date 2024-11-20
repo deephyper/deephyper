@@ -1,5 +1,4 @@
 import copy
-import threading
 from collections.abc import MutableMapping
 from enum import Enum
 from numbers import Number

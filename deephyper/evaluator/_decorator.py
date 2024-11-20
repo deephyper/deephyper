@@ -1,13 +1,11 @@
 import asyncio
 import functools
-import os
 import pickle
 import psutil
 import sys
 import time
 
 from concurrent.futures import ProcessPoolExecutor
-from concurrent.futures import CancelledError
 
 
 def register_inner_function_for_pickle(func):
