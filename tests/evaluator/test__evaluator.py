@@ -1,5 +1,7 @@
 import asyncio
 import os
+import pathlib
+import time
 from collections import Counter
 
 import pandas as pd
@@ -9,25 +11,27 @@ from deephyper.evaluator import profile
 
 
 def run_sync(job, y=0):
+    # The following line impacts the result as it puts on old a running threading.Thread
+    time.sleep(0.01)
     return job["x"] + y
 
 
 async def run_async(job, y=0):
+    # The following line impacts the result as it puts on old a running asyncio.Task
     await asyncio.sleep(0.01)
     return job["x"] + y
 
 
 def run_many_results_sync(job, y=0):
+    # The following line impacts the result as it puts on old a running threading.Thread
+    time.sleep(0.01)
     return {"objective": job["x"], "metadata": {"y": y}}
 
 
 async def run_many_results_async(job, y=0):
+    # The following line impacts the result as it puts on old a running asyncio.Task
+    await asyncio.sleep(0.01)
     return {"objective": job["x"], "metadata": {"y": y}}
-
-
-@pytest.mark.fast
-def test_import():
-    from deephyper.evaluator import Evaluator
 
 
 @pytest.mark.fast
@@ -35,7 +39,7 @@ def test_wrong_evaluator():
     from deephyper.evaluator import Evaluator
 
     with pytest.raises(ValueError):
-        evaluator = Evaluator.create(
+        Evaluator.create(
             run_sync,
             method="threads",
             method_kwargs={
@@ -316,6 +320,9 @@ def test_run_function_standards(tmp_path):
 def execute_evaluator(method, tmp_path):
     from deephyper.evaluator import Evaluator, HPOJob
 
+    # Create the directory where results from tests are potentially saved
+    pathlib.Path(tmp_path).mkdir(parents=True, exist_ok=True)
+
     # without kwargs
     method_kwargs = {"num_workers": 1}
     if method == "ray":
@@ -412,27 +419,27 @@ def test_ray(tmp_path):
         execute_evaluator("ray", tmp_path)
     except ModuleNotFoundError as e:
         e_str = str(e)
-        if not ("ray" in e_str):
+        if "ray" not in e_str:
             raise e
 
 
-def run_job_scalar_output(job):
+async def run_job_scalar_output_async(job):
     return 0
 
 
-def run_job_dict_output(job):
+async def run_job_dict_output_async(job):
     x1 = job.parameters["x1"]
     x2 = job.parameters["x2"]
     return {"y1": x1, "y2": x2, "list": [x1, x2], "dict": {"x1": x1, "x2": x2}}
 
 
 @profile
-def run_job_scalar_output_profiled(job):
+async def run_job_scalar_output_profiled_async(job):
     return 0
 
 
 @profile
-def run_job_dict_output_profiled(job):
+async def run_job_dict_output_profiled_async(job):
     x1 = job.parameters["x1"]
     x2 = job.parameters["x2"]
     return {"y1": x1, "y2": x2, "list": [x1, x2], "dict": {"x1": x1, "x2": x2}}
@@ -440,14 +447,10 @@ def run_job_dict_output_profiled(job):
 
 @pytest.mark.fast
 def test_evaluator_with_Job(tmp_path):
-    import os
-
-    import pandas as pd
-
     from deephyper.evaluator import Evaluator
 
     # Scalar output
-    evaluator = Evaluator.create(run_job_scalar_output, method="serial")
+    evaluator = Evaluator.create(run_job_scalar_output_async, method="serial")
     input_parameters = [{"x": i} for i in range(10)]
     evaluator.submit(input_parameters)
     jobs_done = evaluator.gather("ALL")
@@ -456,10 +459,11 @@ def test_evaluator_with_Job(tmp_path):
     evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
     df = pd.read_csv(os.path.join(tmp_path, "results.csv"))
     assert len(df) == 10
-    assert len(df.columns) == 5
+    assert len(df.columns) == 6
+    evaluator.close()
 
     # Dict output
-    evaluator = Evaluator.create(run_job_dict_output, method="serial")
+    evaluator = Evaluator.create(run_job_dict_output_async, method="serial")
     input_parameters = [{"x1": i, "x2": i + 1} for i in range(10)]
     evaluator.submit(input_parameters)
     jobs_done = evaluator.gather("ALL")
@@ -468,10 +472,11 @@ def test_evaluator_with_Job(tmp_path):
     evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
     df = pd.read_csv(os.path.join(tmp_path, "results.csv"))
     assert len(df) == 10
-    assert len(df.columns) == 9
+    assert len(df.columns) == 10
+    evaluator.close()
 
     # Scalar output with profiled function
-    evaluator = Evaluator.create(run_job_scalar_output_profiled, method="serial")
+    evaluator = Evaluator.create(run_job_scalar_output_profiled_async, method="serial")
     input_parameters = [{"x": i} for i in range(10)]
     evaluator.submit(input_parameters)
     jobs_done = evaluator.gather("ALL")
@@ -482,10 +487,11 @@ def test_evaluator_with_Job(tmp_path):
     evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
     df = pd.read_csv(os.path.join(tmp_path, "results.csv"))
     assert len(df) == 10
-    assert len(df.columns) == 7
+    assert len(df.columns) == 8
+    evaluator.close()
 
     # Dict output with profiled function
-    evaluator = Evaluator.create(run_job_dict_output_profiled, method="serial")
+    evaluator = Evaluator.create(run_job_dict_output_profiled_async, method="serial")
     input_parameters = [{"x1": i, "x2": i + 1} for i in range(10)]
     evaluator.submit(input_parameters)
     jobs_done = evaluator.gather("ALL")
@@ -498,15 +504,25 @@ def test_evaluator_with_Job(tmp_path):
     evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
     df = pd.read_csv(os.path.join(tmp_path, "results.csv"))
     assert len(df) == 10
-    assert len(df.columns) == 11
+    assert len(df.columns) == 12
+    evaluator.close()
 
 
 if __name__ == "__main__":
+    import logging
+
+    logging.basicConfig(
+        # filename="deephyper.log",
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(filename)s:%(funcName)s - %(message)s",
+        force=True,
+    )
+
     tmp_path = "/tmp/deephyper_test/"
     # test_run_function_standards(tmp_path)
     # test_serial(tmp_path)
-    test_thread(tmp_path)
+    # test_thread(tmp_path)
     # test_process(tmp_path)
     # test_ray(tmp_path)
     # test_wrong_evaluator()
-    # test_evaluator_with_Job(".")
+    test_evaluator_with_Job(tmp_path)
