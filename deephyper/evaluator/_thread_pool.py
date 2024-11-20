@@ -48,16 +48,8 @@ class ThreadPoolEvaluator(Evaluator):
             thread_name_prefix="ThreadPoolEvaluator",
         )
 
-        if hasattr(run_function, "__name__") and hasattr(run_function, "__module__"):
-            logger.info(
-                f"ThreadPool Evaluator will execute {self.run_function.__name__}() from module {self.run_function.__module__}"
-            )
-        else:
-            logger.info(f"Thread Evaluator will execute {self.run_function}")
-
     async def execute(self, job: Job) -> Job:
         async with self.sem:
-
             job.status = JobStatus.RUNNING
 
             running_job = job.create_running_job(self._stopper)
@@ -83,7 +75,3 @@ class ThreadPoolEvaluator(Evaluator):
             job.set_output(output)
 
         return job
-
-    # def close(self):
-    #     logging.info("Closing ThreadPoolEvaluator")
-    #     self.loop.close()

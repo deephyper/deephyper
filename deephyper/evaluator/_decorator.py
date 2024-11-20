@@ -121,8 +121,13 @@ def profile(
             if memory:
                 new_metadata["memory"] = memory_peak
 
+            # Format correctly the output to return metadata
             if isinstance(output, dict):
-                output.setdefault("metadata", {})
+                if "output" in output:
+                    if "metadata" not in output:
+                        output["metadata"] = {}
+                else:
+                    output = {"output": output, "metadata": {}}
             else:
                 output = {"output": output, "metadata": {}}
 
@@ -171,8 +176,13 @@ def profile(
             if memory:
                 new_metadata["memory"] = memory_peak
 
+            # Format correctly the output to return metadata
             if isinstance(output, dict):
-                output.setdefault("metadata", {})
+                if "output" in output:
+                    if "metadata" not in output:
+                        output["metadata"] = {}
+                else:
+                    output = {"output": output, "metadata": {}}
             else:
                 output = {"output": output, "metadata": {}}
 
