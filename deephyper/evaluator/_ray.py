@@ -1,16 +1,13 @@
-import logging
+import asyncio
+from typing import Callable, Hashable
 
 import ray
 
-from typing import Callable, Hashable
-
 from deephyper.evaluator._evaluator import Evaluator
-from deephyper.evaluator._job import Job
-from deephyper.evaluator.storage import Storage, RayStorage
+from deephyper.evaluator._job import Job, JobStatus
+from deephyper.evaluator.storage import RayStorage, Storage
 
 ray_initializer = None
-
-logger = logging.getLogger(__name__)
 
 
 class RayEvaluator(Evaluator):
@@ -97,26 +94,36 @@ class RayEvaluator(Evaluator):
         if self.num_workers is None or self.num_workers == -1:
             self.num_workers = int(self.num_cpus // self.num_cpus_per_task)
 
-        if hasattr(run_function, "__name__") and hasattr(run_function, "__module__"):
-            logger.info(
-                f"Ray Evaluator will execute {self.run_function.__name__}() from module {self.run_function.__module__}"
-            )
-        else:
-            logger.info(f"Ray Evaluator will execute {self.run_function}")
-
         self._remote_run_function = ray.remote(
             num_cpus=self.num_cpus_per_task,
             num_gpus=self.num_gpus_per_task,
             # max_calls=1,
         )(self.run_function)
 
+        self.sem = asyncio.Semaphore(self.num_workers)
+
     async def execute(self, job: Job) -> Job:
-        running_job = job.create_running_job(self._storage, self._stopper)
+        async with self.sem:
+            job.status = JobStatus.RUNNING
 
-        output = await self._remote_run_function.remote(
-            running_job, **self.run_function_kwargs
-        )
+            running_job = job.create_running_job(self._stopper)
 
-        job.set_output(output)
+            run_function_future = self._remote_run_function.remote(
+                running_job, **self.run_function_kwargs
+            )
+
+            if self.timeout is not None:
+                try:
+                    output = await asyncio.wait_for(
+                        asyncio.shield(run_function_future), timeout=self.time_left
+                    )
+                except asyncio.TimeoutError:
+                    job.status = JobStatus.CANCELLING
+                    output = await run_function_future
+                    job.status = JobStatus.CANCELLED
+            else:
+                output = await run_function_future
+
+            job.set_output(output)
 
         return job

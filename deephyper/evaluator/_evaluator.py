@@ -78,6 +78,13 @@ class Evaluator(abc.ABC):
         storage: Storage = None,
         search_id: Hashable = None,
     ):
+        if hasattr(run_function, "__name__") and hasattr(run_function, "__module__"):
+            logging.info(
+                f"{type(self).__name__} will execute {run_function.__name__}() from module {run_function.__module__}"
+            )
+        else:
+            logging.info(f"{type(self).__name__} will execute {run_function}")
+
         self.run_function = run_function  # User-defined run function.
         self.run_function_kwargs = (
             {} if run_function_kwargs is None else run_function_kwargs
@@ -204,9 +211,6 @@ class Evaluator(abc.ABC):
         Returns:
             Evaluator: the ``Evaluator`` with the corresponding backend and configuration.
         """
-        logging.info(
-            f"Creating Evaluator({run_function}, method={method}, method_kwargs={method_kwargs}..."
-        )
         if method not in EVALUATORS.keys():
             val = ", ".join(EVALUATORS)
             raise ValueError(
@@ -214,6 +218,10 @@ class Evaluator(abc.ABC):
                 f" Choose among the following evalutor types: "
                 f"{val}."
             )
+
+        logging.info(
+            f"Creating {EVALUATORS[method].split('.')[-1]} of {method=} for {run_function=} with {method_kwargs=}"
+        )
 
         # create the evaluator
         mod_name, attr_name = EVALUATORS[method].split(".")
@@ -459,7 +467,6 @@ class Evaluator(abc.ABC):
     def process_local_tasks_done(self, tasks):
         local_results = []
         for task in tasks:
-
             if task.cancelled():
                 continue
 
@@ -480,10 +487,10 @@ class Evaluator(abc.ABC):
             self._tasks_running,
             return_when="ALL_COMPLETED",
         )
-        self._tasks_running = []
+        # self._tasks_running = []
 
     def close(self):
-        logging.info("Closing Evaluator")
+        logging.info(f"Closing {type(self).__name__}")
         # Attempt to close tasks in loop
         if not self.loop.is_closed():
             for t in self._tasks_running:
@@ -527,6 +534,10 @@ class Evaluator(abc.ABC):
             flush (bool): a boolean indicating if the results should be flushed (i.e., forcing the dumping).
         """
         logging.info("Dumping completed jobs to CSV...")
+
+        if not os.path.exists(log_dir):
+            raise FileNotFoundError(f"No such directory: {log_dir}")
+
         if self._job_class is HPOJob:
             self._dump_jobs_done_to_csv_as_hpo_format(log_dir, filename, flush)
         else:
@@ -539,7 +550,6 @@ class Evaluator(abc.ABC):
         records_list = []
 
         for job in self.jobs_done:
-
             # Start with job.id
             result = {"job_id": int(job.id.split(".")[1])}
 

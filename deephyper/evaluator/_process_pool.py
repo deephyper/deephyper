@@ -19,6 +19,9 @@ class ProcessPoolEvaluator(Evaluator):
         run_function (callable): functions to be executed by the ``Evaluator``.
         num_workers (int, optional): Number of parallel processes used to compute the ``run_function``. Defaults to 1.
         callbacks (list, optional): A list of callbacks to trigger custom actions at the creation or completion of jobs. Defaults to None.
+        run_function_kwargs (dict, optional): Static keyword arguments to pass to the ``run_function`` when executed.
+        storage (Storage, optional): Storage used by the evaluator. Defaults to ``SharedMemoryStorage``.
+        search_id (Hashable, optional): The id of the search to use in the corresponding storage. If ``None`` it will create a new search identifier when initializing the search.
     """
 
     def __init__(
@@ -30,7 +33,6 @@ class ProcessPoolEvaluator(Evaluator):
         storage: Storage = None,
         search_id: Hashable = None,
     ):
-
         if storage is None:
             storage = SharedMemoryStorage()
 
@@ -44,21 +46,13 @@ class ProcessPoolEvaluator(Evaluator):
         )
         self.sem = asyncio.Semaphore(num_workers)
 
-        # !creating the exector once here is crutial to avoid repetitive overheads
+        # !Creating the exector once here is crutial to avoid repetitive overheads
         self.executor = ProcessPoolExecutor(
             max_workers=self.num_workers,
         )
 
-        if hasattr(run_function, "__name__") and hasattr(run_function, "__module__"):
-            logger.info(
-                f"ProcessPool Evaluator will execute {self.run_function.__name__}() from module {self.run_function.__module__}"
-            )
-        else:
-            logger.info(f"ProcessPool Evaluator will execute {self.run_function}")
-
     async def execute(self, job: Job) -> Job:
         async with self.sem:
-
             job.status = JobStatus.RUNNING
 
             running_job = job.create_running_job(self._stopper)
@@ -85,15 +79,16 @@ class ProcessPoolEvaluator(Evaluator):
 
         return job
 
-    def close(self):
-        logging.info("Closing ProcessPoolEvaluator")
-        if self.executor._processes is not None:
-            for pid in self.executor._processes:
-                logging.info(f"Stopping worker process {pid} of ProcessPoolEvaluator")
-                os.kill(pid, signal.SIGKILL)
-        self.executor.shutdown(wait=True, cancel_futures=True)
-        self.executor = ProcessPoolExecutor(
-            max_workers=self.num_workers,
-        )
-        if not self.loop.is_running():
-            self.loop.close()
+    # TODO: check if this code should be reused when forcing the exit of a process
+    # def close(self):
+    #     logging.info("Closing ProcessPoolEvaluator")
+    #     if self.executor._processes is not None:
+    #         for pid in self.executor._processes:
+    #             logging.info(f"Stopping worker process {pid} of ProcessPoolEvaluator")
+    #             os.kill(pid, signal.SIGKILL)
+    #     self.executor.shutdown(wait=True, cancel_futures=True)
+    #     self.executor = ProcessPoolExecutor(
+    #         max_workers=self.num_workers,
+    #     )
+    #     if not self.loop.is_running():
+    #         self.loop.close()

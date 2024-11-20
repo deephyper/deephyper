@@ -102,11 +102,8 @@ class Search(abc.ABC):
         self.stopped = False
 
     def check_evaluator(self, evaluator):
-
         if not (isinstance(evaluator, Evaluator)):
-
             if callable(evaluator):
-
                 # Pick the adapted evaluator depending if the passed function is a coroutine
                 if asyncio.iscoroutinefunction(evaluator):
                     method = "serial"
@@ -305,7 +302,6 @@ class Search(abc.ABC):
         n_ask = self._evaluator.num_workers
 
         while not self.stopped and (max_evals < 0 or num_evals() < max_evals):
-
             new_batch = self.ask(n_ask)
 
             logging.info(f"Submitting {len(new_batch)} configurations...")
