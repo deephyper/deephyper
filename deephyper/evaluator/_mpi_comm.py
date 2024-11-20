@@ -113,7 +113,6 @@ class MPICommEvaluator(Evaluator):
 
     async def execute(self, job: Job) -> Job:
         async with self.sem:
-
             running_job = job.create_running_job(self._storage, self._stopper)
 
             run_function = functools.partial(

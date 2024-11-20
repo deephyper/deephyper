@@ -1,5 +1,4 @@
-"""Deephyper exceptions
-"""
+"""Deephyper exceptions"""
 
 # ! Root exceptions
 

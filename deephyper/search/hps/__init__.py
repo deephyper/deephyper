@@ -9,3 +9,5 @@ except ImportError:
     pass
 
 deprecated_api(__doc__)
+
+__all__ = ["CBO", "MPIDistributedBO"]

@@ -1,6 +1,12 @@
 """
-This evaluator subpackage provides a common interface to execute isolated tasks with different parallel backends and system properties. This interface is used by search algorithm to perform black-box optimization (the black-box being represented by the ``run``-function).
-An ``Evaluator``, when instanciated, is bound to a ``run``-function which takes as first argument a dictionnary and optionally has other keyword-arguments. The ``run``-function has to return a Python serializable value (under ``pickle`` protocol). In it's most basic form the return value is a ``float``.
+This evaluator subpackage provides a common interface to execute isolated
+tasks with different parallel backends and system properties. This interface
+is used by search algorithm to perform black-box optimization (the black-box
+being represented by the ``run``-function). An ``Evaluator``, when
+instanciated, is bound to a ``run``-function which takes as first argument a
+dictionnary and optionally has other keyword-arguments. The ``run``-function
+has to return a Python serializable value (under ``pickle`` protocol). In
+it's most basic form the return value is a ``float``.
 
 An example ``run``-function is:
 
@@ -13,7 +19,9 @@ An example ``run``-function is:
 
         return y
 
-The return value of the ``run``-function respect the following standards (but the feature is not necessarily supported by all search algorithms, such as multi-objective optimization):
+The return value of the ``run``-function respect the following standards
+(but the feature is not necessarily supported by all search algorithms, such
+as multi-objective optimization):
 
 .. code-block:: python
 
@@ -58,7 +66,6 @@ __all__ = [
 ]
 
 try:
-
     from deephyper.evaluator._ray import RayEvaluator  # noqa: F401
 
     __all__.append("RayEvaluator")

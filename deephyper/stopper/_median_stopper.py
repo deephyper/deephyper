@@ -75,7 +75,6 @@ class MedianStopper(Stopper):
             )
 
     def stop(self) -> bool:
-
         # Enforce Pre-conditions
         if super().stop():
             return True

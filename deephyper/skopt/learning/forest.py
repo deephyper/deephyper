@@ -327,7 +327,7 @@ class RandomForestRegressor(ForestRegressor):
         ccp_alpha=0.0,
         max_samples=None,
         min_variance=0.0,
-        splitter="random"
+        splitter="random",
     ):
         super().__init__(
             # !keyword-argument changing from sklearn==1.2.0, positional fixed it!

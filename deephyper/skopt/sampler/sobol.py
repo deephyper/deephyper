@@ -1,18 +1,18 @@
 """
-  Authors:
-    Original FORTRAN77 version of i4_sobol by Bennett Fox.
-    MATLAB version by John Burkardt.
-    PYTHON version by Corrado Chisari
+Authors:
+  Original FORTRAN77 version of i4_sobol by Bennett Fox.
+  MATLAB version by John Burkardt.
+  PYTHON version by Corrado Chisari
 
-    Original Python version of is_prime by Corrado Chisari
+  Original Python version of is_prime by Corrado Chisari
 
-    Original MATLAB versions of other functions by John Burkardt.
-    PYTHON versions by Corrado Chisari
+  Original MATLAB versions of other functions by John Burkardt.
+  PYTHON versions by Corrado Chisari
 
-    Modified Python version by Holger Nahrstaedt
+  Modified Python version by Holger Nahrstaedt
 
-    Original code is available from
-    http://people.sc.fsu.edu/~jburkardt/py_src/sobol/sobol.html
+  Original code is available from
+  http://people.sc.fsu.edu/~jburkardt/py_src/sobol/sobol.html
 """
 
 from __future__ import division
@@ -89,7 +89,6 @@ class Sobol(InitialPointGenerator):
     """
 
     def __init__(self, skip=0, randomize=True):
-
         if not (skip & (skip - 1) == 0):
             raise ValueError(
                 "The balance properties of Sobol' points require"
@@ -450,7 +449,6 @@ class Sobol(InitialPointGenerator):
 
         #  Initialize the remaining rows of V.
         for i in range(2, dim_num + 1):
-
             #  The bits of the integer POLY(I) gives the form of polynomial I.
             #  Find the degree of polynomial I from binary encoding.
             j = self.poly[i - 1]
@@ -595,12 +593,10 @@ class Sobol(InitialPointGenerator):
             self.lastq = np.zeros(dim_num)
 
         elif seed == self.seed_save + 1:
-
             #  Find the position of the right-hand zero in SEED.
             pos_lo0 = _bit_lo0(seed)
 
         elif seed <= self.seed_save:
-
             self.seed_save = 0
             self.lastq = np.zeros(dim_num)
 
@@ -614,7 +610,6 @@ class Sobol(InitialPointGenerator):
             pos_lo0 = _bit_lo0(seed)
 
         elif self.seed_save + 1 < seed:
-
             for seed_temp in range(int(self.seed_save + 1), int(seed)):
                 pos_lo0 = _bit_lo0(seed_temp)
                 for i in range(1, dim_num + 1):

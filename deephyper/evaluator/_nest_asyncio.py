@@ -1,4 +1,5 @@
 """From https://github.com/erdewit/nest_asyncio"""
+
 import asyncio
 import asyncio.events as events
 import os
@@ -51,16 +52,16 @@ def _patch_asyncio():
         return
     if sys.version_info >= (3, 6, 0):
         asyncio.Task = asyncio.tasks._CTask = asyncio.tasks.Task = asyncio.tasks._PyTask
-        asyncio.Future = (
-            asyncio.futures._CFuture
-        ) = asyncio.futures.Future = asyncio.futures._PyFuture
+        asyncio.Future = asyncio.futures._CFuture = asyncio.futures.Future = (
+            asyncio.futures._PyFuture
+        )
     if sys.version_info < (3, 7, 0):
         asyncio.tasks._current_tasks = asyncio.tasks.Task._current_tasks
         asyncio.all_tasks = asyncio.tasks.Task.all_tasks
     if sys.version_info >= (3, 9, 0):
-        events._get_event_loop = (
-            events.get_event_loop
-        ) = asyncio.get_event_loop = _get_event_loop
+        events._get_event_loop = events.get_event_loop = asyncio.get_event_loop = (
+            _get_event_loop
+        )
         _get_event_loop
     asyncio.run = run
     asyncio._nest_patched = True

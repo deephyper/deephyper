@@ -2,7 +2,11 @@ import collections
 
 
 def queued(evaluator_class):
-    """Decorator transforming an Evaluator into a ``Queued{Evaluator}``. The ``run_function`` used with a ``Queued{Evaluator}`` needs to have a ``dequed`` keyword-argument where the dequed resources from the queue will be passed.
+    """Decorator transforming an Evaluator into a ``Queued{Evaluator}``.
+
+    The ``run_function`` used with a ``Queued{Evaluator}`` needs to have a
+    ``dequed`` keyword-argument where the dequed resources from the queue
+    will be passed.
 
     Args:
         queue (list): A list of queued resources.
@@ -18,7 +22,6 @@ def queued(evaluator_class):
         self.queue_pop_per_task = queue_pop_per_task
 
     async def execute(self, job):
-
         dequed = [self.queue.popleft() for _ in range(self.queue_pop_per_task)]
         self.run_function_kwargs["dequed"] = dequed
 

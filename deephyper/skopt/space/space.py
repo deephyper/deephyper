@@ -147,8 +147,9 @@ def check_dimension(dimension, transform=None):
         return Categorical(dimension, transform=transform)
 
     raise ValueError(
-        "Invalid dimension {}. Read the documentation for "
-        "supported types.".format(dimension)
+        "Invalid dimension {}. Read the documentation for " "supported types.".format(
+            dimension
+        )
     )
 
 
@@ -286,13 +287,15 @@ class Real(Dimension):
     ):
         if high <= low:
             raise ValueError(
-                "the lower bound {} has to be less than the"
-                " upper bound {}".format(low, high)
+                "the lower bound {} has to be less than the" " upper bound {}".format(
+                    low, high
+                )
             )
         if prior not in ["uniform", "log-uniform", "normal"]:
             raise ValueError(
-                "prior should be 'normal', 'uniform' or 'log-uniform'"
-                " got {}".format(prior)
+                "prior should be 'normal', 'uniform' or 'log-uniform'" " got {}".format(
+                    prior
+                )
             )
         self.low = low
         self.high = high
@@ -341,8 +344,9 @@ class Real(Dimension):
 
         if self.transform_ not in ["normalize", "identity"]:
             raise ValueError(
-                "transform should be 'normalize' or 'identity'"
-                " got {}".format(self.transform_)
+                "transform should be 'normalize' or 'identity'" " got {}".format(
+                    self.transform_
+                )
             )
 
         # XXX: The _rvs is for sampling in the transformed space.
@@ -558,8 +562,9 @@ class Integer(Dimension):
     ):
         if high <= low:
             raise ValueError(
-                "the lower bound {} has to be less than the"
-                " upper bound {}".format(low, high)
+                "the lower bound {} has to be less than the" " upper bound {}".format(
+                    low, high
+                )
             )
         if prior not in ["uniform", "log-uniform"]:
             raise ValueError(
@@ -630,8 +635,9 @@ class Integer(Dimension):
 
         if transform not in ["normalize", "identity"]:
             raise ValueError(
-                "transform should be 'normalize' or 'identity'"
-                " got {}".format(self.transform_)
+                "transform should be 'normalize' or 'identity'" " got {}".format(
+                    self.transform_
+                )
             )
 
         if self.transform_ == "normalize":

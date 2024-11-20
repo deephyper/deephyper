@@ -17,15 +17,13 @@ def add_arguments_from_signature(parser, obj, prefix="", exclude=[]):
     added_arguments = []
 
     for p_name, p in sig.parameters.items():
-        if not (p_name in exclude):
-
+        if p.name not in exclude:
             if p.kind == inspect._POSITIONAL_OR_KEYWORD:
-
                 arg_format = f"--{prefix}{p_name.replace('_', '-')}"
                 arg_kwargs = {"help": ""}
 
                 # check type int
-                if not (p.annotation is inspect._empty):
+                if p.annotation is not inspect._empty:
                     arg_kwargs["type"] = p.annotation
                     arg_kwargs["help"] += f"Type[{p.annotation.__name__}]. "
 

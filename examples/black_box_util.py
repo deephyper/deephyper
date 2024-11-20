@@ -1,5 +1,5 @@
-"""Set of Black-Box functions useful to build examples.
-"""
+"""Set of Black-Box functions useful to build examples."""
+
 import time
 import numpy as np
 from deephyper.evaluator import profile
@@ -17,7 +17,6 @@ def ackley(x, a=20, b=0.2, c=2 * np.pi):
 
 @profile
 def run_ackley(config, sleep_loc=2, sleep_scale=0.5):
-
     # to simulate the computation of an expensive black-box
     if sleep_loc > 0:
         t_sleep = np.random.normal(loc=sleep_loc, scale=sleep_scale)

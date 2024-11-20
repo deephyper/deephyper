@@ -2,8 +2,10 @@ from typing import List
 
 import tensorflow as tf
 
-# TODO: Check if this import could be removed. Currently, the following import is necessary to avoid a bug if checkpointed models that are loaded have tfp layers.
-import tensorflow_probability as tfp
+# TODO: Check if this import could be removed. Currently, the following import
+# is necessary to avoid a bug if checkpointed models that are loaded have tfp
+# layers.
+# import tensorflow_probability as tfp
 import tf_keras as tfk
 
 from deephyper.predictor import Predictor, PredictorFileLoader

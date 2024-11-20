@@ -192,14 +192,14 @@ class Search(abc.ABC):
         except TimeoutReached:
             wait_all_running_jobs = False
             logging.warning(
-                f"Search is being stopped because the allowed timeout has been reached."
+                "Search is being stopped because the allowed timeout has been reached."
             )
         except MaximumJobsSpawnReached:
             logging.warning(
-                f"Search is being stopped because the maximum number of spawned jobs has been reached."
+                "Search is being stopped because the maximum number of spawned jobs has been reached."
             )
         except SearchTerminationError:
-            logging.warning(f"Search has been requested to be stopped.")
+            logging.warning("Search has been requested to be stopped.")
 
         # Collect remaining jobs
         if wait_all_running_jobs:
@@ -283,7 +283,6 @@ class Search(abc.ABC):
         n_ask = self._evaluator.num_workers
 
         while max_evals < 0 or num_evals() < max_evals:
-
             new_batch = self.ask(n_ask)
 
             logging.info(f"Submitting {len(new_batch)} configurations...")

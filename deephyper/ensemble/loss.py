@@ -1,5 +1,4 @@
-"""Subpackage for loss functions of ensemble models.
-"""
+"""Subpackage for loss functions of ensemble models."""
 
 import abc
 

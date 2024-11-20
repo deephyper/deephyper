@@ -106,11 +106,9 @@ class HPOJob(Job):
 
         # output only returned objective values as tuple or list
         elif isinstance(output, (tuple, list)):
-
             output = {"objective": output}
 
         elif isinstance(output, dict):
-
             other_metadata = output.pop("metadata", dict())
             if not isinstance(other_metadata, dict):
                 TypeError(
@@ -120,11 +118,10 @@ class HPOJob(Job):
 
             if "objective" not in output:
                 raise ValueError(
-                    f"The output of the run-function should have a key 'objective' when it is a dictionnary."
+                    "The output of the run-function should have a key 'objective' when it is a dictionnary."
                 )
 
         else:
-
             raise TypeError(
                 f"The output of the run-function cannot be of type {type(output)}"
             )

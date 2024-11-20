@@ -1,5 +1,4 @@
-"""Core paxplot functions from: https://github.com/kravitsjacob/paxplot
-"""
+"""Core paxplot functions from: https://github.com/kravitsjacob/paxplot"""
 
 import copy
 import functools
@@ -13,7 +12,6 @@ from matplotlib.figure import Figure
 
 
 class PaxFigure(Figure):
-
     _safe_inherited_functions = ["savefig", "set_size_inches", "draw", "show"]
 
     def __init__(self, *args, data=[], **kwargs):

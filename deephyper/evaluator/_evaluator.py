@@ -239,7 +239,6 @@ class Evaluator(abc.ABC):
 
     async def _run_jobs(self, args_list) -> int:
         for args in args_list:
-
             if (
                 self.maximum_num_jobs_submitted > 0
                 and self.num_jobs_submitted >= self.maximum_num_jobs_submitted
@@ -475,7 +474,6 @@ class Evaluator(abc.ABC):
         records_list = []
 
         for job in self.jobs_done:
-
             # job id and rank
             result = {"job_id": int(job.id.split(".")[1])}
 
@@ -500,7 +498,6 @@ class Evaluator(abc.ABC):
 
             with open(os.path.join(log_dir, filename), mode) as fp:
                 if not (self._start_dumping):
-
                     self._columns_dumped = records_list[0].keys()
 
                 if self._columns_dumped is not None:
@@ -528,7 +525,6 @@ class Evaluator(abc.ABC):
         resultsList = []
 
         for job in self.jobs_done:
-
             result = copy.deepcopy(job.args)
 
             # add prefix for all keys found in "args"
@@ -573,7 +569,6 @@ class Evaluator(abc.ABC):
             with open(os.path.join(log_dir, filename), mode) as fp:
                 if not (self._start_dumping):
                     for result in resultsList:
-
                         # Waiting to start receiving non-failed jobs before dumping results
                         is_single_obj_and_has_success = (
                             "objective" in result
