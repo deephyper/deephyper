@@ -84,6 +84,6 @@ class ThreadPoolEvaluator(Evaluator):
 
         return job
 
-    def close(self):
-        logging.info("Closing ThreadPoolEvaluator")
-        self.loop.close()
+    # def close(self):
+    #     logging.info("Closing ThreadPoolEvaluator")
+    #     self.loop.close()
