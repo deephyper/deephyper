@@ -2,21 +2,14 @@ import asyncio
 import functools
 import logging
 import traceback
-
 from typing import Callable, Hashable
 
-from deephyper.core.exceptions import RunFunctionError
-from deephyper.evaluator._evaluator import Evaluator
-from deephyper.evaluator._job import Job
+from mpi4py.futures import MPICommExecutor
+
+from deephyper.evaluator import Evaluator, Job, JobStatus
+from deephyper.evaluator.mpi import MPI
 from deephyper.evaluator.storage import Storage
-
-import mpi4py
-
-# !To avoid initializing MPI when module is imported (MPI is optional)
-mpi4py.rc.initialize = False
-mpi4py.rc.finalize = True
-from mpi4py import MPI  # noqa: E402
-from mpi4py.futures import MPICommExecutor  # noqa: E402
+from deephyper.evaluator.storage._mpi_win_storage import MPIWinStorage
 
 logger = logging.getLogger(__name__)
 
@@ -40,12 +33,20 @@ class MPICommEvaluator(Evaluator):
 
     Args:
         run_function (callable): functions to be executed by the ``Evaluator``.
+
         num_workers (int, optional): Number of parallel Ray-workers used to compute the ``run_function``. Defaults to ``None`` which consider 1 rank as a worker (minus the master rank).
+
         callbacks (list, optional): A list of callbacks to trigger custom actions at the creation or completion of jobs. Defaults to ``None``.
+
         run_function_kwargs (dict, optional): Keyword-arguments to pass to the ``run_function``. Defaults to ``None``.
+
+        storage (Storage, optional): Storage used by the evaluator. Defaults to ``SharedMemoryStorage``.
+
+        search_id (Hashable, optional): The id of the search to use in the corresponding storage. If ``None`` it will create a new search identifier when initializing the search.
+
         comm (optional): A MPI communicator, if ``None`` it will use ``MPI.COMM_WORLD``. Defaults to ``None``.
+
         rank (int, optional): The rank of the master process. Defaults to ``0``.
-        abort_on_exit (bool): If ``True`` then it will call ``comm.Abort()`` to force all MPI processes to finish when closing the ``Evaluator`` (i.e., exiting the current ``with`` block).
     """
 
     def __init__(
@@ -58,10 +59,28 @@ class MPICommEvaluator(Evaluator):
         search_id: Hashable = None,
         comm=None,
         root=0,
-        abort_on_exit=False,
-        wait_on_exit=True,
-        cancel_jobs_on_exit=True,
     ):
+        if not MPI.Is_initialized():
+            MPI.Init_thread()
+
+        self.comm = comm if comm else MPI.COMM_WORLD
+        self.root = root
+
+        if storage is None:
+            logging.info(
+                f"No storage was given to create {type(self).__name__} so using MPIWinStorage"
+            )
+            storage = MPIWinStorage(self.comm, root=self.root)
+
+        if isinstance(storage, MPIWinStorage):
+            if search_id is None:
+                logging.info(
+                    "No search_id was given and an MPIWinStorage is used. Creating new search."
+                )
+                if self.comm.Get_rank() == self.root:
+                    search_id = storage.create_new_search()
+        self.comm.Barrier()
+
         super().__init__(
             run_function=run_function,
             num_workers=num_workers,
@@ -70,14 +89,7 @@ class MPICommEvaluator(Evaluator):
             storage=storage,
             search_id=search_id,
         )
-        if not MPI.Is_initialized():
-            MPI.Init_thread()
 
-        self.comm = comm if comm else MPI.COMM_WORLD
-        self.root = root
-        self.abort_on_exit = abort_on_exit
-        self.wait_on_exit = wait_on_exit
-        self.cancel_jobs_on_exit = cancel_jobs_on_exit
         self.num_workers = self.comm.Get_size() - 1  # 1 rank is the master
         self.sem = asyncio.Semaphore(self.num_workers)
         logging.info(f"Creating MPICommExecutor with {self.num_workers} max_workers...")
@@ -92,6 +104,7 @@ class MPICommEvaluator(Evaluator):
         logging.info("Creation of MPICommExecutor done")
 
     def __enter__(self):
+        # just a pointer to `self.executor` only in the root rank
         self.master_executor = self.executor.__enter__()
         if self.master_executor is not None:
             return self
@@ -99,42 +112,36 @@ class MPICommEvaluator(Evaluator):
             return None
 
     def __exit__(self, type, value, traceback):
-        if self.abort_on_exit:
-            self.comm.Abort(1)
-        else:
-            if (
-                self.master_executor
-                and hasattr(self.executor, "_executor")
-                and self.executor._executor is not None
-            ):
-                self.executor._executor.shutdown(
-                    wait=self.wait_on_exit, cancel_futures=self.cancel_jobs_on_exit
-                )
-                self.executor._executor = None
+        if self.master_executor is not None:
+            self.close()
+        self.executor.__exit__(type, value, traceback)
 
     async def execute(self, job: Job) -> Job:
         async with self.sem:
-            running_job = job.create_running_job(self._storage, self._stopper)
+            job.status = JobStatus.RUNNING
+
+            running_job = job.create_running_job(self._stopper)
 
             run_function = functools.partial(
                 job.run_function, running_job, **self.run_function_kwargs
             )
 
-            code, sol = await self.loop.run_in_executor(
-                self.master_executor, catch_exception, run_function
+            run_function_future = self.loop.run_in_executor(
+                self.master_executor, run_function
             )
 
-            # check if exception happened in worker
-            if code == 1:
-                if "SearchTerminationError" in sol:
-                    pass
-                else:
-                    format_msg = "\n\n/**** START OF REMOTE ERROR ****/\n\n"
-                    format_msg += sol
-                    format_msg += "\nException happening in remote rank was propagated to root process.\n"
-                    format_msg += "\n/**** END OF REMOTE ERROR ****/\n"
-                    raise RunFunctionError(format_msg)
+            if self.timeout is not None:
+                try:
+                    output = await asyncio.wait_for(
+                        asyncio.shield(run_function_future), timeout=self.time_left
+                    )
+                except asyncio.TimeoutError:
+                    job.status = JobStatus.CANCELLING
+                    output = await run_function_future
+                    job.status = JobStatus.CANCELLED
+            else:
+                output = await run_function_future
 
-            job.set_output(sol)
+            job.set_output(output)
 
         return job

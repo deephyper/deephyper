@@ -3,8 +3,7 @@ from typing import Callable, Hashable
 
 import ray
 
-from deephyper.evaluator._evaluator import Evaluator
-from deephyper.evaluator._job import Job, JobStatus
+from deephyper.evaluator import Evaluator, Job, JobStatus
 from deephyper.evaluator.storage import RayStorage, Storage
 
 ray_initializer = None

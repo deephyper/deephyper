@@ -185,6 +185,9 @@ class RunningJob(MutableMapping):
         self.stopper = stopper
         self.obs = None
 
+    def __repr__(self) -> str:
+        return f"RunningJob(id={self.id}, status={self.status}, parameters={self.parameters})"
+
     def __getitem__(self, key):
         if key == "job_id":
             return int(self.id.split(".")[-1])

@@ -4,8 +4,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Hashable
 
-from deephyper.evaluator._evaluator import Evaluator
-from deephyper.evaluator._job import Job, JobStatus
+from deephyper.evaluator import Evaluator, Job, JobStatus
 from deephyper.evaluator.storage import Storage
 
 logger = logging.getLogger(__name__)
