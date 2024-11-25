@@ -1,8 +1,6 @@
 import asyncio
 import functools
 import logging
-import os
-import signal
 from concurrent.futures import ProcessPoolExecutor
 from typing import Callable, Hashable
 

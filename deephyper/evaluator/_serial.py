@@ -2,8 +2,7 @@ import asyncio
 import functools
 from typing import Callable, Hashable
 
-from deephyper.evaluator import Job, JobStatus
-from deephyper.evaluator._evaluator import Evaluator
+from deephyper.evaluator import Evaluator, Job, JobStatus
 from deephyper.evaluator.storage import Storage
 
 

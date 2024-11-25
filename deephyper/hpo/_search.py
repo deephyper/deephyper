@@ -219,7 +219,7 @@ class Search(abc.ABC):
             )
         except SearchTerminationError:
             self.stopped = True
-            logging.warning(f"Search has been requested to be stopped.")
+            logging.warning("Search has been requested to be stopped.")
 
         # Collect remaining jobs
         if wait_all_running_jobs:
