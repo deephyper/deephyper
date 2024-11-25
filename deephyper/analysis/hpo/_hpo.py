@@ -151,11 +151,15 @@ def plot_search_trajectory_single_objective_hpo(
     if x_units == "evaluations":
         x = np.arange(len(results))
         x_label = "Evaluations"
+
+        results = results.sort_values(by=["job_id"], ascending=True)
     else:
         if "m:timestamp_end" in results.columns:
             x = results["m:timestamp_end"].to_numpy()
+            results = results.sort_values(by=["m:timestamp_end"], ascending=True)
         else:
             x = results["m:timestamp_gather"].to_numpy()
+            results = results.sort_values(by=["m:timestamp_gather"], ascending=True)
         x_label = "Time (sec.)"
 
     if results[column].dtype != np.float64:
@@ -293,7 +297,7 @@ def plot_worker_utilization(
     if ax is None:
         ax = fig.gca()
 
-    ax.step(x, y, where="pre", **plot_kwargs)
+    ax.step(x, y, where="post", **plot_kwargs)
 
     ax.set_xlabel("Time (sec.)")
     if num_workers:

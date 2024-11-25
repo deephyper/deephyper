@@ -94,7 +94,9 @@ if __name__ == "__main__":
         figsize=figure_size(width=600),
     )
 
-    plot_search_trajectory_single_objective_hpo(results, mode="min", ax=axes[0])
+    plot_search_trajectory_single_objective_hpo(
+        results, mode="min", x_units="seconds", ax=axes[0]
+    )
 
     plot_worker_utilization(
         results, num_workers=num_workers, profile_type="start/end", ax=axes[1]

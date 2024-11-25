@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**04:05.120** total execution time for 5 files **from examples**:
+**00:24.680** total execution time for 5 files **from examples**:
 
 .. container::
 
@@ -32,16 +32,16 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_examples_plot_from_serial_to_parallel_hpo.py` (``plot_from_serial_to_parallel_hpo.py``)
-     - 04:05.120
+   * - :ref:`sphx_glr_examples_plot_profile_worker_utilization.py` (``plot_profile_worker_utilization.py``)
+     - 00:24.680
      - 0.0
    * - :ref:`sphx_glr_examples_plot_experimental_design.py` (``plot_experimental_design.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_examples_plot_notify_failures_hpo.py` (``plot_notify_failures_hpo.py``)
+   * - :ref:`sphx_glr_examples_plot_from_serial_to_parallel_hpo.py` (``plot_from_serial_to_parallel_hpo.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_examples_plot_profile_worker_utilization.py` (``plot_profile_worker_utilization.py``)
+   * - :ref:`sphx_glr_examples_plot_notify_failures_hpo.py` (``plot_notify_failures_hpo.py``)
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_examples_plot_transfer_learning_for_hpo.py` (``plot_transfer_learning_for_hpo.py``)
