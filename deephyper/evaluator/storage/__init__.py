@@ -29,3 +29,14 @@ try:
     __all__.append("RayStorage")
 except ImportError:
     pass
+
+# optional import for
+try:
+    from deephyper.evaluator.storage._mpi_win_storage import MPIWinStorage  # noqa: F401
+    from deephyper.evaluator.storage._mpi_win_mutable_mapping import (
+        MPIWinMutableMapping,  # noqa: F401
+    )
+
+    __all__.extend(["MPIWinStorage", "MPIWinMutableMapping"])
+except ImportError:
+    pass
