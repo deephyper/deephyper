@@ -33,15 +33,15 @@ After defining the black-box we can continue with the definition of our main scr
 
 import black_box_util as black_box
 import matplotlib.pyplot as plt
-import numpy as np
 
-from deephyper.analysis._matplotlib import update_matplotlib_rc
-from deephyper.hpo import HpProblem
+from deephyper.analysis import figure_size
+from deephyper.analysis.hpo import (
+    plot_search_trajectory_single_objective_hpo,
+    plot_worker_utilization,
+)
 from deephyper.evaluator import Evaluator
 from deephyper.evaluator.callback import TqdmCallback
-from deephyper.hpo import CBO
-
-update_matplotlib_rc()
+from deephyper.hpo import CBO, HpProblem
 
 # %%
 # Then we define the variable(s) we want to optimize. For this problem we
@@ -59,15 +59,6 @@ problem
 # Then we define a parallel search.
 
 if __name__ == "__main__":
-    import logging
-
-    logging.basicConfig(
-        # filename=path_log_file, # optional if we want to store the logs to disk
-        level=logging.INFO,
-        format="%(asctime)s - %(levelname)s - %(filename)s:%(funcName)s - %(message)s",
-        force=True,
-    )
-
     timeout = 20
     num_workers = 4
     results = {}
@@ -80,27 +71,30 @@ if __name__ == "__main__":
             "callbacks": [TqdmCallback()],
         },
     )
-    search = CBO(problem, evaluator, random_state=42)
+    search = CBO(
+        problem,
+        evaluator,
+        random_state=42,
+    )
     results = search.search(timeout=timeout)
 
 # %%
 # Finally, we plot the results from the collected DataFrame.
 
 if __name__ == "__main__":
-    from deephyper.analysis.hpo import (
-        plot_search_trajectory_single_objective_hpo,
-        plot_worker_utilization,
-    )
-
     t0 = results["m:timestamp_start"].iloc[0]
     results["m:timestamp_start"] = results["m:timestamp_start"] - t0
     results["m:timestamp_end"] = results["m:timestamp_end"] - t0
     tmax = results["m:timestamp_end"].max()
 
-    plt.figure()
-    fig, axes = plt.subplots(nrows=2, ncols=1, sharex=True)
+    fig, axes = plt.subplots(
+        nrows=2,
+        ncols=1,
+        sharex=True,
+        figsize=figure_size(width=600),
+    )
 
-    plot_search_trajectory_single_objective_hpo(results, ax=axes[0])
+    plot_search_trajectory_single_objective_hpo(results, mode="min", ax=axes[0])
 
     plot_worker_utilization(
         results, num_workers=num_workers, profile_type="start/end", ax=axes[1]

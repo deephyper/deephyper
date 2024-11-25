@@ -31,14 +31,11 @@ After defining the black-box we can continue with the definition of our main scr
 import black_box_util as black_box
 import matplotlib.pyplot as plt
 
-from deephyper.analysis._matplotlib import update_matplotlib_rc
-from deephyper.hpo import HpProblem
+from deephyper.analysis import figure_size
+from deephyper.analysis.hpo import plot_search_trajectory_single_objective_hpo
 from deephyper.evaluator import Evaluator
 from deephyper.evaluator.callback import TqdmCallback
-from deephyper.hpo import CBO
-
-update_matplotlib_rc()
-
+from deephyper.hpo import HpProblem, CBO
 
 # %%
 # Then we define the variable(s) we want to optimize. For this problem we
@@ -81,11 +78,13 @@ if __name__ == "__main__":
 if __name__ == "__main__":
     parallel_evaluator = Evaluator.create(
         black_box.run_ackley,
-        method="process",
+        method="thread",
         method_kwargs={"num_workers": 5, "callbacks": [TqdmCallback()]},
     )
     print("Running parallel search...")
-    parallel_search = CBO(problem, parallel_evaluator, random_state=42)
+    parallel_search = CBO(
+        problem, parallel_evaluator, multi_point_strategy="qUCBd", random_state=42
+    )
     results["parallel"] = parallel_search.search(timeout=timeout)
     results["parallel"]["m:timestamp_end"] = (
         results["parallel"]["m:timestamp_end"]
@@ -98,14 +97,22 @@ if __name__ == "__main__":
 # parallel search.
 
 if __name__ == "__main__":
-    plt.figure()
+    fig, ax = plt.subplots(figsize=figure_size(width=600))
 
     for strategy, df in results.items():
-        plt.scatter(df["m:timestamp_end"], df.objective, label=strategy)
-        plt.plot(df["m:timestamp_end"], df.objective.cummax())
+        plot_search_trajectory_single_objective_hpo(
+            df,
+            show_failures=False,
+            mode="min",
+            x_units="seconds",
+            ax=ax,
+            label=strategy,
+        )
 
     plt.xlabel("Time (sec.)")
     plt.ylabel("Objective")
-    plt.grid()
+    plt.yscale("log")
+    plt.grid(visible=True, which="minor", linestyle=":")
+    plt.grid(visible=True, which="major", linestyle="-")
     plt.legend()
     plt.show()
