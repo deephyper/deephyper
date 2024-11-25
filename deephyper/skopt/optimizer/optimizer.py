@@ -584,6 +584,7 @@ class Optimizer(object):
             "topk",
             "boltzmann",
             "qLCB",
+            "qLCBd",
         ]
 
         if not (isinstance(n_points, int) and n_points > 0):
@@ -660,7 +661,7 @@ class Optimizer(object):
                 )
 
         # q-ACQ multi point acquisition for centralized setting
-        if len(self.models) > 0 and strategy == "qLCB":
+        if len(self.models) > 0 and strategy.startswith("qLCB"):
             Xsample = self.space.rvs(
                 n_samples=self.n_points, random_state=self.rng, n_jobs=self.n_jobs
             )
@@ -668,14 +669,22 @@ class Optimizer(object):
             Xsample = self._filter_duplicated(Xsample)
             Xsample_transformed = self.space.transform(Xsample)
 
-            mu, std = self.models[-1].predict(Xsample_transformed, return_std=True)
+            if strategy[-1] == "d":
+                mu, _, std = self.models[-1].predict(
+                    Xsample_transformed, return_std=True, disentangled_std=True
+                )
+            else:
+                mu, std = self.models[-1].predict(Xsample_transformed, return_std=True)
+
             kappa = self.acq_func_kwargs.get("kappa", 1.96)
             kappas = self.rng.exponential(kappa, size=n_points - 1)
+
             X = [self._next_x]
             for kappa in kappas:
                 values = mu - kappa * std
                 idx = np.argmin(values)
                 X.append(Xsample[idx])
+
             return X
 
         # Caching the result with n_points not None. If some new parameters

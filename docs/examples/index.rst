@@ -37,23 +37,6 @@ Below is a gallery of examples on how to use DeepHyper.
 
 .. only:: html
 
-  .. image:: /examples/images/thumb/sphx_glr_plot_notify_failures_hyperparameter_search_thumb.png
-    :alt:
-
-  :ref:`sphx_glr_examples_plot_notify_failures_hyperparameter_search.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Notify Failures in Hyperparameter optimization</div>
-    </div>
-
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
-
-.. only:: html
-
   .. image:: /examples/images/thumb/sphx_glr_plot_profile_worker_utilization_thumb.png
     :alt:
 
@@ -71,14 +54,14 @@ Below is a gallery of examples on how to use DeepHyper.
 
 .. only:: html
 
-  .. image:: /examples/images/thumb/sphx_glr_plot_from_serial_to_parallel_hyperparameter_search_thumb.png
+  .. image:: /examples/images/thumb/sphx_glr_plot_notify_failures_hpo_thumb.png
     :alt:
 
-  :ref:`sphx_glr_examples_plot_from_serial_to_parallel_hyperparameter_search.py`
+  :ref:`sphx_glr_examples_plot_notify_failures_hpo.py`
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">From Serial to Parallel Evaluations</div>
+      <div class="sphx-glr-thumbnail-title">Notify Failures in Hyperparameter optimization</div>
     </div>
 
 
@@ -88,14 +71,31 @@ Below is a gallery of examples on how to use DeepHyper.
 
 .. only:: html
 
-  .. image:: /examples/images/thumb/sphx_glr_plot_transfer_learning_for_hps_thumb.png
+  .. image:: /examples/images/thumb/sphx_glr_plot_transfer_learning_for_hpo_thumb.png
     :alt:
 
-  :ref:`sphx_glr_examples_plot_transfer_learning_for_hps.py`
+  :ref:`sphx_glr_examples_plot_transfer_learning_for_hpo.py`
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">Transfer Learning for Hyperparameter Search</div>
+      <div class="sphx-glr-thumbnail-title">Applying Transfer Learning to Hyperparameter Optimization</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
+
+.. only:: html
+
+  .. image:: /examples/images/thumb/sphx_glr_plot_from_serial_to_parallel_hpo_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_plot_from_serial_to_parallel_hpo.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">From Serial to Parallel Evaluations</div>
     </div>
 
 
@@ -110,10 +110,10 @@ Below is a gallery of examples on how to use DeepHyper.
    :hidden:
 
    /examples/plot_experimental_design
-   /examples/plot_notify_failures_hyperparameter_search
    /examples/plot_profile_worker_utilization
-   /examples/plot_from_serial_to_parallel_hyperparameter_search
-   /examples/plot_transfer_learning_for_hps
+   /examples/plot_notify_failures_hpo
+   /examples/plot_transfer_learning_for_hpo
+   /examples/plot_from_serial_to_parallel_hpo
 
 
 .. only:: html

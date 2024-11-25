@@ -120,7 +120,13 @@ def parameters_at_topk(
 
 
 def plot_search_trajectory_single_objective_hpo(
-    results, show_failures: bool = True, column="objective", ax=None, **kwargs
+    results,
+    show_failures: bool = True,
+    column="objective",
+    mode="max",
+    x_units="evaluations",
+    ax=None,
+    **kwargs,
 ):
     """Plot the search trajectory of a Single-Objective Hyperparameter Optimization.
 
@@ -128,27 +134,45 @@ def plot_search_trajectory_single_objective_hpo(
         results (pd.DataFrame): the results of Hyperparameter Optimization.
         show_failures (bool, optional): whether to show the failed objectives. Defaults to ``True``.
         column (str, optional): the column to use for the y-axis of the plot. Defaults to ``"objective"``.
+        mode (str, optional): if the plot should be made for minimization ``"min"`` or maximization ``"max"``. Defaults to ``"max"``.
+        x_units (str, optional): if the plot should be made with respect to evaluations ``"evaluations"`` or time ``"seconds"``. Defaults to ``"evaluations"``.
         ax (matplotlib.pyplot.axes): the axes to use for the plot.
 
     Returns:
         (matplotlib.pyplot.figure, matplotlib.pyplot.axes): the figure and axes of the plot.
     """
+    assert mode in ["min", "max"]
+    assert x_units in ["evaluations", "seconds"]
 
     label = None
     if "label" in kwargs:
         label = kwargs.pop("label")
 
-    if results[column].dtype != np.float64:
+    if x_units == "evaluations":
         x = np.arange(len(results))
+        x_label = "Evaluations"
+    else:
+        if "m:timestamp_end" in results.columns:
+            x = results["m:timestamp_end"].to_numpy()
+        else:
+            x = results["m:timestamp_gather"].to_numpy()
+        x_label = "Time (sec.)"
+
+    if results[column].dtype != np.float64:
         mask_failed = np.where(results[column].str.startswith("F"))[0]
         mask_success = np.where(~results[column].str.startswith("F"))[0]
         x_success, x_failed = x[mask_success], x[mask_failed]
         y_success = results[column][mask_success].astype(float)
     else:
-        x = np.arange(len(results))
         x_success = x
         x_failed = np.array([])
         y_success = results[column]
+
+    if mode == "min":
+        y_success = -y_success
+        y_plot = y_success.cummin()
+    else:
+        y_plot = y_success.cummax()
 
     y_min, y_max = y_success.min(), y_success.max()
     y_min = y_min - 0.05 * (y_max - y_min)
@@ -164,7 +188,7 @@ def plot_search_trajectory_single_objective_hpo(
     if ax is None:
         ax = fig.gca()
 
-    ax.plot(x_success, y_success.cummax(), label=label)
+    ax.plot(x_success, y_plot, label=label)
 
     ax.scatter(
         x_success,
@@ -182,7 +206,7 @@ def plot_search_trajectory_single_objective_hpo(
             label="Failures" if label is None else None,
         )
 
-    ax.set_xlabel("Evaluations")
+    ax.set_xlabel(x_label)
     ax.set_ylabel("Objective")
     ax.legend()
     ax.grid(True)

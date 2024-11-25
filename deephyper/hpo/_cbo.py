@@ -25,7 +25,12 @@ from deephyper.skopt.moo import (
 )
 
 # Adapt minimization -> maximization with DeepHyper
-MAP_multi_point_strategy = {"cl_min": "cl_max", "cl_max": "cl_min", "qUCB": "qLCB"}
+MAP_multi_point_strategy = {
+    "cl_min": "cl_max",
+    "cl_max": "cl_min",
+    "qUCB": "qLCB",
+    "qUCBd": "qLCBd",
+}
 
 MAP_acq_func = {"UCB": "LCB", "UCBd": "LCBd"}
 
@@ -290,6 +295,7 @@ class CBO(Search):
             "topk",
             "boltzmann",
             "qUCB",
+            "qUCBd",
         ]
         if multi_point_strategy not in multi_point_strategy_allowed:
             raise ValueError(
@@ -778,7 +784,7 @@ class CBO(Search):
         columns_metadata = {}
         for hp_name in self._problem.space:
             if hp_name in req_df.columns:
-                hp = self._problem.space.get_hyperparameter(hp_name)
+                hp = self._problem.space[hp_name]
 
                 # TODO: Categorical and Ordinal are both considered non-ordered for SDV
                 # TODO: it could be useful to use the "category"  type of Pandas and the ordered=True/False argument

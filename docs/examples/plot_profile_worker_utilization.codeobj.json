@@ -227,32 +227,7 @@
    "name": "Figure"
   }
  ],
- "i": [
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "builtins",
-   "module_short": "builtins",
-   "name": "int"
-  }
- ],
- "logging.INFO": [
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "builtins",
-   "module_short": "builtins",
-   "name": "int"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "logging",
-   "module_short": "logging",
-   "name": "INFO"
-  }
- ],
- "logging.basicConfig": [
+ "figure_size": [
   {
    "is_class": false,
    "is_explicit": false,
@@ -263,9 +238,18 @@
   {
    "is_class": false,
    "is_explicit": false,
-   "module": "logging",
-   "module_short": "logging",
-   "name": "basicConfig"
+   "module": "deephyper.analysis",
+   "module_short": "deephyper.analysis",
+   "name": "figure_size"
+  }
+ ],
+ "i": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
   }
  ],
  "nb_dim": [
@@ -316,22 +300,6 @@
    "module": "deephyper.analysis.hpo",
    "module_short": "deephyper.analysis.hpo",
    "name": "plot_worker_utilization"
-  }
- ],
- "plt.figure": [
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "builtins",
-   "module_short": "builtins",
-   "name": "function"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "matplotlib.pyplot",
-   "module_short": "matplotlib.pyplot",
-   "name": "figure"
   }
  ],
  "plt.show": [
@@ -550,22 +518,6 @@
    "module": "numpy",
    "module_short": "numpy",
    "name": "float64"
-  }
- ],
- "update_matplotlib_rc": [
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "builtins",
-   "module_short": "builtins",
-   "name": "function"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "deephyper.analysis._matplotlib",
-   "module_short": "deephyper.analysis",
-   "name": "update_matplotlib_rc"
   }
  ]
 }
