@@ -59,8 +59,8 @@ def test_queued_ray_evaluator():
 
         evaluator = QueuedRayEvaluator(
             run_sync,
-            # num_cpus=1,
-            # num_cpus_per_task=1,
+            num_cpus=1,
+            num_cpus_per_task=1,
             num_workers=1,
             ray_kwargs={"runtime_env": {"working_dir": HERE}},
             # queued arguments
@@ -79,7 +79,7 @@ def test_queued_ray_evaluator():
 
             jobs = evaluator.gather("ALL")
 
-            results.append(jobs[0].objective)
+            results.append(jobs[0].result)
 
         assert results == [1, 2, 3, 4, 1, 2, 3, 4]
     except ImportError as e:
