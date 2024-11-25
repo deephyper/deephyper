@@ -9,6 +9,11 @@ class TorchPredictor(Predictor):
     """Represents a frozen torch model that can only predict."""
 
     def __init__(self, module: torch.nn.Module):
+        if not isinstance(module, torch.nn.Module):
+            raise ValueError(
+                f"The given module is of type {type(module)} when it should be of type torch.nn.Module!"
+            )
+
         self.module = module
 
     def pre_process_inputs(self, X):
