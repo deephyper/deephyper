@@ -23,15 +23,18 @@ Standard Experimental Design (Grid Search)
 
 **Author(s)**: Romain Egele.
 
-This example demonstrates how to generate points from standard experimental designs (e.g., random, grid, lhs).
+This example demonstrates how to generate points from standard experimental
+designs (e.g., random, grid, lhs).
 
-.. GENERATED FROM PYTHON SOURCE LINES 10-16
+.. GENERATED FROM PYTHON SOURCE LINES 11-19
 
 .. code-block:: Python
 
 
-
     from deephyper.analysis._matplotlib import update_matplotlib_rc
+    from deephyper.hpo import HpProblem
+    from deephyper.hpo import ExperimentalDesignSearch
+    import matplotlib.pyplot as plt
 
     update_matplotlib_rc()
 
@@ -42,15 +45,13 @@ This example demonstrates how to generate points from standard experimental desi
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 17-18
+.. GENERATED FROM PYTHON SOURCE LINES 20-21
 
 First we define the hyperparameter search space.
 
-.. GENERATED FROM PYTHON SOURCE LINES 18-29
+.. GENERATED FROM PYTHON SOURCE LINES 21-28
 
 .. code-block:: Python
-
-    from deephyper.hpo import HpProblem
 
 
     problem = HpProblem()
@@ -58,8 +59,6 @@ First we define the hyperparameter search space.
     problem.add_hyperparameter((0.0, 100.0), "y")
     problem.add_hyperparameter([1, 2, 3], "z")
     problem
-    problem
-
 
 
 
@@ -79,13 +78,15 @@ First we define the hyperparameter search space.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 30-31
+.. GENERATED FROM PYTHON SOURCE LINES 29-30
 
 Then we define the black-box function to optimize.
 
-.. GENERATED FROM PYTHON SOURCE LINES 31-37
+.. GENERATED FROM PYTHON SOURCE LINES 30-38
 
 .. code-block:: Python
+
+
 
     def run(job):
         config = job.parameters
@@ -100,16 +101,16 @@ Then we define the black-box function to optimize.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 38-40
+.. GENERATED FROM PYTHON SOURCE LINES 39-43
 
-Then we define the search. In this example, we use the `ExperimentalDesignSearch` class to generate points from a grid design. The `Evaluator` can also be used with this class to parallelize evalutions.
+Then we define the search. In this example, we use the
+`ExperimentalDesignSearch` class to generate points from a grid design. The
+`Evaluator` can also be used with this class to parallelize evalutions.
 Note that `n_points` and `max_evals` take the same value here.
 
-.. GENERATED FROM PYTHON SOURCE LINES 40-47
+.. GENERATED FROM PYTHON SOURCE LINES 43-48
 
 .. code-block:: Python
-
-    from deephyper.hpo import ExperimentalDesignSearch
 
 
     max_evals = 200
@@ -120,24 +121,16 @@ Note that `n_points` and `max_evals` take the same value here.
 
 
 
-.. rst-class:: sphx-glr-script-out
-
- .. code-block:: none
-
-    WARNING:root:Results file already exists, it will be renamed to /Users/romainegele/Documents/Argonne/deephyper/examples/results_20240731-192212.csv
 
 
 
-
-.. GENERATED FROM PYTHON SOURCE LINES 48-49
+.. GENERATED FROM PYTHON SOURCE LINES 49-50
 
 Finally, we plot the results from the collected DataFrame.
 
-.. GENERATED FROM PYTHON SOURCE LINES 49-58
+.. GENERATED FROM PYTHON SOURCE LINES 50-57
 
 .. code-block:: Python
-
-    import matplotlib.pyplot as plt
 
 
     fig, ax = plt.subplots()
@@ -155,13 +148,20 @@ Finally, we plot the results from the collected DataFrame.
    :class: sphx-glr-single-img
 
 
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+    /Users/romainegele/Documents/Argonne/deephyper/examples/plot_experimental_design.py:56: UserWarning: FigureCanvasAgg is non-interactive, and thus cannot be shown
+      plt.show()
+
 
 
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 2.740 seconds)
+   **Total running time of the script:** (0 minutes 1.895 seconds)
 
 
 .. _sphx_glr_download_examples_plot_experimental_design.py:

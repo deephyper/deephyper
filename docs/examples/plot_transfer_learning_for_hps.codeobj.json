@@ -163,6 +163,29 @@
    "name": "TqdmCallback"
   }
  ],
+ "ax": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes._axes",
+   "module_short": "matplotlib.axes",
+   "name": "Axes"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes",
+   "module_short": "matplotlib.axes",
+   "name": "Axes"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Axes"
+  }
+ ],
  "df": [
   {
    "is_class": false,
@@ -186,245 +209,89 @@
    "name": "DataFrame"
   }
  ],
- "df.objective": [
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas.core.series",
-   "module_short": "pandas.core.series",
-   "name": "Series"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas.core",
-   "module_short": "pandas.core",
-   "name": "Series"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas",
-   "module_short": "pandas",
-   "name": "Series"
-  }
- ],
- "df.objective.cummax": [
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas.core.series",
-   "module_short": "pandas.core.series",
-   "name": "Series.cummax"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas.core",
-   "module_short": "pandas.core",
-   "name": "Series.cummax"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas",
-   "module_short": "pandas",
-   "name": "Series.cummax"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas.core.base",
-   "module_short": "pandas.core.base",
-   "name": "IndexOpsMixin.cummax"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas.core",
-   "module_short": "pandas.core",
-   "name": "IndexOpsMixin.cummax"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas",
-   "module_short": "pandas",
-   "name": "IndexOpsMixin.cummax"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas.core.generic",
-   "module_short": "pandas.core.generic",
-   "name": "NDFrame.cummax"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas.core",
-   "module_short": "pandas.core",
-   "name": "NDFrame.cummax"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas",
-   "module_short": "pandas",
-   "name": "NDFrame.cummax"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas.core.arraylike",
-   "module_short": "pandas.core.arraylike",
-   "name": "OpsMixin.cummax"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas.core",
-   "module_short": "pandas.core",
-   "name": "OpsMixin.cummax"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas",
-   "module_short": "pandas",
-   "name": "OpsMixin.cummax"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas.core.base",
-   "module_short": "pandas.core.base",
-   "name": "PandasObject.cummax"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas.core",
-   "module_short": "pandas.core",
-   "name": "PandasObject.cummax"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas",
-   "module_short": "pandas",
-   "name": "PandasObject.cummax"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas.core.indexing",
-   "module_short": "pandas.core.indexing",
-   "name": "IndexingMixin.cummax"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas.core",
-   "module_short": "pandas.core",
-   "name": "IndexingMixin.cummax"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas",
-   "module_short": "pandas",
-   "name": "IndexingMixin.cummax"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas.core.accessor",
-   "module_short": "pandas.core.accessor",
-   "name": "DirNamesMixin.cummax"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas.core",
-   "module_short": "pandas.core",
-   "name": "DirNamesMixin.cummax"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "pandas",
-   "module_short": "pandas",
-   "name": "DirNamesMixin.cummax"
-  }
- ],
  "evaluator_large": [
   {
    "is_class": false,
    "is_explicit": false,
-   "module": "deephyper.evaluator._serial",
+   "module": "deephyper.evaluator._thread_pool",
    "module_short": "deephyper.evaluator",
-   "name": "SerialEvaluator"
+   "name": "ThreadPoolEvaluator"
   },
   {
    "is_class": false,
    "is_explicit": false,
    "module": "deephyper.evaluator",
    "module_short": "deephyper.evaluator",
-   "name": "SerialEvaluator"
+   "name": "ThreadPoolEvaluator"
   },
   {
    "is_class": false,
    "is_explicit": false,
    "module": "deephyper",
    "module_short": "deephyper",
-   "name": "SerialEvaluator"
+   "name": "ThreadPoolEvaluator"
   }
  ],
  "evaluator_large_tl": [
   {
    "is_class": false,
    "is_explicit": false,
-   "module": "deephyper.evaluator._serial",
+   "module": "deephyper.evaluator._thread_pool",
    "module_short": "deephyper.evaluator",
-   "name": "SerialEvaluator"
+   "name": "ThreadPoolEvaluator"
   },
   {
    "is_class": false,
    "is_explicit": false,
    "module": "deephyper.evaluator",
    "module_short": "deephyper.evaluator",
-   "name": "SerialEvaluator"
+   "name": "ThreadPoolEvaluator"
   },
   {
    "is_class": false,
    "is_explicit": false,
    "module": "deephyper",
    "module_short": "deephyper",
-   "name": "SerialEvaluator"
+   "name": "ThreadPoolEvaluator"
   }
  ],
  "evaluator_small": [
   {
    "is_class": false,
    "is_explicit": false,
-   "module": "deephyper.evaluator._serial",
+   "module": "deephyper.evaluator._thread_pool",
    "module_short": "deephyper.evaluator",
-   "name": "SerialEvaluator"
+   "name": "ThreadPoolEvaluator"
   },
   {
    "is_class": false,
    "is_explicit": false,
    "module": "deephyper.evaluator",
    "module_short": "deephyper.evaluator",
-   "name": "SerialEvaluator"
+   "name": "ThreadPoolEvaluator"
   },
   {
    "is_class": false,
    "is_explicit": false,
    "module": "deephyper",
    "module_short": "deephyper",
-   "name": "SerialEvaluator"
+   "name": "ThreadPoolEvaluator"
+  }
+ ],
+ "fig": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.figure",
+   "module_short": "matplotlib.figure",
+   "name": "Figure"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Figure"
   }
  ],
  "functools.partial": [
@@ -461,7 +328,7 @@
    "name": "int"
   }
  ],
- "plt.figure": [
+ "plot_search_trajectory_single_objective_hpo": [
   {
    "is_class": false,
    "is_explicit": false,
@@ -472,9 +339,9 @@
   {
    "is_class": false,
    "is_explicit": false,
-   "module": "matplotlib.pyplot",
-   "module_short": "matplotlib.pyplot",
-   "name": "figure"
+   "module": "deephyper.analysis.hpo",
+   "module_short": "deephyper.analysis.hpo",
+   "name": "plot_search_trajectory_single_objective_hpo"
   }
  ],
  "plt.grid": [
@@ -509,38 +376,6 @@
    "name": "legend"
   }
  ],
- "plt.plot": [
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "builtins",
-   "module_short": "builtins",
-   "name": "function"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "matplotlib.pyplot",
-   "module_short": "matplotlib.pyplot",
-   "name": "plot"
-  }
- ],
- "plt.scatter": [
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "builtins",
-   "module_short": "builtins",
-   "name": "function"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "matplotlib.pyplot",
-   "module_short": "matplotlib.pyplot",
-   "name": "scatter"
-  }
- ],
  "plt.show": [
   {
    "is_class": false,
@@ -555,6 +390,22 @@
    "module": "matplotlib.pyplot",
    "module_short": "matplotlib.pyplot",
    "name": "show"
+  }
+ ],
+ "plt.subplots": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "subplots"
   }
  ],
  "plt.xlabel": [
@@ -1006,15 +857,6 @@
    "module": "builtins",
    "module_short": "builtins",
    "name": "str"
-  }
- ],
- "x": [
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "builtins",
-   "module_short": "builtins",
-   "name": "list"
   }
  ]
 }

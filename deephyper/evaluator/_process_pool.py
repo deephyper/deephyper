@@ -1,13 +1,10 @@
 import asyncio
 import functools
-import logging
 from concurrent.futures import ProcessPoolExecutor
 from typing import Callable, Hashable
 
 from deephyper.evaluator import Evaluator, Job, JobStatus
 from deephyper.evaluator.storage import SharedMemoryStorage, Storage
-
-logger = logging.getLogger(__name__)
 
 
 class ProcessPoolEvaluator(Evaluator):
@@ -15,10 +12,15 @@ class ProcessPoolEvaluator(Evaluator):
 
     Args:
         run_function (callable): functions to be executed by the ``Evaluator``.
+
         num_workers (int, optional): Number of parallel processes used to compute the ``run_function``. Defaults to 1.
+
         callbacks (list, optional): A list of callbacks to trigger custom actions at the creation or completion of jobs. Defaults to None.
+
         run_function_kwargs (dict, optional): Static keyword arguments to pass to the ``run_function`` when executed.
+
         storage (Storage, optional): Storage used by the evaluator. Defaults to ``SharedMemoryStorage``.
+
         search_id (Hashable, optional): The id of the search to use in the corresponding storage. If ``None`` it will create a new search identifier when initializing the search.
     """
 

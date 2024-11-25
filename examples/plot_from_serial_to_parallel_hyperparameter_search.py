@@ -5,7 +5,7 @@ From Serial to Parallel Evaluations
 
 **Author(s)**: Romain Egele.
 
-This example demonstrates the advantages of parallel evaluations over serial
+This example demonstrates the advantages of parallel evaluations over sequential
 evaluations. We start by defining an artificial black-box ``run``-function by
 using the Ackley function:
 
@@ -52,29 +52,29 @@ for i in range(nb_dim):
 problem
 
 # %%
-# Then we define serial search by creation a ``"serial"``-evaluator and we
+# Then we define sequential search by creation a ``"sequential"``-evaluator and we
 # execute the search with a fixed time-budget of 2 minutes (i.e., 120
 # secondes).
 
 if __name__ == "__main__":
     # we give a budget of 2 minutes for each search
     timeout = 120
-    serial_evaluator = Evaluator.create(
+    sequential_evaluator = Evaluator.create(
         black_box.run_ackley,
-        method="serial",
+        method="thread",  # because the ``run_function`` is not asynchronous
         method_kwargs={"callbacks": [TqdmCallback()]},
     )
-    print("Running serial search...")
+    print("Running sequential search...")
     results = {}
-    serial_search = CBO(problem, serial_evaluator, random_state=42)
-    results["serial"] = serial_search.search(timeout=timeout)
-    results["serial"]["m:timestamp_end"] = (
-        results["serial"]["m:timestamp_end"]
-        - results["serial"]["m:timestamp_start"].iloc[0]
+    sequential_search = CBO(problem, sequential_evaluator, random_state=42)
+    results["sequential"] = sequential_search.search(timeout=timeout)
+    results["sequential"]["m:timestamp_end"] = (
+        results["sequential"]["m:timestamp_end"]
+        - results["sequential"]["m:timestamp_start"].iloc[0]
     )
 
 # %%
-# After, executing the serial-search for 2 minutes we can create a parallel
+# After, executing the sequential-search for 2 minutes we can create a parallel
 # search which uses the ``"process"``-evaluator and defines 5 parallel
 # workers. The search is also executed for 2 minutes.
 

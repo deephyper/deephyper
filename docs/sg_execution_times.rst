@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**04:34.798** total execution time for 5 files **from all galleries**:
+**04:45.367** total execution time for 5 files **from all galleries**:
 
 .. container::
 
@@ -33,17 +33,17 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_examples_plot_from_serial_to_parallel_hyperparameter_search.py` (``../examples/plot_from_serial_to_parallel_hyperparameter_search.py``)
-     - 04:00.481
+     - 04:04.002
      - 0.0
    * - :ref:`sphx_glr_examples_plot_profile_worker_utilization.py` (``../examples/plot_profile_worker_utilization.py``)
-     - 00:20.473
+     - 00:24.645
      - 0.0
    * - :ref:`sphx_glr_examples_plot_transfer_learning_for_hps.py` (``../examples/plot_transfer_learning_for_hps.py``)
-     - 00:08.590
-     - 0.0
-   * - :ref:`sphx_glr_examples_plot_experimental_design.py` (``../examples/plot_experimental_design.py``)
-     - 00:02.740
+     - 00:08.913
      - 0.0
    * - :ref:`sphx_glr_examples_plot_notify_failures_hyperparameter_search.py` (``../examples/plot_notify_failures_hyperparameter_search.py``)
-     - 00:02.513
+     - 00:05.912
+     - 0.0
+   * - :ref:`sphx_glr_examples_plot_experimental_design.py` (``../examples/plot_experimental_design.py``)
+     - 00:01.895
      - 0.0

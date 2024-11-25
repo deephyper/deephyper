@@ -381,23 +381,23 @@
   {
    "is_class": false,
    "is_explicit": false,
-   "module": "deephyper.evaluator._serial",
+   "module": "deephyper.evaluator._thread_pool",
    "module_short": "deephyper.evaluator",
-   "name": "SerialEvaluator"
+   "name": "ThreadPoolEvaluator"
   },
   {
    "is_class": false,
    "is_explicit": false,
    "module": "deephyper.evaluator",
    "module_short": "deephyper.evaluator",
-   "name": "SerialEvaluator"
+   "name": "ThreadPoolEvaluator"
   },
   {
    "is_class": false,
    "is_explicit": false,
    "module": "deephyper",
    "module_short": "deephyper",
-   "name": "SerialEvaluator"
+   "name": "ThreadPoolEvaluator"
   }
  ],
  "failure_strategy": [

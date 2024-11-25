@@ -59,6 +59,15 @@ problem
 # Then we define a parallel search.
 
 if __name__ == "__main__":
+    import logging
+
+    logging.basicConfig(
+        # filename=path_log_file, # optional if we want to store the logs to disk
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(filename)s:%(funcName)s - %(message)s",
+        force=True,
+    )
+
     timeout = 20
     num_workers = 4
     results = {}
@@ -78,25 +87,10 @@ if __name__ == "__main__":
 # Finally, we plot the results from the collected DataFrame.
 
 if __name__ == "__main__":
-
-    def compile_profile(df):
-        """Take the results dataframe as input and return the number of jobs running at a given timestamp."""
-        history = []
-
-        for _, row in df.iterrows():
-            history.append((row["m:timestamp_start"], 1))
-            history.append((row["m:timestamp_end"], -1))
-
-        history = sorted(history, key=lambda v: v[0])
-        nb_workers = 0
-        timestamp = [0]
-        n_jobs_running = [0]
-        for time, incr in history:
-            nb_workers += incr
-            timestamp.append(time)
-            n_jobs_running.append(nb_workers)
-
-        return timestamp, n_jobs_running
+    from deephyper.analysis.hpo import (
+        plot_search_trajectory_single_objective_hpo,
+        plot_worker_utilization,
+    )
 
     t0 = results["m:timestamp_start"].iloc[0]
     results["m:timestamp_start"] = results["m:timestamp_start"] - t0
@@ -104,27 +98,13 @@ if __name__ == "__main__":
     tmax = results["m:timestamp_end"].max()
 
     plt.figure()
+    fig, axes = plt.subplots(nrows=2, ncols=1, sharex=True)
 
-    plt.subplot(2, 1, 1)
-    plt.scatter(results["m:timestamp_end"], results.objective)
-    plt.plot(results["m:timestamp_end"], results.objective.cummax())
-    plt.xlabel("Time (sec.)")
-    plt.ylabel("Objective")
-    plt.grid()
-    plt.xlim(0, tmax)
+    plot_search_trajectory_single_objective_hpo(results, ax=axes[0])
 
-    plt.subplot(2, 1, 2)
-    x, y = compile_profile(results)
-    y = np.asarray(y) / num_workers * 100
-
-    plt.step(
-        x,
-        y,
-        where="pre",
+    plot_worker_utilization(
+        results, num_workers=num_workers, profile_type="start/end", ax=axes[1]
     )
-    plt.ylim(0, 100)
-    plt.xlim(0, tmax)
-    plt.xlabel("Time (sec.)")
-    plt.ylabel("Worker Utilization (\\%)")
+
     plt.tight_layout()
     plt.show()

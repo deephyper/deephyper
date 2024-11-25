@@ -134,6 +134,10 @@ def plot_search_trajectory_single_objective_hpo(
         (matplotlib.pyplot.figure, matplotlib.pyplot.axes): the figure and axes of the plot.
     """
 
+    label = None
+    if "label" in kwargs:
+        label = kwargs.pop("label")
+
     if results[column].dtype != np.float64:
         x = np.arange(len(results))
         mask_failed = np.where(results[column].str.startswith("F"))[0]
@@ -150,7 +154,7 @@ def plot_search_trajectory_single_objective_hpo(
     y_min = y_min - 0.05 * (y_max - y_min)
     y_max = y_max - 0.05 * (y_max - y_min)
 
-    scatter_kwargs = dict(marker="o", s=10, c="skyblue")
+    scatter_kwargs = dict(marker="o", s=10, c="skyblue" if show_failures else None)
     scatter_kwargs.update(kwargs)
 
     fig = plt.gcf()
@@ -160,8 +164,14 @@ def plot_search_trajectory_single_objective_hpo(
     if ax is None:
         ax = fig.gca()
 
-    ax.plot(x_success, y_success.cummax())
-    ax.scatter(x_success, y_success, **scatter_kwargs, label="Successes")
+    ax.plot(x_success, y_success.cummax(), label=label)
+
+    ax.scatter(
+        x_success,
+        y_success,
+        **scatter_kwargs,
+        label="Successes" if label is None else None,
+    )
 
     if show_failures and len(x_failed) > 0:
         ax.scatter(
@@ -169,7 +179,7 @@ def plot_search_trajectory_single_objective_hpo(
             np.full_like(x_failed, y_min),
             marker="v",
             color="red",
-            label="Failures",
+            label="Failures" if label is None else None,
         )
 
     ax.set_xlabel("Evaluations")
@@ -259,7 +269,7 @@ def plot_worker_utilization(
     if ax is None:
         ax = fig.gca()
 
-    ax.plot(x, y, **plot_kwargs)
+    ax.step(x, y, where="pre", **plot_kwargs)
 
     ax.set_xlabel("Time (sec.)")
     if num_workers:

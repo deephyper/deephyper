@@ -23,28 +23,45 @@ Profile the Worker Utilization
 
 **Author(s)**: Romain Egele.
 
-This example demonstrates the advantages of parallel evaluations over serial evaluations. We start by defining an artificial black-box ``run``-function by using the Ackley function:
+This example demonstrates the advantages of parallel evaluations over serial
+evaluations. We start by defining an artificial black-box ``run``-function by
+using the Ackley function:
 
 .. image:: https://www.sfu.ca/~ssurjano/ackley.png
   :width: 400
   :alt: Ackley Function in 2D
 
-We will use the ``time.sleep`` function to simulate a budget of 2 secondes of execution in average which helps illustrate the advantage of parallel evaluations. The ``@profile`` decorator is useful to collect starting/ending time of the ``run``-function execution which help us know exactly when we are inside the black-box. This decorator is necessary when profiling the worker utilization. When using this decorator, the ``run``-function will return a dictionnary with 2 new keys ``"timestamp_start"`` and ``"timestamp_end"``. The ``run``-function is defined in a separate module because of the "multiprocessing" backend that we are using in this example.
+We will use the ``time.sleep`` function to simulate a budget of 2 secondes of
+execution in average which helps illustrate the advantage of parallel
+evaluations. The ``@profile`` decorator is useful to collect starting/ending
+time of the ``run``-function execution which help us know exactly when we are
+inside the black-box. This decorator is necessary when profiling the worker
+utilization. When using this decorator, the ``run``-function will return a
+dictionnary with 2 new keys ``"timestamp_start"`` and ``"timestamp_end"``.
+The ``run``-function is defined in a separate module because of
+the "multiprocessing" backend that we are using in this example.
 
 .. literalinclude:: ../../examples/black_box_util.py
    :language: python
-   :emphasize-lines: 19-28 
+   :emphasize-lines: 19-28
    :linenos:
 
 After defining the black-box we can continue with the definition of our main script:
 
-.. GENERATED FROM PYTHON SOURCE LINES 23-29
+.. GENERATED FROM PYTHON SOURCE LINES 33-46
 
 .. code-block:: Python
 
+
     import black_box_util as black_box
+    import matplotlib.pyplot as plt
+    import numpy as np
 
     from deephyper.analysis._matplotlib import update_matplotlib_rc
+    from deephyper.hpo import HpProblem
+    from deephyper.evaluator import Evaluator
+    from deephyper.evaluator.callback import TqdmCallback
+    from deephyper.hpo import CBO
 
     update_matplotlib_rc()
 
@@ -55,15 +72,15 @@ After defining the black-box we can continue with the definition of our main scr
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 30-31
+.. GENERATED FROM PYTHON SOURCE LINES 47-50
 
-Then we define the variable(s) we want to optimize. For this problem we optimize Ackley in a 2-dimensional search space, the true minimul is located at ``(0, 0)``.
+Then we define the variable(s) we want to optimize. For this problem we
+optimize Ackley in a 2-dimensional search space, the true minimul is
+located at ``(0, 0)``.
 
-.. GENERATED FROM PYTHON SOURCE LINES 31-41
+.. GENERATED FROM PYTHON SOURCE LINES 50-58
 
 .. code-block:: Python
-
-    from deephyper.hpo import HpProblem
 
 
     nb_dim = 2
@@ -90,18 +107,24 @@ Then we define the variable(s) we want to optimize. For this problem we optimize
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 42-43
+.. GENERATED FROM PYTHON SOURCE LINES 59-60
 
 Then we define a parallel search.
 
-.. GENERATED FROM PYTHON SOURCE LINES 43-63
+.. GENERATED FROM PYTHON SOURCE LINES 60-86
 
 .. code-block:: Python
 
+
     if __name__ == "__main__":
-        from deephyper.evaluator import Evaluator
-        from deephyper.evaluator.callback import TqdmCallback
-        from deephyper.hpo import CBO
+        import logging
+
+        logging.basicConfig(
+            # filename=path_log_file, # optional if we want to store the logs to disk
+            level=logging.INFO,
+            format="%(asctime)s - %(levelname)s - %(filename)s:%(funcName)s - %(message)s",
+            force=True,
+        )
 
         timeout = 20
         num_workers = 4
@@ -126,296 +149,870 @@ Then we define a parallel search.
 
  .. code-block:: none
 
-
-
-
-
-    0it [00:00, ?it/s]
-
-
-
-    1it [00:00, 2976.79it/s, failures=0, objective=-20.2]
-
-
-
-    2it [00:01,  1.60it/s, failures=0, objective=-20.2]  
-
-
-
-    2it [00:01,  1.60it/s, failures=0, objective=-19.8]
-
-
-
-    3it [00:01,  1.89it/s, failures=0, objective=-19.8]
-
-
-
-    3it [00:01,  1.89it/s, failures=0, objective=-19.8]
-
-
-
-    4it [00:01,  2.27it/s, failures=0, objective=-19.8]
-
-
-
-    4it [00:01,  2.27it/s, failures=0, objective=-19.8]
-
-
-
-    5it [00:02,  2.45it/s, failures=0, objective=-19.8]
-
-
-
-    5it [00:02,  2.45it/s, failures=0, objective=-19.8]
-
-
-
-    6it [00:03,  1.36it/s, failures=0, objective=-19.8]
-
-
-
-    6it [00:03,  1.36it/s, failures=0, objective=-19.8]
-
-
-
-    7it [00:03,  1.83it/s, failures=0, objective=-19.8]
-
-
-
-    7it [00:03,  1.83it/s, failures=0, objective=-19.8]
-
-
-
-    8it [00:04,  2.31it/s, failures=0, objective=-19.8]
-
-
-
-    8it [00:04,  2.31it/s, failures=0, objective=-15.4]
-
-
-
-    9it [00:04,  2.94it/s, failures=0, objective=-15.4]
-
-
-
-    9it [00:04,  2.94it/s, failures=0, objective=-15.4]
-
-
-
-    10it [00:05,  1.71it/s, failures=0, objective=-15.4]
-
-
-
-    10it [00:05,  1.71it/s, failures=0, objective=-15.4]
-
-
-
-    11it [00:05,  1.70it/s, failures=0, objective=-15.4]
-
-
-
-    11it [00:05,  1.70it/s, failures=0, objective=-15.4]
-
-
-
-    12it [00:06,  1.70it/s, failures=0, objective=-15.4]
-
-
-
-    12it [00:06,  1.70it/s, failures=0, objective=-15.4]
-
-
-
-    13it [00:06,  2.20it/s, failures=0, objective=-15.4]
-
-
-
-    13it [00:06,  2.20it/s, failures=0, objective=-12.6]
-
-
-
-    14it [00:07,  1.79it/s, failures=0, objective=-12.6]
-
-
-
-    14it [00:07,  1.79it/s, failures=0, objective=-12.6]
-
-
-
-    15it [00:07,  2.25it/s, failures=0, objective=-12.6]
-
-
-
-    15it [00:07,  2.25it/s, failures=0, objective=-12.6]
-
-
-
-    16it [00:08,  1.68it/s, failures=0, objective=-12.6]
-
-
-
-    16it [00:08,  1.68it/s, failures=0, objective=-12.6]
-
-
-
-    17it [00:09,  1.62it/s, failures=0, objective=-12.6]
-
-
-
-    17it [00:09,  1.62it/s, failures=0, objective=-12.6]
-
-
-
-    18it [00:09,  2.01it/s, failures=0, objective=-12.6]
-
-
-
-    18it [00:09,  2.01it/s, failures=0, objective=-6.84]
-
-
-
-    19it [00:09,  2.58it/s, failures=0, objective=-6.84]
-
-
-
-    19it [00:09,  2.58it/s, failures=0, objective=-6.37]
-
-
-
-    20it [00:10,  1.62it/s, failures=0, objective=-6.37]
-
-
-
-    20it [00:10,  1.62it/s, failures=0, objective=-5.35]
-
-
-
-    21it [00:11,  1.33it/s, failures=0, objective=-5.35]
-
-
-
-    21it [00:11,  1.33it/s, failures=0, objective=-5.35]
-
-
-
-    22it [00:12,  1.58it/s, failures=0, objective=-5.35]
-
-
-
-    22it [00:12,  1.58it/s, failures=0, objective=-5.35]
-
-
-
-    23it [00:12,  1.65it/s, failures=0, objective=-5.35]
-
-
-
-    23it [00:12,  1.65it/s, failures=0, objective=-5.35]
-
-
-
-    24it [00:12,  2.16it/s, failures=0, objective=-5.35]
-
-
-
-    24it [00:12,  2.16it/s, failures=0, objective=-5.35]
-
-
-
-    25it [00:13,  2.06it/s, failures=0, objective=-5.35]
-
-
-
-    25it [00:13,  2.06it/s, failures=0, objective=-5.35]
-
-
-
-    26it [00:14,  1.77it/s, failures=0, objective=-5.35]
-
-
-
-    26it [00:14,  1.77it/s, failures=0, objective=-5.35]
-
-
-
-    27it [00:14,  2.21it/s, failures=0, objective=-5.35]
-
-
-
-    27it [00:14,  2.21it/s, failures=0, objective=-5.35]
-
-
-
-    28it [00:14,  2.18it/s, failures=0, objective=-5.35]
-
-
-
-    28it [00:14,  2.18it/s, failures=0, objective=-5.35]
-
-
-
-    29it [00:15,  2.40it/s, failures=0, objective=-5.35]
-
-
-
-    29it [00:15,  2.40it/s, failures=0, objective=-5.35]
-
-
-
-    30it [00:16,  1.26it/s, failures=0, objective=-5.35]
-
-
-
-    30it [00:16,  1.26it/s, failures=0, objective=-5.35]
-
-
-
-    31it [00:16,  1.67it/s, failures=0, objective=-5.35]
-
-
-
-    31it [00:16,  1.67it/s, failures=0, objective=-5.35]
-
-
-
-    32it [00:17,  2.18it/s, failures=0, objective=-5.35]
-
-
-
-    32it [00:17,  2.18it/s, failures=0, objective=-5.35]
-
-
-
-.. GENERATED FROM PYTHON SOURCE LINES 64-65
+    2024-11-25 12:53:10,490 - INFO - _evaluator.py:create - Creating ProcessPoolEvaluator of method='process' for run_function=<function run_ackley at 0x144a709a0> with method_kwargs={'num_workers': 4, 'callbacks': [<deephyper.evaluator.callback.TqdmCallback object at 0x16f173350>]}
+    2024-11-25 12:53:11,980 - INFO - _evaluator.py:__init__ - ProcessPoolEvaluator will execute run_ackley() from module black_box_util
+    2024-11-25 12:53:11,981 - INFO - _evaluator.py:create - Creation done
+    2024-11-25 12:53:11,982 - WARNING - _search.py:__init__ - Results file already exists, it will be renamed to /Users/romainegele/Documents/Argonne/deephyper/examples/results_20241125-125311.csv
+    2024-11-25 12:53:11,983 - INFO - _cbo.py:__init__ - Set up scheduler 'bandit' with parameters '{'delta': 0.05, 'lamb': 0.2, 'delay': 10}'
+    2024-11-25 12:53:11,985 - INFO - _search.py:ask - Asking 4 configuration(s)...
+    2024-11-25 12:53:11,990 - INFO - _search.py:ask - Asking took 0.0051 sec.
+    2024-11-25 12:53:11,990 - INFO - _search.py:_search - Submitting 4 configurations...
+    2024-11-25 12:53:11,990 - INFO - _evaluator.py:submit - submit 4 job(s) starts...
+    2024-11-25 12:53:11,991 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:11,991 - INFO - _search.py:_search - Submition took 0.0005 sec.
+    2024-11-25 12:53:11,991 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:11,991 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:11,996 - INFO - _evaluator.py:time_left - time_left=19.988411903381348
+    2024-11-25 12:53:12,001 - INFO - _evaluator.py:time_left - time_left=19.98330020904541
+    2024-11-25 12:53:12,006 - INFO - _evaluator.py:time_left - time_left=19.978498220443726
+    2024-11-25 12:53:12,010 - INFO - _evaluator.py:time_left - time_left=19.97388219833374
+    0it [00:00, ?it/s]    1it [00:00, 2398.12it/s, failures=0, objective=-21.5]2024-11-25 12:53:15,611 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:15,612 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:15,612 - INFO - _search.py:_search - Gathered 1 job(s) in 3.6217 sec.
+    2024-11-25 12:53:15,613 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:15,613 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:15,615 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:15,615 - INFO - _search.py:_search - Dumping took 0.0022 sec.
+    2024-11-25 12:53:15,615 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:15,615 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:15,616 - INFO - _cbo.py:_tell - Transformation took 0.0002 sec.
+    2024-11-25 12:53:15,616 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.2940756943215774, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:15,616 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:15,616 - INFO - _cbo.py:_tell - Fitting took 0.0003 sec.
+    2024-11-25 12:53:15,617 - INFO - _search.py:_search - Telling took 0.0014 sec.
+    2024-11-25 12:53:15,617 - INFO - _evaluator.py:time_left - time_left=16.367594003677368
+    2024-11-25 12:53:15,617 - INFO - _evaluator.py:time_left - time_left=16.367363214492798
+    2024-11-25 12:53:15,617 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:15,654 - INFO - _search.py:ask - Asking took 0.0368 sec.
+    2024-11-25 12:53:15,654 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:15,654 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:15,655 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:15,655 - INFO - _search.py:_search - Submition took 0.0006 sec.
+    2024-11-25 12:53:15,655 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:15,655 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:15,655 - INFO - _evaluator.py:time_left - time_left=16.32917094230652
+    2it [00:00,  9.02it/s, failures=0, objective=-21.5]      2it [00:00,  9.02it/s, failures=0, objective=-19.8]2024-11-25 12:53:15,833 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:15,834 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:15,834 - INFO - _search.py:_search - Gathered 1 job(s) in 0.1795 sec.
+    2024-11-25 12:53:15,834 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:15,834 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:15,836 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:15,836 - INFO - _search.py:_search - Dumping took 0.0017 sec.
+    2024-11-25 12:53:15,837 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:15,838 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:15,838 - INFO - _cbo.py:_tell - Transformation took 0.0001 sec.
+    2024-11-25 12:53:15,838 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.2940756943215774, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:15,838 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:15,839 - INFO - _cbo.py:_tell - Fitting took 0.0003 sec.
+    2024-11-25 12:53:15,839 - INFO - _search.py:_search - Telling took 0.0011 sec.
+    2024-11-25 12:53:15,839 - INFO - _evaluator.py:time_left - time_left=16.14544105529785
+    2024-11-25 12:53:15,839 - INFO - _evaluator.py:time_left - time_left=16.14534616470337
+    2024-11-25 12:53:15,839 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:15,868 - INFO - _search.py:ask - Asking took 0.0289 sec.
+    2024-11-25 12:53:15,868 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:15,868 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:15,869 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:15,869 - INFO - _search.py:_search - Submition took 0.0007 sec.
+    2024-11-25 12:53:15,869 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:15,869 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:15,869 - INFO - _evaluator.py:time_left - time_left=16.11499810218811
+    3it [00:00,  3.71it/s, failures=0, objective=-19.8]    3it [00:00,  3.71it/s, failures=0, objective=-19.8]2024-11-25 12:53:16,325 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:16,326 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:16,327 - INFO - _search.py:_search - Gathered 1 job(s) in 0.4577 sec.
+    2024-11-25 12:53:16,327 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:16,327 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:16,329 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:16,330 - INFO - _search.py:_search - Dumping took 0.0027 sec.
+    2024-11-25 12:53:16,330 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:16,330 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:16,330 - INFO - _cbo.py:_tell - Transformation took 0.0001 sec.
+    2024-11-25 12:53:16,330 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.2940756943215774, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:16,330 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:16,331 - INFO - _cbo.py:_tell - Fitting took 0.0003 sec.
+    2024-11-25 12:53:16,331 - INFO - _search.py:_search - Telling took 0.0010 sec.
+    2024-11-25 12:53:16,331 - INFO - _evaluator.py:time_left - time_left=15.653435945510864
+    2024-11-25 12:53:16,331 - INFO - _evaluator.py:time_left - time_left=15.653362035751343
+    2024-11-25 12:53:16,331 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:16,360 - INFO - _search.py:ask - Asking took 0.0291 sec.
+    2024-11-25 12:53:16,360 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:16,360 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:16,361 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:16,361 - INFO - _search.py:_search - Submition took 0.0006 sec.
+    2024-11-25 12:53:16,361 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:16,361 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:16,361 - INFO - _evaluator.py:time_left - time_left=15.623017072677612
+    4it [00:01,  3.54it/s, failures=0, objective=-19.8]    4it [00:01,  3.54it/s, failures=0, objective=-19.8]2024-11-25 12:53:16,630 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:16,631 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:16,631 - INFO - _search.py:_search - Gathered 1 job(s) in 0.2699 sec.
+    2024-11-25 12:53:16,631 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:16,631 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:16,633 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:16,633 - INFO - _search.py:_search - Dumping took 0.0023 sec.
+    2024-11-25 12:53:16,634 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:16,634 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:16,634 - INFO - _cbo.py:_tell - Transformation took 0.0001 sec.
+    2024-11-25 12:53:16,634 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.2940756943215774, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:16,634 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:16,635 - INFO - _cbo.py:_tell - Fitting took 0.0003 sec.
+    2024-11-25 12:53:16,635 - INFO - _search.py:_search - Telling took 0.0013 sec.
+    2024-11-25 12:53:16,635 - INFO - _evaluator.py:time_left - time_left=15.34913420677185
+    2024-11-25 12:53:16,635 - INFO - _evaluator.py:time_left - time_left=15.349040031433105
+    2024-11-25 12:53:16,635 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:16,663 - INFO - _search.py:ask - Asking took 0.0277 sec.
+    2024-11-25 12:53:16,663 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:16,663 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:16,664 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:16,664 - INFO - _search.py:_search - Submition took 0.0004 sec.
+    2024-11-25 12:53:16,664 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:16,664 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:16,664 - INFO - _evaluator.py:time_left - time_left=15.32024598121643
+    5it [00:02,  1.54it/s, failures=0, objective=-19.8]    5it [00:02,  1.54it/s, failures=0, objective=-19.8]2024-11-25 12:53:17,969 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:17,970 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:17,970 - INFO - _search.py:_search - Gathered 1 job(s) in 1.3065 sec.
+    2024-11-25 12:53:17,970 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:17,971 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:17,972 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:17,972 - INFO - _search.py:_search - Dumping took 0.0018 sec.
+    2024-11-25 12:53:17,972 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:17,973 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:17,973 - INFO - _cbo.py:_tell - Transformation took 0.0001 sec.
+    2024-11-25 12:53:17,973 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.2940756943215774, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:17,973 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:17,974 - INFO - _cbo.py:_tell - Fitting took 0.0002 sec.
+    2024-11-25 12:53:17,974 - INFO - _search.py:_search - Telling took 0.0011 sec.
+    2024-11-25 12:53:17,974 - INFO - _evaluator.py:time_left - time_left=14.010442972183228
+    2024-11-25 12:53:17,974 - INFO - _evaluator.py:time_left - time_left=14.010369062423706
+    2024-11-25 12:53:17,974 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:18,001 - INFO - _search.py:ask - Asking took 0.0269 sec.
+    2024-11-25 12:53:18,001 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:18,001 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:18,002 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:18,002 - INFO - _search.py:_search - Submition took 0.0005 sec.
+    2024-11-25 12:53:18,002 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:18,002 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:18,002 - INFO - _evaluator.py:time_left - time_left=13.98224425315857
+    6it [00:02,  1.96it/s, failures=0, objective=-19.8]    6it [00:02,  1.96it/s, failures=0, objective=-15.4]2024-11-25 12:53:18,194 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:18,196 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:18,196 - INFO - _search.py:_search - Gathered 1 job(s) in 0.1940 sec.
+    2024-11-25 12:53:18,196 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:18,196 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:18,198 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:18,198 - INFO - _search.py:_search - Dumping took 0.0020 sec.
+    2024-11-25 12:53:18,198 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:18,198 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:18,198 - INFO - _cbo.py:_tell - Transformation took 0.0001 sec.
+    2024-11-25 12:53:18,199 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.2940756943215774, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:18,199 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:18,199 - INFO - _cbo.py:_tell - Fitting took 0.0003 sec.
+    2024-11-25 12:53:18,199 - INFO - _search.py:_search - Telling took 0.0012 sec.
+    2024-11-25 12:53:18,200 - INFO - _evaluator.py:time_left - time_left=13.784528970718384
+    2024-11-25 12:53:18,200 - INFO - _evaluator.py:time_left - time_left=13.784432888031006
+    2024-11-25 12:53:18,200 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:18,231 - INFO - _search.py:ask - Asking took 0.0309 sec.
+    2024-11-25 12:53:18,231 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:18,231 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:18,231 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:18,232 - INFO - _search.py:_search - Submition took 0.0004 sec.
+    2024-11-25 12:53:18,232 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:18,232 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:18,232 - INFO - _evaluator.py:time_left - time_left=13.752366065979004
+    7it [00:02,  1.96it/s, failures=0, objective=-15.4]2024-11-25 12:53:18,240 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:18,240 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:18,240 - INFO - _search.py:_search - Gathered 1 job(s) in 0.0085 sec.
+    2024-11-25 12:53:18,240 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:18,240 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:18,241 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:18,241 - INFO - _search.py:_search - Dumping took 0.0007 sec.
+    2024-11-25 12:53:18,241 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:18,241 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:18,241 - INFO - _cbo.py:_tell - Transformation took 0.0000 sec.
+    2024-11-25 12:53:18,241 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.2940756943215774, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:18,241 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:18,241 - INFO - _cbo.py:_tell - Fitting took 0.0001 sec.
+    2024-11-25 12:53:18,241 - INFO - _search.py:_search - Telling took 0.0004 sec.
+    2024-11-25 12:53:18,241 - INFO - _evaluator.py:time_left - time_left=13.742786169052124
+    2024-11-25 12:53:18,241 - INFO - _evaluator.py:time_left - time_left=13.742747068405151
+    2024-11-25 12:53:18,241 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:18,258 - INFO - _search.py:ask - Asking took 0.0160 sec.
+    2024-11-25 12:53:18,258 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:18,258 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:18,258 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:18,258 - INFO - _search.py:_search - Submition took 0.0003 sec.
+    2024-11-25 12:53:18,258 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:18,258 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:18,258 - INFO - _evaluator.py:time_left - time_left=13.726020097732544
+    8it [00:03,  1.66it/s, failures=0, objective=-15.4]    8it [00:03,  1.66it/s, failures=0, objective=-15.4]2024-11-25 12:53:19,595 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:19,596 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:19,597 - INFO - _search.py:_search - Gathered 1 job(s) in 1.3386 sec.
+    2024-11-25 12:53:19,597 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:19,597 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:19,599 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:19,599 - INFO - _search.py:_search - Dumping took 0.0022 sec.
+    2024-11-25 12:53:19,599 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:19,600 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:19,600 - INFO - _cbo.py:_tell - Transformation took 0.0001 sec.
+    2024-11-25 12:53:19,600 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.4930337059429801, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:19,600 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:19,601 - INFO - _cbo.py:_tell - Fitting took 0.0003 sec.
+    2024-11-25 12:53:19,601 - INFO - _search.py:_search - Telling took 0.0013 sec.
+    2024-11-25 12:53:19,601 - INFO - _evaluator.py:time_left - time_left=12.383191108703613
+    2024-11-25 12:53:19,601 - INFO - _evaluator.py:time_left - time_left=12.383065223693848
+    2024-11-25 12:53:19,601 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:19,631 - INFO - _search.py:ask - Asking took 0.0298 sec.
+    2024-11-25 12:53:19,631 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:19,631 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:19,632 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:19,632 - INFO - _search.py:_search - Submition took 0.0005 sec.
+    2024-11-25 12:53:19,632 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:19,632 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:19,632 - INFO - _evaluator.py:time_left - time_left=12.352025270462036
+    9it [00:04,  1.83it/s, failures=0, objective=-15.4]    9it [00:04,  1.83it/s, failures=0, objective=-15.4]2024-11-25 12:53:19,976 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:19,977 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:19,978 - INFO - _search.py:_search - Gathered 1 job(s) in 0.3456 sec.
+    2024-11-25 12:53:19,978 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:19,978 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:19,980 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:19,980 - INFO - _search.py:_search - Dumping took 0.0020 sec.
+    2024-11-25 12:53:19,980 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:19,980 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:19,980 - INFO - _cbo.py:_tell - Transformation took 0.0001 sec.
+    2024-11-25 12:53:19,980 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.5979742593572528, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:19,980 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:19,981 - INFO - _cbo.py:_tell - Fitting took 0.0002 sec.
+    2024-11-25 12:53:19,981 - INFO - _search.py:_search - Telling took 0.0010 sec.
+    2024-11-25 12:53:19,981 - INFO - _evaluator.py:time_left - time_left=12.003152132034302
+    2024-11-25 12:53:19,981 - INFO - _evaluator.py:time_left - time_left=12.003043174743652
+    2024-11-25 12:53:19,981 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:20,009 - INFO - _search.py:ask - Asking took 0.0278 sec.
+    2024-11-25 12:53:20,009 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:20,009 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:20,010 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:20,010 - INFO - _search.py:_search - Submition took 0.0004 sec.
+    2024-11-25 12:53:20,010 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:20,010 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:20,010 - INFO - _evaluator.py:time_left - time_left=11.974112033843994
+    10it [00:04,  2.00it/s, failures=0, objective=-15.4]    10it [00:04,  2.00it/s, failures=0, objective=-12.6]2024-11-25 12:53:20,350 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:20,351 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:20,351 - INFO - _search.py:_search - Gathered 1 job(s) in 0.3412 sec.
+    2024-11-25 12:53:20,351 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:20,351 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:20,353 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:20,353 - INFO - _search.py:_search - Dumping took 0.0019 sec.
+    2024-11-25 12:53:20,353 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:20,354 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:20,354 - INFO - _cbo.py:_tell - Transformation took 0.0001 sec.
+    2024-11-25 12:53:20,354 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.668432615219981, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:20,354 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:20,471 - INFO - _cbo.py:_tell - Fitting took 0.1170 sec.
+    2024-11-25 12:53:20,471 - INFO - _search.py:_search - Telling took 0.1176 sec.
+    2024-11-25 12:53:20,471 - INFO - _evaluator.py:time_left - time_left=11.512978076934814
+    2024-11-25 12:53:20,471 - INFO - _evaluator.py:time_left - time_left=11.512959003448486
+    2024-11-25 12:53:20,471 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:20,471 - INFO - _search.py:ask - Asking took 0.0000 sec.
+    2024-11-25 12:53:20,471 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:20,471 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:20,471 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:20,472 - INFO - _search.py:_search - Submition took 0.0002 sec.
+    2024-11-25 12:53:20,472 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:20,472 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:20,472 - INFO - _evaluator.py:time_left - time_left=11.512500047683716
+    11it [00:04,  2.53it/s, failures=0, objective=-12.6]    11it [00:04,  2.53it/s, failures=0, objective=-12.6]2024-11-25 12:53:20,473 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:20,473 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:20,473 - INFO - _search.py:_search - Gathered 1 job(s) in 0.0011 sec.
+    2024-11-25 12:53:20,473 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:20,473 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:20,473 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:20,473 - INFO - _search.py:_search - Dumping took 0.0003 sec.
+    2024-11-25 12:53:20,473 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:20,473 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:20,473 - INFO - _cbo.py:_tell - Transformation took 0.0000 sec.
+    2024-11-25 12:53:20,473 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.72109913502423, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:20,473 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:20,551 - INFO - _cbo.py:_tell - Fitting took 0.0783 sec.
+    2024-11-25 12:53:20,551 - INFO - _search.py:_search - Telling took 0.0784 sec.
+    2024-11-25 12:53:20,552 - INFO - _evaluator.py:time_left - time_left=11.43265414237976
+    2024-11-25 12:53:20,552 - INFO - _evaluator.py:time_left - time_left=11.432634830474854
+    2024-11-25 12:53:20,552 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:20,552 - INFO - _search.py:ask - Asking took 0.0000 sec.
+    2024-11-25 12:53:20,552 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:20,552 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:20,552 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:20,552 - INFO - _search.py:_search - Submition took 0.0002 sec.
+    2024-11-25 12:53:20,552 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:20,552 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:20,552 - INFO - _evaluator.py:time_left - time_left=11.432229280471802
+    12it [00:05,  1.90it/s, failures=0, objective=-12.6]    12it [00:05,  1.90it/s, failures=0, objective=-12.6]2024-11-25 12:53:21,330 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:21,332 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:21,332 - INFO - _search.py:_search - Gathered 1 job(s) in 0.7801 sec.
+    2024-11-25 12:53:21,332 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:21,332 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:21,334 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:21,334 - INFO - _search.py:_search - Dumping took 0.0021 sec.
+    2024-11-25 12:53:21,334 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:21,335 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:21,335 - INFO - _cbo.py:_tell - Transformation took 0.0001 sec.
+    2024-11-25 12:53:21,335 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.762963266212974, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:21,335 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:21,488 - INFO - _cbo.py:_tell - Fitting took 0.1527 sec.
+    2024-11-25 12:53:21,488 - INFO - _search.py:_search - Telling took 0.1536 sec.
+    2024-11-25 12:53:21,488 - INFO - _evaluator.py:time_left - time_left=10.496090173721313
+    2024-11-25 12:53:21,488 - INFO - _evaluator.py:time_left - time_left=10.496069192886353
+    2024-11-25 12:53:21,488 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:21,488 - INFO - _search.py:ask - Asking took 0.0000 sec.
+    2024-11-25 12:53:21,488 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:21,488 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:21,488 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:21,488 - INFO - _search.py:_search - Submition took 0.0002 sec.
+    2024-11-25 12:53:21,488 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:21,488 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:21,489 - INFO - _evaluator.py:time_left - time_left=10.495600938796997
+    13it [00:06,  1.71it/s, failures=0, objective=-12.6]    13it [00:06,  1.71it/s, failures=0, objective=-12.6]2024-11-25 12:53:22,062 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:22,063 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:22,063 - INFO - _search.py:_search - Gathered 1 job(s) in 0.5743 sec.
+    2024-11-25 12:53:22,063 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:22,063 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:22,064 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:22,064 - INFO - _search.py:_search - Dumping took 0.0009 sec.
+    2024-11-25 12:53:22,064 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:22,064 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:22,064 - INFO - _cbo.py:_tell - Transformation took 0.0000 sec.
+    2024-11-25 12:53:22,064 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.7975984039484803, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:22,064 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:22,184 - INFO - _cbo.py:_tell - Fitting took 0.1202 sec.
+    2024-11-25 12:53:22,185 - INFO - _search.py:_search - Telling took 0.1207 sec.
+    2024-11-25 12:53:22,185 - INFO - _evaluator.py:time_left - time_left=9.799586057662964
+    2024-11-25 12:53:22,185 - INFO - _evaluator.py:time_left - time_left=9.79956603050232
+    2024-11-25 12:53:22,185 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:22,185 - INFO - _search.py:ask - Asking took 0.0000 sec.
+    2024-11-25 12:53:22,185 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:22,185 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:22,185 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:22,185 - INFO - _search.py:_search - Submition took 0.0002 sec.
+    2024-11-25 12:53:22,185 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:22,185 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:22,185 - INFO - _evaluator.py:time_left - time_left=9.799086093902588
+    14it [00:06,  2.16it/s, failures=0, objective=-12.6]    14it [00:06,  2.16it/s, failures=0, objective=-12.6]2024-11-25 12:53:22,227 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:22,227 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:22,227 - INFO - _search.py:_search - Gathered 1 job(s) in 0.0420 sec.
+    2024-11-25 12:53:22,227 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:22,227 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:22,228 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:22,228 - INFO - _search.py:_search - Dumping took 0.0006 sec.
+    2024-11-25 12:53:22,228 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:22,228 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:22,228 - INFO - _cbo.py:_tell - Transformation took 0.0000 sec.
+    2024-11-25 12:53:22,228 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.8270700960767055, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:22,228 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:22,317 - INFO - _cbo.py:_tell - Fitting took 0.0890 sec.
+    2024-11-25 12:53:22,317 - INFO - _search.py:_search - Telling took 0.0892 sec.
+    2024-11-25 12:53:22,317 - INFO - _evaluator.py:time_left - time_left=9.667360067367554
+    2024-11-25 12:53:22,317 - INFO - _evaluator.py:time_left - time_left=9.66734004020691
+    2024-11-25 12:53:22,317 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:22,317 - INFO - _search.py:ask - Asking took 0.0000 sec.
+    2024-11-25 12:53:22,317 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:22,317 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:22,317 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:22,317 - INFO - _search.py:_search - Submition took 0.0002 sec.
+    2024-11-25 12:53:22,317 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:22,317 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:22,317 - INFO - _evaluator.py:time_left - time_left=9.666880130767822
+    15it [00:07,  1.93it/s, failures=0, objective=-12.6]    15it [00:07,  1.93it/s, failures=0, objective=-12.6]2024-11-25 12:53:22,877 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:22,879 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:22,879 - INFO - _search.py:_search - Gathered 1 job(s) in 0.5617 sec.
+    2024-11-25 12:53:22,879 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:22,879 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:22,881 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:22,881 - INFO - _search.py:_search - Dumping took 0.0020 sec.
+    2024-11-25 12:53:22,881 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:22,881 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:22,881 - INFO - _cbo.py:_tell - Transformation took 0.0001 sec.
+    2024-11-25 12:53:22,882 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.8526768645672802, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:22,882 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:23,009 - INFO - _cbo.py:_tell - Fitting took 0.1271 sec.
+    2024-11-25 12:53:23,009 - INFO - _search.py:_search - Telling took 0.1279 sec.
+    2024-11-25 12:53:23,009 - INFO - _evaluator.py:time_left - time_left=8.974959135055542
+    2024-11-25 12:53:23,009 - INFO - _evaluator.py:time_left - time_left=8.974938869476318
+    2024-11-25 12:53:23,009 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:23,009 - INFO - _search.py:ask - Asking took 0.0000 sec.
+    2024-11-25 12:53:23,009 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:23,009 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:23,010 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:23,010 - INFO - _search.py:_search - Submition took 0.0002 sec.
+    2024-11-25 12:53:23,010 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:23,010 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:23,010 - INFO - _evaluator.py:time_left - time_left=8.97444200515747
+    16it [00:07,  2.13it/s, failures=0, objective=-12.6]    16it [00:07,  2.13it/s, failures=0, objective=-12.6]2024-11-25 12:53:23,235 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:23,236 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:23,236 - INFO - _search.py:_search - Gathered 1 job(s) in 0.2263 sec.
+    2024-11-25 12:53:23,236 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:23,236 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:23,237 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:23,238 - INFO - _search.py:_search - Dumping took 0.0015 sec.
+    2024-11-25 12:53:23,238 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:23,238 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:23,238 - INFO - _cbo.py:_tell - Transformation took 0.0001 sec.
+    2024-11-25 12:53:23,238 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.8752866386313078, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:23,238 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:23,363 - INFO - _cbo.py:_tell - Fitting took 0.1244 sec.
+    2024-11-25 12:53:23,363 - INFO - _search.py:_search - Telling took 0.1250 sec.
+    2024-11-25 12:53:23,363 - INFO - _evaluator.py:time_left - time_left=8.621539115905762
+    2024-11-25 12:53:23,363 - INFO - _evaluator.py:time_left - time_left=8.621519088745117
+    2024-11-25 12:53:23,363 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:23,363 - INFO - _search.py:ask - Asking took 0.0000 sec.
+    2024-11-25 12:53:23,363 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:23,363 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:23,363 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:23,363 - INFO - _search.py:_search - Submition took 0.0002 sec.
+    2024-11-25 12:53:23,363 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:23,363 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:23,363 - INFO - _evaluator.py:time_left - time_left=8.621056079864502
+    17it [00:08,  1.82it/s, failures=0, objective=-12.6]    17it [00:08,  1.82it/s, failures=0, objective=-12.6]2024-11-25 12:53:23,974 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:23,975 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:23,975 - INFO - _search.py:_search - Gathered 1 job(s) in 0.6124 sec.
+    2024-11-25 12:53:23,976 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:23,976 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:23,978 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:23,979 - INFO - _search.py:_search - Dumping took 0.0028 sec.
+    2024-11-25 12:53:23,979 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:23,979 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:23,979 - INFO - _cbo.py:_tell - Transformation took 0.0001 sec.
+    2024-11-25 12:53:23,979 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.8955073518381744, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:23,979 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:24,109 - INFO - _cbo.py:_tell - Fitting took 0.1296 sec.
+    2024-11-25 12:53:24,109 - INFO - _search.py:_search - Telling took 0.1304 sec.
+    2024-11-25 12:53:24,109 - INFO - _evaluator.py:time_left - time_left=7.8750200271606445
+    2024-11-25 12:53:24,109 - INFO - _evaluator.py:time_left - time_left=7.875000238418579
+    2024-11-25 12:53:24,109 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:24,109 - INFO - _search.py:ask - Asking took 0.0000 sec.
+    2024-11-25 12:53:24,109 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:24,109 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:24,109 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:24,109 - INFO - _search.py:_search - Submition took 0.0002 sec.
+    2024-11-25 12:53:24,110 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:24,110 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:24,110 - INFO - _evaluator.py:time_left - time_left=7.874550104141235
+    18it [00:08,  2.24it/s, failures=0, objective=-12.6]    18it [00:08,  2.24it/s, failures=0, objective=-12.6]2024-11-25 12:53:24,176 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:24,177 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:24,177 - INFO - _search.py:_search - Gathered 1 job(s) in 0.0671 sec.
+    2024-11-25 12:53:24,177 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:24,177 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:24,177 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:24,177 - INFO - _search.py:_search - Dumping took 0.0004 sec.
+    2024-11-25 12:53:24,177 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:24,177 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:24,177 - INFO - _cbo.py:_tell - Transformation took 0.0000 sec.
+    2024-11-25 12:53:24,177 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.913780871067603, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:24,177 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:24,275 - INFO - _cbo.py:_tell - Fitting took 0.0973 sec.
+    2024-11-25 12:53:24,275 - INFO - _search.py:_search - Telling took 0.0974 sec.
+    2024-11-25 12:53:24,275 - INFO - _evaluator.py:time_left - time_left=7.709582090377808
+    2024-11-25 12:53:24,275 - INFO - _evaluator.py:time_left - time_left=7.7095630168914795
+    2024-11-25 12:53:24,275 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:24,275 - INFO - _search.py:ask - Asking took 0.0000 sec.
+    2024-11-25 12:53:24,275 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:24,275 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:24,275 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:24,275 - INFO - _search.py:_search - Submition took 0.0002 sec.
+    2024-11-25 12:53:24,275 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:24,275 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:24,275 - INFO - _evaluator.py:time_left - time_left=7.709079027175903
+    19it [00:09,  2.03it/s, failures=0, objective=-12.6]    19it [00:09,  2.03it/s, failures=0, objective=-12.6]2024-11-25 12:53:24,780 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:24,782 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:24,782 - INFO - _search.py:_search - Gathered 1 job(s) in 0.5070 sec.
+    2024-11-25 12:53:24,782 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:24,782 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:24,784 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:24,784 - INFO - _search.py:_search - Dumping took 0.0018 sec.
+    2024-11-25 12:53:24,784 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:24,784 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:24,784 - INFO - _cbo.py:_tell - Transformation took 0.0001 sec.
+    2024-11-25 12:53:24,785 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.9304381338450354, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:24,785 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:24,917 - INFO - _cbo.py:_tell - Fitting took 0.1318 sec.
+    2024-11-25 12:53:24,917 - INFO - _search.py:_search - Telling took 0.1325 sec.
+    2024-11-25 12:53:24,917 - INFO - _evaluator.py:time_left - time_left=7.067440032958984
+    2024-11-25 12:53:24,917 - INFO - _evaluator.py:time_left - time_left=7.067421913146973
+    2024-11-25 12:53:24,917 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:24,917 - INFO - _search.py:ask - Asking took 0.0000 sec.
+    2024-11-25 12:53:24,917 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:24,917 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:24,917 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:24,917 - INFO - _search.py:_search - Submition took 0.0002 sec.
+    2024-11-25 12:53:24,917 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:24,917 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:24,917 - INFO - _evaluator.py:time_left - time_left=7.067032098770142
+    20it [00:09,  2.58it/s, failures=0, objective=-12.6]    20it [00:09,  2.58it/s, failures=0, objective=-12.6]2024-11-25 12:53:24,918 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:24,918 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:24,918 - INFO - _search.py:_search - Gathered 1 job(s) in 0.0011 sec.
+    2024-11-25 12:53:24,918 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:24,918 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:24,918 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:24,918 - INFO - _search.py:_search - Dumping took 0.0003 sec.
+    2024-11-25 12:53:24,918 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:24,918 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:24,919 - INFO - _cbo.py:_tell - Transformation took 0.0000 sec.
+    2024-11-25 12:53:24,919 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.9457332207489493, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:24,919 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:25,015 - INFO - _cbo.py:_tell - Fitting took 0.0963 sec.
+    2024-11-25 12:53:25,015 - INFO - _search.py:_search - Telling took 0.0965 sec.
+    2024-11-25 12:53:25,015 - INFO - _evaluator.py:time_left - time_left=6.969192981719971
+    2024-11-25 12:53:25,015 - INFO - _evaluator.py:time_left - time_left=6.969172954559326
+    2024-11-25 12:53:25,015 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:25,015 - INFO - _search.py:ask - Asking took 0.0000 sec.
+    2024-11-25 12:53:25,015 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:25,015 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:25,015 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:25,015 - INFO - _search.py:_search - Submition took 0.0002 sec.
+    2024-11-25 12:53:25,015 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:25,015 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:25,015 - INFO - _evaluator.py:time_left - time_left=6.9686970710754395
+    21it [00:10,  1.45it/s, failures=0, objective=-12.6]    21it [00:10,  1.45it/s, failures=0, objective=-12.6]2024-11-25 12:53:26,324 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:26,325 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:26,325 - INFO - _search.py:_search - Gathered 1 job(s) in 1.3099 sec.
+    2024-11-25 12:53:26,325 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:26,326 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:26,327 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:26,328 - INFO - _search.py:_search - Dumping took 0.0028 sec.
+    2024-11-25 12:53:26,328 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:26,329 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:26,329 - INFO - _cbo.py:_tell - Transformation took 0.0001 sec.
+    2024-11-25 12:53:26,329 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.9598653176980405, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:26,329 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:26,465 - INFO - _cbo.py:_tell - Fitting took 0.1353 sec.
+    2024-11-25 12:53:26,465 - INFO - _search.py:_search - Telling took 0.1361 sec.
+    2024-11-25 12:53:26,465 - INFO - _evaluator.py:time_left - time_left=5.519466161727905
+    2024-11-25 12:53:26,465 - INFO - _evaluator.py:time_left - time_left=5.519447088241577
+    2024-11-25 12:53:26,465 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:26,465 - INFO - _search.py:ask - Asking took 0.0000 sec.
+    2024-11-25 12:53:26,465 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:26,465 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:26,465 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:26,465 - INFO - _search.py:_search - Submition took 0.0002 sec.
+    2024-11-25 12:53:26,465 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:26,465 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:26,465 - INFO - _evaluator.py:time_left - time_left=5.51901388168335
+    22it [00:10,  1.90it/s, failures=0, objective=-12.6]    22it [00:10,  1.90it/s, failures=0, objective=-12.6]2024-11-25 12:53:26,466 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:26,466 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:26,466 - INFO - _search.py:_search - Gathered 1 job(s) in 0.0012 sec.
+    2024-11-25 12:53:26,466 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:26,466 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:26,467 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:26,467 - INFO - _search.py:_search - Dumping took 0.0003 sec.
+    2024-11-25 12:53:26,467 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:26,467 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:26,467 - INFO - _cbo.py:_tell - Transformation took 0.0000 sec.
+    2024-11-25 12:53:26,467 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.9729933807353988, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:26,467 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:26,563 - INFO - _cbo.py:_tell - Fitting took 0.0961 sec.
+    2024-11-25 12:53:26,563 - INFO - _search.py:_search - Telling took 0.0963 sec.
+    2024-11-25 12:53:26,563 - INFO - _evaluator.py:time_left - time_left=5.421312093734741
+    2024-11-25 12:53:26,563 - INFO - _evaluator.py:time_left - time_left=5.421293020248413
+    2024-11-25 12:53:26,563 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:26,563 - INFO - _search.py:ask - Asking took 0.0000 sec.
+    2024-11-25 12:53:26,563 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:26,563 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:26,563 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:26,563 - INFO - _search.py:_search - Submition took 0.0002 sec.
+    2024-11-25 12:53:26,563 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:26,563 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:26,563 - INFO - _evaluator.py:time_left - time_left=5.42087197303772
+    23it [00:11,  2.25it/s, failures=0, objective=-12.6]    23it [00:11,  2.25it/s, failures=0, objective=-12.6]2024-11-25 12:53:26,717 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:26,717 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:26,717 - INFO - _search.py:_search - Gathered 1 job(s) in 0.1540 sec.
+    2024-11-25 12:53:26,717 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:26,717 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:26,718 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:26,718 - INFO - _search.py:_search - Dumping took 0.0009 sec.
+    2024-11-25 12:53:26,718 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:26,718 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:26,718 - INFO - _cbo.py:_tell - Transformation took 0.0000 sec.
+    2024-11-25 12:53:26,719 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.9852462260079593, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:26,719 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:26,842 - INFO - _cbo.py:_tell - Fitting took 0.1236 sec.
+    2024-11-25 12:53:26,842 - INFO - _search.py:_search - Telling took 0.1239 sec.
+    2024-11-25 12:53:26,842 - INFO - _evaluator.py:time_left - time_left=5.141913175582886
+    2024-11-25 12:53:26,842 - INFO - _evaluator.py:time_left - time_left=5.141893148422241
+    2024-11-25 12:53:26,842 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:26,842 - INFO - _search.py:ask - Asking took 0.0000 sec.
+    2024-11-25 12:53:26,842 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:26,842 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:26,843 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:26,843 - INFO - _search.py:_search - Submition took 0.0002 sec.
+    2024-11-25 12:53:26,843 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:26,843 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:26,843 - INFO - _evaluator.py:time_left - time_left=5.141499042510986
+    24it [00:11,  2.86it/s, failures=0, objective=-12.6]    24it [00:11,  2.86it/s, failures=0, objective=-12.6]2024-11-25 12:53:26,843 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:26,844 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:26,844 - INFO - _search.py:_search - Gathered 1 job(s) in 0.0009 sec.
+    2024-11-25 12:53:26,844 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:26,844 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:26,844 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:26,844 - INFO - _search.py:_search - Dumping took 0.0003 sec.
+    2024-11-25 12:53:26,844 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:26,844 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:26,844 - INFO - _cbo.py:_tell - Transformation took 0.0000 sec.
+    2024-11-25 12:53:26,844 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 1.9967296534460555, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:26,844 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:26,941 - INFO - _cbo.py:_tell - Fitting took 0.0969 sec.
+    2024-11-25 12:53:26,941 - INFO - _search.py:_search - Telling took 0.0971 sec.
+    2024-11-25 12:53:26,941 - INFO - _evaluator.py:time_left - time_left=5.043240070343018
+    2024-11-25 12:53:26,941 - INFO - _evaluator.py:time_left - time_left=5.043222188949585
+    2024-11-25 12:53:26,941 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:26,941 - INFO - _search.py:ask - Asking took 0.0000 sec.
+    2024-11-25 12:53:26,941 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:26,941 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:26,941 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:26,941 - INFO - _search.py:_search - Submition took 0.0002 sec.
+    2024-11-25 12:53:26,941 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:26,941 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:26,941 - INFO - _evaluator.py:time_left - time_left=5.042729139328003
+    25it [00:12,  1.84it/s, failures=0, objective=-12.6]    25it [00:12,  1.84it/s, failures=0, objective=-12.6]2024-11-25 12:53:27,845 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:27,846 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:27,847 - INFO - _search.py:_search - Gathered 1 job(s) in 0.9052 sec.
+    2024-11-25 12:53:27,847 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:27,847 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:27,849 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:27,849 - INFO - _search.py:_search - Dumping took 0.0022 sec.
+    2024-11-25 12:53:27,849 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:27,849 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:27,850 - INFO - _cbo.py:_tell - Transformation took 0.0001 sec.
+    2024-11-25 12:53:27,850 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 2.0075315902787247, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:27,850 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:27,988 - INFO - _cbo.py:_tell - Fitting took 0.1373 sec.
+    2024-11-25 12:53:27,988 - INFO - _search.py:_search - Telling took 0.1383 sec.
+    2024-11-25 12:53:27,988 - INFO - _evaluator.py:time_left - time_left=3.996506929397583
+    2024-11-25 12:53:27,988 - INFO - _evaluator.py:time_left - time_left=3.996488094329834
+    2024-11-25 12:53:27,988 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:27,988 - INFO - _search.py:ask - Asking took 0.0001 sec.
+    2024-11-25 12:53:27,988 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:27,988 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:27,988 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:27,988 - INFO - _search.py:_search - Submition took 0.0003 sec.
+    2024-11-25 12:53:27,988 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:27,988 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:27,988 - INFO - _evaluator.py:time_left - time_left=3.995962142944336
+    26it [00:12,  2.35it/s, failures=0, objective=-12.6]    26it [00:12,  2.35it/s, failures=0, objective=-12.6]2024-11-25 12:53:27,989 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:27,989 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:27,989 - INFO - _search.py:_search - Gathered 1 job(s) in 0.0012 sec.
+    2024-11-25 12:53:27,989 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:27,989 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:27,990 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:27,990 - INFO - _search.py:_search - Dumping took 0.0003 sec.
+    2024-11-25 12:53:27,990 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:27,990 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:27,990 - INFO - _cbo.py:_tell - Transformation took 0.0000 sec.
+    2024-11-25 12:53:27,990 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 2.017725878675561, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:27,990 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:28,088 - INFO - _cbo.py:_tell - Fitting took 0.0981 sec.
+    2024-11-25 12:53:28,088 - INFO - _search.py:_search - Telling took 0.0983 sec.
+    2024-11-25 12:53:28,088 - INFO - _evaluator.py:time_left - time_left=3.8962419033050537
+    2024-11-25 12:53:28,088 - INFO - _evaluator.py:time_left - time_left=3.8962221145629883
+    2024-11-25 12:53:28,088 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:28,088 - INFO - _search.py:ask - Asking took 0.0000 sec.
+    2024-11-25 12:53:28,088 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:28,088 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:28,088 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:28,088 - INFO - _search.py:_search - Submition took 0.0002 sec.
+    2024-11-25 12:53:28,088 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:28,088 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:28,088 - INFO - _evaluator.py:time_left - time_left=3.895749092102051
+    27it [00:13,  1.99it/s, failures=0, objective=-12.6]    27it [00:13,  1.99it/s, failures=0, objective=-12.6]2024-11-25 12:53:28,676 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:28,677 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:28,677 - INFO - _search.py:_search - Gathered 1 job(s) in 0.5889 sec.
+    2024-11-25 12:53:28,677 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:28,677 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:28,679 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:28,679 - INFO - _search.py:_search - Dumping took 0.0014 sec.
+    2024-11-25 12:53:28,679 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:28,679 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:28,679 - INFO - _cbo.py:_tell - Transformation took 0.0001 sec.
+    2024-11-25 12:53:28,679 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 2.0273751139867064, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:28,680 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:28,815 - INFO - _cbo.py:_tell - Fitting took 0.1351 sec.
+    2024-11-25 12:53:28,815 - INFO - _search.py:_search - Telling took 0.1359 sec.
+    2024-11-25 12:53:28,815 - INFO - _evaluator.py:time_left - time_left=3.1693902015686035
+    2024-11-25 12:53:28,815 - INFO - _evaluator.py:time_left - time_left=3.1693708896636963
+    2024-11-25 12:53:28,815 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:28,815 - INFO - _search.py:ask - Asking took 0.0000 sec.
+    2024-11-25 12:53:28,815 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:28,815 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:28,815 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:28,815 - INFO - _search.py:_search - Submition took 0.0002 sec.
+    2024-11-25 12:53:28,815 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:28,815 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:28,815 - INFO - _evaluator.py:time_left - time_left=3.1688950061798096
+    28it [00:13,  2.35it/s, failures=0, objective=-12.6]    28it [00:13,  2.35it/s, failures=0, objective=-12.6]2024-11-25 12:53:28,917 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:28,917 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:28,917 - INFO - _search.py:_search - Gathered 1 job(s) in 0.1023 sec.
+    2024-11-25 12:53:28,918 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:28,918 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:28,918 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:28,918 - INFO - _search.py:_search - Dumping took 0.0006 sec.
+    2024-11-25 12:53:28,918 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:28,918 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:28,918 - INFO - _cbo.py:_tell - Transformation took 0.0000 sec.
+    2024-11-25 12:53:28,918 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 2.0365328048721745, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:28,918 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:29,030 - INFO - _cbo.py:_tell - Fitting took 0.1113 sec.
+    2024-11-25 12:53:29,030 - INFO - _search.py:_search - Telling took 0.1115 sec.
+    2024-11-25 12:53:29,030 - INFO - _evaluator.py:time_left - time_left=2.9544920921325684
+    2024-11-25 12:53:29,030 - INFO - _evaluator.py:time_left - time_left=2.9544730186462402
+    2024-11-25 12:53:29,030 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:29,030 - INFO - _search.py:ask - Asking took 0.0000 sec.
+    2024-11-25 12:53:29,030 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:29,030 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:29,030 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:29,030 - INFO - _search.py:_search - Submition took 0.0002 sec.
+    2024-11-25 12:53:29,030 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:29,030 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:29,030 - INFO - _evaluator.py:time_left - time_left=2.9540159702301025
+    29it [00:14,  1.68it/s, failures=0, objective=-12.6]    29it [00:14,  1.68it/s, failures=0, objective=-12.6]2024-11-25 12:53:29,906 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:29,907 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:29,907 - INFO - _search.py:_search - Gathered 1 job(s) in 0.8771 sec.
+    2024-11-25 12:53:29,907 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:29,907 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:29,910 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:29,910 - INFO - _search.py:_search - Dumping took 0.0024 sec.
+    2024-11-25 12:53:29,910 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:29,910 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:29,910 - INFO - _cbo.py:_tell - Transformation took 0.0001 sec.
+    2024-11-25 12:53:29,911 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 2.0452450404235654, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:29,911 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:30,052 - INFO - _cbo.py:_tell - Fitting took 0.1410 sec.
+    2024-11-25 12:53:30,052 - INFO - _search.py:_search - Telling took 0.1417 sec.
+    2024-11-25 12:53:30,052 - INFO - _evaluator.py:time_left - time_left=1.9322459697723389
+    2024-11-25 12:53:30,052 - INFO - _evaluator.py:time_left - time_left=1.9322271347045898
+    2024-11-25 12:53:30,052 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:30,052 - INFO - _search.py:ask - Asking took 0.0000 sec.
+    2024-11-25 12:53:30,052 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:30,052 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:30,052 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:30,052 - INFO - _search.py:_search - Submition took 0.0002 sec.
+    2024-11-25 12:53:30,052 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:30,052 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:30,052 - INFO - _evaluator.py:time_left - time_left=1.9317922592163086
+    30it [00:14,  1.93it/s, failures=0, objective=-12.6]    30it [00:14,  1.93it/s, failures=0, objective=-12.6]2024-11-25 12:53:30,246 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:30,247 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:30,247 - INFO - _search.py:_search - Gathered 1 job(s) in 0.1950 sec.
+    2024-11-25 12:53:30,247 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:30,248 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:30,249 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:30,250 - INFO - _search.py:_search - Dumping took 0.0019 sec.
+    2024-11-25 12:53:30,250 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:30,250 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:30,250 - INFO - _cbo.py:_tell - Transformation took 0.0001 sec.
+    2024-11-25 12:53:30,250 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 2.05355179309221, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:30,250 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:30,387 - INFO - _cbo.py:_tell - Fitting took 0.1365 sec.
+    2024-11-25 12:53:30,387 - INFO - _search.py:_search - Telling took 0.1373 sec.
+    2024-11-25 12:53:30,387 - INFO - _evaluator.py:time_left - time_left=1.597093105316162
+    2024-11-25 12:53:30,387 - INFO - _evaluator.py:time_left - time_left=1.5970730781555176
+    2024-11-25 12:53:30,387 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:30,387 - INFO - _search.py:ask - Asking took 0.0000 sec.
+    2024-11-25 12:53:30,387 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:30,387 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:30,387 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:30,387 - INFO - _search.py:_search - Submition took 0.0002 sec.
+    2024-11-25 12:53:30,387 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:30,387 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:30,388 - INFO - _evaluator.py:time_left - time_left=1.596648931503296
+    31it [00:15,  1.68it/s, failures=0, objective=-12.6]    31it [00:15,  1.68it/s, failures=0, objective=-12.6]2024-11-25 12:53:31,026 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:31,027 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:31,027 - INFO - _search.py:_search - Gathered 1 job(s) in 0.6396 sec.
+    2024-11-25 12:53:31,027 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:31,027 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:31,029 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:31,029 - INFO - _search.py:_search - Dumping took 0.0018 sec.
+    2024-11-25 12:53:31,029 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:31,029 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:31,029 - INFO - _cbo.py:_tell - Transformation took 0.0001 sec.
+    2024-11-25 12:53:31,030 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 2.061487948674072, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:31,030 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:31,170 - INFO - _cbo.py:_tell - Fitting took 0.1405 sec.
+    2024-11-25 12:53:31,170 - INFO - _search.py:_search - Telling took 0.1412 sec.
+    2024-11-25 12:53:31,170 - INFO - _evaluator.py:time_left - time_left=0.8137381076812744
+    2024-11-25 12:53:31,170 - INFO - _evaluator.py:time_left - time_left=0.8137180805206299
+    2024-11-25 12:53:31,170 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:31,171 - INFO - _search.py:ask - Asking took 0.0000 sec.
+    2024-11-25 12:53:31,171 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:31,171 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:31,171 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:31,171 - INFO - _search.py:_search - Submition took 0.0003 sec.
+    2024-11-25 12:53:31,171 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:31,171 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:31,171 - INFO - _evaluator.py:time_left - time_left=0.8131310939788818
+    32it [00:15,  1.83it/s, failures=0, objective=-12.6]    32it [00:15,  1.83it/s, failures=0, objective=-12.6]2024-11-25 12:53:31,452 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:31,453 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:31,453 - INFO - _search.py:_search - Gathered 1 job(s) in 0.2820 sec.
+    2024-11-25 12:53:31,453 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:31,453 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:31,455 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:31,455 - INFO - _search.py:_search - Dumping took 0.0018 sec.
+    2024-11-25 12:53:31,455 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:31,455 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:31,455 - INFO - _cbo.py:_tell - Transformation took 0.0001 sec.
+    2024-11-25 12:53:31,456 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 2.069084129041412, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:31,456 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:31,596 - INFO - _cbo.py:_tell - Fitting took 0.1397 sec.
+    2024-11-25 12:53:31,596 - INFO - _search.py:_search - Telling took 0.1405 sec.
+    2024-11-25 12:53:31,596 - INFO - _evaluator.py:time_left - time_left=0.3885462284088135
+    2024-11-25 12:53:31,596 - INFO - _evaluator.py:time_left - time_left=0.38852715492248535
+    2024-11-25 12:53:31,596 - INFO - _search.py:ask - Asking 1 configuration(s)...
+    2024-11-25 12:53:31,596 - INFO - _search.py:ask - Asking took 0.0000 sec.
+    2024-11-25 12:53:31,596 - INFO - _search.py:_search - Submitting 1 configurations...
+    2024-11-25 12:53:31,596 - INFO - _evaluator.py:submit - submit 1 job(s) starts...
+    2024-11-25 12:53:31,596 - INFO - _evaluator.py:submit - submit done
+    2024-11-25 12:53:31,596 - INFO - _search.py:_search - Submition took 0.0002 sec.
+    2024-11-25 12:53:31,596 - INFO - _search.py:_search - Gathering jobs...
+    2024-11-25 12:53:31,596 - INFO - _evaluator.py:gather - gather(BATCH, size=1) starts...
+    2024-11-25 12:53:31,596 - INFO - _evaluator.py:time_left - time_left=0.3881039619445801
+    33it [00:16,  1.68it/s, failures=0, objective=-12.6]    33it [00:16,  1.68it/s, failures=0, objective=-12.6]2024-11-25 12:53:32,166 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:32,167 - INFO - _evaluator.py:gather - gather done - 1 job(s)
+    2024-11-25 12:53:32,167 - INFO - _search.py:_search - Gathered 1 job(s) in 0.5708 sec.
+    2024-11-25 12:53:32,167 - INFO - _search.py:_search - Dumping evaluations...
+    2024-11-25 12:53:32,167 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:32,169 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:32,169 - INFO - _search.py:_search - Dumping took 0.0020 sec.
+    2024-11-25 12:53:32,169 - INFO - _search.py:_search - Telling 1 new result(s)...
+    2024-11-25 12:53:32,169 - INFO - _cbo.py:_tell - Transforming received configurations to list...
+    2024-11-25 12:53:32,170 - INFO - _cbo.py:_tell - Transformation took 0.0003 sec.
+    2024-11-25 12:53:32,170 - INFO - _cbo.py:_apply_scheduler - Updated exploration-exploitation policy with {'kappa': 2.0763673556086686, 'xi': 0.001} from scheduler
+    2024-11-25 12:53:32,170 - INFO - _cbo.py:_tell - Fitting the optimizer...
+    2024-11-25 12:53:32,313 - INFO - _cbo.py:_tell - Fitting took 0.1429 sec.
+    2024-11-25 12:53:32,313 - INFO - _search.py:_search - Telling took 0.1441 sec.
+    2024-11-25 12:53:32,313 - INFO - _evaluator.py:time_left - time_left=-0.32906174659729004
+    2024-11-25 12:53:32,313 - INFO - _evaluator.py:time_left - time_left=-0.32908201217651367
+    2024-11-25 12:53:32,326 - INFO - _evaluator.py:gather - gather(ALL, size=1) starts...
+    34it [00:17,  1.32it/s, failures=0, objective=-12.6]    34it [00:17,  1.32it/s, failures=0, objective=-12.6]    35it [00:17,  1.32it/s, failures=0, objective=-12.6]    36it [00:17,  1.32it/s, failures=0, objective=-12.6]2024-11-25 12:53:33,298 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:33,299 - INFO - _evaluator.py:gather - gather done - 3 job(s)
+    2024-11-25 12:53:33,299 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:33,301 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:33,315 - INFO - _evaluator.py:gather - gather(ALL, size=1) starts...
+    2024-11-25 12:53:33,315 - INFO - _evaluator.py:gather_other_jobs_done - gather jobs from other processes
+    2024-11-25 12:53:33,316 - INFO - _evaluator.py:gather - gather done - 0 job(s)
+    2024-11-25 12:53:33,316 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:33,317 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+    2024-11-25 12:53:33,317 - INFO - _evaluator.py:close - Closing ProcessPoolEvaluator
+    2024-11-25 12:53:33,318 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping completed jobs to CSV...
+    2024-11-25 12:53:33,318 - INFO - _evaluator.py:dump_jobs_done_to_csv - Dumping done
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 87-88
 
 Finally, we plot the results from the collected DataFrame.
 
-.. GENERATED FROM PYTHON SOURCE LINES 65-118
+.. GENERATED FROM PYTHON SOURCE LINES 88-111
 
 .. code-block:: Python
 
+
     if __name__ == "__main__":
-        import matplotlib.pyplot as plt
-        import numpy as np
-
-        def compile_profile(df):
-            """Take the results dataframe as input and return the number of jobs running at a given timestamp."""
-            history = []
-
-            for _, row in df.iterrows():
-                history.append((row["m:timestamp_start"], 1))
-                history.append((row["m:timestamp_end"], -1))
-
-            history = sorted(history, key=lambda v: v[0])
-            nb_workers = 0
-            timestamp = [0]
-            n_jobs_running = [0]
-            for time, incr in history:
-                nb_workers += incr
-                timestamp.append(time)
-                n_jobs_running.append(nb_workers)
-
-            return timestamp, n_jobs_running
+        from deephyper.analysis.hpo import (
+            plot_search_trajectory_single_objective_hpo,
+            plot_worker_utilization,
+        )
 
         t0 = results["m:timestamp_start"].iloc[0]
         results["m:timestamp_start"] = results["m:timestamp_start"] - t0
@@ -423,37 +1020,35 @@ Finally, we plot the results from the collected DataFrame.
         tmax = results["m:timestamp_end"].max()
 
         plt.figure()
+        fig, axes = plt.subplots(nrows=2, ncols=1, sharex=True)
 
-        plt.subplot(2, 1, 1)
-        plt.scatter(results["m:timestamp_end"], results.objective)
-        plt.plot(results["m:timestamp_end"], results.objective.cummax())
-        plt.xlabel("Time (sec.)")
-        plt.ylabel("Objective")
-        plt.grid()
-        plt.xlim(0, tmax)
+        plot_search_trajectory_single_objective_hpo(results, ax=axes[0])
 
-        plt.subplot(2, 1, 2)
-        x, y = compile_profile(results)
-        y = np.asarray(y) / num_workers * 100
-
-        plt.step(
-            x,
-            y,
-            where="pre",
+        plot_worker_utilization(
+            results, num_workers=num_workers, profile_type="start/end", ax=axes[1]
         )
-        plt.ylim(0, 100)
-        plt.xlim(0, tmax)
-        plt.xlabel("Time (sec.)")
-        plt.ylabel("Worker Utilization (\\%)")
+
         plt.tight_layout()
         plt.show()
 
 
 
-.. image-sg:: /examples/images/sphx_glr_plot_profile_worker_utilization_001.png
-   :alt: plot profile worker utilization
-   :srcset: /examples/images/sphx_glr_plot_profile_worker_utilization_001.png
-   :class: sphx-glr-single-img
+.. rst-class:: sphx-glr-horizontal
+
+
+    *
+
+      .. image-sg:: /examples/images/sphx_glr_plot_profile_worker_utilization_001.png
+         :alt: plot profile worker utilization
+         :srcset: /examples/images/sphx_glr_plot_profile_worker_utilization_001.png
+         :class: sphx-glr-multi-img
+
+    *
+
+      .. image-sg:: /examples/images/sphx_glr_plot_profile_worker_utilization_002.png
+         :alt: plot profile worker utilization
+         :srcset: /examples/images/sphx_glr_plot_profile_worker_utilization_002.png
+         :class: sphx-glr-multi-img
 
 
 
@@ -462,7 +1057,7 @@ Finally, we plot the results from the collected DataFrame.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 20.473 seconds)
+   **Total running time of the script:** (0 minutes 24.645 seconds)
 
 
 .. _sphx_glr_download_examples_plot_profile_worker_utilization.py:

@@ -23,15 +23,34 @@ Transfer Learning for Hyperparameter Search
 
 **Author(s)**: Romain Egele.
 
-In this example we present how to apply transfer-learning for hyperparameter search. Let's assume you have a bunch of similar tasks for example the search of neural networks hyperparameters for different datasets. You can easily imagine that close choices of hyperparameters can perform well these different datasets even if some light additional tuning can help improve the performance. Therefore, you can perform an expensive search once to then reuse the explored set of hyperparameters of thid search and bias the following search with it. Here, we will use a cheap to compute and easy to understand example where we maximise the :math:`f(x) = -\sum_{i=0}^{n-1}` function. In this case the size of the problem can be defined by the variable :math:`n`. We will start by optimizing the small-size problem where :math:`n=1`, then apply transfer-learning from to optimize the larger-size problem where :math:`n=2` and visualize the difference if were not to apply transfer-learning on this larger problem instance.
+In this example we present how to apply transfer-learning for hyperparameter
+search. Let's assume you have a bunch of similar tasks for example the search
+of neural networks hyperparameters for different datasets. You can easily
+imagine that close choices of hyperparameters can perform well these
+different datasets even if some light additional tuning can help improve the
+performance. Therefore, you can perform an expensive search once to then
+reuse the explored set of hyperparameters of thid search and bias the
+following search with it. Here, we will use a cheap to compute and easy to
+understand example where we maximise the :math:`f(x) = -\sum_{i=0}^
+{n-1}` function. In this case the size of the problem can be defined by the
+variable :math:`n`. We will start by optimizing the small-size problem
+where :math:`n=1`, then apply transfer-learning from to optimize the
+larger-size problem where :math:`n=2` and visualize the difference if were
+not to apply transfer-learning on this larger problem instance.
 
 Let us start by defining the run-functions of the small and large scale problems:
 
-.. GENERATED FROM PYTHON SOURCE LINES 14-25
+.. GENERATED FROM PYTHON SOURCE LINES 27-44
 
 .. code-block:: Python
 
     import functools
+    import matplotlib.pyplot as plt
+
+    from deephyper.hpo import HpProblem
+    from deephyper.evaluator import Evaluator
+    from deephyper.evaluator.callback import TqdmCallback
+    from deephyper.hpo import CBO
 
 
     def run(config: dict, N: int) -> float:
@@ -49,15 +68,13 @@ Let us start by defining the run-functions of the small and large scale problems
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 26-27
+.. GENERATED FROM PYTHON SOURCE LINES 45-46
 
 Then, we can define the hyperparameter problem space based on :math:`n`
 
-.. GENERATED FROM PYTHON SOURCE LINES 27-36
+.. GENERATED FROM PYTHON SOURCE LINES 46-53
 
 .. code-block:: Python
-
-    from deephyper.hpo import HpProblem
 
 
     N = 1
@@ -82,9 +99,10 @@ Then, we can define the hyperparameter problem space based on :math:`n`
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 37-43
+.. GENERATED FROM PYTHON SOURCE LINES 54-61
 
 .. code-block:: Python
+
 
     N = 2
     problem_large = HpProblem()
@@ -109,22 +127,19 @@ Then, we can define the hyperparameter problem space based on :math:`n`
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 44-45
+.. GENERATED FROM PYTHON SOURCE LINES 62-63
 
 Then, we define setup the search and execute it:
 
-.. GENERATED FROM PYTHON SOURCE LINES 45-57
+.. GENERATED FROM PYTHON SOURCE LINES 63-72
 
 .. code-block:: Python
 
-    from deephyper.evaluator import Evaluator
-    from deephyper.evaluator.callback import TqdmCallback
-    from deephyper.hpo import CBO
 
     results = {}
     max_evals = 20
     evaluator_small = Evaluator.create(
-        run_small, method="serial", method_kwargs={"callbacks": [TqdmCallback()]}
+        run_small, method="thread", method_kwargs={"callbacks": [TqdmCallback()]}
     )
     search_small = CBO(problem_small, evaluator_small, random_state=42)
     results["Small"] = search_small.search(max_evals)
@@ -137,16 +152,17 @@ Then, we define setup the search and execute it:
 
  .. code-block:: none
 
-      0%|          | 0/20 [00:00<?, ?it/s]      5%|▌         | 1/20 [00:00<00:00, 62601.55it/s, failures=0, objective=-3.23]     10%|█         | 2/20 [00:00<00:00, 335.62it/s, failures=0, objective=-3.23]       15%|█▌        | 3/20 [00:00<00:00, 245.30it/s, failures=0, objective=-1.22]     20%|██        | 4/20 [00:00<00:00, 224.90it/s, failures=0, objective=-1.22]     25%|██▌       | 5/20 [00:00<00:00, 204.73it/s, failures=0, objective=-1.22]     30%|███       | 6/20 [00:00<00:00, 188.61it/s, failures=0, objective=-1.22]     35%|███▌      | 7/20 [00:00<00:00, 187.45it/s, failures=0, objective=-1.22]     40%|████      | 8/20 [00:00<00:00, 182.07it/s, failures=0, objective=-0.754]     45%|████▌     | 9/20 [00:00<00:00, 181.35it/s, failures=0, objective=-0.754]     50%|█████     | 10/20 [00:00<00:00, 181.36it/s, failures=0, objective=-0.754]     55%|█████▌    | 11/20 [00:00<00:00, 79.03it/s, failures=0, objective=-0.754]      55%|█████▌    | 11/20 [00:00<00:00, 79.03it/s, failures=0, objective=-0.754]     60%|██████    | 12/20 [00:00<00:00, 79.03it/s, failures=0, objective=-0.754]     65%|██████▌   | 13/20 [00:00<00:00, 79.03it/s, failures=0, objective=-0.26]      70%|███████   | 14/20 [00:00<00:00, 79.03it/s, failures=0, objective=-0.0145]     75%|███████▌  | 15/20 [00:00<00:00, 79.03it/s, failures=0, objective=-0.0145]     80%|████████  | 16/20 [00:00<00:00, 79.03it/s, failures=0, objective=-0.0145]     85%|████████▌ | 17/20 [00:00<00:00, 79.03it/s, failures=0, objective=-0.0145]     90%|█████████ | 18/20 [00:00<00:00, 79.03it/s, failures=0, objective=-0.0145]     95%|█████████▌| 19/20 [00:00<00:00, 20.80it/s, failures=0, objective=-0.0145]     95%|█████████▌| 19/20 [00:00<00:00, 20.80it/s, failures=0, objective=-0.00148]    100%|██████████| 20/20 [00:00<00:00, 20.80it/s, failures=0, objective=-0.000458]
+      0%|          | 0/20 [00:00<?, ?it/s]      5%|▌         | 1/20 [00:00<00:00, 47662.55it/s, failures=0, objective=-3.23]     10%|█         | 2/20 [00:00<00:00, 359.30it/s, failures=0, objective=-3.23]       15%|█▌        | 3/20 [00:00<00:00, 283.55it/s, failures=0, objective=-1.22]     20%|██        | 4/20 [00:00<00:00, 255.12it/s, failures=0, objective=-1.22]     25%|██▌       | 5/20 [00:00<00:00, 237.18it/s, failures=0, objective=-1.22]     30%|███       | 6/20 [00:00<00:00, 227.41it/s, failures=0, objective=-1.22]     35%|███▌      | 7/20 [00:00<00:00, 222.78it/s, failures=0, objective=-1.22]     40%|████      | 8/20 [00:00<00:00, 218.37it/s, failures=0, objective=-0.754]     45%|████▌     | 9/20 [00:00<00:00, 213.25it/s, failures=0, objective=-0.754]     50%|█████     | 10/20 [00:00<00:00, 210.69it/s, failures=0, objective=-0.754]     55%|█████▌    | 11/20 [00:00<00:00, 85.39it/s, failures=0, objective=-0.754]      55%|█████▌    | 11/20 [00:00<00:00, 85.39it/s, failures=0, objective=-0.754]     60%|██████    | 12/20 [00:00<00:00, 85.39it/s, failures=0, objective=-0.754]     65%|██████▌   | 13/20 [00:00<00:00, 85.39it/s, failures=0, objective=-0.26]      70%|███████   | 14/20 [00:00<00:00, 85.39it/s, failures=0, objective=-0.0145]     75%|███████▌  | 15/20 [00:00<00:00, 85.39it/s, failures=0, objective=-0.0145]     80%|████████  | 16/20 [00:00<00:00, 85.39it/s, failures=0, objective=-0.0145]     85%|████████▌ | 17/20 [00:00<00:00, 85.39it/s, failures=0, objective=-0.0145]     90%|█████████ | 18/20 [00:00<00:00, 85.39it/s, failures=0, objective=-0.0145]     95%|█████████▌| 19/20 [00:00<00:00, 85.39it/s, failures=0, objective=-0.00148]    100%|██████████| 20/20 [00:00<00:00, 20.50it/s, failures=0, objective=-0.00148]    100%|██████████| 20/20 [00:00<00:00, 20.50it/s, failures=0, objective=-0.000458]
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 58-64
+.. GENERATED FROM PYTHON SOURCE LINES 73-80
 
 .. code-block:: Python
 
+
     evaluator_large = Evaluator.create(
-        run_large, method="serial", method_kwargs={"callbacks": [TqdmCallback()]}
+        run_large, method="thread", method_kwargs={"callbacks": [TqdmCallback()]}
     )
     search_large = CBO(problem_large, evaluator_large, random_state=42)
     results["Large"] = search_large.search(max_evals)
@@ -161,37 +177,38 @@ Then, we define setup the search and execute it:
 
 
       0%|          | 0/20 [00:00<?, ?it/s]
-      5%|▌         | 1/20 [00:00<00:00, 41943.04it/s, failures=0, objective=-48.8]
-     10%|█         | 2/20 [00:00<00:00, 189.68it/s, failures=0, objective=-40.3]  
-     15%|█▌        | 3/20 [00:00<00:00, 144.05it/s, failures=0, objective=-40.3]
-     20%|██        | 4/20 [00:00<00:00, 121.17it/s, failures=0, objective=-6.24]
-     25%|██▌       | 5/20 [00:00<00:00, 115.18it/s, failures=0, objective=-6.24]
-     30%|███       | 6/20 [00:00<00:00, 111.80it/s, failures=0, objective=-6.24]
-     35%|███▌      | 7/20 [00:00<00:00, 108.41it/s, failures=0, objective=-6.24]
-     40%|████      | 8/20 [00:00<00:00, 106.72it/s, failures=0, objective=-2.88]
-     45%|████▌     | 9/20 [00:00<00:00, 105.54it/s, failures=0, objective=-2.88]
-     50%|█████     | 10/20 [00:00<00:00, 103.60it/s, failures=0, objective=-2.88]
-     55%|█████▌    | 11/20 [00:00<00:00, 61.31it/s, failures=0, objective=-2.88] 
-     55%|█████▌    | 11/20 [00:00<00:00, 61.31it/s, failures=0, objective=-2.88]
-     60%|██████    | 12/20 [00:00<00:00, 61.31it/s, failures=0, objective=-2.88]
-     65%|██████▌   | 13/20 [00:00<00:00, 61.31it/s, failures=0, objective=-2.88]
-     70%|███████   | 14/20 [00:00<00:00, 61.31it/s, failures=0, objective=-0.00379]
-     75%|███████▌  | 15/20 [00:00<00:00, 61.31it/s, failures=0, objective=-0.00379]
-     80%|████████  | 16/20 [00:00<00:00, 61.31it/s, failures=0, objective=-0.00379]
-     85%|████████▌ | 17/20 [00:00<00:00, 61.31it/s, failures=0, objective=-0.00379]
-     90%|█████████ | 18/20 [00:00<00:00, 19.45it/s, failures=0, objective=-0.00379]
-     90%|█████████ | 18/20 [00:00<00:00, 19.45it/s, failures=0, objective=-0.00379]
-     95%|█████████▌| 19/20 [00:00<00:00, 19.45it/s, failures=0, objective=-0.00379]
-    100%|██████████| 20/20 [00:01<00:00, 19.45it/s, failures=0, objective=-0.00379]
+      5%|▌         | 1/20 [00:00<00:00, 45590.26it/s, failures=0, objective=-48.8]
+     10%|█         | 2/20 [00:00<00:00, 223.64it/s, failures=0, objective=-40.3]  
+     15%|█▌        | 3/20 [00:00<00:00, 163.81it/s, failures=0, objective=-40.3]
+     20%|██        | 4/20 [00:00<00:00, 147.79it/s, failures=0, objective=-6.24]
+     25%|██▌       | 5/20 [00:00<00:00, 139.82it/s, failures=0, objective=-6.24]
+     30%|███       | 6/20 [00:00<00:00, 134.66it/s, failures=0, objective=-6.24]
+     35%|███▌      | 7/20 [00:00<00:00, 131.51it/s, failures=0, objective=-6.24]
+     40%|████      | 8/20 [00:00<00:00, 129.23it/s, failures=0, objective=-2.88]
+     45%|████▌     | 9/20 [00:00<00:00, 126.87it/s, failures=0, objective=-2.88]
+     50%|█████     | 10/20 [00:00<00:00, 125.59it/s, failures=0, objective=-2.88]
+     55%|█████▌    | 11/20 [00:00<00:00, 68.20it/s, failures=0, objective=-2.88] 
+     55%|█████▌    | 11/20 [00:00<00:00, 68.20it/s, failures=0, objective=-2.88]
+     60%|██████    | 12/20 [00:00<00:00, 68.20it/s, failures=0, objective=-2.88]
+     65%|██████▌   | 13/20 [00:00<00:00, 68.20it/s, failures=0, objective=-2.88]
+     70%|███████   | 14/20 [00:00<00:00, 68.20it/s, failures=0, objective=-0.00379]
+     75%|███████▌  | 15/20 [00:00<00:00, 68.20it/s, failures=0, objective=-0.00379]
+     80%|████████  | 16/20 [00:00<00:00, 68.20it/s, failures=0, objective=-0.00379]
+     85%|████████▌ | 17/20 [00:00<00:00, 68.20it/s, failures=0, objective=-0.00379]
+     90%|█████████ | 18/20 [00:00<00:00, 20.37it/s, failures=0, objective=-0.00379]
+     90%|█████████ | 18/20 [00:00<00:00, 20.37it/s, failures=0, objective=-0.00379]
+     95%|█████████▌| 19/20 [00:00<00:00, 20.37it/s, failures=0, objective=-0.00379]
+    100%|██████████| 20/20 [00:00<00:00, 20.37it/s, failures=0, objective=-0.00379]
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 65-72
+.. GENERATED FROM PYTHON SOURCE LINES 81-89
 
 .. code-block:: Python
 
+
     evaluator_large_tl = Evaluator.create(
-        run_large, method="serial", method_kwargs={"callbacks": [TqdmCallback()]}
+        run_large, method="thread", method_kwargs={"callbacks": [TqdmCallback()]}
     )
     search_large_tl = CBO(problem_large, evaluator_large_tl, random_state=42)
     search_large_tl.fit_generative_model(results["Small"])
@@ -205,112 +222,124 @@ Then, we define setup the search and execute it:
 
  .. code-block:: none
 
-    /Users/romainegele/Documents/Argonne/deephyper/deephyper/hpo/_cbo.py:791: UserWarning: The value of q=0.9 is replaced by q_max=0.5 because a minimum of 10 samples are required to perform transfer-learning!
+    /Users/romainegele/miniforge3/envs/dh-3.12-240724/lib/python3.12/site-packages/rdt/transformers/utils.py:12: DeprecationWarning: module 'sre_parse' is deprecated
+      import sre_parse  # isort:skip
+    /Users/romainegele/Documents/Argonne/deephyper/deephyper/hpo/_cbo.py:744: UserWarning: The value of q=0.9 is replaced by q_max=0.5 because a minimum of 10 samples are required to perform transfer-learning!
       warnings.warn(
+    /Users/romainegele/Documents/Argonne/deephyper/deephyper/hpo/_cbo.py:781: DeprecationWarning: Please use `space[name]`
+      hp = self._problem.space.get_hyperparameter(hp_name)
 
 
       0%|          | 0/20 [00:00<?, ?it/s]
 
-      5%|▌         | 1/20 [00:00<00:00, 25115.59it/s, failures=0, objective=-35.3]
+      5%|▌         | 1/20 [00:00<00:00, 26214.40it/s, failures=0, objective=-35.4]
 
-     10%|█         | 2/20 [00:00<00:01, 13.65it/s, failures=0, objective=-35.3]   
+     10%|█         | 2/20 [00:00<00:01, 13.81it/s, failures=0, objective=-35.4]   
 
-     10%|█         | 2/20 [00:00<00:01, 13.65it/s, failures=0, objective=-23.8]
+     10%|█         | 2/20 [00:00<00:01, 13.81it/s, failures=0, objective=-23.9]
 
-     15%|█▌        | 3/20 [00:00<00:01, 13.65it/s, failures=0, objective=-23.8]
+     15%|█▌        | 3/20 [00:00<00:01, 13.81it/s, failures=0, objective=-23.9]
 
-     20%|██        | 4/20 [00:00<00:01,  8.61it/s, failures=0, objective=-23.8]
+     20%|██        | 4/20 [00:00<00:01,  8.58it/s, failures=0, objective=-23.9]
 
-     20%|██        | 4/20 [00:00<00:01,  8.61it/s, failures=0, objective=-23.8]
+     20%|██        | 4/20 [00:00<00:01,  8.58it/s, failures=0, objective=-23.9]
 
-     25%|██▌       | 5/20 [00:00<00:01,  8.01it/s, failures=0, objective=-23.8]
+     25%|██▌       | 5/20 [00:00<00:02,  6.05it/s, failures=0, objective=-23.9]
 
-     25%|██▌       | 5/20 [00:00<00:01,  8.01it/s, failures=0, objective=-23.8]
+     25%|██▌       | 5/20 [00:00<00:02,  6.05it/s, failures=0, objective=-23.9]
 
-     30%|███       | 6/20 [00:00<00:01,  7.59it/s, failures=0, objective=-23.8]
+     30%|███       | 6/20 [00:00<00:02,  6.26it/s, failures=0, objective=-23.9]
 
-     30%|███       | 6/20 [00:00<00:01,  7.59it/s, failures=0, objective=-1]   
+     30%|███       | 6/20 [00:00<00:02,  6.26it/s, failures=0, objective=-1.2] 
 
-     35%|███▌      | 7/20 [00:01<00:04,  3.14it/s, failures=0, objective=-1]
+     35%|███▌      | 7/20 [00:01<00:02,  6.42it/s, failures=0, objective=-1.2]
 
-     35%|███▌      | 7/20 [00:01<00:04,  3.14it/s, failures=0, objective=-1]
+     35%|███▌      | 7/20 [00:01<00:02,  6.42it/s, failures=0, objective=-0.967]
 
-     40%|████      | 8/20 [00:01<00:03,  3.73it/s, failures=0, objective=-1]
+     40%|████      | 8/20 [00:01<00:01,  6.54it/s, failures=0, objective=-0.967]
 
-     40%|████      | 8/20 [00:01<00:03,  3.73it/s, failures=0, objective=-1]
+     40%|████      | 8/20 [00:01<00:01,  6.54it/s, failures=0, objective=-0.967]
 
-     45%|████▌     | 9/20 [00:01<00:02,  4.30it/s, failures=0, objective=-1]
+     45%|████▌     | 9/20 [00:01<00:01,  6.62it/s, failures=0, objective=-0.967]
 
-     45%|████▌     | 9/20 [00:01<00:02,  4.30it/s, failures=0, objective=-1]
+     45%|████▌     | 9/20 [00:01<00:01,  6.62it/s, failures=0, objective=-0.967]
 
-     50%|█████     | 10/20 [00:01<00:02,  4.84it/s, failures=0, objective=-1]
+     50%|█████     | 10/20 [00:01<00:01,  6.67it/s, failures=0, objective=-0.967]
 
-     50%|█████     | 10/20 [00:01<00:02,  4.84it/s, failures=0, objective=-1]
+     50%|█████     | 10/20 [00:01<00:01,  6.67it/s, failures=0, objective=-0.967]
 
-     55%|█████▌    | 11/20 [00:02<00:01,  4.71it/s, failures=0, objective=-1]
+     55%|█████▌    | 11/20 [00:01<00:01,  5.78it/s, failures=0, objective=-0.967]
 
-     55%|█████▌    | 11/20 [00:02<00:01,  4.71it/s, failures=0, objective=-0.626]
+     55%|█████▌    | 11/20 [00:01<00:01,  5.78it/s, failures=0, objective=-0.967]
 
-     60%|██████    | 12/20 [00:02<00:01,  4.61it/s, failures=0, objective=-0.626]
+     60%|██████    | 12/20 [00:01<00:01,  5.30it/s, failures=0, objective=-0.967]
 
-     60%|██████    | 12/20 [00:02<00:01,  4.61it/s, failures=0, objective=-0.457]
+     60%|██████    | 12/20 [00:01<00:01,  5.30it/s, failures=0, objective=-0.4]  
 
-     65%|██████▌   | 13/20 [00:02<00:01,  4.54it/s, failures=0, objective=-0.457]
+     65%|██████▌   | 13/20 [00:02<00:01,  4.99it/s, failures=0, objective=-0.4]
 
-     65%|██████▌   | 13/20 [00:02<00:01,  4.54it/s, failures=0, objective=-0.457]
+     65%|██████▌   | 13/20 [00:02<00:01,  4.99it/s, failures=0, objective=-0.4]
 
-     70%|███████   | 14/20 [00:02<00:01,  4.48it/s, failures=0, objective=-0.457]
+     70%|███████   | 14/20 [00:02<00:01,  4.79it/s, failures=0, objective=-0.4]
 
-     70%|███████   | 14/20 [00:02<00:01,  4.48it/s, failures=0, objective=-0.303]
+     70%|███████   | 14/20 [00:02<00:01,  4.79it/s, failures=0, objective=-0.4]
 
-     75%|███████▌  | 15/20 [00:03<00:01,  4.43it/s, failures=0, objective=-0.303]
+     75%|███████▌  | 15/20 [00:02<00:01,  4.65it/s, failures=0, objective=-0.4]
 
-     75%|███████▌  | 15/20 [00:03<00:01,  4.43it/s, failures=0, objective=-0.303]
+     75%|███████▌  | 15/20 [00:02<00:01,  4.65it/s, failures=0, objective=-0.391]
 
-     80%|████████  | 16/20 [00:03<00:00,  4.36it/s, failures=0, objective=-0.303]
+     80%|████████  | 16/20 [00:02<00:00,  4.53it/s, failures=0, objective=-0.391]
 
-     80%|████████  | 16/20 [00:03<00:00,  4.36it/s, failures=0, objective=-0.303]
+     80%|████████  | 16/20 [00:02<00:00,  4.53it/s, failures=0, objective=-0.391]
 
-     85%|████████▌ | 17/20 [00:03<00:00,  4.32it/s, failures=0, objective=-0.303]
+     85%|████████▌ | 17/20 [00:03<00:00,  4.44it/s, failures=0, objective=-0.391]
 
-     85%|████████▌ | 17/20 [00:03<00:00,  4.32it/s, failures=0, objective=-0.303]
+     85%|████████▌ | 17/20 [00:03<00:00,  4.44it/s, failures=0, objective=-0.391]
 
-     90%|█████████ | 18/20 [00:03<00:00,  4.31it/s, failures=0, objective=-0.303]
+     90%|█████████ | 18/20 [00:03<00:00,  4.38it/s, failures=0, objective=-0.391]
 
-     90%|█████████ | 18/20 [00:03<00:00,  4.31it/s, failures=0, objective=-0.303]
+     90%|█████████ | 18/20 [00:03<00:00,  4.38it/s, failures=0, objective=-0.391]
 
-     95%|█████████▌| 19/20 [00:04<00:00,  4.30it/s, failures=0, objective=-0.303]
+     95%|█████████▌| 19/20 [00:03<00:00,  4.33it/s, failures=0, objective=-0.391]
 
-     95%|█████████▌| 19/20 [00:04<00:00,  4.30it/s, failures=0, objective=-0.303]
+     95%|█████████▌| 19/20 [00:03<00:00,  4.33it/s, failures=0, objective=-0.191]
 
-    100%|██████████| 20/20 [00:04<00:00,  4.29it/s, failures=0, objective=-0.303]
+    100%|██████████| 20/20 [00:03<00:00,  4.31it/s, failures=0, objective=-0.191]
 
-    100%|██████████| 20/20 [00:04<00:00,  4.29it/s, failures=0, objective=-0.303]
+    100%|██████████| 20/20 [00:03<00:00,  4.31it/s, failures=0, objective=-0.149]
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 73-74
+.. GENERATED FROM PYTHON SOURCE LINES 90-92
 
-Finally, we compare the results and quickly see that transfer-learning provided a consequant speed-up for the search:
+Finally, we compare the results and quickly see that transfer-learning
+provided a consequant speed-up for the search:
 
-.. GENERATED FROM PYTHON SOURCE LINES 74-88
+.. GENERATED FROM PYTHON SOURCE LINES 92-113
 
 .. code-block:: Python
 
-    import matplotlib.pyplot as plt
 
-    plt.figure()
+    # from deephyper.analysis import figure_size
+    from deephyper.analysis.hpo import plot_search_trajectory_single_objective_hpo
+
+    fig, ax = plt.subplots()
 
     for strategy, df in results.items():
-        x = [i for i in range(len(df))]
-        plt.scatter(x, df.objective, label=strategy, alpha=0.5)
-        plt.plot(x, df.objective.cummax(), alpha=0.5)
+        # x = [i for i in range(len(df))]
+        # plt.scatter(x, df.objective, label=strategy, alpha=0.5)
+        # plt.plot(x, df.objective.cummax(), alpha=0.5)
+        plot_search_trajectory_single_objective_hpo(
+            df, show_failures=False, ax=ax, label=strategy
+        )
+
 
     plt.xlabel("Time (sec.)")
     plt.ylabel("Objective")
     plt.grid()
     plt.legend()
     plt.show()
+
 
 
 
@@ -326,7 +355,7 @@ Finally, we compare the results and quickly see that transfer-learning provided 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 8.590 seconds)
+   **Total running time of the script:** (0 minutes 8.913 seconds)
 
 
 .. _sphx_glr_download_examples_plot_transfer_learning_for_hps.py:

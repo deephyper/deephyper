@@ -4,10 +4,8 @@ import logging
 import traceback
 from typing import Callable, Hashable
 
-from mpi4py.futures import MPICommExecutor
-
 from deephyper.evaluator import Evaluator, Job, JobStatus
-from deephyper.evaluator.mpi import MPI
+from deephyper.evaluator.mpi import MPI, MPICommExecutor
 from deephyper.evaluator.storage import Storage
 from deephyper.evaluator.storage._mpi_win_storage import MPIWinStorage
 

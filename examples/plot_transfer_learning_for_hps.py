@@ -64,7 +64,7 @@ problem_large
 results = {}
 max_evals = 20
 evaluator_small = Evaluator.create(
-    run_small, method="serial", method_kwargs={"callbacks": [TqdmCallback()]}
+    run_small, method="thread", method_kwargs={"callbacks": [TqdmCallback()]}
 )
 search_small = CBO(problem_small, evaluator_small, random_state=42)
 results["Small"] = search_small.search(max_evals)
@@ -72,7 +72,7 @@ results["Small"] = search_small.search(max_evals)
 # %%
 
 evaluator_large = Evaluator.create(
-    run_large, method="serial", method_kwargs={"callbacks": [TqdmCallback()]}
+    run_large, method="thread", method_kwargs={"callbacks": [TqdmCallback()]}
 )
 search_large = CBO(problem_large, evaluator_large, random_state=42)
 results["Large"] = search_large.search(max_evals)
@@ -80,7 +80,7 @@ results["Large"] = search_large.search(max_evals)
 # %%
 
 evaluator_large_tl = Evaluator.create(
-    run_large, method="serial", method_kwargs={"callbacks": [TqdmCallback()]}
+    run_large, method="thread", method_kwargs={"callbacks": [TqdmCallback()]}
 )
 search_large_tl = CBO(problem_large, evaluator_large_tl, random_state=42)
 search_large_tl.fit_generative_model(results["Small"])
@@ -90,15 +90,24 @@ results["Large+TL"] = search_large_tl.search(max_evals)
 # Finally, we compare the results and quickly see that transfer-learning
 # provided a consequant speed-up for the search:
 
-plt.figure()
+# from deephyper.analysis import figure_size
+from deephyper.analysis.hpo import plot_search_trajectory_single_objective_hpo
+
+fig, ax = plt.subplots()
 
 for strategy, df in results.items():
-    x = [i for i in range(len(df))]
-    plt.scatter(x, df.objective, label=strategy, alpha=0.5)
-    plt.plot(x, df.objective.cummax(), alpha=0.5)
+    # x = [i for i in range(len(df))]
+    # plt.scatter(x, df.objective, label=strategy, alpha=0.5)
+    # plt.plot(x, df.objective.cummax(), alpha=0.5)
+    plot_search_trajectory_single_objective_hpo(
+        df, show_failures=False, ax=ax, label=strategy
+    )
+
 
 plt.xlabel("Time (sec.)")
 plt.ylabel("Objective")
 plt.grid()
 plt.legend()
 plt.show()
+
+# %%

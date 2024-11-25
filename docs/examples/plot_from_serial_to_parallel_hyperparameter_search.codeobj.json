@@ -681,30 +681,30 @@
    "name": "builtin_function_or_method"
   }
  ],
- "serial_evaluator": [
+ "sequential_evaluator": [
   {
    "is_class": false,
    "is_explicit": false,
-   "module": "deephyper.evaluator._serial",
+   "module": "deephyper.evaluator._thread_pool",
    "module_short": "deephyper.evaluator",
-   "name": "SerialEvaluator"
+   "name": "ThreadPoolEvaluator"
   },
   {
    "is_class": false,
    "is_explicit": false,
    "module": "deephyper.evaluator",
    "module_short": "deephyper.evaluator",
-   "name": "SerialEvaluator"
+   "name": "ThreadPoolEvaluator"
   },
   {
    "is_class": false,
    "is_explicit": false,
    "module": "deephyper",
    "module_short": "deephyper",
-   "name": "SerialEvaluator"
+   "name": "ThreadPoolEvaluator"
   }
  ],
- "serial_search": [
+ "sequential_search": [
   {
    "is_class": false,
    "is_explicit": false,
@@ -727,7 +727,7 @@
    "name": "CBO"
   }
  ],
- "serial_search.search": [
+ "sequential_search.search": [
   {
    "is_class": false,
    "is_explicit": false,

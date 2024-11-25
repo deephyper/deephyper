@@ -54,12 +54,12 @@ print(problem)
 # strategy which replaces by the running min of collected objectives.
 
 results = {}
-max_evals = 30
+max_evals = 50
 for failure_strategy in ["ignore", "mean", "min"]:
     # for failure_strategy in ["min"]:
     print(f"Executing failure strategy: {failure_strategy}")
     evaluator = Evaluator.create(
-        run, method="serial", method_kwargs={"callbacks": [TqdmCallback()]}
+        run, method="thread", method_kwargs={"callbacks": [TqdmCallback()]}
     )
     search = CBO(
         problem,
