@@ -2,20 +2,56 @@
 
 import abc
 
+from typing import Dict, Any
+
 import numpy as np
 import scipy.stats as ss
 
 
+def _check_is_array(y: Any, y_name: str) -> None:
+    """Verify that the passed value is of type np.ndarray and raise a ValueError otherwise.
+
+    Args:
+        y (Any): the value to verify.
+        y_name (str): the name of the value to use in the raise error.
+
+    Raises:
+        ValueError: when ``y`` is not an np.ndarray.
+    """
+    if not isinstance(y, np.ndarray):
+        raise ValueError(
+            f"{y_name} should be of type np.ndarray but is of type {type(y)}"
+        )
+
+
+def _check_is_array_or_dict(y: Any, y_name: str):
+    """Verify that the passed value is of type np.ndarray or dict and raise a ValueError otherwise.
+
+    Args:
+        y (Any): the value to verify.
+        y_name (str): the name of the value to use in the raise error.
+
+    Raises:
+        ValueError: when ``y`` is not an np.ndarray and not a dict.
+    """
+    if not isinstance(y, np.ndarray) and not isinstance(y, dict):
+        raise ValueError(
+            f"{y_name} should be of type np.ndarray or dict but is of type {type(y)}"
+        )
+
+
 class Loss(abc.ABC):
-    """Base class that represents the loss function of an ensemble."""
+    """Base class that represents the loss function of an ensemble. Losses represent functions that should be minimized."""
 
     @abc.abstractmethod
-    def __call__(self, y_true: np.ndarray, y_pred: np.ndarray | dict) -> np.ndarray:
+    def __call__(
+        self, y_true: np.ndarray, y_pred: np.ndarray | Dict[str, np.ndarray]
+    ) -> np.ndarray:
         """Compute the loss function.
 
         Args:
             y_true (np.ndarray): the true target values.
-            y_pred (np.ndarray or dict): the predicted target values.
+            y_pred (np.ndarray or Dict[str, np.ndarray]): the predicted target values.
 
         Returns:
             np.ndarray: the loss value with first dimension ``n_samples``.
@@ -25,20 +61,58 @@ class Loss(abc.ABC):
 class SquaredError(Loss):
     """The usual square loss ``(y_true - y_pred)**2`` used to estimate ``E[Y|X=x]``."""
 
-    def __call__(self, y_true: np.ndarray, y_pred: np.ndarray | dict) -> np.ndarray:
-        # If the prediction is a dictionary, we assume that the prediction is a distribution and we take the mean as prediction.
+    def __call__(
+        self, y_true: np.ndarray, y_pred: np.ndarray | Dict[str, np.ndarray]
+    ) -> np.ndarray:
+        """Compute the squared error.
+
+        Args:
+            y_true (np.ndarray): the true target values.
+            y_pred (np.ndarray or Dict[str, np.ndarray]): the predicted target values. If it is a _Dict[str, np.ndarray]_ then it should contain a key ``"loc"``.
+
+        Returns:
+            np.ndarray: the loss value with first dimension ``n_samples``.
+        """
+        _check_is_array(y_true, "y_true")
+        _check_is_array_or_dict(y_pred, "y_pred")
+
+        # If the prediction is a dictionary, we assume that the prediction are distribution parameters
+        # and we take the mean estimate that should correspond to the 'loc' key
         if isinstance(y_pred, dict):
+            if "loc" not in y_pred:
+                raise ValueError("y_pred should contain a 'loc' key when it is a dict")
+
             y_pred = y_pred["loc"]
+
         return np.square(y_true - y_pred)
 
 
 class AbsoluteError(Loss):
     """The usual absolute loss ``(y_true - y_pred)**2`` used to estimate the median of ``P(Y|X=x)``."""
 
-    def __call__(self, y_true: np.ndarray, y_pred: np.ndarray | dict) -> np.ndarray:
-        # If the prediction is a dictionary, we assume that the prediction is a distribution and we take the mean as prediction.
+    def __call__(
+        self, y_true: np.ndarray, y_pred: np.ndarray | Dict[str, np.ndarray]
+    ) -> np.ndarray:
+        """Compute the absolute error.
+
+        Args:
+            y_true (np.ndarray): the true target values.
+            y_pred (np.ndarray or Dict[str, np.ndarray]): the predicted target values. If it is a _Dict[str, np.ndarray]_ then it should contain a key ``"loc"``.
+
+        Returns:
+            np.ndarray: the loss value with first dimension ``n_samples``.
+        """
+        _check_is_array(y_true, "y_true")
+        _check_is_array_or_dict(y_pred, "y_pred")
+
+        # If the prediction is a dictionary, we assume that the prediction are distribution parameters
+        # and we take the median estimate that should correspond to the 'loc' key
         if isinstance(y_pred, dict):
+            if "loc" not in y_pred:
+                raise ValueError("y_pred should contain a 'loc' key when it is a dict.")
+
             y_pred = y_pred["loc"]
+
         return np.abs(y_true - y_pred)
 
 
@@ -48,8 +122,48 @@ class NormalNegLogLikelihood(Loss):
     def __init__(self):
         self.dist = ss.norm
 
-    def __call__(self, y_true: np.ndarray, y_pred: np.ndarray | dict) -> np.ndarray:
-        return -self.dist.logpdf(y_true, loc=y_pred["loc"], scale=y_pred["scale"])
+    def __call__(
+        self, y_true: np.ndarray, y_pred: np.ndarray | Dict[str, np.ndarray]
+    ) -> np.ndarray:
+        """Compute the negative log-likelihood of a normal distribution.
+
+        Args:
+            y_true (np.ndarray): the true target values.
+            y_pred (np.ndarray or Dict[str, np.ndarray]): the predicted target values. If it is a _Dict[str, np.ndarray]_ then it should contain a key ``"loc"``.
+
+        Returns:
+            np.ndarray: the loss value with first dimension ``n_samples``.
+        """
+        _check_is_array(y_true, "y_true")
+        _check_is_array_or_dict(y_pred, "y_pred")
+
+        if isinstance(y_pred, np.ndarray):
+            if np.shape(y_pred)[0] != 2:
+                raise ValueError(
+                    f"The first dimension of y_pred should be equal to 2 but it is {np.shape(y_pred)[0]}."
+                )
+
+            if np.shape(y_pred)[1:] != np.shape(y_true):
+                raise ValueError(
+                    f"{np.shape(y_true)=} and {np.shape(y_pred)=} do not have matching shapes."
+                )
+
+            y_pred_loc = y_pred[0]
+            y_pred_scale = y_pred[1]
+
+        else:
+            if "loc" not in y_pred:
+                raise ValueError("y_pred should contain a 'loc' key when it is a dict.")
+
+            if "scale" not in y_pred:
+                raise ValueError(
+                    "y_pred should contain a 'scale' key when it is a dict."
+                )
+
+            y_pred_loc = y_pred["loc"]
+            y_pred_scale = y_pred["scale"]
+
+        return -self.dist.logpdf(y_true, loc=y_pred_loc, scale=y_pred_scale)
 
 
 class ZeroOneLoss(Loss):
