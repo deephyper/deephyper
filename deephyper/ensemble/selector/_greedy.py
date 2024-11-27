@@ -14,25 +14,25 @@ class GreedySelector(Selector):
     the loss when aggregated together.
 
     Args:
-        loss_func (Callable or Loss): 
+        loss_func (Callable or Loss):
             a loss function that takes two arguments: the true target values and the predicted target values.
-        aggregator (Aggregator): 
+        aggregator (Aggregator):
             The aggregator to use to combine the predictions of the selected predictors.
-        k (int, optional): 
+        k (int, optional):
             The number of unique predictors to select for the ensemble. Defaults to ``5``.
-        k_init (int, optional): 
+        k_init (int, optional):
             Regularization parameter for greedy selection. It is the number of predictors to select in the initialization step. Defaults to ``1``.
-        max_it (int, optional): 
+        max_it (int, optional):
             Maximum number of iterations which also corresponds to the number of non-unique predictors added to the ensemble. Defaults to ``-1``.
-        eps_tol (float, optional): 
+        eps_tol (float, optional):
             Tolerance for the stopping criterion. Defaults to ``1e-3``.
-        with_replacement (bool, optional): 
+        with_replacement (bool, optional):
             Performs greedy selection with replacement of models already selected. Defaults to ``True``.
-        early_stopping (bool, optional): 
+        early_stopping (bool, optional):
             Stops the ensemble selection as soon as the loss stops improving. Defaults to ``True``.
-        bagging (bool, optional): 
+        bagging (bool, optional):
             Performanced boostrap resampling of available predictors at each iteration. This can be particularly useful when the dataset used for selection is small. Defaults to ``False``.
-        verbose (bool, optional): 
+        verbose (bool, optional):
             Turns on the verbose mode. Defaults to ``False``.
     """
 
