@@ -127,7 +127,9 @@ class OnlineSelector(Callback):
     @property
     def ensemble(self):
         """The ``ensemble`` with adapted ``.predictors`` and ``.weights`` from the latest selection."""
-        ensemble = copy.deepcopy(self._ensemble)
+        # TODO: the following deepcopy can create issues with the evaluator used by the ensemble
+        # ensemble = copy.deepcopy(self._ensemble)
+        ensemble = copy.copy(self._ensemble)
         ensemble.predictors = [
             self._load_predictor_func(job_id)
             for job_id in self.selected_predictors_job_ids

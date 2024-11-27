@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional, Union
 
 import numpy as np
 
@@ -7,7 +7,8 @@ from deephyper.ensemble.aggregator.utils import average
 
 
 class MeanAggregator(Aggregator):
-    """Aggregate the predictions using the average.
+    """
+    Aggregate predictions using the mean. Supports both NumPy arrays and masked arrays.
 
     .. list-table::
         :widths: 25 25
@@ -17,16 +18,40 @@ class MeanAggregator(Aggregator):
           - MaskedArray
         * - ✅
           - ✅
-
     """
 
-    def aggregate(self, y: List[np.ndarray | np.ma.MaskedArray], weights: List = None):
-        """Aggregate the predictions using the mean.
+    def aggregate(
+        self,
+        y: List[Union[np.ndarray, np.ma.MaskedArray]],
+        weights: Optional[List[float]] = None,
+    ) -> np.ndarray:
+        """
+        Aggregate predictions using the mean.
 
         Args:
-            y (np.array): Predictions array of shape ``(n_predictors, n_samples, n_outputs)``.
+            y (List[np.ndarray | np.ma.MaskedArray]):
+                List of prediction arrays, each of shape ``(n_samples, n_outputs)``.
+            weights (Optional[List[float]]):
+                Optional weights for the predictors. If provided, must have the same length as `y`.
 
         Returns:
-            np.array: Aggregated predictions of shape ``(n_samples, n_outputs)``.
+            np.ndarray:
+                Aggregated predictions of shape ``(n_samples, n_outputs)``.
+
+        Raises:
+            ValueError: If `weights` length does not match the number of predictors in `y`.
         """
-        return average(y, axis=0, weights=weights)
+        if weights is not None and len(weights) != len(y):
+            raise ValueError(
+                "The length of `weights` must match the number of predictors in `y`."
+            )
+
+        # Ensure `y` is a valid list of arrays
+        if not all(isinstance(pred, (np.ndarray, np.ma.MaskedArray)) for pred in y):
+            raise TypeError(
+                "All elements of `y` must be numpy.ndarray or numpy.ma.MaskedArray."
+            )
+
+        # Stack predictions for aggregation
+        stacked_y = np.stack(y, axis=0)
+        return average(stacked_y, axis=0, weights=weights)

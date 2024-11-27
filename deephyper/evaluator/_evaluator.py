@@ -491,6 +491,10 @@ class Evaluator(abc.ABC):
 
     def close(self):
         logging.info(f"Closing {type(self).__name__}")
+
+        if self.loop is None:
+            raise RuntimeError("The evaluator loop is already closed.")
+
         # Attempt to close tasks in loop
         if not self.loop.is_closed():
             for t in self._tasks_running:

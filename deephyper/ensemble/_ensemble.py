@@ -1,3 +1,4 @@
+import asyncio
 from typing import Dict, Sequence
 
 import numpy as np
@@ -50,7 +51,7 @@ class EnsemblePredictor(Predictor):
         self._evaluator = None
 
         if evaluator is None:
-            self.evaluator_method = "serial"
+            self.evaluator_method = "thread"
             self.evaluator_method_kwargs = {}
         elif isinstance(evaluator, str):
             self.evaluator_method = evaluator
