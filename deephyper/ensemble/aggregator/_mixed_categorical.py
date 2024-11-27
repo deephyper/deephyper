@@ -17,7 +17,7 @@ class MixedCategoricalAggregator(Aggregator):
         * - Array (Fixed Set)
           - MaskedArray
         * - ✅
-          - ❌
+          - ✅
 
     Args:
         uncertainty_method (str, optional): Method to compute the uncertainty.
