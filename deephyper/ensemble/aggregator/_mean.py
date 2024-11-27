@@ -3,7 +3,6 @@ from typing import List, Optional, Union
 import numpy as np
 
 from deephyper.ensemble.aggregator._aggregator import Aggregator
-from deephyper.ensemble.aggregator.utils import average
 
 
 class MeanAggregator(Aggregator):
@@ -24,7 +23,7 @@ class MeanAggregator(Aggregator):
         self,
         y: List[Union[np.ndarray, np.ma.MaskedArray]],
         weights: Optional[List[float]] = None,
-    ) -> np.ndarray:
+    ) -> Union[np.ndarray, np.ma.MaskedArray]:
         """
         Aggregate predictions using the mean.
 
@@ -52,6 +51,10 @@ class MeanAggregator(Aggregator):
                 "All elements of `y` must be numpy.ndarray or numpy.ma.MaskedArray."
             )
 
+        _np = np
+        if all(isinstance(pred, np.ma.MaskedArray) for pred in y):
+            _np = np.ma
+
         # Stack predictions for aggregation
-        stacked_y = np.stack(y, axis=0)
-        return average(stacked_y, axis=0, weights=weights)
+        stacked_y = _np.stack(y, axis=0)
+        return _np.average(stacked_y, axis=0, weights=weights)

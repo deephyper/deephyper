@@ -1,8 +1,9 @@
-from typing import List, Dict, Union, Optional
+from typing import Dict, List, Optional, Union
+
 import numpy as np
 import scipy.stats as ss
+
 from deephyper.ensemble.aggregator._aggregator import Aggregator
-from deephyper.ensemble.aggregator._mean import average
 
 
 class MixedCategoricalAggregator(Aggregator):
@@ -45,7 +46,7 @@ class MixedCategoricalAggregator(Aggregator):
 
     def aggregate(
         self, y: List[np.ndarray], weights: Optional[List[float]] = None
-    ) -> Dict[str, Union[np.ndarray, float]]:
+    ) -> Dict[str, Union[np.ndarray, np.ma.MaskedArray]]:
         """
         Aggregate predictions using the mode of categorical distributions.
 
@@ -73,11 +74,15 @@ class MixedCategoricalAggregator(Aggregator):
                 "The length of `weights` must match the number of predictors in `y`."
             )
 
+        self._np = np
+        if all(isinstance(pred, np.ma.MaskedArray) for pred in y):
+            self._np = np.ma
+
         # Stack predictions and compute ensemble probabilities
-        y_proba_models = np.stack(
+        y_proba_models = self._np.stack(
             y, axis=0
         )  # Shape: (n_predictors, n_samples, ..., n_classes)
-        y_proba_ensemble = average(y_proba_models, weights=weights, axis=0)
+        y_proba_ensemble = self._np.average(y_proba_models, weights=weights, axis=0)
 
         agg = {"loc": y_proba_ensemble}
 
@@ -101,15 +106,17 @@ class MixedCategoricalAggregator(Aggregator):
         weights: Optional[List[float]],
     ):
         """Compute confidence-based uncertainty."""
-        uncertainty = 1 - np.max(y_proba_ensemble, axis=-1)
+        uncertainty = 1 - self._np.max(y_proba_ensemble, axis=-1)
 
         if not self.decomposed_uncertainty:
             agg["uncertainty"] = uncertainty
         else:
-            uncertainty_aleatoric = np.average(
-                1 - np.max(y_proba_models, axis=-1), weights=weights, axis=0
+            uncertainty_aleatoric = self._np.average(
+                1 - self._np.max(y_proba_models, axis=-1), weights=weights, axis=0
             )
-            uncertainty_epistemic = np.maximum(0, uncertainty - uncertainty_aleatoric)
+            uncertainty_epistemic = self._np.maximum(
+                0, uncertainty - uncertainty_aleatoric
+            )
 
             agg["uncertainty_aleatoric"] = uncertainty_aleatoric
             agg["uncertainty_epistemic"] = uncertainty_epistemic
@@ -122,15 +129,19 @@ class MixedCategoricalAggregator(Aggregator):
         weights: Optional[List[float]],
     ):
         """Compute entropy-based uncertainty."""
-        uncertainty = ss.entropy(y_proba_ensemble, axis=-1)
+        uncertainty = self._entropy(y_proba_ensemble, axis=-1)
 
         if not self.decomposed_uncertainty:
             agg["uncertainty"] = uncertainty
         else:
-            expected_entropy = np.average(
-                ss.entropy(y_proba_models, axis=-1), weights=weights, axis=0
+            expected_entropy = self._np.average(
+                self._entropy(y_proba_models, axis=-1), weights=weights, axis=0
             )
-            uncertainty_epistemic = np.maximum(0, uncertainty - expected_entropy)
+            uncertainty_epistemic = self._np.maximum(0, uncertainty - expected_entropy)
 
             agg["uncertainty_aleatoric"] = expected_entropy
             agg["uncertainty_epistemic"] = uncertainty_epistemic
+
+    def _entropy(self, prob, axis=None):
+        eps = np.finfo(prob.dtype).eps
+        return -self._np.sum(prob * self._np.log(prob + eps), axis=-1)

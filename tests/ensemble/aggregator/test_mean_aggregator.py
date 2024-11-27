@@ -37,7 +37,8 @@ def test_mean_aggregator_with_masked_arrays():
     ]
     aggregator = MeanAggregator()
     result = aggregator.aggregate(y)
-    expected = average(np.stack(y, axis=0), axis=0)
+    expected = np.ma.average(np.ma.stack(y, axis=0), axis=0)
+    print(f"{expected=}")
     assert np.ma.allclose(result, expected), "MeanAggregator failed with masked arrays."
 
 
@@ -87,4 +88,5 @@ def test_mean_aggregator_single_input():
 
 
 if __name__ == "__main__":
-    test_mean_aggregator_valid_input()
+    # test_mean_aggregator_valid_input()
+    test_mean_aggregator_with_masked_arrays()

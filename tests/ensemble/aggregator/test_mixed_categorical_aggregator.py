@@ -131,3 +131,55 @@ def test_mixed_categorical_aggregator_single_predictor():
 
     # If there's only one predictor, the output should match it
     assert np.allclose(result["loc"], y[0]), "Failed to handle single predictor case."
+
+
+def test_mixed_categorical_aggregator_confidence_with_masked_arrays():
+    """Test the MixedCategoricalAggregator with confidence uncertainty."""
+    y = [
+        np.ma.array([[0.6, 0.4], [0.7, 0.3]], mask=[[True, True], [True, True]]),
+        np.ma.array([[0.5, 0.5], [0.8, 0.2]], mask=[[True, True], [False, False]]),
+    ]
+    aggregator = MixedCategoricalAggregator(uncertainty_method="confidence")
+    result = aggregator.aggregate(y)
+
+    # Expected probabilities
+    expected_probs = np.ma.mean(np.ma.stack(y, axis=0), axis=0)
+    assert isinstance(expected_probs, np.ma.MaskedArray)
+    assert np.ma.allclose(
+        result["loc"], expected_probs
+    ), "Aggregated probabilities are incorrect."
+
+    # Expected uncertainty
+    expected_uncertainty = 1 - np.ma.max(expected_probs, axis=-1)
+    assert isinstance(result["uncertainty"], np.ma.MaskedArray)
+    assert np.ma.allclose(
+        result["uncertainty"], expected_uncertainty
+    ), "Uncertainty calculation is incorrect."
+
+
+def test_mixed_categorical_aggregator_entropy_with_masked_arrays():
+    """Test the MixedCategoricalAggregator with entropy uncertainty."""
+    y = [
+        np.ma.array([[0.6, 0.4], [0.7, 0.3]], mask=[[True, True], [True, True]]),
+        np.ma.array([[0.5, 0.5], [0.8, 0.2]], mask=[[True, True], [False, False]]),
+    ]
+    aggregator = MixedCategoricalAggregator(uncertainty_method="entropy")
+    result = aggregator.aggregate(y)
+
+    # Expected probabilities
+    expected_probs = np.ma.mean(np.ma.stack(y, axis=0), axis=0)
+    assert isinstance(expected_probs, np.ma.MaskedArray)
+    assert np.ma.allclose(
+        result["loc"], expected_probs
+    ), "Aggregated probabilities are incorrect."
+
+    # Expected uncertainty
+    expected_uncertainty = ss.entropy(expected_probs, axis=-1)
+    assert isinstance(result["uncertainty"], np.ma.MaskedArray)
+    assert np.ma.allclose(
+        result["uncertainty"], expected_uncertainty
+    ), "Uncertainty calculation is incorrect."
+
+
+if __name__ == "__main__":
+    test_mixed_categorical_aggregator_entropy_with_masked_arrays()

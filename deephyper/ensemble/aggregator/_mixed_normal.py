@@ -3,7 +3,7 @@ from typing import List
 import numpy as np
 
 from deephyper.ensemble.aggregator._aggregator import Aggregator
-from deephyper.ensemble.aggregator._mean import average
+from deephyper.ensemble.aggregator.utils import average
 
 
 class MixedNormalAggregator(Aggregator):
