@@ -129,7 +129,10 @@ def test_zero_one_loss():
 def test_categorical_crossentropy():
     from deephyper.ensemble.loss import CategoricalCrossEntropy
 
-    y_true = np.full((2,), fill_value=1)
+    # test with (batch_dim, class_dim)
+    y_true = np.full((2, 2), fill_value=0)
+    y_true[:, 1] = 1.0
+
     y_pred = np.full((2, 2), fill_value=0.0)
     y_pred[0, 0] = 1.0
     y_pred[1, 1] = 1.0
@@ -151,6 +154,38 @@ def test_categorical_crossentropy():
 
     with pytest.raises(ValueError):
         value = loss(y_true, {"foo": y_pred})
+
+    # test with (batch_dim, other_dim, class_dim)
+    y_true = np.full((5, 3, 2), fill_value=0)
+    y_true[:, :, 0] = 1.0
+
+    y_pred = np.full((5, 3, 2), fill_value=0.0)
+    y_pred[:, :, 0] = 1.0
+
+    loss = CategoricalCrossEntropy()
+
+    value = loss(y_true, y_pred)
+    assert np.shape(value) == (5, 3)
+    assert np.all(value <= 1e-10)
+
+    # test where y_true is an array of labels
+    y_true = np.full((2,), fill_value=1)
+
+    y_pred = np.full((2, 2), fill_value=0.0)
+    y_pred[0, 0] = 1.0
+    y_pred[1, 1] = 1.0
+
+    loss = CategoricalCrossEntropy()
+
+    value = loss(y_true, y_pred)
+    assert np.shape(value) == (2,)
+    assert abs(value[0] - 36.04) <= 1e-2
+    assert value[1] <= 1e-10
+
+    value = loss(y_true, {"loc": y_pred})
+    assert np.shape(value) == (2,)
+    assert abs(value[0] - 36.04) <= 1e-2
+    assert value[1] <= 1e-10
 
 
 if __name__ == "__main__":

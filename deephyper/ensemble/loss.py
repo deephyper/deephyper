@@ -215,7 +215,7 @@ class CategoricalCrossEntropy(Loss):
         """Compute the categorical crossentropy loss.
 
         Args:
-            y_true (np.ndarray): the true target values. It should be an array of integers representing the true class labels.
+            y_true (np.ndarray): the true target values. It should be an array of labels or one-hot encoded labels representing the true class labels.
             y_pred (np.ndarray or Dict[str, np.ndarray]): the predicted target values. If it is a _Dict[str, np.ndarray]_ then it should contain a key ``"loc"``. It is an array of predicted categorical probabilities.
 
         Returns:
@@ -230,10 +230,11 @@ class CategoricalCrossEntropy(Loss):
 
             y_pred = y_pred["loc"]
 
-        if len(np.shape(y_true)) > 1:
-            raise ValueError("Only accepts 1-D arrays for 'y_true'")
+        if len(np.shape(y_true)) == len(np.shape(y_pred)) - 1:
+            # Then the passed y_true is an array of integers
+            num_classes = np.shape(y_pred)[-1]
+            y_true = np.eye(num_classes)[y_true]
 
-        prob = y_pred[np.arange(len(y_pred)), y_true]
-        eps = np.finfo(prob.dtype).eps
-        prob = np.clip(prob, eps, 1 - eps)
-        return -np.log(prob)
+        eps = np.finfo(y_pred.dtype).eps
+        y_pred = np.clip(y_pred, eps, 1 - eps)
+        return (-np.log(y_pred) * y_true).sum(axis=-1)
