@@ -133,3 +133,7 @@ class EnsemblePredictor(Predictor):
                 y_pred.append(job.output)
 
         return y_pred
+
+    def __del__(self):
+        self._evaluator.close()
+        del self._evaluator
