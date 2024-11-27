@@ -1,14 +1,13 @@
-from typing import List
-
+from typing import List, Dict, Union, Optional
 import numpy as np
 import scipy.stats as ss
-
 from deephyper.ensemble.aggregator._aggregator import Aggregator
 from deephyper.ensemble.aggregator._mean import average
 
 
 class MixedCategoricalAggregator(Aggregator):
-    """Aggregate a set of categorical distributions.
+    """
+    Aggregate a set of categorical distributions, supporting uncertainty estimation.
 
     .. list-table::
         :widths: 25 25
@@ -19,80 +18,119 @@ class MixedCategoricalAggregator(Aggregator):
         * - ✅
           - ❌
 
-
     Args:
-        uncertainty_method (str, optional): Method to compute the uncertainty. Can be either ``"confidence"`` or ``"entropy"``. Default is ``"confidence"``.
+        uncertainty_method (str, optional): Method to compute the uncertainty.
+            Choices are ``"confidence"`` or ``"entropy"``. Default is ``"confidence"``.
+            - ``"confidence"``: Uncertainty is computed as ``1 - max(probability)``.
+            - ``"entropy"``: Uncertainty is computed as the entropy of the categorical distribution.
 
-            - ``"confidence"``: The uncertainty is computed as ``1 - max(probability)`` of the aggregated categorical distribution of ensemble.
-            - ``"entropy"``: The uncertainty is computed as the ``entropy`` of of the aggregated categorical distribution of ensemble.
-
-        decomposed_uncertainty (bool, optional): If ``True``, the uncertainty of the ensemble is decomposed into aleatoric and epistemic components. Default is ``False``.
+        decomposed_uncertainty (bool, optional):
+            If ``True``, decomposes uncertainty into aleatoric and epistemic components. Default is ``False``.
     """
+
+    VALID_UNCERTAINTY_METHODS = {"confidence", "entropy"}
 
     def __init__(
         self,
-        uncertainty_method="confidence",
+        uncertainty_method: str = "confidence",
         decomposed_uncertainty: bool = False,
     ):
-        assert uncertainty_method in ["confidence", "entropy"]
+        if uncertainty_method not in self.VALID_UNCERTAINTY_METHODS:
+            raise ValueError(
+                f"Invalid uncertainty_method '{uncertainty_method}'. "
+                f"Valid options are {self.VALID_UNCERTAINTY_METHODS}."
+            )
         self.uncertainty_method = uncertainty_method
         self.decomposed_uncertainty = decomposed_uncertainty
 
-    def aggregate(self, y: List, weights: List = None):
-        """Aggregate the predictions using the mode of categorical distribution.
+    def aggregate(
+        self, y: List[np.ndarray], weights: Optional[List[float]] = None
+    ) -> Dict[str, Union[np.ndarray, float]]:
+        """
+        Aggregate predictions using the mode of categorical distributions.
 
         Args:
-            y (np.array): Predictions array of shape ``(n_predictors, n_samples, n_outputs)``.
-
-            weights (list, optional): Weights of the predictors. Default is ``None``.
+            y (List[np.ndarray]): List of categorical probability arrays of shape
+                ``(n_predictors, n_samples, ..., n_classes)``.
+            weights (Optional[List[float]]): Optional weights for the predictors.
+                Must match the number of predictors. Default is ``None``.
 
         Returns:
-            np.array: Aggregated predictions of shape ``(n_samples, n_outputs)``.
+            Dict[str, Union[np.ndarray, float]]: Aggregated results, including:
+                - ``"loc"``: Aggregated categorical probabilities of shape ``(n_samples, ..., n_classes)``.
+                - ``"uncertainty"``: (Optional) Total uncertainty.
+                - ``"uncertainty_aleatoric"``: (Optional) Aleatoric uncertainty.
+                - ``"uncertainty_epistemic"``: (Optional) Epistemic uncertainty.
+
+        Raises:
+            ValueError: If `y` dimensions are invalid or if `weights` length does not match `y`.
         """
-        # Categorical probabilities (n_predictors, n_samples, ..., n_classes)
-        y_proba_models = y
+        if not isinstance(y, list) or not all(isinstance(arr, np.ndarray) for arr in y):
+            raise TypeError("Input `y` must be a list of numpy.ndarray.")
+
+        if weights is not None and len(weights) != len(y):
+            raise ValueError(
+                "The length of `weights` must match the number of predictors in `y`."
+            )
+
+        # Stack predictions and compute ensemble probabilities
+        y_proba_models = np.stack(
+            y, axis=0
+        )  # Shape: (n_predictors, n_samples, ..., n_classes)
         y_proba_ensemble = average(y_proba_models, weights=weights, axis=0)
 
-        agg = {
-            "loc": y_proba_ensemble,
-        }
+        agg = {"loc": y_proba_ensemble}
 
-        # Confidence of the ensemble: max probability of the ensemble
+        # Compute uncertainty
         if self.uncertainty_method == "confidence":
-            uncertainty = 1 - np.max(y_proba_ensemble, axis=-1)
-
-            if not self.decomposed_uncertainty:
-                agg["uncertainty"] = uncertainty
-
-            else:
-                # Uncertainty of the mode: 1 - confidence(n_predictors, n_samples, ...)
-                uncertainty_aleatoric = np.average(
-                    1 - np.max(y_proba_models, axis=-1), weights=weights, axis=0
-                )
-
-                # TODO: looking at the decomposition of Domingo et al. it is possible that we should take into consideration the coef c1 and c2 to compute the epistemic uncertainty
-                uncertainty_epistemic = np.maximum(
-                    0, uncertainty - uncertainty_aleatoric
-                )
-
-                agg["uncertainty_aleatoric"] = uncertainty_aleatoric
-                agg["uncertainty_epistemic"] = uncertainty_epistemic
-
-        # Entropy of the ensemble
+            self._compute_confidence_uncertainty(
+                agg, y_proba_models, y_proba_ensemble, weights
+            )
         elif self.uncertainty_method == "entropy":
-            uncertainty = ss.entropy(y_proba_ensemble, axis=-1)
-
-            if not self.decomposed_uncertainty:
-                agg["uncertainty"] = uncertainty
-
-            else:
-                # Expectation over predictors in the ensemble
-                expected_entropy = np.average(
-                    ss.entropy(y_proba_models, axis=-1), weights=weights, axis=0
-                )
-                agg["uncertainty_aleatoric"] = expected_entropy
-                agg["uncertainty_epistemic"] = np.maximum(
-                    0, uncertainty - expected_entropy
-                )
+            self._compute_entropy_uncertainty(
+                agg, y_proba_models, y_proba_ensemble, weights
+            )
 
         return agg
+
+    def _compute_confidence_uncertainty(
+        self,
+        agg: Dict,
+        y_proba_models: np.ndarray,
+        y_proba_ensemble: np.ndarray,
+        weights: Optional[List[float]],
+    ):
+        """Compute confidence-based uncertainty."""
+        uncertainty = 1 - np.max(y_proba_ensemble, axis=-1)
+
+        if not self.decomposed_uncertainty:
+            agg["uncertainty"] = uncertainty
+        else:
+            uncertainty_aleatoric = np.average(
+                1 - np.max(y_proba_models, axis=-1), weights=weights, axis=0
+            )
+            uncertainty_epistemic = np.maximum(0, uncertainty - uncertainty_aleatoric)
+
+            agg["uncertainty_aleatoric"] = uncertainty_aleatoric
+            agg["uncertainty_epistemic"] = uncertainty_epistemic
+
+    def _compute_entropy_uncertainty(
+        self,
+        agg: Dict,
+        y_proba_models: np.ndarray,
+        y_proba_ensemble: np.ndarray,
+        weights: Optional[List[float]],
+    ):
+        """Compute entropy-based uncertainty."""
+        uncertainty = ss.entropy(y_proba_ensemble, axis=-1)
+
+        if not self.decomposed_uncertainty:
+            agg["uncertainty"] = uncertainty
+        else:
+            expected_entropy = np.average(
+                ss.entropy(y_proba_models, axis=-1), weights=weights, axis=0
+            )
+            uncertainty_epistemic = np.maximum(0, uncertainty - expected_entropy)
+
+            agg["uncertainty_aleatoric"] = expected_entropy
+            agg["uncertainty_epistemic"] = uncertainty_epistemic
