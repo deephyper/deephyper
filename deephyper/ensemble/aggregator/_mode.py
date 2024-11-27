@@ -19,6 +19,9 @@ class ModeAggregator(Aggregator):
 
     This aggregator is useful when the ensemble is composed of predictors that output categorical distributions.
     The mode of the ensemble is the mode of the modes of the predictors, minimizing the 0-1 loss.
+
+    Args:
+        with_uncertainty (bool, optional): a boolean that sets if the uncertainty should be returned when calling the aggregator. Defaults to ``False``.
     """
 
     def __init__(self, with_uncertainty: bool = False):

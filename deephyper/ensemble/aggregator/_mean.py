@@ -17,7 +17,13 @@ class MeanAggregator(Aggregator):
           - MaskedArray
         * - ✅
           - ✅
+
+    Args:
+        with_uncertainty (bool, optional): a boolean that sets if the uncertainty should be returned when calling the aggregator. Defaults to ``False``.
     """
+
+    def __init__(self, with_uncertainty: bool = False):
+        self.with_uncertainty = with_uncertainty
 
     def aggregate(
         self,
@@ -57,4 +63,13 @@ class MeanAggregator(Aggregator):
 
         # Stack predictions for aggregation
         stacked_y = self._np.stack(y, axis=0)
-        return self._np.average(stacked_y, axis=0, weights=weights)
+        avg = self._np.average(stacked_y, axis=0, weights=weights)
+
+        if not self.with_uncertainty:
+            return avg
+
+        uncertainty = self._np.average(
+            self._np.square(stacked_y - avg), axis=0, weights=weights
+        )
+
+        return {"loc": avg, "uncertainty": uncertainty}

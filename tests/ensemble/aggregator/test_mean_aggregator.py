@@ -17,6 +17,19 @@ def test_mean_aggregator_valid_input():
     expected = np.mean(np.stack(y, axis=0), axis=0)
     assert np.allclose(result, expected), "MeanAggregator failed with valid input."
 
+    aggregator = MeanAggregator(with_uncertainty=True)
+    result = aggregator.aggregate(y)
+    assert isinstance(result, dict)
+    assert "loc" in result and "uncertainty" in result
+    expected_loc = np.mean(np.stack(y, axis=0), axis=0)
+    expected_uncertainty = np.var(np.stack(y, axis=0), axis=0)
+    assert np.allclose(
+        result["loc"], expected_loc
+    ), "MeanAggregator failed with valid input."
+    assert np.allclose(
+        result["uncertainty"], expected_uncertainty
+    ), "MeanAggregator failed with valid input."
+
 
 def test_mean_aggregator_with_weights():
     """Test the MeanAggregator with weights."""
@@ -87,5 +100,5 @@ def test_mean_aggregator_single_input():
 
 
 if __name__ == "__main__":
-    # test_mean_aggregator_valid_input()
-    test_mean_aggregator_with_masked_arrays()
+    test_mean_aggregator_valid_input()
+    # test_mean_aggregator_with_masked_arrays()
