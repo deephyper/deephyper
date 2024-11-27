@@ -51,10 +51,10 @@ class MeanAggregator(Aggregator):
                 "All elements of `y` must be numpy.ndarray or numpy.ma.MaskedArray."
             )
 
-        _np = np
+        self._np = np
         if all(isinstance(pred, np.ma.MaskedArray) for pred in y):
-            _np = np.ma
+            self._np = np.ma
 
         # Stack predictions for aggregation
-        stacked_y = _np.stack(y, axis=0)
-        return _np.average(stacked_y, axis=0, weights=weights)
+        stacked_y = self._np.stack(y, axis=0)
+        return self._np.average(stacked_y, axis=0, weights=weights)

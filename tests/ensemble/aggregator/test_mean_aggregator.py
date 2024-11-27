@@ -14,7 +14,6 @@ def test_mean_aggregator_valid_input():
     y = [np.array([[1, 2], [3, 4]]), np.array([[5, 6], [7, 8]])]
     aggregator = MeanAggregator()
     result = aggregator.aggregate(y)
-    print(result)
     expected = np.mean(np.stack(y, axis=0), axis=0)
     assert np.allclose(result, expected), "MeanAggregator failed with valid input."
 
