@@ -167,9 +167,7 @@ class NormalNegLogLikelihood(Loss):
 
 
 class ZeroOneLoss(Loss):
-    """Zero-One loss for classification (a.k.a, error rate) which is ``1`` if the prediction is wrong and ``0`` if it is correct.
-
-    - ``y_true`` is an array of integers representing the true class labels.
+    """Zero-One loss for classification (a.k.a, error rate) which has value ``1`` if the prediction is wrong and ``0`` if it is correct.
 
     Args:
         predict_proba (bool, optional): A boolean indicating if ``y_pred`` contains predicted categorical probabilities. Defaults to ``False`` for label predictions.
@@ -178,26 +176,63 @@ class ZeroOneLoss(Loss):
     def __init__(self, predict_proba: bool = False):
         self._predict_proba = predict_proba
 
-    def __call__(self, y_true: np.ndarray, y_pred: np.ndarray | dict) -> np.ndarray:
+    def __call__(
+        self, y_true: np.ndarray, y_pred: np.ndarray | Dict[str, np.ndarray]
+    ) -> np.ndarray:
+        """Compute the zero-one loss.
+
+        Args:
+            y_true (np.ndarray): the true target values. It should be an array of integers representing the true class labels.
+            y_pred (np.ndarray or Dict[str, np.ndarray]): the predicted target values. If it is a _Dict[str, np.ndarray]_ then it should contain a key ``"loc"``.
+
+        Returns:
+            np.ndarray: the loss value with first dimension ``n_samples``.
+        """
+        _check_is_array(y_true, "y_true")
+        _check_is_array_or_dict(y_pred, "y_pred")
+
         if isinstance(y_pred, dict):
+            if "loc" not in y_pred:
+                raise ValueError("y_pred should contain a 'loc' key when it is a dict.")
+
             y_pred = y_pred["loc"]
+
         if self._predict_proba:
-            return np.array(y_true != np.argmax(y_pred, axis=-1), dtype=float)
-        else:
-            return np.array(y_true != y_pred, dtype=float)
+            y_pred = np.argmax(y_pred, axis=-1)
+
+            if len(np.shape(y_true)) == len(np.shape(y_pred)) + 1:
+                y_pred = np.expand_dims(y_pred, -1)
+
+        return np.array(y_true != y_pred, dtype=np.float64)
 
 
 class CategoricalCrossEntropy(Loss):
-    """Categorical-Cross Entropy (a.k.a., Log-Loss) function for classification.
+    """Categorical-Cross Entropy (a.k.a., Log-Loss) function for classification."""
 
-    - ``y_true`` is an array of integers representing the true class labels.
-    - ``y_pred`` is an array of predicted categorical probabilities.
+    def __call__(
+        self, y_true: np.ndarray, y_pred: np.ndarray | Dict[str, np.ndarray]
+    ) -> np.ndarray:
+        """Compute the categorical crossentropy loss.
 
-    """
+        Args:
+            y_true (np.ndarray): the true target values. It should be an array of integers representing the true class labels.
+            y_pred (np.ndarray or Dict[str, np.ndarray]): the predicted target values. If it is a _Dict[str, np.ndarray]_ then it should contain a key ``"loc"``. It is an array of predicted categorical probabilities.
 
-    def __call__(self, y_true: np.ndarray, y_pred: np.ndarray | dict) -> np.ndarray:
+        Returns:
+            np.ndarray: the loss value with first dimension ``n_samples``.
+        """
+        _check_is_array(y_true, "y_true")
+        _check_is_array_or_dict(y_pred, "y_pred")
+
         if isinstance(y_pred, dict):
+            if "loc" not in y_pred:
+                raise ValueError("y_pred should contain a 'loc' key when it is a dict.")
+
             y_pred = y_pred["loc"]
+
+        if len(np.shape(y_true)) > 1:
+            raise ValueError("Only accepts 1-D arrays for 'y_true'")
+
         prob = y_pred[np.arange(len(y_pred)), y_true]
         eps = np.finfo(prob.dtype).eps
         prob = np.clip(prob, eps, 1 - eps)
