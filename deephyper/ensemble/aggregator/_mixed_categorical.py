@@ -1,7 +1,6 @@
 from typing import Dict, List, Optional, Union
 
 import numpy as np
-import scipy.stats as ss
 
 from deephyper.ensemble.aggregator._aggregator import Aggregator
 
