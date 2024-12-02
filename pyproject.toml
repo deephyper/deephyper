@@ -1,7 +1,39 @@
 [build-system]
-# Minimum requirements for the build system to execute.
-requires = [
-    "setuptools>=42", 
-    "wheel",
-    "Cython>=0.29.24",
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "deephyper"
+dynamic = ["version"]
+description = "Scalable asynchronous neural architecture and hyperparameter search for deep neural networks"
+authors = [
+    {name = "Prasanna Balaprakash", email = "pbalapra@ornl.gov"},
+    {name = "Romain Egele", email = "romainegele@gmail.com"},
+    {name = "Misha Salim"},
+    {name = "Romit Maulik"},
+    {name = "Venkat Vishwanath"},
+    {name = "Stefan Wild"}
 ]
+maintainers = [{name = "Prasanna Balaprakash", email = "pbalapra@ornl.gov"}]
+license = {file = "LICENSE.md"}
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13"
+]
+
+[project.scripts]
+deephyper = "deephyper.core.cli._cli:main"
+
+[project.urls]
+Documentation = "http://deephyper.readthedocs.io"
+Changes = "https://github.com/deephyper/deephyper/releases"
+Forum = "https://github.com/deephyper/deephyper/discussions"
+GitHub = "https://github.com/deephyper/deephyper"
+Issues = "https://github.com/deephyper/deephyper/issues"
