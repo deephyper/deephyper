@@ -125,9 +125,7 @@ def fit_learning_curve_model_least_square(
     random_state=None,
     verbose=0,
 ):
-    """The learning curve model is assumed to be modeled by 'f' with
-    interface f(z, rho).
-    """
+    """The learning curve model is assumed to be modeled by 'f' with interface f(z, rho)."""
     random_state = check_random_state(random_state)
 
     results = []
@@ -382,8 +380,7 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         return posterior_mu
 
     def prob(self, X, condition):
-        """Compute the approximate probability of P(cond(m(X_i), y_i))
-        where m is the current fitted model and cond a condition.
+        """Compute the approximate probability of P(cond(m(X_i), y_i)) where m is the current fitted model and cond a condition.
 
         Args:
             X (np.array): An array of inputs.

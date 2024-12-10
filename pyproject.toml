@@ -107,5 +107,11 @@ markers = [
     "sdv: marks tests which needs SDV installed"
 ]
 
-[tool.ruff]
+[tool.ruff.lint]
 pydocstyle.convention = "google"
+
+select = ["E4", "E7", "E9", "F", "D"]
+
+ignore = [
+    "D107",  # Allow __init__ without docstring (should be the class docstring).
+]

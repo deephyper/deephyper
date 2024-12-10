@@ -19,8 +19,7 @@ def area_learning_curve(z, f, z_max) -> float:
 
 
 class LCModelStopper(Stopper):
-    """Stopper based on learning curve extrapolation (LCE) to evaluate if the iterations of the learning algorithm
-    should be stopped.
+    """Stopper based on learning curve extrapolation (LCE) to evaluate if the iterations of the learning algorithm should be stopped.
 
     .. list-table::
         :widths: 25 25 25
