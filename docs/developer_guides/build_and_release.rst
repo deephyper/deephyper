@@ -43,10 +43,12 @@ Then,
 
 **For final release only**:
 
-9. build and publish the wheel to `https://test.pypi.org/`: `python setup.py testupload`
+Follow the instructions in the `Python Packaging User Guide <https://packaging.python.org/en/latest/tutorials/packaging-projects/#generating-distribution-archives>`_ to build and publish the package to PyPI.
 
-10. try to install the wheel upload to Test PyPI: `python setup.py testinstall`
+9. Remove old builds that may be in the project root directory with ``rm -rf dist``.
 
-11. build and publish the wheel to `https://pypi.org/`: `python setup.py upload`
+10. Install the latest version of build and twine with ``pip install --upgrade build twine``.
 
-12. try to install the wheel upload to PyPI: `pip install deephyper==$VERSION`
+11. Build the package with ``python -m build``.
+
+12. Upload the built package to PyPI using ``twine upload dist/*``.

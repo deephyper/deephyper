@@ -1,7 +1,108 @@
 [build-system]
-# Minimum requirements for the build system to execute.
-requires = [
-    "setuptools>=42", 
-    "wheel",
-    "Cython>=0.29.24",
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "deephyper"
+dynamic = ["version"]
+dependencies = [
+    "ConfigSpace>=1.1.1",
+    "dm-tree",
+    "Jinja2>=3.1.4",
+    "matplotlib",
+    "numpy>=1.26.0",
+    "pandas>=0.24.2",
+    "packaging",
+    "parse",
+    "scikit-learn>=0.23.1",
+    "scipy>=1.10",
+    "tqdm>=4.64.0",
+    "psutil",
+    "pymoo>=0.6.0",
+    "pyyaml"
+]
+requires-python = ">=3.10"
+authors = [
+    {name = "Prasanna Balaprakash", email = "pbalapra@ornl.gov"},
+    {name = "Romain Egele", email = "romainegele@gmail.com"},
+    {name = "Misha Salim"},
+    {name = "Romit Maulik"},
+    {name = "Venkat Vishwanath"},
+    {name = "Stefan Wild"}
+]
+maintainers = [{name = "Prasanna Balaprakash", email = "pbalapra@ornl.gov"}]
+description = "Scalable asynchronous neural architecture and hyperparameter search for deep neural networks"
+readme = "README.md"
+license = {file = "LICENSE.md"}
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13"
+]
+
+[project.optional-dependencies]
+jax-cpu = ["jax[cpu]>=0.3.25", "numpyro[cpu]"]
+jax-cuda = ["jax[cuda]>=0.3.25", "numpyro[cuda]"]
+tf-keras2 = ["tensorflow~=2.17.0", "tensorflow_probability~=0.24.0", "tf-keras~=2.17.0"]
+torch = ["torch>=2.0.0"]
+hpo-tl = ["sdv~=1.15.0"]
+mpi = ["mpi4py>=3.1.3"]
+ray = ["ray[default]>=1.3.0"]
+redis = ["redis"]
+redis-hiredis = ["redis[hiredis]"]
+core = [
+    "deephyper[tf-keras2]",
+    "deephyper[torch]",
+    "deephyper[hpo-tl]",
+    "deephyper[jax-cpu]"
+]
+dev = [
+    "pytest",
+    "tox",
+    "twine",
+    "ruff",
+    "rstcheck",
+    "GitPython",
+    "ipython",
+    "nbsphinx",
+    "sphinx>=5",
+    "sphinx-book-theme==1.1.3",
+    "pydata-sphinx-theme==0.15.4",
+    "sphinx-copybutton",
+    "sphinx-gallery",
+    "sphinx_lfs_content",
+    "sphinx-togglebutton"
+]
+
+[project.scripts]
+deephyper = "deephyper.core.cli._cli:main"
+
+[project.urls]
+Documentation = "http://deephyper.readthedocs.io"
+Changes = "https://github.com/deephyper/deephyper/releases"
+Forum = "https://github.com/deephyper/deephyper/discussions"
+GitHub = "https://github.com/deephyper/deephyper"
+Issues = "https://github.com/deephyper/deephyper/issues"
+
+[tool.hatch.version]
+path = "src/deephyper/__version__.py"
+
+[tool.pytest.ini_options]
+addopts = "--doctest-modules --ignore=deephyper/evaluator --ignore=tests/skopt"
+norecursedirs = ".git _build docs"
+filterwarnings = "ignore:The objective has been evaluated at this point before.:UserWarning"
+markers = [
+    "fast: marks to define a fast test",
+    "slow: marks to define a slow test",
+    "torch: marks to define a test that requires torch installed",
+    "tf_keras2: marks to define a test that requires tf-keras~=2 installed",
+    "ray: marks tests which needs Ray installed",
+    "mpi: marks tests which needs mpi4py and MPI installed",
+    "redis: marks tests which needs Redis installed",
+    "jax: marks tests which needs JAX installed",
+    "sdv: marks tests which needs SDV installed"
 ]
