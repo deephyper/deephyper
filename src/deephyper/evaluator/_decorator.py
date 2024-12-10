@@ -9,7 +9,9 @@ from concurrent.futures import ProcessPoolExecutor
 
 
 def register_inner_function_for_pickle(func):
-    """Register former decorated function under a new name to be called in subprocess within the decorator.
+    """Register former decorated function under a new name.
+
+    This is to be called in subprocess within the decorator.
 
     See: https://stackoverflow.com/questions/73146709/python-process-inside-decorator
     """
@@ -22,7 +24,10 @@ def register_inner_function_for_pickle(func):
     func.__qualname__ = saved_name
 
 
-# Example from https://github.com/dabeaz/python-cookbook/blob/master/src/9/defining_a_decorator_that_takes_an_optional_argument/example.py
+# Example from
+# https://github.com/dabeaz/python-cookbook/blob/master/src/9/defining_a_decorator_that_takes_an_optional_argument/example.py
+
+
 def profile(  # noqa: D417
     _func=None,
     *,
@@ -65,10 +70,22 @@ def profile(  # noqa: D417
             return y
 
     Args:
-        memory (bool): If ``True``, the memory usage is measured. The measured memory, in bytes, accounts for the whole process. Defaults to ``False``.
-        memory_limit (int): In bytes, if set to a positive integer, the memory usage is measured at regular intervals and the function is interrupted if the memory usage exceeds the limit. If set to ``-1``, only the peak memory is measured. If the executed function is busy outside of the Python interpretor, this mechanism will not work properly. Defaults to ``-1``.
-        memory_tracing_interval (float): In seconds, the interval at which the memory usage is measured. Defaults to ``0.1``.
-        register (bool): Register the called function to be pickalable and executed in a subprocess when the we use as decorator ``@profile``.
+        memory (bool):
+            If ``True``, the memory usage is measured. The measured memory, in
+            bytes, accounts for the whole process. Defaults to ``False``.
+        memory_limit (int):
+            In bytes, if set to a positive integer, the memory usage is
+            measured at regular intervals and the function is interrupted if
+            the memory usage exceeds the limit. If set to ``-1``, only the
+            peak memory is measured. If the executed function is busy outside
+            of the Python interpretor, this mechanism will not work properly.
+            Defaults to ``-1``.
+        memory_tracing_interval (float):
+            In seconds, the interval at which the memory usage is measured.
+            Defaults to ``0.1``.
+        register (bool):
+            Register the called function to be pickalable and executed in a
+            subprocess when the we use as decorator ``@profile``.
 
     Returns:
         function: a decorated function.

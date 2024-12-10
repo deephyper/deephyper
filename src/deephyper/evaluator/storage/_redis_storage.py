@@ -79,9 +79,7 @@ class RedisStorage(Storage):
         Returns:
             Hashable: The created identifier of the job.
         """
-        partial_id = (
-            self._redis.incr(f"search:{search_id}.job_id_counter", amount=1) - 1
-        )
+        partial_id = self._redis.incr(f"search:{search_id}.job_id_counter", amount=1) - 1
         partial_id = f"{partial_id}"  # converting to str
         job_id = f"{search_id}.{partial_id}"
         self._redis.rpush(f"search:{search_id}.job_id_list", job_id)
@@ -108,9 +106,7 @@ class RedisStorage(Storage):
         """
         self._redis.json().set(f"job:{job_id}", f".{key}", value)
 
-    def store_job_in(
-        self, job_id: Hashable, args: Tuple = None, kwargs: Dict = None
-    ) -> None:
+    def store_job_in(self, job_id: Hashable, args: Tuple = None, kwargs: Dict = None) -> None:
         """Stores the input arguments of the executed job.
 
         Args:
@@ -143,9 +139,7 @@ class RedisStorage(Storage):
         """
         if isinstance(value, Number) and math.isnan(value):
             value = "NaN"
-        logging.info(
-            f"Storing metadata for job:{job_id} with key:{key} and value:{value}"
-        )
+        logging.info(f"Storing metadata for job:{job_id} with key:{key} and value:{value}")
         self._redis.json().set(f"job:{job_id}", f".metadata.{key}", value)
 
     def load_all_search_ids(self) -> List[Hashable]:
@@ -199,9 +193,7 @@ class RedisStorage(Storage):
         data = self._redis.json().get(f"job:{job_id}", ".")
         return data
 
-    def store_search_value(
-        self, search_id: Hashable, key: Hashable, value: Any
-    ) -> None:
+    def store_search_value(self, search_id: Hashable, key: Hashable, value: Any) -> None:
         """Stores the value corresponding to key for search_id.
 
         Args:
@@ -225,9 +217,7 @@ class RedisStorage(Storage):
         value = pickle.loads(value)
         return value
 
-    def load_metadata_from_all_jobs(
-        self, search_id: Hashable, key: Hashable
-    ) -> List[Any]:
+    def load_metadata_from_all_jobs(self, search_id: Hashable, key: Hashable) -> List[Any]:
         """Loads a given metadata value from all jobs.
 
         Args:

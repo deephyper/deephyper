@@ -16,14 +16,15 @@ class MPIWinMutableMapping(MutableMapping):
     """Dict like object shared between MPI processes using one-sided communication.
 
     Args:
-        default_value (dict): The default value of the mutable mapping at initialization. Defaults to ``None`` for empty
-        dict.
-
-        comm (MPI.Comm): An MPI communicator.
-
-        size (int): The total size of the shared memory in bytes. Defaults to ``104857600`` for 100MB.
-
-        root (int): The MPI rank where the shared memory window is hosted.
+        default_value (dict):
+            The default value of the mutable mapping at initialization.
+            Defaults to ``None`` for empty dict.
+        comm (MPI.Comm):
+            An MPI communicator.
+        size (int):
+            The total size of the shared memory in bytes. Defaults to ``104857600`` for 100MB.
+        root (int):
+            The MPI rank where the shared memory window is hosted.
     """
 
     HEADER_SIZE = 8  # Reserve 8 bytes for size header
@@ -75,13 +76,9 @@ class MPIWinMutableMapping(MutableMapping):
         """Read the dictionnary state from the shared memory."""
         # Deserialize the dictionary from shared memory
         try:
-            size = int.from_bytes(
-                self.shared_memory[: self.HEADER_SIZE], byteorder="big"
-            )
+            size = int.from_bytes(self.shared_memory[: self.HEADER_SIZE], byteorder="big")
             if size > 0:
-                raw_data = self.shared_memory[
-                    self.HEADER_SIZE : self.HEADER_SIZE + size
-                ].tobytes()
+                raw_data = self.shared_memory[self.HEADER_SIZE : self.HEADER_SIZE + size].tobytes()
                 self.local_dict = pickle.loads(raw_data)
             else:
                 self.local_dict = {}
@@ -173,9 +170,7 @@ class MPIWinMutableMapping(MutableMapping):
 
     def session_start(self, ready_only: bool = False):
         if self._session_is_started:
-            raise RuntimeError(
-                "A session has already been started without being finished!"
-            )
+            raise RuntimeError("A session has already been started without being finished!")
 
         self._session_is_started = True
         self._session_is_ready_only = ready_only

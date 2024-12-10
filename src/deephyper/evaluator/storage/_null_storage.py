@@ -47,9 +47,7 @@ class NullStorage(Storage):
             value (Any): The value to store.
         """
 
-    def store_job_in(
-        self, job_id: Hashable, args: Tuple = None, kwargs: Dict = None
-    ) -> None:
+    def store_job_in(self, job_id: Hashable, args: Tuple = None, kwargs: Dict = None) -> None:
         """Stores the input arguments of the executed job.
 
         Args:
@@ -116,9 +114,7 @@ class NullStorage(Storage):
         """
         return None
 
-    def store_search_value(
-        self, search_id: Hashable, key: Hashable, value: Any
-    ) -> None:
+    def store_search_value(self, search_id: Hashable, key: Hashable, value: Any) -> None:
         """Stores the value corresponding to key for search_id.
 
         Args:
@@ -136,9 +132,7 @@ class NullStorage(Storage):
         """
         return None
 
-    def load_metadata_from_all_jobs(
-        self, search_id: Hashable, key: Hashable
-    ) -> List[Any]:
+    def load_metadata_from_all_jobs(self, search_id: Hashable, key: Hashable) -> List[Any]:
         """Loads a given metadata value from all jobs.
 
         Args:

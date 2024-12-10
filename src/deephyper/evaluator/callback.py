@@ -43,7 +43,12 @@ class Callback(abc.ABC):
 
 
 class ProfilingCallback(Callback):
-    """Collect profiling data. Each time a ``Job`` is completed by the ``Evaluator`` a the different timestamps corresponding to the submit and gather (and run function start and end if the ``profile`` decorator is used on the run function) are collected.
+    """Collect profiling data.
+
+    Each time a ``Job`` is completed by the ``Evaluator`` a the different
+    timestamps corresponding to the submit and gather (and run function start
+    and end if the ``profile`` decorator is used on the run function) are
+    collected.
 
     An example usage can be:
 
@@ -104,12 +109,11 @@ class LoggerCallback(Callback):
                 if self._best_objective is None:
                     self._best_objective = np.sum(job.objective)
                 else:
-                    self._best_objective = max(
-                        np.sum(job.objective), self._best_objective
-                    )
+                    self._best_objective = max(np.sum(job.objective), self._best_objective)
 
                 print(
-                    f"[{self._n_done:05d}] -- best sum(objective): {self._best_objective:.5f} -- received sum(objective): {np.sum(job.objective):.5f}"
+                    f"[{self._n_done:05d}] -- best sum(objective): {self._best_objective:.5f} -- "
+                    f"received sum(objective): {np.sum(job.objective):.5f}"
                 )
             elif np.any(type(res) is str and "F" == res[0] for res in job.objective):
                 print(f"[{self._n_done:05d}] -- received failure: {job.objective}")
@@ -120,7 +124,8 @@ class LoggerCallback(Callback):
                 self._best_objective = max(job.objective, self._best_objective)
 
             print(
-                f"[{self._n_done:05d}] -- best objective: {self._best_objective:.5f} -- received objective: {job.objective:.5f}"
+                f"[{self._n_done:05d}] -- best objective: {self._best_objective:.5f} -- "
+                f"received objective: {job.objective:.5f}"
             )
         elif type(job.objective) is str and "F" == job.objective[0]:
             print(f"[{self._n_done:05d}] -- received failure: {job.objective}")
@@ -169,9 +174,7 @@ class TqdmCallback(Callback):
                 if self._best_objective is None:
                     self._best_objective = np.sum(job.objective)
                 else:
-                    self._best_objective = max(
-                        np.sum(job.objective), self._best_objective
-                    )
+                    self._best_objective = max(np.sum(job.objective), self._best_objective)
             else:
                 self._n_failures += 1
             self._tqdm.set_postfix(
@@ -185,18 +188,24 @@ class TqdmCallback(Callback):
                     self._best_objective = max(job.objective, self._best_objective)
             else:
                 self._n_failures += 1
-            self._tqdm.set_postfix(
-                objective=self._best_objective, failures=self._n_failures
-            )
+            self._tqdm.set_postfix(objective=self._best_objective, failures=self._n_failures)
 
 
 class SearchEarlyStopping(Callback):
     """Stop the search gracefully when it does not improve for a given number of evaluations.
 
     Args:
-        patience (int, optional): The number of not improving evaluations to wait for before stopping the search. Defaults to 10.
-        objective_func (callable, optional): A function that takes a ``Job`` has input and returns the maximized scalar value monitored by this callback. Defaults to ``lambda j: j.result``.
-        threshold (float, optional): The threshold to reach before activating the patience to stop the search. Defaults to ``None``, patience is reinitialized after each improving observation.
+        patience (int, optional):
+            The number of not improving evaluations to wait for before
+            stopping the search. Defaults to 10.
+        objective_func (callable, optional):
+            A function that takes a ``Job`` has input and returns the
+            maximized scalar value monitored by this callback. Defaults to
+            ``lambda j: j.result``.
+        threshold (float, optional):
+            The threshold to reach before activating the patience to stop the
+            search. Defaults to ``None``, patience is reinitialized after
+            each improving observation.
         verbose (bool, optional): Activation or deactivate the verbose mode. Defaults to ``True``.
     """
 
@@ -230,7 +239,8 @@ class SearchEarlyStopping(Callback):
             if job_objective > self._best_objective:
                 if self._verbose:
                     print(
-                        f"Objective has improved from {self._best_objective:.5f} -> {job_objective:.5f}"
+                        "Objective has improved from "
+                        f"{self._best_objective:.5f} -> {job_objective:.5f}"
                     )
                 self._best_objective = job_objective
                 self._n_lower = 0
@@ -241,13 +251,15 @@ class SearchEarlyStopping(Callback):
             if self._threshold is None:
                 if self._verbose:
                     print(
-                        f"Stopping the search because it did not improve for the last {self._patience} evaluations!"
+                        "Stopping the search because it did not improve for the last "
+                        f"{self._patience} evaluations!"
                     )
                 raise deephyper.core.exceptions.SearchTerminationError
             else:
                 if self._best_objective > self._threshold:
                     if self._verbose:
                         print(
-                            f"Stopping the search because it did not improve for the last {self._patience} evaluations!"
+                            "Stopping the search because it did not improve for the last "
+                            f"{self._patience} evaluations!"
                         )
                     raise deephyper.core.exceptions.SearchTerminationError

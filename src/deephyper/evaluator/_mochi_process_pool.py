@@ -45,9 +45,13 @@ class MochiEvaluator(Evaluator):
     """This evaluator uses the ``ProcessPoolExecutor`` as backend.
 
     Args:
-        run_function (callable): functions to be executed by the ``Evaluator``.
-        num_workers (int, optional): Number of parallel processes used to compute the ``run_function``. Defaults to 1.
-        callbacks (list, optional): A list of callbacks to trigger custom actions at the creation or completion of jobs. Defaults to None.
+        run_function (callable):
+            Functions to be executed by the ``Evaluator``.
+        num_workers (int, optional):
+            Number of parallel processes used to compute the ``run_function``. Defaults to 1.
+        callbacks (list, optional):
+            A list of callbacks to trigger custom actions at the creation or
+            completion of jobs. Defaults to None.
     """
 
     def __init__(
@@ -75,11 +79,10 @@ class MochiEvaluator(Evaluator):
             # !creating the exector once here is crutial to avoid repetitive overheads
             self.executor = ProcessPoolExecutor(max_workers=num_workers)
 
-            if hasattr(run_function, "__name__") and hasattr(
-                run_function, "__module__"
-            ):
+            if hasattr(run_function, "__name__") and hasattr(run_function, "__module__"):
                 logger.info(
-                    f"Mochi Evaluator will execute {self.run_function.__name__}() from module {self.run_function.__module__}"
+                    f"Mochi Evaluator will execute {self.run_function.__name__}() from module "
+                    f"{self.run_function.__module__}"
                 )
             else:
                 logger.info(f"Mochi Evaluator will execute {self.run_function}")

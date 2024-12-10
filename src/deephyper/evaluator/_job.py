@@ -121,7 +121,8 @@ class HPOJob(Job):
                 output = {"objective": float(output)}
             else:
                 raise TypeError(
-                    f"When a scalar type, the output of the run-function cannot be of type {type(output)} it should either be a string or a number."
+                    "When a scalar type, the output of run-function cannot be of type "
+                    f"{type(output)} it should either be a string or a number."
                 )
 
         # output only returned objective values as tuple or list
@@ -132,19 +133,19 @@ class HPOJob(Job):
             other_metadata = output.pop("metadata", dict())
             if not isinstance(other_metadata, dict):
                 TypeError(
-                    f"The metadata returned by the run-function should be a dictionnary but are: {other_metadata}."
+                    "The metadata returned by the run-function should be a dictionnary but are: "
+                    f"{other_metadata}."
                 )
             metadata.update(other_metadata)
 
             if "objective" not in output:
                 raise ValueError(
-                    "The output of the run-function should have a key 'objective' when it is a dictionnary."
+                    "The output of the run-function should have a key 'objective' when it is a "
+                    "dictionnary."
                 )
 
         else:
-            raise TypeError(
-                f"The output of the run-function cannot be of type {type(output)}"
-            )
+            raise TypeError(f"The output of the run-function cannot be of type {type(output)}")
 
         return output, metadata
 
@@ -213,7 +214,9 @@ class RunningJob(MutableMapping):
         return JobStatus(self.storage.load_job_status(self.id))
 
     def record(self, budget: float, objective: float):
-        """Records the current ``budget`` and ``objective`` values in the object and pass it to the stopper if one is being used.
+        """Records the current ``budget`` and ``objective`` values in the object.
+
+        These are passed to the stopper if one is being used.
 
         Args:
             budget (float): the budget used.
@@ -225,7 +228,10 @@ class RunningJob(MutableMapping):
             self.obs = objective
 
     def stopped(self) -> bool:
-        """Returns True if the RunningJob is using a Stopper and it is stopped. Otherwise it will return False."""
+        """Returns True if the RunningJob is using a Stopper and it is stopped.
+
+        Otherwise it will return False.
+        """
         if self.stopper:
             return self.stopper.stop()
         else:
@@ -233,7 +239,10 @@ class RunningJob(MutableMapping):
 
     @property
     def objective(self):
-        """If the RunningJob is using a Stopper then it will return observations from the it. Otherwise it will simply return the last objective value recorded."""
+        """If the RunningJob is using a Stopper then it will return observations from the it.
+
+        Otherwise it will simply return the last objective value recorded.
+        """
         if self.stopper:
             return self.stopper.objective
         else:

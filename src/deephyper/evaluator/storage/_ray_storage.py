@@ -7,10 +7,14 @@ from deephyper.evaluator.storage._memory_storage import MemoryStorage
 
 
 class RayStorage(Storage):
-    """Storage class using Ray actors. The RayStorage is wrapping the MemoryStorage class to be a Ray actor.
+    """Storage class using Ray actors.
+
+    The RayStorage is wrapping the MemoryStorage class to be a Ray actor.
 
     Args:
-        address (str, optional): address of the Ray-head. Defaults to ``"auto"``, to connect to the local head node.
+        address (str, optional):
+            Address of the Ray-head. Defaults to ``"auto"``, to connect to the
+            local head node.
     """
 
     ray_storage_counter = 0
@@ -48,9 +52,7 @@ class RayStorage(Storage):
         if not ray.is_initialized():
             ray.init(address=self.address)
 
-        self.memory_storage_actor = ray.get_actor(
-            self.actor_name, namespace="deephyper"
-        )
+        self.memory_storage_actor = ray.get_actor(self.actor_name, namespace="deephyper")
 
     def create_new_search(self) -> Hashable:
         """Create a new search in the store and returns its identifier.
@@ -72,9 +74,7 @@ class RayStorage(Storage):
         """
         return ray.get(self.memory_storage_actor.create_new_job.remote(search_id))
 
-    def store_search_value(
-        self, search_id: Hashable, key: Hashable, value: Any
-    ) -> None:
+    def store_search_value(self, search_id: Hashable, key: Hashable, value: Any) -> None:
         """Stores the value corresponding to key for search_id.
 
         Args:
@@ -82,9 +82,7 @@ class RayStorage(Storage):
             key (Hashable): A key to use to store the value.
             value (Any): The value to store.
         """
-        ray.get(
-            self.memory_storage_actor.store_search_value.remote(search_id, key, value)
-        )
+        ray.get(self.memory_storage_actor.store_search_value.remote(search_id, key, value))
 
     def load_search_value(self, search_id: Hashable, key: Hashable) -> Any:
         """Loads the value corresponding to key for search_id.
@@ -93,9 +91,7 @@ class RayStorage(Storage):
             search_id (Hashable): The identifier of the job.
             key (Hashable): A key to use to access the value.
         """
-        return ray.get(
-            self.memory_storage_actor.load_search_value.remote(search_id, key)
-        )
+        return ray.get(self.memory_storage_actor.load_search_value.remote(search_id, key))
 
     def store_job(self, job_id: Hashable, key: Hashable, value: Any) -> None:
         """Stores the value corresponding to key for job_id.
@@ -107,9 +103,7 @@ class RayStorage(Storage):
         """
         ray.get(self.memory_storage_actor.store_job.remote(job_id, key, value))
 
-    def store_job_in(
-        self, job_id: Hashable, args: Tuple = None, kwargs: Dict = None
-    ) -> None:
+    def store_job_in(self, job_id: Hashable, args: Tuple = None, kwargs: Dict = None) -> None:
         """Stores the input arguments of the executed job.
 
         Args:
@@ -179,9 +173,7 @@ class RayStorage(Storage):
         """
         return ray.get(self.memory_storage_actor.load_job.remote(job_id))
 
-    def load_metadata_from_all_jobs(
-        self, search_id: Hashable, key: Hashable
-    ) -> List[Any]:
+    def load_metadata_from_all_jobs(self, search_id: Hashable, key: Hashable) -> List[Any]:
         """Loads a given metadata value from all jobs.
 
         Args:
@@ -191,9 +183,7 @@ class RayStorage(Storage):
         Returns:
             List[Any]: A list of all the retrieved metadata values.
         """
-        return ray.get(
-            self.memory_storage_actor.load_metadata_from_all_jobs.remote(search_id, key)
-        )
+        return ray.get(self.memory_storage_actor.load_metadata_from_all_jobs.remote(search_id, key))
 
     def load_out_from_all_jobs(self, search_id: Hashable) -> List[Any]:
         """Loads the output value from all jobs.
@@ -204,9 +194,7 @@ class RayStorage(Storage):
         Returns:
             List[Any]: A list of all the retrieved output values.
         """
-        return ray.get(
-            self.memory_storage_actor.load_out_from_all_jobs.remote(search_id)
-        )
+        return ray.get(self.memory_storage_actor.load_out_from_all_jobs.remote(search_id))
 
     def load_jobs(self, job_ids: List[Hashable]) -> dict:
         """Load all data from a given list of jobs' identifiers.
