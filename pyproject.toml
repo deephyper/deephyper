@@ -113,6 +113,7 @@ exclude = [
     "docs",
     "examples",
     "src/deephyper/skopt",
+    "src/deephyper/analysis/hpo/_paxplot.py",
     "tests",
 ]
 

@@ -1,5 +1,4 @@
-# For the documentation
-from . import _cli, _hpo
+from . import _cli, _hpo  # noqa: D104
 
 commands = [_cli, _hpo]
 

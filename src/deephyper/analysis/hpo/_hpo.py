@@ -137,6 +137,7 @@ def plot_search_trajectory_single_objective_hpo(
         mode (str, optional): if the plot should be made for minimization ``"min"`` or maximization ``"max"``. Defaults to ``"max"``.
         x_units (str, optional): if the plot should be made with respect to evaluations ``"evaluations"`` or time ``"seconds"``. Defaults to ``"evaluations"``.
         ax (matplotlib.pyplot.axes): the axes to use for the plot.
+        kwargs (dict): other keywords arguments passed to``ax.scatter(...)``.
 
     Returns:
         (matplotlib.pyplot.figure, matplotlib.pyplot.axes): the figure and axes of the plot.
@@ -277,6 +278,7 @@ def plot_worker_utilization(
         num_workers (int, optional): the number of workers. If passed the normalized utilization will be shown (/num_workers). Otherwise, the raw number of active workers is shown. Defaults to ``None``.
         profile_type (str, optional): the type of profile to build. It can be `"submit/gather"` or `"start/end"`. Defaults to "submit/gather".
         ax (matplotlib.pyplot.axes): the axes to use for the plot.
+        kwargs (dict): other keywords arguments passed to the ``ax.step(...)``.
 
     Returns:
         (matplotlib.pyplot.figure, matplotlib.pyplot.axes): the figure and axes of the plot.
