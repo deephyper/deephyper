@@ -76,11 +76,10 @@ class HpProblemTest(unittest.TestCase):
         pb.add_hyperparameter(value=(-10, 10), name="dim0")
 
     def test_dim_with_wrong_name(self):
-        from deephyper.core.exceptions.problem import SpaceDimNameOfWrongType
         from deephyper.hpo import HpProblem
 
         pb = HpProblem()
-        with pytest.raises(SpaceDimNameOfWrongType):
+        with pytest.raises(TypeError):
             pb.add_hyperparameter((-10, 10), 0)
 
     def test_config_space_hp(self):
