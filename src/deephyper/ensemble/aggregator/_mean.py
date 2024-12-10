@@ -18,7 +18,8 @@ class MeanAggregator(Aggregator):
           - ✅
 
     Args:
-        with_uncertainty (bool, optional): a boolean that sets if the uncertainty should be returned when calling the aggregator. Defaults to ``False``.
+        with_uncertainty (bool, optional): a boolean that sets if the uncertainty should be returned
+         when calling the aggregator. Defaults to ``False``.
     """
 
     def __init__(self, with_uncertainty: bool = False):
@@ -45,15 +46,11 @@ class MeanAggregator(Aggregator):
             ValueError: If `weights` length does not match the number of predictors in `y`.
         """
         if weights is not None and len(weights) != len(y):
-            raise ValueError(
-                "The length of `weights` must match the number of predictors in `y`."
-            )
+            raise ValueError("The length of `weights` must match the number of predictors in `y`.")
 
         # Ensure `y` is a valid list of arrays
         if not all(isinstance(pred, (np.ndarray, np.ma.MaskedArray)) for pred in y):
-            raise TypeError(
-                "All elements of `y` must be numpy.ndarray or numpy.ma.MaskedArray."
-            )
+            raise TypeError("All elements of `y` must be numpy.ndarray or numpy.ma.MaskedArray.")
 
         self._np = np
         if all(isinstance(pred, np.ma.MaskedArray) for pred in y):
@@ -66,8 +63,6 @@ class MeanAggregator(Aggregator):
         if not self.with_uncertainty:
             return avg
 
-        uncertainty = self._np.average(
-            self._np.square(stacked_y - avg), axis=0, weights=weights
-        )
+        uncertainty = self._np.average(self._np.square(stacked_y - avg), axis=0, weights=weights)
 
         return {"loc": avg, "uncertainty": uncertainty}

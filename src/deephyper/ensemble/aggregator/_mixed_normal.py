@@ -19,7 +19,8 @@ class MixedNormalAggregator(Aggregator):
           - ❌
 
     Args:
-        decomposed_scale (bool, optional): If ``True``, the scale of the mixture distribution is decomposed into aleatoric and epistemic components. Default is ``False``.
+        decomposed_scale (bool, optional): If ``True``, the scale of the mixture distribution is
+        decomposed into aleatoric and epistemic components. Default is ``False``.
     """
 
     def __init__(self, decomposed_scale: bool = False):
@@ -29,12 +30,16 @@ class MixedNormalAggregator(Aggregator):
         """Aggregate the predictions using the mean.
 
         Args:
-            y (Dict): Predictions dictionary with keys ``loc`` for the mean and ``scale`` for the standard-deviation of each normal distribution, each with shape ``(n_predictors, n_samples, ..., n_outputs)``.
+            y (Dict): Predictions dictionary with keys ``loc`` for the mean and ``scale`` for the
+            standard-deviation of each normal distribution, each with shape ``(n_predictors,
+            n_samples, ..., n_outputs)``.
 
             weights (list, optional): Weights of the predictors. Default is ``None``.
 
         Returns:
-            Dict: Aggregated predictions with keys ``loc`` for the mean and ``scale`` for the standard-deviation of the mixture distribution, each with shape ``(n_samples, ..., n_outputs)``.
+            Dict: Aggregated predictions with keys ``loc`` for the mean and ``scale`` for the
+            standard-deviation of the mixture distribution, each with shape ``(n_samples, ...,
+            n_outputs)``.
         """
         y_dict = {k: list() for k in y[0].keys()}
         for yi in y:
@@ -56,10 +61,10 @@ class MixedNormalAggregator(Aggregator):
             agg["scale"] = mean_scale
 
         else:
-            # Here we assume that the mixture distribution is a normal distribution with a scale that is the sum of the aleatoric and epistemic scales. This is a significant approximation that could be improved by returning the true GMM.
-            scale_aleatoric = np.sqrt(
-                average(np.square(scale), weights=weights, axis=0)
-            )
+            # Here we assume that the mixture distribution is a normal distribution with a scale
+            # that is the sum of the aleatoric and epistemic scales. This is a significant
+            # approximation that could be improved by returning the true GMM.
+            scale_aleatoric = np.sqrt(average(np.square(scale), weights=weights, axis=0))
             scale_epistemic = np.sqrt(np.square(np.std(loc, axis=0)))
             agg["scale_aleatoric"] = scale_aleatoric
             agg["scale_epistemic"] = scale_epistemic
