@@ -239,7 +239,7 @@ class HpProblem:
         """
         if not (type(name) is str or name is None):
             raise TypeError(
-                f"Dimension name: '{self.value}' is of type == {type(name)} when should be 'str'!"
+                f"Dimension name: '{name}' is of type == {type(name)} when should be 'str'!"
             )
         csh_parameter = check_hyperparameter(value, name, default_value=default_value)
         self._space.add(csh_parameter)
