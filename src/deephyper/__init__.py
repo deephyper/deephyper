@@ -1,5 +1,4 @@
-"""
-DeepHyper's software architecture is designed to be modular and extensible. It is built on top of the following main subpackages:
+"""DeepHyper's software architecture is designed to be modular and extensible. It is built on top of the following main subpackages:
 
 * :mod:`deephyper.analysis`: Tools to analyse results from DeepHyper.
 * :mod:`deephyper.ensemble`: Tools to build ensembles of neural networks with uncertainty quantification.

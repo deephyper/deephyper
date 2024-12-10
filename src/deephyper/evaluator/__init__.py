@@ -1,5 +1,4 @@
-"""
-This evaluator subpackage provides a common interface to execute isolated
+"""This evaluator subpackage provides a common interface to execute isolated
 tasks with different parallel backends and system properties. This interface
 is used by search algorithm to perform black-box optimization (the black-box
 being represented by the ``run``-function). An ``Evaluator``, when

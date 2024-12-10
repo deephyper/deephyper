@@ -15,8 +15,7 @@ class PaxFigure(Figure):
     _safe_inherited_functions = ["savefig", "set_size_inches", "draw", "show"]
 
     def __init__(self, *args, data=[], **kwargs):
-        """
-        Paxplot extension of Matplot Figure
+        """Paxplot extension of Matplot Figure
         """
         # Setup
         super().__init__(*args, **kwargs)
@@ -34,8 +33,7 @@ class PaxFigure(Figure):
         self._pax_colorbar = False
 
     def _scale_vals(self, data, lower=None, upper=None):
-        """
-        Scale `data` between lower and upper
+        """Scale `data` between lower and upper
 
         Parameters
         ----------
@@ -46,7 +44,7 @@ class PaxFigure(Figure):
         upper : numeric, optional
             Upper value for scaling, by default None
 
-        Returns
+        Returns:
         -------
         array-like
             Scaled data
@@ -64,8 +62,7 @@ class PaxFigure(Figure):
         return data_scale
 
     def _get_color_gradient(self, val, lower, upper, colormap):
-        """
-        Get color gradient values for the `val`
+        """Get color gradient values for the `val`
 
         Parameters
         ----------
@@ -78,7 +75,7 @@ class PaxFigure(Figure):
         colormap : str
             Matplotlib colormap to use for coloring
 
-        Returns
+        Returns:
         -------
         color: str
             string color code
@@ -89,8 +86,7 @@ class PaxFigure(Figure):
         return color
 
     def _update_plot_lines(self, ax_idx):
-        """
-        Update plotted lines based on scaled data (_pax_data_scale)
+        """Update plotted lines based on scaled data (_pax_data_scale)
 
         Parameters
         ----------
@@ -118,8 +114,7 @@ class PaxFigure(Figure):
                 line.set_ydata([line.get_ydata()[0], y_r_scaled])
 
     def _update_plot_ticks(self, ax_idx):
-        """
-        Update ticks based on tick labels (_pax_ticks_labels) and scaled tick
+        """Update ticks based on tick labels (_pax_ticks_labels) and scaled tick
         location data (_pax_ticks_scale)
 
         Parameters
@@ -127,7 +122,7 @@ class PaxFigure(Figure):
         ax_idx : _type_
             _description_
 
-        Raises
+        Raises:
         ------
         ValueError
             _description_
@@ -142,8 +137,7 @@ class PaxFigure(Figure):
         self.axes[ax_idx].set_ylim([0.0, 1.0])
 
     def _default_format(self):
-        """
-        Set the default format of a Paxplot Figure
+        """Set the default format of a Paxplot Figure
         """
         # Set attributes
         def_vals = [[0, 1]] * len(self.axes)
@@ -181,8 +175,7 @@ class PaxFigure(Figure):
         self.axes[-1].yaxis.tick_right()
 
     def _default_lim(self, ax_idx):
-        """
-        Set the default limits for an axis. Default limits are between the
+        """Set the default limits for an axis. Default limits are between the
         minimum and maximum values.
 
         Parameters
@@ -202,8 +195,7 @@ class PaxFigure(Figure):
         self._set_lim(ax_idx=ax_idx, bottom=minimum, top=maximum)
 
     def _default_ticks(self, ax_idx):
-        """
-        Set the default ticks for an axis. Default ticks are six labels
+        """Set the default ticks for an axis. Default ticks are six labels
         between the current limits of the axis.
 
         Parameters
@@ -224,15 +216,14 @@ class PaxFigure(Figure):
         self._set_ticks(ax_idx=ax_idx, ticks=ticks, labels=labels)
 
     def _convert_string_data(self, data: list):
-        """
-        Convert string input data to numerical data
+        """Convert string input data to numerical data
 
         Parameters
         ----------
         data : list
             Data to be plotted from `plot`
 
-        Returns
+        Returns:
         -------
         data : list
             Converted `data`
@@ -262,8 +253,7 @@ class PaxFigure(Figure):
         return np.array(data)
 
     def plot(self, data: list, line_kwargs={}):
-        """
-        Plot the supplied data
+        """Plot the supplied data
 
         Parameters
         ----------
@@ -339,8 +329,7 @@ class PaxFigure(Figure):
                 )
 
     def set_lim(self, ax_idx: int, bottom: float, top: float):
-        """
-        Set custom limits on axis
+        """Set custom limits on axis
 
         Parameters
         ----------
@@ -358,8 +347,7 @@ class PaxFigure(Figure):
         self._set_lim(ax_idx=ax_idx, bottom=bottom, top=top)
 
     def _set_lim(self, ax_idx: int, bottom: float, top: float):
-        """
-        Private function to set custom limits on axis
+        """Private function to set custom limits on axis
 
         Parameters
         ----------
@@ -413,8 +401,7 @@ class PaxFigure(Figure):
             self._default_ticks(ax_idx=ax_idx)
 
     def set_ticks(self, ax_idx: int, ticks: list, labels=None):
-        """
-        Set the axis tick locations and optionally labels.
+        """Set the axis tick locations and optionally labels.
 
         Parameters
         ----------
@@ -432,8 +419,7 @@ class PaxFigure(Figure):
         self._set_ticks(ax_idx=ax_idx, ticks=ticks, labels=labels)
 
     def _set_ticks(self, ax_idx: int, ticks: list, labels=None):
-        """
-        Private function to set the axis tick locations and optionally labels.
+        """Private function to set the axis tick locations and optionally labels.
 
         Parameters
         ----------
@@ -498,8 +484,7 @@ class PaxFigure(Figure):
     def set_even_ticks(
         self, ax_idx: int, n_ticks=6, minimum=None, maximum=None, precision=2
     ):
-        """
-        Set evenly spaced axis ticks between minimum and maximum value. If
+        """Set evenly spaced axis ticks between minimum and maximum value. If
         no minimum and maximum values are specified, the limits of the
         underlying plotted data are assumed.
 
@@ -575,8 +560,7 @@ class PaxFigure(Figure):
         ax.set_xticklabels([label])
 
     def set_labels(self, labels: list):
-        """
-        Set labels for all axes. A wrapper for set_label
+        """Set labels for all axes. A wrapper for set_label
 
         Parameters
         ----------
@@ -739,8 +723,7 @@ class PaxFigure(Figure):
 
 
 def add_unsafe_warning(func, fig):
-    """
-    Generate warning if not supported by Paxplot
+    """Generate warning if not supported by Paxplot
     """
 
     @functools.wraps(func)
@@ -759,8 +742,7 @@ def add_unsafe_warning(func, fig):
 
 
 def disable_unsafe_warnings(func, fig):
-    """
-    Temporarily disables safety warnings for the duration of the function
+    """Temporarily disables safety warnings for the duration of the function
     execution.
 
     This allows a known safe function needs to make safe calls to otherwise
@@ -779,15 +761,14 @@ def disable_unsafe_warnings(func, fig):
 
 
 def pax_parallel(n_axes: int):
-    """
-    Wrapper for paxplot analagous to the matplotlib.pyplot.subplots function
+    """Wrapper for paxplot analagous to the matplotlib.pyplot.subplots function
 
     Parameters
     ----------
     n_axes : int
         Number of axes to create
 
-    Returns
+    Returns:
     -------
     fig : PaxFigure
         Paxplot figure class

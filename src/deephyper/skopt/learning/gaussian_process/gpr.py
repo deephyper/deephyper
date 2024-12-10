@@ -13,8 +13,7 @@ from .kernels import RBF, ConstantKernel, Sum, WhiteKernel
 
 
 def _param_for_white_kernel_in_Sum(kernel, kernel_str=""):
-    """
-    Check if a WhiteKernel exists in a Sum Kernel
+    """Check if a WhiteKernel exists in a Sum Kernel
     and if it does return the corresponding key in
     `kernel.get_params()`
     """
@@ -36,8 +35,7 @@ def _param_for_white_kernel_in_Sum(kernel, kernel_str=""):
 
 
 class GaussianProcessRegressor(sk_GaussianProcessRegressor):
-    """
-    GaussianProcessRegressor that allows noise tunability.
+    """GaussianProcessRegressor that allows noise tunability.
 
     The implementation is based on Algorithm 2.1 of Gaussian Processes
     for Machine Learning (GPML) by Rasmussen and Williams.
@@ -126,7 +124,7 @@ class GaussianProcessRegressor(sk_GaussianProcessRegressor):
         If set to "gaussian", then it is assumed that `y` is a noisy
         estimate of `f(x)` where the noise is gaussian.
 
-    Attributes
+    Attributes:
     ----------
     X_train_ : array-like, shape = (n_samples, n_features)
         Feature values in training data (also required for prediction)
@@ -185,7 +183,7 @@ class GaussianProcessRegressor(sk_GaussianProcessRegressor):
         y : array-like, shape = (n_samples, [n_output_dims])
             Target values
 
-        Returns
+        Returns:
         -------
         self
             Returns an instance of self.
@@ -258,8 +256,7 @@ class GaussianProcessRegressor(sk_GaussianProcessRegressor):
         return_mean_grad=False,
         return_std_grad=False,
     ):
-        """
-        Predict output for X.
+        """Predict output for X.
 
         In addition to the mean of the predictive distribution, also its
         standard deviation (return_std=True) or covariance (return_cov=True),
@@ -287,7 +284,7 @@ class GaussianProcessRegressor(sk_GaussianProcessRegressor):
             Whether or not to return the gradient of the std.
             Only valid when X is a single point.
 
-        Returns
+        Returns:
         -------
         y_mean : array, shape = (n_samples, [n_output_dims])
             Mean of predictive distribution a query points

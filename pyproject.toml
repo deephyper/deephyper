@@ -106,3 +106,6 @@ markers = [
     "jax: marks tests which needs JAX installed",
     "sdv: marks tests which needs SDV installed"
 ]
+
+[tool.ruff]
+pydocstyle.convention = "google"

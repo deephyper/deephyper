@@ -8,13 +8,11 @@ from deephyper.core.utils.joblib_utils import Parallel, delayed
 
 
 def _accumulate_prediction_disentangled(tree, X, min_variance, out, lock):
-    """
-    This is a utility function for joblib's Parallel.
+    """This is a utility function for joblib's Parallel.
 
     It can't go locally in ForestClassifier or ForestRegressor, because joblib
     complains that it cannot pickle it when placed there.
     """
-
     mean_tree = tree.predict(X).T
     var_tree = tree.tree_.impurity[tree.apply(X)]
 
@@ -32,8 +30,7 @@ def _accumulate_prediction_disentangled(tree, X, min_variance, out, lock):
 
 
 def _return_mean_and_std_distentangled(X, n_outputs, trees, min_variance, n_jobs):
-    """
-    Returns `std(Y | X)`.
+    """Returns `std(Y | X)`.
 
     Can be calculated by E[Var(Y | Tree)] + Var(E[Y | Tree]) where
     P(Tree) is `1 / len(trees)`.
@@ -54,7 +51,7 @@ def _return_mean_and_std_distentangled(X, n_outputs, trees, min_variance, n_jobs
         Prediction of each data point as returned by RandomForestRegressor
         or ExtraTreesRegressor.
 
-    Returns
+    Returns:
     -------
     std : array-like, shape=(n_samples,)
         Standard deviation of `y` at `X`. If criterion
@@ -92,13 +89,11 @@ def _return_mean_and_std_distentangled(X, n_outputs, trees, min_variance, n_jobs
 
 
 def _accumulate_prediction(tree, X, min_variance, out, lock):
-    """
-    This is a utility function for joblib's Parallel.
+    """This is a utility function for joblib's Parallel.
 
     It can't go locally in ForestClassifier or ForestRegressor, because joblib
     complains that it cannot pickle it when placed there.
     """
-
     mean_tree = tree.predict(X).T
     var_tree = tree.tree_.impurity[tree.apply(X)]
 
@@ -115,8 +110,7 @@ def _accumulate_prediction(tree, X, min_variance, out, lock):
 
 
 def _return_mean_and_std(X, n_outputs, trees, min_variance, n_jobs):
-    """
-    Returns `std(Y | X)`.
+    """Returns `std(Y | X)`.
 
     Can be calculated by E[Var(Y | Tree)] + Var(E[Y | Tree]) where
     P(Tree) is `1 / len(trees)`.
@@ -137,7 +131,7 @@ def _return_mean_and_std(X, n_outputs, trees, min_variance, n_jobs):
         Prediction of each data point as returned by RandomForestRegressor
         or ExtraTreesRegressor.
 
-    Returns
+    Returns:
     -------
     std : array-like, shape=(n_samples,)
         Standard deviation of `y` at `X`. If criterion
@@ -165,8 +159,7 @@ def _return_mean_and_std(X, n_outputs, trees, min_variance, n_jobs):
 
 
 class RandomForestRegressor(ForestRegressor):
-    """
-    RandomForestRegressor that supports conditional std computation.
+    """RandomForestRegressor that supports conditional std computation.
 
     Parameters
     ----------
@@ -266,7 +259,7 @@ class RandomForestRegressor(ForestRegressor):
         and add more estimators to the ensemble, otherwise, just fit a whole
         new forest.
 
-    Attributes
+    Attributes:
     ----------
     estimators_ : list of DecisionTreeRegressor
         The collection of fitted sub-estimators.
@@ -286,7 +279,7 @@ class RandomForestRegressor(ForestRegressor):
     oob_prediction_ : array of shape = [n_samples]
         Prediction computed with out-of-bag estimate on the training set.
 
-    Notes
+    Notes:
     -----
     The default values for the parameters controlling the size of the trees
     (e.g. ``max_depth``, ``min_samples_leaf``, etc.) lead to fully grown and
@@ -300,7 +293,7 @@ class RandomForestRegressor(ForestRegressor):
     search of the best split. To obtain a deterministic behaviour during
     fitting, ``random_state`` has to be fixed.
 
-    References
+    References:
     ----------
     .. [1] L. Breiman, "Random Forests", Machine Learning, 45(1), 5-32, 2001.
 
@@ -379,7 +372,7 @@ class RandomForestRegressor(ForestRegressor):
         return_std : boolean
             Whether or not to return the standard deviation.
 
-        Returns
+        Returns:
         -------
         predictions : array-like of shape = (n_samples,)
             Predicted values for X. If criterion is set to "mse",
@@ -414,8 +407,7 @@ class RandomForestRegressor(ForestRegressor):
 
 
 class ExtraTreesRegressor(_sk_ExtraTreesRegressor):
-    """
-    ExtraTreesRegressor that supports conditional standard deviation.
+    """ExtraTreesRegressor that supports conditional standard deviation.
 
     Parameters
     ----------
@@ -516,7 +508,7 @@ class ExtraTreesRegressor(_sk_ExtraTreesRegressor):
         and add more estimators to the ensemble, otherwise, just fit a whole
         new forest.
 
-    Attributes
+    Attributes:
     ----------
     estimators_ : list of DecisionTreeRegressor
         The collection of fitted sub-estimators.
@@ -536,7 +528,7 @@ class ExtraTreesRegressor(_sk_ExtraTreesRegressor):
     oob_prediction_ : array of shape = [n_samples]
         Prediction computed with out-of-bag estimate on the training set.
 
-    Notes
+    Notes:
     -----
     The default values for the parameters controlling the size of the trees
     (e.g. ``max_depth``, ``min_samples_leaf``, etc.) lead to fully grown and
@@ -550,7 +542,7 @@ class ExtraTreesRegressor(_sk_ExtraTreesRegressor):
     search of the best split. To obtain a deterministic behaviour during
     fitting, ``random_state`` has to be fixed.
 
-    References
+    References:
     ----------
     .. [1] L. Breiman, "Random Forests", Machine Learning, 45(1), 5-32, 2001.
 
@@ -597,8 +589,7 @@ class ExtraTreesRegressor(_sk_ExtraTreesRegressor):
         )
 
     def predict(self, X, return_std=False, disentangled_std=False):
-        """
-        Predict continuous output for X.
+        """Predict continuous output for X.
 
         Parameters
         ----------
@@ -608,7 +599,7 @@ class ExtraTreesRegressor(_sk_ExtraTreesRegressor):
         return_std : boolean
             Whether or not to return the standard deviation.
 
-        Returns
+        Returns:
         -------
         predictions : array-like of shape=(n_samples,)
             Predicted values for X. If criterion is set to "squared_error",

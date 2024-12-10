@@ -6,8 +6,7 @@ from deephyper.ensemble.aggregator._aggregator import Aggregator
 
 
 class MixedCategoricalAggregator(Aggregator):
-    """
-    Aggregate a set of categorical distributions, supporting uncertainty estimation.
+    """Aggregate a set of categorical distributions, supporting uncertainty estimation.
 
     .. list-table::
         :widths: 25 25
@@ -46,8 +45,7 @@ class MixedCategoricalAggregator(Aggregator):
     def aggregate(
         self, y: List[np.ndarray], weights: Optional[List[float]] = None
     ) -> Dict[str, Union[np.ndarray, np.ma.MaskedArray]]:
-        """
-        Aggregate predictions using the mode of categorical distributions.
+        """Aggregate predictions using the mode of categorical distributions.
 
         Args:
             y (List[np.ndarray]): List of categorical probability arrays of shape

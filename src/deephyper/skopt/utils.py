@@ -37,8 +37,7 @@ __all__ = (
 
 
 def create_result(Xi, yi, space=None, rng=None, specs=None, models=None):
-    """
-    Initialize an `OptimizeResult` object.
+    """Initialize an `OptimizeResult` object.
 
     Parameters
     ----------
@@ -60,7 +59,7 @@ def create_result(Xi, yi, space=None, rng=None, specs=None, models=None):
     models : list, optional
         List of fit surrogate models.
 
-    Returns
+    Returns:
     -------
     res : `OptimizeResult`, scipy object
         OptimizeResult instance with the required information.
@@ -106,7 +105,7 @@ def eval_callbacks(callbacks, result):
     result : `OptimizeResult`, scipy object
         Optimization result object to be stored.
 
-    Returns
+    Returns:
     -------
     decision : bool
         Decision of the callbacks whether or not to keep optimizing
@@ -122,8 +121,7 @@ def eval_callbacks(callbacks, result):
 
 
 def dump(res, filename, store_objective=True, **kwargs):
-    """
-    Store an skopt optimization result into a file.
+    """Store an skopt optimization result into a file.
 
     Parameters
     ----------
@@ -168,8 +166,7 @@ def dump(res, filename, store_objective=True, **kwargs):
 
 
 def load(filename, **kwargs):
-    """
-    Reconstruct a skopt optimization result from a file
+    """Reconstruct a skopt optimization result from a file
     persisted with deephyper.skopt.dump.
 
     .. note::
@@ -185,7 +182,7 @@ def load(filename, **kwargs):
     **kwargs : other keyword arguments
         All other keyword arguments will be passed to `joblib.load`.
 
-    Returns
+    Returns:
     -------
     res : `OptimizeResult`, scipy object
         Reconstructed OptimizeResult instance.
@@ -242,7 +239,7 @@ def expected_minimum(res, n_random_starts=20, random_state=None):
         Set random state to something other than None for reproducible
         results.
 
-    Returns
+    Returns:
     -------
     x : list
         location of the minimum.
@@ -298,14 +295,13 @@ def expected_minimum_random_sampling(res, n_random_starts=100000, random_state=N
         Set random state to something other than None for reproducible
         results.
 
-    Returns
+    Returns:
     -------
     x : list
         location of the minimum.
     fun : float
         the surrogate function value at the minimum.
     """
-
     # sample points from search space
     random_samples = res.space.rvs(n_random_starts, random_state=random_state)
 
@@ -319,8 +315,7 @@ def expected_minimum_random_sampling(res, n_random_starts=100000, random_state=N
 
 
 def has_gradients(estimator):
-    """
-    Check if an estimator's ``predict`` method provides gradients.
+    """Check if an estimator's ``predict`` method provides gradients.
 
     Parameters
     ----------
@@ -493,12 +488,12 @@ def dimensions_aslist(search_space):
         and values are instances of classes that inherit from the class
         :class:`deephyper.skopt.space.Dimension` (Real, Integer or Categorical)
 
-    Returns
+    Returns:
     -------
     params_space_list: list
         list of deephyper.skopt.space.Dimension instances.
 
-    Examples
+    Examples:
     --------
     >>> from deephyper.skopt.space.space import Real, Integer
     >>> from deephyper.skopt.utils import dimensions_aslist
@@ -534,13 +529,13 @@ def point_asdict(search_space, point_as_list):
         list with parameter values.The order of parameters in the list
         is given by sorted(params_space.keys()).
 
-    Returns
+    Returns:
     -------
     params_dict : OrderedDict
         dictionary with parameter names as keys to which
         corresponding parameter values are assigned.
 
-    Examples
+    Examples:
     --------
     >>> from deephyper.skopt.space.space import Real, Integer
     >>> from deephyper.skopt.utils import point_asdict
@@ -574,13 +569,13 @@ def point_aslist(search_space, point_as_dict):
         dict with parameter names as keys to which corresponding
         parameter values are assigned.
 
-    Returns
+    Returns:
     -------
     point_as_list : list
         list with point values.The order of
         parameters in the list is given by sorted(params_space.keys()).
 
-    Examples
+    Examples:
     --------
     >>> from deephyper.skopt.space.space import Real, Integer
     >>> from deephyper.skopt.utils import point_aslist
@@ -632,8 +627,7 @@ def normalize_dimensions(dimensions):
 
 
 def check_list_types(x, types):
-    """
-    Check whether all elements of a list `x` are of the correct type(s)
+    """Check whether all elements of a list `x` are of the correct type(s)
     and raise a ValueError if they are not.
 
     Note that `types` can be either a single object-type or a tuple
@@ -651,7 +645,6 @@ def check_list_types(x, types):
         Either a single object-type or a tuple of object-types.
 
     """
-
     # List of the elements in the list that are incorrectly typed.
     err = list(filter(lambda a: not isinstance(a, types), x))
 
@@ -663,8 +656,7 @@ def check_list_types(x, types):
 
 
 def check_dimension_names(dimensions):
-    """
-    Check whether all dimensions have names. Raises `ValueError`,
+    """Check whether all dimensions have names. Raises `ValueError`,
     if one or more dimensions are unnamed.
 
     Parameters
@@ -673,7 +665,6 @@ def check_dimension_names(dimensions):
         List of Dimension-objects.
 
     """
-
     # List of the dimensions that have no names.
     err_dims = list(filter(lambda dim: dim.name is None, dimensions))
 
@@ -685,8 +676,7 @@ def check_dimension_names(dimensions):
 
 
 def use_named_args(dimensions):
-    """
-    Wrapper / decorator for an objective function that uses named arguments
+    """Wrapper / decorator for an objective function that uses named arguments
     to make it compatible with optimizers that use a single list of parameters.
 
     Your objective function can be defined as being callable using named
@@ -702,7 +692,7 @@ def use_named_args(dimensions):
     also reduces the risk of bugs if you change the number of dimensions
     or their order in the search-space.
 
-    Examples
+    Examples:
     --------
     >>> # Define the search-space dimensions. They must all have names!
     >>> from deephyper.skopt.space import Real
@@ -748,15 +738,14 @@ def use_named_args(dimensions):
     dimensions : list(Dimension)
         List of `Dimension`-objects for the search-space dimensions.
 
-    Returns
+    Returns:
     -------
     wrapped_func : callable
         Wrapped objective function.
     """
 
     def decorator(func):
-        """
-        This uses more advanced Python features to wrap `func` using a
+        """This uses more advanced Python features to wrap `func` using a
         function-decorator, which are not explained so well in the
         official Python documentation.
 
@@ -769,7 +758,6 @@ def use_named_args(dimensions):
             Function to minimize. Should take *named arguments*
             and return the objective value.
         """
-
         # Ensure all dimensions are correctly typed.
         check_list_types(dimensions, Dimension)
 
@@ -778,8 +766,7 @@ def use_named_args(dimensions):
 
         @wraps(func)
         def wrapper(x):
-            """
-            This is the code that will be executed every time the
+            """This is the code that will be executed every time the
             wrapped / decorated `func` is being called.
             It takes `x` as a single list of parameters and
             converts them to named arguments and calls `func` with them.
@@ -791,12 +778,11 @@ def use_named_args(dimensions):
                 which will be converted to named arguments and passed
                 to `func`.
 
-            Returns
+            Returns:
             -------
             objective_value
                 The objective value returned by `func`.
             """
-
             # Ensure the number of dimensions match
             # the number of parameters in the list x.
             if len(x) != len(dimensions):

@@ -281,7 +281,6 @@ def plot_worker_utilization(
     Returns:
         (matplotlib.pyplot.figure, matplotlib.pyplot.axes): the figure and axes of the plot.
     """
-
     x, y = compile_worker_activity(results, profile_type=profile_type)
 
     if num_workers:
@@ -374,6 +373,7 @@ def plot_parallel_coordinate(
     constant_predictor=0.035726056,
 ):
     """Plot a parallel coordinate plot of the hyperparameters.
+
     Args:
         results (pd.DataFrame): the results of a Hyperparameter Search.
         parameters_columns (list, optional): list of columns to include in the plot.
@@ -381,10 +381,10 @@ def plot_parallel_coordinate(
         rank_mode (str, optional): mode of ranking. Defaults to "min".
         highlight (bool, optional): whether to highlight the best solutions. Defaults to True.
         constant_predictor (float, optional): value to compare the objective to. Defaults to 0.035726056.
+
     Returns:
         fig: figure of the parallel coordinate plot
     """
-
     if parameters_columns is None:
         cols = [c for c in results.columns if c.startswith("p:")]
     else:

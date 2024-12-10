@@ -32,7 +32,6 @@ def _test_ipython_interpretor() -> bool:
 
     Suggested by: https://stackoverflow.com/questions/15411967/how-can-i-check-if-code-is-executed-in-the-ipython-notebook
     """
-
     # names of shells/modules using jupyter
     notebooks_shells = ["ZMQInteractiveShell"]
     notebooks_modules = ["google.colab._shell"]
@@ -411,7 +410,6 @@ class Evaluator(abc.ABC):
 
     def gather_other_jobs_done(self):
         """Access storage to return results from other processes."""
-
         logging.info("gather jobs from other processes")
 
         job_id_all = self._storage.load_all_job_ids(self._search_id)

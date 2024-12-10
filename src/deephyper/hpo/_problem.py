@@ -75,7 +75,6 @@ def convert_to_skopt_space(cs_space, surrogate_model=None):
     Returns:
         deephyper.skopt.space.Space: a scikit-optimize Space.
     """
-
     # verify pre-conditions
     if not (isinstance(cs_space, cs.ConfigurationSpace)):
         raise TypeError("Input space should be of type ConfigurationSpace")

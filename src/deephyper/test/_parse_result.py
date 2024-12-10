@@ -10,6 +10,7 @@ def parse_result(stream: str) -> float:
 
     Args:
         stream (str): The output of a DeepHyper test.
+
     Returns:
         float: The parsed output.
     """

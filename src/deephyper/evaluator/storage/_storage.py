@@ -41,7 +41,6 @@ class Storage(abc.ABC):
         Returns:
             Storage: the created storage client.
         """
-
         method_kwargs = method_kwargs if method_kwargs else {}
 
         logging.info(

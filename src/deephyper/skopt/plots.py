@@ -48,7 +48,7 @@ def plot_convergence(*args, **kwargs):
     yscale : None or string, optional
         The scale for the y-axis.
 
-    Returns
+    Returns:
     -------
     ax : `Axes`
         The matplotlib axes.
@@ -161,7 +161,7 @@ def plot_gaussian_process(res, **kwargs):
     show_mu : boolean, default: True
         When True, the predicted model is shown.
 
-    Returns
+    Returns:
     -------
     ax : `Axes`
         The matplotlib axes.
@@ -315,7 +315,7 @@ def plot_regret(*args, **kwargs):
     yscale : None or string, optional
         The scale for the y-axis.
 
-    Returns
+    Returns:
     -------
     ax : `Axes`
         The matplotlib axes.
@@ -551,7 +551,7 @@ def partial_dependence(
         values.
         Otherwise, random selected samples will be used.
 
-    Returns
+    Returns:
     -------
     For 1D partial dependence:
 
@@ -724,7 +724,7 @@ def plot_objective(
         Color map for contour plots. Passed directly to
         `plt.contourf()`
 
-    Returns
+    Returns:
     -------
     ax : `Matplotlib.Axes`
         A 2-d matrix of Axes-objects with the sub-plots.
@@ -845,7 +845,7 @@ def plot_evaluations(result, bins=20, dimensions=None, plot_dims=None):
         If `None` then use all dimensions except constant ones
         from the search-space.
 
-    Returns
+    Returns:
     -------
     ax : `Matplotlib.Axes`
         A 2-d matrix of Axes-objects with the sub-plots.
@@ -942,13 +942,12 @@ def _get_ylim_diagonal(ax):
     ax : `Matplotlib.Axes`
         2-dimensional matrix with Matplotlib Axes objects.
 
-    Returns
+    Returns:
     -------
     ylim_diagonal : tuple(int)
         The common min and max ylim for the diagonal plots.
 
     """
-
     # Number of search-space dimensions used in this plot.
     if isinstance(ax, (list, np.ndarray)):
         n_dims = len(ax)
@@ -969,8 +968,7 @@ def _get_ylim_diagonal(ax):
 
 
 def partial_dependence_1D(space, model, i, samples, n_points=40):
-    """
-    Calculate the partial dependence for a single dimension.
+    """Calculate the partial dependence for a single dimension.
 
     This uses the given model to calculate the average objective value
     for all the samples, where the given dimension is fixed at
@@ -999,7 +997,7 @@ def partial_dependence_1D(space, model, i, samples, n_points=40):
         Number of points at which to evaluate the partial dependence
         along each dimension `i`.
 
-    Returns
+    Returns:
     -------
     xi : np.array
         The points at which the partial dependence was evaluated.
@@ -1024,8 +1022,7 @@ def partial_dependence_1D(space, model, i, samples, n_points=40):
     dim_locs = np.cumsum([0] + [d.transformed_size for d in space.dimensions])
 
     def _calc(x):
-        """
-        Helper-function to calculate the average predicted
+        """Helper-function to calculate the average predicted
         objective value for the given model, when setting
         the index'th dimension of the search-space to the value x,
         and then averaging over all samples.
@@ -1047,8 +1044,7 @@ def partial_dependence_1D(space, model, i, samples, n_points=40):
 
 
 def partial_dependence_2D(space, model, i, j, samples, n_points=40):
-    """
-    Calculate the partial dependence for two dimensions in the search-space.
+    """Calculate the partial dependence for two dimensions in the search-space.
 
     This uses the given model to calculate the average objective value
     for all the samples, where the given dimensions are fixed at
@@ -1080,7 +1076,7 @@ def partial_dependence_2D(space, model, i, j, samples, n_points=40):
         Number of points at which to evaluate the partial dependence
         along each dimension `i` and `j`.
 
-    Returns
+    Returns:
     -------
     xi : np.array, shape=n_points
         The points at which the partial dependence was evaluated.
@@ -1106,8 +1102,7 @@ def partial_dependence_2D(space, model, i, j, samples, n_points=40):
     dim_locs = np.cumsum([0] + [d.transformed_size for d in space.dimensions])
 
     def _calc(x, y):
-        """
-        Helper-function to calculate the average predicted
+        """Helper-function to calculate the average predicted
         objective value for the given model, when setting
         the index1'th dimension of the search-space to the value x
         and setting the index2'th dimension to the value y,
@@ -1142,8 +1137,7 @@ def plot_objective_2D(
     n_minimum_search=None,
     ax=None,
 ):
-    """
-    Create and return a Matplotlib figure and axes with a landscape
+    """Create and return a Matplotlib figure and axes with a landscape
     contour-plot of the last fitted model of the search-space,
     overlaid with all the samples from the optimization results,
     for the two given dimensions of the search-space.
@@ -1180,14 +1174,13 @@ def plot_objective_2D(
     ax : `Matplotlib.Axes`, default: None
         When set, everything is plotted inside this axis.
 
-    Returns
+    Returns:
     -------
     ax : `Matplotlib.Axes`
         The Matplotlib Figure-object.
         For example, you can save the plot by calling
         `fig.savefig('file.png')`
     """
-
     # Get the search-space instance from the optimization results.
     space = result.space
     x_vals = _evaluate_min_params(result, minimum, n_minimum_search)
@@ -1254,8 +1247,7 @@ def plot_objective_2D(
 
 
 def plot_histogram(result, dimension_identifier, bins=20, rotate_labels=0, ax=None):
-    """
-    Create and return a Matplotlib figure with a histogram
+    """Create and return a Matplotlib figure with a histogram
     of the samples from the optimization results,
     for a given dimension of the search-space.
 
@@ -1274,12 +1266,11 @@ def plot_histogram(result, dimension_identifier, bins=20, rotate_labels=0, ax=No
         Degree to rotate category-names on the x-axis.
         Only used for Categorical dimensions.
 
-    Returns
+    Returns:
     -------
     ax : `Matplotlib.Axes`
         The Matplotlib Axes-object.
     """
-
     # Get the search-space instance from the optimization results.
     space = result.space
 
@@ -1343,10 +1334,9 @@ def plot_histogram(result, dimension_identifier, bins=20, rotate_labels=0, ax=No
 
 
 def _map_categories(space, points, minimum):
-    """
-    Map categorical values to integers in a set of points.
+    """Map categorical values to integers in a set of points.
 
-    Returns
+    Returns:
     -------
     mapped_points : np.array, shape=points.shape
         A copy of `points` with categoricals replaced with their indices in
@@ -1389,7 +1379,7 @@ def _evenly_sample(dim, n_points):
     n_points : int
         The number of points to sample from `dim`.
 
-    Returns
+    Returns:
     -------
     xi : np.array
         The sampled points in the Dimension.  For Categorical
@@ -1413,7 +1403,8 @@ def _evenly_sample(dim, n_points):
 
 def _cat_format(dimension, x, _):
     """Categorical axis tick formatter function.  Returns the name of category
-    `x` in `dimension`.  Used with `matplotlib.ticker.FuncFormatter`."""
+    `x` in `dimension`.  Used with `matplotlib.ticker.FuncFormatter`.
+    """
     return str(dimension.categories[int(x)])
 
 

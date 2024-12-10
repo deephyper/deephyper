@@ -19,6 +19,7 @@ def rank(
         decimals (int, optional): The number of decimal at which rounding is performed. Defaults to ``3``.
         axis (int, optional): The axis along which the elements of ``a`` are ranked. Defaults to ``None`` to rank the elements after flattening the array.
         nan_policy (str, optional): Defines how to handle when input contains nan. The options are ``"propagate"``, ``"raise"``, ``"omit"``. Defaults to ``"propagate"``.
+
     Returns:
         array: The ranking of the scores.
     """

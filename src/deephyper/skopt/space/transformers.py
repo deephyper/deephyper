@@ -72,7 +72,7 @@ class StringEncoder(Transformer):
         X : array-like, shape=(n_samples,)
             List of categories.
 
-        Returns
+        Returns:
         -------
         Xt : array-like, shape=(n_samples,)
             The string encoded categories.
@@ -88,7 +88,7 @@ class StringEncoder(Transformer):
         Xt : array-like, shape=(n_samples,)
             String encoded categories.
 
-        Returns
+        Returns:
         -------
         X : array-like, shape=(n_samples,)
             The original categories.
@@ -139,7 +139,7 @@ class CategoricalEncoder(Transformer):
         X : array-like, shape=(n_samples,)
             List of categories.
 
-        Returns
+        Returns:
         -------
         Xt : array-like, shape=(n_samples, n_categories)
             The one-hot encoded categories.
@@ -155,7 +155,7 @@ class CategoricalEncoder(Transformer):
         Xt : array-like, shape=(n_samples, n_categories)
             One-hot encoded categories.
 
-        Returns
+        Returns:
         -------
         X : array-like, shape=(n_samples,)
             The original categories.
@@ -200,7 +200,7 @@ class LabelEncoder(Transformer):
         X : array-like, shape=(n_samples,)
             List of categories.
 
-        Returns
+        Returns:
         -------
         Xt : array-like, shape=(n_samples, n_categories)
             The integer categories.
@@ -217,7 +217,7 @@ class LabelEncoder(Transformer):
         Xt : array-like, shape=(n_samples, n_categories)
             Integer categories.
 
-        Returns
+        Returns:
         -------
         X : array-like, shape=(n_samples,)
             The original categories.
@@ -230,8 +230,7 @@ class LabelEncoder(Transformer):
 
 
 class Normalize(Transformer):
-    """
-    Scales each dimension into the interval [0, 1].
+    """Scales each dimension into the interval [0, 1].
 
     Parameters
     ----------
@@ -288,8 +287,7 @@ class Normalize(Transformer):
 
 
 class Pipeline(Transformer):
-    """
-    A lightweight pipeline to chain transformers.
+    """A lightweight pipeline to chain transformers.
 
     Parameters
     ----------

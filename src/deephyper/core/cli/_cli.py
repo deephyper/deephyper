@@ -24,8 +24,7 @@ from deephyper.core.cli import _hps
 
 
 def create_parser():
-    """
-    :meta private:
+    """:meta private:
     """
     parser = argparse.ArgumentParser(description="DeepHyper command line.")
 
@@ -38,8 +37,7 @@ def create_parser():
 
 
 def main():
-    """
-    :meta private:
+    """:meta private:
     """
     parser = create_parser()
 

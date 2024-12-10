@@ -1,5 +1,4 @@
-"""
-Inspired by https://github.com/jonathf/chaospy/blob/master/chaospy/
+"""Inspired by https://github.com/jonathf/chaospy/blob/master/chaospy/
 distributions/sampler/sequences/grid.py
 """
 
@@ -105,7 +104,7 @@ class Grid(InitialPointGenerator):
             Set random state to something other than None for reproducible
             results.
 
-        Returns
+        Returns:
         -------
         np.array, shape=(n_dim, n_samples)
             grid set

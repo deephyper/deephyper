@@ -69,6 +69,7 @@ def profile(
         memory_limit (int): In bytes, if set to a positive integer, the memory usage is measured at regular intervals and the function is interrupted if the memory usage exceeds the limit. If set to ``-1``, only the peak memory is measured. If the executed function is busy outside of the Python interpretor, this mechanism will not work properly. Defaults to ``-1``.
         memory_tracing_interval (float): In seconds, the interval at which the memory usage is measured. Defaults to ``0.1``.
         register (bool): Register the called function to be pickalable and executed in a subprocess when the we use as decorator ``@profile``.
+
     Returns:
         function: a decorated function.
     """

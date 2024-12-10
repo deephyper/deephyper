@@ -29,7 +29,8 @@ class Stopper(abc.ABC):
 
     def transform_objective(self, objective: float):
         """Replaces the currently observed objective by the maximum objective observed from the
-        start. Identity transformation by default."""
+        start. Identity transformation by default.
+        """
         # prev_objective = (
         #     self.observed_objectives[-1] if len(self.observed_objectives) > 0 else None
         # )

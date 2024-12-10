@@ -12,8 +12,7 @@ def gaussian_acquisition_1D(
     acq_func_kwargs=None,
     return_grad=True,
 ):
-    """
-    A wrapper around the acquisition function that is called by fmin_l_bfgs_b.
+    """A wrapper around the acquisition function that is called by fmin_l_bfgs_b.
 
     This is because lbfgs allows only 1-D input.
     """
@@ -35,8 +34,7 @@ def _gaussian_acquisition(
     return_grad=False,
     acq_func_kwargs=None,
 ):
-    """
-    Wrapper so that the output of this function can be
+    """Wrapper so that the output of this function can be
     directly passed to a minimizer.
     """
     # Check inputs
@@ -124,8 +122,7 @@ def _gaussian_acquisition(
 
 
 def gaussian_lcb(X, model, kappa=1.96, return_grad=False, deterministic=False):
-    """
-    Use the lower confidence bound to estimate the acquisition
+    """Use the lower confidence bound to estimate the acquisition
     values.
 
     The trade-off between exploitation and exploration is left to
@@ -154,7 +151,7 @@ def gaussian_lcb(X, model, kappa=1.96, return_grad=False, deterministic=False):
         Whether or not to return the grad. Implemented only for the case where
         ``X`` is a single sample.
 
-    Returns
+    Returns:
     -------
     values : array-like, shape (X.shape[0],)
         Acquisition function values computed at X.
@@ -189,8 +186,7 @@ def gaussian_lcb(X, model, kappa=1.96, return_grad=False, deterministic=False):
 
 
 def gaussian_pi(X, model, y_opt=0.0, xi=0.01, return_grad=False, deterministic=False):
-    """
-    Use the probability of improvement to calculate the acquisition values.
+    """Use the probability of improvement to calculate the acquisition values.
 
     The conditional probability `P(y=f(x) | x)` form a gaussian with a
     certain mean and standard deviation approximated by the model.
@@ -228,7 +224,7 @@ def gaussian_pi(X, model, y_opt=0.0, xi=0.01, return_grad=False, deterministic=F
         Whether or not to return the grad. Implemented only for the case where
         ``X`` is a single sample.
 
-    Returns
+    Returns:
     -------
     values : [array-like, shape=(X.shape[0],)
         Acquisition function values computed at X.
@@ -279,8 +275,7 @@ def gaussian_pi(X, model, y_opt=0.0, xi=0.01, return_grad=False, deterministic=F
 
 
 def gaussian_ei(X, model, y_opt=0.0, xi=0.01, return_grad=False, deterministic=False):
-    """
-    Use the expected improvement to calculate the acquisition values.
+    """Use the expected improvement to calculate the acquisition values.
 
     The conditional probability `P(y=f(x) | x)` form a gaussian with a certain
     mean and standard deviation approximated by the model.
@@ -317,7 +312,7 @@ def gaussian_ei(X, model, y_opt=0.0, xi=0.01, return_grad=False, deterministic=F
         Whether or not to return the grad. Implemented only for the case where
         ``X`` is a single sample.
 
-    Returns
+    Returns:
     -------
     values : array-like, shape=(X.shape[0],)
         Acquisition function values computed at X.
@@ -378,8 +373,7 @@ def gaussian_ei(X, model, y_opt=0.0, xi=0.01, return_grad=False, deterministic=F
 
 
 def gaussian_mes(X, model, k_samples=10, deterministic=False):
-    """
-    Use the max-value entropy to calculate the acquisition values.
+    """Use the max-value entropy to calculate the acquisition values.
     Article: https://arxiv.org/abs/1703.01968
     Source implementation: https://github.com/zi-w/Max-value-Entropy-Search/blob/master/acFuns/evaluateMES.m
 
@@ -418,7 +412,7 @@ def gaussian_mes(X, model, k_samples=10, deterministic=False):
         Whether or not to return the grad. Implemented only for the case where
         ``X`` is a single sample.
 
-    Returns
+    Returns:
     -------
     values : array-like, shape=(X.shape[0],)
         Acquisition function values computed at X.

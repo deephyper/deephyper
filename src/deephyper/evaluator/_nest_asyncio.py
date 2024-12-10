@@ -20,8 +20,7 @@ def apply(loop=None):
 
 
 def _patch_asyncio():
-    """
-    Patch asyncio module to use pure Python tasks and futures,
+    """Patch asyncio module to use pure Python tasks and futures,
     use module level _current_tasks, all_tasks and patch run method.
     """
 
@@ -92,8 +91,7 @@ def _patch_loop(loop):
             return f.result()
 
     def _run_once(self):
-        """
-        Simplified re-implementation of asyncio's _run_once that
+        """Simplified re-implementation of asyncio's _run_once that
         runs handles as they become ready.
         """
         ready = self._ready
@@ -232,8 +230,7 @@ def _patch_task():
 
 
 def _patch_tornado():
-    """
-    If tornado is imported before nest_asyncio, make tornado aware of
+    """If tornado is imported before nest_asyncio, make tornado aware of
     the pure-Python asyncio Future.
     """
     if "tornado" in sys.modules:

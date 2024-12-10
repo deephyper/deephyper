@@ -18,7 +18,6 @@ def terminate_on_timeout(timeout, func, *args, **kwargs):
         *args: positional arguments to pass to the function.
         **kwargs: keyword arguments to pass to the function.
     """
-
     pool = multiprocessing.pool.ThreadPool(processes=1)
     results = pool.apply_async(func, args, kwargs)
     pool.close()

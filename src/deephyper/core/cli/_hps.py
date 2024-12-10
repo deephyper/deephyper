@@ -1,5 +1,4 @@
-"""
-Hyperparameter Search
+"""Hyperparameter Search
 ---------------------
 
 Command line to execute hyperparameter search.
@@ -68,8 +67,7 @@ HPS_SEARCHES = {
 
 
 def build_parser_from(cls):
-    """
-    :meta private:
+    """:meta private:
     """
     parser = argparse.ArgumentParser(conflict_handler="resolve")
 
@@ -106,8 +104,7 @@ def build_parser_from(cls):
 
 
 def add_subparser(parsers):
-    """
-    :meta private:
+    """:meta private:
     """
     parser_name = "hps"
 
@@ -130,10 +127,8 @@ def add_subparser(parsers):
 
 
 def main(**kwargs):
+    """:meta private:
     """
-    :meta private:
-    """
-
     sys.path.insert(0, ".")
 
     if kwargs["verbose"]:

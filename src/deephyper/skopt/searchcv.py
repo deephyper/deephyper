@@ -137,9 +137,8 @@ class BayesSearchCV(BaseSearchCV):
         If ``'True'``, the ``cv_results_`` attribute will include training
         scores.
 
-    Examples
+    Examples:
     --------
-
     >>> from deephyper.skopt import BayesSearchCV
     >>> # parameter ranges are specified by one of below
     >>> from deephyper.skopt.space import Real, Categorical, Integer
@@ -173,7 +172,7 @@ class BayesSearchCV(BaseSearchCV):
     >>> print(opt.score(X_test, y_test))
     0.973...
 
-    Attributes
+    Attributes:
     ----------
     cv_results_ : dict of numpy (masked) ndarrays
         A dict with keys as column headers and values as columns, that can be
@@ -249,7 +248,7 @@ class BayesSearchCV(BaseSearchCV):
     n_splits_ : int
         The number of cross-validation splits (folds/iterations).
 
-    Notes
+    Notes:
     -----
     The parameters selected are those that maximize the score of the held-out
     data, according to the scoring parameter.
@@ -262,7 +261,7 @@ class BayesSearchCV(BaseSearchCV):
     `pre_dispatch` many times. A reasonable value for `pre_dispatch` is `2 *
     n_jobs`.
 
-    See Also
+    See Also:
     --------
     :class:`GridSearchCV`:
         Does exhaustive search over a grid of parameters.
@@ -320,7 +319,6 @@ class BayesSearchCV(BaseSearchCV):
 
     def _check_search_space(self, search_space):
         """Checks whether the search space argument is correct"""
-
         if len(search_space) == 0:
             raise ValueError(
                 "The search_spaces parameter should contain at least one"
@@ -387,13 +385,12 @@ class BayesSearchCV(BaseSearchCV):
             names (strings) and values are deephyper.skopt.space.Dimension instances,
             one of Real, Integer or Categorical.
 
-        Returns
+        Returns:
         -------
         optimizer: Instance of the `Optimizer` class used for for search
             in some parameter space.
 
         """
-
         kwargs = self.optimizer_kwargs_.copy()
         kwargs["dimensions"] = dimensions_aslist(params_space)
         optimizer = Optimizer(**kwargs)
@@ -423,11 +420,10 @@ class BayesSearchCV(BaseSearchCV):
 
     @property
     def total_iterations(self):
-        """
-        Count total iterations that will be taken to explore
+        """Count total iterations that will be taken to explore
         all subspaces with `fit` method.
 
-        Returns
+        Returns:
         -------
         max_iter: int, total number of iterations to explore
         """

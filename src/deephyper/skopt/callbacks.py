@@ -18,8 +18,7 @@ from deephyper.skopt.utils import dump
 
 
 def check_callback(callback):
-    """
-    Check if callback is a callable or a list of callables.
+    """Check if callback is a callable or a list of callables.
     """
     if callback is not None:
         if isinstance(callback, Callable):
@@ -39,8 +38,7 @@ def check_callback(callback):
 
 
 class VerboseCallback(object):
-    """
-    Callback to control the verbosity.
+    """Callback to control the verbosity.
 
     Parameters
     ----------
@@ -54,7 +52,7 @@ class VerboseCallback(object):
     n_total : int
         Total number of func calls.
 
-    Attributes
+    Attributes:
     ----------
     iter_no : int
         Number of iterations of the optimization routine.
@@ -97,8 +95,7 @@ class VerboseCallback(object):
             print("Iteration No: %d %s. %s" % (iter_no, status, search_status))
 
     def __call__(self, res):
-        """
-        Parameters
+        """Parameters
         ----------
         res : `OptimizeResult`, scipy object
             The optimization as a OptimizeResult object.
@@ -120,13 +117,12 @@ class VerboseCallback(object):
 
 
 class TimerCallback(object):
-    """
-    Log the elapsed time between each iteration of the minimization loop.
+    """Log the elapsed time between each iteration of the minimization loop.
 
     The time for each iteration is stored in the `iter_time` attribute which
     you can inspect after the minimization has completed.
 
-    Attributes
+    Attributes:
     ----------
     iter_time : list, shape (n_iter,)
         `iter_time[i-1]` gives the time taken to complete iteration `i`
@@ -137,8 +133,7 @@ class TimerCallback(object):
         self.iter_time = []
 
     def __call__(self, res):
-        """
-        Parameters
+        """Parameters
         ----------
         res : `OptimizeResult`, scipy object
             The optimization as a OptimizeResult object.
@@ -155,8 +150,7 @@ class EarlyStopper(object):
     """
 
     def __call__(self, result):
-        """
-        Parameters
+        """Parameters
         ----------
         result : `OptimizeResult`, scipy object
             The optimization as a OptimizeResult object.
@@ -174,7 +168,7 @@ class EarlyStopper(object):
         result : `OptimizeResult`, scipy object
             The optimization as a OptimizeResult object.
 
-        Returns
+        Returns:
         -------
         decision : boolean or None
             Return True/False if the criterion can make a decision or `None` if
@@ -234,8 +228,7 @@ class DeltaYStopper(EarlyStopper):
 
 
 class HollowIterationsStopper(EarlyStopper):
-    """
-    Stop if the improvement over the last n iterations is below a threshold.
+    """Stop if the improvement over the last n iterations is below a threshold.
     """
 
     def __init__(self, n_iterations, threshold=0):
@@ -252,10 +245,9 @@ class HollowIterationsStopper(EarlyStopper):
 
 
 class DeadlineStopper(EarlyStopper):
-    """
-    Stop the optimization before running out of a fixed budget of time.
+    """Stop the optimization before running out of a fixed budget of time.
 
-    Attributes
+    Attributes:
     ----------
     iter_time : list, shape (n_iter,)
         `iter_time[i-1]` gives the time taken to complete iteration `i`
@@ -286,8 +278,7 @@ class DeadlineStopper(EarlyStopper):
 
 
 class ThresholdStopper(EarlyStopper):
-    """
-    Stop the optimization when the objective value is lower
+    """Stop the optimization when the objective value is lower
     than the given threshold.
     """
 
@@ -300,11 +291,9 @@ class ThresholdStopper(EarlyStopper):
 
 
 class CheckpointSaver(object):
-    """
-    Save current state after each iteration with :class:`deephyper.skopt.dump`.
+    """Save current state after each iteration with :class:`deephyper.skopt.dump`.
 
-
-    Examples
+    Examples:
     --------
     >>> import deephyper.skopt
     >>> def obj_fun(x):
@@ -326,8 +315,7 @@ class CheckpointSaver(object):
         self.dump_options = dump_options
 
     def __call__(self, res):
-        """
-        Parameters
+        """Parameters
         ----------
         res : `OptimizeResult`, scipy object
             The optimization as a OptimizeResult object.

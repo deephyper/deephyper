@@ -1,5 +1,4 @@
-"""
-Inspired by https://github.com/jonathf/chaospy/blob/master/chaospy/
+"""Inspired by https://github.com/jonathf/chaospy/blob/master/chaospy/
 distributions/sampler/sequences/halton.py
 """
 
@@ -63,7 +62,7 @@ class Halton(InitialPointGenerator):
             Set random state to something other than None for reproducible
             results.
 
-        Returns
+        Returns:
         -------
         np.array, shape=(n_dim, n_samples)
             Halton set.
@@ -125,7 +124,7 @@ def _van_der_corput_samples(idx, number_base=2):
     number_base : int
         The numerical base from where to create the samples from.
 
-    Returns
+    Returns:
     -------
     float, numpy.ndarray
         Van der Corput samples.
@@ -147,15 +146,14 @@ def _van_der_corput_samples(idx, number_base=2):
 
 
 def _create_primes(threshold):
-    """
-    Generate prime values using sieve of Eratosthenes method.
+    """Generate prime values using sieve of Eratosthenes method.
 
     Parameters
     ----------
     threshold : int
         The upper bound for the size of the prime values.
 
-    Returns
+    Returns:
     ------
     List
         All primes from 2 and up to ``threshold``.

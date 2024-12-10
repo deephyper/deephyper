@@ -150,7 +150,6 @@ class Search(abc.ABC):
         Args:
             timeout (int, optional): The time budget (in seconds) of the search before stopping. Defaults to ``None``, will not impose a time budget.
         """
-
         if timeout is not None:
             if type(timeout) is not int:
                 raise ValueError(

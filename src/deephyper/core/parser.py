@@ -45,8 +45,7 @@ def add_arguments_from_signature(parser, obj, prefix="", exclude=[]):
 
 
 def str2bool(v):
-    """
-    :meta private:
+    """:meta private:
     """
     if isinstance(v, bool):
         return v

@@ -6,8 +6,7 @@ from deephyper.ensemble.aggregator._aggregator import Aggregator
 
 
 class MeanAggregator(Aggregator):
-    """
-    Aggregate predictions using the mean. Supports both NumPy arrays and masked arrays.
+    """Aggregate predictions using the mean. Supports both NumPy arrays and masked arrays.
 
     .. list-table::
         :widths: 25 25
@@ -30,8 +29,7 @@ class MeanAggregator(Aggregator):
         y: List[Union[np.ndarray, np.ma.MaskedArray]],
         weights: Optional[List[float]] = None,
     ) -> Union[np.ndarray, np.ma.MaskedArray]:
-        """
-        Aggregate predictions using the mean.
+        """Aggregate predictions using the mean.
 
         Args:
             y (List[np.ndarray | np.ma.MaskedArray]):

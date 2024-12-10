@@ -31,7 +31,6 @@ class _Ellipsis:
 
 def _transpose_list_array(x):
     """Transposes a list matrix"""
-
     n_dims = len(x)
     assert n_dims > 0
     n_samples = len(x[0])
@@ -84,7 +83,7 @@ def check_dimension(dimension, transform=None):
                 original space.
               - "normalize", the transformed space is scaled to be between 0 and 1.
 
-        Returns:
+    Returns:
             dimension (Dimension): Dimension instance.
     """
     if isinstance(dimension, Dimension):
@@ -465,7 +464,6 @@ class Real(Dimension):
 
     def update_prior(self, X, y, q=0.9):
         """Fit a Kernel Density Estimator to the data to increase density of samples around regions of interest instead of uniform random-sampling."""
-
         X = np.array(X)
         y = np.array(y)
 
@@ -948,7 +946,6 @@ class Categorical(Dimension):
 
 def _sample_dimension(dim, i, n_samples, random_state, out):
     """Wrapper to sample dimension for joblib parallelization."""
-
     out[0][:, i] = dim.rvs(n_samples=n_samples, random_state=random_state)
 
 
@@ -999,8 +996,7 @@ class Space:
 
     @property
     def dimension_names(self):
-        """
-        Names of all the dimensions in the search-space.
+        """Names of all the dimensions in the search-space.
         """
         index = 0
         names = []
@@ -1014,8 +1010,7 @@ class Space:
 
     @property
     def is_real(self):
-        """
-        Returns true if all dimensions are Real
+        """Returns true if all dimensions are Real
         """
         return all([isinstance(dim, Real) for dim in self.dimensions])
 
@@ -1045,7 +1040,7 @@ class Space:
            Namespace within configuration file to use, will use first
            namespace if not provided
 
-        Returns
+        Returns:
         -------
         space : Space
            Instantiated Space object
@@ -1102,12 +1097,11 @@ class Space:
             Set random state to something other than None for reproducible
             results.
 
-        Returns
+        Returns:
         -------
         points : list of lists, shape=(n_points, n_dims)
            Points sampled from the space.
         """
-
         rng = check_random_state(random_state)
         if self.config_space:
             req_points = []
@@ -1240,7 +1234,7 @@ class Space:
         X : list of lists, shape=(n_samples, n_dims)
             The samples to transform.
 
-        Returns
+        Returns:
         -------
         Xt : array of floats, shape=(n_samples, transformed_n_dims)
             The transformed samples.
@@ -1270,12 +1264,11 @@ class Space:
         Xt : array of floats, shape=(n_samples, transformed_n_dims)
             The samples to inverse transform.
 
-        Returns
+        Returns:
         -------
         X : list of lists, shape=(n_samples, n_dims)
             The original samples.
         """
-
         # Inverse transform
         columns = []
         start = 0
@@ -1325,8 +1318,7 @@ class Space:
         return True
 
     def __getitem__(self, dimension_names):
-        """
-        Lookup and return the search-space dimension with the given name.
+        """Lookup and return the search-space dimension with the given name.
 
         This allows for dict-like lookup of dimensions, for example:
         `space['foo']` returns the dimension named 'foo' if it exists,
@@ -1342,7 +1334,7 @@ class Space:
             Name of a single search-space dimension (str).
             List of names for search-space dimensions (list(str)).
 
-        Returns
+        Returns:
         -------
         dims tuple (index, Dimension), list(tuple(index, Dimension)), \
                 (None, None)
@@ -1431,7 +1423,8 @@ class Space:
 
     def update_prior(self, X, y, q=0.9):
         """Update the prior of the dimensions. Instead of doing random-sampling, a kernel density estimation is fit on the region of interest and
-        sampling is performed from this distribution."""
+        sampling is performed from this distribution.
+        """
         y = np.array(y)
 
         for i, dim in enumerate(self.dimensions):

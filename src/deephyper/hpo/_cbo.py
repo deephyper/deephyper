@@ -515,7 +515,6 @@ class CBO(Search):
         Raises:
             ValueError: when the name of the surrogate model is unknown.
         """
-
         # Check if the surrogate model is supported
         accepted_names = ["RF", "ET", "TB", "RS", "GBRT", "DUMMY", "GP", "MF", "HGBRT"]
         if name not in accepted_names:
@@ -860,7 +859,6 @@ class CBO(Search):
             fac_numerical (float): the factor used to compute the sigma of a truncated normal distribution based on ``sigma = max(1.0, (upper - lower) * fac_numerical)``. A small large factor increase exploration while a small factor increase exploitation around the best-configuration from the ``df`` parameter.
             fac_categorical (float): the weight given to a categorical feature part of the best configuration. A large weight ``> 1`` increase exploitation while a small factor close to ``1`` increase exploration.
         """
-
         if type(df) is str and df[-4:] == ".csv":
             df = pd.read_csv(df)
         assert isinstance(df, pd.DataFrame)

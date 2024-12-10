@@ -7,8 +7,7 @@ def average(
     axis: Optional[int] = None,
     weights: Optional[Sequence[float]] = None,
 ) -> Union[np.ndarray, np.ma.MaskedArray]:
-    """
-    Compute the weighted average of an array, supporting both NumPy arrays and masked arrays.
+    """Compute the weighted average of an array, supporting both NumPy arrays and masked arrays.
 
     Args:
         x (np.ndarray | np.ma.MaskedArray): Input array or masked array.

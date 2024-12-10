@@ -3,14 +3,14 @@ class InitialPointGenerator(object):
         raise NotImplementedError
 
     def set_params(self, **params):
-        """
-        Set the parameters of this initial point generator.
+        """Set the parameters of this initial point generator.
 
         Parameters
         ----------
         **params : dict
             Generator parameters.
-        Returns
+
+        Returns:
         -------
         self : object
             Generator instance.

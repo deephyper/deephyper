@@ -19,7 +19,7 @@ class Hammersly(InitialPointGenerator):
 
     For ``dim == 1`` the sequence falls back to Van Der Corput sequence.
 
-    References
+    References:
     ----------
     T-T. Wong, W-S. Luk, and P-A. Heng, "Sampling with Hammersley and Halton
     Points," Journal of Graphics Tools, vol. 2, no. 2, 1997, pp. 9 - 24.
@@ -66,7 +66,7 @@ class Hammersly(InitialPointGenerator):
             Set random state to something other than None for reproducible
             results.
 
-        Returns
+        Returns:
         -------
         np.array, shape=(n_dim, n_samples)
             Hammersley set.

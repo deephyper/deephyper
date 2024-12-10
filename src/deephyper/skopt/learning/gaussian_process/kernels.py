@@ -22,8 +22,7 @@ from sklearn.gaussian_process.kernels import WhiteKernel as sk_WhiteKernel
 
 
 class Kernel(sk_Kernel):
-    """
-    Base class for deephyper.skopt.gaussian_process kernels.
+    """Base class for deephyper.skopt.gaussian_process kernels.
     Supports computation of the gradient of the kernel with respect to X
     """
 
@@ -51,8 +50,7 @@ class Kernel(sk_Kernel):
         return Exponentiation(self, b)
 
     def gradient_x(self, x, X_train):
-        """
-        Computes gradient of K(x, X_train) with respect to x
+        """Computes gradient of K(x, X_train) with respect to x
 
         Parameters
         ----------
@@ -62,7 +60,7 @@ class Kernel(sk_Kernel):
         X_train: array-like, shape=(n_samples, n_features)
             Training data used to fit the gaussian process.
 
-        Returns
+        Returns:
         -------
         gradient_x: array-like, shape=(n_samples, n_features)
             Gradient of K(x, X_train) with respect to x.
@@ -308,8 +306,7 @@ class DotProduct(Kernel, sk_DotProduct):
 
 
 class HammingKernel(sk_StationaryKernelMixin, sk_NormalizedKernelMixin, Kernel):
-    r"""
-    The HammingKernel is used to handle categorical inputs.
+    r"""The HammingKernel is used to handle categorical inputs.
 
     ``K(x_1, x_2) = exp(\sum_{j=1}^{d} -ls_j * (I(x_1j != x_2j)))``
 
@@ -354,7 +351,7 @@ class HammingKernel(sk_StationaryKernelMixin, sk_NormalizedKernelMixin, Kernel):
             Determines whether the gradient with respect to the kernel
             hyperparameter is determined. Only supported when Y is None.
 
-        Returns
+        Returns:
         -------
         * `K` [array-like, shape=(n_samples_X, n_samples_Y)]
             Kernel k(X, Y)

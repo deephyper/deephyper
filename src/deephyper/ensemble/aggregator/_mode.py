@@ -35,8 +35,7 @@ class ModeAggregator(Aggregator):
         Union[np.ndarray, np.ma.MaskedArray],
         Dict[str, Union[np.ndarray, np.ma.MaskedArray]],
     ]:
-        """
-        Aggregate predictions using the mode of categorical distributions.
+        """Aggregate predictions using the mode of categorical distributions.
 
         Args:
             y (List[Union[np.ndarray, np.ma.MaskedArray]]): List of categorical probability arrays

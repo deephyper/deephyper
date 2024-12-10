@@ -1,5 +1,4 @@
-"""
-This analysis subpackage contains modules to analyze results returned by deephyper.
+"""This analysis subpackage contains modules to analyze results returned by deephyper.
 """
 
 from ._rank import rank

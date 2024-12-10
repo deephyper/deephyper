@@ -138,7 +138,6 @@ class MPIWinStorage(Storage):
         Returns:
             List[Hashable]: A list of identifiers of all the jobs.
         """
-
         partial_ids = self._mapping["data"][search_id]["data"].keys()
         job_ids = [f"{search_id}.{p_id}" for p_id in partial_ids]
         return job_ids

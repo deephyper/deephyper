@@ -128,7 +128,6 @@ def fit_learning_curve_model_least_square(
     """The learning curve model is assumed to be modeled by 'f' with
     interface f(z, rho).
     """
-
     random_state = check_random_state(random_state)
 
     results = []

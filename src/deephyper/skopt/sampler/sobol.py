@@ -1,18 +1,17 @@
-"""
-Authors:
-  Original FORTRAN77 version of i4_sobol by Bennett Fox.
-  MATLAB version by John Burkardt.
-  PYTHON version by Corrado Chisari
+"""Authors:
+Original FORTRAN77 version of i4_sobol by Bennett Fox.
+MATLAB version by John Burkardt.
+PYTHON version by Corrado Chisari
 
-  Original Python version of is_prime by Corrado Chisari
+Original Python version of is_prime by Corrado Chisari
 
-  Original MATLAB versions of other functions by John Burkardt.
-  PYTHON versions by Corrado Chisari
+Original MATLAB versions of other functions by John Burkardt.
+PYTHON versions by Corrado Chisari
 
-  Modified Python version by Holger Nahrstaedt
+Modified Python version by Holger Nahrstaedt
 
-  Original code is available from
-  http://people.sc.fsu.edu/~jburkardt/py_src/sobol/sobol.html
+Original code is available from
+http://people.sc.fsu.edu/~jburkardt/py_src/sobol/sobol.html
 """
 
 from __future__ import division
@@ -36,7 +35,7 @@ class Sobol(InitialPointGenerator):
     randomize : bool, default=False
         When set to True, random shift is applied.
 
-    Notes
+    Notes:
     -----
     Sobol' sequences [1]_ provide :math:`n=2^m` low discrepancy points in
     :math:`[0,1)^{dim}`. Scrambling them makes them suitable for singular
@@ -62,7 +61,7 @@ class Sobol(InitialPointGenerator):
        after :math:`2^B` points have been generated, the sequence will repeat.
        Currently :math:`B=30`.
 
-    References
+    References:
     ----------
     .. [1] I. M. Sobol. The distribution of points in a cube and the accurate
        evaluation of integrals. Zh. Vychisl. Mat. i Mat. Phys., 7:784-802,
@@ -511,7 +510,7 @@ class Sobol(InitialPointGenerator):
             Set random state to something other than None for reproducible
             results.
 
-        Returns
+        Returns:
         -------
         sample : array_like (n_samples, dim)
             Sobol' set.
@@ -573,7 +572,7 @@ class Sobol(InitialPointGenerator):
           An input value of 0 requests the first (0-th) element of
           the sequence.
 
-        Returns
+        Returns:
         -------
         vector, seed : np.array (n_dim,), int
             The next quasirandom vector and the seed of its next vector.
@@ -681,7 +680,7 @@ def _random_shift(dm, random_state=None):
     Randomization of the quasi-MC samples can be achieved in the easiest manner
     by random shift (or the Cranley-Patterson rotation).
 
-    References
+    References:
     -----------
     .. [1] C. Lemieux, "Monte Carlo and Quasi-Monte Carlo Sampling," Springer
        Series in Statistics 692, Springer Science+Business Media, New York,
@@ -695,7 +694,7 @@ def _random_shift(dm, random_state=None):
         Set random state to something other than None for reproducible
         results.
 
-    Returns
+    Returns:
     -------
     dm :  array, shape(n, d)
         Randomized Sobol' design matrix.

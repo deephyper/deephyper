@@ -1,5 +1,4 @@
-"""
-Lhs functions are inspired by
+"""Lhs functions are inspired by
 https://github.com/clicumu/pyDOE2/blob/
 master/pyDOE2/doe_lhs.py
 """
@@ -70,7 +69,7 @@ class Lhs(InitialPointGenerator):
             Set random state to something other than None for reproducible
             results.
 
-        Returns
+        Returns:
         -------
         np.array, shape=(n_dim, n_samples)
             LHS set

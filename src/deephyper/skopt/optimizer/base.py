@@ -1,5 +1,4 @@
-"""
-Abstraction for optimizers.
+"""Abstraction for optimizers.
 
 It is sufficient that one re-implements the base estimator.
 """
@@ -200,7 +199,7 @@ def base_minimize(
         Keeps list of models only as long as the argument given. In the
         case of None, the list has no capped length.
 
-    Returns
+    Returns:
     -------
     res : `OptimizeResult`, scipy object
         The optimization result returned as a OptimizeResult object.

@@ -27,7 +27,6 @@ class JobStatus(Enum):
 class Job:
     """Represents an evaluation executed by the ``Evaluator`` class.
 
-
     Args:
         id (Any): unique identifier of the job. Usually an integer.
         args (dict): argument dictionnary of the ``run_function``.

@@ -101,7 +101,6 @@ class MoScalarFunction(abc.ABC):
         Raises:
             ValueError: Raised if yi is not a list of scalars each of length _n_objectives.
         """
-
         if np.ndim(yi) != 2:
             raise ValueError(f"Expected yi to be a 2D-array but is {yi}!")
 

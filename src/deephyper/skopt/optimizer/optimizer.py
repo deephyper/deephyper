@@ -747,7 +747,6 @@ class Optimizer(object):
         Returns:
             list: the filtered list of samples
         """
-
         if self.filter_duplicated:
             # check duplicated values
 
@@ -920,7 +919,8 @@ class Optimizer(object):
         See `tell()` for the full description.
 
         This method exists to give access to the internals of adding points
-        by side stepping all input validation and transformation."""
+        by side stepping all input validation and transformation.
+        """
         if "ps" in self.acq_func:
             if is_2Dlistlike(x):
                 self.Xi.extend(x)
@@ -1293,7 +1293,6 @@ class Optimizer(object):
 
     def _check_y_is_valid(self, x, y):
         """Check if the shape and types of x and y are consistent."""
-
         if "ps" in self.acq_func:
             if is_2Dlistlike(x):
                 if not (np.ndim(y) == 2 and np.shape(y)[1] == 2):
@@ -1336,7 +1335,8 @@ class Optimizer(object):
 
     def update_next(self):
         """Updates the value returned by opt.ask(). Useful if a parameter
-        was updated after ask was called."""
+        was updated after ask was called.
+        """
         self.cache_ = {}
         # Ask for a new next_x.
         # We only need to overwrite _next_x if it exists.
@@ -1348,7 +1348,7 @@ class Optimizer(object):
         """Returns the same result that would be returned by opt.tell()
         but without calling tell
 
-        Returns
+        Returns:
         -------
         res : `OptimizeResult`, scipy object
             OptimizeResult instance with the required information.

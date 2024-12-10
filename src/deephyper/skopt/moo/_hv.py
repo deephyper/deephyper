@@ -50,8 +50,7 @@ def hypervolume(pointset, ref):
 
 
 class _HyperVolume:
-    """
-    Hypervolume computation based on variant 3 of the algorithm in the paper:
+    """Hypervolume computation based on variant 3 of the algorithm in the paper:
     C. M. Fonseca, L. Paquete, and M. Lopez-Ibanez. An improved dimension-sweep
     algorithm for the hypervolume indicator. In IEEE Congress on Evolutionary
     Computation, pages 1157-1163, Vancouver, Canada, July 2006.
@@ -308,8 +307,7 @@ class _MultiList:
         return node
 
     def reinsert(self, node, index, bounds):
-        """
-        Inserts 'node' at the position it had in all lists in [0, 'index'[
+        """Inserts 'node' at the position it had in all lists in [0, 'index'[
         before it was removed. This method assumes that the next and previous
         nodes of the node that is reinserted are in the list.
 
