@@ -1,7 +1,4 @@
-"""Hyperparameter Search
----------------------
-
-Command line to execute hyperparameter search.
+"""Command line for hyperparameter optimization.
 
 .. code-block:: bash
 
@@ -61,13 +58,17 @@ from deephyper.core.utils import load_attr
 from deephyper.evaluator import EVALUATORS, Evaluator
 
 HPS_SEARCHES = {
-    "ambs": "deephyper.hpo.AMBS",
     "cbo": "deephyper.hpo.CBO",
+    "random": "deephyper.hpo.RandomSearch",
+    "regevo": "deephyper.hpo.RegularizedEvolution",
+    "eds": "deephyper.hpo.ExperimentalDesignSearch",
 }
 
 
 def build_parser_from(cls):
-    """:meta private:
+    """Build the parser automatically from the classes.
+
+    :meta private:
     """
     parser = argparse.ArgumentParser(conflict_handler="resolve")
 
@@ -104,12 +105,14 @@ def build_parser_from(cls):
 
 
 def add_subparser(parsers):
-    """:meta private:
+    """Definition of the parser of the command.
+
+    :meta private:
     """
-    parser_name = "hps"
+    parser_name = "hpo"
 
     parser = parsers.add_parser(
-        parser_name, help="Command line to run hyperparameter search."
+        parser_name, help="Command line to run hyperparameter optimization."
     )
 
     subparsers = parser.add_subparsers()
@@ -127,7 +130,9 @@ def add_subparser(parsers):
 
 
 def main(**kwargs):
-    """:meta private:
+    """Entry point of the command.
+
+    :meta private:
     """
     sys.path.insert(0, ".")
 
