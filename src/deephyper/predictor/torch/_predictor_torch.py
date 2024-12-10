@@ -11,7 +11,8 @@ class TorchPredictor(Predictor):
     def __init__(self, module: torch.nn.Module):
         if not isinstance(module, torch.nn.Module):
             raise ValueError(
-                f"The given module is of type {type(module)} when it should be of type torch.nn.Module!"
+                f"The given module is of type {type(module)} when it should be of type "
+                f"torch.nn.Module!"
             )
 
         self.module = module
@@ -60,9 +61,7 @@ class TorchPredictorFileLoader(PredictorFileLoader):
         return TorchPredictor(model)
 
     @staticmethod
-    def find_predictor_files(
-        path_directory: str, file_extension: str = "pt"
-    ) -> List[str]:
+    def find_predictor_files(path_directory: str, file_extension: str = "pt") -> List[str]:
         """Finds the predictor files in a directory given a specific extension.
 
         Args:
