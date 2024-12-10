@@ -6,7 +6,9 @@ from deephyper.evaluator import RunningJob
 
 
 class DeepXDEStopperCallback(Callback):
-    """Callback to use in conjonction with a DeepHyper ``RunningJob`` to stop the training when the ``Stopper`` is triggered.
+    """Callback to use in conjonction with a DeepHyper ``RunningJob``.
+
+    This stops the training when the ``Stopper`` is triggered.
 
     .. code-block:: python
 
@@ -17,9 +19,15 @@ class DeepXDEStopperCallback(Callback):
             ...
 
     Args:
-        job (RunningJob): The running job created by DeepHyper.
-        monitor (str, optional): The metric to monitor. It can be any metric collected in the ``History``. Defaults to "loss_test" (equivalent to validation loss).
-        mode (str, optional): If the metric is maximized or minimized. Value in ``["max", "min"]``. Defaults to "min".
+        job (RunningJob):
+            The running job created by DeepHyper.
+        monitor (str, optional):
+            The metric to monitor. It can be any metric collected in the
+            ``History``. Defaults to "loss_test" (equivalent to validation
+            loss).
+        mode (str, optional):
+            If the metric is maximized or minimized. Value in ``
+            ["max", "min"]``. Defaults to "min".
     """
 
     def __init__(self, job: RunningJob, mode: str = "min", monitor: str = "loss_test"):

@@ -28,7 +28,7 @@ class Stopper(abc.ABC):
         return json_format
 
     def transform_objective(self, objective: float):
-        """Replaces the currently observed objective by the maximum objective observed from the start.
+        """Replaces currently observed objective by the maximum objective observed from the start.
 
         By default the identity transformation is used.
 
@@ -81,7 +81,7 @@ class Stopper(abc.ABC):
 
     @property
     def observations(self) -> list:
-        """Returns a copy of the list of observations with 0-index the budgets and 1-index the objectives."""
+        """Returns copy of the list of observations with 0-index budgets and 1-index objectives."""
         obs = [self.observed_budgets, self.observed_objectives]
         return copy.deepcopy(obs)
 

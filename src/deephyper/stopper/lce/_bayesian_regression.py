@@ -43,9 +43,7 @@ def f_pow3(z, rho):
 
 @jax.jit
 def f_mmf4(z, rho):
-    return (rho[0] * rho[1] + rho[2] * jnp.power(z, rho[3])) / (
-        rho[1] + jnp.power(z, rho[3])
-    )
+    return (rho[0] * rho[1] + rho[2] * jnp.power(z, rho[3])) / (rho[1] + jnp.power(z, rho[3]))
 
 
 @jax.jit
@@ -175,9 +173,7 @@ def prob_model(
     num_obs=None,
 ):
     rho = numpyro.sample("rho", dist.Normal(rho_mu_prior, rho_sigma_prior))
-    y_sigma = numpyro.sample(
-        "sigma", dist.Exponential(y_sigma_prior)
-    )  # introducing noise
+    y_sigma = numpyro.sample("sigma", dist.Exponential(y_sigma_prior))  # introducing noise
     y_mu = f(z[:num_obs], rho)
     numpyro.sample("obs", dist.Normal(y_mu, y_sigma), obs=y[:num_obs])
 
@@ -195,16 +191,29 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
     """Probabilistic model for learning curve regression.
 
     Args:
-        f_model (callable, optional): The model function to use. Defaults to `f_power3` for a Power-Law with 3 parameters.
-        f_model_nparams (int, optional): The number of parameters of the model. Defaults to `3`.
-        max_trials_ls_fit (int, optional): The number of least-square fits that should be tried. Defaults to `10`.
-        mcmc_kernel (str, optional): The MCMC kernel to use. It should be a string in the following list: `["NUTS", "BarkerMH"]`. Defaults to `"NUTS"`.
-        mcmc_num_warmup (int, optional): The number of warmup steps in MCMC. Defaults to `200`.
-        mcmc_num_samples (int, optional): The number of samples in MCMC. Defaults to `1_000`.
-        random_state (int, optional): A random state. Defaults to `None`.
-        verbose (int, optional): Wether or not to use the verbose mode. Defaults to `0` to deactive it.
-        batch_size (int, optional): The expected maximum length of the X, y arrays (used in the `fit(X, y)` method) in order to preallocate memory and compile the code only once. Defaults to `100`.
-        min_max_scaling (bool, optional): Wether or not to use min-max scaling in [0,1] for `y` values. Defaults to False.
+        f_model (callable, optional):
+            The model function to use. Defaults to `f_power3` for a Power-Law with 3 parameters.
+        f_model_nparams (int, optional):
+            The number of parameters of the model. Defaults to `3`.
+        max_trials_ls_fit (int, optional):
+            The number of least-square fits that should be tried. Defaults to `10`.
+        mcmc_kernel (str, optional):
+            The MCMC kernel to use. It should be a string in the following
+            list: `["NUTS", "BarkerMH"]`. Defaults to `"NUTS"`.
+        mcmc_num_warmup (int, optional):
+            The number of warmup steps in MCMC. Defaults to `200`.
+        mcmc_num_samples (int, optional):
+            The number of samples in MCMC. Defaults to `1_000`.
+        random_state (int, optional):
+            A random state. Defaults to `None`.
+        verbose (int, optional):
+            Wether or not to use the verbose mode. Defaults to `0` to deactive it.
+        batch_size (int, optional):
+            The expected maximum length of the X, y arrays (used in the `fit
+            (X, y)` method) in order to preallocate memory and compile the
+            code only once. Defaults to `100`.
+        min_max_scaling (bool, optional):
+            Wether or not to use min-max scaling in [0,1] for `y` values. Defaults to False.
     """
 
     def __init__(
@@ -242,9 +251,14 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         """Fit the model.
 
         Args:
-            X (np.ndarray): a 1-D array of inputs.
-            y (_type_): a 1-D array of targets.
-            update_prior (bool, optional): A boolean indicating if the prior distribution should be updated using least-squares before running the Bayesian inference. Defaults to ``True``.
+            X (np.ndarray):
+                A 1-D array of inputs.
+            y (_type_):
+                A 1-D array of targets.
+            update_prior (bool, optional):
+                A boolean indicating if the prior distribution should be
+                updated using least-squares before running the Bayesian
+                inference. Defaults to ``True``.
 
         Raises:
             ValueError: if input arguments are invalid.
@@ -339,11 +353,18 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         """Predict the mean and standard deviation of the model.
 
         Args:
-            X (np.ndarray): a 1-D array of inputs.
-            return_std (bool, optional): A boolean indicating if the standard-deviation representing uncertainty in the prediction should be returned. Defaults to ``True``.
+            X (np.ndarray):
+                A 1-D array of inputs.
+            return_std (bool, optional):
+                A boolean indicating if the standard-deviation representing
+                uncertainty in the prediction should be returned. Defaults to
+                ``True``.
 
         Returns:
-            Tuple[np.ndarray, np.ndarray]: the mean prediction with shape ``(len(X),)`` and the standard deviation with shape ``(len(X),)`` if ``return_std`` is ``True``.
+            Tuple[np.ndarray, np.ndarray]:
+                The mean prediction with shape ``(len(X),)`` and the standard
+                deviation with shape ``(len(X),)`` if ``return_std`` is
+                ``True``.
         """
         posterior_samples = self.predict_posterior_samples(X)
 
@@ -362,7 +383,10 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
             X (np.ndarray): a 1-D array of inputs.
 
         Returns:
-            np.ndarray: a 2-D array of shape (n_samples, len(X)) where n_samples is the number of samples and len(X) is the length of the input array.
+            np.ndarray:
+                A 2-D array of shape (n_samples, len(X)) where n_samples is
+                the number of samples and len(X) is the length of the input
+                array.
         """
         # Check if fit has been called
         check_is_fitted(self)
@@ -380,7 +404,9 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
         return posterior_mu
 
     def prob(self, X, condition):
-        """Compute the approximate probability of P(cond(m(X_i), y_i)) where m is the current fitted model and cond a condition.
+        """Compute the approximate probability of P(cond(m(X_i), y_i)).
+
+        Where m is the current fitted model and cond a condition.
 
         Args:
             X (np.array): An array of inputs.
@@ -399,12 +425,20 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
     def get_parametrics_model_func(name):
         """Return the function of the learning curve model given its name.
 
-        Should be one of ``["lin2", "pow3", "mmf4", "vapor3", "logloglin2", "hill3", "logpow3", "pow4", "exp4", "janoschek4", "weibull4", "ilog2", "arctan3"]`` where the integer suffix indicates the number of parameters of the model.
+        Should be one of ``
+        ["lin2", "pow3", "mmf4", "vapor3", "logloglin2", "hill3", "logpow3", "pow4",
+        "exp4", "janoschek4", "weibull4", "ilog2", "arctan3"]`` where the
+        integer suffix indicates the number of parameters of the model.
 
         Args:
             name (str): The name of the learning curve model.
 
         Returns:
-            callable: a function with signature ``f(x, rho)`` of the learning curve model where ``x`` is a possible input of the model and ``rho`` is a 1-D array for the parameters of the model with length equal to the number of parameters of the model (e.g., it is of length ``3`` for ``"pow3"``).
+            callable:
+                A function with signature ``f(x, rho)`` of the learning curve
+                model where ``x`` is a possible input of the model and
+                ``rho`` is a 1-D array for the parameters of the model with
+                length equal to the number of parameters of the model
+                (e.g., it is of length ``3`` for ``"pow3"``).
         """
         return getattr(sys.modules[__name__], f"f_{name}")

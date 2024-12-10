@@ -3,11 +3,20 @@
 It is organized around the following subpackages:
 
 * :mod:`deephyper.analysis`: Tools to analyse results from DeepHyper.
-* :mod:`deephyper.ensemble`: Tools to build ensembles of neural networks with uncertainty quantification.
-* :mod:`deephyper.evaluator` : Tools to distribute the evaluation of tasks (e.g., neural network trainings).
-* :mod:`deephyper.hpo`: Tools to define and run hyperparameter optimization (HPO) and neural architecture search (NAS).
+
+* :mod:`deephyper.ensemble`: Tools to build ensembles of neural networks with
+   uncertainty quantification.
+
+* :mod:`deephyper.evaluator` : Tools to distribute the evaluation of tasks
+   (e.g., neural network trainings).
+
+* :mod:`deephyper.hpo`: Tools to define and run hyperparameter optimization
+   (HPO) and neural architecture search (NAS).
+
 * :mod:`deephyper.predictor`: Tools to wrap pure predictive models (i.e., that can only predict).
-* :mod:`deephyper.stopper`: Tools to define multi-fidelity strategies for hyperparameter optimization (HPO) and neural architecture search (NAS).
+
+* :mod:`deephyper.stopper`: Tools to define multi-fidelity strategies for
+   hyperparameter optimization (HPO) and neural architecture search (NAS).
 
 
 DeepHyper installation requires **Python >= 3.10**.

@@ -8,7 +8,9 @@ from deephyper.evaluator import RunningJob
 
 
 class TFKerasStopperCallback(Callback):
-    """Tensorflow/Keras callback to be used with a DeepHyper ``RunningJob`` to stop the training when the ``Stopper`` is triggered.
+    """Tensorflow/Keras callback to be used with a DeepHyper ``RunningJob``.
+
+    This stops the training when the ``Stopper`` is triggered.
 
     .. code-block:: python
 
@@ -19,9 +21,14 @@ class TFKerasStopperCallback(Callback):
             ...
 
     Args:
-        job (RunningJob): The running job created by DeepHyper.
-        monitor (str, optional): The metric to monitor. It can be any metric collected in the ``History``. Defaults to ``"val_loss"``.
-        mode (str, optional): If the metric is maximized or minimized. Value in ``["max", "min"]``. Defaults to ``"max"``.
+        job (RunningJob):
+            The running job created by DeepHyper.
+        monitor (str, optional):
+            The metric to monitor. It can be any metric collected in the
+            ``History``. Defaults to ``"val_loss"``.
+        mode (str, optional):
+            If the metric is maximized or minimized. Value in ``
+            ["max", "min"]``. Defaults to ``"max"``.
     """
 
     def __init__(self, job: RunningJob, monitor: str = "val_loss", mode: str = "min"):
@@ -56,7 +63,8 @@ class TFKerasStopperCallback(Callback):
 
         if objective is None:
             warnings.warn(
-                f"Monitor {self.monitor} is not found in the history logs. Stopper will not be able to stop the training. Available logs are: {list(logs.keys())}"
+                f"Monitor {self.monitor} is not found in the history logs. Stopper will not be "
+                "able to stop the training. Available logs are: {list(logs.keys())}"
             )
             return
 
