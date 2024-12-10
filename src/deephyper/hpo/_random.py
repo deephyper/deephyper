@@ -43,16 +43,14 @@ class RandomSearch(Search):
 
     Args:
         problem: object describing the search/optimization problem.
-
         evaluator: object describing the evaluation process.
-
-        random_state (np.random.RandomState, optional): Initial random state of the search. Defaults to ``None``.
-
-        log_dir (str, optional): Path to the directoy where results of the search are stored. Defaults to ``"."``.
-
+        random_state (np.random.RandomState, optional): Initial random state of the search.
+            Defaults to ``None``.
+        log_dir (str, optional): Path to the directoy where results of the search are stored.
+            Defaults to ``"."``.
         verbose (int, optional): Use verbose mode. Defaults to ``0``.
-
-        stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the function. Defaults to ``None`` which does not use any stopper.
+        stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the
+            function. Defaults to ``None`` which does not use any stopper.
     """
 
     def __init__(

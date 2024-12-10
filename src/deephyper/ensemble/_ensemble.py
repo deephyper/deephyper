@@ -25,13 +25,22 @@ class EnsemblePredictor(Predictor):
     """A predictor that is itself an ensemble of multiple predictors.
 
     Args:
-        predictors (Sequence[Predictor | PredictorLoader]): the list of predictors to put in the ensemble. The sequence can be composed of ``Predictor`` (i.e., the model is already loaded in memory) or ``PredictorLoader`` to perform the loading remotely and in parallel. In the later case, the ``.load()`` function is called for each inference.
+        predictors (Sequence[Predictor | PredictorLoader]): the list of predictors to put in the
+            ensemble. The sequence can be composed of ``Predictor`` (i.e., the model is already
+            loaded in memory) or ``PredictorLoader`` to perform the loading remotely and in
+            parallel. In the later case, the ``.load()`` function is called for each inference.
 
-        aggregator (Aggregator): the aggregation function to fuse the predictions of the predictors into one prediction.
+        aggregator (Aggregator): the aggregation function to fuse the predictions of the predictors
+            into one prediction.
 
-        weights (Sequence[float], optional): the weights of the predictors in the aggregation. Defaults to ``None``.
+        weights (Sequence[float], optional): the weights of the predictors in the aggregation.
+            Defaults to ``None``.
 
-        evaluator (str | Dict, optional): The parallel strategy to compute predictions from the list of predictions. If it is a ``str`` it must be a possible ``method`` of ``Evaluator.create(..., method=...)``. If it is a ``dict`` it must have two keys ``method`` and ``method_kwargs`` such as ``Evaluator.create(...)``. Defaults to ``None`` which is equivalent to ``evaluator="serial"`` for serial evaluations.
+        evaluator (str | Dict, optional): The parallel strategy to compute predictions from the
+            list of predictions. If it is a ``str`` it must be a possible ``method`` of
+            ``Evaluator.create(..., method=...)``. If it is a ``dict`` it must have two keys
+            ``method`` and ``method_kwargs`` such as ``Evaluator.create(...)``. Defaults to
+            ``None`` which is equivalent to ``evaluator="serial"`` for serial evaluations.
 
     Raises:
         ValueError: when the type of the ``evaluator`` argument is not ``str`` or ``dict``.
@@ -59,9 +68,7 @@ class EnsemblePredictor(Predictor):
             self.evaluator_method = evaluator.get("method", "serial")
             self.evaluator_method_kwargs = evaluator.get("method_kwargs", {})
         else:
-            raise ValueError(
-                f"evaluator must be either None or str or dict, got {type(evaluator)}"
-            )
+            raise ValueError(f"evaluator must be either None or str or dict, got {type(evaluator)}")
         self.init_evaluator()
 
     def init_evaluator(self):
@@ -105,7 +112,8 @@ class EnsemblePredictor(Predictor):
             predictors (Sequence[Predictor]): the list of predictors to compute the predictions.
 
         Returns:
-            List[np.ndarray]: the sequence of predictions in the same order that the list of predictors.
+            List[np.ndarray]: the sequence of predictions in the same order that the list of
+            predictors.
         """
         self._evaluator.submit(
             [
