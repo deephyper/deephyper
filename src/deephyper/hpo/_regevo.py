@@ -29,7 +29,9 @@ def get_inactive_value_of_hyperparameter(hp):
 
 
 class RegularizedEvolution(Search):
-    """Regularized evolution algorithm used as an example for the API to implement new search algorithms.
+    """Regularized evolution algorithm.
+
+    This implementation is an example for the Search API to implement new search algorithms.
 
     .. list-table::
         :widths: 25 25 25
@@ -44,20 +46,17 @@ class RegularizedEvolution(Search):
 
     Args:
         problem: object describing the search/optimization problem.
-
         evaluator: object describing the evaluation process.
-
-        random_state (np.random.RandomState, optional): Initial random state of the search. Defaults to ``None``.
-
-        log_dir (str, optional): Path to the directoy where results of the search are stored. Defaults to ``"."``.
-
+        random_state (np.random.RandomState, optional): Initial random state of the search.
+            Defaults to ``None``.
+        log_dir (str, optional): Path to the directoy where results of the search are stored.
+            Defaults to ``"."``.
         verbose (int, optional): Use verbose mode. Defaults to ``0``.
-
-        stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the function. Defaults to ``None`` which does not use any stopper.
-
+        stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the
+            function. Defaults to ``None`` which does not use any stopper.
         population_size (int, optional): The size of the population. Defaults to ``100``.
-
-        sample_size (int, optional): The number of samples to draw from the population. Defaults to ``10``.
+        sample_size (int, optional): The number of samples to draw from the population. Defaults
+            to ``10``.
     """
 
     def __init__(
@@ -73,9 +72,7 @@ class RegularizedEvolution(Search):
     ):
         super().__init__(problem, evaluator, random_state, log_dir, verbose, stopper)
         self._problem.space.seed(self._random_state.randint(0, 2**31))
-        assert (
-            population_size > sample_size
-        ), "population_size must be greater than sample_size"
+        assert population_size > sample_size, "population_size must be greater than sample_size"
         self.population_size = population_size
         self.sample_size = sample_size
         self._population = deque(maxlen=self.population_size)
@@ -109,9 +106,7 @@ class RegularizedEvolution(Search):
                     # If the parameter is inactive due to some conditions then we attribute the
                     # lower bound value to break symmetries and enforce the same representation.
                     if hp_name not in sample:
-                        sample[hp_name] = get_inactive_value_of_hyperparameter(
-                            space[hp_name]
-                        )
+                        sample[hp_name] = get_inactive_value_of_hyperparameter(space[hp_name])
 
                     # Make sure to have JSON serializable values
                     if type(sample[hp_name]).__module__ == np.__name__:
@@ -142,9 +137,7 @@ class RegularizedEvolution(Search):
                 hp_value = hp.rvs(size=None, random_state=space.random)
 
                 child_sample[hp_name] = hp_value
-                child_sample = dict(
-                    deactivate_inactive_hyperparameters(child_sample, space)
-                )
+                child_sample = dict(deactivate_inactive_hyperparameters(child_sample, space))
 
                 for hp_name in self._problem.hyperparameter_names:
                     # If the parameter is inactive due to some conditions then we attribute the

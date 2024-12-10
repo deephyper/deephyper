@@ -26,16 +26,14 @@ class Search(abc.ABC):
 
     Args:
         problem: object describing the search/optimization problem.
-
         evaluator: object describing the evaluation process.
-
-        random_state (np.random.RandomState, optional): Initial random state of the search. Defaults to ``None``.
-
-        log_dir (str, optional): Path to the directoy where results of the search are stored. Defaults to ``"."``.
-
+        random_state (np.random.RandomState, optional): Initial random state of the search.
+            Defaults to ``None``.
+        log_dir (str, optional): Path to the directoy where results of the search are stored.
+            Defaults to ``"."``.
         verbose (int, optional): Use verbose mode. Defaults to ``0``.
-
-        stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the function. Defaults to ``None`` which does not use any stopper.
+        stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the
+            function. Defaults to ``None`` which does not use any stopper.
     """
 
     def __init__(
@@ -80,9 +78,7 @@ class Search(abc.ABC):
         self._path_results = os.path.join(self._log_dir, "results.csv")
         if os.path.exists(self._path_results):
             str_current_time = time.strftime("%Y%m%d-%H%M%S")
-            path_results_renamed = self._path_results.replace(
-                ".", f"_{str_current_time}."
-            )
+            path_results_renamed = self._path_results.replace(".", f"_{str_current_time}.")
             logging.warning(
                 f"Results file already exists, it will be renamed to {path_results_renamed}"
             )
@@ -113,13 +109,12 @@ class Search(abc.ABC):
                 self._evaluator = Evaluator.create(
                     evaluator,
                     method=method,
-                    method_kwargs={
-                        "callbacks": [TqdmCallback()] if self._verbose else []
-                    },
+                    method_kwargs={"callbacks": [TqdmCallback()] if self._verbose else []},
                 )
             else:
                 raise TypeError(
-                    f"The evaluator shoud be of type deephyper.evaluator.Evaluator or Callable but it is  {type(evaluator)}!"
+                    f"The evaluator shoud be of type deephyper.evaluator.Evaluator or Callable but "
+                    f"it is  {type(evaluator)}!"
                 )
         else:
             self._evaluator = evaluator
@@ -145,10 +140,14 @@ class Search(abc.ABC):
             yaml.dump(context, file)
 
     def _set_timeout(self, timeout=None):
-        """If the `timeout` parameter is valid. Run the search in an other thread and trigger a timeout when this thread exhaust the allocated time budget.
+        """Set the timeout for the evaluator used by the search.
+
+        If the `timeout` parameter is valid. Run the search in an other thread and trigger a
+        timeout when this thread exhaust the allocated time budget.
 
         Args:
-            timeout (int, optional): The time budget (in seconds) of the search before stopping. Defaults to ``None``, will not impose a time budget.
+            timeout (int, optional): The time budget (in seconds) of the search before stopping.
+                Defaults to ``None``, will not impose a time budget.
         """
         if timeout is not None:
             if type(timeout) is not int:
@@ -163,18 +162,20 @@ class Search(abc.ABC):
         #         terminate_on_timeout, timeout + 1, self._search
         #     )
 
-    def search(
-        self, max_evals: int = -1, timeout: int = None, max_evals_strict: bool = False
-    ):
+    def search(self, max_evals: int = -1, timeout: int = None, max_evals_strict: bool = False):
         """Execute the search algorithm.
 
         Args:
-            max_evals (int, optional): The maximum number of evaluations of the run function to perform before stopping the search. Defaults to ``-1``, will run indefinitely.
-            timeout (int, optional): The time budget (in seconds) of the search before stopping. Defaults to ``None``, will not impose a time budget.
-            max_evals_strict (bool, optional): If ``True`` the search will not spawn more than ``max_evals`` jobs. Defaults to ``False``.
+            max_evals (int, optional): The maximum number of evaluations of the run function to
+                perform before stopping the search. Defaults to ``-1``, will run indefinitely.
+            timeout (int, optional): The time budget (in seconds) of the search before stopping.
+                Defaults to ``None``, will not impose a time budget.
+            max_evals_strict (bool, optional): If ``True`` the search will not spawn more than
+                ``max_evals`` jobs. Defaults to ``False``.
 
         Returns:
-            DataFrame: a pandas DataFrame containing the evaluations performed or ``None`` if the search could not evaluate any configuration.
+            DataFrame: a pandas DataFrame containing the evaluations performed or ``None`` if the
+                search could not evaluate any configuration.
         """
         import asyncio
 
@@ -208,13 +209,12 @@ class Search(abc.ABC):
         except TimeoutReached:
             self.stopped = True
             wait_all_running_jobs = False
-            logging.warning(
-                "Search is being stopped because the allowed timeout has been reached."
-            )
+            logging.warning("Search is being stopped because the allowed timeout has been reached.")
         except MaximumJobsSpawnReached:
             self.stopped = True
             logging.warning(
-                "Search is being stopped because the maximum number of spawned jobs has been reached."
+                "Search is being stopped because the maximum number of spawned jobs has been "
+                "reached."
             )
         except SearchTerminationError:
             self.stopped = True
@@ -257,7 +257,10 @@ class Search(abc.ABC):
         return self._evaluator._search_id
 
     def extend_results_with_pareto_efficient(self, df_path: str):
-        """Extend the results DataFrame with a column ``pareto_efficient`` which is ``True`` if the point is Pareto efficient.
+        """Extend the results DataFrame with Pareto-Front.
+
+        A column ``pareto_efficient`` is added to the dataframe. It is ``True`` if the
+        point is Pareto efficient.
 
         Args:
             df_path (str): the path to the input DataFrame.
@@ -272,21 +275,22 @@ class Search(abc.ABC):
                 mask_no_failures = ~df[objective_columns[0]].str.startswith("F")
             else:
                 mask_no_failures = np.ones(len(df), dtype=bool)
-            objectives = -df.loc[mask_no_failures, objective_columns].values.astype(
-                float
-            )
+            objectives = -df.loc[mask_no_failures, objective_columns].values.astype(float)
             mask_pareto_front = non_dominated_set(objectives)
             df["pareto_efficient"] = False
             df.loc[mask_no_failures, "pareto_efficient"] = mask_pareto_front
             df.to_csv(df_path, index=False)
 
     def _search(self, max_evals, timeout, max_evals_strict=False):
-        """Search algorithm to be implemented.
+        """Search algorithm logic.
 
         Args:
-            max_evals (int): The maximum number of evaluations of the run function to perform before stopping the search. Defaults to -1, will run indefinitely.
-            timeout (int): The time budget of the search before stopping.Defaults to None, will not impose a time budget.
-            max_evals_strict (bool, optional): ...
+            max_evals (int): The maximum number of evaluations of the run function to perform
+                before stopping the search. Defaults to -1, will run indefinitely.
+            timeout (int): The time budget of the search before stopping. Defaults to ``None``,
+                will not impose a time budget.
+            max_evals_strict (bool, optional): Wether the number of submitted jobs should be
+            strictly equal to ``max_evals``.
         """
         if max_evals_strict:
 
@@ -311,9 +315,7 @@ class Search(abc.ABC):
             logging.info("Gathering jobs...")
             t1 = time.time()
 
-            new_results = self._evaluator.gather(
-                self.gather_type, self.gather_batch_size
-            )
+            new_results = self._evaluator.gather(self.gather_type, self.gather_batch_size)
 
             # Check if results are received from other search instances
             # connected to the same storage
@@ -321,12 +323,11 @@ class Search(abc.ABC):
                 local_results, other_results = new_results
                 new_results = local_results + other_results
                 logging.info(
-                    f"Gathered {len(local_results)} local job(s) and {len(other_results)} other job(s) in {time.time() - t1:.4f} sec."
+                    f"Gathered {len(local_results)} local job(s) and {len(other_results)} other "
+                    f"job(s) in {time.time() - t1:.4f} sec."
                 )
             else:
-                logging.info(
-                    f"Gathered {len(new_results)} job(s) in {time.time() - t1:.4f} sec."
-                )
+                logging.info(f"Gathered {len(new_results)} job(s) in {time.time() - t1:.4f} sec.")
 
             logging.info("Dumping evaluations...")
             t1 = time.time()
@@ -376,7 +377,8 @@ class Search(abc.ABC):
         """Tell the search the results of the evaluations.
 
         Args:
-            results (List[HPOJob]): a list of HPOJobs from which hyperparameters and objectives can be retrieved.
+            results (List[HPOJob]): a list of HPOJobs from which hyperparameters and objectives can
+            be retrieved.
         """
         self._tell(results)
 
@@ -385,5 +387,6 @@ class Search(abc.ABC):
         """Tell the search the results of the evaluations.
 
         Args:
-            results (List[HPOJob]): a list of HPOJobs from which hyperparameters and objectives can be retrieved.
+            results (List[HPOJob]): a list of HPOJobs from which hyperparameters and objectives can
+                be retrieved.
         """
