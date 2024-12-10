@@ -49,8 +49,7 @@ class Lhs(InitialPointGenerator):
     def generate(self, dimensions, n_samples, random_state=None):
         """Creates latin hypercube samples.
 
-        Parameters
-        ----------
+        Args:
         dimensions : list, shape (n_dims,)
             List of search space dimensions.
             Each search dimension can be defined either as
@@ -70,7 +69,6 @@ class Lhs(InitialPointGenerator):
             results.
 
         Returns:
-        -------
         np.array, shape=(n_dim, n_samples)
             LHS set
         """

@@ -52,8 +52,7 @@ class Kernel(sk_Kernel):
     def gradient_x(self, x, X_train):
         """Computes gradient of K(x, X_train) with respect to x
 
-        Parameters
-        ----------
+        Args:
         x: array-like, shape=(n_features,)
             A single test point.
 
@@ -61,7 +60,6 @@ class Kernel(sk_Kernel):
             Training data used to fit the gaussian process.
 
         Returns:
-        -------
         gradient_x: array-like, shape=(n_samples, n_features)
             Gradient of K(x, X_train) with respect to x.
         """
@@ -338,8 +336,7 @@ class HammingKernel(sk_StationaryKernelMixin, sk_NormalizedKernelMixin, Kernel):
     def __call__(self, X, Y=None, eval_gradient=False):
         """Return the kernel k(X, Y) and optionally its gradient.
 
-        Parameters
-        ----------
+        Args:
         * `X` [array-like, shape=(n_samples_X, n_features)]
             Left argument of the returned kernel k(X, Y)
 
@@ -352,7 +349,6 @@ class HammingKernel(sk_StationaryKernelMixin, sk_NormalizedKernelMixin, Kernel):
             hyperparameter is determined. Only supported when Y is None.
 
         Returns:
-        -------
         * `K` [array-like, shape=(n_samples_X, n_samples_Y)]
             Kernel k(X, Y)
 

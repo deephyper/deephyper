@@ -378,15 +378,13 @@ class BayesSearchCV(BaseSearchCV):
     def _make_optimizer(self, params_space):
         """Instantiate skopt Optimizer class.
 
-        Parameters
-        ----------
+        Args:
         params_space : dict
             Represents parameter search space. The keys are parameter
             names (strings) and values are deephyper.skopt.space.Dimension instances,
             one of Real, Integer or Categorical.
 
         Returns:
-        -------
         optimizer: Instance of the `Optimizer` class used for for search
             in some parameter space.
 
@@ -424,7 +422,6 @@ class BayesSearchCV(BaseSearchCV):
         all subspaces with `fit` method.
 
         Returns:
-        -------
         max_iter: int, total number of iterations to explore
         """
         total_iter = 0
@@ -443,8 +440,7 @@ class BayesSearchCV(BaseSearchCV):
     def fit(self, X, y=None, *, groups=None, callback=None, **fit_params):
         """Run fit on the estimator with randomly drawn parameters.
 
-        Parameters
-        ----------
+        Args:
         X : array-like or sparse matrix, shape = [n_samples, n_features]
             The training input samples.
 

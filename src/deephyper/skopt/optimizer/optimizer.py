@@ -484,8 +484,7 @@ class Optimizer(object):
     def copy(self, random_state=None):
         """Create a shallow copy of an instance of the optimizer.
 
-        Parameters
-        ----------
+        Args:
         random_state : int, RandomState instance, or None (default)
             Set the random state of the copy.
         """
@@ -887,8 +886,7 @@ class Optimizer(object):
         To add multiple observations in a batch pass a list-of-lists for `x`
         and a list of scalars for `y`.
 
-        Parameters
-        ----------
+        Args:
         x : list or list-of-lists
             Point at which objective was evaluated.
 
@@ -1349,7 +1347,6 @@ class Optimizer(object):
         but without calling tell
 
         Returns:
-        -------
         res : `OptimizeResult`, scipy object
             OptimizeResult instance with the required information.
 

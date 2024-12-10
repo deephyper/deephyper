@@ -113,5 +113,5 @@ pydocstyle.convention = "google"
 select = ["E4", "E7", "E9", "F", "D"]
 
 ignore = [
-    "D107",  # Allow __init__ without docstring (should be the class docstring).
+    "D107",  # Allow __init__ without docstring (it should be put the class docstring).
 ]

@@ -18,8 +18,7 @@ from deephyper.skopt.utils import dump
 
 
 def check_callback(callback):
-    """Check if callback is a callable or a list of callables.
-    """
+    """Check if callback is a callable or a list of callables."""
     if callback is not None:
         if isinstance(callback, Callable):
             return [callback]
@@ -163,13 +162,11 @@ class EarlyStopper(object):
         Classes inheriting from `EarlyStop` should use this method to
         implement their decision logic.
 
-        Parameters
-        ----------
+        Args:
         result : `OptimizeResult`, scipy object
             The optimization as a OptimizeResult object.
 
         Returns:
-        -------
         decision : boolean or None
             Return True/False if the criterion can make a decision or `None` if
             there is not enough data yet to make a decision.
@@ -228,8 +225,7 @@ class DeltaYStopper(EarlyStopper):
 
 
 class HollowIterationsStopper(EarlyStopper):
-    """Stop if the improvement over the last n iterations is below a threshold.
-    """
+    """Stop if the improvement over the last n iterations is below a threshold."""
 
     def __init__(self, n_iterations, threshold=0):
         super(HollowIterationsStopper, self).__init__()

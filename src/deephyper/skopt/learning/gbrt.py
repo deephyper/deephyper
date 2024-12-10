@@ -52,8 +52,7 @@ class GradientBoostingQuantileRegressor(BaseEstimator, RegressorMixin):
     def fit(self, X, y):
         """Fit one regressor for each quantile.
 
-        Parameters
-        ----------
+        Args:
         X : array-like, shape=(n_samples, n_features)
             Training vectors, where `n_samples` is the number of samples
             and `n_features` is the number of features.
@@ -111,8 +110,7 @@ class GradientBoostingQuantileRegressor(BaseEstimator, RegressorMixin):
         and the predicted standard deviation, which is approximated as
         the (0.84th quantile - 0.16th quantile) divided by 2.0
 
-        Parameters
-        ----------
+        Args:
         X : array-like, shape=(n_samples, n_features)
             where `n_samples` is the number of samples
             and `n_features` is the number of features.

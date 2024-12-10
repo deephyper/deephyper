@@ -46,8 +46,7 @@ class Hammersly(InitialPointGenerator):
     def generate(self, dimensions, n_samples, random_state=None):
         """Creates samples from Hammersly set.
 
-        Parameters
-        ----------
+        Args:
         dimensions : list, shape (n_dims,)
             List of search space dimensions.
             Each search dimension can be defined either as
@@ -67,7 +66,6 @@ class Hammersly(InitialPointGenerator):
             results.
 
         Returns:
-        -------
         np.array, shape=(n_dim, n_samples)
             Hammersley set.
 
