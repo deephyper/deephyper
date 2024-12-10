@@ -1,3 +1,5 @@
+"""Submodule from where ``MPI`` should always be imported within the package."""
+
 import mpi4py
 
 # The following configuration avoid initializing MPI during the import

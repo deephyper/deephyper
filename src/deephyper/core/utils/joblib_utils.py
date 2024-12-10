@@ -1,4 +1,6 @@
-"""Necessary to pass the global configuration to the joblib workers until
+"""Utility for JobLib.
+
+Necessary to pass the global configuration to the joblib workers until
 https://github.com/joblib/joblib/issues/1071 is fixed.
 """
 

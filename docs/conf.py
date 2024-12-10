@@ -31,7 +31,7 @@ author = "Argonne"
 
 # The short X.Y version
 about = {}
-with open(f"../deephyper/__version__.py") as f:
+with open("../deephyper/__version__.py") as f:
     exec(f.read(), about)
 
 version = about["__version__"]

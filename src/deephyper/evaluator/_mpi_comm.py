@@ -13,7 +13,10 @@ logger = logging.getLogger(__name__)
 
 
 def catch_exception(run_func):
-    """A wrapper function to execute the ``run_func`` passed by the user. This way we can catch remote exception"""
+    """A wrapper function to execute the ``run_func`` passed by the user.
+
+    This is used to catch remote exception.
+    """
     try:
         code = 0
         result = run_func()

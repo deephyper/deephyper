@@ -5,8 +5,18 @@ import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh
 import numpy as np
 
-import deephyper.core.exceptions as dh_exceptions
 import deephyper.skopt
+from deephyper.core.exceptions import DeephyperError
+
+
+class HpNameOfWrongType(DeephyperError):
+    """Raised when a dimension name of the HpProblem is not a string."""
+
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):  # noqa: D105
+        return f"Dimension name: '{self.value}' is of type == {type(self.value)} when should be 'str'!"
 
 
 def convert_to_skopt_dim(cs_hp, surrogate_model=None):
@@ -101,7 +111,7 @@ def check_hyperparameter(parameter, name=None, default_value=None):
 
     Args:
         parameter (str|Hyperparameter): an instance of ``ConfigSpace.hyperparameters.hyperparameter`` or a synthetic description (e.g., ``list``, ``tuple``).
-        parameter (str): the name of the hyperparameter. Only required when the parameter is not a ``ConfigSpace.hyperparameters.hyperparameter``.
+        name (str): the name of the hyperparameter. Only required when the parameter is not a ``ConfigSpace.hyperparameters.hyperparameter``.
         default_value: a default value for the hyperparameter.
 
     Returns:
@@ -239,7 +249,7 @@ class HpProblem:
             ConfigSpace.Hyperparameter: a ConfigSpace ``Hyperparameter`` object corresponding to the ``(value, name, default_value)``.
         """
         if not (type(name) is str or name is None):
-            raise dh_exceptions.problem.SpaceDimNameOfWrongType(name)
+            raise HpNameOfWrongType(name)
         csh_parameter = check_hyperparameter(value, name, default_value=default_value)
         self._space.add(csh_parameter)
         return csh_parameter
@@ -256,9 +266,9 @@ class HpProblem:
         return [self.add_hyperparameter(hp) for hp in hp_list]
 
     def add_forbidden_clause(self, clause):
-        """Add a `forbidden clause <https://automl.github.io/ConfigSpace/master/API-Doc.html#forbidden-clauses>`_ to the ``HpProblem``.
+        r"""Add a `forbidden clause <https://automl.github.io/ConfigSpace/master/API-Doc.html#forbidden-clauses>`_ to the ``HpProblem``.
 
-        For example if we want to optimize :math:`\\frac{1}{x}` where :math:`x` cannot be equal to 0:
+        For example if we want to optimize :math:`\frac{1}{x}` where :math:`x` cannot be equal to 0:
 
         >>> from deephyper.hpo import HpProblem
         >>> import ConfigSpace as cs

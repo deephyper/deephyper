@@ -1,10 +1,11 @@
 """The callback module contains sub-classes of the ``Callback`` class.
 
-This ``Callback`` class is used to trigger custom actions on the start and
+The ``Callback`` class is used to trigger custom actions on the start and
 completion of jobs by the ``Evaluator``. Callbacks can be used with any
-Evaluator implementation.
+``Evaluator`` implementation.
 """
 
+import abc
 import deephyper.core.exceptions
 import numpy as np
 import pandas as pd
@@ -16,7 +17,9 @@ else:
     from tqdm import tqdm
 
 
-class Callback:
+class Callback(abc.ABC):
+    """Callback interface."""
+
     def on_launch(self, job):
         """Called each time a ``Job`` is created by the ``Evaluator``.
 
@@ -25,14 +28,14 @@ class Callback:
         """
 
     def on_done(self, job):
-        """Called each time a Job is completed by the Evaluator.
+        """Called each time a local ``Job`` has been gathered by the Evaluator.
 
         Args:
             job (Job): The completed job.
         """
 
     def on_done_other(self, job):
-        """Called each time a Job is collected from an other process.
+        """Called after local ``Job`` have been gathered for each remote ``Job`` that is done.
 
         Args:
             job (Job): The completed Job.
@@ -53,9 +56,8 @@ class ProfilingCallback(Callback):
     def __init__(self):
         self.history = []
 
-    def on_launch(self, job): ...
-
     def on_done(self, job):
+        """Called when a local job has been gathered."""
         start = job.timestamp_submit
         end = job.timestamp_gather
         if job.timestamp_start is not None and job.timestamp_end is not None:
@@ -66,6 +68,7 @@ class ProfilingCallback(Callback):
 
     @property
     def profile(self):
+        """The profile processed as a ``pd.DataFrame``."""
         n_jobs = 0
         profile = []
         for t, incr in sorted(self.history):
@@ -89,9 +92,11 @@ class LoggerCallback(Callback):
         self._n_done = 0
 
     def on_done_other(self, job):
+        """Called after gathering local jobs on available remote jobs that are done."""
         self.on_done(job)
 
     def on_done(self, job):
+        """Called when a local job has been gathered."""
         self._n_done += 1
         # Test if multi objectives are received
         if np.ndim(job.objective) > 0:
@@ -137,13 +142,19 @@ class TqdmCallback(Callback):
         self._tqdm = None
 
     def set_max_evals(self, max_evals):
+        """Setter for the maximum number of evaluations.
+
+        It is used to initialize the tqdm progressbar.
+        """
         self._max_evals = max_evals
         self._tqdm = None
 
     def on_done_other(self, job):
+        """Called after gathering local jobs on available remote jobs that are done."""
         self.on_done(job)
 
     def on_done(self, job):
+        """Called when a local job has been gathered."""
         if self._tqdm is None:
             if self._max_evals:
                 self._tqdm = tqdm(total=self._max_evals)
@@ -204,9 +215,11 @@ class SearchEarlyStopping(Callback):
         self._verbose = verbose
 
     def on_done_other(self, job):
+        """Called after gathering local jobs on available remote jobs that are done."""
         self.on_done(job)
 
     def on_done(self, job):
+        """Called when a local job has been gathered."""
         job_objective = self._objective_func(job)
         # if multi objectives are received
         if np.ndim(job_objective) > 0:

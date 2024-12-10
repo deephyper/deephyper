@@ -447,7 +447,7 @@ class CBO(Search):
         """Tell the search the results of the evaluations.
 
         Args:
-            observations (dict): a dictionary containing the results of the evaluations.
+            results (List[HPOJob]): a dictionary containing the results of the evaluations.
         """
         # Transform configurations to list to fit optimizer
         logging.info("Transforming received configurations to list...")

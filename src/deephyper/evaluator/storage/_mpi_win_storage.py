@@ -8,9 +8,7 @@ from deephyper.evaluator.storage._storage import Storage
 
 
 class MPIWinStorage(Storage):
-    """Storage based on MPIWinMutableMapping that uses one-sided communication for
-    shared memory.
-    """
+    """Storage based on MPIWinMutableMapping that uses one-sided communication for shared memory."""
 
     def __init__(self, comm, size: int = 104857600, root: int = 0) -> None:
         logging.info("Creating MPIWinStorage ...")

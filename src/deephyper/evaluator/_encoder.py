@@ -12,8 +12,7 @@ from ConfigSpace.read_and_write import json as cs_json
 
 
 class Encoder(json.JSONEncoder):
-    """Enables JSON dump of numpy data, python functions.
-    """
+    """Enables JSON dump of numpy data, python functions."""
 
     def default(self, obj):
         if isinstance(obj, uuid.UUID):

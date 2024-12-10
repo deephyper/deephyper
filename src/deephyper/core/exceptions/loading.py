@@ -12,7 +12,7 @@ class GenericLoaderError(DeephyperError):
         self.error_source = error_source
         self.custom_msg = custom_msg
 
-    def __str__(self):
+    def __str__(self):  # noqa: D105
         error = (
             f"{self.error_source}\n"
             f"{self.custom_msg}"

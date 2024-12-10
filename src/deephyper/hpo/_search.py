@@ -260,7 +260,7 @@ class Search(abc.ABC):
         """Extend the results DataFrame with a column ``pareto_efficient`` which is ``True`` if the point is Pareto efficient.
 
         Args:
-            df (pd.DataFrame): the input results DataFrame.
+            df_path (str): the path to the input DataFrame.
         """
         df = pd.read_csv(df_path)
 
@@ -385,5 +385,5 @@ class Search(abc.ABC):
         """Tell the search the results of the evaluations.
 
         Args:
-            observations (List[HPOJob]): a list of HPOJobs from which hyperparameters and objectives can be retrieved.
+            results (List[HPOJob]): a list of HPOJobs from which hyperparameters and objectives can be retrieved.
         """

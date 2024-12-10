@@ -9,8 +9,8 @@ from concurrent.futures import ProcessPoolExecutor
 
 
 def register_inner_function_for_pickle(func):
-    """Register former decorated function under a new name to be called in subprocess within
-    the decorator.
+    """Register former decorated function under a new name to be called in subprocess within the decorator.
+
     See: https://stackoverflow.com/questions/73146709/python-process-inside-decorator
     """
     prefix = "profiled_"
@@ -23,7 +23,7 @@ def register_inner_function_for_pickle(func):
 
 
 # Example from https://github.com/dabeaz/python-cookbook/blob/master/src/9/defining_a_decorator_that_takes_an_optional_argument/example.py
-def profile(
+def profile(  # noqa: D417
     _func=None,
     *,
     memory: bool = False,
@@ -200,7 +200,7 @@ def profile(
 
 
 def slow_down(_func=None, *, rate=1):
-    """Sleep given amount of seconds before calling the function"""
+    """Sleep given amount of seconds before calling the function."""
 
     def decorator_slow_down(func):
         @functools.wraps(func)

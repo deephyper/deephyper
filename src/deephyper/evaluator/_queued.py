@@ -1,7 +1,7 @@
 import collections
 
 
-def queued(evaluator_class):
+def queued(evaluator_class):  # noqa: D417
     """Decorator transforming an Evaluator into a ``Queued{Evaluator}``.
 
     The ``run_function`` used with a ``Queued{Evaluator}`` needs to have a

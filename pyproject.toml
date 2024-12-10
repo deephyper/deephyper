@@ -107,6 +107,15 @@ markers = [
     "sdv: marks tests which needs SDV installed"
 ]
 
+[tool.ruff]
+
+exclude = [
+    "docs",
+    "examples",
+    "src/deephyper/skopt",
+    "tests",
+]
+
 [tool.ruff.lint]
 pydocstyle.convention = "google"
 

@@ -1,6 +1,4 @@
-"""Deephyper exceptions"""
-
-# ! Root exceptions
+"""Set of root exceptions for the package."""
 
 
 class DeephyperError(Exception):
@@ -24,12 +22,12 @@ class TimeoutReached(SearchTerminationError):
 
 
 class RunFunctionError(RuntimeError):
-    """Raised when error occurs in run-function"""
+    """Raised when error occurs in run-function."""
 
     def __init__(self, msg: str = None) -> None:
         self.msg = msg
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # noqa: D105
         return self.msg
 
 

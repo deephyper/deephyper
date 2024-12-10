@@ -106,7 +106,7 @@ class RandomSearch(Search):
         """Tell the search the results of the evaluations.
 
         Args:
-            observations (dict): a dictionary containing the results of the evaluations.
+            results (List[HPOJob]): a dictionary containing the results of the evaluations.
         """
         for config, obj in results:
             pass

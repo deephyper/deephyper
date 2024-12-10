@@ -157,8 +157,9 @@ class Evaluator(abc.ABC):
 
     @timeout.setter
     def timeout(self, value):
-        """Set a timeout for the Evaluator. It will create task with a "time budget" and will kill the the task if this budget
-        is exhausted.
+        """Set a timeout for the Evaluator.
+
+        It will create new tasks with a "time budget" and it will cancel the the task if this budget is exhausted.
         """
         self._time_timeout_set = time.time()
         self._timeout = value

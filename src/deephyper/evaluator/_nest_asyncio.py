@@ -1,4 +1,7 @@
-"""From https://github.com/erdewit/nest_asyncio"""
+"""Utility code to use asyncio feature inside jupyter notebooks/ipython kernels.
+
+The code is from: https://github.com/erdewit/nest_asyncio
+"""
 
 import asyncio
 import asyncio.events as events
@@ -20,9 +23,7 @@ def apply(loop=None):
 
 
 def _patch_asyncio():
-    """Patch asyncio module to use pure Python tasks and futures,
-    use module level _current_tasks, all_tasks and patch run method.
-    """
+    """Patch asyncio module to use pure Python tasks and futures, use module level _current_tasks, all_tasks and patch run method."""
 
     def run(main, *, debug=False):
         try:
@@ -91,9 +92,7 @@ def _patch_loop(loop):
             return f.result()
 
     def _run_once(self):
-        """Simplified re-implementation of asyncio's _run_once that
-        runs handles as they become ready.
-        """
+        """Simplified re-implementation of asyncio's _run_once that runs handles as they become ready."""
         ready = self._ready
         scheduled = self._scheduled
         while scheduled and scheduled[0]._cancelled:
@@ -230,9 +229,7 @@ def _patch_task():
 
 
 def _patch_tornado():
-    """If tornado is imported before nest_asyncio, make tornado aware of
-    the pure-Python asyncio Future.
-    """
+    """If tornado is imported before nest_asyncio, make tornado aware of the pure-Python asyncio Future."""
     if "tornado" in sys.modules:
         import tornado.concurrent as tc
 

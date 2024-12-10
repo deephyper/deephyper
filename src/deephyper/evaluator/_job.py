@@ -213,8 +213,7 @@ class RunningJob(MutableMapping):
         return JobStatus(self.storage.load_job_status(self.id))
 
     def record(self, budget: float, objective: float):
-        """Records the current ``budget`` and ``objective`` values in the object and
-        pass it to the stopper if one is being used.
+        """Records the current ``budget`` and ``objective`` values in the object and pass it to the stopper if one is being used.
 
         Args:
             budget (float): the budget used.
