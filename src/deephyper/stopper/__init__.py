@@ -1,4 +1,4 @@
-"""The ``stopper`` module.
+"""Multi-fidelity and early discarding subpackage.
 
 This module provides features to observe intermediate performances of
 iterative algorithm and decide dynamically if its evaluation should be

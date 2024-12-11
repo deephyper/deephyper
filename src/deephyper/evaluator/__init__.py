@@ -1,4 +1,4 @@
-"""This evaluator subpackage.
+"""Evaluator subpackage.
 
 This provides a common interface to execute isolated tasks with different
 parallel backends and system properties.

@@ -1,4 +1,4 @@
-"""Subpackage for predictor models."""
+"""Predictive model subpackage."""
 
 from deephyper.predictor._predictor import (
     Predictor,

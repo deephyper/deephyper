@@ -1,10 +1,9 @@
-"""Subpackage for hyperparameter search algorithms.
+"""Hyperparameter optimization and neural architecture search subpackage.
 
 .. warning::
 
-   All search algorithms are MAXIMIZING the objective function. If you want to
-   MINIMIZE the objective function, you have to return the negative of you
-   objective.
+   All optimization algorithms are MAXIMIZING the objective function. If you want to
+   MINIMIZE instead, you should remember to return the negative of your objective.
 """
 
 from deephyper.hpo._cbo import CBO
