@@ -12,9 +12,7 @@ class SklearnPredictor(Predictor):
     def __init__(self, model: BaseEstimator):
         self.model = model
         self._predict_func = "predict"
-        if isinstance(self.model, ClassifierMixin) and hasattr(
-            self.model, "predict_proba"
-        ):
+        if isinstance(self.model, ClassifierMixin) and hasattr(self.model, "predict_proba"):
             self._predict_func = "predict_proba"
 
     def predict(self, X):
@@ -41,9 +39,7 @@ class SklearnPredictorFileLoader(PredictorFileLoader):
         return SklearnPredictor(model)
 
     @staticmethod
-    def find_predictor_files(
-        path_directory: str, file_extension: str = "pkl"
-    ) -> List[str]:
+    def find_predictor_files(path_directory: str, file_extension: str = "pkl") -> List[str]:
         """Finds the predictor files in a directory given a specific extension.
 
         Args:

@@ -50,7 +50,8 @@ def scheduler_periodic_exponential_decay(i, eta_0, num_dim, period, rate, delay)
         delay (int): delay of the decay (decaying starts after ``delay`` iterations).
 
     Returns:
-        tuple: an iterable of length 2 with the updated values at iteration ``i`` for ``[kappa, xi]``.
+        tuple: an iterable of length 2 with the updated values at iteration ``i`` for
+        ``[kappa, xi]``.
     """
     eta_i = eta_0 * np.exp(-rate * ((i - 1 - delay) % period))
     return eta_i
@@ -68,7 +69,8 @@ def scheduler_bandit(i, eta_0, num_dim, delta=0.05, lamb=0.2, delay=0):
         delay (int): delay of the scheduler (decaying starts after ``delay`` iterations).
 
     Returns:
-        tuple: an iterable of length 2 with the updated values at iteration ``i`` for ``[kappa, xi]``.
+        tuple: an iterable of length 2 with the updated values at iteration ``i`` for
+        ``[kappa, xi]``.
     """
     i = np.maximum(i + 1 - delay, 1)
     beta_i = 2 * np.log(num_dim * i**2 * np.pi**2 / (6 * delta)) * lamb
@@ -79,7 +81,10 @@ def scheduler_bandit(i, eta_0, num_dim, delta=0.05, lamb=0.2, delay=0):
 
 
 class CBO(Search):
-    """Centralized Bayesian Optimisation Search. It follows a manager-workers architecture where the manager runs the Bayesian optimization loop and workers execute parallel evaluations of the black-box function.
+    """Centralized Bayesian Optimisation Search.
+
+    It follows a manager-workers architecture where the manager runs the Bayesian optimization
+    loop and workers execute parallel evaluations of the black-box function.
 
     .. list-table::
         :widths: 25 25 25
@@ -104,57 +109,129 @@ class CBO(Search):
 
         random_state (int, optional): Random seed. Defaults to ``None``.
 
-        log_dir (str, optional): Log directory where search's results are saved. Defaults to ``"."``.
+        log_dir (str, optional): Log directory where search's results are saved. Defaults to
+            ``"."``.
 
         verbose (int, optional): Indicate the verbosity level of the search. Defaults to ``0``.
 
-        stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the function. Defaults to ``None`` which does not use any stopper.
+        stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the
+            function. Defaults to ``None`` which does not use any stopper.
 
-        surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Surrogate model used by the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "MF", "GBRT", "DUMMY"]`` or a sklearn regressor. ``"ET"`` is for Extremely Randomized Trees which is the best compromise between speed and quality when performing a lot of parallel evaluations, i.e., reaching more than hundreds of evaluations. ``"GP"`` is for Gaussian-Process which is the best choice when maximizing the quality of iteration but quickly slow down when reaching hundreds of evaluations, also it does not support conditional search space. ``"RF"`` is for Random-Forest, slower than extremely randomized trees but with better mean estimate and worse epistemic uncertainty quantification capabilities. ``"GBRT"`` is for Gradient-Boosting Regression Tree, it has better mean estimate than other tree-based method worse uncertainty quantification capabilities and slower than ``"RF"``. Defaults to ``"ET"``.
+        surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Surrogate model used by
+            the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "MF", "GBRT",
+            "DUMMY"]`` or a sklearn regressor. ``"ET"`` is for Extremely Randomized Trees which is
+            the best compromise between speed and quality when performing a lot of parallel
+            evaluations, i.e., reaching more than hundreds of evaluations. ``"GP"`` is for Gaussian-
+            Process which is the best choice when maximizing the quality of iteration but quickly
+            slow down when reaching hundreds of evaluations, also it does not support conditional
+            search space. ``"RF"`` is for Random-Forest, slower than extremely randomized trees but
+            with better mean estimate and worse epistemic uncertainty quantification capabilities.
+            ``"GBRT"`` is for Gradient-Boosting Regression Tree, it has better mean estimate than
+            other tree-based method worse uncertainty quantification capabilities and slower than
+            ``"RF"``. Defaults to ``"ET"``.
 
-        surrogate_model_kwargs (dict, optional): Additional parameters to pass to the surrogate model. Defaults to ``None``.
+        surrogate_model_kwargs (dict, optional): Additional parameters to pass to the surrogate
+            model. Defaults to ``None``.
 
-        acq_func (str, optional): Acquisition function used by the Bayesian optimization. Can be a value in ``["UCB", "EI", "PI", "gp_hedge"]``. Defaults to ``"UCB"``.
+        acq_func (str, optional): Acquisition function used by the Bayesian optimization. Can be a
+            value in ``["UCB", "EI", "PI", "gp_hedge"]``. Defaults to ``"UCB"``.
 
-        acq_optimizer (str, optional): Method used to minimze the acquisition function. Can be a value in ``["sampling", "lbfgs", "ga", "mixedga"]``. Defaults to ``"auto"``.
+        acq_optimizer (str, optional): Method used to minimze the acquisition function. Can be a
+            value in ``["sampling", "lbfgs", "ga", "mixedga"]``. Defaults to ``"auto"``.
 
-        acq_optimizer_freq (int, optional): Frequency of optimization calls for the acquisition function. Defaults to ``10``, using optimizer every ``10`` surrogate model updates.
+        acq_optimizer_freq (int, optional): Frequency of optimization calls for the acquisition
+            function. Defaults to ``10``, using optimizer every ``10`` surrogate model updates.
 
-        kappa (float, optional): Manage the exploration/exploitation tradeoff for the "UCB" acquisition function. Defaults to ``1.96`` which corresponds to 95% of the confidence interval.
+        kappa (float, optional): Manage the exploration/exploitation tradeoff for the "UCB"
+            acquisition function. Defaults to ``1.96`` which corresponds to 95% of the confidence
+            interval.
 
-        xi (float, optional): Manage the exploration/exploitation tradeoff of ``"EI"`` and ``"PI"`` acquisition function. Defaults to ``0.001``.
+        xi (float, optional): Manage the exploration/exploitation tradeoff of ``"EI"`` and ``"PI"``
+            acquisition function. Defaults to ``0.001``.
 
-        n_points (int, optional): The number of configurations sampled from the search space to infer each batch of new evaluated configurations.
+        n_points (int, optional): The number of configurations sampled from the search space to
+            infer each batch of new evaluated configurations.
 
-        filter_duplicated (bool, optional): Force the optimizer to sample unique points until the search space is "exhausted" in the sens that no new unique points can be found given the sampling size ``n_points``. Defaults to ``True``.
+        filter_duplicated (bool, optional): Force the optimizer to sample unique points until the
+            search space is "exhausted" in the sens that no new unique points can be found given
+            the sampling size ``n_points``. Defaults to ``True``.
 
-        update_prior (bool, optional): Update the prior of the surrogate model with the new evaluated points. Defaults to ``False``. Should be set to ``True`` when all objectives and parameters are continuous.
+        update_prior (bool, optional): Update the prior of the surrogate model with the new
+            evaluated points. Defaults to ``False``. Should be set to ``True`` when all objectives
+            and parameters are continuous.
 
-        update_prior_quantile (float, optional): The quantile used to update the prior. Defaults to ``0.1``.
+        update_prior_quantile (float, optional): The quantile used to update the prior.
+            Defaults to ``0.1``.
 
-        multi_point_strategy (str, optional): Definition of the constant value use for the Liar strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max", "qUCB"]``. All ``"cl_..."`` strategies follow the constant-liar scheme, where if $N$ new points are requested, the surrogate model is re-fitted $N-1$ times with lies (respectively, the minimum, mean and maximum objective found so far; for multiple objectives, these are the minimum, mean and maximum of the individual objectives) to infer the acquisition function. Constant-Liar strategy have poor scalability because of this repeated re-fitting. The ``"qUCB"`` strategy is much more efficient by sampling a new $kappa$ value for each new requested point without re-fitting the model, but it is only compatible with ``acq_func == "UCB"``. Defaults to ``"cl_max"``.
+        multi_point_strategy (str, optional): Definition of the constant value use for the Liar
+            strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max", "qUCB"]``. All
+            ``"cl_..."`` strategies follow the constant-liar scheme, where if $N$ new points are
+            requested, the surrogate model is re-fitted $N-1$ times with lies (respectively, the
+            minimum, mean and maximum objective found so far; for multiple objectives, these are
+            the minimum, mean and maximum of the individual objectives) to infer the acquisition
+            function. Constant-Liar strategy have poor scalability because of this repeated re-
+            fitting. The ``"qUCB"`` strategy is much more efficient by sampling a new $kappa$ value
+            for each new requested point without re-fitting the model, but it is only compatible
+            with ``acq_func == "UCB"``. Defaults to ``"cl_max"``.
 
-        n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the Bayesian optimization. A value of ``-1`` will use all available cores. Not used in ``surrogate_model`` if passed as own sklearn regressor. Defaults to ``1``.
+        n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the
+            Bayesian optimization. A value of ``-1`` will use all available cores. Not used in
+            ``surrogate_model`` if passed as own sklearn regressor. Defaults to ``1``.
 
-        n_initial_points (int, optional): Number of collected objectives required before fitting the surrogate-model. Defaults to ``10``.
+        n_initial_points (int, optional): Number of collected objectives required before fitting
+            the surrogate-model. Defaults to ``10``.
 
-        initial_point_generator (str, optional): Sets an initial points generator. Can be either ``["random", "sobol", "halton", "hammersly", "lhs", "grid"]``. Defaults to ``"random"``.
+        initial_point_generator (str, optional): Sets an initial points generator. Can be either
+            ``["random", "sobol", "halton", "hammersly", "lhs", "grid"]``. Defaults to ``"random"``.
 
-        initial_points (List[Dict], optional): A list of initial points to evaluate where each point is a dictionnary where keys are names of hyperparameters and values their corresponding choice. Defaults to ``None`` for them to be generated randomly from the search space.
+        initial_points (List[Dict], optional): A list of initial points to evaluate where each
+            point is a dictionnary where keys are names of hyperparameters and values their
+            corresponding choice. Defaults to ``None`` for them to be generated randomly from
+            the search space.
 
-        filter_failures (str, optional): Replace objective of failed configurations by ``"min"`` or ``"mean"``. If ``"ignore"`` is passed then failed configurations will be filtered-out and not passed to the surrogate model. For multiple objectives, failure of any single objective will lead to treating that configuration as failed and each of these multiple objective will be replaced by their individual ``"min"`` or ``"mean"`` of past configurations. Defaults to ``"min"`` to replace failed configurations objectives by the running min of all objectives.
+        filter_failures (str, optional): Replace objective of failed configurations by ``"min"``
+            or ``"mean"``. If ``"ignore"`` is passed then failed configurations will be
+            filtered-out and not passed to the surrogate model. For multiple objectives, failure of
+            any single objective will lead to treating that configuration as failed and each of
+            these multiple objective will be replaced by their individual ``"min"`` or ``"mean"``
+            of past configurations. Defaults to ``"min"`` to replace failed configurations
+            objectives by the running min of all objectives.
 
-        max_failures (int, optional): Maximum number of failed configurations allowed before observing a valid objective value when ``filter_failures`` is not equal to ``"ignore"``. Defaults to ``100``.
+        max_failures (int, optional): Maximum number of failed configurations allowed before
+            observing a valid objective value when ``filter_failures`` is not equal to
+            ``"ignore"``. Defaults to ``100``.
 
-        moo_lower_bounds (list, optional): List of lower bounds on the interesting range of objective values. Must be the same length as the number of obejctives. Defaults to ``None``, i.e., no bounds. Can bound only a single objective by providing ``None`` for all other values. For example, ``moo_lower_bounds=[None, 0.5, None]`` will explore all tradeoffs for the objectives at index 0 and 2, but only consider scores for objective 1 that exceed 0.5.
+        moo_lower_bounds (list, optional): List of lower bounds on the interesting range of
+            objective values. Must be the same length as the number of obejctives. Defaults to
+            ``None``, i.e., no bounds. Can bound only a single objective by providing ``None``
+            for all other values. For example, ``moo_lower_bounds=[None, 0.5, None]`` will explore
+            all tradeoffs for the objectives at index 0 and 2, but only consider scores for
+            objective 1 that exceed 0.5.
 
-        moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective optimization. Can be a value in ``["Linear", "Chebyshev", "AugChebyshev", "PBI", "Quadratic"]``. Defaults to ``"Chebyshev"``. Typically, randomized methods should be used to capture entire Pareto front, unless there is a known target solution a priori. Additional details on each scalarization can be found in :mod:`deephyper.skopt.moo`.
+        moo_scalarization_strategy (str, optional): Scalarization strategy used in multiobjective
+            optimization. Can be a value in ``["Linear", "Chebyshev", "AugChebyshev", "PBI",
+            "Quadratic"]``. Defaults to ``"Chebyshev"``. Typically, randomized methods should be
+            used to capture entire Pareto front, unless there is a known target solution a priori.
+            Additional details on each scalarization can be found in :mod:`deephyper.skopt.moo`.
 
-        moo_scalarization_weight (list, optional): Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions. Defaults to ``None`` for randomized weights. Only set if you want to fix the scalarization weights for a multiobjective HPS.
+        moo_scalarization_weight (list, optional): Scalarization weights to be used in
+            multiobjective optimization with length equal to the number of objective functions.
+            Defaults to ``None`` for randomized weights. Only set if you want to fix the
+            scalarization weights for a multiobjective HPS.
 
-        scheduler (dict, callable, optional): a function to manage the value of ``kappa, xi`` with iterations. Defaults to ``None`` which does not use any scheduler. The periodic exponential decay scheduler can be used with  ``scheduler={"type": "periodic-exp-decay", "period": 30, "rate": 0.1}``. The scheduler can also be a callable function with signature ``scheduler(i, eta_0, **kwargs)`` where ``i`` is the current iteration, ``eta_0`` is the initial value of ``[kappa, xi]`` and ``kwargs`` are other fixed parameters of the function. Instead of fixing the decay ``"rate"`` the final ``kappa`` or ``xi`` can be used ``{"type": "periodic-exp-decay", "period": 25, "kappa_final": 1.96}``.
+        scheduler (dict, callable, optional): a function to manage the value of ``kappa, xi`` with
+            iterations. Defaults to ``None`` which does not use any scheduler. The periodic
+            exponential decay scheduler can be used with  ``scheduler={"type":
+            "periodic-exp-decay", "period": 30, "rate": 0.1}``. The scheduler can also be a
+            callable function with signature ``scheduler(i, eta_0, **kwargs)`` where ``i`` is the
+            current iteration, ``eta_0`` is the initial value of ``[kappa, xi]`` and ``kwargs`` are
+            other fixed parameters of the function. Instead of fixing the decay ``"rate"`` the
+            final ``kappa`` or ``xi`` can be used ``{"type": "periodic-exp-decay", "period": 25,
+            "kappa_final": 1.96}``.
 
-        objective_scaler (str, optional): a way to map the objective space to some other support for example to normalize it. Defaults to ``"auto"`` which automatically set it to "identity" for any surrogate model except "RF" which will use "quantile-uniform".
+        objective_scaler (str, optional): a way to map the objective space to some other support
+            for example to normalize it. Defaults to ``"auto"`` which automatically set it to
+            "identity" for any surrogate model except "RF" which will use "quantile-uniform".
     """
 
     def __init__(
@@ -223,7 +300,8 @@ class CBO(Search):
             base_estimator = surrogate_model
         else:
             raise ValueError(
-                f"Parameter 'surrogate_model={surrogate_model}' should have a value in {surrogate_model_allowed}, or be a sklearn regressor!"
+                f"Parameter 'surrogate_model={surrogate_model}' should have a value in "
+                f"{surrogate_model_allowed}, or be a sklearn regressor!"
             )
 
         acq_func_allowed = [
@@ -258,9 +336,7 @@ class CBO(Search):
             )
 
         if type(max_failures) is not int:
-            raise ValueError(
-                f"Parameter max_failures={max_failures} should be an integer value!"
-            )
+            raise ValueError(f"Parameter max_failures={max_failures} should be an integer value!")
 
         # Initialize lower bounds for objectives
         if moo_lower_bounds is None:
@@ -269,12 +345,12 @@ class CBO(Search):
             [isinstance(lbi, numbers.Number) or lbi is None for lbi in moo_lower_bounds]
         ):
             self._moo_upper_bounds = [
-                -lbi if isinstance(lbi, numbers.Number) else None
-                for lbi in moo_lower_bounds
+                -lbi if isinstance(lbi, numbers.Number) else None for lbi in moo_lower_bounds
             ]
         else:
             raise ValueError(
-                f"Parameter 'moo_lower_bounds={moo_lower_bounds}' is invalid. Must be None or a list"
+                f"Parameter 'moo_lower_bounds={moo_lower_bounds}' is invalid. Must be None or "
+                f"a list"
             )
 
         moo_scalarization_strategy_allowed = list(moo_functions.keys())
@@ -283,7 +359,9 @@ class CBO(Search):
             or isinstance(moo_scalarization_strategy, MoScalarFunction)
         ):
             raise ValueError(
-                f"Parameter 'moo_scalarization_strategy={moo_scalarization_strategy}' should have a value in {moo_scalarization_strategy_allowed} or be a subclass of deephyper.skopt.moo.MoScalarFunction!"
+                f"Parameter 'moo_scalarization_strategy={moo_scalarization_strategy}' should have a"
+                f" value in {moo_scalarization_strategy_allowed} or be a subclass of "
+                f"deephyper.skopt.moo.MoScalarFunction!"
             )
         self._moo_scalarization_strategy = moo_scalarization_strategy
         self._moo_scalarization_weight = moo_scalarization_weight
@@ -299,7 +377,8 @@ class CBO(Search):
         ]
         if multi_point_strategy not in multi_point_strategy_allowed:
             raise ValueError(
-                f"Parameter multi_point_strategy={multi_point_strategy} should have a value in {multi_point_strategy_allowed}!"
+                f"Parameter multi_point_strategy={multi_point_strategy} should have a value "
+                f"in {multi_point_strategy_allowed}!"
             )
 
         self._n_initial_points = n_initial_points
@@ -340,9 +419,7 @@ class CBO(Search):
                 "update_prior": update_prior,
                 "update_prior_quantile": 1 - update_prior_quantile,
                 "n_jobs": n_jobs,
-                "filter_failures": MAP_filter_failures.get(
-                    filter_failures, filter_failures
-                ),
+                "filter_failures": MAP_filter_failures.get(filter_failures, filter_failures),
                 "max_failures": max_failures,
                 "acq_optimizer_freq": acq_optimizer_freq,
             },
@@ -424,9 +501,7 @@ class CBO(Search):
         if self.scheduler is not None:
             kappa, xi = self.scheduler(i)
             values = {"kappa": kappa, "xi": xi}
-            logging.info(
-                f"Updated exploration-exploitation policy with {values} from scheduler"
-            )
+            logging.info(f"Updated exploration-exploitation policy with {values} from scheduler")
             self._opt.acq_func_kwargs.update(values)
 
     def _ask(self, n: int = 1) -> List[Dict]:
@@ -447,7 +522,7 @@ class CBO(Search):
         """Tell the search the results of the evaluations.
 
         Args:
-            observations (dict): a dictionary containing the results of the evaluations.
+            results (List[HPOJob]): a dictionary containing the results of the evaluations.
         """
         # Transform configurations to list to fit optimizer
         logging.info("Transforming received configurations to list...")
@@ -468,10 +543,7 @@ class CBO(Search):
             elif (type(obj) is str and "F" == obj[0]) or any(
                 type(obj_i) is str and "F" == obj_i[0] for obj_i in obj
             ):
-                if (
-                    self._opt_kwargs["acq_optimizer_kwargs"]["filter_failures"]
-                    == "ignore"
-                ):
+                if self._opt_kwargs["acq_optimizer_kwargs"]["filter_failures"] == "ignore":
                     continue
                 else:
                     opt_X.append(x)
@@ -505,7 +577,8 @@ class CBO(Search):
 
         Args:
             name (str): name of the surrogate model.
-            n_jobs (int): number of parallel processes to distribute the computation of the surrogate model.
+            n_jobs (int): number of parallel processes to distribute the computation of the
+                surrogate model.
             random_state (int): random seed.
             surrogate_model_kwargs (dict): additional parameters to pass to the surrogate model.
 
@@ -591,7 +664,8 @@ class CBO(Search):
                 )
             except AttributeError:
                 raise deephyper.core.exceptions.MissingRequirementError(
-                    "Installing 'deephyper/scikit-garden' is required to use MondrianForest (MF) regressor as a surrogate model!"
+                    "Installing 'deephyper/scikit-garden' is required to use MondrianForest (MF) "
+                    "regressor as a surrogate model!"
                 )
         # Model: Gradient Boosting Regression Tree (based on quantiles)
         # https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingRegressor.html
@@ -697,16 +771,20 @@ class CBO(Search):
             else:
                 y = df.filter(regex=r"^objective_\d+$").values.tolist()
         except KeyError:
-            raise ValueError(
-                "Incompatible dataframe 'df' to fit surrogate model of CBO."
-            )
+            raise ValueError("Incompatible dataframe 'df' to fit surrogate model of CBO.")
 
         self._opt.tell(x, [np.negative(yi).tolist() for yi in y])
 
     def fit_generative_model(
         self, df, q=0.90, n_samples=100, verbose=False, **generative_model_kwargs
     ):
-        """Learn the distribution of hyperparameters for the top-``(1-q)x100%`` configurations and sample from this distribution. It can be used for transfer learning. For multiobjective problems, this function computes the top-``(1-q)x100%`` configurations in terms of their ranking with respect to pareto efficiency: all points on the first non-dominated pareto front have rank 1 and in general, points on the k'th non-dominated front have rank k.
+        """Fits a generative model for sampling during BO.
+
+        Learn the distribution of hyperparameters for the top-``(1-q)x100%`` configurations and
+        sample from this distribution. It can be used for transfer learning. For multiobjective
+        problems, this function computes the top-``(1-q)x100%`` configurations in terms of their
+        ranking with respect to pareto efficiency: all points on the first non-dominated pareto
+        front have rank 1 and in general, points on the k'th non-dominated front have rank k.
 
         Example Usage:
 
@@ -715,20 +793,30 @@ class CBO(Search):
 
         Args:
             df (str|DataFrame): a dataframe or path to CSV from a previous search.
-            q (float, optional): the quantile defined the set of top configurations used to bias the search. Defaults to ``0.90`` which select the top-10% configurations from ``df``.
+
+            q (float, optional): the quantile defined the set of top configurations used to bias
+                the search. Defaults to ``0.90`` which select the top-10% configurations from
+                ``df``.
+
             n_samples (int, optional): the number of samples used to score the generative model.
-            verbose (bool, optional): If set to ``True`` it will print the score of the generative model. Defaults to ``False``.
-            generative_model_kwargs (dict, optional): additional parameters to pass to the generative model.
+
+            verbose (bool, optional): If set to ``True`` it will print the score of the generative
+                model. Defaults to ``False``.
+
+            generative_model_kwargs (dict, optional): additional parameters to pass to the
+                generative model.
 
         Returns:
-            tuple: ``score, model`` which are a metric which measures the quality of the learned generated-model and the generative model respectively.
+            tuple: ``score, model`` which are a metric which measures the quality of the learned
+                generated-model and the generative model respectively.
         """
         # to make sdv optional
         try:
             import sdv
         except ModuleNotFoundError:
             raise deephyper.core.exceptions.MissingRequirementError(
-                "Installing 'sdv' is required to use 'fit_generative_model' please run 'pip install \"deephyper[sdv]\"'"
+                "Installing 'sdv' is required to use 'fit_generative_model' please run "
+                "'pip install \"deephyper[sdv]\"'"
             )
 
         from sdv.evaluation.single_table import evaluate_quality
@@ -740,14 +828,16 @@ class CBO(Search):
 
         if len(df) < 10:
             raise ValueError(
-                f"The passed DataFrame contains only {len(df)} results when a minimum of 10 is required!"
+                f"The passed DataFrame contains only {len(df)} results when a minimum of "
+                f"10 is required!"
             )
 
         # !avoid error linked to `n_components=10` a parameter of generative model used
         q_max = 1 - 10 / len(df)
         if q_max < q:
             warnings.warn(
-                f"The value of q={q} is replaced by q_max={q_max} because a minimum of 10 samples are required to perform transfer-learning!",
+                f"The value of q={q} is replaced by q_max={q_max} because a minimum of 10 samples "
+                f"sare required to perform transfer-learning!",
                 category=UserWarning,
             )
             q = q_max
@@ -774,9 +864,7 @@ class CBO(Search):
             req_df = df.loc[top]
 
         req_df = req_df[["job_id"] + hp_cols]
-        req_df = req_df.rename(
-            columns={k: k[2:] for k in hp_cols if k.startswith("p:")}
-        )
+        req_df = req_df.rename(columns={k: k[2:] for k in hp_cols if k.startswith("p:")})
 
         # constraints
         scalar_constraints = []
@@ -786,8 +874,8 @@ class CBO(Search):
                 hp = self._problem.space[hp_name]
 
                 # TODO: Categorical and Ordinal are both considered non-ordered for SDV
-                # TODO: it could be useful to use the "category"  type of Pandas and the ordered=True/False argument
-                # TODO: to extend the capability of SDV
+                # TODO: it could be useful to use the "category"  type of Pandas and the
+                # TODO: ordered=True/False argument to extend the capability of SDV
                 if isinstance(hp, csh.CategoricalHyperparameter) or isinstance(
                     hp, csh.OrdinalHyperparameter
                 ):
@@ -856,8 +944,15 @@ class CBO(Search):
 
         Args:
             df (str|DataFrame): a checkpoint from a previous search.
-            fac_numerical (float): the factor used to compute the sigma of a truncated normal distribution based on ``sigma = max(1.0, (upper - lower) * fac_numerical)``. A small large factor increase exploration while a small factor increase exploitation around the best-configuration from the ``df`` parameter.
-            fac_categorical (float): the weight given to a categorical feature part of the best configuration. A large weight ``> 1`` increase exploitation while a small factor close to ``1`` increase exploration.
+
+            fac_numerical (float): the factor used to compute the sigma of a truncated normal
+                distribution based on ``sigma = max(1.0, (upper - lower) * fac_numerical)``. A
+                small large factor increase exploration while a small factor increase exploitation
+                around the best-configuration from the ``df`` parameter.
+
+            fac_categorical (float): the weight given to a categorical feature part of the best
+                configuration. A large weight ``> 1`` increase exploitation while a small factor
+                close to ``1`` increase exploration.
         """
         if type(df) is str and df[-4:] == ".csv":
             df = pd.read_csv(df)
@@ -887,9 +982,7 @@ class CBO(Search):
             best_index = np.argmax(res_df["objective"].values)
             best_param = res_df.iloc[best_index]
         else:
-            best_index = non_dominated_set(
-                -np.asarray(res_df[objcol]), return_mask=False
-            )[0]
+            best_index = non_dominated_set(-np.asarray(res_df[objcol]), return_mask=False)[0]
             best_param = res_df.iloc[best_index]
 
         cst_new = CS.ConfigurationSpace(seed=self._random_state.randint(0, 2**31))
@@ -944,9 +1037,7 @@ class CBO(Search):
                     logging.warning(f"Not fitting {hp} because it is not supported!")
                     cst_new.add(hp)
             else:
-                logging.warning(
-                    f"Not fitting {hp} because it was not found in the dataframe!"
-                )
+                logging.warning(f"Not fitting {hp} because it was not found in the dataframe!")
                 cst_new.add(hp)
 
         # For conditions
@@ -972,10 +1063,7 @@ class CBO(Search):
                 for comp in cond.components:
                     cond_list.append(self._return_forbid(comp, cst_new))
                 cond_new = CS.ForbiddenAndConjunction(*cond_list)
-            elif (
-                type(cond) is CS.ForbiddenEqualsClause
-                or type(cond) is CS.ForbiddenInClause
-            ):
+            elif type(cond) is CS.ForbiddenEqualsClause or type(cond) is CS.ForbiddenInClause:
                 cond_new = self._return_forbid(cond, cst_new)
             else:
                 logging.warning(f"Forbidden {type(cond)} is not implemented!")
@@ -984,7 +1072,9 @@ class CBO(Search):
         self._opt_kwargs["dimensions"] = cst_new
 
     def _to_dict(self, x: list) -> dict:
-        """Transform a list of hyperparameter values to a ``dict`` where keys are hyperparameters names and values are hyperparameters values.
+        """Transform a list of hyperparameter values to a ``dict``.
+
+        The keys are hyperparameters names and values are hyperparameters values.
 
         Args:
             x (list): a list of hyperparameter values.

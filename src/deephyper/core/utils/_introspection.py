@@ -3,7 +3,7 @@ import json
 
 
 def _get_init_param_names(cls):
-    """Get parameter names for the estimator"""
+    """Get parameter names for the estimator."""
     # fetch the constructor
     init = cls.__init__
     if init is object.__init__:

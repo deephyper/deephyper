@@ -2,11 +2,16 @@ import subprocess
 import sys
 
 
-def run(command, live_output=False):
+def run(command: str, live_output: bool = False):
     """Test command line interface.
 
     Args:
-        command (str): the command line as a str.
+        command (str):
+            The command line as a string.
+        live_output (bool, Optional):
+            Boolean that indicates if the STDOUT/STDERR streams from the
+            launched subprocess should directly be redirected to the streams
+            of the parent process.
     """
     command = command.split()
     try:

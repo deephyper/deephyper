@@ -7,10 +7,13 @@ from deephyper.ensemble.loss import Loss
 
 
 class TopKSelector(Selector):
-    """Selection method implementing Top-K selection. This method selects the K predictors with the lowest loss.
+    """Selection method implementing Top-K selection.
+
+    This method selects the K predictors with the lowest loss.
 
     Args:
-        loss_func (Callable or Loss): a loss function that takes two arguments: the true target values and the predicted target values.
+        loss_func (Callable or Loss): a loss function that takes two arguments: the true target
+            values and the predicted target values.
         k (int, optional): The number of predictors to select. Defaults to ``5``.
     """
 

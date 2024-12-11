@@ -364,8 +364,7 @@ class RandomForestRegressor(ForestRegressor):
     def predict(self, X, return_std=False, disentangled_std=False):
         """Predict continuous output for X.
 
-        Parameters
-        ----------
+        Args:
         X : array of shape = (n_samples, n_features)
             Input data.
 
@@ -373,7 +372,6 @@ class RandomForestRegressor(ForestRegressor):
             Whether or not to return the standard deviation.
 
         Returns:
-        -------
         predictions : array-like of shape = (n_samples,)
             Predicted values for X. If criterion is set to "mse",
             then `predictions[i] ~= mean(y | X[i])`.
@@ -591,8 +589,7 @@ class ExtraTreesRegressor(_sk_ExtraTreesRegressor):
     def predict(self, X, return_std=False, disentangled_std=False):
         """Predict continuous output for X.
 
-        Parameters
-        ----------
+        Args:
         X : array-like of shape=(n_samples, n_features)
             Input data.
 
@@ -600,7 +597,6 @@ class ExtraTreesRegressor(_sk_ExtraTreesRegressor):
             Whether or not to return the standard deviation.
 
         Returns:
-        -------
         predictions : array-like of shape=(n_samples,)
             Predicted values for X. If criterion is set to "squared_error",
             then `predictions[i] ~= mean(y | X[i])`.

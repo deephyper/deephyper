@@ -491,8 +491,7 @@ class Sobol(InitialPointGenerator):
     def generate(self, dimensions, n_samples, random_state=None):
         """Creates samples from Sobol' set.
 
-        Parameters
-        ----------
+        Args:
         dimensions : list, shape (n_dims,)
             List of search space dimensions.
             Each search dimension can be defined either as
@@ -511,7 +510,6 @@ class Sobol(InitialPointGenerator):
             results.
 
         Returns:
-        -------
         sample : array_like (n_samples, dim)
             Sobol' set.
 
@@ -557,8 +555,7 @@ class Sobol(InitialPointGenerator):
     def _sobol(self, dim_num, seed):
         """Generates a new quasirandom Sobol' vector with each call.
 
-        Parameters
-        ----------
+        Args:
         dim_num : int
           Number of spatial dimensions.
           `dim_num` must satisfy 1 <= DIM_NUM <= 40.
@@ -573,7 +570,6 @@ class Sobol(InitialPointGenerator):
           the sequence.
 
         Returns:
-        -------
         vector, seed : np.array (n_dim,), int
             The next quasirandom vector and the seed of its next vector.
 

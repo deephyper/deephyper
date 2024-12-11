@@ -12,8 +12,7 @@ from ConfigSpace.read_and_write import json as cs_json
 
 
 class Encoder(json.JSONEncoder):
-    """Enables JSON dump of numpy data, python functions.
-    """
+    """Enables JSON dump of numpy data, python functions."""
 
     def default(self, obj):
         if isinstance(obj, uuid.UUID):
@@ -58,9 +57,11 @@ def parse_subprocess_result(result):
     except AttributeError:
         error = stderr.decode("utf-8")
         raise RuntimeError(
-            f"{error}\n\n Could not collect any result from the run_function in the main process because an error happened in the subprocess."
+            f"{error}\n\n Could not collect any result from the run_function in the main process \
+            because an error happened in the subprocess."
         )
-    # Finally, parse whether the return value from the user-defined function is a scalar, a list, or a dictionary.
+    # Finally, parse whether the return value from the user-defined function
+    # is a scalar, a list, or a dictionary.
     retval = retval_bytes.replace(
         b"'", b'"'
     )  # For dictionaries, replace single quotes with double quotes!

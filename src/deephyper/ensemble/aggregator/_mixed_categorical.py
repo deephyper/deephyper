@@ -24,7 +24,8 @@ class MixedCategoricalAggregator(Aggregator):
             - ``"entropy"``: Uncertainty is computed as the entropy of the categorical distribution.
 
         decomposed_uncertainty (bool, optional):
-            If ``True``, decomposes uncertainty into aleatoric and epistemic components. Default is ``False``.
+            If ``True``, decomposes uncertainty into aleatoric and epistemic components. Default is
+            ``False``.
     """
 
     VALID_UNCERTAINTY_METHODS = {"confidence", "entropy"}
@@ -55,7 +56,8 @@ class MixedCategoricalAggregator(Aggregator):
 
         Returns:
             Dict[str, Union[np.ndarray, float]]: Aggregated results, including:
-                - ``"loc"``: Aggregated categorical probabilities of shape ``(n_samples, ..., n_classes)``.
+                - ``"loc"``: Aggregated categorical probabilities of shape ``(n_samples, ...,
+                 n_classes)``.
                 - ``"uncertainty"``: (Optional) Total uncertainty.
                 - ``"uncertainty_aleatoric"``: (Optional) Aleatoric uncertainty.
                 - ``"uncertainty_epistemic"``: (Optional) Epistemic uncertainty.
@@ -67,9 +69,7 @@ class MixedCategoricalAggregator(Aggregator):
             raise TypeError("Input `y` must be a list of numpy.ndarray.")
 
         if weights is not None and len(weights) != len(y):
-            raise ValueError(
-                "The length of `weights` must match the number of predictors in `y`."
-            )
+            raise ValueError("The length of `weights` must match the number of predictors in `y`.")
 
         self._np = np
         if all(isinstance(pred, np.ma.MaskedArray) for pred in y):
@@ -85,13 +85,9 @@ class MixedCategoricalAggregator(Aggregator):
 
         # Compute uncertainty
         if self.uncertainty_method == "confidence":
-            self._compute_confidence_uncertainty(
-                agg, y_proba_models, y_proba_ensemble, weights
-            )
+            self._compute_confidence_uncertainty(agg, y_proba_models, y_proba_ensemble, weights)
         elif self.uncertainty_method == "entropy":
-            self._compute_entropy_uncertainty(
-                agg, y_proba_models, y_proba_ensemble, weights
-            )
+            self._compute_entropy_uncertainty(agg, y_proba_models, y_proba_ensemble, weights)
 
         return agg
 
@@ -111,9 +107,7 @@ class MixedCategoricalAggregator(Aggregator):
             uncertainty_aleatoric = self._np.average(
                 1 - self._np.max(y_proba_models, axis=-1), weights=weights, axis=0
             )
-            uncertainty_epistemic = self._np.maximum(
-                0, uncertainty - uncertainty_aleatoric
-            )
+            uncertainty_epistemic = self._np.maximum(0, uncertainty - uncertainty_aleatoric)
 
             agg["uncertainty_aleatoric"] = uncertainty_aleatoric
             agg["uncertainty_epistemic"] = uncertainty_epistemic

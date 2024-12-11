@@ -108,4 +108,18 @@ markers = [
 ]
 
 [tool.ruff]
-pydocstyle.convention = "google"
+exclude = [
+    "docs",
+    "examples",
+    "src/deephyper/skopt",
+    "src/deephyper/analysis/hpo/_paxplot.py",
+    "tests",
+]
+line-length = 100
+
+[tool.ruff.lint]
+extend-select = ["D", "E501"]
+ignore = ["D107"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

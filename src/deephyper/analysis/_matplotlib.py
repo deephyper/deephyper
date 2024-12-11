@@ -6,7 +6,7 @@ def figure_size(width, fraction=1):
 
     Args:
         width (float): Document textwidth or columnwidth in pts.
-        fraction (float, optional) Fraction of the width which you wish the figure to occupy.
+        fraction (float, optional): Fraction of the width which you wish the figure to occupy.
 
     Returns:
         tuple: Dimensions of figure in inches.

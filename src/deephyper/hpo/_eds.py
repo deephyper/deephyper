@@ -2,7 +2,10 @@ from deephyper.hpo._cbo import CBO
 
 
 class ExperimentalDesignSearch(CBO):
-    """Centralized Experimental Design Search. It follows a manager-workers architecture where the manager runs the sampling process and workers execute parallel evaluations of the black-box function.
+    """Centralized Experimental Design Search.
+
+    It follows a manager-workers architecture where the manager runs the sampling process and
+    workers execute parallel evaluations of the black-box function.
 
     .. list-table::
         :widths: 25 25 25
@@ -28,11 +31,13 @@ class ExperimentalDesignSearch(CBO):
 
         random_state (int, optional): Random seed. Defaults to ``None``.
 
-        log_dir (str, optional): Log directory where search's results are saved. Defaults to ``"."``.
+        log_dir (str, optional): Log directory where search's results are saved. Defaults to
+            ``"."``.
 
         verbose (int, optional): Indicate the verbosity level of the search. Defaults to ``0``.
 
-        stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the function. Defaults to ``None`` which does not use any stopper.
+        stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the
+            function. Defaults to ``None`` which does not use any stopper.
 
         n_points (int, optional): Number of points to sample. Defaults to ``None``.
 
@@ -60,9 +65,7 @@ class ExperimentalDesignSearch(CBO):
         initial_points=None,
     ):
         if n_points is None:
-            raise ValueError(
-                "n_points must be specified for the ExperimentalDesignSearch."
-            )
+            raise ValueError("n_points must be specified for the ExperimentalDesignSearch.")
         super().__init__(
             problem,
             evaluator,

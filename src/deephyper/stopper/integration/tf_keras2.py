@@ -1,25 +1,37 @@
+"""Submodule of Tensorflow/Keras integrations for the ``Stopper``."""
+
 import warnings
 
 from tf_keras.callbacks import Callback
 
+from deephyper.evaluator import RunningJob
+
 
 class TFKerasStopperCallback(Callback):
-    def __init__(self, job, monitor="val_loss", mode="min") -> None:
-        """Callback to use in conjonction with a DeepHyper ``RunningJob`` to stop the training when the ``Stopper`` is triggered.
+    """Tensorflow/Keras callback to be used with a DeepHyper ``RunningJob``.
 
-        .. code-block:: python
+    This stops the training when the ``Stopper`` is triggered.
 
-            def run(job):
-                callback = TFKerasStopperCallback(job, ...)
-                ...
-                model.fit(..., callbacks=[callback])
-                ...
+    .. code-block:: python
 
-        Args:
-            job (RunningJob): The running job created by DeepHyper.
-            monitor (str, optional): The metric to monitor. It can be any metric collected in the ``History``. Defaults to "val_loss".
-            mode (str, optional): If the metric is maximized or minimized. Value in ``["max", "min"]``. Defaults to "max".
-        """
+        def run(job):
+            callback = TFKerasStopperCallback(job, ...)
+            ...
+            model.fit(..., callbacks=[callback])
+            ...
+
+    Args:
+        job (RunningJob):
+            The running job created by DeepHyper.
+        monitor (str, optional):
+            The metric to monitor. It can be any metric collected in the
+            ``History``. Defaults to ``"val_loss"``.
+        mode (str, optional):
+            If the metric is maximized or minimized. Value in ``
+            ["max", "min"]``. Defaults to ``"max"``.
+    """
+
+    def __init__(self, job: RunningJob, monitor: str = "val_loss", mode: str = "min"):
         super().__init__()
         self.job = job
         self.monitor = monitor
@@ -30,10 +42,20 @@ class TFKerasStopperCallback(Callback):
         self.budget = 0
 
     def on_epoch_end(self, epoch, logs=None):
-        self.budget += 1
-        self.observe_and_stop(self.budget, logs)
+        """Called at the end of an epoch during training.
 
-    def observe_and_stop(self, budget, logs):
+        Args:
+            epoch: Integer, index of epoch.
+            logs: Dict, metric results for this training epoch, and for the
+              validation epoch if validation is performed. Validation result
+              keys are prefixed with `val_`. For training epoch, the values of
+              the `Model`'s metrics are returned. Example:
+              `{'loss': 0.2, 'accuracy': 0.7}`.
+        """
+        self.budget += 1
+        self._observe_and_stop(self.budget, logs)
+
+    def _observe_and_stop(self, budget, logs):
         if logs is None:
             return
 
@@ -41,7 +63,8 @@ class TFKerasStopperCallback(Callback):
 
         if objective is None:
             warnings.warn(
-                f"Monitor {self.monitor} is not found in the history logs. Stopper will not be able to stop the training. Available logs are: {list(logs.keys())}"
+                f"Monitor {self.monitor} is not found in the history logs. Stopper will not be "
+                "able to stop the training. Available logs are: {list(logs.keys())}"
             )
             return
 

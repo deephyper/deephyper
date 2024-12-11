@@ -2,7 +2,9 @@ import parse
 
 
 def parse_result(stream: str) -> float:
-    """Parse the output of a DeepHyper test. The format of the parsed output should be as follows:
+    """Parse the output of a DeepHyper test.
+
+    The format of the parsed output should be as follows:
 
     .. code-block::
 

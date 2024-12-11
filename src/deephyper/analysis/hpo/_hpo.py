@@ -33,7 +33,9 @@ def filter_failed_objectives(
         df (pd.DataFrame): the results of a Hyperparameter Search.
 
     Returns:
-        Tuple[pd.DataFrame, pd.DataFrame]: ``df_without_failures, df_with_failures`` the first are results of a Hyperparameter Search without failed objectives and the second are results of Hyperparameter search with failed objectives.
+        Tuple[pd.DataFrame, pd.DataFrame]: ``df_without_failures, df_with_failures`` the first are
+        results of a Hyperparameter Search without failed objectives and the second are results of
+        Hyperparameter search with failed objectives.
     """
     # Single-Objective
     if "objective" in df.columns:
@@ -59,12 +61,11 @@ def filter_failed_objectives(
 
         df_with_failures = df[mask]
         df_without_failures = df[~mask]
-        df_without_failures = df_without_failures.astype(
-            {objcol_i: float for objcol_i in objcol}
-        )
+        df_without_failures = df_without_failures.astype({objcol_i: float for objcol_i in objcol})
     else:
         raise ValueError(
-            "The DataFrame does not contain neither a column named 'objective' nor columns named 'objective_<int>'."
+            "The DataFrame does not contain neither a column named 'objective' nor columns named "
+            "'objective_<int>'."
         )
 
     return df_without_failures, df_with_failures
@@ -82,9 +83,7 @@ def parameters_from_row(row: pd.Series) -> dict:
     return {k[2:]: v for k, v in row.to_dict().items() if k.startswith("p:")}
 
 
-def parameters_at_max(
-    df: pd.DataFrame, column: str = "objective"
-) -> Tuple[dict, float]:
+def parameters_at_max(df: pd.DataFrame, column: str = "objective") -> Tuple[dict, float]:
     """Return the parameters at the maximum of the given ``column`` function.
 
     Args:
@@ -92,7 +91,8 @@ def parameters_at_max(
         column (str, optional): the column to use for the maximization. Defaults to ``"objective"``.
 
     Returns:
-        Tuple[dict, float]: the parameters at the maximum of the ``column`` and its corresponding value.
+        Tuple[dict, float]: the parameters at the maximum of the ``column`` and its corresponding
+            value.
     """
     df, _ = filter_failed_objectives(df)
     idx = df[column].argmax()
@@ -112,7 +112,8 @@ def parameters_at_topk(
         k (int, optional): the number of top-k to return. Defaults to ``1``.
 
     Returns:
-        List[Tuple[dict, float]]: the parameters at the maximum of the ``column`` and its corresponding value.
+        List[Tuple[dict, float]]: the parameters at the maximum of the ``column`` and its
+            corresponding value.
     """
     df, _ = filter_failed_objectives(df)
     df = df.nlargest(k, columns=column)
@@ -133,10 +134,14 @@ def plot_search_trajectory_single_objective_hpo(
     Args:
         results (pd.DataFrame): the results of Hyperparameter Optimization.
         show_failures (bool, optional): whether to show the failed objectives. Defaults to ``True``.
-        column (str, optional): the column to use for the y-axis of the plot. Defaults to ``"objective"``.
-        mode (str, optional): if the plot should be made for minimization ``"min"`` or maximization ``"max"``. Defaults to ``"max"``.
-        x_units (str, optional): if the plot should be made with respect to evaluations ``"evaluations"`` or time ``"seconds"``. Defaults to ``"evaluations"``.
+        column (str, optional): the column to use for the y-axis of the plot. Defaults to
+            ``"objective"``.
+        mode (str, optional): if the plot should be made for minimization ``"min"`` or maximization
+            ``"max"``. Defaults to ``"max"``.
+        x_units (str, optional): if the plot should be made with respect to evaluations
+            ``"evaluations"`` or time ``"seconds"``. Defaults to ``"evaluations"``.
         ax (matplotlib.pyplot.axes): the axes to use for the plot.
+        kwargs (dict): other keywords arguments passed to``ax.scatter(...)``.
 
     Returns:
         (matplotlib.pyplot.figure, matplotlib.pyplot.axes): the figure and axes of the plot.
@@ -224,10 +229,12 @@ def compile_worker_activity(results, profile_type="submit/gather"):
 
     Args:
         results (pd.DataFrame): the results of a Hyperparameter Search.
-        profile_type (str, optional): the type of profile to build. It can be `"submit/gather"` or `"start/end"`. Defaults to "submit/gather".
+        profile_type (str, optional): the type of profile to build. It can be `"submit/gather"` or
+            `"start/end"`. Defaults to "submit/gather".
 
     Returns:
-        timestamps, n_jobs_active: a list of timestamps and a list of the number of active jobs at each timestamp.
+        timestamps, n_jobs_active: a list of timestamps and a list of the number of active jobs at
+            each timestamp.
     """
     if profile_type == "submit/gather":
         key_start, key_end = "m:timestamp_submit", "m:timestamp_gather"
@@ -235,13 +242,12 @@ def compile_worker_activity(results, profile_type="submit/gather"):
         key_start, key_end = "m:timestamp_start", "m:timestamp_end"
     else:
         raise ValueError(
-            f"Unknown profile_type='{profile_type}' it should be one of ['submit/gather', 'start/end']."
+            f"Unknown profile_type='{profile_type}' it should be one of "
+            "['submit/gather', 'start/end']"
         )
 
     if key_start not in results.columns or key_end not in results.columns:
-        raise ValueError(
-            f"Columns '{key_start}' and '{key_end}' are not present in the DataFrame."
-        )
+        raise ValueError(f"Columns '{key_start}' and '{key_end}' are not present in the DataFrame.")
 
     results = results.sort_values(by=[key_start], ascending=True)
 
@@ -274,9 +280,13 @@ def plot_worker_utilization(
 
     Args:
         results (pd.DataFrame): the results of a Hyperparameter Search.
-        num_workers (int, optional): the number of workers. If passed the normalized utilization will be shown (/num_workers). Otherwise, the raw number of active workers is shown. Defaults to ``None``.
-        profile_type (str, optional): the type of profile to build. It can be `"submit/gather"` or `"start/end"`. Defaults to "submit/gather".
+        num_workers (int, optional): the number of workers. If passed the normalized utilization
+            will be shown (/num_workers). Otherwise, the raw number of active workers is shown.
+            Defaults to ``None``.
+        profile_type (str, optional): the type of profile to build. It can be `"submit/gather"`
+            or `"start/end"`. Defaults to "submit/gather".
         ax (matplotlib.pyplot.axes): the axes to use for the plot.
+        kwargs (dict): other keywords arguments passed to the ``ax.step(...)``.
 
     Returns:
         (matplotlib.pyplot.figure, matplotlib.pyplot.axes): the figure and axes of the plot.
@@ -337,12 +347,8 @@ def add_colorbar_px(paxfig, data, cmap="viridis", colorbar_kwargs={}):
     ax_colorbar = paxfig.add_subplot(gs[0, n_axes])
 
     # Create colorbar
-    sm = plt.cm.ScalarMappable(
-        norm=plt.Normalize(vmin=data.min(), vmax=data.max()), cmap=cmap
-    )
-    cbar = paxfig.colorbar(
-        sm, orientation="vertical", ax=ax_colorbar, **colorbar_kwargs
-    )
+    sm = plt.cm.ScalarMappable(norm=plt.Normalize(vmin=data.min(), vmax=data.max()), cmap=cmap)
+    cbar = paxfig.colorbar(sm, orientation="vertical", ax=ax_colorbar, **colorbar_kwargs)
     cbar.locator = MaxNLocator(integer=True)
     cbar.update_ticks()
 
@@ -378,9 +384,10 @@ def plot_parallel_coordinate(
         results (pd.DataFrame): the results of a Hyperparameter Search.
         parameters_columns (list, optional): list of columns to include in the plot.
         objective_column (str): name of the objective column
-        rank_mode (str, optional): mode of ranking. Defaults to "min".
-        highlight (bool, optional): whether to highlight the best solutions. Defaults to True.
-        constant_predictor (float, optional): value to compare the objective to. Defaults to 0.035726056.
+        rank_mode (str, optional): mode of ranking. Defaults to ``"min"``.
+        highlight (bool, optional): whether to highlight the best solutions. Defaults to ``True``.
+        constant_predictor (float, optional): value to compare the objective to. Defaults to
+            ``0.035726056``.
 
     Returns:
         fig: figure of the parallel coordinate plot
@@ -473,9 +480,7 @@ def plot_parallel_coordinate(
 
         # Add colorbar
         color_col = len(cols) - 1
-        paxfig.add_colorbar(
-            ax_idx=color_col, cmap=cmap, colorbar_kwargs={"label": "Rank"}
-        )
+        paxfig.add_colorbar(ax_idx=color_col, cmap=cmap, colorbar_kwargs={"label": "Rank"})
 
     fig = plt.gcf()
     ax = fig.gca()

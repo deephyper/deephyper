@@ -1,8 +1,20 @@
-"""The ``stopper`` module provides features to observe intermediate performances of iterative algorithm and decide dynamically if its evaluation should be stopped or continued.
+"""The ``stopper`` module.
 
-This module was inspired from the Pruner interface and implementation of `Optuna <https://optuna.readthedocs.io/en/stable/reference/pruners.html>`_.
+This module provides features to observe intermediate performances of
+iterative algorithm and decide dynamically if its evaluation should be
+stopped or continued.
 
-The ``Stopper`` class is the base class for all stoppers. It provides the interface for the ``observe`` and ``stop`` methods that should be implemented by all stoppers. The ``observe`` method is called at each iteration of the iterative algorithm and the ``stop`` method is called at the end of each iteration to decide if the evaluation should be stopped or continued. The stopper object is not used directly but through the ``RunningJob`` received by the ``run``-function. In the following example we demonstrate with a simulation how it can be used:
+This module was inspired from the Pruner interface and implementation of
+`Optuna <https://optuna.readthedocs.io/en/stable/reference/pruners.html>`_.
+
+The ``Stopper`` class is the base class for all stoppers. It provides the
+interface for the ``observe`` and ``stop`` methods that should be implemented
+by all stoppers. The ``observe`` method is called at each iteration of the
+iterative algorithm and the ``stop`` method is called at the end of each
+iteration to decide if the evaluation should be stopped or continued. The
+stopper object is not used directly but through the ``RunningJob`` received
+by the ``run``-function. In the following example we demonstrate with a
+simulation how it can be used:
 
 .. code-block:: python
 
@@ -44,10 +56,11 @@ The ``Stopper`` class is the base class for all stoppers. It provides the interf
     results = search.search(timeout=10)
 
 
-As it can be observed in the following results many evaluation stopped after the first iteration which saved
-a lot of computation time. If evaluated fully, each configuration would take about 1 seconds and we would be able
-to compute only a maximum of 10 configurations (because we set a timeout of 10). However, with the stopper we managed
-to perform 15 evaluations instead.
+As it can be observed in the following results many evaluation stopped after
+the first iteration which saved a lot of computation time. If evaluated
+fully, each configuration would take about 1 seconds and we would be able to
+compute only a maximum of 10 configurations (because we set a timeout of 10).
+However, with the stopper we managed to perform 15 evaluations instead.
 
 .. code-block:: console
 

@@ -1,7 +1,6 @@
-# For the documentation
-from . import _cli, _hps
+from . import _cli, _hpo  # noqa: D104
 
-commands = [_cli, _hps]
+commands = [_cli, _hpo]
 
 __doc__ = ""
 

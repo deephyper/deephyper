@@ -43,8 +43,7 @@ class Halton(InitialPointGenerator):
     def generate(self, dimensions, n_samples, random_state=None):
         """Creates samples from Halton set.
 
-        Parameters
-        ----------
+        Args:
         dimensions : list, shape (n_dims,)
             List of search space dimensions.
             Each search dimension can be defined either as
@@ -63,7 +62,6 @@ class Halton(InitialPointGenerator):
             results.
 
         Returns:
-        -------
         np.array, shape=(n_dim, n_samples)
             Halton set.
 

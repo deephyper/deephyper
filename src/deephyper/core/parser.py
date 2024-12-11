@@ -1,3 +1,5 @@
+"""Module containing code to build automatically build the CL parser."""
+
 import argparse
 import inspect
 from inspect import signature
@@ -11,6 +13,8 @@ def add_arguments_from_signature(parser, obj, prefix="", exclude=[]):
     Args:
         parser (ArgumentParser)): the argument parser to which we want to add arguments.
         obj (type): the class from which we want to extract default parameters for the constructor.
+        prefix (str, Optional): prefix to add to created parser arguments.
+        exclude (list, Optional): list of arguments to be excluded.
     """
     sig = signature(obj)
     prefix = f"{prefix}-" if len(prefix) > 0 else ""
@@ -45,7 +49,9 @@ def add_arguments_from_signature(parser, obj, prefix="", exclude=[]):
 
 
 def str2bool(v):
-    """:meta private:
+    """Convert input string values to boolean.
+
+    :meta private:
     """
     if isinstance(v, bool):
         return v

@@ -1,4 +1,7 @@
-"""From https://github.com/erdewit/nest_asyncio"""
+"""Utility code to use asyncio feature inside jupyter notebooks/ipython kernels.
+
+The code is from: https://github.com/erdewit/nest_asyncio
+"""
 
 import asyncio
 import asyncio.events as events
@@ -20,8 +23,9 @@ def apply(loop=None):
 
 
 def _patch_asyncio():
-    """Patch asyncio module to use pure Python tasks and futures,
-    use module level _current_tasks, all_tasks and patch run method.
+    """Patch asyncio module to use pure Python tasks and futures.
+
+    Use module level _current_tasks, all_tasks and patch run method.
     """
 
     def run(main, *, debug=False):
@@ -58,9 +62,7 @@ def _patch_asyncio():
         asyncio.tasks._current_tasks = asyncio.tasks.Task._current_tasks
         asyncio.all_tasks = asyncio.tasks.Task.all_tasks
     if sys.version_info >= (3, 9, 0):
-        events._get_event_loop = events.get_event_loop = asyncio.get_event_loop = (
-            _get_event_loop
-        )
+        events._get_event_loop = events.get_event_loop = asyncio.get_event_loop = _get_event_loop
         _get_event_loop
     asyncio.run = run
     asyncio._nest_patched = True
@@ -91,8 +93,9 @@ def _patch_loop(loop):
             return f.result()
 
     def _run_once(self):
-        """Simplified re-implementation of asyncio's _run_once that
-        runs handles as they become ready.
+        """Simplified re-implementation of asyncio's _run_once.
+
+        This runs handles as they become ready.
         """
         ready = self._ready
         scheduled = self._scheduled
@@ -141,10 +144,7 @@ def _patch_loop(loop):
             events._set_running_loop(old_running_loop)
             self._num_runs_pending -= 1
             if self._is_proactorloop:
-                if (
-                    self._num_runs_pending == 0
-                    and self._self_reading_future is not None
-                ):
+                if self._num_runs_pending == 0 and self._self_reading_future is not None:
                     ov = self._self_reading_future._ov
                     self._self_reading_future.cancel()
                     if ov is not None:
@@ -185,9 +185,7 @@ def _patch_loop(loop):
     cls._check_running = _check_running
     cls._check_runnung = _check_running  # typo in Python 3.7 source
     cls._num_runs_pending = 0
-    cls._is_proactorloop = os.name == "nt" and issubclass(
-        cls, asyncio.ProactorEventLoop
-    )
+    cls._is_proactorloop = os.name == "nt" and issubclass(cls, asyncio.ProactorEventLoop)
     if sys.version_info < (3, 7, 0):
         cls._set_coroutine_origin_tracking = cls._set_coroutine_wrapper
     cls._nest_patched = True
@@ -230,9 +228,7 @@ def _patch_task():
 
 
 def _patch_tornado():
-    """If tornado is imported before nest_asyncio, make tornado aware of
-    the pure-Python asyncio Future.
-    """
+    """If tornado imported before nest_asyncio, make tornado aware of pure-Python asyncio Future."""
     if "tornado" in sys.modules:
         import tornado.concurrent as tc
 

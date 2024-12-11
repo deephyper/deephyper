@@ -5,7 +5,6 @@ import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh
 import numpy as np
 
-import deephyper.core.exceptions as dh_exceptions
 import deephyper.skopt
 
 
@@ -67,7 +66,8 @@ def convert_to_skopt_space(cs_space, surrogate_model=None):
 
     Args:
         cs_space (ConfigurationSpace): the ``ConfigurationSpace`` to convert.
-        surrogate_model (str, optional): the type of surrogate model/base estimator used to perform Bayesian optimization. Defaults to None.
+        surrogate_model (str, optional): the type of surrogate model/base estimator used to
+            perform Bayesian optimization. Defaults to ``None``.
 
     Raises:
         TypeError: if the input space is not a ConfigurationSpace.
@@ -79,9 +79,7 @@ def convert_to_skopt_space(cs_space, surrogate_model=None):
     if not (isinstance(cs_space, cs.ConfigurationSpace)):
         raise TypeError("Input space should be of type ConfigurationSpace")
 
-    sample_with_config_space = (
-        len(cs_space.conditions) > 0 or len(cs_space.forbidden_clauses) > 0
-    )
+    sample_with_config_space = len(cs_space.conditions) > 0 or len(cs_space.forbidden_clauses) > 0
 
     # convert the ConfigSpace to deephyper.skopt.space.Space
     dimensions = []
@@ -100,12 +98,15 @@ def check_hyperparameter(parameter, name=None, default_value=None):
     :meta private:
 
     Args:
-        parameter (str|Hyperparameter): an instance of ``ConfigSpace.hyperparameters.hyperparameter`` or a synthetic description (e.g., ``list``, ``tuple``).
-        parameter (str): the name of the hyperparameter. Only required when the parameter is not a ``ConfigSpace.hyperparameters.hyperparameter``.
+        parameter (str|Hyperparameter): an instance of ``ConfigSpace.hyperparameters.
+            hyperparameter`` or a synthetic description (e.g., ``list``, ``tuple``).
+        name (str): the name of the hyperparameter. Only required when the parameter is not a
+            ``ConfigSpace.hyperparameters.hyperparameter``.
         default_value: a default value for the hyperparameter.
 
     Returns:
-        Hyperparameter: the ConfigSpace hyperparameter instance corresponding to the ``parameter`` description.
+        Hyperparameter: the ConfigSpace hyperparameter instance corresponding to the ``parameter``
+        description.
     """
     if isinstance(parameter, csh.Hyperparameter):
         return parameter
@@ -115,7 +116,8 @@ def check_hyperparameter(parameter, name=None, default_value=None):
             return csh.Constant(name=name, value=parameter)
 
         raise ValueError(
-            "Shortcut definition of an hyper-parameter has to be a type in [list, tuple, array, dict, float, int, str]."
+            "Shortcut definition of an hyper-parameter has to be a type in [list, tuple, array, "
+            "dict, float, int, str]."
         )
 
     if type(name) is not str:
@@ -130,13 +132,13 @@ def check_hyperparameter(parameter, name=None, default_value=None):
             prior = "uniform"
         elif len(parameter) == 3:
             prior = parameter[2]
-            assert (
-                prior
-                in [
-                    "uniform",
-                    "log-uniform",
-                ]
-            ), f"Prior has to be 'uniform' or 'log-uniform' when {prior} was given for parameter '{name}'"
+            assert prior in [
+                "uniform",
+                "log-uniform",
+            ], (
+                f"Prior has to be 'uniform' or 'log-uniform' when {prior} "
+                f"was given for parameter '{name}'"
+            )
             parameter = parameter[:2]
 
         log = prior == "log-uniform"
@@ -150,9 +152,7 @@ def check_hyperparameter(parameter, name=None, default_value=None):
                 name=name, lower=parameter[0], upper=parameter[1], log=log, **kwargs
             )
     elif type(parameter) is list:  # Categorical
-        if any(
-            [isinstance(p, (str, bool)) or isinstance(p, np.bool_) for p in parameter]
-        ):
+        if any([isinstance(p, (str, bool)) or isinstance(p, np.bool_) for p in parameter]):
             return csh.CategoricalHyperparameter(name, choices=parameter, **kwargs)
         elif all([isinstance(p, (int, float)) for p in parameter]):
             return csh.OrdinalHyperparameter(name, sequence=parameter, **kwargs)
@@ -169,8 +169,7 @@ def check_hyperparameter(parameter, name=None, default_value=None):
                 )
 
     raise ValueError(
-        f"Invalid dimension {name}: {parameter}. Read the documentation for"
-        f" supported types."
+        f"Invalid dimension {name}: {parameter}. Read the documentation for" f" supported types."
     )
 
 
@@ -181,13 +180,12 @@ class HpProblem:
     >>> problem = HpProblem()
 
     Args:
-        config_space (ConfigurationSpace, optional): In case the ``HpProblem`` is defined from a `ConfigurationSpace`.
+        config_space (ConfigurationSpace, optional): In case the ``HpProblem`` is defined from a
+        `ConfigurationSpace`.
     """
 
     def __init__(self, config_space=None):
-        if config_space is not None and not (
-            isinstance(config_space, cs.ConfigurationSpace)
-        ):
+        if config_space is not None and not (isinstance(config_space, cs.ConfigurationSpace)):
             raise ValueError(
                 "Parameter 'config_space' should be an instance of ConfigurationSpace!"
             )
@@ -208,9 +206,7 @@ class HpProblem:
     def __len__(self):
         return len(self.hyperparameter_names)
 
-    def add_hyperparameter(
-        self, value, name: str = None, default_value=None
-    ) -> csh.Hyperparameter:
+    def add_hyperparameter(self, value, name: str = None, default_value=None) -> csh.Hyperparameter:
         """Add an hyperparameter to the ``HpProblem``.
 
         Hyperparameters can be added to a ``HpProblem`` with a short syntax:
@@ -223,7 +219,8 @@ class HpProblem:
 
         >>> problem.add_hyperparameter((0.0, 10.0, "log-uniform"), "real", default_value=5.0)
 
-        It is also possible to use `ConfigSpace <https://automl.github.io/ConfigSpace/master/API-Doc.html#hyperparameters>`_ ``Hyperparameters``:
+        It is also possible to use `ConfigSpace Hyperparameters
+        <https://automl.github.io/ConfigSpace/master/API-Doc.html#hyperparameters>`_:
 
         >>> import ConfigSpace.hyperparameters as csh
         >>> csh_hp = csh.UniformIntegerHyperparameter(
@@ -233,19 +230,26 @@ class HpProblem:
         Args:
             value (tuple or list or ConfigSpace.Hyperparameter): a valid hyperparametr description.
             name (str): The name of the hyperparameter to add.
-            default_value (float or int or str): A default value for the corresponding hyperparameter.
+            default_value (float or int or str): A default value for the corresponding
+                hyperparameter.
 
         Returns:
-            ConfigSpace.Hyperparameter: a ConfigSpace ``Hyperparameter`` object corresponding to the ``(value, name, default_value)``.
+            ConfigSpace.Hyperparameter: a ConfigSpace ``Hyperparameter`` object corresponding to
+            the ``(value, name, default_value)``.
         """
         if not (type(name) is str or name is None):
-            raise dh_exceptions.problem.SpaceDimNameOfWrongType(name)
+            raise TypeError(
+                f"Dimension name: '{name}' is of type == {type(name)} when should be 'str'!"
+            )
         csh_parameter = check_hyperparameter(value, name, default_value=default_value)
         self._space.add(csh_parameter)
         return csh_parameter
 
     def add_hyperparameters(self, hp_list):
-        """Add a list of hyperparameters. It can be useful when a list of ``ConfigSpace.Hyperparameter`` are defined and we need to add them to the ``HpProblem``.
+        """Add a list of hyperparameters.
+
+        It can be useful when a list of ``ConfigSpace.Hyperparameter`` are defined and we need to
+        add them to the ``HpProblem``.
 
         Args:
             hp_list (ConfigSpace.Hyperparameter): a list of ConfigSpace hyperparameters.
@@ -256,9 +260,12 @@ class HpProblem:
         return [self.add_hyperparameter(hp) for hp in hp_list]
 
     def add_forbidden_clause(self, clause):
-        """Add a `forbidden clause <https://automl.github.io/ConfigSpace/master/API-Doc.html#forbidden-clauses>`_ to the ``HpProblem``.
+        r"""Add a forbidden clause to the problem.
 
-        For example if we want to optimize :math:`\\frac{1}{x}` where :math:`x` cannot be equal to 0:
+        Add a `forbidden clause <https://automl.github.io/ConfigSpace/master/API-Doc.html#forbidden-clauses>`_
+        to the ``HpProblem``.
+
+        For example if we want to optimize :math:`\frac{1}{x}` where :math:`x` cannot be equal to 0:
 
         >>> from deephyper.hpo import HpProblem
         >>> import ConfigSpace as cs
@@ -272,7 +279,10 @@ class HpProblem:
         self._space.add(clause)
 
     def add_condition(self, condition):
-        """Add a `condition <https://automl.github.io/ConfigSpace/master/API-Doc.html#conditions>`_ to the ``HpProblem``.
+        """Add a condition to the problem.
+
+        Add a `condition <https://automl.github.io/ConfigSpace/master/API-Doc.html#conditions>`_ to
+        the ``HpProblem``.
 
                 >>> from deephyper.hpo import HpProblem
                 >>> import ConfigSpace as cs
@@ -287,7 +297,7 @@ class HpProblem:
         self._space.add(condition)
 
     def add_conditions(self, conditions: list) -> None:
-        """Add a list of `condition <https://automl.github.io/ConfigSpace/master/API-Doc.html#conditions>`_ to the ``HpProblem``.
+        """Add a list of conditions to the problem.
 
         Args:
             conditions (list): A list of ConfigSpace conditions.

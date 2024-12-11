@@ -47,15 +47,11 @@ class TFKeras2PredictorFileLoader(PredictorFileLoader):
         super().__init__(path_predictor_file)
 
     def load(self) -> TFKeras2Predictor:
-        model = tfk.models.load_model(
-            self.path_predictor_file, compile=False, safe_mode=False
-        )
+        model = tfk.models.load_model(self.path_predictor_file, compile=False, safe_mode=False)
         return TFKeras2Predictor(model)
 
     @staticmethod
-    def find_predictor_files(
-        path_directory: str, file_extension: str = "keras"
-    ) -> List[str]:
+    def find_predictor_files(path_directory: str, file_extension: str = "keras") -> List[str]:
         """Finds the predictor files in a directory given a specific extension.
 
         Args:

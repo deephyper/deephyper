@@ -1,7 +1,7 @@
 import collections
 
 
-def queued(evaluator_class):
+def queued(evaluator_class):  # noqa: D417
     """Decorator transforming an Evaluator into a ``Queued{Evaluator}``.
 
     The ``run_function`` used with a ``Queued{Evaluator}`` needs to have a
@@ -9,13 +9,14 @@ def queued(evaluator_class):
     will be passed.
 
     Args:
-        queue (list): A list of queued resources.
-        queue_pop_per_task (int, optional): The number of resources popped out of the queue each time a task is submitted. Defaults to ``1``.
+        queue (list):
+            A list of queued resources.
+        queue_pop_per_task (int, optional):
+            The number of resources popped out of the queue each time a task
+            is submitted. Defaults to ``1``.
     """
 
-    def __init__(
-        self, *args, queue: list = None, queue_pop_per_task: int = 1, **kwargs
-    ):
+    def __init__(self, *args, queue: list = None, queue_pop_per_task: int = 1, **kwargs):
         evaluator_class.__init__(self, *args, **kwargs)
 
         self.queue = collections.deque(queue[:])

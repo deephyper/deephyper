@@ -1,3 +1,5 @@
+"""Submodule of utility functions for skopt."""
+
 from collections import OrderedDict
 from copy import deepcopy
 from functools import wraps
@@ -166,26 +168,19 @@ def dump(res, filename, store_objective=True, **kwargs):
 
 
 def load(filename, **kwargs):
-    """Reconstruct a skopt optimization result from a file
-    persisted with deephyper.skopt.dump.
+    """Reconstruct a skopt optimization result from a file persisted with ``deephyper.skopt.dump``.
 
     .. note::
         Notice that the loaded optimization result can be missing
-        the objective function (`.specs['args']['func']`) if `deephyper.skopt.dump`
+        the objective function (``.specs['args']['func']``) if ``deephyper.skopt.dump``
         was called with `store_objective=False`.
 
-    Parameters
-    ----------
-    filename : string or `pathlib.Path`
-        The path of the file from which to load the optimization result.
-
-    **kwargs : other keyword arguments
-        All other keyword arguments will be passed to `joblib.load`.
+    Args:
+        filename (str or pathlib.Path): The path of the file from which to load the optimization result.
+        **kwargs : All other keyword arguments will be passed to `joblib.load`.
 
     Returns:
-    -------
-    res : `OptimizeResult`, scipy object
-        Reconstructed OptimizeResult instance.
+        res (OptimizeResult scipy object): Reconstructed OptimizeResult instance.
     """
     return load_(filename, **kwargs)
 
@@ -218,33 +213,21 @@ def check_x_in_space(x, space):
 
 
 def expected_minimum(res, n_random_starts=20, random_state=None):
-    """Compute the minimum over the predictions of the last surrogate model.
-    Uses `expected_minimum_random_sampling` with `n_random_starts` = 100000,
-    when the space contains any categorical values.
+    """Compute the minimum over the predictions of the last surrogate model. Uses `expected_minimum_random_sampling` with `n_random_starts` = 100000, when the space contains any categorical values.
 
     .. note::
         The returned minimum may not necessarily be an accurate
         prediction of the minimum of the true objective function.
 
-    Parameters
-    ----------
-    res : `OptimizeResult`, scipy object
-        The optimization result returned by a `skopt` minimizer.
-
-    n_random_starts : int, default=20
-        The number of random starts for the minimization of the surrogate
-        model.
-
-    random_state : int, RandomState instance, or None (default)
-        Set random state to something other than None for reproducible
-        results.
+    Args:
+        res (OptimizeResult scipy object): The optimization result returned by a `skopt` minimizer.
+        n_random_starts (int): The number of random starts for the minimization of the surrogate
+            model. Defaults to ``20``.
+        random_state (int or RandomState, Optional): Set random state to something other than None for reproducible results.
 
     Returns:
-    -------
-    x : list
-        location of the minimum.
-    fun : float
-        the surrogate function value at the minimum.
+        x (list): location of the minimum.
+        fun (float): the surrogate function value at the minimum.
     """
     if res.space.is_partly_categorical:
         return expected_minimum_random_sampling(
@@ -274,33 +257,22 @@ def expected_minimum(res, n_random_starts=20, random_state=None):
 
 
 def expected_minimum_random_sampling(res, n_random_starts=100000, random_state=None):
-    """Minimum search by doing naive random sampling, Returns the parameters
-    that gave the minimum function value. Can be used when the space
-    contains any categorical values.
+    """Minimum search by doing naive random sampling, Returns the parameters that gave the minimum function value. Can be used when the space contains any categorical values.
 
     .. note::
         The returned minimum may not necessarily be an accurate
         prediction of the minimum of the true objective function.
 
-    Parameters
-    ----------
-    res : `OptimizeResult`, scipy object
-        The optimization result returned by a `skopt` minimizer.
-
-    n_random_starts : int, default=100000
-        The number of random starts for the minimization of the surrogate
-        model.
-
-    random_state : int, RandomState instance, or None (default)
-        Set random state to something other than None for reproducible
+    Args:
+        res (OptimizeResult scipy object): The optimization result returned by a `skopt` minimizer.
+        n_random_starts (int): The number of random starts for the minimization of the surrogate
+        model. Defaults to ``100000``.
+        random_state (int or RandomState, Optional): Set random state to something other than None for reproducible
         results.
 
     Returns:
-    -------
-    x : list
-        location of the minimum.
-    fun : float
-        the surrogate function value at the minimum.
+        x (list):  location of the minimum.
+        fun (float): the surrogate function value at the minimum.
     """
     # sample points from search space
     random_samples = res.space.rvs(n_random_starts, random_state=random_state)
@@ -478,20 +450,13 @@ def cook_initial_point_generator(generator, **kwargs):
 
 
 def dimensions_aslist(search_space):
-    """Convert a dict representation of a search space into a list of
-    dimensions, ordered by sorted(search_space.keys()).
+    """Convert a dict representation of a search space into a list of dimensions, ordered by sorted(search_space.keys()).
 
-    Parameters
-    ----------
-    search_space : dict
-        Represents search space. The keys are dimension names (strings)
-        and values are instances of classes that inherit from the class
-        :class:`deephyper.skopt.space.Dimension` (Real, Integer or Categorical)
+    Args:
+        search_space (dict): Represents search space. The keys are dimension names (strings) and values are instances of classes that inherit from the class :class:`deephyper.skopt.space.Dimension` (Real, Integer or Categorical)
 
     Returns:
-    -------
-    params_space_list: list
-        list of deephyper.skopt.space.Dimension instances.
+        params_space_list (list): list of deephyper.skopt.space.Dimension instances.
 
     Examples:
     --------
@@ -512,28 +477,16 @@ def dimensions_aslist(search_space):
 
 
 def point_asdict(search_space, point_as_list):
-    """Convert the list representation of a point from a search space
-    to the dictionary representation, where keys are dimension names
-    and values are corresponding to the values of dimensions in the list.
+    """Convert the list representation of a point from a search space to the dictionary representation, where keys are dimension names and values are corresponding to the values of dimensions in the list.
 
     .. seealso:: :class:`deephyper.skopt.utils.point_aslist`
 
-    Parameters
-    ----------
-    search_space : dict
-        Represents search space. The keys are dimension names (strings)
-        and values are instances of classes that inherit from the class
-        :class:`deephyper.skopt.space.Dimension` (Real, Integer or Categorical)
-
-    point_as_list : list
-        list with parameter values.The order of parameters in the list
-        is given by sorted(params_space.keys()).
+    Args:
+        search_space (dict): Represents search space. The keys are dimension names (strings) and values are instances of classes that inherit from the class :class:`deephyper.skopt.space.Dimension` (Real, Integer or Categorical)
+        point_as_list (list): list with parameter values.The order of parameters in the list is given by sorted(params_space.keys()).
 
     Returns:
-    -------
-    params_dict : OrderedDict
-        dictionary with parameter names as keys to which
-        corresponding parameter values are assigned.
+        params_dict (OrderedDict): dictionary with parameter names as keys to which corresponding parameter values are assigned.
 
     Examples:
     --------
@@ -552,28 +505,16 @@ def point_asdict(search_space, point_as_list):
 
 
 def point_aslist(search_space, point_as_dict):
-    """Convert a dictionary representation of a point from a search space to
-    the list representation. The list of values is created from the values of
-    the dictionary, sorted by the names of dimensions used as keys.
+    """Convert a dictionary representation of a point from a search space to the list representation. The list of values is created from the values of the dictionary, sorted by the names of dimensions used as keys.
 
     .. seealso:: :class:`deephyper.skopt.utils.point_asdict`
 
-    Parameters
-    ----------
-    search_space : dict
-        Represents search space. The keys are dimension names (strings)
-        and values are instances of classes that inherit from the class
-        :class:`deephyper.skopt.space.Dimension` (Real, Integer or Categorical)
-
-    point_as_dict : dict
-        dict with parameter names as keys to which corresponding
-        parameter values are assigned.
+    Args:
+        search_space (dict): Represents search space. The keys are dimension names (strings) and values are instances of classes that inherit from the class :class:`deephyper.skopt.space.Dimension` (Real, Integer or Categorical).
+        point_as_dict (dict): dict with parameter names as keys to which corresponding parameter values are assigned.
 
     Returns:
-    -------
-    point_as_list : list
-        list with point values.The order of
-        parameters in the list is given by sorted(params_space.keys()).
+        point_as_list (list): list with point values.The order of parameters in the list is given by sorted(params_space.keys()).
 
     Examples:
     --------
@@ -627,8 +568,7 @@ def normalize_dimensions(dimensions):
 
 
 def check_list_types(x, types):
-    """Check whether all elements of a list `x` are of the correct type(s)
-    and raise a ValueError if they are not.
+    """Check whether all elements of a list `x` are of the correct type(s) and raise a ValueError if they are not.
 
     Note that `types` can be either a single object-type or a tuple
     of object-types.
@@ -636,14 +576,9 @@ def check_list_types(x, types):
     Raises `ValueError`, If one or more element in the list `x` is
     not of the correct type(s).
 
-    Parameters
-    ----------
-    x : list
-        List of objects.
-
-    types : object or list(object)
-        Either a single object-type or a tuple of object-types.
-
+    Args:
+        x (list): List of objects.
+        types (object or list(object)): Either a single object-type or a tuple of object-types.
     """
     # List of the elements in the list that are incorrectly typed.
     err = list(filter(lambda a: not isinstance(a, types), x))
@@ -656,14 +591,10 @@ def check_list_types(x, types):
 
 
 def check_dimension_names(dimensions):
-    """Check whether all dimensions have names. Raises `ValueError`,
-    if one or more dimensions are unnamed.
+    """Check whether all dimensions have names. Raises `ValueError`, if one or more dimensions are unnamed.
 
-    Parameters
-    ----------
-    dimensions : list(Dimension)
-        List of Dimension-objects.
-
+    Args:
+        dimensions (list(Dimension)): List of Dimension-objects.
     """
     # List of the dimensions that have no names.
     err_dims = list(filter(lambda dim: dim.name is None, dimensions))
@@ -676,8 +607,7 @@ def check_dimension_names(dimensions):
 
 
 def use_named_args(dimensions):
-    """Wrapper / decorator for an objective function that uses named arguments
-    to make it compatible with optimizers that use a single list of parameters.
+    """Wrapper / decorator for an objective function that uses named arguments to make it compatible with optimizers that use a single list of parameters.
 
     Your objective function can be defined as being callable using named
     arguments: `func(foo=123, bar=3.0, baz='hello')` for a search-space
@@ -733,29 +663,22 @@ def use_named_args(dimensions):
     >>> print("Best parameters: {}".format(result.x))
     Best parameters: [0.44134853091052617, 0.06570954323368307, 0.17586123323419825]
 
-    Parameters
-    ----------
-    dimensions : list(Dimension)
-        List of `Dimension`-objects for the search-space dimensions.
+
+    Args:
+        dimensions (list(Dimension)): List of `Dimension`-objects for the search-space dimensions.
 
     Returns:
-    -------
-    wrapped_func : callable
-        Wrapped objective function.
+        wrapped_func (callable): Wrapped objective function.
     """
 
     def decorator(func):
-        """This uses more advanced Python features to wrap `func` using a
-        function-decorator, which are not explained so well in the
-        official Python documentation.
+        """This uses more advanced Python features to wrap ``func`` using a function-decorator, which are not explained so well in the official Python documentation.
 
         A good video tutorial explaining how this works is found here:
         https://www.youtube.com/watch?v=KlBPCzcQNU8
 
-        Parameters
-        ----------
-        func : callable
-            Function to minimize. Should take *named arguments*
+        Args:
+            func (callable): Function to minimize. Should take *named arguments*
             and return the objective value.
         """
         # Ensure all dimensions are correctly typed.
@@ -766,22 +689,18 @@ def use_named_args(dimensions):
 
         @wraps(func)
         def wrapper(x):
-            """This is the code that will be executed every time the
-            wrapped / decorated `func` is being called.
+            """This is the code that will be executed every time the wrapped / decorated `func` is being called.
+
             It takes `x` as a single list of parameters and
             converts them to named arguments and calls `func` with them.
 
-            Parameters
-            ----------
-            x : list
-                A single list of parameters e.g. `[123, 3.0, 'linear']`
+            Args:
+                x (list): A single list of parameters e.g. `[123, 3.0, 'linear']`
                 which will be converted to named arguments and passed
                 to `func`.
 
             Returns:
-            -------
-            objective_value
-                The objective value returned by `func`.
+                objective_value: The objective value returned by `func`.
             """
             # Ensure the number of dimensions match
             # the number of parameters in the list x.

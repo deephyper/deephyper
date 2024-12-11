@@ -32,10 +32,10 @@ jobs:
           pip install tox ruff
 
       - name: Run linter checks with ruff
-        run: ruff check examples src
+        run: ruff check 
 
       - name: Run formatter checks with ruff
-        run: ruff format --check examples src
+        run: ruff format --check 
 
       - name: Run tests with tox
         run: tox -e py3

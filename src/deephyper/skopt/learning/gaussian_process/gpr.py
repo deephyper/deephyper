@@ -175,8 +175,7 @@ class GaussianProcessRegressor(sk_GaussianProcessRegressor):
     def fit(self, X, y):
         """Fit Gaussian process regression model.
 
-        Parameters
-        ----------
+        Args:
         X : array-like, shape = (n_samples, n_features)
             Training data
 
@@ -184,7 +183,6 @@ class GaussianProcessRegressor(sk_GaussianProcessRegressor):
             Target values
 
         Returns:
-        -------
         self
             Returns an instance of self.
         """
@@ -263,8 +261,7 @@ class GaussianProcessRegressor(sk_GaussianProcessRegressor):
         the gradient of the mean and the standard-deviation with respect to X
         can be optionally provided.
 
-        Parameters
-        ----------
+        Args:
         X : array-like, shape = (n_samples, n_features)
             Query points where the GP is evaluated.
 
@@ -285,7 +282,6 @@ class GaussianProcessRegressor(sk_GaussianProcessRegressor):
             Only valid when X is a single point.
 
         Returns:
-        -------
         y_mean : array, shape = (n_samples, [n_output_dims])
             Mean of predictive distribution a query points
 

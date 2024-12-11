@@ -20,24 +20,28 @@ It can be used in the shell with:
 
 import argparse
 
-from deephyper.core.cli import _hps
+from deephyper.core.cli import _hpo
 
 
 def create_parser():
-    """:meta private:
+    """Creates the deephyper CL parser.
+
+    :meta private:
     """
     parser = argparse.ArgumentParser(description="DeepHyper command line.")
 
     subparsers = parser.add_subparsers()
 
     # hyper-parameter search
-    _hps.add_subparser(subparsers)
+    _hpo.add_subparser(subparsers)
 
     return parser
 
 
 def main():
-    """:meta private:
+    """Entry point of the CL.
+
+    :meta private:
     """
     parser = create_parser()
 

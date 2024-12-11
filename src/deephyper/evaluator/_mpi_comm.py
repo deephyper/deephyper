@@ -13,7 +13,10 @@ logger = logging.getLogger(__name__)
 
 
 def catch_exception(run_func):
-    """A wrapper function to execute the ``run_func`` passed by the user. This way we can catch remote exception"""
+    """A wrapper function to execute the ``run_func`` passed by the user.
+
+    This is used to catch remote exception.
+    """
     try:
         code = 0
         result = run_func()
@@ -27,24 +30,32 @@ def catch_exception(run_func):
 class MPICommEvaluator(Evaluator):
     """This evaluator uses the ``mpi4py`` library as backend.
 
-    This evaluator consider an already existing MPI-context (with running processes), therefore it has less overhead than ``MPIPoolEvaluator`` which spawn processes dynamically.
+    This evaluator consider an already existing MPI-context (with running
+    processes), therefore it has less overhead than ``MPIPoolEvaluator``
+    which spawn processes dynamically.
 
     Args:
-        run_function (callable): functions to be executed by the ``Evaluator``.
-
-        num_workers (int, optional): Number of parallel Ray-workers used to compute the ``run_function``. Defaults to ``None`` which consider 1 rank as a worker (minus the master rank).
-
-        callbacks (list, optional): A list of callbacks to trigger custom actions at the creation or completion of jobs. Defaults to ``None``.
-
-        run_function_kwargs (dict, optional): Keyword-arguments to pass to the ``run_function``. Defaults to ``None``.
-
-        storage (Storage, optional): Storage used by the evaluator. Defaults to ``SharedMemoryStorage``.
-
-        search_id (Hashable, optional): The id of the search to use in the corresponding storage. If ``None`` it will create a new search identifier when initializing the search.
-
-        comm (optional): A MPI communicator, if ``None`` it will use ``MPI.COMM_WORLD``. Defaults to ``None``.
-
-        rank (int, optional): The rank of the master process. Defaults to ``0``.
+        run_function (callable):
+            Functions to be executed by the ``Evaluator``.
+        num_workers (int, optional):
+            Number of parallel Ray-workers used to compute the
+            ``run_function``. Defaults to ``None`` which consider 1 rank as a
+            worker (minus the master rank).
+        callbacks (list, optional):
+            A list of callbacks to trigger custom actions at the creation or
+            completion of jobs. Defaults to ``None``.
+        run_function_kwargs (dict, optional):
+            Keyword-arguments to pass to the ``run_function``. Defaults to ``None``.
+        storage (Storage, optional):
+            Storage used by the evaluator. Defaults to ``SharedMemoryStorage``.
+        search_id (Hashable, optional):
+            The id of the search to use in the corresponding storage. If
+            ``None`` it will create a new search identifier when initializing
+            the search.
+        comm (optional):
+            A MPI communicator, if ``None`` it will use ``MPI.COMM_WORLD``. Defaults to ``None``.
+        rank (int, optional):
+            The rank of the master process. Defaults to ``0``.
     """
 
     def __init__(
@@ -94,7 +105,8 @@ class MPICommEvaluator(Evaluator):
 
         if self.num_workers == 0 and self.comm.Get_size() <= 1:
             raise RuntimeError(
-                "No workers was detected because there was only 1 MPI rank. The number of MPI ranks must be greater than 1."
+                "No workers was detected because there was only 1 MPI rank. The number of MPI "
+                "ranks must be greater than 1."
             )
 
         self.executor = MPICommExecutor(comm=self.comm, root=self.root)
@@ -124,9 +136,7 @@ class MPICommEvaluator(Evaluator):
                 job.run_function, running_job, **self.run_function_kwargs
             )
 
-            run_function_future = self.loop.run_in_executor(
-                self.master_executor, run_function
-            )
+            run_function_future = self.loop.run_in_executor(self.master_executor, run_function)
 
             if self.timeout is not None:
                 try:

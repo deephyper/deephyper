@@ -13,19 +13,43 @@ class RayEvaluator(Evaluator):
     """This evaluator uses the ``ray`` library as backend.
 
     Args:
-        run_function (callable): functions to be executed by the ``Evaluator``.
-        callbacks (list, optional): A list of callbacks to trigger custom actions at the creation or completion of jobs. Defaults to None.
-        run_function_kwargs (dict, optional): Static keyword arguments to pass to the ``run_function`` when executed.
-        storage (Storage, optional): Storage used by the evaluator. Defaults to ``RayStorage``.
-        search_id (Hashable, optional): The id of the search to use in the corresponding storage. If ``None`` it will create a new search identifier when initializing the search.
-        address (str, optional): address of the Ray-head. Defaults to None, if no Ray-head was started.
-        password (str, optional): password to connect ot the Ray-head. Defaults to None, if the default Ray-password is used.
-        num_cpus (int, optional): number of CPUs available in the Ray-cluster. Defaults to None, if the Ray-cluster was already started it will be automatically computed.
-        num_gpus (int, optional): number of GPUs available in the Ray-cluster. Defaults to None, if the Ray-cluster was already started it will be automatically computed.
-        num_cpus_per_task (float, optional): number of CPUs used per remote task. Defaults to 1.
-        num_gpus_per_task (float, optional): number of GPUs used per remote task. Defaults to None.
-        ray_kwargs (dict, optional): other ray keyword arguments passed to ``ray.init(...)``. Defaults to {}.
-        num_workers (int, optional): number of workers available to compute remote-tasks in parallel. Defaults to ``None``, or if it is ``-1`` it is automatically computed based with ``num_workers = int(num_cpus // num_cpus_per_task)``.
+        run_function (callable):
+            Functions to be executed by the ``Evaluator``.
+        callbacks (list, optional):
+            A list of callbacks to trigger custom actions at the creation or
+            completion of jobs. Defaults to None.
+        run_function_kwargs (dict, optional):
+            Static keyword arguments to pass to the ``run_function`` when executed.
+        storage (Storage, optional):
+            Storage used by the evaluator. Defaults to ``RayStorage``.
+        search_id (Hashable, optional):
+            The id of the search to use in the corresponding storage. If
+            ``None`` it will create a new search identifier when initializing
+            the search.
+        address (str, optional):
+            address of the Ray-head. Defaults to None, if no Ray-head was started.
+        password (str, optional):
+            Password to connect ot the Ray-head. Defaults to None, if the
+            default Ray-password is used.
+        num_cpus (int, optional):
+            Number of CPUs available in the Ray-cluster. Defaults to None, if
+            the Ray-cluster was already started it will be automatically
+            computed.
+        num_gpus (int, optional):
+            Number of GPUs available in the Ray-cluster. Defaults to None, if
+            the Ray-cluster was already started it will be automatically
+            computed.
+        num_cpus_per_task (float, optional):
+            Number of CPUs used per remote task. Defaults to 1.
+        num_gpus_per_task (float, optional):
+            Number of GPUs used per remote task. Defaults to None.
+        ray_kwargs (dict, optional):
+            Other ray keyword arguments passed to ``ray.init(...)``. Defaults to {}.
+        num_workers (int, optional):
+            Number of workers available to compute remote-tasks in parallel.
+            Defaults to ``None``, or if it is ``-1`` it is automatically
+            computed based with ``num_workers = int
+            (num_cpus // num_cpus_per_task)``.
     """
 
     def __init__(
@@ -77,16 +101,12 @@ class RayEvaluator(Evaluator):
         self.num_gpus_per_task = num_gpus_per_task
 
         if num_cpus is None:
-            self.num_cpus = int(
-                sum([node["Resources"].get("CPU", 0) for node in ray.nodes()])
-            )
+            self.num_cpus = int(sum([node["Resources"].get("CPU", 0) for node in ray.nodes()]))
         else:
             self.num_cpus = num_cpus
 
         if num_gpus is None:
-            self.num_gpus = int(
-                sum([node["Resources"].get("GPU", 0) for node in ray.nodes()])
-            )
+            self.num_gpus = int(sum([node["Resources"].get("GPU", 0) for node in ray.nodes()]))
         else:
             self.num_gpus = num_gpus
 

@@ -16,8 +16,11 @@ class ConstantStopper(Stopper):
           - ✅
 
     Args:
-        max_steps (int): the maximum number of steps which should be performed to evaluate the configuration fully.
-        stop_step (int): the step at which to stop the evaluation.
+        max_steps (int):
+            The maximum number of steps which should be performed to evaluate
+            the configuration fully.
+        stop_step (int):
+            The step at which to stop the evaluation.
     """
 
     def __init__(self, max_steps: int, stop_step: int) -> None:

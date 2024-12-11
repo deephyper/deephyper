@@ -1,6 +1,4 @@
-"""Deephyper exceptions"""
-
-# ! Root exceptions
+"""Set of root exceptions for the package."""
 
 
 class DeephyperError(Exception):
@@ -8,7 +6,10 @@ class DeephyperError(Exception):
 
 
 class DeephyperRuntimeError(RuntimeError):
-    """Raised when an error is detected in deephyper and that doesn’t fall in any of the other categories. The associated value is a string indicating what precisely went wrong."""
+    """Raised when for error that doesn't fall in other categories.
+
+    The associated value is a string indicating what precisely went wrong.
+    """
 
 
 class SearchTerminationError(RuntimeError):
@@ -24,12 +25,12 @@ class TimeoutReached(SearchTerminationError):
 
 
 class RunFunctionError(RuntimeError):
-    """Raised when error occurs in run-function"""
+    """Raised when error occurs in run-function."""
 
     def __init__(self, msg: str = None) -> None:
         self.msg = msg
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # noqa: D105
         return self.msg
 
 

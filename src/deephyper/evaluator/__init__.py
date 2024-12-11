@@ -1,11 +1,14 @@
-"""This evaluator subpackage provides a common interface to execute isolated
-tasks with different parallel backends and system properties. This interface
-is used by search algorithm to perform black-box optimization (the black-box
-being represented by the ``run``-function). An ``Evaluator``, when
-instanciated, is bound to a ``run``-function which takes as first argument a
-dictionnary and optionally has other keyword-arguments. The ``run``-function
-has to return a Python serializable value (under ``pickle`` protocol). In
-it's most basic form the return value is a ``float``.
+"""This evaluator subpackage.
+
+This provides a common interface to execute isolated tasks with different
+parallel backends and system properties.
+
+This interface is used by search algorithm to perform black-box optimization
+(the black-box being represented by the ``run``-function). An ``Evaluator``,
+when instanciated, is bound to a ``run``-function which takes as first
+argument a dictionnary and optionally has other keyword-arguments. The
+``run``-function has to return a Python serializable value (under ``pickle``
+protocol). In it's most basic form the return value is a ``float``.
 
 An example ``run``-function is:
 
@@ -34,9 +37,8 @@ as multi-objective optimization):
     return {"objective": 42.0, "metadata": {"num_epochs_trained": 25, "num_parameters": 420000}}
     # dict with reserved keywords (when @profile decorator is used)
     return {"objective": 42.0, "metadata": {"timestamp_start": ..., "timestamp_end": ...}"
-    # tuple of float for multi-objective optimization (will appear as "objective_0" and "objective_1" in the resulting dataframe)
+    # tuple of float for multi-objective optimization, appears as "objective_0" and "objective_1"
     return 42.0, 0.42
-
 
 """
 

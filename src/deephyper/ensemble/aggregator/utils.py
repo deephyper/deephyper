@@ -1,3 +1,5 @@
+"""Module of utility functions for ensemble aggregators."""
+
 import numpy as np
 from typing import Optional, Union, Sequence
 

@@ -19,8 +19,9 @@ def area_learning_curve(z, f, z_max) -> float:
 
 
 class LCModelStopper(Stopper):
-    """Stopper based on learning curve extrapolation (LCE) to evaluate if the iterations of the learning algorithm
-    should be stopped.
+    """Stopper based on learning curve extrapolation (LCE).
+
+    This is to evaluate if the iterations of the learning algorithm should be stopped.
 
     .. list-table::
         :widths: 25 25 25
@@ -33,13 +34,28 @@ class LCModelStopper(Stopper):
           - ❌
           - ❌
 
-    The LCE is based on a parametric learning curve model (LCM) which is modeling the score as a function of the number of training steps. Training steps can correspond to the number of training epochs, the number of training batches, the number of observed samples or any other quantity that is iterated through during the training process. The LCE is based on the following steps:
+    The LCE is based on a parametric learning curve model (LCM) which is
+    modeling the score as a function of the number of training steps.
+    Training steps can correspond to the number of training epochs, the
+    number of training batches, the number of observed samples or any other
+    quantity that is iterated through during the training process. The LCE is
+    based on the following steps:
 
-    1. An early stopping condition is always checked first. If the early stopping condition is met, the LCE is not applied.
-    2. Then, some safeguard conditions are checked to ensure that the LCE can be applied (number of observed steps must be greater or equal to the number of parameters of the LCM).
-    3. If the LCM cannot be fitted (number of observed steps is less than number of parameters of the model), then the last observed step is compared to hitorical performance of others at the same step to check if it is a low-performing outlier (outlier in the direction of performing worse!) using the IQR criterion.
-    4. If the LCM can be fitted, a least square fit is performed to estimate the parameters of the LCM.
-    5. The probability of the current LC to perform worse than the best observed score at the maximum iteration is computed using Monte-Carlo Markov Chain (MCMC).
+    1. An early stopping condition is always checked first. If the early
+       stopping condition is met, the LCE is not applied.
+    2. Then, some safeguard conditions are checked to ensure that the LCE can
+       be applied (number of observed steps must be greater or equal to the
+       number of parameters of the LCM).
+    3. If the LCM cannot be fitted (number of observed steps is less than
+       number of parameters of the model), then the last observed step is
+       compared to hitorical performance of others at the same step to check if
+       it is a low-performing outlier (outlier in the direction of performing
+       worse!) using the IQR criterion.
+    4. If the LCM can be fitted, a least square fit is performed to estimate
+       the parameters of the LCM.
+    5. The probability of the current LC to perform worse than the best
+       observed score at the maximum iteration is computed using Monte-Carlo
+       Markov Chain (MCMC).
 
     To use this stopper, you need to install the following dependencies:
 
@@ -49,17 +65,56 @@ class LCModelStopper(Stopper):
         $ numpyro
 
     Args:
-        max_steps (int): The maximum number of training steps which can be performed.
-        min_steps (int, optional): The minimum number of training steps which can be performed. Defaults to ``4``. It is better to have at least as many steps as the number of parameters of the fitted learning curve model. For example, if ``lc_model="mmf4"`` then ``min_steps`` should be at least ``4``.
-        lc_model (str, optional): The parameteric learning model to use. It should be a string in the following list: ``["lin2", "loglin2", "loglin3", "loglin4", "pow3","mmf4", "vapor3", "logloglin2", "hill3", "logpow3", "pow4", "exp4", "janoschek4", "weibull4", "ilog2"]``. The number in the name corresponds to the number of parameters of the parametric model. Defaults to ``"mmf4"``.
-        min_obs_to_fit_lc_model (int, optional): The minimum number of observed scores to fit the learning curve model. Defaults to ``4`` because the ``"mmf4"`` model has 4 parameters.
-        min_done_for_outlier_detection (int, optional): The minimum number of observed scores at the same step to check for if it is a lower-bound outlier. Defaults to ``10``.
-        iqr_factor_for_outlier_detection (float, optional): The IQR factor for outlier detection. The higher it is the more inclusive the condition will be (i.e. if set very large it is likely not going to detect any outliers). Defaults to ``1.5``.
-        prob_promotion (float, optional): The threshold probabily to stop the iterations. If the current learning curve has a probability greater than ``prob_promotion`` to be worse that the best observed score accross all evaluations then the current iterations are stopped. Defaults to ``0.9`` (i.e. probability of 0.9 of being worse).
-        early_stopping_patience (float, optional): The patience of the early stopping condition. If it is an ``int`` it is directly corresponding to a number of iterations. If it is a ``float`` then it is corresponding to a proportion between [0,1] w.r.t. ``max_steps``. Defaults to ``0.25`` (i.e. 25% of ``max_steps``).
-        reduction_factor (int, optional): The reduction factor of the number of steps to wait before stopping the evaluation. Defaults to ``1`` to extrapolate the learning curve at every step.
-        objective_returned (str, optional): The returned objective. It can be a value in ``["last", "max", "alc"]`` where ``"last"`` corresponds to the last observed score, ``"max"`` corresponds to the maximum observed score and ``"alc"`` corresponds to the area under the learning curve. Defaults to "last".
-        random_state (int or np.RandomState, optional): The random state of estimation process. Defaults to ``None``.
+        max_steps (int):
+            The maximum number of training steps which can be performed.
+        min_steps (int, optional):
+            The minimum number of training steps which can be performed.
+            Defaults to ``4``. It is better to have at least as many steps as
+            the number of parameters of the fitted learning curve model. For
+            example, if ``lc_model="mmf4"`` then ``min_steps`` should be at
+            least ``4``.
+        lc_model (str, optional):
+            The parameteric learning model to use. It should be a string in
+            the following list: ``
+            ["lin2", "loglin2", "loglin3", "loglin4", "pow3","mmf4", "vapor3",
+            "logloglin2", "hill3", "logpow3", "pow4", "exp4", "janoschek4", "weibull4",
+            "ilog2"]``. The number in the name corresponds to the number of
+            parameters of the parametric model. Defaults to ``"mmf4"``.
+        min_obs_to_fit_lc_model (int, optional):
+            The minimum number of observed scores to fit the learning curve
+            model. Defaults to ``4`` because the ``"mmf4"`` model has 4
+            parameters.
+        min_done_for_outlier_detection (int, optional):
+            The minimum number of observed scores at the same step to check
+            for if it is a lower-bound outlier. Defaults to ``10``.
+        iqr_factor_for_outlier_detection (float, optional):
+            The IQR factor for outlier detection. The higher it is the more
+            inclusive the condition will be (i.e. if set very large it is
+            likely not going to detect any outliers). Defaults to ``1.5``.
+        prob_promotion (float, optional):
+            The threshold probabily to stop the iterations. If the current
+            learning curve has a probability greater than ``prob_promotion``
+            to be worse that the best observed score accross all evaluations
+            then the current iterations are stopped. Defaults to ``0.9``
+            (i.e. probability of 0.9 of being worse).
+        early_stopping_patience (float, optional):
+            The patience of the early stopping condition. If it is an ``int``
+            it is directly corresponding to a number of iterations. If it is
+            a ``float`` then it is corresponding to a proportion between
+            [0,1] w.r.t. ``max_steps``. Defaults to ``0.25`` (i.e. 25% of
+            ``max_steps``).
+        reduction_factor (int, optional):
+            The reduction factor of the number of steps to wait before
+            stopping the evaluation. Defaults to ``1`` to extrapolate the
+            learning curve at every step.
+        objective_returned (str, optional):
+            The returned objective. It can be a value in ``
+            ["last", "max", "alc"]`` where ``"last"`` corresponds to the last
+            observed score, ``"max"`` corresponds to the maximum observed
+            score and ``"alc"`` corresponds to the area under the learning
+            curve. Defaults to "last".
+        random_state (int or np.RandomState, optional):
+            The random state of estimation process. Defaults to ``None``.
 
     Raises:
         ValueError: parameters are not valid.
@@ -82,9 +137,7 @@ class LCModelStopper(Stopper):
         super().__init__(max_steps=max_steps)
         self.min_steps = min_steps
 
-        self._f_model = BayesianLearningCurveRegressor.get_parametrics_model_func(
-            lc_model
-        )
+        self._f_model = BayesianLearningCurveRegressor.get_parametrics_model_func(lc_model)
         self._f_model_nparams = int(lc_model[-1])
         self._min_obs_to_fit_lc_model = min_obs_to_fit_lc_model
         self._reduction_factor = reduction_factor
@@ -141,9 +194,7 @@ class LCModelStopper(Stopper):
 
     def _get_competiting_objectives(self, rung) -> list:
         search_id, _ = self.job.id.split(".")
-        values = self.job.storage.load_metadata_from_all_jobs(
-            search_id, f"_completed_rung_{rung}"
-        )
+        values = self.job.storage.load_metadata_from_all_jobs(search_id, f"_completed_rung_{rung}")
         # Filter out non numerical values (e.g., "F" for failed jobs)
         values = [v for v in values if isinstance(v, Number)]
         return values
@@ -204,10 +255,7 @@ class LCModelStopper(Stopper):
                     )
                     iqr = q3 - q1
                     # lower than the minimum of a box plot
-                    if (
-                        self._objective
-                        < q1 - self.iqr_factor_for_outlier_detection * iqr
-                    ):
+                    if self._objective < q1 - self.iqr_factor_for_outlier_detection * iqr:
                         self.infos_stopped = "outlier"
                         return True
                 self._rung += 1

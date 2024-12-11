@@ -101,9 +101,9 @@ class OnlineSelector(Callback):
         y_pred_mask[job.output["online_selector"]["y_pred_idx"]] = 0
 
         y_pred = np.zeros_like(self.y, dtype=float)
-        y_pred[job.output["online_selector"]["y_pred_idx"]] = job.output[
-            "online_selector"
-        ]["y_pred"]
+        y_pred[job.output["online_selector"]["y_pred_idx"]] = job.output["online_selector"][
+            "y_pred"
+        ]
 
         m_y_pred = np.ma.masked_array(y_pred, mask=y_pred_mask)
         self.y_predictors.append(m_y_pred)
@@ -120,19 +120,20 @@ class OnlineSelector(Callback):
     @property
     def selected_predictors_job_ids(self) -> List[str]:
         """List of ``job.id`` corresponding to the selected set of predictors."""
-        return [
-            self.y_predictors_job_ids[idx] for idx in self.selected_predictors_indexes
-        ]
+        return [self.y_predictors_job_ids[idx] for idx in self.selected_predictors_indexes]
 
     @property
     def ensemble(self):
-        """The ``ensemble`` with adapted ``.predictors`` and ``.weights`` from the latest selection."""
+        """The ensemble with its weights.
+
+        It will provide the ``ensemble`` with adapted ``.predictors`` and ``.weights`` from the
+        latest selection.
+        """
         # TODO: the following deepcopy can create issues with the evaluator used by the ensemble
         # ensemble = copy.deepcopy(self._ensemble)
         ensemble = copy.copy(self._ensemble)
         ensemble.predictors = [
-            self._load_predictor_func(job_id)
-            for job_id in self.selected_predictors_job_ids
+            self._load_predictor_func(job_id) for job_id in self.selected_predictors_job_ids
         ]
         ensemble.weights = self.selected_predictors_weights
         return ensemble

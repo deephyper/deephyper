@@ -5,13 +5,11 @@ class InitialPointGenerator(object):
     def set_params(self, **params):
         """Set the parameters of this initial point generator.
 
-        Parameters
-        ----------
+        Args:
         **params : dict
             Generator parameters.
 
         Returns:
-        -------
         self : object
             Generator instance.
         """
