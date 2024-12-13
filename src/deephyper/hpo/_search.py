@@ -177,14 +177,6 @@ class Search(abc.ABC):
             DataFrame: a pandas DataFrame containing the evaluations performed or ``None`` if the
                 search could not evaluate any configuration.
         """
-        import asyncio
-
-        loop = self._evaluator.loop
-        if loop is not None:
-            print(f"{loop=}")
-            all_tasks = asyncio.all_tasks(loop)
-            print(f"{all_tasks=}")
-
         self.stopped = False
         self._set_timeout(timeout)
         if max_evals_strict:
