@@ -139,11 +139,8 @@ class Search(abc.ABC):
         with open(path_context, "w") as file:
             yaml.dump(context, file)
 
-    def _set_timeout(self, timeout=None):
-        """Set the timeout for the evaluator used by the search.
-
-        If the `timeout` parameter is valid. Run the search in an other thread and trigger a
-        timeout when this thread exhaust the allocated time budget.
+    def _check_timeout(self, timeout=None):
+        """Check the timeout parameter for the evaluator used by the search.
 
         Args:
             timeout (int, optional): The time budget (in seconds) of the search before stopping.
@@ -156,11 +153,6 @@ class Search(abc.ABC):
                 )
             if timeout <= 0:
                 raise ValueError("'timeout' should be > 0!")
-
-        # if np.isscalar(timeout) and timeout > 0:
-        #     self._search = functools.partial(
-        #         terminate_on_timeout, timeout + 1, self._search
-        #     )
 
     def search(self, max_evals: int = -1, timeout: int = None, max_evals_strict: bool = False):
         """Execute the search algorithm.
@@ -178,7 +170,7 @@ class Search(abc.ABC):
                 search could not evaluate any configuration.
         """
         self.stopped = False
-        self._set_timeout(timeout)
+        self._check_timeout(timeout)
         if max_evals_strict:
             # TODO: should be replaced by a property with a setter?
             self._evaluator.set_maximum_num_jobs_submitted(max_evals)
@@ -293,6 +285,9 @@ class Search(abc.ABC):
 
             def num_evals():
                 return self._evaluator.num_jobs_gathered
+
+        # Update the number of evals in case the `search.search(...)` was previously called
+        max_evals = max_evals if max_evals < 0 else max_evals + num_evals()
 
         n_ask = self._evaluator.num_workers
 
