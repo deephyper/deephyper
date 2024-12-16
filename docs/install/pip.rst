@@ -36,15 +36,22 @@ In Bayesian optimization, the Mondrian Forest surrogate model can be used. This 
 Distributed Computation
 =======================
 
-DeepHyper supports distributed computation with different backends. ``MPI`` demonstrated better scaling capabilities but ``Ray`` is more flexible and easier to use on smaller scales. ``Redis`` is required for distributed search (i.e., different search instances communicating with each other through a shared database). The following command install the "client" or "python binding" of the corresponding libraries but for ``MPI`` and ``Redis`` you will also need to install the corresponding libraries on your system prior to the ``pip ...`` command.
+DeepHyper supports distributed computation with different backends. ``MPI`` demonstrated better scaling capabilities but ``Ray`` is more flexible and easier to use on smaller scales. ``Redis`` is required for decentralized search (i.e., different search instances communicating with each other through a shared database). The following commands install the "client" or "python binding" of the corresponding libraries but for ``MPI`` and ``Redis`` you will also need to install the corresponding libraries on your system prior to the ``pip ...`` command.
 
 .. code-block:: console
 
-    $ pip install "deephyper[mpi]" # Install MPI features for MPICommEvaluator.
-    $ pip install "deephyper[ray]" # Install Ray features for RayEvaluator.
-    $ pip install "deephyper[redis]" # Install Redis Client for RedisStorage with Distributed Search.
-    $ pip install "deephyper[redis-hiredis]" # Install Redis with Hiredis for better performance.
+    $ pip install "deephyper[mpi]" # Install python bindings for MPI.
+    $ pip install "deephyper[ray]" # Install Ray.
+    $ pip install "deephyper[redis]" # Install Redis Client.
+    $ pip install "deephyper[redis-hiredis]" # Install Redis Client with Hiredis for better performance.
 
-For ``Redis`` we advice to follow the `Redis official installation guide <https://redis.io/topics/quickstart>`_ to install the client/server features. Then, the ``RedisJson`` also needs to be installed by following the `Redis JSON official installation guide <https://redis.io/docs/stack/json/>`_. To make the installation easier we provide a Spack package ``redisjson`` for which installation instruction are detailed at :ref:`Redis Server Install`.
 
-For ``MPI`` we advice to follow the `MPI official installation guide <https://www.open-mpi.org/faq/?category=building>`_ to install the client/server features. But, in many centers an ``MPI`` installation will already be provided or it can also be installed through a package manager (e.g., ``apt`` or ``brew``).
+Redis
+-----
+
+For ``Redis``, the `redis-stack <https://redis.io/docs/latest/operate/oss_and_stack/install/install-stack/>`_ should be installed.
+
+MPI
+---
+
+For ``MPI`` we advice to follow the `MPI official installation guide <https://www.open-mpi.org/faq/?category=building>`_ to install the client/server features. But, in many computing facilities an ``MPI`` installation will already be provided or it can also be installed through a package manager (e.g., ``apt`` or ``brew``).
