@@ -361,7 +361,7 @@ def test_cbo_checkpoint_restart(tmp_path):
     assert len(results_a) == 4
 
     new_results_a = search_a.search(6)
-    assert len(new_results_a) == 6
+    assert len(new_results_a) == 10
 
     # test reloading of a checkpoint
     search_b = CBO(
