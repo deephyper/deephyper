@@ -19,16 +19,7 @@ DeepHyper is a powerful Python package for automating machine learning tasks, pa
 Installation with `pip`:
 
 ```console
-# For the most basic set of features (hyperparameter search)
 pip install deephyper
-
-# For the default set of features including:
-# - hyperparameter search with transfer-learning
-# - neural architecture search
-# - deep ensembles
-# - Ray-based distributed computing
-# - Learning-curve extrapolation for multi-fidelity hyperparameter search
-pip install "deephyper[default]"
 ```
 
 More details about the installation process can be found at [DeepHyper Installations](https://deephyper.readthedocs.io/en/latest/install/index.html).
@@ -54,11 +45,10 @@ def run(job):
     return y
 
 
-# Necessary IF statement otherwise it will enter in a infinite loop
-# when loading the 'run' function from a new process
+# Necessary IF statement otherwise it will enter in a infinite recursion
+# when loading the 'run' function from a child processes
 if __name__ == "__main__":
-    from deephyper.hpo import HpProblem
-    from deephyper.hpo import CBO
+    from deephyper.hpo import CBO, HpProblem
     from deephyper.evaluator import Evaluator
 
     # define the variable you want to optimize
@@ -87,18 +77,18 @@ Which outputs the following results where the best parameters are with `function
 `x == 9.99` and `b == 10`.
 
 ```verbatim
-    p:b p:function       p:x    objective  job_id  m:timestamp_submit  m:timestamp_gather
-0     7     linear  8.831019    15.831019       1            0.064874            1.430992
-1     4     linear  9.788889    13.788889       0            0.064862            1.453012
-2     0      cubic  2.144989     9.869049       2            1.452692            1.468436
-3     9     linear -9.236860    -0.236860       3            1.468123            1.483654
-4     2      cubic -9.783865  -934.550818       4            1.483340            1.588162
-..  ...        ...       ...          ...     ...                 ...                 ...
-95    6      cubic  9.862098   965.197192      95           13.538506           13.671872
-96   10      cubic  9.997512  1009.253866      96           13.671596           13.884530
-97    6      cubic  9.965615   995.719961      97           13.884188           14.020144
-98    5      cubic  9.998324  1004.497422      98           14.019737           14.154467
-99    9      cubic  9.995800  1007.740379      99           14.154169           14.289366
+     p:b p:function       p:x    objective  job_id job_status  m:timestamp_submit  m:timestamp_gather
+0      7      cubic -1.103350     5.656803       0       DONE            0.018402            1.548068
+1      3      cubic  8.374450   590.312101       1       DONE            0.018485            1.548254
+2      9     linear  8.787395    17.787395       3       DONE            1.564276            1.565336
+3      6      cubic  4.680560   108.540056       2       DONE            1.564209            1.565440
+4      2      cubic  4.012429    66.598442       5       DONE            1.575218            1.576076
+..   ...        ...       ...          ...     ...        ...                 ...                 ...
+96    10      cubic  9.986875  1006.067558      96       DONE            9.895560            9.995656
+97     9      cubic  9.999787  1008.936159      97       DONE            9.995220           10.095534
+98     9      cubic  9.997146  1008.143990      98       DONE           10.095102           10.195398
+99     7      cubic  9.999389  1006.816600      99       DONE           10.194956           10.297452
+100    9      cubic  9.997912  1008.373594     100       DONE           10.296981           10.412184
 ```
 
 The code defines a function `run` that takes a RunningJob `job` as input and returns the maximized objective `y`. The `if` block at the end of the code defines a black-box optimization process using the `CBO` (Centralized Bayesian Optimization) algorithm from the `deephyper` library.
