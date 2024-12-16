@@ -1,4 +1,5 @@
 import asyncio
+import warnings
 from typing import Callable, Hashable
 
 import ray
@@ -86,7 +87,13 @@ class RayEvaluator(Evaluator):
             ray_kwargs["include_dashboard"] = include_dashboard
 
         if not (ray.is_initialized()):
-            ray.init(**ray_kwargs)
+            # Startin Ray triggers ResourceWarning:
+            # "ResourceWarning: unclosed file"
+            # But that's the expected behaviour
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", ResourceWarning)
+
+                ray.init(**ray_kwargs)
 
         super().__init__(
             run_function=run_function,
