@@ -43,13 +43,12 @@ def assert_results(results, max_evals_strict=False):
 
 
 @pytest.mark.fast
-@pytest.mark.hps
-def test_centralized_random_search():
+def test_centralized_random_search(tmp_path):
 
     problem = create_problem()
 
     # Test serial evaluation
-    search = RandomSearch(problem, run, random_state=42, verbose=0)
+    search = RandomSearch(problem, run, random_state=42, log_dir=tmp_path, verbose=0)
     results = search.search(max_evals=100)
 
     assert_results(results)
@@ -57,10 +56,10 @@ def test_centralized_random_search():
     # Test parallel centralized evaluation
     evaluator = Evaluator.create(
         run_function=run,
-        method="process",
+        method="thread",
         method_kwargs={"num_workers": 10},
     )
-    search = RandomSearch(problem, evaluator, random_state=42)
+    search = RandomSearch(problem, evaluator, random_state=42, log_dir=tmp_path)
 
     results = search.search(max_evals=100)
 
@@ -70,9 +69,8 @@ def test_centralized_random_search():
 
 
 @pytest.mark.fast
-@pytest.mark.hps
 @pytest.mark.redis
-def test_centralized_random_search_redis_storage():
+def test_centralized_random_search_redis_storage(tmp_path):
     from deephyper.evaluator.storage import RedisStorage
 
     storage = RedisStorage()
@@ -85,7 +83,7 @@ def test_centralized_random_search_redis_storage():
         method_kwargs={"storage": storage, "num_workers": 10},
     )
 
-    search = RandomSearch(problem, evaluator, random_state=42)
+    search = RandomSearch(problem, evaluator, random_state=42, log_dir=tmp_path)
 
     results = search.search(max_evals=100)
 
@@ -124,7 +122,6 @@ def launch_serial_search_with_redis_storage(search_id, search_seed, is_master=Fa
 
 
 @pytest.mark.fast
-@pytest.mark.hps
 @pytest.mark.redis
 def test_decentralized_random_search_redis_storage():
     from multiprocessing import Pool

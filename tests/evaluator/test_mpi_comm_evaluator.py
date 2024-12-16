@@ -7,17 +7,26 @@ import pytest
 PYTHON = sys.executable
 SCRIPT = os.path.abspath(__file__)
 
-import deephyper.test
-from deephyper.evaluator import Evaluator
+import deephyper.test  # noqa: E402
+from deephyper.evaluator import Evaluator  # noqa: E402
 
 
-def run(config):
-    job_id = config["job_id"]
+def run(job):
+    job_id = int(job.id.split(".")[1])
+
     print(f"job {job_id}...")
+
     if job_id > 3:
-        time.sleep(2)
+        frac = 0.1
+        cum = 0
+        while cum < 4:
+            print(job)
+            time.sleep(frac)
+            cum += frac
+
     print(f"job {job_id} done!", flush=True)
-    return config["x"]
+
+    return job.parameters["x"]
 
 
 def _test_mpicomm_evaluator():
@@ -38,11 +47,14 @@ def _test_mpicomm_evaluator():
             objectives = sorted([job.output for job in results])
             assert objectives == list(range(4))
     duration = time.time() - t1
-    print("duration:", duration)
+
+    from mpi4py import MPI  # noqa: E402
+
+    rank = MPI.COMM_WORLD.Get_rank()
+    print(f"{rank=}, {duration=}")
 
 
 @pytest.mark.fast
-@pytest.mark.hps
 @pytest.mark.mpi
 def test_mpicomm_evaluator():
     command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_mpicomm_evaluator"

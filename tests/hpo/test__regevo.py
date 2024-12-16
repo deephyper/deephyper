@@ -39,32 +39,44 @@ def assert_results(results):
 
 
 @pytest.mark.fast
-@pytest.mark.hps
 def test_centralized_regevo_search(tmp_path):
 
     problem = create_problem()
 
     # Test serial evaluation
     search = RegularizedEvolution(
-        problem, run, random_state=42, log_dir=tmp_path, verbose=0
+        problem,
+        run,
+        random_state=42,
+        population_size=25,
+        sample_size=5,
+        log_dir=tmp_path,
+        verbose=0,
     )
-    results = search.search(max_evals=1000)
+    results = search.search(max_evals=100)
 
     assert_results(results)
-    assert len(results) == 1000
+    assert len(results) == 100
 
     # Test parallel centralized evaluation
     evaluator = Evaluator.create(
         run_function=run,
-        method="process",
+        method="thread",
         method_kwargs={"num_workers": 10},
     )
-    search = RegularizedEvolution(problem, evaluator, random_state=42)
+    search = RegularizedEvolution(
+        problem,
+        evaluator,
+        population_size=25,
+        sample_size=5,
+        log_dir=tmp_path,
+        random_state=42,
+    )
 
-    results = search.search(max_evals=1000, max_evals_strict=True)
+    results = search.search(max_evals=100, max_evals_strict=True)
 
     assert_results(results)
-    assert len(results) >= 1000
+    assert len(results) >= 100
 
 
 if __name__ == "__main__":

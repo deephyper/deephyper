@@ -5,7 +5,14 @@ from deephyper.evaluator import Evaluator, RunningJob, HPOJob
 from deephyper.evaluator.storage import MemoryStorage
 
 
-def run_0(job: RunningJob) -> dict:
+async def run_async(job: RunningJob) -> dict:
+    return {
+        "objective": job.parameters["x"],
+        "metadata": {"storage_id": id(job.storage)},
+    }
+
+
+def run_sync(job: RunningJob) -> dict:
     return {
         "objective": job.parameters["x"],
         "metadata": {"storage_id": id(job.storage)},
@@ -13,7 +20,6 @@ def run_0(job: RunningJob) -> dict:
 
 
 @pytest.mark.fast
-@pytest.mark.hps
 class TestMemoryStorage(unittest.TestCase):
     def test_basic(self):
 
@@ -74,30 +80,33 @@ class TestMemoryStorage(unittest.TestCase):
 
         # serial evaluator
         evaluator = Evaluator.create(
-            run_0, method="serial", method_kwargs={"storage": storage}
+            run_async, method="serial", method_kwargs={"storage": storage}
         )
         evaluator._job_class = HPOJob
         evaluator.submit([{"x": 0}])
         job_done = evaluator.gather("ALL")[0]
         assert job_done.metadata["storage_id"] == id(storage)
+        evaluator.close()
 
         # thread evaluator
         evaluator = Evaluator.create(
-            run_0, method="thread", method_kwargs={"storage": storage}
+            run_sync, method="thread", method_kwargs={"storage": storage}
         )
         evaluator._job_class = HPOJob
         evaluator.submit([{"x": 0}])
         job_done = evaluator.gather("ALL")[0]
         assert job_done.metadata["storage_id"] == id(storage)
+        evaluator.close()
 
         # process evaluator
         evaluator = Evaluator.create(
-            run_0, method="process", method_kwargs={"storage": storage}
+            run_sync, method="process", method_kwargs={"storage": storage}
         )
         evaluator._job_class = HPOJob
         evaluator.submit([{"x": 0}])
         job_done = evaluator.gather("ALL")[0]
         assert job_done.metadata["storage_id"] != id(storage)
+        evaluator.close()
 
 
 if __name__ == "__main__":

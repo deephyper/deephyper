@@ -11,7 +11,7 @@ To install DeepHyper on Crusher after connecting to the system run the following
 .. code-block:: console
 
     $ module load cray-python
-    $ python3.9 -m venv dh-env python=3.9
+    $ python -m venv dh-env python=3.10
     $ source dh-env/bin/activate
     $ pip install deephyper
     

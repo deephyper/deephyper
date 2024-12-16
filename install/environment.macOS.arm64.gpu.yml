@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - apple
 dependencies:
-  - python>=3.9
+  - python>=3.10
   - pip
   - tensorflow-deps==2.6.0
   - msgpack-python

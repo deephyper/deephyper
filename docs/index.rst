@@ -6,7 +6,18 @@ DeepHyper is a powerful Python package for automating machine learning tasks, pa
 
 DeepHyper is specialized for machine learning tasks but it can also be used for generic black-box and gray-box optimization problems of expensive functions.
 
-.. automodule:: deephyper
+DeepHyper's software architecture is designed to be modular and extensible.
+
+It is organized around the following subpackages:
+
+* :mod:`deephyper.analysis`: To analyse your results.
+* :mod:`deephyper.ensemble`: To build ensembles of predictive models possibly with disentangled uncertainty quantification.
+* :mod:`deephyper.evaluator`: To distribute the evaluation of tasks (e.g., training or inference).
+* :mod:`deephyper.hpo`: To perform hyperparameter optimization (HPO) and neural architecture search (NAS).
+* :mod:`deephyper.predictor`: To wrap predictive models from different libraries.
+* :mod:`deephyper.stopper` : To apply multi-fidelity or early discarding strategies for hyperparameter optimization (HPO) and neural architecture search (NAS).
+
+DeepHyper installation requires **Python >= 3.10**.
 
 Install instructions
 ====================
@@ -133,6 +144,8 @@ Table of Contents
 
 .. toctree::
     :caption: API Reference
+    :maxdepth: 1
+    :titlesonly:
 
     Analysis <_autosummary/deephyper.analysis>
     Core <_autosummary/deephyper.core>
@@ -145,14 +158,11 @@ Table of Contents
 
 .. toctree::
     :maxdepth: 2
-    :caption: Developer Guides
-    :glob:
+    :caption: Developer's Guide
 
-    developer_guides/dev
-    developer_guides/doc
-    developer_guides/tests_link
-    developer_guides/build
+    developer_guides/contributing
     developer_guides/software_architecture
+    
 
 
 Indices and tables

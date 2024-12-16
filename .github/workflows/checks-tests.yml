@@ -1,0 +1,45 @@
+name: Run checks and tests
+
+on:
+  - pull_request
+  - push
+
+jobs:
+
+  checks-tests:
+
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        python-version:
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install tox ruff
+
+      - name: Run linter checks with ruff
+        run: ruff check 
+
+      - name: Run formatter checks with ruff
+        run: ruff format --check 
+
+      - name: Run tests with tox
+        run: tox -e py3
+
+      - name: Upload coverage report
+        if: ${{ matrix.python-version == 3.12 }} # Only upload coverage once
+        uses: codecov/codecov-action@v5

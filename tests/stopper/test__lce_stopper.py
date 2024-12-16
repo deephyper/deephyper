@@ -65,7 +65,6 @@ def run(job: RunningJob) -> dict:
     }
 
 
-@pytest.mark.hps
 @pytest.mark.slow
 @pytest.mark.jax
 def test_lce_stopper(tmp_path):

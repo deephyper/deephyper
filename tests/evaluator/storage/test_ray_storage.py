@@ -5,8 +5,18 @@ import pytest
 from deephyper.evaluator import Evaluator, RunningJob
 
 
-def run_0(job: RunningJob) -> dict:
-    if not (job.storage.connected):
+async def run_async(job: RunningJob) -> dict:
+    if not job.storage.is_connected():
+        job.storage.connect()
+    job.storage.store_job_metadata(job.id, "foo", 0)
+    return {
+        "objective": job.parameters["x"],
+        "metadata": {"storage_id": id(job.storage)},
+    }
+
+
+def run_sync(job: RunningJob) -> dict:
+    if not job.storage.is_connected():
         job.storage.connect()
     job.storage.store_job_metadata(job.id, "foo", 0)
     return {
@@ -16,7 +26,6 @@ def run_0(job: RunningJob) -> dict:
 
 
 @pytest.mark.fast
-@pytest.mark.hps
 @pytest.mark.ray
 class TestRayStorage(unittest.TestCase):
     def test_basic(self):
@@ -101,32 +110,37 @@ class TestRayStorage(unittest.TestCase):
         # serial evaluator
         print("serial evaluator")
         evaluator = Evaluator.create(
-            run_0, method="serial", method_kwargs={"storage": storage}
+            run_async, method="serial", method_kwargs={"storage": storage}
         )
         evaluator.submit([{"x": 0}])
         job_done = evaluator.gather("ALL")[0]
         assert job_done.metadata["storage_id"] == id(storage)
+        evaluator.close()
 
         # thread evaluator
         print("thread evaluator")
         evaluator = Evaluator.create(
-            run_0, method="thread", method_kwargs={"storage": storage}
+            run_sync, method="thread", method_kwargs={"storage": storage}
         )
         evaluator.submit([{"x": 0}])
         job_done = evaluator.gather("ALL")[0]
         assert job_done.metadata["storage_id"] == id(storage)
+        evaluator.close()
 
         # process evaluator
         print("process evaluator")
         evaluator = Evaluator.create(
-            run_0, method="process", method_kwargs={"storage": storage}
+            run_sync, method="process", method_kwargs={"storage": storage}
         )
         evaluator.submit([{"x": 0}])
         job_done = evaluator.gather("ALL")[0]
         assert job_done.metadata["storage_id"] != id(storage)
+        evaluator.close()
 
         data = evaluator._storage.load_search(evaluator._search_id)
         assert data["0"]["metadata"]["foo"] == 0
+
+        # TODO: manage possible warnings and leaked ressources.
 
 
 if __name__ == "__main__":

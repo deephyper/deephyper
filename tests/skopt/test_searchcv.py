@@ -137,7 +137,9 @@ def test_searchcv_runs(surrogate, n_jobs, n_points, cv=None):
     assert opt.score(X_test, y_test) > 0.9
 
 
-@pytest.mark.hps_slow_test
+_slow_test
+
+
 def test_parallel_cv():
     """
     Test whether parallel jobs work
@@ -300,7 +302,6 @@ def test_searchcv_reproducibility():
     assert optim_res2[3] == getattr(best_est, "kernel")
 
 
-@pytest.mark.hps
 def test_searchcv_rank():
     """
     Test whether results of BayesSearchCV can be reproduced with a fixed

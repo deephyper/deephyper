@@ -15,7 +15,7 @@ def run(job):
     return y
 
 
-@pytest.mark.hps
+@pytest.mark.fast
 def test_quickstart(tmp_path):
     from deephyper.hpo import HpProblem, CBO
     from deephyper.evaluator import Evaluator

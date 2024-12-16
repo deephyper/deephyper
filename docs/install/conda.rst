@@ -3,7 +3,7 @@
 Install DeepHyper with conda
 ****************************
 
-DeepHyper installation requires ``Python>=3.9``.
+DeepHyper installation requires ``Python>=3.10``.
 
 .. warning:: All packages required for your application need to be installed in the same environment.
 
@@ -16,7 +16,7 @@ Install Miniconda form the `official installation guide <https://docs.conda.io/e
 
 .. code-block:: console
 
-    $ conda create -n dh python=3.9 -y
+    $ conda create -n dh python=3.10 -y
     $ conda activate dh
     $ conda install gxx_linux-64 gcc_linux-64
 
@@ -53,7 +53,7 @@ If your architecture is ``x86_64`` install `Miniconda <https://docs.conda.io/en/
 
 .. code-block:: console
 
-    $ conda create -n dh python=3.9 -y
+    $ conda create -n dh python=3.10 -y
     $ conda activate dh
 
 Then install DeepHyper in the previously created ``dh`` environment:

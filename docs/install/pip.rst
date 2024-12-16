@@ -3,7 +3,7 @@
 Install DeepHyper with pip
 **************************
 
-DeepHyper installation requires ``Python>=3.9``.
+DeepHyper installation requires ``Python>=3.10``.
 
 .. warning:: All packages required for your application need to be installed in the same environment.
 
@@ -11,19 +11,18 @@ DeepHyper is available on `PyPI <https://pypi.org/project/deephyper/>`_ and can 
 
 .. code-block:: console
 
-    $ # Default set of features (HPS, NAS, AutoDEUQ, Transfer-Learning and LCE Stopper) 
-    $ pip install "deephyper[default]" # <=> "deephyper[hps,hps-tl,tf-keras2,jax-cpu]"
+    $ # Core set of features
+    $ pip install "deephyper[core]" # <=> "deephyper[hpo-tl,tf-keras2,jax-cpu,torch]"
     
     $ # Isolated features
     $ pip install "deephyper" # Install Hyperparameter Optimization (HPO).
     $ pip install "deephyper[hpo-tl]" # Install Transfer-Learning for HPO.
     $ pip install "deephyper[jax-cpu]" # Install JAX with CPU support for Learning Curve Extrapolation Stopper.
     $ pip install "deephyper[jax-cuda]" # Install JAX with GPU (cuda) support for Learning Curve Extrapolation Stopper.
-    $ pip install "deephyper[tf_keras2]" # Install DeepHyper with Tensorflow/Keras2 support.
+    $ pip install "deephyper[tf-keras2]" # Install DeepHyper with Tensorflow/Keras2 support.
     $ pip install "deephyper[torch]" # Install DeepHyper with Pytorch support.
     
-    $ # Others
-    $ pip install "deephyper[analytics]" # Install Analytics tools (for developers).
+    $ # For developers (Tests, Documentation, etc...)
     $ pip install "deephyper[dev]" # Install Developer Stack (tests, documentation, etc...)
 
 

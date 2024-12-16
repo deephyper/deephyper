@@ -17,8 +17,7 @@ Tests corresponding to  ``deephyper`` modules are located in the ``tests`` folde
 
 - fast: tests that are fast to run.
 - slow: tests that are slow to run.
-- hps: tests that are related to hyperparameter search.
-- nas: tests that are related to neural architecture search.
+- asyncio: tests that are using asyncio.
 - mpi: tests that require MPI.
 - ray: tests that require Ray.
 - redis: tests that require Redis.
@@ -57,12 +56,12 @@ Then, each test function should have a name starting with ``test_``. For example
     def test_median_stopper():
         ...
 
-This function should use decorators to classify its type. For example, the ``test_median_stopper`` function should be decorated with the ``@pytest.mark.fast`` decorator and ``@pytest.mark.hps`` decorator.
+This function should use decorators to classify its type. For example, the ``test_median_stopper`` function should be decorated with the ``@pytest.mark.fast`` decorator and ```` decorator.
 
 .. code-block:: python
 
     @pytest.mark.fast
-    @pytest.mark.hps
+    
     def test_median_stopper():
         ...
 
@@ -71,7 +70,7 @@ Each test function creating data (files or directly) should use a temporary dire
 .. code-block:: python
 
     @pytest.mark.fast
-    @pytest.mark.hps
+    
     def test_median_stopper(tmp_path):
         ...
 
