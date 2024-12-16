@@ -11,47 +11,53 @@ Start by installing Spack on your system. The following command will install Spa
     $ . ./spack/share/spack/setup-env.sh
 
 
-.. _Redis Server Install:
+Installing DeepHyper with Spack
+===============================
 
-Redis Server & RedisJSON
-========================
+Additonal documentation here: https://github.com/deephyper/deephyper-spack-packages.
 
-Create a Spack environment where the redis-server will be installed:
-
-.. code-block:: console
-
-    $ spack env create redisjson
-    $ spack env activate redisjson
-
-Download the deephyper Spack package repository and add it to the environment:
-
-.. code-block:: console
-
-    $ git clone https://github.com/deephyper/deephyper-spack-packages.git
-    $ spack repo add deephyper-spack-packages
-
-Then, add the ``redisjson`` Spack package to the environment:
-
-.. code-block:: console
-
-    $ spack add redisjson
-
-Finally, install:
+Clone and add the DeepHyper Spack repository to Spack
 
 .. code-block:: console
     
+    $ git clone https://github.com/deephyper/deephyper-spack-packages.git
+    $ spack repo add deephyper-spack-packages
+
+Create Spack environment for DeepHyper
+
+.. code-block:: console
+    
+    $ spack env create deephyper
+    $ spack env activate deephyper
+
+Add and Install DeepHyper to the spack environment created above
+
+.. code-block:: console
+    
+    $ spack add py-deephyper
     $ spack install
 
-Now that the Redis server is installed and the RedisJSON pluging is compiled you can start the Redis server using the appropriate ``redis.conf``. The following commands will create a ``redis.conf`` file which configures the server to listen on all interfaces, and also load the RedisJSON plugin:
+Install Machine Learning Features 
 
 .. code-block:: console
 
-    $ touch redis.conf
-    $ echo "bind 0.0.0.0" >> redis.conf
-    $ cat $(spack find --path redisjson | grep -o "/.*/redisjson.*")/redis.conf >> redis.conf
+    $ spack add deephyper +hpo-tl # Hyperparameter optimization with Transfer Learning dependencies
+    $ spack add deephyper +jax-cpu # Jax support
+    $ spack add deephyper +tf-keras2 # Tensorflow and Keras support
+    $ spack add deephyper +torch # PyTorch support
 
-Finally, start the Redis server:
+Install Storage and Parallel Backends
 
 .. code-block:: console
+    
+    $ spack add deephyper +mpi # MPI support for MPICommEvaluator
+    $ spack add deephyper +ray # Ray support for RayEvaluator
+    $ spack add deephyper +redis # Redis/RedisJSON/py-redis support for RedisStorage and Distributed Search
 
-    $ redis-server redis.conf
+Install Dev tools
+
+.. code-block:: console
+    
+    $ spack add deephyper +dev
+
+Run :code:`spack install` again after adding any additonal features
