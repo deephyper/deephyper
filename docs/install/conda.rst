@@ -16,16 +16,15 @@ Install Miniconda form the `official installation guide <https://docs.conda.io/e
 
 .. code-block:: console
 
-    $ conda create -n dh python=3.10 -y
+    $ conda create -n dh python=3.12 -y
     $ conda activate dh
-    $ conda install gxx_linux-64 gcc_linux-64
 
 Finally install DeepHyper with ``pip`` within this environement:
 
 .. code-block:: console
 
     $ pip install pip --upgrade
-    $ pip install "deephyper[default]"
+    $ pip install deephyper
 
 .. note:: More details about DeepHyper's optional modules can be found in the :ref:`install-pip` section.
 
@@ -46,14 +45,12 @@ In any case on MacOS, you need to install Xcode command line tools first:
     xcode-select --install
 
 
-x86_64
-######
 
-If your architecture is ``x86_64`` install `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_, and create the ``dh`` environment:
+Install `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_, and create the ``dh`` environment:
 
 .. code-block:: console
 
-    $ conda create -n dh python=3.10 -y
+    $ conda create -n dh python=3.12 -y
     $ conda activate dh
 
 Then install DeepHyper in the previously created ``dh`` environment:
@@ -61,26 +58,6 @@ Then install DeepHyper in the previously created ``dh`` environment:
 .. code-block:: console
 
     $ pip install pip --upgrade
-    $ pip install "deephyper[default]"
-
-.. note:: More details about DeepHyper's optional modules can be found in the :ref:`install-pip` section.
-
-arm64
-#####
-
-If your architecture is  ``arm64`` download `MiniForge <https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-arm64.sh>`_ then install it:
-
-.. code-block:: console
-
-    chmod +x ~/Downloads/Miniforge3-MacOSX-arm64.sh
-    sh ~/Downloads/Miniforge3-MacOSX-arm64.sh
-
-After installing MiniForge clone the DeepHyper repo and install the package:
-
-.. code-block:: console
-
-    git clone https://github.com/deephyper/deephyper.git
-    cd deephyper/
-    conda env create -f install/environment.macOS.arm64.yml
+    $ pip install deephyper
 
 .. note:: More details about DeepHyper's optional modules can be found in the :ref:`install-pip` section.
