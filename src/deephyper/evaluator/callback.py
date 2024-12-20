@@ -6,10 +6,12 @@ completion of jobs by the ``Evaluator``. Callbacks can be used with any
 """
 
 import abc
-import deephyper.core.exceptions
+
 import numpy as np
 import pandas as pd
+
 from deephyper.evaluator._evaluator import _test_ipython_interpretor
+from deephyper.skopt.moo import hypervolume
 
 if _test_ipython_interpretor():
     from tqdm.notebook import tqdm
@@ -191,17 +193,52 @@ class TqdmCallback(Callback):
             self._tqdm.set_postfix(objective=self._best_objective, failures=self._n_failures)
 
 
+class ObjectiveRecorder:
+    """Records the objective values of the jobs.
+
+    :meta: private
+    """
+
+    def __init__(self):
+        self._objectives = []
+        self.is_multi_objective = False
+        self._last_return = -float("inf")
+
+    def __call__(self, job):
+        """Called when a local job has been gathered."""
+        # Only add the objective if it is not a string (i.e., failure...)
+        if not isinstance(job.objective, str):
+            self._objectives.append(job.objective)
+
+            # Then check if the objective is multi-objective
+            if np.ndim(job.objective) > 0:
+                self.is_multi_objective = True
+
+        # If no objectives are received but only failures then return -inf
+        if len(self._objectives) == 0:
+            return self._last_return
+
+        # If single objective then returns the maximum
+        if not self.is_multi_objective:
+            self._last_return = max(self._objectives[-1], self._last_return)
+            return self._last_return
+        else:
+            objectives = -np.asarray(self._objectives)
+            ref = np.max(objectives, axis=0)  # reference point
+            return hypervolume(objectives, ref)
+
+
 class SearchEarlyStopping(Callback):
     """Stop the search gracefully when it does not improve for a given number of evaluations.
 
     Args:
         patience (int, optional):
             The number of not improving evaluations to wait for before
-            stopping the search. Defaults to 10.
+            stopping the search. Defaults to ``10``.
         objective_func (callable, optional):
-            A function that takes a ``Job`` has input and returns the
-            maximized scalar value monitored by this callback. Defaults to
-            ``lambda j: j.result``.
+            A function that takes a ``Job`` has input and returns the maximized scalar value
+            monitored by this callback. Defaults to computes the maximum for single-objective
+            optimization and the hypervolume for multi-objective optimization.
         threshold (float, optional):
             The threshold to reach before activating the patience to stop the
             search. Defaults to ``None``, patience is reinitialized after
@@ -212,16 +249,17 @@ class SearchEarlyStopping(Callback):
     def __init__(
         self,
         patience: int = 10,
-        objective_func=lambda j: j.result,
+        objective_func=None,
         threshold: float = None,
         verbose: bool = 1,
     ):
         self._best_objective = None
         self._n_lower = 0
         self._patience = patience
-        self._objective_func = objective_func
+        self._objective_func = ObjectiveRecorder() if objective_func is None else objective_func
         self._threshold = threshold
         self._verbose = verbose
+        self.search_stopped = False
 
     def on_done_other(self, job):
         """Called after gathering local jobs on available remote jobs that are done."""
@@ -230,9 +268,7 @@ class SearchEarlyStopping(Callback):
     def on_done(self, job):
         """Called when a local job has been gathered."""
         job_objective = self._objective_func(job)
-        # if multi objectives are received
-        if np.ndim(job_objective) > 0:
-            job_objective = np.sum(job_objective)
+
         if self._best_objective is None:
             self._best_objective = job_objective
         else:
@@ -254,7 +290,7 @@ class SearchEarlyStopping(Callback):
                         "Stopping the search because it did not improve for the last "
                         f"{self._patience} evaluations!"
                     )
-                raise deephyper.core.exceptions.SearchTerminationError
+                self.search_stopped = True
             else:
                 if self._best_objective > self._threshold:
                     if self._verbose:
@@ -262,4 +298,4 @@ class SearchEarlyStopping(Callback):
                             "Stopping the search because it did not improve for the last "
                             f"{self._patience} evaluations!"
                         )
-                    raise deephyper.core.exceptions.SearchTerminationError
+                    self.search_stopped = True

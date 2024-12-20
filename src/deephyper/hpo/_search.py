@@ -328,7 +328,15 @@ class Search(abc.ABC):
 
             n_ask = len(new_results)
 
+            # Test if search should be stopped due to timeout
             if self._evaluator.time_left is not None and self._evaluator.time_left <= 0:
+                self.stopped = True
+
+            # Test if search should be stopped because a callback requested it
+            if any(
+                (hasattr(c, "search_stopped") and c.search_stopped)
+                for c in self._evaluator._callbacks
+            ):
                 self.stopped = True
 
     def ask(self, n: int = 1) -> List[Dict]:
