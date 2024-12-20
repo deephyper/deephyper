@@ -5,7 +5,7 @@ import pytest
 def pytest_addoption(parser):
     parser.addoption(
         "--run",
-        default="fast,hps",
+        default="fast",
         help="Select tests to run.",
     )
 

@@ -104,7 +104,8 @@ markers = [
     "mpi: marks tests which needs mpi4py and MPI installed",
     "redis: marks tests which needs Redis installed",
     "jax: marks tests which needs JAX installed",
-    "sdv: marks tests which needs SDV installed"
+    "sdv: marks tests which needs SDV installed",
+    "memory_profiling: marks tests which needs profile memory using psutil installed",
 ]
 
 [tool.ruff]

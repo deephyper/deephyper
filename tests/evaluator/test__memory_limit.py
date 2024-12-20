@@ -43,7 +43,7 @@ async def run_preprocessing_2_async(job):
     return _run_preprocessing(job)
 
 
-@pytest.mark.fast
+@pytest.mark.memory_profiling
 def test_memory_limit_with_profile_decorator():
 
     # With sync function
@@ -68,7 +68,7 @@ def test_memory_limit_with_profile_decorator():
     assert metadata[0]["memory"] > 1024**3
     evaluator.close()
 
-@pytest.mark.fast
+@pytest.mark.memory_profiling
 def test_memory_limit_with_profile_decorator_as_function():
 
     # With sync function
