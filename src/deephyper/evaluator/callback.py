@@ -133,66 +133,6 @@ class LoggerCallback(Callback):
             print(f"[{self._n_done:05d}] -- received failure: {job.objective}")
 
 
-class TqdmCallback(Callback):
-    """Print information when jobs are completed by the ``Evaluator``.
-
-    An example usage can be:
-
-    >>> evaluator.create(method="ray", method_kwargs={..., "callbacks": [TqdmCallback()]})
-    """
-
-    def __init__(self):
-        self._best_objective = None
-        self._n_done = 0
-        self._n_failures = 0
-        self._max_evals = None
-        self._tqdm = None
-
-    def set_max_evals(self, max_evals):
-        """Setter for the maximum number of evaluations.
-
-        It is used to initialize the tqdm progressbar.
-        """
-        self._max_evals = max_evals
-        self._tqdm = None
-
-    def on_done_other(self, job):
-        """Called after gathering local jobs on available remote jobs that are done."""
-        self.on_done(job)
-
-    def on_done(self, job):
-        """Called when a local job has been gathered."""
-        if self._tqdm is None:
-            if self._max_evals:
-                self._tqdm = tqdm(total=self._max_evals)
-            else:
-                self._tqdm = tqdm()
-
-        self._n_done += 1
-        self._tqdm.update(1)
-        # Test if multi objectives are received
-        if np.ndim(job.objective) > 0:
-            if not (any(not (np.isreal(objective_i)) for objective_i in job.objective)):
-                if self._best_objective is None:
-                    self._best_objective = np.sum(job.objective)
-                else:
-                    self._best_objective = max(np.sum(job.objective), self._best_objective)
-            else:
-                self._n_failures += 1
-            self._tqdm.set_postfix(
-                {"failures": self._n_failures, "sum(objective)": self._best_objective}
-            )
-        else:
-            if np.isreal(job.objective):
-                if self._best_objective is None:
-                    self._best_objective = job.objective
-                else:
-                    self._best_objective = max(job.objective, self._best_objective)
-            else:
-                self._n_failures += 1
-            self._tqdm.set_postfix(objective=self._best_objective, failures=self._n_failures)
-
-
 class ObjectiveRecorder:
     """Records the objective values of the jobs.
 
@@ -226,6 +166,66 @@ class ObjectiveRecorder:
             objectives = -np.asarray(self._objectives)
             ref = np.max(objectives, axis=0)  # reference point
             return hypervolume(objectives, ref)
+
+
+class TqdmCallback(Callback):
+    """Print information when jobs are completed by the ``Evaluator``.
+
+    An example usage can be:
+
+    >>> evaluator.create(method="ray", method_kwargs={..., "callbacks": [TqdmCallback()]})
+    """
+
+    def __init__(self):
+        self._best_objective = None
+        self._n_done = 0
+        self._n_failures = 0
+        self._max_evals = None
+        self._tqdm = None
+        self._objective_func = ObjectiveRecorder()
+
+    def set_max_evals(self, max_evals):
+        """Setter for the maximum number of evaluations.
+
+        It is used to initialize the tqdm progressbar.
+        """
+        self._max_evals = max_evals
+        self._tqdm = None
+
+    def on_done_other(self, job):
+        """Called after gathering local jobs on available remote jobs that are done."""
+        self.on_done(job)
+
+    def on_done(self, job):
+        """Called when a local job has been gathered."""
+        if self._tqdm is None:
+            if self._max_evals:
+                self._tqdm = tqdm(total=self._max_evals)
+            else:
+                self._tqdm = tqdm()
+
+        self._n_done += 1
+        self._tqdm.update(1)
+
+        # Test if multi objectives are received
+        if np.ndim(job.objective) > 0:
+            if not (any(not (np.isreal(objective_i)) for objective_i in job.objective)):
+                if self._best_objective is None:
+                    self._best_objective = self._objective_func(job)
+                else:
+                    self._best_objective = self._objective_func(job)
+            else:
+                self._n_failures += 1
+            self._tqdm.set_postfix({"failures": self._n_failures, "hvi": self._best_objective})
+        else:
+            if np.isreal(job.objective):
+                if self._best_objective is None:
+                    self._best_objective = self._objective_func(job)
+                else:
+                    self._best_objective = self._objective_func(job)
+            else:
+                self._n_failures += 1
+            self._tqdm.set_postfix(objective=self._best_objective, failures=self._n_failures)
 
 
 class SearchEarlyStopping(Callback):
