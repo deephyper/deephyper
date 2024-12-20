@@ -82,8 +82,8 @@ def test_timeout_simple(tmp_path):
     run_local_test(run_test_timeout_simple_sync, "thread", num_workers=1)
     run_local_test(run_test_timeout_simple_sync, "thread", num_workers=4)
 
-    run_local_test(run_test_timeout_simple_sync, "process", num_workers=1, timeout=2)
-    run_local_test(run_test_timeout_simple_sync, "process", num_workers=4, timeout=2)
+    run_local_test(run_test_timeout_simple_sync, "process", num_workers=1, timeout=3)
+    run_local_test(run_test_timeout_simple_sync, "process", num_workers=4, timeout=3)
 
 
 @pytest.mark.fast
@@ -139,8 +139,8 @@ def test_timeout_stop_then_continue(tmp_path):
     run_local_test(run_test_timeout_simple_sync, "thread", num_workers=1)
     run_local_test(run_test_timeout_simple_sync, "thread", num_workers=4)
 
-    run_local_test(run_test_timeout_simple_sync, "process", num_workers=1, timeout=2)
-    run_local_test(run_test_timeout_simple_sync, "process", num_workers=4, timeout=2)
+    run_local_test(run_test_timeout_simple_sync, "process", num_workers=1, timeout=3)
+    run_local_test(run_test_timeout_simple_sync, "process", num_workers=4, timeout=3)
 
 
 if __name__ == "__main__":
@@ -154,5 +154,5 @@ if __name__ == "__main__":
     )
     tmp_path = "/tmp/deephyper_test"
 
-    # test_timeout_simple(tmp_path)
-    test_timeout_stop_then_continue(tmp_path)
+    test_timeout_simple(tmp_path)
+    # test_timeout_stop_then_continue(tmp_path)

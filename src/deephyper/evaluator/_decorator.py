@@ -2,6 +2,7 @@ import asyncio
 import functools
 import pickle
 import psutil
+import os
 import sys
 import time
 
@@ -26,6 +27,14 @@ def register_inner_function_for_pickle(func):
 
 # Example from
 # https://github.com/dabeaz/python-cookbook/blob/master/src/9/defining_a_decorator_that_takes_an_optional_argument/example.py
+
+
+def asyncio_run(func, *args, **kwargs):
+    """Useful to run async function from subprocess."""
+    if asyncio.iscoroutinefunction(func):
+        return asyncio.run(func(*args, **kwargs))
+    else:
+        return func(*args, **kwargs)
 
 
 def profile(  # noqa: D417
@@ -104,7 +113,13 @@ def profile(  # noqa: D417
                 output = None
 
                 with ProcessPoolExecutor(max_workers=1) as executor:
-                    future = executor.submit(func, *args, **kwargs)
+                    future = executor.submit(os.getpid)
+                    pid = future.result()
+                    p = psutil.Process(pid)
+
+                    asyncio_run_func = functools.partial(asyncio_run, func)
+
+                    future = executor.submit(asyncio_run_func, *args, **kwargs)
                     memory_peak = p.memory_info().rss
 
                     while not future.done():
@@ -159,6 +174,10 @@ def profile(  # noqa: D417
                 output = None
 
                 with ProcessPoolExecutor(max_workers=1) as executor:
+                    future = executor.submit(os.getpid)
+                    pid = future.result()
+                    p = psutil.Process(pid)
+
                     future = executor.submit(func, *args, **kwargs)
                     memory_peak = p.memory_info().rss
 

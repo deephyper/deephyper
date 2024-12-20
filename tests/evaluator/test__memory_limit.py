@@ -5,18 +5,6 @@ import time
 from deephyper.evaluator import Evaluator, profile
 
 
-# @profile(memory=True)
-# @profile(memory=True, memory_limit=250 * (1024**2), memory_tracing_interval=0.01)
-def run(job):
-    x = []
-    for i in range(100_000):
-        # print(i)
-        x.append([1] * 2000)
-        time.sleep(0.01)
-
-    return sum(x)
-
-
 def _run_preprocessing(job):
     import numpy as np
 
@@ -40,49 +28,90 @@ def _run_preprocessing(job):
     return {"objective": 0, "metadata": {"X_shape": X.shape}}
 
 
-@profile(memory=True, memory_limit=1024**3, memory_tracing_interval=0.01)
-def run_preprocessing_1(job):
+@profile(memory=True, memory_limit=1024**3, memory_tracing_interval=0.2)
+def run_preprocessing_1_sync(job):
+    return _run_preprocessing(job)
+
+@profile(memory=True, memory_limit=1024**3, memory_tracing_interval=0.2)
+async def run_preprocessing_1_async(job):
+    return _run_preprocessing(job)
+
+def run_preprocessing_2_sync(job):
+    return _run_preprocessing(job)
+
+async def run_preprocessing_2_async(job):
     return _run_preprocessing(job)
 
 
-def run_preprocessing_2(job):
-    return _run_preprocessing(job)
+@pytest.mark.fast
+def test_memory_limit_with_profile_decorator():
 
+    # With sync function
+    evaluator = Evaluator.create(run_preprocessing_1_sync, method="thread",)
+    tasks = [{"x": i} for i in range(1)]
+    evaluator.submit(tasks)
+    jobs = evaluator.gather("ALL")
+    result = [job.output for job in jobs]
+    metadata = [job.metadata for job in jobs]
+    assert result[0] == "F_memory_limit_exceeded"
+    assert metadata[0]["memory"] > 1024**3
+    evaluator.close()
 
-class TestMemoryLimit(unittest.TestCase):
-    @pytest.mark.slow
-    def manual_test_memory_limit_with_profile_decorator(self):
+    # With async function
+    evaluator = Evaluator.create(run_preprocessing_1_async, method="serial",)
+    tasks = [{"x": i} for i in range(1)]
+    evaluator.submit(tasks)
+    jobs = evaluator.gather("ALL")
+    result = [job.output for job in jobs]
+    metadata = [job.metadata for job in jobs]
+    assert result[0] == "F_memory_limit_exceeded"
+    assert metadata[0]["memory"] > 1024**3
+    evaluator.close()
 
-        evaluator = Evaluator.create(run_preprocessing_1, method="serial")
-        tasks = [{"x": i} for i in range(1)]
-        evaluator.submit(tasks)
-        jobs = evaluator.gather("ALL")
-        result = [job.output for job in jobs]
-        metadata = [job.metadata for job in jobs]
-        assert result[0]["objective"] == "F_memory_limit_exceeded"
+@pytest.mark.fast
+def test_memory_limit_with_profile_decorator_as_function():
 
-    @pytest.mark.slow
-    def test_memory_limit_with_profile_decorator_as_function(self):
+    # With sync function
+    run_profiled = profile(
+        memory=True,
+        memory_limit=1024**3,
+        memory_tracing_interval=0.2,
+        register=False,  # !Required to make it work
+    )(run_preprocessing_2_sync)
+    evaluator = Evaluator.create(
+        run_profiled,
+        method="thread",
+    )
+    tasks = [{"x": i} for i in range(1)]
+    evaluator.submit(tasks)
+    jobs = evaluator.gather("ALL")
+    result = [job.output for job in jobs]
+    metadata = [job.metadata for job in jobs]
+    assert result[0] == "F_memory_limit_exceeded"
+    assert metadata[0]["memory"] > 1024**3
+    evaluator.close()
 
-        run_profiled = profile(
-            memory=True,
-            memory_limit=1024**3,
-            memory_tracing_interval=0.01,
-            register=False,  # !Required to make it work
-        )(run_preprocessing_2)
-        evaluator = Evaluator.create(
-            run_profiled,
-            method="serial",
-        )
-        tasks = [{"x": i} for i in range(1)]
-        evaluator.submit(tasks)
-        jobs = evaluator.gather("ALL")
-        result = [job.output for job in jobs]
-        metadata = [job.metadata for job in jobs]
-        assert result[0]["objective"] == "F_memory_limit_exceeded"
+    # With async function
+    run_profiled = profile(
+        memory=True,
+        memory_limit=1024**3,
+        memory_tracing_interval=0.2,
+        register=False,  # !Required to make it work
+    )(run_preprocessing_2_async)
+    evaluator = Evaluator.create(
+        run_profiled,
+        method="serial",
+    )
+    tasks = [{"x": i} for i in range(1)]
+    evaluator.submit(tasks)
+    jobs = evaluator.gather("ALL")
+    result = [job.output for job in jobs]
+    metadata = [job.metadata for job in jobs]
+    assert result[0] == "F_memory_limit_exceeded"
+    assert metadata[0]["memory"] > 1024**3
+    evaluator.close()
 
 
 if __name__ == "__main__":
-    test = TestMemoryLimit()
-    # test.test_memory_limit_with_profile_decorator()
-    test.test_memory_limit_with_profile_decorator_as_function()
+    test_memory_limit_with_profile_decorator()
+    test_memory_limit_with_profile_decorator_as_function()
