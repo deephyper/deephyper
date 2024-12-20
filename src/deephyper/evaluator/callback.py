@@ -103,10 +103,10 @@ class LoggerCallback(Callback):
             if np.isreal(job.objective).all():
                 self._best_objective = self._objective_func(job)
 
+                tmp = tuple(round(o, 5) if not isinstance(o, str) else o for o in job.objective)
                 print(
                     f"[{self._n_done:05d}] -- HVI Objective: {self._best_objective:.5f} -- "
-                    f"Last Objective: {tuple(round(o,5) if not isinstance(o, str) else o 
-                    for o in job.objective)}"
+                    f"Last Objective: {tmp}"
                 )
 
             elif np.any(type(res) is str and "F" == res[0] for res in job.objective):
