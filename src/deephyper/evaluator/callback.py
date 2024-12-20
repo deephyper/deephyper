@@ -8,7 +8,6 @@ completion of jobs by the ``Evaluator``. Callbacks can be used with any
 import abc
 
 import numpy as np
-import pandas as pd
 
 from deephyper.evaluator._evaluator import _test_ipython_interpretor
 from deephyper.skopt.moo import hypervolume
