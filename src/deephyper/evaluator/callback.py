@@ -44,48 +44,6 @@ class Callback(abc.ABC):
         """
 
 
-class ProfilingCallback(Callback):
-    """Collect profiling data.
-
-    Each time a ``Job`` is completed by the ``Evaluator`` a the different
-    timestamps corresponding to the submit and gather (and run function start
-    and end if the ``profile`` decorator is used on the run function) are
-    collected.
-
-    An example usage can be:
-
-    >>> profiler = ProfilingCallback()
-    >>> evaluator.create(method="ray", method_kwargs={..., "callbacks": [profiler]})
-    ...
-    >>> profiler.profile
-    """
-
-    def __init__(self):
-        self.history = []
-
-    def on_done(self, job):
-        """Called when a local job has been gathered."""
-        start = job.timestamp_submit
-        end = job.timestamp_gather
-        if job.timestamp_start is not None and job.timestamp_end is not None:
-            start = job.timestamp_start
-            end = job.timestamp_end
-        self.history.append((start, 1))
-        self.history.append((end, -1))
-
-    @property
-    def profile(self):
-        """The profile processed as a ``pd.DataFrame``."""
-        n_jobs = 0
-        profile = []
-        for t, incr in sorted(self.history):
-            n_jobs += incr
-            profile.append([t, n_jobs])
-        cols = ["timestamp", "n_jobs_running"]
-        df = pd.DataFrame(profile, columns=cols)
-        return df
-
-
 class LoggerCallback(Callback):
     """Print information when jobs are completed by the ``Evaluator``.
 
