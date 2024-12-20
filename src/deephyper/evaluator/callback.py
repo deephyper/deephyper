@@ -44,53 +44,6 @@ class Callback(abc.ABC):
         """
 
 
-class LoggerCallback(Callback):
-    """Print information when jobs are completed by the ``Evaluator``.
-
-    An example usage can be:
-
-    >>> evaluator.create(method="ray", method_kwargs={..., "callbacks": [LoggerCallback()]})
-    """
-
-    def __init__(self):
-        self._best_objective = None
-        self._n_done = 0
-
-    def on_done_other(self, job):
-        """Called after gathering local jobs on available remote jobs that are done."""
-        self.on_done(job)
-
-    def on_done(self, job):
-        """Called when a local job has been gathered."""
-        self._n_done += 1
-        # Test if multi objectives are received
-        if np.ndim(job.objective) > 0:
-            if np.isreal(job.objective).all():
-                if self._best_objective is None:
-                    self._best_objective = np.sum(job.objective)
-                else:
-                    self._best_objective = max(np.sum(job.objective), self._best_objective)
-
-                print(
-                    f"[{self._n_done:05d}] -- best sum(objective): {self._best_objective:.5f} -- "
-                    f"received sum(objective): {np.sum(job.objective):.5f}"
-                )
-            elif np.any(type(res) is str and "F" == res[0] for res in job.objective):
-                print(f"[{self._n_done:05d}] -- received failure: {job.objective}")
-        elif np.isreal(job.objective):
-            if self._best_objective is None:
-                self._best_objective = job.objective
-            else:
-                self._best_objective = max(job.objective, self._best_objective)
-
-            print(
-                f"[{self._n_done:05d}] -- best objective: {self._best_objective:.5f} -- "
-                f"received objective: {job.objective:.5f}"
-            )
-        elif type(job.objective) is str and "F" == job.objective[0]:
-            print(f"[{self._n_done:05d}] -- received failure: {job.objective}")
-
-
 class ObjectiveRecorder:
     """Records the objective values of the jobs.
 
@@ -124,6 +77,51 @@ class ObjectiveRecorder:
             objectives = -np.asarray(self._objectives)
             ref = np.max(objectives, axis=0)  # reference point
             return hypervolume(objectives, ref)
+
+
+class LoggerCallback(Callback):
+    """Print information when jobs are completed by the ``Evaluator``.
+
+    An example usage can be:
+
+    >>> evaluator.create(method="ray", method_kwargs={..., "callbacks": [LoggerCallback()]})
+    """
+
+    def __init__(self):
+        self._best_objective = None
+        self._n_done = 0
+        self._objective_func = ObjectiveRecorder()
+
+    def on_done_other(self, job):
+        """Called after gathering local jobs on available remote jobs that are done."""
+        self.on_done(job)
+
+    def on_done(self, job):
+        """Called when a local job has been gathered."""
+        self._n_done += 1
+        # Test if multi objectives are received
+        if np.ndim(job.objective) > 0:
+            if np.isreal(job.objective).all():
+                self._best_objective = self._objective_func(job)
+
+                print(
+                    f"[{self._n_done:05d}] -- HVI Objective: {self._best_objective:.5f} -- "
+                    f"Last Objective: {tuple(round(o,5) if not isinstance(o, str) else o 
+                    for o in job.objective)}"
+                )
+
+            elif np.any(type(res) is str and "F" == res[0] for res in job.objective):
+                print(f"[{self._n_done:05d}] -- Last Failure: {job.objective}")
+
+        elif np.isreal(job.objective):
+            self._best_objective = self._objective_func(job)
+
+            print(
+                f"[{self._n_done:05d}] -- Maximum Objective: {self._best_objective:.5f} -- "
+                f"Last Objective: {job.objective:.5f}"
+            )
+        elif type(job.objective) is str and "F" == job.objective[0]:
+            print(f"[{self._n_done:05d}] -- Last Failure: {job.objective}")
 
 
 class TqdmCallback(Callback):
@@ -168,19 +166,13 @@ class TqdmCallback(Callback):
         # Test if multi objectives are received
         if np.ndim(job.objective) > 0:
             if not (any(not (np.isreal(objective_i)) for objective_i in job.objective)):
-                if self._best_objective is None:
-                    self._best_objective = self._objective_func(job)
-                else:
-                    self._best_objective = self._objective_func(job)
+                self._best_objective = self._objective_func(job)
             else:
                 self._n_failures += 1
             self._tqdm.set_postfix({"failures": self._n_failures, "hvi": self._best_objective})
         else:
             if np.isreal(job.objective):
-                if self._best_objective is None:
-                    self._best_objective = self._objective_func(job)
-                else:
-                    self._best_objective = self._objective_func(job)
+                self._best_objective = self._objective_func(job)
             else:
                 self._n_failures += 1
             self._tqdm.set_postfix(objective=self._best_objective, failures=self._n_failures)
