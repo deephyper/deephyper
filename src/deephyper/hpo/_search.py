@@ -166,8 +166,18 @@ class Search(abc.ABC):
                 ``max_evals`` jobs. Defaults to ``False``.
 
         Returns:
-            DataFrame: a pandas DataFrame containing the evaluations performed or ``None`` if the
+            DataFrame: A pandas DataFrame containing the evaluations performed or ``None`` if the
                 search could not evaluate any configuration.
+
+                This DataFrame contains the following columns:
+                - ``p:HYPERPARAMETER_NAME``: for each hyperparameter of the problem.
+                - ``objective``: for single objective optimization.
+                - ``objective_0``, ``objective_1``, ...: for multi-objective optimization.
+                - ``job_id``: the identifier of the job.
+                - ``job_status``: the status of the job at the end of the search.
+                - ``m:METADATA_NAME``: for each metadata of the problem. Some metadata are always
+                    present like ``m:timestamp_submit`` and ``m:timestamp_gather`` which are the
+                    timestamps of the submission and gathering of the job.
         """
         self.stopped = False
         self._check_timeout(timeout)
