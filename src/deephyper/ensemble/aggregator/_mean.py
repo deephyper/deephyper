@@ -19,7 +19,7 @@ class MeanAggregator(Aggregator):
 
     Args:
         with_uncertainty (bool, optional): a boolean that sets if the uncertainty should be returned
-         when calling the aggregator. Defaults to ``False``.
+            when calling the aggregator. Defaults to ``False``.
     """
 
     def __init__(self, with_uncertainty: bool = False):
@@ -33,14 +33,14 @@ class MeanAggregator(Aggregator):
         """Aggregate predictions using the mean.
 
         Args:
-            y (List[np.ndarray | np.ma.MaskedArray]):
-                List of prediction arrays, each of shape ``(n_samples, n_outputs)``.
-            weights (Optional[List[float]]):
-                Optional weights for the predictors. If provided, must have the same length as `y`.
+            y (List[np.ndarray | np.ma.MaskedArray]): List of prediction arrays, each of shape
+                ``(n_samples, n_outputs)``.
+
+            weights (Optional[List[float]]): Optional weights for the predictors. If provided,
+                must have the same length as `y`.
 
         Returns:
-            np.ndarray:
-                Aggregated predictions of shape ``(n_samples, n_outputs)``.
+            np.ndarray: Aggregated predictions of shape ``(n_samples, n_outputs)``.
 
         Raises:
             ValueError: If `weights` length does not match the number of predictors in `y`.
