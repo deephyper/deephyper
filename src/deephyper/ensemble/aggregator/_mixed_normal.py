@@ -50,7 +50,8 @@ class MixedNormalAggregator(Aggregator):
         Returns:
             Dict[str, np.ndarray]: Aggregated predictions with:
                 - `loc`: Mean of the mixture distribution.
-                - `scale`: Standard deviation (or decomposed components if `decomposed_scale` is `True`).
+                - `scale`: Standard deviation (or decomposed components if `decomposed_scale` is
+                    `True`).
         """
         if not y:
             raise ValueError("Input list 'y' must not be empty.")
