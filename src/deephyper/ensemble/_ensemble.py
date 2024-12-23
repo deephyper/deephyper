@@ -143,5 +143,8 @@ class EnsemblePredictor(Predictor):
         return y_pred
 
     def __del__(self):
-        self._evaluator.close()
-        del self._evaluator
+        if self._evaluator is not None and self._evaluator.loop is not None:
+            self._evaluator.close()
+            tmp = self._evaluator
+            self._evaluator = None
+            del tmp
