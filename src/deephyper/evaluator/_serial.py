@@ -13,7 +13,7 @@ class SerialEvaluator(Evaluator):
         run_function (callable):
             Functions to be executed by the ``Evaluator``.
         num_workers (int, optional):
-            Number of parallel Ray-workers used to compute the ``run_function``. Defaults to 1.
+            Number of parallel Ray-workers used to compute the ``run_function``. Defaults to ``1``.
         callbacks (list, optional):
             A list of callbacks to trigger custom actions at the creation or
             completion of jobs. Defaults to None.
@@ -78,6 +78,4 @@ class SerialEvaluator(Evaluator):
             else:
                 output = await run_function_future
 
-            job.set_output(output)
-
-        return job
+            return self._update_job_when_done(job, output)

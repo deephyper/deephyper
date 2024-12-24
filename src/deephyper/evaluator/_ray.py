@@ -150,6 +150,4 @@ class RayEvaluator(Evaluator):
             else:
                 output = await run_function_future
 
-            job.set_output(output)
-
-        return job
+            return self._update_job_when_done(job, output)

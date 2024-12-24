@@ -554,6 +554,16 @@ class Evaluator(abc.ABC):
             self.loop.close()
             self.loop = None
 
+    def _update_job_when_done(self, job: Job, output) -> Job:
+        # Check if the output is a Job object or else
+        # If the output is a Job object it means that the run_function is for example
+        # following a Producer-Consumer pattern.
+        if isinstance(output, Job):
+            job = output
+        else:
+            job.set_output(output)
+        return job
+
     def dump_jobs_done_to_csv(
         self,
         log_dir: str = ".",

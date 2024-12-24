@@ -79,20 +79,4 @@ class ProcessPoolEvaluator(Evaluator):
             else:
                 output = await run_function_future
 
-            job.set_output(output)
-
-        return job
-
-    # TODO: check if this code should be reused when forcing the exit of a process
-    # def close(self):
-    #     logging.info("Closing ProcessPoolEvaluator")
-    #     if self.executor._processes is not None:
-    #         for pid in self.executor._processes:
-    #             logging.info(f"Stopping worker process {pid} of ProcessPoolEvaluator")
-    #             os.kill(pid, signal.SIGKILL)
-    #     self.executor.shutdown(wait=True, cancel_futures=True)
-    #     self.executor = ProcessPoolExecutor(
-    #         max_workers=self.num_workers,
-    #     )
-    #     if not self.loop.is_running():
-    #         self.loop.close()
+            return self._update_job_when_done(job, output)
