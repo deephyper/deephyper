@@ -13,6 +13,7 @@ from sklearn.base import is_regressor
 
 import deephyper.core.exceptions
 import deephyper.skopt
+from deephyper.analysis.hpo import filter_failed_objectives
 from deephyper.core.utils import CaptureSTD
 from deephyper.evaluator import HPOJob
 from deephyper.hpo._problem import convert_to_skopt_space
@@ -753,9 +754,13 @@ class CBO(Search):
         >>> search = CBO(problem, evaluator)
         >>> search.fit_surrogate("results.csv")
         """
+        if type(df) is not str and not isinstance(df, pd.DataFrame):
+            raise ValueError("The argument 'df' should be a path to a CSV file or a DataFrame!")
+
         if type(df) is str and df[-4:] == ".csv":
             df = pd.read_csv(df)
-        assert isinstance(df, pd.DataFrame)
+
+        df, df_failures = filter_failed_objectives(df)
 
         self._fitted = True
 
@@ -765,6 +770,8 @@ class CBO(Search):
         hp_names = [f"p:{name}" for name in self._problem.hyperparameter_names]
         try:
             x = df[hp_names].values.tolist()
+            x += df_failures[hp_names].values.tolist()
+
             # check single or multiple objectives
             if "objective" in df.columns:
                 y = df.objective.tolist()
@@ -773,7 +780,9 @@ class CBO(Search):
         except KeyError:
             raise ValueError("Incompatible dataframe 'df' to fit surrogate model of CBO.")
 
-        self._opt.tell(x, [np.negative(yi).tolist() for yi in y])
+        y = [np.negative(yi).tolist() for yi in y] + ["F"] * len(df_failures)
+
+        self._opt.tell(x, y)
 
     def fit_generative_model(
         self, df, q=0.90, n_samples=100, verbose=False, **generative_model_kwargs

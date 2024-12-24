@@ -1,3 +1,4 @@
+import os
 import time
 
 import pytest
@@ -299,14 +300,10 @@ def test_max_evals_strict(tmp_path):
     problem = HpProblem()
     problem.add_hyperparameter((0.0, 10.0), "x")
 
-    evaluator = Evaluator.create(
-        run_max_evals, method="process", method_kwargs={"num_workers": 8}
-    )
+    evaluator = Evaluator.create(run_max_evals, method="process", method_kwargs={"num_workers": 8})
 
     # Test Timeout with max_evals (this should be like an "max_evals or timeout" condition)
-    search = CBO(
-        problem, evaluator, random_state=42, surrogate_model="DUMMY", log_dir=tmp_path
-    )
+    search = CBO(problem, evaluator, random_state=42, surrogate_model="DUMMY", log_dir=tmp_path)
 
     max_evals = 100
     results = search.search(max_evals, max_evals_strict=True)
@@ -342,40 +339,246 @@ def test_cbo_checkpoint_restart(tmp_path):
     from deephyper.hpo import CBO, HpProblem
 
     problem = HpProblem()
-    problem.add_hyperparameter((0.0, 10.0), "x")
+    problem.add_hyperparameter((0, 10), "x_int")
+    problem.add_hyperparameter((0.0, 10.0), "x_float")
+    problem.add_hyperparameter(["a", "b", "c"], "x_cat")
 
-    def run(config):
-        return config["x"]
+    def run(job):
+        objective = (
+            job.parameters["x_int"] + job.parameters["x_float"] + ord(job.parameters["x_cat"])
+        )
+        return objective
 
-    # test pause-continue of the search
-    search_a = CBO(
-        problem,
-        run,
+    search_kwargs = dict(
+        problem=problem,
+        evaluator=run,
         initial_points=[problem.default_configuration],
         random_state=42,
         surrogate_model="DUMMY",
-        log_dir=tmp_path,
+        n_points=100,
+    )
+
+    def get_log_dir(name):
+        return os.path.join(tmp_path, name)
+
+    # test pause-continue of the search
+    search_a = CBO(
+        log_dir=get_log_dir("search_a"),
+        **search_kwargs,
     )
 
     results_a = search_a.search(4)
     assert len(results_a) == 4
 
     new_results_a = search_a.search(6)
+    assert all(results_a["p:x_int"] == new_results_a.iloc[:4]["p:x_int"])
     assert len(new_results_a) == 10
 
-    # test reloading of a checkpoint
+    # test reloading of a checkpoint directly as dataframe
     search_b = CBO(
-        problem,
-        run,
-        initial_points=[problem.default_configuration],
-        random_state=42,
-        surrogate_model="DUMMY",
-        log_dir=tmp_path,
+        log_dir=get_log_dir("search_b"),
+        **search_kwargs,
     )
 
     search_b.fit_surrogate(results_a)
     new_results_b = search_b.search(6)
     assert len(new_results_b) == 6
+
+    # test reloading of a checkpoint from a file
+    search_c = CBO(
+        log_dir=get_log_dir("search_c"),
+        **search_kwargs,
+    )
+    search_c.fit_surrogate(os.path.join(get_log_dir("search_b"), "results.csv"))
+    results_c = search_c.search(20)
+
+    assert len(results_c) == 20
+
+
+@pytest.mark.fast
+def test_cbo_checkpoint_restart_moo(tmp_path):
+    from deephyper.hpo import CBO, HpProblem
+
+    problem = HpProblem()
+    problem.add_hyperparameter((0, 10), "x_int")
+    problem.add_hyperparameter((0.0, 10.0), "x_float")
+    problem.add_hyperparameter(["a", "b", "c"], "x_cat")
+
+    def run(job):
+        objective0 = (
+            job.parameters["x_int"] + job.parameters["x_float"] + ord(job.parameters["x_cat"])
+        )
+        objective1 = (
+            -job.parameters["x_int"] - job.parameters["x_float"] - ord(job.parameters["x_cat"])
+        )
+        return objective0, objective1
+
+    search_kwargs = dict(
+        problem=problem,
+        evaluator=run,
+        initial_points=[problem.default_configuration],
+        random_state=42,
+        surrogate_model="DUMMY",
+        n_points=100,
+    )
+
+    def get_log_dir(name):
+        return os.path.join(tmp_path, name)
+
+    # test pause-continue of the search
+    search_a = CBO(
+        log_dir=get_log_dir("search_a"),
+        **search_kwargs,
+    )
+
+    results_a = search_a.search(4)
+    assert len(results_a) == 4
+
+    new_results_a = search_a.search(6)
+    assert all(results_a["p:x_int"] == new_results_a.iloc[:4]["p:x_int"])
+    assert len(new_results_a) == 10
+
+    # test reloading of a checkpoint directly as dataframe
+    search_b = CBO(
+        log_dir=get_log_dir("search_b"),
+        **search_kwargs,
+    )
+
+    search_b.fit_surrogate(results_a)
+    new_results_b = search_b.search(6)
+    assert len(new_results_b) == 6
+
+    # test reloading of a checkpoint from a file
+    search_c = CBO(
+        log_dir=get_log_dir("search_c"),
+        **search_kwargs,
+    )
+    search_c.fit_surrogate(os.path.join(get_log_dir("search_b"), "results.csv"))
+    results_c = search_c.search(20)
+
+    assert len(results_c) == 20
+
+
+@pytest.mark.fast
+def test_cbo_checkpoint_restart_with_failures(tmp_path):
+    from deephyper.hpo import CBO, HpProblem
+
+    problem = HpProblem()
+    problem.add_hyperparameter((0, 10), "x_int")
+    problem.add_hyperparameter((0.0, 10.0), "x_float")
+    problem.add_hyperparameter(["a", "b", "c"], "x_cat")
+
+    def run(job):
+        objective = (
+            job.parameters["x_int"] + job.parameters["x_float"] + ord(job.parameters["x_cat"])
+        )
+        if job.parameters["x_cat"] == "c":
+            objective = "F"
+        return objective
+
+    search_kwargs = dict(
+        problem=problem,
+        evaluator=run,
+        initial_points=[problem.default_configuration],
+        random_state=42,
+        surrogate_model="DUMMY",
+        n_points=100,
+    )
+
+    # test pause-continue of the search
+    search_a = CBO(
+        log_dir=os.path.join(tmp_path, "search_a"),
+        **search_kwargs,
+    )
+
+    results_a = search_a.search(10)
+    assert len(results_a) == 10
+
+    new_results_a = search_a.search(10)
+    assert len(new_results_a) == 20
+
+    # test reloading of a checkpoint directly as dataframe
+    search_b = CBO(
+        log_dir=os.path.join(tmp_path, "search_b"),
+        **search_kwargs,
+    )
+
+    search_b.fit_surrogate(results_a)
+    new_results_b = search_b.search(20)
+    assert len(new_results_b) == 20
+
+    # test reloading of a checkpoint from a file
+    search_c = CBO(
+        log_dir=os.path.join(tmp_path, "search_c"),
+        **search_kwargs,
+    )
+    search_c.fit_surrogate(os.path.join(tmp_path, "search_b", "results.csv"))
+    results_c = search_c.search(20)
+
+    assert len(results_c) == 20
+
+
+@pytest.mark.fast
+def test_cbo_checkpoint_restart_moo_with_failures(tmp_path):
+    from deephyper.hpo import CBO, HpProblem
+
+    problem = HpProblem()
+    problem.add_hyperparameter((0, 10), "x_int")
+    problem.add_hyperparameter((0.0, 10.0), "x_float")
+    problem.add_hyperparameter(["a", "b", "c"], "x_cat")
+
+    def run(job):
+        objective0 = (
+            job.parameters["x_int"] + job.parameters["x_float"] + ord(job.parameters["x_cat"])
+        )
+        objective1 = (
+            -job.parameters["x_int"] - job.parameters["x_float"] - ord(job.parameters["x_cat"])
+        )
+        if job.parameters["x_cat"] == "c":
+            objective0 = "F"
+            objective1 = "F"
+        return objective0, objective1
+
+    search_kwargs = dict(
+        problem=problem,
+        evaluator=run,
+        initial_points=[problem.default_configuration],
+        random_state=42,
+        surrogate_model="DUMMY",
+        n_points=100,
+    )
+
+    # test pause-continue of the search
+    search_a = CBO(
+        log_dir=os.path.join(tmp_path, "search_a"),
+        **search_kwargs,
+    )
+
+    results_a = search_a.search(10)
+    assert len(results_a) == 10
+
+    new_results_a = search_a.search(10)
+    assert len(new_results_a) == 20
+
+    # test reloading of a checkpoint directly as dataframe
+    search_b = CBO(
+        log_dir=os.path.join(tmp_path, "search_b"),
+        **search_kwargs,
+    )
+
+    search_b.fit_surrogate(results_a)
+    new_results_b = search_b.search(20)
+    assert len(new_results_b) == 20
+
+    # test reloading of a checkpoint from a file
+    search_c = CBO(
+        log_dir=os.path.join(tmp_path, "search_c"),
+        **search_kwargs,
+    )
+    search_c.fit_surrogate(os.path.join(tmp_path, "search_b", "results.csv"))
+    results_c = search_c.search(20)
+
+    assert len(results_c) == 20
 
 
 @pytest.mark.fast
@@ -413,15 +616,11 @@ def test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path):
     problem = HpProblem()
 
     max_num_layers = 10
-    num_layers = problem.add_hyperparameter(
-        (1, max_num_layers), "num_layers", default_value=2
-    )
+    num_layers = problem.add_hyperparameter((1, max_num_layers), "num_layers", default_value=2)
 
     conditions = []
     for i in range(max_num_layers):
-        layer_i_units = problem.add_hyperparameter(
-            (1, 100), f"layer_{i}_units", default_value=32
-        )
+        layer_i_units = problem.add_hyperparameter((1, 100), f"layer_{i}_units", default_value=32)
 
         if i > 0:
             conditions.extend(
@@ -520,30 +719,30 @@ if __name__ == "__main__":
         force=True,
     )
 
-    import time
+    # import time
 
-    tmp_path = "/tmp/deephyper_test"
+    # tmp_path = "/tmp/deephyper_test"
 
-    # scope = locals().copy()
-    # # for k in scope:
-    # for k in [
-    #     "test_timeout",
-    #     # "test_max_evals_strict",
-    # ]:
-    #     if k.startswith("test_"):
+    # # scope = locals().copy()
+    # # # for k in scope:
+    # # for k in [
+    # #     "test_timeout",
+    # #     # "test_max_evals_strict",
+    # # ]:
+    # #     if k.startswith("test_"):
 
-    #         print(f"Running {k}")
+    # #         print(f"Running {k}")
 
-    #         test_func = scope[k]
+    # #         test_func = scope[k]
 
-    #         t1 = time.time()
-    #         test_func(tmp_path)
-    #         duration = time.time() - t1
+    # #         t1 = time.time()
+    # #         test_func(tmp_path)
+    # #         duration = time.time() - t1
 
-    #         print(f"\t{duration:.2f} sec.")
+    # #         print(f"\t{duration:.2f} sec.")
 
-    t1 = time.time()
-    # test_max_evals_strict(tmp_path)
-    test_timeout(tmp_path)
-    duration = time.time() - t1
-    print(f"\t{duration:.2f} sec.")
+    # t1 = time.time()
+    # # test_max_evals_strict(tmp_path)
+    # test_timeout(tmp_path)
+    # duration = time.time() - t1
+    # print(f"\t{duration:.2f} sec.")
