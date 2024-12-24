@@ -460,8 +460,8 @@ class Evaluator(abc.ABC):
                     )
                     if job.status is JobStatus.RUNNING:
                         job.status = JobStatus.DONE
-                    job.output["metadata"].update(job_data["metadata"])
-                    job.output["objective"] = job_data["out"]
+                    job.metadata.update(job_data["metadata"])
+                    job.set_output(job_data["out"])
                     self.job_id_gathered.append(job_id)
                     self.jobs_done.append(job)
                     other_results.append(job)

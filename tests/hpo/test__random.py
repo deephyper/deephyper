@@ -44,7 +44,6 @@ def assert_results(results, max_evals_strict=False):
 
 @pytest.mark.fast
 def test_centralized_random_search(tmp_path):
-
     problem = create_problem()
 
     # Test serial evaluation
@@ -90,7 +89,7 @@ def test_centralized_random_search_redis_storage(tmp_path):
     assert_results(results)
 
 
-def launch_serial_search_with_redis_storage(search_id, search_seed, is_master=False):
+def launch_thread_search_with_redis_storage(search_id, search_seed, is_master=False):
     from deephyper.evaluator.storage import RedisStorage
 
     storage = RedisStorage().connect()
@@ -99,7 +98,7 @@ def launch_serial_search_with_redis_storage(search_id, search_seed, is_master=Fa
 
     evaluator = Evaluator.create(
         run_function=run,
-        method="serial",
+        method="thread",
         method_kwargs={"storage": storage, "num_workers": 1, "search_id": search_id},
     )
 
@@ -133,13 +132,60 @@ def test_decentralized_random_search_redis_storage():
     # Master
     with Pool(processes=4) as pool:
         results = pool.starmap(
-            launch_serial_search_with_redis_storage,
+            launch_thread_search_with_redis_storage,
             [(search_id, i, i == 0) for i in range(4)],
         )
     assert_results(results[0], max_evals_strict=False)
 
 
+def launch_thread_search_with_shared_memory_storage(
+    storage, search_id, search_seed, is_master=False
+):
+    problem = create_problem()
+
+    evaluator = Evaluator.create(
+        run_function=run,
+        method="thread",
+        method_kwargs={"storage": storage, "num_workers": 1, "search_id": search_id},
+    )
+
+    log_dir = "." if is_master else f"/tmp/deephyper_search_{search_seed}"
+    search = RandomSearch(problem, evaluator, random_state=search_seed, log_dir=log_dir)
+
+    def dump_evals(*args, **kwargs):
+        pass
+
+    max_evals = 100
+    results = None
+    max_evals_strict = True
+    if is_master:
+        results = search.search(max_evals=max_evals, max_evals_strict=max_evals_strict)
+    else:
+        evaluator.dump_jobs_done_to_csv = dump_evals
+        search.search(max_evals=max_evals, max_evals_strict=max_evals_strict)
+
+    return results
+
+
+@pytest.mark.fast
+def test_decentralized_random_search_shared_memory_storage():
+    from multiprocessing import Pool
+    from deephyper.evaluator.storage import SharedMemoryStorage
+
+    storage = SharedMemoryStorage()
+    search_id = storage.create_new_search()
+
+    # Master
+    with Pool(processes=4) as pool:
+        results = pool.starmap(
+            launch_thread_search_with_shared_memory_storage,
+            [(storage, search_id, i, i == 0) for i in range(4)],
+        )
+    assert_results(results[0], max_evals_strict=False)
+
+
 if __name__ == "__main__":
-    test_centralized_random_search()
-    test_centralized_random_search_redis_storage()
-    test_decentralized_random_search_redis_storage()
+    # test_centralized_random_search()
+    # test_centralized_random_search_redis_storage()
+    # test_decentralized_random_search_redis_storage()
+    test_decentralized_random_search_shared_memory_storage()
