@@ -1,7 +1,4 @@
 import pytest
-import unittest
-import time
-
 from deephyper.evaluator import Evaluator, profile
 
 
@@ -110,8 +107,3 @@ def test_memory_limit_with_profile_decorator_as_function():
     assert result[0] == "F_memory_limit_exceeded"
     assert metadata[0]["memory"] > 1024**3
     evaluator.close()
-
-
-if __name__ == "__main__":
-    test_memory_limit_with_profile_decorator()
-    test_memory_limit_with_profile_decorator_as_function()
