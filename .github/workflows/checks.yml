@@ -44,8 +44,14 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install pytest
+          pip install pytest coverage
           pip install .
 
-      - name: Run tests with pytest
-        run: pytest --run-marks-subset "fast" tests/
+      - name: Run tests and generate coverage report
+        run: |
+          coverage run -m pytest --run-marks-subset "fast" tests/
+          coverage html
+          coverage xml
+
+      - name: Upload coverage to codecov
+        uses: codecov/codecov-action@v5
