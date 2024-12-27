@@ -48,4 +48,4 @@ jobs:
           pip install .
 
       - name: Run tests with pytest
-        run: pytest -m "fast or hpo"
+        run: pytest --run-marks-subset "fast"

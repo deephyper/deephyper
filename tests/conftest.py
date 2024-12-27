@@ -4,18 +4,18 @@ import pytest
 # -- Control skipping of tests according to command line option
 def pytest_addoption(parser):
     parser.addoption(
-        "--run",
+        "--run-marks-subset",
         default="fast",
-        help="Select tests to run.",
+        help="Select tests to run with marks that are a subset of the selected marks.",
     )
 
 
 def pytest_collection_modifyitems(config, items):
 
-    selected_marks = set(config.getoption("--run").split(","))
+    selected_marks = set(config.getoption("--run-marks-subset").split(","))
     get_markers = lambda item: {m.name for m in item.iter_markers()}
 
-    skip_mark = pytest.mark.skip(reason=f"need --run with compatible marks to run")
+    skip_mark = pytest.mark.skip(reason=f"need --run-marks-subset with compatible marks to run")
     for item in items:
         item_marks = get_markers(item)
         if not (item_marks.issubset(selected_marks)):
