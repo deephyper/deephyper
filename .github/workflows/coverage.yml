@@ -1,0 +1,30 @@
+name: Coverage report
+
+on:
+  - pull_request
+
+jobs:
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install coverage
+
+      - name: Generate coverage report
+        run: |
+          coverage run -m pytest --run-marks-subset "fast" tests/
+          coverage html
+          coverage xml
+
+      - name: Upload coverage to codecov
+        uses: codecov/codecov-action@v5
