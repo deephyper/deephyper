@@ -650,12 +650,12 @@ def test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path):
     )
     results = search.search(max_evals=100)
 
-    import matplotlib.pyplot as plt
+    # import matplotlib.pyplot as plt
 
-    from deephyper.analysis.hpo import plot_search_trajectory_single_objective_hpo
+    # from deephyper.analysis.hpo import plot_search_trajectory_single_objective_hpo
 
-    fig, ax = plot_search_trajectory_single_objective_hpo(results)
-    plt.show()
+    # fig, ax = plot_search_trajectory_single_objective_hpo(results)
+    # plt.show()
 
 
 # @pytest.mark.slow
