@@ -126,8 +126,11 @@ def plot_search_trajectory_single_objective_hpo(
     column="objective",
     mode="max",
     x_units="evaluations",
+    label=None,
     ax=None,
-    **kwargs,
+    plot_kwargs=None,
+    scatter_success_kwargs=None,
+    scatter_failure_kwargs=None,
 ):
     """Plot the search trajectory of a Single-Objective Hyperparameter Optimization.
 
@@ -140,8 +143,13 @@ def plot_search_trajectory_single_objective_hpo(
             ``"max"``. Defaults to ``"max"``.
         x_units (str, optional): if the plot should be made with respect to evaluations
             ``"evaluations"`` or time ``"seconds"``. Defaults to ``"evaluations"``.
+        label (str, optional): the label of the plot. Defaults to ``None``.
         ax (matplotlib.pyplot.axes): the axes to use for the plot.
-        kwargs (dict): other keywords arguments passed to``ax.scatter(...)``.
+        plot_kwargs (dict, optional): keywords arguments passed to ``ax.plot(...)``.
+        scatter_success_kwargs (dict, optional): keywords arguments passed to ``ax.scatter(...)``
+            for the successful evaluations.
+        scatter_failure_kwargs (dict, optional): keywords arguments passed to ``ax.scatter(...)``
+            for the failed evaluations.
 
     Returns:
         (matplotlib.pyplot.figure, matplotlib.pyplot.axes): the figure and axes of the plot.
@@ -149,22 +157,45 @@ def plot_search_trajectory_single_objective_hpo(
     assert mode in ["min", "max"]
     assert x_units in ["evaluations", "seconds"]
 
-    label = None
-    if "label" in kwargs:
-        label = kwargs.pop("label")
+    # Manage default values
+    if plot_kwargs is None:
+        plot_kwargs = dict()
+    _plot_kwargs = dict(
+        color="skyblue",
+        label="Trajectory" if label is None else label,
+    )
+    _plot_kwargs.update(plot_kwargs)
+
+    if scatter_success_kwargs is None:
+        scatter_success_kwargs = dict()
+    _scatter_success_kwargs = dict(
+        marker="o",
+        s=10,
+        c="skyblue" if show_failures else None,
+        label="Successes" if label is None else None,
+    )
+    _scatter_success_kwargs.update(scatter_success_kwargs)
+
+    if scatter_failure_kwargs is None:
+        scatter_failure_kwargs = dict()
+    _scatter_failure_kwargs = dict(
+        marker="v",
+        color="red",
+        label="Failures" if label is None else None,
+    )
+    _scatter_failure_kwargs.update(scatter_failure_kwargs)
 
     if x_units == "evaluations":
         x = np.arange(len(results))
         x_label = "Evaluations"
-
-        results = results.sort_values(by=["job_id"], ascending=True)
+        results = results.sort_values(by=["m:timestamp_gather"], ascending=True)
     else:
         if "m:timestamp_end" in results.columns:
-            x = results["m:timestamp_end"].to_numpy()
             results = results.sort_values(by=["m:timestamp_end"], ascending=True)
+            x = results["m:timestamp_end"].to_numpy()
         else:
-            x = results["m:timestamp_gather"].to_numpy()
             results = results.sort_values(by=["m:timestamp_gather"], ascending=True)
+            x = results["m:timestamp_gather"].to_numpy()
         x_label = "Time (sec.)"
 
     if results[column].dtype != np.float64:
@@ -187,9 +218,6 @@ def plot_search_trajectory_single_objective_hpo(
     y_min = y_min - 0.05 * (y_max - y_min)
     y_max = y_max - 0.05 * (y_max - y_min)
 
-    scatter_kwargs = dict(marker="o", s=10, c="skyblue" if show_failures else None)
-    scatter_kwargs.update(kwargs)
-
     fig = plt.gcf()
     if fig is None:
         fig = plt.figure()
@@ -197,22 +225,19 @@ def plot_search_trajectory_single_objective_hpo(
     if ax is None:
         ax = fig.gca()
 
-    ax.plot(x_success, y_plot, label=label)
+    ax.plot(x_success, y_plot, **_plot_kwargs)
 
     ax.scatter(
         x_success,
         y_success,
-        **scatter_kwargs,
-        label="Successes" if label is None else None,
+        **_scatter_success_kwargs,
     )
 
     if show_failures and len(x_failed) > 0:
         ax.scatter(
             x_failed,
             np.full_like(x_failed, y_min),
-            marker="v",
-            color="red",
-            label="Failures" if label is None else None,
+            **_scatter_failure_kwargs,
         )
 
     ax.set_xlabel(x_label)
