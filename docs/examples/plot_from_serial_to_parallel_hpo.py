@@ -39,80 +39,92 @@ from deephyper.hpo import HpProblem, CBO
 
 # %%
 # Then we define the variable(s) we want to optimize. For this problem we
-# optimize Ackley in a 2-dimensional search space, the true minimul is
-# located at ``(0, 0)``.
+# optimize Ackley in a 5-dimensional search space, the true minimul is
+# located at ``(0, 0, 0, 0, 0)``.
 
-nb_dim = 2
+nb_dim = 5
 problem = HpProblem()
 for i in range(nb_dim):
     problem.add_hyperparameter((-32.768, 32.768), f"x{i}")
 problem
 
 # %%
-# Then we define sequential search by creation a ``"sequential"``-evaluator and we
-# execute the search with a fixed time-budget of 2 minutes (i.e., 120
-# secondes).
+# Then we define sequential search by creating a ``"thread"``-evaluator and we
+# execute the search with a fixed time-budget of 2 minutes.
 
-if __name__ == "__main__":
-    # we give a budget of 2 minutes for each search
-    timeout = 120
-    sequential_evaluator = Evaluator.create(
-        black_box.run_ackley,
-        method="thread",  # because the ``run_function`` is not asynchronous
-        method_kwargs={"callbacks": [TqdmCallback()]},
-    )
-    print("Running sequential search...")
-    results = {}
-    sequential_search = CBO(problem, sequential_evaluator, random_state=42)
-    results["sequential"] = sequential_search.search(timeout=timeout)
-    results["sequential"]["m:timestamp_end"] = (
-        results["sequential"]["m:timestamp_end"]
-        - results["sequential"]["m:timestamp_start"].iloc[0]
-    )
+timeout = 120  # in seconds
+search_kwargs = {
+    "n_initial_points": 2*5+1,
+    "surrogate_model": "ET",
+    "surrogate_model_kwargs": {
+        "n_estimators": 25, 
+        "min_samples_split": 8, 
+    },
+    "multi_point_strategy": "qUCBd",
+    "acq_optimizer": "ga",
+    "acq_optimizer_freq": 1,
+    "filter_duplicated": False,
+    "kappa": 10.0,
+    "scheduler": {"type": "periodic-exp-decay", "period": 50, "kappa_final": 0.001},
+    "random_state": 42,
+
+}
+sequential_evaluator = Evaluator.create(
+    black_box.run_ackley,
+    method="thread",  # because the ``run_function`` is not asynchronous
+    method_kwargs={"num_workers": 1, "callbacks": [TqdmCallback()]},
+)
+print("Running sequential search...")
+results = {}
+sequential_search = CBO(problem, sequential_evaluator, **search_kwargs)
+results["sequential"] = sequential_search.search(timeout=timeout)
+results["sequential"]["m:timestamp_end"] = (
+    results["sequential"]["m:timestamp_end"]
+    - results["sequential"]["m:timestamp_start"].iloc[0]
+)
 
 # %%
-# After, executing the sequential-search for 2 minutes we can create a parallel
-# search which uses the ``"process"``-evaluator and defines 5 parallel
-# workers. The search is also executed for 2 minutes.
-
-if __name__ == "__main__":
-    parallel_evaluator = Evaluator.create(
-        black_box.run_ackley,
-        method="thread",
-        method_kwargs={"num_workers": 5, "callbacks": [TqdmCallback()]},
-    )
-    print("Running parallel search...")
-    parallel_search = CBO(
-        problem, parallel_evaluator, multi_point_strategy="qUCBd", random_state=42
-    )
-    results["parallel"] = parallel_search.search(timeout=timeout)
-    results["parallel"]["m:timestamp_end"] = (
-        results["parallel"]["m:timestamp_end"]
-        - results["parallel"]["m:timestamp_start"].iloc[0]
-    )
+# After, executing the sequential-search for 2 minutes we can create a "parallel"
+# search simulated by the ``"thread"``-evaluator and 100 workers. The search is 
+# also executed for 2 minutes.
+parallel_evaluator = Evaluator.create(
+    black_box.run_ackley,
+    method="thread",
+    method_kwargs={"num_workers": 100, "callbacks": [TqdmCallback()]},
+)
+print("Running parallel search...")
+parallel_search = CBO(problem, parallel_evaluator, **search_kwargs)
+results["parallel"] = parallel_search.search(timeout=timeout)
+results["parallel"]["m:timestamp_end"] = (
+    results["parallel"]["m:timestamp_end"]
+    - results["parallel"]["m:timestamp_start"].iloc[0]
+)
 
 # %%
 # Finally, we plot the results from the collected DataFrame. The execution
 # time is used as the x-axis which help-us vizualise the advantages of the
 # parallel search.
 
-if __name__ == "__main__":
-    fig, ax = plt.subplots(figsize=figure_size(width=600))
+fig, ax = plt.subplots(figsize=figure_size(width=600))
 
-    for strategy, df in results.items():
-        plot_search_trajectory_single_objective_hpo(
-            df,
-            show_failures=False,
-            mode="min",
-            x_units="seconds",
-            ax=ax,
-            label=strategy,
-        )
+for i, (strategy, df) in enumerate(results.items()):
+    plot_search_trajectory_single_objective_hpo(
+        df,
+        show_failures=False,
+        mode="min",
+        x_units="seconds",
+        ax=ax,
+        label=strategy,
+        plot_kwargs={"color": f"C{i}"},
+        scatter_success_kwargs={"color": f"C{i}"},
+    )
 
-    plt.xlabel("Time (sec.)")
-    plt.ylabel("Objective")
-    plt.yscale("log")
-    plt.grid(visible=True, which="minor", linestyle=":")
-    plt.grid(visible=True, which="major", linestyle="-")
-    plt.legend()
-    plt.show()
+plt.xlabel("Time (sec.)")
+plt.ylabel("Objective")
+plt.yscale("log")
+plt.grid(visible=True, which="minor", linestyle=":")
+plt.grid(visible=True, which="major", linestyle="-")
+plt.legend()
+plt.show()
+
+

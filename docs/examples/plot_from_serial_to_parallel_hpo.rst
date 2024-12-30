@@ -69,15 +69,15 @@ After defining the black-box we can continue with the definition of our main scr
 .. GENERATED FROM PYTHON SOURCE LINES 41-44
 
 Then we define the variable(s) we want to optimize. For this problem we
-optimize Ackley in a 2-dimensional search space, the true minimul is
-located at ``(0, 0)``.
+optimize Ackley in a 5-dimensional search space, the true minimul is
+located at ``(0, 0, 0, 0, 0)``.
 
 .. GENERATED FROM PYTHON SOURCE LINES 44-51
 
 .. code-block:: Python
 
 
-    nb_dim = 2
+    nb_dim = 5
     problem = HpProblem()
     for i in range(nb_dim):
         problem.add_hyperparameter((-32.768, 32.768), f"x{i}")
@@ -96,37 +96,53 @@ located at ``(0, 0)``.
       Hyperparameters:
         x0, Type: UniformFloat, Range: [-32.768, 32.768], Default: 0.0
         x1, Type: UniformFloat, Range: [-32.768, 32.768], Default: 0.0
+        x2, Type: UniformFloat, Range: [-32.768, 32.768], Default: 0.0
+        x3, Type: UniformFloat, Range: [-32.768, 32.768], Default: 0.0
+        x4, Type: UniformFloat, Range: [-32.768, 32.768], Default: 0.0
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 52-55
+.. GENERATED FROM PYTHON SOURCE LINES 52-54
 
-Then we define sequential search by creation a ``"sequential"``-evaluator and we
-execute the search with a fixed time-budget of 2 minutes (i.e., 120
-secondes).
+Then we define sequential search by creating a ``"thread"``-evaluator and we
+execute the search with a fixed time-budget of 2 minutes.
 
-.. GENERATED FROM PYTHON SOURCE LINES 55-73
+.. GENERATED FROM PYTHON SOURCE LINES 54-86
 
 .. code-block:: Python
 
 
-    if __name__ == "__main__":
-        # we give a budget of 2 minutes for each search
-        timeout = 120
-        sequential_evaluator = Evaluator.create(
-            black_box.run_ackley,
-            method="thread",  # because the ``run_function`` is not asynchronous
-            method_kwargs={"callbacks": [TqdmCallback()]},
-        )
-        print("Running sequential search...")
-        results = {}
-        sequential_search = CBO(problem, sequential_evaluator, random_state=42)
-        results["sequential"] = sequential_search.search(timeout=timeout)
-        results["sequential"]["m:timestamp_end"] = (
-            results["sequential"]["m:timestamp_end"]
-            - results["sequential"]["m:timestamp_start"].iloc[0]
-        )
+    timeout = 120  # in seconds
+    search_kwargs = {
+        "n_initial_points": 2*5+1,
+        "surrogate_model": "ET",
+        "surrogate_model_kwargs": {
+            "n_estimators": 25, 
+            "min_samples_split": 8, 
+        },
+        "multi_point_strategy": "qUCBd",
+        "acq_optimizer": "ga",
+        "acq_optimizer_freq": 1,
+        "filter_duplicated": False,
+        "kappa": 10.0,
+        "scheduler": {"type": "periodic-exp-decay", "period": 50, "kappa_final": 0.001},
+        "random_state": 42,
+
+    }
+    sequential_evaluator = Evaluator.create(
+        black_box.run_ackley,
+        method="thread",  # because the ``run_function`` is not asynchronous
+        method_kwargs={"num_workers": 1, "callbacks": [TqdmCallback()]},
+    )
+    print("Running sequential search...")
+    results = {}
+    sequential_search = CBO(problem, sequential_evaluator, **search_kwargs)
+    results["sequential"] = sequential_search.search(timeout=timeout)
+    results["sequential"]["m:timestamp_end"] = (
+        results["sequential"]["m:timestamp_end"]
+        - results["sequential"]["m:timestamp_start"].iloc[0]
+    )
 
 
 
@@ -137,37 +153,33 @@ secondes).
  .. code-block:: none
 
     Running sequential search...
-    WARNING:root:Results file already exists, it will be renamed to /Users/romainegele/Documents/Argonne/deephyper/examples/results_20241125-160658.csv
-    0it [00:00, ?it/s]    1it [00:00, 3890.82it/s, failures=0, objective=-19.8]    2it [00:02,  1.12s/it, failures=0, objective=-19.8]      2it [00:02,  1.12s/it, failures=0, objective=-19.8]    3it [00:04,  1.55s/it, failures=0, objective=-19.8]    3it [00:04,  1.55s/it, failures=0, objective=-19.8]    4it [00:05,  1.55s/it, failures=0, objective=-19.8]    4it [00:05,  1.55s/it, failures=0, objective=-15.4]    5it [00:08,  1.86s/it, failures=0, objective=-15.4]    5it [00:08,  1.86s/it, failures=0, objective=-15.4]    6it [00:10,  2.02s/it, failures=0, objective=-15.4]    6it [00:10,  2.02s/it, failures=0, objective=-15.4]    7it [00:13,  2.13s/it, failures=0, objective=-15.4]    7it [00:13,  2.13s/it, failures=0, objective=-15.4]    8it [00:14,  1.97s/it, failures=0, objective=-15.4]    8it [00:14,  1.97s/it, failures=0, objective=-12.6]    9it [00:16,  1.85s/it, failures=0, objective=-12.6]    9it [00:16,  1.85s/it, failures=0, objective=-12.6]    10it [00:18,  1.87s/it, failures=0, objective=-12.6]    10it [00:18,  1.87s/it, failures=0, objective=-12.6]    11it [00:19,  1.79s/it, failures=0, objective=-12.6]    11it [00:19,  1.79s/it, failures=0, objective=-12.6]    12it [00:22,  2.11s/it, failures=0, objective=-12.6]    12it [00:22,  2.11s/it, failures=0, objective=-12.6]    13it [00:25,  2.27s/it, failures=0, objective=-12.6]    13it [00:25,  2.27s/it, failures=0, objective=-5.02]    14it [00:27,  2.38s/it, failures=0, objective=-5.02]    14it [00:27,  2.38s/it, failures=0, objective=-5.02]    15it [00:30,  2.33s/it, failures=0, objective=-5.02]    15it [00:30,  2.33s/it, failures=0, objective=-5.02]    16it [00:32,  2.18s/it, failures=0, objective=-5.02]    16it [00:32,  2.18s/it, failures=0, objective=-2.09]    17it [00:34,  2.32s/it, failures=0, objective=-2.09]    17it [00:34,  2.32s/it, failures=0, objective=-2.09]    18it [00:36,  2.22s/it, failures=0, objective=-2.09]    18it [00:36,  2.22s/it, failures=0, objective=-2.09]    19it [00:38,  2.07s/it, failures=0, objective=-2.09]    19it [00:38,  2.07s/it, failures=0, objective=-2.09]    20it [00:40,  2.05s/it, failures=0, objective=-2.09]    20it [00:40,  2.05s/it, failures=0, objective=-2.09]    21it [00:41,  1.83s/it, failures=0, objective=-2.09]    21it [00:41,  1.83s/it, failures=0, objective=-2.09]    22it [00:43,  1.96s/it, failures=0, objective=-2.09]    22it [00:43,  1.96s/it, failures=0, objective=-2.09]    23it [00:45,  1.73s/it, failures=0, objective=-2.09]    23it [00:45,  1.73s/it, failures=0, objective=-2.09]    24it [00:47,  1.79s/it, failures=0, objective=-2.09]    24it [00:47,  1.79s/it, failures=0, objective=-2.09]    25it [00:48,  1.70s/it, failures=0, objective=-2.09]    25it [00:48,  1.70s/it, failures=0, objective=-2.09]    26it [00:50,  1.73s/it, failures=0, objective=-2.09]    26it [00:50,  1.73s/it, failures=0, objective=-1.62]    27it [00:52,  1.93s/it, failures=0, objective=-1.62]    27it [00:52,  1.93s/it, failures=0, objective=-1.62]    28it [00:54,  1.96s/it, failures=0, objective=-1.62]    28it [00:54,  1.96s/it, failures=0, objective=-1.62]    29it [00:57,  2.05s/it, failures=0, objective=-1.62]    29it [00:57,  2.05s/it, failures=0, objective=-1.62]    30it [00:59,  2.26s/it, failures=0, objective=-1.62]    30it [00:59,  2.26s/it, failures=0, objective=-1.62]    31it [01:03,  2.62s/it, failures=0, objective=-1.62]    31it [01:03,  2.62s/it, failures=0, objective=-1.62]    32it [01:05,  2.50s/it, failures=0, objective=-1.62]    32it [01:05,  2.50s/it, failures=0, objective=-1.62]    33it [01:07,  2.50s/it, failures=0, objective=-1.62]    33it [01:07,  2.50s/it, failures=0, objective=-1.62]    34it [01:09,  2.33s/it, failures=0, objective=-1.62]    34it [01:09,  2.33s/it, failures=0, objective=-1.62]    35it [01:11,  2.17s/it, failures=0, objective=-1.62]    35it [01:11,  2.17s/it, failures=0, objective=-1.14]    36it [01:13,  1.97s/it, failures=0, objective=-1.14]    36it [01:13,  1.97s/it, failures=0, objective=-1.14]    37it [01:15,  2.11s/it, failures=0, objective=-1.14]    37it [01:15,  2.11s/it, failures=0, objective=-0.739]    38it [01:17,  2.16s/it, failures=0, objective=-0.739]    38it [01:17,  2.16s/it, failures=0, objective=-0.739]    39it [01:20,  2.24s/it, failures=0, objective=-0.739]    39it [01:20,  2.24s/it, failures=0, objective=-0.739]    40it [01:22,  2.09s/it, failures=0, objective=-0.739]    40it [01:22,  2.09s/it, failures=0, objective=-0.739]    41it [01:24,  2.05s/it, failures=0, objective=-0.739]    41it [01:24,  2.05s/it, failures=0, objective=-0.739]    42it [01:26,  2.32s/it, failures=0, objective=-0.739]    42it [01:26,  2.32s/it, failures=0, objective=-0.739]    43it [01:28,  2.16s/it, failures=0, objective=-0.739]    43it [01:28,  2.16s/it, failures=0, objective=-0.739]    44it [01:29,  1.87s/it, failures=0, objective=-0.739]    44it [01:29,  1.87s/it, failures=0, objective=-0.739]    45it [01:32,  2.03s/it, failures=0, objective=-0.739]    45it [01:32,  2.03s/it, failures=0, objective=-0.727]    46it [01:34,  1.95s/it, failures=0, objective=-0.727]    46it [01:34,  1.95s/it, failures=0, objective=-0.727]    47it [01:35,  1.77s/it, failures=0, objective=-0.727]    47it [01:35,  1.77s/it, failures=0, objective=-0.278]    48it [01:38,  2.02s/it, failures=0, objective=-0.278]    48it [01:38,  2.02s/it, failures=0, objective=-0.278]    49it [01:39,  1.86s/it, failures=0, objective=-0.278]    49it [01:39,  1.86s/it, failures=0, objective=-0.278]    50it [01:42,  2.07s/it, failures=0, objective=-0.278]    50it [01:42,  2.07s/it, failures=0, objective=-0.278]    51it [01:44,  2.10s/it, failures=0, objective=-0.278]    51it [01:44,  2.10s/it, failures=0, objective=-0.278]    52it [01:46,  2.23s/it, failures=0, objective=-0.278]    52it [01:46,  2.23s/it, failures=0, objective=-0.278]    53it [01:49,  2.33s/it, failures=0, objective=-0.278]    53it [01:49,  2.33s/it, failures=0, objective=-0.278]    54it [01:51,  2.39s/it, failures=0, objective=-0.278]    54it [01:51,  2.39s/it, failures=0, objective=-0.278]    55it [01:53,  2.21s/it, failures=0, objective=-0.278]    55it [01:53,  2.21s/it, failures=0, objective=-0.278]    56it [01:55,  2.20s/it, failures=0, objective=-0.278]    56it [01:55,  2.20s/it, failures=0, objective=-0.278]    57it [01:58,  2.22s/it, failures=0, objective=-0.278]    57it [01:58,  2.22s/it, failures=0, objective=-0.278]
+    WARNING:root:Results file already exists, it will be renamed to /Users/romainegele/Documents/Argonne/deephyper/examples/results_20241230-172336.csv
+    0it [00:00, ?it/s]    1it [00:00, 1940.91it/s, failures=0, objective=-21.1]    2it [00:02,  1.39s/it, failures=0, objective=-21.1]      2it [00:02,  1.39s/it, failures=0, objective=-21.1]    3it [00:05,  1.96s/it, failures=0, objective=-21.1]    3it [00:05,  1.96s/it, failures=0, objective=-20.6]    4it [00:08,  2.22s/it, failures=0, objective=-20.6]    4it [00:08,  2.22s/it, failures=0, objective=-20.6]    5it [00:10,  2.14s/it, failures=0, objective=-20.6]    5it [00:10,  2.14s/it, failures=0, objective=-20.1]    6it [00:12,  2.12s/it, failures=0, objective=-20.1]    6it [00:12,  2.12s/it, failures=0, objective=-20.1]    7it [00:13,  1.74s/it, failures=0, objective=-20.1]    7it [00:13,  1.74s/it, failures=0, objective=-20.1]    8it [00:14,  1.67s/it, failures=0, objective=-20.1]    8it [00:14,  1.67s/it, failures=0, objective=-20.1]    9it [00:16,  1.85s/it, failures=0, objective=-20.1]    9it [00:16,  1.85s/it, failures=0, objective=-20.1]    10it [00:19,  2.19s/it, failures=0, objective=-20.1]    10it [00:19,  2.19s/it, failures=0, objective=-20.1]    11it [00:21,  2.06s/it, failures=0, objective=-20.1]    11it [00:21,  2.06s/it, failures=0, objective=-20.1]    12it [00:23,  1.98s/it, failures=0, objective=-20.1]    12it [00:23,  1.98s/it, failures=0, objective=-20.1]    13it [00:25,  1.99s/it, failures=0, objective=-20.1]    13it [00:25,  1.99s/it, failures=0, objective=-20.1]    14it [00:27,  1.99s/it, failures=0, objective=-20.1]    14it [00:27,  1.99s/it, failures=0, objective=-20.1]    15it [00:29,  2.04s/it, failures=0, objective=-20.1]    15it [00:29,  2.04s/it, failures=0, objective=-20.1]    16it [00:31,  1.99s/it, failures=0, objective=-20.1]    16it [00:31,  1.99s/it, failures=0, objective=-20.1]    17it [00:34,  2.32s/it, failures=0, objective=-20.1]    17it [00:34,  2.32s/it, failures=0, objective=-20.1]    18it [00:36,  2.22s/it, failures=0, objective=-20.1]    18it [00:36,  2.22s/it, failures=0, objective=-20.1]    19it [00:39,  2.28s/it, failures=0, objective=-20.1]    19it [00:39,  2.28s/it, failures=0, objective=-20.1]    20it [00:40,  2.10s/it, failures=0, objective=-20.1]    20it [00:40,  2.10s/it, failures=0, objective=-20.1]    21it [00:42,  2.05s/it, failures=0, objective=-20.1]    21it [00:42,  2.05s/it, failures=0, objective=-20.1]    22it [00:44,  1.93s/it, failures=0, objective=-20.1]    22it [00:44,  1.93s/it, failures=0, objective=-20.1]    23it [00:47,  2.24s/it, failures=0, objective=-20.1]    23it [00:47,  2.24s/it, failures=0, objective=-19.8]    24it [00:49,  2.25s/it, failures=0, objective=-19.8]    24it [00:49,  2.25s/it, failures=0, objective=-19.8]    25it [00:52,  2.42s/it, failures=0, objective=-19.8]    25it [00:52,  2.42s/it, failures=0, objective=-19.8]    26it [00:54,  2.19s/it, failures=0, objective=-19.8]    26it [00:54,  2.19s/it, failures=0, objective=-19.3]    27it [00:55,  2.10s/it, failures=0, objective=-19.3]    27it [00:55,  2.10s/it, failures=0, objective=-19.3]    28it [00:57,  2.08s/it, failures=0, objective=-19.3]    28it [00:57,  2.08s/it, failures=0, objective=-19.3]    29it [01:00,  2.29s/it, failures=0, objective=-19.3]    29it [01:00,  2.29s/it, failures=0, objective=-19.3]    30it [01:02,  2.16s/it, failures=0, objective=-19.3]    30it [01:02,  2.16s/it, failures=0, objective=-19.3]    31it [01:05,  2.38s/it, failures=0, objective=-19.3]    31it [01:05,  2.38s/it, failures=0, objective=-18.7]    32it [01:08,  2.43s/it, failures=0, objective=-18.7]    32it [01:08,  2.43s/it, failures=0, objective=-18.5]    33it [01:10,  2.54s/it, failures=0, objective=-18.5]    33it [01:10,  2.54s/it, failures=0, objective=-18.5]    34it [01:13,  2.51s/it, failures=0, objective=-18.5]    34it [01:13,  2.51s/it, failures=0, objective=-18.5]    35it [01:15,  2.30s/it, failures=0, objective=-18.5]    35it [01:15,  2.30s/it, failures=0, objective=-18.5]    36it [01:17,  2.20s/it, failures=0, objective=-18.5]    36it [01:17,  2.20s/it, failures=0, objective=-18.5]    37it [01:18,  2.04s/it, failures=0, objective=-18.5]    37it [01:18,  2.04s/it, failures=0, objective=-18.3]    38it [01:21,  2.18s/it, failures=0, objective=-18.3]    38it [01:21,  2.18s/it, failures=0, objective=-18.3]    39it [01:23,  2.29s/it, failures=0, objective=-18.3]    39it [01:23,  2.29s/it, failures=0, objective=-18.3]    40it [01:25,  2.13s/it, failures=0, objective=-18.3]    40it [01:25,  2.13s/it, failures=0, objective=-18.3]    41it [01:27,  2.03s/it, failures=0, objective=-18.3]    41it [01:27,  2.03s/it, failures=0, objective=-18.3]    42it [01:29,  1.96s/it, failures=0, objective=-18.3]    42it [01:29,  1.96s/it, failures=0, objective=-18.3]    43it [01:30,  1.81s/it, failures=0, objective=-18.3]    43it [01:30,  1.81s/it, failures=0, objective=-18.3]    44it [01:32,  1.84s/it, failures=0, objective=-18.3]    44it [01:32,  1.84s/it, failures=0, objective=-17.8]    45it [01:34,  1.93s/it, failures=0, objective=-17.8]    45it [01:34,  1.93s/it, failures=0, objective=-17.8]    46it [01:37,  2.24s/it, failures=0, objective=-17.8]    46it [01:37,  2.24s/it, failures=0, objective=-17.8]    47it [01:40,  2.34s/it, failures=0, objective=-17.8]    47it [01:40,  2.34s/it, failures=0, objective=-17.8]    48it [01:42,  2.40s/it, failures=0, objective=-17.8]    48it [01:42,  2.40s/it, failures=0, objective=-17.8]    49it [01:45,  2.44s/it, failures=0, objective=-17.8]    49it [01:45,  2.44s/it, failures=0, objective=-17.8]    50it [01:47,  2.41s/it, failures=0, objective=-17.8]    50it [01:47,  2.41s/it, failures=0, objective=-17.8]    51it [01:48,  2.08s/it, failures=0, objective=-17.8]    51it [01:48,  2.08s/it, failures=0, objective=-17.8]    52it [01:51,  2.16s/it, failures=0, objective=-17.8]    52it [01:51,  2.16s/it, failures=0, objective=-17.8]    53it [01:53,  2.13s/it, failures=0, objective=-17.8]    53it [01:53,  2.13s/it, failures=0, objective=-17.6]    54it [01:54,  1.94s/it, failures=0, objective=-17.6]    54it [01:54,  1.94s/it, failures=0, objective=-17.3]    55it [01:57,  2.11s/it, failures=0, objective=-17.3]    55it [01:57,  2.11s/it, failures=0, objective=-17.3]    56it [01:59,  2.28s/it, failures=0, objective=-17.3]    56it [01:59,  2.28s/it, failures=0, objective=-17.3]
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 74-77
+.. GENERATED FROM PYTHON SOURCE LINES 87-90
 
-After, executing the sequential-search for 2 minutes we can create a parallel
-search which uses the ``"process"``-evaluator and defines 5 parallel
-workers. The search is also executed for 2 minutes.
+After, executing the sequential-search for 2 minutes we can create a "parallel"
+search simulated by the ``"thread"``-evaluator and 100 workers. The search is 
+also executed for 2 minutes.
 
-.. GENERATED FROM PYTHON SOURCE LINES 77-94
+.. GENERATED FROM PYTHON SOURCE LINES 90-103
 
 .. code-block:: Python
 
-
-    if __name__ == "__main__":
-        parallel_evaluator = Evaluator.create(
-            black_box.run_ackley,
-            method="thread",
-            method_kwargs={"num_workers": 5, "callbacks": [TqdmCallback()]},
-        )
-        print("Running parallel search...")
-        parallel_search = CBO(
-            problem, parallel_evaluator, multi_point_strategy="qUCBd", random_state=42
-        )
-        results["parallel"] = parallel_search.search(timeout=timeout)
-        results["parallel"]["m:timestamp_end"] = (
-            results["parallel"]["m:timestamp_end"]
-            - results["parallel"]["m:timestamp_start"].iloc[0]
-        )
+    parallel_evaluator = Evaluator.create(
+        black_box.run_ackley,
+        method="thread",
+        method_kwargs={"num_workers": 100, "callbacks": [TqdmCallback()]},
+    )
+    print("Running parallel search...")
+    parallel_search = CBO(problem, parallel_evaluator, **search_kwargs)
+    results["parallel"] = parallel_search.search(timeout=timeout)
+    results["parallel"]["m:timestamp_end"] = (
+        results["parallel"]["m:timestamp_end"]
+        - results["parallel"]["m:timestamp_start"].iloc[0]
+    )
 
 
 
@@ -178,585 +190,5149 @@ workers. The search is also executed for 2 minutes.
  .. code-block:: none
 
     Running parallel search...
-    WARNING:root:Results file already exists, it will be renamed to /Users/romainegele/Documents/Argonne/deephyper/examples/results_20241125-160858.csv
+    WARNING:root:Results file already exists, it will be renamed to /Users/romainegele/Documents/Argonne/deephyper/examples/results_20241230-172538.csv
 
     0it [00:00, ?it/s]
-    1it [00:00, 6990.51it/s, failures=0, objective=-20.4]
-    2it [00:00,  6.35it/s, failures=0, objective=-20.4]  
-    2it [00:00,  6.35it/s, failures=0, objective=-19.8]
-    3it [00:00,  6.68it/s, failures=0, objective=-19.8]
-    3it [00:00,  6.68it/s, failures=0, objective=-19.8]
-    4it [00:00,  5.13it/s, failures=0, objective=-19.8]
-    4it [00:00,  5.13it/s, failures=0, objective=-19.8]
-    5it [00:01,  2.32it/s, failures=0, objective=-19.8]
-    5it [00:01,  2.32it/s, failures=0, objective=-19.8]
-    6it [00:01,  2.32it/s, failures=0, objective=-19.8]
-    7it [00:02,  3.04it/s, failures=0, objective=-19.8]
-    7it [00:02,  3.04it/s, failures=0, objective=-19.8]
-    8it [00:02,  2.91it/s, failures=0, objective=-19.8]
-    8it [00:02,  2.91it/s, failures=0, objective=-19.8]
-    9it [00:02,  2.91it/s, failures=0, objective=-15.4]
-    10it [00:03,  2.00it/s, failures=0, objective=-15.4]
-    10it [00:03,  2.00it/s, failures=0, objective=-15.4]
-    11it [00:03,  2.42it/s, failures=0, objective=-15.4]
-    11it [00:03,  2.42it/s, failures=0, objective=-12.6]
-    12it [00:04,  2.42it/s, failures=0, objective=-12.6]
-    13it [00:04,  3.56it/s, failures=0, objective=-12.6]
-    13it [00:04,  3.56it/s, failures=0, objective=-12.6]
-    14it [00:04,  3.23it/s, failures=0, objective=-12.6]
-    14it [00:04,  3.23it/s, failures=0, objective=-12.6]
-    15it [00:05,  1.89it/s, failures=0, objective=-12.6]
-    15it [00:05,  1.89it/s, failures=0, objective=-12.6]
-    16it [00:06,  1.99it/s, failures=0, objective=-12.6]
-    16it [00:06,  1.99it/s, failures=0, objective=-12.6]
-    17it [00:06,  2.50it/s, failures=0, objective=-12.6]
-    17it [00:06,  2.50it/s, failures=0, objective=-12.6]
-    18it [00:06,  2.73it/s, failures=0, objective=-12.6]
-    18it [00:06,  2.73it/s, failures=0, objective=-12.6]
-    19it [00:07,  2.28it/s, failures=0, objective=-12.6]
-    19it [00:07,  2.28it/s, failures=0, objective=-12.6]
-    20it [00:07,  2.18it/s, failures=0, objective=-12.6]
-    20it [00:07,  2.18it/s, failures=0, objective=-12.6]
-    21it [00:08,  2.06it/s, failures=0, objective=-12.6]
-    21it [00:08,  2.06it/s, failures=0, objective=-12.6]
-    22it [00:08,  2.31it/s, failures=0, objective=-12.6]
-    22it [00:08,  2.31it/s, failures=0, objective=-12.6]
-    23it [00:08,  2.90it/s, failures=0, objective=-12.6]
-    23it [00:08,  2.90it/s, failures=0, objective=-12.6]
-    24it [00:09,  2.30it/s, failures=0, objective=-12.6]
-    24it [00:09,  2.30it/s, failures=0, objective=-12.6]
-    25it [00:10,  1.48it/s, failures=0, objective=-12.6]
-    25it [00:10,  1.48it/s, failures=0, objective=-10.6]
-    26it [00:10,  1.94it/s, failures=0, objective=-10.6]
-    26it [00:10,  1.94it/s, failures=0, objective=-10.6]
-    27it [00:10,  1.94it/s, failures=0, objective=-10.6]
-    28it [00:10,  1.94it/s, failures=0, objective=-10.6]
-    29it [00:11,  3.26it/s, failures=0, objective=-10.6]
-    29it [00:11,  3.26it/s, failures=0, objective=-10.6]
-    30it [00:12,  2.29it/s, failures=0, objective=-10.6]
-    30it [00:12,  2.29it/s, failures=0, objective=-10.6]
-    31it [00:12,  2.19it/s, failures=0, objective=-10.6]
-    31it [00:12,  2.19it/s, failures=0, objective=-10.6]
-    32it [00:12,  2.48it/s, failures=0, objective=-10.6]
-    32it [00:12,  2.48it/s, failures=0, objective=-10.6]
-    33it [00:12,  3.04it/s, failures=0, objective=-10.6]
-    33it [00:12,  3.04it/s, failures=0, objective=-10.6]
-    34it [00:13,  1.97it/s, failures=0, objective=-10.6]
-    34it [00:13,  1.97it/s, failures=0, objective=-10.6]
-    35it [00:14,  2.36it/s, failures=0, objective=-10.6]
-    35it [00:14,  2.36it/s, failures=0, objective=-10.6]
-    36it [00:14,  2.75it/s, failures=0, objective=-10.6]
-    36it [00:14,  2.75it/s, failures=0, objective=-10.6]
-    37it [00:15,  2.27it/s, failures=0, objective=-10.6]
-    37it [00:15,  2.27it/s, failures=0, objective=-10.6]
-    38it [00:15,  2.39it/s, failures=0, objective=-10.6]
-    38it [00:15,  2.39it/s, failures=0, objective=-10.6]
-    39it [00:15,  2.54it/s, failures=0, objective=-10.6]
-    39it [00:15,  2.54it/s, failures=0, objective=-10.6]
-    40it [00:16,  2.07it/s, failures=0, objective=-10.6]
-    40it [00:16,  2.07it/s, failures=0, objective=-10.6]
-    41it [00:16,  2.58it/s, failures=0, objective=-10.6]
-    41it [00:16,  2.58it/s, failures=0, objective=-10.6]
-    42it [00:16,  2.68it/s, failures=0, objective=-10.6]
-    42it [00:16,  2.68it/s, failures=0, objective=-10.6]
-    43it [00:17,  2.77it/s, failures=0, objective=-10.6]
-    43it [00:17,  2.77it/s, failures=0, objective=-10.6]
-    44it [00:18,  2.06it/s, failures=0, objective=-10.6]
-    44it [00:18,  2.06it/s, failures=0, objective=-10.6]
-    45it [00:18,  2.28it/s, failures=0, objective=-10.6]
-    45it [00:18,  2.28it/s, failures=0, objective=-10.6]
-    46it [00:18,  2.23it/s, failures=0, objective=-10.6]
-    46it [00:18,  2.23it/s, failures=0, objective=-9.02]
-    47it [00:19,  2.66it/s, failures=0, objective=-9.02]
-    47it [00:19,  2.66it/s, failures=0, objective=-9.02]
-    48it [00:19,  3.35it/s, failures=0, objective=-9.02]
-    48it [00:19,  3.35it/s, failures=0, objective=-9.02]
-    49it [00:20,  1.83it/s, failures=0, objective=-9.02]
-    49it [00:20,  1.83it/s, failures=0, objective=-9.02]
-    50it [00:20,  2.19it/s, failures=0, objective=-9.02]
-    50it [00:20,  2.19it/s, failures=0, objective=-9.02]
-    51it [00:20,  2.28it/s, failures=0, objective=-9.02]
-    51it [00:20,  2.28it/s, failures=0, objective=-9.02]
-    52it [00:21,  2.82it/s, failures=0, objective=-9.02]
-    52it [00:21,  2.82it/s, failures=0, objective=-7.67]
-    53it [00:21,  3.02it/s, failures=0, objective=-7.67]
-    53it [00:21,  3.02it/s, failures=0, objective=-7.67]
-    54it [00:21,  3.68it/s, failures=0, objective=-7.67]
-    54it [00:21,  3.68it/s, failures=0, objective=-7.58]
-    55it [00:22,  2.12it/s, failures=0, objective=-7.58]
-    55it [00:22,  2.12it/s, failures=0, objective=-6.8] 
-    56it [00:23,  1.75it/s, failures=0, objective=-6.8]
-    56it [00:23,  1.75it/s, failures=0, objective=-6.8]
-    57it [00:23,  2.19it/s, failures=0, objective=-6.8]
-    57it [00:23,  2.19it/s, failures=0, objective=-6.8]
-    58it [00:24,  2.02it/s, failures=0, objective=-6.8]
-    58it [00:24,  2.02it/s, failures=0, objective=-6.8]
-    59it [00:24,  2.51it/s, failures=0, objective=-6.8]
-    59it [00:24,  2.51it/s, failures=0, objective=-5.67]
-    60it [00:24,  2.72it/s, failures=0, objective=-5.67]
-    60it [00:24,  2.72it/s, failures=0, objective=-5.67]
-    61it [00:24,  3.34it/s, failures=0, objective=-5.67]
-    61it [00:24,  3.34it/s, failures=0, objective=-5.67]
-    62it [00:24,  3.56it/s, failures=0, objective=-5.67]
-    62it [00:24,  3.56it/s, failures=0, objective=-5.67]
-    63it [00:25,  2.08it/s, failures=0, objective=-5.67]
-    63it [00:25,  2.08it/s, failures=0, objective=-5.67]
-    64it [00:25,  2.63it/s, failures=0, objective=-5.67]
-    64it [00:25,  2.63it/s, failures=0, objective=-5.67]
-    65it [00:26,  2.85it/s, failures=0, objective=-5.67]
-    65it [00:26,  2.85it/s, failures=0, objective=-5.67]
-    66it [00:26,  2.81it/s, failures=0, objective=-5.67]
-    66it [00:26,  2.81it/s, failures=0, objective=-5.67]
-    67it [00:27,  2.04it/s, failures=0, objective=-5.67]
-    67it [00:27,  2.04it/s, failures=0, objective=-5.67]
-    68it [00:27,  2.16it/s, failures=0, objective=-5.67]
-    68it [00:27,  2.16it/s, failures=0, objective=-5.67]
-    69it [00:28,  2.56it/s, failures=0, objective=-5.67]
-    69it [00:28,  2.56it/s, failures=0, objective=-5.67]
-    70it [00:28,  2.63it/s, failures=0, objective=-5.67]
-    70it [00:28,  2.63it/s, failures=0, objective=-5.44]
-    71it [00:29,  2.20it/s, failures=0, objective=-5.44]
-    71it [00:29,  2.20it/s, failures=0, objective=-3.15]
-    72it [00:29,  2.72it/s, failures=0, objective=-3.15]
-    72it [00:29,  2.72it/s, failures=0, objective=-0.313]
-    73it [00:29,  3.40it/s, failures=0, objective=-0.313]
-    73it [00:29,  3.40it/s, failures=0, objective=-0.313]
-    74it [00:29,  3.59it/s, failures=0, objective=-0.313]
-    74it [00:29,  3.59it/s, failures=0, objective=-0.313]
-    75it [00:30,  2.66it/s, failures=0, objective=-0.313]
-    75it [00:30,  2.66it/s, failures=0, objective=-0.313]
-    76it [00:31,  1.84it/s, failures=0, objective=-0.313]
-    76it [00:31,  1.84it/s, failures=0, objective=-0.313]
-    77it [00:31,  2.34it/s, failures=0, objective=-0.313]
-    77it [00:31,  2.34it/s, failures=0, objective=-0.313]
-    78it [00:31,  2.36it/s, failures=0, objective=-0.313]
-    78it [00:31,  2.36it/s, failures=0, objective=-0.313]
-    79it [00:31,  2.68it/s, failures=0, objective=-0.313]
-    79it [00:31,  2.68it/s, failures=0, objective=-0.313]
-    80it [00:32,  2.21it/s, failures=0, objective=-0.313]
-    80it [00:32,  2.21it/s, failures=0, objective=-0.313]
-    81it [00:33,  2.16it/s, failures=0, objective=-0.313]
-    81it [00:33,  2.16it/s, failures=0, objective=-0.313]
-    82it [00:33,  2.23it/s, failures=0, objective=-0.313]
-    82it [00:33,  2.23it/s, failures=0, objective=-0.313]
-    83it [00:33,  2.76it/s, failures=0, objective=-0.313]
-    83it [00:33,  2.76it/s, failures=0, objective=-0.313]
-    84it [00:34,  1.93it/s, failures=0, objective=-0.313]
-    84it [00:34,  1.93it/s, failures=0, objective=-0.313]
-    85it [00:34,  2.23it/s, failures=0, objective=-0.313]
-    85it [00:34,  2.23it/s, failures=0, objective=-0.313]
-    86it [00:34,  2.82it/s, failures=0, objective=-0.313]
-    86it [00:34,  2.82it/s, failures=0, objective=-0.313]
-    87it [00:35,  2.84it/s, failures=0, objective=-0.313]
-    87it [00:35,  2.84it/s, failures=0, objective=-0.313]
-    88it [00:35,  3.39it/s, failures=0, objective=-0.313]
-    88it [00:35,  3.39it/s, failures=0, objective=-0.313]
-    89it [00:36,  2.24it/s, failures=0, objective=-0.313]
-    89it [00:36,  2.24it/s, failures=0, objective=-0.313]
-    90it [00:36,  2.19it/s, failures=0, objective=-0.313]
-    90it [00:36,  2.19it/s, failures=0, objective=-0.313]
-    91it [00:36,  2.63it/s, failures=0, objective=-0.313]
-    91it [00:36,  2.63it/s, failures=0, objective=-0.313]
-    92it [00:37,  2.96it/s, failures=0, objective=-0.313]
-    92it [00:37,  2.96it/s, failures=0, objective=-0.313]
-    93it [00:37,  2.79it/s, failures=0, objective=-0.313]
-    93it [00:37,  2.79it/s, failures=0, objective=-0.313]
-    94it [00:38,  1.79it/s, failures=0, objective=-0.313]
-    94it [00:38,  1.79it/s, failures=0, objective=-0.313]
-    95it [00:39,  1.79it/s, failures=0, objective=-0.313]
-    95it [00:39,  1.79it/s, failures=0, objective=-0.313]
-    96it [00:39,  2.27it/s, failures=0, objective=-0.313]
-    96it [00:39,  2.27it/s, failures=0, objective=-0.313]
-    97it [00:39,  2.83it/s, failures=0, objective=-0.313]
-    97it [00:39,  2.83it/s, failures=0, objective=-0.313]
-    98it [00:39,  3.26it/s, failures=0, objective=-0.313]
-    98it [00:39,  3.26it/s, failures=0, objective=-0.313]
-    99it [00:40,  2.09it/s, failures=0, objective=-0.313]
-    99it [00:40,  2.09it/s, failures=0, objective=-0.313]
-    100it [00:41,  1.62it/s, failures=0, objective=-0.313]
-    100it [00:41,  1.62it/s, failures=0, objective=-0.313]
-    101it [00:41,  2.10it/s, failures=0, objective=-0.313]
-    101it [00:41,  2.10it/s, failures=0, objective=-0.313]
-    102it [00:41,  2.69it/s, failures=0, objective=-0.313]
-    102it [00:41,  2.69it/s, failures=0, objective=-0.313]
-    103it [00:41,  3.38it/s, failures=0, objective=-0.313]
-    103it [00:41,  3.38it/s, failures=0, objective=-0.313]
-    104it [00:42,  1.91it/s, failures=0, objective=-0.313]
-    104it [00:42,  1.91it/s, failures=0, objective=-0.313]
-    105it [00:43,  2.43it/s, failures=0, objective=-0.313]
-    105it [00:43,  2.43it/s, failures=0, objective=-0.313]
-    106it [00:43,  2.49it/s, failures=0, objective=-0.313]
-    106it [00:43,  2.49it/s, failures=0, objective=-0.313]
-    107it [00:43,  2.90it/s, failures=0, objective=-0.313]
-    107it [00:43,  2.90it/s, failures=0, objective=-0.313]
-    108it [00:43,  2.95it/s, failures=0, objective=-0.313]
-    108it [00:43,  2.95it/s, failures=0, objective=-0.313]
-    109it [00:45,  1.62it/s, failures=0, objective=-0.313]
-    109it [00:45,  1.62it/s, failures=0, objective=-0.313]
-    110it [00:45,  1.93it/s, failures=0, objective=-0.313]
-    110it [00:45,  1.93it/s, failures=0, objective=-0.313]
-    111it [00:45,  2.01it/s, failures=0, objective=-0.313]
-    111it [00:45,  2.01it/s, failures=0, objective=-0.313]
-    112it [00:46,  2.38it/s, failures=0, objective=-0.313]
-    112it [00:46,  2.38it/s, failures=0, objective=-0.313]
-    113it [00:46,  3.02it/s, failures=0, objective=-0.313]
-    113it [00:46,  3.02it/s, failures=0, objective=-0.313]
-    114it [00:47,  2.05it/s, failures=0, objective=-0.313]
-    114it [00:47,  2.05it/s, failures=0, objective=-0.313]
-    115it [00:47,  1.83it/s, failures=0, objective=-0.313]
-    115it [00:47,  1.83it/s, failures=0, objective=-0.313]
-    116it [00:48,  2.08it/s, failures=0, objective=-0.313]
-    116it [00:48,  2.08it/s, failures=0, objective=-0.313]
-    117it [00:48,  2.32it/s, failures=0, objective=-0.313]
-    117it [00:48,  2.32it/s, failures=0, objective=-0.313]
-    118it [00:48,  2.29it/s, failures=0, objective=-0.313]
-    118it [00:48,  2.29it/s, failures=0, objective=-0.313]
-    119it [00:49,  1.78it/s, failures=0, objective=-0.313]
-    119it [00:49,  1.78it/s, failures=0, objective=-0.313]
-    120it [00:50,  2.03it/s, failures=0, objective=-0.313]
-    120it [00:50,  2.03it/s, failures=0, objective=-0.313]
-    121it [00:50,  2.56it/s, failures=0, objective=-0.313]
-    121it [00:50,  2.56it/s, failures=0, objective=-0.313]
-    122it [00:50,  3.04it/s, failures=0, objective=-0.313]
-    122it [00:50,  3.04it/s, failures=0, objective=-0.313]
-    123it [00:50,  3.25it/s, failures=0, objective=-0.313]
-    123it [00:50,  3.25it/s, failures=0, objective=-0.313]
-    124it [00:52,  1.43it/s, failures=0, objective=-0.313]
-    124it [00:52,  1.43it/s, failures=0, objective=-0.313]
-    125it [00:52,  1.86it/s, failures=0, objective=-0.313]
-    125it [00:52,  1.86it/s, failures=0, objective=-0.313]
-    126it [00:52,  2.33it/s, failures=0, objective=-0.313]
-    126it [00:52,  2.33it/s, failures=0, objective=-0.313]
-    127it [00:53,  2.52it/s, failures=0, objective=-0.313]
-    127it [00:53,  2.52it/s, failures=0, objective=-0.313]
-    128it [00:53,  2.91it/s, failures=0, objective=-0.313]
-    128it [00:53,  2.91it/s, failures=0, objective=-0.313]
-    129it [00:54,  1.58it/s, failures=0, objective=-0.313]
-    129it [00:54,  1.58it/s, failures=0, objective=-0.313]
-    130it [00:54,  2.03it/s, failures=0, objective=-0.313]
-    130it [00:54,  2.03it/s, failures=0, objective=-0.313]
-    131it [00:55,  1.55it/s, failures=0, objective=-0.313]
-    131it [00:55,  1.55it/s, failures=0, objective=-0.313]
-    132it [00:55,  1.99it/s, failures=0, objective=-0.313]
-    132it [00:55,  1.99it/s, failures=0, objective=-0.313]
-    133it [00:55,  1.99it/s, failures=0, objective=-0.313]
-    134it [00:57,  1.76it/s, failures=0, objective=-0.313]
-    134it [00:57,  1.76it/s, failures=0, objective=-0.313]
-    135it [00:57,  1.66it/s, failures=0, objective=-0.313]
-    135it [00:57,  1.66it/s, failures=0, objective=-0.313]
-    136it [00:58,  2.04it/s, failures=0, objective=-0.313]
-    136it [00:58,  2.04it/s, failures=0, objective=-0.313]
-    137it [00:58,  2.38it/s, failures=0, objective=-0.313]
-    137it [00:58,  2.38it/s, failures=0, objective=-0.313]
-    138it [00:58,  2.93it/s, failures=0, objective=-0.313]
-    138it [00:58,  2.93it/s, failures=0, objective=-0.313]
-    139it [00:58,  3.33it/s, failures=0, objective=-0.313]
-    139it [00:58,  3.33it/s, failures=0, objective=-0.313]
-    140it [00:59,  1.67it/s, failures=0, objective=-0.313]
-    140it [00:59,  1.67it/s, failures=0, objective=-0.313]
-    141it [01:00,  2.13it/s, failures=0, objective=-0.313]
-    141it [01:00,  2.13it/s, failures=0, objective=-0.313]
-    142it [01:00,  2.71it/s, failures=0, objective=-0.313]
-    142it [01:00,  2.71it/s, failures=0, objective=-0.313]
-    143it [01:00,  2.71it/s, failures=0, objective=-0.313]
-    144it [01:00,  3.49it/s, failures=0, objective=-0.313]
-    144it [01:00,  3.49it/s, failures=0, objective=-0.313]
-    145it [01:02,  1.57it/s, failures=0, objective=-0.313]
-    145it [01:02,  1.57it/s, failures=0, objective=-0.313]
-    146it [01:02,  1.70it/s, failures=0, objective=-0.313]
-    146it [01:02,  1.70it/s, failures=0, objective=-0.313]
-    147it [01:02,  2.11it/s, failures=0, objective=-0.313]
-    147it [01:02,  2.11it/s, failures=0, objective=-0.313]
-    148it [01:03,  2.65it/s, failures=0, objective=-0.313]
-    148it [01:03,  2.65it/s, failures=0, objective=-0.313]
-    149it [01:03,  3.28it/s, failures=0, objective=-0.313]
-    149it [01:03,  3.28it/s, failures=0, objective=-0.313]
-    150it [01:04,  1.70it/s, failures=0, objective=-0.313]
-    150it [01:04,  1.70it/s, failures=0, objective=-0.313]
-    151it [01:04,  2.17it/s, failures=0, objective=-0.313]
-    151it [01:04,  2.17it/s, failures=0, objective=-0.313]
-    152it [01:04,  2.37it/s, failures=0, objective=-0.313]
-    152it [01:04,  2.37it/s, failures=0, objective=-0.313]
-    153it [01:05,  2.91it/s, failures=0, objective=-0.313]
-    153it [01:05,  2.91it/s, failures=0, objective=-0.313]
-    154it [01:06,  1.88it/s, failures=0, objective=-0.313]
-    154it [01:06,  1.88it/s, failures=0, objective=-0.313]
-    155it [01:06,  2.38it/s, failures=0, objective=-0.313]
-    155it [01:06,  2.38it/s, failures=0, objective=-0.313]
-    156it [01:06,  2.63it/s, failures=0, objective=-0.313]
-    156it [01:06,  2.63it/s, failures=0, objective=-0.313]
-    157it [01:07,  2.04it/s, failures=0, objective=-0.313]
-    157it [01:07,  2.04it/s, failures=0, objective=-0.313]
-    158it [01:07,  2.54it/s, failures=0, objective=-0.313]
-    158it [01:07,  2.54it/s, failures=0, objective=-0.313]
-    159it [01:07,  2.62it/s, failures=0, objective=-0.313]
-    159it [01:07,  2.62it/s, failures=0, objective=-0.313]
-    160it [01:08,  3.06it/s, failures=0, objective=-0.313]
-    160it [01:08,  3.06it/s, failures=0, objective=-0.313]
-    161it [01:09,  1.75it/s, failures=0, objective=-0.313]
-    161it [01:09,  1.75it/s, failures=0, objective=-0.313]
-    162it [01:09,  1.56it/s, failures=0, objective=-0.313]
-    162it [01:09,  1.56it/s, failures=0, objective=-0.313]
-    163it [01:10,  1.95it/s, failures=0, objective=-0.313]
-    163it [01:10,  1.95it/s, failures=0, objective=-0.313]
-    164it [01:10,  2.27it/s, failures=0, objective=-0.313]
-    164it [01:10,  2.27it/s, failures=0, objective=-0.313]
-    165it [01:11,  1.97it/s, failures=0, objective=-0.313]
-    165it [01:11,  1.97it/s, failures=0, objective=-0.313]
-    166it [01:11,  2.48it/s, failures=0, objective=-0.313]
-    166it [01:11,  2.48it/s, failures=0, objective=-0.313]
-    167it [01:12,  1.73it/s, failures=0, objective=-0.313]
-    167it [01:12,  1.73it/s, failures=0, objective=-0.313]
-    168it [01:12,  2.03it/s, failures=0, objective=-0.313]
-    168it [01:12,  2.03it/s, failures=0, objective=-0.313]
-    169it [01:13,  1.66it/s, failures=0, objective=-0.313]
-    169it [01:13,  1.66it/s, failures=0, objective=-0.313]
-    170it [01:13,  1.91it/s, failures=0, objective=-0.313]
-    170it [01:13,  1.91it/s, failures=0, objective=-0.313]
-    171it [01:13,  2.42it/s, failures=0, objective=-0.313]
-    171it [01:13,  2.42it/s, failures=0, objective=-0.313]
-    172it [01:14,  3.06it/s, failures=0, objective=-0.313]
-    172it [01:14,  3.06it/s, failures=0, objective=-0.313]
-    173it [01:14,  2.98it/s, failures=0, objective=-0.313]
-    173it [01:14,  2.98it/s, failures=0, objective=-0.313]
-    174it [01:14,  2.71it/s, failures=0, objective=-0.313]
-    174it [01:14,  2.71it/s, failures=0, objective=-0.313]
-    175it [01:16,  1.45it/s, failures=0, objective=-0.313]
-    175it [01:16,  1.45it/s, failures=0, objective=-0.313]
-    176it [01:16,  1.79it/s, failures=0, objective=-0.313]
-    176it [01:16,  1.79it/s, failures=0, objective=-0.313]
-    177it [01:16,  1.79it/s, failures=0, objective=-0.313]
-    178it [01:16,  2.56it/s, failures=0, objective=-0.313]
-    178it [01:16,  2.56it/s, failures=0, objective=-0.313]
-    179it [01:17,  2.17it/s, failures=0, objective=-0.313]
-    179it [01:17,  2.17it/s, failures=0, objective=-0.313]
-    180it [01:18,  1.83it/s, failures=0, objective=-0.313]
-    180it [01:18,  1.83it/s, failures=0, objective=-0.313]
-    181it [01:18,  2.27it/s, failures=0, objective=-0.313]
-    181it [01:18,  2.27it/s, failures=0, objective=-0.313]
-    182it [01:18,  2.42it/s, failures=0, objective=-0.313]
-    182it [01:18,  2.42it/s, failures=0, objective=-0.313]
-    183it [01:19,  2.91it/s, failures=0, objective=-0.313]
-    183it [01:19,  2.91it/s, failures=0, objective=-0.313]
-    184it [01:19,  2.48it/s, failures=0, objective=-0.313]
-    184it [01:19,  2.48it/s, failures=0, objective=-0.313]
-    185it [01:19,  2.54it/s, failures=0, objective=-0.313]
-    185it [01:19,  2.54it/s, failures=0, objective=-0.313]
-    186it [01:20,  2.52it/s, failures=0, objective=-0.313]
-    186it [01:20,  2.52it/s, failures=0, objective=-0.313]
-    187it [01:20,  2.54it/s, failures=0, objective=-0.313]
-    187it [01:20,  2.54it/s, failures=0, objective=-0.313]
-    188it [01:21,  1.80it/s, failures=0, objective=-0.313]
-    188it [01:21,  1.80it/s, failures=0, objective=-0.313]
-    189it [01:21,  2.28it/s, failures=0, objective=-0.313]
-    189it [01:21,  2.28it/s, failures=0, objective=-0.313]
-    190it [01:22,  2.05it/s, failures=0, objective=-0.313]
-    190it [01:22,  2.05it/s, failures=0, objective=-0.313]
-    191it [01:22,  2.16it/s, failures=0, objective=-0.313]
-    191it [01:22,  2.16it/s, failures=0, objective=-0.313]
-    192it [01:23,  2.66it/s, failures=0, objective=-0.313]
-    192it [01:23,  2.66it/s, failures=0, objective=-0.313]
-    193it [01:23,  2.66it/s, failures=0, objective=-0.313]
-    194it [01:23,  3.42it/s, failures=0, objective=-0.313]
-    194it [01:23,  3.42it/s, failures=0, objective=-0.313]
-    195it [01:24,  1.95it/s, failures=0, objective=-0.313]
-    195it [01:24,  1.95it/s, failures=0, objective=-0.313]
-    196it [01:24,  2.30it/s, failures=0, objective=-0.313]
-    196it [01:24,  2.30it/s, failures=0, objective=-0.313]
-    197it [01:25,  2.46it/s, failures=0, objective=-0.313]
-    197it [01:25,  2.46it/s, failures=0, objective=-0.313]
-    198it [01:25,  2.63it/s, failures=0, objective=-0.313]
-    198it [01:25,  2.63it/s, failures=0, objective=-0.313]
-    199it [01:25,  2.57it/s, failures=0, objective=-0.313]
-    199it [01:25,  2.57it/s, failures=0, objective=-0.313]
-    200it [01:26,  2.00it/s, failures=0, objective=-0.313]
-    200it [01:26,  2.00it/s, failures=0, objective=-0.313]
-    201it [01:27,  1.69it/s, failures=0, objective=-0.313]
-    201it [01:27,  1.69it/s, failures=0, objective=-0.313]
-    202it [01:27,  1.85it/s, failures=0, objective=-0.313]
-    202it [01:27,  1.85it/s, failures=0, objective=-0.313]
-    203it [01:28,  2.37it/s, failures=0, objective=-0.313]
-    203it [01:28,  2.37it/s, failures=0, objective=-0.313]
-    204it [01:28,  2.10it/s, failures=0, objective=-0.313]
-    204it [01:28,  2.10it/s, failures=0, objective=-0.313]
-    205it [01:28,  2.65it/s, failures=0, objective=-0.313]
-    205it [01:28,  2.65it/s, failures=0, objective=-0.312]
-    206it [01:29,  2.53it/s, failures=0, objective=-0.312]
-    206it [01:29,  2.53it/s, failures=0, objective=-0.312]
-    207it [01:29,  2.49it/s, failures=0, objective=-0.312]
-    207it [01:29,  2.49it/s, failures=0, objective=-0.312]
-    208it [01:30,  2.37it/s, failures=0, objective=-0.312]
-    208it [01:30,  2.37it/s, failures=0, objective=-0.312]
-    209it [01:30,  2.94it/s, failures=0, objective=-0.312]
-    209it [01:30,  2.94it/s, failures=0, objective=-0.312]
-    210it [01:30,  2.94it/s, failures=0, objective=-0.312]
-    211it [01:30,  2.91it/s, failures=0, objective=-0.312]
-    211it [01:30,  2.91it/s, failures=0, objective=-0.312]
-    212it [01:31,  3.16it/s, failures=0, objective=-0.312]
-    212it [01:31,  3.16it/s, failures=0, objective=-0.312]
-    213it [01:31,  3.37it/s, failures=0, objective=-0.312]
-    213it [01:31,  3.37it/s, failures=0, objective=-0.312]
-    214it [01:32,  2.05it/s, failures=0, objective=-0.312]
-    214it [01:32,  2.05it/s, failures=0, objective=-0.312]
-    215it [01:32,  2.46it/s, failures=0, objective=-0.312]
-    215it [01:32,  2.46it/s, failures=0, objective=-0.312]
-    216it [01:33,  2.10it/s, failures=0, objective=-0.312]
-    216it [01:33,  2.10it/s, failures=0, objective=-0.312]
-    217it [01:33,  2.24it/s, failures=0, objective=-0.312]
-    217it [01:33,  2.24it/s, failures=0, objective=-0.312]
-    218it [01:33,  2.75it/s, failures=0, objective=-0.312]
-    218it [01:33,  2.75it/s, failures=0, objective=-0.312]
-    219it [01:35,  1.57it/s, failures=0, objective=-0.312]
-    219it [01:35,  1.57it/s, failures=0, objective=-0.312]
-    220it [01:35,  2.01it/s, failures=0, objective=-0.312]
-    220it [01:35,  2.01it/s, failures=0, objective=-0.312]
-    221it [01:35,  2.01it/s, failures=0, objective=-0.312]
-    222it [01:35,  2.36it/s, failures=0, objective=-0.312]
-    222it [01:35,  2.36it/s, failures=0, objective=-0.312]
-    223it [01:36,  2.37it/s, failures=0, objective=-0.312]
-    223it [01:36,  2.37it/s, failures=0, objective=-0.312]
-    224it [01:37,  1.46it/s, failures=0, objective=-0.312]
-    224it [01:37,  1.46it/s, failures=0, objective=-0.312]
-    225it [01:37,  1.84it/s, failures=0, objective=-0.312]
-    225it [01:37,  1.84it/s, failures=0, objective=-0.312]
-    226it [01:38,  2.32it/s, failures=0, objective=-0.312]
-    226it [01:38,  2.32it/s, failures=0, objective=-0.312]
-    227it [01:38,  2.89it/s, failures=0, objective=-0.312]
-    227it [01:38,  2.89it/s, failures=0, objective=-0.312]
-    228it [01:38,  2.67it/s, failures=0, objective=-0.312]
-    228it [01:38,  2.67it/s, failures=0, objective=-0.312]
-    229it [01:39,  1.84it/s, failures=0, objective=-0.312]
-    229it [01:39,  1.84it/s, failures=0, objective=-0.312]
-    230it [01:40,  1.92it/s, failures=0, objective=-0.312]
-    230it [01:40,  1.92it/s, failures=0, objective=-0.312]
-    231it [01:40,  2.40it/s, failures=0, objective=-0.312]
-    231it [01:40,  2.40it/s, failures=0, objective=-0.312]
-    232it [01:40,  2.78it/s, failures=0, objective=-0.312]
-    232it [01:40,  2.78it/s, failures=0, objective=-0.312]
-    233it [01:41,  2.28it/s, failures=0, objective=-0.312]
-    233it [01:41,  2.28it/s, failures=0, objective=-0.312]
-    234it [01:41,  2.09it/s, failures=0, objective=-0.312]
-    234it [01:41,  2.09it/s, failures=0, objective=-0.312]
-    235it [01:41,  2.54it/s, failures=0, objective=-0.312]
-    235it [01:41,  2.54it/s, failures=0, objective=-0.312]
-    236it [01:42,  1.97it/s, failures=0, objective=-0.312]
-    236it [01:42,  1.97it/s, failures=0, objective=-0.0645]
-    237it [01:42,  2.47it/s, failures=0, objective=-0.0645]
-    237it [01:42,  2.47it/s, failures=0, objective=-0.0645]
-    238it [01:43,  1.82it/s, failures=0, objective=-0.0645]
-    238it [01:43,  1.82it/s, failures=0, objective=-0.0645]
-    239it [01:44,  1.93it/s, failures=0, objective=-0.0645]
-    239it [01:44,  1.93it/s, failures=0, objective=-0.0645]
-    240it [01:44,  2.40it/s, failures=0, objective=-0.0645]
-    240it [01:44,  2.40it/s, failures=0, objective=-0.0645]
-    241it [01:45,  1.83it/s, failures=0, objective=-0.0645]
-    241it [01:45,  1.83it/s, failures=0, objective=-0.0645]
-    242it [01:45,  2.11it/s, failures=0, objective=-0.0645]
-    242it [01:45,  2.11it/s, failures=0, objective=-0.0645]
-    243it [01:45,  2.62it/s, failures=0, objective=-0.0645]
-    243it [01:45,  2.62it/s, failures=0, objective=-0.0645]
-    244it [01:46,  2.37it/s, failures=0, objective=-0.0645]
-    244it [01:46,  2.37it/s, failures=0, objective=-0.0645]
-    245it [01:46,  2.91it/s, failures=0, objective=-0.0645]
-    245it [01:46,  2.91it/s, failures=0, objective=-0.0645]
-    246it [01:47,  2.08it/s, failures=0, objective=-0.0645]
-    246it [01:47,  2.08it/s, failures=0, objective=-0.0645]
-    247it [01:47,  2.46it/s, failures=0, objective=-0.0645]
-    247it [01:47,  2.46it/s, failures=0, objective=-0.0645]
-    248it [01:47,  2.60it/s, failures=0, objective=-0.0645]
-    248it [01:47,  2.60it/s, failures=0, objective=-0.0645]
-    249it [01:48,  2.23it/s, failures=0, objective=-0.0645]
-    249it [01:48,  2.23it/s, failures=0, objective=-0.0645]
-    250it [01:48,  2.69it/s, failures=0, objective=-0.0645]
-    250it [01:48,  2.69it/s, failures=0, objective=-0.0645]
-    251it [01:49,  1.95it/s, failures=0, objective=-0.0645]
-    251it [01:49,  1.95it/s, failures=0, objective=-0.0645]
-    252it [01:49,  2.25it/s, failures=0, objective=-0.0645]
-    252it [01:49,  2.25it/s, failures=0, objective=-0.0645]
-    253it [01:50,  2.17it/s, failures=0, objective=-0.0645]
-    253it [01:50,  2.17it/s, failures=0, objective=-0.0645]
-    254it [01:50,  2.16it/s, failures=0, objective=-0.0645]
-    254it [01:50,  2.16it/s, failures=0, objective=-0.0645]
-    255it [01:50,  2.67it/s, failures=0, objective=-0.0645]
-    255it [01:50,  2.67it/s, failures=0, objective=-0.0645]
-    256it [01:50,  3.31it/s, failures=0, objective=-0.0645]
-    256it [01:50,  3.31it/s, failures=0, objective=-0.0645]
-    257it [01:52,  1.78it/s, failures=0, objective=-0.0645]
-    257it [01:52,  1.78it/s, failures=0, objective=-0.0645]
-    258it [01:52,  2.26it/s, failures=0, objective=-0.0645]
-    258it [01:52,  2.26it/s, failures=0, objective=-0.0645]
-    259it [01:52,  2.09it/s, failures=0, objective=-0.0645]
-    259it [01:52,  2.09it/s, failures=0, objective=-0.0645]
-    260it [01:53,  1.90it/s, failures=0, objective=-0.0645]
-    260it [01:53,  1.90it/s, failures=0, objective=-0.0645]
-    261it [01:53,  2.40it/s, failures=0, objective=-0.0645]
-    261it [01:53,  2.40it/s, failures=0, objective=-0.0645]
-    262it [01:53,  2.50it/s, failures=0, objective=-0.0645]
-    262it [01:53,  2.50it/s, failures=0, objective=-0.0645]
-    263it [01:54,  2.90it/s, failures=0, objective=-0.0645]
-    263it [01:54,  2.90it/s, failures=0, objective=-0.0645]
-    264it [01:54,  3.54it/s, failures=0, objective=-0.0645]
-    264it [01:54,  3.54it/s, failures=0, objective=-0.0645]
-    265it [01:55,  1.60it/s, failures=0, objective=-0.0645]
-    265it [01:55,  1.60it/s, failures=0, objective=-0.0645]
-    266it [01:55,  2.05it/s, failures=0, objective=-0.0645]
-    266it [01:55,  2.05it/s, failures=0, objective=-0.0645]
-    267it [01:55,  2.63it/s, failures=0, objective=-0.0645]
-    267it [01:55,  2.63it/s, failures=0, objective=-0.0645]
-    268it [01:56,  3.05it/s, failures=0, objective=-0.0645]
-    268it [01:56,  3.05it/s, failures=0, objective=-0.0645]
-    269it [01:56,  3.69it/s, failures=0, objective=-0.0645]
-    269it [01:56,  3.69it/s, failures=0, objective=-0.0645]
-    270it [01:56,  3.46it/s, failures=0, objective=-0.0645]
-    270it [01:56,  3.46it/s, failures=0, objective=-0.0645]
-    271it [01:57,  1.70it/s, failures=0, objective=-0.0645]
-    271it [01:57,  1.70it/s, failures=0, objective=-0.0645]
-    272it [01:58,  1.94it/s, failures=0, objective=-0.0645]
-    272it [01:58,  1.94it/s, failures=0, objective=-0.0645]
-    273it [01:58,  2.46it/s, failures=0, objective=-0.0645]
-    273it [01:58,  2.46it/s, failures=0, objective=-0.0645]
-    274it [01:58,  2.46it/s, failures=0, objective=-0.0645]
-    275it [01:58,  3.21it/s, failures=0, objective=-0.0645]
-    275it [01:58,  3.21it/s, failures=0, objective=-0.0645]
-    276it [02:01,  1.23it/s, failures=0, objective=-0.0645]
-    276it [02:01,  1.23it/s, failures=0, objective=-0.0645]
-    277it [02:01,  1.23it/s, failures=0, objective=-0.0645]
-    278it [02:01,  1.23it/s, failures=0, objective=-0.0645]
-    279it [02:01,  1.23it/s, failures=0, objective=-0.0645]
+    1it [00:00, 4253.86it/s, failures=0, objective=-21.6]
+    2it [00:00, 21.56it/s, failures=0, objective=-21]    
+    3it [00:00, 13.06it/s, failures=0, objective=-21]
+    3it [00:00, 13.06it/s, failures=0, objective=-21]
+    4it [00:00, 13.06it/s, failures=0, objective=-20.7]
+    5it [00:00, 13.06it/s, failures=0, objective=-20.7]
+    6it [00:00, 13.06it/s, failures=0, objective=-20.7]
+    7it [00:00, 19.60it/s, failures=0, objective=-20.7]
+    7it [00:00, 19.60it/s, failures=0, objective=-20.7]
+    8it [00:00, 19.60it/s, failures=0, objective=-16.8]
+    9it [00:00, 19.60it/s, failures=0, objective=-16.8]
+    10it [00:00, 19.60it/s, failures=0, objective=-16.8]
+    11it [00:00, 22.60it/s, failures=0, objective=-16.8]
+    11it [00:00, 22.60it/s, failures=0, objective=-16.8]
+    12it [00:00, 22.60it/s, failures=0, objective=-16.8]
+    13it [00:00, 22.60it/s, failures=0, objective=-16.8]
+    14it [00:00, 22.87it/s, failures=0, objective=-16.8]
+    14it [00:00, 22.87it/s, failures=0, objective=-16.8]
+    15it [00:00, 22.87it/s, failures=0, objective=-16.8]
+    16it [00:00, 22.87it/s, failures=0, objective=-16.8]
+    17it [00:00, 23.60it/s, failures=0, objective=-16.8]
+    17it [00:00, 23.60it/s, failures=0, objective=-16.8]
+    18it [00:00, 23.60it/s, failures=0, objective=-16.8]
+    19it [00:00, 23.60it/s, failures=0, objective=-16.8]
+    20it [00:00, 23.60it/s, failures=0, objective=-16.8]
+    21it [00:00, 23.60it/s, failures=0, objective=-16.8]
+    22it [00:00, 23.60it/s, failures=0, objective=-16.8]
+    23it [00:00, 28.75it/s, failures=0, objective=-16.8]
+    23it [00:00, 28.75it/s, failures=0, objective=-16.8]
+    24it [00:00, 28.75it/s, failures=0, objective=-16.8]
+    25it [00:00, 28.75it/s, failures=0, objective=-16.8]
+    26it [00:00, 28.75it/s, failures=0, objective=-16.8]
+    27it [00:00, 28.75it/s, failures=0, objective=-16.8]
+    28it [00:00, 28.75it/s, failures=0, objective=-16.8]
+    29it [00:00, 28.75it/s, failures=0, objective=-16.8]
+    30it [00:00, 28.75it/s, failures=0, objective=-16.8]
+    31it [00:00, 28.75it/s, failures=0, objective=-16.8]
+    32it [00:00, 28.75it/s, failures=0, objective=-16.8]
+    33it [00:00, 28.75it/s, failures=0, objective=-16.8]
+    34it [00:00, 28.75it/s, failures=0, objective=-16.8]
+    35it [00:00, 28.75it/s, failures=0, objective=-16.8]
+    36it [00:00, 28.75it/s, failures=0, objective=-16.8]
+    37it [00:01, 49.58it/s, failures=0, objective=-16.8]
+    37it [00:01, 49.58it/s, failures=0, objective=-16.8]
+    38it [00:01, 49.58it/s, failures=0, objective=-16.8]
+    39it [00:01, 49.58it/s, failures=0, objective=-16.8]
+    40it [00:01, 49.58it/s, failures=0, objective=-16.8]
+    41it [00:01, 49.58it/s, failures=0, objective=-16.8]
+    42it [00:01, 49.58it/s, failures=0, objective=-16.8]
+    43it [00:01, 49.58it/s, failures=0, objective=-16.8]
+    44it [00:01, 49.58it/s, failures=0, objective=-16.8]
+    45it [00:01, 49.58it/s, failures=0, objective=-16.8]
+    46it [00:01, 52.18it/s, failures=0, objective=-16.8]
+    46it [00:01, 52.18it/s, failures=0, objective=-16.8]
+    47it [00:01, 52.18it/s, failures=0, objective=-16.8]
+    48it [00:01, 52.18it/s, failures=0, objective=-16.8]
+    49it [00:01, 52.18it/s, failures=0, objective=-16.8]
+    50it [00:01, 52.18it/s, failures=0, objective=-16.8]
+    51it [00:01, 52.18it/s, failures=0, objective=-16.8]
+    52it [00:01, 48.10it/s, failures=0, objective=-16.8]
+    52it [00:01, 48.10it/s, failures=0, objective=-16.8]
+    53it [00:01, 48.10it/s, failures=0, objective=-16.8]
+    54it [00:01, 48.10it/s, failures=0, objective=-16.8]
+    55it [00:01, 48.10it/s, failures=0, objective=-16.8]
+    56it [00:01, 48.10it/s, failures=0, objective=-16.8]
+    57it [00:01, 48.10it/s, failures=0, objective=-16.8]
+    58it [00:01, 48.10it/s, failures=0, objective=-16.8]
+    59it [00:01, 48.10it/s, failures=0, objective=-16.8]
+    60it [00:01, 48.10it/s, failures=0, objective=-16.8]
+    61it [00:01, 48.10it/s, failures=0, objective=-16.8]
+    62it [00:01, 48.10it/s, failures=0, objective=-16.8]
+    63it [00:01, 48.10it/s, failures=0, objective=-16.8]
+    64it [00:01, 48.10it/s, failures=0, objective=-16.8]
+    65it [00:01, 48.10it/s, failures=0, objective=-16.8]
+    66it [00:01, 48.10it/s, failures=0, objective=-16.8]
+    67it [00:01, 48.10it/s, failures=0, objective=-16.8]
+    68it [00:01, 48.10it/s, failures=0, objective=-16.8]
+    69it [00:01, 64.83it/s, failures=0, objective=-16.8]
+    69it [00:01, 64.83it/s, failures=0, objective=-16.8]
+    70it [00:01, 64.83it/s, failures=0, objective=-16.8]
+    71it [00:01, 64.83it/s, failures=0, objective=-16.8]
+    72it [00:01, 64.83it/s, failures=0, objective=-16.8]
+    73it [00:01, 64.83it/s, failures=0, objective=-16.8]
+    74it [00:01, 64.83it/s, failures=0, objective=-16.8]
+    75it [00:01, 64.83it/s, failures=0, objective=-16.8]
+    76it [00:01, 64.83it/s, failures=0, objective=-16.8]
+    77it [00:01, 64.83it/s, failures=0, objective=-16.8]
+    78it [00:01, 64.83it/s, failures=0, objective=-16.8]
+    79it [00:01, 64.83it/s, failures=0, objective=-16.8]
+    80it [00:01, 64.83it/s, failures=0, objective=-16.8]
+    81it [00:01, 64.83it/s, failures=0, objective=-16.8]
+    82it [00:01, 64.83it/s, failures=0, objective=-16.8]
+    83it [00:01, 64.83it/s, failures=0, objective=-16.8]
+    84it [00:01, 64.83it/s, failures=0, objective=-16.8]
+    85it [00:01, 64.83it/s, failures=0, objective=-16.8]
+    86it [00:01, 64.83it/s, failures=0, objective=-16.8]
+    87it [00:01, 70.35it/s, failures=0, objective=-16.8]
+    87it [00:01, 70.35it/s, failures=0, objective=-16.8]
+    88it [00:01, 70.35it/s, failures=0, objective=-16.8]
+    89it [00:01, 70.35it/s, failures=0, objective=-16.8]
+    90it [00:01, 70.35it/s, failures=0, objective=-16.8]
+    91it [00:01, 70.35it/s, failures=0, objective=-16.8]
+    92it [00:01, 70.35it/s, failures=0, objective=-16.8]
+    93it [00:01, 70.35it/s, failures=0, objective=-16.8]
+    94it [00:01, 70.35it/s, failures=0, objective=-16.8]
+    95it [00:01, 63.07it/s, failures=0, objective=-16.8]
+    95it [00:01, 63.07it/s, failures=0, objective=-16.8]
+    96it [00:01, 63.07it/s, failures=0, objective=-16.8]
+    97it [00:01, 63.07it/s, failures=0, objective=-16.8]
+    98it [00:01, 63.07it/s, failures=0, objective=-16.8]
+    99it [00:01, 63.07it/s, failures=0, objective=-16.8]
+    100it [00:02, 63.07it/s, failures=0, objective=-16.8]
+    101it [00:02, 63.07it/s, failures=0, objective=-16.8]
+    102it [00:02, 50.92it/s, failures=0, objective=-16.8]
+    102it [00:02, 50.92it/s, failures=0, objective=-16.8]
+    103it [00:02, 50.92it/s, failures=0, objective=-16.8]
+    104it [00:02, 50.92it/s, failures=0, objective=-16.8]
+    105it [00:02, 50.92it/s, failures=0, objective=-16.8]
+    106it [00:02, 50.92it/s, failures=0, objective=-16.8]
+    107it [00:02, 50.92it/s, failures=0, objective=-16.8]
+    108it [00:02, 46.28it/s, failures=0, objective=-16.8]
+    108it [00:02, 46.28it/s, failures=0, objective=-16.8]
+    109it [00:02, 46.28it/s, failures=0, objective=-16.8]
+    110it [00:02, 46.28it/s, failures=0, objective=-16.8]
+    111it [00:02, 46.28it/s, failures=0, objective=-16.8]
+    112it [00:02, 46.28it/s, failures=0, objective=-16.8]
+    113it [00:02, 41.92it/s, failures=0, objective=-16.8]
+    113it [00:02, 41.92it/s, failures=0, objective=-16.8]
+    114it [00:02, 41.92it/s, failures=0, objective=-15.7]
+    115it [00:02, 41.92it/s, failures=0, objective=-15.7]
+    116it [00:02, 41.92it/s, failures=0, objective=-15.7]
+    117it [00:02, 41.92it/s, failures=0, objective=-15.7]
+    118it [00:02, 41.92it/s, failures=0, objective=-15.7]
+    119it [00:02, 41.92it/s, failures=0, objective=-14.7]
+    120it [00:02, 39.13it/s, failures=0, objective=-14.7]
+    120it [00:02, 39.13it/s, failures=0, objective=-14.7]
+    121it [00:02, 39.13it/s, failures=0, objective=-14.7]
+    122it [00:02, 39.13it/s, failures=0, objective=-14.7]
+    123it [00:02, 39.13it/s, failures=0, objective=-14.7]
+    124it [00:02, 39.13it/s, failures=0, objective=-14.7]
+    125it [00:02, 39.13it/s, failures=0, objective=-14.7]
+    126it [00:02, 39.13it/s, failures=0, objective=-14.7]
+    127it [00:02, 39.13it/s, failures=0, objective=-14.7]
+    128it [00:02, 39.13it/s, failures=0, objective=-14.7]
+    129it [00:02, 39.13it/s, failures=0, objective=-14.7]
+    130it [00:02, 44.43it/s, failures=0, objective=-14.7]
+    130it [00:02, 44.43it/s, failures=0, objective=-14.7]
+    131it [00:02, 44.43it/s, failures=0, objective=-14.7]
+    132it [00:02, 44.43it/s, failures=0, objective=-14.7]
+    133it [00:02, 44.43it/s, failures=0, objective=-14.7]
+    134it [00:03, 44.43it/s, failures=0, objective=-14.7]
+    135it [00:03, 38.06it/s, failures=0, objective=-14.7]
+    135it [00:03, 38.06it/s, failures=0, objective=-14.7]
+    136it [00:03, 38.06it/s, failures=0, objective=-14.7]
+    137it [00:03, 38.06it/s, failures=0, objective=-14.7]
+    138it [00:03, 38.06it/s, failures=0, objective=-14.7]
+    139it [00:03, 33.55it/s, failures=0, objective=-14.7]
+    139it [00:03, 33.55it/s, failures=0, objective=-14.7]
+    140it [00:03, 33.55it/s, failures=0, objective=-14.7]
+    141it [00:03, 33.55it/s, failures=0, objective=-14.7]
+    142it [00:03, 33.55it/s, failures=0, objective=-14.7]
+    143it [00:03, 33.55it/s, failures=0, objective=-14.7]
+    144it [00:03, 33.55it/s, failures=0, objective=-14.7]
+    145it [00:03, 33.58it/s, failures=0, objective=-14.7]
+    145it [00:03, 33.58it/s, failures=0, objective=-14.7]
+    146it [00:03, 33.58it/s, failures=0, objective=-14.7]
+    147it [00:03, 33.58it/s, failures=0, objective=-14.7]
+    148it [00:03, 33.58it/s, failures=0, objective=-14.7]
+    149it [00:03, 33.58it/s, failures=0, objective=-13.7]
+    150it [00:03, 33.58it/s, failures=0, objective=-13.7]
+    151it [00:03, 33.58it/s, failures=0, objective=-13.7]
+    152it [00:03, 33.58it/s, failures=0, objective=-13.7]
+    153it [00:03, 33.87it/s, failures=0, objective=-13.7]
+    153it [00:03, 33.87it/s, failures=0, objective=-13.7]
+    154it [00:03, 33.87it/s, failures=0, objective=-13.7]
+    155it [00:03, 33.87it/s, failures=0, objective=-13.7]
+    156it [00:03, 33.87it/s, failures=0, objective=-13.7]
+    157it [00:03, 33.87it/s, failures=0, objective=-13.7]
+    158it [00:03, 33.87it/s, failures=0, objective=-13.7]
+    159it [00:03, 33.87it/s, failures=0, objective=-13.7]
+    160it [00:03, 33.87it/s, failures=0, objective=-13.7]
+    161it [00:03, 35.97it/s, failures=0, objective=-13.7]
+    161it [00:03, 35.97it/s, failures=0, objective=-13.7]
+    162it [00:03, 35.97it/s, failures=0, objective=-13.7]
+    163it [00:03, 35.97it/s, failures=0, objective=-13.7]
+    164it [00:03, 35.97it/s, failures=0, objective=-13.7]
+    165it [00:03, 35.97it/s, failures=0, objective=-13.7]
+    166it [00:03, 35.97it/s, failures=0, objective=-13.7]
+    167it [00:03, 35.97it/s, failures=0, objective=-13.7]
+    168it [00:03, 35.97it/s, failures=0, objective=-13.7]
+    169it [00:03, 35.97it/s, failures=0, objective=-13.7]
+    170it [00:03, 35.97it/s, failures=0, objective=-12.3]
+    171it [00:03, 35.97it/s, failures=0, objective=-12.3]
+    172it [00:03, 35.97it/s, failures=0, objective=-12.3]
+    173it [00:03, 35.97it/s, failures=0, objective=-12.3]
+    174it [00:03, 35.97it/s, failures=0, objective=-12.3]
+    175it [00:04, 41.66it/s, failures=0, objective=-12.3]
+    175it [00:04, 41.66it/s, failures=0, objective=-12.3]
+    176it [00:04, 41.66it/s, failures=0, objective=-12.3]
+    177it [00:04, 41.66it/s, failures=0, objective=-12.3]
+    178it [00:04, 41.66it/s, failures=0, objective=-12.3]
+    179it [00:04, 41.66it/s, failures=0, objective=-12.3]
+    180it [00:04, 41.66it/s, failures=0, objective=-12.3]
+    181it [00:04, 41.66it/s, failures=0, objective=-12.3]
+    182it [00:04, 41.66it/s, failures=0, objective=-12.3]
+    183it [00:04, 41.66it/s, failures=0, objective=-12.3]
+    184it [00:04, 41.66it/s, failures=0, objective=-12.3]
+    185it [00:04, 41.66it/s, failures=0, objective=-12.3]
+    186it [00:04, 41.66it/s, failures=0, objective=-12.3]
+    187it [00:04, 41.66it/s, failures=0, objective=-12.3]
+    188it [00:04, 41.66it/s, failures=0, objective=-12.3]
+    189it [00:04, 41.66it/s, failures=0, objective=-12.3]
+    190it [00:04, 41.66it/s, failures=0, objective=-12.3]
+    191it [00:04, 49.82it/s, failures=0, objective=-12.3]
+    191it [00:04, 49.82it/s, failures=0, objective=-12.3]
+    192it [00:04, 49.82it/s, failures=0, objective=-12.3]
+    193it [00:04, 49.82it/s, failures=0, objective=-12.3]
+    194it [00:04, 49.82it/s, failures=0, objective=-12.3]
+    195it [00:04, 49.82it/s, failures=0, objective=-12.3]
+    196it [00:04, 49.82it/s, failures=0, objective=-12.3]
+    197it [00:04, 49.82it/s, failures=0, objective=-12.3]
+    198it [00:04, 49.82it/s, failures=0, objective=-12.3]
+    199it [00:04, 49.82it/s, failures=0, objective=-12.3]
+    200it [00:04, 46.54it/s, failures=0, objective=-12.3]
+    200it [00:04, 46.54it/s, failures=0, objective=-12.3]
+    201it [00:04, 46.54it/s, failures=0, objective=-12.3]
+    202it [00:04, 46.54it/s, failures=0, objective=-12.3]
+    203it [00:04, 46.54it/s, failures=0, objective=-12.3]
+    204it [00:04, 46.54it/s, failures=0, objective=-12.3]
+    205it [00:04, 46.54it/s, failures=0, objective=-12.3]
+    206it [00:04, 46.54it/s, failures=0, objective=-12.3]
+    207it [00:04, 46.54it/s, failures=0, objective=-12]  
+    208it [00:04, 46.54it/s, failures=0, objective=-12]
+    209it [00:04, 46.54it/s, failures=0, objective=-12]
+    210it [00:04, 46.54it/s, failures=0, objective=-12]
+    211it [00:04, 46.54it/s, failures=0, objective=-12]
+    212it [00:04, 47.22it/s, failures=0, objective=-12]
+    212it [00:04, 47.22it/s, failures=0, objective=-12]
+    213it [00:04, 47.22it/s, failures=0, objective=-12]
+    214it [00:04, 47.22it/s, failures=0, objective=-12]
+    215it [00:04, 47.22it/s, failures=0, objective=-12]
+    216it [00:04, 47.22it/s, failures=0, objective=-12]
+    217it [00:04, 47.22it/s, failures=0, objective=-12]
+    218it [00:04, 47.22it/s, failures=0, objective=-12]
+    219it [00:04, 47.22it/s, failures=0, objective=-12]
+    220it [00:04, 47.22it/s, failures=0, objective=-12]
+    221it [00:04, 47.22it/s, failures=0, objective=-12]
+    222it [00:04, 47.22it/s, failures=0, objective=-12]
+    223it [00:04, 47.22it/s, failures=0, objective=-12]
+    224it [00:04, 47.22it/s, failures=0, objective=-12]
+    225it [00:04, 47.22it/s, failures=0, objective=-12]
+    226it [00:05, 53.08it/s, failures=0, objective=-12]
+    226it [00:05, 53.08it/s, failures=0, objective=-12]
+    227it [00:05, 53.08it/s, failures=0, objective=-12]
+    228it [00:05, 53.08it/s, failures=0, objective=-12]
+    229it [00:05, 53.08it/s, failures=0, objective=-12]
+    230it [00:05, 53.08it/s, failures=0, objective=-12]
+    231it [00:05, 53.08it/s, failures=0, objective=-12]
+    232it [00:05, 46.81it/s, failures=0, objective=-12]
+    232it [00:05, 46.81it/s, failures=0, objective=-12]
+    233it [00:05, 46.81it/s, failures=0, objective=-12]
+    234it [00:05, 46.81it/s, failures=0, objective=-12]
+    235it [00:05, 46.81it/s, failures=0, objective=-12]
+    236it [00:05, 46.81it/s, failures=0, objective=-12]
+    237it [00:05, 46.81it/s, failures=0, objective=-12]
+    238it [00:05, 42.49it/s, failures=0, objective=-12]
+    238it [00:05, 42.49it/s, failures=0, objective=-12]
+    239it [00:05, 42.49it/s, failures=0, objective=-12]
+    240it [00:05, 42.49it/s, failures=0, objective=-12]
+    241it [00:05, 42.49it/s, failures=0, objective=-12]
+    242it [00:05, 42.49it/s, failures=0, objective=-12]
+    243it [00:05, 38.30it/s, failures=0, objective=-12]
+    243it [00:05, 38.30it/s, failures=0, objective=-12]
+    244it [00:05, 38.30it/s, failures=0, objective=-12]
+    245it [00:05, 38.30it/s, failures=0, objective=-12]
+    246it [00:05, 38.30it/s, failures=0, objective=-12]
+    247it [00:05, 38.30it/s, failures=0, objective=-12]
+    248it [00:05, 38.30it/s, failures=0, objective=-12]
+    249it [00:05, 38.30it/s, failures=0, objective=-10.2]
+    250it [00:05, 38.30it/s, failures=0, objective=-10.2]
+    251it [00:05, 38.30it/s, failures=0, objective=-10.2]
+    252it [00:05, 37.11it/s, failures=0, objective=-10.2]
+    252it [00:05, 37.11it/s, failures=0, objective=-10.2]
+    253it [00:05, 37.11it/s, failures=0, objective=-10.2]
+    254it [00:05, 37.11it/s, failures=0, objective=-10.2]
+    255it [00:05, 37.11it/s, failures=0, objective=-10.2]
+    256it [00:05, 37.11it/s, failures=0, objective=-10.2]
+    257it [00:05, 37.11it/s, failures=0, objective=-10.2]
+    258it [00:05, 37.11it/s, failures=0, objective=-10.2]
+    259it [00:05, 37.11it/s, failures=0, objective=-10.2]
+    260it [00:05, 37.11it/s, failures=0, objective=-10.2]
+    261it [00:05, 37.11it/s, failures=0, objective=-10.2]
+    262it [00:05, 37.11it/s, failures=0, objective=-10.2]
+    263it [00:06, 35.27it/s, failures=0, objective=-10.2]
+    263it [00:06, 35.27it/s, failures=0, objective=-10.2]
+    264it [00:06, 35.27it/s, failures=0, objective=-10.2]
+    265it [00:06, 35.27it/s, failures=0, objective=-10.2]
+    266it [00:06, 35.27it/s, failures=0, objective=-10.2]
+    267it [00:06, 35.27it/s, failures=0, objective=-10.2]
+    268it [00:06, 35.27it/s, failures=0, objective=-10.2]
+    269it [00:06, 35.27it/s, failures=0, objective=-10.2]
+    270it [00:06, 35.27it/s, failures=0, objective=-10.2]
+    271it [00:06, 35.27it/s, failures=0, objective=-10.2]
+    272it [00:06, 35.27it/s, failures=0, objective=-10.2]
+    273it [00:06, 35.27it/s, failures=0, objective=-10.2]
+    274it [00:06, 35.27it/s, failures=0, objective=-10.2]
+    275it [00:06, 40.88it/s, failures=0, objective=-10.2]
+    275it [00:06, 40.88it/s, failures=0, objective=-10.2]
+    276it [00:06, 40.88it/s, failures=0, objective=-10.2]
+    277it [00:06, 40.88it/s, failures=0, objective=-10.2]
+    278it [00:06, 40.88it/s, failures=0, objective=-10.2]
+    279it [00:06, 40.88it/s, failures=0, objective=-10.2]
+    280it [00:06, 40.88it/s, failures=0, objective=-10.2]
+    281it [00:06, 40.88it/s, failures=0, objective=-10.2]
+    282it [00:06, 40.88it/s, failures=0, objective=-10.2]
+    283it [00:06, 37.36it/s, failures=0, objective=-10.2]
+    283it [00:06, 37.36it/s, failures=0, objective=-10.2]
+    284it [00:06, 37.36it/s, failures=0, objective=-10.2]
+    285it [00:06, 37.36it/s, failures=0, objective=-10.2]
+    286it [00:06, 37.36it/s, failures=0, objective=-10.2]
+    287it [00:06, 37.36it/s, failures=0, objective=-10.2]
+    288it [00:06, 37.36it/s, failures=0, objective=-10.2]
+    289it [00:06, 37.36it/s, failures=0, objective=-10.2]
+    290it [00:06, 37.36it/s, failures=0, objective=-10.2]
+    291it [00:06, 37.36it/s, failures=0, objective=-10.2]
+    292it [00:06, 37.36it/s, failures=0, objective=-10.2]
+    293it [00:06, 37.36it/s, failures=0, objective=-10.2]
+    294it [00:06, 37.36it/s, failures=0, objective=-10.2]
+    295it [00:06, 37.36it/s, failures=0, objective=-10.2]
+    296it [00:06, 37.36it/s, failures=0, objective=-10.2]
+    297it [00:06, 37.36it/s, failures=0, objective=-10.2]
+    298it [00:07, 44.01it/s, failures=0, objective=-10.2]
+    298it [00:07, 44.01it/s, failures=0, objective=-10.2]
+    299it [00:07, 44.01it/s, failures=0, objective=-10.2]
+    300it [00:07, 44.01it/s, failures=0, objective=-10.2]
+    301it [00:07, 44.01it/s, failures=0, objective=-10.2]
+    302it [00:07, 44.01it/s, failures=0, objective=-10.2]
+    303it [00:07, 44.01it/s, failures=0, objective=-10.2]
+    304it [00:07, 44.01it/s, failures=0, objective=-10.2]
+    305it [00:07, 40.96it/s, failures=0, objective=-10.2]
+    305it [00:07, 40.96it/s, failures=0, objective=-10]  
+    306it [00:07, 40.96it/s, failures=0, objective=-10]
+    307it [00:07, 40.96it/s, failures=0, objective=-10]
+    308it [00:07, 40.96it/s, failures=0, objective=-10]
+    309it [00:07, 40.96it/s, failures=0, objective=-10]
+    310it [00:07, 40.96it/s, failures=0, objective=-10]
+    311it [00:07, 40.96it/s, failures=0, objective=-10]
+    312it [00:07, 40.96it/s, failures=0, objective=-10]
+    313it [00:07, 40.96it/s, failures=0, objective=-10]
+    314it [00:07, 37.21it/s, failures=0, objective=-10]
+    314it [00:07, 37.21it/s, failures=0, objective=-10]
+    315it [00:07, 37.21it/s, failures=0, objective=-10]
+    316it [00:07, 37.21it/s, failures=0, objective=-10]
+    317it [00:07, 37.21it/s, failures=0, objective=-10]
+    318it [00:07, 37.21it/s, failures=0, objective=-10]
+    319it [00:07, 37.21it/s, failures=0, objective=-10]
+    320it [00:07, 37.21it/s, failures=0, objective=-10]
+    321it [00:07, 37.21it/s, failures=0, objective=-10]
+    322it [00:07, 37.21it/s, failures=0, objective=-10]
+    323it [00:07, 37.21it/s, failures=0, objective=-10]
+    324it [00:07, 37.21it/s, failures=0, objective=-10]
+    325it [00:07, 37.21it/s, failures=0, objective=-10]
+    326it [00:07, 37.21it/s, failures=0, objective=-10]
+    327it [00:07, 37.21it/s, failures=0, objective=-10]
+    328it [00:07, 37.21it/s, failures=0, objective=-10]
+    329it [00:07, 37.21it/s, failures=0, objective=-10]
+    330it [00:07, 48.46it/s, failures=0, objective=-10]
+    330it [00:07, 48.46it/s, failures=0, objective=-10]
+    331it [00:07, 48.46it/s, failures=0, objective=-10]
+    332it [00:07, 48.46it/s, failures=0, objective=-10]
+    333it [00:07, 48.46it/s, failures=0, objective=-10]
+    334it [00:07, 48.46it/s, failures=0, objective=-10]
+    335it [00:07, 48.46it/s, failures=0, objective=-10]
+    336it [00:07, 48.46it/s, failures=0, objective=-10]
+    337it [00:07, 48.46it/s, failures=0, objective=-10]
+    338it [00:07, 45.15it/s, failures=0, objective=-10]
+    338it [00:07, 45.15it/s, failures=0, objective=-10]
+    339it [00:07, 45.15it/s, failures=0, objective=-10]
+    340it [00:07, 45.15it/s, failures=0, objective=-10]
+    341it [00:07, 45.15it/s, failures=0, objective=-10]
+    342it [00:07, 45.15it/s, failures=0, objective=-7.16]
+    343it [00:07, 45.15it/s, failures=0, objective=-7.16]
+    344it [00:07, 45.15it/s, failures=0, objective=-7.16]
+    345it [00:07, 45.15it/s, failures=0, objective=-7.16]
+    346it [00:08, 36.84it/s, failures=0, objective=-7.16]
+    346it [00:08, 36.84it/s, failures=0, objective=-7.16]
+    347it [00:08, 36.84it/s, failures=0, objective=-7.16]
+    348it [00:08, 36.84it/s, failures=0, objective=-7.16]
+    349it [00:08, 36.84it/s, failures=0, objective=-7.16]
+    350it [00:08, 36.84it/s, failures=0, objective=-7.16]
+    351it [00:08, 36.84it/s, failures=0, objective=-7.16]
+    352it [00:08, 36.84it/s, failures=0, objective=-7.16]
+    353it [00:08, 36.84it/s, failures=0, objective=-7.16]
+    354it [00:08, 36.84it/s, failures=0, objective=-7.16]
+    355it [00:08, 36.84it/s, failures=0, objective=-7.16]
+    356it [00:08, 36.84it/s, failures=0, objective=-7.16]
+    357it [00:08, 36.84it/s, failures=0, objective=-7.16]
+    358it [00:08, 36.84it/s, failures=0, objective=-7.16]
+    359it [00:08, 36.84it/s, failures=0, objective=-7.16]
+    360it [00:08, 36.84it/s, failures=0, objective=-7.16]
+    361it [00:08, 46.26it/s, failures=0, objective=-7.16]
+    361it [00:08, 46.26it/s, failures=0, objective=-7.16]
+    362it [00:08, 46.26it/s, failures=0, objective=-7.16]
+    363it [00:08, 46.26it/s, failures=0, objective=-7.16]
+    364it [00:08, 46.26it/s, failures=0, objective=-7.16]
+    365it [00:08, 46.26it/s, failures=0, objective=-7.16]
+    366it [00:08, 46.26it/s, failures=0, objective=-7.16]
+    367it [00:08, 39.92it/s, failures=0, objective=-7.16]
+    367it [00:08, 39.92it/s, failures=0, objective=-7.16]
+    368it [00:08, 39.92it/s, failures=0, objective=-7.16]
+    369it [00:08, 39.92it/s, failures=0, objective=-7.16]
+    370it [00:08, 39.92it/s, failures=0, objective=-7.16]
+    371it [00:08, 39.92it/s, failures=0, objective=-7.16]
+    372it [00:08, 39.92it/s, failures=0, objective=-7.16]
+    373it [00:08, 39.92it/s, failures=0, objective=-7.16]
+    374it [00:08, 39.92it/s, failures=0, objective=-7.16]
+    375it [00:08, 39.92it/s, failures=0, objective=-7.16]
+    376it [00:08, 39.92it/s, failures=0, objective=-7.16]
+    377it [00:08, 39.81it/s, failures=0, objective=-7.16]
+    377it [00:08, 39.81it/s, failures=0, objective=-7.16]
+    378it [00:08, 39.81it/s, failures=0, objective=-7.16]
+    379it [00:08, 39.81it/s, failures=0, objective=-7.16]
+    380it [00:08, 39.81it/s, failures=0, objective=-7.16]
+    381it [00:08, 39.81it/s, failures=0, objective=-7.16]
+    382it [00:08, 39.81it/s, failures=0, objective=-7.16]
+    383it [00:08, 39.81it/s, failures=0, objective=-7.16]
+    384it [00:08, 39.81it/s, failures=0, objective=-7.16]
+    385it [00:08, 39.81it/s, failures=0, objective=-7.16]
+    386it [00:08, 39.81it/s, failures=0, objective=-7.16]
+    387it [00:09, 41.64it/s, failures=0, objective=-7.16]
+    387it [00:09, 41.64it/s, failures=0, objective=-7.16]
+    388it [00:09, 41.64it/s, failures=0, objective=-7.16]
+    389it [00:09, 41.64it/s, failures=0, objective=-7.16]
+    390it [00:09, 41.64it/s, failures=0, objective=-7.16]
+    391it [00:09, 41.64it/s, failures=0, objective=-7.16]
+    392it [00:09, 41.64it/s, failures=0, objective=-7.16]
+    393it [00:09, 41.64it/s, failures=0, objective=-7.16]
+    394it [00:09, 41.64it/s, failures=0, objective=-7.16]
+    395it [00:09, 41.64it/s, failures=0, objective=-7.16]
+    396it [00:09, 41.64it/s, failures=0, objective=-7.16]
+    397it [00:09, 41.64it/s, failures=0, objective=-7.16]
+    398it [00:09, 43.07it/s, failures=0, objective=-7.16]
+    398it [00:09, 43.07it/s, failures=0, objective=-7.16]
+    399it [00:09, 43.07it/s, failures=0, objective=-7.16]
+    400it [00:09, 43.07it/s, failures=0, objective=-7.16]
+    401it [00:09, 43.07it/s, failures=0, objective=-7.16]
+    402it [00:09, 43.07it/s, failures=0, objective=-7.16]
+    403it [00:09, 43.07it/s, failures=0, objective=-7.16]
+    404it [00:09, 43.07it/s, failures=0, objective=-7.16]
+    405it [00:09, 43.07it/s, failures=0, objective=-7.16]
+    406it [00:09, 43.07it/s, failures=0, objective=-7.16]
+    407it [00:09, 43.07it/s, failures=0, objective=-7.16]
+    408it [00:09, 43.07it/s, failures=0, objective=-7.16]
+    409it [00:09, 43.07it/s, failures=0, objective=-7.16]
+    410it [00:09, 43.07it/s, failures=0, objective=-7.16]
+    411it [00:09, 43.07it/s, failures=0, objective=-7.16]
+    412it [00:09, 43.07it/s, failures=0, objective=-7.16]
+    413it [00:09, 48.18it/s, failures=0, objective=-7.16]
+    413it [00:09, 48.18it/s, failures=0, objective=-6.53]
+    414it [00:09, 48.18it/s, failures=0, objective=-6.53]
+    415it [00:09, 48.18it/s, failures=0, objective=-6.53]
+    416it [00:09, 48.18it/s, failures=0, objective=-6.53]
+    417it [00:09, 48.18it/s, failures=0, objective=-6.53]
+    418it [00:09, 48.18it/s, failures=0, objective=-6.53]
+    419it [00:09, 48.18it/s, failures=0, objective=-6.53]
+    420it [00:09, 48.18it/s, failures=0, objective=-6.53]
+    421it [00:09, 45.50it/s, failures=0, objective=-6.53]
+    421it [00:09, 45.50it/s, failures=0, objective=-6.53]
+    422it [00:09, 45.50it/s, failures=0, objective=-6.53]
+    423it [00:09, 45.50it/s, failures=0, objective=-6.53]
+    424it [00:09, 45.50it/s, failures=0, objective=-6.53]
+    425it [00:09, 45.50it/s, failures=0, objective=-6.53]
+    426it [00:09, 45.50it/s, failures=0, objective=-6.53]
+    427it [00:09, 45.50it/s, failures=0, objective=-6.53]
+    428it [00:09, 45.50it/s, failures=0, objective=-6.53]
+    429it [00:10, 42.36it/s, failures=0, objective=-6.53]
+    429it [00:10, 42.36it/s, failures=0, objective=-6.53]
+    430it [00:10, 42.36it/s, failures=0, objective=-6.53]
+    431it [00:10, 42.36it/s, failures=0, objective=-6.53]
+    432it [00:10, 42.36it/s, failures=0, objective=-6.53]
+    433it [00:10, 42.36it/s, failures=0, objective=-6.53]
+    434it [00:10, 42.36it/s, failures=0, objective=-6.53]
+    435it [00:10, 42.36it/s, failures=0, objective=-6.53]
+    436it [00:10, 42.36it/s, failures=0, objective=-6.53]
+    437it [00:10, 42.36it/s, failures=0, objective=-6.53]
+    438it [00:10, 34.27it/s, failures=0, objective=-6.53]
+    438it [00:10, 34.27it/s, failures=0, objective=-6.53]
+    439it [00:10, 34.27it/s, failures=0, objective=-6.53]
+    440it [00:10, 34.27it/s, failures=0, objective=-6.53]
+    441it [00:10, 34.27it/s, failures=0, objective=-6.53]
+    442it [00:10, 34.27it/s, failures=0, objective=-6.53]
+    443it [00:10, 34.27it/s, failures=0, objective=-6.53]
+    444it [00:10, 34.27it/s, failures=0, objective=-6.53]
+    445it [00:10, 34.27it/s, failures=0, objective=-6.53]
+    446it [00:10, 34.27it/s, failures=0, objective=-6.53]
+    447it [00:10, 34.27it/s, failures=0, objective=-6.53]
+    448it [00:10, 34.27it/s, failures=0, objective=-6.53]
+    449it [00:10, 34.27it/s, failures=0, objective=-6.53]
+    450it [00:10, 34.27it/s, failures=0, objective=-6.53]
+    451it [00:10, 34.27it/s, failures=0, objective=-6.53]
+    452it [00:10, 34.27it/s, failures=0, objective=-6.53]
+    453it [00:10, 34.27it/s, failures=0, objective=-6.53]
+    454it [00:10, 34.27it/s, failures=0, objective=-6.53]
+    455it [00:10, 45.32it/s, failures=0, objective=-6.53]
+    455it [00:10, 45.32it/s, failures=0, objective=-6.53]
+    456it [00:10, 45.32it/s, failures=0, objective=-6.53]
+    457it [00:10, 45.32it/s, failures=0, objective=-6.53]
+    458it [00:10, 45.32it/s, failures=0, objective=-6.53]
+    459it [00:10, 45.32it/s, failures=0, objective=-6.53]
+    460it [00:10, 45.32it/s, failures=0, objective=-6.53]
+    461it [00:10, 45.32it/s, failures=0, objective=-6.53]
+    462it [00:10, 42.36it/s, failures=0, objective=-6.53]
+    462it [00:10, 42.36it/s, failures=0, objective=-6.53]
+    463it [00:10, 42.36it/s, failures=0, objective=-6.53]
+    464it [00:10, 42.36it/s, failures=0, objective=-6.53]
+    465it [00:10, 42.36it/s, failures=0, objective=-6.53]
+    466it [00:10, 42.36it/s, failures=0, objective=-6.53]
+    467it [00:10, 42.36it/s, failures=0, objective=-6.53]
+    468it [00:10, 42.36it/s, failures=0, objective=-6.53]
+    469it [00:10, 42.36it/s, failures=0, objective=-6.53]
+    470it [00:11, 39.60it/s, failures=0, objective=-6.53]
+    470it [00:11, 39.60it/s, failures=0, objective=-6.53]
+    471it [00:11, 39.60it/s, failures=0, objective=-6.53]
+    472it [00:11, 39.60it/s, failures=0, objective=-6.53]
+    473it [00:11, 39.60it/s, failures=0, objective=-6.53]
+    474it [00:11, 39.60it/s, failures=0, objective=-6.53]
+    475it [00:11, 39.60it/s, failures=0, objective=-6.53]
+    476it [00:11, 39.60it/s, failures=0, objective=-6.53]
+    477it [00:11, 39.60it/s, failures=0, objective=-6.53]
+    478it [00:11, 38.72it/s, failures=0, objective=-6.53]
+    478it [00:11, 38.72it/s, failures=0, objective=-6.53]
+    479it [00:11, 38.72it/s, failures=0, objective=-6.53]
+    480it [00:11, 38.72it/s, failures=0, objective=-6.53]
+    481it [00:11, 38.72it/s, failures=0, objective=-6.53]
+    482it [00:11, 38.72it/s, failures=0, objective=-6.53]
+    483it [00:11, 38.72it/s, failures=0, objective=-5.74]
+    484it [00:11, 38.72it/s, failures=0, objective=-5.74]
+    485it [00:11, 38.72it/s, failures=0, objective=-5.74]
+    486it [00:11, 38.72it/s, failures=0, objective=-5.74]
+    487it [00:11, 38.72it/s, failures=0, objective=-5.74]
+    488it [00:11, 38.72it/s, failures=0, objective=-5.74]
+    489it [00:11, 38.72it/s, failures=0, objective=-5.74]
+    490it [00:11, 38.72it/s, failures=0, objective=-5.74]
+    491it [00:11, 39.58it/s, failures=0, objective=-5.74]
+    491it [00:11, 39.58it/s, failures=0, objective=-5.74]
+    492it [00:11, 39.58it/s, failures=0, objective=-5.74]
+    493it [00:11, 39.58it/s, failures=0, objective=-5.74]
+    494it [00:11, 39.58it/s, failures=0, objective=-5.74]
+    495it [00:11, 39.58it/s, failures=0, objective=-5.74]
+    496it [00:11, 39.58it/s, failures=0, objective=-5.74]
+    497it [00:11, 39.58it/s, failures=0, objective=-5.74]
+    498it [00:11, 39.58it/s, failures=0, objective=-5.74]
+    499it [00:11, 39.58it/s, failures=0, objective=-5.74]
+    500it [00:11, 39.58it/s, failures=0, objective=-5.74]
+    501it [00:11, 39.58it/s, failures=0, objective=-5.74]
+    502it [00:11, 39.58it/s, failures=0, objective=-5.74]
+    503it [00:11, 39.58it/s, failures=0, objective=-5.74]
+    504it [00:11, 39.58it/s, failures=0, objective=-5.74]
+    505it [00:11, 45.03it/s, failures=0, objective=-5.74]
+    505it [00:11, 45.03it/s, failures=0, objective=-5.74]
+    506it [00:11, 45.03it/s, failures=0, objective=-5.74]
+    507it [00:11, 45.03it/s, failures=0, objective=-5.74]
+    508it [00:11, 45.03it/s, failures=0, objective=-5.74]
+    509it [00:11, 45.03it/s, failures=0, objective=-5.74]
+    510it [00:11, 45.03it/s, failures=0, objective=-5.74]
+    511it [00:11, 45.03it/s, failures=0, objective=-5.74]
+    512it [00:11, 45.03it/s, failures=0, objective=-5.74]
+    513it [00:11, 45.03it/s, failures=0, objective=-5.74]
+    514it [00:11, 45.03it/s, failures=0, objective=-5.74]
+    515it [00:11, 45.03it/s, failures=0, objective=-5.74]
+    516it [00:11, 45.03it/s, failures=0, objective=-5.74]
+    517it [00:12, 46.56it/s, failures=0, objective=-5.74]
+    517it [00:12, 46.56it/s, failures=0, objective=-5.74]
+    518it [00:12, 46.56it/s, failures=0, objective=-5.74]
+    519it [00:12, 46.56it/s, failures=0, objective=-5.74]
+    520it [00:12, 46.56it/s, failures=0, objective=-5.74]
+    521it [00:12, 46.56it/s, failures=0, objective=-5.74]
+    522it [00:12, 46.56it/s, failures=0, objective=-5.74]
+    523it [00:12, 46.56it/s, failures=0, objective=-5.74]
+    524it [00:12, 46.56it/s, failures=0, objective=-5.74]
+    525it [00:12, 46.56it/s, failures=0, objective=-5.74]
+    526it [00:12, 46.56it/s, failures=0, objective=-5.74]
+    527it [00:12, 41.97it/s, failures=0, objective=-5.74]
+    527it [00:12, 41.97it/s, failures=0, objective=-5.74]
+    528it [00:12, 41.97it/s, failures=0, objective=-5.74]
+    529it [00:12, 41.97it/s, failures=0, objective=-5.74]
+    530it [00:12, 41.97it/s, failures=0, objective=-5.74]
+    531it [00:12, 41.97it/s, failures=0, objective=-5.74]
+    532it [00:12, 41.97it/s, failures=0, objective=-5.74]
+    533it [00:12, 41.97it/s, failures=0, objective=-5.74]
+    534it [00:12, 41.97it/s, failures=0, objective=-5.74]
+    535it [00:12, 41.97it/s, failures=0, objective=-5.74]
+    536it [00:12, 41.97it/s, failures=0, objective=-5.74]
+    537it [00:12, 41.97it/s, failures=0, objective=-5.74]
+    538it [00:12, 41.97it/s, failures=0, objective=-5.74]
+    539it [00:12, 41.16it/s, failures=0, objective=-5.74]
+    539it [00:12, 41.16it/s, failures=0, objective=-5.74]
+    540it [00:12, 41.16it/s, failures=0, objective=-5.74]
+    541it [00:12, 41.16it/s, failures=0, objective=-5.74]
+    542it [00:12, 41.16it/s, failures=0, objective=-5.74]
+    543it [00:12, 41.16it/s, failures=0, objective=-5.74]
+    544it [00:12, 41.16it/s, failures=0, objective=-5.74]
+    545it [00:12, 41.16it/s, failures=0, objective=-5.74]
+    546it [00:12, 41.16it/s, failures=0, objective=-5.74]
+    547it [00:12, 41.16it/s, failures=0, objective=-5.74]
+    548it [00:12, 41.16it/s, failures=0, objective=-5.74]
+    549it [00:12, 41.16it/s, failures=0, objective=-5.74]
+    550it [00:12, 41.16it/s, failures=0, objective=-5.74]
+    551it [00:12, 41.16it/s, failures=0, objective=-5.74]
+    552it [00:12, 41.16it/s, failures=0, objective=-5.74]
+    553it [00:12, 41.16it/s, failures=0, objective=-5.74]
+    554it [00:13, 46.67it/s, failures=0, objective=-5.74]
+    554it [00:13, 46.67it/s, failures=0, objective=-5.74]
+    555it [00:13, 46.67it/s, failures=0, objective=-5.74]
+    556it [00:13, 46.67it/s, failures=0, objective=-5.74]
+    557it [00:13, 46.67it/s, failures=0, objective=-5.74]
+    558it [00:13, 46.67it/s, failures=0, objective=-5.74]
+    559it [00:13, 46.67it/s, failures=0, objective=-5.74]
+    560it [00:13, 46.67it/s, failures=0, objective=-5.74]
+    561it [00:13, 46.67it/s, failures=0, objective=-5.74]
+    562it [00:13, 43.49it/s, failures=0, objective=-5.74]
+    562it [00:13, 43.49it/s, failures=0, objective=-5.74]
+    563it [00:13, 43.49it/s, failures=0, objective=-5.74]
+    564it [00:13, 43.49it/s, failures=0, objective=-5.74]
+    565it [00:13, 43.49it/s, failures=0, objective=-5.74]
+    566it [00:13, 43.49it/s, failures=0, objective=-5.74]
+    567it [00:13, 43.49it/s, failures=0, objective=-5.74]
+    568it [00:13, 38.50it/s, failures=0, objective=-5.74]
+    568it [00:13, 38.50it/s, failures=0, objective=-5.74]
+    569it [00:13, 38.50it/s, failures=0, objective=-5.74]
+    570it [00:13, 38.50it/s, failures=0, objective=-5.74]
+    571it [00:13, 38.50it/s, failures=0, objective=-5.74]
+    572it [00:13, 38.50it/s, failures=0, objective=-5.74]
+    573it [00:13, 38.50it/s, failures=0, objective=-5.74]
+    574it [00:13, 38.50it/s, failures=0, objective=-5.74]
+    575it [00:13, 38.50it/s, failures=0, objective=-5.74]
+    576it [00:13, 38.50it/s, failures=0, objective=-5.74]
+    577it [00:13, 38.50it/s, failures=0, objective=-5.74]
+    578it [00:13, 39.52it/s, failures=0, objective=-5.74]
+    578it [00:13, 39.52it/s, failures=0, objective=-5.74]
+    579it [00:13, 39.52it/s, failures=0, objective=-5.74]
+    580it [00:13, 39.52it/s, failures=0, objective=-5.74]
+    581it [00:13, 39.52it/s, failures=0, objective=-5.74]
+    582it [00:13, 39.52it/s, failures=0, objective=-5.74]
+    583it [00:13, 39.52it/s, failures=0, objective=-5.74]
+    584it [00:14, 32.97it/s, failures=0, objective=-5.74]
+    584it [00:14, 32.97it/s, failures=0, objective=-5.74]
+    585it [00:14, 32.97it/s, failures=0, objective=-5.74]
+    586it [00:14, 32.97it/s, failures=0, objective=-5.74]
+    587it [00:14, 32.97it/s, failures=0, objective=-5.74]
+    588it [00:14, 32.97it/s, failures=0, objective=-5.74]
+    589it [00:14, 32.97it/s, failures=0, objective=-5.74]
+    590it [00:14, 32.97it/s, failures=0, objective=-5.74]
+    591it [00:14, 32.97it/s, failures=0, objective=-5.74]
+    592it [00:14, 31.26it/s, failures=0, objective=-5.74]
+    592it [00:14, 31.26it/s, failures=0, objective=-5.74]
+    593it [00:14, 31.26it/s, failures=0, objective=-5.74]
+    594it [00:14, 31.26it/s, failures=0, objective=-5.74]
+    595it [00:14, 31.26it/s, failures=0, objective=-5.74]
+    596it [00:14, 31.26it/s, failures=0, objective=-5.74]
+    597it [00:14, 31.26it/s, failures=0, objective=-5.74]
+    598it [00:14, 31.26it/s, failures=0, objective=-5.74]
+    599it [00:14, 31.26it/s, failures=0, objective=-5.74]
+    600it [00:14, 31.26it/s, failures=0, objective=-5.74]
+    601it [00:14, 31.26it/s, failures=0, objective=-5.74]
+    602it [00:14, 31.26it/s, failures=0, objective=-4.83]
+    603it [00:14, 31.26it/s, failures=0, objective=-4.83]
+    604it [00:14, 31.26it/s, failures=0, objective=-4.83]
+    605it [00:14, 31.26it/s, failures=0, objective=-4.83]
+    606it [00:14, 31.26it/s, failures=0, objective=-4.83]
+    607it [00:14, 31.26it/s, failures=0, objective=-4.83]
+    608it [00:14, 31.26it/s, failures=0, objective=-4.83]
+    609it [00:14, 31.26it/s, failures=0, objective=-4.83]
+    610it [00:14, 31.26it/s, failures=0, objective=-4.83]
+    611it [00:14, 31.26it/s, failures=0, objective=-4.83]
+    612it [00:14, 42.07it/s, failures=0, objective=-4.83]
+    612it [00:14, 42.07it/s, failures=0, objective=-4.83]
+    613it [00:14, 42.07it/s, failures=0, objective=-4.83]
+    614it [00:14, 42.07it/s, failures=0, objective=-4.83]
+    615it [00:14, 42.07it/s, failures=0, objective=-4.83]
+    616it [00:14, 42.07it/s, failures=0, objective=-4.83]
+    617it [00:14, 42.07it/s, failures=0, objective=-4.83]
+    618it [00:14, 42.07it/s, failures=0, objective=-4.83]
+    619it [00:14, 42.07it/s, failures=0, objective=-4.83]
+    620it [00:14, 42.07it/s, failures=0, objective=-4.83]
+    621it [00:14, 42.07it/s, failures=0, objective=-4.83]
+    622it [00:14, 42.07it/s, failures=0, objective=-4.83]
+    623it [00:14, 42.07it/s, failures=0, objective=-4.83]
+    624it [00:14, 42.07it/s, failures=0, objective=-4.83]
+    625it [00:14, 42.07it/s, failures=0, objective=-4.83]
+    626it [00:14, 44.83it/s, failures=0, objective=-4.83]
+    626it [00:14, 44.83it/s, failures=0, objective=-4.83]
+    627it [00:14, 44.83it/s, failures=0, objective=-4.83]
+    628it [00:14, 44.83it/s, failures=0, objective=-4.83]
+    629it [00:14, 44.83it/s, failures=0, objective=-4.83]
+    630it [00:14, 44.83it/s, failures=0, objective=-4.83]
+    631it [00:14, 44.83it/s, failures=0, objective=-4.83]
+    632it [00:14, 44.83it/s, failures=0, objective=-4.83]
+    633it [00:14, 44.83it/s, failures=0, objective=-4.83]
+    634it [00:14, 44.83it/s, failures=0, objective=-4.83]
+    635it [00:14, 44.83it/s, failures=0, objective=-4.83]
+    636it [00:14, 44.83it/s, failures=0, objective=-4.83]
+    637it [00:14, 44.83it/s, failures=0, objective=-4.83]
+    638it [00:14, 44.83it/s, failures=0, objective=-4.83]
+    639it [00:15, 46.07it/s, failures=0, objective=-4.83]
+    639it [00:15, 46.07it/s, failures=0, objective=-4.83]
+    640it [00:15, 46.07it/s, failures=0, objective=-4.83]
+    641it [00:15, 46.07it/s, failures=0, objective=-4.83]
+    642it [00:15, 46.07it/s, failures=0, objective=-4.83]
+    643it [00:15, 46.07it/s, failures=0, objective=-4.83]
+    644it [00:15, 38.62it/s, failures=0, objective=-4.83]
+    644it [00:15, 38.62it/s, failures=0, objective=-4.83]
+    645it [00:15, 38.62it/s, failures=0, objective=-4.83]
+    646it [00:15, 38.62it/s, failures=0, objective=-4.83]
+    647it [00:15, 38.62it/s, failures=0, objective=-4.83]
+    648it [00:15, 38.62it/s, failures=0, objective=-4.83]
+    649it [00:15, 38.62it/s, failures=0, objective=-4.83]
+    650it [00:15, 38.62it/s, failures=0, objective=-4.83]
+    651it [00:15, 38.62it/s, failures=0, objective=-4.83]
+    652it [00:15, 38.62it/s, failures=0, objective=-4.83]
+    653it [00:15, 36.29it/s, failures=0, objective=-4.83]
+    653it [00:15, 36.29it/s, failures=0, objective=-4.83]
+    654it [00:15, 36.29it/s, failures=0, objective=-4.83]
+    655it [00:15, 36.29it/s, failures=0, objective=-4.83]
+    656it [00:15, 36.29it/s, failures=0, objective=-4.83]
+    657it [00:15, 36.29it/s, failures=0, objective=-4.83]
+    658it [00:15, 36.29it/s, failures=0, objective=-4.83]
+    659it [00:15, 36.29it/s, failures=0, objective=-4.83]
+    660it [00:15, 36.29it/s, failures=0, objective=-4.83]
+    661it [00:15, 36.29it/s, failures=0, objective=-4.83]
+    662it [00:15, 36.29it/s, failures=0, objective=-4.83]
+    663it [00:15, 36.29it/s, failures=0, objective=-4.83]
+    664it [00:15, 36.29it/s, failures=0, objective=-4.83]
+    665it [00:15, 36.29it/s, failures=0, objective=-4.83]
+    666it [00:15, 36.29it/s, failures=0, objective=-4.83]
+    667it [00:15, 36.29it/s, failures=0, objective=-4.83]
+    668it [00:15, 42.90it/s, failures=0, objective=-4.83]
+    668it [00:15, 42.90it/s, failures=0, objective=-4.83]
+    669it [00:15, 42.90it/s, failures=0, objective=-4.83]
+    670it [00:15, 42.90it/s, failures=0, objective=-4.83]
+    671it [00:15, 42.90it/s, failures=0, objective=-4.83]
+    672it [00:15, 42.90it/s, failures=0, objective=-4.83]
+    673it [00:15, 42.90it/s, failures=0, objective=-4.83]
+    674it [00:15, 42.90it/s, failures=0, objective=-4.83]
+    675it [00:15, 42.90it/s, failures=0, objective=-4.83]
+    676it [00:15, 42.90it/s, failures=0, objective=-4.83]
+    677it [00:15, 42.90it/s, failures=0, objective=-4.83]
+    678it [00:16, 37.08it/s, failures=0, objective=-4.83]
+    678it [00:16, 37.08it/s, failures=0, objective=-4.83]
+    679it [00:16, 37.08it/s, failures=0, objective=-4.83]
+    680it [00:16, 37.08it/s, failures=0, objective=-4.83]
+    681it [00:16, 37.08it/s, failures=0, objective=-4.83]
+    682it [00:16, 37.08it/s, failures=0, objective=-4.83]
+    683it [00:16, 37.08it/s, failures=0, objective=-4.83]
+    684it [00:16, 37.08it/s, failures=0, objective=-4.83]
+    685it [00:16, 37.08it/s, failures=0, objective=-4.83]
+    686it [00:16, 37.08it/s, failures=0, objective=-4.83]
+    687it [00:16, 37.08it/s, failures=0, objective=-4.83]
+    688it [00:16, 37.08it/s, failures=0, objective=-4.83]
+    689it [00:16, 37.08it/s, failures=0, objective=-4.83]
+    690it [00:16, 37.08it/s, failures=0, objective=-4.83]
+    691it [00:16, 37.08it/s, failures=0, objective=-4.83]
+    692it [00:16, 37.08it/s, failures=0, objective=-4.83]
+    693it [00:16, 37.08it/s, failures=0, objective=-4.83]
+    694it [00:16, 37.08it/s, failures=0, objective=-4.83]
+    695it [00:16, 37.08it/s, failures=0, objective=-4.83]
+    696it [00:16, 37.08it/s, failures=0, objective=-4.83]
+    697it [00:16, 46.44it/s, failures=0, objective=-4.83]
+    697it [00:16, 46.44it/s, failures=0, objective=-4.83]
+    698it [00:16, 46.44it/s, failures=0, objective=-4.83]
+    699it [00:16, 46.44it/s, failures=0, objective=-4.83]
+    700it [00:16, 46.44it/s, failures=0, objective=-4.83]
+    701it [00:16, 46.44it/s, failures=0, objective=-4.83]
+    702it [00:16, 46.44it/s, failures=0, objective=-4.83]
+    703it [00:16, 46.44it/s, failures=0, objective=-4.83]
+    704it [00:16, 46.44it/s, failures=0, objective=-4.83]
+    705it [00:16, 46.44it/s, failures=0, objective=-4.83]
+    706it [00:16, 38.47it/s, failures=0, objective=-4.83]
+    706it [00:16, 38.47it/s, failures=0, objective=-4.83]
+    707it [00:16, 38.47it/s, failures=0, objective=-4.83]
+    708it [00:16, 38.47it/s, failures=0, objective=-4.83]
+    709it [00:16, 38.47it/s, failures=0, objective=-4.83]
+    710it [00:16, 38.47it/s, failures=0, objective=-4.83]
+    711it [00:16, 38.47it/s, failures=0, objective=-4.83]
+    712it [00:16, 38.47it/s, failures=0, objective=-4.83]
+    713it [00:16, 38.47it/s, failures=0, objective=-4.83]
+    714it [00:16, 38.47it/s, failures=0, objective=-4.83]
+    715it [00:16, 38.47it/s, failures=0, objective=-4.83]
+    716it [00:16, 38.47it/s, failures=0, objective=-4.83]
+    717it [00:17, 36.58it/s, failures=0, objective=-4.83]
+    717it [00:17, 36.58it/s, failures=0, objective=-4.83]
+    718it [00:17, 36.58it/s, failures=0, objective=-4.83]
+    719it [00:17, 36.58it/s, failures=0, objective=-4.83]
+    720it [00:17, 36.58it/s, failures=0, objective=-4.83]
+    721it [00:17, 36.58it/s, failures=0, objective=-4.83]
+    722it [00:17, 36.58it/s, failures=0, objective=-4.83]
+    723it [00:17, 36.58it/s, failures=0, objective=-4.83]
+    724it [00:17, 36.58it/s, failures=0, objective=-4.83]
+    725it [00:17, 36.58it/s, failures=0, objective=-4.83]
+    726it [00:17, 36.58it/s, failures=0, objective=-4.83]
+    727it [00:17, 36.58it/s, failures=0, objective=-4.83]
+    728it [00:17, 37.75it/s, failures=0, objective=-4.83]
+    728it [00:17, 37.75it/s, failures=0, objective=-4.83]
+    729it [00:17, 37.75it/s, failures=0, objective=-4.83]
+    730it [00:17, 37.75it/s, failures=0, objective=-4.83]
+    731it [00:17, 37.75it/s, failures=0, objective=-4.83]
+    732it [00:17, 37.75it/s, failures=0, objective=-4.83]
+    733it [00:17, 37.75it/s, failures=0, objective=-4.83]
+    734it [00:17, 37.75it/s, failures=0, objective=-4.83]
+    735it [00:17, 37.75it/s, failures=0, objective=-4.83]
+    736it [00:17, 37.75it/s, failures=0, objective=-4.83]
+    737it [00:17, 37.75it/s, failures=0, objective=-4.83]
+    738it [00:17, 37.75it/s, failures=0, objective=-4.83]
+    739it [00:17, 37.75it/s, failures=0, objective=-4.83]
+    740it [00:17, 37.75it/s, failures=0, objective=-4.83]
+    741it [00:17, 37.75it/s, failures=0, objective=-4.83]
+    742it [00:17, 41.44it/s, failures=0, objective=-4.83]
+    742it [00:17, 41.44it/s, failures=0, objective=-4.83]
+    743it [00:17, 41.44it/s, failures=0, objective=-4.83]
+    744it [00:17, 41.44it/s, failures=0, objective=-4.83]
+    745it [00:17, 41.44it/s, failures=0, objective=-4.83]
+    746it [00:17, 41.44it/s, failures=0, objective=-4.83]
+    747it [00:17, 41.44it/s, failures=0, objective=-4.83]
+    748it [00:17, 41.44it/s, failures=0, objective=-4.83]
+    749it [00:17, 41.44it/s, failures=0, objective=-4.83]
+    750it [00:17, 41.44it/s, failures=0, objective=-4.83]
+    751it [00:17, 41.44it/s, failures=0, objective=-4.83]
+    752it [00:17, 41.44it/s, failures=0, objective=-4.83]
+    753it [00:17, 41.44it/s, failures=0, objective=-4.83]
+    754it [00:17, 41.44it/s, failures=0, objective=-4.83]
+    755it [00:17, 41.44it/s, failures=0, objective=-4.83]
+    756it [00:18, 43.03it/s, failures=0, objective=-4.83]
+    756it [00:18, 43.03it/s, failures=0, objective=-4.83]
+    757it [00:18, 43.03it/s, failures=0, objective=-4.83]
+    758it [00:18, 43.03it/s, failures=0, objective=-4.83]
+    759it [00:18, 43.03it/s, failures=0, objective=-4.83]
+    760it [00:18, 43.03it/s, failures=0, objective=-4.83]
+    761it [00:18, 43.03it/s, failures=0, objective=-4.83]
+    762it [00:18, 43.03it/s, failures=0, objective=-4.83]
+    763it [00:18, 43.03it/s, failures=0, objective=-4.83]
+    764it [00:18, 43.03it/s, failures=0, objective=-4.83]
+    765it [00:18, 42.87it/s, failures=0, objective=-4.83]
+    765it [00:18, 42.87it/s, failures=0, objective=-4.83]
+    766it [00:18, 42.87it/s, failures=0, objective=-4.83]
+    767it [00:18, 42.87it/s, failures=0, objective=-4.83]
+    768it [00:18, 42.87it/s, failures=0, objective=-4.83]
+    769it [00:18, 42.87it/s, failures=0, objective=-4.83]
+    770it [00:18, 42.87it/s, failures=0, objective=-4.83]
+    771it [00:18, 42.87it/s, failures=0, objective=-4.83]
+    772it [00:18, 42.87it/s, failures=0, objective=-4.83]
+    773it [00:18, 42.87it/s, failures=0, objective=-4.83]
+    774it [00:18, 42.87it/s, failures=0, objective=-4.83]
+    775it [00:18, 42.87it/s, failures=0, objective=-4.83]
+    776it [00:18, 42.87it/s, failures=0, objective=-4.83]
+    777it [00:18, 42.87it/s, failures=0, objective=-4.83]
+    778it [00:18, 43.58it/s, failures=0, objective=-4.83]
+    778it [00:18, 43.58it/s, failures=0, objective=-4.83]
+    779it [00:18, 43.58it/s, failures=0, objective=-4.83]
+    780it [00:18, 43.58it/s, failures=0, objective=-4.83]
+    781it [00:18, 43.58it/s, failures=0, objective=-4.83]
+    782it [00:18, 43.58it/s, failures=0, objective=-4.83]
+    783it [00:18, 43.58it/s, failures=0, objective=-4.83]
+    784it [00:18, 43.58it/s, failures=0, objective=-4.83]
+    785it [00:18, 43.58it/s, failures=0, objective=-4.83]
+    786it [00:18, 43.58it/s, failures=0, objective=-4.83]
+    787it [00:18, 43.58it/s, failures=0, objective=-4.83]
+    788it [00:18, 42.62it/s, failures=0, objective=-4.83]
+    788it [00:18, 42.62it/s, failures=0, objective=-4.83]
+    789it [00:18, 42.62it/s, failures=0, objective=-4.83]
+    790it [00:18, 42.62it/s, failures=0, objective=-4.83]
+    791it [00:18, 42.62it/s, failures=0, objective=-4.83]
+    792it [00:18, 42.62it/s, failures=0, objective=-4.83]
+    793it [00:18, 42.62it/s, failures=0, objective=-4.83]
+    794it [00:18, 42.62it/s, failures=0, objective=-3.9] 
+    795it [00:18, 42.62it/s, failures=0, objective=-3.9]
+    796it [00:18, 42.62it/s, failures=0, objective=-3.9]
+    797it [00:19, 39.67it/s, failures=0, objective=-3.9]
+    797it [00:19, 39.67it/s, failures=0, objective=-3.9]
+    798it [00:19, 39.67it/s, failures=0, objective=-3.9]
+    799it [00:19, 39.67it/s, failures=0, objective=-3.9]
+    800it [00:19, 39.67it/s, failures=0, objective=-3.9]
+    801it [00:19, 39.67it/s, failures=0, objective=-3.9]
+    802it [00:19, 39.67it/s, failures=0, objective=-3.9]
+    803it [00:19, 39.67it/s, failures=0, objective=-3.9]
+    804it [00:19, 39.67it/s, failures=0, objective=-3.9]
+    805it [00:19, 39.67it/s, failures=0, objective=-3.9]
+    806it [00:19, 39.67it/s, failures=0, objective=-3.9]
+    807it [00:19, 39.67it/s, failures=0, objective=-3.9]
+    808it [00:19, 39.67it/s, failures=0, objective=-3.9]
+    809it [00:19, 38.52it/s, failures=0, objective=-3.9]
+    809it [00:19, 38.52it/s, failures=0, objective=-3.9]
+    810it [00:19, 38.52it/s, failures=0, objective=-3.9]
+    811it [00:19, 38.52it/s, failures=0, objective=-3.9]
+    812it [00:19, 38.52it/s, failures=0, objective=-3.9]
+    813it [00:19, 38.52it/s, failures=0, objective=-3.9]
+    814it [00:19, 38.52it/s, failures=0, objective=-3.9]
+    815it [00:19, 38.52it/s, failures=0, objective=-3.9]
+    816it [00:19, 38.52it/s, failures=0, objective=-3.9]
+    817it [00:19, 38.52it/s, failures=0, objective=-3.9]
+    818it [00:19, 38.52it/s, failures=0, objective=-3.9]
+    819it [00:19, 38.52it/s, failures=0, objective=-3.9]
+    820it [00:19, 38.52it/s, failures=0, objective=-3.9]
+    821it [00:19, 38.52it/s, failures=0, objective=-3.9]
+    822it [00:19, 38.52it/s, failures=0, objective=-3.9]
+    823it [00:19, 38.52it/s, failures=0, objective=-3.9]
+    824it [00:19, 44.06it/s, failures=0, objective=-3.9]
+    824it [00:19, 44.06it/s, failures=0, objective=-3.9]
+    825it [00:19, 44.06it/s, failures=0, objective=-3.9]
+    826it [00:19, 44.06it/s, failures=0, objective=-3.9]
+    827it [00:19, 44.06it/s, failures=0, objective=-3.9]
+    828it [00:19, 44.06it/s, failures=0, objective=-3.9]
+    829it [00:19, 44.06it/s, failures=0, objective=-3.9]
+    830it [00:19, 44.06it/s, failures=0, objective=-3.9]
+    831it [00:19, 44.06it/s, failures=0, objective=-3.9]
+    832it [00:19, 44.06it/s, failures=0, objective=-3.9]
+    833it [00:19, 44.06it/s, failures=0, objective=-3.9]
+    834it [00:19, 44.06it/s, failures=0, objective=-3.9]
+    835it [00:19, 44.06it/s, failures=0, objective=-3.9]
+    836it [00:19, 44.06it/s, failures=0, objective=-3.9]
+    837it [00:19, 44.06it/s, failures=0, objective=-3.9]
+    838it [00:19, 44.06it/s, failures=0, objective=-3.9]
+    839it [00:20, 46.98it/s, failures=0, objective=-3.9]
+    839it [00:20, 46.98it/s, failures=0, objective=-3.9]
+    840it [00:20, 46.98it/s, failures=0, objective=-3.9]
+    841it [00:20, 46.98it/s, failures=0, objective=-3.9]
+    842it [00:20, 46.98it/s, failures=0, objective=-3.9]
+    843it [00:20, 46.98it/s, failures=0, objective=-3.9]
+    844it [00:20, 46.98it/s, failures=0, objective=-3.9]
+    845it [00:20, 46.98it/s, failures=0, objective=-3.9]
+    846it [00:20, 46.98it/s, failures=0, objective=-3.9]
+    847it [00:20, 41.52it/s, failures=0, objective=-3.9]
+    847it [00:20, 41.52it/s, failures=0, objective=-3.9]
+    848it [00:20, 41.52it/s, failures=0, objective=-3.9]
+    849it [00:20, 41.52it/s, failures=0, objective=-3.9]
+    850it [00:20, 41.52it/s, failures=0, objective=-3.9]
+    851it [00:20, 41.52it/s, failures=0, objective=-3.9]
+    852it [00:20, 41.52it/s, failures=0, objective=-3.9]
+    853it [00:20, 41.52it/s, failures=0, objective=-3.9]
+    854it [00:20, 41.52it/s, failures=0, objective=-3.9]
+    855it [00:20, 41.52it/s, failures=0, objective=-3.9]
+    856it [00:20, 41.52it/s, failures=0, objective=-3.9]
+    857it [00:20, 41.52it/s, failures=0, objective=-3.9]
+    858it [00:20, 41.08it/s, failures=0, objective=-3.9]
+    858it [00:20, 41.08it/s, failures=0, objective=-3.9]
+    859it [00:20, 41.08it/s, failures=0, objective=-3.9]
+    860it [00:20, 41.08it/s, failures=0, objective=-3.9]
+    861it [00:20, 41.08it/s, failures=0, objective=-3.9]
+    862it [00:20, 41.08it/s, failures=0, objective=-3.9]
+    863it [00:20, 41.08it/s, failures=0, objective=-3.9]
+    864it [00:20, 41.08it/s, failures=0, objective=-3.9]
+    865it [00:20, 41.08it/s, failures=0, objective=-3.9]
+    866it [00:20, 41.08it/s, failures=0, objective=-3.9]
+    867it [00:20, 41.08it/s, failures=0, objective=-3.9]
+    868it [00:20, 40.75it/s, failures=0, objective=-3.9]
+    868it [00:20, 40.75it/s, failures=0, objective=-3.9]
+    869it [00:20, 40.75it/s, failures=0, objective=-3.9]
+    870it [00:20, 40.75it/s, failures=0, objective=-3.9]
+    871it [00:20, 40.75it/s, failures=0, objective=-3.9]
+    872it [00:20, 40.75it/s, failures=0, objective=-3.9]
+    873it [00:20, 40.75it/s, failures=0, objective=-3.9]
+    874it [00:20, 40.75it/s, failures=0, objective=-3.9]
+    875it [00:20, 40.75it/s, failures=0, objective=-3.9]
+    876it [00:20, 40.75it/s, failures=0, objective=-3.9]
+    877it [00:21, 36.18it/s, failures=0, objective=-3.9]
+    877it [00:21, 36.18it/s, failures=0, objective=-3.9]
+    878it [00:21, 36.18it/s, failures=0, objective=-3.9]
+    879it [00:21, 36.18it/s, failures=0, objective=-3.9]
+    880it [00:21, 36.18it/s, failures=0, objective=-3.9]
+    881it [00:21, 36.18it/s, failures=0, objective=-3.9]
+    882it [00:21, 36.18it/s, failures=0, objective=-3.9]
+    883it [00:21, 36.18it/s, failures=0, objective=-3.9]
+    884it [00:21, 36.18it/s, failures=0, objective=-3.9]
+    885it [00:21, 36.18it/s, failures=0, objective=-3.67]
+    886it [00:21, 36.18it/s, failures=0, objective=-3.67]
+    887it [00:21, 36.18it/s, failures=0, objective=-3.67]
+    888it [00:21, 36.18it/s, failures=0, objective=-3.67]
+    889it [00:21, 36.18it/s, failures=0, objective=-3.67]
+    890it [00:21, 36.18it/s, failures=0, objective=-3.67]
+    891it [00:21, 36.18it/s, failures=0, objective=-3.67]
+    892it [00:21, 36.18it/s, failures=0, objective=-3.67]
+    893it [00:21, 36.18it/s, failures=0, objective=-3.67]
+    894it [00:21, 40.04it/s, failures=0, objective=-3.67]
+    894it [00:21, 40.04it/s, failures=0, objective=-3.67]
+    895it [00:21, 40.04it/s, failures=0, objective=-3.67]
+    896it [00:21, 40.04it/s, failures=0, objective=-3.67]
+    897it [00:21, 40.04it/s, failures=0, objective=-3.67]
+    898it [00:21, 40.04it/s, failures=0, objective=-3.67]
+    899it [00:21, 40.04it/s, failures=0, objective=-3.67]
+    900it [00:21, 40.04it/s, failures=0, objective=-3.67]
+    901it [00:21, 40.04it/s, failures=0, objective=-3.67]
+    902it [00:21, 40.04it/s, failures=0, objective=-3.67]
+    903it [00:21, 40.04it/s, failures=0, objective=-3.67]
+    904it [00:21, 40.04it/s, failures=0, objective=-3.67]
+    905it [00:21, 40.04it/s, failures=0, objective=-3.67]
+    906it [00:21, 40.04it/s, failures=0, objective=-3.67]
+    907it [00:21, 40.04it/s, failures=0, objective=-3.67]
+    908it [00:21, 41.32it/s, failures=0, objective=-3.67]
+    908it [00:21, 41.32it/s, failures=0, objective=-3.67]
+    909it [00:21, 41.32it/s, failures=0, objective=-3.67]
+    910it [00:21, 41.32it/s, failures=0, objective=-3.67]
+    911it [00:21, 41.32it/s, failures=0, objective=-3.67]
+    912it [00:21, 41.32it/s, failures=0, objective=-3.67]
+    913it [00:21, 41.32it/s, failures=0, objective=-3.67]
+    914it [00:21, 41.32it/s, failures=0, objective=-3.67]
+    915it [00:21, 41.32it/s, failures=0, objective=-3.67]
+    916it [00:21, 41.32it/s, failures=0, objective=-3.67]
+    917it [00:21, 41.32it/s, failures=0, objective=-3.67]
+    918it [00:21, 41.32it/s, failures=0, objective=-3.67]
+    919it [00:21, 41.32it/s, failures=0, objective=-3.67]
+    920it [00:21, 41.32it/s, failures=0, objective=-3.67]
+    921it [00:21, 41.32it/s, failures=0, objective=-3.67]
+    922it [00:21, 41.32it/s, failures=0, objective=-3.67]
+    923it [00:21, 41.32it/s, failures=0, objective=-3.67]
+    924it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    924it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    925it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    926it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    927it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    928it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    929it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    930it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    931it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    932it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    933it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    934it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    935it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    936it [00:22, 41.62it/s, failures=0, objective=-3.67]
+    936it [00:22, 41.62it/s, failures=0, objective=-3.67]
+    937it [00:22, 41.62it/s, failures=0, objective=-3.67]
+    938it [00:22, 41.62it/s, failures=0, objective=-3.67]
+    939it [00:22, 41.62it/s, failures=0, objective=-3.67]
+    940it [00:22, 41.62it/s, failures=0, objective=-3.67]
+    941it [00:22, 41.62it/s, failures=0, objective=-3.67]
+    942it [00:22, 41.62it/s, failures=0, objective=-3.67]
+    943it [00:22, 41.62it/s, failures=0, objective=-3.67]
+    944it [00:22, 41.62it/s, failures=0, objective=-3.67]
+    945it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    945it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    946it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    947it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    948it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    949it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    950it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    951it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    952it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    953it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    954it [00:22, 40.81it/s, failures=0, objective=-3.67]
+    955it [00:23, 40.13it/s, failures=0, objective=-3.67]
+    955it [00:23, 40.13it/s, failures=0, objective=-3.67]
+    956it [00:23, 40.13it/s, failures=0, objective=-3.67]
+    957it [00:23, 40.13it/s, failures=0, objective=-3.67]
+    958it [00:23, 40.13it/s, failures=0, objective=-3.67]
+    959it [00:23, 40.13it/s, failures=0, objective=-3.67]
+    960it [00:23, 40.13it/s, failures=0, objective=-3.67]
+    961it [00:23, 40.13it/s, failures=0, objective=-3.67]
+    962it [00:23, 40.13it/s, failures=0, objective=-3.67]
+    963it [00:23, 40.13it/s, failures=0, objective=-3.67]
+    964it [00:23, 40.13it/s, failures=0, objective=-3.67]
+    965it [00:23, 40.13it/s, failures=0, objective=-3.67]
+    966it [00:23, 40.13it/s, failures=0, objective=-3.67]
+    967it [00:23, 40.13it/s, failures=0, objective=-3.67]
+    968it [00:23, 44.11it/s, failures=0, objective=-3.67]
+    968it [00:23, 44.11it/s, failures=0, objective=-3.67]
+    969it [00:23, 44.11it/s, failures=0, objective=-3.67]
+    970it [00:23, 44.11it/s, failures=0, objective=-3.67]
+    971it [00:23, 44.11it/s, failures=0, objective=-3.67]
+    972it [00:23, 44.11it/s, failures=0, objective=-3.67]
+    973it [00:23, 44.11it/s, failures=0, objective=-3.67]
+    974it [00:23, 44.11it/s, failures=0, objective=-3.67]
+    975it [00:23, 44.11it/s, failures=0, objective=-3.67]
+    976it [00:23, 44.11it/s, failures=0, objective=-3.67]
+    977it [00:23, 34.27it/s, failures=0, objective=-3.67]
+    977it [00:23, 34.27it/s, failures=0, objective=-3.67]
+    978it [00:23, 34.27it/s, failures=0, objective=-3.67]
+    979it [00:23, 34.27it/s, failures=0, objective=-3.67]
+    980it [00:23, 34.27it/s, failures=0, objective=-3.67]
+    981it [00:23, 34.27it/s, failures=0, objective=-3.67]
+    982it [00:23, 34.27it/s, failures=0, objective=-3.67]
+    983it [00:23, 34.27it/s, failures=0, objective=-3.67]
+    984it [00:23, 34.27it/s, failures=0, objective=-3.67]
+    985it [00:23, 34.27it/s, failures=0, objective=-3.67]
+    986it [00:23, 34.27it/s, failures=0, objective=-3.67]
+    987it [00:23, 34.27it/s, failures=0, objective=-3.67]
+    988it [00:23, 34.27it/s, failures=0, objective=-3.67]
+    989it [00:23, 34.27it/s, failures=0, objective=-3.67]
+    990it [00:23, 34.27it/s, failures=0, objective=-3.67]
+    991it [00:23, 38.11it/s, failures=0, objective=-3.67]
+    991it [00:23, 38.11it/s, failures=0, objective=-3.67]
+    992it [00:23, 38.11it/s, failures=0, objective=-3.67]
+    993it [00:23, 38.11it/s, failures=0, objective=-3.67]
+    994it [00:23, 38.11it/s, failures=0, objective=-3.67]
+    995it [00:23, 38.11it/s, failures=0, objective=-3.67]
+    996it [00:23, 38.11it/s, failures=0, objective=-3.67]
+    997it [00:23, 38.11it/s, failures=0, objective=-3.67]
+    998it [00:23, 38.11it/s, failures=0, objective=-3.67]
+    999it [00:23, 38.11it/s, failures=0, objective=-3.67]
+    1000it [00:23, 38.11it/s, failures=0, objective=-3.67]
+    1001it [00:23, 38.11it/s, failures=0, objective=-3.67]
+    1002it [00:23, 38.11it/s, failures=0, objective=-3.67]
+    1003it [00:23, 38.11it/s, failures=0, objective=-3.67]
+    1004it [00:23, 38.11it/s, failures=0, objective=-3.67]
+    1005it [00:23, 38.11it/s, failures=0, objective=-3.67]
+    1006it [00:24, 39.06it/s, failures=0, objective=-3.67]
+    1006it [00:24, 39.06it/s, failures=0, objective=-3.67]
+    1007it [00:24, 39.06it/s, failures=0, objective=-3.67]
+    1008it [00:24, 39.06it/s, failures=0, objective=-3.67]
+    1009it [00:24, 39.06it/s, failures=0, objective=-3.67]
+    1010it [00:24, 39.06it/s, failures=0, objective=-3.67]
+    1011it [00:24, 39.06it/s, failures=0, objective=-3.67]
+    1012it [00:24, 39.06it/s, failures=0, objective=-3.67]
+    1013it [00:24, 39.06it/s, failures=0, objective=-3.67]
+    1014it [00:24, 39.06it/s, failures=0, objective=-3.67]
+    1015it [00:24, 39.06it/s, failures=0, objective=-3.67]
+    1016it [00:24, 39.06it/s, failures=0, objective=-3.67]
+    1017it [00:24, 39.06it/s, failures=0, objective=-3.59]
+    1018it [00:24, 39.06it/s, failures=0, objective=-3.59]
+    1019it [00:24, 39.06it/s, failures=0, objective=-3.59]
+    1020it [00:24, 39.06it/s, failures=0, objective=-3.59]
+    1021it [00:24, 39.06it/s, failures=0, objective=-3.59]
+    1022it [00:24, 43.23it/s, failures=0, objective=-3.59]
+    1022it [00:24, 43.23it/s, failures=0, objective=-3.59]
+    1023it [00:24, 43.23it/s, failures=0, objective=-3.59]
+    1024it [00:24, 43.23it/s, failures=0, objective=-3.59]
+    1025it [00:24, 43.23it/s, failures=0, objective=-3.59]
+    1026it [00:24, 43.23it/s, failures=0, objective=-3.59]
+    1027it [00:24, 43.23it/s, failures=0, objective=-3.59]
+    1028it [00:24, 43.23it/s, failures=0, objective=-3.59]
+    1029it [00:24, 43.23it/s, failures=0, objective=-3.59]
+    1030it [00:24, 43.23it/s, failures=0, objective=-3.59]
+    1031it [00:24, 43.23it/s, failures=0, objective=-3.59]
+    1032it [00:24, 43.23it/s, failures=0, objective=-3.59]
+    1033it [00:24, 41.47it/s, failures=0, objective=-3.59]
+    1033it [00:24, 41.47it/s, failures=0, objective=-3.59]
+    1034it [00:24, 41.47it/s, failures=0, objective=-3.59]
+    1035it [00:24, 41.47it/s, failures=0, objective=-3.59]
+    1036it [00:24, 41.47it/s, failures=0, objective=-3.59]
+    1037it [00:24, 41.47it/s, failures=0, objective=-3.59]
+    1038it [00:24, 41.47it/s, failures=0, objective=-3.59]
+    1039it [00:24, 41.47it/s, failures=0, objective=-3.59]
+    1040it [00:24, 41.47it/s, failures=0, objective=-3.59]
+    1041it [00:24, 41.47it/s, failures=0, objective=-3.59]
+    1042it [00:24, 41.47it/s, failures=0, objective=-3.57]
+    1043it [00:24, 41.47it/s, failures=0, objective=-3.57]
+    1044it [00:24, 41.47it/s, failures=0, objective=-3.57]
+    1045it [00:24, 41.47it/s, failures=0, objective=-3.57]
+    1046it [00:25, 40.48it/s, failures=0, objective=-3.57]
+    1046it [00:25, 40.48it/s, failures=0, objective=-3.57]
+    1047it [00:25, 40.48it/s, failures=0, objective=-3.57]
+    1048it [00:25, 40.48it/s, failures=0, objective=-3.57]
+    1049it [00:25, 40.48it/s, failures=0, objective=-3.57]
+    1050it [00:25, 40.48it/s, failures=0, objective=-3.57]
+    1051it [00:25, 40.48it/s, failures=0, objective=-3.57]
+    1052it [00:25, 40.48it/s, failures=0, objective=-3.57]
+    1053it [00:25, 40.48it/s, failures=0, objective=-3.57]
+    1054it [00:25, 40.48it/s, failures=0, objective=-3.57]
+    1055it [00:25, 40.48it/s, failures=0, objective=-3.57]
+    1056it [00:25, 40.48it/s, failures=0, objective=-3.57]
+    1057it [00:25, 39.69it/s, failures=0, objective=-3.57]
+    1057it [00:25, 39.69it/s, failures=0, objective=-3.57]
+    1058it [00:25, 39.69it/s, failures=0, objective=-3.57]
+    1059it [00:25, 39.69it/s, failures=0, objective=-3.57]
+    1060it [00:25, 39.69it/s, failures=0, objective=-3.57]
+    1061it [00:25, 39.69it/s, failures=0, objective=-3.57]
+    1062it [00:25, 39.69it/s, failures=0, objective=-3.57]
+    1063it [00:25, 39.69it/s, failures=0, objective=-3.57]
+    1064it [00:25, 39.69it/s, failures=0, objective=-3.57]
+    1065it [00:25, 39.69it/s, failures=0, objective=-3.57]
+    1066it [00:25, 39.69it/s, failures=0, objective=-3.57]
+    1067it [00:25, 39.69it/s, failures=0, objective=-3.57]
+    1068it [00:25, 37.66it/s, failures=0, objective=-3.57]
+    1068it [00:25, 37.66it/s, failures=0, objective=-3.57]
+    1069it [00:25, 37.66it/s, failures=0, objective=-3.57]
+    1070it [00:25, 37.66it/s, failures=0, objective=-3.57]
+    1071it [00:25, 37.66it/s, failures=0, objective=-3.57]
+    1072it [00:25, 37.66it/s, failures=0, objective=-3.57]
+    1073it [00:25, 37.66it/s, failures=0, objective=-3.57]
+    1074it [00:25, 37.66it/s, failures=0, objective=-3.57]
+    1075it [00:25, 37.66it/s, failures=0, objective=-3.57]
+    1076it [00:25, 37.66it/s, failures=0, objective=-3.57]
+    1077it [00:25, 37.66it/s, failures=0, objective=-3.57]
+    1078it [00:25, 37.66it/s, failures=0, objective=-3.57]
+    1079it [00:26, 37.04it/s, failures=0, objective=-3.57]
+    1079it [00:26, 37.04it/s, failures=0, objective=-3.57]
+    1080it [00:26, 37.04it/s, failures=0, objective=-3.57]
+    1081it [00:26, 37.04it/s, failures=0, objective=-3.57]
+    1082it [00:26, 37.04it/s, failures=0, objective=-3.57]
+    1083it [00:26, 37.04it/s, failures=0, objective=-3.57]
+    1084it [00:26, 37.04it/s, failures=0, objective=-3.57]
+    1085it [00:26, 37.04it/s, failures=0, objective=-3.57]
+    1086it [00:26, 37.04it/s, failures=0, objective=-3.57]
+    1087it [00:26, 37.04it/s, failures=0, objective=-3.57]
+    1088it [00:26, 37.04it/s, failures=0, objective=-3.57]
+    1089it [00:26, 37.04it/s, failures=0, objective=-3.57]
+    1090it [00:26, 37.04it/s, failures=0, objective=-3.57]
+    1091it [00:26, 37.04it/s, failures=0, objective=-3.57]
+    1092it [00:26, 37.04it/s, failures=0, objective=-3.57]
+    1093it [00:26, 37.04it/s, failures=0, objective=-3.57]
+    1094it [00:26, 37.04it/s, failures=0, objective=-3.57]
+    1095it [00:26, 37.04it/s, failures=0, objective=-3.15]
+    1096it [00:26, 37.04it/s, failures=0, objective=-3.15]
+    1097it [00:26, 38.43it/s, failures=0, objective=-3.15]
+    1097it [00:26, 38.43it/s, failures=0, objective=-3.15]
+    1098it [00:26, 38.43it/s, failures=0, objective=-3.15]
+    1099it [00:26, 38.43it/s, failures=0, objective=-3.15]
+    1100it [00:26, 38.43it/s, failures=0, objective=-3.15]
+    1101it [00:26, 38.43it/s, failures=0, objective=-3.15]
+    1102it [00:26, 38.43it/s, failures=0, objective=-3.15]
+    1103it [00:26, 38.43it/s, failures=0, objective=-3.15]
+    1104it [00:26, 38.43it/s, failures=0, objective=-3.15]
+    1105it [00:26, 38.43it/s, failures=0, objective=-3.15]
+    1106it [00:26, 38.43it/s, failures=0, objective=-3.15]
+    1107it [00:26, 38.43it/s, failures=0, objective=-3.15]
+    1108it [00:26, 38.43it/s, failures=0, objective=-3.15]
+    1109it [00:26, 38.43it/s, failures=0, objective=-3.15]
+    1110it [00:26, 38.43it/s, failures=0, objective=-3.15]
+    1111it [00:26, 38.43it/s, failures=0, objective=-3.15]
+    1112it [00:26, 38.43it/s, failures=0, objective=-3.15]
+    1113it [00:26, 38.43it/s, failures=0, objective=-3.15]
+    1114it [00:26, 38.43it/s, failures=0, objective=-3.15]
+    1115it [00:26, 38.43it/s, failures=0, objective=-3.15]
+    1116it [00:26, 38.43it/s, failures=0, objective=-3.15]
+    1117it [00:26, 38.43it/s, failures=0, objective=-3.15]
+    1118it [00:26, 38.43it/s, failures=0, objective=-3.15]
+    1119it [00:26, 47.18it/s, failures=0, objective=-3.15]
+    1119it [00:26, 47.18it/s, failures=0, objective=-3.15]
+    1120it [00:26, 47.18it/s, failures=0, objective=-3.15]
+    1121it [00:26, 47.18it/s, failures=0, objective=-2.85]
+    1122it [00:26, 47.18it/s, failures=0, objective=-2.85]
+    1123it [00:26, 47.18it/s, failures=0, objective=-2.85]
+    1124it [00:26, 47.18it/s, failures=0, objective=-2.85]
+    1125it [00:26, 47.18it/s, failures=0, objective=-2.85]
+    1126it [00:26, 47.18it/s, failures=0, objective=-2.85]
+    1127it [00:26, 47.18it/s, failures=0, objective=-2.85]
+    1128it [00:26, 47.18it/s, failures=0, objective=-2.85]
+    1129it [00:26, 47.18it/s, failures=0, objective=-2.85]
+    1130it [00:26, 47.18it/s, failures=0, objective=-2.85]
+    1131it [00:26, 47.18it/s, failures=0, objective=-2.85]
+    1132it [00:26, 47.18it/s, failures=0, objective=-2.85]
+    1133it [00:26, 47.18it/s, failures=0, objective=-2.85]
+    1134it [00:26, 47.18it/s, failures=0, objective=-2.85]
+    1135it [00:26, 47.18it/s, failures=0, objective=-2.85]
+    1136it [00:26, 47.18it/s, failures=0, objective=-2.85]
+    1137it [00:26, 47.18it/s, failures=0, objective=-2.85]
+    1138it [00:27, 49.05it/s, failures=0, objective=-2.85]
+    1138it [00:27, 49.05it/s, failures=0, objective=-2.85]
+    1139it [00:27, 49.05it/s, failures=0, objective=-2.85]
+    1140it [00:27, 49.05it/s, failures=0, objective=-2.85]
+    1141it [00:27, 49.05it/s, failures=0, objective=-2.85]
+    1142it [00:27, 49.05it/s, failures=0, objective=-2.85]
+    1143it [00:27, 49.05it/s, failures=0, objective=-2.85]
+    1144it [00:27, 49.05it/s, failures=0, objective=-2.85]
+    1145it [00:27, 49.05it/s, failures=0, objective=-2.85]
+    1146it [00:27, 49.05it/s, failures=0, objective=-2.85]
+    1147it [00:27, 49.05it/s, failures=0, objective=-2.85]
+    1148it [00:27, 44.43it/s, failures=0, objective=-2.85]
+    1148it [00:27, 44.43it/s, failures=0, objective=-2.85]
+    1149it [00:27, 44.43it/s, failures=0, objective=-2.85]
+    1150it [00:27, 44.43it/s, failures=0, objective=-2.85]
+    1151it [00:27, 44.43it/s, failures=0, objective=-2.85]
+    1152it [00:27, 44.43it/s, failures=0, objective=-2.85]
+    1153it [00:27, 44.43it/s, failures=0, objective=-2.85]
+    1154it [00:27, 44.43it/s, failures=0, objective=-2.85]
+    1155it [00:27, 44.43it/s, failures=0, objective=-2.85]
+    1156it [00:27, 44.43it/s, failures=0, objective=-2.85]
+    1157it [00:27, 42.19it/s, failures=0, objective=-2.85]
+    1157it [00:27, 42.19it/s, failures=0, objective=-2.85]
+    1158it [00:27, 42.19it/s, failures=0, objective=-2.85]
+    1159it [00:27, 42.19it/s, failures=0, objective=-2.85]
+    1160it [00:27, 42.19it/s, failures=0, objective=-2.85]
+    1161it [00:27, 42.19it/s, failures=0, objective=-2.85]
+    1162it [00:27, 42.19it/s, failures=0, objective=-2.85]
+    1163it [00:27, 42.19it/s, failures=0, objective=-2.85]
+    1164it [00:27, 42.19it/s, failures=0, objective=-2.85]
+    1165it [00:27, 42.19it/s, failures=0, objective=-2.85]
+    1166it [00:28, 38.76it/s, failures=0, objective=-2.85]
+    1166it [00:28, 38.76it/s, failures=0, objective=-2.85]
+    1167it [00:28, 38.76it/s, failures=0, objective=-2.85]
+    1168it [00:28, 38.76it/s, failures=0, objective=-2.85]
+    1169it [00:28, 38.76it/s, failures=0, objective=-2.85]
+    1170it [00:28, 38.76it/s, failures=0, objective=-2.85]
+    1171it [00:28, 38.76it/s, failures=0, objective=-2.85]
+    1172it [00:28, 33.34it/s, failures=0, objective=-2.85]
+    1172it [00:28, 33.34it/s, failures=0, objective=-2.85]
+    1173it [00:28, 33.34it/s, failures=0, objective=-2.85]
+    1174it [00:28, 33.34it/s, failures=0, objective=-2.85]
+    1175it [00:28, 33.34it/s, failures=0, objective=-2.85]
+    1176it [00:28, 33.34it/s, failures=0, objective=-2.85]
+    1177it [00:28, 33.34it/s, failures=0, objective=-2.85]
+    1178it [00:28, 33.34it/s, failures=0, objective=-2.85]
+    1179it [00:28, 33.34it/s, failures=0, objective=-2.85]
+    1180it [00:28, 33.34it/s, failures=0, objective=-2.85]
+    1181it [00:28, 33.34it/s, failures=0, objective=-2.85]
+    1182it [00:28, 33.34it/s, failures=0, objective=-2.85]
+    1183it [00:28, 34.33it/s, failures=0, objective=-2.85]
+    1183it [00:28, 34.33it/s, failures=0, objective=-2.85]
+    1184it [00:28, 34.33it/s, failures=0, objective=-2.85]
+    1185it [00:28, 34.33it/s, failures=0, objective=-2.85]
+    1186it [00:28, 34.33it/s, failures=0, objective=-2.85]
+    1187it [00:28, 34.33it/s, failures=0, objective=-2.85]
+    1188it [00:28, 34.33it/s, failures=0, objective=-2.85]
+    1189it [00:28, 34.33it/s, failures=0, objective=-2.85]
+    1190it [00:28, 34.33it/s, failures=0, objective=-2.85]
+    1191it [00:28, 34.33it/s, failures=0, objective=-2.85]
+    1192it [00:28, 34.33it/s, failures=0, objective=-2.85]
+    1193it [00:28, 34.33it/s, failures=0, objective=-2.85]
+    1194it [00:28, 34.33it/s, failures=0, objective=-2.85]
+    1195it [00:28, 34.33it/s, failures=0, objective=-2.85]
+    1196it [00:28, 34.33it/s, failures=0, objective=-2.85]
+    1197it [00:28, 34.33it/s, failures=0, objective=-2.85]
+    1198it [00:28, 34.33it/s, failures=0, objective=-2.85]
+    1199it [00:29, 38.56it/s, failures=0, objective=-2.85]
+    1199it [00:29, 38.56it/s, failures=0, objective=-2.85]
+    1200it [00:29, 38.56it/s, failures=0, objective=-2.85]
+    1201it [00:29, 38.56it/s, failures=0, objective=-2.85]
+    1202it [00:29, 38.56it/s, failures=0, objective=-2.85]
+    1203it [00:29, 38.56it/s, failures=0, objective=-2.85]
+    1204it [00:29, 38.56it/s, failures=0, objective=-2.85]
+    1205it [00:29, 38.56it/s, failures=0, objective=-2.85]
+    1206it [00:29, 38.56it/s, failures=0, objective=-2.85]
+    1207it [00:29, 38.56it/s, failures=0, objective=-2.85]
+    1208it [00:29, 38.56it/s, failures=0, objective=-2.85]
+    1209it [00:29, 38.56it/s, failures=0, objective=-2.85]
+    1210it [00:29, 38.56it/s, failures=0, objective=-2.85]
+    1211it [00:29, 38.56it/s, failures=0, objective=-2.85]
+    1212it [00:29, 38.56it/s, failures=0, objective=-2.85]
+    1213it [00:29, 38.56it/s, failures=0, objective=-2.85]
+    1214it [00:29, 38.56it/s, failures=0, objective=-2.85]
+    1215it [00:29, 38.56it/s, failures=0, objective=-2.85]
+    1216it [00:29, 38.56it/s, failures=0, objective=-2.85]
+    1217it [00:29, 45.88it/s, failures=0, objective=-2.85]
+    1217it [00:29, 45.88it/s, failures=0, objective=-2.68]
+    1218it [00:29, 45.88it/s, failures=0, objective=-2.68]
+    1219it [00:29, 45.88it/s, failures=0, objective=-2.68]
+    1220it [00:29, 45.88it/s, failures=0, objective=-2.68]
+    1221it [00:29, 45.88it/s, failures=0, objective=-2.68]
+    1222it [00:29, 45.88it/s, failures=0, objective=-2.68]
+    1223it [00:29, 45.88it/s, failures=0, objective=-2.68]
+    1224it [00:29, 45.88it/s, failures=0, objective=-2.68]
+    1225it [00:29, 45.88it/s, failures=0, objective=-2.68]
+    1226it [00:29, 45.88it/s, failures=0, objective=-2.68]
+    1227it [00:29, 45.88it/s, failures=0, objective=-2.68]
+    1228it [00:29, 43.31it/s, failures=0, objective=-2.68]
+    1228it [00:29, 43.31it/s, failures=0, objective=-2.68]
+    1229it [00:29, 43.31it/s, failures=0, objective=-2.68]
+    1230it [00:29, 43.31it/s, failures=0, objective=-2.68]
+    1231it [00:29, 43.31it/s, failures=0, objective=-2.68]
+    1232it [00:29, 43.31it/s, failures=0, objective=-2.68]
+    1233it [00:29, 43.31it/s, failures=0, objective=-2.68]
+    1234it [00:29, 43.31it/s, failures=0, objective=-2.68]
+    1235it [00:29, 43.31it/s, failures=0, objective=-2.68]
+    1236it [00:29, 43.31it/s, failures=0, objective=-2.68]
+    1237it [00:29, 43.31it/s, failures=0, objective=-2.68]
+    1238it [00:29, 43.31it/s, failures=0, objective=-2.68]
+    1239it [00:29, 43.31it/s, failures=0, objective=-2.68]
+    1240it [00:29, 43.31it/s, failures=0, objective=-2.68]
+    1241it [00:29, 43.31it/s, failures=0, objective=-2.68]
+    1242it [00:29, 43.31it/s, failures=0, objective=-2.68]
+    1243it [00:29, 47.16it/s, failures=0, objective=-2.68]
+    1243it [00:29, 47.16it/s, failures=0, objective=-2.68]
+    1244it [00:29, 47.16it/s, failures=0, objective=-2.68]
+    1245it [00:29, 47.16it/s, failures=0, objective=-2.68]
+    1246it [00:29, 47.16it/s, failures=0, objective=-2.68]
+    1247it [00:29, 47.16it/s, failures=0, objective=-2.68]
+    1248it [00:29, 47.16it/s, failures=0, objective=-2.68]
+    1249it [00:29, 47.16it/s, failures=0, objective=-2.68]
+    1250it [00:29, 47.16it/s, failures=0, objective=-2.68]
+    1251it [00:29, 47.16it/s, failures=0, objective=-2.68]
+    1252it [00:30, 41.73it/s, failures=0, objective=-2.68]
+    1252it [00:30, 41.73it/s, failures=0, objective=-2.68]
+    1253it [00:30, 41.73it/s, failures=0, objective=-2.68]
+    1254it [00:30, 41.73it/s, failures=0, objective=-2.68]
+    1255it [00:30, 41.73it/s, failures=0, objective=-2.68]
+    1256it [00:30, 41.73it/s, failures=0, objective=-2.68]
+    1257it [00:30, 41.73it/s, failures=0, objective=-2.68]
+    1258it [00:30, 41.73it/s, failures=0, objective=-2.68]
+    1259it [00:30, 41.73it/s, failures=0, objective=-2.68]
+    1260it [00:30, 41.73it/s, failures=0, objective=-2.68]
+    1261it [00:30, 41.73it/s, failures=0, objective=-2.68]
+    1262it [00:30, 41.73it/s, failures=0, objective=-2.68]
+    1263it [00:30, 41.73it/s, failures=0, objective=-2.68]
+    1264it [00:30, 41.73it/s, failures=0, objective=-2.68]
+    1265it [00:30, 43.00it/s, failures=0, objective=-2.68]
+    1265it [00:30, 43.00it/s, failures=0, objective=-2.68]
+    1266it [00:30, 43.00it/s, failures=0, objective=-2.68]
+    1267it [00:30, 43.00it/s, failures=0, objective=-2.68]
+    1268it [00:30, 43.00it/s, failures=0, objective=-2.68]
+    1269it [00:30, 43.00it/s, failures=0, objective=-2.68]
+    1270it [00:30, 43.00it/s, failures=0, objective=-2.68]
+    1271it [00:30, 34.61it/s, failures=0, objective=-2.68]
+    1271it [00:30, 34.61it/s, failures=0, objective=-2.68]
+    1272it [00:30, 34.61it/s, failures=0, objective=-2.68]
+    1273it [00:30, 34.61it/s, failures=0, objective=-2.68]
+    1274it [00:30, 34.61it/s, failures=0, objective=-2.68]
+    1275it [00:30, 34.61it/s, failures=0, objective=-2.68]
+    1276it [00:30, 34.61it/s, failures=0, objective=-2.68]
+    1277it [00:30, 34.61it/s, failures=0, objective=-2.68]
+    1278it [00:30, 34.61it/s, failures=0, objective=-2.68]
+    1279it [00:30, 34.61it/s, failures=0, objective=-2.68]
+    1280it [00:30, 34.61it/s, failures=0, objective=-2.68]
+    1281it [00:30, 34.61it/s, failures=0, objective=-2.68]
+    1282it [00:30, 34.61it/s, failures=0, objective=-2.68]
+    1283it [00:30, 34.61it/s, failures=0, objective=-2.68]
+    1284it [00:31, 35.98it/s, failures=0, objective=-2.68]
+    1284it [00:31, 35.98it/s, failures=0, objective=-2.68]
+    1285it [00:31, 35.98it/s, failures=0, objective=-2.68]
+    1286it [00:31, 35.98it/s, failures=0, objective=-2.68]
+    1287it [00:31, 35.98it/s, failures=0, objective=-2.68]
+    1288it [00:31, 35.98it/s, failures=0, objective=-2.68]
+    1289it [00:31, 35.98it/s, failures=0, objective=-2.68]
+    1290it [00:31, 35.98it/s, failures=0, objective=-2.68]
+    1291it [00:31, 35.98it/s, failures=0, objective=-2.68]
+    1292it [00:31, 35.98it/s, failures=0, objective=-2.68]
+    1293it [00:31, 35.98it/s, failures=0, objective=-2.68]
+    1294it [00:31, 35.98it/s, failures=0, objective=-2.68]
+    1295it [00:31, 35.98it/s, failures=0, objective=-2.68]
+    1296it [00:31, 35.98it/s, failures=0, objective=-2.68]
+    1297it [00:31, 36.71it/s, failures=0, objective=-2.68]
+    1297it [00:31, 36.71it/s, failures=0, objective=-2.68]
+    1298it [00:31, 36.71it/s, failures=0, objective=-2.68]
+    1299it [00:31, 36.71it/s, failures=0, objective=-2.68]
+    1300it [00:31, 36.71it/s, failures=0, objective=-2.68]
+    1301it [00:31, 36.71it/s, failures=0, objective=-2.68]
+    1302it [00:31, 36.71it/s, failures=0, objective=-2.68]
+    1303it [00:31, 36.71it/s, failures=0, objective=-2.68]
+    1304it [00:31, 36.71it/s, failures=0, objective=-2.68]
+    1305it [00:31, 36.71it/s, failures=0, objective=-2.68]
+    1306it [00:31, 36.71it/s, failures=0, objective=-2.68]
+    1307it [00:31, 36.71it/s, failures=0, objective=-2.68]
+    1308it [00:31, 36.71it/s, failures=0, objective=-2.68]
+    1309it [00:31, 36.71it/s, failures=0, objective=-2.68]
+    1310it [00:31, 36.71it/s, failures=0, objective=-2.68]
+    1311it [00:31, 36.71it/s, failures=0, objective=-2.68]
+    1312it [00:31, 36.71it/s, failures=0, objective=-2.68]
+    1313it [00:31, 36.71it/s, failures=0, objective=-2.68]
+    1314it [00:31, 36.71it/s, failures=0, objective=-2.68]
+    1315it [00:31, 41.82it/s, failures=0, objective=-2.68]
+    1315it [00:31, 41.82it/s, failures=0, objective=-2.68]
+    1316it [00:31, 41.82it/s, failures=0, objective=-2.68]
+    1317it [00:31, 41.82it/s, failures=0, objective=-2.5] 
+    1318it [00:31, 41.82it/s, failures=0, objective=-2.5]
+    1319it [00:31, 41.82it/s, failures=0, objective=-2.5]
+    1320it [00:31, 41.82it/s, failures=0, objective=-2.5]
+    1321it [00:31, 41.82it/s, failures=0, objective=-2.5]
+    1322it [00:31, 41.82it/s, failures=0, objective=-2.5]
+    1323it [00:31, 41.82it/s, failures=0, objective=-2.5]
+    1324it [00:31, 41.82it/s, failures=0, objective=-2.5]
+    1325it [00:31, 41.82it/s, failures=0, objective=-2.5]
+    1326it [00:31, 41.82it/s, failures=0, objective=-2.5]
+    1327it [00:31, 41.82it/s, failures=0, objective=-2.5]
+    1328it [00:31, 41.82it/s, failures=0, objective=-2.5]
+    1329it [00:31, 41.82it/s, failures=0, objective=-2.5]
+    1330it [00:31, 41.82it/s, failures=0, objective=-2.5]
+    1331it [00:31, 41.82it/s, failures=0, objective=-2.5]
+    1332it [00:31, 41.82it/s, failures=0, objective=-2.5]
+    1333it [00:31, 41.82it/s, failures=0, objective=-2.5]
+    1334it [00:31, 41.82it/s, failures=0, objective=-2.5]
+    1335it [00:32, 47.74it/s, failures=0, objective=-2.5]
+    1335it [00:32, 47.74it/s, failures=0, objective=-2.5]
+    1336it [00:32, 47.74it/s, failures=0, objective=-2.5]
+    1337it [00:32, 47.74it/s, failures=0, objective=-2.5]
+    1338it [00:32, 47.74it/s, failures=0, objective=-2.5]
+    1339it [00:32, 47.74it/s, failures=0, objective=-2.5]
+    1340it [00:32, 47.74it/s, failures=0, objective=-2.5]
+    1341it [00:32, 47.74it/s, failures=0, objective=-2.5]
+    1342it [00:32, 47.74it/s, failures=0, objective=-2.5]
+    1343it [00:32, 47.74it/s, failures=0, objective=-2.5]
+    1344it [00:32, 47.74it/s, failures=0, objective=-2.5]
+    1345it [00:32, 47.74it/s, failures=0, objective=-2.5]
+    1346it [00:32, 47.74it/s, failures=0, objective=-2.5]
+    1347it [00:32, 45.58it/s, failures=0, objective=-2.5]
+    1347it [00:32, 45.58it/s, failures=0, objective=-2.5]
+    1348it [00:32, 45.58it/s, failures=0, objective=-2.5]
+    1349it [00:32, 45.58it/s, failures=0, objective=-2.5]
+    1350it [00:32, 45.58it/s, failures=0, objective=-2.5]
+    1351it [00:32, 45.58it/s, failures=0, objective=-2.5]
+    1352it [00:32, 45.58it/s, failures=0, objective=-2.5]
+    1353it [00:32, 45.58it/s, failures=0, objective=-2.5]
+    1354it [00:32, 45.58it/s, failures=0, objective=-2.5]
+    1355it [00:32, 45.58it/s, failures=0, objective=-2.5]
+    1356it [00:32, 45.58it/s, failures=0, objective=-2.5]
+    1357it [00:32, 45.58it/s, failures=0, objective=-2.5]
+    1358it [00:32, 41.23it/s, failures=0, objective=-2.5]
+    1358it [00:32, 41.23it/s, failures=0, objective=-2.5]
+    1359it [00:32, 41.23it/s, failures=0, objective=-2.48]
+    1360it [00:32, 41.23it/s, failures=0, objective=-2.48]
+    1361it [00:32, 41.23it/s, failures=0, objective=-2.48]
+    1362it [00:32, 41.23it/s, failures=0, objective=-2.48]
+    1363it [00:32, 41.23it/s, failures=0, objective=-2.48]
+    1364it [00:32, 41.23it/s, failures=0, objective=-2.48]
+    1365it [00:32, 41.23it/s, failures=0, objective=-2.48]
+    1366it [00:32, 41.23it/s, failures=0, objective=-2.48]
+    1367it [00:32, 41.23it/s, failures=0, objective=-2.48]
+    1368it [00:32, 41.23it/s, failures=0, objective=-2.48]
+    1369it [00:32, 41.23it/s, failures=0, objective=-2.48]
+    1370it [00:33, 40.01it/s, failures=0, objective=-2.48]
+    1370it [00:33, 40.01it/s, failures=0, objective=-2.48]
+    1371it [00:33, 40.01it/s, failures=0, objective=-2.48]
+    1372it [00:33, 40.01it/s, failures=0, objective=-2.48]
+    1373it [00:33, 40.01it/s, failures=0, objective=-2.48]
+    1374it [00:33, 40.01it/s, failures=0, objective=-2.48]
+    1375it [00:33, 40.01it/s, failures=0, objective=-2.48]
+    1376it [00:33, 40.01it/s, failures=0, objective=-2.48]
+    1377it [00:33, 40.01it/s, failures=0, objective=-2.48]
+    1378it [00:33, 40.01it/s, failures=0, objective=-2.48]
+    1379it [00:33, 40.01it/s, failures=0, objective=-2.48]
+    1380it [00:33, 40.01it/s, failures=0, objective=-2.48]
+    1381it [00:33, 40.01it/s, failures=0, objective=-2.48]
+    1382it [00:33, 40.01it/s, failures=0, objective=-2.48]
+    1383it [00:33, 40.01it/s, failures=0, objective=-2.48]
+    1384it [00:33, 40.01it/s, failures=0, objective=-2.48]
+    1385it [00:33, 40.90it/s, failures=0, objective=-2.48]
+    1385it [00:33, 40.90it/s, failures=0, objective=-2.48]
+    1386it [00:33, 40.90it/s, failures=0, objective=-2.48]
+    1387it [00:33, 40.90it/s, failures=0, objective=-2.48]
+    1388it [00:33, 40.90it/s, failures=0, objective=-2.48]
+    1389it [00:33, 40.90it/s, failures=0, objective=-2.48]
+    1390it [00:33, 40.90it/s, failures=0, objective=-2.48]
+    1391it [00:33, 40.90it/s, failures=0, objective=-2.48]
+    1392it [00:33, 40.90it/s, failures=0, objective=-2.48]
+    1393it [00:33, 40.90it/s, failures=0, objective=-2.48]
+    1394it [00:33, 40.90it/s, failures=0, objective=-2.48]
+    1395it [00:33, 40.90it/s, failures=0, objective=-2.48]
+    1396it [00:33, 40.90it/s, failures=0, objective=-2.48]
+    1397it [00:33, 38.71it/s, failures=0, objective=-2.48]
+    1397it [00:33, 38.71it/s, failures=0, objective=-2.48]
+    1398it [00:33, 38.71it/s, failures=0, objective=-2.48]
+    1399it [00:33, 38.71it/s, failures=0, objective=-2.48]
+    1400it [00:33, 38.71it/s, failures=0, objective=-2.48]
+    1401it [00:33, 38.71it/s, failures=0, objective=-2.48]
+    1402it [00:33, 38.71it/s, failures=0, objective=-2.48]
+    1403it [00:33, 38.71it/s, failures=0, objective=-2.48]
+    1404it [00:33, 38.71it/s, failures=0, objective=-2.48]
+    1405it [00:33, 38.71it/s, failures=0, objective=-2.48]
+    1406it [00:33, 38.71it/s, failures=0, objective=-2.48]
+    1407it [00:33, 38.71it/s, failures=0, objective=-2.48]
+    1408it [00:33, 38.71it/s, failures=0, objective=-2.48]
+    1409it [00:33, 38.71it/s, failures=0, objective=-2.48]
+    1410it [00:33, 38.71it/s, failures=0, objective=-2.48]
+    1411it [00:34, 41.68it/s, failures=0, objective=-2.48]
+    1411it [00:34, 41.68it/s, failures=0, objective=-2.48]
+    1412it [00:34, 41.68it/s, failures=0, objective=-2.48]
+    1413it [00:34, 41.68it/s, failures=0, objective=-2.48]
+    1414it [00:34, 41.68it/s, failures=0, objective=-2.48]
+    1415it [00:34, 41.68it/s, failures=0, objective=-2.48]
+    1416it [00:34, 41.68it/s, failures=0, objective=-2.48]
+    1417it [00:34, 41.68it/s, failures=0, objective=-2.48]
+    1418it [00:34, 41.68it/s, failures=0, objective=-2.48]
+    1419it [00:34, 41.68it/s, failures=0, objective=-2.48]
+    1420it [00:34, 41.68it/s, failures=0, objective=-2.48]
+    1421it [00:34, 41.68it/s, failures=0, objective=-2.48]
+    1422it [00:34, 40.06it/s, failures=0, objective=-2.48]
+    1422it [00:34, 40.06it/s, failures=0, objective=-2.48]
+    1423it [00:34, 40.06it/s, failures=0, objective=-2.48]
+    1424it [00:34, 40.06it/s, failures=0, objective=-2.48]
+    1425it [00:34, 40.06it/s, failures=0, objective=-2.48]
+    1426it [00:34, 40.06it/s, failures=0, objective=-2.48]
+    1427it [00:34, 40.06it/s, failures=0, objective=-2.48]
+    1428it [00:34, 40.06it/s, failures=0, objective=-2.48]
+    1429it [00:34, 40.06it/s, failures=0, objective=-2.48]
+    1430it [00:34, 40.06it/s, failures=0, objective=-2.48]
+    1431it [00:34, 40.06it/s, failures=0, objective=-2.48]
+    1432it [00:34, 40.06it/s, failures=0, objective=-2.48]
+    1433it [00:34, 40.06it/s, failures=0, objective=-2.48]
+    1434it [00:34, 36.86it/s, failures=0, objective=-2.48]
+    1434it [00:34, 36.86it/s, failures=0, objective=-2.48]
+    1435it [00:34, 36.86it/s, failures=0, objective=-2.48]
+    1436it [00:34, 36.86it/s, failures=0, objective=-2.48]
+    1437it [00:34, 36.86it/s, failures=0, objective=-2.48]
+    1438it [00:34, 36.86it/s, failures=0, objective=-2.48]
+    1439it [00:34, 36.86it/s, failures=0, objective=-2.48]
+    1440it [00:34, 36.86it/s, failures=0, objective=-2.48]
+    1441it [00:34, 36.86it/s, failures=0, objective=-2.48]
+    1442it [00:34, 36.86it/s, failures=0, objective=-2.48]
+    1443it [00:34, 36.86it/s, failures=0, objective=-2.48]
+    1444it [00:34, 36.86it/s, failures=0, objective=-2.48]
+    1445it [00:34, 36.86it/s, failures=0, objective=-2.48]
+    1446it [00:34, 36.86it/s, failures=0, objective=-2.48]
+    1447it [00:34, 36.86it/s, failures=0, objective=-2.48]
+    1448it [00:34, 36.86it/s, failures=0, objective=-2.48]
+    1449it [00:34, 36.86it/s, failures=0, objective=-2.48]
+    1450it [00:34, 36.86it/s, failures=0, objective=-2.48]
+    1451it [00:34, 36.86it/s, failures=0, objective=-2.48]
+    1452it [00:34, 36.86it/s, failures=0, objective=-2.48]
+    1453it [00:34, 36.86it/s, failures=0, objective=-2.48]
+    1454it [00:34, 36.86it/s, failures=0, objective=-2.48]
+    1455it [00:35, 45.59it/s, failures=0, objective=-2.48]
+    1455it [00:35, 45.59it/s, failures=0, objective=-2.48]
+    1456it [00:35, 45.59it/s, failures=0, objective=-2.48]
+    1457it [00:35, 45.59it/s, failures=0, objective=-2.48]
+    1458it [00:35, 45.59it/s, failures=0, objective=-2.48]
+    1459it [00:35, 45.59it/s, failures=0, objective=-2.48]
+    1460it [00:35, 45.59it/s, failures=0, objective=-2.48]
+    1461it [00:35, 45.59it/s, failures=0, objective=-2.48]
+    1462it [00:35, 45.59it/s, failures=0, objective=-2.48]
+    1463it [00:35, 45.59it/s, failures=0, objective=-2.48]
+    1464it [00:35, 45.59it/s, failures=0, objective=-2.48]
+    1465it [00:35, 45.59it/s, failures=0, objective=-2.48]
+    1466it [00:35, 40.82it/s, failures=0, objective=-2.48]
+    1466it [00:35, 40.82it/s, failures=0, objective=-2.48]
+    1467it [00:35, 40.82it/s, failures=0, objective=-2.48]
+    1468it [00:35, 40.82it/s, failures=0, objective=-2.48]
+    1469it [00:35, 40.82it/s, failures=0, objective=-2.48]
+    1470it [00:35, 40.82it/s, failures=0, objective=-2.48]
+    1471it [00:35, 40.82it/s, failures=0, objective=-2.48]
+    1472it [00:35, 40.82it/s, failures=0, objective=-2.48]
+    1473it [00:35, 40.82it/s, failures=0, objective=-2.48]
+    1474it [00:35, 40.82it/s, failures=0, objective=-2.48]
+    1475it [00:35, 40.82it/s, failures=0, objective=-2.48]
+    1476it [00:35, 40.82it/s, failures=0, objective=-2.48]
+    1477it [00:35, 40.82it/s, failures=0, objective=-2.48]
+    1478it [00:35, 40.82it/s, failures=0, objective=-2.48]
+    1479it [00:35, 37.88it/s, failures=0, objective=-2.48]
+    1479it [00:35, 37.88it/s, failures=0, objective=-2.48]
+    1480it [00:35, 37.88it/s, failures=0, objective=-2.48]
+    1481it [00:35, 37.88it/s, failures=0, objective=-2.48]
+    1482it [00:35, 37.88it/s, failures=0, objective=-2.48]
+    1483it [00:35, 37.88it/s, failures=0, objective=-2.48]
+    1484it [00:35, 37.88it/s, failures=0, objective=-2.48]
+    1485it [00:35, 37.88it/s, failures=0, objective=-2.48]
+    1486it [00:35, 37.88it/s, failures=0, objective=-2.48]
+    1487it [00:35, 37.88it/s, failures=0, objective=-2.48]
+    1488it [00:35, 37.88it/s, failures=0, objective=-2.48]
+    1489it [00:35, 37.88it/s, failures=0, objective=-2.48]
+    1490it [00:35, 37.88it/s, failures=0, objective=-2.48]
+    1491it [00:35, 37.88it/s, failures=0, objective=-2.48]
+    1492it [00:35, 37.88it/s, failures=0, objective=-2.48]
+    1493it [00:35, 37.88it/s, failures=0, objective=-2.48]
+    1494it [00:36, 39.91it/s, failures=0, objective=-2.48]
+    1494it [00:36, 39.91it/s, failures=0, objective=-2.48]
+    1495it [00:36, 39.91it/s, failures=0, objective=-2.48]
+    1496it [00:36, 39.91it/s, failures=0, objective=-2.48]
+    1497it [00:36, 39.91it/s, failures=0, objective=-2.48]
+    1498it [00:36, 39.91it/s, failures=0, objective=-2.48]
+    1499it [00:36, 39.91it/s, failures=0, objective=-2.48]
+    1500it [00:36, 39.91it/s, failures=0, objective=-2.47]
+    1501it [00:36, 39.91it/s, failures=0, objective=-2.47]
+    1502it [00:36, 39.91it/s, failures=0, objective=-2.47]
+    1503it [00:36, 39.91it/s, failures=0, objective=-2.47]
+    1504it [00:36, 39.91it/s, failures=0, objective=-2.47]
+    1505it [00:36, 39.91it/s, failures=0, objective=-2.47]
+    1506it [00:36, 39.91it/s, failures=0, objective=-2.47]
+    1507it [00:36, 39.91it/s, failures=0, objective=-2.47]
+    1508it [00:36, 39.91it/s, failures=0, objective=-2.47]
+    1509it [00:36, 39.91it/s, failures=0, objective=-2.47]
+    1510it [00:36, 40.65it/s, failures=0, objective=-2.47]
+    1510it [00:36, 40.65it/s, failures=0, objective=-2.47]
+    1511it [00:36, 40.65it/s, failures=0, objective=-2.47]
+    1512it [00:36, 40.65it/s, failures=0, objective=-2.47]
+    1513it [00:36, 40.65it/s, failures=0, objective=-2.47]
+    1514it [00:36, 40.65it/s, failures=0, objective=-2.47]
+    1515it [00:36, 40.65it/s, failures=0, objective=-2.47]
+    1516it [00:36, 40.65it/s, failures=0, objective=-2.47]
+    1517it [00:36, 40.65it/s, failures=0, objective=-2.47]
+    1518it [00:36, 40.65it/s, failures=0, objective=-2.47]
+    1519it [00:36, 40.65it/s, failures=0, objective=-2.47]
+    1520it [00:36, 40.65it/s, failures=0, objective=-2.47]
+    1521it [00:36, 40.65it/s, failures=0, objective=-2.47]
+    1522it [00:37, 38.21it/s, failures=0, objective=-2.47]
+    1522it [00:37, 38.21it/s, failures=0, objective=-2.47]
+    1523it [00:37, 38.21it/s, failures=0, objective=-2.47]
+    1524it [00:37, 38.21it/s, failures=0, objective=-2.47]
+    1525it [00:37, 38.21it/s, failures=0, objective=-2.47]
+    1526it [00:37, 38.21it/s, failures=0, objective=-2.47]
+    1527it [00:37, 38.21it/s, failures=0, objective=-2.47]
+    1528it [00:37, 38.21it/s, failures=0, objective=-2.47]
+    1529it [00:37, 38.21it/s, failures=0, objective=-2.47]
+    1530it [00:37, 38.21it/s, failures=0, objective=-2.47]
+    1531it [00:37, 38.21it/s, failures=0, objective=-2.47]
+    1532it [00:37, 38.21it/s, failures=0, objective=-2.47]
+    1533it [00:37, 38.21it/s, failures=0, objective=-2.47]
+    1534it [00:37, 38.21it/s, failures=0, objective=-2.47]
+    1535it [00:37, 38.21it/s, failures=0, objective=-2.47]
+    1536it [00:37, 38.21it/s, failures=0, objective=-2.47]
+    1537it [00:37, 38.21it/s, failures=0, objective=-2.47]
+    1538it [00:37, 38.21it/s, failures=0, objective=-2.47]
+    1539it [00:37, 40.80it/s, failures=0, objective=-2.47]
+    1539it [00:37, 40.80it/s, failures=0, objective=-2.47]
+    1540it [00:37, 40.80it/s, failures=0, objective=-2.47]
+    1541it [00:37, 40.80it/s, failures=0, objective=-2.47]
+    1542it [00:37, 40.80it/s, failures=0, objective=-2.47]
+    1543it [00:37, 40.80it/s, failures=0, objective=-2.47]
+    1544it [00:37, 40.80it/s, failures=0, objective=-2.47]
+    1545it [00:37, 40.80it/s, failures=0, objective=-2.47]
+    1546it [00:37, 40.80it/s, failures=0, objective=-2.47]
+    1547it [00:37, 40.80it/s, failures=0, objective=-2.47]
+    1548it [00:37, 40.80it/s, failures=0, objective=-2.47]
+    1549it [00:37, 40.80it/s, failures=0, objective=-2.47]
+    1550it [00:37, 40.80it/s, failures=0, objective=-2.47]
+    1551it [00:37, 40.80it/s, failures=0, objective=-2.47]
+    1552it [00:37, 40.80it/s, failures=0, objective=-2.47]
+    1553it [00:37, 40.80it/s, failures=0, objective=-2.47]
+    1554it [00:37, 40.80it/s, failures=0, objective=-2.47]
+    1555it [00:37, 40.80it/s, failures=0, objective=-2.47]
+    1556it [00:37, 43.27it/s, failures=0, objective=-2.47]
+    1556it [00:37, 43.27it/s, failures=0, objective=-2.47]
+    1557it [00:37, 43.27it/s, failures=0, objective=-2.47]
+    1558it [00:37, 43.27it/s, failures=0, objective=-2.47]
+    1559it [00:37, 43.27it/s, failures=0, objective=-2.47]
+    1560it [00:37, 43.27it/s, failures=0, objective=-2.47]
+    1561it [00:37, 43.27it/s, failures=0, objective=-2.47]
+    1562it [00:37, 43.27it/s, failures=0, objective=-2.47]
+    1563it [00:37, 43.27it/s, failures=0, objective=-2.47]
+    1564it [00:37, 43.27it/s, failures=0, objective=-2.47]
+    1565it [00:37, 43.27it/s, failures=0, objective=-2.47]
+    1566it [00:37, 43.27it/s, failures=0, objective=-2.47]
+    1567it [00:37, 43.27it/s, failures=0, objective=-2.47]
+    1568it [00:38, 41.58it/s, failures=0, objective=-2.47]
+    1568it [00:38, 41.58it/s, failures=0, objective=-2.47]
+    1569it [00:38, 41.58it/s, failures=0, objective=-2.47]
+    1570it [00:38, 41.58it/s, failures=0, objective=-2.47]
+    1571it [00:38, 41.58it/s, failures=0, objective=-2.47]
+    1572it [00:38, 41.58it/s, failures=0, objective=-2.47]
+    1573it [00:38, 41.58it/s, failures=0, objective=-2.47]
+    1574it [00:38, 41.58it/s, failures=0, objective=-2.47]
+    1575it [00:38, 41.58it/s, failures=0, objective=-2.47]
+    1576it [00:38, 41.58it/s, failures=0, objective=-2.47]
+    1577it [00:38, 41.58it/s, failures=0, objective=-2.47]
+    1578it [00:38, 41.58it/s, failures=0, objective=-2.47]
+    1579it [00:38, 41.58it/s, failures=0, objective=-2.47]
+    1580it [00:38, 41.58it/s, failures=0, objective=-2.47]
+    1581it [00:38, 41.58it/s, failures=0, objective=-2.47]
+    1582it [00:38, 44.43it/s, failures=0, objective=-2.47]
+    1582it [00:38, 44.43it/s, failures=0, objective=-2.47]
+    1583it [00:38, 44.43it/s, failures=0, objective=-2.47]
+    1584it [00:38, 44.43it/s, failures=0, objective=-2.47]
+    1585it [00:38, 44.43it/s, failures=0, objective=-2.47]
+    1586it [00:38, 44.43it/s, failures=0, objective=-2.47]
+    1587it [00:38, 44.43it/s, failures=0, objective=-2.47]
+    1588it [00:38, 44.43it/s, failures=0, objective=-2.47]
+    1589it [00:38, 44.43it/s, failures=0, objective=-2.47]
+    1590it [00:38, 44.43it/s, failures=0, objective=-2.47]
+    1591it [00:38, 44.43it/s, failures=0, objective=-2.47]
+    1592it [00:38, 44.43it/s, failures=0, objective=-2.47]
+    1593it [00:38, 37.64it/s, failures=0, objective=-2.47]
+    1593it [00:38, 37.64it/s, failures=0, objective=-2.47]
+    1594it [00:38, 37.64it/s, failures=0, objective=-2.47]
+    1595it [00:38, 37.64it/s, failures=0, objective=-2.47]
+    1596it [00:38, 37.64it/s, failures=0, objective=-2.47]
+    1597it [00:38, 37.64it/s, failures=0, objective=-2.47]
+    1598it [00:38, 37.64it/s, failures=0, objective=-2.38]
+    1599it [00:38, 37.64it/s, failures=0, objective=-2.38]
+    1600it [00:38, 37.64it/s, failures=0, objective=-2.38]
+    1601it [00:38, 37.64it/s, failures=0, objective=-2.38]
+    1602it [00:38, 37.64it/s, failures=0, objective=-2.38]
+    1603it [00:38, 37.64it/s, failures=0, objective=-2.38]
+    1604it [00:38, 37.64it/s, failures=0, objective=-2.38]
+    1605it [00:38, 37.64it/s, failures=0, objective=-2.38]
+    1606it [00:38, 37.64it/s, failures=0, objective=-2.38]
+    1607it [00:38, 37.64it/s, failures=0, objective=-2.38]
+    1608it [00:38, 37.64it/s, failures=0, objective=-2.38]
+    1609it [00:38, 37.64it/s, failures=0, objective=-2.38]
+    1610it [00:39, 41.29it/s, failures=0, objective=-2.38]
+    1610it [00:39, 41.29it/s, failures=0, objective=-2.38]
+    1611it [00:39, 41.29it/s, failures=0, objective=-2.38]
+    1612it [00:39, 41.29it/s, failures=0, objective=-2.38]
+    1613it [00:39, 41.29it/s, failures=0, objective=-2.38]
+    1614it [00:39, 41.29it/s, failures=0, objective=-2.38]
+    1615it [00:39, 41.29it/s, failures=0, objective=-2.38]
+    1616it [00:39, 41.29it/s, failures=0, objective=-2.38]
+    1617it [00:39, 41.29it/s, failures=0, objective=-2.38]
+    1618it [00:39, 41.29it/s, failures=0, objective=-2.38]
+    1619it [00:39, 41.29it/s, failures=0, objective=-2.38]
+    1620it [00:39, 41.29it/s, failures=0, objective=-2.38]
+    1621it [00:39, 35.69it/s, failures=0, objective=-2.38]
+    1621it [00:39, 35.69it/s, failures=0, objective=-2.38]
+    1622it [00:39, 35.69it/s, failures=0, objective=-2.38]
+    1623it [00:39, 35.69it/s, failures=0, objective=-2.38]
+    1624it [00:39, 35.69it/s, failures=0, objective=-2.38]
+    1625it [00:39, 35.69it/s, failures=0, objective=-2.38]
+    1626it [00:39, 35.69it/s, failures=0, objective=-2.38]
+    1627it [00:39, 35.69it/s, failures=0, objective=-2.38]
+    1628it [00:39, 35.69it/s, failures=0, objective=-2.38]
+    1629it [00:39, 35.69it/s, failures=0, objective=-2.38]
+    1630it [00:39, 35.69it/s, failures=0, objective=-2.38]
+    1631it [00:39, 35.69it/s, failures=0, objective=-2.38]
+    1632it [00:39, 35.69it/s, failures=0, objective=-2.38]
+    1633it [00:39, 35.69it/s, failures=0, objective=-2.38]
+    1634it [00:39, 35.59it/s, failures=0, objective=-2.38]
+    1634it [00:39, 35.59it/s, failures=0, objective=-2.38]
+    1635it [00:39, 35.59it/s, failures=0, objective=-2.38]
+    1636it [00:39, 35.59it/s, failures=0, objective=-2.38]
+    1637it [00:39, 35.59it/s, failures=0, objective=-2.38]
+    1638it [00:39, 35.59it/s, failures=0, objective=-2.38]
+    1639it [00:39, 35.59it/s, failures=0, objective=-2.38]
+    1640it [00:39, 35.59it/s, failures=0, objective=-2.38]
+    1641it [00:39, 35.59it/s, failures=0, objective=-2.38]
+    1642it [00:39, 35.59it/s, failures=0, objective=-2.38]
+    1643it [00:39, 35.59it/s, failures=0, objective=-2.38]
+    1644it [00:39, 35.59it/s, failures=0, objective=-2.38]
+    1645it [00:39, 35.59it/s, failures=0, objective=-2.38]
+    1646it [00:39, 35.59it/s, failures=0, objective=-2.38]
+    1647it [00:39, 35.59it/s, failures=0, objective=-2.38]
+    1648it [00:40, 36.60it/s, failures=0, objective=-2.38]
+    1648it [00:40, 36.60it/s, failures=0, objective=-2.38]
+    1649it [00:40, 36.60it/s, failures=0, objective=-2.38]
+    1650it [00:40, 36.60it/s, failures=0, objective=-2.38]
+    1651it [00:40, 36.60it/s, failures=0, objective=-2.38]
+    1652it [00:40, 36.60it/s, failures=0, objective=-2.38]
+    1653it [00:40, 36.60it/s, failures=0, objective=-2.38]
+    1654it [00:40, 36.60it/s, failures=0, objective=-2.38]
+    1655it [00:40, 36.60it/s, failures=0, objective=-2.38]
+    1656it [00:40, 36.60it/s, failures=0, objective=-2.38]
+    1657it [00:40, 36.60it/s, failures=0, objective=-2.38]
+    1658it [00:40, 36.60it/s, failures=0, objective=-2.38]
+    1659it [00:40, 36.60it/s, failures=0, objective=-2.38]
+    1660it [00:40, 36.60it/s, failures=0, objective=-2.38]
+    1661it [00:40, 36.60it/s, failures=0, objective=-2.38]
+    1662it [00:40, 36.60it/s, failures=0, objective=-2.38]
+    1663it [00:40, 38.59it/s, failures=0, objective=-2.38]
+    1663it [00:40, 38.59it/s, failures=0, objective=-2.38]
+    1664it [00:40, 38.59it/s, failures=0, objective=-2.38]
+    1665it [00:40, 38.59it/s, failures=0, objective=-2.38]
+    1666it [00:40, 38.59it/s, failures=0, objective=-2.38]
+    1667it [00:40, 38.59it/s, failures=0, objective=-2.38]
+    1668it [00:40, 38.59it/s, failures=0, objective=-2.38]
+    1669it [00:40, 38.59it/s, failures=0, objective=-2.38]
+    1670it [00:40, 38.59it/s, failures=0, objective=-2.38]
+    1671it [00:40, 38.59it/s, failures=0, objective=-2.38]
+    1672it [00:40, 38.59it/s, failures=0, objective=-2.38]
+    1673it [00:40, 38.59it/s, failures=0, objective=-2.38]
+    1674it [00:40, 38.59it/s, failures=0, objective=-2.38]
+    1675it [00:40, 38.59it/s, failures=0, objective=-2.38]
+    1676it [00:40, 38.59it/s, failures=0, objective=-2.38]
+    1677it [00:40, 38.59it/s, failures=0, objective=-2.38]
+    1678it [00:40, 38.59it/s, failures=0, objective=-2.38]
+    1679it [00:40, 38.59it/s, failures=0, objective=-2.38]
+    1680it [00:40, 38.59it/s, failures=0, objective=-2.38]
+    1681it [00:40, 42.63it/s, failures=0, objective=-2.38]
+    1681it [00:40, 42.63it/s, failures=0, objective=-2.38]
+    1682it [00:40, 42.63it/s, failures=0, objective=-2.38]
+    1683it [00:40, 42.63it/s, failures=0, objective=-2.38]
+    1684it [00:40, 42.63it/s, failures=0, objective=-2.38]
+    1685it [00:40, 42.63it/s, failures=0, objective=-2.38]
+    1686it [00:40, 42.63it/s, failures=0, objective=-2.38]
+    1687it [00:40, 42.63it/s, failures=0, objective=-2.38]
+    1688it [00:40, 42.63it/s, failures=0, objective=-2.38]
+    1689it [00:40, 42.63it/s, failures=0, objective=-2.38]
+    1690it [00:41, 36.61it/s, failures=0, objective=-2.38]
+    1690it [00:41, 36.61it/s, failures=0, objective=-2.38]
+    1691it [00:41, 36.61it/s, failures=0, objective=-2.38]
+    1692it [00:41, 36.61it/s, failures=0, objective=-2.38]
+    1693it [00:41, 36.61it/s, failures=0, objective=-2.38]
+    1694it [00:41, 36.61it/s, failures=0, objective=-2.38]
+    1695it [00:41, 36.61it/s, failures=0, objective=-2.38]
+    1696it [00:41, 36.61it/s, failures=0, objective=-2.38]
+    1697it [00:41, 36.61it/s, failures=0, objective=-2.38]
+    1698it [00:41, 36.61it/s, failures=0, objective=-2.38]
+    1699it [00:41, 36.61it/s, failures=0, objective=-2.38]
+    1700it [00:41, 36.61it/s, failures=0, objective=-2.38]
+    1701it [00:41, 36.61it/s, failures=0, objective=-2.38]
+    1702it [00:41, 36.61it/s, failures=0, objective=-2.38]
+    1703it [00:41, 36.61it/s, failures=0, objective=-2.38]
+    1704it [00:41, 36.56it/s, failures=0, objective=-2.38]
+    1704it [00:41, 36.56it/s, failures=0, objective=-2.38]
+    1705it [00:41, 36.56it/s, failures=0, objective=-2.38]
+    1706it [00:41, 36.56it/s, failures=0, objective=-2.38]
+    1707it [00:41, 36.56it/s, failures=0, objective=-2.38]
+    1708it [00:41, 36.56it/s, failures=0, objective=-2.38]
+    1709it [00:41, 36.56it/s, failures=0, objective=-2.38]
+    1710it [00:41, 36.56it/s, failures=0, objective=-2.38]
+    1711it [00:41, 36.56it/s, failures=0, objective=-2.38]
+    1712it [00:41, 36.56it/s, failures=0, objective=-2.38]
+    1713it [00:41, 36.56it/s, failures=0, objective=-2.38]
+    1714it [00:41, 36.56it/s, failures=0, objective=-2.38]
+    1715it [00:42, 34.73it/s, failures=0, objective=-2.38]
+    1715it [00:42, 34.73it/s, failures=0, objective=-2.38]
+    1716it [00:42, 34.73it/s, failures=0, objective=-2.38]
+    1717it [00:42, 34.73it/s, failures=0, objective=-2.38]
+    1718it [00:42, 34.73it/s, failures=0, objective=-2.38]
+    1719it [00:42, 34.73it/s, failures=0, objective=-2.38]
+    1720it [00:42, 34.73it/s, failures=0, objective=-2.38]
+    1721it [00:42, 34.73it/s, failures=0, objective=-2.38]
+    1722it [00:42, 34.73it/s, failures=0, objective=-2.38]
+    1723it [00:42, 34.73it/s, failures=0, objective=-2.38]
+    1724it [00:42, 34.73it/s, failures=0, objective=-2.38]
+    1725it [00:42, 31.12it/s, failures=0, objective=-2.38]
+    1725it [00:42, 31.12it/s, failures=0, objective=-2.38]
+    1726it [00:42, 31.12it/s, failures=0, objective=-2.38]
+    1727it [00:42, 31.12it/s, failures=0, objective=-2.38]
+    1728it [00:42, 31.12it/s, failures=0, objective=-2.38]
+    1729it [00:42, 31.12it/s, failures=0, objective=-2.38]
+    1730it [00:42, 31.12it/s, failures=0, objective=-2.38]
+    1731it [00:42, 31.12it/s, failures=0, objective=-2.38]
+    1732it [00:42, 31.12it/s, failures=0, objective=-2.38]
+    1733it [00:42, 31.12it/s, failures=0, objective=-2.38]
+    1734it [00:42, 31.12it/s, failures=0, objective=-2.38]
+    1735it [00:42, 31.12it/s, failures=0, objective=-2.38]
+    1736it [00:42, 31.12it/s, failures=0, objective=-2.38]
+    1737it [00:42, 31.12it/s, failures=0, objective=-2.38]
+    1738it [00:42, 31.12it/s, failures=0, objective=-2.38]
+    1739it [00:42, 31.12it/s, failures=0, objective=-2.38]
+    1740it [00:42, 31.12it/s, failures=0, objective=-2.38]
+    1741it [00:42, 31.12it/s, failures=0, objective=-2.38]
+    1742it [00:42, 31.12it/s, failures=0, objective=-2.38]
+    1743it [00:42, 31.12it/s, failures=0, objective=-2.38]
+    1744it [00:42, 31.12it/s, failures=0, objective=-2.38]
+    1745it [00:42, 31.12it/s, failures=0, objective=-2.38]
+    1746it [00:42, 38.69it/s, failures=0, objective=-2.38]
+    1746it [00:42, 38.69it/s, failures=0, objective=-2.38]
+    1747it [00:42, 38.69it/s, failures=0, objective=-2.38]
+    1748it [00:42, 38.69it/s, failures=0, objective=-2.38]
+    1749it [00:42, 38.69it/s, failures=0, objective=-2.38]
+    1750it [00:42, 38.69it/s, failures=0, objective=-2.38]
+    1751it [00:42, 38.69it/s, failures=0, objective=-2.38]
+    1752it [00:42, 38.69it/s, failures=0, objective=-2.38]
+    1753it [00:42, 38.69it/s, failures=0, objective=-2.38]
+    1754it [00:42, 38.69it/s, failures=0, objective=-2.38]
+    1755it [00:42, 38.69it/s, failures=0, objective=-2.38]
+    1756it [00:42, 38.69it/s, failures=0, objective=-2.38]
+    1757it [00:42, 38.69it/s, failures=0, objective=-2.38]
+    1758it [00:42, 38.69it/s, failures=0, objective=-2.38]
+    1759it [00:42, 38.69it/s, failures=0, objective=-2.38]
+    1760it [00:42, 38.69it/s, failures=0, objective=-2.38]
+    1761it [00:42, 38.69it/s, failures=0, objective=-2.38]
+    1762it [00:42, 38.69it/s, failures=0, objective=-2.38]
+    1763it [00:43, 40.72it/s, failures=0, objective=-2.38]
+    1763it [00:43, 40.72it/s, failures=0, objective=-2.38]
+    1764it [00:43, 40.72it/s, failures=0, objective=-2.38]
+    1765it [00:43, 40.72it/s, failures=0, objective=-2.38]
+    1766it [00:43, 40.72it/s, failures=0, objective=-2.38]
+    1767it [00:43, 40.72it/s, failures=0, objective=-2.38]
+    1768it [00:43, 40.72it/s, failures=0, objective=-2.38]
+    1769it [00:43, 40.72it/s, failures=0, objective=-2.38]
+    1770it [00:43, 40.72it/s, failures=0, objective=-2.38]
+    1771it [00:43, 40.72it/s, failures=0, objective=-2.38]
+    1772it [00:43, 40.72it/s, failures=0, objective=-2.38]
+    1773it [00:43, 40.72it/s, failures=0, objective=-2.38]
+    1774it [00:43, 40.72it/s, failures=0, objective=-2.38]
+    1775it [00:43, 40.72it/s, failures=0, objective=-2.38]
+    1776it [00:43, 40.72it/s, failures=0, objective=-2.38]
+    1777it [00:43, 40.72it/s, failures=0, objective=-2.38]
+    1778it [00:43, 40.72it/s, failures=0, objective=-2.38]
+    1779it [00:43, 40.72it/s, failures=0, objective=-2.38]
+    1780it [00:43, 40.72it/s, failures=0, objective=-2.38]
+    1781it [00:43, 40.72it/s, failures=0, objective=-2.38]
+    1782it [00:43, 46.73it/s, failures=0, objective=-2.38]
+    1782it [00:43, 46.73it/s, failures=0, objective=-2.38]
+    1783it [00:43, 46.73it/s, failures=0, objective=-2.38]
+    1784it [00:43, 46.73it/s, failures=0, objective=-2.38]
+    1785it [00:43, 46.73it/s, failures=0, objective=-2.38]
+    1786it [00:43, 46.73it/s, failures=0, objective=-2.38]
+    1787it [00:43, 46.73it/s, failures=0, objective=-2.38]
+    1788it [00:43, 46.73it/s, failures=0, objective=-2.38]
+    1789it [00:43, 46.73it/s, failures=0, objective=-2.38]
+    1790it [00:43, 46.73it/s, failures=0, objective=-2.38]
+    1791it [00:43, 46.73it/s, failures=0, objective=-2.38]
+    1792it [00:43, 40.25it/s, failures=0, objective=-2.38]
+    1792it [00:43, 40.25it/s, failures=0, objective=-2.38]
+    1793it [00:43, 40.25it/s, failures=0, objective=-2.38]
+    1794it [00:43, 40.25it/s, failures=0, objective=-2.38]
+    1795it [00:43, 40.25it/s, failures=0, objective=-2.38]
+    1796it [00:43, 40.25it/s, failures=0, objective=-2.38]
+    1797it [00:43, 40.25it/s, failures=0, objective=-2.38]
+    1798it [00:43, 40.25it/s, failures=0, objective=-2.38]
+    1799it [00:43, 40.25it/s, failures=0, objective=-2.38]
+    1800it [00:43, 40.25it/s, failures=0, objective=-2.38]
+    1801it [00:43, 40.25it/s, failures=0, objective=-2.38]
+    1802it [00:43, 40.25it/s, failures=0, objective=-2.38]
+    1803it [00:43, 40.25it/s, failures=0, objective=-2.38]
+    1804it [00:44, 37.77it/s, failures=0, objective=-2.38]
+    1804it [00:44, 37.77it/s, failures=0, objective=-2.38]
+    1805it [00:44, 37.77it/s, failures=0, objective=-2.38]
+    1806it [00:44, 37.77it/s, failures=0, objective=-2.38]
+    1807it [00:44, 37.77it/s, failures=0, objective=-2.38]
+    1808it [00:44, 37.77it/s, failures=0, objective=-2.38]
+    1809it [00:44, 37.77it/s, failures=0, objective=-2.38]
+    1810it [00:44, 37.77it/s, failures=0, objective=-2.38]
+    1811it [00:44, 37.77it/s, failures=0, objective=-2.38]
+    1812it [00:44, 37.77it/s, failures=0, objective=-2.38]
+    1813it [00:44, 37.77it/s, failures=0, objective=-2.38]
+    1814it [00:44, 37.77it/s, failures=0, objective=-2.38]
+    1815it [00:44, 37.77it/s, failures=0, objective=-2.38]
+    1816it [00:44, 37.77it/s, failures=0, objective=-2.38]
+    1817it [00:44, 37.77it/s, failures=0, objective=-2.38]
+    1818it [00:44, 37.77it/s, failures=0, objective=-2.38]
+    1819it [00:44, 37.77it/s, failures=0, objective=-2.38]
+    1820it [00:44, 40.07it/s, failures=0, objective=-2.38]
+    1820it [00:44, 40.07it/s, failures=0, objective=-2.38]
+    1821it [00:44, 40.07it/s, failures=0, objective=-2.38]
+    1822it [00:44, 40.07it/s, failures=0, objective=-2.38]
+    1823it [00:44, 40.07it/s, failures=0, objective=-2.38]
+    1824it [00:44, 40.07it/s, failures=0, objective=-2.38]
+    1825it [00:44, 40.07it/s, failures=0, objective=-2.38]
+    1826it [00:44, 40.07it/s, failures=0, objective=-2.38]
+    1827it [00:44, 40.07it/s, failures=0, objective=-2.38]
+    1828it [00:44, 40.07it/s, failures=0, objective=-2.38]
+    1829it [00:44, 37.60it/s, failures=0, objective=-2.38]
+    1829it [00:44, 37.60it/s, failures=0, objective=-2.38]
+    1830it [00:44, 37.60it/s, failures=0, objective=-2.38]
+    1831it [00:44, 37.60it/s, failures=0, objective=-2.38]
+    1832it [00:44, 37.60it/s, failures=0, objective=-2.38]
+    1833it [00:44, 37.60it/s, failures=0, objective=-2.38]
+    1834it [00:44, 37.60it/s, failures=0, objective=-2.38]
+    1835it [00:44, 37.60it/s, failures=0, objective=-2.38]
+    1836it [00:44, 37.60it/s, failures=0, objective=-2.38]
+    1837it [00:45, 32.18it/s, failures=0, objective=-2.38]
+    1837it [00:45, 32.18it/s, failures=0, objective=-2.38]
+    1838it [00:45, 32.18it/s, failures=0, objective=-2.38]
+    1839it [00:45, 32.18it/s, failures=0, objective=-2.38]
+    1840it [00:45, 32.18it/s, failures=0, objective=-2.38]
+    1841it [00:45, 32.18it/s, failures=0, objective=-2.38]
+    1842it [00:45, 32.18it/s, failures=0, objective=-2.38]
+    1843it [00:45, 32.18it/s, failures=0, objective=-2.38]
+    1844it [00:45, 32.18it/s, failures=0, objective=-2.38]
+    1845it [00:45, 32.18it/s, failures=0, objective=-2.38]
+    1846it [00:45, 32.18it/s, failures=0, objective=-2.38]
+    1847it [00:45, 32.18it/s, failures=0, objective=-2.37]
+    1848it [00:45, 32.18it/s, failures=0, objective=-2.37]
+    1849it [00:45, 32.18it/s, failures=0, objective=-2.37]
+    1850it [00:45, 32.18it/s, failures=0, objective=-2.37]
+    1851it [00:45, 32.18it/s, failures=0, objective=-2.37]
+    1852it [00:45, 32.18it/s, failures=0, objective=-2.37]
+    1853it [00:45, 38.13it/s, failures=0, objective=-2.37]
+    1853it [00:45, 38.13it/s, failures=0, objective=-2.37]
+    1854it [00:45, 38.13it/s, failures=0, objective=-2.37]
+    1855it [00:45, 38.13it/s, failures=0, objective=-2.37]
+    1856it [00:45, 38.13it/s, failures=0, objective=-2.37]
+    1857it [00:45, 38.13it/s, failures=0, objective=-2.37]
+    1858it [00:45, 38.13it/s, failures=0, objective=-2.37]
+    1859it [00:45, 38.13it/s, failures=0, objective=-2.37]
+    1860it [00:45, 38.13it/s, failures=0, objective=-2.37]
+    1861it [00:45, 38.13it/s, failures=0, objective=-2.37]
+    1862it [00:45, 38.13it/s, failures=0, objective=-2.37]
+    1863it [00:45, 38.13it/s, failures=0, objective=-2.37]
+    1864it [00:45, 38.13it/s, failures=0, objective=-2.37]
+    1865it [00:45, 38.13it/s, failures=0, objective=-2.37]
+    1866it [00:45, 38.13it/s, failures=0, objective=-2.37]
+    1867it [00:45, 38.13it/s, failures=0, objective=-2.37]
+    1868it [00:45, 38.13it/s, failures=0, objective=-2.37]
+    1869it [00:45, 40.42it/s, failures=0, objective=-2.37]
+    1869it [00:45, 40.42it/s, failures=0, objective=-2.37]
+    1870it [00:45, 40.42it/s, failures=0, objective=-2.37]
+    1871it [00:45, 40.42it/s, failures=0, objective=-2.37]
+    1872it [00:45, 40.42it/s, failures=0, objective=-2.37]
+    1873it [00:45, 40.42it/s, failures=0, objective=-2.37]
+    1874it [00:45, 40.42it/s, failures=0, objective=-2.37]
+    1875it [00:45, 40.42it/s, failures=0, objective=-2.34]
+    1876it [00:45, 40.42it/s, failures=0, objective=-2.34]
+    1877it [00:45, 40.42it/s, failures=0, objective=-2.34]
+    1878it [00:45, 40.42it/s, failures=0, objective=-2.34]
+    1879it [00:45, 40.42it/s, failures=0, objective=-2.34]
+    1880it [00:45, 40.42it/s, failures=0, objective=-2.34]
+    1881it [00:45, 40.42it/s, failures=0, objective=-2.34]
+    1882it [00:45, 40.42it/s, failures=0, objective=-2.34]
+    1883it [00:45, 40.42it/s, failures=0, objective=-2.34]
+    1884it [00:45, 40.42it/s, failures=0, objective=-2.34]
+    1885it [00:45, 40.42it/s, failures=0, objective=-2.34]
+    1886it [00:45, 40.42it/s, failures=0, objective=-2.34]
+    1887it [00:46, 43.13it/s, failures=0, objective=-2.34]
+    1887it [00:46, 43.13it/s, failures=0, objective=-2.34]
+    1888it [00:46, 43.13it/s, failures=0, objective=-2.34]
+    1889it [00:46, 43.13it/s, failures=0, objective=-2.34]
+    1890it [00:46, 43.13it/s, failures=0, objective=-2.34]
+    1891it [00:46, 43.13it/s, failures=0, objective=-2.34]
+    1892it [00:46, 43.13it/s, failures=0, objective=-2.34]
+    1893it [00:46, 43.13it/s, failures=0, objective=-2.34]
+    1894it [00:46, 43.13it/s, failures=0, objective=-2.34]
+    1895it [00:46, 43.13it/s, failures=0, objective=-2.34]
+    1896it [00:46, 43.13it/s, failures=0, objective=-2.34]
+    1897it [00:46, 43.13it/s, failures=0, objective=-2.34]
+    1898it [00:46, 43.13it/s, failures=0, objective=-2.34]
+    1899it [00:46, 43.13it/s, failures=0, objective=-2.34]
+    1900it [00:46, 43.13it/s, failures=0, objective=-2.34]
+    1901it [00:46, 43.13it/s, failures=0, objective=-2.34]
+    1902it [00:46, 45.06it/s, failures=0, objective=-2.34]
+    1902it [00:46, 45.06it/s, failures=0, objective=-2.34]
+    1903it [00:46, 45.06it/s, failures=0, objective=-2.34]
+    1904it [00:46, 45.06it/s, failures=0, objective=-2.34]
+    1905it [00:46, 45.06it/s, failures=0, objective=-2.34]
+    1906it [00:47, 45.06it/s, failures=0, objective=-2.34]
+    1907it [00:47, 33.69it/s, failures=0, objective=-2.34]
+    1907it [00:47, 33.69it/s, failures=0, objective=-2.34]
+    1908it [00:47, 33.69it/s, failures=0, objective=-2.34]
+    1909it [00:47, 33.69it/s, failures=0, objective=-2.34]
+    1910it [00:47, 33.69it/s, failures=0, objective=-2.34]
+    1911it [00:47, 33.69it/s, failures=0, objective=-2.34]
+    1912it [00:47, 33.69it/s, failures=0, objective=-2.34]
+    1913it [00:47, 33.69it/s, failures=0, objective=-2.34]
+    1914it [00:47, 33.69it/s, failures=0, objective=-2.34]
+    1915it [00:47, 33.69it/s, failures=0, objective=-2.34]
+    1916it [00:47, 33.69it/s, failures=0, objective=-2.34]
+    1917it [00:47, 33.69it/s, failures=0, objective=-2.34]
+    1918it [00:47, 33.69it/s, failures=0, objective=-2.34]
+    1919it [00:47, 33.69it/s, failures=0, objective=-2.34]
+    1920it [00:47, 33.69it/s, failures=0, objective=-2.34]
+    1921it [00:47, 33.69it/s, failures=0, objective=-2.34]
+    1922it [00:47, 33.69it/s, failures=0, objective=-2.34]
+    1923it [00:47, 39.43it/s, failures=0, objective=-2.34]
+    1923it [00:47, 39.43it/s, failures=0, objective=-2.34]
+    1924it [00:47, 39.43it/s, failures=0, objective=-2.34]
+    1925it [00:47, 39.43it/s, failures=0, objective=-2.34]
+    1926it [00:47, 39.43it/s, failures=0, objective=-2.34]
+    1927it [00:47, 39.43it/s, failures=0, objective=-2.34]
+    1928it [00:47, 39.43it/s, failures=0, objective=-2.34]
+    1929it [00:47, 39.43it/s, failures=0, objective=-2.34]
+    1930it [00:47, 39.43it/s, failures=0, objective=-2.34]
+    1931it [00:47, 39.43it/s, failures=0, objective=-2.34]
+    1932it [00:47, 39.43it/s, failures=0, objective=-2.34]
+    1933it [00:47, 39.43it/s, failures=0, objective=-2.34]
+    1934it [00:47, 39.43it/s, failures=0, objective=-2.34]
+    1935it [00:47, 39.43it/s, failures=0, objective=-2.34]
+    1936it [00:47, 39.43it/s, failures=0, objective=-2.34]
+    1937it [00:47, 41.97it/s, failures=0, objective=-2.34]
+    1937it [00:47, 41.97it/s, failures=0, objective=-2.34]
+    1938it [00:47, 41.97it/s, failures=0, objective=-2.34]
+    1939it [00:47, 41.97it/s, failures=0, objective=-2.34]
+    1940it [00:47, 41.97it/s, failures=0, objective=-2.34]
+    1941it [00:47, 41.97it/s, failures=0, objective=-2.34]
+    1942it [00:47, 41.97it/s, failures=0, objective=-2.34]
+    1943it [00:47, 41.97it/s, failures=0, objective=-2.34]
+    1944it [00:47, 41.97it/s, failures=0, objective=-2.34]
+    1945it [00:47, 41.97it/s, failures=0, objective=-2.34]
+    1946it [00:48, 33.79it/s, failures=0, objective=-2.34]
+    1946it [00:48, 33.79it/s, failures=0, objective=-2.34]
+    1947it [00:48, 33.79it/s, failures=0, objective=-2.34]
+    1948it [00:48, 33.79it/s, failures=0, objective=-2.34]
+    1949it [00:48, 33.79it/s, failures=0, objective=-2.34]
+    1950it [00:48, 33.79it/s, failures=0, objective=-2.34]
+    1951it [00:48, 33.79it/s, failures=0, objective=-2.34]
+    1952it [00:48, 33.79it/s, failures=0, objective=-2.34]
+    1953it [00:48, 33.79it/s, failures=0, objective=-2.34]
+    1954it [00:48, 33.79it/s, failures=0, objective=-2.34]
+    1955it [00:48, 33.79it/s, failures=0, objective=-2.34]
+    1956it [00:48, 33.79it/s, failures=0, objective=-2.34]
+    1957it [00:48, 33.79it/s, failures=0, objective=-2.34]
+    1958it [00:48, 33.79it/s, failures=0, objective=-2.34]
+    1959it [00:48, 33.79it/s, failures=0, objective=-2.34]
+    1960it [00:48, 33.79it/s, failures=0, objective=-2.34]
+    1961it [00:48, 33.79it/s, failures=0, objective=-2.34]
+    1962it [00:48, 33.79it/s, failures=0, objective=-2.34]
+    1963it [00:48, 33.79it/s, failures=0, objective=-2.34]
+    1964it [00:48, 33.79it/s, failures=0, objective=-2.34]
+    1965it [00:48, 33.79it/s, failures=0, objective=-2.34]
+    1966it [00:48, 39.69it/s, failures=0, objective=-2.34]
+    1966it [00:48, 39.69it/s, failures=0, objective=-2.34]
+    1967it [00:48, 39.69it/s, failures=0, objective=-2.34]
+    1968it [00:48, 39.69it/s, failures=0, objective=-2.34]
+    1969it [00:48, 39.69it/s, failures=0, objective=-2.34]
+    1970it [00:48, 39.69it/s, failures=0, objective=-2.34]
+    1971it [00:48, 39.69it/s, failures=0, objective=-2.34]
+    1972it [00:48, 39.69it/s, failures=0, objective=-2.34]
+    1973it [00:48, 39.69it/s, failures=0, objective=-2.34]
+    1974it [00:48, 39.69it/s, failures=0, objective=-2.34]
+    1975it [00:48, 39.69it/s, failures=0, objective=-2.34]
+    1976it [00:48, 39.69it/s, failures=0, objective=-2.34]
+    1977it [00:48, 39.69it/s, failures=0, objective=-2.34]
+    1978it [00:48, 39.69it/s, failures=0, objective=-2.34]
+    1979it [00:48, 39.69it/s, failures=0, objective=-2.34]
+    1980it [00:48, 41.55it/s, failures=0, objective=-2.34]
+    1980it [00:48, 41.55it/s, failures=0, objective=-2.34]
+    1981it [00:48, 41.55it/s, failures=0, objective=-2.34]
+    1982it [00:48, 41.55it/s, failures=0, objective=-2.34]
+    1983it [00:48, 41.55it/s, failures=0, objective=-2.34]
+    1984it [00:48, 41.55it/s, failures=0, objective=-2.34]
+    1985it [00:48, 41.55it/s, failures=0, objective=-2.34]
+    1986it [00:48, 41.55it/s, failures=0, objective=-2.34]
+    1987it [00:48, 41.55it/s, failures=0, objective=-2.34]
+    1988it [00:48, 41.55it/s, failures=0, objective=-2.34]
+    1989it [00:49, 34.94it/s, failures=0, objective=-2.34]
+    1989it [00:49, 34.94it/s, failures=0, objective=-2.34]
+    1990it [00:49, 34.94it/s, failures=0, objective=-2.34]
+    1991it [00:49, 34.94it/s, failures=0, objective=-2.34]
+    1992it [00:49, 34.94it/s, failures=0, objective=-2.34]
+    1993it [00:49, 34.94it/s, failures=0, objective=-2.34]
+    1994it [00:49, 34.94it/s, failures=0, objective=-2.34]
+    1995it [00:49, 34.94it/s, failures=0, objective=-2.34]
+    1996it [00:49, 34.94it/s, failures=0, objective=-2.34]
+    1997it [00:49, 34.94it/s, failures=0, objective=-2.34]
+    1998it [00:49, 34.94it/s, failures=0, objective=-2.34]
+    1999it [00:49, 34.94it/s, failures=0, objective=-2.34]
+    2000it [00:49, 34.94it/s, failures=0, objective=-2.34]
+    2001it [00:49, 34.94it/s, failures=0, objective=-2.34]
+    2002it [00:49, 34.94it/s, failures=0, objective=-2.34]
+    2003it [00:49, 34.94it/s, failures=0, objective=-2.34]
+    2004it [00:49, 34.94it/s, failures=0, objective=-2.34]
+    2005it [00:49, 34.94it/s, failures=0, objective=-2.34]
+    2006it [00:49, 34.94it/s, failures=0, objective=-2.34]
+    2007it [00:49, 34.94it/s, failures=0, objective=-2.34]
+    2008it [00:49, 34.94it/s, failures=0, objective=-2.34]
+    2009it [00:49, 34.94it/s, failures=0, objective=-2.34]
+    2010it [00:49, 34.94it/s, failures=0, objective=-2.34]
+    2011it [00:49, 42.32it/s, failures=0, objective=-2.34]
+    2011it [00:49, 42.32it/s, failures=0, objective=-2.34]
+    2012it [00:49, 42.32it/s, failures=0, objective=-2.34]
+    2013it [00:49, 42.32it/s, failures=0, objective=-2.34]
+    2014it [00:49, 42.32it/s, failures=0, objective=-2.34]
+    2015it [00:49, 42.32it/s, failures=0, objective=-2.34]
+    2016it [00:49, 42.32it/s, failures=0, objective=-2.34]
+    2017it [00:49, 42.32it/s, failures=0, objective=-2.34]
+    2018it [00:49, 42.32it/s, failures=0, objective=-2.34]
+    2019it [00:49, 42.32it/s, failures=0, objective=-2.34]
+    2020it [00:49, 42.32it/s, failures=0, objective=-2.34]
+    2021it [00:49, 38.53it/s, failures=0, objective=-2.34]
+    2021it [00:49, 38.53it/s, failures=0, objective=-2.34]
+    2022it [00:49, 38.53it/s, failures=0, objective=-2.34]
+    2023it [00:49, 38.53it/s, failures=0, objective=-2.34]
+    2024it [00:49, 38.53it/s, failures=0, objective=-2.34]
+    2025it [00:49, 38.53it/s, failures=0, objective=-2.34]
+    2026it [00:49, 38.53it/s, failures=0, objective=-2.34]
+    2027it [00:49, 38.53it/s, failures=0, objective=-2.34]
+    2028it [00:49, 38.53it/s, failures=0, objective=-2.34]
+    2029it [00:49, 38.53it/s, failures=0, objective=-2.34]
+    2030it [00:49, 38.53it/s, failures=0, objective=-2.34]
+    2031it [00:49, 38.53it/s, failures=0, objective=-2.34]
+    2032it [00:50, 34.91it/s, failures=0, objective=-2.34]
+    2032it [00:50, 34.91it/s, failures=0, objective=-2.34]
+    2033it [00:50, 34.91it/s, failures=0, objective=-2.34]
+    2034it [00:50, 34.91it/s, failures=0, objective=-2.34]
+    2035it [00:50, 34.91it/s, failures=0, objective=-2.34]
+    2036it [00:50, 34.91it/s, failures=0, objective=-2.34]
+    2037it [00:50, 34.91it/s, failures=0, objective=-2.34]
+    2038it [00:50, 34.91it/s, failures=0, objective=-2.34]
+    2039it [00:50, 34.91it/s, failures=0, objective=-2.34]
+    2040it [00:50, 34.91it/s, failures=0, objective=-2.34]
+    2041it [00:50, 34.91it/s, failures=0, objective=-2.34]
+    2042it [00:50, 34.91it/s, failures=0, objective=-2.34]
+    2043it [00:50, 34.91it/s, failures=0, objective=-2.34]
+    2044it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2044it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2045it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2046it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2047it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2048it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2049it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2050it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2051it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2052it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2053it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2054it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2055it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2056it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2057it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2058it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2059it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2060it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2061it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2062it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2063it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2064it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2065it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2066it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2067it [00:50, 31.99it/s, failures=0, objective=-2.34]
+    2068it [00:51, 38.50it/s, failures=0, objective=-2.34]
+    2068it [00:51, 38.50it/s, failures=0, objective=-2.34]
+    2069it [00:51, 38.50it/s, failures=0, objective=-2.34]
+    2070it [00:51, 38.50it/s, failures=0, objective=-2.34]
+    2071it [00:51, 38.50it/s, failures=0, objective=-2.34]
+    2072it [00:51, 38.50it/s, failures=0, objective=-2.34]
+    2073it [00:51, 38.50it/s, failures=0, objective=-2.34]
+    2074it [00:51, 38.50it/s, failures=0, objective=-2.34]
+    2075it [00:51, 38.50it/s, failures=0, objective=-2.34]
+    2076it [00:51, 38.50it/s, failures=0, objective=-2.34]
+    2077it [00:51, 38.50it/s, failures=0, objective=-2.34]
+    2078it [00:51, 38.50it/s, failures=0, objective=-2.34]
+    2079it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2079it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2080it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2081it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2082it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2083it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2084it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2085it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2086it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2087it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2088it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2089it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2090it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2091it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2092it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2093it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2094it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2095it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2096it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2097it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2098it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2099it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2100it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2101it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2102it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2103it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2104it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2105it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2106it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2107it [00:51, 32.22it/s, failures=0, objective=-2.34]
+    2108it [00:52, 45.37it/s, failures=0, objective=-2.34]
+    2108it [00:52, 45.37it/s, failures=0, objective=-2.34]
+    2109it [00:52, 45.37it/s, failures=0, objective=-2.34]
+    2110it [00:52, 45.37it/s, failures=0, objective=-2.34]
+    2111it [00:52, 45.37it/s, failures=0, objective=-2.34]
+    2112it [00:52, 45.37it/s, failures=0, objective=-2.34]
+    2113it [00:52, 45.37it/s, failures=0, objective=-2.34]
+    2114it [00:52, 45.37it/s, failures=0, objective=-2.34]
+    2115it [00:52, 45.37it/s, failures=0, objective=-2.34]
+    2116it [00:52, 45.37it/s, failures=0, objective=-2.34]
+    2117it [00:52, 45.37it/s, failures=0, objective=-2.34]
+    2118it [00:52, 45.37it/s, failures=0, objective=-2.34]
+    2119it [00:52, 39.64it/s, failures=0, objective=-2.34]
+    2119it [00:52, 39.64it/s, failures=0, objective=-2.34]
+    2120it [00:52, 39.64it/s, failures=0, objective=-2.34]
+    2121it [00:52, 39.64it/s, failures=0, objective=-2.34]
+    2122it [00:52, 39.64it/s, failures=0, objective=-2.34]
+    2123it [00:52, 39.64it/s, failures=0, objective=-2.34]
+    2124it [00:52, 39.64it/s, failures=0, objective=-2.34]
+    2125it [00:52, 39.64it/s, failures=0, objective=-2.34]
+    2126it [00:52, 39.64it/s, failures=0, objective=-2.34]
+    2127it [00:52, 39.64it/s, failures=0, objective=-2.34]
+    2128it [00:52, 39.64it/s, failures=0, objective=-2.34]
+    2129it [00:52, 39.64it/s, failures=0, objective=-2.34]
+    2130it [00:52, 39.64it/s, failures=0, objective=-2.34]
+    2131it [00:52, 39.64it/s, failures=0, objective=-2.34]
+    2132it [00:52, 37.99it/s, failures=0, objective=-2.34]
+    2132it [00:52, 37.99it/s, failures=0, objective=-2.34]
+    2133it [00:52, 37.99it/s, failures=0, objective=-2.34]
+    2134it [00:52, 37.99it/s, failures=0, objective=-2.34]
+    2135it [00:52, 37.99it/s, failures=0, objective=-2.34]
+    2136it [00:52, 37.99it/s, failures=0, objective=-2.34]
+    2137it [00:52, 37.99it/s, failures=0, objective=-2.34]
+    2138it [00:52, 37.99it/s, failures=0, objective=-2.34]
+    2139it [00:52, 37.99it/s, failures=0, objective=-2.34]
+    2140it [00:52, 37.99it/s, failures=0, objective=-2.34]
+    2141it [00:52, 37.99it/s, failures=0, objective=-2.34]
+    2142it [00:52, 37.99it/s, failures=0, objective=-2.34]
+    2143it [00:52, 37.99it/s, failures=0, objective=-2.34]
+    2144it [00:52, 37.99it/s, failures=0, objective=-2.34]
+    2145it [00:53, 36.59it/s, failures=0, objective=-2.34]
+    2145it [00:53, 36.59it/s, failures=0, objective=-2.34]
+    2146it [00:53, 36.59it/s, failures=0, objective=-2.34]
+    2147it [00:53, 36.59it/s, failures=0, objective=-2.34]
+    2148it [00:53, 36.59it/s, failures=0, objective=-2.34]
+    2149it [00:53, 36.59it/s, failures=0, objective=-2.34]
+    2150it [00:53, 36.59it/s, failures=0, objective=-2.34]
+    2151it [00:53, 36.59it/s, failures=0, objective=-2.34]
+    2152it [00:53, 36.59it/s, failures=0, objective=-2.34]
+    2153it [00:53, 36.59it/s, failures=0, objective=-2.34]
+    2154it [00:53, 36.59it/s, failures=0, objective=-2.34]
+    2155it [00:53, 36.59it/s, failures=0, objective=-2.34]
+    2156it [00:53, 36.59it/s, failures=0, objective=-2.34]
+    2157it [00:53, 36.59it/s, failures=0, objective=-2.34]
+    2158it [00:53, 36.59it/s, failures=0, objective=-2.34]
+    2159it [00:53, 36.59it/s, failures=0, objective=-2.34]
+    2160it [00:53, 36.59it/s, failures=0, objective=-2.34]
+    2161it [00:53, 36.59it/s, failures=0, objective=-2.34]
+    2162it [00:53, 36.59it/s, failures=0, objective=-2.34]
+    2163it [00:53, 36.59it/s, failures=0, objective=-2.34]
+    2164it [00:53, 36.59it/s, failures=0, objective=-2.34]
+    2165it [00:53, 41.19it/s, failures=0, objective=-2.34]
+    2165it [00:53, 41.19it/s, failures=0, objective=-2.34]
+    2166it [00:53, 41.19it/s, failures=0, objective=-2.34]
+    2167it [00:53, 41.19it/s, failures=0, objective=-2.34]
+    2168it [00:53, 41.19it/s, failures=0, objective=-2.34]
+    2169it [00:53, 41.19it/s, failures=0, objective=-2.34]
+    2170it [00:53, 41.19it/s, failures=0, objective=-2.34]
+    2171it [00:53, 41.19it/s, failures=0, objective=-2.34]
+    2172it [00:53, 41.19it/s, failures=0, objective=-2.34]
+    2173it [00:53, 41.19it/s, failures=0, objective=-2.34]
+    2174it [00:53, 41.19it/s, failures=0, objective=-2.34]
+    2175it [00:53, 41.19it/s, failures=0, objective=-2.34]
+    2176it [00:53, 41.19it/s, failures=0, objective=-2.34]
+    2177it [00:53, 40.36it/s, failures=0, objective=-2.34]
+    2177it [00:53, 40.36it/s, failures=0, objective=-2.34]
+    2178it [00:53, 40.36it/s, failures=0, objective=-2.34]
+    2179it [00:53, 40.36it/s, failures=0, objective=-2.34]
+    2180it [00:53, 40.36it/s, failures=0, objective=-1.74]
+    2181it [00:53, 40.36it/s, failures=0, objective=-1.74]
+    2182it [00:53, 40.36it/s, failures=0, objective=-1.74]
+    2183it [00:53, 40.36it/s, failures=0, objective=-1.74]
+    2184it [00:53, 40.36it/s, failures=0, objective=-1.74]
+    2185it [00:53, 40.36it/s, failures=0, objective=-1.74]
+    2186it [00:53, 40.36it/s, failures=0, objective=-1.74]
+    2187it [00:54, 33.15it/s, failures=0, objective=-1.74]
+    2187it [00:54, 33.15it/s, failures=0, objective=-1.74]
+    2188it [00:54, 33.15it/s, failures=0, objective=-1.74]
+    2189it [00:54, 33.15it/s, failures=0, objective=-1.74]
+    2190it [00:54, 33.15it/s, failures=0, objective=-1.74]
+    2191it [00:54, 33.15it/s, failures=0, objective=-1.74]
+    2192it [00:54, 33.15it/s, failures=0, objective=-1.74]
+    2193it [00:54, 33.15it/s, failures=0, objective=-1.74]
+    2194it [00:54, 33.15it/s, failures=0, objective=-1.74]
+    2195it [00:54, 33.15it/s, failures=0, objective=-1.74]
+    2196it [00:54, 33.15it/s, failures=0, objective=-1.74]
+    2197it [00:54, 33.15it/s, failures=0, objective=-1.74]
+    2198it [00:54, 33.15it/s, failures=0, objective=-1.74]
+    2199it [00:54, 33.15it/s, failures=0, objective=-1.74]
+    2200it [00:54, 33.15it/s, failures=0, objective=-1.74]
+    2201it [00:54, 33.15it/s, failures=0, objective=-1.74]
+    2202it [00:54, 33.15it/s, failures=0, objective=-1.74]
+    2203it [00:54, 33.15it/s, failures=0, objective=-1.74]
+    2204it [00:54, 33.15it/s, failures=0, objective=-1.74]
+    2205it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2205it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2206it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2207it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2208it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2209it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2210it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2211it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2212it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2213it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2214it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2215it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2216it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2217it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2218it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2219it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2220it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2221it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2222it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2223it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2224it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2225it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2226it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2227it [00:54, 35.37it/s, failures=0, objective=-1.74]
+    2228it [00:55, 43.93it/s, failures=0, objective=-1.74]
+    2228it [00:55, 43.93it/s, failures=0, objective=-1.74]
+    2229it [00:55, 43.93it/s, failures=0, objective=-1.74]
+    2230it [00:55, 43.93it/s, failures=0, objective=-1.74]
+    2231it [00:55, 43.93it/s, failures=0, objective=-1.74]
+    2232it [00:55, 43.93it/s, failures=0, objective=-1.74]
+    2233it [00:55, 43.93it/s, failures=0, objective=-1.74]
+    2234it [00:55, 43.93it/s, failures=0, objective=-1.74]
+    2235it [00:55, 43.93it/s, failures=0, objective=-1.74]
+    2236it [00:55, 43.93it/s, failures=0, objective=-1.74]
+    2237it [00:55, 43.93it/s, failures=0, objective=-1.74]
+    2238it [00:55, 43.93it/s, failures=0, objective=-1.74]
+    2239it [00:55, 43.93it/s, failures=0, objective=-1.74]
+    2240it [00:55, 43.93it/s, failures=0, objective=-1.74]
+    2241it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2241it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2242it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2243it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2244it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2245it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2246it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2247it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2248it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2249it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2250it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2251it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2252it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2253it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2254it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2255it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2256it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2257it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2258it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2259it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2260it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2261it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2262it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2263it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2264it [00:55, 37.69it/s, failures=0, objective=-1.74]
+    2265it [00:56, 44.86it/s, failures=0, objective=-1.74]
+    2265it [00:56, 44.86it/s, failures=0, objective=-1.74]
+    2266it [00:56, 44.86it/s, failures=0, objective=-1.74]
+    2267it [00:56, 44.86it/s, failures=0, objective=-1.74]
+    2268it [00:56, 44.86it/s, failures=0, objective=-1.74]
+    2269it [00:56, 44.86it/s, failures=0, objective=-1.74]
+    2270it [00:56, 44.86it/s, failures=0, objective=-1.74]
+    2271it [00:56, 44.86it/s, failures=0, objective=-1.74]
+    2272it [00:56, 44.86it/s, failures=0, objective=-1.74]
+    2273it [00:56, 44.86it/s, failures=0, objective=-1.74]
+    2274it [00:56, 44.86it/s, failures=0, objective=-1.74]
+    2275it [00:56, 44.86it/s, failures=0, objective=-1.74]
+    2276it [00:56, 44.86it/s, failures=0, objective=-1.74]
+    2277it [00:56, 44.86it/s, failures=0, objective=-1.74]
+    2278it [00:56, 44.86it/s, failures=0, objective=-1.74]
+    2279it [00:56, 40.71it/s, failures=0, objective=-1.74]
+    2279it [00:56, 40.71it/s, failures=0, objective=-1.74]
+    2280it [00:56, 40.71it/s, failures=0, objective=-1.74]
+    2281it [00:56, 40.71it/s, failures=0, objective=-1.74]
+    2282it [00:56, 40.71it/s, failures=0, objective=-1.74]
+    2283it [00:56, 40.71it/s, failures=0, objective=-1.74]
+    2284it [00:56, 40.71it/s, failures=0, objective=-1.74]
+    2285it [00:56, 40.71it/s, failures=0, objective=-1.74]
+    2286it [00:56, 40.71it/s, failures=0, objective=-1.74]
+    2287it [00:56, 40.71it/s, failures=0, objective=-1.74]
+    2288it [00:56, 40.71it/s, failures=0, objective=-1.74]
+    2289it [00:56, 40.71it/s, failures=0, objective=-1.74]
+    2290it [00:56, 40.71it/s, failures=0, objective=-1.74]
+    2291it [00:56, 40.71it/s, failures=0, objective=-1.74]
+    2292it [00:56, 40.71it/s, failures=0, objective=-1.74]
+    2293it [00:56, 41.58it/s, failures=0, objective=-1.74]
+    2293it [00:56, 41.58it/s, failures=0, objective=-1.74]
+    2294it [00:56, 41.58it/s, failures=0, objective=-1.74]
+    2295it [00:56, 41.58it/s, failures=0, objective=-1.74]
+    2296it [00:56, 41.58it/s, failures=0, objective=-1.74]
+    2297it [00:56, 41.58it/s, failures=0, objective=-1.74]
+    2298it [00:56, 41.58it/s, failures=0, objective=-1.74]
+    2299it [00:56, 41.58it/s, failures=0, objective=-1.74]
+    2300it [00:56, 41.58it/s, failures=0, objective=-1.74]
+    2301it [00:56, 41.58it/s, failures=0, objective=-1.74]
+    2302it [00:56, 41.58it/s, failures=0, objective=-1.74]
+    2303it [00:57, 35.66it/s, failures=0, objective=-1.74]
+    2303it [00:57, 35.66it/s, failures=0, objective=-1.74]
+    2304it [00:57, 35.66it/s, failures=0, objective=-1.74]
+    2305it [00:57, 35.66it/s, failures=0, objective=-1.74]
+    2306it [00:57, 35.66it/s, failures=0, objective=-1.74]
+    2307it [00:57, 35.66it/s, failures=0, objective=-1.74]
+    2308it [00:57, 35.66it/s, failures=0, objective=-1.74]
+    2309it [00:57, 35.66it/s, failures=0, objective=-1.74]
+    2310it [00:57, 35.66it/s, failures=0, objective=-1.74]
+    2311it [00:57, 35.66it/s, failures=0, objective=-1.74]
+    2312it [00:57, 35.66it/s, failures=0, objective=-1.74]
+    2313it [00:57, 35.66it/s, failures=0, objective=-1.74]
+    2314it [00:57, 35.66it/s, failures=0, objective=-1.74]
+    2315it [00:57, 35.66it/s, failures=0, objective=-1.74]
+    2316it [00:57, 35.66it/s, failures=0, objective=-1.74]
+    2317it [00:57, 35.62it/s, failures=0, objective=-1.74]
+    2317it [00:57, 35.62it/s, failures=0, objective=-1.74]
+    2318it [00:57, 35.62it/s, failures=0, objective=-1.74]
+    2319it [00:57, 35.62it/s, failures=0, objective=-1.74]
+    2320it [00:57, 35.62it/s, failures=0, objective=-1.74]
+    2321it [00:57, 35.62it/s, failures=0, objective=-1.74]
+    2322it [00:57, 35.62it/s, failures=0, objective=-1.74]
+    2323it [00:57, 35.62it/s, failures=0, objective=-1.74]
+    2324it [00:57, 35.62it/s, failures=0, objective=-1.74]
+    2325it [00:57, 35.62it/s, failures=0, objective=-1.74]
+    2326it [00:57, 35.62it/s, failures=0, objective=-1.74]
+    2327it [00:57, 35.62it/s, failures=0, objective=-1.74]
+    2328it [00:57, 35.62it/s, failures=0, objective=-1.74]
+    2329it [00:57, 35.62it/s, failures=0, objective=-1.74]
+    2330it [00:57, 35.62it/s, failures=0, objective=-1.74]
+    2331it [00:57, 35.62it/s, failures=0, objective=-1.74]
+    2332it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2332it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2333it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2334it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2335it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2336it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2337it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2338it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2339it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2340it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2341it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2342it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2343it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2344it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2345it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2346it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2347it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2348it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2349it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2350it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2351it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2352it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2353it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2354it [00:58, 34.96it/s, failures=0, objective=-1.74]
+    2355it [00:58, 41.27it/s, failures=0, objective=-1.74]
+    2355it [00:58, 41.27it/s, failures=0, objective=-1.74]
+    2356it [00:58, 41.27it/s, failures=0, objective=-1.74]
+    2357it [00:58, 41.27it/s, failures=0, objective=-1.74]
+    2358it [00:58, 41.27it/s, failures=0, objective=-1.74]
+    2359it [00:58, 41.27it/s, failures=0, objective=-1.74]
+    2360it [00:58, 41.27it/s, failures=0, objective=-1.74]
+    2361it [00:58, 41.27it/s, failures=0, objective=-1.74]
+    2362it [00:58, 41.27it/s, failures=0, objective=-1.74]
+    2363it [00:58, 41.27it/s, failures=0, objective=-1.74]
+    2364it [00:58, 41.27it/s, failures=0, objective=-1.74]
+    2365it [00:58, 41.27it/s, failures=0, objective=-1.74]
+    2366it [00:58, 41.27it/s, failures=0, objective=-1.74]
+    2367it [00:58, 41.27it/s, failures=0, objective=-1.74]
+    2368it [00:58, 41.27it/s, failures=0, objective=-1.74]
+    2369it [00:58, 41.27it/s, failures=0, objective=-1.74]
+    2370it [00:58, 41.27it/s, failures=0, objective=-1.74]
+    2371it [00:58, 41.27it/s, failures=0, objective=-1.74]
+    2372it [00:58, 40.94it/s, failures=0, objective=-1.74]
+    2372it [00:58, 40.94it/s, failures=0, objective=-1.74]
+    2373it [00:58, 40.94it/s, failures=0, objective=-1.74]
+    2374it [00:58, 40.94it/s, failures=0, objective=-1.74]
+    2375it [00:58, 40.94it/s, failures=0, objective=-1.74]
+    2376it [00:58, 40.94it/s, failures=0, objective=-1.74]
+    2377it [00:58, 40.94it/s, failures=0, objective=-1.74]
+    2378it [00:58, 40.94it/s, failures=0, objective=-1.74]
+    2379it [00:58, 40.94it/s, failures=0, objective=-1.74]
+    2380it [00:58, 40.94it/s, failures=0, objective=-1.74]
+    2381it [00:58, 40.94it/s, failures=0, objective=-1.74]
+    2382it [00:59, 38.10it/s, failures=0, objective=-1.74]
+    2382it [00:59, 38.10it/s, failures=0, objective=-1.74]
+    2383it [00:59, 38.10it/s, failures=0, objective=-1.74]
+    2384it [00:59, 38.10it/s, failures=0, objective=-1.74]
+    2385it [00:59, 38.10it/s, failures=0, objective=-1.74]
+    2386it [00:59, 38.10it/s, failures=0, objective=-1.74]
+    2387it [00:59, 38.10it/s, failures=0, objective=-1.74]
+    2388it [00:59, 38.10it/s, failures=0, objective=-1.74]
+    2389it [00:59, 38.10it/s, failures=0, objective=-1.74]
+    2390it [00:59, 38.10it/s, failures=0, objective=-1.74]
+    2391it [00:59, 38.10it/s, failures=0, objective=-1.74]
+    2392it [00:59, 38.10it/s, failures=0, objective=-1.74]
+    2393it [00:59, 38.10it/s, failures=0, objective=-1.74]
+    2394it [00:59, 38.10it/s, failures=0, objective=-1.74]
+    2395it [00:59, 38.10it/s, failures=0, objective=-1.74]
+    2396it [00:59, 38.10it/s, failures=0, objective=-1.74]
+    2397it [00:59, 38.55it/s, failures=0, objective=-1.74]
+    2397it [00:59, 38.55it/s, failures=0, objective=-1.74]
+    2398it [00:59, 38.55it/s, failures=0, objective=-1.74]
+    2399it [00:59, 38.55it/s, failures=0, objective=-1.7] 
+    2400it [00:59, 38.55it/s, failures=0, objective=-1.7]
+    2401it [00:59, 38.55it/s, failures=0, objective=-1.54]
+    2402it [00:59, 38.55it/s, failures=0, objective=-1.54]
+    2403it [00:59, 38.55it/s, failures=0, objective=-1.54]
+    2404it [00:59, 38.55it/s, failures=0, objective=-1.54]
+    2405it [00:59, 38.55it/s, failures=0, objective=-1.54]
+    2406it [00:59, 34.81it/s, failures=0, objective=-1.54]
+    2406it [00:59, 34.81it/s, failures=0, objective=-1.54]
+    2407it [00:59, 34.81it/s, failures=0, objective=-1.54]
+    2408it [00:59, 34.81it/s, failures=0, objective=-1.54]
+    2409it [00:59, 34.81it/s, failures=0, objective=-1.54]
+    2410it [00:59, 34.81it/s, failures=0, objective=-1.54]
+    2411it [00:59, 34.81it/s, failures=0, objective=-1.54]
+    2412it [00:59, 34.81it/s, failures=0, objective=-1.54]
+    2413it [00:59, 34.81it/s, failures=0, objective=-1.54]
+    2414it [00:59, 34.81it/s, failures=0, objective=-1.54]
+    2415it [00:59, 34.81it/s, failures=0, objective=-1.54]
+    2416it [00:59, 34.81it/s, failures=0, objective=-1.54]
+    2417it [00:59, 34.81it/s, failures=0, objective=-1.54]
+    2418it [00:59, 34.81it/s, failures=0, objective=-1.54]
+    2419it [00:59, 34.81it/s, failures=0, objective=-1.54]
+    2420it [00:59, 34.81it/s, failures=0, objective=-1.54]
+    2421it [00:59, 34.81it/s, failures=0, objective=-1.54]
+    2422it [00:59, 34.81it/s, failures=0, objective=-1.54]
+    2423it [00:59, 34.81it/s, failures=0, objective=-1.54]
+    2424it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2424it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2425it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2426it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2427it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2428it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2429it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2430it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2431it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2432it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2433it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2434it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2435it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2436it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2437it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2438it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2439it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2440it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2441it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2442it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2443it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2444it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2445it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2446it [01:00, 36.29it/s, failures=0, objective=-1.54]
+    2447it [01:00, 43.22it/s, failures=0, objective=-1.54]
+    2447it [01:00, 43.22it/s, failures=0, objective=-1.24]
+    2448it [01:00, 43.22it/s, failures=0, objective=-1.24]
+    2449it [01:00, 43.22it/s, failures=0, objective=-1.24]
+    2450it [01:00, 43.22it/s, failures=0, objective=-1.24]
+    2451it [01:00, 43.22it/s, failures=0, objective=-1.24]
+    2452it [01:00, 43.22it/s, failures=0, objective=-1.24]
+    2453it [01:00, 43.22it/s, failures=0, objective=-1.24]
+    2454it [01:00, 43.22it/s, failures=0, objective=-1.24]
+    2455it [01:00, 43.22it/s, failures=0, objective=-1.24]
+    2456it [01:00, 43.22it/s, failures=0, objective=-1.24]
+    2457it [01:00, 43.22it/s, failures=0, objective=-1.24]
+    2458it [01:00, 43.22it/s, failures=0, objective=-1.24]
+    2459it [01:00, 43.22it/s, failures=0, objective=-1.24]
+    2460it [01:00, 43.22it/s, failures=0, objective=-1.24]
+    2461it [01:01, 42.62it/s, failures=0, objective=-1.24]
+    2461it [01:01, 42.62it/s, failures=0, objective=-1.24]
+    2462it [01:01, 42.62it/s, failures=0, objective=-1.24]
+    2463it [01:01, 42.62it/s, failures=0, objective=-1.24]
+    2464it [01:01, 42.62it/s, failures=0, objective=-1.24]
+    2465it [01:01, 42.62it/s, failures=0, objective=-1.24]
+    2466it [01:01, 42.62it/s, failures=0, objective=-1.24]
+    2467it [01:01, 42.62it/s, failures=0, objective=-1.24]
+    2468it [01:01, 42.62it/s, failures=0, objective=-1.24]
+    2469it [01:01, 42.62it/s, failures=0, objective=-1.24]
+    2470it [01:01, 42.62it/s, failures=0, objective=-1.24]
+    2471it [01:01, 42.62it/s, failures=0, objective=-1.24]
+    2472it [01:01, 42.62it/s, failures=0, objective=-1.24]
+    2473it [01:01, 42.62it/s, failures=0, objective=-1.24]
+    2474it [01:01, 38.64it/s, failures=0, objective=-1.24]
+    2474it [01:01, 38.64it/s, failures=0, objective=-1.24]
+    2475it [01:01, 38.64it/s, failures=0, objective=-1.24]
+    2476it [01:01, 38.64it/s, failures=0, objective=-1.24]
+    2477it [01:01, 38.64it/s, failures=0, objective=-1.24]
+    2478it [01:01, 38.64it/s, failures=0, objective=-1.24]
+    2479it [01:01, 38.64it/s, failures=0, objective=-1.24]
+    2480it [01:01, 38.64it/s, failures=0, objective=-1.24]
+    2481it [01:01, 38.64it/s, failures=0, objective=-1.24]
+    2482it [01:01, 38.64it/s, failures=0, objective=-1.24]
+    2483it [01:01, 38.64it/s, failures=0, objective=-1.24]
+    2484it [01:01, 38.64it/s, failures=0, objective=-1.24]
+    2485it [01:01, 38.64it/s, failures=0, objective=-1.24]
+    2486it [01:01, 38.64it/s, failures=0, objective=-1.24]
+    2487it [01:01, 38.64it/s, failures=0, objective=-1.24]
+    2488it [01:01, 38.80it/s, failures=0, objective=-1.24]
+    2488it [01:01, 38.80it/s, failures=0, objective=-1.24]
+    2489it [01:01, 38.80it/s, failures=0, objective=-1.24]
+    2490it [01:01, 38.80it/s, failures=0, objective=-1.24]
+    2491it [01:01, 38.80it/s, failures=0, objective=-1.24]
+    2492it [01:01, 38.80it/s, failures=0, objective=-1.24]
+    2493it [01:01, 38.80it/s, failures=0, objective=-1.24]
+    2494it [01:01, 38.80it/s, failures=0, objective=-1.24]
+    2495it [01:01, 38.80it/s, failures=0, objective=-1.24]
+    2496it [01:01, 38.80it/s, failures=0, objective=-1.24]
+    2497it [01:01, 38.80it/s, failures=0, objective=-1.24]
+    2498it [01:01, 38.80it/s, failures=0, objective=-1.24]
+    2499it [01:02, 35.85it/s, failures=0, objective=-1.24]
+    2499it [01:02, 35.85it/s, failures=0, objective=-1.24]
+    2500it [01:02, 35.85it/s, failures=0, objective=-1.24]
+    2501it [01:02, 35.85it/s, failures=0, objective=-1.24]
+    2502it [01:02, 35.85it/s, failures=0, objective=-1.24]
+    2503it [01:02, 35.85it/s, failures=0, objective=-1.24]
+    2504it [01:02, 35.85it/s, failures=0, objective=-1.24]
+    2505it [01:02, 35.85it/s, failures=0, objective=-1.24]
+    2506it [01:02, 35.85it/s, failures=0, objective=-1.24]
+    2507it [01:02, 35.85it/s, failures=0, objective=-1.24]
+    2508it [01:02, 35.85it/s, failures=0, objective=-1.24]
+    2509it [01:02, 35.85it/s, failures=0, objective=-1.24]
+    2510it [01:02, 35.85it/s, failures=0, objective=-1.24]
+    2511it [01:02, 35.85it/s, failures=0, objective=-1.24]
+    2512it [01:02, 35.85it/s, failures=0, objective=-1.24]
+    2513it [01:02, 36.58it/s, failures=0, objective=-1.24]
+    2513it [01:02, 36.58it/s, failures=0, objective=-1.24]
+    2514it [01:02, 36.58it/s, failures=0, objective=-1.24]
+    2515it [01:02, 36.58it/s, failures=0, objective=-1.24]
+    2516it [01:02, 36.58it/s, failures=0, objective=-1.24]
+    2517it [01:02, 36.58it/s, failures=0, objective=-1.24]
+    2518it [01:02, 36.58it/s, failures=0, objective=-1.24]
+    2519it [01:02, 36.58it/s, failures=0, objective=-1.24]
+    2520it [01:02, 36.58it/s, failures=0, objective=-1.24]
+    2521it [01:02, 36.58it/s, failures=0, objective=-1.24]
+    2522it [01:02, 36.58it/s, failures=0, objective=-1.24]
+    2523it [01:02, 36.58it/s, failures=0, objective=-1.24]
+    2524it [01:02, 36.58it/s, failures=0, objective=-1.24]
+    2525it [01:02, 36.58it/s, failures=0, objective=-1.24]
+    2526it [01:02, 36.58it/s, failures=0, objective=-1.24]
+    2527it [01:02, 36.58it/s, failures=0, objective=-1.24]
+    2528it [01:02, 36.58it/s, failures=0, objective=-1.24]
+    2529it [01:03, 37.89it/s, failures=0, objective=-1.24]
+    2529it [01:03, 37.89it/s, failures=0, objective=-1.24]
+    2530it [01:03, 37.89it/s, failures=0, objective=-1.24]
+    2531it [01:03, 37.89it/s, failures=0, objective=-1.24]
+    2532it [01:03, 37.89it/s, failures=0, objective=-1.24]
+    2533it [01:03, 37.89it/s, failures=0, objective=-1.24]
+    2534it [01:03, 37.89it/s, failures=0, objective=-1.24]
+    2535it [01:03, 37.89it/s, failures=0, objective=-1.24]
+    2536it [01:03, 37.89it/s, failures=0, objective=-1.24]
+    2537it [01:03, 37.89it/s, failures=0, objective=-1.24]
+    2538it [01:03, 37.89it/s, failures=0, objective=-1.24]
+    2539it [01:03, 37.89it/s, failures=0, objective=-1.24]
+    2540it [01:03, 37.89it/s, failures=0, objective=-1.24]
+    2541it [01:03, 37.89it/s, failures=0, objective=-1.24]
+    2542it [01:03, 37.89it/s, failures=0, objective=-1.24]
+    2543it [01:03, 37.89it/s, failures=0, objective=-1.24]
+    2544it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2544it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2545it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2546it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2547it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2548it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2549it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2550it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2551it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2552it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2553it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2554it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2555it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2556it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2557it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2558it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2559it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2560it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2561it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2562it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2563it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2564it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2565it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2566it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2567it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2568it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2569it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2570it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2571it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2572it [01:03, 34.67it/s, failures=0, objective=-1.24]
+    2573it [01:03, 46.44it/s, failures=0, objective=-1.24]
+    2573it [01:03, 46.44it/s, failures=0, objective=-1.24]
+    2574it [01:03, 46.44it/s, failures=0, objective=-1.24]
+    2575it [01:03, 46.44it/s, failures=0, objective=-1.24]
+    2576it [01:03, 46.44it/s, failures=0, objective=-1.24]
+    2577it [01:03, 46.44it/s, failures=0, objective=-1.24]
+    2578it [01:04, 38.73it/s, failures=0, objective=-1.24]
+    2578it [01:04, 38.73it/s, failures=0, objective=-1.24]
+    2579it [01:04, 38.73it/s, failures=0, objective=-1.24]
+    2580it [01:04, 38.73it/s, failures=0, objective=-1.24]
+    2581it [01:04, 38.73it/s, failures=0, objective=-1.24]
+    2582it [01:04, 38.73it/s, failures=0, objective=-1.24]
+    2583it [01:04, 38.73it/s, failures=0, objective=-1.24]
+    2584it [01:04, 38.73it/s, failures=0, objective=-1.24]
+    2585it [01:04, 38.73it/s, failures=0, objective=-1.24]
+    2586it [01:04, 38.73it/s, failures=0, objective=-1.24]
+    2587it [01:04, 38.73it/s, failures=0, objective=-1.24]
+    2588it [01:04, 38.73it/s, failures=0, objective=-1.24]
+    2589it [01:04, 38.73it/s, failures=0, objective=-1.24]
+    2590it [01:04, 36.82it/s, failures=0, objective=-1.24]
+    2590it [01:04, 36.82it/s, failures=0, objective=-1.24]
+    2591it [01:04, 36.82it/s, failures=0, objective=-1.24]
+    2592it [01:04, 36.82it/s, failures=0, objective=-1.24]
+    2593it [01:04, 36.82it/s, failures=0, objective=-1.24]
+    2594it [01:04, 36.82it/s, failures=0, objective=-1.24]
+    2595it [01:04, 36.82it/s, failures=0, objective=-1.24]
+    2596it [01:04, 36.82it/s, failures=0, objective=-1.24]
+    2597it [01:04, 36.82it/s, failures=0, objective=-1.24]
+    2598it [01:04, 36.82it/s, failures=0, objective=-1.24]
+    2599it [01:04, 36.82it/s, failures=0, objective=-1.24]
+    2600it [01:04, 36.82it/s, failures=0, objective=-1.24]
+    2601it [01:04, 36.82it/s, failures=0, objective=-1.24]
+    2602it [01:04, 36.82it/s, failures=0, objective=-1.24]
+    2603it [01:04, 36.82it/s, failures=0, objective=-1.24]
+    2604it [01:04, 36.82it/s, failures=0, objective=-1.24]
+    2605it [01:04, 36.82it/s, failures=0, objective=-1.24]
+    2606it [01:05, 38.09it/s, failures=0, objective=-1.24]
+    2606it [01:05, 38.09it/s, failures=0, objective=-1.24]
+    2607it [01:05, 38.09it/s, failures=0, objective=-1.24]
+    2608it [01:05, 38.09it/s, failures=0, objective=-1.24]
+    2609it [01:05, 38.09it/s, failures=0, objective=-1.24]
+    2610it [01:05, 38.09it/s, failures=0, objective=-1.24]
+    2611it [01:05, 38.09it/s, failures=0, objective=-1.24]
+    2612it [01:05, 38.09it/s, failures=0, objective=-1.24]
+    2613it [01:05, 38.09it/s, failures=0, objective=-1.24]
+    2614it [01:05, 38.09it/s, failures=0, objective=-1.24]
+    2615it [01:05, 38.09it/s, failures=0, objective=-1.24]
+    2616it [01:05, 38.09it/s, failures=0, objective=-1.24]
+    2617it [01:05, 38.09it/s, failures=0, objective=-1.24]
+    2618it [01:05, 38.09it/s, failures=0, objective=-1.24]
+    2619it [01:05, 38.09it/s, failures=0, objective=-1.24]
+    2620it [01:05, 38.09it/s, failures=0, objective=-1.24]
+    2621it [01:05, 38.09it/s, failures=0, objective=-1.24]
+    2622it [01:05, 38.09it/s, failures=0, objective=-1.24]
+    2623it [01:05, 43.99it/s, failures=0, objective=-1.24]
+    2623it [01:05, 43.99it/s, failures=0, objective=-1.24]
+    2624it [01:05, 43.99it/s, failures=0, objective=-1.24]
+    2625it [01:05, 43.99it/s, failures=0, objective=-1.24]
+    2626it [01:05, 43.99it/s, failures=0, objective=-1.24]
+    2627it [01:05, 43.99it/s, failures=0, objective=-1.24]
+    2628it [01:05, 43.99it/s, failures=0, objective=-1.24]
+    2629it [01:05, 43.99it/s, failures=0, objective=-1.24]
+    2630it [01:05, 43.99it/s, failures=0, objective=-1.24]
+    2631it [01:05, 43.99it/s, failures=0, objective=-1.24]
+    2632it [01:05, 43.99it/s, failures=0, objective=-1.24]
+    2633it [01:05, 43.99it/s, failures=0, objective=-1.24]
+    2634it [01:05, 41.07it/s, failures=0, objective=-1.24]
+    2634it [01:05, 41.07it/s, failures=0, objective=-1.24]
+    2635it [01:05, 41.07it/s, failures=0, objective=-1.24]
+    2636it [01:05, 41.07it/s, failures=0, objective=-0.826]
+    2637it [01:05, 41.07it/s, failures=0, objective=-0.826]
+    2638it [01:05, 41.07it/s, failures=0, objective=-0.826]
+    2639it [01:05, 41.07it/s, failures=0, objective=-0.826]
+    2640it [01:05, 41.07it/s, failures=0, objective=-0.826]
+    2641it [01:05, 41.07it/s, failures=0, objective=-0.826]
+    2642it [01:05, 41.07it/s, failures=0, objective=-0.826]
+    2643it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2643it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2644it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2645it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2646it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2647it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2648it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2649it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2650it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2651it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2652it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2653it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2654it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2655it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2656it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2657it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2658it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2659it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2660it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2661it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2662it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2663it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2664it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2665it [01:06, 33.12it/s, failures=0, objective=-0.826]
+    2666it [01:06, 41.61it/s, failures=0, objective=-0.826]
+    2666it [01:06, 41.61it/s, failures=0, objective=-0.826]
+    2667it [01:06, 41.61it/s, failures=0, objective=-0.826]
+    2668it [01:06, 41.61it/s, failures=0, objective=-0.826]
+    2669it [01:06, 41.61it/s, failures=0, objective=-0.826]
+    2670it [01:06, 41.61it/s, failures=0, objective=-0.826]
+    2671it [01:06, 41.61it/s, failures=0, objective=-0.826]
+    2672it [01:06, 41.61it/s, failures=0, objective=-0.826]
+    2673it [01:06, 41.61it/s, failures=0, objective=-0.826]
+    2674it [01:06, 36.34it/s, failures=0, objective=-0.826]
+    2674it [01:06, 36.34it/s, failures=0, objective=-0.826]
+    2675it [01:06, 36.34it/s, failures=0, objective=-0.826]
+    2676it [01:06, 36.34it/s, failures=0, objective=-0.826]
+    2677it [01:06, 36.34it/s, failures=0, objective=-0.826]
+    2678it [01:06, 36.34it/s, failures=0, objective=-0.826]
+    2679it [01:06, 36.34it/s, failures=0, objective=-0.826]
+    2680it [01:06, 36.34it/s, failures=0, objective=-0.826]
+    2681it [01:06, 36.34it/s, failures=0, objective=-0.826]
+    2682it [01:06, 36.34it/s, failures=0, objective=-0.826]
+    2683it [01:06, 36.34it/s, failures=0, objective=-0.826]
+    2684it [01:06, 36.34it/s, failures=0, objective=-0.826]
+    2685it [01:06, 36.34it/s, failures=0, objective=-0.826]
+    2686it [01:06, 36.34it/s, failures=0, objective=-0.826]
+    2687it [01:06, 36.34it/s, failures=0, objective=-0.826]
+    2688it [01:06, 36.34it/s, failures=0, objective=-0.826]
+    2689it [01:06, 36.34it/s, failures=0, objective=-0.826]
+    2690it [01:07, 37.80it/s, failures=0, objective=-0.826]
+    2690it [01:07, 37.80it/s, failures=0, objective=-0.826]
+    2691it [01:07, 37.80it/s, failures=0, objective=-0.826]
+    2692it [01:07, 37.80it/s, failures=0, objective=-0.826]
+    2693it [01:07, 37.80it/s, failures=0, objective=-0.826]
+    2694it [01:07, 37.80it/s, failures=0, objective=-0.826]
+    2695it [01:07, 37.80it/s, failures=0, objective=-0.826]
+    2696it [01:07, 37.80it/s, failures=0, objective=-0.826]
+    2697it [01:07, 37.80it/s, failures=0, objective=-0.826]
+    2698it [01:07, 37.80it/s, failures=0, objective=-0.826]
+    2699it [01:07, 37.80it/s, failures=0, objective=-0.826]
+    2700it [01:07, 37.80it/s, failures=0, objective=-0.826]
+    2701it [01:07, 37.80it/s, failures=0, objective=-0.826]
+    2702it [01:07, 37.80it/s, failures=0, objective=-0.826]
+    2703it [01:07, 37.80it/s, failures=0, objective=-0.826]
+    2704it [01:07, 37.80it/s, failures=0, objective=-0.826]
+    2705it [01:07, 37.80it/s, failures=0, objective=-0.826]
+    2706it [01:07, 37.80it/s, failures=0, objective=-0.826]
+    2707it [01:07, 41.32it/s, failures=0, objective=-0.826]
+    2707it [01:07, 41.32it/s, failures=0, objective=-0.826]
+    2708it [01:07, 41.32it/s, failures=0, objective=-0.826]
+    2709it [01:07, 41.32it/s, failures=0, objective=-0.826]
+    2710it [01:07, 41.32it/s, failures=0, objective=-0.826]
+    2711it [01:07, 41.32it/s, failures=0, objective=-0.826]
+    2712it [01:07, 41.32it/s, failures=0, objective=-0.826]
+    2713it [01:07, 41.32it/s, failures=0, objective=-0.826]
+    2714it [01:07, 41.32it/s, failures=0, objective=-0.826]
+    2715it [01:07, 41.32it/s, failures=0, objective=-0.826]
+    2716it [01:07, 41.32it/s, failures=0, objective=-0.826]
+    2717it [01:07, 41.32it/s, failures=0, objective=-0.826]
+    2718it [01:07, 41.32it/s, failures=0, objective=-0.826]
+    2719it [01:07, 40.00it/s, failures=0, objective=-0.826]
+    2719it [01:07, 40.00it/s, failures=0, objective=-0.826]
+    2720it [01:07, 40.00it/s, failures=0, objective=-0.826]
+    2721it [01:07, 40.00it/s, failures=0, objective=-0.826]
+    2722it [01:07, 40.00it/s, failures=0, objective=-0.826]
+    2723it [01:07, 40.00it/s, failures=0, objective=-0.826]
+    2724it [01:07, 40.00it/s, failures=0, objective=-0.826]
+    2725it [01:07, 40.00it/s, failures=0, objective=-0.826]
+    2726it [01:07, 40.00it/s, failures=0, objective=-0.826]
+    2727it [01:07, 40.00it/s, failures=0, objective=-0.826]
+    2728it [01:07, 40.00it/s, failures=0, objective=-0.826]
+    2729it [01:08, 35.50it/s, failures=0, objective=-0.826]
+    2729it [01:08, 35.50it/s, failures=0, objective=-0.826]
+    2730it [01:08, 35.50it/s, failures=0, objective=-0.826]
+    2731it [01:08, 35.50it/s, failures=0, objective=-0.826]
+    2732it [01:08, 35.50it/s, failures=0, objective=-0.78] 
+    2733it [01:08, 35.50it/s, failures=0, objective=-0.78]
+    2734it [01:08, 35.50it/s, failures=0, objective=-0.78]
+    2735it [01:08, 35.50it/s, failures=0, objective=-0.78]
+    2736it [01:08, 35.50it/s, failures=0, objective=-0.78]
+    2737it [01:08, 35.50it/s, failures=0, objective=-0.78]
+    2738it [01:08, 35.50it/s, failures=0, objective=-0.78]
+    2739it [01:08, 35.50it/s, failures=0, objective=-0.78]
+    2740it [01:08, 35.50it/s, failures=0, objective=-0.78]
+    2741it [01:08, 35.50it/s, failures=0, objective=-0.78]
+    2742it [01:08, 34.46it/s, failures=0, objective=-0.78]
+    2742it [01:08, 34.46it/s, failures=0, objective=-0.78]
+    2743it [01:08, 34.46it/s, failures=0, objective=-0.78]
+    2744it [01:08, 34.46it/s, failures=0, objective=-0.78]
+    2745it [01:08, 34.46it/s, failures=0, objective=-0.78]
+    2746it [01:08, 34.46it/s, failures=0, objective=-0.78]
+    2747it [01:08, 34.46it/s, failures=0, objective=-0.78]
+    2748it [01:08, 34.46it/s, failures=0, objective=-0.78]
+    2749it [01:08, 34.46it/s, failures=0, objective=-0.78]
+    2750it [01:08, 34.46it/s, failures=0, objective=-0.78]
+    2751it [01:08, 34.46it/s, failures=0, objective=-0.78]
+    2752it [01:08, 34.46it/s, failures=0, objective=-0.78]
+    2753it [01:08, 34.46it/s, failures=0, objective=-0.78]
+    2754it [01:08, 34.46it/s, failures=0, objective=-0.78]
+    2755it [01:08, 34.46it/s, failures=0, objective=-0.78]
+    2756it [01:08, 34.46it/s, failures=0, objective=-0.78]
+    2757it [01:08, 34.46it/s, failures=0, objective=-0.78]
+    2758it [01:08, 34.46it/s, failures=0, objective=-0.78]
+    2759it [01:08, 34.46it/s, failures=0, objective=-0.633]
+    2760it [01:08, 34.46it/s, failures=0, objective=-0.633]
+    2761it [01:08, 34.46it/s, failures=0, objective=-0.633]
+    2762it [01:08, 34.46it/s, failures=0, objective=-0.633]
+    2763it [01:08, 34.46it/s, failures=0, objective=-0.633]
+    2764it [01:09, 43.22it/s, failures=0, objective=-0.633]
+    2764it [01:09, 43.22it/s, failures=0, objective=-0.633]
+    2765it [01:09, 43.22it/s, failures=0, objective=-0.633]
+    2766it [01:09, 43.22it/s, failures=0, objective=-0.633]
+    2767it [01:09, 43.22it/s, failures=0, objective=-0.633]
+    2768it [01:09, 43.22it/s, failures=0, objective=-0.633]
+    2769it [01:09, 43.22it/s, failures=0, objective=-0.633]
+    2770it [01:09, 43.22it/s, failures=0, objective=-0.633]
+    2771it [01:09, 43.22it/s, failures=0, objective=-0.633]
+    2772it [01:09, 43.22it/s, failures=0, objective=-0.633]
+    2773it [01:09, 43.22it/s, failures=0, objective=-0.633]
+    2774it [01:09, 43.22it/s, failures=0, objective=-0.633]
+    2775it [01:09, 41.73it/s, failures=0, objective=-0.633]
+    2775it [01:09, 41.73it/s, failures=0, objective=-0.633]
+    2776it [01:09, 41.73it/s, failures=0, objective=-0.633]
+    2777it [01:09, 41.73it/s, failures=0, objective=-0.633]
+    2778it [01:09, 41.73it/s, failures=0, objective=-0.633]
+    2779it [01:09, 41.73it/s, failures=0, objective=-0.633]
+    2780it [01:09, 41.73it/s, failures=0, objective=-0.633]
+    2781it [01:09, 41.73it/s, failures=0, objective=-0.633]
+    2782it [01:09, 41.73it/s, failures=0, objective=-0.633]
+    2783it [01:09, 41.73it/s, failures=0, objective=-0.633]
+    2784it [01:09, 41.73it/s, failures=0, objective=-0.633]
+    2785it [01:09, 41.73it/s, failures=0, objective=-0.633]
+    2786it [01:09, 37.94it/s, failures=0, objective=-0.633]
+    2786it [01:09, 37.94it/s, failures=0, objective=-0.633]
+    2787it [01:09, 37.94it/s, failures=0, objective=-0.633]
+    2788it [01:09, 37.94it/s, failures=0, objective=-0.633]
+    2789it [01:09, 37.94it/s, failures=0, objective=-0.633]
+    2790it [01:09, 37.94it/s, failures=0, objective=-0.633]
+    2791it [01:09, 37.94it/s, failures=0, objective=-0.633]
+    2792it [01:09, 37.94it/s, failures=0, objective=-0.633]
+    2793it [01:09, 37.94it/s, failures=0, objective=-0.633]
+    2794it [01:09, 37.94it/s, failures=0, objective=-0.633]
+    2795it [01:09, 37.94it/s, failures=0, objective=-0.633]
+    2796it [01:09, 37.94it/s, failures=0, objective=-0.633]
+    2797it [01:09, 37.94it/s, failures=0, objective=-0.633]
+    2798it [01:09, 37.94it/s, failures=0, objective=-0.633]
+    2799it [01:09, 37.94it/s, failures=0, objective=-0.633]
+    2800it [01:10, 39.09it/s, failures=0, objective=-0.633]
+    2800it [01:10, 39.09it/s, failures=0, objective=-0.633]
+    2801it [01:10, 39.09it/s, failures=0, objective=-0.633]
+    2802it [01:10, 39.09it/s, failures=0, objective=-0.633]
+    2803it [01:10, 39.09it/s, failures=0, objective=-0.633]
+    2804it [01:10, 39.09it/s, failures=0, objective=-0.633]
+    2805it [01:10, 39.09it/s, failures=0, objective=-0.633]
+    2806it [01:10, 39.09it/s, failures=0, objective=-0.633]
+    2807it [01:10, 39.09it/s, failures=0, objective=-0.633]
+    2808it [01:10, 39.09it/s, failures=0, objective=-0.633]
+    2809it [01:10, 39.09it/s, failures=0, objective=-0.633]
+    2810it [01:10, 39.09it/s, failures=0, objective=-0.633]
+    2811it [01:10, 39.09it/s, failures=0, objective=-0.633]
+    2812it [01:10, 39.09it/s, failures=0, objective=-0.633]
+    2813it [01:10, 39.09it/s, failures=0, objective=-0.633]
+    2814it [01:10, 39.09it/s, failures=0, objective=-0.633]
+    2815it [01:10, 38.70it/s, failures=0, objective=-0.633]
+    2815it [01:10, 38.70it/s, failures=0, objective=-0.633]
+    2816it [01:10, 38.70it/s, failures=0, objective=-0.633]
+    2817it [01:10, 38.70it/s, failures=0, objective=-0.633]
+    2818it [01:10, 38.70it/s, failures=0, objective=-0.633]
+    2819it [01:10, 38.70it/s, failures=0, objective=-0.633]
+    2820it [01:10, 38.70it/s, failures=0, objective=-0.633]
+    2821it [01:10, 38.70it/s, failures=0, objective=-0.591]
+    2822it [01:10, 38.70it/s, failures=0, objective=-0.591]
+    2823it [01:10, 38.70it/s, failures=0, objective=-0.591]
+    2824it [01:10, 38.70it/s, failures=0, objective=-0.591]
+    2825it [01:10, 38.70it/s, failures=0, objective=-0.591]
+    2826it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2826it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2827it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2828it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2829it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2830it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2831it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2832it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2833it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2834it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2835it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2836it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2837it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2838it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2839it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2840it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2841it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2842it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2843it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2844it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2845it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2846it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2847it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2848it [01:10, 33.14it/s, failures=0, objective=-0.591]
+    2849it [01:11, 39.72it/s, failures=0, objective=-0.591]
+    2849it [01:11, 39.72it/s, failures=0, objective=-0.591]
+    2850it [01:11, 39.72it/s, failures=0, objective=-0.591]
+    2851it [01:11, 39.72it/s, failures=0, objective=-0.591]
+    2852it [01:11, 39.72it/s, failures=0, objective=-0.591]
+    2853it [01:11, 39.72it/s, failures=0, objective=-0.591]
+    2854it [01:11, 39.72it/s, failures=0, objective=-0.591]
+    2855it [01:11, 39.72it/s, failures=0, objective=-0.591]
+    2856it [01:11, 39.72it/s, failures=0, objective=-0.591]
+    2857it [01:11, 39.72it/s, failures=0, objective=-0.591]
+    2858it [01:11, 39.72it/s, failures=0, objective=-0.591]
+    2859it [01:11, 39.72it/s, failures=0, objective=-0.591]
+    2860it [01:11, 39.72it/s, failures=0, objective=-0.591]
+    2861it [01:11, 39.72it/s, failures=0, objective=-0.591]
+    2862it [01:11, 39.72it/s, failures=0, objective=-0.591]
+    2863it [01:11, 39.72it/s, failures=0, objective=-0.591]
+    2864it [01:11, 39.72it/s, failures=0, objective=-0.591]
+    2865it [01:11, 41.87it/s, failures=0, objective=-0.591]
+    2865it [01:11, 41.87it/s, failures=0, objective=-0.591]
+    2866it [01:11, 41.87it/s, failures=0, objective=-0.591]
+    2867it [01:11, 41.87it/s, failures=0, objective=-0.591]
+    2868it [01:11, 41.87it/s, failures=0, objective=-0.591]
+    2869it [01:11, 41.87it/s, failures=0, objective=-0.591]
+    2870it [01:11, 41.87it/s, failures=0, objective=-0.591]
+    2871it [01:11, 41.87it/s, failures=0, objective=-0.591]
+    2872it [01:11, 41.87it/s, failures=0, objective=-0.591]
+    2873it [01:11, 41.87it/s, failures=0, objective=-0.591]
+    2874it [01:11, 41.87it/s, failures=0, objective=-0.591]
+    2875it [01:12, 35.62it/s, failures=0, objective=-0.591]
+    2875it [01:12, 35.62it/s, failures=0, objective=-0.591]
+    2876it [01:12, 35.62it/s, failures=0, objective=-0.591]
+    2877it [01:12, 35.62it/s, failures=0, objective=-0.591]
+    2878it [01:12, 35.62it/s, failures=0, objective=-0.591]
+    2879it [01:12, 35.62it/s, failures=0, objective=-0.591]
+    2880it [01:12, 35.62it/s, failures=0, objective=-0.591]
+    2881it [01:12, 35.62it/s, failures=0, objective=-0.591]
+    2882it [01:12, 35.62it/s, failures=0, objective=-0.591]
+    2883it [01:12, 35.62it/s, failures=0, objective=-0.591]
+    2884it [01:12, 35.62it/s, failures=0, objective=-0.591]
+    2885it [01:12, 35.62it/s, failures=0, objective=-0.591]
+    2886it [01:12, 35.62it/s, failures=0, objective=-0.591]
+    2887it [01:12, 35.62it/s, failures=0, objective=-0.591]
+    2888it [01:12, 35.62it/s, failures=0, objective=-0.591]
+    2889it [01:12, 35.62it/s, failures=0, objective=-0.591]
+    2890it [01:12, 35.62it/s, failures=0, objective=-0.591]
+    2891it [01:12, 35.62it/s, failures=0, objective=-0.591]
+    2892it [01:12, 35.62it/s, failures=0, objective=-0.591]
+    2893it [01:12, 35.62it/s, failures=0, objective=-0.591]
+    2894it [01:12, 35.62it/s, failures=0, objective=-0.591]
+    2895it [01:12, 41.37it/s, failures=0, objective=-0.591]
+    2895it [01:12, 41.37it/s, failures=0, objective=-0.591]
+    2896it [01:12, 41.37it/s, failures=0, objective=-0.591]
+    2897it [01:12, 41.37it/s, failures=0, objective=-0.591]
+    2898it [01:12, 41.37it/s, failures=0, objective=-0.591]
+    2899it [01:12, 41.37it/s, failures=0, objective=-0.591]
+    2900it [01:12, 41.37it/s, failures=0, objective=-0.591]
+    2901it [01:12, 41.37it/s, failures=0, objective=-0.591]
+    2902it [01:12, 41.37it/s, failures=0, objective=-0.591]
+    2903it [01:12, 41.37it/s, failures=0, objective=-0.591]
+    2904it [01:12, 41.37it/s, failures=0, objective=-0.591]
+    2905it [01:12, 41.37it/s, failures=0, objective=-0.591]
+    2906it [01:12, 41.37it/s, failures=0, objective=-0.591]
+    2907it [01:12, 41.37it/s, failures=0, objective=-0.591]
+    2908it [01:12, 41.37it/s, failures=0, objective=-0.591]
+    2909it [01:12, 41.09it/s, failures=0, objective=-0.591]
+    2909it [01:12, 41.09it/s, failures=0, objective=-0.591]
+    2910it [01:12, 41.09it/s, failures=0, objective=-0.591]
+    2911it [01:12, 41.09it/s, failures=0, objective=-0.591]
+    2912it [01:12, 41.09it/s, failures=0, objective=-0.591]
+    2913it [01:12, 41.09it/s, failures=0, objective=-0.591]
+    2914it [01:12, 41.09it/s, failures=0, objective=-0.591]
+    2915it [01:12, 41.09it/s, failures=0, objective=-0.591]
+    2916it [01:12, 41.09it/s, failures=0, objective=-0.591]
+    2917it [01:12, 41.09it/s, failures=0, objective=-0.591]
+    2918it [01:12, 41.09it/s, failures=0, objective=-0.591]
+    2919it [01:13, 37.32it/s, failures=0, objective=-0.591]
+    2919it [01:13, 37.32it/s, failures=0, objective=-0.591]
+    2920it [01:13, 37.32it/s, failures=0, objective=-0.591]
+    2921it [01:13, 37.32it/s, failures=0, objective=-0.591]
+    2922it [01:13, 37.32it/s, failures=0, objective=-0.591]
+    2923it [01:13, 37.32it/s, failures=0, objective=-0.591]
+    2924it [01:13, 37.32it/s, failures=0, objective=-0.591]
+    2925it [01:13, 37.32it/s, failures=0, objective=-0.591]
+    2926it [01:13, 37.32it/s, failures=0, objective=-0.591]
+    2927it [01:13, 37.32it/s, failures=0, objective=-0.591]
+    2928it [01:13, 37.32it/s, failures=0, objective=-0.591]
+    2929it [01:13, 37.32it/s, failures=0, objective=-0.591]
+    2930it [01:13, 37.32it/s, failures=0, objective=-0.591]
+    2931it [01:13, 37.32it/s, failures=0, objective=-0.591]
+    2932it [01:13, 37.32it/s, failures=0, objective=-0.591]
+    2933it [01:13, 38.18it/s, failures=0, objective=-0.591]
+    2933it [01:13, 38.18it/s, failures=0, objective=-0.591]
+    2934it [01:13, 38.18it/s, failures=0, objective=-0.591]
+    2935it [01:13, 38.18it/s, failures=0, objective=-0.591]
+    2936it [01:13, 38.18it/s, failures=0, objective=-0.591]
+    2937it [01:13, 38.18it/s, failures=0, objective=-0.591]
+    2938it [01:13, 38.18it/s, failures=0, objective=-0.591]
+    2939it [01:13, 38.18it/s, failures=0, objective=-0.591]
+    2940it [01:13, 38.18it/s, failures=0, objective=-0.591]
+    2941it [01:13, 38.18it/s, failures=0, objective=-0.591]
+    2942it [01:13, 38.18it/s, failures=0, objective=-0.591]
+    2943it [01:13, 38.18it/s, failures=0, objective=-0.591]
+    2944it [01:13, 38.18it/s, failures=0, objective=-0.591]
+    2945it [01:13, 38.18it/s, failures=0, objective=-0.591]
+    2946it [01:13, 38.18it/s, failures=0, objective=-0.591]
+    2947it [01:13, 38.18it/s, failures=0, objective=-0.591]
+    2948it [01:13, 38.18it/s, failures=0, objective=-0.591]
+    2949it [01:13, 37.72it/s, failures=0, objective=-0.591]
+    2949it [01:13, 37.72it/s, failures=0, objective=-0.591]
+    2950it [01:13, 37.72it/s, failures=0, objective=-0.591]
+    2951it [01:13, 37.72it/s, failures=0, objective=-0.591]
+    2952it [01:13, 37.72it/s, failures=0, objective=-0.591]
+    2953it [01:13, 37.72it/s, failures=0, objective=-0.591]
+    2954it [01:13, 37.72it/s, failures=0, objective=-0.591]
+    2955it [01:13, 37.72it/s, failures=0, objective=-0.591]
+    2956it [01:13, 37.72it/s, failures=0, objective=-0.591]
+    2957it [01:13, 37.72it/s, failures=0, objective=-0.591]
+    2958it [01:13, 37.72it/s, failures=0, objective=-0.591]
+    2959it [01:13, 37.72it/s, failures=0, objective=-0.591]
+    2960it [01:13, 37.72it/s, failures=0, objective=-0.591]
+    2961it [01:13, 37.72it/s, failures=0, objective=-0.591]
+    2962it [01:13, 37.72it/s, failures=0, objective=-0.591]
+    2963it [01:13, 37.72it/s, failures=0, objective=-0.591]
+    2964it [01:14, 38.56it/s, failures=0, objective=-0.591]
+    2964it [01:14, 38.56it/s, failures=0, objective=-0.591]
+    2965it [01:14, 38.56it/s, failures=0, objective=-0.591]
+    2966it [01:14, 38.56it/s, failures=0, objective=-0.591]
+    2967it [01:14, 38.56it/s, failures=0, objective=-0.591]
+    2968it [01:14, 38.56it/s, failures=0, objective=-0.591]
+    2969it [01:14, 38.56it/s, failures=0, objective=-0.591]
+    2970it [01:14, 38.56it/s, failures=0, objective=-0.591]
+    2971it [01:14, 38.56it/s, failures=0, objective=-0.591]
+    2972it [01:14, 38.56it/s, failures=0, objective=-0.591]
+    2973it [01:14, 38.56it/s, failures=0, objective=-0.591]
+    2974it [01:14, 38.56it/s, failures=0, objective=-0.591]
+    2975it [01:14, 38.56it/s, failures=0, objective=-0.591]
+    2976it [01:14, 38.56it/s, failures=0, objective=-0.591]
+    2977it [01:14, 38.56it/s, failures=0, objective=-0.591]
+    2978it [01:14, 38.56it/s, failures=0, objective=-0.591]
+    2979it [01:14, 38.56it/s, failures=0, objective=-0.591]
+    2980it [01:14, 38.56it/s, failures=0, objective=-0.591]
+    2981it [01:14, 38.56it/s, failures=0, objective=-0.591]
+    2982it [01:14, 41.95it/s, failures=0, objective=-0.591]
+    2982it [01:14, 41.95it/s, failures=0, objective=-0.591]
+    2983it [01:14, 41.95it/s, failures=0, objective=-0.591]
+    2984it [01:14, 41.95it/s, failures=0, objective=-0.591]
+    2985it [01:14, 41.95it/s, failures=0, objective=-0.591]
+    2986it [01:14, 41.95it/s, failures=0, objective=-0.591]
+    2987it [01:14, 41.95it/s, failures=0, objective=-0.591]
+    2988it [01:14, 41.95it/s, failures=0, objective=-0.591]
+    2989it [01:14, 41.95it/s, failures=0, objective=-0.591]
+    2990it [01:14, 41.95it/s, failures=0, objective=-0.591]
+    2991it [01:14, 41.95it/s, failures=0, objective=-0.591]
+    2992it [01:14, 41.95it/s, failures=0, objective=-0.591]
+    2993it [01:14, 41.95it/s, failures=0, objective=-0.591]
+    2994it [01:14, 41.95it/s, failures=0, objective=-0.591]
+    2995it [01:14, 41.95it/s, failures=0, objective=-0.591]
+    2996it [01:14, 41.95it/s, failures=0, objective=-0.591]
+    2997it [01:14, 41.95it/s, failures=0, objective=-0.591]
+    2998it [01:14, 41.95it/s, failures=0, objective=-0.591]
+    2999it [01:14, 44.17it/s, failures=0, objective=-0.591]
+    2999it [01:14, 44.17it/s, failures=0, objective=-0.591]
+    3000it [01:14, 44.17it/s, failures=0, objective=-0.591]
+    3001it [01:14, 44.17it/s, failures=0, objective=-0.591]
+    3002it [01:14, 44.17it/s, failures=0, objective=-0.591]
+    3003it [01:14, 44.17it/s, failures=0, objective=-0.591]
+    3004it [01:14, 44.17it/s, failures=0, objective=-0.591]
+    3005it [01:14, 44.17it/s, failures=0, objective=-0.591]
+    3006it [01:14, 44.17it/s, failures=0, objective=-0.591]
+    3007it [01:14, 44.17it/s, failures=0, objective=-0.591]
+    3008it [01:14, 44.17it/s, failures=0, objective=-0.411]
+    3009it [01:14, 44.17it/s, failures=0, objective=-0.411]
+    3010it [01:14, 44.17it/s, failures=0, objective=-0.411]
+    3011it [01:14, 44.17it/s, failures=0, objective=-0.411]
+    3012it [01:15, 41.33it/s, failures=0, objective=-0.411]
+    3012it [01:15, 41.33it/s, failures=0, objective=-0.411]
+    3013it [01:15, 41.33it/s, failures=0, objective=-0.411]
+    3014it [01:15, 41.33it/s, failures=0, objective=-0.411]
+    3015it [01:15, 41.33it/s, failures=0, objective=-0.411]
+    3016it [01:15, 41.33it/s, failures=0, objective=-0.411]
+    3017it [01:15, 41.33it/s, failures=0, objective=-0.411]
+    3018it [01:15, 41.33it/s, failures=0, objective=-0.411]
+    3019it [01:15, 41.33it/s, failures=0, objective=-0.411]
+    3020it [01:15, 41.33it/s, failures=0, objective=-0.411]
+    3021it [01:15, 41.33it/s, failures=0, objective=-0.411]
+    3022it [01:15, 41.33it/s, failures=0, objective=-0.411]
+    3023it [01:15, 38.30it/s, failures=0, objective=-0.411]
+    3023it [01:15, 38.30it/s, failures=0, objective=-0.411]
+    3024it [01:15, 38.30it/s, failures=0, objective=-0.411]
+    3025it [01:15, 38.30it/s, failures=0, objective=-0.411]
+    3026it [01:15, 38.30it/s, failures=0, objective=-0.411]
+    3027it [01:15, 38.30it/s, failures=0, objective=-0.411]
+    3028it [01:15, 38.30it/s, failures=0, objective=-0.411]
+    3029it [01:15, 38.30it/s, failures=0, objective=-0.411]
+    3030it [01:15, 38.30it/s, failures=0, objective=-0.411]
+    3031it [01:15, 38.30it/s, failures=0, objective=-0.411]
+    3032it [01:15, 38.30it/s, failures=0, objective=-0.411]
+    3033it [01:15, 38.30it/s, failures=0, objective=-0.411]
+    3034it [01:16, 35.61it/s, failures=0, objective=-0.411]
+    3034it [01:16, 35.61it/s, failures=0, objective=-0.411]
+    3035it [01:16, 35.61it/s, failures=0, objective=-0.411]
+    3036it [01:16, 35.61it/s, failures=0, objective=-0.411]
+    3037it [01:16, 35.61it/s, failures=0, objective=-0.411]
+    3038it [01:16, 35.61it/s, failures=0, objective=-0.411]
+    3039it [01:16, 35.61it/s, failures=0, objective=-0.411]
+    3040it [01:16, 35.61it/s, failures=0, objective=-0.411]
+    3041it [01:16, 35.61it/s, failures=0, objective=-0.411]
+    3042it [01:16, 35.61it/s, failures=0, objective=-0.411]
+    3043it [01:16, 35.61it/s, failures=0, objective=-0.411]
+    3044it [01:16, 35.61it/s, failures=0, objective=-0.411]
+    3045it [01:16, 35.61it/s, failures=0, objective=-0.411]
+    3046it [01:16, 35.61it/s, failures=0, objective=-0.411]
+    3047it [01:16, 35.61it/s, failures=0, objective=-0.411]
+    3048it [01:16, 35.61it/s, failures=0, objective=-0.411]
+    3049it [01:16, 35.61it/s, failures=0, objective=-0.411]
+    3050it [01:16, 36.35it/s, failures=0, objective=-0.411]
+    3050it [01:16, 36.35it/s, failures=0, objective=-0.411]
+    3051it [01:16, 36.35it/s, failures=0, objective=-0.411]
+    3052it [01:16, 36.35it/s, failures=0, objective=-0.411]
+    3053it [01:16, 36.35it/s, failures=0, objective=-0.411]
+    3054it [01:16, 36.35it/s, failures=0, objective=-0.411]
+    3055it [01:16, 36.35it/s, failures=0, objective=-0.411]
+    3056it [01:16, 36.35it/s, failures=0, objective=-0.411]
+    3057it [01:16, 36.35it/s, failures=0, objective=-0.411]
+    3058it [01:16, 36.35it/s, failures=0, objective=-0.411]
+    3059it [01:16, 36.35it/s, failures=0, objective=-0.411]
+    3060it [01:16, 36.35it/s, failures=0, objective=-0.411]
+    3061it [01:16, 36.35it/s, failures=0, objective=-0.411]
+    3062it [01:16, 36.35it/s, failures=0, objective=-0.411]
+    3063it [01:16, 36.35it/s, failures=0, objective=-0.411]
+    3064it [01:16, 37.50it/s, failures=0, objective=-0.411]
+    3064it [01:16, 37.50it/s, failures=0, objective=-0.411]
+    3065it [01:16, 37.50it/s, failures=0, objective=-0.411]
+    3066it [01:16, 37.50it/s, failures=0, objective=-0.411]
+    3067it [01:16, 37.50it/s, failures=0, objective=-0.411]
+    3068it [01:16, 37.50it/s, failures=0, objective=-0.411]
+    3069it [01:16, 37.50it/s, failures=0, objective=-0.411]
+    3070it [01:16, 37.50it/s, failures=0, objective=-0.411]
+    3071it [01:16, 37.50it/s, failures=0, objective=-0.411]
+    3072it [01:16, 37.50it/s, failures=0, objective=-0.411]
+    3073it [01:16, 37.50it/s, failures=0, objective=-0.411]
+    3074it [01:16, 37.50it/s, failures=0, objective=-0.411]
+    3075it [01:16, 37.50it/s, failures=0, objective=-0.411]
+    3076it [01:16, 37.50it/s, failures=0, objective=-0.411]
+    3077it [01:16, 37.50it/s, failures=0, objective=-0.411]
+    3078it [01:16, 37.50it/s, failures=0, objective=-0.411]
+    3079it [01:16, 37.50it/s, failures=0, objective=-0.411]
+    3080it [01:16, 37.50it/s, failures=0, objective=-0.411]
+    3081it [01:16, 37.50it/s, failures=0, objective=-0.411]
+    3082it [01:16, 37.50it/s, failures=0, objective=-0.411]
+    3083it [01:17, 42.09it/s, failures=0, objective=-0.411]
+    3083it [01:17, 42.09it/s, failures=0, objective=-0.411]
+    3084it [01:17, 42.09it/s, failures=0, objective=-0.411]
+    3085it [01:17, 42.09it/s, failures=0, objective=-0.411]
+    3086it [01:17, 42.09it/s, failures=0, objective=-0.411]
+    3087it [01:17, 42.09it/s, failures=0, objective=-0.411]
+    3088it [01:17, 42.09it/s, failures=0, objective=-0.411]
+    3089it [01:17, 42.09it/s, failures=0, objective=-0.411]
+    3090it [01:17, 42.09it/s, failures=0, objective=-0.411]
+    3091it [01:17, 42.09it/s, failures=0, objective=-0.411]
+    3092it [01:17, 42.09it/s, failures=0, objective=-0.411]
+    3093it [01:17, 42.09it/s, failures=0, objective=-0.411]
+    3094it [01:17, 42.09it/s, failures=0, objective=-0.411]
+    3095it [01:17, 42.09it/s, failures=0, objective=-0.411]
+    3096it [01:17, 42.09it/s, failures=0, objective=-0.411]
+    3097it [01:17, 42.09it/s, failures=0, objective=-0.411]
+    3098it [01:17, 42.09it/s, failures=0, objective=-0.411]
+    3099it [01:17, 42.09it/s, failures=0, objective=-0.411]
+    3100it [01:17, 42.09it/s, failures=0, objective=-0.411]
+    3101it [01:17, 42.09it/s, failures=0, objective=-0.391]
+    3102it [01:17, 42.09it/s, failures=0, objective=-0.391]
+    3103it [01:17, 42.09it/s, failures=0, objective=-0.391]
+    3104it [01:17, 48.08it/s, failures=0, objective=-0.391]
+    3104it [01:17, 48.08it/s, failures=0, objective=-0.391]
+    3105it [01:17, 48.08it/s, failures=0, objective=-0.391]
+    3106it [01:17, 48.08it/s, failures=0, objective=-0.391]
+    3107it [01:17, 48.08it/s, failures=0, objective=-0.391]
+    3108it [01:17, 48.08it/s, failures=0, objective=-0.391]
+    3109it [01:17, 48.08it/s, failures=0, objective=-0.391]
+    3110it [01:17, 48.08it/s, failures=0, objective=-0.391]
+    3111it [01:17, 38.67it/s, failures=0, objective=-0.391]
+    3111it [01:17, 38.67it/s, failures=0, objective=-0.391]
+    3112it [01:17, 38.67it/s, failures=0, objective=-0.391]
+    3113it [01:17, 38.67it/s, failures=0, objective=-0.391]
+    3114it [01:17, 38.67it/s, failures=0, objective=-0.391]
+    3115it [01:17, 38.67it/s, failures=0, objective=-0.391]
+    3116it [01:17, 38.67it/s, failures=0, objective=-0.391]
+    3117it [01:17, 38.67it/s, failures=0, objective=-0.391]
+    3118it [01:17, 38.67it/s, failures=0, objective=-0.391]
+    3119it [01:17, 38.67it/s, failures=0, objective=-0.391]
+    3120it [01:17, 38.67it/s, failures=0, objective=-0.391]
+    3121it [01:18, 35.92it/s, failures=0, objective=-0.391]
+    3121it [01:18, 35.92it/s, failures=0, objective=-0.391]
+    3122it [01:18, 35.92it/s, failures=0, objective=-0.391]
+    3123it [01:18, 35.92it/s, failures=0, objective=-0.391]
+    3124it [01:18, 35.92it/s, failures=0, objective=-0.391]
+    3125it [01:18, 35.92it/s, failures=0, objective=-0.391]
+    3126it [01:18, 35.92it/s, failures=0, objective=-0.391]
+    3127it [01:18, 35.92it/s, failures=0, objective=-0.391]
+    3128it [01:18, 35.92it/s, failures=0, objective=-0.391]
+    3129it [01:18, 35.92it/s, failures=0, objective=-0.391]
+    3130it [01:18, 35.92it/s, failures=0, objective=-0.391]
+    3131it [01:18, 35.92it/s, failures=0, objective=-0.391]
+    3132it [01:18, 35.92it/s, failures=0, objective=-0.391]
+    3133it [01:18, 35.92it/s, failures=0, objective=-0.391]
+    3134it [01:18, 35.92it/s, failures=0, objective=-0.391]
+    3135it [01:18, 35.92it/s, failures=0, objective=-0.391]
+    3136it [01:18, 32.95it/s, failures=0, objective=-0.391]
+    3136it [01:18, 32.95it/s, failures=0, objective=-0.391]
+    3137it [01:18, 32.95it/s, failures=0, objective=-0.391]
+    3138it [01:18, 32.95it/s, failures=0, objective=-0.391]
+    3139it [01:18, 32.95it/s, failures=0, objective=-0.391]
+    3140it [01:18, 32.95it/s, failures=0, objective=-0.391]
+    3141it [01:18, 32.95it/s, failures=0, objective=-0.391]
+    3142it [01:18, 32.95it/s, failures=0, objective=-0.391]
+    3143it [01:18, 32.95it/s, failures=0, objective=-0.391]
+    3144it [01:18, 32.95it/s, failures=0, objective=-0.391]
+    3145it [01:18, 32.95it/s, failures=0, objective=-0.391]
+    3146it [01:18, 32.95it/s, failures=0, objective=-0.391]
+    3147it [01:18, 32.95it/s, failures=0, objective=-0.391]
+    3148it [01:18, 32.95it/s, failures=0, objective=-0.391]
+    3149it [01:18, 32.95it/s, failures=0, objective=-0.391]
+    3150it [01:18, 32.95it/s, failures=0, objective=-0.391]
+    3151it [01:18, 32.95it/s, failures=0, objective=-0.391]
+    3152it [01:18, 32.95it/s, failures=0, objective=-0.391]
+    3153it [01:18, 32.95it/s, failures=0, objective=-0.391]
+    3154it [01:18, 32.95it/s, failures=0, objective=-0.391]
+    3155it [01:19, 36.60it/s, failures=0, objective=-0.391]
+    3155it [01:19, 36.60it/s, failures=0, objective=-0.391]
+    3156it [01:19, 36.60it/s, failures=0, objective=-0.391]
+    3157it [01:19, 36.60it/s, failures=0, objective=-0.391]
+    3158it [01:19, 36.60it/s, failures=0, objective=-0.391]
+    3159it [01:19, 36.60it/s, failures=0, objective=-0.391]
+    3160it [01:19, 36.60it/s, failures=0, objective=-0.391]
+    3161it [01:19, 36.60it/s, failures=0, objective=-0.391]
+    3162it [01:19, 36.60it/s, failures=0, objective=-0.391]
+    3163it [01:19, 36.60it/s, failures=0, objective=-0.391]
+    3164it [01:19, 36.60it/s, failures=0, objective=-0.391]
+    3165it [01:19, 36.60it/s, failures=0, objective=-0.391]
+    3166it [01:19, 36.60it/s, failures=0, objective=-0.391]
+    3167it [01:19, 36.60it/s, failures=0, objective=-0.391]
+    3168it [01:19, 36.60it/s, failures=0, objective=-0.391]
+    3169it [01:19, 36.60it/s, failures=0, objective=-0.391]
+    3170it [01:19, 36.60it/s, failures=0, objective=-0.391]
+    3171it [01:19, 36.60it/s, failures=0, objective=-0.391]
+    3172it [01:19, 36.60it/s, failures=0, objective=-0.391]
+    3173it [01:19, 37.97it/s, failures=0, objective=-0.391]
+    3173it [01:19, 37.97it/s, failures=0, objective=-0.391]
+    3174it [01:19, 37.97it/s, failures=0, objective=-0.391]
+    3175it [01:19, 37.97it/s, failures=0, objective=-0.391]
+    3176it [01:19, 37.97it/s, failures=0, objective=-0.391]
+    3177it [01:19, 37.97it/s, failures=0, objective=-0.391]
+    3178it [01:19, 37.97it/s, failures=0, objective=-0.391]
+    3179it [01:19, 37.97it/s, failures=0, objective=-0.391]
+    3180it [01:19, 37.97it/s, failures=0, objective=-0.391]
+    3181it [01:19, 37.97it/s, failures=0, objective=-0.391]
+    3182it [01:19, 37.97it/s, failures=0, objective=-0.391]
+    3183it [01:19, 37.97it/s, failures=0, objective=-0.391]
+    3184it [01:19, 37.97it/s, failures=0, objective=-0.391]
+    3185it [01:19, 37.97it/s, failures=0, objective=-0.391]
+    3186it [01:19, 37.97it/s, failures=0, objective=-0.391]
+    3187it [01:19, 37.97it/s, failures=0, objective=-0.391]
+    3188it [01:19, 37.97it/s, failures=0, objective=-0.391]
+    3189it [01:19, 37.97it/s, failures=0, objective=-0.391]
+    3190it [01:19, 37.97it/s, failures=0, objective=-0.391]
+    3191it [01:19, 37.97it/s, failures=0, objective=-0.391]
+    3192it [01:19, 37.97it/s, failures=0, objective=-0.391]
+    3193it [01:19, 37.97it/s, failures=0, objective=-0.391]
+    3194it [01:19, 37.97it/s, failures=0, objective=-0.391]
+    3195it [01:20, 41.13it/s, failures=0, objective=-0.391]
+    3195it [01:20, 41.13it/s, failures=0, objective=-0.391]
+    3196it [01:20, 41.13it/s, failures=0, objective=-0.391]
+    3197it [01:20, 41.13it/s, failures=0, objective=-0.391]
+    3198it [01:20, 41.13it/s, failures=0, objective=-0.391]
+    3199it [01:20, 41.13it/s, failures=0, objective=-0.391]
+    3200it [01:20, 41.13it/s, failures=0, objective=-0.391]
+    3201it [01:20, 41.13it/s, failures=0, objective=-0.391]
+    3202it [01:20, 41.13it/s, failures=0, objective=-0.391]
+    3203it [01:20, 41.13it/s, failures=0, objective=-0.391]
+    3204it [01:20, 41.13it/s, failures=0, objective=-0.391]
+    3205it [01:20, 41.13it/s, failures=0, objective=-0.391]
+    3206it [01:20, 41.13it/s, failures=0, objective=-0.391]
+    3207it [01:20, 41.13it/s, failures=0, objective=-0.391]
+    3208it [01:20, 41.13it/s, failures=0, objective=-0.391]
+    3209it [01:20, 41.13it/s, failures=0, objective=-0.391]
+    3210it [01:20, 41.13it/s, failures=0, objective=-0.391]
+    3211it [01:20, 41.64it/s, failures=0, objective=-0.391]
+    3211it [01:20, 41.64it/s, failures=0, objective=-0.391]
+    3212it [01:20, 41.64it/s, failures=0, objective=-0.391]
+    3213it [01:20, 41.64it/s, failures=0, objective=-0.391]
+    3214it [01:20, 41.64it/s, failures=0, objective=-0.391]
+    3215it [01:20, 41.64it/s, failures=0, objective=-0.391]
+    3216it [01:20, 41.64it/s, failures=0, objective=-0.391]
+    3217it [01:20, 35.50it/s, failures=0, objective=-0.391]
+    3217it [01:20, 35.50it/s, failures=0, objective=-0.344]
+    3218it [01:20, 35.50it/s, failures=0, objective=-0.344]
+    3219it [01:20, 35.50it/s, failures=0, objective=-0.344]
+    3220it [01:20, 35.50it/s, failures=0, objective=-0.344]
+    3221it [01:20, 35.50it/s, failures=0, objective=-0.344]
+    3222it [01:20, 35.50it/s, failures=0, objective=-0.344]
+    3223it [01:20, 35.50it/s, failures=0, objective=-0.344]
+    3224it [01:20, 35.50it/s, failures=0, objective=-0.344]
+    3225it [01:20, 35.50it/s, failures=0, objective=-0.344]
+    3226it [01:20, 35.50it/s, failures=0, objective=-0.344]
+    3227it [01:20, 35.50it/s, failures=0, objective=-0.344]
+    3228it [01:21, 32.89it/s, failures=0, objective=-0.344]
+    3228it [01:21, 32.89it/s, failures=0, objective=-0.344]
+    3229it [01:21, 32.89it/s, failures=0, objective=-0.344]
+    3230it [01:21, 32.89it/s, failures=0, objective=-0.344]
+    3231it [01:21, 32.89it/s, failures=0, objective=-0.342]
+    3232it [01:21, 32.89it/s, failures=0, objective=-0.342]
+    3233it [01:21, 32.89it/s, failures=0, objective=-0.342]
+    3234it [01:21, 32.89it/s, failures=0, objective=-0.342]
+    3235it [01:21, 32.89it/s, failures=0, objective=-0.342]
+    3236it [01:21, 32.89it/s, failures=0, objective=-0.342]
+    3237it [01:21, 32.89it/s, failures=0, objective=-0.342]
+    3238it [01:21, 32.89it/s, failures=0, objective=-0.342]
+    3239it [01:21, 32.89it/s, failures=0, objective=-0.342]
+    3240it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3240it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3241it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3242it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3243it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3244it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3245it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3246it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3247it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3248it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3249it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3250it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3251it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3252it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3253it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3254it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3255it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3256it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3257it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3258it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3259it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3260it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3261it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3262it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3263it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3264it [01:21, 31.22it/s, failures=0, objective=-0.342]
+    3265it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3265it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3266it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3267it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3268it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3269it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3270it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3271it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3272it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3273it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3274it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3275it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3276it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3277it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3278it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3279it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3280it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3281it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3282it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3283it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3284it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3285it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3286it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3287it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3288it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3289it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3290it [01:22, 37.83it/s, failures=0, objective=-0.342]
+    3291it [01:22, 44.09it/s, failures=0, objective=-0.342]
+    3291it [01:22, 44.09it/s, failures=0, objective=-0.342]
+    3292it [01:22, 44.09it/s, failures=0, objective=-0.342]
+    3293it [01:22, 44.09it/s, failures=0, objective=-0.342]
+    3294it [01:22, 44.09it/s, failures=0, objective=-0.342]
+    3295it [01:22, 44.09it/s, failures=0, objective=-0.342]
+    3296it [01:22, 44.09it/s, failures=0, objective=-0.342]
+    3297it [01:22, 44.09it/s, failures=0, objective=-0.342]
+    3298it [01:22, 44.09it/s, failures=0, objective=-0.342]
+    3299it [01:22, 44.09it/s, failures=0, objective=-0.342]
+    3300it [01:22, 44.09it/s, failures=0, objective=-0.342]
+    3301it [01:22, 44.09it/s, failures=0, objective=-0.342]
+    3302it [01:22, 44.09it/s, failures=0, objective=-0.342]
+    3303it [01:22, 44.09it/s, failures=0, objective=-0.342]
+    3304it [01:22, 44.09it/s, failures=0, objective=-0.342]
+    3305it [01:22, 44.09it/s, failures=0, objective=-0.342]
+    3306it [01:22, 44.09it/s, failures=0, objective=-0.342]
+    3307it [01:23, 41.31it/s, failures=0, objective=-0.342]
+    3307it [01:23, 41.31it/s, failures=0, objective=-0.342]
+    3308it [01:23, 41.31it/s, failures=0, objective=-0.342]
+    3309it [01:23, 41.31it/s, failures=0, objective=-0.342]
+    3310it [01:23, 41.31it/s, failures=0, objective=-0.342]
+    3311it [01:23, 41.31it/s, failures=0, objective=-0.342]
+    3312it [01:23, 41.31it/s, failures=0, objective=-0.342]
+    3313it [01:23, 41.31it/s, failures=0, objective=-0.342]
+    3314it [01:23, 41.31it/s, failures=0, objective=-0.342]
+    3315it [01:23, 41.31it/s, failures=0, objective=-0.342]
+    3316it [01:23, 41.31it/s, failures=0, objective=-0.342]
+    3317it [01:23, 41.31it/s, failures=0, objective=-0.342]
+    3318it [01:23, 41.31it/s, failures=0, objective=-0.342]
+    3319it [01:23, 41.31it/s, failures=0, objective=-0.342]
+    3320it [01:23, 41.31it/s, failures=0, objective=-0.342]
+    3321it [01:23, 41.31it/s, failures=0, objective=-0.342]
+    3322it [01:23, 41.17it/s, failures=0, objective=-0.342]
+    3322it [01:23, 41.17it/s, failures=0, objective=-0.342]
+    3323it [01:23, 41.17it/s, failures=0, objective=-0.342]
+    3324it [01:23, 41.17it/s, failures=0, objective=-0.342]
+    3325it [01:23, 41.17it/s, failures=0, objective=-0.342]
+    3326it [01:23, 41.17it/s, failures=0, objective=-0.342]
+    3327it [01:23, 41.17it/s, failures=0, objective=-0.342]
+    3328it [01:23, 32.74it/s, failures=0, objective=-0.342]
+    3328it [01:23, 32.74it/s, failures=0, objective=-0.342]
+    3329it [01:23, 32.74it/s, failures=0, objective=-0.342]
+    3330it [01:23, 32.74it/s, failures=0, objective=-0.342]
+    3331it [01:23, 32.74it/s, failures=0, objective=-0.342]
+    3332it [01:23, 32.74it/s, failures=0, objective=-0.342]
+    3333it [01:23, 32.74it/s, failures=0, objective=-0.342]
+    3334it [01:23, 32.74it/s, failures=0, objective=-0.342]
+    3335it [01:23, 32.74it/s, failures=0, objective=-0.342]
+    3336it [01:23, 32.74it/s, failures=0, objective=-0.342]
+    3337it [01:23, 32.74it/s, failures=0, objective=-0.342]
+    3338it [01:23, 32.74it/s, failures=0, objective=-0.342]
+    3339it [01:23, 32.74it/s, failures=0, objective=-0.342]
+    3340it [01:23, 32.74it/s, failures=0, objective=-0.342]
+    3341it [01:24, 32.52it/s, failures=0, objective=-0.342]
+    3341it [01:24, 32.52it/s, failures=0, objective=-0.342]
+    3342it [01:24, 32.52it/s, failures=0, objective=-0.342]
+    3343it [01:24, 32.52it/s, failures=0, objective=-0.342]
+    3344it [01:24, 32.52it/s, failures=0, objective=-0.342]
+    3345it [01:24, 32.52it/s, failures=0, objective=-0.342]
+    3346it [01:24, 32.52it/s, failures=0, objective=-0.342]
+    3347it [01:24, 32.52it/s, failures=0, objective=-0.342]
+    3348it [01:24, 32.52it/s, failures=0, objective=-0.342]
+    3349it [01:24, 32.52it/s, failures=0, objective=-0.342]
+    3350it [01:24, 32.52it/s, failures=0, objective=-0.342]
+    3351it [01:24, 32.52it/s, failures=0, objective=-0.342]
+    3352it [01:24, 32.52it/s, failures=0, objective=-0.342]
+    3353it [01:24, 32.52it/s, failures=0, objective=-0.342]
+    3354it [01:24, 32.52it/s, failures=0, objective=-0.342]
+    3355it [01:24, 32.52it/s, failures=0, objective=-0.342]
+    3356it [01:24, 32.52it/s, failures=0, objective=-0.342]
+    3357it [01:24, 32.52it/s, failures=0, objective=-0.342]
+    3358it [01:24, 32.52it/s, failures=0, objective=-0.342]
+    3359it [01:24, 32.52it/s, failures=0, objective=-0.342]
+    3360it [01:24, 32.52it/s, failures=0, objective=-0.342]
+    3361it [01:24, 38.00it/s, failures=0, objective=-0.342]
+    3361it [01:24, 38.00it/s, failures=0, objective=-0.342]
+    3362it [01:24, 38.00it/s, failures=0, objective=-0.342]
+    3363it [01:24, 38.00it/s, failures=0, objective=-0.342]
+    3364it [01:24, 38.00it/s, failures=0, objective=-0.342]
+    3365it [01:24, 38.00it/s, failures=0, objective=-0.342]
+    3366it [01:24, 38.00it/s, failures=0, objective=-0.342]
+    3367it [01:24, 38.00it/s, failures=0, objective=-0.342]
+    3368it [01:24, 38.00it/s, failures=0, objective=-0.342]
+    3369it [01:24, 38.00it/s, failures=0, objective=-0.342]
+    3370it [01:24, 38.00it/s, failures=0, objective=-0.342]
+    3371it [01:24, 38.00it/s, failures=0, objective=-0.342]
+    3372it [01:24, 38.00it/s, failures=0, objective=-0.342]
+    3373it [01:24, 38.00it/s, failures=0, objective=-0.342]
+    3374it [01:24, 38.00it/s, failures=0, objective=-0.342]
+    3375it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3375it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3376it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3377it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3378it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3379it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3380it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3381it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3382it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3383it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3384it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3385it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3386it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3387it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3388it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3389it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3390it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3391it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3392it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3393it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3394it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3395it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3396it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3397it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3398it [01:25, 36.03it/s, failures=0, objective=-0.342]
+    3399it [01:25, 45.36it/s, failures=0, objective=-0.342]
+    3399it [01:25, 45.36it/s, failures=0, objective=-0.342]
+    3400it [01:25, 45.36it/s, failures=0, objective=-0.342]
+    3401it [01:25, 45.36it/s, failures=0, objective=-0.342]
+    3402it [01:25, 45.36it/s, failures=0, objective=-0.342]
+    3403it [01:25, 45.36it/s, failures=0, objective=-0.342]
+    3404it [01:25, 45.36it/s, failures=0, objective=-0.342]
+    3405it [01:25, 45.36it/s, failures=0, objective=-0.342]
+    3406it [01:25, 45.36it/s, failures=0, objective=-0.342]
+    3407it [01:25, 45.36it/s, failures=0, objective=-0.266]
+    3408it [01:25, 45.36it/s, failures=0, objective=-0.266]
+    3409it [01:25, 45.36it/s, failures=0, objective=-0.266]
+    3410it [01:25, 45.36it/s, failures=0, objective=-0.266]
+    3411it [01:25, 45.36it/s, failures=0, objective=-0.266]
+    3412it [01:25, 45.36it/s, failures=0, objective=-0.266]
+    3413it [01:25, 45.36it/s, failures=0, objective=-0.266]
+    3414it [01:25, 44.13it/s, failures=0, objective=-0.266]
+    3414it [01:25, 44.13it/s, failures=0, objective=-0.266]
+    3415it [01:25, 44.13it/s, failures=0, objective=-0.266]
+    3416it [01:25, 44.13it/s, failures=0, objective=-0.266]
+    3417it [01:25, 44.13it/s, failures=0, objective=-0.266]
+    3418it [01:25, 44.13it/s, failures=0, objective=-0.266]
+    3419it [01:25, 44.13it/s, failures=0, objective=-0.266]
+    3420it [01:25, 44.13it/s, failures=0, objective=-0.266]
+    3421it [01:25, 44.13it/s, failures=0, objective=-0.266]
+    3422it [01:26, 36.97it/s, failures=0, objective=-0.266]
+    3422it [01:26, 36.97it/s, failures=0, objective=-0.266]
+    3423it [01:26, 36.97it/s, failures=0, objective=-0.266]
+    3424it [01:26, 36.97it/s, failures=0, objective=-0.266]
+    3425it [01:26, 36.97it/s, failures=0, objective=-0.266]
+    3426it [01:26, 36.97it/s, failures=0, objective=-0.266]
+    3427it [01:26, 36.97it/s, failures=0, objective=-0.266]
+    3428it [01:26, 36.97it/s, failures=0, objective=-0.266]
+    3429it [01:26, 36.97it/s, failures=0, objective=-0.266]
+    3430it [01:26, 36.97it/s, failures=0, objective=-0.266]
+    3431it [01:26, 36.97it/s, failures=0, objective=-0.266]
+    3432it [01:26, 36.97it/s, failures=0, objective=-0.266]
+    3433it [01:26, 31.40it/s, failures=0, objective=-0.266]
+    3433it [01:26, 31.40it/s, failures=0, objective=-0.266]
+    3434it [01:26, 31.40it/s, failures=0, objective=-0.266]
+    3435it [01:26, 31.40it/s, failures=0, objective=-0.266]
+    3436it [01:26, 31.40it/s, failures=0, objective=-0.266]
+    3437it [01:26, 31.40it/s, failures=0, objective=-0.266]
+    3438it [01:26, 31.40it/s, failures=0, objective=-0.266]
+    3439it [01:26, 31.40it/s, failures=0, objective=-0.266]
+    3440it [01:26, 31.40it/s, failures=0, objective=-0.266]
+    3441it [01:26, 31.40it/s, failures=0, objective=-0.266]
+    3442it [01:26, 31.40it/s, failures=0, objective=-0.266]
+    3443it [01:26, 31.40it/s, failures=0, objective=-0.266]
+    3444it [01:26, 31.40it/s, failures=0, objective=-0.266]
+    3445it [01:26, 31.40it/s, failures=0, objective=-0.266]
+    3446it [01:26, 31.40it/s, failures=0, objective=-0.266]
+    3447it [01:27, 33.49it/s, failures=0, objective=-0.266]
+    3447it [01:27, 33.49it/s, failures=0, objective=-0.266]
+    3448it [01:27, 33.49it/s, failures=0, objective=-0.266]
+    3449it [01:27, 33.49it/s, failures=0, objective=-0.266]
+    3450it [01:27, 33.49it/s, failures=0, objective=-0.266]
+    3451it [01:27, 33.49it/s, failures=0, objective=-0.266]
+    3452it [01:27, 33.49it/s, failures=0, objective=-0.266]
+    3453it [01:27, 33.49it/s, failures=0, objective=-0.266]
+    3454it [01:27, 33.49it/s, failures=0, objective=-0.266]
+    3455it [01:27, 33.49it/s, failures=0, objective=-0.266]
+    3456it [01:27, 33.49it/s, failures=0, objective=-0.266]
+    3457it [01:27, 33.49it/s, failures=0, objective=-0.266]
+    3458it [01:27, 33.49it/s, failures=0, objective=-0.266]
+    3459it [01:27, 33.49it/s, failures=0, objective=-0.266]
+    3460it [01:27, 33.49it/s, failures=0, objective=-0.266]
+    3461it [01:27, 33.49it/s, failures=0, objective=-0.266]
+    3462it [01:27, 33.49it/s, failures=0, objective=-0.266]
+    3463it [01:27, 36.46it/s, failures=0, objective=-0.266]
+    3463it [01:27, 36.46it/s, failures=0, objective=-0.266]
+    3464it [01:27, 36.46it/s, failures=0, objective=-0.266]
+    3465it [01:27, 36.46it/s, failures=0, objective=-0.266]
+    3466it [01:27, 36.46it/s, failures=0, objective=-0.266]
+    3467it [01:27, 36.46it/s, failures=0, objective=-0.266]
+    3468it [01:27, 36.46it/s, failures=0, objective=-0.266]
+    3469it [01:27, 36.46it/s, failures=0, objective=-0.266]
+    3470it [01:27, 36.46it/s, failures=0, objective=-0.266]
+    3471it [01:27, 36.46it/s, failures=0, objective=-0.266]
+    3472it [01:27, 36.46it/s, failures=0, objective=-0.266]
+    3473it [01:27, 36.46it/s, failures=0, objective=-0.266]
+    3474it [01:27, 36.46it/s, failures=0, objective=-0.266]
+    3475it [01:27, 36.46it/s, failures=0, objective=-0.266]
+    3476it [01:27, 36.46it/s, failures=0, objective=-0.266]
+    3477it [01:27, 36.46it/s, failures=0, objective=-0.266]
+    3478it [01:27, 36.46it/s, failures=0, objective=-0.266]
+    3479it [01:27, 36.46it/s, failures=0, objective=-0.266]
+    3480it [01:27, 36.46it/s, failures=0, objective=-0.266]
+    3481it [01:27, 36.46it/s, failures=0, objective=-0.266]
+    3482it [01:27, 36.46it/s, failures=0, objective=-0.266]
+    3483it [01:27, 36.46it/s, failures=0, objective=-0.266]
+    3484it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3484it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3485it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3486it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3487it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3488it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3489it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3490it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3491it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3492it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3493it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3494it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3495it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3496it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3497it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3498it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3499it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3500it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3501it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3502it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3503it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3504it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3505it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3506it [01:27, 38.20it/s, failures=0, objective=-0.266]
+    3507it [01:28, 44.47it/s, failures=0, objective=-0.266]
+    3507it [01:28, 44.47it/s, failures=0, objective=-0.266]
+    3508it [01:28, 44.47it/s, failures=0, objective=-0.266]
+    3509it [01:28, 44.47it/s, failures=0, objective=-0.266]
+    3510it [01:28, 44.47it/s, failures=0, objective=-0.266]
+    3511it [01:28, 44.47it/s, failures=0, objective=-0.266]
+    3512it [01:28, 44.47it/s, failures=0, objective=-0.266]
+    3513it [01:28, 44.47it/s, failures=0, objective=-0.266]
+    3514it [01:28, 44.47it/s, failures=0, objective=-0.266]
+    3515it [01:28, 44.47it/s, failures=0, objective=-0.266]
+    3516it [01:28, 44.47it/s, failures=0, objective=-0.266]
+    3517it [01:28, 44.47it/s, failures=0, objective=-0.266]
+    3518it [01:28, 39.44it/s, failures=0, objective=-0.266]
+    3518it [01:28, 39.44it/s, failures=0, objective=-0.266]
+    3519it [01:28, 39.44it/s, failures=0, objective=-0.266]
+    3520it [01:28, 39.44it/s, failures=0, objective=-0.266]
+    3521it [01:28, 39.44it/s, failures=0, objective=-0.266]
+    3522it [01:28, 39.44it/s, failures=0, objective=-0.266]
+    3523it [01:28, 39.44it/s, failures=0, objective=-0.266]
+    3524it [01:28, 39.44it/s, failures=0, objective=-0.266]
+    3525it [01:28, 39.44it/s, failures=0, objective=-0.266]
+    3526it [01:28, 39.44it/s, failures=0, objective=-0.266]
+    3527it [01:28, 39.44it/s, failures=0, objective=-0.266]
+    3528it [01:28, 39.44it/s, failures=0, objective=-0.266]
+    3529it [01:28, 39.44it/s, failures=0, objective=-0.266]
+    3530it [01:28, 39.44it/s, failures=0, objective=-0.266]
+    3531it [01:28, 39.44it/s, failures=0, objective=-0.266]
+    3532it [01:28, 39.44it/s, failures=0, objective=-0.266]
+    3533it [01:28, 39.44it/s, failures=0, objective=-0.266]
+    3534it [01:28, 39.44it/s, failures=0, objective=-0.266]
+    3535it [01:28, 39.44it/s, failures=0, objective=-0.266]
+    3536it [01:29, 43.33it/s, failures=0, objective=-0.266]
+    3536it [01:29, 43.33it/s, failures=0, objective=-0.266]
+    3537it [01:29, 43.33it/s, failures=0, objective=-0.266]
+    3538it [01:29, 43.33it/s, failures=0, objective=-0.266]
+    3539it [01:29, 43.33it/s, failures=0, objective=-0.249]
+    3540it [01:29, 43.33it/s, failures=0, objective=-0.249]
+    3541it [01:29, 31.80it/s, failures=0, objective=-0.249]
+    3541it [01:29, 31.80it/s, failures=0, objective=-0.249]
+    3542it [01:29, 31.80it/s, failures=0, objective=-0.249]
+    3543it [01:29, 31.80it/s, failures=0, objective=-0.249]
+    3544it [01:29, 31.80it/s, failures=0, objective=-0.249]
+    3545it [01:29, 31.80it/s, failures=0, objective=-0.249]
+    3546it [01:29, 31.80it/s, failures=0, objective=-0.249]
+    3547it [01:29, 31.80it/s, failures=0, objective=-0.249]
+    3548it [01:29, 31.80it/s, failures=0, objective=-0.249]
+    3549it [01:29, 31.80it/s, failures=0, objective=-0.249]
+    3550it [01:29, 31.80it/s, failures=0, objective=-0.249]
+    3551it [01:29, 31.80it/s, failures=0, objective=-0.249]
+    3552it [01:29, 31.80it/s, failures=0, objective=-0.249]
+    3553it [01:29, 31.80it/s, failures=0, objective=-0.249]
+    3554it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3554it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3555it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3556it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3557it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3558it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3559it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3560it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3561it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3562it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3563it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3564it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3565it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3566it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3567it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3568it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3569it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3570it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3571it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3572it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3573it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3574it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3575it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3576it [01:29, 30.64it/s, failures=0, objective=-0.249]
+    3577it [01:30, 37.36it/s, failures=0, objective=-0.249]
+    3577it [01:30, 37.36it/s, failures=0, objective=-0.249]
+    3578it [01:30, 37.36it/s, failures=0, objective=-0.249]
+    3579it [01:30, 37.36it/s, failures=0, objective=-0.249]
+    3580it [01:30, 37.36it/s, failures=0, objective=-0.249]
+    3581it [01:30, 37.36it/s, failures=0, objective=-0.249]
+    3582it [01:30, 37.36it/s, failures=0, objective=-0.249]
+    3583it [01:30, 37.36it/s, failures=0, objective=-0.249]
+    3584it [01:30, 37.36it/s, failures=0, objective=-0.249]
+    3585it [01:30, 37.36it/s, failures=0, objective=-0.249]
+    3586it [01:30, 37.36it/s, failures=0, objective=-0.249]
+    3587it [01:30, 37.36it/s, failures=0, objective=-0.249]
+    3588it [01:30, 37.36it/s, failures=0, objective=-0.249]
+    3589it [01:30, 37.36it/s, failures=0, objective=-0.249]
+    3590it [01:30, 37.36it/s, failures=0, objective=-0.249]
+    3591it [01:30, 37.36it/s, failures=0, objective=-0.249]
+    3592it [01:30, 37.36it/s, failures=0, objective=-0.249]
+    3593it [01:30, 37.03it/s, failures=0, objective=-0.249]
+    3593it [01:30, 37.03it/s, failures=0, objective=-0.249]
+    3594it [01:30, 37.03it/s, failures=0, objective=-0.249]
+    3595it [01:30, 37.03it/s, failures=0, objective=-0.249]
+    3596it [01:30, 37.03it/s, failures=0, objective=-0.249]
+    3597it [01:30, 37.03it/s, failures=0, objective=-0.249]
+    3598it [01:30, 37.03it/s, failures=0, objective=-0.249]
+    3599it [01:30, 37.03it/s, failures=0, objective=-0.249]
+    3600it [01:30, 37.03it/s, failures=0, objective=-0.249]
+    3601it [01:30, 37.03it/s, failures=0, objective=-0.249]
+    3602it [01:30, 37.03it/s, failures=0, objective=-0.249]
+    3603it [01:30, 37.03it/s, failures=0, objective=-0.249]
+    3604it [01:30, 37.03it/s, failures=0, objective=-0.249]
+    3605it [01:30, 37.03it/s, failures=0, objective=-0.249]
+    3606it [01:30, 37.03it/s, failures=0, objective=-0.249]
+    3607it [01:30, 37.03it/s, failures=0, objective=-0.249]
+    3608it [01:30, 37.03it/s, failures=0, objective=-0.249]
+    3609it [01:30, 37.03it/s, failures=0, objective=-0.249]
+    3610it [01:30, 37.03it/s, failures=0, objective=-0.249]
+    3611it [01:30, 37.03it/s, failures=0, objective=-0.249]
+    3612it [01:30, 37.03it/s, failures=0, objective=-0.249]
+    3613it [01:30, 37.03it/s, failures=0, objective=-0.249]
+    3614it [01:30, 37.03it/s, failures=0, objective=-0.249]
+    3615it [01:31, 41.85it/s, failures=0, objective=-0.249]
+    3615it [01:31, 41.85it/s, failures=0, objective=-0.249]
+    3616it [01:31, 41.85it/s, failures=0, objective=-0.249]
+    3617it [01:31, 41.85it/s, failures=0, objective=-0.249]
+    3618it [01:31, 41.85it/s, failures=0, objective=-0.249]
+    3619it [01:31, 41.85it/s, failures=0, objective=-0.249]
+    3620it [01:31, 41.85it/s, failures=0, objective=-0.249]
+    3621it [01:31, 41.85it/s, failures=0, objective=-0.249]
+    3622it [01:31, 41.85it/s, failures=0, objective=-0.249]
+    3623it [01:31, 41.85it/s, failures=0, objective=-0.249]
+    3624it [01:31, 41.85it/s, failures=0, objective=-0.249]
+    3625it [01:31, 41.85it/s, failures=0, objective=-0.249]
+    3626it [01:31, 41.85it/s, failures=0, objective=-0.249]
+    3627it [01:31, 41.85it/s, failures=0, objective=-0.249]
+    3628it [01:31, 41.85it/s, failures=0, objective=-0.249]
+    3629it [01:31, 41.85it/s, failures=0, objective=-0.249]
+    3630it [01:31, 41.85it/s, failures=0, objective=-0.249]
+    3631it [01:31, 42.30it/s, failures=0, objective=-0.249]
+    3631it [01:31, 42.30it/s, failures=0, objective=-0.249]
+    3632it [01:31, 42.30it/s, failures=0, objective=-0.249]
+    3633it [01:31, 42.30it/s, failures=0, objective=-0.249]
+    3634it [01:31, 42.30it/s, failures=0, objective=-0.249]
+    3635it [01:31, 42.30it/s, failures=0, objective=-0.249]
+    3636it [01:31, 42.30it/s, failures=0, objective=-0.249]
+    3637it [01:31, 42.30it/s, failures=0, objective=-0.249]
+    3638it [01:31, 42.30it/s, failures=0, objective=-0.249]
+    3639it [01:32, 35.67it/s, failures=0, objective=-0.249]
+    3639it [01:32, 35.67it/s, failures=0, objective=-0.249]
+    3640it [01:32, 35.67it/s, failures=0, objective=-0.249]
+    3641it [01:32, 35.67it/s, failures=0, objective=-0.249]
+    3642it [01:32, 35.67it/s, failures=0, objective=-0.249]
+    3643it [01:32, 35.67it/s, failures=0, objective=-0.249]
+    3644it [01:32, 35.67it/s, failures=0, objective=-0.249]
+    3645it [01:32, 35.67it/s, failures=0, objective=-0.249]
+    3646it [01:32, 35.67it/s, failures=0, objective=-0.249]
+    3647it [01:32, 35.67it/s, failures=0, objective=-0.249]
+    3648it [01:32, 35.67it/s, failures=0, objective=-0.249]
+    3649it [01:32, 32.72it/s, failures=0, objective=-0.249]
+    3649it [01:32, 32.72it/s, failures=0, objective=-0.249]
+    3650it [01:32, 32.72it/s, failures=0, objective=-0.249]
+    3651it [01:32, 32.72it/s, failures=0, objective=-0.249]
+    3652it [01:32, 32.72it/s, failures=0, objective=-0.249]
+    3653it [01:32, 32.72it/s, failures=0, objective=-0.249]
+    3654it [01:32, 32.72it/s, failures=0, objective=-0.249]
+    3655it [01:32, 32.72it/s, failures=0, objective=-0.249]
+    3656it [01:32, 32.72it/s, failures=0, objective=-0.249]
+    3657it [01:32, 32.72it/s, failures=0, objective=-0.249]
+    3658it [01:32, 32.72it/s, failures=0, objective=-0.249]
+    3659it [01:32, 32.72it/s, failures=0, objective=-0.249]
+    3660it [01:32, 32.72it/s, failures=0, objective=-0.249]
+    3661it [01:32, 32.72it/s, failures=0, objective=-0.249]
+    3662it [01:32, 32.72it/s, failures=0, objective=-0.249]
+    3663it [01:32, 32.72it/s, failures=0, objective=-0.249]
+    3664it [01:32, 32.72it/s, failures=0, objective=-0.249]
+    3665it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3665it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3666it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3667it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3668it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3669it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3670it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3671it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3672it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3673it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3674it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3675it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3676it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3677it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3678it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3679it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3680it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3681it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3682it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3683it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3684it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3685it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3686it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3687it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3688it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3689it [01:32, 33.18it/s, failures=0, objective=-0.249]
+    3690it [01:33, 40.11it/s, failures=0, objective=-0.249]
+    3690it [01:33, 40.11it/s, failures=0, objective=-0.249]
+    3691it [01:33, 40.11it/s, failures=0, objective=-0.249]
+    3692it [01:33, 40.11it/s, failures=0, objective=-0.249]
+    3693it [01:33, 40.11it/s, failures=0, objective=-0.249]
+    3694it [01:33, 40.11it/s, failures=0, objective=-0.249]
+    3695it [01:33, 40.11it/s, failures=0, objective=-0.249]
+    3696it [01:33, 40.11it/s, failures=0, objective=-0.249]
+    3697it [01:33, 40.11it/s, failures=0, objective=-0.249]
+    3698it [01:33, 40.11it/s, failures=0, objective=-0.249]
+    3699it [01:33, 40.11it/s, failures=0, objective=-0.249]
+    3700it [01:33, 40.11it/s, failures=0, objective=-0.249]
+    3701it [01:33, 40.11it/s, failures=0, objective=-0.249]
+    3702it [01:33, 40.11it/s, failures=0, objective=-0.249]
+    3703it [01:33, 40.11it/s, failures=0, objective=-0.249]
+    3704it [01:33, 40.11it/s, failures=0, objective=-0.249]
+    3705it [01:33, 40.11it/s, failures=0, objective=-0.249]
+    3706it [01:33, 40.11it/s, failures=0, objective=-0.249]
+    3707it [01:33, 40.11it/s, failures=0, objective=-0.249]
+    3708it [01:33, 39.77it/s, failures=0, objective=-0.249]
+    3708it [01:33, 39.77it/s, failures=0, objective=-0.249]
+    3709it [01:33, 39.77it/s, failures=0, objective=-0.249]
+    3710it [01:33, 39.77it/s, failures=0, objective=-0.249]
+    3711it [01:33, 39.77it/s, failures=0, objective=-0.249]
+    3712it [01:33, 39.77it/s, failures=0, objective=-0.249]
+    3713it [01:33, 39.77it/s, failures=0, objective=-0.249]
+    3714it [01:33, 39.77it/s, failures=0, objective=-0.249]
+    3715it [01:33, 39.77it/s, failures=0, objective=-0.249]
+    3716it [01:33, 39.77it/s, failures=0, objective=-0.249]
+    3717it [01:33, 39.77it/s, failures=0, objective=-0.249]
+    3718it [01:33, 39.77it/s, failures=0, objective=-0.249]
+    3719it [01:33, 39.77it/s, failures=0, objective=-0.249]
+    3720it [01:33, 39.77it/s, failures=0, objective=-0.249]
+    3721it [01:33, 39.77it/s, failures=0, objective=-0.249]
+    3722it [01:33, 39.77it/s, failures=0, objective=-0.249]
+    3723it [01:33, 39.77it/s, failures=0, objective=-0.249]
+    3724it [01:33, 39.77it/s, failures=0, objective=-0.249]
+    3725it [01:33, 39.77it/s, failures=0, objective=-0.249]
+    3726it [01:34, 42.58it/s, failures=0, objective=-0.249]
+    3726it [01:34, 42.58it/s, failures=0, objective=-0.249]
+    3727it [01:34, 42.58it/s, failures=0, objective=-0.249]
+    3728it [01:34, 42.58it/s, failures=0, objective=-0.249]
+    3729it [01:34, 42.58it/s, failures=0, objective=-0.249]
+    3730it [01:34, 42.58it/s, failures=0, objective=-0.249]
+    3731it [01:34, 42.58it/s, failures=0, objective=-0.249]
+    3732it [01:34, 42.58it/s, failures=0, objective=-0.249]
+    3733it [01:34, 42.58it/s, failures=0, objective=-0.249]
+    3734it [01:34, 42.58it/s, failures=0, objective=-0.249]
+    3735it [01:34, 42.58it/s, failures=0, objective=-0.249]
+    3736it [01:34, 42.58it/s, failures=0, objective=-0.249]
+    3737it [01:34, 40.09it/s, failures=0, objective=-0.249]
+    3737it [01:34, 40.09it/s, failures=0, objective=-0.249]
+    3738it [01:34, 40.09it/s, failures=0, objective=-0.249]
+    3739it [01:34, 40.09it/s, failures=0, objective=-0.249]
+    3740it [01:34, 40.09it/s, failures=0, objective=-0.249]
+    3741it [01:34, 40.09it/s, failures=0, objective=-0.249]
+    3742it [01:34, 40.09it/s, failures=0, objective=-0.249]
+    3743it [01:34, 40.09it/s, failures=0, objective=-0.249]
+    3744it [01:34, 40.09it/s, failures=0, objective=-0.249]
+    3745it [01:34, 32.11it/s, failures=0, objective=-0.249]
+    3745it [01:34, 32.11it/s, failures=0, objective=-0.249]
+    3746it [01:34, 32.11it/s, failures=0, objective=-0.249]
+    3747it [01:34, 32.11it/s, failures=0, objective=-0.249]
+    3748it [01:34, 32.11it/s, failures=0, objective=-0.249]
+    3749it [01:34, 32.11it/s, failures=0, objective=-0.249]
+    3750it [01:34, 32.11it/s, failures=0, objective=-0.249]
+    3751it [01:34, 32.11it/s, failures=0, objective=-0.249]
+    3752it [01:34, 32.11it/s, failures=0, objective=-0.249]
+    3753it [01:34, 32.11it/s, failures=0, objective=-0.249]
+    3754it [01:34, 32.11it/s, failures=0, objective=-0.249]
+    3755it [01:34, 32.11it/s, failures=0, objective=-0.249]
+    3756it [01:34, 32.11it/s, failures=0, objective=-0.249]
+    3757it [01:34, 32.11it/s, failures=0, objective=-0.249]
+    3758it [01:34, 32.11it/s, failures=0, objective=-0.249]
+    3759it [01:34, 32.11it/s, failures=0, objective=-0.249]
+    3760it [01:34, 32.11it/s, failures=0, objective=-0.249]
+    3761it [01:34, 32.11it/s, failures=0, objective=-0.249]
+    3762it [01:34, 32.11it/s, failures=0, objective=-0.249]
+    3763it [01:35, 34.04it/s, failures=0, objective=-0.249]
+    3763it [01:35, 34.04it/s, failures=0, objective=-0.249]
+    3764it [01:35, 34.04it/s, failures=0, objective=-0.249]
+    3765it [01:35, 34.04it/s, failures=0, objective=-0.249]
+    3766it [01:35, 34.04it/s, failures=0, objective=-0.249]
+    3767it [01:35, 34.04it/s, failures=0, objective=-0.249]
+    3768it [01:35, 34.04it/s, failures=0, objective=-0.249]
+    3769it [01:35, 34.04it/s, failures=0, objective=-0.249]
+    3770it [01:35, 34.04it/s, failures=0, objective=-0.249]
+    3771it [01:35, 34.04it/s, failures=0, objective=-0.249]
+    3772it [01:35, 34.04it/s, failures=0, objective=-0.249]
+    3773it [01:35, 34.04it/s, failures=0, objective=-0.249]
+    3774it [01:35, 34.04it/s, failures=0, objective=-0.249]
+    3775it [01:35, 34.04it/s, failures=0, objective=-0.249]
+    3776it [01:35, 34.04it/s, failures=0, objective=-0.249]
+    3777it [01:35, 34.04it/s, failures=0, objective=-0.249]
+    3778it [01:35, 34.04it/s, failures=0, objective=-0.249]
+    3779it [01:35, 34.04it/s, failures=0, objective=-0.249]
+    3780it [01:35, 34.04it/s, failures=0, objective=-0.249]
+    3781it [01:35, 34.04it/s, failures=0, objective=-0.249]
+    3782it [01:35, 34.04it/s, failures=0, objective=-0.249]
+    3783it [01:35, 38.89it/s, failures=0, objective=-0.249]
+    3783it [01:35, 38.89it/s, failures=0, objective=-0.249]
+    3784it [01:35, 38.89it/s, failures=0, objective=-0.249]
+    3785it [01:35, 38.89it/s, failures=0, objective=-0.249]
+    3786it [01:35, 38.89it/s, failures=0, objective=-0.249]
+    3787it [01:35, 38.89it/s, failures=0, objective=-0.249]
+    3788it [01:35, 38.89it/s, failures=0, objective=-0.249]
+    3789it [01:35, 38.89it/s, failures=0, objective=-0.249]
+    3790it [01:35, 38.89it/s, failures=0, objective=-0.249]
+    3791it [01:35, 38.89it/s, failures=0, objective=-0.249]
+    3792it [01:35, 38.89it/s, failures=0, objective=-0.249]
+    3793it [01:35, 38.89it/s, failures=0, objective=-0.249]
+    3794it [01:35, 38.89it/s, failures=0, objective=-0.249]
+    3795it [01:35, 38.89it/s, failures=0, objective=-0.249]
+    3796it [01:35, 38.89it/s, failures=0, objective=-0.249]
+    3797it [01:35, 38.89it/s, failures=0, objective=-0.249]
+    3798it [01:35, 38.89it/s, failures=0, objective=-0.249]
+    3799it [01:35, 38.89it/s, failures=0, objective=-0.249]
+    3800it [01:35, 38.89it/s, failures=0, objective=-0.249]
+    3801it [01:35, 38.89it/s, failures=0, objective=-0.249]
+    3802it [01:36, 40.94it/s, failures=0, objective=-0.249]
+    3802it [01:36, 40.94it/s, failures=0, objective=-0.249]
+    3803it [01:36, 40.94it/s, failures=0, objective=-0.249]
+    3804it [01:36, 40.94it/s, failures=0, objective=-0.249]
+    3805it [01:36, 40.94it/s, failures=0, objective=-0.249]
+    3806it [01:36, 40.94it/s, failures=0, objective=-0.249]
+    3807it [01:36, 40.94it/s, failures=0, objective=-0.249]
+    3808it [01:36, 40.94it/s, failures=0, objective=-0.249]
+    3809it [01:36, 40.94it/s, failures=0, objective=-0.249]
+    3810it [01:36, 40.94it/s, failures=0, objective=-0.249]
+    3811it [01:36, 40.94it/s, failures=0, objective=-0.249]
+    3812it [01:36, 40.94it/s, failures=0, objective=-0.249]
+    3813it [01:36, 40.94it/s, failures=0, objective=-0.249]
+    3814it [01:36, 40.94it/s, failures=0, objective=-0.249]
+    3815it [01:36, 38.97it/s, failures=0, objective=-0.249]
+    3815it [01:36, 38.97it/s, failures=0, objective=-0.249]
+    3816it [01:36, 38.97it/s, failures=0, objective=-0.249]
+    3817it [01:36, 38.97it/s, failures=0, objective=-0.249]
+    3818it [01:36, 38.97it/s, failures=0, objective=-0.249]
+    3819it [01:36, 38.97it/s, failures=0, objective=-0.249]
+    3820it [01:36, 38.97it/s, failures=0, objective=-0.249]
+    3821it [01:36, 38.97it/s, failures=0, objective=-0.249]
+    3822it [01:36, 38.97it/s, failures=0, objective=-0.249]
+    3823it [01:36, 38.97it/s, failures=0, objective=-0.249]
+    3824it [01:36, 38.97it/s, failures=0, objective=-0.249]
+    3825it [01:36, 38.97it/s, failures=0, objective=-0.249]
+    3826it [01:36, 38.97it/s, failures=0, objective=-0.249]
+    3827it [01:36, 38.97it/s, failures=0, objective=-0.227]
+    3828it [01:36, 38.97it/s, failures=0, objective=-0.227]
+    3829it [01:36, 38.97it/s, failures=0, objective=-0.227]
+    3830it [01:36, 38.97it/s, failures=0, objective=-0.227]
+    3831it [01:37, 36.54it/s, failures=0, objective=-0.227]
+    3831it [01:37, 36.54it/s, failures=0, objective=-0.227]
+    3832it [01:37, 36.54it/s, failures=0, objective=-0.227]
+    3833it [01:37, 36.54it/s, failures=0, objective=-0.227]
+    3834it [01:37, 36.54it/s, failures=0, objective=-0.227]
+    3835it [01:37, 36.54it/s, failures=0, objective=-0.227]
+    3836it [01:37, 36.54it/s, failures=0, objective=-0.227]
+    3837it [01:37, 36.54it/s, failures=0, objective=-0.227]
+    3838it [01:37, 36.54it/s, failures=0, objective=-0.227]
+    3839it [01:37, 36.54it/s, failures=0, objective=-0.227]
+    3840it [01:37, 36.54it/s, failures=0, objective=-0.227]
+    3841it [01:37, 36.54it/s, failures=0, objective=-0.227]
+    3842it [01:37, 36.54it/s, failures=0, objective=-0.227]
+    3843it [01:37, 34.26it/s, failures=0, objective=-0.227]
+    3843it [01:37, 34.26it/s, failures=0, objective=-0.227]
+    3844it [01:37, 34.26it/s, failures=0, objective=-0.227]
+    3845it [01:37, 34.26it/s, failures=0, objective=-0.227]
+    3846it [01:37, 34.26it/s, failures=0, objective=-0.227]
+    3847it [01:37, 34.26it/s, failures=0, objective=-0.227]
+    3848it [01:37, 34.26it/s, failures=0, objective=-0.227]
+    3849it [01:37, 34.26it/s, failures=0, objective=-0.227]
+    3850it [01:37, 34.26it/s, failures=0, objective=-0.227]
+    3851it [01:37, 34.26it/s, failures=0, objective=-0.227]
+    3852it [01:37, 34.26it/s, failures=0, objective=-0.227]
+    3853it [01:37, 34.26it/s, failures=0, objective=-0.227]
+    3854it [01:37, 34.26it/s, failures=0, objective=-0.227]
+    3855it [01:37, 34.26it/s, failures=0, objective=-0.227]
+    3856it [01:37, 34.26it/s, failures=0, objective=-0.227]
+    3857it [01:37, 34.26it/s, failures=0, objective=-0.227]
+    3858it [01:37, 34.26it/s, failures=0, objective=-0.227]
+    3859it [01:37, 34.26it/s, failures=0, objective=-0.227]
+    3860it [01:37, 36.95it/s, failures=0, objective=-0.227]
+    3860it [01:37, 36.95it/s, failures=0, objective=-0.227]
+    3861it [01:37, 36.95it/s, failures=0, objective=-0.227]
+    3862it [01:37, 36.95it/s, failures=0, objective=-0.227]
+    3863it [01:37, 36.95it/s, failures=0, objective=-0.227]
+    3864it [01:37, 36.95it/s, failures=0, objective=-0.227]
+    3865it [01:37, 36.95it/s, failures=0, objective=-0.227]
+    3866it [01:37, 36.95it/s, failures=0, objective=-0.227]
+    3867it [01:37, 36.95it/s, failures=0, objective=-0.227]
+    3868it [01:37, 36.95it/s, failures=0, objective=-0.227]
+    3869it [01:37, 36.95it/s, failures=0, objective=-0.227]
+    3870it [01:37, 36.95it/s, failures=0, objective=-0.227]
+    3871it [01:37, 36.95it/s, failures=0, objective=-0.227]
+    3872it [01:37, 36.95it/s, failures=0, objective=-0.227]
+    3873it [01:37, 36.95it/s, failures=0, objective=-0.227]
+    3874it [01:37, 36.95it/s, failures=0, objective=-0.227]
+    3875it [01:37, 36.95it/s, failures=0, objective=-0.227]
+    3876it [01:37, 36.95it/s, failures=0, objective=-0.227]
+    3877it [01:37, 36.95it/s, failures=0, objective=-0.227]
+    3878it [01:37, 36.95it/s, failures=0, objective=-0.227]
+    3879it [01:37, 36.95it/s, failures=0, objective=-0.227]
+    3880it [01:38, 39.34it/s, failures=0, objective=-0.227]
+    3880it [01:38, 39.34it/s, failures=0, objective=-0.227]
+    3881it [01:38, 39.34it/s, failures=0, objective=-0.227]
+    3882it [01:38, 39.34it/s, failures=0, objective=-0.227]
+    3883it [01:38, 39.34it/s, failures=0, objective=-0.227]
+    3884it [01:38, 39.34it/s, failures=0, objective=-0.227]
+    3885it [01:38, 39.34it/s, failures=0, objective=-0.227]
+    3886it [01:38, 39.34it/s, failures=0, objective=-0.227]
+    3887it [01:38, 39.34it/s, failures=0, objective=-0.227]
+    3888it [01:38, 39.34it/s, failures=0, objective=-0.227]
+    3889it [01:38, 39.34it/s, failures=0, objective=-0.227]
+    3890it [01:38, 39.34it/s, failures=0, objective=-0.227]
+    3891it [01:38, 39.34it/s, failures=0, objective=-0.227]
+    3892it [01:38, 39.34it/s, failures=0, objective=-0.227]
+    3893it [01:38, 39.34it/s, failures=0, objective=-0.227]
+    3894it [01:38, 39.34it/s, failures=0, objective=-0.227]
+    3895it [01:38, 39.34it/s, failures=0, objective=-0.227]
+    3896it [01:38, 39.34it/s, failures=0, objective=-0.227]
+    3897it [01:38, 39.34it/s, failures=0, objective=-0.227]
+    3898it [01:38, 39.34it/s, failures=0, objective=-0.227]
+    3899it [01:38, 39.34it/s, failures=0, objective=-0.227]
+    3900it [01:38, 39.34it/s, failures=0, objective=-0.227]
+    3901it [01:38, 42.48it/s, failures=0, objective=-0.227]
+    3901it [01:38, 42.48it/s, failures=0, objective=-0.227]
+    3902it [01:38, 42.48it/s, failures=0, objective=-0.227]
+    3903it [01:38, 42.48it/s, failures=0, objective=-0.227]
+    3904it [01:38, 42.48it/s, failures=0, objective=-0.227]
+    3905it [01:38, 42.48it/s, failures=0, objective=-0.227]
+    3906it [01:38, 42.48it/s, failures=0, objective=-0.227]
+    3907it [01:38, 42.48it/s, failures=0, objective=-0.227]
+    3908it [01:38, 42.48it/s, failures=0, objective=-0.227]
+    3909it [01:38, 42.48it/s, failures=0, objective=-0.227]
+    3910it [01:38, 42.48it/s, failures=0, objective=-0.227]
+    3911it [01:38, 42.48it/s, failures=0, objective=-0.227]
+    3912it [01:38, 42.48it/s, failures=0, objective=-0.227]
+    3913it [01:38, 42.48it/s, failures=0, objective=-0.227]
+    3914it [01:38, 42.48it/s, failures=0, objective=-0.227]
+    3915it [01:39, 36.63it/s, failures=0, objective=-0.227]
+    3915it [01:39, 36.63it/s, failures=0, objective=-0.227]
+    3916it [01:39, 36.63it/s, failures=0, objective=-0.227]
+    3917it [01:39, 36.63it/s, failures=0, objective=-0.227]
+    3918it [01:39, 36.63it/s, failures=0, objective=-0.227]
+    3919it [01:39, 36.63it/s, failures=0, objective=-0.227]
+    3920it [01:39, 36.63it/s, failures=0, objective=-0.227]
+    3921it [01:39, 36.63it/s, failures=0, objective=-0.227]
+    3922it [01:39, 36.63it/s, failures=0, objective=-0.227]
+    3923it [01:39, 36.63it/s, failures=0, objective=-0.227]
+    3924it [01:39, 36.63it/s, failures=0, objective=-0.227]
+    3925it [01:39, 36.63it/s, failures=0, objective=-0.227]
+    3926it [01:39, 36.63it/s, failures=0, objective=-0.227]
+    3927it [01:39, 36.63it/s, failures=0, objective=-0.227]
+    3928it [01:39, 36.63it/s, failures=0, objective=-0.227]
+    3929it [01:39, 36.63it/s, failures=0, objective=-0.227]
+    3930it [01:39, 36.63it/s, failures=0, objective=-0.227]
+    3931it [01:39, 36.63it/s, failures=0, objective=-0.227]
+    3932it [01:39, 36.63it/s, failures=0, objective=-0.227]
+    3933it [01:39, 36.63it/s, failures=0, objective=-0.227]
+    3934it [01:39, 36.63it/s, failures=0, objective=-0.227]
+    3935it [01:39, 39.60it/s, failures=0, objective=-0.227]
+    3935it [01:39, 39.60it/s, failures=0, objective=-0.227]
+    3936it [01:39, 39.60it/s, failures=0, objective=-0.227]
+    3937it [01:39, 39.60it/s, failures=0, objective=-0.227]
+    3938it [01:39, 39.60it/s, failures=0, objective=-0.227]
+    3939it [01:39, 39.60it/s, failures=0, objective=-0.227]
+    3940it [01:39, 39.60it/s, failures=0, objective=-0.227]
+    3941it [01:39, 39.60it/s, failures=0, objective=-0.227]
+    3942it [01:39, 39.60it/s, failures=0, objective=-0.227]
+    3943it [01:39, 39.60it/s, failures=0, objective=-0.227]
+    3944it [01:39, 39.60it/s, failures=0, objective=-0.227]
+    3945it [01:39, 39.60it/s, failures=0, objective=-0.227]
+    3946it [01:39, 39.60it/s, failures=0, objective=-0.227]
+    3947it [01:40, 33.91it/s, failures=0, objective=-0.227]
+    3947it [01:40, 33.91it/s, failures=0, objective=-0.227]
+    3948it [01:40, 33.91it/s, failures=0, objective=-0.227]
+    3949it [01:40, 33.91it/s, failures=0, objective=-0.227]
+    3950it [01:40, 33.91it/s, failures=0, objective=-0.227]
+    3951it [01:40, 33.91it/s, failures=0, objective=-0.227]
+    3952it [01:40, 33.91it/s, failures=0, objective=-0.227]
+    3953it [01:40, 33.91it/s, failures=0, objective=-0.227]
+    3954it [01:40, 33.91it/s, failures=0, objective=-0.227]
+    3955it [01:40, 33.91it/s, failures=0, objective=-0.227]
+    3956it [01:40, 33.91it/s, failures=0, objective=-0.227]
+    3957it [01:40, 33.91it/s, failures=0, objective=-0.227]
+    3958it [01:40, 33.91it/s, failures=0, objective=-0.227]
+    3959it [01:40, 33.91it/s, failures=0, objective=-0.227]
+    3960it [01:40, 33.91it/s, failures=0, objective=-0.227]
+    3961it [01:40, 33.91it/s, failures=0, objective=-0.227]
+    3962it [01:40, 33.91it/s, failures=0, objective=-0.227]
+    3963it [01:40, 33.91it/s, failures=0, objective=-0.227]
+    3964it [01:40, 33.91it/s, failures=0, objective=-0.227]
+    3965it [01:40, 33.91it/s, failures=0, objective=-0.227]
+    3966it [01:40, 33.91it/s, failures=0, objective=-0.227]
+    3967it [01:40, 37.05it/s, failures=0, objective=-0.227]
+    3967it [01:40, 37.05it/s, failures=0, objective=-0.216]
+    3968it [01:40, 37.05it/s, failures=0, objective=-0.216]
+    3969it [01:40, 37.05it/s, failures=0, objective=-0.216]
+    3970it [01:40, 37.05it/s, failures=0, objective=-0.216]
+    3971it [01:40, 37.05it/s, failures=0, objective=-0.216]
+    3972it [01:40, 37.05it/s, failures=0, objective=-0.216]
+    3973it [01:40, 37.05it/s, failures=0, objective=-0.216]
+    3974it [01:40, 37.05it/s, failures=0, objective=-0.216]
+    3975it [01:40, 37.05it/s, failures=0, objective=-0.216]
+    3976it [01:40, 37.05it/s, failures=0, objective=-0.216]
+    3977it [01:40, 37.05it/s, failures=0, objective=-0.216]
+    3978it [01:40, 37.05it/s, failures=0, objective=-0.216]
+    3979it [01:40, 37.05it/s, failures=0, objective=-0.216]
+    3980it [01:40, 37.05it/s, failures=0, objective=-0.216]
+    3981it [01:40, 37.05it/s, failures=0, objective=-0.216]
+    3982it [01:40, 37.05it/s, failures=0, objective=-0.216]
+    3983it [01:40, 37.05it/s, failures=0, objective=-0.216]
+    3984it [01:41, 36.32it/s, failures=0, objective=-0.216]
+    3984it [01:41, 36.32it/s, failures=0, objective=-0.216]
+    3985it [01:41, 36.32it/s, failures=0, objective=-0.216]
+    3986it [01:41, 36.32it/s, failures=0, objective=-0.216]
+    3987it [01:41, 36.32it/s, failures=0, objective=-0.216]
+    3988it [01:41, 36.32it/s, failures=0, objective=-0.216]
+    3989it [01:41, 36.32it/s, failures=0, objective=-0.216]
+    3990it [01:41, 36.32it/s, failures=0, objective=-0.216]
+    3991it [01:41, 36.32it/s, failures=0, objective=-0.216]
+    3992it [01:41, 36.32it/s, failures=0, objective=-0.216]
+    3993it [01:41, 36.32it/s, failures=0, objective=-0.216]
+    3994it [01:41, 36.32it/s, failures=0, objective=-0.216]
+    3995it [01:41, 36.32it/s, failures=0, objective=-0.216]
+    3996it [01:41, 36.32it/s, failures=0, objective=-0.216]
+    3997it [01:41, 36.32it/s, failures=0, objective=-0.216]
+    3998it [01:41, 35.21it/s, failures=0, objective=-0.216]
+    3998it [01:41, 35.21it/s, failures=0, objective=-0.216]
+    3999it [01:41, 35.21it/s, failures=0, objective=-0.216]
+    4000it [01:41, 35.21it/s, failures=0, objective=-0.216]
+    4001it [01:41, 35.21it/s, failures=0, objective=-0.216]
+    4002it [01:41, 35.21it/s, failures=0, objective=-0.216]
+    4003it [01:41, 35.21it/s, failures=0, objective=-0.216]
+    4004it [01:41, 35.21it/s, failures=0, objective=-0.216]
+    4005it [01:41, 35.21it/s, failures=0, objective=-0.216]
+    4006it [01:41, 35.21it/s, failures=0, objective=-0.216]
+    4007it [01:41, 35.21it/s, failures=0, objective=-0.216]
+    4008it [01:41, 35.21it/s, failures=0, objective=-0.216]
+    4009it [01:41, 35.21it/s, failures=0, objective=-0.216]
+    4010it [01:41, 35.21it/s, failures=0, objective=-0.216]
+    4011it [01:41, 35.21it/s, failures=0, objective=-0.216]
+    4012it [01:42, 33.37it/s, failures=0, objective=-0.216]
+    4012it [01:42, 33.37it/s, failures=0, objective=-0.216]
+    4013it [01:42, 33.37it/s, failures=0, objective=-0.216]
+    4014it [01:42, 33.37it/s, failures=0, objective=-0.216]
+    4015it [01:42, 33.37it/s, failures=0, objective=-0.216]
+    4016it [01:42, 33.37it/s, failures=0, objective=-0.216]
+    4017it [01:42, 33.37it/s, failures=0, objective=-0.216]
+    4018it [01:42, 33.37it/s, failures=0, objective=-0.216]
+    4019it [01:42, 33.37it/s, failures=0, objective=-0.216]
+    4020it [01:42, 33.37it/s, failures=0, objective=-0.216]
+    4021it [01:42, 33.37it/s, failures=0, objective=-0.216]
+    4022it [01:42, 33.37it/s, failures=0, objective=-0.216]
+    4023it [01:42, 33.37it/s, failures=0, objective=-0.193]
+    4024it [01:42, 33.37it/s, failures=0, objective=-0.193]
+    4025it [01:42, 33.37it/s, failures=0, objective=-0.193]
+    4026it [01:42, 33.37it/s, failures=0, objective=-0.193]
+    4027it [01:42, 33.37it/s, failures=0, objective=-0.193]
+    4028it [01:42, 33.37it/s, failures=0, objective=-0.193]
+    4029it [01:42, 33.37it/s, failures=0, objective=-0.193]
+    4030it [01:42, 33.37it/s, failures=0, objective=-0.193]
+    4031it [01:42, 33.37it/s, failures=0, objective=-0.193]
+    4032it [01:42, 33.37it/s, failures=0, objective=-0.193]
+    4033it [01:42, 33.37it/s, failures=0, objective=-0.193]
+    4034it [01:42, 33.37it/s, failures=0, objective=-0.193]
+    4035it [01:42, 33.37it/s, failures=0, objective=-0.193]
+    4036it [01:42, 33.37it/s, failures=0, objective=-0.193]
+    4037it [01:42, 33.37it/s, failures=0, objective=-0.193]
+    4038it [01:42, 42.37it/s, failures=0, objective=-0.193]
+    4038it [01:42, 42.37it/s, failures=0, objective=-0.193]
+    4039it [01:42, 42.37it/s, failures=0, objective=-0.193]
+    4040it [01:42, 42.37it/s, failures=0, objective=-0.193]
+    4041it [01:42, 42.37it/s, failures=0, objective=-0.193]
+    4042it [01:42, 42.37it/s, failures=0, objective=-0.193]
+    4043it [01:42, 42.37it/s, failures=0, objective=-0.193]
+    4044it [01:42, 42.37it/s, failures=0, objective=-0.193]
+    4045it [01:42, 42.37it/s, failures=0, objective=-0.193]
+    4046it [01:42, 42.37it/s, failures=0, objective=-0.193]
+    4047it [01:42, 42.37it/s, failures=0, objective=-0.193]
+    4048it [01:42, 42.37it/s, failures=0, objective=-0.193]
+    4049it [01:42, 42.37it/s, failures=0, objective=-0.193]
+    4050it [01:42, 42.37it/s, failures=0, objective=-0.193]
+    4051it [01:42, 42.37it/s, failures=0, objective=-0.193]
+    4052it [01:42, 42.37it/s, failures=0, objective=-0.193]
+    4053it [01:42, 40.78it/s, failures=0, objective=-0.193]
+    4053it [01:42, 40.78it/s, failures=0, objective=-0.193]
+    4054it [01:42, 40.78it/s, failures=0, objective=-0.193]
+    4055it [01:42, 40.78it/s, failures=0, objective=-0.193]
+    4056it [01:42, 40.78it/s, failures=0, objective=-0.193]
+    4057it [01:42, 40.78it/s, failures=0, objective=-0.193]
+    4058it [01:42, 40.78it/s, failures=0, objective=-0.193]
+    4059it [01:42, 40.78it/s, failures=0, objective=-0.193]
+    4060it [01:42, 40.78it/s, failures=0, objective=-0.193]
+    4061it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4061it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4062it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4063it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4064it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4065it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4066it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4067it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4068it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4069it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4070it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4071it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4072it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4073it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4074it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4075it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4076it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4077it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4078it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4079it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4080it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4081it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4082it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4083it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4084it [01:43, 32.25it/s, failures=0, objective=-0.193]
+    4085it [01:43, 41.16it/s, failures=0, objective=-0.193]
+    4085it [01:43, 41.16it/s, failures=0, objective=-0.193]
+    4086it [01:43, 41.16it/s, failures=0, objective=-0.193]
+    4087it [01:43, 41.16it/s, failures=0, objective=-0.193]
+    4088it [01:43, 41.16it/s, failures=0, objective=-0.193]
+    4089it [01:43, 41.16it/s, failures=0, objective=-0.193]
+    4090it [01:43, 41.16it/s, failures=0, objective=-0.193]
+    4091it [01:43, 41.16it/s, failures=0, objective=-0.193]
+    4092it [01:43, 41.16it/s, failures=0, objective=-0.193]
+    4093it [01:44, 33.08it/s, failures=0, objective=-0.193]
+    4093it [01:44, 33.08it/s, failures=0, objective=-0.193]
+    4094it [01:44, 33.08it/s, failures=0, objective=-0.193]
+    4095it [01:44, 33.08it/s, failures=0, objective=-0.193]
+    4096it [01:44, 33.08it/s, failures=0, objective=-0.193]
+    4097it [01:44, 33.08it/s, failures=0, objective=-0.193]
+    4098it [01:44, 33.08it/s, failures=0, objective=-0.193]
+    4099it [01:44, 33.08it/s, failures=0, objective=-0.182]
+    4100it [01:44, 33.08it/s, failures=0, objective=-0.182]
+    4101it [01:44, 33.08it/s, failures=0, objective=-0.182]
+    4102it [01:44, 33.08it/s, failures=0, objective=-0.182]
+    4103it [01:44, 33.08it/s, failures=0, objective=-0.182]
+    4104it [01:44, 33.08it/s, failures=0, objective=-0.182]
+    4105it [01:44, 33.08it/s, failures=0, objective=-0.182]
+    4106it [01:44, 33.08it/s, failures=0, objective=-0.182]
+    4107it [01:44, 33.08it/s, failures=0, objective=-0.182]
+    4108it [01:44, 33.08it/s, failures=0, objective=-0.182]
+    4109it [01:44, 33.08it/s, failures=0, objective=-0.182]
+    4110it [01:44, 33.08it/s, failures=0, objective=-0.182]
+    4111it [01:44, 33.08it/s, failures=0, objective=-0.182]
+    4112it [01:44, 33.08it/s, failures=0, objective=-0.182]
+    4113it [01:44, 33.08it/s, failures=0, objective=-0.182]
+    4114it [01:44, 37.16it/s, failures=0, objective=-0.182]
+    4114it [01:44, 37.16it/s, failures=0, objective=-0.182]
+    4115it [01:44, 37.16it/s, failures=0, objective=-0.182]
+    4116it [01:44, 37.16it/s, failures=0, objective=-0.182]
+    4117it [01:44, 37.16it/s, failures=0, objective=-0.182]
+    4118it [01:44, 37.16it/s, failures=0, objective=-0.182]
+    4119it [01:44, 37.16it/s, failures=0, objective=-0.182]
+    4120it [01:44, 37.16it/s, failures=0, objective=-0.182]
+    4121it [01:44, 37.16it/s, failures=0, objective=-0.182]
+    4122it [01:44, 37.16it/s, failures=0, objective=-0.182]
+    4123it [01:44, 37.16it/s, failures=0, objective=-0.182]
+    4124it [01:44, 37.16it/s, failures=0, objective=-0.182]
+    4125it [01:44, 37.16it/s, failures=0, objective=-0.182]
+    4126it [01:44, 37.16it/s, failures=0, objective=-0.182]
+    4127it [01:44, 37.16it/s, failures=0, objective=-0.182]
+    4128it [01:44, 37.16it/s, failures=0, objective=-0.182]
+    4129it [01:44, 37.16it/s, failures=0, objective=-0.182]
+    4130it [01:44, 37.16it/s, failures=0, objective=-0.182]
+    4131it [01:44, 37.16it/s, failures=0, objective=-0.182]
+    4132it [01:44, 37.16it/s, failures=0, objective=-0.182]
+    4133it [01:45, 41.07it/s, failures=0, objective=-0.182]
+    4133it [01:45, 41.07it/s, failures=0, objective=-0.182]
+    4134it [01:45, 41.07it/s, failures=0, objective=-0.182]
+    4135it [01:45, 41.07it/s, failures=0, objective=-0.182]
+    4136it [01:45, 41.07it/s, failures=0, objective=-0.182]
+    4137it [01:45, 41.07it/s, failures=0, objective=-0.182]
+    4138it [01:45, 41.07it/s, failures=0, objective=-0.182]
+    4139it [01:45, 41.07it/s, failures=0, objective=-0.182]
+    4140it [01:45, 41.07it/s, failures=0, objective=-0.182]
+    4141it [01:45, 41.07it/s, failures=0, objective=-0.182]
+    4142it [01:45, 41.07it/s, failures=0, objective=-0.182]
+    4143it [01:45, 41.07it/s, failures=0, objective=-0.182]
+    4144it [01:45, 41.07it/s, failures=0, objective=-0.182]
+    4145it [01:45, 41.07it/s, failures=0, objective=-0.182]
+    4146it [01:45, 41.07it/s, failures=0, objective=-0.182]
+    4147it [01:45, 41.07it/s, failures=0, objective=-0.182]
+    4148it [01:45, 41.07it/s, failures=0, objective=-0.182]
+    4149it [01:45, 41.07it/s, failures=0, objective=-0.182]
+    4150it [01:45, 43.01it/s, failures=0, objective=-0.182]
+    4150it [01:45, 43.01it/s, failures=0, objective=-0.182]
+    4151it [01:45, 43.01it/s, failures=0, objective=-0.182]
+    4152it [01:45, 43.01it/s, failures=0, objective=-0.182]
+    4153it [01:45, 43.01it/s, failures=0, objective=-0.182]
+    4154it [01:45, 43.01it/s, failures=0, objective=-0.182]
+    4155it [01:45, 43.01it/s, failures=0, objective=-0.182]
+    4156it [01:45, 43.01it/s, failures=0, objective=-0.182]
+    4157it [01:45, 43.01it/s, failures=0, objective=-0.182]
+    4158it [01:45, 43.01it/s, failures=0, objective=-0.182]
+    4159it [01:45, 43.01it/s, failures=0, objective=-0.182]
+    4160it [01:45, 43.01it/s, failures=0, objective=-0.182]
+    4161it [01:45, 43.01it/s, failures=0, objective=-0.182]
+    4162it [01:45, 43.01it/s, failures=0, objective=-0.182]
+    4163it [01:45, 39.97it/s, failures=0, objective=-0.182]
+    4163it [01:45, 39.97it/s, failures=0, objective=-0.158]
+    4164it [01:45, 39.97it/s, failures=0, objective=-0.158]
+    4165it [01:45, 39.97it/s, failures=0, objective=-0.158]
+    4166it [01:45, 39.97it/s, failures=0, objective=-0.158]
+    4167it [01:45, 39.97it/s, failures=0, objective=-0.158]
+    4168it [01:45, 39.97it/s, failures=0, objective=-0.158]
+    4169it [01:45, 39.97it/s, failures=0, objective=-0.158]
+    4170it [01:45, 39.97it/s, failures=0, objective=-0.158]
+    4171it [01:45, 39.97it/s, failures=0, objective=-0.158]
+    4172it [01:45, 39.97it/s, failures=0, objective=-0.158]
+    4173it [01:45, 39.97it/s, failures=0, objective=-0.158]
+    4174it [01:45, 39.97it/s, failures=0, objective=-0.158]
+    4175it [01:45, 39.97it/s, failures=0, objective=-0.158]
+    4176it [01:45, 39.97it/s, failures=0, objective=-0.158]
+    4177it [01:45, 39.97it/s, failures=0, objective=-0.158]
+    4178it [01:46, 37.65it/s, failures=0, objective=-0.158]
+    4178it [01:46, 37.65it/s, failures=0, objective=-0.158]
+    4179it [01:46, 37.65it/s, failures=0, objective=-0.158]
+    4180it [01:46, 37.65it/s, failures=0, objective=-0.158]
+    4181it [01:46, 37.65it/s, failures=0, objective=-0.158]
+    4182it [01:46, 37.65it/s, failures=0, objective=-0.158]
+    4183it [01:46, 37.65it/s, failures=0, objective=-0.158]
+    4184it [01:46, 37.65it/s, failures=0, objective=-0.158]
+    4185it [01:46, 37.65it/s, failures=0, objective=-0.158]
+    4186it [01:46, 37.65it/s, failures=0, objective=-0.158]
+    4187it [01:46, 37.65it/s, failures=0, objective=-0.158]
+    4188it [01:46, 37.65it/s, failures=0, objective=-0.158]
+    4189it [01:46, 37.65it/s, failures=0, objective=-0.158]
+    4190it [01:46, 37.65it/s, failures=0, objective=-0.158]
+    4191it [01:46, 37.65it/s, failures=0, objective=-0.158]
+    4192it [01:46, 37.65it/s, failures=0, objective=-0.158]
+    4193it [01:46, 37.65it/s, failures=0, objective=-0.158]
+    4194it [01:46, 36.19it/s, failures=0, objective=-0.158]
+    4194it [01:46, 36.19it/s, failures=0, objective=-0.158]
+    4195it [01:46, 36.19it/s, failures=0, objective=-0.158]
+    4196it [01:46, 36.19it/s, failures=0, objective=-0.158]
+    4197it [01:46, 36.19it/s, failures=0, objective=-0.158]
+    4198it [01:46, 36.19it/s, failures=0, objective=-0.158]
+    4199it [01:46, 36.19it/s, failures=0, objective=-0.158]
+    4200it [01:46, 36.19it/s, failures=0, objective=-0.158]
+    4201it [01:46, 36.19it/s, failures=0, objective=-0.158]
+    4202it [01:46, 36.19it/s, failures=0, objective=-0.158]
+    4203it [01:46, 36.19it/s, failures=0, objective=-0.158]
+    4204it [01:46, 36.19it/s, failures=0, objective=-0.158]
+    4205it [01:46, 36.19it/s, failures=0, objective=-0.158]
+    4206it [01:46, 36.19it/s, failures=0, objective=-0.158]
+    4207it [01:46, 36.19it/s, failures=0, objective=-0.158]
+    4208it [01:46, 36.19it/s, failures=0, objective=-0.158]
+    4209it [01:46, 36.19it/s, failures=0, objective=-0.158]
+    4210it [01:46, 36.19it/s, failures=0, objective=-0.158]
+    4211it [01:47, 37.47it/s, failures=0, objective=-0.158]
+    4211it [01:47, 37.47it/s, failures=0, objective=-0.158]
+    4212it [01:47, 37.47it/s, failures=0, objective=-0.158]
+    4213it [01:47, 37.47it/s, failures=0, objective=-0.158]
+    4214it [01:47, 37.47it/s, failures=0, objective=-0.158]
+    4215it [01:47, 37.47it/s, failures=0, objective=-0.158]
+    4216it [01:47, 37.47it/s, failures=0, objective=-0.158]
+    4217it [01:47, 37.47it/s, failures=0, objective=-0.158]
+    4218it [01:47, 37.47it/s, failures=0, objective=-0.158]
+    4219it [01:47, 37.47it/s, failures=0, objective=-0.158]
+    4220it [01:47, 37.47it/s, failures=0, objective=-0.158]
+    4221it [01:47, 37.47it/s, failures=0, objective=-0.158]
+    4222it [01:47, 37.47it/s, failures=0, objective=-0.158]
+    4223it [01:47, 37.47it/s, failures=0, objective=-0.158]
+    4224it [01:47, 37.47it/s, failures=0, objective=-0.158]
+    4225it [01:47, 37.47it/s, failures=0, objective=-0.158]
+    4226it [01:47, 37.47it/s, failures=0, objective=-0.158]
+    4227it [01:47, 37.47it/s, failures=0, objective=-0.158]
+    4228it [01:47, 39.17it/s, failures=0, objective=-0.158]
+    4228it [01:47, 39.17it/s, failures=0, objective=-0.158]
+    4229it [01:47, 39.17it/s, failures=0, objective=-0.158]
+    4230it [01:47, 39.17it/s, failures=0, objective=-0.158]
+    4231it [01:47, 39.17it/s, failures=0, objective=-0.158]
+    4232it [01:47, 39.17it/s, failures=0, objective=-0.158]
+    4233it [01:47, 39.17it/s, failures=0, objective=-0.158]
+    4234it [01:47, 39.17it/s, failures=0, objective=-0.158]
+    4235it [01:47, 39.17it/s, failures=0, objective=-0.158]
+    4236it [01:47, 39.17it/s, failures=0, objective=-0.158]
+    4237it [01:47, 39.17it/s, failures=0, objective=-0.158]
+    4238it [01:47, 39.17it/s, failures=0, objective=-0.158]
+    4239it [01:47, 39.17it/s, failures=0, objective=-0.158]
+    4240it [01:47, 39.17it/s, failures=0, objective=-0.158]
+    4241it [01:47, 39.17it/s, failures=0, objective=-0.158]
+    4242it [01:47, 39.17it/s, failures=0, objective=-0.158]
+    4243it [01:47, 39.17it/s, failures=0, objective=-0.158]
+    4244it [01:47, 39.17it/s, failures=0, objective=-0.158]
+    4245it [01:47, 39.17it/s, failures=0, objective=-0.158]
+    4246it [01:47, 39.17it/s, failures=0, objective=-0.158]
+    4247it [01:47, 39.17it/s, failures=0, objective=-0.158]
+    4248it [01:47, 44.04it/s, failures=0, objective=-0.158]
+    4248it [01:47, 44.04it/s, failures=0, objective=-0.158]
+    4249it [01:47, 44.04it/s, failures=0, objective=-0.158]
+    4250it [01:47, 44.04it/s, failures=0, objective=-0.158]
+    4251it [01:47, 44.04it/s, failures=0, objective=-0.158]
+    4252it [01:47, 44.04it/s, failures=0, objective=-0.158]
+    4253it [01:47, 44.04it/s, failures=0, objective=-0.158]
+    4254it [01:47, 44.04it/s, failures=0, objective=-0.158]
+    4255it [01:47, 44.04it/s, failures=0, objective=-0.158]
+    4256it [01:47, 44.04it/s, failures=0, objective=-0.158]
+    4257it [01:48, 38.77it/s, failures=0, objective=-0.158]
+    4257it [01:48, 38.77it/s, failures=0, objective=-0.158]
+    4258it [01:48, 38.77it/s, failures=0, objective=-0.158]
+    4259it [01:48, 38.77it/s, failures=0, objective=-0.158]
+    4260it [01:48, 38.77it/s, failures=0, objective=-0.158]
+    4261it [01:48, 38.77it/s, failures=0, objective=-0.158]
+    4262it [01:48, 38.77it/s, failures=0, objective=-0.158]
+    4263it [01:48, 38.77it/s, failures=0, objective=-0.158]
+    4264it [01:48, 38.77it/s, failures=0, objective=-0.158]
+    4265it [01:48, 38.77it/s, failures=0, objective=-0.158]
+    4266it [01:48, 38.77it/s, failures=0, objective=-0.158]
+    4267it [01:48, 38.77it/s, failures=0, objective=-0.158]
+    4268it [01:48, 38.77it/s, failures=0, objective=-0.158]
+    4269it [01:48, 38.77it/s, failures=0, objective=-0.122]
+    4270it [01:48, 38.77it/s, failures=0, objective=-0.122]
+    4271it [01:48, 38.77it/s, failures=0, objective=-0.122]
+    4272it [01:48, 39.22it/s, failures=0, objective=-0.122]
+    4272it [01:48, 39.22it/s, failures=0, objective=-0.122]
+    4273it [01:48, 39.22it/s, failures=0, objective=-0.122]
+    4274it [01:48, 39.22it/s, failures=0, objective=-0.122]
+    4275it [01:48, 39.22it/s, failures=0, objective=-0.122]
+    4276it [01:48, 39.22it/s, failures=0, objective=-0.122]
+    4277it [01:48, 39.22it/s, failures=0, objective=-0.122]
+    4278it [01:48, 39.22it/s, failures=0, objective=-0.122]
+    4279it [01:48, 39.22it/s, failures=0, objective=-0.122]
+    4280it [01:48, 39.22it/s, failures=0, objective=-0.122]
+    4281it [01:48, 39.22it/s, failures=0, objective=-0.122]
+    4282it [01:48, 39.22it/s, failures=0, objective=-0.122]
+    4283it [01:48, 38.57it/s, failures=0, objective=-0.122]
+    4283it [01:48, 38.57it/s, failures=0, objective=-0.122]
+    4284it [01:48, 38.57it/s, failures=0, objective=-0.122]
+    4285it [01:48, 38.57it/s, failures=0, objective=-0.122]
+    4286it [01:48, 38.57it/s, failures=0, objective=-0.122]
+    4287it [01:48, 38.57it/s, failures=0, objective=-0.122]
+    4288it [01:48, 38.57it/s, failures=0, objective=-0.122]
+    4289it [01:48, 38.57it/s, failures=0, objective=-0.122]
+    4290it [01:48, 38.57it/s, failures=0, objective=-0.122]
+    4291it [01:48, 38.57it/s, failures=0, objective=-0.122]
+    4292it [01:48, 38.57it/s, failures=0, objective=-0.122]
+    4293it [01:48, 38.57it/s, failures=0, objective=-0.122]
+    4294it [01:48, 38.57it/s, failures=0, objective=-0.122]
+    4295it [01:49, 33.94it/s, failures=0, objective=-0.122]
+    4295it [01:49, 33.94it/s, failures=0, objective=-0.122]
+    4296it [01:49, 33.94it/s, failures=0, objective=-0.122]
+    4297it [01:49, 33.94it/s, failures=0, objective=-0.122]
+    4298it [01:49, 33.94it/s, failures=0, objective=-0.122]
+    4299it [01:49, 33.94it/s, failures=0, objective=-0.122]
+    4300it [01:49, 33.94it/s, failures=0, objective=-0.122]
+    4301it [01:49, 33.94it/s, failures=0, objective=-0.122]
+    4302it [01:49, 33.94it/s, failures=0, objective=-0.122]
+    4303it [01:49, 33.94it/s, failures=0, objective=-0.122]
+    4304it [01:49, 33.94it/s, failures=0, objective=-0.122]
+    4305it [01:49, 33.94it/s, failures=0, objective=-0.122]
+    4306it [01:49, 33.94it/s, failures=0, objective=-0.122]
+    4307it [01:49, 33.94it/s, failures=0, objective=-0.122]
+    4308it [01:49, 33.94it/s, failures=0, objective=-0.122]
+    4309it [01:49, 33.94it/s, failures=0, objective=-0.122]
+    4310it [01:49, 33.94it/s, failures=0, objective=-0.122]
+    4311it [01:49, 33.94it/s, failures=0, objective=-0.122]
+    4312it [01:49, 33.94it/s, failures=0, objective=-0.122]
+    4313it [01:49, 33.94it/s, failures=0, objective=-0.122]
+    4314it [01:49, 33.94it/s, failures=0, objective=-0.122]
+    4315it [01:49, 36.02it/s, failures=0, objective=-0.122]
+    4315it [01:49, 36.02it/s, failures=0, objective=-0.122]
+    4316it [01:49, 36.02it/s, failures=0, objective=-0.122]
+    4317it [01:49, 36.02it/s, failures=0, objective=-0.122]
+    4318it [01:49, 36.02it/s, failures=0, objective=-0.122]
+    4319it [01:49, 36.02it/s, failures=0, objective=-0.122]
+    4320it [01:49, 36.02it/s, failures=0, objective=-0.122]
+    4321it [01:49, 36.02it/s, failures=0, objective=-0.122]
+    4322it [01:49, 36.02it/s, failures=0, objective=-0.122]
+    4323it [01:49, 36.02it/s, failures=0, objective=-0.122]
+    4324it [01:49, 36.02it/s, failures=0, objective=-0.122]
+    4325it [01:49, 36.02it/s, failures=0, objective=-0.122]
+    4326it [01:49, 36.02it/s, failures=0, objective=-0.122]
+    4327it [01:49, 36.02it/s, failures=0, objective=-0.122]
+    4328it [01:49, 36.02it/s, failures=0, objective=-0.122]
+    4329it [01:49, 36.02it/s, failures=0, objective=-0.122]
+    4330it [01:49, 36.02it/s, failures=0, objective=-0.122]
+    4331it [01:49, 36.02it/s, failures=0, objective=-0.122]
+    4332it [01:49, 36.02it/s, failures=0, objective=-0.122]
+    4333it [01:49, 36.02it/s, failures=0, objective=-0.122]
+    4334it [01:49, 36.02it/s, failures=0, objective=-0.122]
+    4335it [01:49, 36.02it/s, failures=0, objective=-0.122]
+    4336it [01:50, 42.86it/s, failures=0, objective=-0.122]
+    4336it [01:50, 42.86it/s, failures=0, objective=-0.122]
+    4337it [01:50, 42.86it/s, failures=0, objective=-0.122]
+    4338it [01:50, 42.86it/s, failures=0, objective=-0.122]
+    4339it [01:50, 42.86it/s, failures=0, objective=-0.122]
+    4340it [01:50, 42.86it/s, failures=0, objective=-0.122]
+    4341it [01:50, 42.86it/s, failures=0, objective=-0.122]
+    4342it [01:50, 42.86it/s, failures=0, objective=-0.122]
+    4343it [01:50, 42.86it/s, failures=0, objective=-0.122]
+    4344it [01:50, 42.86it/s, failures=0, objective=-0.122]
+    4345it [01:50, 42.86it/s, failures=0, objective=-0.122]
+    4346it [01:50, 42.86it/s, failures=0, objective=-0.122]
+    4347it [01:50, 42.86it/s, failures=0, objective=-0.122]
+    4348it [01:50, 42.86it/s, failures=0, objective=-0.122]
+    4349it [01:50, 38.50it/s, failures=0, objective=-0.122]
+    4349it [01:50, 38.50it/s, failures=0, objective=-0.122]
+    4350it [01:50, 38.50it/s, failures=0, objective=-0.122]
+    4351it [01:50, 38.50it/s, failures=0, objective=-0.122]
+    4352it [01:50, 38.50it/s, failures=0, objective=-0.122]
+    4353it [01:50, 38.50it/s, failures=0, objective=-0.122]
+    4354it [01:50, 38.50it/s, failures=0, objective=-0.122]
+    4355it [01:50, 38.50it/s, failures=0, objective=-0.122]
+    4356it [01:50, 38.50it/s, failures=0, objective=-0.122]
+    4357it [01:50, 38.50it/s, failures=0, objective=-0.122]
+    4358it [01:50, 38.50it/s, failures=0, objective=-0.122]
+    4359it [01:50, 38.50it/s, failures=0, objective=-0.122]
+    4360it [01:50, 38.50it/s, failures=0, objective=-0.122]
+    4361it [01:50, 38.50it/s, failures=0, objective=-0.122]
+    4362it [01:50, 38.50it/s, failures=0, objective=-0.122]
+    4363it [01:50, 38.50it/s, failures=0, objective=-0.122]
+    4364it [01:50, 38.50it/s, failures=0, objective=-0.122]
+    4365it [01:50, 38.50it/s, failures=0, objective=-0.122]
+    4366it [01:50, 38.50it/s, failures=0, objective=-0.122]
+    4367it [01:51, 41.31it/s, failures=0, objective=-0.122]
+    4367it [01:51, 41.31it/s, failures=0, objective=-0.122]
+    4368it [01:51, 41.31it/s, failures=0, objective=-0.122]
+    4369it [01:51, 41.31it/s, failures=0, objective=-0.122]
+    4370it [01:51, 41.31it/s, failures=0, objective=-0.122]
+    4371it [01:51, 41.31it/s, failures=0, objective=-0.122]
+    4372it [01:51, 41.31it/s, failures=0, objective=-0.122]
+    4373it [01:51, 41.31it/s, failures=0, objective=-0.122]
+    4374it [01:51, 41.31it/s, failures=0, objective=-0.122]
+    4375it [01:51, 41.31it/s, failures=0, objective=-0.122]
+    4376it [01:51, 41.31it/s, failures=0, objective=-0.122]
+    4377it [01:51, 41.31it/s, failures=0, objective=-0.122]
+    4378it [01:51, 41.31it/s, failures=0, objective=-0.122]
+    4379it [01:51, 41.31it/s, failures=0, objective=-0.122]
+    4380it [01:51, 41.31it/s, failures=0, objective=-0.122]
+    4381it [01:51, 39.00it/s, failures=0, objective=-0.122]
+    4381it [01:51, 39.00it/s, failures=0, objective=-0.11] 
+    4382it [01:51, 39.00it/s, failures=0, objective=-0.11]
+    4383it [01:51, 39.00it/s, failures=0, objective=-0.11]
+    4384it [01:51, 39.00it/s, failures=0, objective=-0.11]
+    4385it [01:51, 39.00it/s, failures=0, objective=-0.11]
+    4386it [01:51, 39.00it/s, failures=0, objective=-0.11]
+    4387it [01:51, 39.00it/s, failures=0, objective=-0.11]
+    4388it [01:51, 39.00it/s, failures=0, objective=-0.11]
+    4389it [01:51, 39.00it/s, failures=0, objective=-0.11]
+    4390it [01:51, 39.00it/s, failures=0, objective=-0.11]
+    4391it [01:51, 39.00it/s, failures=0, objective=-0.11]
+    4392it [01:51, 39.00it/s, failures=0, objective=-0.11]
+    4393it [01:51, 39.00it/s, failures=0, objective=-0.11]
+    4394it [01:51, 36.89it/s, failures=0, objective=-0.11]
+    4394it [01:51, 36.89it/s, failures=0, objective=-0.11]
+    4395it [01:51, 36.89it/s, failures=0, objective=-0.11]
+    4396it [01:51, 36.89it/s, failures=0, objective=-0.11]
+    4397it [01:51, 36.89it/s, failures=0, objective=-0.11]
+    4398it [01:51, 36.89it/s, failures=0, objective=-0.11]
+    4399it [01:51, 36.89it/s, failures=0, objective=-0.11]
+    4400it [01:51, 36.89it/s, failures=0, objective=-0.11]
+    4401it [01:51, 36.89it/s, failures=0, objective=-0.11]
+    4402it [01:51, 36.89it/s, failures=0, objective=-0.11]
+    4403it [01:51, 36.89it/s, failures=0, objective=-0.11]
+    4404it [01:51, 36.89it/s, failures=0, objective=-0.11]
+    4405it [01:51, 36.89it/s, failures=0, objective=-0.11]
+    4406it [01:51, 36.89it/s, failures=0, objective=-0.11]
+    4407it [01:51, 36.89it/s, failures=0, objective=-0.11]
+    4408it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4408it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4409it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4410it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4411it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4412it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4413it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4414it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4415it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4416it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4417it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4418it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4419it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4420it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4421it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4422it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4423it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4424it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4425it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4426it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4427it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4428it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4429it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4430it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4431it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4432it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4433it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4434it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4435it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4436it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4437it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4438it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4439it [01:52, 32.15it/s, failures=0, objective=-0.11]
+    4440it [01:52, 49.92it/s, failures=0, objective=-0.11]
+    4440it [01:52, 49.92it/s, failures=0, objective=-0.11]
+    4441it [01:52, 49.92it/s, failures=0, objective=-0.11]
+    4442it [01:52, 49.92it/s, failures=0, objective=-0.11]
+    4443it [01:52, 49.92it/s, failures=0, objective=-0.11]
+    4444it [01:52, 49.92it/s, failures=0, objective=-0.11]
+    4445it [01:52, 49.92it/s, failures=0, objective=-0.11]
+    4446it [01:52, 49.92it/s, failures=0, objective=-0.11]
+    4447it [01:53, 40.61it/s, failures=0, objective=-0.11]
+    4447it [01:53, 40.61it/s, failures=0, objective=-0.11]
+    4448it [01:53, 40.61it/s, failures=0, objective=-0.11]
+    4449it [01:53, 40.61it/s, failures=0, objective=-0.11]
+    4450it [01:53, 40.61it/s, failures=0, objective=-0.11]
+    4451it [01:53, 40.61it/s, failures=0, objective=-0.11]
+    4452it [01:53, 40.61it/s, failures=0, objective=-0.11]
+    4453it [01:53, 40.61it/s, failures=0, objective=-0.11]
+    4454it [01:53, 40.61it/s, failures=0, objective=-0.11]
+    4455it [01:53, 40.61it/s, failures=0, objective=-0.11]
+    4456it [01:53, 40.61it/s, failures=0, objective=-0.11]
+    4457it [01:53, 40.61it/s, failures=0, objective=-0.11]
+    4458it [01:53, 40.61it/s, failures=0, objective=-0.11]
+    4459it [01:53, 40.61it/s, failures=0, objective=-0.11]
+    4460it [01:53, 37.53it/s, failures=0, objective=-0.11]
+    4460it [01:53, 37.53it/s, failures=0, objective=-0.11]
+    4461it [01:53, 37.53it/s, failures=0, objective=-0.11]
+    4462it [01:53, 37.53it/s, failures=0, objective=-0.11]
+    4463it [01:53, 37.53it/s, failures=0, objective=-0.11]
+    4464it [01:53, 37.53it/s, failures=0, objective=-0.11]
+    4465it [01:53, 37.53it/s, failures=0, objective=-0.11]
+    4466it [01:53, 37.53it/s, failures=0, objective=-0.11]
+    4467it [01:53, 37.53it/s, failures=0, objective=-0.11]
+    4468it [01:53, 37.53it/s, failures=0, objective=-0.11]
+    4469it [01:53, 37.53it/s, failures=0, objective=-0.11]
+    4470it [01:53, 37.53it/s, failures=0, objective=-0.11]
+    4471it [01:53, 37.53it/s, failures=0, objective=-0.11]
+    4472it [01:53, 37.53it/s, failures=0, objective=-0.11]
+    4473it [01:53, 37.53it/s, failures=0, objective=-0.11]
+    4474it [01:53, 37.53it/s, failures=0, objective=-0.11]
+    4475it [01:53, 37.53it/s, failures=0, objective=-0.11]
+    4476it [01:53, 37.53it/s, failures=0, objective=-0.11]
+    4477it [01:53, 37.53it/s, failures=0, objective=-0.11]
+    4478it [01:53, 37.53it/s, failures=0, objective=-0.11]
+    4479it [01:53, 39.23it/s, failures=0, objective=-0.11]
+    4479it [01:53, 39.23it/s, failures=0, objective=-0.11]
+    4480it [01:53, 39.23it/s, failures=0, objective=-0.11]
+    4481it [01:53, 39.23it/s, failures=0, objective=-0.11]
+    4482it [01:53, 39.23it/s, failures=0, objective=-0.11]
+    4483it [01:53, 39.23it/s, failures=0, objective=-0.11]
+    4484it [01:53, 39.23it/s, failures=0, objective=-0.11]
+    4485it [01:53, 39.23it/s, failures=0, objective=-0.11]
+    4486it [01:53, 39.23it/s, failures=0, objective=-0.11]
+    4487it [01:53, 39.23it/s, failures=0, objective=-0.11]
+    4488it [01:53, 39.23it/s, failures=0, objective=-0.11]
+    4489it [01:53, 39.23it/s, failures=0, objective=-0.11]
+    4490it [01:53, 39.23it/s, failures=0, objective=-0.11]
+    4491it [01:53, 39.23it/s, failures=0, objective=-0.11]
+    4492it [01:53, 39.23it/s, failures=0, objective=-0.11]
+    4493it [01:53, 39.23it/s, failures=0, objective=-0.11]
+    4494it [01:54, 40.08it/s, failures=0, objective=-0.11]
+    4494it [01:54, 40.08it/s, failures=0, objective=-0.11]
+    4495it [01:54, 40.08it/s, failures=0, objective=-0.11]
+    4496it [01:54, 40.08it/s, failures=0, objective=-0.11]
+    4497it [01:54, 40.08it/s, failures=0, objective=-0.11]
+    4498it [01:54, 40.08it/s, failures=0, objective=-0.11]
+    4499it [01:54, 40.08it/s, failures=0, objective=-0.11]
+    4500it [01:54, 40.08it/s, failures=0, objective=-0.11]
+    4501it [01:54, 40.08it/s, failures=0, objective=-0.11]
+    4502it [01:54, 40.08it/s, failures=0, objective=-0.11]
+    4503it [01:54, 40.08it/s, failures=0, objective=-0.11]
+    4504it [01:54, 34.12it/s, failures=0, objective=-0.11]
+    4504it [01:54, 34.12it/s, failures=0, objective=-0.11]
+    4505it [01:54, 34.12it/s, failures=0, objective=-0.11]
+    4506it [01:54, 34.12it/s, failures=0, objective=-0.11]
+    4507it [01:54, 34.12it/s, failures=0, objective=-0.11]
+    4508it [01:54, 34.12it/s, failures=0, objective=-0.11]
+    4509it [01:54, 34.12it/s, failures=0, objective=-0.11]
+    4510it [01:54, 34.12it/s, failures=0, objective=-0.11]
+    4511it [01:54, 34.12it/s, failures=0, objective=-0.11]
+    4512it [01:54, 34.12it/s, failures=0, objective=-0.11]
+    4513it [01:54, 34.12it/s, failures=0, objective=-0.11]
+    4514it [01:54, 34.12it/s, failures=0, objective=-0.11]
+    4515it [01:54, 34.12it/s, failures=0, objective=-0.11]
+    4516it [01:54, 34.12it/s, failures=0, objective=-0.11]
+    4517it [01:54, 34.12it/s, failures=0, objective=-0.11]
+    4518it [01:54, 34.12it/s, failures=0, objective=-0.11]
+    4519it [01:54, 34.12it/s, failures=0, objective=-0.11]
+    4520it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4520it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4521it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4522it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4523it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4524it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4525it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4526it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4527it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4528it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4529it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4530it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4531it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4532it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4533it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4534it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4535it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4536it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4537it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4538it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4539it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4540it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4541it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4542it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4543it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4544it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4545it [01:55, 32.72it/s, failures=0, objective=-0.11]
+    4546it [01:55, 41.73it/s, failures=0, objective=-0.11]
+    4546it [01:55, 41.73it/s, failures=0, objective=-0.11]
+    4547it [01:55, 41.73it/s, failures=0, objective=-0.11]
+    4548it [01:55, 41.73it/s, failures=0, objective=-0.11]
+    4549it [01:55, 41.73it/s, failures=0, objective=-0.11]
+    4550it [01:55, 41.73it/s, failures=0, objective=-0.11]
+    4551it [01:55, 41.73it/s, failures=0, objective=-0.11]
+    4552it [01:55, 41.73it/s, failures=0, objective=-0.11]
+    4553it [01:55, 41.73it/s, failures=0, objective=-0.11]
+    4554it [01:55, 41.73it/s, failures=0, objective=-0.11]
+    4555it [01:55, 41.73it/s, failures=0, objective=-0.11]
+    4556it [01:55, 41.73it/s, failures=0, objective=-0.11]
+    4557it [01:55, 41.73it/s, failures=0, objective=-0.11]
+    4558it [01:55, 41.73it/s, failures=0, objective=-0.11]
+    4559it [01:55, 41.73it/s, failures=0, objective=-0.11]
+    4560it [01:56, 40.76it/s, failures=0, objective=-0.11]
+    4560it [01:56, 40.76it/s, failures=0, objective=-0.11]
+    4561it [01:56, 40.76it/s, failures=0, objective=-0.11]
+    4562it [01:56, 40.76it/s, failures=0, objective=-0.11]
+    4563it [01:56, 40.76it/s, failures=0, objective=-0.11]
+    4564it [01:56, 40.76it/s, failures=0, objective=-0.11]
+    4565it [01:56, 40.76it/s, failures=0, objective=-0.11]
+    4566it [01:56, 40.76it/s, failures=0, objective=-0.11]
+    4567it [01:56, 40.76it/s, failures=0, objective=-0.11]
+    4568it [01:56, 40.76it/s, failures=0, objective=-0.11]
+    4569it [01:56, 40.76it/s, failures=0, objective=-0.11]
+    4570it [01:56, 40.76it/s, failures=0, objective=-0.11]
+    4571it [01:56, 40.76it/s, failures=0, objective=-0.11]
+    4572it [01:56, 40.76it/s, failures=0, objective=-0.11]
+    4573it [01:56, 40.76it/s, failures=0, objective=-0.11]
+    4574it [01:56, 39.75it/s, failures=0, objective=-0.11]
+    4574it [01:56, 39.75it/s, failures=0, objective=-0.11]
+    4575it [01:56, 39.75it/s, failures=0, objective=-0.11]
+    4576it [01:56, 39.75it/s, failures=0, objective=-0.11]
+    4577it [01:56, 39.75it/s, failures=0, objective=-0.11]
+    4578it [01:56, 39.75it/s, failures=0, objective=-0.11]
+    4579it [01:56, 39.75it/s, failures=0, objective=-0.11]
+    4580it [01:56, 39.75it/s, failures=0, objective=-0.11]
+    4581it [01:56, 39.75it/s, failures=0, objective=-0.11]
+    4582it [01:56, 39.75it/s, failures=0, objective=-0.11]
+    4583it [01:56, 39.75it/s, failures=0, objective=-0.11]
+    4584it [01:56, 39.75it/s, failures=0, objective=-0.11]
+    4585it [01:56, 39.75it/s, failures=0, objective=-0.11]
+    4586it [01:56, 33.99it/s, failures=0, objective=-0.11]
+    4586it [01:56, 33.99it/s, failures=0, objective=-0.11]
+    4587it [01:56, 33.99it/s, failures=0, objective=-0.11]
+    4588it [01:56, 33.99it/s, failures=0, objective=-0.11]
+    4589it [01:56, 33.99it/s, failures=0, objective=-0.11]
+    4590it [01:56, 33.99it/s, failures=0, objective=-0.11]
+    4591it [01:56, 33.99it/s, failures=0, objective=-0.11]
+    4592it [01:56, 33.99it/s, failures=0, objective=-0.11]
+    4593it [01:56, 33.99it/s, failures=0, objective=-0.11]
+    4594it [01:56, 33.99it/s, failures=0, objective=-0.11]
+    4595it [01:56, 33.99it/s, failures=0, objective=-0.11]
+    4596it [01:56, 33.99it/s, failures=0, objective=-0.11]
+    4597it [01:56, 33.99it/s, failures=0, objective=-0.11]
+    4598it [01:56, 33.99it/s, failures=0, objective=-0.11]
+    4599it [01:56, 33.99it/s, failures=0, objective=-0.11]
+    4600it [01:56, 33.99it/s, failures=0, objective=-0.11]
+    4601it [01:56, 33.99it/s, failures=0, objective=-0.11]
+    4602it [01:56, 33.99it/s, failures=0, objective=-0.11]
+    4603it [01:56, 33.99it/s, failures=0, objective=-0.11]
+    4604it [01:56, 33.99it/s, failures=0, objective=-0.11]
+    4605it [01:57, 36.95it/s, failures=0, objective=-0.11]
+    4605it [01:57, 36.95it/s, failures=0, objective=-0.11]
+    4606it [01:57, 36.95it/s, failures=0, objective=-0.11]
+    4607it [01:57, 36.95it/s, failures=0, objective=-0.11]
+    4608it [01:57, 36.95it/s, failures=0, objective=-0.11]
+    4609it [01:57, 36.95it/s, failures=0, objective=-0.11]
+    4610it [01:57, 36.95it/s, failures=0, objective=-0.11]
+    4611it [01:57, 36.95it/s, failures=0, objective=-0.11]
+    4612it [01:57, 36.95it/s, failures=0, objective=-0.11]
+    4613it [01:57, 36.95it/s, failures=0, objective=-0.11]
+    4614it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4614it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4615it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4616it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4617it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4618it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4619it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4620it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4621it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4622it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4623it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4624it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4625it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4626it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4627it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4628it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4629it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4630it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4631it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4632it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4633it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4634it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4635it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4636it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4637it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4638it [01:57, 30.49it/s, failures=0, objective=-0.11]
+    4639it [01:58, 37.96it/s, failures=0, objective=-0.11]
+    4639it [01:58, 37.96it/s, failures=0, objective=-0.11]
+    4640it [01:58, 37.96it/s, failures=0, objective=-0.11]
+    4641it [01:58, 37.96it/s, failures=0, objective=-0.11]
+    4642it [01:58, 37.96it/s, failures=0, objective=-0.11]
+    4643it [01:58, 37.96it/s, failures=0, objective=-0.11]
+    4644it [01:58, 37.96it/s, failures=0, objective=-0.11]
+    4645it [01:58, 37.96it/s, failures=0, objective=-0.11]
+    4646it [01:58, 37.96it/s, failures=0, objective=-0.11]
+    4647it [01:58, 37.96it/s, failures=0, objective=-0.11]
+    4648it [01:58, 37.96it/s, failures=0, objective=-0.11]
+    4649it [01:58, 37.96it/s, failures=0, objective=-0.11]
+    4650it [01:58, 37.96it/s, failures=0, objective=-0.11]
+    4651it [01:58, 37.96it/s, failures=0, objective=-0.11]
+    4652it [01:58, 37.96it/s, failures=0, objective=-0.11]
+    4653it [01:58, 37.96it/s, failures=0, objective=-0.11]
+    4654it [01:58, 37.96it/s, failures=0, objective=-0.11]
+    4655it [01:58, 37.96it/s, failures=0, objective=-0.11]
+    4656it [01:58, 37.96it/s, failures=0, objective=-0.11]
+    4657it [01:58, 37.96it/s, failures=0, objective=-0.11]
+    4658it [01:58, 37.96it/s, failures=0, objective=-0.11]
+    4659it [01:58, 37.96it/s, failures=0, objective=-0.11]
+    4660it [01:58, 41.98it/s, failures=0, objective=-0.11]
+    4660it [01:58, 41.98it/s, failures=0, objective=-0.11]
+    4661it [01:58, 41.98it/s, failures=0, objective=-0.11]
+    4662it [01:58, 41.98it/s, failures=0, objective=-0.11]
+    4663it [01:58, 41.98it/s, failures=0, objective=-0.11]
+    4664it [01:58, 41.98it/s, failures=0, objective=-0.11]
+    4665it [01:58, 41.98it/s, failures=0, objective=-0.11]
+    4666it [01:58, 41.98it/s, failures=0, objective=-0.11]
+    4667it [01:58, 41.98it/s, failures=0, objective=-0.11]
+    4668it [01:58, 41.98it/s, failures=0, objective=-0.11]
+    4669it [01:58, 41.98it/s, failures=0, objective=-0.11]
+    4670it [01:58, 41.98it/s, failures=0, objective=-0.11]
+    4671it [01:58, 41.98it/s, failures=0, objective=-0.11]
+    4672it [01:58, 41.98it/s, failures=0, objective=-0.11]
+    4673it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4673it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4674it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4675it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4676it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4677it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4678it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4679it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4680it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4681it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4682it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4683it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4684it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4685it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4686it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4687it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4688it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4689it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4690it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4691it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4692it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4693it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4694it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4695it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4696it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4697it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4698it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4699it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4700it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4701it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4702it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4703it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4704it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4705it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4706it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4707it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4708it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4709it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4710it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4711it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4712it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4713it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4714it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4715it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4716it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4717it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4718it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4719it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4720it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4721it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4722it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4723it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4724it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4725it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4726it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4727it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4728it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4729it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4730it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4731it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4732it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4733it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4734it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4735it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4736it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4737it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4738it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4739it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4740it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4741it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4742it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4743it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4744it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4745it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4746it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4747it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4748it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4749it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4750it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4751it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4752it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4753it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4754it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4755it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4756it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4757it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4758it [02:01, 14.72it/s, failures=0, objective=-0.11]
+    4759it [02:01, 14.72it/s, failures=0, objective=-0.11]
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 95-98
+.. GENERATED FROM PYTHON SOURCE LINES 104-107
 
 Finally, we plot the results from the collected DataFrame. The execution
 time is used as the x-axis which help-us vizualise the advantages of the
 parallel search.
 
-.. GENERATED FROM PYTHON SOURCE LINES 98-119
+.. GENERATED FROM PYTHON SOURCE LINES 107-131
 
 .. code-block:: Python
 
 
-    if __name__ == "__main__":
-        fig, ax = plt.subplots(figsize=figure_size(width=600))
+    fig, ax = plt.subplots(figsize=figure_size(width=600))
 
-        for strategy, df in results.items():
-            plot_search_trajectory_single_objective_hpo(
-                df,
-                show_failures=False,
-                mode="min",
-                x_units="seconds",
-                ax=ax,
-                label=strategy,
-            )
+    for i, (strategy, df) in enumerate(results.items()):
+        plot_search_trajectory_single_objective_hpo(
+            df,
+            show_failures=False,
+            mode="min",
+            x_units="seconds",
+            ax=ax,
+            label=strategy,
+            plot_kwargs={"color": f"C{i}"},
+            scatter_success_kwargs={"color": f"C{i}"},
+        )
 
-        plt.xlabel("Time (sec.)")
-        plt.ylabel("Objective")
-        plt.yscale("log")
-        plt.grid(visible=True, which="minor", linestyle=":")
-        plt.grid(visible=True, which="major", linestyle="-")
-        plt.legend()
-        plt.show()
+    plt.xlabel("Time (sec.)")
+    plt.ylabel("Objective")
+    plt.yscale("log")
+    plt.grid(visible=True, which="minor", linestyle=":")
+    plt.grid(visible=True, which="major", linestyle="-")
+    plt.legend()
+    plt.show()
+
+
 
 
 
@@ -770,7 +5346,7 @@ parallel search.
 
  .. code-block:: none
 
-    /Users/romainegele/Documents/Argonne/deephyper/examples/plot_from_serial_to_parallel_hpo.py:118: UserWarning: FigureCanvasAgg is non-interactive, and thus cannot be shown
+    /Users/romainegele/Documents/Argonne/deephyper/examples/plot_from_serial_to_parallel_hpo.py:128: UserWarning: FigureCanvasAgg is non-interactive, and thus cannot be shown
       plt.show()
 
 
@@ -779,7 +5355,7 @@ parallel search.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (4 minutes 5.120 seconds)
+   **Total running time of the script:** (4 minutes 5.743 seconds)
 
 
 .. _sphx_glr_download_examples_plot_from_serial_to_parallel_hpo.py:
