@@ -110,7 +110,7 @@ markers = [
 
 [tool.coverage.run]
 branch = true
-source = "src/deephyper"
+source = ["src/deephyper"]
 omit = ["src/deephyper/skopt/*", "src/deephyper/core/*"]
 
 [tool.coverage.report]
