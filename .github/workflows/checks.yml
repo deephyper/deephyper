@@ -2,7 +2,6 @@ name: Run checks and tests
 
 on:
   - pull_request
-  - push
 
 jobs:
 
