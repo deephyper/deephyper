@@ -514,7 +514,7 @@ class CBO(Search):
         Returns:
             List[Dict]: a list of hyperparameter configurations to evaluate.
         """
-        new_X = self._opt.ask(n_points=n)
+        new_X = self._opt.ask(n_points=n, strategy=self._multi_point_strategy)
         new_samples = [self._to_dict(x) for x in new_X]
         self._num_asked += n
         return new_samples
