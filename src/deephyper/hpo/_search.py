@@ -339,7 +339,8 @@ class Search(abc.ABC):
             n_ask = len(new_results)
 
             # Test if search should be stopped due to timeout
-            if self._evaluator.time_left is not None and self._evaluator.time_left <= 0:
+            time_left = self._evaluator.time_left
+            if time_left is not None and time_left <= 0:
                 self.stopped = True
 
             # Test if search should be stopped because a callback requested it
