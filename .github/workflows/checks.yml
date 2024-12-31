@@ -44,7 +44,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install pytest coverage
-          pip install .
+          pip install -e .
 
       - name: Run tests and generate coverage report
         run: |
@@ -52,9 +52,10 @@ jobs:
           coverage html
           coverage xml
 
+      # Documentation: https://github.com/codecov/codecov-action
       - name: Upload coverage to codecov
         if: ${{ matrix.python-version == 3.12 }} # Only upload coverage once
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v5 
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
