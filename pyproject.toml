@@ -108,9 +108,12 @@ markers = [
     "memory_profiling: marks tests which needs profile memory using psutil installed",
 ]
 
+[tool.coverage.paths]
+source = ["src/", "*/site-packages"]
+
 [tool.coverage.run]
 branch = true
-source = ["src/deephyper"]
+source = ["deephyper"]
 omit = ["src/deephyper/skopt/*", "src/deephyper/core/*"]
 
 [tool.coverage.report]
