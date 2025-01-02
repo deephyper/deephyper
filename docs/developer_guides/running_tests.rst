@@ -1,17 +1,7 @@
-Tests
-*****
+Running Tests
+*************
 
 For automatic tests in DeepHyper we chose to use the `Pytest <https://docs.pytest.org/en/latest/index.html>`_ package.
-
-
-Developer Installation
-======================
-
-
-Follow the :ref:`local-dev-installation`.
-
-Running Tests
-=============
 
 Tests corresponding to  ``deephyper`` modules are located in the ``tests`` folder. These tests are marked with possible marks such as:
 
@@ -36,8 +26,8 @@ To test notebooks the ``develop`` branch of deephyper can be installed with pip 
     !pip install -e "git+https://github.com/deephyper/deephyper.git@develop#egg=deephyper"
 
 
-Writting Tests
-==============
+Writing Tests
+=============
 
 Tests are located in the ``tests`` folder. Each module from ``deephyper`` should have a corresponding test module with the same name but with the ``test_`` prefix.
 
@@ -61,7 +51,7 @@ This function should use decorators to classify its type. For example, the ``tes
 .. code-block:: python
 
     @pytest.mark.fast
-    
+
     def test_median_stopper():
         ...
 
@@ -70,7 +60,7 @@ Each test function creating data (files or directly) should use a temporary dire
 .. code-block:: python
 
     @pytest.mark.fast
-    
+
     def test_median_stopper(tmp_path):
         ...
 
