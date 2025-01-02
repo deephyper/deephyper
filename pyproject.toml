@@ -113,7 +113,6 @@ source = ["src/", "*/site-packages"]
 [tool.coverage.run]
 branch = true
 source = ["deephyper"]
-omit = ["src/deephyper/skopt/*", "src/deephyper/core/*"]
 
 [tool.coverage.report]
 exclude_lines = ["if __name__ == '__main__':"]
