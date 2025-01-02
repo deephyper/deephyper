@@ -47,7 +47,7 @@ jobs:
 
       - name: Run tests and generate coverage report
         run: |
-          coverage run -m pytest tests/
+          coverage run -m pytest
           coverage html
           coverage xml
 

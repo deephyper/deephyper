@@ -92,7 +92,7 @@ Issues = "https://github.com/deephyper/deephyper/issues"
 path = "src/deephyper/__version__.py"
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules --ignore=deephyper/evaluator --ignore=tests/skopt"
+addopts = "--ignore=tests/skopt"
 norecursedirs = ".git _build docs"
 filterwarnings = "ignore:The objective has been evaluated at this point before.:UserWarning"
 markers = [
