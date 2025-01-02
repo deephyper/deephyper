@@ -47,7 +47,7 @@ jobs:
 
       - name: Run tests and generate coverage report
         run: |
-          coverage run -m pytest --run-marks-subset "fast" tests/
+          coverage run -m pytest tests/
           coverage html
           coverage xml
 
