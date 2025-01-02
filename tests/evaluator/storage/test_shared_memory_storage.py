@@ -17,7 +17,6 @@ def run_sync(job: RunningJob) -> dict:
     }
 
 
-@pytest.mark.fast
 def test_basic():
     # Creation of the database
     storage = SharedMemoryStorage()
@@ -72,7 +71,6 @@ def test_basic():
     assert job_id0_data["metadata"] == {"timestamp": 10}
 
 
-@pytest.mark.fast
 def test_with_evaluator():
     storage = SharedMemoryStorage()
 

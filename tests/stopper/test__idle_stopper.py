@@ -28,7 +28,6 @@ def run(job: RunningJob) -> dict:
     }
 
 
-@pytest.mark.fast
 def test_idle_stopper(tmp_path):
 
     # define the variable you want to optimize

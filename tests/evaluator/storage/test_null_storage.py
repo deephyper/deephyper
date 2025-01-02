@@ -7,7 +7,6 @@ async def run(job: RunningJob) -> dict:
     return job.parameters["x"] + 1
 
 
-@pytest.mark.fast
 def test_basic():
 
     evaluator = Evaluator.create(

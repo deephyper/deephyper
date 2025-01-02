@@ -23,7 +23,6 @@ def run_sync(job: RunningJob) -> dict:
     }
 
 
-@pytest.mark.fast
 @pytest.mark.ray
 def test_basic(self):
     import ray
@@ -93,7 +92,6 @@ def test_basic(self):
     assert math.isnan(job_id0_data["metadata"]["nan_value"])
 
 
-@pytest.mark.fast
 @pytest.mark.ray
 def test_with_evaluator():
     import ray

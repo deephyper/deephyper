@@ -35,7 +35,6 @@ def run_scalar_output_with_memory(job):
     return x[0]
 
 
-@pytest.mark.fast
 def test_profile():
     # Scalar output
     output = run_scalar_output({"x": 0})

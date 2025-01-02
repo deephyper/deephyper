@@ -1,7 +1,6 @@
 import pytest
 
 
-@pytest.mark.fast
 def test_rank():
     from deephyper.analysis import rank
 

@@ -54,7 +54,6 @@ def _test_mpicomm_evaluator():
     print(f"{rank=}, {duration=}")
 
 
-@pytest.mark.fast
 @pytest.mark.mpi
 def test_mpicomm_evaluator():
     command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_mpicomm_evaluator"

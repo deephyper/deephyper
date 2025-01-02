@@ -127,7 +127,6 @@ def _test_mpi_win_mutable_mapping():
     comm.Barrier()
 
 
-@pytest.mark.fast
 @pytest.mark.mpi
 def test_mpi_win_mutable_mapping():
     command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_mpi_win_mutable_mapping"
@@ -197,7 +196,6 @@ def _test_mpi_win_storage_basic():
     assert job_id0_data["metadata"] == {"timestamp": 10}
 
 
-@pytest.mark.fast
 @pytest.mark.mpi
 def test_mpi_win_storage_basic():
     command = f"mpirun -np 1 {PYTHON} {SCRIPT} _test_mpi_win_storage_basic"
@@ -286,7 +284,6 @@ def _test_mpi_win_storage_with_evaluator():
             evaluator.dump_jobs_done_to_csv()
 
 
-@pytest.mark.fast
 @pytest.mark.mpi
 def test_mpi_win_storage_with_evaluator():
     command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_mpi_win_storage_with_evaluator"

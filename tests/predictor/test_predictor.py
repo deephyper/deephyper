@@ -1,7 +1,6 @@
 import pytest
 
 
-@pytest.mark.fast
 def test_imports():
     from deephyper.predictor import Predictor  # noqa: F401
     from deephyper.predictor import PredictorLoader  # noqa: F401

@@ -12,7 +12,6 @@ def run_0(job: RunningJob) -> dict:
     }
 
 
-@pytest.mark.fast
 @pytest.mark.redis
 def test_basic():
     from deephyper.evaluator.storage._redis_storage import RedisStorage
@@ -84,7 +83,6 @@ def test_basic():
     assert job_id0_data["metadata"]["nan_value"] == "NaN"
 
 
-@pytest.mark.fast
 @pytest.mark.redis
 def test_with_evaluator():
     from deephyper.evaluator.storage._redis_storage import RedisStorage

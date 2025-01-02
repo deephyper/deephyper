@@ -5,8 +5,8 @@ import pytest
 def pytest_addoption(parser):
     parser.addoption(
         "--run-marks-subset",
-        default="fast",
-        help="Select tests to run with marks that are a subset of the selected marks.",
+        default="",
+        help="Select tests to run with marks that are a subset of the selected marks. It should be a comma separated list of marks.",
     )
 
 

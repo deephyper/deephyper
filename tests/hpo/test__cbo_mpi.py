@@ -40,7 +40,6 @@ def _test_mpi_timeout(tmp_path):
         print(f"DEEPHYPER-OUTPUT: {duration}")
 
 
-@pytest.mark.fast
 @pytest.mark.mpi
 def test_mpi_timeout(tmp_path):
     command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_mpi_timeout {tmp_path}"

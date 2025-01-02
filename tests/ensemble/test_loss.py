@@ -2,12 +2,10 @@ import numpy as np
 import pytest
 
 
-@pytest.mark.fast
 def test_import():
     from deephyper.ensemble.loss import Loss  # noqa: F401
 
 
-@pytest.mark.fast
 def test_squared_loss():
     from deephyper.ensemble.loss import SquaredError
 
@@ -31,7 +29,6 @@ def test_squared_loss():
         value = loss(y_true, {"foo": y_pred})
 
 
-@pytest.mark.fast
 def test_absolute_loss():
     from deephyper.ensemble.loss import AbsoluteError
 
@@ -55,7 +52,6 @@ def test_absolute_loss():
         value = loss(y_true, {"foo": y_pred})
 
 
-@pytest.mark.fast
 def test_normal_nll_loss():
     from deephyper.ensemble.loss import NormalNegLogLikelihood
 
@@ -79,7 +75,6 @@ def test_normal_nll_loss():
         value = loss(y_true, {"foo": y_pred})
 
 
-@pytest.mark.fast
 def test_zero_one_loss():
     from deephyper.ensemble.loss import ZeroOneLoss
 
@@ -125,7 +120,6 @@ def test_zero_one_loss():
     assert value[0] == 0
 
 
-@pytest.mark.fast
 def test_categorical_crossentropy():
     from deephyper.ensemble.loss import CategoricalCrossEntropy
 

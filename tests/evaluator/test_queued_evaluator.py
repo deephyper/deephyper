@@ -9,7 +9,6 @@ def run_sync(config, dequed=None):
     return config["x"] + dequed[0]
 
 
-@pytest.mark.fast
 def test_queued_serial_evaluator():
     from deephyper.evaluator import SerialEvaluator, queued, HPOJob
 
@@ -43,7 +42,6 @@ def test_queued_serial_evaluator():
     evaluator.close()
 
 
-@pytest.mark.fast
 @pytest.mark.ray
 def test_queued_ray_evaluator():
     try:

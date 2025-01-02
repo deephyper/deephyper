@@ -11,7 +11,6 @@ def wrap_and_predict(model):
     return y
 
 
-@pytest.mark.fast
 @pytest.mark.tf_keras2
 def test_tf_keras2_predictor_with_single_output():
     import tf_keras as tfk
@@ -28,7 +27,6 @@ def test_tf_keras2_predictor_with_single_output():
     assert np.shape(y) == (16, 1)
 
 
-@pytest.mark.fast
 @pytest.mark.tf_keras2
 def test_tf_keras2_predictor_with_list_output():
     import tf_keras as tfk
@@ -50,7 +48,6 @@ def test_tf_keras2_predictor_with_list_output():
     assert all(np.shape(y[i]) == (16, 1) for i in range(2))
 
 
-@pytest.mark.fast
 @pytest.mark.tf_keras2
 def test_tf_keras2_predictor_with_dict_output():
     import tf_keras as tfk
