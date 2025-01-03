@@ -34,7 +34,6 @@ async def run_many_results_async(job, y=0):
     return {"objective": job["x"], "metadata": {"y": y}}
 
 
-@pytest.mark.fast
 def test_wrong_evaluator():
     from deephyper.evaluator import Evaluator
 
@@ -48,7 +47,6 @@ def test_wrong_evaluator():
         )
 
 
-@pytest.mark.fast
 def test_run_function_standards(tmp_path):
     from deephyper.evaluator import HPOJob, SerialEvaluator, ThreadPoolEvaluator
 
@@ -397,22 +395,18 @@ def execute_evaluator(method, tmp_path):
     evaluator.close()
 
 
-@pytest.mark.fast
 def test_serial(tmp_path):
     execute_evaluator("serial", tmp_path)
 
 
-@pytest.mark.fast
 def test_thread(tmp_path):
     execute_evaluator("thread", tmp_path)
 
 
-@pytest.mark.fast
 def test_process(tmp_path):
     execute_evaluator("process", tmp_path)
 
 
-@pytest.mark.fast
 @pytest.mark.ray
 def test_ray(tmp_path):
     try:
@@ -445,7 +439,6 @@ async def run_job_dict_output_profiled_async(job):
     return {"y1": x1, "y2": x2, "list": [x1, x2], "dict": {"x1": x1, "x2": x2}}
 
 
-@pytest.mark.fast
 def test_evaluator_with_Job(tmp_path):
     from deephyper.evaluator import Evaluator
 

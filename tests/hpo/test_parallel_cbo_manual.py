@@ -65,7 +65,6 @@ def _test_parallel_cbo_manual():
     comm.Barrier()
 
 
-@pytest.mark.fast
 @pytest.mark.mpi
 @pytest.mark.redis
 def test_dbo_timeout():

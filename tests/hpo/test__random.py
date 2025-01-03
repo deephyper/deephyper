@@ -42,7 +42,6 @@ def assert_results(results, max_evals_strict=False):
     assert "p:x_ord" in results.columns
 
 
-@pytest.mark.fast
 def test_centralized_random_search(tmp_path):
     problem = create_problem()
 
@@ -67,7 +66,6 @@ def test_centralized_random_search(tmp_path):
     )
 
 
-@pytest.mark.fast
 @pytest.mark.redis
 def test_centralized_random_search_redis_storage(tmp_path):
     from deephyper.evaluator.storage import RedisStorage
@@ -120,7 +118,6 @@ def launch_thread_search_with_redis_storage(search_id, search_seed, is_master=Fa
     return results
 
 
-@pytest.mark.fast
 @pytest.mark.redis
 def test_decentralized_random_search_redis_storage():
     from multiprocessing import Pool
@@ -167,7 +164,6 @@ def launch_thread_search_with_shared_memory_storage(
     return results
 
 
-@pytest.mark.fast
 def test_decentralized_random_search_shared_memory_storage():
     from multiprocessing import Pool
     from deephyper.evaluator.storage import SharedMemoryStorage

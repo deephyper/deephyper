@@ -12,7 +12,6 @@ def wrap_and_predict(module):
     return y
 
 
-@pytest.mark.fast
 @pytest.mark.torch
 def test_torch_predictor_with_single_output():
     import torch.nn as nn
@@ -35,7 +34,6 @@ def test_torch_predictor_with_single_output():
     assert np.shape(y) == (16, 1)
 
 
-@pytest.mark.fast
 @pytest.mark.torch
 def test_torch_predictor_with_list_output():
     import torch.nn as nn
@@ -62,7 +60,6 @@ def test_torch_predictor_with_list_output():
     assert all(np.shape(y[i]) == (16, 1) for i in range(2))
 
 
-@pytest.mark.fast
 @pytest.mark.torch
 def test_torch_predictor_with_dict_output():
     import torch.nn as nn
@@ -89,7 +86,6 @@ def test_torch_predictor_with_dict_output():
     assert all(np.shape(v) == (16, 1) for v in y.values())
 
 
-@pytest.mark.fast
 @pytest.mark.torch
 def test_torch_predictor_with_proba():
     import torch.nn as nn

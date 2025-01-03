@@ -29,7 +29,6 @@ def run(job: RunningJob) -> dict:
     }
 
 
-@pytest.mark.fast
 def test_successive_halving_stopper(tmp_path):
     # define the variable you want to optimize
     problem = HpProblem()
@@ -152,7 +151,6 @@ def run_with_failures(job: RunningJob) -> dict:
     }
 
 
-@pytest.mark.fast
 def test_successive_halving_stopper_with_failing_evaluations(tmp_path):
     # define the variable you want to optimize
     problem = HpProblem()

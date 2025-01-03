@@ -58,7 +58,6 @@ def _test_dbo_timeout():
         shutil.rmtree(log_dir)
 
 
-@pytest.mark.fast
 @pytest.mark.mpi
 @pytest.mark.redis
 def test_dbo_timeout():

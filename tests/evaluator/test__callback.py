@@ -1,6 +1,5 @@
 import pytest
 
-@pytest.mark.fast
 def test_search_early_stopping_callback(tmp_path):
     
     from deephyper.evaluator import Evaluator
@@ -48,7 +47,6 @@ def test_search_early_stopping_callback(tmp_path):
 
     assert len(results) < 100
 
-@pytest.mark.fast
 def test_tqdm_callback(tmp_path):
     
     from deephyper.evaluator import Evaluator
@@ -92,7 +90,6 @@ def test_tqdm_callback(tmp_path):
     search = RandomSearch(problem, evaluator, random_state=42, log_dir=tmp_path)
     results = search.search(max_evals=100)
 
-@pytest.mark.fast
 def test_logger_callback(tmp_path):
     
     from deephyper.evaluator import Evaluator

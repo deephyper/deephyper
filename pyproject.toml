@@ -92,11 +92,10 @@ Issues = "https://github.com/deephyper/deephyper/issues"
 path = "src/deephyper/__version__.py"
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules --ignore=deephyper/evaluator --ignore=tests/skopt"
+addopts = "--ignore=tests/skopt"
 norecursedirs = ".git _build docs"
 filterwarnings = "ignore:The objective has been evaluated at this point before.:UserWarning"
 markers = [
-    "fast: marks to define a fast test",
     "slow: marks to define a slow test",
     "torch: marks to define a test that requires torch installed",
     "tf_keras2: marks to define a test that requires tf-keras~=2 installed",
@@ -107,6 +106,16 @@ markers = [
     "sdv: marks tests which needs SDV installed",
     "memory_profiling: marks tests which needs profile memory using psutil installed",
 ]
+
+[tool.coverage.paths]
+source = ["src/", "*/site-packages"]
+
+[tool.coverage.run]
+branch = true
+source = ["deephyper"]
+
+[tool.coverage.report]
+exclude_lines = ["if __name__ == '__main__':"]
 
 [tool.ruff]
 exclude = [

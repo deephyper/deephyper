@@ -28,7 +28,6 @@ def run(job: RunningJob) -> dict:
     }
 
 
-@pytest.mark.fast
 def test_median_stopper_with_cbo(tmp_path):
 
     # define the variable you want to optimize
@@ -58,7 +57,6 @@ def test_median_stopper_with_cbo(tmp_path):
     assert results["m:budget"].sum() < 50 * 30
 
 
-@pytest.mark.fast
 def test_median_stopper_with_random_search(tmp_path):
 
     # define the variable you want to optimize

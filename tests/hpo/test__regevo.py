@@ -38,7 +38,6 @@ def assert_results(results):
     assert "p:x_ord" in results.columns
 
 
-@pytest.mark.fast
 def test_centralized_regevo_search(tmp_path):
 
     problem = create_problem()

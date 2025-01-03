@@ -4,7 +4,6 @@ import time
 import pytest
 
 
-@pytest.mark.fast
 def test_cbo_random_seed(tmp_path):
     import numpy as np
 
@@ -74,7 +73,6 @@ def test_cbo_random_seed(tmp_path):
     assert np.array_equal(res1_array, res2_array)
 
 
-@pytest.mark.fast
 def test_sample_types(tmp_path):
     import numpy as np
 
@@ -115,7 +113,6 @@ def test_sample_types(tmp_path):
     assert len(results) == 10
 
 
-@pytest.mark.fast
 def test_sample_types_no_cat(tmp_path):
     import numpy as np
 
@@ -154,7 +151,6 @@ def test_sample_types_no_cat(tmp_path):
     assert len(results) == 10
 
 
-@pytest.mark.fast
 def test_gp(tmp_path):
     from deephyper.evaluator import Evaluator
     from deephyper.hpo import CBO, HpProblem
@@ -208,7 +204,6 @@ def test_gp(tmp_path):
     assert len(results) == 10
 
 
-@pytest.mark.fast
 def test_sample_types_conditional(tmp_path):
     import ConfigSpace as cs
     import numpy as np
@@ -292,7 +287,6 @@ def run_max_evals(job):
     return config["x"]
 
 
-@pytest.mark.fast
 def test_max_evals_strict(tmp_path):
     from deephyper.evaluator import Evaluator
     from deephyper.hpo import CBO, HpProblem
@@ -310,7 +304,6 @@ def test_max_evals_strict(tmp_path):
     assert len(results) == max_evals
 
 
-@pytest.mark.fast
 def test_initial_points(tmp_path):
     from deephyper.hpo import CBO, HpProblem
 
@@ -334,7 +327,6 @@ def test_initial_points(tmp_path):
     assert result.loc[0, "objective"] == problem.default_configuration["x"]
 
 
-@pytest.mark.fast
 def test_cbo_checkpoint_restart(tmp_path):
     from deephyper.hpo import CBO, HpProblem
 
@@ -395,7 +387,6 @@ def test_cbo_checkpoint_restart(tmp_path):
     assert len(results_c) == 20
 
 
-@pytest.mark.fast
 def test_cbo_checkpoint_restart_moo(tmp_path):
     from deephyper.hpo import CBO, HpProblem
 
@@ -459,7 +450,6 @@ def test_cbo_checkpoint_restart_moo(tmp_path):
     assert len(results_c) == 20
 
 
-@pytest.mark.fast
 def test_cbo_checkpoint_restart_with_failures(tmp_path):
     from deephyper.hpo import CBO, HpProblem
 
@@ -518,7 +508,6 @@ def test_cbo_checkpoint_restart_with_failures(tmp_path):
     assert len(results_c) == 20
 
 
-@pytest.mark.fast
 def test_cbo_checkpoint_restart_moo_with_failures(tmp_path):
     from deephyper.hpo import CBO, HpProblem
 
@@ -581,7 +570,6 @@ def test_cbo_checkpoint_restart_moo_with_failures(tmp_path):
     assert len(results_c) == 20
 
 
-@pytest.mark.fast
 def test_cbo_categorical_variable(tmp_path):
     from deephyper.evaluator import SerialEvaluator
     from deephyper.hpo import CBO, HpProblem
