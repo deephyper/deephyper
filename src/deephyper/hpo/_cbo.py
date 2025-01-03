@@ -165,15 +165,14 @@ class CBO(Search):
             Defaults to ``0.1``.
 
         multi_point_strategy (str, optional): Definition of the constant value use for the Liar
-            strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max", "qUCB"]``. All
+            strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max", "qUCB", "qUCBd"]``. All
             ``"cl_..."`` strategies follow the constant-liar scheme, where if $N$ new points are
             requested, the surrogate model is re-fitted $N-1$ times with lies (respectively, the
             minimum, mean and maximum objective found so far; for multiple objectives, these are
             the minimum, mean and maximum of the individual objectives) to infer the acquisition
             function. Constant-Liar strategy have poor scalability because of this repeated re-
             fitting. The ``"qUCB"`` strategy is much more efficient by sampling a new $kappa$ value
-            for each new requested point without re-fitting the model, but it is only compatible
-            with ``acq_func == "UCB"``. Defaults to ``"cl_max"``.
+            for each new requested point without re-fitting the model.
 
         n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the
             Bayesian optimization. A value of ``-1`` will use all available cores. Not used in

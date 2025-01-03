@@ -595,6 +595,59 @@ def test_cbo_categorical_variable(tmp_path):
     assert results.objective.max() >= 105
 
 
+def test_cbo_multi_point_strategy(tmp_path):
+
+    import asyncio
+    import time
+    from deephyper.evaluator import Evaluator
+    from deephyper.hpo import CBO, HpProblem
+
+    problem = HpProblem()
+    problem.add_hyperparameter((0.0, 10.0), "x")
+
+    async def run(config):
+        await asyncio.sleep(0.01)
+        return config["x"]
+
+    durations = []
+    for multi_point_strategy in ["cl_min", "cl_mean", "cl_max", "qUCB", "qUCBd"]:
+        t1 = time.time()
+        search = CBO(
+            problem,
+            Evaluator.create(run, method="serial", method_kwargs={"num_workers": 10}),
+            random_state=42,
+            surrogate_model="ET",
+            surrogate_model_kwargs={"n_estimators": 25, "min_samples_split": 8},
+            multi_point_strategy=multi_point_strategy,
+            log_dir=tmp_path,
+        )
+        results = search.search(100)
+        durations.append(time.time() - t1)
+
+        assert len(results) == 100
+
+    assert all(durations[i] > durations[j] for i in range(3) for j in range(3,5))
+
+    durations = []
+    for multi_point_strategy in ["cl_min", "cl_mean", "cl_max", "qUCB", "qUCBd"]:
+        t1 = time.time()
+        search = CBO(
+            problem,
+            Evaluator.create(run, method="serial", method_kwargs={"num_workers": 10}),
+            acq_func="EI",
+            random_state=42,
+            surrogate_model="ET",
+            surrogate_model_kwargs={"n_estimators": 25, "min_samples_split": 8},
+            multi_point_strategy=multi_point_strategy,
+            log_dir=tmp_path,
+        )
+        results = search.search(100)
+        durations.append(time.time() - t1)
+
+        assert len(results) == 100
+
+    assert all(durations[i] > durations[j] for i in range(3) for j in range(3,5))
+
 @pytest.mark.slow
 def test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path):
     from ConfigSpace import GreaterThanCondition
