@@ -1,27 +1,58 @@
 Running Tests
 *************
 
-For automatic tests in DeepHyper we chose to use the `Pytest <https://docs.pytest.org/en/latest/index.html>`_ package.
+For automatic tests in DeepHyper we use the `Pytest <https://docs.pytest.org/en/latest/index.html>`_ package.
 
-Tests corresponding to  ``deephyper`` modules are located in the ``tests`` folder. These tests are marked with possible marks such as:
+Tests corresponding to  ``deephyper`` modules are located in the ``tests`` folder.
 
-- fast: tests that are fast to run.
-- slow: tests that are slow to run.
-- asyncio: tests that are using asyncio.
-- mpi: tests that require MPI.
-- ray: tests that require Ray.
-- redis: tests that require Redis.
-
-To run corresponding tests these markers can be used such as:
+The default test command that corresponds to the default installation of the package ``pip install deephyper`` is (from the root of the repository):
 
 .. code-block:: console
 
-    pytest --run fast,hps tests/
+    pytest
 
-Testing Notebooks
-=================
+This command will run all the tests in the ``tests/`` folder without any ``pytest.mark.*``.
 
-To test notebooks the ``develop`` branch of deephyper can be installed with pip by using the following command::
+We use markers to classify tests that have specific requirements. Possible marks are:
+
+- ``slow``: marks to define a slow test. For example, the training of a model or the execution of Bayesian optimization.
+- ``torch``: marks to define a test that requires PyTorch installed.
+- ``tf_keras2``: marks to define a test that requires Tensorflow/Keras 2 installed.
+- ``ray``: marks tests which needs Ray installed.
+- ``mpi``: marks tests which needs mpi4py and an MPI implementation (e.g., openmpi, mpich) installed.
+- ``redis``: marks tests which needs Redis-Stack installed (i.e., includes RedisJSON).
+- ``jax``: marks tests which needs JAX installed.
+- ``sdv``: marks tests which needs SDV package installed (e.g., used in ``pip install "deephyper[hpo-tl]"``).
+- ``memory_profiling``: marks tests which use ``psutil`` installed to profile memory as its behaviour can vary depending on the system were it installed.
+
+The command that we use to run tests with specific markers is:
+
+.. code-block:: console
+
+    pytest --run-marks-subset "slow,torch,tf_keras2,mpi,redis" tests/
+
+This command will run all the tests in the ``tests/`` folder that have a subset of mentionned markers such as:
+
+.. code-block:: console
+
+    @pytest.mark.slow
+    def test_some_test_just_slow():
+        ...
+
+    @pytest.mark.slow
+    @pytest.mark.torch
+    def test_some_test_using_torch():
+        ...
+
+    @pytest.mark.mpi
+    def test_some_test_using_mpi():
+        ...
+
+
+Testing Examples and Notebooks
+==============================
+
+To test examples from ``deephyper/examples/`` or tutorial notebooks the ``develop`` branch of deephyper can be installed with pip by using the following command::
 
     !pip install -e "git+https://github.com/deephyper/deephyper.git@develop#egg=deephyper"
 
@@ -46,12 +77,11 @@ Then, each test function should have a name starting with ``test_``. For example
     def test_median_stopper():
         ...
 
-This function should use decorators to classify its type. For example, the ``test_median_stopper`` function should be decorated with the ``@pytest.mark.fast`` decorator and ```` decorator.
+This function can use markers to classify its type. For example, the ``test_median_stopper`` function could be decorated with the ``@pytest.mark.redis`` marker if the test uses the ``RedisStorage``.
 
 .. code-block:: python
 
-    @pytest.mark.fast
-
+    @pytest.mark.redis
     def test_median_stopper():
         ...
 
@@ -59,8 +89,7 @@ Each test function creating data (files or directly) should use a temporary dire
 
 .. code-block:: python
 
-    @pytest.mark.fast
-
+    @pytest.mark.redis
     def test_median_stopper(tmp_path):
         ...
 
