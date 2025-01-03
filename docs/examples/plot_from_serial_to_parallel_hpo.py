@@ -34,7 +34,7 @@ from deephyper.analysis.hpo import plot_search_trajectory_single_objective_hpo
 from deephyper.analysis.hpo import plot_worker_utilization
 from deephyper.evaluator import Evaluator
 from deephyper.evaluator.callback import TqdmCallback
-from deephyper.hpo import HpProblem, CBO
+from deephyper.hpo import HpProblem, CBO, RandomSearch
 
 # %%
 # Then, we define the variable(s) we want to optimize. For this problem we
@@ -185,7 +185,6 @@ plt.show()
 # Finally, we compare both search with the execution time is used as the x-axis.
 # The advantage of parallelism is clearly visible by the difference in the number of evaluations and in objective.
 
-# sphinx_gallery_thumbnail_number = 3
 fig, ax = plt.subplots(figsize=figure_size(width=600))
 
 for i, (strategy, df) in enumerate(results.items()):
@@ -210,4 +209,57 @@ plt.show()
 
 
 
+# %%
+# Finally, one could compare to a random search to see if the overheads of the parallel Bayesian optimization are worth it (i.e., the cost of fitting and optimizing the surrogate model).
+# The evaluator is defined similarly to the one used for the parallel Bayesian optimization search:
+parallel_evaluator = Evaluator.create(
+    black_box.run_ackley,
+    method="thread",
+    method_kwargs={
+        "num_workers": 100, # For the parallel evaluations
+        "callbacks": [TqdmCallback()]
+    },
+)
+random_search = RandomSearch(problem, parallel_evaluator, random_state=search_kwargs["random_state"])
+results["random"] = random_search.search(timeout=timeout)
+offset = results["random"]["m:timestamp_start"].min()
+results["random"]["m:timestamp_start"] -= offset 
+results["random"]["m:timestamp_end"] -= offset 
+results["random"]
+
+
+# %%
+# The number of evaluations of the random search is higher than the parallel Bayesian optimization search.
+print(f"Number of evaluations for the parallel Bayesian optimization: {len(results['parallel'])}")
+print(f"Number of evaluations for the random search: {len(results['random'])}")
+# %%
+# However, the objective value of the parallel Bayesian optimization search is significantly better than the random search.
+
+# sphinx_gallery_thumbnail_number = 4
+fig, ax = plt.subplots(figsize=figure_size(width=600))
+labels = {
+    "random": "Parallel Random Search",
+    "sequential": "Sequential Bayesian Optimization",
+    "parallel": "Parallel Bayesian Optimization",
+    }
+for i, (key, label) in enumerate(labels.items()):
+    df = results[key]
+    plot_search_trajectory_single_objective_hpo(
+        df,
+        show_failures=False,
+        mode="min",
+        x_units="seconds",
+        ax=ax,
+        label=label,
+        plot_kwargs={"color": f"C{i}"},
+        scatter_success_kwargs={"color": f"C{i}", "alpha": 0.5},
+    )
+
+plt.xlabel("Time (sec.)")
+plt.ylabel("Objective")
+plt.yscale("log")
+plt.grid(visible=True, which="minor", linestyle=":")
+plt.grid(visible=True, which="major", linestyle="-")
+plt.legend()
+plt.show()
 # %%
