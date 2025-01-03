@@ -95,7 +95,7 @@ Below is a gallery of examples on how to use DeepHyper.
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">From Serial to Parallel Evaluations</div>
+      <div class="sphx-glr-thumbnail-title">From Sequential to Massively-Parallel Bayesian Optimization</div>
     </div>
 
 
