@@ -232,10 +232,31 @@ results["random"]
 # The number of evaluations of the random search is higher than the parallel Bayesian optimization search.
 print(f"Number of evaluations for the parallel Bayesian optimization: {len(results['parallel'])}")
 print(f"Number of evaluations for the random search: {len(results['random'])}")
+
+# %%
+# The utilization of the worker is confirmed to be near 100% for the random search.
+fig, axes = plt.subplots(
+        nrows=2,
+        ncols=1,
+        sharex=True,
+        figsize=figure_size(width=600),
+    )
+
+plot_search_trajectory_single_objective_hpo(
+    results["random"], mode="min", x_units="seconds", ax=axes[0]
+)
+
+plot_worker_utilization(
+    results["random"], num_workers=1, profile_type="start/end", ax=axes[1]
+)
+
+plt.tight_layout()
+plt.show()
+
 # %%
 # However, the objective value of the parallel Bayesian optimization search is significantly better than the random search.
 
-# sphinx_gallery_thumbnail_number = 4
+# sphinx_gallery_thumbnail_number = 5
 fig, ax = plt.subplots(figsize=figure_size(width=600))
 labels = {
     "random": "Parallel Random Search",

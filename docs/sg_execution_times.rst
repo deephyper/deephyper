@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**03:09.415** total execution time for 5 files **from all galleries**:
+**03:10.287** total execution time for 5 files **from all galleries**:
 
 .. container::
 
@@ -33,7 +33,7 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_examples_plot_from_serial_to_parallel_hpo.py` (``../examples/plot_from_serial_to_parallel_hpo.py``)
-     - 03:09.415
+     - 03:10.287
      - 0.0
    * - :ref:`sphx_glr_examples_plot_experimental_design.py` (``../examples/plot_experimental_design.py``)
      - 00:00.000
