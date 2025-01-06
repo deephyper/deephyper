@@ -9,7 +9,7 @@ from deephyper.evaluator import Evaluator, HPOJob, RunningJob
 PYTHON = sys.executable
 SCRIPT = os.path.abspath(__file__)
 
-import deephyper.test  # noqa: E402
+import deephyper.tests  # noqa: E402
 
 
 def _test_mpi_win_mutable_mapping():

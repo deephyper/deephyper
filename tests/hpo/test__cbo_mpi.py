@@ -5,7 +5,7 @@ import pytest
 PYTHON = sys.executable
 SCRIPT = os.path.abspath(__file__)
 
-import deephyper.test
+import deephyper.tests
 
 
 def _test_mpi_timeout(tmp_path):

@@ -191,6 +191,7 @@ class MPIWinMutableMapping(MutableMapping):
         self._session_is_started = False
         self._session_is_ready_only = True
 
+    # This can create a deadlock if not called by all processes!
     def __del__(self):
         self.win.Free()
 
