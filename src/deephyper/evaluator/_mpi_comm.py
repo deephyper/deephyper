@@ -124,7 +124,8 @@ class MPICommEvaluator(Evaluator):
 
     def __exit__(self, type, value, traceback):
         if self.is_master:
-            self.close()
+            if self.loop is not None and not self.loop.is_closed():
+                self.close()
             self._pool_executor.__exit__(type, value, traceback)
             self._pool_executor = None
 

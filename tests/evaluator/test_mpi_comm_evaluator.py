@@ -41,7 +41,6 @@ def _test_mpicomm_evaluator():
 
     with Evaluator.create(run_sync, 
         method="mpicomm", 
-        # method_kwargs={"storage": MemoryStorage()},
         ) as evaluator:
         dht.log(f"{rank=} {evaluator=}")
         if evaluator.is_master:

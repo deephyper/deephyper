@@ -245,7 +245,7 @@ def _test_mpi_win_storage_with_evaluator():
             "root": 0,
         },
     ) as evaluator:
-        if evaluator is not None:
+        if evaluator.is_master:
             evaluator._job_class = HPOJob
             evaluator.submit(
                 [
@@ -276,7 +276,7 @@ def _test_mpi_win_storage_with_evaluator():
             "root": 0,
         },
     ) as evaluator:
-        if evaluator is not None:
+        if evaluator.is_master:
             evaluator._job_class = HPOJob
             evaluator.submit([{"x": i} for i in range(20)])
             job_done = evaluator.gather("BATCH", size=3)[0]
