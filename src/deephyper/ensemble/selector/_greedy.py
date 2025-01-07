@@ -88,6 +88,11 @@ class GreedySelector(Selector):
                 )
 
             for i in range(n_predictors):
+                # Applying conditions that ignore some indices in the selection
+                if len(selected_indices) == 1 and i in selected_indices:
+                    losses.append(np.nan)
+                    continue
+
                 if not self.with_replacement and i in selected_indices:
                     losses.append(np.nan)
                     continue
