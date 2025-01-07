@@ -1,4 +1,4 @@
-from typing import Callable, Sequence
+from typing import Callable, Sequence, Tuple
 
 import numpy as np
 
@@ -21,7 +21,7 @@ class TopKSelector(Selector):
         super().__init__(loss_func)
         self.k = k
 
-    def select(self, y, y_predictors) -> Sequence[int]:
+    def select(self, y, y_predictors) -> Tuple[Sequence[int], Sequence[float]]:
         losses = [self._evaluate(y, y_pred_i) for y_pred_i in y_predictors]
         selected_indices = np.argsort(losses, axis=0)[: self.k].reshape(-1).tolist()
         selected_indices_weights = [1.0] * len(selected_indices)
