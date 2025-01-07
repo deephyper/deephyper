@@ -95,11 +95,13 @@ class HPOJob(Job):
 
         Possible return values of the run-function are:
 
-        >>> 0
-        >>> 0, 0
-        >>> "F_something"
-        >>> {"objective": 0 }
-        >>> {"objective": (0, 0), "metadata": {...}}
+        .. code-block:: python
+
+            0
+            0, 0
+            "F_something"
+            {"objective": 0 }
+            {"objective": (0, 0), "metadata": {...}}
 
         Args:
             output (Union[str, float, tuple, list, dict]): the output of the run-function.

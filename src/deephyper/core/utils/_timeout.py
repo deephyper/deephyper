@@ -8,9 +8,11 @@ from deephyper.core.exceptions import TimeoutReached
 def terminate_on_timeout(timeout, func, *args, **kwargs):
     """High order function to wrap the call of a function in a thread to monitor its execution time.
 
-    >>> import functools
-    >>> f_timeout = functools.partial(terminate_on_timeout, 10, f)
-    >>> f_timeout(1, b=2)
+    .. code-block:: python
+
+        import functools
+        f_timeout = functools.partial(terminate_on_timeout, 10, f)
+        f_timeout(1, b=2)
 
     Args:
         timeout (int): timeout in seconds.

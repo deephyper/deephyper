@@ -3,7 +3,16 @@
 The ``Callback`` class is used to trigger custom actions on the start and
 completion of jobs by the ``Evaluator``. Callbacks can be used with any
 ``Evaluator`` implementation.
-"""
+
+An example usage can be:
+
+    >>> from deephyper.evaluator import Evaluator
+    >>> from deephyper.evaluator.callback import TqdmCallback
+    >>> def run(job):
+    ...    return job.parameters["x"] + 1
+    >>> evaluator = Evaluator.create(run, method="thread", method_kwargs={"callbacks": [TqdmCallback()]})
+
+"""  # noqa: E501
 
 import abc
 
@@ -79,12 +88,7 @@ class ObjectiveRecorder:
 
 
 class LoggerCallback(Callback):
-    """Print information when jobs are completed by the ``Evaluator``.
-
-    An example usage can be:
-
-    >>> evaluator.create(method="ray", method_kwargs={..., "callbacks": [LoggerCallback()]})
-    """
+    """Print information when jobs are completed by the ``Evaluator``."""
 
     def __init__(self):
         self._best_objective = None
@@ -124,12 +128,7 @@ class LoggerCallback(Callback):
 
 
 class TqdmCallback(Callback):
-    """Print information when jobs are completed by the ``Evaluator``.
-
-    An example usage can be:
-
-    >>> evaluator.create(method="ray", method_kwargs={..., "callbacks": [TqdmCallback()]})
-    """
+    """Print information when jobs are completed by the ``Evaluator``."""
 
     def __init__(self):
         self._best_objective = None

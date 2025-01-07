@@ -100,7 +100,15 @@ class CBO(Search):
 
     Example Usage:
 
-        >>> search = CBO(problem, evaluator)
+        >>> from deephyper.hpo import HpProblem, ExperimentalDesignSearch
+        >>> problem = HpProblem()
+        >>> problem.add_hyperparameter((0.0, 1.0), "x")
+        UniformFloatHyperparameter(name='x', default_value=0.5, meta=None, size=inf, lower=0.0, upper=1.0, log=False)
+        >>> problem.add_hyperparameter((0.0, 1.0), "y")
+        UniformFloatHyperparameter(name='y', default_value=0.5, meta=None, size=inf, lower=0.0, upper=1.0, log=False)
+        >>> def run(job):
+        ...     return sum(job.parameters.values())
+        >>> search = CBO(problem, run)
         >>> results = search.search(max_evals=100, timeout=120)
 
     Args:
@@ -232,7 +240,7 @@ class CBO(Search):
         objective_scaler (str, optional): a way to map the objective space to some other support
             for example to normalize it. Defaults to ``"auto"`` which automatically set it to
             "identity" for any surrogate model except "RF" which will use "quantile-uniform".
-    """
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -806,11 +814,6 @@ class CBO(Search):
         ranking with respect to pareto efficiency: all points on the first non-dominated pareto
         front have rank 1 and in general, points on the k'th non-dominated front have rank k.
 
-        Example Usage:
-
-        >>> search = CBO(problem, evaluator)
-        >>> search.fit_surrogate("results.csv")
-
         Args:
             df (str|DataFrame): a dataframe or path to CSV from a previous search.
 
@@ -957,11 +960,6 @@ class CBO(Search):
     def fit_search_space(self, df, fac_numerical=0.125, fac_categorical=10):
         """Apply prior-guided transfer learning based on a DataFrame of results.
 
-        Example Usage:
-
-        >>> search = CBO(problem, evaluator)
-        >>> search.fit_surrogate("results.csv")
-
         Args:
             df (str|DataFrame): a checkpoint from a previous search.
 
@@ -973,7 +971,7 @@ class CBO(Search):
             fac_categorical (float): the weight given to a categorical feature part of the best
                 configuration. A large weight ``> 1`` increase exploitation while a small factor
                 close to ``1`` increase exploration.
-        """
+        """  # noqa: E501
         if type(df) is str and df[-4:] == ".csv":
             df = pd.read_csv(df)
         assert isinstance(df, pd.DataFrame)
