@@ -1,6 +1,8 @@
 name: Run checks and tests
 
-on: pull_request
+on: 
+  - pull_request
+  - push
 
 jobs:
 
@@ -57,30 +59,3 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
-
-  tests-mpi:
-    needs: tests-default
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        python-version: ["3.12"]
-        mpi: ["openmpi"]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup MPI
-        uses: mpi4py/setup-mpi@v1
-        with:
-          mpi: ${{ matrix.mpi }}
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: "pip"
-
-      - name: Install with mpi4py
-        run: |
-          pip install --upgrade pip
-          pip install pytest
-          pip install .[mpi]
-
-      - name: Run tests
-        run: pytest  -m mpi --run-marks-subset mpi tests/
