@@ -2,9 +2,14 @@ import pytest
 from deephyper.evaluator import Evaluator, RunningJob, HPOJob
 
 
-def run_0(job: RunningJob) -> dict:
-    if not (job.storage.connected):
-        job.storage.connect()
+async def run_0_async(job: RunningJob) -> dict:
+    job.storage.store_job_metadata(job.id, "foo", 0)
+    return {
+        "objective": job.parameters["x"],
+        "metadata": {"storage_id": id(job.storage)},
+    }
+
+def run_0_sync(job: RunningJob) -> dict:
     job.storage.store_job_metadata(job.id, "foo", 0)
     return {
         "objective": job.parameters["x"],
@@ -93,7 +98,7 @@ def test_with_evaluator():
 
     # serial evaluator
     evaluator = Evaluator.create(
-        run_0, method="serial", method_kwargs={"storage": storage}
+        run_0_async, method="serial", method_kwargs={"storage": storage}
     )
     evaluator._job_class = HPOJob
     evaluator.submit([{"x": 0}])
@@ -102,7 +107,7 @@ def test_with_evaluator():
 
     # thread evaluator
     evaluator = Evaluator.create(
-        run_0, method="thread", method_kwargs={"storage": storage}
+        run_0_sync, method="thread", method_kwargs={"storage": storage}
     )
     evaluator._job_class = HPOJob
     evaluator.submit([{"x": 0}])
@@ -111,7 +116,7 @@ def test_with_evaluator():
 
     # process evaluator
     evaluator = Evaluator.create(
-        run_0, method="process", method_kwargs={"storage": storage}
+        run_0_sync, method="process", method_kwargs={"storage": storage}
     )
     evaluator._job_class = HPOJob
     evaluator.submit([{"x": 0}])
