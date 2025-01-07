@@ -28,11 +28,16 @@ class MPIWinStorage(Storage):
         self.connected = True
 
     def __getstate__(self):
-        state = {"_mapping": {}, "connected": False}
+        state = {
+            "_mapping_cache_id": self._mapping._cache_id,
+            "connected": False,
+        }
         return state
 
     def __setstate__(self, newstate):
-        self.__dict__.update(newstate)
+        self._mapping = MPIWinMutableMapping.CACHE[newstate["_mapping_cache_id"]]
+        self.root = self._mapping.root
+        self.comm = self._mapping.comm
         self.connect()
 
     def create_new_search(self) -> Hashable:

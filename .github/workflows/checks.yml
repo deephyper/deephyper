@@ -1,6 +1,8 @@
 name: Run checks and tests
 
-on: pull_request
+on: 
+  - pull_request
+  - push
 
 jobs:
 
@@ -25,7 +27,7 @@ jobs:
       - name: Run formatter checks with ruff
         run: ruff format --check
 
-  tests:
+  tests-default:
     needs: checks
     runs-on: ubuntu-22.04
     strategy:

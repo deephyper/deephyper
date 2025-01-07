@@ -9,7 +9,7 @@ from deephyper.evaluator import Evaluator, HPOJob, RunningJob
 PYTHON = sys.executable
 SCRIPT = os.path.abspath(__file__)
 
-import deephyper.test  # noqa: E402
+import deephyper.tests as dht  # noqa: E402
 
 
 def _test_mpi_win_mutable_mapping():
@@ -130,7 +130,7 @@ def _test_mpi_win_mutable_mapping():
 @pytest.mark.mpi
 def test_mpi_win_mutable_mapping():
     command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_mpi_win_mutable_mapping"
-    result = deephyper.test.run(command, live_output=False)
+    result = dht.run(command, live_output=False)
     assert result.returncode == 0
 
 
@@ -199,7 +199,7 @@ def _test_mpi_win_storage_basic():
 @pytest.mark.mpi
 def test_mpi_win_storage_basic():
     command = f"mpirun -np 1 {PYTHON} {SCRIPT} _test_mpi_win_storage_basic"
-    result = deephyper.test.run(command, live_output=False)
+    result = dht.run(command, live_output=False)
     assert result.returncode == 0
 
 
@@ -245,7 +245,7 @@ def _test_mpi_win_storage_with_evaluator():
             "root": 0,
         },
     ) as evaluator:
-        if evaluator is not None:
+        if evaluator.is_master:
             evaluator._job_class = HPOJob
             evaluator.submit(
                 [
@@ -276,7 +276,7 @@ def _test_mpi_win_storage_with_evaluator():
             "root": 0,
         },
     ) as evaluator:
-        if evaluator is not None:
+        if evaluator.is_master:
             evaluator._job_class = HPOJob
             evaluator.submit([{"x": i} for i in range(20)])
             job_done = evaluator.gather("BATCH", size=3)[0]
@@ -287,5 +287,5 @@ def _test_mpi_win_storage_with_evaluator():
 @pytest.mark.mpi
 def test_mpi_win_storage_with_evaluator():
     command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_mpi_win_storage_with_evaluator"
-    result = deephyper.test.run(command, live_output=False)
+    result = dht.run(command, live_output=False)
     assert result.returncode == 0
