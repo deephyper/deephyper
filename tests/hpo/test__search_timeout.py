@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import multiprocessing
 import os
 import threading
 import time
@@ -82,7 +83,8 @@ def test_timeout_simple(tmp_path):
     run_local_test(run_test_timeout_simple_sync, "thread", num_workers=4)
 
     run_local_test(run_test_timeout_simple_sync, "process", num_workers=1, timeout=3)
-    run_local_test(run_test_timeout_simple_sync, "process", num_workers=4, timeout=3)
+    cpu_count = multiprocessing.cpu_count()
+    run_local_test(run_test_timeout_simple_sync, "process", num_workers=min(cpu_count, 4), timeout=3)
 
 
 def test_timeout_stop_then_continue(tmp_path):
@@ -138,7 +140,8 @@ def test_timeout_stop_then_continue(tmp_path):
     run_local_test(run_test_timeout_simple_sync, "thread", num_workers=4)
 
     run_local_test(run_test_timeout_simple_sync, "process", num_workers=1, timeout=3)
-    run_local_test(run_test_timeout_simple_sync, "process", num_workers=4, timeout=3)
+    cpu_count = multiprocessing.cpu_count()
+    run_local_test(run_test_timeout_simple_sync, "process", num_workers=min(cpu_count, 4), timeout=3)
 
 
 if __name__ == "__main__":
