@@ -729,3 +729,8 @@ class Evaluator(abc.ABC):
             "``Evaluator.dump_jobs_done_to_csv(...)`` method should be used instead."
         )
         self.dump_jobs_done_to_csv(log_dir, filename, flush)
+
+    @property
+    def is_master(self):
+        """Boolean that indicates if the current Evaluator object is a "Master"."""
+        return True
