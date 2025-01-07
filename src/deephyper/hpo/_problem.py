@@ -211,21 +211,29 @@ class HpProblem:
 
         Hyperparameters can be added to a ``HpProblem`` with a short syntax:
 
+        >>> from deephyper.hpo import HpProblem
+        >>> problem = HpProblem()
         >>> problem.add_hyperparameter((0, 10), "discrete", default_value=5)
+        UniformIntegerHyperparameter(name='discrete', default_value=5, meta=None, size=11, lower=0, upper=10, log=False)
         >>> problem.add_hyperparameter((0.0, 10.0), "real", default_value=5.0)
+        UniformFloatHyperparameter(name='real', default_value=5.0, meta=None, size=inf, lower=0.0, upper=10.0, log=False)
         >>> problem.add_hyperparameter([0, 10], "categorical", default_value=0)
+        OrdinalHyperparameter(name='categorical', default_value=0, meta=None, size=2, sequence=(0, 10), _contains_sequence_as_value=False)
+
 
         Sampling distributions can be provided:
 
-        >>> problem.add_hyperparameter((0.0, 10.0, "log-uniform"), "real", default_value=5.0)
+        >>> problem.add_hyperparameter((0.01, 10.0, "log-uniform"), "real_log", default_value=5.0)
+        UniformFloatHyperparameter(name='real_log', default_value=5.0, meta=None, size=inf, lower=0.01, upper=10.0, log=True)
 
-        It is also possible to use `ConfigSpace Hyperparameters
+        It is also possible to directly use `ConfigSpace Hyperparameters
         <https://automl.github.io/ConfigSpace/master/API-Doc.html#hyperparameters>`_:
 
         >>> import ConfigSpace.hyperparameters as csh
         >>> csh_hp = csh.UniformIntegerHyperparameter(
         ...     name='uni_int', lower=10, upper=100, log=False)
         >>> problem.add_hyperparameter(csh_hp)
+        UniformIntegerHyperparameter(name='uni_int', default_value=55, meta=None, size=91, lower=10, upper=100, log=False)
 
         Args:
             value (tuple or list or ConfigSpace.Hyperparameter): a valid hyperparametr description.
@@ -236,7 +244,7 @@ class HpProblem:
         Returns:
             ConfigSpace.Hyperparameter: a ConfigSpace ``Hyperparameter`` object corresponding to
             the ``(value, name, default_value)``.
-        """
+        """  # noqa: E501
         if not (type(name) is str or name is None):
             raise TypeError(
                 f"Dimension name: '{name}' is of type == {type(name)} when should be 'str'!"
@@ -284,15 +292,23 @@ class HpProblem:
         Add a `condition <https://automl.github.io/ConfigSpace/master/API-Doc.html#conditions>`_ to
         the ``HpProblem``.
 
-                >>> from deephyper.hpo import HpProblem
-                >>> import ConfigSpace as cs
-                >>> problem = HpProblem()
-                >>> x = problem.add_hyperparameter((0.0, 10.0), "x")
-                >>> y = problem.add_hyperparameter((1e-4, 1.0), "y")
-                >>> problem.add_condition(cs.LessThanCondition(y, x, 1.0))
-        s
-                Args:
-                    condition: A ConfigSpace condition.
+        >>> from deephyper.hpo import HpProblem
+        >>> import ConfigSpace as cs
+        >>> problem = HpProblem()
+        >>> x = problem.add_hyperparameter((0.0, 10.0), "x")
+        >>> y = problem.add_hyperparameter((1e-4, 1.0), "y")
+        >>> problem.add_condition(cs.LessThanCondition(y, x, 1.0))
+        >>> problem
+        Configuration space object:
+          Hyperparameters:
+            x, Type: UniformFloat, Range: [0.0, 10.0], Default: 5.0
+            y, Type: UniformFloat, Range: [0.0001, 1.0], Default: 0.50005
+          Conditions:
+            y | x < 1.0
+        <BLANKLINE>
+
+        Args:
+            condition: A ConfigSpace condition.
         """
         self._space.add(condition)
 

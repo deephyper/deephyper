@@ -20,9 +20,17 @@ class ExperimentalDesignSearch(CBO):
 
     Example Usage:
 
+        >>> from deephyper.hpo import HpProblem, ExperimentalDesignSearch
+        >>> problem = HpProblem()
+        >>> problem.add_hyperparameter((0.0, 1.0), "x")
+        UniformFloatHyperparameter(name='x', default_value=0.5, meta=None, size=inf, lower=0.0, upper=1.0, log=False)
+        >>> problem.add_hyperparameter((0.0, 1.0), "y")
+        UniformFloatHyperparameter(name='y', default_value=0.5, meta=None, size=inf, lower=0.0, upper=1.0, log=False)
+        >>> def run(job):
+        ...     return sum(job.parameters.values())
         >>> max_evals = 100
-        >>> search = ExperimentalDesignSearch(problem, evaluator, n_points=max_evals, design="grid")
-        >>> results = search.search(max_evals=100)
+        >>> search = ExperimentalDesignSearch(problem, run, n_points=max_evals, design="grid")
+        >>> results = search.search(max_evals)
 
     Args:
         problem (HpProblem): Hyperparameter problem describing the search space to explore.
@@ -50,7 +58,7 @@ class ExperimentalDesignSearch(CBO):
             - ``"grid"`` for a uniform grid sequence.
 
         initial_points (list, optional): List of initial points to evaluate. Defaults to ``None``.
-    """
+    """  # noqa: E501
 
     def __init__(
         self,

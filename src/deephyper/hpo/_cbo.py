@@ -750,9 +750,21 @@ class CBO(Search):
 
         Example Usage:
 
-        >>> search = CBO(problem, evaluator)
-        >>> search.fit_surrogate("results.csv")
-        """
+        >>> from deephyper.hpo import HpProblem, CBO
+        >>> problem = HpProblem()
+        >>> problem.add_hyperparameter((0.0, 1.0), "x")
+        UniformFloatHyperparameter(name='x', default_value=0.5, meta=None, size=inf, lower=0.0, upper=1.0, log=False)
+        >>> problem.add_hyperparameter((0.0, 1.0), "y")
+        UniformFloatHyperparameter(name='y', default_value=0.5, meta=None, size=inf, lower=0.0, upper=1.0, log=False)
+        >>> def run(job):
+        ...     return sum(job.parameters.values())
+        >>> search_0 = CBO(problem, run, log_dir="search_0")
+        >>> results_checkpoint = search_0.search(max_evals=50)
+        >>> search_1 = CBO(problem, run, log_dir="search_1")
+        >>> search_1.fit_surrogate("search_0/results.csv")
+        >>> results_from_checkpoint = search_1.search(max_evals=50)
+
+        """  # noqa: E501
         if type(df) is not str and not isinstance(df, pd.DataFrame):
             raise ValueError("The argument 'df' should be a path to a CSV file or a DataFrame!")
 
