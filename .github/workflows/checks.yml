@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.13"]
     steps:
       - uses: actions/checkout@v4
 
@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ["3.12"]
+        python-version: ["3.13"]
         mpi: ["openmpi"]
     steps:
       - uses: actions/checkout@v4
@@ -90,9 +90,9 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ["3.12"]
+        python-version: ["3.13"]
         mpi: ["openmpi"]
-        redis-version: ["7"]
+        redis-version: ["7.4.0-v1"]
     steps:
       - uses: actions/checkout@v4
       - name: Setup MPI
