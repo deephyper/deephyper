@@ -15,7 +15,6 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ["3.12", "3.13"]
         mpi: ["openmpi"]
         redis-version: ["7.4.0-v1"]
     steps:
@@ -36,7 +35,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.12"
           cache: "pip"
 
       - name: PyPI Install with MPI and Redis

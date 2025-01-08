@@ -256,19 +256,6 @@ def test_sample_types_conditional(tmp_path):
     results = search.search(10)
     assert len(results) == 10
 
-    # # Test search with transfer learning through generative model
-    # search = CBO(
-    #     problem,
-    #     run,
-    #     random_state=42,
-    #     surrogate_model="DUMMY",
-    #     log_dir=tmp_path,
-    #     verbose=0,
-    # )
-    # search.fit_generative_model(results)
-    # results = search.search(10)
-    # assert len(results) == 10
-
     # Test search with ET surrogate model
     results = CBO(
         problem,
@@ -748,6 +735,45 @@ def test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path):
 
 #     fig, ax = plot_search_trajectory_single_objective_hpo(results)
 #     plt.show()
+
+
+@pytest.mark.sdv
+def test_cbo_fit_generative_model(tmp_path):
+
+    from deephyper.hpo import CBO, HpProblem
+
+    problem = HpProblem()
+    problem.add_hyperparameter((0, 10), "x_int")
+    problem.add_hyperparameter((0.0, 10.0), "x_float")
+    problem.add_hyperparameter(["a", "b", "c"], "x_cat")
+
+    def run(job):
+        return sum(ord(v) if isinstance(v, str) else v for v in job.parameters.values())
+
+
+    search = CBO(
+        problem,
+        run,
+        random_state=42,
+        surrogate_model="DUMMY",
+        log_dir=os.path.join(tmp_path, "search_0"),
+        verbose=0,
+    )
+    results_0 = search.search(max_evals=100)
+
+    search = CBO(
+        problem,
+        run,
+        random_state=42,
+        surrogate_model="DUMMY",
+        log_dir=os.path.join(tmp_path, "search_1"),
+        verbose=0,
+    )
+    search.fit_generative_model(os.path.join(tmp_path, "search_0", "results.csv"))
+    results_1 = search.search(max_evals=10)
+    assert (results_1["p:x_cat"] == "c").sum() > 5
+    assert (results_1["p:x_int"] >= 7).sum() > 5
+    assert (results_1["p:x_float"] >= 7).sum() > 5
 
 
 if __name__ == "__main__":

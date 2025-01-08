@@ -22,7 +22,7 @@ We use markers to classify tests that have specific requirements. Possible marks
 - ``mpi``: marks tests which needs mpi4py and an MPI implementation (e.g., openmpi, mpich) installed.
 - ``redis``: marks tests which needs Redis-Stack installed (i.e., includes RedisJSON).
 - ``jax``: marks tests which needs JAX installed.
-- ``sdv``: marks tests which needs SDV package installed (e.g., used in ``pip install "deephyper[hpo-tl]"``).
+- ``sdv``: marks tests which needs SDV package installed.
 - ``memory_profiling``: marks tests which use ``psutil`` installed to profile memory as its behaviour can vary depending on the system were it installed.
 
 The command that we use to run tests with specific markers is:

@@ -41,7 +41,7 @@ Install Machine Learning Features
 
 .. code-block:: console
 
-    $ spack add deephyper +hpo-tl # Hyperparameter optimization with Transfer Learning dependencies
+    $ spack add deephyper +sdv # SDV support
     $ spack add deephyper +jax-cpu # Jax support
     $ spack add deephyper +tf-keras2 # Tensorflow and Keras support
     $ spack add deephyper +torch # PyTorch support

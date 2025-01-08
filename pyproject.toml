@@ -45,7 +45,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-hpo-tl = ["sdv~=1.15.0"]
+sdv = ["sdv~=1.15.0"]
 jax-cpu = ["jax[cpu]>=0.3.25", "numpyro[cpu]"]
 jax-cuda = ["jax[cuda]>=0.3.25", "numpyro[cuda]"]
 tf-keras2 = ["tensorflow~=2.17.0", "tensorflow_probability~=0.24.0", "tf-keras~=2.17.0"]
@@ -57,7 +57,7 @@ redis-hiredis = ["redis[hiredis]"]
 core = [
     "deephyper[tf-keras2]",
     "deephyper[torch]",
-    "deephyper[hpo-tl]",
+    "deephyper[sdv]",
     "deephyper[jax-cpu]"
 ]
 dev = [
