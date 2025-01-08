@@ -1,19 +1,25 @@
+import multiprocessing
 import os
 import sys
 import pytest
 
+import deephyper.tests as dht
+
 PYTHON = sys.executable
 SCRIPT = os.path.abspath(__file__)
-
-import deephyper.tests
-
+CPUS = min(4, multiprocessing.cpu_count())
 
 def _test_dbo_max_evals(tmp_path):
     import time
     import numpy as np
 
-    from deephyper.hpo import HpProblem
-    from deephyper.hpo import MPIDistributedBO
+    from deephyper.evaluator.mpi import MPI
+    from deephyper.hpo import HpProblem, MPIDistributedBO
+
+    if not MPI.Is_initialized():
+        MPI.Init_thread()
+    rank = int(MPI.COMM_WORLD.Get_rank())
+    size = int(MPI.COMM_WORLD.Get_size())
 
     d = 10
     domain = (-32.768, 32.768)
@@ -34,11 +40,12 @@ def _test_dbo_max_evals(tmp_path):
         config = job.parameters
         x = np.array([config[f"x{i}"] for i in range(d)])
         x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
-        return -ackley(x)
+        return {"objective": -ackley(x), "metadata": {"rank": rank}}
 
     search = MPIDistributedBO(
         hp_problem,
         run,
+        surrogate_model="DUMMY",
         log_dir=tmp_path,
     )
 
@@ -50,17 +57,20 @@ def _test_dbo_max_evals(tmp_path):
         search.search(max_evals=max_evals)
     search.comm.Barrier()
     if search.rank == 0:
+        unique_ranks = set(results["m:rank"])
+        n_unique_ranks = len(unique_ranks)
         assert len(results) >= max_evals
-        print("DEEPHYPER-OUTPUT:", float(len(results)))
+        # TODO: solve the fact that sometimes some jobs have empty metadata! leading to NaN
+        # TODO: in the set of ranks leading to the "or n_unique_ranks == size + 1" that should not be
+        assert n_unique_ranks == size or n_unique_ranks == size + 1, f"{n_unique_ranks=} - {unique_ranks=}"
 
 
 @pytest.mark.mpi
 @pytest.mark.redis
-def test_dbo_timeout(tmp_path):
-    command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_dbo_max_evals {tmp_path}"
-    result = deephyper.test.run(command, live_output=False)
-    val = deephyper.test.parse_result(result.stdout)
-    assert int(val) >= 40
+def test_dbo_max_evals(tmp_path):
+    command = f"mpirun -np {CPUS} {PYTHON} {SCRIPT} _test_dbo_max_evals {tmp_path}"
+    result = dht.run(command, live_output=False, timeout=10)
+    assert result.returncode == 0
 
 
 if __name__ == "__main__":

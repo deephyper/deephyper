@@ -47,3 +47,6 @@ jobs:
 
       - name: Run Redis tests
         run: pytest  -m redis --run-marks-subset redis tests/
+
+      - name: Run Redis,MPI tests
+        run: pytest  -m "mpi and redis" --run-marks-subset mpi,redis tests/
