@@ -47,6 +47,7 @@ def test_mpi_timeout(tmp_path):
     command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_mpi_timeout {tmp_path}"
     result = dht.run(command, live_output=False, timeout=5)
     duration = dht.parse_result(result.stdout)
+    assert result.returncode == 0
     assert duration < 2
 
 
