@@ -1,4 +1,4 @@
-name: Run checks and tests
+name: Tests Redis
 
 on: 
     push:
