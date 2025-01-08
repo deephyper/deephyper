@@ -824,7 +824,7 @@ class CBO(Search):
         except ModuleNotFoundError:
             raise deephyper.core.exceptions.MissingRequirementError(
                 "Installing 'sdv' is required to use 'fit_generative_model' please run "
-                "'pip install \"deephyper[hpo-tl]\"'"
+                "'pip install \"deephyper[sdv]\"'"
             )
 
         from sdv.evaluation.single_table import evaluate_quality
