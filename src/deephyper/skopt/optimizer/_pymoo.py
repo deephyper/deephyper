@@ -2,7 +2,6 @@ from collections import OrderedDict
 
 import numpy as np
 
-from ConfigSpace import Configuration
 from ConfigSpace.forbidden import ForbiddenClause, ForbiddenRelation
 from ConfigSpace.util import deactivate_inactive_hyperparameters
 
