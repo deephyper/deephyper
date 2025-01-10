@@ -1,4 +1,3 @@
-
 from deephyper.evaluator import profile
 
 
@@ -66,7 +65,7 @@ def test_profile():
     assert "metadata" in output and "metadata" in output["output"]
     assert "timestamp_end" in output["metadata"]
     assert "timestamp_start" in output["metadata"]
-    assert output["output"]["metadata"] == None
+    assert output["output"]["metadata"] is None
 
     # Dict output with empty dict metadata
     output = run_dict_with_empty_dict_metadata_output({"x": 0})
@@ -78,10 +77,7 @@ def test_profile():
     assert "metadata" in output and "metadata" in output["output"]
     assert "timestamp_end" in output["metadata"]
     assert "timestamp_start" in output["metadata"]
-    assert (
-        isinstance(output["output"]["metadata"], dict)
-        and len(output["output"]["metadata"]) == 0
-    )
+    assert isinstance(output["output"]["metadata"], dict) and len(output["output"]["metadata"]) == 0
 
     # Dict output with metadata
     output = run_dict_with_metadata_output({"x": 0})

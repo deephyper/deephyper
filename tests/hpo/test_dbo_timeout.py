@@ -20,7 +20,6 @@ def _test_dbo_timeout(tmp_path):
     if not MPI.Is_initialized():
         MPI.Init_thread()
     rank = int(MPI.COMM_WORLD.Get_rank())
-    size = int(MPI.COMM_WORLD.Get_size())
 
     d = 10
     domain = (-32.768, 32.768)
@@ -59,6 +58,7 @@ def _test_dbo_timeout(tmp_path):
 
     duration = time.time() - t1
     assert duration < timeout + 1
+    assert len(results) > 1
 
     search.comm.Barrier()
 

@@ -9,7 +9,6 @@ from deephyper.hpo import CBO, HpProblem
 
 @pytest.mark.jax
 def test_bayesian_learning_curve_regression_without_noise():
-
     from deephyper.stopper.lce import BayesianLearningCurveRegressor
 
     f_pow3 = BayesianLearningCurveRegressor.get_parametrics_model_func("pow3")
@@ -19,28 +18,24 @@ def test_bayesian_learning_curve_regression_without_noise():
     x = np.arange(1, 101)
     y = f_pow3_fixed(x)
     x_train, y_train = x[:50], y[:50]
-    x_test, y_test = x[50:], y[50:]
 
     lce_model = BayesianLearningCurveRegressor(
         f_model=f_pow3,
         f_model_nparams=3,
     )
-    for i in range(3): # a few trials
+    for i in range(3):  # a few trials
         lce_model.fit(x_train, y_train)
 
         y_pred, y_pred_std = lce_model.predict(x)
 
-        mse = np.mean((y_pred - y)**2)
+        mse = np.mean((y_pred - y) ** 2)
         if mse <= 1e-4:
             break
     assert mse <= 1e-4
 
-    
-
 
 @pytest.mark.jax
 def test_bayesian_learning_curve_regression_with_noise():
-
     from deephyper.stopper.lce import BayesianLearningCurveRegressor
 
     f_pow3 = BayesianLearningCurveRegressor.get_parametrics_model_func("pow3")
@@ -48,21 +43,20 @@ def test_bayesian_learning_curve_regression_with_noise():
     f_pow3_fixed = functools.partial(f_pow3, rho=rho)
 
     x = np.arange(1, 101)
-    y_ = f_pow3_fixed(x) 
+    y_ = f_pow3_fixed(x)
     y = y_ + np.random.normal(0, scale=0.01, size=100)
     x_train, y_train = x[:50], y[:50]
-    x_test, y_test = x[50:], y[50:]
 
     lce_model = BayesianLearningCurveRegressor(
         f_model=f_pow3,
         f_model_nparams=3,
     )
-    for i in range(3): # a few trials
+    for i in range(3):  # a few trials
         lce_model.fit(x_train, y_train)
 
         y_pred, y_pred_std = lce_model.predict(x)
 
-        mean_se = np.mean((y_pred - y_)**2)
+        mean_se = np.mean((y_pred - y_) ** 2)
         mean_std = np.mean(y_pred_std)
         if mean_se <= 1e-4:
             break
@@ -149,6 +143,7 @@ def run(job: RunningJob) -> dict:
         "metadata": {"budget": budget_i, "stopped": budget_i < max_budget},
     }
 
+
 @pytest.mark.slow
 @pytest.mark.jax
 def test_lce_stopper(tmp_path):
@@ -185,5 +180,4 @@ def test_lce_stopper(tmp_path):
 
 if __name__ == "__main__":
     # test_bayesian_learning_curve_regression_with_noise()
-    # test_lce_stopper(tmp_path="/tmp/deephyper_test")
-    test_bayesian_lce_model_speed()
+    test_lce_stopper(tmp_path="/tmp/deephyper_test")

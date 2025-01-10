@@ -9,8 +9,8 @@ PYTHON = sys.executable
 SCRIPT = os.path.abspath(__file__)
 CPUS = min(4, multiprocessing.cpu_count())
 
+
 def _test_dbo_max_evals(tmp_path):
-    import time
     import numpy as np
 
     from deephyper.evaluator.mpi import MPI
@@ -51,7 +51,6 @@ def _test_dbo_max_evals(tmp_path):
 
     max_evals = 40
     if search.rank == 0:
-        t1 = time.time()
         results = search.search(max_evals=max_evals)
     else:
         search.search(max_evals=max_evals)
@@ -61,8 +60,11 @@ def _test_dbo_max_evals(tmp_path):
         n_unique_ranks = len(unique_ranks)
         assert len(results) >= max_evals
         # TODO: solve the fact that sometimes some jobs have empty metadata! leading to NaN
-        # TODO: in the set of ranks leading to the "or n_unique_ranks == size + 1" that should not be
-        assert n_unique_ranks == size or n_unique_ranks == size + 1, f"{n_unique_ranks=} - {unique_ranks=}"
+        # TODO: in the set of ranks leading to the "or n_unique_ranks == size + 1"
+        # TODO: that should not be
+        assert n_unique_ranks == size or n_unique_ranks == size + 1, (
+            f"{n_unique_ranks=} - {unique_ranks=}",
+        )
 
 
 @pytest.mark.mpi

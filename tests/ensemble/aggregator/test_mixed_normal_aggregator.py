@@ -122,7 +122,7 @@ def test_mixed_normal_aggregator_invalid_input():
         ValueError,
         match="All elements of 'y' must have a 'loc' key.",
     ):
-        result = aggregator.aggregate(y)
+        aggregator.aggregate(y)
 
     y = [
         {
@@ -139,8 +139,4 @@ def test_mixed_normal_aggregator_invalid_input():
         ValueError,
         match="All elements of 'y' must have a 'scale' key.",
     ):
-        result = aggregator.aggregate(y)
-
-
-if __name__ == "__main__":
-    test_mean_aggregator_valid_input()
+        aggregator.aggregate(y)

@@ -207,7 +207,7 @@ def test_gp(tmp_path):
         acq_func="UCB",
         log_dir=tmp_path,
     ).search(max_evals)
-    assert len(results) == max_evals 
+    assert len(results) == max_evals
 
     # test categorical hyperparameters
     problem = HpProblem()
@@ -312,11 +312,11 @@ def test_max_evals_strict(tmp_path):
 
     # Test Timeout with max_evals (this should be like an "max_evals or timeout" condition)
     search = CBO(
-        problem, 
-        evaluator, 
+        problem,
+        evaluator,
         n_points=SEARCH_KWARGS_DEFAULTS["n_points"],
-        random_state=SEARCH_KWARGS_DEFAULTS["random_state"], 
-        surrogate_model="DUMMY", 
+        random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
+        surrogate_model="DUMMY",
         log_dir=tmp_path,
     )
 
@@ -631,7 +631,6 @@ def test_cbo_categorical_variable(tmp_path):
 
 
 def test_cbo_multi_point_strategy(tmp_path):
-
     from deephyper.evaluator import Evaluator
     from deephyper.hpo import CBO, HpProblem
 
@@ -658,9 +657,9 @@ def test_cbo_multi_point_strategy(tmp_path):
         results = search.search(max_evals)
         durations.append(time.time() - t1)
 
-        assert len(results) == max_evals 
+        assert len(results) == max_evals
 
-    assert all(durations[i] > durations[j] for i in range(3) for j in range(3,5))
+    assert all(durations[i] > durations[j] for i in range(3) for j in range(3, 5))
 
     durations = []
     for multi_point_strategy in ["cl_min", "cl_mean", "cl_max", "qUCB", "qUCBd"]:
@@ -680,9 +679,10 @@ def test_cbo_multi_point_strategy(tmp_path):
         results = search.search(25)
         durations.append(time.time() - t1)
 
-        assert len(results) == 25 
+        assert len(results) == 25
 
-    assert all(durations[i] > durations[j] for i in range(3) for j in range(3,5))
+    assert all(durations[i] > durations[j] for i in range(3) for j in range(3, 5))
+
 
 @pytest.mark.slow
 def test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path):
@@ -706,7 +706,6 @@ def test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path):
                 ]
             )
     problem.add_conditions(conditions)
-
 
     def run(job):
         num_layers = job.parameters["num_layers"]
@@ -747,9 +746,7 @@ def test_cbo_with_acq_optimizer_mixedga_and_forbiddens_in_problem(tmp_path):
         problem.add_hyperparameter((0, max_num_layers), f"layer_{i}_units", default_value=i)
     forbiddens = []
     for i in range(1, max_num_layers):
-        forb = ForbiddenEqualsRelation(
-            problem[f"layer_{i-1}_units"], problem[f"layer_{i}_units"]
-        )
+        forb = ForbiddenEqualsRelation(problem[f"layer_{i-1}_units"], problem[f"layer_{i}_units"])
         forbiddens.append(forb)
     problem.add_forbidden_clause(forbiddens)
     print(problem)
@@ -779,7 +776,6 @@ def test_cbo_with_acq_optimizer_mixedga_and_forbiddens_in_problem(tmp_path):
 
 @pytest.mark.sdv
 def test_cbo_fit_generative_model(tmp_path):
-
     from deephyper.hpo import CBO, HpProblem
 
     problem = HpProblem()
@@ -790,7 +786,6 @@ def test_cbo_fit_generative_model(tmp_path):
     def run(job):
         return sum(ord(v) if isinstance(v, str) else v for v in job.parameters.values())
 
-
     search = CBO(
         problem,
         run,
@@ -800,7 +795,7 @@ def test_cbo_fit_generative_model(tmp_path):
         log_dir=os.path.join(tmp_path, "search_0"),
         verbose=0,
     )
-    results_0 = search.search(max_evals=100)
+    search.search(max_evals=100)
 
     search = CBO(
         problem,
@@ -827,7 +822,7 @@ if __name__ == "__main__":
         format="%(asctime)s - %(levelname)s - %(filename)s:%(funcName)s - %(message)s",
         force=True,
     )
-    
+
     tmp_path = "/tmp/deephyper_test"
 
     # test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path)

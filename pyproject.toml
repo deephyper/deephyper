@@ -123,7 +123,7 @@ exclude = [
     "examples",
     "src/deephyper/skopt",
     "src/deephyper/analysis/hpo/_paxplot.py",
-    "tests",
+    "tests/skopt",
 ]
 line-length = 100
 
@@ -133,3 +133,6 @@ ignore = ["D107"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D"]
