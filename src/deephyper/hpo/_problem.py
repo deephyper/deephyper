@@ -206,6 +206,9 @@ class HpProblem:
     def __len__(self):
         return len(self.hyperparameter_names)
 
+    def __getitem__(self, hyperparameter_name):
+        return self.space[hyperparameter_name]
+
     def add_hyperparameter(self, value, name: str = None, default_value=None) -> csh.Hyperparameter:
         """Add an hyperparameter to the ``HpProblem``.
 
