@@ -38,8 +38,7 @@ class ConstantGPRSurrogate(object):
         self.space = space
 
     def fit(self, X, y):
-        """
-        The first estimator returns a constant value.
+        """The first estimator returns a constant value.
         The second estimator is a gaussian process regressor that
         models the logarithm of the time.
         """

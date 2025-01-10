@@ -2,7 +2,6 @@ import pytest
 import numbers
 import numpy as np
 import os
-import yaml
 from tempfile import NamedTemporaryFile
 
 from numpy.testing import assert_array_almost_equal

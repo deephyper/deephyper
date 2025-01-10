@@ -6,7 +6,6 @@ import threading
 import time
 
 import pandas as pd
-import pytest
 
 from deephyper.evaluator import Evaluator, JobStatus
 from deephyper.hpo import HpProblem, RandomSearch

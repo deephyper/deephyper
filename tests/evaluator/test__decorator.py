@@ -1,4 +1,3 @@
-import pytest
 
 from deephyper.evaluator import profile
 

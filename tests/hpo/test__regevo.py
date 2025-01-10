@@ -1,4 +1,3 @@
-import pytest
 
 from ConfigSpace import NotEqualsCondition
 from deephyper.hpo import HpProblem, RegularizedEvolution

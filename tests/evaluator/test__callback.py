@@ -1,4 +1,3 @@
-import pytest
 
 def test_search_early_stopping_callback(tmp_path):
     

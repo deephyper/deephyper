@@ -632,8 +632,6 @@ def test_cbo_categorical_variable(tmp_path):
 
 def test_cbo_multi_point_strategy(tmp_path):
 
-    import asyncio
-    import time
     from deephyper.evaluator import Evaluator
     from deephyper.hpo import CBO, HpProblem
 
@@ -738,9 +736,7 @@ def test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path):
 
 @pytest.mark.slow
 def test_cbo_with_acq_optimizer_mixedga_and_forbiddens_in_problem(tmp_path):
-    import numpy as np
     from deephyper.hpo import CBO, HpProblem
-    from deephyper.evaluator import Evaluator
 
     from ConfigSpace import ForbiddenEqualsRelation
 

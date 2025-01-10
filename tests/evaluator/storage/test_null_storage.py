@@ -1,4 +1,3 @@
-import pytest
 from deephyper.evaluator import Evaluator, RunningJob
 from deephyper.evaluator.storage._null_storage import NullStorage
 

@@ -1,4 +1,3 @@
-import pytest
 from deephyper.evaluator import Evaluator, RunningJob, HPOJob
 from deephyper.evaluator.storage import MemoryStorage
 

@@ -2,7 +2,6 @@ import pytest
 
 
 def test_add_good_dim():
-    import ConfigSpace as cs
     import ConfigSpace.hyperparameters as csh
     from deephyper.hpo import HpProblem
 

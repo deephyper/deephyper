@@ -6,7 +6,6 @@ from deephyper.ensemble.aggregator import MixedNormalAggregator
 
 def test_mixed_normal_aggregator_valid_input():
     """Test the MixedNormalAggregator with valid input arrays."""
-
     y = [
         {
             "loc": np.array([[1, 2], [3, 4]]),
@@ -41,7 +40,6 @@ def test_mixed_normal_aggregator_valid_input():
 
 def test_mean_aggregator_with_weights():
     """Test the MixedNormalAggregator with weights."""
-
     y = [
         {
             "loc": np.array([[1, 2], [3, 4]]),

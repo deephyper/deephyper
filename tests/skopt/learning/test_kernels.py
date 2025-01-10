@@ -88,8 +88,7 @@ def test_gradient_correctness(kernel):
 @pytest.mark.parametrize("random_state", [0, 1])
 @pytest.mark.parametrize("kernel", KERNELS)
 def test_gradient_finiteness(random_state, kernel):
-    """
-    When x is the same as X_train, gradients might become undefined because
+    """When x is the same as X_train, gradients might become undefined because
     they are divided by d(x, X_train).
     Check they are equal to numerical gradients at such points.
     """

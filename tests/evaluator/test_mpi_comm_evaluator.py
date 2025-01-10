@@ -26,7 +26,6 @@ def run_sync(job):
 
 def _test_mpicomm_evaluator():
     """Test the MPICommEvaluator"""
-    from deephyper.evaluator.storage import MemoryStorage
     from mpi4py import MPI  # noqa: E402
     if not MPI.Is_initialized():
         MPI.Init_thread()

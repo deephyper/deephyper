@@ -1,7 +1,6 @@
 """Scikit-optimize plotting tests."""
 
 import numpy as np
-import pytest
 from sklearn.datasets import load_breast_cancer
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import cross_val_score
@@ -11,7 +10,7 @@ from deephyper.skopt import plots, gp_minimize
 import matplotlib.pyplot as plt
 from deephyper.skopt.benchmarks import bench3
 from deephyper.skopt import expected_minimum, expected_minimum_random_sampling
-from deephyper.skopt.plots import _evaluate_min_params, partial_dependence
+from deephyper.skopt.plots import _evaluate_min_params
 from deephyper.skopt.plots import partial_dependence_1D, partial_dependence_2D
 from deephyper.skopt import Optimizer
 

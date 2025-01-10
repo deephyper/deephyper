@@ -35,8 +35,7 @@ n_points = 4  # number of points to evaluate at a single step
 @pytest.mark.parametrize("surrogate", available_surrogates)
 @pytest.mark.parametrize("acq_func", supported_acq_functions)
 def test_constant_liar_runs(strategy, surrogate, acq_func):
-    """
-    Tests whether the optimizer runs properly during the random
+    """Tests whether the optimizer runs properly during the random
     initialization phase and beyond
 
     Parameters
@@ -74,8 +73,7 @@ def test_constant_liar_runs(strategy, surrogate, acq_func):
 @pytest.mark.parametrize("strategy", supported_strategies)
 @pytest.mark.parametrize("surrogate", available_surrogates)
 def test_all_points_different(strategy, surrogate):
-    """
-    Tests whether the parallel optimizer always generates
+    """Tests whether the parallel optimizer always generates
     different points to evaluate.
 
     Parameters
@@ -104,8 +102,7 @@ def test_all_points_different(strategy, surrogate):
 @pytest.mark.parametrize("strategy", supported_strategies)
 @pytest.mark.parametrize("surrogate", available_surrogates)
 def test_same_set_of_points_ask(strategy, surrogate):
-    """
-    For n_points not None, tests whether two consecutive calls to ask
+    """For n_points not None, tests whether two consecutive calls to ask
     return the same sets of points.
 
     Parameters
@@ -116,7 +113,6 @@ def test_same_set_of_points_ask(strategy, surrogate):
     * `surrogate` [scikit-optimize surrogate class]:
         A class of the scikit-optimize surrogate used in Optimizer.
     """
-
     optimizer = Optimizer(
         base_estimator=surrogate(),
         dimensions=[Real(-5.0, 10.0), Real(0.0, 15.0)],
