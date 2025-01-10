@@ -1,4 +1,3 @@
-
 import numpy as np
 
 from deephyper.evaluator import RunningJob
@@ -8,7 +7,6 @@ from deephyper.stopper import MedianStopper
 
 
 def run(job: RunningJob) -> dict:
-
     assert isinstance(job.stopper, MedianStopper)
 
     max_budget = 50
@@ -28,7 +26,6 @@ def run(job: RunningJob) -> dict:
 
 
 def test_median_stopper_with_cbo(tmp_path):
-
     # define the variable you want to optimize
     problem = HpProblem()
     problem.add_hyperparameter((0.0, 10.0), "x")
@@ -57,7 +54,6 @@ def test_median_stopper_with_cbo(tmp_path):
 
 
 def test_median_stopper_with_random_search(tmp_path):
-
     # define the variable you want to optimize
     problem = HpProblem()
     problem.add_hyperparameter((0.0, 10.0), "x")

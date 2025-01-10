@@ -8,8 +8,8 @@ def test_topk_selector_np_array():
 
     y_true = np.array([[0, 0, 0, 0]])
     y_predictors = [
-        np.array([[0, 0, 0, 0]]), 
-        np.array([[1, 0, 0, 0]]), 
+        np.array([[0, 0, 0, 0]]),
+        np.array([[1, 0, 0, 0]]),
         np.array([[1, 1, 0, 0]]),
         np.array([[1, 1, 1, 0]]),
         np.array([[1, 1, 1, 1]]),
@@ -23,6 +23,7 @@ def test_topk_selector_np_array():
     assert indices == [0, 1, 2]
     assert weights == [1.0, 1.0, 1.0]
 
+
 def test_topk_selector_np_ma_array():
     """Test Topk Selector with Masked Numpy Arrays."""
     from deephyper.ensemble.loss import SquaredError
@@ -30,8 +31,8 @@ def test_topk_selector_np_ma_array():
 
     y_true = np.array([[0, 0, 0, 0]])
     y_predictors = [
-        np.ma.array([[0, 0, 0, 0]], mask=[[False, False, False, True]]), 
-        np.ma.array([[1, 0, 0, 0]], mask=[[False, False, True, False]]), 
+        np.ma.array([[0, 0, 0, 0]], mask=[[False, False, False, True]]),
+        np.ma.array([[1, 0, 0, 0]], mask=[[False, False, True, False]]),
         np.ma.array([[1, 1, 0, 0]], mask=[[True, True, False, False]]),
         np.ma.array([[1, 1, 1, 0]], mask=[[False, False, False, True]]),
         np.ma.array([[1, 1, 1, 1]], mask=[[False, False, False, True]]),

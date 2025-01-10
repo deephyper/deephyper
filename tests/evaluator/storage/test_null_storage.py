@@ -7,7 +7,6 @@ async def run(job: RunningJob) -> dict:
 
 
 def test_basic():
-
     evaluator = Evaluator.create(
         run,
         method="serial",

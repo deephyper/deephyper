@@ -12,9 +12,7 @@ def run_sync(config, dequed=None):
 def test_queued_serial_evaluator():
     from deephyper.evaluator import SerialEvaluator, queued, HPOJob
 
-    QueuedSerialEvaluator = queued(
-        SerialEvaluator
-    )  # returns class of type Queued{evaluator_class}
+    QueuedSerialEvaluator = queued(SerialEvaluator)  # returns class of type Queued{evaluator_class}
 
     evaluator = QueuedSerialEvaluator(
         run_async,
@@ -51,9 +49,7 @@ def test_queued_ray_evaluator():
 
         from deephyper.evaluator import RayEvaluator, queued, HPOJob
 
-        QueuedRayEvaluator = queued(
-            RayEvaluator
-        )  # returns class of type Queued{evaluator_class}
+        QueuedRayEvaluator = queued(RayEvaluator)  # returns class of type Queued{evaluator_class}
 
         evaluator = QueuedRayEvaluator(
             run_sync,

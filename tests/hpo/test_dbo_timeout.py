@@ -58,7 +58,8 @@ def _test_dbo_timeout(tmp_path):
 
     duration = time.time() - t1
     assert duration < timeout + 1
-    assert len(results) > 1
+    if search.rank == 0:
+        assert len(results) > 1
 
     search.comm.Barrier()
 

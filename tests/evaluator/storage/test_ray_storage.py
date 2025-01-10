@@ -107,9 +107,7 @@ def test_with_evaluator():
 
     # serial evaluator
     print("serial evaluator")
-    evaluator = Evaluator.create(
-        run_async, method="serial", method_kwargs={"storage": storage}
-    )
+    evaluator = Evaluator.create(run_async, method="serial", method_kwargs={"storage": storage})
     evaluator.submit([{"x": 0}])
     job_done = evaluator.gather("ALL")[0]
     assert job_done.metadata["storage_id"] == id(storage)
@@ -117,9 +115,7 @@ def test_with_evaluator():
 
     # thread evaluator
     print("thread evaluator")
-    evaluator = Evaluator.create(
-        run_sync, method="thread", method_kwargs={"storage": storage}
-    )
+    evaluator = Evaluator.create(run_sync, method="thread", method_kwargs={"storage": storage})
     evaluator.submit([{"x": 0}])
     job_done = evaluator.gather("ALL")[0]
     assert job_done.metadata["storage_id"] == id(storage)
@@ -127,9 +123,7 @@ def test_with_evaluator():
 
     # process evaluator
     print("process evaluator")
-    evaluator = Evaluator.create(
-        run_sync, method="process", method_kwargs={"storage": storage}
-    )
+    evaluator = Evaluator.create(run_sync, method="process", method_kwargs={"storage": storage})
     evaluator.submit([{"x": 0}])
     job_done = evaluator.gather("ALL")[0]
     assert job_done.metadata["storage_id"] != id(storage)

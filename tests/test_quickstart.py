@@ -1,5 +1,3 @@
-
-
 def run(job):
     # The suggested parameters are accessible in job.parameters (dict)
     x = job.parameters["x"]

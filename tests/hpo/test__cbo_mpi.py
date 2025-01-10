@@ -11,6 +11,7 @@ from deephyper.evaluator import Evaluator, JobStatus, profile
 PYTHON = sys.executable
 SCRIPT = os.path.abspath(__file__)
 
+
 @profile
 def run_sync(job):
     while True:
@@ -18,6 +19,7 @@ def run_sync(job):
         if job.status is JobStatus.CANCELLING:
             break
     return job.parameters["x"]
+
 
 def _test_mpi_timeout(tmp_path):
     """Test if the timeout condition is working properly when the run-function runs indefinitely."""

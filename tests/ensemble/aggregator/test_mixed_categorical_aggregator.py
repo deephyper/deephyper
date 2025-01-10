@@ -13,9 +13,7 @@ def test_mixed_categorical_aggregator_confidence():
 
     # Expected probabilities
     expected_probs = np.mean(np.stack(y, axis=0), axis=0)
-    assert np.allclose(
-        result["loc"], expected_probs
-    ), "Aggregated probabilities are incorrect."
+    assert np.allclose(result["loc"], expected_probs), "Aggregated probabilities are incorrect."
 
     # Expected uncertainty
     expected_uncertainty = 1 - np.max(expected_probs, axis=-1)
@@ -32,9 +30,7 @@ def test_mixed_categorical_aggregator_entropy():
 
     # Expected probabilities
     expected_probs = np.mean(np.stack(y, axis=0), axis=0)
-    assert np.allclose(
-        result["loc"], expected_probs
-    ), "Aggregated probabilities are incorrect."
+    assert np.allclose(result["loc"], expected_probs), "Aggregated probabilities are incorrect."
 
     # Expected uncertainty
     expected_uncertainty = ss.entropy(expected_probs, axis=-1)
@@ -72,9 +68,7 @@ def test_mixed_categorical_aggregator_decomposed_uncertainty():
 
     # Expected probabilities
     expected_probs = np.mean(np.stack(y, axis=0), axis=0)
-    assert np.allclose(
-        result["loc"], expected_probs
-    ), "Aggregated probabilities are incorrect."
+    assert np.allclose(result["loc"], expected_probs), "Aggregated probabilities are incorrect."
 
     # Expected uncertainty
     expected_uncertainty = 1 - np.max(expected_probs, axis=-1)
@@ -145,9 +139,7 @@ def test_mixed_categorical_aggregator_confidence_with_masked_arrays():
     # Expected probabilities
     expected_probs = np.ma.mean(np.ma.stack(y, axis=0), axis=0)
     assert isinstance(expected_probs, np.ma.MaskedArray)
-    assert np.ma.allclose(
-        result["loc"], expected_probs
-    ), "Aggregated probabilities are incorrect."
+    assert np.ma.allclose(result["loc"], expected_probs), "Aggregated probabilities are incorrect."
 
     # Expected uncertainty
     expected_uncertainty = 1 - np.ma.max(expected_probs, axis=-1)
@@ -169,9 +161,7 @@ def test_mixed_categorical_aggregator_entropy_with_masked_arrays():
     # Expected probabilities
     expected_probs = np.ma.mean(np.ma.stack(y, axis=0), axis=0)
     assert isinstance(expected_probs, np.ma.MaskedArray)
-    assert np.ma.allclose(
-        result["loc"], expected_probs
-    ), "Aggregated probabilities are incorrect."
+    assert np.ma.allclose(result["loc"], expected_probs), "Aggregated probabilities are incorrect."
 
     # Expected uncertainty
     expected_uncertainty = ss.entropy(expected_probs, axis=-1)

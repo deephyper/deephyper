@@ -74,9 +74,7 @@ def test_with_evaluator():
     storage = MemoryStorage()
 
     # serial evaluator
-    evaluator = Evaluator.create(
-        run_async, method="serial", method_kwargs={"storage": storage}
-    )
+    evaluator = Evaluator.create(run_async, method="serial", method_kwargs={"storage": storage})
     evaluator._job_class = HPOJob
     evaluator.submit([{"x": 0}])
     job_done = evaluator.gather("ALL")[0]
@@ -84,9 +82,7 @@ def test_with_evaluator():
     evaluator.close()
 
     # thread evaluator
-    evaluator = Evaluator.create(
-        run_sync, method="thread", method_kwargs={"storage": storage}
-    )
+    evaluator = Evaluator.create(run_sync, method="thread", method_kwargs={"storage": storage})
     evaluator._job_class = HPOJob
     evaluator.submit([{"x": 0}])
     job_done = evaluator.gather("ALL")[0]
@@ -94,9 +90,7 @@ def test_with_evaluator():
     evaluator.close()
 
     # process evaluator
-    evaluator = Evaluator.create(
-        run_sync, method="process", method_kwargs={"storage": storage}
-    )
+    evaluator = Evaluator.create(run_sync, method="process", method_kwargs={"storage": storage})
     evaluator._job_class = HPOJob
     evaluator.submit([{"x": 0}])
     job_done = evaluator.gather("ALL")[0]

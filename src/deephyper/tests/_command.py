@@ -24,16 +24,16 @@ def run(command: str, live_output: bool = False, timeout=None):
                 text=True,
                 stdout=sys.stdout,
                 stderr=sys.stderr,
-                timeout=timeout
+                timeout=timeout,
             )
         else:
             result = subprocess.run(
-                command, 
-                check=True, 
+                command,
+                check=True,
                 capture_output=True,
-                text=True, 
+                text=True,
                 timeout=timeout,
-                )
+            )
         return result
     except subprocess.CalledProcessError as e:
         print(e.stdout, file=sys.stdout)
