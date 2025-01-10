@@ -1,8 +1,8 @@
 import os
 import time
 
+import numpy as np
 import pytest
-
 
 SEARCH_KWARGS_DEFAULTS = dict(
     n_points=100,
@@ -14,7 +14,6 @@ SEARCH_KWARGS_DEFAULTS = dict(
 
 def test_cbo_random_seed(tmp_path):
     import numpy as np
-
     from deephyper.evaluator import Evaluator
     from deephyper.hpo import CBO, HpProblem
 
@@ -87,7 +86,6 @@ def test_cbo_random_seed(tmp_path):
 
 def test_sample_types(tmp_path):
     import numpy as np
-
     from deephyper.hpo import CBO, HpProblem
 
     problem = HpProblem()
@@ -131,7 +129,6 @@ def test_sample_types(tmp_path):
 
 def test_sample_types_no_cat(tmp_path):
     import numpy as np
-
     from deephyper.hpo import CBO, HpProblem
 
     problem = HpProblem()
@@ -231,7 +228,6 @@ def test_gp(tmp_path):
 def test_sample_types_conditional(tmp_path):
     import ConfigSpace as cs
     import numpy as np
-
     from deephyper.hpo import CBO, HpProblem
 
     problem = HpProblem()
@@ -687,7 +683,6 @@ def test_cbo_multi_point_strategy(tmp_path):
 @pytest.mark.slow
 def test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path):
     from ConfigSpace import GreaterThanCondition
-
     from deephyper.hpo import CBO, HpProblem
 
     problem = HpProblem()
@@ -735,20 +730,26 @@ def test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path):
 
 @pytest.mark.slow
 def test_cbo_with_acq_optimizer_mixedga_and_forbiddens_in_problem(tmp_path):
+    from ConfigSpace import ForbiddenAndConjunction, ForbiddenEqualsClause, ForbiddenEqualsRelation
     from deephyper.hpo import CBO, HpProblem
-
-    from ConfigSpace import ForbiddenEqualsRelation
 
     problem = HpProblem()
 
     max_num_layers = 5
     for i in range(max_num_layers):
-        problem.add_hyperparameter((0, max_num_layers), f"layer_{i}_units", default_value=i)
+        problem.add_hyperparameter(
+            (0, max_num_layers), f"layer_{i}_units", default_value=(i + 1) % max_num_layers
+        )
     forbiddens = []
     for i in range(1, max_num_layers):
         forb = ForbiddenEqualsRelation(problem[f"layer_{i-1}_units"], problem[f"layer_{i}_units"])
         forbiddens.append(forb)
     problem.add_forbidden_clause(forbiddens)
+    problem.add_forbidden_clause(
+        ForbiddenAndConjunction(
+            *(ForbiddenEqualsClause(problem[f"layer_{i}_units"], i) for i in range(max_num_layers))
+        )
+    )
     print(problem)
 
     def run(job):
@@ -770,8 +771,11 @@ def test_cbo_with_acq_optimizer_mixedga_and_forbiddens_in_problem(tmp_path):
     )
     results = search.search(max_evals=25)
 
+    cond = np.ones(len(results), dtype=bool)
     for i in range(1, max_num_layers):
         assert (results[f"p:layer_{i-1}_units"] != results[f"p:layer_{i}_units"]).all(), f"for {i=}"
+        cond = cond & (results[f"p:layer_{i-1}_units"] == i)
+    assert (~cond).all()
 
 
 @pytest.mark.sdv

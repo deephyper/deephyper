@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 import numpy as np
 
-from ConfigSpace.forbidden import ForbiddenClause, ForbiddenRelation
+from ConfigSpace.forbidden import ForbiddenClause, ForbiddenRelation, ForbiddenConjunction
 from ConfigSpace.util import deactivate_inactive_hyperparameters
 
 from pymoo.core.problem import ElementwiseProblem, Problem
@@ -137,13 +137,19 @@ class ConfigSpaceRepair(Repair):
                     # The new x respect all forbiddens
                     x_new = dict(self.config_space.sample_configuration())
                     for forbidden in self.config_space.forbidden_clauses:
+
                         if forbidden.is_forbidden_value(x):
-                            if isinstance(forbidden, ForbiddenClause):
-                                key = forbidden.hyperparameter.name
-                                x[forbidden.hyperparameter.name] = x_new[forbidden.hyperparameter.name]
-                            elif isinstance(forbidden,ForbiddenRelation):
-                                x[forbidden.right.name] = x_new[forbidden.right.name]
-                                x[forbidden.left.name] = x_new[forbidden.left.name]
+                            if isinstance(forbidden, ForbiddenConjunction):
+                                dlcs = forbidden.dlcs
+                            else:
+                                dlcs = [forbidden]
+                                
+                            for f in dlcs:
+                                if isinstance(f, ForbiddenClause):
+                                    x[f.hyperparameter.name] = x_new[f.hyperparameter.name]
+                                elif isinstance(f, ForbiddenRelation):
+                                    x[f.right.name] = x_new[f.right.name]
+                                    x[f.left.name] = x_new[f.left.name]
                     num_trials += 1
                 # No possible fix was found we override with a valid config
                 if max_trials == num_trials:
