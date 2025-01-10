@@ -694,12 +694,12 @@ def test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path):
 
     problem = HpProblem()
 
-    max_num_layers = 10
+    max_num_layers = 3
     num_layers = problem.add_hyperparameter((1, max_num_layers), "num_layers", default_value=2)
 
     conditions = []
     for i in range(max_num_layers):
-        layer_i_units = problem.add_hyperparameter((1, 100), f"layer_{i}_units", default_value=32)
+        layer_i_units = problem.add_hyperparameter((1, 50), f"layer_{i}_units", default_value=32)
 
         if i > 0:
             conditions.extend(
@@ -707,9 +707,8 @@ def test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path):
                     GreaterThanCondition(layer_i_units, num_layers, i),
                 ]
             )
-
     problem.add_conditions(conditions)
-    print(problem)
+
 
     def run(job):
         num_layers = job.parameters["num_layers"]
@@ -718,74 +717,68 @@ def test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path):
     search = CBO(
         problem,
         run,
+        n_points=SEARCH_KWARGS_DEFAULTS["n_points"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
-        verbose=1,
+        surrogate_model=SEARCH_KWARGS_DEFAULTS["surrogate_model"],
+        surrogate_model_kwargs=SEARCH_KWARGS_DEFAULTS["surrogate_model_kwargs"],
         log_dir=tmp_path,
         acq_optimizer="mixedga",
         acq_optimizer_freq=1,
         kappa=5.0,
         scheduler={"type": "periodic-exp-decay", "period": 25, "kappa_final": 0.0001},
-        objective_scaler="identity",
+        verbose=0,
     )
-    results = search.search(max_evals=100)
+    results = search.search(max_evals=25)
 
-    # import matplotlib.pyplot as plt
-
-    # from deephyper.analysis.hpo import plot_search_trajectory_single_objective_hpo
-
-    # fig, ax = plot_search_trajectory_single_objective_hpo(results)
-    # plt.show()
+    assert (results[(results["p:num_layers"] == 1)]["p:layer_1_units"] == 1).all()
+    assert (results[(results["p:num_layers"] == 1)]["p:layer_2_units"] == 1).all()
+    assert (results[(results["p:num_layers"] == 2)]["p:layer_2_units"] == 1).all()
+    assert results["objective"].max() > 100
 
 
-# @pytest.mark.slow
-#
-# def test_cbo_with_acq_optimizer_mixedga_and_forbiddens_in_problem(tmp_path):
-#     # TODO: this does not enforce the forbidden contraints
-#     import numpy as np
-#     from deephyper.hpo import HpProblem
-#     from deephyper.hpo import CBO
-#     from deephyper.evaluator import Evaluator
+@pytest.mark.slow
+def test_cbo_with_acq_optimizer_mixedga_and_forbiddens_in_problem(tmp_path):
+    import numpy as np
+    from deephyper.hpo import CBO, HpProblem
+    from deephyper.evaluator import Evaluator
 
-#     from ConfigSpace import ForbiddenEqualsRelation
+    from ConfigSpace import ForbiddenEqualsRelation
 
-#     problem = HpProblem()
+    problem = HpProblem()
 
-#     max_num_layers = 2
+    max_num_layers = 5
+    for i in range(max_num_layers):
+        problem.add_hyperparameter((0, max_num_layers), f"layer_{i}_units", default_value=i)
+    forbiddens = []
+    for i in range(1, max_num_layers):
+        forb = ForbiddenEqualsRelation(
+            problem[f"layer_{i-1}_units"], problem[f"layer_{i}_units"]
+        )
+        forbiddens.append(forb)
+    problem.add_forbidden_clause(forbiddens)
+    print(problem)
 
-#     for i in range(max_num_layers):
-#         problem.add_hyperparameter((1, 5), f"layer_{i}_units")
+    def run(job):
+        return sum(job.parameters[f"layer_{i}_units"] for i in range(max_num_layers))
 
-#     forbiddens = []
-#     for i in range(1, max_num_layers):
-#         forb = ForbiddenEqualsRelation(
-#             problem.space[f"layer_{i-1}_units"], problem.space[f"layer_{i}_units"]
-#         )
-#         forbiddens.append(forb)
+    search = CBO(
+        problem,
+        run,
+        n_points=SEARCH_KWARGS_DEFAULTS["n_points"],
+        random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
+        surrogate_model=SEARCH_KWARGS_DEFAULTS["surrogate_model"],
+        surrogate_model_kwargs=SEARCH_KWARGS_DEFAULTS["surrogate_model_kwargs"],
+        log_dir=tmp_path,
+        acq_optimizer="mixedga",
+        acq_optimizer_freq=1,
+        kappa=5.0,
+        scheduler={"type": "periodic-exp-decay", "period": 25, "kappa_final": 0.0001},
+        verbose=0,
+    )
+    results = search.search(max_evals=25)
 
-#     print(problem)
-
-#     def run(job):
-#         return sum(job.parameters[f"layer_{i}_units"] for i in range(max_num_layers))
-
-#     search = CBO(
-#         problem,
-#         run,
-#         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
-#         verbose=1,
-#         log_dir=tmp_path,
-#         acq_optimizer="mixedga",
-#         acq_optimizer_freq=1,
-#         kappa=5.0,
-#         scheduler={"type": "periodic-exp-decay", "period": 25, "kappa_final": 0.0001},
-#         objective_scaler="identity",
-#     )
-#     results = search.search(max_evals=100)
-
-#     import matplotlib.pyplot as plt
-#     from deephyper.analysis.hpo import plot_search_trajectory_single_objective_hpo
-
-#     fig, ax = plot_search_trajectory_single_objective_hpo(results)
-#     plt.show()
+    for i in range(1, max_num_layers):
+        assert (results[f"p:layer_{i-1}_units"] != results[f"p:layer_{i}_units"]).all(), f"for {i=}"
 
 
 @pytest.mark.sdv
@@ -838,10 +831,13 @@ if __name__ == "__main__":
         format="%(asctime)s - %(levelname)s - %(filename)s:%(funcName)s - %(message)s",
         force=True,
     )
+    
+    tmp_path = "/tmp/deephyper_test"
+
+    # test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path)
+    test_cbo_with_acq_optimizer_mixedga_and_forbiddens_in_problem(tmp_path)
 
     # import time
-
-    # tmp_path = "/tmp/deephyper_test"
 
     # # scope = locals().copy()
     # # # for k in scope:
