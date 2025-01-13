@@ -169,7 +169,7 @@ def check_hyperparameter(parameter, name=None, default_value=None):
                 )
 
     raise ValueError(
-        f"Invalid dimension {name}: {parameter}. Read the documentation for" f" supported types."
+        f"Invalid dimension {name}: {parameter}. Read the documentation for supported types."
     )
 
 
@@ -205,6 +205,9 @@ class HpProblem:
 
     def __len__(self):
         return len(self.hyperparameter_names)
+
+    def __getitem__(self, hyperparameter_name):
+        return self.space[hyperparameter_name]
 
     def add_hyperparameter(self, value, name: str = None, default_value=None) -> csh.Hyperparameter:
         """Add an hyperparameter to the ``HpProblem``.

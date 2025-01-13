@@ -9,8 +9,8 @@ def test_greedy_selector_np_array():
 
     y_true = np.array([[0, 0, 0, 0]])
     y_predictors = [
-        np.array([[1, 0, 0, 0]]), 
-        np.array([[1, 0.5, 0, 0]]), 
+        np.array([[1, 0, 0, 0]]),
+        np.array([[1, 0.5, 0, 0]]),
         np.array([[-1, 0, 0, 0]]),
         np.array([[0, -0.5, 0, 0]]),
         np.array([[0, -1, 1, 0]]),
@@ -33,9 +33,9 @@ def test_greedy_selector_np_array():
     assert abs(sum(weights) - 1) <= 1e-3
 
     selector = GreedySelector(
-        loss_func=SquaredError(), 
-        aggregator=MeanAggregator(), 
-        k_init=1, 
+        loss_func=SquaredError(),
+        aggregator=MeanAggregator(),
+        k_init=1,
         early_stopping=False,
         k=5,
         with_replacement=False,
@@ -45,6 +45,7 @@ def test_greedy_selector_np_array():
     assert len(weights) == 5
     assert indices == [0, 1, 2, 3, 4]
     assert abs(sum(weights) - 1) <= 1e-3
+
 
 if __name__ == "__main__":
     test_greedy_selector_np_array()

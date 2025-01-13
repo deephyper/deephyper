@@ -74,8 +74,7 @@ def check_minimizer_bounds(result, n_calls):
 
 
 def check_result_callable(res):
-    """
-    Check that the result instance is set right at every callable call.
+    """Check that the result instance is set right at every callable call.
     """
     assert isinstance(res, OptimizeResult)
     assert_equal(len(res.x_iters), len(res.func_vals))

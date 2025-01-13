@@ -133,7 +133,7 @@ def fit_learning_curve_model_least_square(
 
     for i in range(max_trials_ls_fit):
         if verbose:
-            print(f"Least-Square fit - trial {i+1}/{max_trials_ls_fit}: ", end="")
+            print(f"Least-Square fit - trial {i + 1}/{max_trials_ls_fit}: ", end="")
 
         rho_init[:] = random_state.randn(f_model_nparams)[:]
 

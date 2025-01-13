@@ -119,7 +119,8 @@ def test_gpr_default():
 
 def test_use_given_estimator():
     """Test that gp_minimize does not use default estimator if one is passed
-    in explicitly."""
+    in explicitly.
+    """
     domain = [(1.0, 2.0), (3.0, 4.0)]
     noise_correct = 1e5
     noise_fake = 1e-10
@@ -138,7 +139,8 @@ def test_use_given_estimator():
 
 def test_use_given_estimator_with_max_model_size():
     """Test that gp_minimize does not use default estimator if one is passed
-    in explicitly."""
+    in explicitly.
+    """
     domain = [(1.0, 2.0), (3.0, 4.0)]
     noise_correct = 1e5
     noise_fake = 1e-10

@@ -1,4 +1,3 @@
-import pytest
 from deephyper.evaluator import Evaluator, RunningJob
 from deephyper.evaluator.storage._null_storage import NullStorage
 
@@ -8,7 +7,6 @@ async def run(job: RunningJob) -> dict:
 
 
 def test_basic():
-
     evaluator = Evaluator.create(
         run,
         method="serial",

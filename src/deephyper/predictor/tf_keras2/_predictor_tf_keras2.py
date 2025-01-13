@@ -58,7 +58,7 @@ class TFKeras2PredictorFileLoader(PredictorFileLoader):
             path_directory (str): the directory path.
             file_extension (str, optional): the file extension. Defaults to ``"keras"``.
 
-        returns:
+        Returns:
             List[str]: the list of predictor files found in the directory.
         """
         return PredictorFileLoader.find_predictor_files(path_directory, file_extension)

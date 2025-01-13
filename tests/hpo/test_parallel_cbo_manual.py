@@ -1,6 +1,5 @@
 import multiprocessing
 import os
-import shutil
 import sys
 import pytest
 
@@ -12,7 +11,6 @@ CPUS = min(4, multiprocessing.cpu_count())
 
 
 def _test_parallel_cbo_manual(tmp_path):
-
     from deephyper.evaluator import ThreadPoolEvaluator
     from deephyper.evaluator.mpi import MPI
     from deephyper.evaluator.storage import RedisStorage
@@ -26,7 +24,6 @@ def _test_parallel_cbo_manual(tmp_path):
 
     def run(job):
         return -(job.parameters["x"] ** 2)
-
 
     problem = HpProblem()
     problem.add_hyperparameter((-10.0, 10.0), "x")

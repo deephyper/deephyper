@@ -29,12 +29,15 @@ def _run_preprocessing(job):
 def run_preprocessing_1_sync(job):
     return _run_preprocessing(job)
 
+
 @profile(memory=True, memory_limit=1024**3, memory_tracing_interval=0.2)
 async def run_preprocessing_1_async(job):
     return _run_preprocessing(job)
 
+
 def run_preprocessing_2_sync(job):
     return _run_preprocessing(job)
+
 
 async def run_preprocessing_2_async(job):
     return _run_preprocessing(job)
@@ -42,9 +45,11 @@ async def run_preprocessing_2_async(job):
 
 @pytest.mark.memory_profiling
 def test_memory_limit_with_profile_decorator():
-
     # With sync function
-    evaluator = Evaluator.create(run_preprocessing_1_sync, method="thread",)
+    evaluator = Evaluator.create(
+        run_preprocessing_1_sync,
+        method="thread",
+    )
     tasks = [{"x": i} for i in range(1)]
     evaluator.submit(tasks)
     jobs = evaluator.gather("ALL")
@@ -55,7 +60,10 @@ def test_memory_limit_with_profile_decorator():
     evaluator.close()
 
     # With async function
-    evaluator = Evaluator.create(run_preprocessing_1_async, method="serial",)
+    evaluator = Evaluator.create(
+        run_preprocessing_1_async,
+        method="serial",
+    )
     tasks = [{"x": i} for i in range(1)]
     evaluator.submit(tasks)
     jobs = evaluator.gather("ALL")
@@ -65,9 +73,9 @@ def test_memory_limit_with_profile_decorator():
     assert metadata[0]["memory"] > 1024**3
     evaluator.close()
 
+
 @pytest.mark.memory_profiling
 def test_memory_limit_with_profile_decorator_as_function():
-
     # With sync function
     run_profiled = profile(
         memory=True,

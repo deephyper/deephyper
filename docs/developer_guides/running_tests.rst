@@ -97,3 +97,14 @@ Each test function creating data (files or directly) should use a temporary dire
 .. note::
 
     If you want to know more about temporary directory or file check the Pytest documentation: `How to use temporary directories and files in tests <https://docs.pytest.org/en/latest/how-to/tmp_path.html>`_.
+
+
+Profiling Tests
+===============
+
+Tests can become slow. To identify sections of code that are slow during tests the Pytest-Profile plugin can be easily installed and used:
+
+.. code-block:: bash
+
+    $ pip install pytest-profiling
+    $ pytest tests/hpo/test__cbo.py --profile

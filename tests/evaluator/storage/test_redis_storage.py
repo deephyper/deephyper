@@ -9,6 +9,7 @@ async def run_0_async(job: RunningJob) -> dict:
         "metadata": {"storage_id": id(job.storage)},
     }
 
+
 def run_0_sync(job: RunningJob) -> dict:
     job.storage.store_job_metadata(job.id, "foo", 0)
     return {
@@ -97,27 +98,21 @@ def test_with_evaluator():
     storage._redis.flushdb()
 
     # serial evaluator
-    evaluator = Evaluator.create(
-        run_0_async, method="serial", method_kwargs={"storage": storage}
-    )
+    evaluator = Evaluator.create(run_0_async, method="serial", method_kwargs={"storage": storage})
     evaluator._job_class = HPOJob
     evaluator.submit([{"x": 0}])
     job_done = evaluator.gather("ALL")[0]
     assert job_done.metadata["storage_id"] == id(storage)
 
     # thread evaluator
-    evaluator = Evaluator.create(
-        run_0_sync, method="thread", method_kwargs={"storage": storage}
-    )
+    evaluator = Evaluator.create(run_0_sync, method="thread", method_kwargs={"storage": storage})
     evaluator._job_class = HPOJob
     evaluator.submit([{"x": 0}])
     job_done = evaluator.gather("ALL")[0]
     assert job_done.metadata["storage_id"] == id(storage)
 
     # process evaluator
-    evaluator = Evaluator.create(
-        run_0_sync, method="process", method_kwargs={"storage": storage}
-    )
+    evaluator = Evaluator.create(run_0_sync, method="process", method_kwargs={"storage": storage})
     evaluator._job_class = HPOJob
     evaluator.submit([{"x": 0}])
     job_done = evaluator.gather("ALL")[0]

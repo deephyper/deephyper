@@ -1,4 +1,3 @@
-import logging
 import os
 import sys
 import time
@@ -30,9 +29,7 @@ def _test_mpi_win_mutable_mapping():
 
     for i in range(comm.Get_size()):
         if i == comm.Get_rank():
-            print(
-                f"Process {comm.Get_rank()} has: {mapping} with {len(mapping)} elements"
-            )
+            print(f"Process {comm.Get_rank()} has: {mapping} with {len(mapping)} elements")
             assert len(mapping) == i + 1
 
     comm.Barrier()
@@ -225,14 +222,6 @@ def _test_mpi_win_storage_with_evaluator():
         MPI.Init_thread()
 
     comm = MPI.COMM_WORLD
-
-    if comm.Get_rank() >= 0:
-        logging.basicConfig(
-            # filename=path_log_file, # optional if we want to store the logs to disk
-            level=logging.INFO,
-            format=f"%(asctime)s - %(levelname)s - R={comm.Get_rank()} - %(filename)s:%(funcName)s - %(message)s",
-            force=True,
-        )
 
     storage_0 = MPIWinStorage(comm)
 

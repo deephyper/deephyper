@@ -1,5 +1,3 @@
-import pytest
-
 from ConfigSpace import NotEqualsCondition
 from deephyper.hpo import HpProblem, RegularizedEvolution
 from deephyper.evaluator import Evaluator
@@ -39,7 +37,6 @@ def assert_results(results):
 
 
 def test_centralized_regevo_search(tmp_path):
-
     problem = create_problem()
 
     # Test serial evaluation

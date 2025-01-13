@@ -94,9 +94,7 @@ def test_successive_halving_stopper_with_ray(tmp_path):
             "num_cpus": 4,
             "num_cpus_per_task": 1,
             "ray_kwargs": {
-                "runtime_env": {
-                    "working_dir": os.path.dirname(os.path.abspath(__file__))
-                }
+                "runtime_env": {"working_dir": os.path.dirname(os.path.abspath(__file__))}
             },
         },
     )
