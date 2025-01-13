@@ -6,7 +6,7 @@ on:
 
 jobs:
 
-  tests:
+  tests-macos:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
