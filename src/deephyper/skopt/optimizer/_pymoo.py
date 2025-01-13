@@ -2,6 +2,7 @@ from collections import OrderedDict
 
 import numpy as np
 
+from ConfigSpace.forbidden import ForbiddenClause, ForbiddenRelation, ForbiddenConjunction
 from ConfigSpace.util import deactivate_inactive_hyperparameters
 
 from pymoo.core.problem import ElementwiseProblem, Problem
@@ -125,7 +126,35 @@ class ConfigSpaceRepair(Repair):
         self.config_space = self.space.config_space
 
     def _do(self, problem, x, **kwargs):
+
         def deactivate_inactive_dimensions(x: dict):
+            
+            if len(self.config_space.forbidden_clauses) > 0:
+                # Resolve forbidden
+                max_trials = 10
+                num_trials = 0 
+                while (num_trials < max_trials) and any(f.is_forbidden_value(x) for f in self.config_space.forbidden_clauses):
+                    # The new x respect all forbiddens
+                    x_new = dict(self.config_space.sample_configuration())
+                    for forbidden in self.config_space.forbidden_clauses:
+
+                        if forbidden.is_forbidden_value(x):
+                            if isinstance(forbidden, ForbiddenConjunction):
+                                dlcs = forbidden.dlcs
+                            else:
+                                dlcs = [forbidden]
+                                
+                            for f in dlcs:
+                                if isinstance(f, ForbiddenClause):
+                                    x[f.hyperparameter.name] = x_new[f.hyperparameter.name]
+                                elif isinstance(f, ForbiddenRelation):
+                                    x[f.right.name] = x_new[f.right.name]
+                                    x[f.left.name] = x_new[f.left.name]
+                    num_trials += 1
+                # No possible fix was found we override with a valid config
+                if max_trials == num_trials:
+                    x = x_new
+
             x = dict(deactivate_inactive_hyperparameters(x, self.config_space))
             for i, hps_name in enumerate(self.space.dimension_names):
                 # If the parameter is inactive due to some conditions then we attribute the
@@ -134,6 +163,10 @@ class ConfigSpaceRepair(Repair):
             return x
 
         if self.config_space:
+
+            # If there are forbiddens they must be treated before conditions
+
+            # Dealing with conditions
             x[:] = list(
                 map(
                     lambda xi: deactivate_inactive_dimensions(xi),

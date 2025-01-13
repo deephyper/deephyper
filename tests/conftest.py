@@ -6,16 +6,18 @@ def pytest_addoption(parser):
     parser.addoption(
         "--run-marks-subset",
         default="",
-        help="Select tests to run with marks that are a subset of the selected marks. It should be a comma separated list of marks.",
+        help="Select tests to run with marks that are a subset of the selected marks. \
+        It should be a comma separated list of marks.",
     )
 
 
 def pytest_collection_modifyitems(config, items):
-
     selected_marks = set(config.getoption("--run-marks-subset").split(","))
-    get_markers = lambda item: {m.name for m in item.iter_markers()}
 
-    skip_mark = pytest.mark.skip(reason=f"need --run-marks-subset with compatible marks to run")
+    def get_markers(item):
+        return {m.name for m in item.iter_markers()}
+
+    skip_mark = pytest.mark.skip(reason="need --run-marks-subset with compatible marks to run")
     for item in items:
         item_marks = get_markers(item)
         if not (item_marks.issubset(selected_marks)):

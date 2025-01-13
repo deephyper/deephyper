@@ -54,7 +54,7 @@ class PredictorFileLoader(PredictorLoader):
             path_directory (str): the directory path.
             file_extension (str): the file extension.
 
-        returns:
+        Returns:
             List[str]: the list of predictor files found in the directory.
         """
         files = [

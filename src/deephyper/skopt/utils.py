@@ -176,7 +176,8 @@ def load(filename, **kwargs):
         was called with `store_objective=False`.
 
     Args:
-        filename (str or pathlib.Path): The path of the file from which to load the optimization result.
+        filename (str or pathlib.Path): The path of the file from which to load the optimization
+            result.
         **kwargs : All other keyword arguments will be passed to `joblib.load`.
 
     Returns:
@@ -202,18 +203,19 @@ def check_x_in_space(x, space):
     elif is_listlike(x):
         if x not in space:
             raise ValueError(
-                "Point (%s) is not within the bounds of"
-                " the space (%s)." % (x, space.bounds)
+                "Point (%s) is not within the bounds of" " the space (%s)." % (x, space.bounds)
             )
         if len(x) != len(space.dimensions):
             raise ValueError(
-                "Dimensions of point (%s) and space (%s) do not match"
-                % (x, space.bounds)
+                "Dimensions of point (%s) and space (%s) do not match" % (x, space.bounds)
             )
 
 
 def expected_minimum(res, n_random_starts=20, random_state=None):
-    """Compute the minimum over the predictions of the last surrogate model. Uses `expected_minimum_random_sampling` with `n_random_starts` = 100000, when the space contains any categorical values.
+    """Compute the minimum over the predictions of the last surrogate model.
+
+    Uses `expected_minimum_random_sampling` with `n_random_starts` = 100000,
+    when the space contains any categorical values.
 
     .. note::
         The returned minimum may not necessarily be an accurate
@@ -223,7 +225,8 @@ def expected_minimum(res, n_random_starts=20, random_state=None):
         res (OptimizeResult scipy object): The optimization result returned by a `skopt` minimizer.
         n_random_starts (int): The number of random starts for the minimization of the surrogate
             model. Defaults to ``20``.
-        random_state (int or RandomState, Optional): Set random state to something other than None for reproducible results.
+        random_state (int or RandomState, Optional): Set random state to something other than None
+            for reproducible results.
 
     Returns:
         x (list): location of the minimum.
@@ -257,7 +260,10 @@ def expected_minimum(res, n_random_starts=20, random_state=None):
 
 
 def expected_minimum_random_sampling(res, n_random_starts=100000, random_state=None):
-    """Minimum search by doing naive random sampling, Returns the parameters that gave the minimum function value. Can be used when the space contains any categorical values.
+    """Minimum search by doing naive random sampling.
+
+    Returns the parameters that gave the minimum function value. Can be used when the space contains
+     any categorical values.
 
     .. note::
         The returned minimum may not necessarily be an accurate
@@ -267,8 +273,8 @@ def expected_minimum_random_sampling(res, n_random_starts=100000, random_state=N
         res (OptimizeResult scipy object): The optimization result returned by a `skopt` minimizer.
         n_random_starts (int): The number of random starts for the minimization of the surrogate
         model. Defaults to ``100000``.
-        random_state (int or RandomState, Optional): Set random state to something other than None for reproducible
-        results.
+        random_state (int or RandomState, Optional): Set random state to something other than None
+            for reproducible results.
 
     Returns:
         x (list):  location of the minimum.
@@ -428,8 +434,7 @@ def cook_initial_point_generator(generator, **kwargs):
             )
     elif not isinstance(generator, InitialPointGenerator):
         raise ValueError(
-            "generator has to be an InitialPointGenerator."
-            "Got %s" % (str(type(generator)))
+            "generator has to be an InitialPointGenerator." "Got %s" % (str(type(generator)))
         )
 
     if isinstance(generator, str):
@@ -450,10 +455,14 @@ def cook_initial_point_generator(generator, **kwargs):
 
 
 def dimensions_aslist(search_space):
-    """Convert a dict representation of a search space into a list of dimensions, ordered by sorted(search_space.keys()).
+    """Convert a dict representation of a search space into a list of dimensions.
+
+    The list is ordered by sorted(search_space.keys()).
 
     Args:
-        search_space (dict): Represents search space. The keys are dimension names (strings) and values are instances of classes that inherit from the class :class:`deephyper.skopt.space.Dimension` (Real, Integer or Categorical)
+        search_space (dict): Represents search space. The keys are dimension names (strings) and
+            values are instances of classes that inherit from the class
+            :class:`deephyper.skopt.space.Dimension` (Real, Integer or Categorical).
 
     Returns:
         params_space_list (list): list of deephyper.skopt.space.Dimension instances.
@@ -477,16 +486,23 @@ def dimensions_aslist(search_space):
 
 
 def point_asdict(search_space, point_as_list):
-    """Convert the list representation of a point from a search space to the dictionary representation, where keys are dimension names and values are corresponding to the values of dimensions in the list.
+    """Convert a list representation of a point from a search space to a dictionary representation.
+
+    The keys are dimension names and values are corresponding to the values of dimensions in the
+    list.
 
     .. seealso:: :class:`deephyper.skopt.utils.point_aslist`
 
     Args:
-        search_space (dict): Represents search space. The keys are dimension names (strings) and values are instances of classes that inherit from the class :class:`deephyper.skopt.space.Dimension` (Real, Integer or Categorical)
-        point_as_list (list): list with parameter values.The order of parameters in the list is given by sorted(params_space.keys()).
+        search_space (dict): Represents search space. The keys are dimension names (strings) and
+            values are instances of classes that inherit from the class
+            :class:`deephyper.skopt.space.Dimension` (Real, Integer or Categorical).
+        point_as_list (list): list with parameter values.The order of parameters in the list is
+            given by sorted(params_space.keys()).
 
     Returns:
-        params_dict (OrderedDict): dictionary with parameter names as keys to which corresponding parameter values are assigned.
+        params_dict (OrderedDict): dictionary with parameter names as keys to which corresponding
+            parameter values are assigned.
 
     Examples:
     --------
@@ -505,16 +521,23 @@ def point_asdict(search_space, point_as_list):
 
 
 def point_aslist(search_space, point_as_dict):
-    """Convert a dictionary representation of a point from a search space to the list representation. The list of values is created from the values of the dictionary, sorted by the names of dimensions used as keys.
+    """Convert a dictionary representation of a point from a search space to a list representation.
+
+    The list of values is created from the values of the dictionary, sorted by the names of
+    dimensions used as keys.
 
     .. seealso:: :class:`deephyper.skopt.utils.point_asdict`
 
     Args:
-        search_space (dict): Represents search space. The keys are dimension names (strings) and values are instances of classes that inherit from the class :class:`deephyper.skopt.space.Dimension` (Real, Integer or Categorical).
-        point_as_dict (dict): dict with parameter names as keys to which corresponding parameter values are assigned.
+        search_space (dict): Represents search space. The keys are dimension names (strings) and
+            values are instances of classes that inherit from the class
+            :class:`deephyper.skopt.space.Dimension` (Real, Integer or Categorical).
+        point_as_dict (dict): dict with parameter names as keys to which corresponding parameter
+            values are assigned.
 
     Returns:
-        point_as_list (list): list with point values.The order of parameters in the list is given by sorted(params_space.keys()).
+        point_as_list (list): list with point values.The order of parameters in the list is given
+            by sorted(params_space.keys()).
 
     Examples:
     --------
@@ -568,7 +591,9 @@ def normalize_dimensions(dimensions):
 
 
 def check_list_types(x, types):
-    """Check whether all elements of a list `x` are of the correct type(s) and raise a ValueError if they are not.
+    """Check whether all elements of a list `x` are of the correct type(s).
+
+    Raise a ValueError if they are not.
 
     Note that `types` can be either a single object-type or a tuple
     of object-types.
@@ -591,7 +616,9 @@ def check_list_types(x, types):
 
 
 def check_dimension_names(dimensions):
-    """Check whether all dimensions have names. Raises `ValueError`, if one or more dimensions are unnamed.
+    """Check whether all dimensions have names.
+
+    Raises `ValueError`, if one or more dimensions are unnamed.
 
     Args:
         dimensions (list(Dimension)): List of Dimension-objects.
@@ -607,7 +634,10 @@ def check_dimension_names(dimensions):
 
 
 def use_named_args(dimensions):
-    """Wrapper / decorator for an objective function that uses named arguments to make it compatible with optimizers that use a single list of parameters.
+    """Decorator.
+
+    Wrapper / decorator for an objective function that uses named arguments to make it compatible
+    with optimizers that use a single list of parameters.
 
     Your objective function can be defined as being callable using named
     arguments: `func(foo=123, bar=3.0, baz='hello')` for a search-space
@@ -672,8 +702,10 @@ def use_named_args(dimensions):
     """
 
     def decorator(func):
-        """This uses more advanced Python features to wrap ``func`` using a function-decorator, which are not explained so well in the official Python documentation.
+        """Decorator.
 
+        This uses more advanced Python features to wrap ``func`` using a function-decorator.
+        It is not well explaiend in the official Python documentation.
         A good video tutorial explaining how this works is found here:
         https://www.youtube.com/watch?v=KlBPCzcQNU8
 
@@ -689,7 +721,10 @@ def use_named_args(dimensions):
 
         @wraps(func)
         def wrapper(x):
-            """This is the code that will be executed every time the wrapped / decorated `func` is being called.
+            """Wrapper.
+
+            This is the code that will be executed every time the wrapped / decorated `func` is
+            being called.
 
             It takes `x` as a single list of parameters and
             converts them to named arguments and calls `func` with them.
@@ -727,7 +762,7 @@ def use_named_args(dimensions):
 
 
 def cook_objective_scaler(scaler, base_estimator):
-    """Prepare a Scikit-Learn preprocessing pipeline to map the output objective to a different space."""
+    """Prepare a Scikit-Learn preprocessing pipeline to transform the objective."""
     scalers = {}
 
     # identity
@@ -761,9 +796,7 @@ def cook_objective_scaler(scaler, base_estimator):
         inverse_func=lambda x: x,
         check_inverse=False,
     )
-    pipeline = make_pipeline(
-        rounding, QuantileTransformer(output_distribution="uniform")
-    )
+    pipeline = make_pipeline(rounding, QuantileTransformer(output_distribution="uniform"))
     scalers["quantile-uniform"] = pipeline
 
     if scaler == "auto":
@@ -777,7 +810,8 @@ def cook_objective_scaler(scaler, base_estimator):
             return scalers[scaler]
         else:
             raise ValueError(
-                f"Objective scaler should be a sklearn.pipeline.Pipeline or a value in {list(scalers.keys())}"
+                f"Objective scaler should be a sklearn.pipeline.Pipeline or a \
+                    value in {list(scalers.keys())}"
             )
     else:
         return scaler

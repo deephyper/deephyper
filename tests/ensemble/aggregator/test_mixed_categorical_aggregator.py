@@ -13,15 +13,13 @@ def test_mixed_categorical_aggregator_confidence():
 
     # Expected probabilities
     expected_probs = np.mean(np.stack(y, axis=0), axis=0)
-    assert np.allclose(
-        result["loc"], expected_probs
-    ), "Aggregated probabilities are incorrect."
+    assert np.allclose(result["loc"], expected_probs), "Aggregated probabilities are incorrect."
 
     # Expected uncertainty
     expected_uncertainty = 1 - np.max(expected_probs, axis=-1)
-    assert np.allclose(
-        result["uncertainty"], expected_uncertainty
-    ), "Uncertainty calculation is incorrect."
+    assert np.allclose(result["uncertainty"], expected_uncertainty), (
+        "Uncertainty calculation is incorrect."
+    )
 
 
 def test_mixed_categorical_aggregator_entropy():
@@ -32,16 +30,14 @@ def test_mixed_categorical_aggregator_entropy():
 
     # Expected probabilities
     expected_probs = np.mean(np.stack(y, axis=0), axis=0)
-    assert np.allclose(
-        result["loc"], expected_probs
-    ), "Aggregated probabilities are incorrect."
+    assert np.allclose(result["loc"], expected_probs), "Aggregated probabilities are incorrect."
 
     # Expected uncertainty
     expected_uncertainty = ss.entropy(expected_probs, axis=-1)
 
-    assert np.allclose(
-        result["uncertainty"], expected_uncertainty
-    ), "Uncertainty calculation is incorrect."
+    assert np.allclose(result["uncertainty"], expected_uncertainty), (
+        "Uncertainty calculation is incorrect."
+    )
 
 
 def test_mixed_categorical_aggregator_with_weights():
@@ -57,9 +53,9 @@ def test_mixed_categorical_aggregator_with_weights():
 
     # Expected uncertainty
     expected_uncertainty = 1 - np.max(weighted_probs, axis=-1)
-    assert np.allclose(
-        result["uncertainty"], expected_uncertainty
-    ), "Uncertainty calculation is incorrect with weights."
+    assert np.allclose(result["uncertainty"], expected_uncertainty), (
+        "Uncertainty calculation is incorrect with weights."
+    )
 
 
 def test_mixed_categorical_aggregator_decomposed_uncertainty():
@@ -72,21 +68,19 @@ def test_mixed_categorical_aggregator_decomposed_uncertainty():
 
     # Expected probabilities
     expected_probs = np.mean(np.stack(y, axis=0), axis=0)
-    assert np.allclose(
-        result["loc"], expected_probs
-    ), "Aggregated probabilities are incorrect."
+    assert np.allclose(result["loc"], expected_probs), "Aggregated probabilities are incorrect."
 
     # Expected uncertainty
     expected_uncertainty = 1 - np.max(expected_probs, axis=-1)
     aleatoric_uncertainty = np.mean([1 - np.max(p, axis=-1) for p in y], axis=0)
     epistemic_uncertainty = np.maximum(0, expected_uncertainty - aleatoric_uncertainty)
 
-    assert np.allclose(
-        result["uncertainty_aleatoric"], aleatoric_uncertainty
-    ), "Aleatoric uncertainty is incorrect."
-    assert np.allclose(
-        result["uncertainty_epistemic"], epistemic_uncertainty
-    ), "Epistemic uncertainty is incorrect."
+    assert np.allclose(result["uncertainty_aleatoric"], aleatoric_uncertainty), (
+        "Aleatoric uncertainty is incorrect."
+    )
+    assert np.allclose(result["uncertainty_epistemic"], epistemic_uncertainty), (
+        "Epistemic uncertainty is incorrect."
+    )
 
 
 def test_mixed_categorical_aggregator_invalid_uncertainty_method():
@@ -145,16 +139,14 @@ def test_mixed_categorical_aggregator_confidence_with_masked_arrays():
     # Expected probabilities
     expected_probs = np.ma.mean(np.ma.stack(y, axis=0), axis=0)
     assert isinstance(expected_probs, np.ma.MaskedArray)
-    assert np.ma.allclose(
-        result["loc"], expected_probs
-    ), "Aggregated probabilities are incorrect."
+    assert np.ma.allclose(result["loc"], expected_probs), "Aggregated probabilities are incorrect."
 
     # Expected uncertainty
     expected_uncertainty = 1 - np.ma.max(expected_probs, axis=-1)
     assert isinstance(result["uncertainty"], np.ma.MaskedArray)
-    assert np.ma.allclose(
-        result["uncertainty"], expected_uncertainty
-    ), "Uncertainty calculation is incorrect."
+    assert np.ma.allclose(result["uncertainty"], expected_uncertainty), (
+        "Uncertainty calculation is incorrect."
+    )
 
 
 def test_mixed_categorical_aggregator_entropy_with_masked_arrays():
@@ -169,16 +161,14 @@ def test_mixed_categorical_aggregator_entropy_with_masked_arrays():
     # Expected probabilities
     expected_probs = np.ma.mean(np.ma.stack(y, axis=0), axis=0)
     assert isinstance(expected_probs, np.ma.MaskedArray)
-    assert np.ma.allclose(
-        result["loc"], expected_probs
-    ), "Aggregated probabilities are incorrect."
+    assert np.ma.allclose(result["loc"], expected_probs), "Aggregated probabilities are incorrect."
 
     # Expected uncertainty
     expected_uncertainty = ss.entropy(expected_probs, axis=-1)
     assert isinstance(result["uncertainty"], np.ma.MaskedArray)
-    assert np.ma.allclose(
-        result["uncertainty"], expected_uncertainty
-    ), "Uncertainty calculation is incorrect."
+    assert np.ma.allclose(result["uncertainty"], expected_uncertainty), (
+        "Uncertainty calculation is incorrect."
+    )
 
 
 if __name__ == "__main__":

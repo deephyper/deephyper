@@ -96,9 +96,7 @@ def test_run_function_standards(tmp_path):
     evaluator.submit(configs)
     evaluator.gather(type="ALL")
     evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
-    results = pd.read_csv(os.path.join(tmp_path, "results.csv")).sort_values(
-        by="job_id"
-    )
+    results = pd.read_csv(os.path.join(tmp_path, "results.csv")).sort_values(by="job_id")
     assert all(
         results.columns
         == [
@@ -281,7 +279,8 @@ def test_run_function_standards(tmp_path):
     assert results["m:num_parameters"][0] == 420000
     evaluator.close()
 
-    # tuple of float for multi-objective optimization (will appear as "objective_0" and "objective_1" in the resulting dataframe)
+    # Tuple of float for multi-objective optimization
+    # It will appear as "objective_0" and "objective_1" in the results
     async def run(config):
         if config["x"] < 5:
             return 42.0, 0.42

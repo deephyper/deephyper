@@ -189,3 +189,4 @@ old_*/
 !docs/examples/images/thumb/*.png
 context.yaml
 *.rdb
+prof/*.prof

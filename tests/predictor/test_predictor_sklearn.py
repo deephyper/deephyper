@@ -3,7 +3,6 @@ import pathlib
 import pickle as pkl
 
 import numpy as np
-import pytest
 from sklearn.dummy import DummyClassifier, DummyRegressor
 
 

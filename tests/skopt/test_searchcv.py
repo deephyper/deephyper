@@ -19,10 +19,8 @@ from deephyper.skopt import BayesSearchCV
 
 
 def _fit_svc(n_jobs=1, n_points=1, cv=None):
+    """Utility function to fit a larger classification task with SVC
     """
-    Utility function to fit a larger classification task with SVC
-    """
-
     X, y = make_classification(
         n_samples=1000,
         n_features=20,
@@ -86,8 +84,7 @@ def test_raise_errors():
 @pytest.mark.parametrize("n_jobs", [1, -1])  # test sequential and parallel
 @pytest.mark.parametrize("n_points", [1, 3])  # test query of multiple points
 def test_searchcv_runs(surrogate, n_jobs, n_points, cv=None):
-    """
-    Test whether the cross validation search wrapper around sklearn
+    """Test whether the cross validation search wrapper around sklearn
     models runs properly with available surrogates and with single
     or multiple workers and different number of parameter settings
     to ask from the optimizer in parallel.
@@ -103,7 +100,6 @@ def test_searchcv_runs(surrogate, n_jobs, n_points, cv=None):
         Number of parallel processes to use for computations.
 
     """
-
     X, y = load_iris(True)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, train_size=0.75, random_state=0
@@ -141,20 +137,16 @@ _slow_test
 
 
 def test_parallel_cv():
+    """Test whether parallel jobs work
     """
-    Test whether parallel jobs work
-    """
-
     _fit_svc(n_jobs=1, cv=5)
     _fit_svc(n_jobs=2, cv=5)
 
 
 def test_searchcv_runs_multiple_subspaces():
-    """
-    Test whether the BayesSearchCV runs without exceptions when
+    """Test whether the BayesSearchCV runs without exceptions when
     multiple subspaces are given.
     """
-
     X, y = load_iris(True)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, train_size=0.75, random_state=0
@@ -197,11 +189,9 @@ def test_searchcv_runs_multiple_subspaces():
 
 
 def test_searchcv_sklearn_compatibility():
-    """
-    Test whether the BayesSearchCV is compatible with base sklearn methods
+    """Test whether the BayesSearchCV is compatible with base sklearn methods
     such as clone, set_params, get_params.
     """
-
     X, y = load_iris(True)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, train_size=0.75, random_state=0
@@ -255,11 +245,9 @@ def test_searchcv_sklearn_compatibility():
 
 
 def test_searchcv_reproducibility():
-    """
-    Test whether results of BayesSearchCV can be reproduced with a fixed
+    """Test whether results of BayesSearchCV can be reproduced with a fixed
     random state.
     """
-
     X, y = load_iris(True)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, train_size=0.75, random_state=0
@@ -303,11 +291,9 @@ def test_searchcv_reproducibility():
 
 
 def test_searchcv_rank():
-    """
-    Test whether results of BayesSearchCV can be reproduced with a fixed
+    """Test whether results of BayesSearchCV can be reproduced with a fixed
     random state.
     """
-
     X, y = load_iris(True)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, train_size=0.75, random_state=0
@@ -343,11 +329,9 @@ def test_searchcv_rank():
 
 
 def test_searchcv_refit():
-    """
-    Test whether results of BayesSearchCV can be reproduced with a fixed
+    """Test whether results of BayesSearchCV can be reproduced with a fixed
     random state.
     """
-
     X, y = load_iris(True)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, train_size=0.75, random_state=0

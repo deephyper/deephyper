@@ -1,4 +1,3 @@
-import pytest
 from deephyper.skopt import dummy_minimize
 from deephyper.skopt.benchmarks import bench1
 from deephyper.skopt.benchmarks import bench2
