@@ -56,15 +56,13 @@ def _test_dbo_max_evals(tmp_path):
         search.search(max_evals=max_evals)
     search.comm.Barrier()
     if search.rank == 0:
-        unique_ranks = set(results["m:rank"])
+        unique_ranks = set(r for r in results["m:rank"] if not np.isnan(r))
         n_unique_ranks = len(unique_ranks)
         assert len(results) >= max_evals
         # TODO: solve the fact that sometimes some jobs have empty metadata! leading to NaN
         # TODO: in the set of ranks leading to the "or n_unique_ranks == size + 1"
         # TODO: that should not be
-        assert n_unique_ranks == size or n_unique_ranks == size + 1, (
-            f"{n_unique_ranks=} - {unique_ranks=}",
-        )
+        assert n_unique_ranks == size, (f"{n_unique_ranks=} - {unique_ranks=}",)
 
 
 @pytest.mark.mpi
