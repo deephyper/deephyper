@@ -22,20 +22,20 @@ def test_mixed_normal_aggregator_valid_input():
     assert "loc" in result and "scale" in result
     expected = np.mean(np.stack([y[0]["loc"], y[1]["loc"]], axis=0), axis=0)
     assert np.allclose(result["loc"], expected), "MixedNormalAggregator failed with valid input."
-    assert np.shape(result["loc"]) == np.shape(
-        result["scale"]
-    ), "MixedNormalAggregator failed with valid input."
+    assert np.shape(result["loc"]) == np.shape(result["scale"]), (
+        "MixedNormalAggregator failed with valid input."
+    )
 
     aggregator = MixedNormalAggregator(decomposed_scale=True)
     result = aggregator.aggregate(y)
     assert "loc" in result and "scale_aleatoric" in result and "scale_epistemic" in result
     assert np.allclose(result["loc"], expected), "MixedNormalAggregator failed with valid input."
-    assert np.shape(result["loc"]) == np.shape(
-        result["scale_aleatoric"]
-    ), "MixedNormalAggregator failed with valid input."
-    assert np.shape(result["loc"]) == np.shape(
-        result["scale_epistemic"]
-    ), "MixedNormalAggregator failed with valid input."
+    assert np.shape(result["loc"]) == np.shape(result["scale_aleatoric"]), (
+        "MixedNormalAggregator failed with valid input."
+    )
+    assert np.shape(result["loc"]) == np.shape(result["scale_epistemic"]), (
+        "MixedNormalAggregator failed with valid input."
+    )
 
 
 def test_mean_aggregator_with_weights():
@@ -64,20 +64,20 @@ def test_mean_aggregator_with_weights():
     assert "loc" in result and "scale" in result
     expected = np.sum(np.stack([0.3 * y[0]["loc"], 0.7 * y[1]["loc"]], axis=0), axis=0)
     assert np.allclose(result["loc"], expected), "MixedNormalAggregator failed with valid input."
-    assert np.shape(result["loc"]) == np.shape(
-        result["scale"]
-    ), "MixedNormalAggregator failed with valid input."
+    assert np.shape(result["loc"]) == np.shape(result["scale"]), (
+        "MixedNormalAggregator failed with valid input."
+    )
 
     aggregator = MixedNormalAggregator(decomposed_scale=True)
     result = aggregator.aggregate(y, weights=weights)
     assert "loc" in result and "scale_aleatoric" in result and "scale_epistemic" in result
     assert np.allclose(result["loc"], expected), "MixedNormalAggregator failed with valid input."
-    assert np.shape(result["loc"]) == np.shape(
-        result["scale_aleatoric"]
-    ), "MixedNormalAggregator failed with valid input."
-    assert np.shape(result["loc"]) == np.shape(
-        result["scale_epistemic"]
-    ), "MixedNormalAggregator failed with valid input."
+    assert np.shape(result["loc"]) == np.shape(result["scale_aleatoric"]), (
+        "MixedNormalAggregator failed with valid input."
+    )
+    assert np.shape(result["loc"]) == np.shape(result["scale_epistemic"]), (
+        "MixedNormalAggregator failed with valid input."
+    )
 
 
 def test_mean_aggregator_with_masked_arrays():
@@ -100,9 +100,9 @@ def test_mean_aggregator_with_masked_arrays():
     result = aggregator.aggregate(y)
     assert "loc" in result and "scale" in result
     expected = np.ma.average(np.ma.stack([y[0]["loc"], y[1]["loc"], y[2]["loc"]], axis=0), axis=0)
-    assert np.ma.allclose(
-        result["loc"], expected
-    ), "MixedNormalAggregator failed with masked arrays."
+    assert np.ma.allclose(result["loc"], expected), (
+        "MixedNormalAggregator failed with masked arrays."
+    )
 
 
 def test_mixed_normal_aggregator_invalid_input():

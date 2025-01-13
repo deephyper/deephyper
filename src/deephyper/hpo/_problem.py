@@ -169,7 +169,7 @@ def check_hyperparameter(parameter, name=None, default_value=None):
                 )
 
     raise ValueError(
-        f"Invalid dimension {name}: {parameter}. Read the documentation for" f" supported types."
+        f"Invalid dimension {name}: {parameter}. Read the documentation for supported types."
     )
 
 

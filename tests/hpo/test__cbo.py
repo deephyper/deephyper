@@ -742,7 +742,7 @@ def test_cbo_with_acq_optimizer_mixedga_and_forbiddens_in_problem(tmp_path):
         )
     forbiddens = []
     for i in range(1, max_num_layers):
-        forb = ForbiddenEqualsRelation(problem[f"layer_{i-1}_units"], problem[f"layer_{i}_units"])
+        forb = ForbiddenEqualsRelation(problem[f"layer_{i - 1}_units"], problem[f"layer_{i}_units"])
         forbiddens.append(forb)
     problem.add_forbidden_clause(forbiddens)
     problem.add_forbidden_clause(
@@ -773,8 +773,10 @@ def test_cbo_with_acq_optimizer_mixedga_and_forbiddens_in_problem(tmp_path):
 
     cond = np.ones(len(results), dtype=bool)
     for i in range(1, max_num_layers):
-        assert (results[f"p:layer_{i-1}_units"] != results[f"p:layer_{i}_units"]).all(), f"for {i=}"
-        cond = cond & (results[f"p:layer_{i-1}_units"] == i)
+        assert (results[f"p:layer_{i - 1}_units"] != results[f"p:layer_{i}_units"]).all(), (
+            f"for {i=}"
+        )
+        cond = cond & (results[f"p:layer_{i - 1}_units"] == i)
     assert (~cond).all()
 
 
