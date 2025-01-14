@@ -199,7 +199,7 @@ class Search(abc.ABC):
         try:
             if np.isscalar(timeout) and timeout > 0:
                 self._evaluator.timeout = timeout
-            self._search(max_evals, timeout)
+            self._search(max_evals, timeout, max_evals_strict)
         except TimeoutReached:
             self.stopped = True
             wait_all_running_jobs = False
