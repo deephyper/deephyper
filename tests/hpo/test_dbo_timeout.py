@@ -1,20 +1,25 @@
+import multiprocessing
 import os
-import shutil
 import sys
 import pytest
 
+import deephyper.tests as dht
+
 PYTHON = sys.executable
 SCRIPT = os.path.abspath(__file__)
+CPUS = min(4, multiprocessing.cpu_count())
 
-import deephyper.test
 
-
-def _test_dbo_timeout():
+def _test_dbo_timeout(tmp_path):
     import time
     import numpy as np
 
-    from deephyper.hpo import HpProblem
-    from deephyper.hpo import MPIDistributedBO
+    from deephyper.evaluator.mpi import MPI
+    from deephyper.hpo import HpProblem, MPIDistributedBO
+
+    if not MPI.Is_initialized():
+        MPI.Init_thread()
+    rank = int(MPI.COMM_WORLD.Get_rank())
 
     d = 10
     domain = (-32.768, 32.768)
@@ -35,42 +40,39 @@ def _test_dbo_timeout():
         config = job.parameters
         x = np.array([config[f"x{i}"] for i in range(d)])
         x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
-        return -ackley(x)
+        return {"objective": -ackley(x), "metadata": {"rank": rank}}
 
-    log_dir = "log-dbo"
     search = MPIDistributedBO(
         hp_problem,
         run,
-        log_dir=log_dir,
+        surrogate_model="DUMMY",
+        log_dir=tmp_path,
     )
 
     timeout = 2
+    t1 = time.time()
     if search.rank == 0:
-        t1 = time.time()
         results = search.search(timeout=timeout)
-        duration = time.time() - t1
-        assert duration < timeout + 1
     else:
         search.search(timeout=timeout)
-    search.comm.Barrier()
+
+    duration = time.time() - t1
+    assert duration < timeout + 1
     if search.rank == 0:
-        print("\n", results)
-        shutil.rmtree(log_dir)
+        assert len(results) > 1
+
+    search.comm.Barrier()
 
 
-@pytest.mark.fast
 @pytest.mark.mpi
 @pytest.mark.redis
-def test_dbo_timeout():
-    command = f"time mpirun -np 4 {PYTHON} {SCRIPT} _test_dbo_timeout"
-    result = deephyper.test.run(command, live_output=False)
-    result = result.stderr.replace("\n", "").split(" ")
-    i = result.index("sys")
-    t = float(result[i - 1])
-    assert t < 3
+def test_dbo_timeout(tmp_path):
+    command = f"mpirun -np {CPUS} {PYTHON} {SCRIPT} _test_dbo_timeout {tmp_path}"
+    result = dht.run(command, live_output=False, timeout=10)
+    assert result.returncode == 0
 
 
 if __name__ == "__main__":
-    func = sys.argv[-1]
+    func = sys.argv[-2]
     func = globals()[func]
-    func()
+    func(sys.argv[-1])

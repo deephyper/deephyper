@@ -1,4 +1,3 @@
-import pytest
 
 import numpy as np
 from deephyper.skopt.learning import GaussianProcessRegressor
@@ -6,7 +5,6 @@ from deephyper.skopt.learning import GaussianProcessRegressor
 
 def test_gpr_uses_noise():
     """Test that gpr is using WhiteKernel"""
-
     X = np.random.normal(size=[100, 2])
     Y = np.random.normal(size=[100])
 

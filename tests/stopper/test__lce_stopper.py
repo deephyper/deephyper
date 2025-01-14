@@ -8,32 +8,111 @@ from deephyper.hpo import CBO, HpProblem
 
 
 @pytest.mark.jax
-def test_bayesian_learning_curve_regression():
-    import matplotlib.pyplot as plt
-
+def test_bayesian_learning_curve_regression_without_noise():
     from deephyper.stopper.lce import BayesianLearningCurveRegressor
 
     f_pow3 = BayesianLearningCurveRegressor.get_parametrics_model_func("pow3")
     rho = np.asarray([0.0, -0.1, 0.1])
     f_pow3_fixed = functools.partial(f_pow3, rho=rho)
 
-    x = np.arange(1, 100)
+    x = np.arange(1, 101)
     y = f_pow3_fixed(x)
     x_train, y_train = x[:50], y[:50]
-    x_test, y_test = x[50:], y[50:]
 
     lce_model = BayesianLearningCurveRegressor(
         f_model=f_pow3,
         f_model_nparams=3,
     )
-    lce_model.fit(x_train, y_train)
+    for i in range(3):  # a few trials
+        lce_model.fit(x_train, y_train)
 
-    y_pred, y_pred_std = lce_model.predict(x)
+        y_pred, y_pred_std = lce_model.predict(x)
+
+        mse = np.mean((y_pred - y) ** 2)
+        if mse <= 1e-4:
+            break
+    assert mse <= 1e-4
+
+
+@pytest.mark.jax
+def test_bayesian_learning_curve_regression_with_noise():
+    from deephyper.stopper.lce import BayesianLearningCurveRegressor
+
+    f_pow3 = BayesianLearningCurveRegressor.get_parametrics_model_func("pow3")
+    rho = np.asarray([0.0, -0.1, 0.1])
+    f_pow3_fixed = functools.partial(f_pow3, rho=rho)
+
+    x = np.arange(1, 101)
+    y_ = f_pow3_fixed(x)
+    y = y_ + np.random.normal(0, scale=0.01, size=100)
+    x_train, y_train = x[:50], y[:50]
+
+    lce_model = BayesianLearningCurveRegressor(
+        f_model=f_pow3,
+        f_model_nparams=3,
+    )
+    for i in range(3):  # a few trials
+        lce_model.fit(x_train, y_train)
+
+        y_pred, y_pred_std = lce_model.predict(x)
+
+        mean_se = np.mean((y_pred - y_) ** 2)
+        mean_std = np.mean(y_pred_std)
+        if mean_se <= 1e-4:
+            break
+    assert mean_se <= 1e-4 and (0.01 - mean_std) <= 0.01
+
+    # import matplotlib.pyplot as plt
+    # plt.figure()
+    # plt.plot(x, y, label="True")
+    # plt.plot(x, y_pred, label="Pred")
+    # plt.fill_between(x, y_pred - y_pred_std, y_pred + y_pred_std, alpha=0.2)
+    # plt.legend()
+    # plt.show()
+
+
+def optimization_test_bayesian_lce_model_speed():
+    import cProfile
+    import time
+    from pstats import SortKey
+
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    from deephyper.stopper.lce import BayesianLearningCurveRegressor
+
+    f_pow3 = BayesianLearningCurveRegressor.get_parametrics_model_func("pow3")
+
+    def f(z):
+        return f_pow3(z, [1, -1, 0.125])
+
+    z = np.arange(1, 1000)
+
+    y = f(z)
+    # y = y + rng.normal(0, 0.01, size=y.shape)
+
+    t_start = time.time()
+    with cProfile.Profile() as pr:
+        model = BayesianLearningCurveRegressor(batch_size=100, verbose=0)
+        for r in range(5):
+            print(f"{r=}")
+            for i in range(1, 20):
+                print(f"{i=}")
+                model.fit(z[:i], y[:i])
+                y_pred, y_std = model.predict(z)
+                y_min, y_max = y_pred - y_std, y_pred + y_std
+
+        pr.print_stats(SortKey.TIME)
+
+    t_end = time.time()
+    duration = t_end - t_start
+
+    print(f"duration: {duration:.3f} sec")
 
     plt.figure()
-    plt.plot(x, y, label="True")
-    plt.plot(x, y_pred, label="Pred")
-    plt.fill_between(x, y_pred - y_pred_std, y_pred + y_pred_std, alpha=0.2)
+    plt.plot(z, y, label="f_pow3")
+    plt.plot(z, y_pred, label="$\\hat{y}$", color="C2")
+    plt.fill_between(z, y_min, y_max, color="C2", alpha=0.5)
     plt.legend()
     plt.show()
 
@@ -68,6 +147,7 @@ def run(job: RunningJob) -> dict:
 @pytest.mark.slow
 @pytest.mark.jax
 def test_lce_stopper(tmp_path):
+    """This test can take up to 5 mins."""
     from deephyper.stopper import LCModelStopper
 
     # define the variable you want to optimize
@@ -99,5 +179,5 @@ def test_lce_stopper(tmp_path):
 
 
 if __name__ == "__main__":
-    # test_bayesian_learning_curve_regression()
+    # test_bayesian_learning_curve_regression_with_noise()
     test_lce_stopper(tmp_path="/tmp/deephyper_test")

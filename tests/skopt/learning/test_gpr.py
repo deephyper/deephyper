@@ -100,8 +100,7 @@ def test_std_gradient():
 
 
 def test_gpr_handles_similar_points():
-    """
-    This tests whether our implementation of GPR
+    """This tests whether our implementation of GPR
     does not crash when the covariance matrix whose
     inverse is calculated during fitting of the
     regressor is singular.

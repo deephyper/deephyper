@@ -1,6 +1,3 @@
-import pytest
-
-
 def run(job):
     # The suggested parameters are accessible in job.parameters (dict)
     x = job.parameters["x"]
@@ -15,7 +12,6 @@ def run(job):
     return y
 
 
-@pytest.mark.fast
 def test_quickstart(tmp_path):
     from deephyper.hpo import HpProblem, CBO
     from deephyper.evaluator import Evaluator

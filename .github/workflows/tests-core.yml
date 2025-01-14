@@ -1,0 +1,37 @@
+name: Tests Core
+
+on: 
+  pull_request:
+    branches:
+      - master
+      - develop
+
+jobs:
+
+  tests-core:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pytest coverage
+          pip install .[core]
+
+      - name: Run JAX tests 
+        run: pytest -m jax --run-marks-subset jax tests/
+      
+      - name: Run Torch tests 
+        run: pytest -m torch --run-marks-subset torch tests/
+
+      - name: Run TF/Keras2 tests
+        run: pytest -m tf_keras2 --run-marks-subset tf_keras2 tests/
+      
+      - name: Run SDV tests
+        run: pytest -m sdv --run-marks-subset sdv tests/

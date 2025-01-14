@@ -199,7 +199,7 @@ class Search(abc.ABC):
         try:
             if np.isscalar(timeout) and timeout > 0:
                 self._evaluator.timeout = timeout
-            self._search(max_evals, timeout)
+            self._search(max_evals, timeout, max_evals_strict)
         except TimeoutReached:
             self.stopped = True
             wait_all_running_jobs = False
@@ -215,16 +215,10 @@ class Search(abc.ABC):
             logging.warning("Search has been requested to be stopped.")
 
         # Collect remaining jobs
+        logging.info("Collect remaining jobs...")
         if wait_all_running_jobs:
-            num_submit = self._evaluator.num_jobs_submitted
-            num_gather = self._evaluator.num_jobs_gathered
-            while num_submit > num_gather:
-                time.sleep(0.01)
-                num_submit = self._evaluator.num_jobs_submitted
-                num_gather = self._evaluator.num_jobs_gathered
-
+            while self._evaluator.num_jobs_submitted > self._evaluator.num_jobs_gathered:
                 self._evaluator.gather("ALL")
-
                 self._evaluator.dump_jobs_done_to_csv(self._log_dir)
         else:
             self._evaluator.gather_other_jobs_done()
@@ -259,6 +253,7 @@ class Search(abc.ABC):
         Args:
             df_path (str): the path to the input DataFrame.
         """
+        logging.info("Extends results with pareto efficient indicator...")
         df = pd.read_csv(df_path)
 
         # Check if Multi-Objective Optimization was performed to save the pareto front
@@ -318,12 +313,14 @@ class Search(abc.ABC):
             # connected to the same storage
             if isinstance(new_results, tuple) and len(new_results) == 2:
                 local_results, other_results = new_results
+                n_ask = len(local_results)
                 new_results = local_results + other_results
                 logging.info(
                     f"Gathered {len(local_results)} local job(s) and {len(other_results)} other "
                     f"job(s) in {time.time() - t1:.4f} sec."
                 )
             else:
+                n_ask = len(new_results)
                 logging.info(f"Gathered {len(new_results)} job(s) in {time.time() - t1:.4f} sec.")
 
             logging.info("Dumping evaluations...")
@@ -335,8 +332,6 @@ class Search(abc.ABC):
             t1 = time.time()
             self.tell(new_results)
             logging.info(f"Telling took {time.time() - t1:.4f} sec.")
-
-            n_ask = len(new_results)
 
             # Test if search should be stopped due to timeout
             time_left = self._evaluator.time_left

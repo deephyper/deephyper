@@ -1,11 +1,8 @@
 import pytest
 import numpy as np
-from unittest.mock import MagicMock, patch
 
 from deephyper.predictor import Predictor
-from deephyper.ensemble.aggregator import Aggregator, MeanAggregator
-from deephyper.evaluator import Evaluator
-from deephyper.evaluator.storage import NullStorage
+from deephyper.ensemble.aggregator import MeanAggregator
 from deephyper.ensemble import EnsemblePredictor
 
 

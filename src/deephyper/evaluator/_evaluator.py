@@ -197,9 +197,7 @@ class Evaluator(abc.ABC):
 
     @property
     def num_jobs_gathered(self):
-        job_outputs = self._storage.load_out_from_all_jobs(self._search_id)
-        job_outputs = [val for val in job_outputs if val != "null"]
-        return len(job_outputs) - self._num_jobs_offset
+        return len(self.job_id_gathered) - self._num_jobs_offset
 
     def to_json(self):
         """Returns a json version of the evaluator."""
@@ -729,3 +727,8 @@ class Evaluator(abc.ABC):
             "``Evaluator.dump_jobs_done_to_csv(...)`` method should be used instead."
         )
         self.dump_jobs_done_to_csv(log_dir, filename, flush)
+
+    @property
+    def is_master(self):
+        """Boolean that indicates if the current Evaluator object is a "Master"."""
+        return True

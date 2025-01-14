@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 
 from deephyper.ensemble.aggregator import MeanAggregator
-from deephyper.ensemble.aggregator.utils import average
 
 
 def test_import():
@@ -23,12 +22,10 @@ def test_mean_aggregator_valid_input():
     assert "loc" in result and "uncertainty" in result
     expected_loc = np.mean(np.stack(y, axis=0), axis=0)
     expected_uncertainty = np.var(np.stack(y, axis=0), axis=0)
-    assert np.allclose(
-        result["loc"], expected_loc
-    ), "MeanAggregator failed with valid input."
-    assert np.allclose(
-        result["uncertainty"], expected_uncertainty
-    ), "MeanAggregator failed with valid input."
+    assert np.allclose(result["loc"], expected_loc), "MeanAggregator failed with valid input."
+    assert np.allclose(result["uncertainty"], expected_uncertainty), (
+        "MeanAggregator failed with valid input."
+    )
 
 
 def test_mean_aggregator_with_weights():
@@ -37,7 +34,7 @@ def test_mean_aggregator_with_weights():
     weights = [0.3, 0.7]
     aggregator = MeanAggregator()
     result = aggregator.aggregate(y, weights=weights)
-    expected = average(np.stack(y, axis=0), axis=0, weights=weights)
+    expected = np.average(np.stack(y, axis=0), axis=0, weights=weights)
     assert np.allclose(result, expected), "MeanAggregator failed with weights."
 
 
@@ -94,9 +91,7 @@ def test_mean_aggregator_single_input():
     aggregator = MeanAggregator()
     result = aggregator.aggregate(y)
     expected = y[0]
-    assert np.allclose(
-        result, expected
-    ), "MeanAggregator failed with a single input array."
+    assert np.allclose(result, expected), "MeanAggregator failed with a single input array."
 
 
 if __name__ == "__main__":

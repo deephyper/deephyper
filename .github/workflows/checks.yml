@@ -1,0 +1,63 @@
+name: Run checks and tests
+
+on: 
+  pull_request:
+    branches:
+      - master
+      - develop
+
+jobs:
+
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install ruff
+
+      - name: Run linter checks with ruff
+        run: ruff check
+
+      - name: Run formatter checks with ruff
+        run: ruff format --check
+
+  tests-default:
+    needs: checks
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12","3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pytest coverage
+          pip install .
+
+      - name: Run tests and generate coverage report
+        run: |
+          coverage run -m pytest
+          coverage html
+          coverage xml
+
+      - name: Upload coverage report to Codecov
+        if: ${{ matrix.python-version == 3.12 }}
+        uses: codecov/codecov-action@v5 
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true

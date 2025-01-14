@@ -6,7 +6,7 @@ from numpy.testing import assert_equal
 from numpy.testing import assert_raises
 import numpy as np
 
-from deephyper.skopt import gp_minimize, forest_minimize
+from deephyper.skopt import gp_minimize
 from deephyper.skopt import load
 from deephyper.skopt import dump
 from deephyper.skopt import expected_minimum, expected_minimum_random_sampling
@@ -63,7 +63,7 @@ def test_dump_and_load():
         f.seek(0)
         res_loaded = load(f)
     check_optimization_results_equality(res, res_loaded)
-    assert not ("func" in res_loaded.specs["args"])
+    assert "func" not in res_loaded.specs["args"]
 
     # Delete the objective function and dump the modified object
     del res.specs["args"]["func"]
@@ -72,7 +72,7 @@ def test_dump_and_load():
         f.seek(0)
         res_loaded = load(f)
     check_optimization_results_equality(res, res_loaded)
-    assert not ("func" in res_loaded.specs["args"])
+    assert "func" not in res_loaded.specs["args"]
 
 
 def test_dump_and_load_optimizer():
@@ -128,11 +128,9 @@ def test_expected_minimum_random_sampling():
 
 
 def test_dict_list_space_representation():
-    """
-    Tests whether the conversion of the dictionary and list representation
+    """Tests whether the conversion of the dictionary and list representation
     of a point from a search space works properly.
     """
-
     chef_space = {
         "Cooking time": (0, 1200),  # in minutes
         "Main ingredient": [
@@ -210,8 +208,7 @@ def test_normalize_dimensions(dimension, name):
 
 
 def test_use_named_args():
-    """
-    Test the function wrapper @use_named_args which is used
+    """Test the function wrapper @use_named_args which is used
     for wrapping an objective function with named args so it
     can be called by the optimizers which only pass a single
     list as the arg.
@@ -219,7 +216,6 @@ def test_use_named_args():
     This test does not actually use the optimizers but merely
     simulates how they would call the function.
     """
-
     # Define the search-space dimensions. They must all have names!
     dim1 = Real(name="foo", low=0.0, high=1.0)
     dim2 = Real(name="bar", low=0.0, high=1.0)

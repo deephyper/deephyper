@@ -95,7 +95,24 @@ Below is a gallery of examples on how to use DeepHyper.
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">From Serial to Parallel Evaluations</div>
+      <div class="sphx-glr-thumbnail-title">From Sequential to Massively-Parallel Bayesian Optimization</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
+
+.. only:: html
+
+  .. image:: /examples/images/thumb/sphx_glr_plot_scaling_bo_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_plot_scaling_bo.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Scaling Bayesian Optimization with Heterogeneous Parallelism</div>
     </div>
 
 
@@ -114,6 +131,7 @@ Below is a gallery of examples on how to use DeepHyper.
    /examples/plot_notify_failures_hpo
    /examples/plot_transfer_learning_for_hpo
    /examples/plot_from_serial_to_parallel_hpo
+   /examples/plot_scaling_bo
 
 
 .. only:: html

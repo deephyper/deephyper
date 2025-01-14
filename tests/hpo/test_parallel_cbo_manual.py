@@ -1,29 +1,29 @@
+import multiprocessing
 import os
-import shutil
 import sys
 import pytest
 
+import deephyper.tests as dht
+
 PYTHON = sys.executable
 SCRIPT = os.path.abspath(__file__)
+CPUS = min(4, multiprocessing.cpu_count())
 
-import deephyper.test
 
+def _test_parallel_cbo_manual(tmp_path):
+    from deephyper.evaluator import ThreadPoolEvaluator
+    from deephyper.evaluator.mpi import MPI
+    from deephyper.evaluator.storage import RedisStorage
+    from deephyper.hpo import HpProblem, CBO
 
-def _test_parallel_cbo_manual():
-
-    from mpi4py import MPI
+    if not MPI.Is_initialized():
+        MPI.Init_thread()
 
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
 
-    from deephyper.hpo import HpProblem
-
     def run(job):
         return -(job.parameters["x"] ** 2)
-
-    from deephyper.hpo import CBO
-    from deephyper.evaluator import SerialEvaluator
-    from deephyper.evaluator.storage import RedisStorage
 
     problem = HpProblem()
     problem.add_hyperparameter((-10.0, 10.0), "x")
@@ -34,8 +34,8 @@ def _test_parallel_cbo_manual():
 
     search_id = None
     if rank == 0:
-        evaluator = SerialEvaluator(run, storage=storage)
-        search = CBO(problem, evaluator, random_state=42)
+        evaluator = ThreadPoolEvaluator(run, storage=storage)
+        search = CBO(problem, evaluator, random_state=42, log_dir=tmp_path)
         search_id = search.search_id
         print(f"{search_id}")
 
@@ -43,14 +43,14 @@ def _test_parallel_cbo_manual():
     print(f"rank={rank} - search_id={search_id}")
 
     if rank > 0:
-        evaluator = SerialEvaluator(run, storage=storage, search_id=search_id)
+        evaluator = ThreadPoolEvaluator(run, storage=storage, search_id=search_id)
 
         def dumps_evals(*args, **kwargs):
             pass
 
         evaluator.dump_jobs_done_to_csv = dumps_evals
 
-        search = CBO(problem, evaluator, random_state=42)
+        search = CBO(problem, evaluator, surrogate_model="DUMMY", random_state=42)
     comm.Barrier()
 
     if rank == 0:
@@ -65,19 +65,15 @@ def _test_parallel_cbo_manual():
     comm.Barrier()
 
 
-@pytest.mark.fast
 @pytest.mark.mpi
 @pytest.mark.redis
-def test_dbo_timeout():
-    command = f"time mpirun -np 4 {PYTHON} {SCRIPT} _test_parallel_cbo_manual"
-    result = deephyper.test.run(command, live_output=False)
-    result = result.stderr.replace("\n", "").split(" ")
-    # i = result.index("sys")
-    # t = float(result[i - 1])
-    # assert t < 3
+def test_parallel_cbo_manual(tmp_path):
+    command = f"mpirun -np {CPUS} {PYTHON} {SCRIPT} _test_parallel_cbo_manual {tmp_path}"
+    result = dht.run(command, live_output=False, timeout=10)
+    assert result.returncode == 0
 
 
 if __name__ == "__main__":
-    func = sys.argv[-1]
+    func = sys.argv[-2]
     func = globals()[func]
-    func()
+    func(sys.argv[-1])

@@ -29,6 +29,10 @@ class MPIWinMutableMapping(MutableMapping):
 
     HEADER_SIZE = 8  # Reserve 8 bytes for size header
 
+    # Use to share state when pickling arguments of function
+    COUNTER = 0  # Counter of created instances
+    CACHE = {}
+
     def __init__(
         self,
         default_value: dict = None,
@@ -58,6 +62,9 @@ class MPIWinMutableMapping(MutableMapping):
             self.local_dict = {}
         else:
             self.local_dict = copy.deepcopy(default_value)
+        self._cache_id = MPIWinMutableMapping.COUNTER
+        MPIWinMutableMapping.COUNTER += 1
+        MPIWinMutableMapping.CACHE[self._cache_id] = self
 
         if self.comm.Get_rank() == self.root:
             self.lock()
@@ -191,8 +198,10 @@ class MPIWinMutableMapping(MutableMapping):
         self._session_is_started = False
         self._session_is_ready_only = True
 
+    # This can create a deadlock if not called by all processes!
     def __del__(self):
         self.win.Free()
+        self.CACHE.pop(self._cache_id)
 
     def incr(self, key: Hashable, amount=1):
         """Atomic operator that increments and returns the resulting value."""

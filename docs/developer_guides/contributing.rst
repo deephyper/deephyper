@@ -6,5 +6,5 @@ Contributing
 
     development
     documentation
-    tests_link
+    running_tests
     build_and_release

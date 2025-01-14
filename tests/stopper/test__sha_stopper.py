@@ -29,7 +29,6 @@ def run(job: RunningJob) -> dict:
     }
 
 
-@pytest.mark.fast
 def test_successive_halving_stopper(tmp_path):
     # define the variable you want to optimize
     problem = HpProblem()
@@ -95,9 +94,7 @@ def test_successive_halving_stopper_with_ray(tmp_path):
             "num_cpus": 4,
             "num_cpus_per_task": 1,
             "ray_kwargs": {
-                "runtime_env": {
-                    "working_dir": os.path.dirname(os.path.abspath(__file__))
-                }
+                "runtime_env": {"working_dir": os.path.dirname(os.path.abspath(__file__))}
             },
         },
     )
@@ -152,7 +149,6 @@ def run_with_failures(job: RunningJob) -> dict:
     }
 
 
-@pytest.mark.fast
 def test_successive_halving_stopper_with_failing_evaluations(tmp_path):
     # define the variable you want to optimize
     problem = HpProblem()

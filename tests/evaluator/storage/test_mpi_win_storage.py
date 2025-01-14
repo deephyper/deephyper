@@ -1,9 +1,6 @@
-import logging
 import os
 import sys
 import time
-import unittest
-
 import pytest
 
 from deephyper.evaluator import Evaluator, HPOJob, RunningJob
@@ -11,7 +8,7 @@ from deephyper.evaluator import Evaluator, HPOJob, RunningJob
 PYTHON = sys.executable
 SCRIPT = os.path.abspath(__file__)
 
-import deephyper.test  # noqa: E402
+import deephyper.tests as dht  # noqa: E402
 
 
 def _test_mpi_win_mutable_mapping():
@@ -32,9 +29,7 @@ def _test_mpi_win_mutable_mapping():
 
     for i in range(comm.Get_size()):
         if i == comm.Get_rank():
-            print(
-                f"Process {comm.Get_rank()} has: {mapping} with {len(mapping)} elements"
-            )
+            print(f"Process {comm.Get_rank()} has: {mapping} with {len(mapping)} elements")
             assert len(mapping) == i + 1
 
     comm.Barrier()
@@ -106,8 +101,8 @@ def _test_mpi_win_mutable_mapping():
 
         # No session was used here
         assert mapping._session_is_started is False
-        for k, v in mapping.items():
-            mapping[k]
+        for key in mapping:
+            mapping[key]
 
         assert mapping.count_read == 5
 
@@ -121,19 +116,18 @@ def _test_mpi_win_mutable_mapping():
         with mapping(ready_only=True):
             assert mapping._session_is_started is True
 
-            for k, v in mapping.items():
-                mapping[k]
+            for key in mapping:
+                mapping[key]
 
         assert mapping.count_read == 1
 
     comm.Barrier()
 
 
-@pytest.mark.fast
 @pytest.mark.mpi
 def test_mpi_win_mutable_mapping():
     command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_mpi_win_mutable_mapping"
-    result = deephyper.test.run(command, live_output=False)
+    result = dht.run(command, live_output=False)
     assert result.returncode == 0
 
 
@@ -146,68 +140,63 @@ def _test_mpi_win_storage_basic():
 
     comm = MPI.COMM_WORLD
 
-    class TestMPIWinStorage(unittest.TestCase):
-        def test_basic(self):
-            # Creation of the database
-            storage = MPIWinStorage(comm)
-            search_id0 = storage.create_new_search()
-            job_id0 = storage.create_new_job(search_id0)
-            job_id1 = storage.create_new_job(search_id=search_id0)
+    # Creation of the database
+    storage = MPIWinStorage(comm)
+    search_id0 = storage.create_new_search()
+    job_id0 = storage.create_new_job(search_id0)
+    job_id1 = storage.create_new_job(search_id=search_id0)
 
-            self.assertEqual(search_id0, "0")
-            self.assertEqual(job_id0, "0.0")
-            self.assertEqual(job_id1, "0.1")
+    assert search_id0 == "0"
+    assert job_id0 == "0.0"
+    assert job_id1 == "0.1"
 
-            search_id1 = storage.create_new_search()
-            job_id0 = storage.create_new_job(search_id1)
-            job_id1 = storage.create_new_job(search_id=search_id1)
+    search_id1 = storage.create_new_search()
+    job_id0 = storage.create_new_job(search_id1)
+    job_id1 = storage.create_new_job(search_id=search_id1)
 
-            self.assertEqual(search_id1, "1")
-            self.assertEqual(job_id0, "1.0")
-            self.assertEqual(job_id1, "1.1")
+    assert search_id1 == "1"
+    assert job_id0 == "1.0"
+    assert job_id1 == "1.1"
 
-            # Check available ids
-            search_ids = storage.load_all_search_ids()
-            self.assertEqual(search_ids, ["0", "1"])
+    # Check available ids
+    search_ids = storage.load_all_search_ids()
+    assert search_ids == ["0", "1"]
 
-            job_ids = storage.load_all_job_ids(search_id0)
-            self.assertEqual(job_ids, ["0.0", "0.1"])
+    job_ids = storage.load_all_job_ids(search_id0)
+    assert job_ids == ["0.0", "0.1"]
 
-            # Store/Load
-            # Job is empty
-            job_id0_data = storage.load_job(job_id0)
-            self.assertIn("in", job_id0_data)
-            self.assertIn("out", job_id0_data)
-            self.assertIn("metadata", job_id0_data)
+    # Store/Load
+    # Job is empty
+    job_id0_data = storage.load_job(job_id0)
+    assert "in" in job_id0_data
+    assert "out" in job_id0_data
+    assert "metadata" in job_id0_data
 
-            # Storing inputs of job
-            storage.store_job_in(job_id0, args=(1, 2), kwargs={"foo": 0})
-            job_id0_data = storage.load_job(job_id0)
-            self.assertIn("args", job_id0_data["in"])
-            self.assertIn("kwargs", job_id0_data["in"])
-            self.assertEqual(job_id0_data["in"]["args"], (1, 2))
-            self.assertEqual(job_id0_data["in"]["kwargs"], {"foo": 0})
+    # Storing inputs of job
+    storage.store_job_in(job_id0, args=(1, 2), kwargs={"foo": 0})
+    job_id0_data = storage.load_job(job_id0)
+    assert "args" in job_id0_data["in"]
+    assert "kwargs" in job_id0_data["in"]
+    assert job_id0_data["in"]["args"] == (1, 2)
+    assert job_id0_data["in"]["kwargs"] == {"foo": 0}
 
-            # Storing outputs of job
-            storage.store_job_out(job_id0, 0)
-            self.assertIs(None, job_id0_data["out"])
-            job_id0_data = storage.load_job(job_id0)
-            self.assertEqual(0, job_id0_data["out"])
+    # Storing outputs of job
+    storage.store_job_out(job_id0, 0)
+    assert job_id0_data["out"] is None
+    job_id0_data = storage.load_job(job_id0)
+    assert 0 == job_id0_data["out"]
 
-            # Storing metadata of job
-            storage.store_job_metadata(job_id0, "timestamp", 10)
-            self.assertEqual(job_id0_data["metadata"], {})
-            job_id0_data = storage.load_job(job_id0)
-            self.assertEqual(job_id0_data["metadata"], {"timestamp": 10})
-
-    TestMPIWinStorage().test_basic()
+    # Storing metadata of job
+    storage.store_job_metadata(job_id0, "timestamp", 10)
+    assert job_id0_data["metadata"] == {}
+    job_id0_data = storage.load_job(job_id0)
+    assert job_id0_data["metadata"] == {"timestamp": 10}
 
 
-@pytest.mark.fast
 @pytest.mark.mpi
 def test_mpi_win_storage_basic():
     command = f"mpirun -np 1 {PYTHON} {SCRIPT} _test_mpi_win_storage_basic"
-    result = deephyper.test.run(command, live_output=False)
+    result = dht.run(command, live_output=False)
     assert result.returncode == 0
 
 
@@ -234,77 +223,58 @@ def _test_mpi_win_storage_with_evaluator():
 
     comm = MPI.COMM_WORLD
 
-    if comm.Get_rank() >= 0:
-        logging.basicConfig(
-            # filename=path_log_file, # optional if we want to store the logs to disk
-            level=logging.INFO,
-            format=f"%(asctime)s - %(levelname)s - R={comm.Get_rank()} - %(filename)s:%(funcName)s - %(message)s",
-            force=True,
-        )
+    storage_0 = MPIWinStorage(comm)
 
-    class TestMPIWinStorage(unittest.TestCase):
-        def test_with_evaluator(self):
-            storage_0 = MPIWinStorage(comm)
+    # test 0
+    with Evaluator.create(
+        run_sync,
+        method="mpicomm",
+        method_kwargs={
+            "storage": storage_0,
+            "root": 0,
+        },
+    ) as evaluator:
+        if evaluator.is_master:
+            evaluator._job_class = HPOJob
+            evaluator.submit(
+                [
+                    {"x": 0},
+                    {"x": 1},
+                    {"x": 2},
+                ]
+            )
+            job_done = evaluator.gather("ALL")[0]
+            assert job_done.metadata["storage_id"] != id(storage_0)
+            evaluator.dump_jobs_done_to_csv()
 
-            # test 0
-            with Evaluator.create(
-                run_sync,
-                method="mpicomm",
-                method_kwargs={
-                    "storage": storage_0,
-                    "root": 0,
-                },
-            ) as evaluator:
-                if evaluator is not None:
-                    evaluator._job_class = HPOJob
-                    evaluator.submit(
-                        [
-                            {"x": 0},
-                            {"x": 1},
-                            {"x": 2},
-                        ]
-                    )
-                    job_done = evaluator.gather("ALL")[0]
-                    assert job_done.metadata["storage_id"] != id(storage_0)
-                    evaluator.dump_jobs_done_to_csv()
+    comm.Barrier()
 
-            comm.Barrier()
+    # test 1
+    # TODO: if I recreate a storage, deadlock
+    # something is wrong when (storage_0 gets deleted and creates a deadlock)
+    # for example if I use the same name of variable "storage"
+    # instead of having storage_0 and storage_1
+    storage_1 = MPIWinStorage(comm)
 
-            # test 1
-            # TODO: if I recreate a storage, deadlock
-            # something is wrong when (storage_0 gets deleted and creates a deadlock)
-            # for example if I use the same name of variable "storage"
-            # instead of having storage_0 and storage_1
-            storage_1 = MPIWinStorage(comm)
-
-            # serial evaluator
-            with Evaluator.create(
-                run_sync,
-                method="mpicomm",
-                method_kwargs={
-                    "storage": storage_1,
-                    "root": 0,
-                },
-            ) as evaluator:
-                if evaluator is not None:
-                    evaluator._job_class = HPOJob
-                    evaluator.submit([{"x": i} for i in range(20)])
-                    job_done = evaluator.gather("BATCH", size=3)[0]
-                    assert job_done.metadata["storage_id"] != id(storage_1)
-                    evaluator.dump_jobs_done_to_csv()
-
-    TestMPIWinStorage().test_with_evaluator()
+    # serial evaluator
+    with Evaluator.create(
+        run_sync,
+        method="mpicomm",
+        method_kwargs={
+            "storage": storage_1,
+            "root": 0,
+        },
+    ) as evaluator:
+        if evaluator.is_master:
+            evaluator._job_class = HPOJob
+            evaluator.submit([{"x": i} for i in range(20)])
+            job_done = evaluator.gather("BATCH", size=3)[0]
+            assert job_done.metadata["storage_id"] != id(storage_1)
+            evaluator.dump_jobs_done_to_csv()
 
 
-@pytest.mark.fast
 @pytest.mark.mpi
 def test_mpi_win_storage_with_evaluator():
     command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_mpi_win_storage_with_evaluator"
-    result = deephyper.test.run(command, live_output=False)
+    result = dht.run(command, live_output=False)
     assert result.returncode == 0
-
-
-if __name__ == "__main__":
-    func = sys.argv[-1]
-    func = globals()[func]
-    func()

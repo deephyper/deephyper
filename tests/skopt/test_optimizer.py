@@ -7,7 +7,6 @@ from numpy.testing import assert_equal
 from numpy.testing import assert_raises
 
 from deephyper.skopt import gp_minimize
-from deephyper.skopt import forest_minimize
 from deephyper.skopt.benchmarks import bench1, bench1_with_time
 from deephyper.skopt.benchmarks import branin
 from deephyper.skopt.learning import ExtraTreesRegressor, RandomForestRegressor

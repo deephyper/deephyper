@@ -3,7 +3,6 @@ import pathlib
 import pickle as pkl
 
 import numpy as np
-import pytest
 from sklearn.dummy import DummyClassifier, DummyRegressor
 
 
@@ -21,21 +20,18 @@ def wrap_and_predict(model):
     return y
 
 
-@pytest.mark.fast
 def test_sklearn_predictor_with_single_output_regressor():
     y = wrap_and_predict(DummyRegressor())
     assert isinstance(y, np.ndarray)
     assert np.shape(y) == (16,)
 
 
-@pytest.mark.fast
 def test_sklearn_predictor_with_single_output_classifier():
     y = wrap_and_predict(DummyClassifier())
     assert isinstance(y, np.ndarray)
     assert np.shape(y) == (16, 2)
 
 
-@pytest.mark.fast
 def test_sklearn_predictor_from_pkl_file(tmp_path):
     from deephyper.predictor.sklearn import SklearnPredictorFileLoader
 

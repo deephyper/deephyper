@@ -109,22 +109,25 @@ class MPICommEvaluator(Evaluator):
                 "ranks must be greater than 1."
             )
 
-        self.executor = MPICommExecutor(comm=self.comm, root=self.root)
-        self.master_executor = None
+        self._comm_executor = None
+        self._pool_executor = None
         logging.info("Creation of MPICommExecutor done")
 
+    @property
+    def is_master(self):
+        return self.comm.Get_rank() == self.root
+
     def __enter__(self):
-        # just a pointer to `self.executor` only in the root rank
-        self.master_executor = self.executor.__enter__()
-        if self.master_executor is not None:
-            return self
-        else:
-            return None
+        self._comm_executor = MPICommExecutor(comm=self.comm, root=self.root)
+        self._pool_executor = self._comm_executor.__enter__()
+        return self
 
     def __exit__(self, type, value, traceback):
-        if self.master_executor is not None:
-            self.close()
-        self.executor.__exit__(type, value, traceback)
+        if self.is_master:
+            if self.loop is not None and not self.loop.is_closed():
+                self.close()
+            self._pool_executor.__exit__(type, value, traceback)
+            self._pool_executor = None
 
     async def execute(self, job: Job) -> Job:
         async with self.sem:
@@ -136,7 +139,7 @@ class MPICommEvaluator(Evaluator):
                 job.run_function, running_job, **self.run_function_kwargs
             )
 
-            run_function_future = self.loop.run_in_executor(self.master_executor, run_function)
+            run_function_future = self.loop.run_in_executor(self._pool_executor, run_function)
 
             if self.timeout is not None:
                 try:

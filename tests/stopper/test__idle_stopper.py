@@ -1,5 +1,3 @@
-import pytest
-
 import numpy as np
 
 from deephyper.evaluator import RunningJob
@@ -9,7 +7,6 @@ from deephyper.stopper import IdleStopper
 
 
 def run(job: RunningJob) -> dict:
-
     assert isinstance(job.stopper, IdleStopper)
 
     max_budget = 50
@@ -28,9 +25,7 @@ def run(job: RunningJob) -> dict:
     }
 
 
-@pytest.mark.fast
 def test_idle_stopper(tmp_path):
-
     # define the variable you want to optimize
     problem = HpProblem()
     problem.add_hyperparameter((0.0, 10.0), "x")

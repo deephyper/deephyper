@@ -1,0 +1,42 @@
+name: Tests MPI
+
+on: 
+  push:
+    branches:
+      - "*mpi*"
+  pull_request:
+    branches:
+      - master
+      - develop
+
+jobs:
+
+  tests-mpi:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+        mpi: ["openmpi"]
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Setup MPI
+        uses: mpi4py/setup-mpi@v1
+        with:
+          mpi: ${{ matrix.mpi }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: PyPI Install with MPI
+        run: |
+          pip install --upgrade pip
+          pip install pytest
+          pip install .[mpi]
+
+      - name: Run MPI tests
+        run: pytest  -m mpi --run-marks-subset mpi tests/

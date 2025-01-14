@@ -1,19 +1,15 @@
+import asyncio
 import logging
 
-import mpi4py
 import numpy as np
 import scipy.stats
 
-# !To avoid initializing MPI when module is imported (MPI is optional)
-mpi4py.rc.initialize = False
-mpi4py.rc.finalize = True
-from mpi4py import MPI  # noqa: E402
-
-from deephyper.evaluator import Evaluator  # noqa: E402
-from deephyper.evaluator.callback import TqdmCallback  # noqa: E402
-from deephyper.evaluator.storage import Storage  # noqa: E402
-from deephyper.hpo._cbo import CBO  # noqa: E402
-from deephyper.stopper import Stopper  # noqa: E402
+from deephyper.evaluator import Evaluator, HPOJob
+from deephyper.evaluator.callback import TqdmCallback
+from deephyper.evaluator.mpi import MPI
+from deephyper.evaluator.storage import Storage
+from deephyper.hpo._cbo import CBO
+from deephyper.stopper import Stopper
 
 MAP_acq_func = {
     "UCB": "LCB",
@@ -310,9 +306,15 @@ class MPIDistributedBO(CBO):
     def check_evaluator(self, evaluator):
         if not (isinstance(evaluator, Evaluator)):
             if callable(evaluator):
+                # Pick the adapted evaluator depending if the passed function is a coroutine
+                if asyncio.iscoroutinefunction(evaluator):
+                    evaluator_type = "serial"
+                else:
+                    evaluator_type = "thread"
+
                 self._evaluator = self.bootstrap_evaluator(
                     run_function=evaluator,
-                    evaluator_type="serial",
+                    evaluator_type=evaluator_type,
                     storage_type="redis",
                     comm=self.comm,
                     root=0,
@@ -325,6 +327,8 @@ class MPIDistributedBO(CBO):
                 )
         else:
             self._evaluator = evaluator
+
+        self._evaluator._job_class = HPOJob
 
     @staticmethod
     def bootstrap_evaluator(

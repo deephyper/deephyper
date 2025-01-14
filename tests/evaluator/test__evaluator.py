@@ -34,7 +34,6 @@ async def run_many_results_async(job, y=0):
     return {"objective": job["x"], "metadata": {"y": y}}
 
 
-@pytest.mark.fast
 def test_wrong_evaluator():
     from deephyper.evaluator import Evaluator
 
@@ -48,7 +47,6 @@ def test_wrong_evaluator():
         )
 
 
-@pytest.mark.fast
 def test_run_function_standards(tmp_path):
     from deephyper.evaluator import HPOJob, SerialEvaluator, ThreadPoolEvaluator
 
@@ -98,9 +96,7 @@ def test_run_function_standards(tmp_path):
     evaluator.submit(configs)
     evaluator.gather(type="ALL")
     evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
-    results = pd.read_csv(os.path.join(tmp_path, "results.csv")).sort_values(
-        by="job_id"
-    )
+    results = pd.read_csv(os.path.join(tmp_path, "results.csv")).sort_values(by="job_id")
     assert all(
         results.columns
         == [
@@ -283,7 +279,8 @@ def test_run_function_standards(tmp_path):
     assert results["m:num_parameters"][0] == 420000
     evaluator.close()
 
-    # tuple of float for multi-objective optimization (will appear as "objective_0" and "objective_1" in the resulting dataframe)
+    # Tuple of float for multi-objective optimization
+    # It will appear as "objective_0" and "objective_1" in the results
     async def run(config):
         if config["x"] < 5:
             return 42.0, 0.42
@@ -397,22 +394,18 @@ def execute_evaluator(method, tmp_path):
     evaluator.close()
 
 
-@pytest.mark.fast
 def test_serial(tmp_path):
     execute_evaluator("serial", tmp_path)
 
 
-@pytest.mark.fast
 def test_thread(tmp_path):
     execute_evaluator("thread", tmp_path)
 
 
-@pytest.mark.fast
 def test_process(tmp_path):
     execute_evaluator("process", tmp_path)
 
 
-@pytest.mark.fast
 @pytest.mark.ray
 def test_ray(tmp_path):
     try:
@@ -445,7 +438,6 @@ async def run_job_dict_output_profiled_async(job):
     return {"y1": x1, "y2": x2, "list": [x1, x2], "dict": {"x1": x1, "x2": x2}}
 
 
-@pytest.mark.fast
 def test_evaluator_with_Job(tmp_path):
     from deephyper.evaluator import Evaluator
 
