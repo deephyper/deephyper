@@ -85,7 +85,7 @@ The ensemble strategies is modular to allow: exploring models tested during hype
 
 # Acknowledgements
 
-We acknowledge contributions from Misha Salim, Romit Maulik, Venkat Vishwanath, Stefan Wild, Joceran Gouneau, Dipendra Jha, Kyle Felker, Matthieu Dorier, Felix Perez, Bethany Lush, Romit Maulik, Gavin Wiggins, Tyler H. Chang, Yixuan Sun, Shengli Jiang, @rmjcs2020, Albert Lam, Taylor Childers, @Z223I, Zachariah Carmichael, Hongyuan Liu, Sam Foreman, Akalanka Galappaththi,Brett Eiffert, Sun Haozhe, Sandeep Madireddy, Adrian Perez Dieguez, and Nesar Ramachandra. 
+We acknowledge contributions from Misha Salim, Romit Maulik, Venkat Vishwanath, Stefan Wild, Joceran Gouneau, Dipendra Jha, Kyle Felker, Matthieu Dorier, Felix Perez, Bethany Lush, Romit Maulik, Gavin M. Wiggins, Tyler H. Chang, Yixuan Sun, Shengli Jiang, @rmjcs2020, Albert Lam, Taylor Childers, @Z223I, Zachariah Carmichael, Hongyuan Liu, Sam Foreman, Akalanka Galappaththi,Brett Eiffert, Sun Haozhe, Sandeep Madireddy, Adrian Perez Dieguez, and Nesar Ramachandra. 
 We also would like to thank Prof. Isabelle Guyon for her guidance on the machine learning methodologies developed in this software.
 
 # References
