@@ -68,6 +68,8 @@ class Search(abc.ABC):
 
         self._verbose = verbose
 
+        self.is_master = True
+
         # if a callable is directly passed wrap it around the serial evaluator
         self.check_evaluator(evaluator)
 
@@ -219,10 +221,10 @@ class Search(abc.ABC):
         if wait_all_running_jobs:
             while self._evaluator.num_jobs_submitted > self._evaluator.num_jobs_gathered:
                 self._evaluator.gather("ALL")
-                self._evaluator.dump_jobs_done_to_csv(self._log_dir)
+                self.dump_jobs_done_to_csv()
         else:
             self._evaluator.gather_other_jobs_done()
-            self._evaluator.dump_jobs_done_to_csv(self._log_dir)
+            self.dump_jobs_done_to_csv()
 
         self._evaluator.close()
 
@@ -231,9 +233,9 @@ class Search(abc.ABC):
             return None
 
         # Force dumping if all configurations were failed
-        self._evaluator.dump_jobs_done_to_csv(self._log_dir, flush=True)
+        self.dump_jobs_done_to_csv(flush=True)
 
-        self.extend_results_with_pareto_efficient(self._path_results)
+        self.extend_results_with_pareto_efficient_indicator()
 
         df_results = pd.read_csv(self._path_results)
 
@@ -244,31 +246,30 @@ class Search(abc.ABC):
         """The identifier of the search used by the evaluator."""
         return self._evaluator._search_id
 
-    def extend_results_with_pareto_efficient(self, df_path: str):
+    def extend_results_with_pareto_efficient_indicator(self):
         """Extend the results DataFrame with Pareto-Front.
 
         A column ``pareto_efficient`` is added to the dataframe. It is ``True`` if the
         point is Pareto efficient.
-
-        Args:
-            df_path (str): the path to the input DataFrame.
         """
-        logging.info("Extends results with pareto efficient indicator...")
-        df = pd.read_csv(df_path)
+        if self.is_master:
+            logging.info("Extends results with pareto efficient indicator...")
+            df_path = self._path_results
+            df = pd.read_csv(df_path)
 
-        # Check if Multi-Objective Optimization was performed to save the pareto front
-        objective_columns = [col for col in df.columns if col.startswith("objective")]
+            # Check if Multi-Objective Optimization was performed to save the pareto front
+            objective_columns = [col for col in df.columns if col.startswith("objective")]
 
-        if len(objective_columns) > 1:
-            if pd.api.types.is_string_dtype(df[objective_columns[0]]):
-                mask_no_failures = ~df[objective_columns[0]].str.startswith("F")
-            else:
-                mask_no_failures = np.ones(len(df), dtype=bool)
-            objectives = -df.loc[mask_no_failures, objective_columns].values.astype(float)
-            mask_pareto_front = non_dominated_set(objectives)
-            df["pareto_efficient"] = False
-            df.loc[mask_no_failures, "pareto_efficient"] = mask_pareto_front
-            df.to_csv(df_path, index=False)
+            if len(objective_columns) > 1:
+                if pd.api.types.is_string_dtype(df[objective_columns[0]]):
+                    mask_no_failures = ~df[objective_columns[0]].str.startswith("F")
+                else:
+                    mask_no_failures = np.ones(len(df), dtype=bool)
+                objectives = -df.loc[mask_no_failures, objective_columns].values.astype(float)
+                mask_pareto_front = non_dominated_set(objectives)
+                df["pareto_efficient"] = False
+                df.loc[mask_no_failures, "pareto_efficient"] = mask_pareto_front
+                df.to_csv(df_path, index=False)
 
     def _search(self, max_evals, timeout, max_evals_strict=False):
         """Search algorithm logic.
@@ -325,7 +326,7 @@ class Search(abc.ABC):
 
             logging.info("Dumping evaluations...")
             t1 = time.time()
-            self._evaluator.dump_jobs_done_to_csv(log_dir=self._log_dir)
+            self.dump_jobs_done_to_csv()
             logging.info(f"Dumping took {time.time() - t1:.4f} sec.")
 
             logging.info(f"Telling {len(new_results)} new result(s)...")
@@ -391,3 +392,12 @@ class Search(abc.ABC):
             results (List[HPOJob]): a list of HPOJobs from which hyperparameters and objectives can
                 be retrieved.
         """
+
+    def dump_jobs_done_to_csv(self, flush: bool = False):
+        """Dump jobs completed to CSV in log_dir.
+
+        Args:
+            flush (bool, optional): Force the dumping if set to ``True``. Defaults to ``False``.
+        """
+        if self.is_master:
+            self._evaluator.dump_jobs_done_to_csv(log_dir=self._log_dir, flush=flush)
