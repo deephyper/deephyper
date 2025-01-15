@@ -88,7 +88,7 @@ def test_centralized_random_search_redis_storage(tmp_path):
     assert_results(results)
 
 
-def launch_thread_search_with_redis_storage(search_id, search_seed, is_master=False):
+def launch_thread_search_with_redis_storage(search_id, search_seed, is_master=False, log_dir="."):
     from deephyper.evaluator.storage import RedisStorage
 
     storage = RedisStorage().connect()
@@ -101,26 +101,22 @@ def launch_thread_search_with_redis_storage(search_id, search_seed, is_master=Fa
         method_kwargs={"storage": storage, "num_workers": 1, "search_id": search_id},
     )
 
-    log_dir = "." if is_master else f"/tmp/deephyper_search_{search_seed}"
     search = RandomSearch(problem, evaluator, random_state=search_seed, log_dir=log_dir)
-
-    def dump_evals(*args, **kwargs):
-        pass
+    search.is_master = is_master
 
     max_evals = 100
     results = None
     max_evals_strict = True
-    if is_master:
+    if search.is_master:
         results = search.search(max_evals=max_evals, max_evals_strict=max_evals_strict)
     else:
-        evaluator.dump_jobs_done_to_csv = dump_evals
         search.search(max_evals=max_evals, max_evals_strict=max_evals_strict)
 
     return results
 
 
 @pytest.mark.redis
-def test_decentralized_random_search_redis_storage():
+def test_decentralized_random_search_redis_storage(tmp_path):
     from multiprocessing import Pool
     from deephyper.evaluator.storage import RedisStorage
 
@@ -131,7 +127,7 @@ def test_decentralized_random_search_redis_storage():
     with Pool(processes=4) as pool:
         results = pool.starmap(
             launch_thread_search_with_redis_storage,
-            [(search_id, i, i == 0) for i in range(4)],
+            [(search_id, i, i == 0, tmp_path) for i in range(4)],
         )
     assert_results(results[0], max_evals_strict=False)
 
@@ -152,19 +148,15 @@ def launch_thread_search_with_shared_memory_storage(
     )
 
     search = RandomSearch(problem, evaluator, random_state=search_seed, log_dir=log_dir)
-
-    def dummy(*args, **kwargs):
-        pass
+    search.is_master = is_master
 
     max_evals = 100
     results = None
     max_evals_strict = True
     time.sleep(0.1)
-    if is_master:
+    if search.is_master:
         results = search.search(max_evals, max_evals_strict=max_evals_strict)
     else:
-        evaluator.dump_jobs_done_to_csv = dummy
-        search.extend_results_with_pareto_efficient = dummy
         search.search(max_evals, max_evals_strict=max_evals_strict)
 
     return results

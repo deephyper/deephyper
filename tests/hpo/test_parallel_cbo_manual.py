@@ -44,13 +44,8 @@ def _test_parallel_cbo_manual(tmp_path):
 
     if rank > 0:
         evaluator = ThreadPoolEvaluator(run, storage=storage, search_id=search_id)
-
-        def dumps_evals(*args, **kwargs):
-            pass
-
-        evaluator.dump_jobs_done_to_csv = dumps_evals
-
         search = CBO(problem, evaluator, surrogate_model="DUMMY", random_state=42)
+        search.is_master = False
     comm.Barrier()
 
     if rank == 0:

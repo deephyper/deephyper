@@ -33,17 +33,13 @@ def execute_centralized_bo_with_share_memory(
     search_kwargs["random_state"] = search_random_state
     search = CBO(problem, evaluator, log_dir=log_dir, **search_kwargs)
 
-    def dummy(*args, **kwargs):
-        pass
+    # For concurrency reason this important to set this variable
+    search.is_master = is_master
 
     results = None
-    if is_master:
+    if search.is_master:
         results = search.search(timeout=timeout)
     else:
-        # for concurrency reasons this is important to override these functions
-        evaluator.dump_jobs_done_to_csv = dummy
-        search.extend_results_with_pareto_efficient = dummy
-
         search.search(timeout=timeout)
 
     return results
