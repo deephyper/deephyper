@@ -1,3 +1,4 @@
+import copy
 import functools
 import logging
 import numbers
@@ -9,7 +10,8 @@ import ConfigSpace as CS
 import ConfigSpace.hyperparameters as csh
 import numpy as np
 import pandas as pd
-from sklearn.base import is_regressor
+from sklearn.base import RegressorMixin, is_regressor
+from sklearn.inspection import permutation_importance
 
 import deephyper.core.exceptions
 import deephyper.skopt
@@ -1100,3 +1102,63 @@ class CBO(Search):
             res[hps_name] = xi
 
         return res
+
+    def get_surrogate_model(self):
+        """Get the latest fitted surrogate model."""
+        space = copy.deepcopy(self._opt.space)
+        estimator = copy.deepcopy(self._opt_kwargs["base_estimator"])
+        surrogate_model = BayesianOptimizationSurrogate(space, estimator)
+        X = self._opt.Xi
+        y = self._opt.yi
+        X = np.array([xi for xi, yi in zip(X, y) if yi != "F"])
+        y = np.array([-yi for yi in y if yi != "F"])
+        surrogate_model.fit(X, y)
+        return surrogate_model
+
+
+class BayesianOptimizationSurrogate(RegressorMixin):
+    def __init__(self, space, estimator):
+        self.space = space
+        self.estimator = estimator
+
+    def fit(self, X, y):
+        X = self.space.transform(X)
+        self.estimator.fit(X, y)
+
+    def predict(self, X, return_std=False):
+        X = self.space.transform(X)
+        return self.estimator.predict(X, return_std=return_std)
+
+    def evaluate(self, X, y):
+        y_pred = self.predict(X)
+        return np.mean((y_pred - y) ** 2)
+
+    @property
+    def hyperparameter_names(self) -> List[str]:
+        """List of hyperparameters names ordered for the model."""
+        return self.space.dimension_names
+
+    def hyperparameter_importance(
+        self, X, y, n_repeats=5, random_state=None
+    ) -> Dict[str, Dict[str, float]]:
+        """Hyperparameter importance based on permutation importance algorithm.
+
+        https://scikit-learn.org/1.5/modules/permutation_importance.html#outline-of-the-permutation-importance-algorithm
+
+        Args:
+            X (_type_): _description_
+            y (_type_): _description_
+            n_repeats (int, optional): _description_. Defaults to 5.
+            random_state (_type_, optional): _description_. Defaults to None.
+
+        Returns:
+            Dict[str, Dict[str, float]]: _description_
+        """
+        r = permutation_importance(self, X, y, n_repeats=n_repeats, random_state=random_state)
+        hp_imp = {}
+        for i in r.importances_mean.argsort()[::-1]:
+            hp_imp[self.hyperparameter_names[i]] = {
+                "mean": r.importances_mean[i],
+                "std": r.importances_std[i],
+            }
+        return hp_imp
