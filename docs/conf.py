@@ -43,7 +43,7 @@ else:
     release = f'v{about["__version__"]}-{about["__version_suffix__"]}'
 
 # PULL Tutorials
-branch_name_map = {"master": "main", "latest": "main", "develop": "develop"}
+branch_name_map = {"master": "main", "stable": "main", "latest": "develop", "develop": "develop"}
 if os.environ.get("READTHEDOCS"):
     doc_version = os.environ["READTHEDOCS_VERSION"]
 else:
