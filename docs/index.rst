@@ -2,13 +2,12 @@
 DeepHyper: Distributed Neural Architecture and Hyperparameter Optimization for Machine Learning
 ***********************************************************************************************
 
-DeepHyper is a powerful Python package for automating machine learning tasks, particularly focused on optimizing hyperparameters, searching for optimal neural architectures, and quantifying uncertainty through the deep ensembles. With DeepHyper, users can easily perform these tasks on a single machine or distributed across multiple machines, making it ideal for use in a variety of environments. Whether you're a beginner looking to optimize your machine learning models or an experienced data scientist looking to streamline your workflow, DeepHyper has something to offer. So why wait? Start using DeepHyper today and take your machine learning skills to the next level!
+DeepHyper is first and foremost a hyperparameter optimization (HPO) library.
+By leveraging this core HPO functionnality, DeepHyper also provides neural architecture search, multi-fidelity and ensemble capabilities. 
+With DeepHyper, users can easily perform these tasks on a single machine or distributed across multiple machines, making it ideal for use in a variety of environments. 
+Whether you're a beginner looking to optimize your machine learning models or an experienced data scientist looking to streamline your workflow, DeepHyper has something to offer. So why wait? Start using DeepHyper today and take your machine learning skills to the next level!
 
-DeepHyper is specialized for machine learning tasks but it can also be used for generic black-box and gray-box optimization problems of expensive functions.
-
-DeepHyper's software architecture is designed to be modular and extensible.
-
-It is organized around the following subpackages:
+The package is organized around the following modules:
 
 * :mod:`deephyper.analysis`: To analyse your results.
 * :mod:`deephyper.ensemble`: To build ensembles of predictive models possibly with disentangled uncertainty quantification.
@@ -17,31 +16,21 @@ It is organized around the following subpackages:
 * :mod:`deephyper.predictor`: To wrap predictive models from different libraries.
 * :mod:`deephyper.stopper` : To apply multi-fidelity or early discarding strategies for hyperparameter optimization (HPO) and neural architecture search (NAS).
 
-DeepHyper installation requires **Python >= 3.10**.
+Quick Start
+=========== 
 
-Install instructions
-====================
-Install with ``pip``
+Install with ``pip`` (requires **Python >= 3.10**):
 
 .. code-block:: python
 
-    # For the default set of features 
     pip install deephyper
 
-    # For the core set of features including:
-    # - Tensorflow/Keras2
-    # - Pytorch
-    # - Transfer learning for HPO
-    # - Learning-curve extrapolation for multi-fidelity hyperparameter search
+    # For the core set of features (Tensorflow/Keras2, Pytorch, Transfer-Learning for HPO and Learning Curve Extrapolation)
     pip install "deephyper[core]"
 
-More details about the installation process can be found at `DeepHyper Installations <https://deephyper.readthedocs.io/en/latest/install/index.html>`_.
+More details about installation can be found on our :ref:`Installation <installation>` page.
 
-
-Quick Start
-===========
-
-DeepHyper is first and foremost a hyperparameter optimization (HPO) library. Here is a simple example of how to use DeepHyper to optimize a black-box function with three hyperparameters: a real-valued parameter, a discrete parameter, and a categorical parameter.
+We then present a simple example of how to use DeepHyper to optimize a black-box function with three hyperparameters: a real-valued parameter, a discrete parameter, and a categorical parameter.
 
 To try this example, you can copy/paste the script and run it.
 
@@ -224,7 +213,7 @@ Table of Contents
     :titlesonly:
     :caption: Get Started
 
-    Install <install/index>
+    Installation <install/index>
     tutorials/index
     examples/index
     F.A.Q. <faq>

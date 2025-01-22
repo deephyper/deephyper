@@ -1,7 +1,11 @@
-Installations
-=============
+.. _installation:
 
-DeepHyper is a Python package containing different modules that can be installed in differents ways. The following sections describe the different ways to install DeepHyper. The DeepHyper package itself is a pure Python package and therefore does not need "compilation". However, some of the (optional) modules of DeepHyper require external libraries to be installed which can require compilation when pre-built binaries are not available (or not optimized) for your target system (e.g., Tensorflow or Numpy).
+Installation
+============
+
+On this page, you will find documentation about installation options of DeepHyper.
+The package in itself is a pure Python package and therefore does not require any "compilation".
+However, some features of the package can require external libraries to be installed that require compilation when pre-built binaries are not available (or not optimized) for your target system (e.g., Tensorflow or Numpy).
 
 .. toctree::
    :maxdepth: 1
@@ -10,7 +14,7 @@ DeepHyper is a Python package containing different modules that can be installed
 
    conda <conda>
    jupyter <jupyter>
-   pip (default) <pip>
+   pip (recommended) <pip>
    spack <spack>
    uv <uv>
 
