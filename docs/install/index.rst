@@ -12,6 +12,7 @@ DeepHyper is a Python package containing different modules that can be installed
    jupyter <jupyter>
    pip (default) <pip>
    spack <spack>
+   uv <uv>
 
 .. toctree::
    :maxdepth: 1
