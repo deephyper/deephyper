@@ -1,5 +1,5 @@
-Spack
-*****
+Install with spack
+******************
 
 `Spack <https://spack.readthedocs.io/en/latest/>`_ is a package management tool designed to support multiple versions and configurations of software on a wide variety of platforms and environments. We use Spack to build from source some dependencies of DeepHyper.
 

@@ -1,5 +1,5 @@
 Install with uv
-===============
+***************
 
 DeepHyper can also be installed with the `uv tool <https://docs.astral.sh/uv/>`_ which is a fast Python package and project manager. The uv commands shown below will create a Python project with a virtual environment that contains the deephyper package. See the uv documentation for more information about working with Python using the uv tool.
 

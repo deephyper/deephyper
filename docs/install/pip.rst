@@ -1,7 +1,7 @@
 .. _install-pip:
 
-Install DeepHyper with pip
-**************************
+Install with pip
+****************
 
 DeepHyper installation requires ``Python>=3.10``.
 

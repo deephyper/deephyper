@@ -1,7 +1,7 @@
 .. _install-jupyter:
 
-Install DeepHyper with Jupyter
-******************************
+Install with Jupyter
+********************
 
 Sometimes the environment in which DeepHyper was installed is not detected by Jupyter. To create a custom Jupyter kernel run the following from your activated Conda environment:
 
