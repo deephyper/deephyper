@@ -1,6 +1,6 @@
-***********************************************************************************************
-DeepHyper: Distributed Neural Architecture and Hyperparameter Optimization for Machine Learning
-***********************************************************************************************
+******************************************************************************
+DeepHyper: Massively Parallel Hyperparameter Optimization for Machine Learning
+******************************************************************************
 
 DeepHyper is first and foremost a hyperparameter optimization (HPO) library.
 By leveraging this core HPO functionnality, DeepHyper also provides neural architecture search, multi-fidelity and ensemble capabilities. 
