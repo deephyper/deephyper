@@ -1,5 +1,7 @@
 :orphan:
 
+.. _examples:
+
 Examples
 ========
 

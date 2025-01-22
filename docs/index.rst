@@ -214,6 +214,8 @@ This DataFrame contains 1 row per ``run``-function evaluation:
 
 .. warning:: By convention in DeepHyper, all search algorithms are MAXIMIZING the objective function. If you want to MINIMIZE the objective function, you can simply return the negative of your objective value.
 
+The next steps to learn more about DeepHyper is to follow our :ref:`Tutorials <tutorials>` and :ref:`Examples <examples>`.
+
 Table of Contents
 =================
 
