@@ -19,13 +19,17 @@ The package is organized around the following modules:
 Quick Start
 =========== 
 
-Install with ``pip`` (requires **Python >= 3.10**):
+The :ref:`pip installation <install-pip>` is recommended. It requires **Python >= 3.10**.
 
 .. code-block:: python
 
     pip install deephyper
 
-    # For the core set of features (Tensorflow/Keras2, Pytorch, Transfer-Learning for HPO and Learning Curve Extrapolation)
+
+If you would like to install DeepHyper with its core set of machine learning features (Tensorflow/Keras2, Pytorch, Transfer-Learning for HPO and Learning Curve Extrapolation) use the following command:
+
+.. code-block:: python
+
     pip install "deephyper[core]"
 
 More details about installation can be found on our :ref:`Installation <installation>` page.
