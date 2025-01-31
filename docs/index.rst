@@ -184,11 +184,12 @@ Then, we execute the search by using the ``max_evals`` termination criterion to 
 
 The returned ``results`` is a Pandas DataFrame object that is also checkpointed locally in the current directory under ``results.csv`` (default value of the ``log_dir="."`` argument of ``Search`` subclasses).
 This DataFrame contains 1 row per ``run``-function evaluation:
-  - the columns that start with ``p:`` are the hyperparameters.
-  - the ``objective`` is the returned values of the ``run``-function.
-  - the ``job_id`` is the ``Evaluator`` job id of the evaluation (an integer incremented by order of job creation). 
-  - the ``job_status`` is the ``Evaluator`` job status of the evaluation.
-  - the columns that stat with ``m:`` are metadata of each evaluations. Some are added by DeepHyper but they can also be returned by the user as part of the ``run``-function returned value.
+
+* the columns that start with ``p:`` are the hyperparameters.
+* the ``objective`` is the returned values of the ``run``-function.
+* the ``job_id`` is the ``Evaluator`` job id of the evaluation (an integer incremented by order of job creation). 
+* the ``job_status`` is the ``Evaluator`` job status of the evaluation.
+* the columns that stat with ``m:`` are metadata of each evaluations. Some are added by DeepHyper but they can also be returned by the user as part of the ``run``-function returned value.
 
 .. code-block:: console
 
