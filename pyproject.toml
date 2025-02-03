@@ -23,14 +23,19 @@ dependencies = [
 ]
 requires-python = ">=3.10"
 authors = [
+    {name = "Romain Egele", email = "regele@ornl.gov"},
     {name = "Prasanna Balaprakash", email = "pbalapra@ornl.gov"},
-    {name = "Romain Egele", email = "romainegele@gmail.com"},
     {name = "Misha Salim"},
     {name = "Romit Maulik"},
     {name = "Venkat Vishwanath"},
-    {name = "Stefan Wild"}
+    {name = "Stefan Wild"},
 ]
-maintainers = [{name = "Prasanna Balaprakash", email = "pbalapra@ornl.gov"}]
+maintainers = [
+    {name = "Romain Egele", email = "regele@ornl.gov"},
+    {name = "Prasanna Balaprakash", email = "pbalapra@ornl.gov"},
+    {name = "Gavin M. Wiggins ", email = "wigginsg@ornl.gov"},
+    {name = "Brett Eiffert ", email = "eiffertbc@ornl.gov"},
+]
 description = "Scalable asynchronous neural architecture and hyperparameter search for deep neural networks"
 readme = "README.md"
 license = {file = "LICENSE"}
