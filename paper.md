@@ -33,7 +33,9 @@ bibliography: paper.bib
 
 # Summary
 
-<img src="figures/logo-deephyper-nobg.png" alt="DeepHyper Logo" width="300"/>
+Machine learning models are increasingly applied across scientific disciplines, yet their effectiveness often hinges on heuristic decisions—such as data transformations, training strategies, and model architectures—that are not learned by the models themselves. Automating the selection of these heuristics and analyzing their sensitivity is crucial for building robust and efficient learning workflows. `DeepHyper` addresses this challenge by democratizing hyperparameter optimization, providing accessible tools to streamline and enhance machine learning workflows from a laptop to the largest supercomputer in the world. Building on top of hyperparameter optimization it unlock new capabilities around ensembles of models for improved accuray and uncertainty quantification. All of these organized around efficient parallel computing.
+
+![DeepHyper Logo](figures/logo-deephyper-nobg.png){width=75%}
 
 # Statement of need
 
@@ -57,8 +59,8 @@ The Bayesian optimization of the `DeepHyper` relies by default on Extremely Rand
 Extremely Randomized Forest are a kind of Random Forest where the split decision involves a random process for each newly created node of a tree.
 It provides smoother epistemic uncertainty estimates compared to usual Random Forests that use a deterministic "best" split decision.
 
-![Uncertainty for Random Forest (Best Split)](figures/random_forest_best_split.png)
-![Uncertainty for Extremely Randomized Forest (Random Split)](figures/random_forest_random_split.png)
+![Uncertainty for Random Forest (Best Split)](figures/random_forest_best_split.png){width=49%}
+![Uncertainty for Extremely Randomized Forest (Random Split)](figures/random_forest_random_split.png){width=49%}
 
 Then, a custom acquisition function `UCBd`, focuses on the epistemic uncertainty of this surrogate for improved efficiency.
 It is also combined with a periodic exponential decay (impacting exploration-exploitation parameters of BO) to escape local solutions (Egele et al., 2023).
