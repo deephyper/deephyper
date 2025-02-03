@@ -33,7 +33,7 @@ authors = [
 maintainers = [{name = "Prasanna Balaprakash", email = "pbalapra@ornl.gov"}]
 description = "Scalable asynchronous neural architecture and hyperparameter search for deep neural networks"
 readme = "README.md"
-license = {file = "LICENSE.md"}
+license = {file = "LICENSE"}
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Programming Language :: Python",
