@@ -35,7 +35,7 @@ bibliography: paper.bib
 
 Machine learning models are increasingly applied across scientific disciplines, yet their effectiveness often hinges on heuristic decisions—such as data transformations, training strategies, and model architectures—that are not learned by the models themselves. Automating the selection of these heuristics and analyzing their sensitivity is crucial for building robust and efficient learning workflows. `DeepHyper` addresses this challenge by democratizing hyperparameter optimization, providing accessible tools to streamline and enhance machine learning workflows from a laptop to the largest supercomputer in the world. Building on top of hyperparameter optimization it unlock new capabilities around ensembles of models for improved accuray and uncertainty quantification. All of these organized around efficient parallel computing.
 
-![DeepHyper Logo](figures/logo-deephyper-nobg.png){width=75%}
+![DeepHyper Logo](figures/logo-deephyper-nobg.png){width=49%}
 
 # Statement of need
 
@@ -44,7 +44,7 @@ access to a variety of asynchronous parallel black-box optimization algorithms `
 software offers a variety of parallel programming backends such as Asyncio, threading, processes, Ray, and MPI `deehyper.evaluator`. The hyperparameter optimization can be single or multi-objective, composed of mixed variables,
 using explicit or hidden constraints, and benefit from early-discarding strategies `deephyper.stopper`. Leveraging the results of hyperparameter optimization or neural architecture search it provides parallel ensemble algorithms `deephyper.ensemble` that can help improve accuracy or quantify disentangled predictive uncertainty.
 
-![DeepHyper Software Architecture](figures/deephyper-architecture.png)
+![DeepHyper Software Architecture](figures/deephyper-architecture.png){width=60%}
 
 `DeepHyper` was designed to help research in the field of automated machine learning and also to be used out-of-the box
 in scientific projects where learning workflows are being developed.
@@ -65,7 +65,7 @@ It provides smoother epistemic uncertainty estimates compared to usual Random Fo
 Then, a custom acquisition function `UCBd`, focuses on the epistemic uncertainty of this surrogate for improved efficiency.
 It is also combined with a periodic exponential decay (impacting exploration-exploitation parameters of BO) to escape local solutions (Egele et al., 2023).
 
-![Periodic Exponential Decay for Bayesian Optimization](figures/example-exp-decay.jpg)
+![Periodic Exponential Decay for Bayesian Optimization](figures/example-exp-decay.jpg){width=49%}
 
 Batch parallel genetic algorithms are provided to resolve efficiently the sub-problem of optimizing the acquisition function and it is also more accurate than Monte-Carlo approches.
 An cheap and efficient multi-point acquisition strategy `qUCBd` is provided for better parallel scalability (Egele et al., 2023).
