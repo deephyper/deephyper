@@ -1,5 +1,5 @@
 ---
-title: 'DeepHyper: A Python Package for Parallel Hyperparameter Optimization'
+title: 'DeepHyper: Massively Parallel Hyperparameter Optimization for Machine Learning'
 tags:
   - Python
   - machine learning
@@ -12,36 +12,23 @@ authors:
   - name: Romain Egele
     orcid: 0000-0002-8992-8192
     equal-contrib: true
-    affiliation: "1" # (Multiple affiliations must be quoted)
+    affiliation: "1"
+    corresponding: true
   - name: Prasanna Balaprakash
     orcid: 0000-0002-0292-5715
     equal-contrib: true
     affiliation: "1"
-  - name: Author Without ORCID
-    equal-contrib: true # (This is how you can denote equal contributions between multiple authors)
-    affiliation: 2
-  - name: Author with no affiliation
-    corresponding: true # (This is how to denote the corresponding author)
-    affiliation: 3
-  - given-names: Ludwig
-    dropping-particle: van
-    surname: Beethoven
-    affiliation: 3
+  - name: Gavin M. Wiggins
+    affiliation: 1
+  - name: Brett Eiffert
+    affiliation: 1
 affiliations:
  - name: Oak Ridge National Laboratory, Tenesse, United States
    index: 1
    ror: 01qz5mb56
- - name: Institution Name, Country
-   index: 2
- - name: Independent Researcher, Country
-   index: 3
-date: 14 January 2025
+date: 3 February 2025
 bibliography: paper.bib
 
-# Optional fields if submitting to a AAS journal too, see this blog post:
-# https://blog.joss.theoj.org/2018/12/a-new-collaboration-with-aas-publishing
-aas-doi: 10.3847/xxxxx <- update this with the DOI from AAS once you know it.
-aas-journal: Astrophysical Journal <- The name of the AAS journal.
 ---
 
 # Summary
@@ -64,18 +51,24 @@ in scientific projects where learning workflows are being developed.
 
 # Mathematics
 
-`DeepHyper` main hyperparameter optimization algorithm is based on Bayesian optimization and it can manage stochastic objective functions.
+`DeepHyper` main hyperparameter optimization algorithm is based on Bayesian optimization.
 
-The Bayesian optimization of the `DeepHyer` relies on Extremely Randomized Forest as default surrogate model. 
+It can work with mixed-integer problems (i.e., including real, discrete, categorical values), with explicit or implicit constraints (e.g., $x_0 < x_1$, unexpected out-of-memory error), and stochastic objective functions $Y = f(x)$ where $Y$ is a random variable, $x$ is a vector of input hyperparameters and $f$ is the objective function.
+
+The Bayesian optimization of the `DeepHyper` relies by default on Extremely Randomized Forest assurrogate model to estimate $E_Y[Y|X=x]$.
+Extremely Randomized Forest are a kind of Random Forest where the split decision involves a random process for each newly created node of a tree.
+It provides smoother epistemic uncertainty estimates compared to usual Random Forests that use a deterministic "best" split decision.
 
 ![Uncertainty for Random Forest (Best Split)](figures/random_forest_best_split.png)
 ![Uncertainty for Extremely Randomized Forest (Random Split)](figures/random_forest_random_split.png)
 
-A custom acquisition function `UCBd`, focuses on the epistemic uncertainty of this surrogate for improved efficiency. A custom periodic exponential decay is available to escape local solutions (Egele et al., 2023).
+Then, a custom acquisition function `UCBd`, focuses on the epistemic uncertainty of this surrogate for improved efficiency.
+It is also combined with a periodic exponential decay (impacting exploration-exploitation parameters of BO) to escape local solutions (Egele et al., 2023).
 
 ![Periodic Exponential Decay for Bayesian Optimization](figures/example-exp-decay.jpg)
 
-Batch parallel genetic algorithms are provided to optimize the acquisition efficiently and more accurately than Monte-Carlo approches. An efficient multi-point acquisition strategy `qUCBd` is provided for better parallel scalability (Egele et al., 2023).
+Batch parallel genetic algorithms are provided to resolve efficiently the sub-problem of optimizing the acquisition function and it is also more accurate than Monte-Carlo approches.
+An cheap and efficient multi-point acquisition strategy `qUCBd` is provided for better parallel scalability (Egele et al., 2023).
 
 The multi-objective optimization is enabled by scalarization functions and objective rescaling (Egele and Chang et al., 2023).
 
@@ -85,7 +78,7 @@ The ensemble strategies is modular to allow: exploring models tested during hype
 
 # Acknowledgements
 
-We acknowledge contributions from Misha Salim, Romit Maulik, Venkat Vishwanath, Stefan Wild, Joceran Gouneau, Dipendra Jha, Kyle Felker, Matthieu Dorier, Felix Perez, Bethany Lush, Gavin M. Wiggins, Tyler H. Chang, Yixuan Sun, Shengli Jiang, @rmjcs2020, Albert Lam, Taylor Childers, @Z223I, Zachariah Carmichael, Hongyuan Liu, Sam Foreman, Akalanka Galappaththi,Brett Eiffert, Sun Haozhe, Sandeep Madireddy, Adrian Perez Dieguez, and Nesar Ramachandra. 
+We acknowledge contributions from Misha Salim, Romit Maulik, Venkat Vishwanath, Stefan Wild, Joceran Gouneau, Dipendra Jha, Kyle Felker, Matthieu Dorier, Felix Perez, Bethany Lush, Gavin M. Wiggins, Tyler H. Chang, Yixuan Sun, Shengli Jiang, @rmjcs2020, Albert Lam, Taylor Childers, @Z223I, Zachariah Carmichael, Hongyuan Liu, Sam Foreman, Akalanka Galappaththi, Brett Eiffert, Sun Haozhe, Sandeep Madireddy, Adrian Perez Dieguez, and Nesar Ramachandra. 
 We also would like to thank Prof. Isabelle Guyon for her guidance on the machine learning methodologies developed in this software.
 
 # References
