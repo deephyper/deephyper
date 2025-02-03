@@ -37,7 +37,7 @@ maintainers = [
     {name = "Brett Eiffert ", email = "eiffertbc@ornl.gov"},
 
 ]
-description = "Scalable asynchronous neural architecture and hyperparameter search for deep neural networks"
+description = "Massively Parallel Hyperparameter Optimization for Machine Learning"
 readme = "README.md"
 license = {file = "LICENSE"}
 classifiers = [
