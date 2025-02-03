@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+            lfs: true
       - name: Build draft PDF
         uses: openjournals/openjournals-draft-action@master
         with:
