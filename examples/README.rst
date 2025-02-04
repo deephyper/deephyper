@@ -3,5 +3,5 @@
 Examples
 ========
 
-Below is a gallery of examples on how to use DeepHyper.
+This page consists of code examples on how to use DeepHyper.
 

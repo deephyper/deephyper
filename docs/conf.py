@@ -125,7 +125,9 @@ exclude_patterns = [
     "_templates",
     "Thumbs.db",
     ".DS_Store",
-    "examples/*.ipynb",
+    "examples/**.ipynb",
+    "examples/**.py",
+    "api.rst",
 ]
 
 # The name of the Pygments (syntax highlighting) style to use.
@@ -268,12 +270,14 @@ intersphinx_mapping = {
     "scipy": ("https://docs.scipy.org/doc/scipy/", None),
     "matplotlib": ("https://matplotlib.org/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+    "deephyper": ("https://deephyper.readthedocs.io/en/latest/", None),
 }
+
 
 # -- Options for todo extension ----------------------------------------------
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = True
+todo_include_todos = False
 
 # makes sphinx do a mock import of mpi4py so it’s not broken when you try to do auto-docs and import mpi4py
 autodoc_mock_imports = [
@@ -309,22 +313,21 @@ autosummary_mock_imports = autodoc_mock_imports + [
 # Remove <BLANKLINE>
 trim_doctest_flags = True
 
-
-# Sphinx Gallery
-
-sphinx_gallery_conf = {
-    "examples_dirs": "../examples",  # path to your example scripts
-    "gallery_dirs": "examples",  # path to where to save gallery generated output
-    "filename_pattern": "/plot_",
-    "ignore_pattern": r"_util\.py",
-    "remove_config_comments": True,
-}
-
-
+# Add custom JS/CSS
 def setup(app):
     app.add_css_file("custom.css")
     app.add_js_file("custom.js")
 
+# Sphinx Gallery
+sphinx_gallery_conf = {
+    "examples_dirs": "../examples",  # path to your example scripts
+    "gallery_dirs": "examples",  # path to where to save gallery generated output
+    "filename_pattern": r"/plot_",
+    # "filename_pattern": r"/plot_experimental_design\.py",
+    "ignore_pattern": r"_util\.py",
+    "remove_config_comments": True,
+    "plot_gallery": True,
+}
 
 # Patch Sphinx Gallery
 def parse_dropdown(rst_text):
