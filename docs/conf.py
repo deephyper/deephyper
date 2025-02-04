@@ -127,7 +127,6 @@ exclude_patterns = [
     ".DS_Store",
     "examples/**.ipynb",
     "examples/**.py",
-    "api.rst",
 ]
 
 # The name of the Pygments (syntax highlighting) style to use.
