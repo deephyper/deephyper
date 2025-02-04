@@ -29,7 +29,7 @@ Below is a gallery of examples on how to use DeepHyper.
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">Standard Experimental Design (Grid Search)</div>
+      <div class="sphx-glr-thumbnail-title">Standard Experimental Design with Grid Search</div>
     </div>
 
 

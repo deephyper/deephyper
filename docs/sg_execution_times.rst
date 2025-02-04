@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**01:12.020** total execution time for 6 files **from all galleries**:
+**00:01.772** total execution time for 6 files **from all galleries**:
 
 .. container::
 
@@ -32,11 +32,8 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_examples_plot_scaling_bo.py` (``../examples/plot_scaling_bo.py``)
-     - 01:12.020
-     - 0.0
    * - :ref:`sphx_glr_examples_plot_experimental_design.py` (``../examples/plot_experimental_design.py``)
-     - 00:00.000
+     - 00:01.772
      - 0.0
    * - :ref:`sphx_glr_examples_plot_from_serial_to_parallel_hpo.py` (``../examples/plot_from_serial_to_parallel_hpo.py``)
      - 00:00.000
@@ -45,6 +42,9 @@ Computation times
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_examples_plot_profile_worker_utilization.py` (``../examples/plot_profile_worker_utilization.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_examples_plot_scaling_bo.py` (``../examples/plot_scaling_bo.py``)
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_examples_plot_transfer_learning_for_hpo.py` (``../examples/plot_transfer_learning_for_hpo.py``)

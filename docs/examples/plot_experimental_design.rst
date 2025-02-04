@@ -18,38 +18,44 @@
 .. _sphx_glr_examples_plot_experimental_design.py:
 
 
-Standard Experimental Design (Grid Search)
-==========================================
+Standard Experimental Design with Grid Search
+=============================================
 
 **Author(s)**: Romain Egele.
 
 This example demonstrates how to generate points from standard experimental
 designs (e.g., random, grid, lhs).
 
-.. GENERATED FROM PYTHON SOURCE LINES 11-19
+.. GENERATED FROM PYTHON SOURCE LINES 11-24
 
-.. code-block:: Python
+.. dropdown:: Code (Import statements)
 
+    .. code-block:: Python
 
-    from deephyper.analysis._matplotlib import update_matplotlib_rc
-    from deephyper.hpo import HpProblem
-    from deephyper.hpo import ExperimentalDesignSearch
-    import matplotlib.pyplot as plt
+        import os
+        import shutil
 
-    update_matplotlib_rc()
+        import matplotlib.pyplot as plt
 
-
-
-
-
+        from deephyper.analysis._matplotlib import update_matplotlib_rc
+        from deephyper.hpo import HpProblem
+        from deephyper.hpo import ExperimentalDesignSearch
 
 
+        update_matplotlib_rc()
 
-.. GENERATED FROM PYTHON SOURCE LINES 20-21
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 25-26
 
 First we define the hyperparameter search space.
 
-.. GENERATED FROM PYTHON SOURCE LINES 21-28
+.. GENERATED FROM PYTHON SOURCE LINES 26-33
 
 .. code-block:: Python
 
@@ -78,14 +84,13 @@ First we define the hyperparameter search space.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 29-30
+.. GENERATED FROM PYTHON SOURCE LINES 34-35
 
 Then we define the black-box function to optimize.
 
-.. GENERATED FROM PYTHON SOURCE LINES 30-38
+.. GENERATED FROM PYTHON SOURCE LINES 35-41
 
 .. code-block:: Python
-
 
 
     def run(job):
@@ -100,21 +105,44 @@ Then we define the black-box function to optimize.
 
 
 
+.. GENERATED FROM PYTHON SOURCE LINES 42-48
 
-.. GENERATED FROM PYTHON SOURCE LINES 39-43
+.. dropdown:: Code (Clean up legacy results)
+
+    .. code-block:: Python
+
+
+        log_dir = "eds_logs"
+        if os.path.exists(log_dir):
+            shutil.rmtree(log_dir)
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 49-53
 
 Then we define the search. In this example, we use the
 `ExperimentalDesignSearch` class to generate points from a grid design. The
 `Evaluator` can also be used with this class to parallelize evalutions.
 Note that `n_points` and `max_evals` take the same value here.
 
-.. GENERATED FROM PYTHON SOURCE LINES 43-48
+.. GENERATED FROM PYTHON SOURCE LINES 53-64
 
 .. code-block:: Python
 
 
     max_evals = 200
-    search = ExperimentalDesignSearch(problem, run, n_points=max_evals, design="grid")
+    search = ExperimentalDesignSearch(
+        problem, 
+        run, 
+        n_points=max_evals, 
+        design="grid", 
+        log_dir=log_dir,
+    )
     results = search.search(max_evals)
 
 
@@ -124,21 +152,22 @@ Note that `n_points` and `max_evals` take the same value here.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 49-50
+.. GENERATED FROM PYTHON SOURCE LINES 65-66
 
 Finally, we plot the results from the collected DataFrame.
 
-.. GENERATED FROM PYTHON SOURCE LINES 50-57
+.. GENERATED FROM PYTHON SOURCE LINES 66-73
 
-.. code-block:: Python
+.. dropdown:: Code (Make plot)
+
+    .. code-block:: Python
 
 
-    fig, ax = plt.subplots()
-    ax.scatter(results["p:x"], results["p:y"], c=results["p:z"], alpha=0.3)
-    ax.set_xscale("log")
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.show()
+        fig, ax = plt.subplots()
+        ax.scatter(results["p:x"], results["p:y"], c=results["p:z"], alpha=0.3)
+        ax.set_xscale("log")
+        _ = plt.xlabel("x")
+        _ = plt.ylabel("y")
 
 
 
@@ -148,20 +177,13 @@ Finally, we plot the results from the collected DataFrame.
    :class: sphx-glr-single-img
 
 
-.. rst-class:: sphx-glr-script-out
-
- .. code-block:: none
-
-    /Users/romainegele/Documents/Argonne/deephyper/examples/plot_experimental_design.py:56: UserWarning: FigureCanvasAgg is non-interactive, and thus cannot be shown
-      plt.show()
-
 
 
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 1.895 seconds)
+   **Total running time of the script:** (0 minutes 1.772 seconds)
 
 
 .. _sphx_glr_download_examples_plot_experimental_design.py:

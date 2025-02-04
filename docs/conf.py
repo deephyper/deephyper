@@ -377,9 +377,9 @@ def codestr2rst(codestr, lang="python", lineno=None):
 
     # Process the dropdown configuration
     if dropdown_config is not None:
-        dropdown_directive = f".. dropdown::"
+        dropdown_directive = f".. dropdown:: Code"
         if len(dropdown_config["title"]) > 0:
-            dropdown_directive += f" {dropdown_config['title']}"
+            dropdown_directive += f" ({dropdown_config['title']})"
         dropdown_directive += "\n"
 
         for key, value in dropdown_config["options"].items():
