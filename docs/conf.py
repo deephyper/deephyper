@@ -262,6 +262,13 @@ epub_exclude_files = ["search.html"]
 
 # -- Options for intersphinx extension ---------------------------------------
 
+branch_name_map = {"master": "stable", "stable": "stable", "latest": "latest", "develop": "latest"}
+if os.environ.get("READTHEDOCS"):
+    doc_version = os.environ["READTHEDOCS_VERSION"]
+else:
+    github_repo = git.Repo(search_parent_directories=True)
+    doc_version = branch_name_map.get(github_repo.active_branch.name, "latest")
+
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     "python": ("https://docs.python.org/{.major}".format(sys.version_info), None),
@@ -269,7 +276,7 @@ intersphinx_mapping = {
     "scipy": ("https://docs.scipy.org/doc/scipy/", None),
     "matplotlib": ("https://matplotlib.org/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
-    "deephyper": ("https://deephyper.readthedocs.io/en/latest/", None),
+    "deephyper": (f"https://deephyper.readthedocs.io/en/{doc_version}/", None),
 }
 
 
