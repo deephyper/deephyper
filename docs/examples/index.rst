@@ -161,6 +161,41 @@ Parallelism
     </div>
 
 
+Uncertainty quantification
+--------------------------
+
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+.. thumbnail-parent-div-open
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele, Brett Eiffert.">
+
+.. only:: html
+
+  .. image:: /examples/examples_uq/images/thumb/sphx_glr_plot_nas_deep_ensemble_uq_regression_pytorch_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_examples_uq_plot_nas_deep_ensemble_uq_regression_pytorch.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Neural Architecture Search and Deep Ensemble with Uncertainty Quantification for Regression (Pytorch)</div>
+    </div>
+
+
+.. thumbnail-parent-div-close
+
+.. raw:: html
+
+    </div>
+
+
 .. toctree::
    :hidden:
    :includehidden:
@@ -168,6 +203,7 @@ Parallelism
 
    /examples/examples_hpo/index.rst
    /examples/examples_parallelism/index.rst
+   /examples/examples_uq/index.rst
 
 
 .. only:: html

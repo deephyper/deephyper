@@ -276,6 +276,8 @@ intersphinx_mapping = {
     "scipy": ("https://docs.scipy.org/doc/scipy/", None),
     "matplotlib": ("https://matplotlib.org/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+    "torch": ("https://pytorch.org/docs/main/", None),
+    "ConfigSpace": ("https://automl.github.io/ConfigSpace/latest/", None),
     "deephyper": (f"https://deephyper.readthedocs.io/en/{doc_version}/", None),
 }
 
