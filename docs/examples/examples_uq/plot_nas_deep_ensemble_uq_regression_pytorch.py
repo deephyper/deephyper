@@ -829,7 +829,7 @@ hpo_results
 
 
 # %%
-# Learning curves of the best model:
+# We look at the learning curves of the best model and observe improvements in both training and validation loss:
 
 # .. dropdown: Make learning curves plot
 x_values = np.arange(1, len(baseline_results["metadata"]["train_loss"]) + 1)
@@ -873,7 +873,7 @@ _ = plt.ylabel("NLL")
 
 
 # %%
-# Finally, we look at predictions of this best model:
+# Finally, we look at predictions of this best model and observe that it manage to predict much better than the baseline one the right range. 
 from deephyper.analysis.hpo import parameters_from_row
 
 
