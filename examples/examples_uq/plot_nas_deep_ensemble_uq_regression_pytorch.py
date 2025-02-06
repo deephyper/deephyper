@@ -27,7 +27,6 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from tqdm.notebook import tqdm
 
-
 WIDTH_PLOTS = 8
 HEIGHT_PLOTS = WIDTH_PLOTS / 1.618
 
@@ -416,6 +415,12 @@ def train(
 
 max_n_epochs = 1_000
 
+if torch.cuda.is_available():
+    device='cuda'
+else:
+    device='cpu'
+
+
 def run(job, model_checkpoint_dir=".", verbose=False):
     (x, y), (vx, vy), (tx, ty) = load_data()
 
@@ -440,6 +445,8 @@ def run(job, model_checkpoint_dir=".", verbose=False):
         scale=y_std,
     )
 
+    model.to(device=device)
+
     if verbose:
         print(model)
 
@@ -451,13 +458,13 @@ def run(job, model_checkpoint_dir=".", verbose=False):
         patience=job.parameters["lr_scheduler_patience"],
     )
 
-    x = torch.from_numpy(x).float()
-    vx = torch.from_numpy(vx).float()
-    tx = torch.from_numpy(tx).float()
+    x = torch.from_numpy(x).to(device=device, dtype=torch.float32)
+    vx = torch.from_numpy(vx).to(device=device, dtype=torch.float32)
+    tx = torch.from_numpy(tx).to(device=device, dtype=torch.float32)
 
-    y = torch.from_numpy(y).float()
-    vy = torch.from_numpy(vy).float()
-    ty = torch.from_numpy(ty).float()
+    y = torch.from_numpy(y).to(device=device, dtype=torch.float32)
+    vy = torch.from_numpy(vy).to(device=device, dtype=torch.float32)
+    ty = torch.from_numpy(ty).to(device=device, dtype=torch.float32)
 
     try:
         train_losses, val_losses, train_mse, val_mse = train(
@@ -474,11 +481,12 @@ def run(job, model_checkpoint_dir=".", verbose=False):
             progressbar=verbose,
         )
     except Exception:
+        raise
         return "F_fit"
 
     ty_pred = model(tx)
-    test_loss = torch.mean(nll(ty, ty_pred)).detach().numpy()
-    test_mse = torch.mean(squared_error(ty, ty_pred)).detach().numpy()
+    test_loss = torch.mean(nll(ty, ty_pred)).detach().cpu().numpy()
+    test_mse = torch.mean(squared_error(ty, ty_pred)).detach().cpu().numpy()
 
     # Saving the model's state (i.e., weights)
     torch.save(model.state_dict(), os.path.join(model_checkpoint_dir, f"model_{job.id}.pt"))
@@ -752,10 +760,9 @@ def run_neural_architecture_search(problem, max_evals):
 
     evaluator = Evaluator.create(
         run,
-        method="ray",  
+        method="thread",  
         method_kwargs={
-            "num_cpus": 8,
-            "num_cpus_per_task": 1,
+            "num_workers": 1,
             "run_function_kwargs": {
                 "model_checkpoint_dir": model_checkpoint_dir,
                 "verbose": False,
