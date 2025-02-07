@@ -14,7 +14,21 @@ Specifically, in this tutorial you will learn how to:
 2.	**Define constraints** on the neural architecture hyperparameters to reduce redundancies and improve efficiency of the optimization.
 
 This tutorial will provide a hands-on approach to leveraging NAS for robust regression models with well-calibrated uncertainty estimates.
+
 """
+# %%
+# Installation and imports
+# ------------------------
+#
+# Installing dependencies with the :ref:`pip installation <install-pip>` is recommended. It requires **Python >= 3.10**.
+#
+# .. code-block:: bash
+#
+#     %%bash
+#     pip install "deephyper[ray,torch]"
+
+#%%
+
 # .. dropdown:: Import statements
 import json
 import os
@@ -26,7 +40,6 @@ import pandas as pd
 
 from sklearn.model_selection import train_test_split
 from tqdm.notebook import tqdm
-
 
 WIDTH_PLOTS = 8
 HEIGHT_PLOTS = WIDTH_PLOTS / 1.618
@@ -365,10 +378,10 @@ def train(
             b_val_loss = torch.mean(nll(y_val, y_dist))
             b_val_mse = torch.mean(squared_error(y_val, y_dist))
 
-            batch_losses_t.append(b_train_loss.detach().numpy())
-            batch_mse_t.append(b_train_mse.detach().numpy())
-            batch_losses_v.append(b_val_loss.detach().numpy())
-            batch_mse_v.append(b_val_mse.detach().numpy())
+            batch_losses_t.append(b_train_loss.detach().cpu().numpy())
+            batch_mse_t.append(b_train_mse.detach().cpu().numpy())
+            batch_losses_v.append(b_val_loss.detach().cpu().numpy())
+            batch_mse_v.append(b_val_mse.detach().cpu().numpy())
 
         train_loss.append(np.mean(batch_losses_t))
         val_loss.append(np.mean(batch_losses_v))
@@ -406,6 +419,31 @@ def train(
 
     return train_loss, val_loss, train_mse, val_mse
 
+# %% 
+# Run time
+# --------
+import multiprocessing
+
+dtype = torch.float32
+if torch.cuda.is_available():
+    device = "cuda"
+    device_count = 1
+else:
+    device = "cpu"
+    device_count = multiprocessing.cpu_count()
+
+print(f"Runtime with {device=}, {device_count=}, {dtype=}")
+
+# %%
+
+# .. dropdown:: Conversion utility functions
+
+def to_torch(array):
+    return torch.from_numpy(array).to(device=device, dtype=dtype)
+
+def to_numpy(tensor):
+    return tensor.detach().cpu().numpy()
+
 # %%
 # Evaluation function
 # -------------------
@@ -415,6 +453,7 @@ def train(
 # that we want to maximize.
 
 max_n_epochs = 1_000
+
 
 def run(job, model_checkpoint_dir=".", verbose=False):
     (x, y), (vx, vy), (tx, ty) = load_data()
@@ -438,7 +477,7 @@ def run(job, model_checkpoint_dir=".", verbose=False):
         ],
         loc=y_mu,
         scale=y_std,
-    )
+    ).to(device=device, dtype=dtype)
 
     if verbose:
         print(model)
@@ -451,13 +490,8 @@ def run(job, model_checkpoint_dir=".", verbose=False):
         patience=job.parameters["lr_scheduler_patience"],
     )
 
-    x = torch.from_numpy(x).float()
-    vx = torch.from_numpy(vx).float()
-    tx = torch.from_numpy(tx).float()
-
-    y = torch.from_numpy(y).float()
-    vy = torch.from_numpy(vy).float()
-    ty = torch.from_numpy(ty).float()
+    x, vx, tx = to_torch(x), to_torch(vx), to_torch(tx)
+    y, vy, ty = to_torch(y), to_torch(vy), to_torch(ty)
 
     try:
         train_losses, val_losses, train_mse, val_mse = train(
@@ -477,8 +511,8 @@ def run(job, model_checkpoint_dir=".", verbose=False):
         return "F_fit"
 
     ty_pred = model(tx)
-    test_loss = torch.mean(nll(ty, ty_pred)).detach().numpy()
-    test_mse = torch.mean(squared_error(ty, ty_pred)).detach().numpy()
+    test_loss = to_numpy(torch.mean(nll(ty, ty_pred)))
+    test_mse = to_numpy(torch.mean(squared_error(ty, ty_pred)))
 
     # Saving the model's state (i.e., weights)
     torch.save(model.state_dict(), os.path.join(model_checkpoint_dir, f"model_{job.id}.pt"))
@@ -580,14 +614,14 @@ torch_module = DeepNormalRegressor(
     ],
     loc=y_mu,
     scale=y_std,
-)
+).to(device=device, dtype=dtype)
 
 torch_module.load_state_dict(torch.load(weights_path, weights_only=True))
 torch_module.eval()
 
-y_pred = torch_module.forward(torch.from_numpy(test_X).float())
-y_pred_mean = y_pred.loc.detach().numpy()
-y_pred_std = y_pred.scale.detach().numpy()
+y_pred = torch_module.forward(to_torch(test_X))
+y_pred_mean = to_numpy(y_pred.loc)
+y_pred_std = to_numpy(y_pred.scale)
 
 # %%
 
@@ -750,18 +784,32 @@ def run_neural_architecture_search(problem, max_evals):
     model_checkpoint_dir = os.path.join(hpo_dir, "models")
     pathlib.Path(model_checkpoint_dir).mkdir(parents=True, exist_ok=True)
 
+    method_kwargs = {
+        "run_function_kwargs": {
+            "model_checkpoint_dir": model_checkpoint_dir,
+            "verbose": False,
+        },
+        "callbacks": [TqdmCallback()],
+    }
+
+    if device == "cuda":
+        method_kwargs.update({
+            "num_cpus": device_count,
+            "num_gpus": device_count,
+            "num_cpus_per_task": 1,
+            "num_gpus_per_task": 1,
+        })
+    else:
+        method_kwargs.update({
+            "num_cpus": device_count,
+            "num_cpus_per_task": 1,
+        })
+    
+
     evaluator = Evaluator.create(
         run,
         method="ray",  
-        method_kwargs={
-            "num_cpus": 8,
-            "num_cpus_per_task": 1,
-            "run_function_kwargs": {
-                "model_checkpoint_dir": model_checkpoint_dir,
-                "verbose": False,
-            },
-            "callbacks": [TqdmCallback()],
-        },
+        method_kwargs=method_kwargs,
     )
 
     stopper = SuccessiveHalvingStopper(min_steps=1, max_steps=max_n_epochs)
@@ -771,8 +819,20 @@ def run_neural_architecture_search(problem, max_evals):
 
     return results
 
+
+# %%
+# Preload cached results if you want to skip the slow neural architecture search step.
+#
+# .. code-block:: bash
+#
+#     %%bash
+#     pip install gdown  # Install if necessary
+#     gdown "https://drive.google.com/uc?id=1VOV-UM0ws0lopHvoYT_9RAiRdT1y4Kus"
+#     tar -xvf nas_regression.tar.gz
+
 # %% 
-# As the search can take some time to finalize we provide a mechanism that checks if results were already computed and skip the search if it is the case.
+# As the search can take some time to finalize we provide a mechanism that checks if results were already computed and skip 
+# the neural architecture search if it is the case.
 max_evals = 200
 
 hpo_results = None
@@ -901,14 +961,14 @@ torch_module = DeepNormalRegressor(
     ],
     loc=y_mu,
     scale=y_std,
-)
+).to(device=device, dtype=dtype)
 
 torch_module.load_state_dict(torch.load(weights_path, weights_only=True))
 torch_module.eval()
 
-y_pred = torch_module.forward(torch.from_numpy(test_X).float())
-y_pred_mean = y_pred.loc.detach().numpy()
-y_pred_std = y_pred.scale.detach().numpy()
+y_pred = torch_module.forward(to_torch(test_X))
+y_pred_mean = to_numpy(y_pred.loc)
+y_pred_std = to_numpy(y_pred.scale)
 
 # %%
 
@@ -948,18 +1008,16 @@ from deephyper.predictor.torch import TorchPredictor
 
 class NormalTorchPredictor(TorchPredictor):
     def __init__(self, torch_module):
-        super().__init__(torch_module)
+        super().__init__(torch_module.to(device=device, dtype=dtype))
 
     def pre_process_inputs(self, X):
-        X = super().pre_process_inputs(X).float()
-        return X
+        return to_torch(X)
 
     def post_process_predictions(self, y):
-        y = {
-            "loc": y.loc.detach().numpy(),
-            "scale": y.scale.detach().numpy(),
+        return {
+            "loc": to_numpy(y.loc),
+            "scale": to_numpy(y.scale),
         }
-        return y
 
 
 # %%

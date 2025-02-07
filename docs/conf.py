@@ -335,6 +335,7 @@ sphinx_gallery_conf = {
     "ignore_pattern": r"_util\.py",
     "remove_config_comments": True,
     "plot_gallery": True,
+    "promote_jupyter_magic": True,
 }
 
 # Patch Sphinx Gallery
