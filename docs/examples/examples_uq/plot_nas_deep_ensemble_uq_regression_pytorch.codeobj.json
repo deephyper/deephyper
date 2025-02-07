@@ -1040,6 +1040,33 @@
    "name": "HpProblem"
   }
  ],
+ "device": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "device_count": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "dtype": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "dtype"
+  }
+ ],
  "ensemble": [
   {
    "is_class": false,
@@ -1478,6 +1505,22 @@
    "module": "builtins",
    "module_short": "builtins",
    "name": "str"
+  }
+ ],
+ "multiprocessing.cpu_count": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "module.cpu_count"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "multiprocessing",
+   "module_short": "multiprocessing",
+   "name": "cpu_count"
   }
  ],
  "nll": [
@@ -3273,6 +3316,40 @@
    "name": "builtin_function_or_method"
   }
  ],
+ "to_numpy": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "to_torch": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "torch.cuda.is_available": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.cuda",
+   "module_short": "torch.cuda",
+   "name": "is_available"
+  }
+ ],
  "torch.distributions.Normal": [
   {
    "is_class": true,
@@ -3343,6 +3420,22 @@
    "module": "torch.distributions",
    "module_short": "torch.distributions",
    "name": "Normal"
+  }
+ ],
+ "torch.float32": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "dtype"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "float32"
   }
  ],
  "torch.from_numpy": [
@@ -3631,6 +3724,43 @@
    "name": "Module.load_state_dict"
   }
  ],
+ "torch_module.to": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "__main__",
+   "module_short": "__main__",
+   "name": "DeepNormalRegressor.to"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn.modules.module",
+   "module_short": "torch.nn",
+   "name": "Module.to"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Module.to"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Module.to"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Module.to"
+  }
+ ],
  "tqdm": [
   {
    "is_class": true,
@@ -3869,7 +3999,7 @@
    "name": "dict"
   }
  ],
- "y_pred.loc.detach": [
+ "y_pred.loc": [
   {
    "is_class": false,
    "is_explicit": false,
@@ -3878,7 +4008,7 @@
    "name": "dict"
   }
  ],
- "y_pred.scale.detach": [
+ "y_pred.scale": [
   {
    "is_class": false,
    "is_explicit": false,

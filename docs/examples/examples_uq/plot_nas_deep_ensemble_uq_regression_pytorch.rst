@@ -34,11 +34,24 @@ Specifically, in this tutorial you will learn how to:
 
 This tutorial will provide a hands-on approach to leveraging NAS for robust regression models with well-calibrated uncertainty estimates.
 
-.. GENERATED FROM PYTHON SOURCE LINES 18-34
+.. GENERATED FROM PYTHON SOURCE LINES 20-29
+
+Installation and imports
+------------------------
+
+Installing dependencies with the :ref:`pip installation <install-pip>` is recommended. It requires **Python >= 3.10**.
+
+.. code-block:: bash
+
+    %%bash
+    pip install "deephyper[ray,torch]"
+
+.. GENERATED FROM PYTHON SOURCE LINES 31-47
 
 .. dropdown:: Code (Import statements)
 
     .. code-block:: Python
+
 
         import json
         import os
@@ -51,7 +64,6 @@ This tutorial will provide a hands-on approach to leveraging NAS for robust regr
         from sklearn.model_selection import train_test_split
         from tqdm.notebook import tqdm
 
-
         WIDTH_PLOTS = 8
         HEIGHT_PLOTS = WIDTH_PLOTS / 1.618
 
@@ -62,7 +74,7 @@ This tutorial will provide a hands-on approach to leveraging NAS for robust regr
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 35-50
+.. GENERATED FROM PYTHON SOURCE LINES 48-63
 
 Synthetic data generation
 -------------------------
@@ -80,7 +92,7 @@ and :math:`\epsilon(X) \sim \mathcal{N}(0, \sigma(X))` with:
 - :math:`\sigma(x) = 0.5` if :math:`x \in [-30,-15]`
 - :math:`\sigma(x) = 1.0` if :math:`x \in [15,30]`
 
-.. GENERATED FROM PYTHON SOURCE LINES 50-108
+.. GENERATED FROM PYTHON SOURCE LINES 63-121
 
 .. dropdown:: Code (Loading synthetic data)
 
@@ -155,7 +167,7 @@ and :math:`\epsilon(X) \sim \mathcal{N}(0, \sigma(X))` with:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 109-124
+.. GENERATED FROM PYTHON SOURCE LINES 122-137
 
 Configurable neural network with uncertainty
 --------------------------------------------
@@ -173,7 +185,7 @@ The output of this module will be a Gaussian distribution :math:`\mathcal{N}(\mu
 The uncertainty :math:`\sigma_\theta(x)` estimated by the network is an estimator of :math:`V_Y[Y|X=x]` therefore corresponding
 to aleatoric uncertainty (a.k.a., intrinsic noise).
 
-.. GENERATED FROM PYTHON SOURCE LINES 124-205
+.. GENERATED FROM PYTHON SOURCE LINES 137-218
 
 .. code-block:: Python
 
@@ -265,7 +277,7 @@ to aleatoric uncertainty (a.k.a., intrinsic noise).
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 206-217
+.. GENERATED FROM PYTHON SOURCE LINES 219-230
 
 Hyperparameter search space
 ---------------------------
@@ -279,7 +291,7 @@ In the definition of the hyperparameter space, we add constraints using :class:`
 represent when an hyperparameter is active. In this example, "active" means it actually influence the code execution of
 the trained model.
 
-.. GENERATED FROM PYTHON SOURCE LINES 217-271
+.. GENERATED FROM PYTHON SOURCE LINES 230-284
 
 .. code-block:: Python
 
@@ -419,7 +431,7 @@ the trained model.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 272-288
+.. GENERATED FROM PYTHON SOURCE LINES 285-301
 
 Loss and Metric
 ---------------
@@ -438,7 +450,7 @@ As complementary metric, we use the squared error to evaluate the quality of the
     L_\text{SE}(x, y;\theta) = (\mu_\theta(x)-y)^2
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 288-308
+.. GENERATED FROM PYTHON SOURCE LINES 301-321
 
 .. code-block:: Python
 
@@ -469,7 +481,7 @@ As complementary metric, we use the squared error to evaluate the quality of the
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 309-317
+.. GENERATED FROM PYTHON SOURCE LINES 322-330
 
 Training loop
 -------------
@@ -480,7 +492,7 @@ We also add a mechanism to checkpoint weights of the model based on the best obs
 
 Finally, we add an early stopping mechanism to save computing resources.
 
-.. GENERATED FROM PYTHON SOURCE LINES 317-409
+.. GENERATED FROM PYTHON SOURCE LINES 330-422
 
 .. dropdown:: Code (Training loop)
 
@@ -536,10 +548,10 @@ Finally, we add an early stopping mechanism to save computing resources.
                     b_val_loss = torch.mean(nll(y_val, y_dist))
                     b_val_mse = torch.mean(squared_error(y_val, y_dist))
 
-                    batch_losses_t.append(b_train_loss.detach().numpy())
-                    batch_mse_t.append(b_train_mse.detach().numpy())
-                    batch_losses_v.append(b_val_loss.detach().numpy())
-                    batch_mse_v.append(b_val_mse.detach().numpy())
+                    batch_losses_t.append(b_train_loss.detach().cpu().numpy())
+                    batch_mse_t.append(b_train_mse.detach().cpu().numpy())
+                    batch_losses_v.append(b_val_loss.detach().cpu().numpy())
+                    batch_mse_v.append(b_val_mse.detach().cpu().numpy())
 
                 train_loss.append(np.mean(batch_losses_t))
                 val_loss.append(np.mean(batch_losses_v))
@@ -584,7 +596,62 @@ Finally, we add an early stopping mechanism to save computing resources.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 410-416
+.. GENERATED FROM PYTHON SOURCE LINES 423-425
+
+Run time
+--------
+
+.. GENERATED FROM PYTHON SOURCE LINES 425-437
+
+.. code-block:: Python
+
+    import multiprocessing
+
+    dtype = torch.float32
+    if torch.cuda.is_available():
+        device = "cuda"
+        device_count = 1
+    else:
+        device = "cpu"
+        device_count = multiprocessing.cpu_count()
+
+    print(f"Runtime with {device=}, {device_count=}, {dtype=}")
+
+
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+    Runtime with device='cpu', device_count=10, dtype=torch.float32
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 438-447
+
+.. dropdown:: Code (Conversion utility functions)
+
+    .. code-block:: Python
+
+
+
+        def to_torch(array):
+            return torch.from_numpy(array).to(device=device, dtype=dtype)
+
+        def to_numpy(tensor):
+            return tensor.detach().cpu().numpy()
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 448-454
 
 Evaluation function
 -------------------
@@ -593,12 +660,13 @@ The evaluation function (often called ``run``-function in DeepHyper) is the func
 receives suggested parameters as inputs ``job.parameters`` and returns an ``"objective"`` 
 that we want to maximize.
 
-.. GENERATED FROM PYTHON SOURCE LINES 416-498
+.. GENERATED FROM PYTHON SOURCE LINES 454-532
 
 .. code-block:: Python
 
 
     max_n_epochs = 1_000
+
 
     def run(job, model_checkpoint_dir=".", verbose=False):
         (x, y), (vx, vy), (tx, ty) = load_data()
@@ -622,7 +690,7 @@ that we want to maximize.
             ],
             loc=y_mu,
             scale=y_std,
-        )
+        ).to(device=device, dtype=dtype)
 
         if verbose:
             print(model)
@@ -635,13 +703,8 @@ that we want to maximize.
             patience=job.parameters["lr_scheduler_patience"],
         )
 
-        x = torch.from_numpy(x).float()
-        vx = torch.from_numpy(vx).float()
-        tx = torch.from_numpy(tx).float()
-
-        y = torch.from_numpy(y).float()
-        vy = torch.from_numpy(vy).float()
-        ty = torch.from_numpy(ty).float()
+        x, vx, tx = to_torch(x), to_torch(vx), to_torch(tx)
+        y, vy, ty = to_torch(y), to_torch(vy), to_torch(ty)
 
         try:
             train_losses, val_losses, train_mse, val_mse = train(
@@ -661,8 +724,8 @@ that we want to maximize.
             return "F_fit"
 
         ty_pred = model(tx)
-        test_loss = torch.mean(nll(ty, ty_pred)).detach().numpy()
-        test_mse = torch.mean(squared_error(ty, ty_pred)).detach().numpy()
+        test_loss = to_numpy(torch.mean(nll(ty, ty_pred)))
+        test_mse = to_numpy(torch.mean(squared_error(ty, ty_pred)))
 
         # Saving the model's state (i.e., weights)
         torch.save(model.state_dict(), os.path.join(model_checkpoint_dir, f"model_{job.id}.pt"))
@@ -686,7 +749,7 @@ that we want to maximize.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 499-504
+.. GENERATED FROM PYTHON SOURCE LINES 533-538
 
 Evaluation of the baseline
 --------------------------
@@ -694,7 +757,7 @@ Evaluation of the baseline
 We evaluate the default configuration of hyperparameters that we call "baseline" using the same evaluation function.
 This allows to test the evaluation function.
 
-.. GENERATED FROM PYTHON SOURCE LINES 504-527
+.. GENERATED FROM PYTHON SOURCE LINES 538-561
 
 .. code-block:: Python
 
@@ -766,7 +829,7 @@ This allows to test the evaluation function.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 528-534
+.. GENERATED FROM PYTHON SOURCE LINES 562-568
 
 Then, we look at the learning curves of our baseline model returned by the evaluation function.
 
@@ -775,7 +838,7 @@ These curves display a good learning behaviour:
 - the training and validation curves follow each other closely and are decreasing.
 - a clear convergence plateau is reached at the end of the training.
 
-.. GENERATED FROM PYTHON SOURCE LINES 534-557
+.. GENERATED FROM PYTHON SOURCE LINES 568-591
 
 .. dropdown:: Code (Make learning curves plot)
 
@@ -815,13 +878,13 @@ These curves display a good learning behaviour:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 558-561
+.. GENERATED FROM PYTHON SOURCE LINES 592-595
 
 In addition, we look at the predictions by reloading the checkpointed weights.
 
 We first need to recreate the torch module and then we update its state using the checkpointed weights.
 
-.. GENERATED FROM PYTHON SOURCE LINES 561-592
+.. GENERATED FROM PYTHON SOURCE LINES 595-626
 
 .. code-block:: Python
 
@@ -847,14 +910,14 @@ We first need to recreate the torch module and then we update its state using th
         ],
         loc=y_mu,
         scale=y_std,
-    )
+    ).to(device=device, dtype=dtype)
 
     torch_module.load_state_dict(torch.load(weights_path, weights_only=True))
     torch_module.eval()
 
-    y_pred = torch_module.forward(torch.from_numpy(test_X).float())
-    y_pred_mean = y_pred.loc.detach().numpy()
-    y_pred_std = y_pred.scale.detach().numpy()
+    y_pred = torch_module.forward(to_torch(test_X))
+    y_pred_mean = to_numpy(y_pred.loc)
+    y_pred_std = to_numpy(y_pred.scale)
 
 
 
@@ -863,7 +926,7 @@ We first need to recreate the torch module and then we update its state using th
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 593-619
+.. GENERATED FROM PYTHON SOURCE LINES 627-653
 
 .. dropdown:: Code (Make prediction plot)
 
@@ -906,7 +969,7 @@ We first need to recreate the torch module and then we update its state using th
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 620-707
+.. GENERATED FROM PYTHON SOURCE LINES 654-741
 
 Neural architecture search
 --------------------------
@@ -996,7 +1059,7 @@ Interestingly the same trick will be used later to decompose the uncertainty of 
 - ``kappa`` and ``scheduler``: are the parameters that define the schedule of :math:`\kappa^j_i` previously mentionned.
 - ``objective_scaler``: is a parameter that can be used to rescale the observed objectives (e.g., identity, min-max, log).
 
-.. GENERATED FROM PYTHON SOURCE LINES 707-728
+.. GENERATED FROM PYTHON SOURCE LINES 741-762
 
 .. code-block:: Python
 
@@ -1028,7 +1091,7 @@ Interestingly the same trick will be used later to decompose the uncertainty of 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 729-740
+.. GENERATED FROM PYTHON SOURCE LINES 763-774
 
 Then, we create the search instance.
 
@@ -1042,7 +1105,7 @@ submit and gather asynchronous evaluations.
 The ``stopper`` is an optional parameter that allows to use an early-discarding (a.k.a., multi-fidelity) strategy to stop early low performing evaluations.
 In our case we will use the Asynchronous Successive Halving (ASHA) early-discarding strategy.
 
-.. GENERATED FROM PYTHON SOURCE LINES 740-774
+.. GENERATED FROM PYTHON SOURCE LINES 774-823
 
 .. code-block:: Python
 
@@ -1059,18 +1122,32 @@ In our case we will use the Asynchronous Successive Halving (ASHA) early-discard
         model_checkpoint_dir = os.path.join(hpo_dir, "models")
         pathlib.Path(model_checkpoint_dir).mkdir(parents=True, exist_ok=True)
 
+        method_kwargs = {
+            "run_function_kwargs": {
+                "model_checkpoint_dir": model_checkpoint_dir,
+                "verbose": False,
+            },
+            "callbacks": [TqdmCallback()],
+        }
+
+        if device == "cuda":
+            method_kwargs.update({
+                "num_cpus": device_count,
+                "num_gpus": device_count,
+                "num_cpus_per_task": 1,
+                "num_gpus_per_task": 1,
+            })
+        else:
+            method_kwargs.update({
+                "num_cpus": device_count,
+                "num_cpus_per_task": 1,
+            })
+    
+
         evaluator = Evaluator.create(
             run,
             method="ray",  
-            method_kwargs={
-                "num_cpus": 8,
-                "num_cpus_per_task": 1,
-                "run_function_kwargs": {
-                    "model_checkpoint_dir": model_checkpoint_dir,
-                    "verbose": False,
-                },
-                "callbacks": [TqdmCallback()],
-            },
+            method_kwargs=method_kwargs,
         )
 
         stopper = SuccessiveHalvingStopper(min_steps=1, max_steps=max_n_epochs)
@@ -1087,11 +1164,24 @@ In our case we will use the Asynchronous Successive Halving (ASHA) early-discard
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 775-776
 
-As the search can take some time to finalize we provide a mechanism that checks if results were already computed and skip the search if it is the case.
+.. GENERATED FROM PYTHON SOURCE LINES 824-832
 
-.. GENERATED FROM PYTHON SOURCE LINES 776-788
+Preload cached results if you want to skip the slow neural architecture search step.
+
+.. code-block:: bash
+
+    %%bash
+    pip install gdown  # Install if necessary
+    gdown "https://drive.google.com/uc?id=1VOV-UM0ws0lopHvoYT_9RAiRdT1y4Kus"
+    tar -xvf nas_regression.tar.gz
+
+.. GENERATED FROM PYTHON SOURCE LINES 834-836
+
+As the search can take some time to finalize we provide a mechanism that checks if results were already computed and skip 
+the neural architecture search if it is the case.
+
+.. GENERATED FROM PYTHON SOURCE LINES 836-848
 
 .. code-block:: Python
 
@@ -1120,14 +1210,14 @@ As the search can take some time to finalize we provide a mechanism that checks 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 789-793
+.. GENERATED FROM PYTHON SOURCE LINES 849-853
 
 Analysis of the results
 -----------------------
 
 We will now look at the results of the search globally in term of evolution of the objective and worker's activity.
 
-.. GENERATED FROM PYTHON SOURCE LINES 793-821
+.. GENERATED FROM PYTHON SOURCE LINES 853-881
 
 .. code-block:: Python
 
@@ -1171,11 +1261,11 @@ We will now look at the results of the search globally in term of evolution of t
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 822-823
+.. GENERATED FROM PYTHON SOURCE LINES 882-883
 
 Then, we split results between successful and failed results if there are some.
 
-.. GENERATED FROM PYTHON SOURCE LINES 823-831
+.. GENERATED FROM PYTHON SOURCE LINES 883-891
 
 .. code-block:: Python
 
@@ -1857,11 +1947,11 @@ Then, we split results between successful and failed results if there are some.
     <br />
     <br />
 
-.. GENERATED FROM PYTHON SOURCE LINES 832-833
+.. GENERATED FROM PYTHON SOURCE LINES 892-893
 
 We look at the learning curves of the best model and observe improvements in both training and validation loss:
 
-.. GENERATED FROM PYTHON SOURCE LINES 833-875
+.. GENERATED FROM PYTHON SOURCE LINES 893-935
 
 .. code-block:: Python
 
@@ -1919,11 +2009,11 @@ We look at the learning curves of the best model and observe improvements in bot
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 876-877
+.. GENERATED FROM PYTHON SOURCE LINES 936-937
 
 Finally, we look at predictions of this best model and observe that it manage to predict much better than the baseline one the right range. 
 
-.. GENERATED FROM PYTHON SOURCE LINES 877-913
+.. GENERATED FROM PYTHON SOURCE LINES 937-973
 
 .. code-block:: Python
 
@@ -1954,14 +2044,14 @@ Finally, we look at predictions of this best model and observe that it manage to
         ],
         loc=y_mu,
         scale=y_std,
-    )
+    ).to(device=device, dtype=dtype)
 
     torch_module.load_state_dict(torch.load(weights_path, weights_only=True))
     torch_module.eval()
 
-    y_pred = torch_module.forward(torch.from_numpy(test_X).float())
-    y_pred_mean = y_pred.loc.detach().numpy()
-    y_pred_std = y_pred.scale.detach().numpy()
+    y_pred = torch_module.forward(to_torch(test_X))
+    y_pred_mean = to_numpy(y_pred.loc)
+    y_pred_std = to_numpy(y_pred.scale)
 
 
 
@@ -1970,7 +2060,7 @@ Finally, we look at predictions of this best model and observe that it manage to
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 914-939
+.. GENERATED FROM PYTHON SOURCE LINES 974-999
 
 .. dropdown:: Code (Make prediction plot)
 
@@ -2012,12 +2102,12 @@ Finally, we look at predictions of this best model and observe that it manage to
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 940-942
+.. GENERATED FROM PYTHON SOURCE LINES 1000-1002
 
 Deep ensemble
 -------------
 
-.. GENERATED FROM PYTHON SOURCE LINES 942-965
+.. GENERATED FROM PYTHON SOURCE LINES 1002-1023
 
 .. code-block:: Python
 
@@ -2030,18 +2120,16 @@ Deep ensemble
 
     class NormalTorchPredictor(TorchPredictor):
         def __init__(self, torch_module):
-            super().__init__(torch_module)
+            super().__init__(torch_module.to(device=device, dtype=dtype))
 
         def pre_process_inputs(self, X):
-            X = super().pre_process_inputs(X).float()
-            return X
+            return to_torch(X)
 
         def post_process_predictions(self, y):
-            y = {
-                "loc": y.loc.detach().numpy(),
-                "scale": y.scale.detach().numpy(),
+            return {
+                "loc": to_numpy(y.loc),
+                "scale": to_numpy(y.scale),
             }
-            return y
 
 
 
@@ -2051,7 +2139,7 @@ Deep ensemble
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 966-1016
+.. GENERATED FROM PYTHON SOURCE LINES 1024-1074
 
 .. code-block:: Python
 
@@ -2118,12 +2206,12 @@ Deep ensemble
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 1017-1019
+.. GENERATED FROM PYTHON SOURCE LINES 1075-1077
 
 Ensemble selection
 ------------------
 
-.. GENERATED FROM PYTHON SOURCE LINES 1019-1052
+.. GENERATED FROM PYTHON SOURCE LINES 1077-1110
 
 .. code-block:: Python
 
@@ -2169,120 +2257,120 @@ Ensemble selection
  .. code-block:: none
 
     Ensemble initialized with [44, 70, 76]
-    Step 1, ensemble is [44, 70, 76, 44]
-    Step 2, ensemble is [44, 70, 76, 44, 44]
-    Step 3, ensemble is [44, 70, 76, 44, 44, 44]
-    Step 4, ensemble is [44, 70, 76, 44, 44, 44, 44]
-    Step 5, ensemble is [44, 70, 76, 44, 44, 44, 44, 44]
-    Step 6, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44]
-    Step 7, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44]
-    Step 8, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44]
-    Step 9, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203]
-    Step 10, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44]
-    Step 11, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44]
-    Step 12, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50]
-    Step 13, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44]
-    Step 14, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76]
-    Step 15, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44]
-    Step 16, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44]
-    Step 17, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70]
-    Step 18, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44]
-    Step 19, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44]
-    Step 20, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44]
-    Step 21, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76]
-    Step 22, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203]
-    Step 23, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44]
-    Step 24, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44]
-    Step 25, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44]
-    Step 26, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44]
-    Step 27, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76]
-    Step 28, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44]
-    Step 29, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76]
-    Step 30, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70]
-    Step 31, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44]
-    Step 32, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44]
-    Step 33, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44]
-    Step 34, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70]
-    Step 35, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76]
-    Step 36, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70]
-    Step 37, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44]
-    Step 38, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203]
-    Step 39, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44]
-    Step 40, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70]
-    Step 41, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76]
-    Step 42, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45]
-    Step 43, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44]
-    Step 44, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44]
-    Step 45, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44]
-    Step 46, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44]
-    Step 47, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44]
-    Step 48, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44]
-    Step 49, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44]
-    Step 50, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70]
-    Step 51, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44]
-    Step 52, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44]
-    Step 53, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44]
-    Step 54, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44]
-    Step 55, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44]
-    Step 56, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203]
-    Step 57, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44]
-    Step 58, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44]
-    Step 59, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76]
-    Step 60, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70]
-    Step 61, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44]
-    Step 62, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70]
-    Step 63, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44]
-    Step 64, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70]
-    Step 65, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50]
-    Step 66, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76]
-    Step 67, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44]
-    Step 68, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44]
-    Step 69, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44]
-    Step 70, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76]
-    Step 71, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44]
-    Step 72, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203]
-    Step 73, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44]
-    Step 74, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44]
-    Step 75, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44]
-    Step 76, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44]
-    Step 77, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44]
-    Step 78, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44, 76]
-    Step 79, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44, 76, 76]
-    Step 80, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44, 76, 76, 44]
-    Step 81, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44, 76, 76, 44, 44]
-    Step 82, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44, 76, 76, 44, 44, 44]
-    Step 83, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44, 76, 76, 44, 44, 44, 44]
-    Step 84, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44, 76, 76, 44, 44, 44, 44, 44]
-    Step 85, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44, 76, 76, 44, 44, 44, 44, 44, 44]
-    Step 86, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44, 76, 76, 44, 44, 44, 44, 44, 44, 44]
-    Step 87, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44, 76, 76, 44, 44, 44, 44, 44, 44, 44, 50]
-    Step 88, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44, 76, 76, 44, 44, 44, 44, 44, 44, 44, 50, 44]
-    Step 89, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44, 76, 76, 44, 44, 44, 44, 44, 44, 44, 50, 44, 70]
-    Step 90, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44, 76, 76, 44, 44, 44, 44, 44, 44, 44, 50, 44, 70, 70]
-    Step 91, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44, 76, 76, 44, 44, 44, 44, 44, 44, 44, 50, 44, 70, 70, 44]
-    Step 92, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44, 76, 76, 44, 44, 44, 44, 44, 44, 44, 50, 44, 70, 70, 44, 44]
-    Step 93, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44, 76, 76, 44, 44, 44, 44, 44, 44, 44, 50, 44, 70, 70, 44, 44, 44]
-    Step 94, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44, 76, 76, 44, 44, 44, 44, 44, 44, 44, 50, 44, 70, 70, 44, 44, 44, 44]
-    Step 95, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44, 76, 76, 44, 44, 44, 44, 44, 44, 44, 50, 44, 70, 70, 44, 44, 44, 44, 203]
-    Step 96, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44, 76, 76, 44, 44, 44, 44, 44, 44, 44, 50, 44, 70, 70, 44, 44, 44, 44, 203, 44]
-    Step 97, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44, 76, 76, 44, 44, 44, 44, 44, 44, 44, 50, 44, 70, 70, 44, 44, 44, 44, 203, 44, 44]
-    Step 98, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44, 76, 76, 44, 44, 44, 44, 44, 44, 44, 50, 44, 70, 70, 44, 44, 44, 44, 203, 44, 44, 44]
-    Step 99, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44, 76, 76, 44, 44, 44, 44, 44, 44, 44, 50, 44, 70, 70, 44, 44, 44, 44, 203, 44, 44, 44, 44]
-    Step 100, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 44, 44, 203, 44, 44, 50, 44, 76, 44, 44, 70, 44, 44, 44, 76, 203, 44, 44, 44, 44, 76, 44, 76, 70, 44, 44, 44, 70, 76, 70, 44, 203, 44, 70, 76, 45, 44, 44, 44, 44, 44, 44, 44, 70, 44, 44, 44, 44, 44, 203, 44, 44, 76, 70, 44, 70, 44, 70, 50, 76, 44, 44, 44, 76, 44, 203, 44, 44, 44, 44, 44, 76, 76, 44, 44, 44, 44, 44, 44, 44, 50, 44, 70, 70, 44, 44, 44, 44, 203, 44, 44, 44, 44, 44]
-    After 100 steps, the final ensemble is [ 44  45  50  70  76 203] with weights [0.66990291 0.00970874 0.02912621 0.11650485 0.11650485 0.05825243]
-    selected_predictors_indexes=[44, 45, 50, 70, 76, 203]
-    selected_predictors_weights=[0.6699029126213593, 0.009708737864077669, 0.02912621359223301, 0.11650485436893204, 0.11650485436893204, 0.05825242718446602]
-    selected_predictors_job_ids=array([  7, 132, 106, 119, 158, 134])
+    Step 1, ensemble is [44, 70, 76, 70]
+    Step 2, ensemble is [44, 70, 76, 70, 44]
+    Step 3, ensemble is [44, 70, 76, 70, 44, 50]
+    Step 4, ensemble is [44, 70, 76, 70, 44, 50, 76]
+    Step 5, ensemble is [44, 70, 76, 70, 44, 50, 76, 70]
+    Step 6, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70]
+    Step 7, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76]
+    Step 8, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44]
+    Step 9, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44]
+    Step 10, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44]
+    Step 11, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203]
+    Step 12, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44]
+    Step 13, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76]
+    Step 14, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44]
+    Step 15, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44]
+    Step 16, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44]
+    Step 17, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70]
+    Step 18, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76]
+    Step 19, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44]
+    Step 20, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70]
+    Step 21, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44]
+    Step 22, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76]
+    Step 23, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44]
+    Step 24, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44]
+    Step 25, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44]
+    Step 26, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76]
+    Step 27, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203]
+    Step 28, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44]
+    Step 29, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70]
+    Step 30, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76]
+    Step 31, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44]
+    Step 32, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44]
+    Step 33, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70]
+    Step 34, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44]
+    Step 35, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76]
+    Step 36, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44]
+    Step 37, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44]
+    Step 38, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203]
+    Step 39, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44]
+    Step 40, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44]
+    Step 41, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70]
+    Step 42, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44]
+    Step 43, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76]
+    Step 44, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44]
+    Step 45, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76]
+    Step 46, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44]
+    Step 47, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76]
+    Step 48, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44]
+    Step 49, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44]
+    Step 50, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44]
+    Step 51, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44]
+    Step 52, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50]
+    Step 53, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76]
+    Step 54, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44]
+    Step 55, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44]
+    Step 56, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203]
+    Step 57, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44]
+    Step 58, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44]
+    Step 59, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76]
+    Step 60, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76]
+    Step 61, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44]
+    Step 62, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76]
+    Step 63, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44]
+    Step 64, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44]
+    Step 65, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44]
+    Step 66, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76]
+    Step 67, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44]
+    Step 68, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44]
+    Step 69, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44]
+    Step 70, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70]
+    Step 71, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44]
+    Step 72, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44]
+    Step 73, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44]
+    Step 74, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44]
+    Step 75, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203]
+    Step 76, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76]
+    Step 77, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44]
+    Step 78, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44, 44]
+    Step 79, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44, 44, 44]
+    Step 80, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44, 44, 44, 44]
+    Step 81, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44, 44, 44, 44, 44]
+    Step 82, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44, 44, 44, 44, 44, 203]
+    Step 83, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44, 44, 44, 44, 44, 203, 44]
+    Step 84, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44, 44, 44, 44, 44, 203, 44, 76]
+    Step 85, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44, 44, 44, 44, 44, 203, 44, 76, 44]
+    Step 86, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44, 44, 44, 44, 44, 203, 44, 76, 44, 70]
+    Step 87, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44, 44, 44, 44, 44, 203, 44, 76, 44, 70, 76]
+    Step 88, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44, 44, 44, 44, 44, 203, 44, 76, 44, 70, 76, 44]
+    Step 89, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44, 44, 44, 44, 44, 203, 44, 76, 44, 70, 76, 44, 44]
+    Step 90, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44, 44, 44, 44, 44, 203, 44, 76, 44, 70, 76, 44, 44, 50]
+    Step 91, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44, 44, 44, 44, 44, 203, 44, 76, 44, 70, 76, 44, 44, 50, 44]
+    Step 92, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44, 44, 44, 44, 44, 203, 44, 76, 44, 70, 76, 44, 44, 50, 44, 44]
+    Step 93, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44, 44, 44, 44, 44, 203, 44, 76, 44, 70, 76, 44, 44, 50, 44, 44, 44]
+    Step 94, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44, 44, 44, 44, 44, 203, 44, 76, 44, 70, 76, 44, 44, 50, 44, 44, 44, 76]
+    Step 95, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44, 44, 44, 44, 44, 203, 44, 76, 44, 70, 76, 44, 44, 50, 44, 44, 44, 76, 76]
+    Step 96, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44, 44, 44, 44, 44, 203, 44, 76, 44, 70, 76, 44, 44, 50, 44, 44, 44, 76, 76, 70]
+    Step 97, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44, 44, 44, 44, 44, 203, 44, 76, 44, 70, 76, 44, 44, 50, 44, 44, 44, 76, 76, 70, 44]
+    Step 98, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44, 44, 44, 44, 44, 203, 44, 76, 44, 70, 76, 44, 44, 50, 44, 44, 44, 76, 76, 70, 44, 44]
+    Step 99, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44, 44, 44, 44, 44, 203, 44, 76, 44, 70, 76, 44, 44, 50, 44, 44, 44, 76, 76, 70, 44, 44, 44]
+    Step 100, ensemble is [44, 70, 76, 70, 44, 50, 76, 70, 70, 76, 44, 44, 44, 203, 44, 76, 44, 44, 44, 70, 76, 44, 70, 44, 76, 44, 44, 44, 76, 203, 44, 70, 76, 44, 44, 70, 44, 76, 44, 44, 203, 44, 44, 70, 44, 76, 44, 76, 44, 76, 44, 44, 44, 44, 50, 76, 44, 44, 203, 44, 44, 76, 76, 44, 76, 44, 44, 44, 76, 44, 44, 44, 70, 44, 44, 44, 44, 203, 76, 44, 44, 44, 44, 44, 203, 44, 76, 44, 70, 76, 44, 44, 50, 44, 44, 44, 76, 76, 70, 44, 44, 44, 44]
+    After 100 steps, the final ensemble is [ 44  50  70  76 203] with weights [0.58252427 0.02912621 0.11650485 0.21359223 0.05825243]
+    selected_predictors_indexes=[44, 50, 70, 76, 203]
+    selected_predictors_weights=[0.5825242718446602, 0.02912621359223301, 0.11650485436893204, 0.21359223300970873, 0.05825242718446602]
+    selected_predictors_job_ids=array([  7, 106, 119, 158, 134])
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 1053-1055
+.. GENERATED FROM PYTHON SOURCE LINES 1111-1113
 
 Evaluation of the ensemble
 --------------------------
 
-.. GENERATED FROM PYTHON SOURCE LINES 1055-1099
+.. GENERATED FROM PYTHON SOURCE LINES 1113-1157
 
 .. code-block:: Python
 
@@ -2337,12 +2425,12 @@ Evaluation of the ensemble
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 1100-1102
+.. GENERATED FROM PYTHON SOURCE LINES 1158-1160
 
 Aleatoric Uncertainty
 ---------------------
 
-.. GENERATED FROM PYTHON SOURCE LINES 1102-1126
+.. GENERATED FROM PYTHON SOURCE LINES 1160-1184
 
 .. dropdown:: Code (Make aleatoric uncertainty plot)
 
@@ -2383,12 +2471,12 @@ Aleatoric Uncertainty
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 1127-1129
+.. GENERATED FROM PYTHON SOURCE LINES 1185-1187
 
 Epistemic uncertainty
 ---------------------
 
-.. GENERATED FROM PYTHON SOURCE LINES 1129-1153
+.. GENERATED FROM PYTHON SOURCE LINES 1187-1211
 
 .. dropdown:: Code (Make epistemic uncertainty plot)
 
@@ -2432,7 +2520,7 @@ Epistemic uncertainty
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 8.366 seconds)
+   **Total running time of the script:** (0 minutes 8.851 seconds)
 
 
 .. _sphx_glr_download_examples_examples_uq_plot_nas_deep_ensemble_uq_regression_pytorch.py:
