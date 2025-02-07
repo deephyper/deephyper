@@ -821,7 +821,7 @@ def run_neural_architecture_search(problem, max_evals):
 
 
 # %%
-# Preload cached results if you want to skip the slow neural architecture search step.
+# Preload cached results if you want to skip the slow neural architecture search step by running the following commands:
 #
 # .. code-block:: bash
 #
@@ -829,6 +829,14 @@ def run_neural_architecture_search(problem, max_evals):
 #     pip install gdown  # Install if necessary
 #     gdown "https://drive.google.com/uc?id=1VOV-UM0ws0lopHvoYT_9RAiRdT1y4Kus"
 #     tar -xvf nas_regression.tar.gz
+
+# %% 
+# If you want to remove previously computed results run the following command:
+#
+# .. code-block:: bash
+#
+#     %%bash
+#     rm -rf nas_regression/
 
 # %% 
 # As the search can take some time to finalize we provide a mechanism that checks if results were already computed and skip 
