@@ -226,6 +226,12 @@ Table of Contents
     Publications <https://deephyper.github.io/papers>
     Authors <https://deephyper.github.io/aboutus>
 
+.. toctree:: 2
+   :caption: Facility Guides
+   :maxdepth: 1
+   :titlesonly:
+
+   facility/alcf/index
 
 .. toctree::
     :caption: API Reference
@@ -248,8 +254,6 @@ Table of Contents
     developer_guides/contributing
     developer_guides/software_architecture
     
-
-
 Indices and tables
 ==================
 
