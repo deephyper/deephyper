@@ -1,10 +1,30 @@
 :orphan:
 
+.. _examples:
+
 Examples
 ========
 
-Below is a gallery of examples on how to use DeepHyper.
+This page consists of code examples on how to use DeepHyper.
 
+
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+.. thumbnail-parent-div-open
+
+.. thumbnail-parent-div-close
+
+.. raw:: html
+
+    </div>
+
+
+Hyperparameter optimization
+---------------------------
 
 
 
@@ -20,14 +40,14 @@ Below is a gallery of examples on how to use DeepHyper.
 
 .. only:: html
 
-  .. image:: /examples/images/thumb/sphx_glr_plot_experimental_design_thumb.png
+  .. image:: /examples/examples_hpo/images/thumb/sphx_glr_plot_experimental_design_thumb.png
     :alt:
 
-  :ref:`sphx_glr_examples_plot_experimental_design.py`
+  :ref:`sphx_glr_examples_examples_hpo_plot_experimental_design.py`
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">Standard Experimental Design (Grid Search)</div>
+      <div class="sphx-glr-thumbnail-title">Experimental Design with Grid Search</div>
     </div>
 
 
@@ -37,27 +57,10 @@ Below is a gallery of examples on how to use DeepHyper.
 
 .. only:: html
 
-  .. image:: /examples/images/thumb/sphx_glr_plot_profile_worker_utilization_thumb.png
+  .. image:: /examples/examples_hpo/images/thumb/sphx_glr_plot_notify_failures_hpo_thumb.png
     :alt:
 
-  :ref:`sphx_glr_examples_plot_profile_worker_utilization.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Profile the Worker Utilization</div>
-    </div>
-
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
-
-.. only:: html
-
-  .. image:: /examples/images/thumb/sphx_glr_plot_notify_failures_hpo_thumb.png
-    :alt:
-
-  :ref:`sphx_glr_examples_plot_notify_failures_hpo.py`
+  :ref:`sphx_glr_examples_examples_hpo_plot_notify_failures_hpo.py`
 
 .. raw:: html
 
@@ -71,14 +74,49 @@ Below is a gallery of examples on how to use DeepHyper.
 
 .. only:: html
 
-  .. image:: /examples/images/thumb/sphx_glr_plot_transfer_learning_for_hpo_thumb.png
+  .. image:: /examples/examples_hpo/images/thumb/sphx_glr_plot_transfer_learning_for_hpo_thumb.png
     :alt:
 
-  :ref:`sphx_glr_examples_plot_transfer_learning_for_hpo.py`
+  :ref:`sphx_glr_examples_examples_hpo_plot_transfer_learning_for_hpo.py`
 
 .. raw:: html
 
       <div class="sphx-glr-thumbnail-title">Applying Transfer Learning to Hyperparameter Optimization</div>
+    </div>
+
+
+.. thumbnail-parent-div-close
+
+.. raw:: html
+
+    </div>
+
+
+Parallelism
+-----------
+
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+.. thumbnail-parent-div-open
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
+
+.. only:: html
+
+  .. image:: /examples/examples_parallelism/images/thumb/sphx_glr_plot_profile_worker_utilization_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_examples_parallelism_plot_profile_worker_utilization.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Profile the Worker Utilization</div>
     </div>
 
 
@@ -88,10 +126,10 @@ Below is a gallery of examples on how to use DeepHyper.
 
 .. only:: html
 
-  .. image:: /examples/images/thumb/sphx_glr_plot_from_serial_to_parallel_hpo_thumb.png
+  .. image:: /examples/examples_parallelism/images/thumb/sphx_glr_plot_from_serial_to_parallel_hpo_thumb.png
     :alt:
 
-  :ref:`sphx_glr_examples_plot_from_serial_to_parallel_hpo.py`
+  :ref:`sphx_glr_examples_examples_parallelism_plot_from_serial_to_parallel_hpo.py`
 
 .. raw:: html
 
@@ -105,10 +143,10 @@ Below is a gallery of examples on how to use DeepHyper.
 
 .. only:: html
 
-  .. image:: /examples/images/thumb/sphx_glr_plot_scaling_bo_thumb.png
+  .. image:: /examples/examples_parallelism/images/thumb/sphx_glr_plot_scaling_bo_thumb.png
     :alt:
 
-  :ref:`sphx_glr_examples_plot_scaling_bo.py`
+  :ref:`sphx_glr_examples_examples_parallelism_plot_scaling_bo.py`
 
 .. raw:: html
 
@@ -123,15 +161,49 @@ Below is a gallery of examples on how to use DeepHyper.
     </div>
 
 
+Uncertainty quantification
+--------------------------
+
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+.. thumbnail-parent-div-open
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele, Brett Eiffert.">
+
+.. only:: html
+
+  .. image:: /examples/examples_uq/images/thumb/sphx_glr_plot_nas_deep_ensemble_uq_regression_pytorch_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_examples_uq_plot_nas_deep_ensemble_uq_regression_pytorch.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Neural Architecture Search and Deep Ensemble with Uncertainty Quantification for Regression (Pytorch)</div>
+    </div>
+
+
+.. thumbnail-parent-div-close
+
+.. raw:: html
+
+    </div>
+
+
 .. toctree::
    :hidden:
+   :includehidden:
 
-   /examples/plot_experimental_design
-   /examples/plot_profile_worker_utilization
-   /examples/plot_notify_failures_hpo
-   /examples/plot_transfer_learning_for_hpo
-   /examples/plot_from_serial_to_parallel_hpo
-   /examples/plot_scaling_bo
+
+   /examples/examples_hpo/index.rst
+   /examples/examples_parallelism/index.rst
+   /examples/examples_uq/index.rst
 
 
 .. only:: html

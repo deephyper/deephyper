@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**01:12.020** total execution time for 6 files **from all galleries**:
+**00:19.320** total execution time for 7 files **from all galleries**:
 
 .. container::
 
@@ -32,21 +32,24 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_examples_plot_scaling_bo.py` (``../examples/plot_scaling_bo.py``)
-     - 01:12.020
+   * - :ref:`sphx_glr_examples_examples_uq_plot_nas_deep_ensemble_uq_regression_pytorch.py` (``../examples/examples_uq/plot_nas_deep_ensemble_uq_regression_pytorch.py``)
+     - 00:19.320
      - 0.0
-   * - :ref:`sphx_glr_examples_plot_experimental_design.py` (``../examples/plot_experimental_design.py``)
+   * - :ref:`sphx_glr_examples_examples_hpo_plot_experimental_design.py` (``../examples/examples_hpo/plot_experimental_design.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_examples_plot_from_serial_to_parallel_hpo.py` (``../examples/plot_from_serial_to_parallel_hpo.py``)
+   * - :ref:`sphx_glr_examples_examples_hpo_plot_notify_failures_hpo.py` (``../examples/examples_hpo/plot_notify_failures_hpo.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_examples_plot_notify_failures_hpo.py` (``../examples/plot_notify_failures_hpo.py``)
+   * - :ref:`sphx_glr_examples_examples_hpo_plot_transfer_learning_for_hpo.py` (``../examples/examples_hpo/plot_transfer_learning_for_hpo.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_examples_plot_profile_worker_utilization.py` (``../examples/plot_profile_worker_utilization.py``)
+   * - :ref:`sphx_glr_examples_examples_parallelism_plot_from_serial_to_parallel_hpo.py` (``../examples/examples_parallelism/plot_from_serial_to_parallel_hpo.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_examples_plot_transfer_learning_for_hpo.py` (``../examples/plot_transfer_learning_for_hpo.py``)
+   * - :ref:`sphx_glr_examples_examples_parallelism_plot_profile_worker_utilization.py` (``../examples/examples_parallelism/plot_profile_worker_utilization.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_examples_examples_parallelism_plot_scaling_bo.py` (``../examples/examples_parallelism/plot_scaling_bo.py``)
      - 00:00.000
      - 0.0

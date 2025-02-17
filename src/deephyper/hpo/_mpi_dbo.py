@@ -295,6 +295,7 @@ class MPIDistributedBO(CBO):
             )
 
         self.comm.Barrier()
+        self.is_master = self.rank == 0
 
         # Replace CBO _init_params by DBO _init_params
         self._init_params = _init_params
@@ -374,24 +375,4 @@ class MPIDistributedBO(CBO):
         # all ranks synchronise with timestamp on root rank
         evaluator.timestamp = comm.bcast(evaluator.timestamp)
 
-        # replace dump_evals of evaluator by empty function to avoid concurrent writtings in file
-        if rank != root:
-
-            def dumps_evals(*args, **kwargs):
-                pass
-
-            evaluator.dump_jobs_done_to_csv = dumps_evals
-
         return evaluator
-
-    def extend_results_with_pareto_efficient(self, df_path: str):
-        """Extend the results DataFrame with the Pareto-Front.
-
-        It adds a column ``pareto_efficient`` which is ``True`` if the point is Pareto efficient.
-
-        Args:
-            df_path (pd.DataFrame): the path to results DataFrame.
-        """
-        if self.rank == 0:
-            super().extend_results_with_pareto_efficient(df_path)
-        self.comm.Barrier()

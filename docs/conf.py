@@ -13,21 +13,21 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-
-# import sys
+import re
+import sys
 
 import git
 import sphinx_book_theme
+import sphinx_gallery.gen_rst
 
-
-# sys.path.insert(0, os.path.abspath(".."))
+from textwrap import indent
 
 
 # -- Project information -----------------------------------------------------
 
 project = "DeepHyper"
-copyright = "2018-2024, Argonne"
-author = "Argonne"
+copyright = "2018-2024, DeepHyper Team"
+author = "DeepHyper Team"
 
 # The short X.Y version
 about = {}
@@ -43,7 +43,7 @@ else:
     release = f'v{about["__version__"]}-{about["__version_suffix__"]}'
 
 # PULL Tutorials
-branch_name_map = {"master": "main", "latest": "main", "develop": "develop"}
+branch_name_map = {"master": "main", "stable": "main", "latest": "develop", "develop": "develop"}
 if os.environ.get("READTHEDOCS"):
     doc_version = os.environ["READTHEDOCS_VERSION"]
 else:
@@ -78,6 +78,7 @@ extensions = [
     "nbsphinx",
     "sphinx_book_theme",
     "sphinx_copybutton",
+    "sphinx_design",
     "sphinx_gallery.gen_gallery",
     "sphinx_lfs_content",
     "sphinx.ext.autodoc",
@@ -124,7 +125,8 @@ exclude_patterns = [
     "_templates",
     "Thumbs.db",
     ".DS_Store",
-    "examples/*.ipynb",
+    "examples/**.ipynb",
+    "examples/**.py",
 ]
 
 # The name of the Pygments (syntax highlighting) style to use.
@@ -260,13 +262,30 @@ epub_exclude_files = ["search.html"]
 
 # -- Options for intersphinx extension ---------------------------------------
 
+branch_name_map = {"master": "stable", "stable": "stable", "latest": "latest", "develop": "latest"}
+if os.environ.get("READTHEDOCS"):
+    doc_version = os.environ["READTHEDOCS_VERSION"]
+else:
+    github_repo = git.Repo(search_parent_directories=True)
+    doc_version = branch_name_map.get(github_repo.active_branch.name, "latest")
+
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/{.major}".format(sys.version_info), None),
+    "numpy": ("https://numpy.org/doc/stable", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
+    "matplotlib": ("https://matplotlib.org/", None),
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+    "torch": ("https://pytorch.org/docs/main/", None),
+    "ConfigSpace": ("https://automl.github.io/ConfigSpace/latest/", None),
+    "deephyper": (f"https://deephyper.readthedocs.io/en/{doc_version}/", None),
+}
+
 
 # -- Options for todo extension ----------------------------------------------
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = True
+todo_include_todos = False
 
 # makes sphinx do a mock import of mpi4py so it’s not broken when you try to do auto-docs and import mpi4py
 autodoc_mock_imports = [
@@ -302,17 +321,92 @@ autosummary_mock_imports = autodoc_mock_imports + [
 # Remove <BLANKLINE>
 trim_doctest_flags = True
 
-
-# Sphinx Gallery
-
-sphinx_gallery_conf = {
-    "examples_dirs": "../examples",  # path to your example scripts
-    "gallery_dirs": "examples",  # path to where to save gallery generated output
-    "filename_pattern": "/plot_",
-    "ignore_pattern": r"_util\.py",
-}
-
-
+# Add custom JS/CSS
 def setup(app):
     app.add_css_file("custom.css")
     app.add_js_file("custom.js")
+
+# Sphinx Gallery
+sphinx_gallery_conf = {
+    "examples_dirs": "../examples",  # path to your example scripts
+    "gallery_dirs": "examples",  # path to where to save gallery generated output
+    "filename_pattern": r"/plot_",
+    # "filename_pattern": r"/plot_experimental_design\.py",
+    "ignore_pattern": r"_util\.py",
+    "remove_config_comments": True,
+    "plot_gallery": True,
+    "promote_jupyter_magic": True,
+}
+
+# Patch Sphinx Gallery
+def parse_dropdown(rst_text):
+    pattern = re.compile(
+        r"# \.\. dropdown::(.*?)\n"  # Match the title
+        r"(?:    :(\w+):(?: (.*?))?\n)*",  # Match optional keys and values
+        re.DOTALL
+    )
+
+    match = pattern.search(rst_text)
+    if match:
+
+        title = match.group(1).strip()
+
+        # Extract options as key-value pairs
+        options = dict(re.findall(r"    :(\w+):(?: (.*))?", rst_text))
+
+        # Remove matched lines from rst_text
+        cleaned_rst_text = pattern.sub("", rst_text)
+        for _ in options:
+            i = cleaned_rst_text.index("\n")
+            cleaned_rst_text = cleaned_rst_text[i+1:]
+
+        return {"title": title, "options": options}, cleaned_rst_text
+    
+    return None, rst_text
+
+
+def codestr2rst(codestr, lang="python", lineno=None):
+    """Return reStructuredText code block from code string."""
+
+    # Start by checking if there is a dropdown directive
+    dropdown_config, codestr = parse_dropdown(codestr)
+
+    if lineno is not None:
+        # Sphinx only starts numbering from the first non-empty line.
+        blank_lines = codestr.count("\n", 0, -len(codestr.lstrip()))
+        lineno = f"   :lineno-start: {lineno + blank_lines}\n"
+    else:
+        lineno = ""
+    # If the whole block is indented, prevent Sphinx from removing too much whitespace
+    dedent = "   :dedent: 1\n"
+    for line in codestr.splitlines():
+        if line and not line.startswith((" ", "\t")):
+            dedent = ""
+            break
+    code_directive = f".. code-block:: {lang}\n{dedent}{lineno}\n"
+    indented_block = indent(codestr, " " * 4)
+    block = code_directive + indented_block
+
+    # Process the dropdown configuration
+    if dropdown_config is not None:
+        dropdown_directive = f".. dropdown:: Code"
+        if len(dropdown_config["title"]) > 0:
+            dropdown_directive += f" ({dropdown_config['title']})"
+        dropdown_directive += "\n"
+
+        for key, value in dropdown_config["options"].items():
+            dropdown_directive += " " * 4
+            if len(value) > 0:
+                dropdown_directive += f":{key}: {value}"
+            else:
+                dropdown_directive += f":{key}:"
+            dropdown_directive += "\n"
+
+        dropdown_directive += "\n"
+        code_block = indent(block, " " * 4)
+        block = dropdown_directive + code_block
+
+    return block
+
+# Apply the patch
+sphinx_gallery.gen_rst.codestr2rst = codestr2rst
