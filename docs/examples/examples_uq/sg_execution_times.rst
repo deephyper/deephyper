@@ -6,11 +6,7 @@
 
 Computation times
 =================
-<<<<<<< HEAD
-**00:19.320** total execution time for 1 file **from examples/examples_uq**:
-=======
-**00:19.953** total execution time for 1 file **from examples/examples_uq**:
->>>>>>> master
+**00:17.240** total execution time for 1 file **from examples/examples_uq**:
 
 .. container::
 
@@ -37,9 +33,5 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_examples_examples_uq_plot_nas_deep_ensemble_uq_regression_pytorch.py` (``plot_nas_deep_ensemble_uq_regression_pytorch.py``)
-<<<<<<< HEAD
-     - 00:19.320
-=======
-     - 00:19.953
->>>>>>> master
+     - 00:17.240
      - 0.0
