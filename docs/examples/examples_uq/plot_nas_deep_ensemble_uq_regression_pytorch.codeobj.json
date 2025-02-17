@@ -390,6 +390,7 @@
    "name": "HpProblem"
   }
  ],
+<<<<<<< HEAD
  "MedianStopper": [
   {
    "is_class": true,
@@ -448,6 +449,8 @@
    "name": "MedianStopper"
   }
  ],
+=======
+>>>>>>> master
  "MixedNormalAggregator": [
   {
    "is_class": true,
