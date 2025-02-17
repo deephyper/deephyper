@@ -62,7 +62,7 @@ Installing dependencies with the :ref:`pip installation <install-pip>` is recomm
         import pandas as pd
 
         from sklearn.model_selection import train_test_split
-        from tqdm.notebook import tqdm
+        from tqdm import tqdm
 
         WIDTH_PLOTS = 8
         HEIGHT_PLOTS = WIDTH_PLOTS / 1.618
@@ -92,7 +92,7 @@ and :math:`\epsilon(X) \sim \mathcal{N}(0, \sigma(X))` with:
 - :math:`\sigma(x) = 0.5` if :math:`x \in [-30,-15]`
 - :math:`\sigma(x) = 1.0` if :math:`x \in [15,30]`
 
-.. GENERATED FROM PYTHON SOURCE LINES 63-121
+.. GENERATED FROM PYTHON SOURCE LINES 63-122
 
 .. dropdown:: Code (Loading synthetic data)
 
@@ -140,6 +140,7 @@ and :math:`\epsilon(X) \sim \mathcal{N}(0, \sigma(X))` with:
 
         (train_X, train_y), (valid_X, valid_y), (test_X, test_y) = load_data()
 
+        y_mu, y_std = np.mean(train_y), np.std(train_y)
 
         x_lim, y_lim = 50, 7
         _ = plt.figure(figsize=(WIDTH_PLOTS, HEIGHT_PLOTS))
@@ -167,7 +168,7 @@ and :math:`\epsilon(X) \sim \mathcal{N}(0, \sigma(X))` with:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 122-137
+.. GENERATED FROM PYTHON SOURCE LINES 123-138
 
 Configurable neural network with uncertainty
 --------------------------------------------
@@ -185,7 +186,7 @@ The output of this module will be a Gaussian distribution :math:`\mathcal{N}(\mu
 The uncertainty :math:`\sigma_\theta(x)` estimated by the network is an estimator of :math:`V_Y[Y|X=x]` therefore corresponding
 to aleatoric uncertainty (a.k.a., intrinsic noise).
 
-.. GENERATED FROM PYTHON SOURCE LINES 137-218
+.. GENERATED FROM PYTHON SOURCE LINES 138-219
 
 .. code-block:: Python
 
@@ -277,7 +278,7 @@ to aleatoric uncertainty (a.k.a., intrinsic noise).
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 219-230
+.. GENERATED FROM PYTHON SOURCE LINES 220-231
 
 Hyperparameter search space
 ---------------------------
@@ -291,7 +292,7 @@ In the definition of the hyperparameter space, we add constraints using :class:`
 represent when an hyperparameter is active. In this example, "active" means it actually influence the code execution of
 the trained model.
 
-.. GENERATED FROM PYTHON SOURCE LINES 230-284
+.. GENERATED FROM PYTHON SOURCE LINES 231-285
 
 .. code-block:: Python
 
@@ -300,17 +301,17 @@ the trained model.
     from deephyper.hpo import HpProblem
 
 
-    def create_hpo_problem(max_num_layers=10):
+    def create_hpo_problem(min_num_layers=3, max_num_layers=8, max_num_units=512):
         problem = HpProblem()
 
         # Neural Architecture Hyperparameters
-        num_layers = problem.add_hyperparameter((1, max_num_layers), "num_layers", default_value=5)
+        num_layers = problem.add_hyperparameter((min_num_layers, max_num_layers), "num_layers", default_value=5)
 
         conditions = []
         for i in range(max_num_layers):
 
             # Adding the hyperparameters that impact each layer of the model
-            layer_i_units = problem.add_hyperparameter((16, 200), f"layer_{i}_units", default_value=64)
+            layer_i_units = problem.add_hyperparameter((16, max_num_units), f"layer_{i}_units", default_value=max_num_units)
             layer_i_activation = problem.add_hyperparameter(
                 ["relu", "sigmoid", "tanh", "swish", "mish", "gelu", "silu"],
                 f"layer_{i}_activation",
@@ -321,7 +322,7 @@ the trained model.
             )
 
             # Adding the constraints to define when these hyperparameters are active
-            if i > 0:
+            if i + 1 > min_num_layers:
                 conditions.extend(
                     [
                         GreaterThanCondition(layer_i_units, num_layers, i),
@@ -333,15 +334,15 @@ the trained model.
         problem.add_conditions(conditions)
 
         # Hyperparameters of the output layers
-        problem.add_hyperparameter((16, 200), "n_units_mean", default_value=64)
-        problem.add_hyperparameter((16, 200), "n_units_std", default_value=64)
+        problem.add_hyperparameter((16, max_num_units), "n_units_mean", default_value=max_num_units)
+        problem.add_hyperparameter((16, max_num_units), "n_units_std", default_value=max_num_units)
         problem.add_hyperparameter((1e-8, 1e-2, "log-uniform"), "std_offset", default_value=1e-3)
         problem.add_hyperparameter((0.01, 1.0), "softplus_factor", default_value=0.05)
 
         # Training Hyperparameters
         problem.add_hyperparameter((1e-5, 1e-1, "log-uniform"), "learning_rate", default_value=2e-3)
-        problem.add_hyperparameter((8, 256, "log-uniform"), "batch_size", default_value=128)
-        problem.add_hyperparameter((0.1, 0.99), "lr_scheduler_factor", default_value=0.1)
+        problem.add_hyperparameter((8, 256, "log-uniform"), "batch_size", default_value=32)
+        problem.add_hyperparameter((0.01, 0.99), "lr_scheduler_factor", default_value=0.1)
         problem.add_hyperparameter((10, 100), "lr_scheduler_patience", default_value=20)
 
         return problem
@@ -360,52 +361,40 @@ the trained model.
 
     Configuration space object:
       Hyperparameters:
-        batch_size, Type: UniformInteger, Range: [8, 256], Default: 128, on log-scale
+        batch_size, Type: UniformInteger, Range: [8, 256], Default: 32, on log-scale
         layer_0_activation, Type: Categorical, Choices: {relu, sigmoid, tanh, swish, mish, gelu, silu}, Default: relu
         layer_0_dropout_rate, Type: UniformFloat, Range: [0.0, 0.25], Default: 0.0
-        layer_0_units, Type: UniformInteger, Range: [16, 200], Default: 64
+        layer_0_units, Type: UniformInteger, Range: [16, 512], Default: 512
         layer_1_activation, Type: Categorical, Choices: {relu, sigmoid, tanh, swish, mish, gelu, silu}, Default: relu
         layer_1_dropout_rate, Type: UniformFloat, Range: [0.0, 0.25], Default: 0.0
-        layer_1_units, Type: UniformInteger, Range: [16, 200], Default: 64
+        layer_1_units, Type: UniformInteger, Range: [16, 512], Default: 512
         layer_2_activation, Type: Categorical, Choices: {relu, sigmoid, tanh, swish, mish, gelu, silu}, Default: relu
         layer_2_dropout_rate, Type: UniformFloat, Range: [0.0, 0.25], Default: 0.0
-        layer_2_units, Type: UniformInteger, Range: [16, 200], Default: 64
+        layer_2_units, Type: UniformInteger, Range: [16, 512], Default: 512
         layer_3_activation, Type: Categorical, Choices: {relu, sigmoid, tanh, swish, mish, gelu, silu}, Default: relu
         layer_3_dropout_rate, Type: UniformFloat, Range: [0.0, 0.25], Default: 0.0
-        layer_3_units, Type: UniformInteger, Range: [16, 200], Default: 64
+        layer_3_units, Type: UniformInteger, Range: [16, 512], Default: 512
         layer_4_activation, Type: Categorical, Choices: {relu, sigmoid, tanh, swish, mish, gelu, silu}, Default: relu
         layer_4_dropout_rate, Type: UniformFloat, Range: [0.0, 0.25], Default: 0.0
-        layer_4_units, Type: UniformInteger, Range: [16, 200], Default: 64
+        layer_4_units, Type: UniformInteger, Range: [16, 512], Default: 512
         layer_5_activation, Type: Categorical, Choices: {relu, sigmoid, tanh, swish, mish, gelu, silu}, Default: relu
         layer_5_dropout_rate, Type: UniformFloat, Range: [0.0, 0.25], Default: 0.0
-        layer_5_units, Type: UniformInteger, Range: [16, 200], Default: 64
+        layer_5_units, Type: UniformInteger, Range: [16, 512], Default: 512
         layer_6_activation, Type: Categorical, Choices: {relu, sigmoid, tanh, swish, mish, gelu, silu}, Default: relu
         layer_6_dropout_rate, Type: UniformFloat, Range: [0.0, 0.25], Default: 0.0
-        layer_6_units, Type: UniformInteger, Range: [16, 200], Default: 64
+        layer_6_units, Type: UniformInteger, Range: [16, 512], Default: 512
         layer_7_activation, Type: Categorical, Choices: {relu, sigmoid, tanh, swish, mish, gelu, silu}, Default: relu
         layer_7_dropout_rate, Type: UniformFloat, Range: [0.0, 0.25], Default: 0.0
-        layer_7_units, Type: UniformInteger, Range: [16, 200], Default: 64
-        layer_8_activation, Type: Categorical, Choices: {relu, sigmoid, tanh, swish, mish, gelu, silu}, Default: relu
-        layer_8_dropout_rate, Type: UniformFloat, Range: [0.0, 0.25], Default: 0.0
-        layer_8_units, Type: UniformInteger, Range: [16, 200], Default: 64
-        layer_9_activation, Type: Categorical, Choices: {relu, sigmoid, tanh, swish, mish, gelu, silu}, Default: relu
-        layer_9_dropout_rate, Type: UniformFloat, Range: [0.0, 0.25], Default: 0.0
-        layer_9_units, Type: UniformInteger, Range: [16, 200], Default: 64
+        layer_7_units, Type: UniformInteger, Range: [16, 512], Default: 512
         learning_rate, Type: UniformFloat, Range: [1e-05, 0.1], Default: 0.002, on log-scale
-        lr_scheduler_factor, Type: UniformFloat, Range: [0.1, 0.99], Default: 0.1
+        lr_scheduler_factor, Type: UniformFloat, Range: [0.01, 0.99], Default: 0.1
         lr_scheduler_patience, Type: UniformInteger, Range: [10, 100], Default: 20
-        n_units_mean, Type: UniformInteger, Range: [16, 200], Default: 64
-        n_units_std, Type: UniformInteger, Range: [16, 200], Default: 64
-        num_layers, Type: UniformInteger, Range: [1, 10], Default: 5
+        n_units_mean, Type: UniformInteger, Range: [16, 512], Default: 512
+        n_units_std, Type: UniformInteger, Range: [16, 512], Default: 512
+        num_layers, Type: UniformInteger, Range: [3, 8], Default: 5
         softplus_factor, Type: UniformFloat, Range: [0.01, 1.0], Default: 0.05
         std_offset, Type: UniformFloat, Range: [1e-08, 0.01], Default: 0.001, on log-scale
       Conditions:
-        layer_1_activation | num_layers > 1
-        layer_1_dropout_rate | num_layers > 1
-        layer_1_units | num_layers > 1
-        layer_2_activation | num_layers > 2
-        layer_2_dropout_rate | num_layers > 2
-        layer_2_units | num_layers > 2
         layer_3_activation | num_layers > 3
         layer_3_dropout_rate | num_layers > 3
         layer_3_units | num_layers > 3
@@ -421,17 +410,11 @@ the trained model.
         layer_7_activation | num_layers > 7
         layer_7_dropout_rate | num_layers > 7
         layer_7_units | num_layers > 7
-        layer_8_activation | num_layers > 8
-        layer_8_dropout_rate | num_layers > 8
-        layer_8_units | num_layers > 8
-        layer_9_activation | num_layers > 9
-        layer_9_dropout_rate | num_layers > 9
-        layer_9_units | num_layers > 9
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 285-301
+.. GENERATED FROM PYTHON SOURCE LINES 286-302
 
 Loss and Metric
 ---------------
@@ -450,7 +433,7 @@ As complementary metric, we use the squared error to evaluate the quality of the
     L_\text{SE}(x, y;\theta) = (\mu_\theta(x)-y)^2
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 301-321
+.. GENERATED FROM PYTHON SOURCE LINES 302-322
 
 .. code-block:: Python
 
@@ -481,7 +464,7 @@ As complementary metric, we use the squared error to evaluate the quality of the
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 322-330
+.. GENERATED FROM PYTHON SOURCE LINES 323-331
 
 Training loop
 -------------
@@ -492,7 +475,7 @@ We also add a mechanism to checkpoint weights of the model based on the best obs
 
 Finally, we add an early stopping mechanism to save computing resources.
 
-.. GENERATED FROM PYTHON SOURCE LINES 330-422
+.. GENERATED FROM PYTHON SOURCE LINES 331-423
 
 .. dropdown:: Code (Training loop)
 
@@ -548,10 +531,10 @@ Finally, we add an early stopping mechanism to save computing resources.
                     b_val_loss = torch.mean(nll(y_val, y_dist))
                     b_val_mse = torch.mean(squared_error(y_val, y_dist))
 
-                    batch_losses_t.append(b_train_loss.detach().cpu().numpy())
-                    batch_mse_t.append(b_train_mse.detach().cpu().numpy())
-                    batch_losses_v.append(b_val_loss.detach().cpu().numpy())
-                    batch_mse_v.append(b_val_mse.detach().cpu().numpy())
+                    batch_losses_t.append(to_numpy(b_train_loss))
+                    batch_mse_t.append(to_numpy(b_train_mse))
+                    batch_losses_v.append(to_numpy(b_val_loss))
+                    batch_mse_v.append(to_numpy(b_val_mse))
 
                 train_loss.append(np.mean(batch_losses_t))
                 val_loss.append(np.mean(batch_losses_v))
@@ -596,12 +579,12 @@ Finally, we add an early stopping mechanism to save computing resources.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 423-425
+.. GENERATED FROM PYTHON SOURCE LINES 424-426
 
 Run time
 --------
 
-.. GENERATED FROM PYTHON SOURCE LINES 425-437
+.. GENERATED FROM PYTHON SOURCE LINES 426-438
 
 .. code-block:: Python
 
@@ -630,7 +613,7 @@ Run time
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 438-447
+.. GENERATED FROM PYTHON SOURCE LINES 439-448
 
 .. dropdown:: Code (Conversion utility functions)
 
@@ -651,16 +634,54 @@ Run time
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 448-454
+.. GENERATED FROM PYTHON SOURCE LINES 449-453
 
 Evaluation function
 -------------------
+
+We start by defining a function that will create the Torch module from a dictionnary of hyperparameters.
+
+.. GENERATED FROM PYTHON SOURCE LINES 453-476
+
+.. code-block:: Python
+
+
+
+    def create_model(parameters: dict, y_mu=0, y_std=1):
+        num_layers = parameters["num_layers"]
+        torch_module = DeepNormalRegressor(
+            n_inputs=1,
+            layers=[
+                (
+                    parameters[f"layer_{i}_units"],
+                    parameters[f"layer_{i}_activation"],
+                    parameters[f"layer_{i}_dropout_rate"],
+                )
+                for i in range(num_layers)
+            ],
+            n_units_mean=parameters["n_units_mean"],
+            n_units_std=parameters["n_units_std"],
+            std_offset=parameters["std_offset"],
+            softplus_factor=parameters["softplus_factor"],
+            loc=y_mu,
+            scale=y_std,
+        ).to(device=device, dtype=dtype)
+        return torch_module
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 477-480
 
 The evaluation function (often called ``run``-function in DeepHyper) is the function that 
 receives suggested parameters as inputs ``job.parameters`` and returns an ``"objective"`` 
 that we want to maximize.
 
-.. GENERATED FROM PYTHON SOURCE LINES 454-532
+.. GENERATED FROM PYTHON SOURCE LINES 481-542
 
 .. code-block:: Python
 
@@ -671,26 +692,8 @@ that we want to maximize.
     def run(job, model_checkpoint_dir=".", verbose=False):
         (x, y), (vx, vy), (tx, ty) = load_data()
 
-        y_mu = np.mean(y)
-        y_std = np.std(y)
-
-        inputs = x.shape[1]
-
         # Create the model based on neural architecture hyperparameters
-        num_layers = job.parameters["num_layers"]
-        model = DeepNormalRegressor(
-            inputs,
-            layers=[
-                (
-                    job.parameters[f"layer_{i}_units"],
-                    job.parameters[f"layer_{i}_activation"],
-                    job.parameters[f"layer_{i}_dropout_rate"],
-                )
-                for i in range(num_layers)
-            ],
-            loc=y_mu,
-            scale=y_std,
-        ).to(device=device, dtype=dtype)
+        model = create_model(job.parameters, y_mu, y_std)
 
         if verbose:
             print(model)
@@ -739,6 +742,7 @@ that we want to maximize.
                 "val_mse": val_mse,
                 "test_loss": test_loss,
                 "test_mse": test_mse,
+                "budget": len(val_losses),
             },
         }
 
@@ -749,7 +753,7 @@ that we want to maximize.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 533-538
+.. GENERATED FROM PYTHON SOURCE LINES 543-548
 
 Evaluation of the baseline
 --------------------------
@@ -757,7 +761,7 @@ Evaluation of the baseline
 We evaluate the default configuration of hyperparameters that we call "baseline" using the same evaluation function.
 This allows to test the evaluation function.
 
-.. GENERATED FROM PYTHON SOURCE LINES 538-561
+.. GENERATED FROM PYTHON SOURCE LINES 548-569
 
 .. code-block:: Python
 
@@ -766,11 +770,9 @@ This allows to test the evaluation function.
 
     baseline_dir = "nas_baseline_regression"
 
-    def evaluate_baseline():
+    def evaluate_baseline(problem):
         model_checkpoint_dir = os.path.join(baseline_dir, "models")
         pathlib.Path(model_checkpoint_dir).mkdir(parents=True, exist_ok=True)
-
-        problem = create_hpo_problem()
 
         default_parameters = problem.default_configuration
         print(f"{default_parameters=}\n")
@@ -782,7 +784,7 @@ This allows to test the evaluation function.
         )
         return result
 
-    baseline_results = evaluate_baseline()
+    baseline_results = evaluate_baseline(problem)
 
 
 
@@ -792,44 +794,44 @@ This allows to test the evaluation function.
 
  .. code-block:: none
 
-    default_parameters={'batch_size': 128, 'layer_0_activation': 'relu', 'layer_0_dropout_rate': 0.0, 'layer_0_units': 64, 'learning_rate': 0.002, 'lr_scheduler_factor': 0.1, 'lr_scheduler_patience': 20, 'n_units_mean': 64, 'n_units_std': 64, 'num_layers': 5, 'softplus_factor': 0.05, 'std_offset': 0.001, 'layer_1_activation': 'relu', 'layer_1_dropout_rate': 0.0, 'layer_1_units': 64, 'layer_2_activation': 'relu', 'layer_2_dropout_rate': 0.0, 'layer_2_units': 64, 'layer_3_activation': 'relu', 'layer_3_dropout_rate': 0.0, 'layer_3_units': 64, 'layer_4_activation': 'relu', 'layer_4_dropout_rate': 0.0, 'layer_4_units': 64, 'layer_5_activation': 'relu', 'layer_5_dropout_rate': 0.0, 'layer_5_units': 16, 'layer_6_activation': 'relu', 'layer_6_dropout_rate': 0.0, 'layer_6_units': 16, 'layer_7_activation': 'relu', 'layer_7_dropout_rate': 0.0, 'layer_7_units': 16, 'layer_8_activation': 'relu', 'layer_8_dropout_rate': 0.0, 'layer_8_units': 16, 'layer_9_activation': 'relu', 'layer_9_dropout_rate': 0.0, 'layer_9_units': 16}
+    default_parameters={'batch_size': 32, 'layer_0_activation': 'relu', 'layer_0_dropout_rate': 0.0, 'layer_0_units': 512, 'layer_1_activation': 'relu', 'layer_1_dropout_rate': 0.0, 'layer_1_units': 512, 'layer_2_activation': 'relu', 'layer_2_dropout_rate': 0.0, 'layer_2_units': 512, 'learning_rate': 0.002, 'lr_scheduler_factor': 0.1, 'lr_scheduler_patience': 20, 'n_units_mean': 512, 'n_units_std': 512, 'num_layers': 5, 'softplus_factor': 0.05, 'std_offset': 0.001, 'layer_3_activation': 'relu', 'layer_3_dropout_rate': 0.0, 'layer_3_units': 512, 'layer_4_activation': 'relu', 'layer_4_dropout_rate': 0.0, 'layer_4_units': 512, 'layer_5_activation': 'relu', 'layer_5_dropout_rate': 0.0, 'layer_5_units': 16, 'layer_6_activation': 'relu', 'layer_6_dropout_rate': 0.0, 'layer_6_units': 16, 'layer_7_activation': 'relu', 'layer_7_dropout_rate': 0.0, 'layer_7_units': 16}
 
     DeepNormalRegressor(
       (shared_layer): Sequential(
-        (0): Linear(in_features=1, out_features=64, bias=True)
+        (0): Linear(in_features=1, out_features=512, bias=True)
         (1): ReLU()
         (2): Dropout(p=0.0, inplace=False)
-        (3): Linear(in_features=64, out_features=64, bias=True)
+        (3): Linear(in_features=512, out_features=512, bias=True)
         (4): ReLU()
         (5): Dropout(p=0.0, inplace=False)
-        (6): Linear(in_features=64, out_features=64, bias=True)
+        (6): Linear(in_features=512, out_features=512, bias=True)
         (7): ReLU()
         (8): Dropout(p=0.0, inplace=False)
-        (9): Linear(in_features=64, out_features=64, bias=True)
+        (9): Linear(in_features=512, out_features=512, bias=True)
         (10): ReLU()
         (11): Dropout(p=0.0, inplace=False)
-        (12): Linear(in_features=64, out_features=64, bias=True)
+        (12): Linear(in_features=512, out_features=512, bias=True)
         (13): ReLU()
         (14): Dropout(p=0.0, inplace=False)
       )
       (mean_layer): Sequential(
-        (0): Linear(in_features=64, out_features=64, bias=True)
+        (0): Linear(in_features=512, out_features=512, bias=True)
         (1): ReLU()
-        (2): Linear(in_features=64, out_features=1, bias=True)
+        (2): Linear(in_features=512, out_features=1, bias=True)
       )
       (std_layer): Sequential(
-        (0): Linear(in_features=64, out_features=64, bias=True)
+        (0): Linear(in_features=512, out_features=512, bias=True)
         (1): ReLU()
-        (2): Linear(in_features=64, out_features=1, bias=True)
+        (2): Linear(in_features=512, out_features=1, bias=True)
         (3): Softplus(beta=1.0, threshold=20.0)
       )
     )
-      0%|          | 0/1000 [00:00<?, ?it/s]
+      0%|          | 0/1000 [00:00<?, ?it/s]      0%|          | 1/1000 [00:00<01:22, 12.05it/s, train_loss=3.408, val_loss=3.440, train_mse=8.728, val_mse=8.889]      0%|          | 2/1000 [00:00<01:09, 14.42it/s, train_loss=3.408, val_loss=3.440, train_mse=8.728, val_mse=8.889]      0%|          | 2/1000 [00:00<01:09, 14.42it/s, train_loss=1.790, val_loss=1.811, train_mse=1.921, val_mse=2.098]      0%|          | 3/1000 [00:00<01:09, 14.42it/s, train_loss=1.687, val_loss=1.790, train_mse=1.675, val_mse=2.094]      0%|          | 4/1000 [00:00<01:00, 16.33it/s, train_loss=1.687, val_loss=1.790, train_mse=1.675, val_mse=2.094]      0%|          | 4/1000 [00:00<01:00, 16.33it/s, train_loss=1.698, val_loss=1.814, train_mse=1.766, val_mse=2.152]      0%|          | 5/1000 [00:00<01:00, 16.33it/s, train_loss=1.684, val_loss=1.761, train_mse=1.691, val_mse=1.960]      1%|          | 6/1000 [00:00<01:26, 11.43it/s, train_loss=1.684, val_loss=1.761, train_mse=1.691, val_mse=1.960]      1%|          | 6/1000 [00:00<01:26, 11.43it/s, train_loss=1.642, val_loss=1.764, train_mse=1.566, val_mse=1.975]      1%|          | 7/1000 [00:00<01:26, 11.43it/s, train_loss=1.649, val_loss=1.741, train_mse=1.588, val_mse=1.892]      1%|          | 8/1000 [00:00<01:15, 13.15it/s, train_loss=1.649, val_loss=1.741, train_mse=1.588, val_mse=1.892]      1%|          | 8/1000 [00:00<01:15, 13.15it/s, train_loss=1.659, val_loss=1.742, train_mse=1.624, val_mse=1.897]      1%|          | 9/1000 [00:00<01:15, 13.15it/s, train_loss=1.628, val_loss=1.737, train_mse=1.528, val_mse=1.878]      1%|          | 10/1000 [00:00<01:06, 14.88it/s, train_loss=1.628, val_loss=1.737, train_mse=1.528, val_mse=1.878]      1%|          | 10/1000 [00:00<01:06, 14.88it/s, train_loss=1.655, val_loss=1.764, train_mse=1.617, val_mse=1.979]      1%|          | 11/1000 [00:00<01:06, 14.88it/s, train_loss=1.641, val_loss=1.761, train_mse=1.558, val_mse=1.948]      1%|          | 12/1000 [00:00<01:03, 15.49it/s, train_loss=1.641, val_loss=1.761, train_mse=1.558, val_mse=1.948]      1%|          | 12/1000 [00:00<01:03, 15.49it/s, train_loss=1.657, val_loss=1.740, train_mse=1.626, val_mse=1.888]      1%|▏         | 13/1000 [00:00<01:03, 15.49it/s, train_loss=1.664, val_loss=1.742, train_mse=1.631, val_mse=1.891]      1%|▏         | 14/1000 [00:00<01:07, 14.67it/s, train_loss=1.664, val_loss=1.742, train_mse=1.631, val_mse=1.891]      1%|▏         | 14/1000 [00:00<01:07, 14.67it/s, train_loss=1.655, val_loss=1.764, train_mse=1.600, val_mse=1.966]      2%|▏         | 15/1000 [00:01<01:07, 14.67it/s, train_loss=1.616, val_loss=1.704, train_mse=1.474, val_mse=1.765]      2%|▏         | 16/1000 [00:01<01:04, 15.35it/s, train_loss=1.616, val_loss=1.704, train_mse=1.474, val_mse=1.765]      2%|▏         | 16/1000 [00:01<01:04, 15.35it/s, train_loss=1.593, val_loss=1.691, train_mse=1.405, val_mse=1.718]      2%|▏         | 17/1000 [00:01<01:04, 15.35it/s, train_loss=1.609, val_loss=1.703, train_mse=1.454, val_mse=1.747]      2%|▏         | 18/1000 [00:01<01:02, 15.65it/s, train_loss=1.609, val_loss=1.703, train_mse=1.454, val_mse=1.747]      2%|▏         | 18/1000 [00:01<01:02, 15.65it/s, train_loss=1.649, val_loss=1.699, train_mse=1.575, val_mse=1.732]      2%|▏         | 19/1000 [00:01<01:02, 15.65it/s, train_loss=1.596, val_loss=1.697, train_mse=1.411, val_mse=1.736]      2%|▏         | 20/1000 [00:01<01:02, 15.71it/s, train_loss=1.596, val_loss=1.697, train_mse=1.411, val_mse=1.736]      2%|▏         | 20/1000 [00:01<01:02, 15.71it/s, train_loss=1.547, val_loss=1.649, train_mse=1.274, val_mse=1.580]      2%|▏         | 21/1000 [00:01<01:02, 15.71it/s, train_loss=1.554, val_loss=1.663, train_mse=1.303, val_mse=1.602]      2%|▏         | 22/1000 [00:01<01:04, 15.08it/s, train_loss=1.554, val_loss=1.663, train_mse=1.303, val_mse=1.602]      2%|▏         | 22/1000 [00:01<01:04, 15.08it/s, train_loss=1.553, val_loss=1.661, train_mse=1.303, val_mse=1.596]      2%|▏         | 23/1000 [00:01<01:04, 15.08it/s, train_loss=1.565, val_loss=1.659, train_mse=1.335, val_mse=1.594]      2%|▏         | 24/1000 [00:01<01:06, 14.65it/s, train_loss=1.565, val_loss=1.659, train_mse=1.335, val_mse=1.594]      2%|▏         | 24/1000 [00:01<01:06, 14.65it/s, train_loss=1.551, val_loss=1.646, train_mse=1.297, val_mse=1.563]      2%|▎         | 25/1000 [00:01<01:06, 14.65it/s, train_loss=1.547, val_loss=1.641, train_mse=1.288, val_mse=1.547]      3%|▎         | 26/1000 [00:01<01:05, 14.97it/s, train_loss=1.547, val_loss=1.641, train_mse=1.288, val_mse=1.547]      3%|▎         | 26/1000 [00:01<01:05, 14.97it/s, train_loss=1.532, val_loss=1.648, train_mse=1.250, val_mse=1.566]      3%|▎         | 27/1000 [00:01<01:04, 14.97it/s, train_loss=1.536, val_loss=1.648, train_mse=1.261, val_mse=1.564]      3%|▎         | 28/1000 [00:01<01:04, 15.13it/s, train_loss=1.536, val_loss=1.648, train_mse=1.261, val_mse=1.564]      3%|▎         | 28/1000 [00:01<01:04, 15.13it/s, train_loss=1.539, val_loss=1.669, train_mse=1.270, val_mse=1.610]      3%|▎         | 29/1000 [00:01<01:04, 15.13it/s, train_loss=1.555, val_loss=1.644, train_mse=1.314, val_mse=1.546]      3%|▎         | 30/1000 [00:02<01:01, 15.71it/s, train_loss=1.555, val_loss=1.644, train_mse=1.314, val_mse=1.546]      3%|▎         | 30/1000 [00:02<01:01, 15.71it/s, train_loss=1.535, val_loss=1.654, train_mse=1.256, val_mse=1.577]      3%|▎         | 31/1000 [00:02<01:01, 15.71it/s, train_loss=1.578, val_loss=1.672, train_mse=1.377, val_mse=1.625]      3%|▎         | 32/1000 [00:02<00:58, 16.60it/s, train_loss=1.578, val_loss=1.672, train_mse=1.377, val_mse=1.625]      3%|▎         | 32/1000 [00:02<00:58, 16.60it/s, train_loss=1.540, val_loss=1.637, train_mse=1.272, val_mse=1.535]      3%|▎         | 33/1000 [00:02<00:58, 16.60it/s, train_loss=1.544, val_loss=1.641, train_mse=1.281, val_mse=1.547]      3%|▎         | 34/1000 [00:02<00:57, 16.94it/s, train_loss=1.544, val_loss=1.641, train_mse=1.281, val_mse=1.547]      3%|▎         | 34/1000 [00:02<00:57, 16.94it/s, train_loss=1.549, val_loss=1.643, train_mse=1.290, val_mse=1.548]      4%|▎         | 35/1000 [00:02<00:56, 16.94it/s, train_loss=1.541, val_loss=1.629, train_mse=1.275, val_mse=1.509]      4%|▎         | 36/1000 [00:02<00:55, 17.44it/s, train_loss=1.541, val_loss=1.629, train_mse=1.275, val_mse=1.509]      4%|▎         | 36/1000 [00:02<00:55, 17.44it/s, train_loss=1.525, val_loss=1.631, train_mse=1.234, val_mse=1.510]      4%|▎         | 37/1000 [00:02<00:55, 17.44it/s, train_loss=1.527, val_loss=1.646, train_mse=1.239, val_mse=1.543]      4%|▍         | 38/1000 [00:02<00:55, 17.27it/s, train_loss=1.527, val_loss=1.646, train_mse=1.239, val_mse=1.543]      4%|▍         | 38/1000 [00:02<00:55, 17.27it/s, train_loss=1.532, val_loss=1.648, train_mse=1.250, val_mse=1.546]      4%|▍         | 39/1000 [00:02<00:55, 17.27it/s, train_loss=1.546, val_loss=1.660, train_mse=1.287, val_mse=1.577]      4%|▍         | 40/1000 [00:02<00:55, 17.22it/s, train_loss=1.546, val_loss=1.660, train_mse=1.287, val_mse=1.577]      4%|▍         | 40/1000 [00:02<00:55, 17.22it/s, train_loss=1.542, val_loss=1.641, train_mse=1.277, val_mse=1.532]      4%|▍         | 41/1000 [00:02<00:55, 17.22it/s, train_loss=1.528, val_loss=1.639, train_mse=1.243, val_mse=1.527]      4%|▍         | 42/1000 [00:02<00:55, 17.14it/s, train_loss=1.528, val_loss=1.639, train_mse=1.243, val_mse=1.527]      4%|▍         | 42/1000 [00:02<00:55, 17.14it/s, train_loss=1.533, val_loss=1.632, train_mse=1.254, val_mse=1.508]      4%|▍         | 43/1000 [00:02<00:55, 17.14it/s, train_loss=1.528, val_loss=1.648, train_mse=1.240, val_mse=1.554]      4%|▍         | 44/1000 [00:02<00:55, 17.29it/s, train_loss=1.528, val_loss=1.648, train_mse=1.240, val_mse=1.554]      4%|▍         | 44/1000 [00:02<00:55, 17.29it/s, train_loss=1.542, val_loss=1.627, train_mse=1.276, val_mse=1.495]      4%|▍         | 45/1000 [00:02<00:55, 17.29it/s, train_loss=1.520, val_loss=1.634, train_mse=1.222, val_mse=1.512]      5%|▍         | 46/1000 [00:02<00:53, 17.77it/s, train_loss=1.520, val_loss=1.634, train_mse=1.222, val_mse=1.512]      5%|▍         | 46/1000 [00:02<00:53, 17.77it/s, train_loss=1.529, val_loss=1.628, train_mse=1.245, val_mse=1.494]      5%|▍         | 47/1000 [00:02<00:53, 17.77it/s, train_loss=1.513, val_loss=1.636, train_mse=1.205, val_mse=1.516]      5%|▍         | 48/1000 [00:03<00:52, 18.10it/s, train_loss=1.513, val_loss=1.636, train_mse=1.205, val_mse=1.516]      5%|▍         | 48/1000 [00:03<00:52, 18.10it/s, train_loss=1.534, val_loss=1.630, train_mse=1.255, val_mse=1.494]      5%|▍         | 49/1000 [00:03<00:52, 18.10it/s, train_loss=1.537, val_loss=1.637, train_mse=1.267, val_mse=1.512]      5%|▌         | 50/1000 [00:03<00:53, 17.68it/s, train_loss=1.537, val_loss=1.637, train_mse=1.267, val_mse=1.512]      5%|▌         | 50/1000 [00:03<00:53, 17.68it/s, train_loss=1.520, val_loss=1.630, train_mse=1.222, val_mse=1.500]      5%|▌         | 51/1000 [00:03<00:53, 17.68it/s, train_loss=1.528, val_loss=1.628, train_mse=1.244, val_mse=1.496]      5%|▌         | 52/1000 [00:03<00:53, 17.88it/s, train_loss=1.528, val_loss=1.628, train_mse=1.244, val_mse=1.496]      5%|▌         | 52/1000 [00:03<00:53, 17.88it/s, train_loss=1.526, val_loss=1.631, train_mse=1.237, val_mse=1.502]      5%|▌         | 53/1000 [00:03<00:52, 17.88it/s, train_loss=1.528, val_loss=1.630, train_mse=1.242, val_mse=1.496]      5%|▌         | 54/1000 [00:03<00:52, 18.05it/s, train_loss=1.528, val_loss=1.630, train_mse=1.242, val_mse=1.496]      5%|▌         | 54/1000 [00:03<00:52, 18.05it/s, train_loss=1.539, val_loss=1.629, train_mse=1.271, val_mse=1.492]      6%|▌         | 55/1000 [00:03<00:52, 18.05it/s, train_loss=1.531, val_loss=1.626, train_mse=1.251, val_mse=1.489]      6%|▌         | 56/1000 [00:03<00:52, 18.10it/s, train_loss=1.531, val_loss=1.626, train_mse=1.251, val_mse=1.489]      6%|▌         | 56/1000 [00:03<00:52, 18.10it/s, train_loss=1.530, val_loss=1.631, train_mse=1.249, val_mse=1.505]      6%|▌         | 57/1000 [00:03<00:52, 18.10it/s, train_loss=1.520, val_loss=1.631, train_mse=1.221, val_mse=1.508]      6%|▌         | 58/1000 [00:03<00:55, 17.03it/s, train_loss=1.520, val_loss=1.631, train_mse=1.221, val_mse=1.508]      6%|▌         | 58/1000 [00:03<00:55, 17.03it/s, train_loss=1.533, val_loss=1.632, train_mse=1.252, val_mse=1.499]      6%|▌         | 59/1000 [00:03<00:55, 17.03it/s, train_loss=1.522, val_loss=1.642, train_mse=1.228, val_mse=1.529]      6%|▌         | 60/1000 [00:03<01:08, 13.82it/s, train_loss=1.522, val_loss=1.642, train_mse=1.228, val_mse=1.529]      6%|▌         | 60/1000 [00:03<01:08, 13.82it/s, train_loss=1.521, val_loss=1.629, train_mse=1.226, val_mse=1.494]      6%|▌         | 61/1000 [00:03<01:07, 13.82it/s, train_loss=1.523, val_loss=1.637, train_mse=1.232, val_mse=1.511]      6%|▌         | 62/1000 [00:03<01:09, 13.59it/s, train_loss=1.523, val_loss=1.637, train_mse=1.232, val_mse=1.511]      6%|▌         | 62/1000 [00:03<01:09, 13.59it/s, train_loss=1.526, val_loss=1.634, train_mse=1.237, val_mse=1.504]      6%|▋         | 63/1000 [00:04<01:08, 13.59it/s, train_loss=1.512, val_loss=1.634, train_mse=1.203, val_mse=1.503]      6%|▋         | 64/1000 [00:04<01:06, 14.01it/s, train_loss=1.512, val_loss=1.634, train_mse=1.203, val_mse=1.503]      6%|▋         | 64/1000 [00:04<01:06, 14.01it/s, train_loss=1.513, val_loss=1.629, train_mse=1.206, val_mse=1.495]      6%|▋         | 65/1000 [00:04<01:06, 14.01it/s, train_loss=1.516, val_loss=1.637, train_mse=1.215, val_mse=1.513]      7%|▋         | 66/1000 [00:04<01:02, 15.01it/s, train_loss=1.516, val_loss=1.637, train_mse=1.215, val_mse=1.513]      7%|▋         | 66/1000 [00:04<01:02, 15.01it/s, train_loss=1.533, val_loss=1.631, train_mse=1.255, val_mse=1.493]      7%|▋         | 67/1000 [00:04<01:02, 15.01it/s, train_loss=1.518, val_loss=1.637, train_mse=1.220, val_mse=1.509]      7%|▋         | 68/1000 [00:04<00:58, 16.04it/s, train_loss=1.518, val_loss=1.637, train_mse=1.220, val_mse=1.509]      7%|▋         | 68/1000 [00:04<00:58, 16.04it/s, train_loss=1.517, val_loss=1.635, train_mse=1.214, val_mse=1.510]      7%|▋         | 69/1000 [00:04<00:58, 16.04it/s, train_loss=1.517, val_loss=1.629, train_mse=1.216, val_mse=1.489]      7%|▋         | 70/1000 [00:04<00:54, 17.04it/s, train_loss=1.517, val_loss=1.629, train_mse=1.216, val_mse=1.489]      7%|▋         | 70/1000 [00:04<00:54, 17.04it/s, train_loss=1.533, val_loss=1.645, train_mse=1.256, val_mse=1.527]      7%|▋         | 71/1000 [00:04<00:54, 17.04it/s, train_loss=1.770, val_loss=1.801, train_mse=1.855, val_mse=1.929]      7%|▋         | 72/1000 [00:04<00:52, 17.65it/s, train_loss=1.770, val_loss=1.801, train_mse=1.855, val_mse=1.929]      7%|▋         | 72/1000 [00:04<00:52, 17.65it/s, train_loss=1.620, val_loss=1.724, train_mse=1.496, val_mse=1.801]      7%|▋         | 73/1000 [00:04<00:52, 17.65it/s, train_loss=1.563, val_loss=1.650, train_mse=1.299, val_mse=1.566]      7%|▋         | 74/1000 [00:04<01:00, 15.34it/s, train_loss=1.563, val_loss=1.650, train_mse=1.299, val_mse=1.566]      7%|▋         | 74/1000 [00:04<01:00, 15.34it/s, train_loss=1.539, val_loss=1.646, train_mse=1.240, val_mse=1.556]      8%|▊         | 75/1000 [00:04<01:00, 15.34it/s, train_loss=1.557, val_loss=1.670, train_mse=1.311, val_mse=1.614]      8%|▊         | 76/1000 [00:04<00:59, 15.49it/s, train_loss=1.557, val_loss=1.670, train_mse=1.311, val_mse=1.614]      8%|▊         | 76/1000 [00:04<00:59, 15.49it/s, train_loss=1.534, val_loss=1.658, train_mse=1.258, val_mse=1.579]      8%|▊         | 77/1000 [00:04<00:59, 15.49it/s, train_loss=1.555, val_loss=1.640, train_mse=1.312, val_mse=1.528]      8%|▊         | 78/1000 [00:04<01:04, 14.24it/s, train_loss=1.555, val_loss=1.640, train_mse=1.312, val_mse=1.528]      8%|▊         | 78/1000 [00:04<01:04, 14.24it/s, train_loss=1.526, val_loss=1.640, train_mse=1.240, val_mse=1.530]      8%|▊         | 79/1000 [00:05<01:04, 14.24it/s, train_loss=1.533, val_loss=1.638, train_mse=1.254, val_mse=1.523]      8%|▊         | 80/1000 [00:05<00:59, 15.53it/s, train_loss=1.533, val_loss=1.638, train_mse=1.254, val_mse=1.523]      8%|▊         | 80/1000 [00:05<00:59, 15.53it/s, train_loss=1.528, val_loss=1.639, train_mse=1.244, val_mse=1.525]      8%|▊         | 81/1000 [00:05<00:59, 15.53it/s, train_loss=1.532, val_loss=1.639, train_mse=1.253, val_mse=1.526]      8%|▊         | 82/1000 [00:05<00:55, 16.46it/s, train_loss=1.532, val_loss=1.639, train_mse=1.253, val_mse=1.526]      8%|▊         | 82/1000 [00:05<00:55, 16.46it/s, train_loss=1.526, val_loss=1.638, train_mse=1.238, val_mse=1.523]      8%|▊         | 83/1000 [00:05<00:55, 16.46it/s, train_loss=1.517, val_loss=1.637, train_mse=1.216, val_mse=1.521]      8%|▊         | 84/1000 [00:05<00:53, 17.16it/s, train_loss=1.517, val_loss=1.637, train_mse=1.216, val_mse=1.521]      8%|▊         | 84/1000 [00:05<00:53, 17.16it/s, train_loss=1.523, val_loss=1.638, train_mse=1.229, val_mse=1.522]      8%|▊         | 85/1000 [00:05<00:53, 17.16it/s, train_loss=1.548, val_loss=1.638, train_mse=1.296, val_mse=1.522]      9%|▊         | 86/1000 [00:05<00:52, 17.49it/s, train_loss=1.548, val_loss=1.638, train_mse=1.296, val_mse=1.522]      9%|▊         | 86/1000 [00:05<00:52, 17.49it/s, train_loss=1.540, val_loss=1.637, train_mse=1.276, val_mse=1.520]      9%|▊         | 87/1000 [00:05<00:52, 17.49it/s, train_loss=1.536, val_loss=1.640, train_mse=1.262, val_mse=1.528]      9%|▉         | 88/1000 [00:05<00:52, 17.33it/s, train_loss=1.536, val_loss=1.640, train_mse=1.262, val_mse=1.528]      9%|▉         | 88/1000 [00:05<00:52, 17.33it/s, train_loss=1.525, val_loss=1.642, train_mse=1.237, val_mse=1.534]      9%|▉         | 89/1000 [00:05<00:52, 17.33it/s, train_loss=1.538, val_loss=1.639, train_mse=1.268, val_mse=1.524]      9%|▉         | 90/1000 [00:05<00:52, 17.31it/s, train_loss=1.538, val_loss=1.639, train_mse=1.268, val_mse=1.524]      9%|▉         | 90/1000 [00:05<00:52, 17.31it/s, train_loss=1.533, val_loss=1.637, train_mse=1.254, val_mse=1.521]      9%|▉         | 91/1000 [00:05<00:52, 17.31it/s, train_loss=1.518, val_loss=1.637, train_mse=1.217, val_mse=1.522]      9%|▉         | 92/1000 [00:05<00:50, 17.89it/s, train_loss=1.518, val_loss=1.637, train_mse=1.217, val_mse=1.522]      9%|▉         | 92/1000 [00:05<00:50, 17.89it/s, train_loss=1.526, val_loss=1.636, train_mse=1.237, val_mse=1.518]      9%|▉         | 93/1000 [00:05<00:50, 17.89it/s, train_loss=1.521, val_loss=1.636, train_mse=1.226, val_mse=1.518]      9%|▉         | 94/1000 [00:05<00:50, 17.81it/s, train_loss=1.521, val_loss=1.636, train_mse=1.226, val_mse=1.518]      9%|▉         | 94/1000 [00:05<00:50, 17.81it/s, train_loss=1.514, val_loss=1.637, train_mse=1.207, val_mse=1.519]     10%|▉         | 95/1000 [00:05<00:50, 17.81it/s, train_loss=1.521, val_loss=1.636, train_mse=1.226, val_mse=1.516]     10%|▉         | 96/1000 [00:05<00:50, 17.83it/s, train_loss=1.521, val_loss=1.636, train_mse=1.226, val_mse=1.516]     10%|▉         | 96/1000 [00:05<00:50, 17.83it/s, train_loss=1.518, val_loss=1.636, train_mse=1.218, val_mse=1.516]     10%|▉         | 97/1000 [00:06<00:50, 17.83it/s, train_loss=1.521, val_loss=1.637, train_mse=1.227, val_mse=1.518]     10%|▉         | 98/1000 [00:06<00:49, 18.04it/s, train_loss=1.521, val_loss=1.637, train_mse=1.227, val_mse=1.518]     10%|▉         | 98/1000 [00:06<00:49, 18.04it/s, train_loss=1.550, val_loss=1.637, train_mse=1.299, val_mse=1.517]     10%|▉         | 99/1000 [00:06<00:49, 18.04it/s, train_loss=1.533, val_loss=1.637, train_mse=1.256, val_mse=1.518]     10%|█         | 100/1000 [00:06<00:49, 18.36it/s, train_loss=1.533, val_loss=1.637, train_mse=1.256, val_mse=1.518]     10%|█         | 100/1000 [00:06<00:49, 18.36it/s, train_loss=1.525, val_loss=1.637, train_mse=1.236, val_mse=1.518]     10%|█         | 101/1000 [00:06<00:48, 18.36it/s, train_loss=1.537, val_loss=1.637, train_mse=1.267, val_mse=1.518]     10%|█         | 102/1000 [00:06<00:48, 18.52it/s, train_loss=1.537, val_loss=1.637, train_mse=1.267, val_mse=1.518]     10%|█         | 102/1000 [00:06<00:48, 18.52it/s, train_loss=1.510, val_loss=1.637, train_mse=1.197, val_mse=1.518]     10%|█         | 103/1000 [00:06<00:48, 18.52it/s, train_loss=1.522, val_loss=1.637, train_mse=1.228, val_mse=1.517]     10%|█         | 104/1000 [00:06<00:51, 17.52it/s, train_loss=1.522, val_loss=1.637, train_mse=1.228, val_mse=1.517]     10%|█         | 104/1000 [00:06<00:51, 17.52it/s, train_loss=1.525, val_loss=1.637, train_mse=1.236, val_mse=1.517]     10%|█         | 105/1000 [00:06<00:51, 17.52it/s, train_loss=1.507, val_loss=1.637, train_mse=1.192, val_mse=1.517]     11%|█         | 106/1000 [00:06<00:49, 17.96it/s, train_loss=1.507, val_loss=1.637, train_mse=1.192, val_mse=1.517]     11%|█         | 106/1000 [00:06<00:49, 17.96it/s, train_loss=1.541, val_loss=1.637, train_mse=1.276, val_mse=1.517]     11%|█         | 107/1000 [00:06<00:49, 17.96it/s, train_loss=1.530, val_loss=1.637, train_mse=1.249, val_mse=1.517]     11%|█         | 108/1000 [00:06<00:48, 18.31it/s, train_loss=1.530, val_loss=1.637, train_mse=1.249, val_mse=1.517]     11%|█         | 108/1000 [00:06<00:48, 18.31it/s, train_loss=1.520, val_loss=1.637, train_mse=1.223, val_mse=1.517]     11%|█         | 109/1000 [00:06<00:48, 18.31it/s, train_loss=1.515, val_loss=1.636, train_mse=1.210, val_mse=1.517]     11%|█         | 110/1000 [00:06<00:48, 18.33it/s, train_loss=1.515, val_loss=1.636, train_mse=1.210, val_mse=1.517]     11%|█         | 110/1000 [00:06<00:48, 18.33it/s, train_loss=1.521, val_loss=1.636, train_mse=1.225, val_mse=1.517]     11%|█         | 111/1000 [00:06<00:48, 18.33it/s, train_loss=1.518, val_loss=1.636, train_mse=1.218, val_mse=1.517]     11%|█         | 112/1000 [00:06<00:48, 18.13it/s, train_loss=1.518, val_loss=1.636, train_mse=1.218, val_mse=1.517]     11%|█         | 112/1000 [00:06<00:48, 18.13it/s, train_loss=1.525, val_loss=1.637, train_mse=1.237, val_mse=1.517]     11%|█▏        | 113/1000 [00:06<00:48, 18.13it/s, train_loss=1.523, val_loss=1.637, train_mse=1.232, val_mse=1.517]     11%|█▏        | 114/1000 [00:06<00:47, 18.61it/s, train_loss=1.523, val_loss=1.637, train_mse=1.232, val_mse=1.517]     11%|█▏        | 114/1000 [00:06<00:47, 18.61it/s, train_loss=1.555, val_loss=1.636, train_mse=1.312, val_mse=1.517]     12%|█▏        | 115/1000 [00:06<00:47, 18.61it/s, train_loss=1.536, val_loss=1.636, train_mse=1.265, val_mse=1.517]     12%|█▏        | 116/1000 [00:07<00:47, 18.80it/s, train_loss=1.536, val_loss=1.636, train_mse=1.265, val_mse=1.517]     12%|█▏        | 116/1000 [00:07<00:47, 18.80it/s, train_loss=1.523, val_loss=1.636, train_mse=1.231, val_mse=1.517]     12%|█▏        | 117/1000 [00:07<00:46, 18.80it/s, train_loss=1.523, val_loss=1.636, train_mse=1.231, val_mse=1.517]     12%|█▏        | 118/1000 [00:07<00:46, 18.89it/s, train_loss=1.523, val_loss=1.636, train_mse=1.231, val_mse=1.517]     12%|█▏        | 118/1000 [00:07<00:46, 18.89it/s, train_loss=1.519, val_loss=1.636, train_mse=1.222, val_mse=1.517]     12%|█▏        | 119/1000 [00:07<00:46, 18.89it/s, train_loss=1.510, val_loss=1.636, train_mse=1.199, val_mse=1.517]     12%|█▏        | 120/1000 [00:07<00:47, 18.67it/s, train_loss=1.510, val_loss=1.636, train_mse=1.199, val_mse=1.517]     12%|█▏        | 120/1000 [00:07<00:47, 18.67it/s, train_loss=1.521, val_loss=1.636, train_mse=1.224, val_mse=1.517]     12%|█▏        | 121/1000 [00:07<00:47, 18.67it/s, train_loss=1.531, val_loss=1.636, train_mse=1.251, val_mse=1.517]     12%|█▏        | 122/1000 [00:07<00:47, 18.38it/s, train_loss=1.531, val_loss=1.636, train_mse=1.251, val_mse=1.517]     12%|█▏        | 122/1000 [00:07<00:47, 18.38it/s, train_loss=1.521, val_loss=1.636, train_mse=1.226, val_mse=1.517]     12%|█▏        | 123/1000 [00:07<00:47, 18.38it/s, train_loss=1.538, val_loss=1.636, train_mse=1.269, val_mse=1.517]     12%|█▏        | 124/1000 [00:07<00:47, 18.40it/s, train_loss=1.538, val_loss=1.636, train_mse=1.269, val_mse=1.517]     12%|█▏        | 124/1000 [00:07<00:47, 18.40it/s, train_loss=1.519, val_loss=1.636, train_mse=1.222, val_mse=1.517]     12%|█▎        | 125/1000 [00:07<00:47, 18.40it/s, train_loss=1.524, val_loss=1.636, train_mse=1.233, val_mse=1.517]     13%|█▎        | 126/1000 [00:07<00:47, 18.56it/s, train_loss=1.524, val_loss=1.636, train_mse=1.233, val_mse=1.517]     13%|█▎        | 126/1000 [00:07<00:47, 18.56it/s, train_loss=1.518, val_loss=1.636, train_mse=1.219, val_mse=1.517]     13%|█▎        | 127/1000 [00:07<00:47, 18.56it/s, train_loss=1.520, val_loss=1.636, train_mse=1.222, val_mse=1.517]     13%|█▎        | 128/1000 [00:07<00:46, 18.56it/s, train_loss=1.544, val_loss=1.636, train_mse=1.284, val_mse=1.517]     13%|█▎        | 129/1000 [00:07<00:45, 19.02it/s, train_loss=1.544, val_loss=1.636, train_mse=1.284, val_mse=1.517]     13%|█▎        | 129/1000 [00:07<00:45, 19.02it/s, train_loss=1.530, val_loss=1.636, train_mse=1.249, val_mse=1.517]     13%|█▎        | 130/1000 [00:07<00:45, 19.02it/s, train_loss=1.527, val_loss=1.636, train_mse=1.241, val_mse=1.517]     13%|█▎        | 131/1000 [00:07<00:45, 19.04it/s, train_loss=1.527, val_loss=1.636, train_mse=1.241, val_mse=1.517]     13%|█▎        | 131/1000 [00:07<00:45, 19.04it/s, train_loss=1.522, val_loss=1.636, train_mse=1.229, val_mse=1.517]     13%|█▎        | 132/1000 [00:07<00:45, 19.04it/s, train_loss=1.512, val_loss=1.636, train_mse=1.203, val_mse=1.517]     13%|█▎        | 133/1000 [00:07<00:45, 19.13it/s, train_loss=1.512, val_loss=1.636, train_mse=1.203, val_mse=1.517]     13%|█▎        | 133/1000 [00:07<00:45, 19.13it/s, train_loss=1.519, val_loss=1.636, train_mse=1.220, val_mse=1.517]     13%|█▎        | 134/1000 [00:07<00:45, 19.13it/s, train_loss=1.516, val_loss=1.636, train_mse=1.212, val_mse=1.517]     14%|█▎        | 135/1000 [00:08<00:46, 18.71it/s, train_loss=1.516, val_loss=1.636, train_mse=1.212, val_mse=1.517]     14%|█▎        | 135/1000 [00:08<00:46, 18.71it/s, train_loss=1.532, val_loss=1.636, train_mse=1.254, val_mse=1.517]     14%|█▎        | 136/1000 [00:08<00:46, 18.71it/s, train_loss=1.520, val_loss=1.636, train_mse=1.223, val_mse=1.517]     14%|█▎        | 137/1000 [00:08<00:47, 18.19it/s, train_loss=1.520, val_loss=1.636, train_mse=1.223, val_mse=1.517]     14%|█▎        | 137/1000 [00:08<00:47, 18.19it/s, train_loss=1.538, val_loss=1.636, train_mse=1.269, val_mse=1.517]     14%|█▍        | 138/1000 [00:08<00:47, 18.19it/s, train_loss=1.536, val_loss=1.636, train_mse=1.265, val_mse=1.517]     14%|█▍        | 139/1000 [00:08<00:48, 17.67it/s, train_loss=1.536, val_loss=1.636, train_mse=1.265, val_mse=1.517]     14%|█▍        | 139/1000 [00:08<00:48, 17.67it/s, train_loss=1.519, val_loss=1.636, train_mse=1.220, val_mse=1.517]     14%|█▍        | 140/1000 [00:08<00:48, 17.67it/s, train_loss=1.525, val_loss=1.636, train_mse=1.238, val_mse=1.517]     14%|█▍        | 141/1000 [00:08<00:47, 17.94it/s, train_loss=1.525, val_loss=1.636, train_mse=1.238, val_mse=1.517]     14%|█▍        | 141/1000 [00:08<00:47, 17.94it/s, train_loss=1.521, val_loss=1.636, train_mse=1.226, val_mse=1.517]     14%|█▍        | 142/1000 [00:08<00:47, 17.94it/s, train_loss=1.509, val_loss=1.636, train_mse=1.197, val_mse=1.517]     14%|█▍        | 143/1000 [00:08<00:47, 18.20it/s, train_loss=1.509, val_loss=1.636, train_mse=1.197, val_mse=1.517]     14%|█▍        | 143/1000 [00:08<00:47, 18.20it/s, train_loss=1.518, val_loss=1.636, train_mse=1.218, val_mse=1.517]     14%|█▍        | 144/1000 [00:08<00:47, 18.20it/s, train_loss=1.533, val_loss=1.636, train_mse=1.255, val_mse=1.517]     14%|█▍        | 145/1000 [00:08<00:46, 18.34it/s, train_loss=1.533, val_loss=1.636, train_mse=1.255, val_mse=1.517]     14%|█▍        | 145/1000 [00:08<00:46, 18.34it/s, train_loss=1.523, val_loss=1.636, train_mse=1.230, val_mse=1.517]     15%|█▍        | 146/1000 [00:08<00:46, 18.34it/s, train_loss=1.522, val_loss=1.636, train_mse=1.228, val_mse=1.517]     15%|█▍        | 147/1000 [00:08<00:47, 18.13it/s, train_loss=1.522, val_loss=1.636, train_mse=1.228, val_mse=1.517]     15%|█▍        | 147/1000 [00:08<00:47, 18.13it/s, train_loss=1.527, val_loss=1.636, train_mse=1.240, val_mse=1.517]     15%|█▍        | 148/1000 [00:08<00:47, 18.13it/s, train_loss=1.521, val_loss=1.636, train_mse=1.224, val_mse=1.517]     15%|█▍        | 149/1000 [00:08<00:48, 17.64it/s, train_loss=1.521, val_loss=1.636, train_mse=1.224, val_mse=1.517]     15%|█▍        | 149/1000 [00:08<00:48, 17.64it/s, train_loss=1.526, val_loss=1.636, train_mse=1.239, val_mse=1.517]     15%|█▌        | 150/1000 [00:08<00:48, 17.64it/s, train_loss=1.514, val_loss=1.636, train_mse=1.207, val_mse=1.517]     15%|█▌        | 151/1000 [00:09<00:56, 14.98it/s, train_loss=1.514, val_loss=1.636, train_mse=1.207, val_mse=1.517]     15%|█▌        | 151/1000 [00:09<00:56, 14.98it/s, train_loss=1.539, val_loss=1.636, train_mse=1.272, val_mse=1.517]     15%|█▌        | 152/1000 [00:09<00:56, 14.98it/s, train_loss=1.518, val_loss=1.636, train_mse=1.218, val_mse=1.517]     15%|█▌        | 153/1000 [00:09<00:56, 15.08it/s, train_loss=1.518, val_loss=1.636, train_mse=1.218, val_mse=1.517]     15%|█▌        | 153/1000 [00:09<00:56, 15.08it/s, train_loss=1.524, val_loss=1.636, train_mse=1.233, val_mse=1.517]     15%|█▌        | 154/1000 [00:09<00:56, 15.08it/s, train_loss=1.528, val_loss=1.636, train_mse=1.244, val_mse=1.517]     16%|█▌        | 155/1000 [00:09<00:52, 16.11it/s, train_loss=1.528, val_loss=1.636, train_mse=1.244, val_mse=1.517]     16%|█▌        | 155/1000 [00:09<00:52, 16.11it/s, train_loss=1.518, val_loss=1.636, train_mse=1.219, val_mse=1.517]     16%|█▌        | 156/1000 [00:09<00:52, 16.11it/s, train_loss=1.521, val_loss=1.636, train_mse=1.226, val_mse=1.517]     16%|█▌        | 157/1000 [00:09<00:50, 16.74it/s, train_loss=1.521, val_loss=1.636, train_mse=1.226, val_mse=1.517]     16%|█▌        | 157/1000 [00:09<00:50, 16.74it/s, train_loss=1.512, val_loss=1.636, train_mse=1.203, val_mse=1.517]     16%|█▌        | 158/1000 [00:09<00:50, 16.74it/s, train_loss=1.520, val_loss=1.636, train_mse=1.223, val_mse=1.517]     16%|█▌        | 159/1000 [00:09<00:47, 17.55it/s, train_loss=1.520, val_loss=1.636, train_mse=1.223, val_mse=1.517]     16%|█▌        | 159/1000 [00:09<00:47, 17.55it/s, train_loss=1.529, val_loss=1.636, train_mse=1.246, val_mse=1.517]     16%|█▌        | 160/1000 [00:09<00:47, 17.55it/s, train_loss=1.515, val_loss=1.636, train_mse=1.210, val_mse=1.517]     16%|█▌        | 161/1000 [00:09<00:46, 18.17it/s, train_loss=1.515, val_loss=1.636, train_mse=1.210, val_mse=1.517]     16%|█▌        | 161/1000 [00:09<00:46, 18.17it/s, train_loss=1.543, val_loss=1.636, train_mse=1.283, val_mse=1.517]     16%|█▌        | 162/1000 [00:09<00:46, 18.17it/s, train_loss=1.531, val_loss=1.636, train_mse=1.250, val_mse=1.517]     16%|█▋        | 163/1000 [00:09<00:44, 18.68it/s, train_loss=1.531, val_loss=1.636, train_mse=1.250, val_mse=1.517]     16%|█▋        | 163/1000 [00:09<00:44, 18.68it/s, train_loss=1.522, val_loss=1.636, train_mse=1.227, val_mse=1.517]     16%|█▋        | 164/1000 [00:09<00:44, 18.68it/s, train_loss=1.531, val_loss=1.636, train_mse=1.252, val_mse=1.517]     16%|█▋        | 165/1000 [00:09<00:43, 19.02it/s, train_loss=1.531, val_loss=1.636, train_mse=1.252, val_mse=1.517]     16%|█▋        | 165/1000 [00:09<00:43, 19.02it/s, train_loss=1.517, val_loss=1.636, train_mse=1.215, val_mse=1.517]     17%|█▋        | 166/1000 [00:09<00:43, 19.02it/s, train_loss=1.531, val_loss=1.636, train_mse=1.250, val_mse=1.517]     17%|█▋        | 167/1000 [00:09<00:43, 19.26it/s, train_loss=1.531, val_loss=1.636, train_mse=1.250, val_mse=1.517]     17%|█▋        | 167/1000 [00:09<00:43, 19.26it/s, train_loss=1.517, val_loss=1.636, train_mse=1.215, val_mse=1.517]     17%|█▋        | 168/1000 [00:09<00:43, 19.26it/s, train_loss=1.521, val_loss=1.636, train_mse=1.227, val_mse=1.517]     17%|█▋        | 169/1000 [00:09<00:43, 19.32it/s, train_loss=1.521, val_loss=1.636, train_mse=1.227, val_mse=1.517]     17%|█▋        | 169/1000 [00:09<00:43, 19.32it/s, train_loss=1.515, val_loss=1.636, train_mse=1.211, val_mse=1.517]     17%|█▋        | 170/1000 [00:10<00:42, 19.32it/s, train_loss=1.533, val_loss=1.636, train_mse=1.257, val_mse=1.517]     17%|█▋        | 171/1000 [00:10<00:42, 19.42it/s, train_loss=1.533, val_loss=1.636, train_mse=1.257, val_mse=1.517]     17%|█▋        | 171/1000 [00:10<00:42, 19.42it/s, train_loss=1.522, val_loss=1.636, train_mse=1.228, val_mse=1.517]     17%|█▋        | 172/1000 [00:10<00:42, 19.42it/s, train_loss=1.530, val_loss=1.636, train_mse=1.248, val_mse=1.517]     17%|█▋        | 173/1000 [00:10<00:42, 19.36it/s, train_loss=1.530, val_loss=1.636, train_mse=1.248, val_mse=1.517]     17%|█▋        | 173/1000 [00:10<00:42, 19.36it/s, train_loss=1.528, val_loss=1.636, train_mse=1.244, val_mse=1.517]     17%|█▋        | 174/1000 [00:10<00:42, 19.36it/s, train_loss=1.515, val_loss=1.636, train_mse=1.211, val_mse=1.517]     18%|█▊        | 175/1000 [00:10<00:42, 19.33it/s, train_loss=1.515, val_loss=1.636, train_mse=1.211, val_mse=1.517]     18%|█▊        | 175/1000 [00:10<00:42, 19.33it/s, train_loss=1.520, val_loss=1.636, train_mse=1.223, val_mse=1.517]     18%|█▊        | 176/1000 [00:10<00:42, 19.33it/s, train_loss=1.511, val_loss=1.636, train_mse=1.201, val_mse=1.517]     18%|█▊        | 177/1000 [00:10<00:42, 19.17it/s, train_loss=1.511, val_loss=1.636, train_mse=1.201, val_mse=1.517]     18%|█▊        | 177/1000 [00:10<00:42, 19.17it/s, train_loss=1.528, val_loss=1.636, train_mse=1.244, val_mse=1.517]     18%|█▊        | 178/1000 [00:10<00:42, 19.17it/s, train_loss=1.511, val_loss=1.636, train_mse=1.202, val_mse=1.517]     18%|█▊        | 179/1000 [00:10<00:43, 18.80it/s, train_loss=1.511, val_loss=1.636, train_mse=1.202, val_mse=1.517]     18%|█▊        | 179/1000 [00:10<00:43, 18.80it/s, train_loss=1.516, val_loss=1.636, train_mse=1.214, val_mse=1.517]     18%|█▊        | 180/1000 [00:10<00:43, 18.80it/s, train_loss=1.519, val_loss=1.636, train_mse=1.220, val_mse=1.517]     18%|█▊        | 181/1000 [00:10<00:43, 18.96it/s, train_loss=1.519, val_loss=1.636, train_mse=1.220, val_mse=1.517]     18%|█▊        | 181/1000 [00:10<00:43, 18.96it/s, train_loss=1.516, val_loss=1.636, train_mse=1.213, val_mse=1.517]     18%|█▊        | 182/1000 [00:10<00:43, 18.96it/s, train_loss=1.528, val_loss=1.636, train_mse=1.244, val_mse=1.517]     18%|█▊        | 183/1000 [00:10<00:42, 19.06it/s, train_loss=1.528, val_loss=1.636, train_mse=1.244, val_mse=1.517]     18%|█▊        | 183/1000 [00:10<00:42, 19.06it/s, train_loss=1.536, val_loss=1.636, train_mse=1.265, val_mse=1.517]     18%|█▊        | 184/1000 [00:10<00:42, 19.06it/s, train_loss=1.513, val_loss=1.636, train_mse=1.205, val_mse=1.517]     18%|█▊        | 185/1000 [00:10<00:43, 18.64it/s, train_loss=1.513, val_loss=1.636, train_mse=1.205, val_mse=1.517]     18%|█▊        | 185/1000 [00:10<00:43, 18.64it/s, train_loss=1.535, val_loss=1.636, train_mse=1.260, val_mse=1.517]     19%|█▊        | 186/1000 [00:10<00:43, 18.64it/s, train_loss=1.521, val_loss=1.636, train_mse=1.226, val_mse=1.517]     19%|█▊        | 187/1000 [00:10<00:43, 18.84it/s, train_loss=1.521, val_loss=1.636, train_mse=1.226, val_mse=1.517]     19%|█▊        | 187/1000 [00:10<00:43, 18.84it/s, train_loss=1.522, val_loss=1.636, train_mse=1.229, val_mse=1.517]     19%|█▉        | 188/1000 [00:10<00:43, 18.84it/s, train_loss=1.516, val_loss=1.636, train_mse=1.212, val_mse=1.517]     19%|█▉        | 189/1000 [00:11<00:43, 18.84it/s, train_loss=1.514, val_loss=1.636, train_mse=1.208, val_mse=1.517]     19%|█▉        | 190/1000 [00:11<00:42, 19.23it/s, train_loss=1.514, val_loss=1.636, train_mse=1.208, val_mse=1.517]     19%|█▉        | 190/1000 [00:11<00:42, 19.23it/s, train_loss=1.515, val_loss=1.636, train_mse=1.211, val_mse=1.517]     19%|█▉        | 191/1000 [00:11<00:42, 19.23it/s, train_loss=1.528, val_loss=1.636, train_mse=1.244, val_mse=1.517]     19%|█▉        | 192/1000 [00:11<00:45, 17.86it/s, train_loss=1.528, val_loss=1.636, train_mse=1.244, val_mse=1.517]     19%|█▉        | 192/1000 [00:11<00:45, 17.86it/s, train_loss=1.507, val_loss=1.636, train_mse=1.190, val_mse=1.517]     19%|█▉        | 193/1000 [00:11<00:45, 17.86it/s, train_loss=1.541, val_loss=1.636, train_mse=1.277, val_mse=1.517]     19%|█▉        | 194/1000 [00:11<00:45, 17.63it/s, train_loss=1.541, val_loss=1.636, train_mse=1.277, val_mse=1.517]     19%|█▉        | 194/1000 [00:11<00:45, 17.63it/s, train_loss=1.540, val_loss=1.636, train_mse=1.275, val_mse=1.517]     20%|█▉        | 195/1000 [00:11<00:45, 17.63it/s, train_loss=1.514, val_loss=1.636, train_mse=1.208, val_mse=1.517]     20%|█▉        | 196/1000 [00:11<00:44, 17.95it/s, train_loss=1.514, val_loss=1.636, train_mse=1.208, val_mse=1.517]     20%|█▉        | 196/1000 [00:11<00:44, 17.95it/s, train_loss=1.519, val_loss=1.636, train_mse=1.220, val_mse=1.517]     20%|█▉        | 197/1000 [00:11<00:44, 17.95it/s, train_loss=1.521, val_loss=1.636, train_mse=1.225, val_mse=1.517]     20%|█▉        | 198/1000 [00:11<00:43, 18.40it/s, train_loss=1.521, val_loss=1.636, train_mse=1.225, val_mse=1.517]     20%|█▉        | 198/1000 [00:11<00:43, 18.40it/s, train_loss=1.515, val_loss=1.636, train_mse=1.211, val_mse=1.517]     20%|█▉        | 199/1000 [00:11<00:43, 18.40it/s, train_loss=1.532, val_loss=1.636, train_mse=1.252, val_mse=1.517]     20%|██        | 200/1000 [00:11<00:44, 17.91it/s, train_loss=1.532, val_loss=1.636, train_mse=1.252, val_mse=1.517]     20%|██        | 200/1000 [00:11<00:44, 17.91it/s, train_loss=1.524, val_loss=1.636, train_mse=1.233, val_mse=1.517]     20%|██        | 201/1000 [00:11<00:44, 17.91it/s, train_loss=1.514, val_loss=1.636, train_mse=1.208, val_mse=1.517]     20%|██        | 202/1000 [00:11<00:45, 17.55it/s, train_loss=1.514, val_loss=1.636, train_mse=1.208, val_mse=1.517]     20%|██        | 202/1000 [00:11<00:45, 17.55it/s, train_loss=1.517, val_loss=1.636, train_mse=1.217, val_mse=1.517]     20%|██        | 203/1000 [00:11<00:45, 17.55it/s, train_loss=1.530, val_loss=1.636, train_mse=1.249, val_mse=1.517]     20%|██        | 204/1000 [00:11<00:48, 16.42it/s, train_loss=1.530, val_loss=1.636, train_mse=1.249, val_mse=1.517]     20%|██        | 204/1000 [00:11<00:48, 16.42it/s, train_loss=1.522, val_loss=1.636, train_mse=1.227, val_mse=1.517]     20%|██        | 205/1000 [00:11<00:48, 16.42it/s, train_loss=1.517, val_loss=1.636, train_mse=1.216, val_mse=1.517]     21%|██        | 206/1000 [00:12<00:48, 16.33it/s, train_loss=1.517, val_loss=1.636, train_mse=1.216, val_mse=1.517]     21%|██        | 206/1000 [00:12<00:48, 16.33it/s, train_loss=1.532, val_loss=1.636, train_mse=1.255, val_mse=1.517]     21%|██        | 207/1000 [00:12<00:48, 16.33it/s, train_loss=1.526, val_loss=1.636, train_mse=1.237, val_mse=1.517]     21%|██        | 208/1000 [00:12<00:48, 16.18it/s, train_loss=1.526, val_loss=1.636, train_mse=1.237, val_mse=1.517]     21%|██        | 208/1000 [00:12<00:48, 16.18it/s, train_loss=1.518, val_loss=1.636, train_mse=1.219, val_mse=1.517]     21%|██        | 209/1000 [00:12<00:48, 16.18it/s, train_loss=1.522, val_loss=1.636, train_mse=1.228, val_mse=1.517]     21%|██        | 210/1000 [00:12<00:47, 16.66it/s, train_loss=1.522, val_loss=1.636, train_mse=1.228, val_mse=1.517]     21%|██        | 210/1000 [00:12<00:47, 16.66it/s, train_loss=1.523, val_loss=1.636, train_mse=1.231, val_mse=1.517]     21%|██        | 211/1000 [00:12<00:47, 16.66it/s, train_loss=1.522, val_loss=1.636, train_mse=1.228, val_mse=1.517]     21%|██        | 212/1000 [00:12<00:46, 16.81it/s, train_loss=1.522, val_loss=1.636, train_mse=1.228, val_mse=1.517]     21%|██        | 212/1000 [00:12<00:46, 16.81it/s, train_loss=1.515, val_loss=1.636, train_mse=1.210, val_mse=1.517]     21%|██▏       | 213/1000 [00:12<00:46, 16.81it/s, train_loss=1.520, val_loss=1.636, train_mse=1.223, val_mse=1.517]     21%|██▏       | 214/1000 [00:12<00:45, 17.15it/s, train_loss=1.520, val_loss=1.636, train_mse=1.223, val_mse=1.517]     21%|██▏       | 214/1000 [00:12<00:45, 17.15it/s, train_loss=1.515, val_loss=1.636, train_mse=1.212, val_mse=1.517]     22%|██▏       | 215/1000 [00:12<00:45, 17.15it/s, train_loss=1.513, val_loss=1.636, train_mse=1.205, val_mse=1.517]     22%|██▏       | 216/1000 [00:12<00:45, 17.22it/s, train_loss=1.513, val_loss=1.636, train_mse=1.205, val_mse=1.517]     22%|██▏       | 216/1000 [00:12<00:45, 17.22it/s, train_loss=1.515, val_loss=1.636, train_mse=1.210, val_mse=1.517]     22%|██▏       | 217/1000 [00:12<00:45, 17.22it/s, train_loss=1.512, val_loss=1.636, train_mse=1.202, val_mse=1.517]     22%|██▏       | 218/1000 [00:12<00:44, 17.57it/s, train_loss=1.512, val_loss=1.636, train_mse=1.202, val_mse=1.517]     22%|██▏       | 218/1000 [00:12<00:44, 17.57it/s, train_loss=1.515, val_loss=1.636, train_mse=1.211, val_mse=1.517]     22%|██▏       | 219/1000 [00:12<00:44, 17.57it/s, train_loss=1.527, val_loss=1.636, train_mse=1.241, val_mse=1.517]     22%|██▏       | 220/1000 [00:12<00:43, 17.77it/s, train_loss=1.527, val_loss=1.636, train_mse=1.241, val_mse=1.517]     22%|██▏       | 220/1000 [00:12<00:43, 17.77it/s, train_loss=1.512, val_loss=1.636, train_mse=1.203, val_mse=1.517]     22%|██▏       | 221/1000 [00:12<00:43, 17.77it/s, train_loss=1.534, val_loss=1.636, train_mse=1.258, val_mse=1.517]     22%|██▏       | 222/1000 [00:12<00:43, 17.73it/s, train_loss=1.534, val_loss=1.636, train_mse=1.258, val_mse=1.517]     22%|██▏       | 222/1000 [00:12<00:43, 17.73it/s, train_loss=1.530, val_loss=1.636, train_mse=1.247, val_mse=1.517]     22%|██▏       | 223/1000 [00:12<00:43, 17.73it/s, train_loss=1.518, val_loss=1.636, train_mse=1.217, val_mse=1.517]     22%|██▏       | 224/1000 [00:13<00:43, 17.92it/s, train_loss=1.518, val_loss=1.636, train_mse=1.217, val_mse=1.517]     22%|██▏       | 224/1000 [00:13<00:43, 17.92it/s, train_loss=1.520, val_loss=1.636, train_mse=1.224, val_mse=1.517]     22%|██▎       | 225/1000 [00:13<00:43, 17.92it/s, train_loss=1.519, val_loss=1.636, train_mse=1.221, val_mse=1.517]     23%|██▎       | 226/1000 [00:13<00:42, 18.15it/s, train_loss=1.519, val_loss=1.636, train_mse=1.221, val_mse=1.517]     23%|██▎       | 226/1000 [00:13<00:42, 18.15it/s, train_loss=1.515, val_loss=1.636, train_mse=1.211, val_mse=1.517]     23%|██▎       | 227/1000 [00:13<00:42, 18.15it/s, train_loss=1.524, val_loss=1.636, train_mse=1.234, val_mse=1.517]     23%|██▎       | 228/1000 [00:13<00:42, 18.13it/s, train_loss=1.524, val_loss=1.636, train_mse=1.234, val_mse=1.517]     23%|██▎       | 228/1000 [00:13<00:42, 18.13it/s, train_loss=1.528, val_loss=1.636, train_mse=1.244, val_mse=1.517]     23%|██▎       | 229/1000 [00:13<00:42, 18.13it/s, train_loss=1.529, val_loss=1.636, train_mse=1.245, val_mse=1.517]     23%|██▎       | 230/1000 [00:13<00:41, 18.41it/s, train_loss=1.529, val_loss=1.636, train_mse=1.245, val_mse=1.517]     23%|██▎       | 230/1000 [00:13<00:41, 18.41it/s, train_loss=1.536, val_loss=1.636, train_mse=1.261, val_mse=1.517]     23%|██▎       | 231/1000 [00:13<00:41, 18.41it/s, train_loss=1.534, val_loss=1.636, train_mse=1.259, val_mse=1.517]     23%|██▎       | 232/1000 [00:13<00:41, 18.44it/s, train_loss=1.534, val_loss=1.636, train_mse=1.259, val_mse=1.517]     23%|██▎       | 232/1000 [00:13<00:41, 18.44it/s, train_loss=1.524, val_loss=1.636, train_mse=1.232, val_mse=1.517]     23%|██▎       | 233/1000 [00:13<00:41, 18.44it/s, train_loss=1.539, val_loss=1.636, train_mse=1.272, val_mse=1.517]     23%|██▎       | 234/1000 [00:13<00:42, 17.83it/s, train_loss=1.539, val_loss=1.636, train_mse=1.272, val_mse=1.517]     23%|██▎       | 234/1000 [00:13<00:42, 17.83it/s, train_loss=1.521, val_loss=1.636, train_mse=1.226, val_mse=1.517]     24%|██▎       | 235/1000 [00:13<00:42, 17.83it/s, train_loss=1.518, val_loss=1.636, train_mse=1.219, val_mse=1.517]     24%|██▎       | 236/1000 [00:13<00:42, 17.98it/s, train_loss=1.518, val_loss=1.636, train_mse=1.219, val_mse=1.517]     24%|██▎       | 236/1000 [00:13<00:42, 17.98it/s, train_loss=1.519, val_loss=1.636, train_mse=1.221, val_mse=1.517]     24%|██▎       | 237/1000 [00:13<00:42, 17.98it/s, train_loss=1.523, val_loss=1.636, train_mse=1.230, val_mse=1.517]     24%|██▍       | 238/1000 [00:13<00:41, 18.42it/s, train_loss=1.523, val_loss=1.636, train_mse=1.230, val_mse=1.517]     24%|██▍       | 238/1000 [00:13<00:41, 18.42it/s, train_loss=1.523, val_loss=1.636, train_mse=1.231, val_mse=1.517]     24%|██▍       | 239/1000 [00:13<00:41, 18.42it/s, train_loss=1.516, val_loss=1.636, train_mse=1.212, val_mse=1.517]     24%|██▍       | 240/1000 [00:13<00:41, 18.51it/s, train_loss=1.516, val_loss=1.636, train_mse=1.212, val_mse=1.517]     24%|██▍       | 240/1000 [00:13<00:41, 18.51it/s, train_loss=1.516, val_loss=1.636, train_mse=1.213, val_mse=1.517]     24%|██▍       | 241/1000 [00:13<00:41, 18.51it/s, train_loss=1.520, val_loss=1.636, train_mse=1.223, val_mse=1.517]     24%|██▍       | 242/1000 [00:14<00:41, 18.27it/s, train_loss=1.520, val_loss=1.636, train_mse=1.223, val_mse=1.517]     24%|██▍       | 242/1000 [00:14<00:41, 18.27it/s, train_loss=1.529, val_loss=1.636, train_mse=1.246, val_mse=1.517]     24%|██▍       | 243/1000 [00:14<00:41, 18.27it/s, train_loss=1.532, val_loss=1.636, train_mse=1.253, val_mse=1.517]     24%|██▍       | 244/1000 [00:14<00:40, 18.51it/s, train_loss=1.532, val_loss=1.636, train_mse=1.253, val_mse=1.517]     24%|██▍       | 244/1000 [00:14<00:40, 18.51it/s, train_loss=1.523, val_loss=1.636, train_mse=1.232, val_mse=1.517]     24%|██▍       | 245/1000 [00:14<00:40, 18.51it/s, train_loss=1.518, val_loss=1.636, train_mse=1.218, val_mse=1.517]     25%|██▍       | 246/1000 [00:14<00:40, 18.58it/s, train_loss=1.518, val_loss=1.636, train_mse=1.218, val_mse=1.517]     25%|██▍       | 246/1000 [00:14<00:40, 18.58it/s, train_loss=1.519, val_loss=1.636, train_mse=1.222, val_mse=1.517]     25%|██▍       | 247/1000 [00:14<00:40, 18.58it/s, train_loss=1.519, val_loss=1.636, train_mse=1.221, val_mse=1.517]     25%|██▍       | 248/1000 [00:14<00:40, 18.59it/s, train_loss=1.519, val_loss=1.636, train_mse=1.221, val_mse=1.517]     25%|██▍       | 248/1000 [00:14<00:40, 18.59it/s, train_loss=1.529, val_loss=1.636, train_mse=1.247, val_mse=1.517]     25%|██▍       | 249/1000 [00:14<00:40, 18.59it/s, train_loss=1.534, val_loss=1.636, train_mse=1.259, val_mse=1.517]     25%|██▌       | 250/1000 [00:14<00:40, 18.62it/s, train_loss=1.534, val_loss=1.636, train_mse=1.259, val_mse=1.517]     25%|██▌       | 250/1000 [00:14<00:40, 18.62it/s, train_loss=1.526, val_loss=1.636, train_mse=1.238, val_mse=1.517]     25%|██▌       | 251/1000 [00:14<00:40, 18.62it/s, train_loss=1.514, val_loss=1.636, train_mse=1.207, val_mse=1.517]     25%|██▌       | 252/1000 [00:14<00:40, 18.66it/s, train_loss=1.514, val_loss=1.636, train_mse=1.207, val_mse=1.517]     25%|██▌       | 252/1000 [00:14<00:40, 18.66it/s, train_loss=1.518, val_loss=1.636, train_mse=1.217, val_mse=1.517]     25%|██▌       | 253/1000 [00:14<00:40, 18.66it/s, train_loss=1.533, val_loss=1.636, train_mse=1.258, val_mse=1.517]     25%|██▌       | 254/1000 [00:14<00:40, 18.58it/s, train_loss=1.533, val_loss=1.636, train_mse=1.258, val_mse=1.517]     25%|██▌       | 254/1000 [00:14<00:40, 18.58it/s, train_loss=1.514, val_loss=1.636, train_mse=1.207, val_mse=1.517]     26%|██▌       | 255/1000 [00:14<00:40, 18.58it/s, train_loss=1.510, val_loss=1.636, train_mse=1.198, val_mse=1.517]     26%|██▌       | 255/1000 [00:14<00:43, 17.32it/s, train_loss=1.510, val_loss=1.636, train_mse=1.198, val_mse=1.517]
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 562-568
+.. GENERATED FROM PYTHON SOURCE LINES 570-576
 
 Then, we look at the learning curves of our baseline model returned by the evaluation function.
 
@@ -838,7 +840,7 @@ These curves display a good learning behaviour:
 - the training and validation curves follow each other closely and are decreasing.
 - a clear convergence plateau is reached at the end of the training.
 
-.. GENERATED FROM PYTHON SOURCE LINES 568-591
+.. GENERATED FROM PYTHON SOURCE LINES 576-599
 
 .. dropdown:: Code (Make learning curves plot)
 
@@ -878,40 +880,20 @@ These curves display a good learning behaviour:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 592-595
+.. GENERATED FROM PYTHON SOURCE LINES 600-603
 
 In addition, we look at the predictions by reloading the checkpointed weights.
 
 We first need to recreate the torch module and then we update its state using the checkpointed weights.
 
-.. GENERATED FROM PYTHON SOURCE LINES 595-626
+.. GENERATED FROM PYTHON SOURCE LINES 603-614
 
 .. code-block:: Python
 
 
     weights_path = os.path.join(baseline_dir, "models",  "model_0.0.pt")
-
-    y_mu, y_std = np.mean(train_y), np.std(train_y)
-    inputs = train_X.shape[1]
-
-
     parameters = problem.default_configuration
-
-    num_layers = parameters["num_layers"]
-    torch_module = DeepNormalRegressor(
-        inputs,
-        layers=[
-            (
-                parameters[f"layer_{i}_units"],
-                parameters[f"layer_{i}_activation"],
-                parameters[f"layer_{i}_dropout_rate"],
-            )
-            for i in range(num_layers)
-        ],
-        loc=y_mu,
-        scale=y_std,
-    ).to(device=device, dtype=dtype)
-
+    torch_module = create_model(parameters, y_mu, y_std)
     torch_module.load_state_dict(torch.load(weights_path, weights_only=True))
     torch_module.eval()
 
@@ -926,7 +908,7 @@ We first need to recreate the torch module and then we update its state using th
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 627-653
+.. GENERATED FROM PYTHON SOURCE LINES 615-641
 
 .. dropdown:: Code (Make prediction plot)
 
@@ -969,7 +951,7 @@ We first need to recreate the torch module and then we update its state using th
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 654-741
+.. GENERATED FROM PYTHON SOURCE LINES 642-729
 
 Neural architecture search
 --------------------------
@@ -1059,7 +1041,7 @@ Interestingly the same trick will be used later to decompose the uncertainty of 
 - ``kappa`` and ``scheduler``: are the parameters that define the schedule of :math:`\kappa^j_i` previously mentionned.
 - ``objective_scaler``: is a parameter that can be used to rescale the observed objectives (e.g., identity, min-max, log).
 
-.. GENERATED FROM PYTHON SOURCE LINES 741-762
+.. GENERATED FROM PYTHON SOURCE LINES 729-750
 
 .. code-block:: Python
 
@@ -1091,7 +1073,7 @@ Interestingly the same trick will be used later to decompose the uncertainty of 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 763-774
+.. GENERATED FROM PYTHON SOURCE LINES 751-763
 
 Then, we create the search instance.
 
@@ -1103,16 +1085,17 @@ The ``evaluator`` is a subclass of :class:`deephyper.evaluator.Evaluator` that p
 submit and gather asynchronous evaluations.
 
 The ``stopper`` is an optional parameter that allows to use an early-discarding (a.k.a., multi-fidelity) strategy to stop early low performing evaluations.
-In our case we will use the Asynchronous Successive Halving (ASHA) early-discarding strategy.
+In our case we will use the median early-discarding strategy. 
+This strategy consists in early stopping the training if the observed objective at the current budget is worse than the median objective for the same budget.
 
-.. GENERATED FROM PYTHON SOURCE LINES 774-823
+.. GENERATED FROM PYTHON SOURCE LINES 763-812
 
 .. code-block:: Python
 
     from deephyper.evaluator import Evaluator
     from deephyper.evaluator.callback import TqdmCallback
     from deephyper.hpo import CBO
-    from deephyper.stopper import SuccessiveHalvingStopper
+    from deephyper.stopper import MedianStopper
 
 
     hpo_dir = "nas_regression"
@@ -1150,7 +1133,7 @@ In our case we will use the Asynchronous Successive Halving (ASHA) early-discard
             method_kwargs=method_kwargs,
         )
 
-        stopper = SuccessiveHalvingStopper(min_steps=1, max_steps=max_n_epochs)
+        stopper= MedianStopper(min_steps=50, max_steps=max_n_epochs, interval_steps=50)
         search = CBO(problem, evaluator, log_dir=hpo_dir, stopper=stopper, **search_kwargs)
 
         results = search.search(max_evals=max_evals)
@@ -1165,7 +1148,7 @@ In our case we will use the Asynchronous Successive Halving (ASHA) early-discard
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 824-832
+.. GENERATED FROM PYTHON SOURCE LINES 813-821
 
 Preload cached results if you want to skip the slow neural architecture search step by running the following commands:
 
@@ -1176,7 +1159,7 @@ Preload cached results if you want to skip the slow neural architecture search s
     gdown "https://drive.google.com/uc?id=1VOV-UM0ws0lopHvoYT_9RAiRdT1y4Kus"
     tar -xvf nas_regression.tar.gz
 
-.. GENERATED FROM PYTHON SOURCE LINES 834-840
+.. GENERATED FROM PYTHON SOURCE LINES 823-829
 
 If you want to remove previously computed results run the following command:
 
@@ -1185,16 +1168,16 @@ If you want to remove previously computed results run the following command:
     %%bash
     rm -rf nas_regression/
 
-.. GENERATED FROM PYTHON SOURCE LINES 842-844
+.. GENERATED FROM PYTHON SOURCE LINES 831-833
 
 As the search can take some time to finalize we provide a mechanism that checks if results were already computed and skip 
 the neural architecture search if it is the case.
 
-.. GENERATED FROM PYTHON SOURCE LINES 844-856
+.. GENERATED FROM PYTHON SOURCE LINES 833-845
 
 .. code-block:: Python
 
-    max_evals = 200
+    max_evals = 250
 
     hpo_results = None
     hpo_results_path = os.path.join(hpo_dir, "results.csv")
@@ -1219,14 +1202,14 @@ the neural architecture search if it is the case.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 857-861
+.. GENERATED FROM PYTHON SOURCE LINES 846-850
 
 Analysis of the results
 -----------------------
 
 We will now look at the results of the search globally in term of evolution of the objective and worker's activity.
 
-.. GENERATED FROM PYTHON SOURCE LINES 861-889
+.. GENERATED FROM PYTHON SOURCE LINES 850-878
 
 .. code-block:: Python
 
@@ -1270,11 +1253,11 @@ We will now look at the results of the search globally in term of evolution of t
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 890-891
+.. GENERATED FROM PYTHON SOURCE LINES 879-880
 
 Then, we split results between successful and failed results if there are some.
 
-.. GENERATED FROM PYTHON SOURCE LINES 891-899
+.. GENERATED FROM PYTHON SOURCE LINES 880-888
 
 .. code-block:: Python
 
@@ -1316,6 +1299,12 @@ Then, we split results between successful and failed results if there are some.
           <th>p:layer_0_activation</th>
           <th>p:layer_0_dropout_rate</th>
           <th>p:layer_0_units</th>
+          <th>p:layer_1_activation</th>
+          <th>p:layer_1_dropout_rate</th>
+          <th>p:layer_1_units</th>
+          <th>p:layer_2_activation</th>
+          <th>p:layer_2_dropout_rate</th>
+          <th>p:layer_2_units</th>
           <th>p:learning_rate</th>
           <th>p:lr_scheduler_factor</th>
           <th>p:lr_scheduler_patience</th>
@@ -1324,12 +1313,6 @@ Then, we split results between successful and failed results if there are some.
           <th>p:num_layers</th>
           <th>p:softplus_factor</th>
           <th>p:std_offset</th>
-          <th>p:layer_1_activation</th>
-          <th>p:layer_1_dropout_rate</th>
-          <th>p:layer_1_units</th>
-          <th>p:layer_2_activation</th>
-          <th>p:layer_2_dropout_rate</th>
-          <th>p:layer_2_units</th>
           <th>p:layer_3_activation</th>
           <th>p:layer_3_dropout_rate</th>
           <th>p:layer_3_units</th>
@@ -1345,12 +1328,6 @@ Then, we split results between successful and failed results if there are some.
           <th>p:layer_7_activation</th>
           <th>p:layer_7_dropout_rate</th>
           <th>p:layer_7_units</th>
-          <th>p:layer_8_activation</th>
-          <th>p:layer_8_dropout_rate</th>
-          <th>p:layer_8_units</th>
-          <th>p:layer_9_activation</th>
-          <th>p:layer_9_dropout_rate</th>
-          <th>p:layer_9_units</th>
           <th>objective</th>
           <th>job_id</th>
           <th>job_status</th>
@@ -1361,274 +1338,250 @@ Then, we split results between successful and failed results if there are some.
           <th>m:val_mse</th>
           <th>m:test_loss</th>
           <th>m:test_mse</th>
+          <th>m:budget</th>
           <th>m:timestamp_gather</th>
         </tr>
       </thead>
       <tbody>
         <tr>
           <th>0</th>
-          <td>11</td>
+          <td>70</td>
           <td>sigmoid</td>
-          <td>0.142795</td>
-          <td>143</td>
-          <td>0.080070</td>
-          <td>0.119921</td>
-          <td>73</td>
-          <td>104</td>
-          <td>84</td>
-          <td>3</td>
-          <td>0.423261</td>
-          <td>0.000008</td>
+          <td>0.181926</td>
+          <td>474</td>
+          <td>relu</td>
+          <td>0.206947</td>
+          <td>102</td>
+          <td>gelu</td>
+          <td>0.077514</td>
+          <td>102</td>
+          <td>0.025985</td>
+          <td>0.865468</td>
+          <td>44</td>
+          <td>34</td>
+          <td>72</td>
+          <td>6</td>
+          <td>0.295450</td>
+          <td>3.219338e-06</td>
           <td>tanh</td>
-          <td>0.050663</td>
-          <td>22</td>
-          <td>tanh</td>
-          <td>0.158975</td>
-          <td>169</td>
+          <td>0.013806</td>
+          <td>31</td>
+          <td>sigmoid</td>
+          <td>0.084893</td>
+          <td>133</td>
+          <td>swish</td>
+          <td>0.041425</td>
+          <td>342</td>
           <td>relu</td>
-          <td>0.000000</td>
+          <td>0.0</td>
           <td>16</td>
           <td>relu</td>
-          <td>0.000000</td>
+          <td>0.0</td>
           <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>-4.523852</td>
-          <td>3</td>
+          <td>-2.150262</td>
+          <td>2</td>
           <td>DONE</td>
-          <td>3.079100</td>
-          <td>[4.5245]</td>
-          <td>[4.523852]</td>
-          <td>[189.5458]</td>
-          <td>[214.93625]</td>
-          <td>4.626149</td>
-          <td>909.973140</td>
-          <td>5.919309</td>
+          <td>3.115092</td>
+          <td>[3.3446648, 3.007759, 2.1224763, 2.1232972, 2....</td>
+          <td>[3.658542, 2.7046585, 2.2429872, 2.2186995, 2....</td>
+          <td>[13.944258, 5.2797594, 3.7825398, 3.7604504, 3...</td>
+          <td>[14.685605, 5.4939284, 4.2901144, 4.2900653, 4...</td>
+          <td>1.914078</td>
+          <td>2.502486</td>
+          <td>207</td>
+          <td>11.251570</td>
         </tr>
         <tr>
           <th>1</th>
-          <td>119</td>
-          <td>silu</td>
-          <td>0.246973</td>
-          <td>132</td>
-          <td>0.000251</td>
-          <td>0.330596</td>
-          <td>76</td>
-          <td>113</td>
-          <td>100</td>
-          <td>9</td>
-          <td>0.339058</td>
-          <td>0.000043</td>
+          <td>97</td>
           <td>mish</td>
-          <td>0.003462</td>
-          <td>108</td>
+          <td>0.092652</td>
+          <td>353</td>
           <td>mish</td>
-          <td>0.150642</td>
-          <td>184</td>
-          <td>swish</td>
-          <td>0.096153</td>
-          <td>153</td>
+          <td>0.160574</td>
+          <td>209</td>
           <td>gelu</td>
-          <td>0.042527</td>
-          <td>102</td>
-          <td>silu</td>
-          <td>0.071766</td>
-          <td>86</td>
-          <td>silu</td>
-          <td>0.043412</td>
-          <td>86</td>
-          <td>sigmoid</td>
-          <td>0.061962</td>
-          <td>94</td>
-          <td>silu</td>
-          <td>0.155331</td>
-          <td>187</td>
+          <td>0.187758</td>
+          <td>473</td>
+          <td>0.011654</td>
+          <td>0.285402</td>
+          <td>67</td>
+          <td>138</td>
+          <td>352</td>
+          <td>4</td>
+          <td>0.587813</td>
+          <td>4.738140e-08</td>
+          <td>swish</td>
+          <td>0.231107</td>
+          <td>320</td>
           <td>relu</td>
           <td>0.000000</td>
           <td>16</td>
-          <td>-2.427877</td>
-          <td>1</td>
+          <td>relu</td>
+          <td>0.000000</td>
+          <td>16</td>
+          <td>relu</td>
+          <td>0.0</td>
+          <td>16</td>
+          <td>relu</td>
+          <td>0.0</td>
+          <td>16</td>
+          <td>-11.422319</td>
+          <td>8</td>
           <td>DONE</td>
-          <td>3.076278</td>
-          <td>[2.2848647]</td>
-          <td>[2.4278772]</td>
-          <td>[3.7918663]</td>
-          <td>[4.2942433]</td>
-          <td>1.915583</td>
-          <td>2.508090</td>
-          <td>8.019736</td>
+          <td>3.124672</td>
+          <td>[3.8383796e+17, 4.4299097, 4.9976664, 4.943719...</td>
+          <td>[3.221744e+17, 4.5298862, 4.7057, 4.00931, 4.0...</td>
+          <td>[1923.6177, 198.72899, 747.47736, 1066.5563, 6...</td>
+          <td>[1655.038, 337.08624, 288.66772, 61.806, 178.6...</td>
+          <td>11.205925</td>
+          <td>596.508360</td>
+          <td>204</td>
+          <td>14.438305</td>
         </tr>
         <tr>
           <th>2</th>
-          <td>13</td>
+          <td>12</td>
           <td>sigmoid</td>
-          <td>0.030328</td>
-          <td>21</td>
-          <td>0.051103</td>
-          <td>0.490162</td>
-          <td>35</td>
-          <td>37</td>
-          <td>115</td>
-          <td>10</td>
-          <td>0.508639</td>
-          <td>0.001759</td>
-          <td>gelu</td>
-          <td>0.085958</td>
-          <td>182</td>
-          <td>swish</td>
-          <td>0.169313</td>
-          <td>50</td>
-          <td>gelu</td>
-          <td>0.225288</td>
-          <td>127</td>
-          <td>relu</td>
-          <td>0.031218</td>
-          <td>39</td>
-          <td>relu</td>
-          <td>0.172153</td>
-          <td>65</td>
-          <td>sigmoid</td>
-          <td>0.103585</td>
-          <td>64</td>
-          <td>sigmoid</td>
-          <td>0.246642</td>
-          <td>42</td>
-          <td>swish</td>
-          <td>0.194683</td>
-          <td>23</td>
+          <td>0.098485</td>
+          <td>167</td>
           <td>tanh</td>
-          <td>0.160958</td>
-          <td>160</td>
-          <td>-2.560267</td>
-          <td>4</td>
+          <td>0.081428</td>
+          <td>162</td>
+          <td>relu</td>
+          <td>0.185991</td>
+          <td>422</td>
+          <td>0.000010</td>
+          <td>0.400599</td>
+          <td>83</td>
+          <td>236</td>
+          <td>292</td>
+          <td>3</td>
+          <td>0.685736</td>
+          <td>2.607425e-06</td>
+          <td>relu</td>
+          <td>0.000000</td>
+          <td>16</td>
+          <td>relu</td>
+          <td>0.000000</td>
+          <td>16</td>
+          <td>relu</td>
+          <td>0.000000</td>
+          <td>16</td>
+          <td>relu</td>
+          <td>0.0</td>
+          <td>16</td>
+          <td>relu</td>
+          <td>0.0</td>
+          <td>16</td>
+          <td>-1.628614</td>
+          <td>7</td>
           <td>DONE</td>
-          <td>3.080451</td>
-          <td>[2.409007]</td>
-          <td>[2.5602667]</td>
-          <td>[5.226042]</td>
-          <td>[6.4964147]</td>
-          <td>1.930383</td>
-          <td>2.543664</td>
-          <td>8.026484</td>
+          <td>3.123110</td>
+          <td>[2.236774, 2.1814837, 2.1265445, 2.0818307, 2....</td>
+          <td>[2.3746197, 2.30508, 2.2423122, 2.1839232, 2.1...</td>
+          <td>[3.71194, 3.5859272, 3.432112, 3.299646, 3.131...</td>
+          <td>[4.225223, 4.0678625, 3.90591, 3.7386181, 3.56...</td>
+          <td>2.380924</td>
+          <td>3.308409</td>
+          <td>100</td>
+          <td>16.841407</td>
         </tr>
         <tr>
           <th>3</th>
-          <td>11</td>
+          <td>68</td>
+          <td>silu</td>
+          <td>0.122704</td>
+          <td>105</td>
           <td>mish</td>
-          <td>0.208449</td>
-          <td>118</td>
-          <td>0.000058</td>
-          <td>0.243255</td>
-          <td>59</td>
-          <td>126</td>
-          <td>125</td>
+          <td>0.171507</td>
+          <td>130</td>
+          <td>silu</td>
+          <td>0.025040</td>
+          <td>258</td>
+          <td>0.000051</td>
+          <td>0.726719</td>
+          <td>31</td>
+          <td>29</td>
+          <td>320</td>
           <td>5</td>
-          <td>0.951712</td>
-          <td>0.000156</td>
-          <td>sigmoid</td>
-          <td>0.116730</td>
-          <td>184</td>
-          <td>relu</td>
-          <td>0.050939</td>
-          <td>128</td>
-          <td>silu</td>
-          <td>0.150211</td>
-          <td>98</td>
-          <td>silu</td>
-          <td>0.034990</td>
-          <td>62</td>
+          <td>0.071061</td>
+          <td>9.339449e-03</td>
+          <td>tanh</td>
+          <td>0.039217</td>
+          <td>149</td>
+          <td>gelu</td>
+          <td>0.192898</td>
+          <td>228</td>
           <td>relu</td>
           <td>0.000000</td>
           <td>16</td>
           <td>relu</td>
-          <td>0.000000</td>
+          <td>0.0</td>
           <td>16</td>
           <td>relu</td>
-          <td>0.000000</td>
+          <td>0.0</td>
           <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>-2.235948</td>
-          <td>6</td>
+          <td>-1.623544</td>
+          <td>5</td>
           <td>DONE</td>
-          <td>3.082923</td>
-          <td>[2.1744583, 2.1584742, 2.1234758]</td>
-          <td>[2.2993066, 2.2754505, 2.235948]</td>
-          <td>[3.720943, 3.6704187, 3.5363545]</td>
-          <td>[4.248204, 4.170691, 4.0215554]</td>
-          <td>1.861702</td>
-          <td>2.410056</td>
-          <td>8.034442</td>
+          <td>3.119682</td>
+          <td>[2.210437, 2.1761377, 2.1406722, 2.1041787, 2....</td>
+          <td>[2.3381114, 2.291759, 2.2486758, 2.206605, 2.1...</td>
+          <td>[3.673555, 3.5535786, 3.4296498, 3.298158, 3.1...</td>
+          <td>[4.1579785, 3.9966674, 3.845235, 3.6954503, 3....</td>
+          <td>2.103548</td>
+          <td>2.312875</td>
+          <td>335</td>
+          <td>16.867606</td>
         </tr>
         <tr>
           <th>4</th>
-          <td>68</td>
-          <td>gelu</td>
-          <td>0.163604</td>
-          <td>69</td>
-          <td>0.088403</td>
-          <td>0.807050</td>
-          <td>24</td>
-          <td>123</td>
-          <td>129</td>
-          <td>10</td>
-          <td>0.702998</td>
-          <td>0.000003</td>
-          <td>silu</td>
-          <td>0.026479</td>
-          <td>197</td>
-          <td>tanh</td>
-          <td>0.067620</td>
-          <td>53</td>
-          <td>silu</td>
-          <td>0.086518</td>
-          <td>131</td>
-          <td>tanh</td>
-          <td>0.224611</td>
-          <td>81</td>
-          <td>gelu</td>
-          <td>0.246323</td>
-          <td>57</td>
-          <td>swish</td>
-          <td>0.108116</td>
-          <td>100</td>
-          <td>tanh</td>
-          <td>0.209740</td>
-          <td>110</td>
-          <td>gelu</td>
-          <td>0.109997</td>
-          <td>147</td>
-          <td>swish</td>
-          <td>0.207370</td>
-          <td>119</td>
-          <td>-10.855550</td>
+          <td>32</td>
+          <td>relu</td>
+          <td>0.000000</td>
+          <td>512</td>
+          <td>relu</td>
+          <td>0.000000</td>
+          <td>512</td>
+          <td>relu</td>
+          <td>0.000000</td>
+          <td>512</td>
+          <td>0.002000</td>
+          <td>0.100000</td>
+          <td>20</td>
+          <td>512</td>
+          <td>512</td>
           <td>5</td>
+          <td>0.050000</td>
+          <td>1.000000e-03</td>
+          <td>relu</td>
+          <td>0.000000</td>
+          <td>512</td>
+          <td>relu</td>
+          <td>0.000000</td>
+          <td>512</td>
+          <td>relu</td>
+          <td>0.000000</td>
+          <td>16</td>
+          <td>relu</td>
+          <td>0.0</td>
+          <td>16</td>
+          <td>relu</td>
+          <td>0.0</td>
+          <td>16</td>
+          <td>-1.635386</td>
+          <td>0</td>
           <td>DONE</td>
-          <td>3.081731</td>
-          <td>[9.659424]</td>
-          <td>[10.85555]</td>
-          <td>[13572.945]</td>
-          <td>[20573.744]</td>
-          <td>7.017100</td>
-          <td>40355.594000</td>
-          <td>8.041589</td>
+          <td>3.111969</td>
+          <td>[3.0886695, 1.750991, 1.6709614, 1.6958653, 1....</td>
+          <td>[2.9877737, 1.8339363, 1.7619252, 1.7876191, 1...</td>
+          <td>[9.036593, 1.8560325, 1.6338795, 1.754334, 1.7...</td>
+          <td>[8.499712, 2.2645135, 1.9825038, 2.0629869, 1....</td>
+          <td>2.309622</td>
+          <td>3.235827</td>
+          <td>100</td>
+          <td>19.226117</td>
         </tr>
         <tr>
           <th>...</th>
@@ -1677,296 +1630,267 @@ Then, we split results between successful and failed results if there are some.
           <td>...</td>
           <td>...</td>
           <td>...</td>
-          <td>...</td>
-          <td>...</td>
-          <td>...</td>
-          <td>...</td>
-          <td>...</td>
         </tr>
         <tr>
-          <th>201</th>
-          <td>12</td>
-          <td>tanh</td>
-          <td>0.169678</td>
-          <td>45</td>
-          <td>0.001328</td>
-          <td>0.340748</td>
-          <td>72</td>
-          <td>111</td>
-          <td>190</td>
-          <td>2</td>
-          <td>0.076266</td>
-          <td>0.000001</td>
-          <td>sigmoid</td>
-          <td>0.229338</td>
-          <td>97</td>
+          <th>253</th>
+          <td>9</td>
+          <td>gelu</td>
+          <td>0.147503</td>
+          <td>327</td>
+          <td>gelu</td>
+          <td>0.040974</td>
+          <td>382</td>
           <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>-1.894008</td>
-          <td>202</td>
-          <td>DONE</td>
-          <td>652.764093</td>
-          <td>[1.8625572]</td>
-          <td>[1.8940079]</td>
-          <td>[2.3215275]</td>
-          <td>[2.4539046]</td>
-          <td>2.160337</td>
-          <td>3.650421</td>
-          <td>676.915572</td>
-        </tr>
-        <tr>
-          <th>202</th>
-          <td>10</td>
+          <td>0.111438</td>
+          <td>350</td>
+          <td>0.000201</td>
+          <td>0.646348</td>
+          <td>75</td>
+          <td>407</td>
+          <td>223</td>
+          <td>6</td>
+          <td>0.355029</td>
+          <td>2.807461e-04</td>
           <td>swish</td>
-          <td>0.090668</td>
+          <td>0.008805</td>
+          <td>436</td>
+          <td>relu</td>
+          <td>0.052158</td>
           <td>168</td>
-          <td>0.000940</td>
-          <td>0.684951</td>
-          <td>34</td>
-          <td>107</td>
-          <td>109</td>
-          <td>10</td>
-          <td>0.082857</td>
-          <td>0.000338</td>
-          <td>silu</td>
-          <td>0.086736</td>
-          <td>152</td>
-          <td>silu</td>
-          <td>0.081158</td>
-          <td>199</td>
           <td>swish</td>
-          <td>0.105326</td>
-          <td>46</td>
-          <td>silu</td>
-          <td>0.163630</td>
-          <td>94</td>
+          <td>0.048483</td>
+          <td>228</td>
           <td>relu</td>
-          <td>0.111274</td>
-          <td>53</td>
-          <td>mish</td>
-          <td>0.185784</td>
-          <td>182</td>
-          <td>mish</td>
-          <td>0.001874</td>
-          <td>199</td>
-          <td>swish</td>
-          <td>0.223241</td>
-          <td>79</td>
-          <td>mish</td>
-          <td>0.175191</td>
-          <td>74</td>
-          <td>-2.009886</td>
-          <td>201</td>
+          <td>0.0</td>
+          <td>16</td>
+          <td>relu</td>
+          <td>0.0</td>
+          <td>16</td>
+          <td>-1.355191</td>
+          <td>246</td>
           <td>DONE</td>
-          <td>652.762850</td>
-          <td>[1.976489]</td>
-          <td>[2.0098858]</td>
-          <td>[2.646244]</td>
-          <td>[2.7720828]</td>
-          <td>2.349890</td>
-          <td>3.986277</td>
-          <td>676.921395</td>
+          <td>630.366095</td>
+          <td>[1.7959713, 1.612981, 1.5384753, 1.5049683, 1....</td>
+          <td>[1.8916413, 1.6986941, 1.633342, 1.585164, 1.5...</td>
+          <td>[2.1121533, 1.4583974, 1.2615055, 1.1661158, 1...</td>
+          <td>[2.4692147, 1.7586042, 1.5339593, 1.414326, 1....</td>
+          <td>5.490296</td>
+          <td>2.254771</td>
+          <td>150</td>
+          <td>679.582077</td>
         </tr>
         <tr>
-          <th>203</th>
-          <td>12</td>
-          <td>tanh</td>
-          <td>0.169678</td>
-          <td>45</td>
-          <td>0.001328</td>
-          <td>0.340748</td>
-          <td>72</td>
-          <td>111</td>
-          <td>190</td>
-          <td>2</td>
-          <td>0.076266</td>
-          <td>0.000001</td>
-          <td>sigmoid</td>
-          <td>0.229338</td>
-          <td>97</td>
+          <th>254</th>
+          <td>9</td>
+          <td>gelu</td>
+          <td>0.147503</td>
+          <td>327</td>
+          <td>gelu</td>
+          <td>0.040974</td>
+          <td>382</td>
           <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>-1.905002</td>
-          <td>205</td>
-          <td>DONE</td>
-          <td>652.768147</td>
-          <td>[1.8342311]</td>
-          <td>[1.9050022]</td>
-          <td>[2.2270005]</td>
-          <td>[2.5286634]</td>
-          <td>2.291993</td>
-          <td>4.221706</td>
-          <td>676.926126</td>
-        </tr>
-        <tr>
-          <th>204</th>
-          <td>12</td>
-          <td>tanh</td>
-          <td>0.169678</td>
-          <td>45</td>
-          <td>0.001328</td>
-          <td>0.340748</td>
-          <td>72</td>
-          <td>111</td>
-          <td>190</td>
-          <td>2</td>
-          <td>0.076266</td>
-          <td>0.000001</td>
-          <td>sigmoid</td>
-          <td>0.229338</td>
-          <td>97</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>relu</td>
-          <td>0.000000</td>
-          <td>16</td>
-          <td>-1.877806</td>
-          <td>203</td>
-          <td>DONE</td>
-          <td>652.765279</td>
-          <td>[1.7900155]</td>
-          <td>[1.8778058]</td>
-          <td>[2.0069356]</td>
-          <td>[2.3177512]</td>
-          <td>2.366820</td>
-          <td>4.192923</td>
-          <td>676.931342</td>
-        </tr>
-        <tr>
-          <th>205</th>
-          <td>10</td>
+          <td>0.111438</td>
+          <td>350</td>
+          <td>0.000201</td>
+          <td>0.646348</td>
+          <td>75</td>
+          <td>407</td>
+          <td>223</td>
+          <td>6</td>
+          <td>0.355029</td>
+          <td>2.807461e-04</td>
           <td>swish</td>
-          <td>0.090668</td>
+          <td>0.008805</td>
+          <td>436</td>
+          <td>relu</td>
+          <td>0.052158</td>
           <td>168</td>
-          <td>0.000940</td>
-          <td>0.684951</td>
-          <td>34</td>
-          <td>107</td>
-          <td>109</td>
-          <td>10</td>
-          <td>0.082857</td>
-          <td>0.000338</td>
-          <td>silu</td>
-          <td>0.086736</td>
-          <td>152</td>
-          <td>silu</td>
-          <td>0.081158</td>
-          <td>199</td>
           <td>swish</td>
-          <td>0.105326</td>
-          <td>46</td>
-          <td>silu</td>
-          <td>0.163630</td>
-          <td>94</td>
+          <td>0.048483</td>
+          <td>228</td>
           <td>relu</td>
-          <td>0.111274</td>
-          <td>53</td>
-          <td>mish</td>
-          <td>0.185784</td>
-          <td>182</td>
-          <td>mish</td>
-          <td>0.001874</td>
-          <td>199</td>
-          <td>swish</td>
-          <td>0.223241</td>
-          <td>79</td>
-          <td>mish</td>
-          <td>0.175191</td>
-          <td>74</td>
-          <td>-1.978294</td>
-          <td>204</td>
+          <td>0.0</td>
+          <td>16</td>
+          <td>relu</td>
+          <td>0.0</td>
+          <td>16</td>
+          <td>-1.338869</td>
+          <td>245</td>
           <td>DONE</td>
-          <td>652.766497</td>
-          <td>[1.8848333]</td>
-          <td>[1.9782941]</td>
-          <td>[2.4709816]</td>
-          <td>[2.8507404]</td>
-          <td>2.675296</td>
-          <td>5.365109</td>
-          <td>676.937901</td>
+          <td>630.364619</td>
+          <td>[1.7868594, 1.6394458, 1.5969827, 1.5058933, 1...</td>
+          <td>[1.881283, 1.6959612, 1.6907848, 1.5996006, 1....</td>
+          <td>[2.0721033, 1.5127479, 1.4592592, 1.1749825, 1...</td>
+          <td>[2.4467967, 1.7090496, 1.7507932, 1.4495625, 1...</td>
+          <td>4.865471</td>
+          <td>2.652589</td>
+          <td>150</td>
+          <td>679.591466</td>
+        </tr>
+        <tr>
+          <th>255</th>
+          <td>39</td>
+          <td>sigmoid</td>
+          <td>0.023327</td>
+          <td>492</td>
+          <td>gelu</td>
+          <td>0.046661</td>
+          <td>508</td>
+          <td>tanh</td>
+          <td>0.054499</td>
+          <td>408</td>
+          <td>0.000429</td>
+          <td>0.456818</td>
+          <td>99</td>
+          <td>305</td>
+          <td>375</td>
+          <td>6</td>
+          <td>0.083601</td>
+          <td>6.648459e-04</td>
+          <td>relu</td>
+          <td>0.001359</td>
+          <td>131</td>
+          <td>relu</td>
+          <td>0.000434</td>
+          <td>91</td>
+          <td>mish</td>
+          <td>0.006195</td>
+          <td>278</td>
+          <td>relu</td>
+          <td>0.0</td>
+          <td>16</td>
+          <td>relu</td>
+          <td>0.0</td>
+          <td>16</td>
+          <td>-1.237021</td>
+          <td>254</td>
+          <td>DONE</td>
+          <td>663.889429</td>
+          <td>[2.1483836, 1.6763021, 1.6019645, 1.5603795, 1...</td>
+          <td>[2.2329588, 1.7383378, 1.6627777, 1.6332842, 1...</td>
+          <td>[3.4518583, 1.6064619, 1.3468125, 1.269646, 1....</td>
+          <td>[3.7938585, 1.8709488, 1.5942268, 1.5283567, 1...</td>
+          <td>3.218310</td>
+          <td>3.013878</td>
+          <td>200</td>
+          <td>679.601624</td>
+        </tr>
+        <tr>
+          <th>256</th>
+          <td>9</td>
+          <td>gelu</td>
+          <td>0.147503</td>
+          <td>327</td>
+          <td>gelu</td>
+          <td>0.040974</td>
+          <td>382</td>
+          <td>relu</td>
+          <td>0.111438</td>
+          <td>350</td>
+          <td>0.000201</td>
+          <td>0.646348</td>
+          <td>75</td>
+          <td>407</td>
+          <td>223</td>
+          <td>6</td>
+          <td>0.355029</td>
+          <td>2.807461e-04</td>
+          <td>swish</td>
+          <td>0.008805</td>
+          <td>436</td>
+          <td>relu</td>
+          <td>0.052158</td>
+          <td>168</td>
+          <td>swish</td>
+          <td>0.048483</td>
+          <td>228</td>
+          <td>relu</td>
+          <td>0.0</td>
+          <td>16</td>
+          <td>relu</td>
+          <td>0.0</td>
+          <td>16</td>
+          <td>-1.329060</td>
+          <td>252</td>
+          <td>DONE</td>
+          <td>630.374816</td>
+          <td>[1.87602, 1.6645529, 1.5612121, 1.4900389, 1.4...</td>
+          <td>[1.939153, 1.7124308, 1.6570098, 1.6031138, 1....</td>
+          <td>[2.3585367, 1.6309453, 1.300604, 1.1493164, 1....</td>
+          <td>[2.6316204, 1.8015269, 1.6143771, 1.4616898, 1...</td>
+          <td>10.104279</td>
+          <td>3.058449</td>
+          <td>150</td>
+          <td>679.611899</td>
+        </tr>
+        <tr>
+          <th>257</th>
+          <td>40</td>
+          <td>swish</td>
+          <td>0.021190</td>
+          <td>508</td>
+          <td>gelu</td>
+          <td>0.018175</td>
+          <td>251</td>
+          <td>tanh</td>
+          <td>0.132126</td>
+          <td>140</td>
+          <td>0.000244</td>
+          <td>0.541508</td>
+          <td>97</td>
+          <td>195</td>
+          <td>178</td>
+          <td>7</td>
+          <td>0.051539</td>
+          <td>5.631186e-04</td>
+          <td>relu</td>
+          <td>0.001663</td>
+          <td>263</td>
+          <td>relu</td>
+          <td>0.001925</td>
+          <td>16</td>
+          <td>relu</td>
+          <td>0.034920</td>
+          <td>377</td>
+          <td>sigmoid</td>
+          <td>0.0</td>
+          <td>16</td>
+          <td>relu</td>
+          <td>0.0</td>
+          <td>16</td>
+          <td>-1.630955</td>
+          <td>257</td>
+          <td>DONE</td>
+          <td>679.533651</td>
+          <td>[2.2289357, 2.1660335, 2.1070788, 1.9747405, 1...</td>
+          <td>[2.368112, 2.2929592, 2.195803, 2.0754118, 1.9...</td>
+          <td>[3.6846101, 3.5444841, 3.3924818, 2.8852522, 2...</td>
+          <td>[4.2091117, 4.049022, 3.7570698, 3.316684, 2.8...</td>
+          <td>2.380392</td>
+          <td>3.325646</td>
+          <td>50</td>
+          <td>692.428325</td>
         </tr>
       </tbody>
     </table>
-    <p>206 rows × 50 columns</p>
+    <p>258 rows × 45 columns</p>
     </div>
     </div>
     <br />
     <br />
 
-.. GENERATED FROM PYTHON SOURCE LINES 900-901
+.. GENERATED FROM PYTHON SOURCE LINES 889-890
 
 We look at the learning curves of the best model and observe improvements in both training and validation loss:
 
-.. GENERATED FROM PYTHON SOURCE LINES 901-943
+.. GENERATED FROM PYTHON SOURCE LINES 890-934
 
 .. code-block:: Python
 
 
     # .. dropdown: Make learning curves plot
     x_values = np.arange(1, len(baseline_results["metadata"]["train_loss"]) + 1)
+    x_min, x_max = x_values.min(), x_values.max()
     _ = plt.figure(figsize=(WIDTH_PLOTS, HEIGHT_PLOTS))
     _ = plt.plot(
         x_values,
@@ -1985,6 +1909,7 @@ We look at the learning curves of the best model and observe improvements in bot
     train_loss = json.loads(hpo_results.iloc[i_max]["m:train_loss"])
     val_loss = json.loads(hpo_results.iloc[i_max]["m:val_loss"])
     x_values = np.arange(1, len(train_loss) + 1)
+    x_max = max(x_max, x_values.max())
     _ = plt.plot(
         x_values,
         train_loss,
@@ -1999,7 +1924,7 @@ We look at the learning curves of the best model and observe improvements in bot
         linestyle="--",
         label="Best Validation",
     )
-    _ = plt.xlim(x_values.min(), x_values.max())
+    _ = plt.xlim(x_min, x_max)
     _ = plt.grid(which="both", linestyle=":")
     _ = plt.legend()
     _ = plt.xlabel("Epochs")
@@ -2018,11 +1943,11 @@ We look at the learning curves of the best model and observe improvements in bot
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 944-945
+.. GENERATED FROM PYTHON SOURCE LINES 935-936
 
 Finally, we look at predictions of this best model and observe that it manage to predict much better than the baseline one the right range. 
 
-.. GENERATED FROM PYTHON SOURCE LINES 945-981
+.. GENERATED FROM PYTHON SOURCE LINES 936-956
 
 .. code-block:: Python
 
@@ -2034,26 +1959,10 @@ Finally, we look at predictions of this best model and observe that it manage to
     job_id = hpo_results.iloc[i_max]["job_id"]
     file_name = f"model_0.{job_id}.pt"
 
-    y_mu, y_std = np.mean(train_y), np.std(train_y)
-    inputs = train_X.shape[1]
-
     weights_path = os.path.join(model_checkpoint_dir, file_name)
     parameters = parameters_from_row(hpo_results.iloc[i_max])
 
-    num_layers = parameters["num_layers"]
-    torch_module = DeepNormalRegressor(
-        inputs,
-        layers=[
-            (
-                parameters[f"layer_{i}_units"],
-                parameters[f"layer_{i}_activation"],
-                parameters[f"layer_{i}_dropout_rate"],
-            )
-            for i in range(num_layers)
-        ],
-        loc=y_mu,
-        scale=y_std,
-    ).to(device=device, dtype=dtype)
+    torch_module = create_model(parameters, y_mu, y_std)
 
     torch_module.load_state_dict(torch.load(weights_path, weights_only=True))
     torch_module.eval()
@@ -2069,7 +1978,7 @@ Finally, we look at predictions of this best model and observe that it manage to
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 982-1007
+.. GENERATED FROM PYTHON SOURCE LINES 957-982
 
 .. dropdown:: Code (Make prediction plot)
 
@@ -2111,15 +2020,29 @@ Finally, we look at predictions of this best model and observe that it manage to
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 1008-1010
+.. GENERATED FROM PYTHON SOURCE LINES 983-1000
 
 Deep ensemble
 -------------
 
-.. GENERATED FROM PYTHON SOURCE LINES 1010-1031
+After running the neural architecture search we have an available library of checkpointed models.
+From this section, you will learn how to combine these models to form an ensemble that can improve both accuracy and provide disentangled uncertainty quantification.
+
+We start by importing classes from :mod:`deephyper.predictor` and :mod:`deephyper.ensemble`.
+
+The :mod:`deephyper.predictor` module includes subclasses of :class:`deephyper.predictor.Predictor` to wrap predictive models ready for inference. In our case, we will use :class:`deephyper.predictor.torch.TorchPredictor`.
+The :mod:`deephyper.ensemble` module includes modular components to build an ensemble of predictive models.
+The ensemble module is organized around loss functions, aggregation functions and selection algorithms.
+The implementation of these functions is based on Numpy.
+In this example, we start by wrapping our torch module within a subclass of :class:`deephyper.predictor.torch.TorchPredictor` that we call ``NormalTorchPredictor``. This predictor class is used to make a torch module compatible with our Numpy-based implementation for ensembles.
+
+The ``pre_process_inputs`` is used to map a Numpy array to a Torch tensor.
+The ``post_process_predictions`` is used to map a Torch tensor to a Numpy array.
+It also formats the prediction as a dictionnary with ``"loc"`` (for the predictive mean) and ``"scale"`` (for the predictive standard deviation) that is necessary for our aggregation function ``MixedNormalAggregator``.
+
+.. GENERATED FROM PYTHON SOURCE LINES 1000-1020
 
 .. code-block:: Python
-
 
     from deephyper.ensemble import EnsemblePredictor
     from deephyper.ensemble.aggregator import MixedNormalAggregator
@@ -2148,15 +2071,17 @@ Deep ensemble
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 1032-1082
+.. GENERATED FROM PYTHON SOURCE LINES 1021-1024
+
+After defining the predictor, we load the checkpointed models to collect their predictions into ``y_predictors``.
+These predictions are the inputs of our loss, aggregation and selection functions.
+We also collect the job ids of the checkpointed models into ``job_id_predictors``.
+
+.. GENERATED FROM PYTHON SOURCE LINES 1024-1054
 
 .. code-block:: Python
 
-    hpo_dir = "nas_regression"
     model_checkpoint_dir = os.path.join(hpo_dir, "models")
-
-    y_mu, y_std = np.mean(train_y), np.std(train_y)
-    inputs = train_X.shape[1]
 
     y_predictors = []
     job_id_predictors = []
@@ -2172,30 +2097,14 @@ Deep ensemble
         if len(row) == 0:
             continue
         assert len(row) == 1
+
         row = row.iloc[0]
         parameters = parameters_from_row(row)
-
-        num_layers = parameters["num_layers"]
-        torch_module = DeepNormalRegressor(
-            inputs,
-            layers=[
-                (
-                    parameters[f"layer_{i}_units"],
-                    parameters[f"layer_{i}_activation"],
-                    parameters[f"layer_{i}_dropout_rate"],
-                )
-                for i in range(num_layers)
-            ],
-            loc=y_mu,
-            scale=y_std,
-        )
-
+        torch_module = create_model(parameters, y_mu, y_std)
         try:
             torch_module.load_state_dict(torch.load(weights_path, weights_only=True))
         except RuntimeError:
             continue
-
-        torch_module.eval()
 
         predictor = NormalTorchPredictor(torch_module)
         y_pred = predictor.predict(valid_X)
@@ -2210,35 +2119,46 @@ Deep ensemble
 
  .. code-block:: none
 
-      0%|          | 0/206 [00:00<?, ?it/s]
+      0%|          | 0/258 [00:00<?, ?it/s]      7%|▋         | 19/258 [00:00<00:01, 176.63it/s]     14%|█▍        | 37/258 [00:00<00:01, 175.91it/s]     23%|██▎       | 60/258 [00:00<00:00, 199.92it/s]     32%|███▏      | 83/258 [00:00<00:00, 210.54it/s]     41%|████      | 106/258 [00:00<00:00, 215.32it/s]     50%|████▉     | 128/258 [00:00<00:00, 209.45it/s]     58%|█████▊    | 149/258 [00:00<00:00, 204.08it/s]     66%|██████▌   | 170/258 [00:00<00:00, 204.79it/s]     74%|███████▍  | 192/258 [00:00<00:00, 207.65it/s]     84%|████████▍ | 217/258 [00:01<00:00, 219.26it/s]     93%|█████████▎| 240/258 [00:01<00:00, 220.64it/s]    100%|██████████| 258/258 [00:01<00:00, 202.35it/s]
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 1083-1085
+.. GENERATED FROM PYTHON SOURCE LINES 1055-1067
 
 Ensemble selection
 ------------------
 
-.. GENERATED FROM PYTHON SOURCE LINES 1085-1118
+This is where the ensemble selection logic happens. We use the :class:`deephyper.ensemble.selector.GreedySelector` or :class:`deephyper.ensemble.selector.TopKSelector` class.
+The top-k selection, selects the topk-k models according to the given ``los_func`` and weight them equally in the ensemble.
+The greedy selection, iteratively selects models from the checkpoints that improves the current ensemble.
+
+The ``aggregator`` is the logic that combines a set of predictors into a single predictor to form the ensemble's prediction.
+In our case, we use the :class:`deephyper.ensemble.aggregator.MixedNormalAggregator` that approximates a mixture of normal distribution (each normal distribution is the output of a checkpointed model) as a normal distribution.
+
+To try top-k or greedy selection just uncomment/comment the corresponding code.
+This part of the code is fast to compute.
+
+.. GENERATED FROM PYTHON SOURCE LINES 1067-1101
 
 .. code-block:: Python
 
     k = 50
 
-    # Use TopK or Greedy/Caruana
+    # Top-K Selection
     # selector = TopKSelector(
     #     loss_func=NormalNegLogLikelihood(),
     #     k=k,
     # )
 
+    # Greedy Selection
     selector = GreedySelector(
         loss_func=NormalNegLogLikelihood(),
         aggregator=MixedNormalAggregator(),
         k=k,
-        max_it=100,
+        max_it=k,
         k_init=3,
-        early_stopping=False,
+        early_stopping=True,
         with_replacement=True,
         bagging=True,
         verbose=True,
@@ -2265,121 +2185,37 @@ Ensemble selection
 
  .. code-block:: none
 
-    Ensemble initialized with [44, 70, 76]
-    Step 1, ensemble is [44, 70, 76, 44]
-    Step 2, ensemble is [44, 70, 76, 44, 44]
-    Step 3, ensemble is [44, 70, 76, 44, 44, 44]
-    Step 4, ensemble is [44, 70, 76, 44, 44, 44, 44]
-    Step 5, ensemble is [44, 70, 76, 44, 44, 44, 44, 44]
-    Step 6, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44]
-    Step 7, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203]
-    Step 8, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76]
-    Step 9, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44]
-    Step 10, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45]
-    Step 11, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44]
-    Step 12, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44]
-    Step 13, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44]
-    Step 14, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44]
-    Step 15, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44]
-    Step 16, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50]
-    Step 17, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44]
-    Step 18, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44]
-    Step 19, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44]
-    Step 20, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44]
-    Step 21, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44]
-    Step 22, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44]
-    Step 23, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44]
-    Step 24, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44]
-    Step 25, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44]
-    Step 26, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50]
-    Step 27, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44]
-    Step 28, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44]
-    Step 29, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76]
-    Step 30, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203]
-    Step 31, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44]
-    Step 32, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44]
-    Step 33, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76]
-    Step 34, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44]
-    Step 35, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70]
-    Step 36, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44]
-    Step 37, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45]
-    Step 38, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44]
-    Step 39, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44]
-    Step 40, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44]
-    Step 41, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70]
-    Step 42, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70]
-    Step 43, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70]
-    Step 44, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70]
-    Step 45, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203]
-    Step 46, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76]
-    Step 47, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44]
-    Step 48, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44]
-    Step 49, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45]
-    Step 50, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44]
-    Step 51, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45]
-    Step 52, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76]
-    Step 53, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76]
-    Step 54, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44]
-    Step 55, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70]
-    Step 56, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70]
-    Step 57, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44]
-    Step 58, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203]
-    Step 59, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44]
-    Step 60, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44]
-    Step 61, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50]
-    Step 62, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76]
-    Step 63, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76]
-    Step 64, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44]
-    Step 65, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76]
-    Step 66, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76]
-    Step 67, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76]
-    Step 68, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76]
-    Step 69, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76]
-    Step 70, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44]
-    Step 71, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44]
-    Step 72, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76]
-    Step 73, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203]
-    Step 74, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76]
-    Step 75, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70]
-    Step 76, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44]
-    Step 77, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70]
-    Step 78, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70, 44]
-    Step 79, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70, 44, 44]
-    Step 80, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70, 44, 44, 44]
-    Step 81, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70, 44, 44, 44, 76]
-    Step 82, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70, 44, 44, 44, 76, 44]
-    Step 83, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70, 44, 44, 44, 76, 44, 44]
-    Step 84, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70, 44, 44, 44, 76, 44, 44, 44]
-    Step 85, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70, 44, 44, 44, 76, 44, 44, 44, 44]
-    Step 86, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70, 44, 44, 44, 76, 44, 44, 44, 44, 44]
-    Step 87, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70, 44, 44, 44, 76, 44, 44, 44, 44, 44, 44]
-    Step 88, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70, 44, 44, 44, 76, 44, 44, 44, 44, 44, 44, 44]
-    Step 89, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70, 44, 44, 44, 76, 44, 44, 44, 44, 44, 44, 44, 44]
-    Step 90, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70, 44, 44, 44, 76, 44, 44, 44, 44, 44, 44, 44, 44, 44]
-    Step 91, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70, 44, 44, 44, 76, 44, 44, 44, 44, 44, 44, 44, 44, 44, 44]
-    Step 92, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70, 44, 44, 44, 76, 44, 44, 44, 44, 44, 44, 44, 44, 44, 44, 203]
-    Step 93, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70, 44, 44, 44, 76, 44, 44, 44, 44, 44, 44, 44, 44, 44, 44, 203, 76]
-    Step 94, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70, 44, 44, 44, 76, 44, 44, 44, 44, 44, 44, 44, 44, 44, 44, 203, 76, 44]
-    Step 95, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70, 44, 44, 44, 76, 44, 44, 44, 44, 44, 44, 44, 44, 44, 44, 203, 76, 44, 44]
-    Step 96, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70, 44, 44, 44, 76, 44, 44, 44, 44, 44, 44, 44, 44, 44, 44, 203, 76, 44, 44, 44]
-    Step 97, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70, 44, 44, 44, 76, 44, 44, 44, 44, 44, 44, 44, 44, 44, 44, 203, 76, 44, 44, 44, 70]
-    Step 98, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70, 44, 44, 44, 76, 44, 44, 44, 44, 44, 44, 44, 44, 44, 44, 203, 76, 44, 44, 44, 70, 76]
-    Step 99, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70, 44, 44, 44, 76, 44, 44, 44, 44, 44, 44, 44, 44, 44, 44, 203, 76, 44, 44, 44, 70, 76, 44]
-    Step 100, ensemble is [44, 70, 76, 44, 44, 44, 44, 44, 44, 203, 76, 44, 45, 44, 44, 44, 44, 44, 50, 44, 44, 44, 44, 44, 44, 44, 44, 44, 50, 44, 44, 76, 203, 44, 44, 76, 44, 70, 44, 45, 44, 44, 44, 70, 70, 70, 70, 203, 76, 44, 44, 45, 44, 45, 76, 76, 44, 70, 70, 44, 203, 44, 44, 50, 76, 76, 44, 76, 76, 76, 76, 76, 44, 44, 76, 203, 76, 70, 44, 70, 44, 44, 44, 76, 44, 44, 44, 44, 44, 44, 44, 44, 44, 44, 203, 76, 44, 44, 44, 70, 76, 44, 203]
-    After 100 steps, the final ensemble is [ 44  45  50  70  76 203] with weights [0.57281553 0.03883495 0.02912621 0.10679612 0.18446602 0.06796117]
-    selected_predictors_indexes=[44, 45, 50, 70, 76, 203]
-    selected_predictors_weights=[0.5728155339805825, 0.038834951456310676, 0.02912621359223301, 0.10679611650485436, 0.18446601941747573, 0.06796116504854369]
-    selected_predictors_job_ids=array([  7, 132, 106, 119, 158, 134])
+    Ensemble initialized with [190, 174, 58]
+    Step 1, ensemble is [190, 174, 58, 169]
+    Step 2, ensemble is [190, 174, 58, 169, 190]
+    Step 3, ensemble selection stopped
+    After 3 steps, the final ensemble is [ 58 169 174 190] with weights [0.2 0.2 0.2 0.4]
+    selected_predictors_indexes=[58, 169, 174, 190]
+    selected_predictors_weights=[0.2, 0.2, 0.2, 0.4]
+    selected_predictors_job_ids=array([211,  37,  42, 206])
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 1119-1121
+.. GENERATED FROM PYTHON SOURCE LINES 1102-1117
 
 Evaluation of the ensemble
 --------------------------
 
-.. GENERATED FROM PYTHON SOURCE LINES 1121-1165
+Now that we have a set of predictors with their corresponding weights in the ensemble we can look at the predictions.
+For this, we use the :class:`deephyper.ensemble.EnsemblePredictor` class.
+This class can use the :class:`deephyper.evaluator.Evaluator` to parallelize the inference of ensemble members.
+Then, we need to give it the list of ``predictors``, ``weights`` and the ``aggregator``.
+For inference, we set ``decomposed_scale=True`` for the :class:`deephyper.ensemble.aggregator.MixedNormalAggregator` as we want
+to predict disentangled epistemic and aleatoric uncertainty using the law of total variance:
+
+.. math::
+
+    V_Y[Y|X=x] = \underbrace{E_\Theta\left[V_Y[Y|X=x;\Theta\right]}_\text{Aleatoric Uncertainty} + \underbrace{V_\Theta\left[E_Y[Y|X=x;\Theta]\right]}_\text{Epistemic Uncertainty}
+
+where :math:`\Theta` is the random variable that represents a concatenation of weights and hyperparameters, :math:`Y`` is the random variable representing a target prediction, and :math:`X` is the random variable representing an observed input.
+
+.. GENERATED FROM PYTHON SOURCE LINES 1117-1142
 
 .. code-block:: Python
 
@@ -2388,9 +2224,6 @@ Evaluation of the ensemble
     hpo_dir = "nas_regression"
     model_checkpoint_dir = os.path.join(hpo_dir, "models")
 
-    y_mu, y_std = np.mean(train_y), np.std(train_y)
-    inputs = train_X.shape[1]
-
     for job_id in selected_predictors_job_ids:
         file_name = f"model_0.{job_id}.pt"
 
@@ -2398,24 +2231,8 @@ Evaluation of the ensemble
 
         row = hpo_results[hpo_results["job_id"] == job_id].iloc[0]
         parameters = parameters_from_row(row)
-
-        num_layers = parameters["num_layers"]
-        torch_module = DeepNormalRegressor(
-            inputs,
-            layers=[
-                (
-                    parameters[f"layer_{i}_units"],
-                    parameters[f"layer_{i}_activation"],
-                    parameters[f"layer_{i}_dropout_rate"],
-                )
-                for i in range(num_layers)
-            ],
-            loc=y_mu,
-            scale=y_std,
-        )
-
+        torch_module = create_model(parameters, y_mu, y_std)
         torch_module.load_state_dict(torch.load(weights_path, weights_only=True))
-        torch_module.eval()
         predictor = NormalTorchPredictor(torch_module)
         predictors.append(predictor)
 
@@ -2434,12 +2251,76 @@ Evaluation of the ensemble
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 1166-1168
+.. GENERATED FROM PYTHON SOURCE LINES 1143-1147
+
+In the visualization, we can first observe that the mean prediction is close to the true function.
+
+Then, to visualize both uncertainties together we plot the variance.
+The goal is to observe the epistemic component vanish in areas where we observed data.
+
+.. GENERATED FROM PYTHON SOURCE LINES 1148-1186
+
+.. dropdown:: Code (Make uncertainty plot)
+
+    .. code-block:: Python
+
+
+        _ = plt.figure(figsize=(WIDTH_PLOTS, HEIGHT_PLOTS))
+        _ = plt.scatter(train_X, train_y, s=5, label="Training")
+        _ = plt.scatter(valid_X, valid_y, s=5, label="Validation")
+        _ = plt.plot(test_X, test_y, linestyle="--", color="gray", label="Test")
+        _ = plt.plot(test_X, y_pred["loc"], label=r"$\mu(x)$")
+        _ = plt.fill_between(
+            test_X.reshape(-1),
+            (y_pred["loc"] - y_pred["scale_aleatoric"]**2).reshape(-1),
+            (y_pred["loc"] + y_pred["scale_aleatoric"]**2).reshape(-1),
+            alpha=0.25,
+            label=r"$\sigma_\text{al}^2(x)$",
+        )
+        _ = plt.fill_between(
+            test_X.reshape(-1),
+            (y_pred["loc"] - y_pred["scale_aleatoric"]**2).reshape(-1),
+            (y_pred["loc"] - y_pred["scale_aleatoric"]**2 - y_pred["scale_epistemic"]**2).reshape(-1),
+            alpha=0.25,
+            color="red",
+            label=r"$\sigma_\text{ep}^2(x)$",
+        )
+        _ = plt.fill_between(
+            test_X.reshape(-1),
+            (y_pred["loc"] + y_pred["scale_aleatoric"]**2).reshape(-1),
+            (y_pred["loc"] + y_pred["scale_aleatoric"]**2 + y_pred["scale_epistemic"]**2).reshape(-1),
+            alpha=0.25,
+            color="red",
+        )
+        _ = plt.fill_between([-30, -15], [-y_lim, -y_lim], [y_lim, y_lim], color="gray", alpha=0.25)
+        _ = plt.fill_between([15, 30], [-y_lim, -y_lim], [y_lim, y_lim], color="gray", alpha=0.25)
+        _ = plt.xlim(-x_lim, x_lim)
+        _ = plt.ylim(-y_lim, y_lim)
+        _ = plt.legend(ncols=2)
+        _ = plt.xlabel(r"$x$")
+        _ = plt.ylabel(r"$f(x)$")
+        _ = plt.grid(which="both", linestyle=":")
+
+
+
+
+.. image-sg:: /examples/examples_uq/images/sphx_glr_plot_nas_deep_ensemble_uq_regression_pytorch_007.png
+   :alt: plot nas deep ensemble uq regression pytorch
+   :srcset: /examples/examples_uq/images/sphx_glr_plot_nas_deep_ensemble_uq_regression_pytorch_007.png
+   :class: sphx-glr-single-img
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 1188-1192
 
 Aleatoric Uncertainty
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
-.. GENERATED FROM PYTHON SOURCE LINES 1168-1192
+Now, if we isolate the aleatoric uncertainty we observe that we somewhat correctly estimated the lower aleatoric uncertainty on the left side, and larger on the right side.
+
+.. GENERATED FROM PYTHON SOURCE LINES 1192-1216
 
 .. dropdown:: Code (Make aleatoric uncertainty plot)
 
@@ -2471,21 +2352,23 @@ Aleatoric Uncertainty
 
 
 
-.. image-sg:: /examples/examples_uq/images/sphx_glr_plot_nas_deep_ensemble_uq_regression_pytorch_007.png
+.. image-sg:: /examples/examples_uq/images/sphx_glr_plot_nas_deep_ensemble_uq_regression_pytorch_008.png
    :alt: plot nas deep ensemble uq regression pytorch
-   :srcset: /examples/examples_uq/images/sphx_glr_plot_nas_deep_ensemble_uq_regression_pytorch_007.png
+   :srcset: /examples/examples_uq/images/sphx_glr_plot_nas_deep_ensemble_uq_regression_pytorch_008.png
    :class: sphx-glr-single-img
 
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 1193-1195
+.. GENERATED FROM PYTHON SOURCE LINES 1217-1221
 
 Epistemic uncertainty
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
-.. GENERATED FROM PYTHON SOURCE LINES 1195-1219
+Finally, if we isole the epistemic uncertainty we observe that it vanishes in the grey areas where we observed data and grows in areas were we did not have data.
+
+.. GENERATED FROM PYTHON SOURCE LINES 1221-1245
 
 .. dropdown:: Code (Make epistemic uncertainty plot)
 
@@ -2517,9 +2400,9 @@ Epistemic uncertainty
 
 
 
-.. image-sg:: /examples/examples_uq/images/sphx_glr_plot_nas_deep_ensemble_uq_regression_pytorch_008.png
+.. image-sg:: /examples/examples_uq/images/sphx_glr_plot_nas_deep_ensemble_uq_regression_pytorch_009.png
    :alt: plot nas deep ensemble uq regression pytorch
-   :srcset: /examples/examples_uq/images/sphx_glr_plot_nas_deep_ensemble_uq_regression_pytorch_008.png
+   :srcset: /examples/examples_uq/images/sphx_glr_plot_nas_deep_ensemble_uq_regression_pytorch_009.png
    :class: sphx-glr-single-img
 
 
@@ -2529,7 +2412,7 @@ Epistemic uncertainty
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 7.004 seconds)
+   **Total running time of the script:** (0 minutes 19.320 seconds)
 
 
 .. _sphx_glr_download_examples_examples_uq_plot_nas_deep_ensemble_uq_regression_pytorch.py:

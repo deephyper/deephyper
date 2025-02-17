@@ -39,7 +39,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn.model_selection import train_test_split
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 
 WIDTH_PLOTS = 8
 HEIGHT_PLOTS = WIDTH_PLOTS / 1.618
@@ -103,6 +103,7 @@ def load_data(
 
 (train_X, train_y), (valid_X, valid_y), (test_X, test_y) = load_data()
 
+y_mu, y_std = np.mean(train_y), np.std(train_y)
 
 x_lim, y_lim = 50, 7
 _ = plt.figure(figsize=(WIDTH_PLOTS, HEIGHT_PLOTS))
@@ -232,17 +233,17 @@ from ConfigSpace import GreaterThanCondition
 from deephyper.hpo import HpProblem
 
 
-def create_hpo_problem(max_num_layers=10):
+def create_hpo_problem(min_num_layers=3, max_num_layers=8, max_num_units=512):
     problem = HpProblem()
 
     # Neural Architecture Hyperparameters
-    num_layers = problem.add_hyperparameter((1, max_num_layers), "num_layers", default_value=5)
+    num_layers = problem.add_hyperparameter((min_num_layers, max_num_layers), "num_layers", default_value=5)
 
     conditions = []
     for i in range(max_num_layers):
 
         # Adding the hyperparameters that impact each layer of the model
-        layer_i_units = problem.add_hyperparameter((16, 200), f"layer_{i}_units", default_value=64)
+        layer_i_units = problem.add_hyperparameter((16, max_num_units), f"layer_{i}_units", default_value=max_num_units)
         layer_i_activation = problem.add_hyperparameter(
             ["relu", "sigmoid", "tanh", "swish", "mish", "gelu", "silu"],
             f"layer_{i}_activation",
@@ -253,7 +254,7 @@ def create_hpo_problem(max_num_layers=10):
         )
 
         # Adding the constraints to define when these hyperparameters are active
-        if i > 0:
+        if i + 1 > min_num_layers:
             conditions.extend(
                 [
                     GreaterThanCondition(layer_i_units, num_layers, i),
@@ -265,15 +266,15 @@ def create_hpo_problem(max_num_layers=10):
     problem.add_conditions(conditions)
 
     # Hyperparameters of the output layers
-    problem.add_hyperparameter((16, 200), "n_units_mean", default_value=64)
-    problem.add_hyperparameter((16, 200), "n_units_std", default_value=64)
+    problem.add_hyperparameter((16, max_num_units), "n_units_mean", default_value=max_num_units)
+    problem.add_hyperparameter((16, max_num_units), "n_units_std", default_value=max_num_units)
     problem.add_hyperparameter((1e-8, 1e-2, "log-uniform"), "std_offset", default_value=1e-3)
     problem.add_hyperparameter((0.01, 1.0), "softplus_factor", default_value=0.05)
 
     # Training Hyperparameters
     problem.add_hyperparameter((1e-5, 1e-1, "log-uniform"), "learning_rate", default_value=2e-3)
-    problem.add_hyperparameter((8, 256, "log-uniform"), "batch_size", default_value=128)
-    problem.add_hyperparameter((0.1, 0.99), "lr_scheduler_factor", default_value=0.1)
+    problem.add_hyperparameter((8, 256, "log-uniform"), "batch_size", default_value=32)
+    problem.add_hyperparameter((0.01, 0.99), "lr_scheduler_factor", default_value=0.1)
     problem.add_hyperparameter((10, 100), "lr_scheduler_patience", default_value=20)
 
     return problem
@@ -378,10 +379,10 @@ def train(
             b_val_loss = torch.mean(nll(y_val, y_dist))
             b_val_mse = torch.mean(squared_error(y_val, y_dist))
 
-            batch_losses_t.append(b_train_loss.detach().cpu().numpy())
-            batch_mse_t.append(b_train_mse.detach().cpu().numpy())
-            batch_losses_v.append(b_val_loss.detach().cpu().numpy())
-            batch_mse_v.append(b_val_mse.detach().cpu().numpy())
+            batch_losses_t.append(to_numpy(b_train_loss))
+            batch_mse_t.append(to_numpy(b_train_mse))
+            batch_losses_v.append(to_numpy(b_val_loss))
+            batch_mse_v.append(to_numpy(b_val_mse))
 
         train_loss.append(np.mean(batch_losses_t))
         val_loss.append(np.mean(batch_losses_v))
@@ -448,6 +449,32 @@ def to_numpy(tensor):
 # Evaluation function
 # -------------------
 #
+# We start by defining a function that will create the Torch module from a dictionnary of hyperparameters.
+
+
+def create_model(parameters: dict, y_mu=0, y_std=1):
+    num_layers = parameters["num_layers"]
+    torch_module = DeepNormalRegressor(
+        n_inputs=1,
+        layers=[
+            (
+                parameters[f"layer_{i}_units"],
+                parameters[f"layer_{i}_activation"],
+                parameters[f"layer_{i}_dropout_rate"],
+            )
+            for i in range(num_layers)
+        ],
+        n_units_mean=parameters["n_units_mean"],
+        n_units_std=parameters["n_units_std"],
+        std_offset=parameters["std_offset"],
+        softplus_factor=parameters["softplus_factor"],
+        loc=y_mu,
+        scale=y_std,
+    ).to(device=device, dtype=dtype)
+    return torch_module
+
+# %%
+#
 # The evaluation function (often called ``run``-function in DeepHyper) is the function that 
 # receives suggested parameters as inputs ``job.parameters`` and returns an ``"objective"`` 
 # that we want to maximize.
@@ -458,26 +485,8 @@ max_n_epochs = 1_000
 def run(job, model_checkpoint_dir=".", verbose=False):
     (x, y), (vx, vy), (tx, ty) = load_data()
 
-    y_mu = np.mean(y)
-    y_std = np.std(y)
-
-    inputs = x.shape[1]
-
     # Create the model based on neural architecture hyperparameters
-    num_layers = job.parameters["num_layers"]
-    model = DeepNormalRegressor(
-        inputs,
-        layers=[
-            (
-                job.parameters[f"layer_{i}_units"],
-                job.parameters[f"layer_{i}_activation"],
-                job.parameters[f"layer_{i}_dropout_rate"],
-            )
-            for i in range(num_layers)
-        ],
-        loc=y_mu,
-        scale=y_std,
-    ).to(device=device, dtype=dtype)
+    model = create_model(job.parameters, y_mu, y_std)
 
     if verbose:
         print(model)
@@ -526,6 +535,7 @@ def run(job, model_checkpoint_dir=".", verbose=False):
             "val_mse": val_mse,
             "test_loss": test_loss,
             "test_mse": test_mse,
+            "budget": len(val_losses),
         },
     }
 
@@ -540,11 +550,9 @@ from deephyper.evaluator import RunningJob
 
 baseline_dir = "nas_baseline_regression"
 
-def evaluate_baseline():
+def evaluate_baseline(problem):
     model_checkpoint_dir = os.path.join(baseline_dir, "models")
     pathlib.Path(model_checkpoint_dir).mkdir(parents=True, exist_ok=True)
-
-    problem = create_hpo_problem()
 
     default_parameters = problem.default_configuration
     print(f"{default_parameters=}\n")
@@ -556,7 +564,7 @@ def evaluate_baseline():
     )
     return result
 
-baseline_results = evaluate_baseline()
+baseline_results = evaluate_baseline(problem)
 
 # %%
 # Then, we look at the learning curves of our baseline model returned by the evaluation function.
@@ -594,28 +602,8 @@ _ = plt.ylabel("NLL")
 # We first need to recreate the torch module and then we update its state using the checkpointed weights.
 
 weights_path = os.path.join(baseline_dir, "models",  "model_0.0.pt")
-
-y_mu, y_std = np.mean(train_y), np.std(train_y)
-inputs = train_X.shape[1]
-
-
 parameters = problem.default_configuration
-
-num_layers = parameters["num_layers"]
-torch_module = DeepNormalRegressor(
-    inputs,
-    layers=[
-        (
-            parameters[f"layer_{i}_units"],
-            parameters[f"layer_{i}_activation"],
-            parameters[f"layer_{i}_dropout_rate"],
-        )
-        for i in range(num_layers)
-    ],
-    loc=y_mu,
-    scale=y_std,
-).to(device=device, dtype=dtype)
-
+torch_module = create_model(parameters, y_mu, y_std)
 torch_module.load_state_dict(torch.load(weights_path, weights_only=True))
 torch_module.eval()
 
@@ -770,11 +758,12 @@ search_kwargs = {
 # submit and gather asynchronous evaluations.
 # 
 # The ``stopper`` is an optional parameter that allows to use an early-discarding (a.k.a., multi-fidelity) strategy to stop early low performing evaluations.
-# In our case we will use the Asynchronous Successive Halving (ASHA) early-discarding strategy.
+# In our case we will use the median early-discarding strategy. 
+# This strategy consists in early stopping the training if the observed objective at the current budget is worse than the median objective for the same budget.
 from deephyper.evaluator import Evaluator
 from deephyper.evaluator.callback import TqdmCallback
 from deephyper.hpo import CBO
-from deephyper.stopper import SuccessiveHalvingStopper
+from deephyper.stopper import MedianStopper
 
 
 hpo_dir = "nas_regression"
@@ -812,7 +801,7 @@ def run_neural_architecture_search(problem, max_evals):
         method_kwargs=method_kwargs,
     )
 
-    stopper = SuccessiveHalvingStopper(min_steps=1, max_steps=max_n_epochs)
+    stopper= MedianStopper(min_steps=50, max_steps=max_n_epochs, interval_steps=50)
     search = CBO(problem, evaluator, log_dir=hpo_dir, stopper=stopper, **search_kwargs)
 
     results = search.search(max_evals=max_evals)
@@ -841,7 +830,7 @@ def run_neural_architecture_search(problem, max_evals):
 # %% 
 # As the search can take some time to finalize we provide a mechanism that checks if results were already computed and skip 
 # the neural architecture search if it is the case.
-max_evals = 200
+max_evals = 250
 
 hpo_results = None
 hpo_results_path = os.path.join(hpo_dir, "results.csv")
@@ -901,6 +890,7 @@ hpo_results
 
 # .. dropdown: Make learning curves plot
 x_values = np.arange(1, len(baseline_results["metadata"]["train_loss"]) + 1)
+x_min, x_max = x_values.min(), x_values.max()
 _ = plt.figure(figsize=(WIDTH_PLOTS, HEIGHT_PLOTS))
 _ = plt.plot(
     x_values,
@@ -919,6 +909,7 @@ i_max = hpo_results["objective"].argmax()
 train_loss = json.loads(hpo_results.iloc[i_max]["m:train_loss"])
 val_loss = json.loads(hpo_results.iloc[i_max]["m:val_loss"])
 x_values = np.arange(1, len(train_loss) + 1)
+x_max = max(x_max, x_values.max())
 _ = plt.plot(
     x_values,
     train_loss,
@@ -933,7 +924,7 @@ _ = plt.plot(
     linestyle="--",
     label="Best Validation",
 )
-_ = plt.xlim(x_values.min(), x_values.max())
+_ = plt.xlim(x_min, x_max)
 _ = plt.grid(which="both", linestyle=":")
 _ = plt.legend()
 _ = plt.xlabel("Epochs")
@@ -950,26 +941,10 @@ model_checkpoint_dir = os.path.join(hpo_dir, "models")
 job_id = hpo_results.iloc[i_max]["job_id"]
 file_name = f"model_0.{job_id}.pt"
 
-y_mu, y_std = np.mean(train_y), np.std(train_y)
-inputs = train_X.shape[1]
-
 weights_path = os.path.join(model_checkpoint_dir, file_name)
 parameters = parameters_from_row(hpo_results.iloc[i_max])
 
-num_layers = parameters["num_layers"]
-torch_module = DeepNormalRegressor(
-    inputs,
-    layers=[
-        (
-            parameters[f"layer_{i}_units"],
-            parameters[f"layer_{i}_activation"],
-            parameters[f"layer_{i}_dropout_rate"],
-        )
-        for i in range(num_layers)
-    ],
-    loc=y_mu,
-    scale=y_std,
-).to(device=device, dtype=dtype)
+torch_module = create_model(parameters, y_mu, y_std)
 
 torch_module.load_state_dict(torch.load(weights_path, weights_only=True))
 torch_module.eval()
@@ -1007,7 +982,21 @@ _ = plt.grid(which="both", linestyle=":")
 # %% 
 # Deep ensemble
 # -------------
-
+#
+# After running the neural architecture search we have an available library of checkpointed models.
+# From this section, you will learn how to combine these models to form an ensemble that can improve both accuracy and provide disentangled uncertainty quantification.
+#
+# We start by importing classes from :mod:`deephyper.predictor` and :mod:`deephyper.ensemble`.
+#
+# The :mod:`deephyper.predictor` module includes subclasses of :class:`deephyper.predictor.Predictor` to wrap predictive models ready for inference. In our case, we will use :class:`deephyper.predictor.torch.TorchPredictor`.
+# The :mod:`deephyper.ensemble` module includes modular components to build an ensemble of predictive models.
+# The ensemble module is organized around loss functions, aggregation functions and selection algorithms.
+# The implementation of these functions is based on Numpy.
+# In this example, we start by wrapping our torch module within a subclass of :class:`deephyper.predictor.torch.TorchPredictor` that we call ``NormalTorchPredictor``. This predictor class is used to make a torch module compatible with our Numpy-based implementation for ensembles.
+#
+# The ``pre_process_inputs`` is used to map a Numpy array to a Torch tensor.
+# The ``post_process_predictions`` is used to map a Torch tensor to a Numpy array.
+# It also formats the prediction as a dictionnary with ``"loc"`` (for the predictive mean) and ``"scale"`` (for the predictive standard deviation) that is necessary for our aggregation function ``MixedNormalAggregator``.
 from deephyper.ensemble import EnsemblePredictor
 from deephyper.ensemble.aggregator import MixedNormalAggregator
 from deephyper.ensemble.loss import NormalNegLogLikelihood
@@ -1029,11 +1018,10 @@ class NormalTorchPredictor(TorchPredictor):
 
 
 # %%
-hpo_dir = "nas_regression"
+# After defining the predictor, we load the checkpointed models to collect their predictions into ``y_predictors``.
+# These predictions are the inputs of our loss, aggregation and selection functions.
+# We also collect the job ids of the checkpointed models into ``job_id_predictors``.
 model_checkpoint_dir = os.path.join(hpo_dir, "models")
-
-y_mu, y_std = np.mean(train_y), np.std(train_y)
-inputs = train_X.shape[1]
 
 y_predictors = []
 job_id_predictors = []
@@ -1049,30 +1037,14 @@ for file_name in tqdm(os.listdir(model_checkpoint_dir)):
     if len(row) == 0:
         continue
     assert len(row) == 1
+
     row = row.iloc[0]
     parameters = parameters_from_row(row)
-
-    num_layers = parameters["num_layers"]
-    torch_module = DeepNormalRegressor(
-        inputs,
-        layers=[
-            (
-                parameters[f"layer_{i}_units"],
-                parameters[f"layer_{i}_activation"],
-                parameters[f"layer_{i}_dropout_rate"],
-            )
-            for i in range(num_layers)
-        ],
-        loc=y_mu,
-        scale=y_std,
-    )
-
+    torch_module = create_model(parameters, y_mu, y_std)
     try:
         torch_module.load_state_dict(torch.load(weights_path, weights_only=True))
     except RuntimeError:
         continue
-
-    torch_module.eval()
 
     predictor = NormalTorchPredictor(torch_module)
     y_pred = predictor.predict(valid_X)
@@ -1082,21 +1054,32 @@ for file_name in tqdm(os.listdir(model_checkpoint_dir)):
 # %%
 # Ensemble selection
 # ------------------
+#
+# This is where the ensemble selection logic happens. We use the :class:`deephyper.ensemble.selector.GreedySelector` or :class:`deephyper.ensemble.selector.TopKSelector` class.
+# The top-k selection, selects the topk-k models according to the given ``los_func`` and weight them equally in the ensemble.
+# The greedy selection, iteratively selects models from the checkpoints that improves the current ensemble.
+#
+# The ``aggregator`` is the logic that combines a set of predictors into a single predictor to form the ensemble's prediction.
+# In our case, we use the :class:`deephyper.ensemble.aggregator.MixedNormalAggregator` that approximates a mixture of normal distribution (each normal distribution is the output of a checkpointed model) as a normal distribution.
+#
+# To try top-k or greedy selection just uncomment/comment the corresponding code.
+# This part of the code is fast to compute.
 k = 50
 
-# Use TopK or Greedy/Caruana
+# Top-K Selection
 # selector = TopKSelector(
 #     loss_func=NormalNegLogLikelihood(),
 #     k=k,
 # )
 
+# Greedy Selection
 selector = GreedySelector(
     loss_func=NormalNegLogLikelihood(),
     aggregator=MixedNormalAggregator(),
     k=k,
-    max_it=100,
+    max_it=k,
     k_init=3,
-    early_stopping=False,
+    early_stopping=True,
     with_replacement=True,
     bagging=True,
     verbose=True,
@@ -1118,13 +1101,23 @@ print(f"{selected_predictors_job_ids=}")
 # %%
 # Evaluation of the ensemble
 # --------------------------
+#
+# Now that we have a set of predictors with their corresponding weights in the ensemble we can look at the predictions.
+# For this, we use the :class:`deephyper.ensemble.EnsemblePredictor` class.
+# This class can use the :class:`deephyper.evaluator.Evaluator` to parallelize the inference of ensemble members.
+# Then, we need to give it the list of ``predictors``, ``weights`` and the ``aggregator``.
+# For inference, we set ``decomposed_scale=True`` for the :class:`deephyper.ensemble.aggregator.MixedNormalAggregator` as we want
+# to predict disentangled epistemic and aleatoric uncertainty using the law of total variance:
+#
+# .. math::
+# 
+#     V_Y[Y|X=x] = \underbrace{E_\Theta\left[V_Y[Y|X=x;\Theta\right]}_\text{Aleatoric Uncertainty} + \underbrace{V_\Theta\left[E_Y[Y|X=x;\Theta]\right]}_\text{Epistemic Uncertainty}
+# 
+# where :math:`\Theta` is the random variable that represents a concatenation of weights and hyperparameters, :math:`Y`` is the random variable representing a target prediction, and :math:`X` is the random variable representing an observed input.
 predictors = []
 
 hpo_dir = "nas_regression"
 model_checkpoint_dir = os.path.join(hpo_dir, "models")
-
-y_mu, y_std = np.mean(train_y), np.std(train_y)
-inputs = train_X.shape[1]
 
 for job_id in selected_predictors_job_ids:
     file_name = f"model_0.{job_id}.pt"
@@ -1133,24 +1126,8 @@ for job_id in selected_predictors_job_ids:
 
     row = hpo_results[hpo_results["job_id"] == job_id].iloc[0]
     parameters = parameters_from_row(row)
-
-    num_layers = parameters["num_layers"]
-    torch_module = DeepNormalRegressor(
-        inputs,
-        layers=[
-            (
-                parameters[f"layer_{i}_units"],
-                parameters[f"layer_{i}_activation"],
-                parameters[f"layer_{i}_dropout_rate"],
-            )
-            for i in range(num_layers)
-        ],
-        loc=y_mu,
-        scale=y_std,
-    )
-
+    torch_module = create_model(parameters, y_mu, y_std)
     torch_module.load_state_dict(torch.load(weights_path, weights_only=True))
-    torch_module.eval()
     predictor = NormalTorchPredictor(torch_module)
     predictors.append(predictor)
 
@@ -1163,8 +1140,55 @@ ensemble = EnsemblePredictor(
 y_pred = ensemble.predict(test_X)
 
 # %%
+#
+# In the visualization, we can first observe that the mean prediction is close to the true function.
+#
+# Then, to visualize both uncertainties together we plot the variance.
+# The goal is to observe the epistemic component vanish in areas where we observed data.
+
+# .. dropdown:: Make uncertainty plot
+# sphinx_gallery_thumbnail_number = 7
+_ = plt.figure(figsize=(WIDTH_PLOTS, HEIGHT_PLOTS))
+_ = plt.scatter(train_X, train_y, s=5, label="Training")
+_ = plt.scatter(valid_X, valid_y, s=5, label="Validation")
+_ = plt.plot(test_X, test_y, linestyle="--", color="gray", label="Test")
+_ = plt.plot(test_X, y_pred["loc"], label=r"$\mu(x)$")
+_ = plt.fill_between(
+    test_X.reshape(-1),
+    (y_pred["loc"] - y_pred["scale_aleatoric"]**2).reshape(-1),
+    (y_pred["loc"] + y_pred["scale_aleatoric"]**2).reshape(-1),
+    alpha=0.25,
+    label=r"$\sigma_\text{al}^2(x)$",
+)
+_ = plt.fill_between(
+    test_X.reshape(-1),
+    (y_pred["loc"] - y_pred["scale_aleatoric"]**2).reshape(-1),
+    (y_pred["loc"] - y_pred["scale_aleatoric"]**2 - y_pred["scale_epistemic"]**2).reshape(-1),
+    alpha=0.25,
+    color="red",
+    label=r"$\sigma_\text{ep}^2(x)$",
+)
+_ = plt.fill_between(
+    test_X.reshape(-1),
+    (y_pred["loc"] + y_pred["scale_aleatoric"]**2).reshape(-1),
+    (y_pred["loc"] + y_pred["scale_aleatoric"]**2 + y_pred["scale_epistemic"]**2).reshape(-1),
+    alpha=0.25,
+    color="red",
+)
+_ = plt.fill_between([-30, -15], [-y_lim, -y_lim], [y_lim, y_lim], color="gray", alpha=0.25)
+_ = plt.fill_between([15, 30], [-y_lim, -y_lim], [y_lim, y_lim], color="gray", alpha=0.25)
+_ = plt.xlim(-x_lim, x_lim)
+_ = plt.ylim(-y_lim, y_lim)
+_ = plt.legend(ncols=2)
+_ = plt.xlabel(r"$x$")
+_ = plt.ylabel(r"$f(x)$")
+_ = plt.grid(which="both", linestyle=":")
+
+# %%
 # Aleatoric Uncertainty
-# ---------------------
+# ~~~~~~~~~~~~~~~~~~~~~
+#
+# Now, if we isolate the aleatoric uncertainty we observe that we somewhat correctly estimated the lower aleatoric uncertainty on the left side, and larger on the right side.
 
 # .. dropdown:: Make aleatoric uncertainty plot
 kappa = 1.96
@@ -1191,7 +1215,9 @@ _ = plt.grid(which="both", linestyle=":")
 
 # %%
 # Epistemic uncertainty
-# ---------------------
+# ~~~~~~~~~~~~~~~~~~~~~
+#
+# Finally, if we isole the epistemic uncertainty we observe that it vanishes in the grey areas where we observed data and grows in areas were we did not have data.
 
 # .. dropdown:: Make epistemic uncertainty plot
 kappa = 1.96

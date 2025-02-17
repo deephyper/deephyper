@@ -390,6 +390,64 @@
    "name": "HpProblem"
   }
  ],
+ "MedianStopper": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.stopper._median_stopper",
+   "module_short": "deephyper.stopper",
+   "name": "MedianStopper"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.stopper",
+   "module_short": "deephyper.stopper",
+   "name": "MedianStopper"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "MedianStopper"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.stopper._stopper",
+   "module_short": "deephyper.stopper",
+   "name": "Stopper"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.stopper",
+   "module_short": "deephyper.stopper",
+   "name": "Stopper"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Stopper"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.stopper",
+   "module_short": "deephyper.stopper",
+   "name": "MedianStopper"
+  }
+ ],
  "MixedNormalAggregator": [
   {
    "is_class": true,
@@ -699,64 +757,6 @@
    "name": "RunningJob"
   }
  ],
- "SuccessiveHalvingStopper": [
-  {
-   "is_class": true,
-   "is_explicit": false,
-   "module": "deephyper.stopper._asha_stopper",
-   "module_short": "deephyper.stopper",
-   "name": "SuccessiveHalvingStopper"
-  },
-  {
-   "is_class": true,
-   "is_explicit": false,
-   "module": "deephyper.stopper",
-   "module_short": "deephyper.stopper",
-   "name": "SuccessiveHalvingStopper"
-  },
-  {
-   "is_class": true,
-   "is_explicit": false,
-   "module": "deephyper",
-   "module_short": "deephyper",
-   "name": "SuccessiveHalvingStopper"
-  },
-  {
-   "is_class": true,
-   "is_explicit": false,
-   "module": "deephyper.stopper._stopper",
-   "module_short": "deephyper.stopper",
-   "name": "Stopper"
-  },
-  {
-   "is_class": true,
-   "is_explicit": false,
-   "module": "deephyper.stopper",
-   "module_short": "deephyper.stopper",
-   "name": "Stopper"
-  },
-  {
-   "is_class": true,
-   "is_explicit": false,
-   "module": "deephyper",
-   "module_short": "deephyper",
-   "name": "Stopper"
-  },
-  {
-   "is_class": true,
-   "is_explicit": false,
-   "module": "abc",
-   "module_short": "abc",
-   "name": "ABC"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "deephyper.stopper",
-   "module_short": "deephyper.stopper",
-   "name": "SuccessiveHalvingStopper"
-  }
- ],
  "TensorDataset": [
   {
    "is_class": true,
@@ -1006,7 +1006,66 @@
    "name": "function"
   }
  ],
+ "create_model": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "deephyper.ensemble.EnsemblePredictor": [
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "deephyper.ensemble",
+   "module_short": "deephyper.ensemble",
+   "name": "EnsemblePredictor"
+  }
+ ],
+ "deephyper.ensemble.aggregator.MixedNormalAggregator": [
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "deephyper.ensemble.aggregator",
+   "module_short": "deephyper.ensemble.aggregator",
+   "name": "MixedNormalAggregator"
+  },
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "deephyper.ensemble.aggregator",
+   "module_short": "deephyper.ensemble.aggregator",
+   "name": "MixedNormalAggregator"
+  }
+ ],
+ "deephyper.ensemble.selector.GreedySelector": [
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "deephyper.ensemble.selector",
+   "module_short": "deephyper.ensemble.selector",
+   "name": "GreedySelector"
+  }
+ ],
+ "deephyper.ensemble.selector.TopKSelector": [
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "deephyper.ensemble.selector",
+   "module_short": "deephyper.ensemble.selector",
+   "name": "TopKSelector"
+  }
+ ],
  "deephyper.evaluator.Evaluator": [
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "deephyper.evaluator",
+   "module_short": "deephyper.evaluator",
+   "name": "Evaluator"
+  },
   {
    "is_class": false,
    "is_explicit": true,
@@ -1038,6 +1097,31 @@
    "module": "deephyper.hpo",
    "module_short": "deephyper.hpo",
    "name": "HpProblem"
+  }
+ ],
+ "deephyper.predictor.Predictor": [
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "deephyper.predictor",
+   "module_short": "deephyper.predictor",
+   "name": "Predictor"
+  }
+ ],
+ "deephyper.predictor.torch.TorchPredictor": [
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "deephyper.predictor.torch",
+   "module_short": "deephyper.predictor.torch",
+   "name": "TorchPredictor"
+  },
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "deephyper.predictor.torch",
+   "module_short": "deephyper.predictor.torch",
+   "name": "TorchPredictor"
   }
  ],
  "device": [
@@ -1399,15 +1483,6 @@
    "module": "numpy",
    "module_short": "numpy",
    "name": "int64"
-  }
- ],
- "inputs": [
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "builtins",
-   "module_short": "builtins",
-   "name": "int"
   }
  ],
  "job_id": [
@@ -2419,15 +2494,6 @@
    "module": "numpy",
    "module_short": "numpy",
    "name": "std"
-  }
- ],
- "num_layers": [
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "builtins",
-   "module_short": "builtins",
-   "name": "int"
   }
  ],
  "os.listdir": [
@@ -3765,20 +3831,6 @@
   {
    "is_class": true,
    "is_explicit": false,
-   "module": "tqdm.notebook",
-   "module_short": "tqdm.notebook",
-   "name": "tqdm_notebook"
-  },
-  {
-   "is_class": true,
-   "is_explicit": false,
-   "module": "tqdm",
-   "module_short": "tqdm",
-   "name": "tqdm_notebook"
-  },
-  {
-   "is_class": true,
-   "is_explicit": false,
    "module": "tqdm.std",
    "module_short": "tqdm",
    "name": "tqdm"
@@ -3807,8 +3859,8 @@
   {
    "is_class": false,
    "is_explicit": false,
-   "module": "tqdm.notebook",
-   "module_short": "tqdm.notebook",
+   "module": "tqdm",
+   "module_short": "tqdm",
    "name": "tqdm"
   }
  ],
@@ -3828,15 +3880,6 @@
    "module": "numpy",
    "module_short": "numpy",
    "name": "ndarray"
-  }
- ],
- "train_X.shape": [
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "builtins",
-   "module_short": "builtins",
-   "name": "tuple"
   }
  ],
  "train_loss": [
@@ -3943,6 +3986,24 @@
    "module": "builtins",
    "module_short": "builtins",
    "name": "int"
+  }
+ ],
+ "x_max": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "int64"
+  }
+ ],
+ "x_min": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "int64"
   }
  ],
  "x_values": [
