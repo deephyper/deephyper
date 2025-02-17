@@ -801,7 +801,11 @@ def run_neural_architecture_search(problem, max_evals):
         method_kwargs=method_kwargs,
     )
 
-    stopper= MedianStopper(min_steps=50, max_steps=max_n_epochs, interval_steps=50)
+    stopper = None
+    
+    # Uncomment the following to speed-up the search
+    # stopper = MedianStopper(min_steps=50, max_steps=max_n_epochs, interval_steps=50)
+
     search = CBO(problem, evaluator, log_dir=hpo_dir, stopper=stopper, **search_kwargs)
 
     results = search.search(max_evals=max_evals)
@@ -810,7 +814,12 @@ def run_neural_architecture_search(problem, max_evals):
 
 
 # %%
-# Preload cached results if you want to skip the slow neural architecture search step by running the following commands:
+# You can download precomputed results if you want to skip the slow neural architecture search. We provide the following two set of precomputed results:
+#
+# - Link to precomputed results without stopper: ``https://drive.google.com/uc?id=1VOV-UM0ws0lopHvoYT_9RAiRdT1y4Kus``
+# - Link to precomputed results with median stopper: ``https://drive.google.com/uc?id=1VOV-UM0ws0lopHvoYT_9RAiRdT1y4Kus``
+#
+# Then run the following commands and adapt the url:
 #
 # .. code-block:: bash
 #

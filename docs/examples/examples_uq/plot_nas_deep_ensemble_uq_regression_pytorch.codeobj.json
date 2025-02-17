@@ -390,64 +390,6 @@
    "name": "HpProblem"
   }
  ],
- "MedianStopper": [
-  {
-   "is_class": true,
-   "is_explicit": false,
-   "module": "deephyper.stopper._median_stopper",
-   "module_short": "deephyper.stopper",
-   "name": "MedianStopper"
-  },
-  {
-   "is_class": true,
-   "is_explicit": false,
-   "module": "deephyper.stopper",
-   "module_short": "deephyper.stopper",
-   "name": "MedianStopper"
-  },
-  {
-   "is_class": true,
-   "is_explicit": false,
-   "module": "deephyper",
-   "module_short": "deephyper",
-   "name": "MedianStopper"
-  },
-  {
-   "is_class": true,
-   "is_explicit": false,
-   "module": "deephyper.stopper._stopper",
-   "module_short": "deephyper.stopper",
-   "name": "Stopper"
-  },
-  {
-   "is_class": true,
-   "is_explicit": false,
-   "module": "deephyper.stopper",
-   "module_short": "deephyper.stopper",
-   "name": "Stopper"
-  },
-  {
-   "is_class": true,
-   "is_explicit": false,
-   "module": "deephyper",
-   "module_short": "deephyper",
-   "name": "Stopper"
-  },
-  {
-   "is_class": true,
-   "is_explicit": false,
-   "module": "abc",
-   "module_short": "abc",
-   "name": "ABC"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "deephyper.stopper",
-   "module_short": "deephyper.stopper",
-   "name": "MedianStopper"
-  }
- ],
  "MixedNormalAggregator": [
   {
    "is_class": true,
