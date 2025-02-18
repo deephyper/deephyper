@@ -33,7 +33,7 @@ authors = [
 maintainers = [
     {name = "Romain Egele", email = "regele@ornl.gov"},
     {name = "Prasanna Balaprakash", email = "pbalapra@ornl.gov"},
-    {name = "Gavin M. Wiggins ", email = "wigginsg@ornl.gov"},
+    {name = "Gavin M. Wiggins"},
     {name = "Brett Eiffert ", email = "eiffertbc@ornl.gov"},
 ]
 description = "Massively Parallel Hyperparameter Optimization for Machine Learning"

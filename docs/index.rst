@@ -41,6 +41,7 @@ To try this example, you can copy/paste the script and run it.
 .. code-block:: python
 
     from deephyper.hpo import HpProblem, CBO
+    from deephyper.analysis.hpo import parameters_at_max
     from deephyper.evaluator import Evaluator
 
 
@@ -59,8 +60,8 @@ To try this example, you can copy/paste the script and run it.
 
     def optimize():
         problem = HpProblem()
-        problem.add_hyperparameter((-10.0, 10.0), "x") 
-        problem.add_hyperparameter((0, 10), "b") 
+        problem.add_hyperparameter((-10.0, 10.0), "x")
+        problem.add_hyperparameter((0, 10), "b")
         problem.add_hyperparameter(["linear", "cubic"], "function")
 
         evaluator = Evaluator.create(run, method="process",
@@ -71,14 +72,21 @@ To try this example, you can copy/paste the script and run it.
 
         search = CBO(problem, evaluator, random_state=42)
         results = search.search(max_evals=100)
-        
+
         return results
 
     if __name__ == "__main__":
         results = optimize()
         print(results)
 
-It will output the following results where the best parameters are with ``function == "cubic"``, ``x == 9.99`` and ``b == 10``.
+        res = parameters_at_max(results)
+        print("\nOptimum values")
+        print("function:", res[0]["function"])
+        print("x:", res[0]["x"])
+        print("b:", res[0]["b"])
+        print("y:", res[1])
+
+Running the example will output the results shown below. The best parameters are for the cubic function with ``x = 9.99`` and ``b = 10`` which produces ``y = 1009.87``.
 
 .. code-block:: console
 
@@ -95,15 +103,15 @@ It will output the following results where the best parameters are with ``functi
     99    10      cubic  9.986875  1006.067558      99       DONE           10.394701           10.495718
     100    9      cubic  9.999787  1008.936159     100       DONE           10.495265           10.595172
 
+    Optimum values
+    function: cubic
+    x: 9.99958232225758
+    b: 10
+    y: 1009.8747019108424
+
 Let us now provide step-by-step details about this example.
 
-The black-box function named ``run`` (it could be named anything but by convention we call it the ``run``-function) is defined by taking an input ``job`` that contains the different hyperparameters to optimize under ``job.parameters``.
-In our case, the function takes three hyperparameters: ``x``, ``b``, and ``function``. 
-The ``run``-function returns a value ``y`` that is computed based on the values of the hyperparameters.
-The value of ``y`` is the objective value that we want to **maximize** (by convention we do maximization, to do minimization simply return the negative of your objective).
-The ``run``-function can be any computationally expensive function that you want to optimize.
-For example, it can be a simple Python execution, opening subprocesses, submitting a SLURM job, perfoming an HTTP request...
-The search algorithms will learn to optimize the function just based on observed input hyperparameters and output values.
+The black-box function named ``run`` (it could be named anything but by convention we call it the ``run``-function) is defined by taking an input ``job`` that contains the different hyperparameters to optimize under ``job.parameters``. In our case, the function takes three hyperparameters: ``x``, ``b``, and ``function``. The ``run``-function returns a value ``y`` that is computed based on the values of the hyperparameters. The value of ``y`` is the objective value that we want to **maximize** (by convention we do maximization, to do minimization simply return the negative of your objective). The ``run``-function can be any computationally expensive function that you want to optimize. For example, it can be a simple Python execution, opening subprocesses, submitting a SLURM job, perfoming an HTTP request, etc. The search algorithms will learn to optimize the function just based on observed input hyperparameters and output values.
 
 .. code-block:: python
 
