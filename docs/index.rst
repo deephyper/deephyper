@@ -240,6 +240,8 @@ Table of Contents
    :titlesonly:
 
    facility/alcf/index
+   facility/nersc
+   facility/olcf
 
 .. toctree::
     :caption: API Reference
