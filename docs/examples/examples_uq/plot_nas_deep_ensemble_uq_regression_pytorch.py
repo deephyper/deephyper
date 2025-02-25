@@ -817,7 +817,7 @@ def run_neural_architecture_search(problem, max_evals):
 # You can download precomputed results if you want to skip the slow neural architecture search. We provide the following two set of precomputed results:
 #
 # - Link to precomputed results without stopper: ``https://drive.google.com/uc?id=1VOV-UM0ws0lopHvoYT_9RAiRdT1y4Kus``
-# - Link to precomputed results with median stopper: ``https://drive.google.com/uc?id=1VOV-UM0ws0lopHvoYT_9RAiRdT1y4Kus``
+# - Link to precomputed results with median stopper: ``https://drive.google.com/uc?id=1I09-ZaH4BzQfBOw6YmhzgKLFWBsdrvpg``
 #
 # Then run the following commands and adapt the url:
 #
