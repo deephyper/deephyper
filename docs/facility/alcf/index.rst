@@ -6,7 +6,6 @@ Argonne Leadership Computing Facility (ALCF)
    :numbered:
 
    installation
-   theta
    theta-gpu-ray
    theta-gpu-mpi
    theta-gpu-jupyter
