@@ -4,6 +4,7 @@ import numpy as np
 
 from deephyper.ensemble.aggregator import Aggregator
 from deephyper.evaluator import Evaluator, RunningJob
+from deephyper.evaluator.callback import TqdmCallback
 from deephyper.evaluator.storage import NullStorage
 from deephyper.predictor import Predictor, PredictorLoader
 
@@ -115,6 +116,12 @@ class EnsemblePredictor(Predictor):
             List[np.ndarray]: the sequence of predictions in the same order that the list of
             predictors.
         """
+        n_jobs_submitted = len(predictors)
+
+        for cb in self._evaluator._callbacks:
+            if isinstance(cb, TqdmCallback):
+                cb.set_max_evals(n_jobs_submitted)
+
         self._evaluator.submit(
             [
                 {
@@ -125,8 +132,13 @@ class EnsemblePredictor(Predictor):
             ]
         )
 
-        jobs_done = self._evaluator.gather("ALL")
+        jobs_done = []
+        while len(jobs_done) != n_jobs_submitted:
+            new_jobs_done = self._evaluator.gather("BATCH", size=1)
+            jobs_done.extend(new_jobs_done)
         jobs_done = list(sorted(jobs_done, key=lambda j: int(j.id.split(".")[-1])))
+
+        self._evaluator.close()
 
         y_pred = []
         for i, job in enumerate(jobs_done):
@@ -141,7 +153,3 @@ class EnsemblePredictor(Predictor):
                 y_pred.append(job.output)
 
         return y_pred
-
-    def __del__(self):
-        if self._evaluator is not None and self._evaluator.loop is not None:
-            self._evaluator.close()
