@@ -109,6 +109,7 @@ class Evaluator(abc.ABC):
         self._tasks_done = []  # Temp list to hold completed tasks from asyncio.
         self._tasks_pending = []  # Temp list to hold pending tasks from asyncio.
         self.jobs_done = []  # List used to store all jobs completed by the evaluator.
+        self.job_id_submitted = []  # List of jobs'id submitted by the evaluator.
         self.job_id_gathered = []  # List of jobs'id gathered by the evaluator.
         self.timestamp = time.time()  # Recorded time of when this evaluator interface was created.
         self.maximum_num_jobs_submitted = -1  # Maximum number of jobs to spawn.
@@ -298,6 +299,7 @@ class Evaluator(abc.ABC):
             job_id = self._storage.create_new_job(self._search_id)
             self._storage.store_job_in(job_id, args=(args,))
             new_job = self._create_job(job_id, args, self.run_function, self._storage)
+            self.job_id_submitted.append(job_id)
 
             # Set the context of the job
             # TODO: the notion of `search` in the storage should probably be updated to something
@@ -441,11 +443,15 @@ class Evaluator(abc.ABC):
         logging.info("gather jobs from other processes")
 
         job_id_all = self._storage.load_all_job_ids(self._search_id)
-        job_id_not_gathered = np.setdiff1d(job_id_all, self.job_id_gathered).tolist()
+        job_id_not_gathered = np.setdiff1d(
+            job_id_all,
+            self.job_id_submitted + self.job_id_gathered,
+        ).tolist()
 
         other_results = []
         if len(job_id_not_gathered) > 0:
             jobs_data = self._storage.load_jobs(job_id_not_gathered)
+            print(f"{jobs_data}")
 
             for job_id in job_id_not_gathered:
                 job_data = jobs_data[job_id]
@@ -461,6 +467,7 @@ class Evaluator(abc.ABC):
                     job.metadata.update(job_data["metadata"])
                     job.set_output(job_data["out"])
                     self.job_id_gathered.append(job_id)
+                    self.job_id_submitted.remove(job_id)
                     self.jobs_done.append(job)
                     other_results.append(job)
 
@@ -521,7 +528,7 @@ class Evaluator(abc.ABC):
         logging.info(f"Closing {type(self).__name__}")
 
         if self.loop is None:
-            raise RuntimeError("The evaluator loop is already closed.")
+            return
 
         # Attempt to close tasks in loop
         if not self.loop.is_closed():
