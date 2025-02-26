@@ -467,7 +467,6 @@ class Evaluator(abc.ABC):
                     job.metadata.update(job_data["metadata"])
                     job.set_output(job_data["out"])
                     self.job_id_gathered.append(job_id)
-                    self.job_id_submitted.remove(job_id)
                     self.jobs_done.append(job)
                     other_results.append(job)
 
@@ -511,6 +510,7 @@ class Evaluator(abc.ABC):
             self.jobs_done.append(job)
             self._tasks_running.remove(task)
             self.job_id_gathered.append(job.id)
+            self.job_id_submitted.remove(job.id)
 
         self._tasks_done = []
         self._tasks_pending = []
