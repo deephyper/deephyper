@@ -2,6 +2,8 @@ r"""
 Black-Box Optimization
 ======================
 
+**Author(s)**: Romain Egele, Brett Eiffert.
+
 In this tutorial, we introduce you to the notion of `black-box optimization (Wikipedia) <https://en.wikipedia.org/wiki/Derivative-free_optimization>`_ (a.k.a., derivative-free optimization) with DeepHyper.
 
 Black-box optimization is a field of optimization research where an objective function :math:`f(x) = y \in \mathbb{R}` is optimized only based on input-output observations :math:`\{ (x_1,y_1), \ldots, (x_n, y_n) \}`.

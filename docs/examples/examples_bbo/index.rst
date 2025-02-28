@@ -16,7 +16,7 @@ Black-box optimization
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="In this tutorial, we introduce you to the notion of black-box optimization (Wikipedia) (a.k.a., derivative-free optimization) with DeepHyper.">
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele, Brett Eiffert.">
 
 .. only:: html
 
