@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:09.663** total execution time for 1 file **from examples/examples_bbo**:
+**00:05.062** total execution time for 1 file **from examples/examples_bbo**:
 
 .. container::
 
@@ -33,5 +33,5 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization.py` (``plot_black_box_optimization.py``)
-     - 00:09.663
+     - 00:05.062
      - 0.0
