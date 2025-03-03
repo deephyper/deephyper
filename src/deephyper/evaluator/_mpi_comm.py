@@ -100,7 +100,7 @@ class MPICommEvaluator(Evaluator):
         )
 
         self.num_workers = self.comm.Get_size() - 1  # 1 rank is the master
-        self.sem = asyncio.Semaphore(self.num_workers)
+        self.sem = None
         logging.info(f"Creating MPICommExecutor with {self.num_workers} max_workers...")
 
         if self.num_workers == 0 and self.comm.Get_size() <= 1:
@@ -112,6 +112,12 @@ class MPICommEvaluator(Evaluator):
         self._comm_executor = None
         self._pool_executor = None
         logging.info("Creation of MPICommExecutor done")
+    
+    def set_event_loop(self):
+        super().set_event_loop()
+        # The semaphore should be created after getting the event loop to avoid
+        # binding it to a different event loop
+        self.sem = asyncio.Semaphore(self.num_workers)
 
     @property
     def is_master(self):
