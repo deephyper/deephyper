@@ -66,7 +66,6 @@ class LokyEvaluator(Evaluator):
             search_id=search_id,
         )
 
-
         # Creating the exector once here is crutial to avoid repetitive overheads
         self.executor = ProcessPoolExecutor(
             max_workers=self.num_workers,

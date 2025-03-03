@@ -112,7 +112,7 @@ class MPICommEvaluator(Evaluator):
         self._comm_executor = None
         self._pool_executor = None
         logging.info("Creation of MPICommExecutor done")
-    
+
     def set_event_loop(self):
         super().set_event_loop()
         # The semaphore should be created after getting the event loop to avoid
