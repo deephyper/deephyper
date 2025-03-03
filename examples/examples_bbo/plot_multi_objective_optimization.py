@@ -15,20 +15,11 @@ where :math:`x` is the set of optimized variables and :math:`f_i` are the differ
 where :math:`w` is a set of weights which manages the trade-off between objectives and :math:`s_w : \mathbb{R}^n \rightarrow \mathbb{R}`. The weight vector :math:`w` is randomized and re-sampled for each new batch of suggestion from the optimizer.
 """
 
-# .. dropdown:: Installing DeepHyper if not present
-try:
-    import deephyper
-    print(deephyper.__version__)
-except (ImportError, ModuleNotFoundError):
-    get_ipython().system('pip install deephyper')
-    import deephyper
-    print(deephyper.__version__)
+# %%
+# Start by importing DeepHyper and checking the installed version number:
 
-# .. dropdown:: Installing DeepHyper/Benchmark if not present
-try:
-    import deephyper_benchmark as dhb
-except (ImportError, ModuleNotFoundError):
-    get_ipython().system('pip install -e "git+https://github.com/deephyper/benchmark.git@main#egg=deephyper-benchmark"')
+import deephyper
+print(deephyper.__version__)
 
 # %%
 # We will look at the DTLZ benchmark suite, a classic in multi-objective optimization (MOO) litterature. This benchmark exibit some characteristic cases of MOO. By default, this tutorial is loading the DTLZ-II benchmark which exibit a Pareto-Front with a concave shape.
@@ -45,8 +36,9 @@ os.environ["DEEPHYPER_BENCHMARK_DTLZ_OFFSET"] = str(0.6)
 os.environ["DEEPHYPER_BENCHMARK_FAILURES"] = str(0)
 
 # Loading the DTLZ Benchmark
-import deephyper_benchmark as dhb; dhb.load("DTLZ");
+import deephyper_benchmark as dhb
 from deephyper_benchmark.lib.dtlz import hpo, metrics
+dhb.load("DTLZ")
 
 # %%
 # We can display the variable search space of the benchmark we just loaded:
