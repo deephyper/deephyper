@@ -11,7 +11,7 @@ from deephyper.evaluator.storage import SharedMemoryStorage, Storage
 class LokyEvaluator(Evaluator):
     """This evaluator uses the ``ProcessPoolExecutor`` from ``loky`` as backend.
 
-    The ``loky`` backend uses ``cloudpickle`` to serialize by value the called function and 
+    The ``loky`` backend uses ``cloudpickle`` to serialize by value the called function and
     its arguments.
 
     Args:
