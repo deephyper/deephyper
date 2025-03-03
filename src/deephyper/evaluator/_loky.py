@@ -2,10 +2,23 @@ import asyncio
 import functools
 from typing import Callable, Hashable
 
+import cloudpickle
+
 from loky import ProcessPoolExecutor
 
 from deephyper.evaluator import Evaluator, Job, JobStatus
 from deephyper.evaluator.storage import SharedMemoryStorage, Storage
+
+
+def run_with_cloudpickle(loop, executor, func, *args):
+    # Serialize the function and arguments using cloudpickle
+    serialized_task = cloudpickle.dumps((func, args))
+
+    def wrapped_task(serialized_task):
+        func, args = cloudpickle.loads(serialized_task)
+        return func(*args)
+
+    return loop.run_in_executor(executor, wrapped_task, serialized_task)
 
 
 class LokyEvaluator(Evaluator):
@@ -69,7 +82,8 @@ class LokyEvaluator(Evaluator):
                 job.run_function, running_job, **self.run_function_kwargs
             )
 
-            run_function_future = self.loop.run_in_executor(self.executor, run_function)
+            # run_function_future = self.loop.run_in_executor(self.executor, run_function)
+            run_function_future = run_with_cloudpickle(self.loop, self.executor, run_function)
 
             if self.timeout is not None:
                 try:
