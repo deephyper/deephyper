@@ -24,6 +24,7 @@ EVALUATORS = {
     "ray": "_ray.RayEvaluator",
     "serial": "_serial.SerialEvaluator",
     "thread": "_thread_pool.ThreadPoolEvaluator",
+    "loky": "_loky.LokyEvaluator",
 }
 
 
@@ -558,6 +559,9 @@ class Evaluator(abc.ABC):
         if not self.loop.is_running():
             self.loop.close()
             self.loop = None
+
+    def __del__(self):
+        self.close()
 
     def _update_job_when_done(self, job: Job, output) -> Job:
         # Check if the output is a Job object or else
