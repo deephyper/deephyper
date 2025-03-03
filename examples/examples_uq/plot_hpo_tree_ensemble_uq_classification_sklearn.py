@@ -2,9 +2,9 @@ r"""
 Hyperparameter Optimization of Decision Tree and Ensemble with Uncertainty Quantification for Classification
 ============================================================================================================
 
-In this tutorial, we will see how to use Hyperparameter optimization to generate ensemble of models that can be used for uncertainty quantification.
-
 **Author(s)**: Romain Egele.
+
+In this tutorial, you will learn about how to use hyperparameter optimization to generate ensemble of `Scikit-Learn <https://scikit-learn.org/stable/>`_ models that can be used for uncertainty quantification.
 """
 # %%
 
@@ -26,14 +26,13 @@ WIDTH_PLOTS = 8
 HEIGHT_PLOTS = WIDTH_PLOTS / 1.618
 
 # %%
-# Data loading
-# ------------
+# Loading synthetic data
+# ----------------------
 # 
-# For the data, we use the :func:`sklearn.datasets.make_moons` functionality from Scikit-Learn to have a binary-classification problem.
-# 
-# In addition, we randomly flip 10% of the labels to generate artificial noise (later corresponding to aleatoric uncertainty).
+# For the data, we use the :func:`sklearn.datasets.make_moons` functionality from Scikit-Learn to have a synthetic binary-classification problem with two moons.
+# We randomly flip 10% of the labels to generate artificial noise that should later be estimated by what we call "aleatoric uncertainty" (a.k.a., intrinsic random noise).
 
-# .. dropdown:: Loading synthetic data
+# .. dropdown:: Load and plot synthetic data
 def flip_binary_labels(y, ratio, random_state=None):
     """Increase the variance of P(Y|X) by ``ratio``"""
     y_flipped = np.zeros(np.shape(y))
@@ -98,15 +97,17 @@ _ = plt.xlabel("$x0$", fontsize=12)
 _ = plt.legend(loc="upper center", ncol=3, fontsize=12)
 
 # %%
-# Training and Scoring of Decision Tree
-# -------------------------------------
+# Training a Decision Tree
+# ------------------------
 # 
-# The class of model we use in this tutorial is Decision Tree.
-# 
-# In this part, we will see how to train and evaluate such models.
+# In this tutorial, we focus on the class of random decision tree models. 
+# We now define a function that trains and evaluate such a model from given parameters ``job.parameters``.
+# These parameters will be optimized in the next steps by DeepHyper.
+#
+# The score we optimize the validation log loss (a.k.a., binary cross entropy) as we want to have calibrated uncertainty estimates.
 
-# .. dropdown:: Utility to plot decision boundary
-def plot_decision_boundary_decision_tree(dataset, labels, model, steps=1000, color_map="viridis"):
+# .. dropdown:: Plot decision boundary
+def plot_decision_boundary_decision_tree(dataset, labels, model, steps=1000, color_map="viridis", ax=None):
     color_map = plt.get_cmap(color_map)
     # Define region of interest by data limits
     xmin, xmax = dataset[:, 0].min() - 1, dataset[:, 0].max() + 1
@@ -121,7 +122,6 @@ def plot_decision_boundary_decision_tree(dataset, labels, model, steps=1000, col
     # Plot decision boundary in region of interest
     z = labels_predicted[:, 1].reshape(xx.shape)
 
-    ax = plt.gca()
     ax.contourf(xx, yy, z, cmap=color_map, alpha=0.5)
 
     # Get predicted labels on training data and plot
@@ -162,13 +162,13 @@ def run(job, model_checkpoint_dir=".", verbose=True, show_plots=False):
         print(f"{job.id}: {val_cce=:.3f}")
 
     if show_plots:
-        plt.figure(figsize=(WIDTH_PLOTS, HEIGHT_PLOTS))
+        fig, ax = plt.subplots(figsize=(WIDTH_PLOTS, HEIGHT_PLOTS))
         plot_decision_boundary_decision_tree(
-            tx, ty, model, steps=1000, color_map="viridis"
+            tx, ty, model, steps=1000, color_map="viridis", ax=ax
         )
 
-        plt.figure(figsize=(WIDTH_PLOTS, HEIGHT_PLOTS))
-        disp = CalibrationDisplay.from_predictions(ty, model.predict_proba(tx)[:, 1])
+        fig, ax = plt.subplots(figsize=(WIDTH_PLOTS, HEIGHT_PLOTS))
+        disp = CalibrationDisplay.from_predictions(ty, model.predict_proba(tx)[:, 1], ax=ax)
 
     test_cce = log_loss(ty, model.predict_proba(tx))
     test_acc = accuracy_score(ty, model.predict(tx))
@@ -182,15 +182,16 @@ def run(job, model_checkpoint_dir=".", verbose=True, show_plots=False):
 
 # %%
 # Hyperparameter search space
-# 
-# We now define the hyperparameter optimization search space for decision trees.
-
+# ---------------------------
+#
+# We define the hyperparameter search space for decision trees.
+# This tells to DeepHyper the hyperparameter values it can use for the optimization.
+# To define these hyperparameters we look at the `DecisionTreeClassifier API Reference <https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html>`_.
 from deephyper.hpo import HpProblem
 
 
 def create_hpo_problem():
 
-    print(f"--> PID: {os.getpid()}")
     problem = HpProblem()
 
     problem.add_hyperparameter(["gini", "entropy", "log_loss"], "criterion")
@@ -209,8 +210,7 @@ problem
 # Evaluation of the baseline
 # --------------------------
 # 
-# Now, we evaluate the baseline Decision Tree model by test `default_value` hyperparameters.
-
+# We previously defined ``default_value=...`` for each hyperparameter. These values corresponds to the default hyperparameters used in Scikit-Learn. We now test them to have a base performance.
 from deephyper.evaluator import RunningJob
 
 
@@ -249,9 +249,9 @@ def run_hpo(problem):
 
     evaluator = Evaluator.create(
         run,
-        method="loky",
+        method="ray",
         method_kwargs={
-            "num_workers": 4,
+            "num_cpus_per_task": 1,
             "run_function_kwargs": {
                 "model_checkpoint_dir": model_checkpoint_dir,
                 "verbose": False,
@@ -274,6 +274,245 @@ def run_hpo(problem):
 
     return results
 
-if __name__ == "__main__":
-    results = run_hpo(problem)
+results = run_hpo(problem)
 
+# %%
+# Analysis of the results
+# -----------------------
+
+results
+
+# %%
+# Evolution of the objective
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# .. dropdown:: Plot search trajectory
+from deephyper.analysis.hpo import plot_search_trajectory_single_objective_hpo
+
+
+_, ax = plt.subplots(figsize=(WIDTH_PLOTS, HEIGHT_PLOTS))
+_ = plot_search_trajectory_single_objective_hpo(results, ax=ax)
+
+# %%
+# Worker utilization
+# ~~~~~~~~~~~~~~~~~~
+
+# .. dropdown:: Plot worker utilization
+from deephyper.analysis.hpo import plot_worker_utilization
+
+_, ax = plt.subplots(figsize=(WIDTH_PLOTS, HEIGHT_PLOTS))
+_ = plot_worker_utilization(results, ax=ax)
+
+# %% 
+# The best tecision tree
+# ~~~~~~~~~~~~~~~~~~~~~~
+
+from deephyper.analysis.hpo import parameters_from_row
+
+topk_rows = results.nlargest(5, "objective").reset_index(drop=True)
+
+for i, row in topk_rows.iterrows():
+    parameters = parameters_from_row(row)
+    obj = row["objective"]
+    print(f"Top-{i+1} -> {obj=:.3f}: {parameters}")
+    print()
+
+best_job = topk_rows.iloc[0]
+
+hpo_dir = "hpo_sklearn_classification"
+model_checkpoint_dir = os.path.join(hpo_dir, "models")
+
+with open(os.path.join(model_checkpoint_dir, f"model_0.{best_job.job_id}.pkl"), "rb") as f:
+    best_model = pickle.load(f)
+
+# %%
+
+# .. dropdown:: Plot decision boundary and calibration
+fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(WIDTH_PLOTS, HEIGHT_PLOTS))
+plot_decision_boundary_decision_tree(tx, ty, best_model, steps=1000, color_map="viridis", ax=axes[0])
+
+fig, ax = plt.subplots(figsize=(WIDTH_PLOTS, HEIGHT_PLOTS))
+disp = CalibrationDisplay.from_predictions(ty, best_model.predict_proba(tx)[:, 1], ax=axes[1])
+
+# %% 
+# Ensemble of decision trees
+# --------------------------
+from deephyper.ensemble import EnsemblePredictor
+from deephyper.ensemble.aggregator import MixedCategoricalAggregator
+from deephyper.ensemble.loss import CategoricalCrossEntropy 
+from deephyper.ensemble.selector import GreedySelector, TopKSelector
+from deephyper.predictor.sklearn import SklearnPredictorFileLoader
+
+# %%
+
+# .. dropdown:: Make plot with decision boundary and uncertainty
+def plot_decision_boundary_and_uncertainty(
+    dataset, labels, model, steps=1000, color_map="viridis", s=5
+):
+
+    fig, axs = plt.subplots(
+        3, sharex="all", sharey="all", figsize=(WIDTH_PLOTS, HEIGHT_PLOTS * 2)
+    )
+
+    # Define region of interest by data limits
+    xmin, xmax = dataset[:, 0].min() - 1, dataset[:, 0].max() + 1
+    ymin, ymax = dataset[:, 1].min() - 1, dataset[:, 1].max() + 1
+    x_span = np.linspace(xmin, xmax, steps)
+    y_span = np.linspace(ymin, ymax, steps)
+    xx, yy = np.meshgrid(x_span, y_span)
+
+    # Make predictions across region of interest
+    y_pred = model.predict(np.c_[xx.ravel(), yy.ravel()].astype(np.float32))
+    y_pred_proba = y_pred["loc"]
+    y_pred_aleatoric = y_pred["uncertainty_aleatoric"]
+    y_pred_epistemic = y_pred["uncertainty_epistemic"]
+
+    # Plot decision boundary in region of interest
+
+    # 1. MODE
+    color_map = plt.get_cmap("viridis")
+    z = y_pred_proba[:, 1].reshape(xx.shape)
+
+    cont = axs[0].contourf(xx, yy, z, cmap=color_map, vmin=0, vmax=1, alpha=0.5)
+
+    # Get predicted labels on training data and plot
+    axs[0].scatter(
+        dataset[:, 0],
+        dataset[:, 1],
+        c=labels,
+        cmap=color_map,
+        s=s,
+        lw=0,
+    )
+    plt.colorbar(cont, ax=axs[0], label="Probability of class 1")
+
+    # 2. ALEATORIC
+    color_map = plt.get_cmap("plasma")
+    z = y_pred_aleatoric.reshape(xx.shape)
+
+    cont = axs[1].contourf(xx, yy, z, cmap=color_map, vmin=0, vmax=0.69, alpha=0.5)
+
+    # Get predicted labels on training data and plot
+    axs[1].scatter(
+        dataset[:, 0],
+        dataset[:, 1],
+        c=labels,
+        cmap=color_map,
+        s=s,
+        lw=0,
+    )
+    plt.colorbar(cont, ax=axs[1], label="Aleatoric uncertainty")
+
+    # 3. EPISTEMIC
+    z = y_pred_epistemic.reshape(xx.shape)
+
+    cont = axs[2].contourf(xx, yy, z, cmap=color_map, vmin=0, vmax=0.69, alpha=0.5)
+
+    # Get predicted labels on training data and plot
+    axs[2].scatter(
+        dataset[:, 0],
+        dataset[:, 1],
+        c=labels,
+        cmap=color_map,
+        s=s,
+        lw=0,
+    )
+    plt.colorbar(cont, ax=axs[2], label="Epistemic uncertainty")
+
+
+# %%
+def create_ensemble_from_checkpoints(ensemble_selector: str = "topk"):
+
+    # 0. Load data
+    _, (vx, vy), _ = load_data()
+
+    # !1.3 SKLEARN EXAMPLE
+    predictor_files = SklearnPredictorFileLoader.find_predictor_files(
+        model_checkpoint_dir
+    )
+    predictor_loaders = [SklearnPredictorFileLoader(f) for f in predictor_files]
+    predictors = [p.load() for p in predictor_loaders]
+
+    # 2. Build an ensemble
+    ensemble = EnsemblePredictor(
+        predictors=predictors,
+        aggregator=MixedCategoricalAggregator(
+            uncertainty_method="entropy", decomposed_uncertainty=True
+        ),
+        # ! You can specify parallel backends for the evaluation of the ensemble
+        evaluator={
+            "method": "ray",
+            "method_kwargs": {"num_cpus_per_task": 1},
+        },
+    )
+    y_predictors = ensemble.predictions_from_predictors(
+        vx, predictors=ensemble.predictors
+    )
+
+    # Use TopK or Greedy/Caruana
+    if ensemble_selector == "topk":
+        selector = TopKSelector(
+            loss_func=CategoricalCrossEntropy(),
+            k=20,
+        )
+    elif ensemble_selector == "greedy":
+        selector = GreedySelector(
+            loss_func=CategoricalCrossEntropy(),
+            aggregator=MixedCategoricalAggregator(),
+            k=20,
+            k_init=5,
+            eps_tol=1e-5,
+        )
+    else:
+        raise ValueError(f"Unknown ensemble_selector: {ensemble_selector}")
+
+    selected_predictors_indexes, selected_predictors_weights = selector.select(
+        vy, y_predictors
+    )
+    print(f"{selected_predictors_indexes=}")
+    print(f"{selected_predictors_weights=}")
+
+    ensemble.predictors = [ensemble.predictors[i] for i in selected_predictors_indexes]
+    ensemble.weights = selected_predictors_weights
+
+    return ensemble
+
+ensemble = create_ensemble_from_checkpoints("topk")
+
+# %%
+plot_decision_boundary_and_uncertainty(tx, ty, ensemble, steps=1000, color_map="viridis")
+
+ty_pred = ensemble.predict(tx)["loc"]
+
+cce = log_loss(ty, ty_pred)
+acc = accuracy_score(ty, np.argmax(ty_pred, axis=1))
+
+print(f"{cce=:.3f}, {acc=:.3f}")
+
+# %%
+plt.figure(figsize=(WIDTH_PLOTS, HEIGHT_PLOTS))
+disp = CalibrationDisplay.from_predictions(ty, ty_pred[:, 1])
+
+# %%
+ensemble = create_ensemble_from_checkpoints("greedy")
+
+# %%
+plot_decision_boundary_and_uncertainty(tx, ty, ensemble, steps=1000, color_map="viridis")
+
+ty_pred = ensemble.predict(tx)["loc"]
+
+cce = log_loss(ty, ty_pred)
+acc = accuracy_score(ty, np.argmax(ty_pred, axis=1))
+
+print(f"{cce=:.3f}, {acc=:.3f}")
+
+# %%
+# The improvement over the default hyperparameters is significant.
+# 
+# For CCE, we moved from about 6 to 0.4.
+# 
+# For Accuracy, we moved from 0.82 to 0.87.
+
+# %%
+plt.figure(figsize=(WIDTH_PLOTS, HEIGHT_PLOTS))
+disp = CalibrationDisplay.from_predictions(ty, ty_pred[:, 1])
