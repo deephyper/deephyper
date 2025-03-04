@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:42.613** total execution time for 9 files **from all galleries**:
+**00:44.945** total execution time for 9 files **from all galleries**:
 
 .. container::
 
@@ -33,7 +33,7 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_examples_examples_uq_plot_hpo_tree_ensemble_uq_classification_sklearn.py` (``../examples/examples_uq/plot_hpo_tree_ensemble_uq_classification_sklearn.py``)
-     - 00:42.613
+     - 00:44.945
      - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization.py` (``../examples/examples_bbo/plot_black_box_optimization.py``)
      - 00:00.000

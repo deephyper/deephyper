@@ -1,6 +1,6 @@
 r"""
-Hyperparameter Optimizated Ensemble of Decision Trees with Uncertainty for Classification
-=========================================================================================
+Hyperparameter Optimized Ensemble of Random Decision Trees with Uncertainty for Classification
+==============================================================================================
 
 **Author(s)**: Romain Egele.
 

@@ -219,7 +219,7 @@ Uncertainty quantification
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">Hyperparameter Optimizated Ensemble of Decision Trees with Uncertainty for Classification</div>
+      <div class="sphx-glr-thumbnail-title">Hyperparameter Optimized Ensemble of Random Decision Trees with Uncertainty for Classification</div>
     </div>
 
 

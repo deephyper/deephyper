@@ -42,29 +42,6 @@ if about["__version__"] == "":
 else:
     release = f'v{about["__version__"]}-{about["__version_suffix__"]}'
 
-# PULL Tutorials
-branch_name_map = {"master": "main", "stable": "main", "latest": "develop", "develop": "develop"}
-if os.environ.get("READTHEDOCS"):
-    doc_version = os.environ["READTHEDOCS_VERSION"]
-else:
-    github_repo = git.Repo(search_parent_directories=True)
-    doc_version = github_repo.active_branch.name
-
-tutorial_branch = branch_name_map.get(doc_version, "develop")
-tutorials_github_link = "https://github.com/deephyper/tutorials.git"
-tutorials_dest_dir = "tutorials"
-
-
-def pull_tutorials(github_link, dest_dir, tutorial_branch):
-    os.system(f"rm -rf {dest_dir}/")
-    os.system(
-        f"git clone --depth=1 --branch={tutorial_branch} {github_link} {dest_dir}"
-    )
-    os.system(f"rm -rf {dest_dir}/.git")
-
-
-pull_tutorials(tutorials_github_link, tutorials_dest_dir, tutorial_branch)
-
 # -- General configuration ---------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
