@@ -1,13 +1,14 @@
-import pytest
-
 import numpy as np
 import pandas as pd
-
-from deephyper.hpo._gmm_sampler import GMMSampler
-from deephyper.hpo import HpProblem
-
+import pytest
 from ConfigSpace import Configuration
 
+from deephyper.hpo import HpProblem
+from deephyper.hpo.gmm import GMMSampler
+
+# TODO: add test with 1 type of variable at a time
+# TODO: add test to sample from config space with conditions
+# TODO: add test to sample from config space with forbiddens
 
 def test_gmm_sampler_config_space_without_condition():
     problem = HpProblem()

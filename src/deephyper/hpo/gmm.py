@@ -9,11 +9,13 @@ from ConfigSpace.hyperparameters import (
 )
 from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, OrdinalEncoder
+from sklearn.utils import check_random_state
 
 
 class GMMSampler:
-    def __init__(self, config_space):
+    def __init__(self, config_space, random_state=None):
         self.config_space = config_space
+        self.rng = check_random_state(random_state)
 
         # Check variable types
         self.categorical_cols = []
@@ -40,6 +42,8 @@ class GMMSampler:
         self.gmm = None
 
     def fit(self, df: pd.DataFrame):
+        n_samples = df.shape[0]
+
         categorical_categories = []
         for hp_name in self.categorical_cols:
             hp = self.config_space[hp_name]
@@ -56,9 +60,20 @@ class GMMSampler:
 
         self.numerical_encoder = StandardScaler()
 
-        X_cat = self.categorical_encoder.fit_transform(df[self.categorical_cols].values)
-        X_ord = self.ordinal_encoder.fit_transform(df[self.ordinal_cols].values)
-        X_num = self.numerical_encoder.fit_transform(df[self.numerical_cols].values)
+        if len(self.categorical_cols) > 0:
+            X_cat = self.categorical_encoder.fit_transform(df[self.categorical_cols].values)
+        else:
+            X_cat = np.array([[]]).reshape(n_samples, 0)
+
+        if len(self.ordinal_cols) > 0:
+            X_ord = self.ordinal_encoder.fit_transform(df[self.ordinal_cols].values)
+        else:
+            X_ord = np.array([[]]).reshape(n_samples, 0)
+
+        if len(self.numerical_cols) > 0:
+            X_num = self.numerical_encoder.fit_transform(df[self.numerical_cols].values)
+        else:
+            X_num = np.array([[]]).reshape(n_samples, 0)
 
         self.n_X_cat = X_cat.shape[1]
         self.n_X_ord = X_ord.shape[1]
@@ -66,7 +81,7 @@ class GMMSampler:
 
         X = np.hstack([X_cat, X_ord, X_num])
 
-        self.gmm = GaussianMixture(n_components=5)
+        self.gmm = GaussianMixture(n_components=5, random_state=self.rng)
         self.gmm.fit(X)
 
     def sample(self, n_samples: int) -> pd.DataFrame:
@@ -75,25 +90,35 @@ class GMMSampler:
         # Enforce constraints for each variable
 
         # Categorical
-        X_cat = self.categorical_encoder.inverse_transform(X[:, : self.n_X_cat])
+        if self.n_X_cat > 0:
+            X_cat = self.categorical_encoder.inverse_transform(X[:, : self.n_X_cat])
+        else:
+            X_cat = np.array([[]]).reshape(n_samples, 0)
 
         # Ordinal
-        X_ord = X[:, self.n_X_cat : self.n_X_cat + self.n_X_ord]
-        for i, hp_name in enumerate(self.ordinal_cols):
-            categories = self.ordinal_encoder.categories_[i]
-            X_ord[:, i] = np.clip(X_ord[:, i], a_min=0, a_max=len(categories) - 1).astype(int)
-        X_ord = self.ordinal_encoder.inverse_transform(X_ord)
+        if self.n_X_ord > 0:
+            X_ord = X[:, self.n_X_cat : self.n_X_cat + self.n_X_ord]
+            for i, hp_name in enumerate(self.ordinal_cols):
+                categories = self.ordinal_encoder.categories_[i]
+                X_ord[:, i] = np.clip(X_ord[:, i], a_min=0, a_max=len(categories) - 1).astype(int)
+            X_ord = self.ordinal_encoder.inverse_transform(X_ord)
+        else:
+            X_ord = np.array([[]]).reshape(n_samples, 0)
 
         # Numerical
-        X_num = self.numerical_encoder.inverse_transform(X[:, self.n_X_cat + self.n_X_ord :])
-        for i, hp_name in enumerate(self.numerical_cols):
-            hp = self.config_space[hp_name]
-            X_num[:, i] = np.clip(X_num[:, i], a_min=hp.lower, a_max=hp.upper)
+        if self.n_X_num:
+            X_num = self.numerical_encoder.inverse_transform(X[:, self.n_X_cat + self.n_X_ord :])
+            for i, hp_name in enumerate(self.numerical_cols):
+                hp = self.config_space[hp_name]
+                X_num[:, i] = np.clip(X_num[:, i], a_min=hp.lower, a_max=hp.upper)
+        else:
+            X_num = np.array([[]]).reshape(n_samples, 0)
 
         # Integer
-        X_num[:, : len(self.integer_cols)] = np.round(X_num[:, : len(self.integer_cols)]).astype(
-            int
-        )
+        if len(self.integer_cols) > 0:
+            X_num[:, : len(self.integer_cols)] = np.round(
+                X_num[:, : len(self.integer_cols)]
+            ).astype(int)
 
         X = np.hstack([X_cat, X_ord, X_num])
         df = (
