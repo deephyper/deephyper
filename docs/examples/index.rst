@@ -35,7 +35,7 @@ Black-box optimization
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="In this tutorial, we introduce you to the notion of black-box optimization (Wikipedia) (a.k.a., derivative-free optimization) with DeepHyper.">
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele, Brett Eiffert.">
 
 .. only:: html
 
@@ -205,6 +205,23 @@ Uncertainty quantification
     <div class="sphx-glr-thumbnails">
 
 .. thumbnail-parent-div-open
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
+
+.. only:: html
+
+  .. image:: /examples/examples_uq/images/thumb/sphx_glr_plot_hpo_tree_ensemble_uq_classification_sklearn_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_examples_uq_plot_hpo_tree_ensemble_uq_classification_sklearn.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Hyperparameter Optimizated Ensemble of Decision Trees with Uncertainty for Classification</div>
+    </div>
+
 
 .. raw:: html
 

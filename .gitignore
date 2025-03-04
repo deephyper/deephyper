@@ -192,3 +192,5 @@ context.yaml
 *.pt
 *.rdb
 prof/*.prof
+*.code-workspace
+*.pkl
