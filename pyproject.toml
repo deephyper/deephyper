@@ -7,6 +7,7 @@ name = "deephyper"
 dynamic = ["version"]
 dependencies = [
     "ConfigSpace>=1.1.1",
+    "cloudpickle",
     "dm-tree",
     "Jinja2>=3.1.4",
     "loky>=3.4",
@@ -51,23 +52,15 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-sdv = ["sdv~=1.15.0"]
 jax-cpu = ["jax[cpu]>=0.3.25", "numpyro[cpu]"]
 jax-cuda = ["jax[cuda]>=0.3.25", "numpyro[cuda]"]
-tf-keras2 = [
-    "tensorflow~=2.17.0",
-    "tensorflow_probability~=0.24.0",
-    "tf-keras~=2.17.0",
-]
 torch = ["torch>=2.0.0"]
 mpi = ["mpi4py>=3.1.3"]
 ray = ["ray[default]>=1.3.0"]
 redis = ["redis"]
 redis-hiredis = ["redis[hiredis]"]
 core = [
-    "deephyper[tf-keras2]",
     "deephyper[torch]",
-    "deephyper[sdv]",
     "deephyper[jax-cpu]",
 ]
 dev = [
@@ -109,12 +102,10 @@ filterwarnings = "ignore:The objective has been evaluated at this point before.:
 markers = [
     "slow: marks to define a slow test",
     "torch: marks to define a test that requires torch installed",
-    "tf_keras2: marks to define a test that requires tf-keras~=2 installed",
     "ray: marks tests which needs Ray installed",
     "mpi: marks tests which needs mpi4py and MPI installed",
     "redis: marks tests which needs Redis installed",
     "jax: marks tests which needs JAX installed",
-    "sdv: marks tests which needs SDV installed",
     "memory_profiling: marks tests which needs profile memory using psutil installed",
 ]
 

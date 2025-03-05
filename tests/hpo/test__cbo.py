@@ -780,7 +780,6 @@ def test_cbo_with_acq_optimizer_mixedga_and_forbiddens_in_problem(tmp_path):
     assert (~cond).all()
 
 
-@pytest.mark.sdv
 def test_cbo_fit_generative_model(tmp_path):
     from deephyper.hpo import CBO, HpProblem
 

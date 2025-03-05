@@ -31,6 +31,23 @@ Black-box optimization
     </div>
 
 
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
+
+.. only:: html
+
+  .. image:: /examples/examples_bbo/images/thumb/sphx_glr_plot_transfer_learning_for_hpo_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_examples_bbo_plot_transfer_learning_for_hpo.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Applying Transfer Learning to Black-Box Optimization</div>
+    </div>
+
+
 .. thumbnail-parent-div-close
 
 .. raw:: html
@@ -42,4 +59,5 @@ Black-box optimization
    :hidden:
 
    /examples/examples_bbo/plot_black_box_optimization
+   /examples/examples_bbo/plot_transfer_learning_for_hpo
 

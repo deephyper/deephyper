@@ -80,7 +80,10 @@ class Search(abc.ABC):
         self._path_results = os.path.join(self._log_dir, "results.csv")
         if os.path.exists(self._path_results):
             str_current_time = time.strftime("%Y%m%d-%H%M%S")
-            path_results_renamed = self._path_results.replace(".", f"_{str_current_time}.")
+            path_results_dirname = os.path.dirname(self._path_results)
+            path_results_basename = os.path.basename(self._path_results)
+            path_results_basename = path_results_basename.replace(".", f"_{str_current_time}.")
+            path_results_renamed = os.path.join(path_results_dirname, path_results_basename)
             logging.warning(
                 f"Results file already exists, it will be renamed to {path_results_renamed}"
             )

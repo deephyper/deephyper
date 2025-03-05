@@ -82,6 +82,18 @@ When writing examples, some portions of codes can be heavy for the reader while 
 
 The blank line between ``# Some text here...`` and ``# .. dropdown:: A title for my dropdown`` is necessary to make the difference between the text block and the code block.
 
+
+Setting the Preview Figure
+-------------------------
+
+To set the figure from the example that should be displayed on the gallery page as preview use:
+
+.. code-block:: python
+
+    # sphinx_gallery_thumbnail_number = FIGURE_INDEX
+    _ = plt.subplots(...)
+
+
 Build Examples
 --------------
 

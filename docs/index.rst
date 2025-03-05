@@ -227,7 +227,6 @@ Table of Contents
     :caption: Get Started
 
     Installation <install/index>
-    tutorials/index
     examples/index
     F.A.Q. <faq>
     Blog (Events & Workshops) <https://deephyper.github.io>
