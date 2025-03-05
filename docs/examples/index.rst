@@ -35,6 +35,23 @@ Black-box optimization
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
+
+.. only:: html
+
+  .. image:: /examples/examples_bbo/images/thumb/sphx_glr_plot_experimental_design_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_examples_bbo_plot_experimental_design.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Generating Parameters with Experimental Design</div>
+    </div>
+
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele, Brett Eiffert.">
 
 .. only:: html
@@ -73,6 +90,23 @@ Black-box optimization
 
 .. only:: html
 
+  .. image:: /examples/examples_bbo/images/thumb/sphx_glr_plot_notify_failures_hpo_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_examples_bbo_plot_notify_failures_hpo.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Notify Failures in Hyperparameter optimization</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
+
+.. only:: html
+
   .. image:: /examples/examples_bbo/images/thumb/sphx_glr_plot_transfer_learning_for_hpo_thumb.png
     :alt:
 
@@ -101,40 +135,6 @@ Hyperparameter optimization
     <div class="sphx-glr-thumbnails">
 
 .. thumbnail-parent-div-open
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
-
-.. only:: html
-
-  .. image:: /examples/examples_hpo/images/thumb/sphx_glr_plot_experimental_design_thumb.png
-    :alt:
-
-  :ref:`sphx_glr_examples_examples_hpo_plot_experimental_design.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Experimental Design with Grid Search</div>
-    </div>
-
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
-
-.. only:: html
-
-  .. image:: /examples/examples_hpo/images/thumb/sphx_glr_plot_notify_failures_hpo_thumb.png
-    :alt:
-
-  :ref:`sphx_glr_examples_examples_hpo_plot_notify_failures_hpo.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Notify Failures in Hyperparameter optimization</div>
-    </div>
-
 
 .. thumbnail-parent-div-close
 
