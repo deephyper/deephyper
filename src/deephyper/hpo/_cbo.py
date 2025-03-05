@@ -9,7 +9,6 @@ import ConfigSpace as CS
 import ConfigSpace.hyperparameters as csh
 import numpy as np
 import pandas as pd
-from ConfigSpace.util import deactivate_inactive_hyperparameters
 from sklearn.base import is_regressor
 
 import deephyper.core.exceptions
@@ -787,7 +786,6 @@ class CBO(Search):
     def fit_generative_model(
         self,
         df,
-        problem=None,
         q=0.90,
         verbose=False,
     ):
@@ -806,8 +804,6 @@ class CBO(Search):
 
         Args:
             df (str|DataFrame): a dataframe or path to CSV from a previous search.
-
-            problem (HpProblem, optional): the hyperparameter problem corresponding to the dataframe ``df``.
 
             q (float, optional): the quantile defined the set of top configurations used to bias
                 the search. Defaults to ``0.90`` which select the top-10% configurations from
@@ -863,47 +859,10 @@ class CBO(Search):
         req_df = req_df[["job_id"] + hp_cols]
         req_df = req_df.rename(columns={k: k[2:] for k in hp_cols if k.startswith("p:")})
 
-        problem = self._problem if problem is None else problem
-
-        model = GMMSampler(problem.space, random_state=self._random_state)
+        model = GMMSampler(self._problem.space, random_state=self._random_state)
         model.fit(req_df)
 
-        initial_points = [p[:] for p in self._opt_kwargs["initial_points"]]  # copy
-        n_samples = self._n_initial_points - len(initial_points)
-        confs = model.sample(n_samples)
-
-        hps_names_target = list(self._problem.space.keys())
-        hps_names_source = list(problem.space.keys())
-        hps_names_new = list(set(hps_names_target) - set(hps_names_source))
-
-        # randomly sample the new hyperparameters
-        for name in hps_names_new:
-            hp = self._problem.space[name]
-            rvs = []
-            rvs = hp.sample_value(n_samples, seed=self._random_state)
-            confs[name] = rvs
-
-        # reoder the column names
-        confs = confs[hps_names_target]
-
-        confs = confs.to_dict("records")
-        for idx, conf in enumerate(confs):
-            cf = deactivate_inactive_hyperparameters(conf, self._problem.space)
-            confs[idx] = dict(cf)
-
-        for idx, conf in enumerate(confs):
-            point_as_dict = dict(conf)
-            point = []
-            for i, hps_name in enumerate(hps_names_target):
-                # If the parameter is inactive due to some conditions then we attribute the
-                # lower bound value to break symmetries and enforce the same representation.
-                if hps_name in point_as_dict:
-                    point.append(point_as_dict[hps_name])
-                else:
-                    point.append(self._opt_space.dimensions[i].bounds[0])
-            initial_points.append(point)
-
-        self._opt_kwargs["initial_points"] = initial_points
+        self._opt_kwargs["model_sdv"] = model
 
         return model
 

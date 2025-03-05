@@ -1,29 +1,63 @@
+"""A module for a sampler based on a Gaussian Mixture Model."""
+
+import warnings
+
 import numpy as np
 import pandas as pd
-
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
-    IntegerHyperparameter,
     FloatHyperparameter,
+    IntegerHyperparameter,
     OrdinalHyperparameter,
 )
 from sklearn.mixture import GaussianMixture
-from sklearn.preprocessing import OneHotEncoder, StandardScaler, OrdinalEncoder
+from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler
 from sklearn.utils import check_random_state
 
 
 class GMMSampler:
+    """Gaussian Mixture Model sampler.
+
+    Args:
+        config_space (ConfigSpace):
+            the configuration space used to check the conditions on the samples generated from
+            the gaussian mixture model.
+
+        random_state (Union[int,RandomState], optional):
+            a random state for the sampler. Defaults to ``None``.
+    """
+
     def __init__(self, config_space, random_state=None):
         self.config_space = config_space
         self.rng = check_random_state(random_state)
 
+        self.categorical_cols = []
+        self.ordinal_cols = []
+        self.integer_cols = []
+        self.float_cols = []
+        self.numerical_cols = []
+
+        self.categorical_encoder = None
+        self.ordinal_encoder = None
+        self.numerical_encoder = None
+        self.gmm = None
+
+    def check_variable_types(self, df):
+        """Utility that checks the columns of the dataframe against the config space."""
         # Check variable types
         self.categorical_cols = []
         self.ordinal_cols = []
         self.integer_cols = []
         self.float_cols = []
-        for hp_name in self.config_space.keys():
-            hp = self.config_space[hp_name]
+        # for hp_name in self.config_space.keys():
+        for hp_name in list(df.columns):
+            try:
+                hp = self.config_space[hp_name]
+            except KeyError:
+                warnings.warn(
+                    f"Skipping hyperparameter: '{hp_name}' as it is not included in the space."
+                )
+                continue
             if isinstance(hp, CategoricalHyperparameter):
                 self.categorical_cols.append(hp_name)
             elif isinstance(hp, OrdinalHyperparameter):
@@ -36,13 +70,15 @@ class GMMSampler:
                 raise ValueError(f"Incompatible hyperparameter {hp}")
         self.numerical_cols = self.integer_cols + self.float_cols
 
-        self.categorical_encoder = None
-        self.ordinal_encoder = None
-        self.numerical_encoder = None
-        self.gmm = None
-
     def fit(self, df: pd.DataFrame):
+        """Fits the Gaussian mixture model.
+
+        Args:
+            df (pd.DataFrame): the dataframe used to fit the model.
+        """
         n_samples = df.shape[0]
+
+        self.check_variable_types(df)
 
         categorical_categories = []
         for hp_name in self.categorical_cols:
@@ -85,6 +121,14 @@ class GMMSampler:
         self.gmm.fit(X)
 
     def sample(self, n_samples: int) -> pd.DataFrame:
+        """Generates samples from the Gaussian mixture model.
+
+        Args:
+            n_samples (int): the number of samples to generate.
+
+        Returns:
+            pd.DataFrame: a dataframe with the generated samples.
+        """
         X = self.gmm.sample(n_samples)[0]
 
         # Enforce constraints for each variable

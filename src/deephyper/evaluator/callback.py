@@ -135,7 +135,7 @@ class TqdmCallback(Callback):
     >>> evaluator.create(method="ray", method_kwargs={..., "callbacks": [TqdmCallback()]})
     """
 
-    def __init__(self, description: str= None):
+    def __init__(self, description: str = None):
         self._best_objective = None
         self._n_done = 0
         self._n_failures = 0
