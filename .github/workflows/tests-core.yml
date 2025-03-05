@@ -29,6 +29,3 @@ jobs:
       
       - name: Run Torch tests 
         run: pytest -m torch --run-marks-subset torch tests/
-
-      - name: Run SDV tests
-        run: pytest -m sdv --run-marks-subset sdv tests/

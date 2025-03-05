@@ -52,7 +52,6 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-sdv = ["sdv~=1.15.0"]
 jax-cpu = ["jax[cpu]>=0.3.25", "numpyro[cpu]"]
 jax-cuda = ["jax[cuda]>=0.3.25", "numpyro[cuda]"]
 torch = ["torch>=2.0.0"]
@@ -62,7 +61,6 @@ redis = ["redis"]
 redis-hiredis = ["redis[hiredis]"]
 core = [
     "deephyper[torch]",
-    "deephyper[sdv]",
     "deephyper[jax-cpu]",
 ]
 dev = [
@@ -108,7 +106,6 @@ markers = [
     "mpi: marks tests which needs mpi4py and MPI installed",
     "redis: marks tests which needs Redis installed",
     "jax: marks tests which needs JAX installed",
-    "sdv: marks tests which needs SDV installed",
     "memory_profiling: marks tests which needs profile memory using psutil installed",
 ]
 
