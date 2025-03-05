@@ -1,6 +1,6 @@
 r"""
-Experimental Design with Grid Search
-====================================
+Generating Parameters with Experimental Design
+==============================================
 
 **Author(s)**: Romain Egele.
 
