@@ -28,7 +28,7 @@ Hyperparameter optimization
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">Hyperparameter search for text classification (Pytorch)</div>
+      <div class="sphx-glr-thumbnail-title">Hyperparameter search for text classification</div>
     </div>
 
 

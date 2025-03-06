@@ -1,6 +1,6 @@
 r"""
-Hyperparameter search for text classification (Pytorch)
-=======================================================
+Hyperparameter search for text classification
+=============================================
 
 **Author(s)**: Romain Egele, Brett Eiffert.
 
@@ -22,6 +22,7 @@ This tutorial is based on materials from the Pytorch Documentation: [Text classi
 
 # %%
 # Imports
+# ~~~~~~~
 
 # %%
 import ray
@@ -51,7 +52,7 @@ n_gpus = torch.cuda.device_count()
 # The dataset
 # ~~~~~~~~~~~ 
 #
-# The torchtext library provides a few raw dataset iterators, which yield the raw text strings. For example, the `AG_NEWS` dataset iterators yield the raw data as a tuple of label and text. It has four labels (1 : World 2 : Sports 3 : Business 4 : Sci/Tec).
+# The torchtext library provides a few raw dataset iterators, which yield the raw text strings. For example, the :code:`AG_NEWS` dataset iterators yield the raw data as a tuple of label and text. It has four labels (1 : World 2 : Sports 3 : Business 4 : Sci/Tec).
 # 
 
 # %%
@@ -72,24 +73,24 @@ def load_data(train_ratio):
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
 #
 # Here is an example for typical NLP data processing with tokenizer and vocabulary. The first step is to build a vocabulary with the raw training dataset. Here we use built in
-# factory function `build_vocab_from_iterator` which accepts iterator that yield list or iterator of tokens. Users can also pass any special symbols to be added to the
+# factory function :code:`build_vocab_from_iterator` which accepts iterator that yield list or iterator of tokens. Users can also pass any special symbols to be added to the
 # vocabulary.
 # 
 # The vocabulary block converts a list of tokens into integers.
 # 
-# ```
+# .. code-block:: python
 # vocab(['here', 'is', 'an', 'example'])
 # >>> [475, 21, 30, 5286]
-# ```
+# 
 # 
 # The text pipeline converts a text string into a list of integers based on the lookup table defined in the vocabulary. The label pipeline converts the label into integers. For example,
 # 
-# ```
+# .. code-block:: python
 # text_pipeline('here is the an example')
 # >>> [475, 21, 2, 30, 5286]
 # label_pipeline('10')
 # >>> 9
-# ```
+# 
 
 # %%
 train_iter = AG_NEWS(split='train')
@@ -122,14 +123,14 @@ def collate_batch(batch, device):
     return label_list.to(device), text_list.to(device), offsets.to(device)
 
 # %%
-# .. note:: The `collate_fn` function works on a batch of samples generated from `DataLoader`. The input to `collate_fn` is a batch of data with the batch size in `DataLoader`, and `collate_fn` processes them according to the data processing pipelines declared previously.
+# .. note:: The :code:`collate_fn` function works on a batch of samples generated from :code:`DataLoader`. The input to :code:`collate_fn` is a batch of data with the batch size in :code:`DataLoader`, and :code:`collate_fn` processes them according to the data processing pipelines declared previously.
 #     
 
 # %%
 # Define the model
 # ~~~~~~~~~~~~~~~~
 # 
-# The model is composed of the [nn.EmbeddingBag](https://pytorch.org/docs/stable/nn.html?highlight=embeddingbag#torch.nn.EmbeddingBag) layer plus a linear layer for the classification purpose.
+# The model is composed of the `nn.EmbeddingBag <https://pytorch.org/docs/stable/nn.html?highlight=embeddingbag#torch.nn.EmbeddingBag>`_ layer plus a linear layer for the classification purpose.
 
 # %%
 class TextClassificationModel(nn.Module):
@@ -181,13 +182,13 @@ def evaluate(model, dataloader):
 # Define the run-function
 # ~~~~~~~~~~~~~~~~~~~~~~~ 
 #
-# The run-function defines how the objective that we want to maximize is computed. It takes a `config` dictionary as input and often returns a scalar value that we want to maximize. The `config` contains a sample value of hyperparameters that we want to tune. In this example we will search for:
+# The run-function defines how the objective that we want to maximize is computed. It takes a :code:`config` dictionary as input and often returns a scalar value that we want to maximize. The :code:`config` contains a sample value of hyperparameters that we want to tune. In this example we will search for:
 # 
-# * `num_epochs` (default value: `10`)
-# * `batch_size` (default value: `64`)
-# * `learning_rate` (default value: `5`)
+# * :code:`num_epochs` (default value: :code:`10`)
+# * :code:`batch_size` (default value: :code:`64`)
+# * :code:`learning_rate` (default value: :code:`5`)
 # 
-# A hyperparameter value can be acessed easily in the dictionary through the corresponding key, for example `config["units"]`.
+# A hyperparameter value can be acessed easily in the dictionary through the corresponding key, for example :code:`config["units"]`.
 
 # %%
 def get_run(train_ratio=0.95):
@@ -216,14 +217,14 @@ def get_run(train_ratio=0.95):
   return run
 
 # %%
-# We create two versions of `run`, one quicker to evaluate for the seacrh, with a small training dataset, and another one, for performance evaluation, which uses a normal training/validation ratio.
+# We create two versions of :code:`run`, one quicker to evaluate for the seacrh, with a small training dataset, and another one, for performance evaluation, which uses a normal training/validation ratio.
 
 # %%
 quick_run = get_run(train_ratio=0.3)
 perf_run = get_run(train_ratio=0.95)
 
 # %%
-# .. note:: The objective maximised by DeepHyper is the scalar value returned by the `run`-function.
+# .. note:: The objective maximised by DeepHyper is the scalar value returned by the :code:`run`-function.
 # 
 # In this tutorial it corresponds to the validation accuracy of the model after training.
 
@@ -233,9 +234,9 @@ perf_run = get_run(train_ratio=0.95)
 #
 # Hyperparameter ranges are defined using the following syntax:
 # 
-# * Discrete integer ranges are generated from a tuple `(lower: int, upper: int)`
-# * Continuous prarameters are generated from a tuple `(lower: float, upper: float)`
-# * Categorical or nonordinal hyperparameter ranges can be given as a list of possible values `[val1, val2, ...]`
+# * Discrete integer ranges are generated from a tuple :code:`(lower: int, upper: int)`
+# * Continuous prarameters are generated from a tuple :code:`(lower: float, upper: float)`
+# * Categorical or nonordinal hyperparameter ranges can be given as a list of possible values :code:`[val1, val2, ...]`
 # 
 # We provide the default configuration of hyperparameters as a starting point of the problem.
 
@@ -259,15 +260,13 @@ problem
 #
 # We evaluate the performance of the default set of hyperparameters provided in the Pytorch tutorial.
 
-# %%
-# We launch the Ray run-time and execute the `run` function
-# with the default configuration
-
+#We launch the Ray run-time and execute the `run` function
+#with the default configuration
 if is_gpu_available:
     if not(ray.is_initialized()):
         ray.init(num_cpus=n_gpus, num_gpus=n_gpus, log_to_driver=False)
     
-    run_default = ray.remote(num_cpus=1, num_gpus=0)(perf_run)
+    run_default = ray.remote(num_cpus=1, num_gpus=1)(perf_run)
     objective_default = ray.get(run_default.remote(problem.default_configuration))
 else:
     if not(ray.is_initialized()):
@@ -281,26 +280,28 @@ print(f"Accuracy Default Configuration:  {objective_default:.3f}")
 # Define the evaluator object
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
 #
-# The `Evaluator` object allows to change the parallelization backend used by DeepHyper.  
-# It is a standalone object which schedules the execution of remote tasks. All evaluators needs a `run_function` to be instantiated.  
-# Then a keyword `method` defines the backend (e.g., `"ray"`) and the `method_kwargs` corresponds to keyword arguments of this chosen `method`.
-# 
-# ```python
-# evaluator = Evaluator.create(run_function, method, method_kwargs)
-# ```
-# 
-# Once created the `evaluator.num_workers` gives access to the number of available parallel workers.
+# The :code:`Evaluator` object allows to change the parallelization backend used by DeepHyper.  
+# It is a standalone object which schedules the execution of remote tasks. All evaluators needs a :code:`run_function` to be instantiated.  
+# Then a keyword :code:`method` defines the backend (e.g., :code:`"ray"`) and the :code:`method_kwargs` corresponds to keyword arguments of this chosen :code:`method`.
+
+# %%
+# .. code-block:: python
+#   evaluator = Evaluator.create(run_function, method, method_kwargs)
+ 
+# %%
+# Once created the :code:`evaluator.num_workers` gives access to the number of available parallel workers.
 # 
 # Finally, to submit and collect tasks to the evaluator one just needs to use the following interface:
-# 
-# ```python
-# configs = [...]
-# evaluator.submit(configs)
-# ...
-# tasks_done = evaluator.get("BATCH", size=1) # For asynchronous
-# tasks_done = evaluator.get("ALL") # For batch synchronous
-# ```
-# 
+
+# %%
+# .. code-block:: python
+#   configs = [...]
+#   evaluator.submit(configs)
+#   ...
+#   tasks_done = evaluator.get("BATCH", size=1) # For asynchronous
+#   tasks_done = evaluator.get("ALL") # For batch synchronous
+
+# %%
 # .. warning:: Each `Evaluator` saves its own state, therefore it is crucial to create a new evaluator when launching a fresh search.
 
 # %%
@@ -338,7 +339,7 @@ evaluator_1 = get_evaluator(quick_run)
 # Define and run the Centralized Bayesian Optimization search (CBO)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
 #
-# We create the CBO using the `problem` and `evaluator` defined above.
+# We create the CBO using the :code:`problem` and :code:`evaluator` defined above.
 
 # %%
 from deephyper.hpo import CBO
@@ -349,9 +350,9 @@ search = CBO(problem, evaluator_1)
 
 # %%  
 # .. note:: All DeepHyper's search algorithm have two stopping criteria:
-#           *
-#           *`max_evals (int)`</code>: Defines the maximum number of evaluations that we want to perform. Default to <code>-1</code> for an infinite number.</li>
-#           * <code>`timeout (int)`</code>: Defines a time budget (in seconds) before stopping the search. Default to <code>None</code> for an infinite time budget.</li>
+# 
+# * :code:`max_evals (int)`: Defines the maximum number of evaluations that we want to perform. Default to :code:`-1` for an infinite number.
+# * :code:`timeout (int)`: Defines a time budget (in seconds) before stopping the search. Default to :code:`None` for an infinite time budget.
 #
 
 # %%
@@ -360,17 +361,18 @@ results = search.search(max_evals=30)
 # %%
 # The returned `results` is a Pandas Dataframe where columns are hyperparameters and information stored by the evaluator:
 # 
-# * `job_id` is a unique identifier corresponding to the order of creation of tasks
-# * `objective` is the value returned by the run-function
-# * `timestamp_submit` is the time (in seconds) when the hyperparameter configuration was submitted by the `Evaluator` relative to the creation of the evaluator.
-# * `timestamp_gather` is the time (in seconds) when the hyperparameter configuration was collected by the `Evaluator` relative to the creation of the evaluator.
+# * :code:`job_id` is a unique identifier corresponding to the order of creation of tasks
+# * :code:`objective` is the value returned by the run-function
+# * :code:`timestamp_submit` is the time (in seconds) when the hyperparameter configuration was submitted by the :code:`Evaluator` relative to the creation of the evaluator.
+# * code:`timestamp_gather` is the time (in seconds) when the hyperparameter configuration was collected by the :code:`Evaluator` relative to the creation of the evaluator.
 
 # %%
 results
 
-# %% [markdown]
-# ## Evaluate the best configuration
-# 
+# %%
+# Evaluate the best configuration
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
 # Now that the search is over, let us print the best configuration found during this run and evaluate it on the full training dataset.
 
 # %%

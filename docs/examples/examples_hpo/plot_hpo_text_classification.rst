@@ -18,8 +18,8 @@
 .. _sphx_glr_examples_examples_hpo_plot_hpo_text_classification.py:
 
 
-Hyperparameter search for text classification (Pytorch)
-=======================================================
+Hyperparameter search for text classification
+=============================================
 
 **Author(s)**: Romain Egele, Brett Eiffert.
 
@@ -38,11 +38,12 @@ This tutorial is based on materials from the Pytorch Documentation: [Text classi
     pip install ray
     pip install torch torchtext torchdata
 
-.. GENERATED FROM PYTHON SOURCE LINES 24-25
+.. GENERATED FROM PYTHON SOURCE LINES 24-26
 
 Imports
+~~~~~~~
 
-.. GENERATED FROM PYTHON SOURCE LINES 27-43
+.. GENERATED FROM PYTHON SOURCE LINES 28-44
 
 .. code-block:: Python
 
@@ -114,7 +115,7 @@ Imports
         return 0.0, func()
       File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/sphinx_gallery/gen_rst.py", line 794, in __call__
         exec(self.code, self.fake_main.__dict__)
-      File "/Users/35e/Projects/DeepHyper/deephyper/examples/examples_hpo/plot_hpo_text_classification.py", line 32, in <module>
+      File "/Users/35e/Projects/DeepHyper/deephyper/examples/examples_hpo/plot_hpo_text_classification.py", line 33, in <module>
         import torch
       File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/torch/__init__.py", line 1477, in <module>
         from .functional import *  # noqa: F403
@@ -132,11 +133,11 @@ Imports
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 44-45
+.. GENERATED FROM PYTHON SOURCE LINES 45-46
 
 .. note::The following can be used to detect if <b>CUDA</b> devices are available on the current host. Therefore, this notebook will automatically adapt the parallel execution based on the ressources available locally. However, it will not be the case if many compute nodes are requested.
 
-.. GENERATED FROM PYTHON SOURCE LINES 47-50
+.. GENERATED FROM PYTHON SOURCE LINES 48-51
 
 .. code-block:: Python
 
@@ -150,15 +151,15 @@ Imports
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 51-56
+.. GENERATED FROM PYTHON SOURCE LINES 52-57
 
 The dataset
 ~~~~~~~~~~~ 
 
-The torchtext library provides a few raw dataset iterators, which yield the raw text strings. For example, the `AG_NEWS` dataset iterators yield the raw data as a tuple of label and text. It has four labels (1 : World 2 : Sports 3 : Business 4 : Sci/Tec).
+The torchtext library provides a few raw dataset iterators, which yield the raw text strings. For example, the :code:`AG_NEWS` dataset iterators yield the raw data as a tuple of label and text. It has four labels (1 : World 2 : Sports 3 : Business 4 : Sci/Tec).
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 58-70
+.. GENERATED FROM PYTHON SOURCE LINES 59-71
 
 .. code-block:: Python
 
@@ -181,32 +182,32 @@ The torchtext library provides a few raw dataset iterators, which yield the raw 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 71-93
+.. GENERATED FROM PYTHON SOURCE LINES 72-94
 
 Preprocessing pipelines and Batch generation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
 
 Here is an example for typical NLP data processing with tokenizer and vocabulary. The first step is to build a vocabulary with the raw training dataset. Here we use built in
-factory function `build_vocab_from_iterator` which accepts iterator that yield list or iterator of tokens. Users can also pass any special symbols to be added to the
+factory function :code:`build_vocab_from_iterator` which accepts iterator that yield list or iterator of tokens. Users can also pass any special symbols to be added to the
 vocabulary.
 
 The vocabulary block converts a list of tokens into integers.
 
-```
+.. code-block:: python
 vocab(['here', 'is', 'an', 'example'])
 >>> [475, 21, 30, 5286]
-```
+
 
 The text pipeline converts a text string into a list of integers based on the lookup table defined in the vocabulary. The label pipeline converts the label into integers. For example,
 
-```
+.. code-block:: python
 text_pipeline('here is the an example')
 >>> [475, 21, 2, 30, 5286]
 label_pipeline('10')
 >>> 9
-```
 
-.. GENERATED FROM PYTHON SOURCE LINES 95-124
+
+.. GENERATED FROM PYTHON SOURCE LINES 96-125
 
 .. code-block:: Python
 
@@ -246,19 +247,19 @@ label_pipeline('10')
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 125-127
+.. GENERATED FROM PYTHON SOURCE LINES 126-128
 
-.. note:: The `collate_fn` function works on a batch of samples generated from `DataLoader`. The input to `collate_fn` is a batch of data with the batch size in `DataLoader`, and `collate_fn` processes them according to the data processing pipelines declared previously.
+.. note:: The :code:`collate_fn` function works on a batch of samples generated from :code:`DataLoader`. The input to :code:`collate_fn` is a batch of data with the batch size in :code:`DataLoader`, and :code:`collate_fn` processes them according to the data processing pipelines declared previously.
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 129-133
+.. GENERATED FROM PYTHON SOURCE LINES 130-134
 
 Define the model
 ~~~~~~~~~~~~~~~~
 
-The model is composed of the [nn.EmbeddingBag](https://pytorch.org/docs/stable/nn.html?highlight=embeddingbag#torch.nn.EmbeddingBag) layer plus a linear layer for the classification purpose.
+The model is composed of the `nn.EmbeddingBag <https://pytorch.org/docs/stable/nn.html?highlight=embeddingbag#torch.nn.EmbeddingBag>`_ layer plus a linear layer for the classification purpose.
 
-.. GENERATED FROM PYTHON SOURCE LINES 135-153
+.. GENERATED FROM PYTHON SOURCE LINES 136-154
 
 .. code-block:: Python
 
@@ -287,12 +288,12 @@ The model is composed of the [nn.EmbeddingBag](https://pytorch.org/docs/stable/n
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 154-156
+.. GENERATED FROM PYTHON SOURCE LINES 155-157
 
 Define functions to train the model and evaluate results.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. GENERATED FROM PYTHON SOURCE LINES 158-180
+.. GENERATED FROM PYTHON SOURCE LINES 159-181
 
 .. code-block:: Python
 
@@ -325,20 +326,20 @@ Define functions to train the model and evaluate results.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 181-191
+.. GENERATED FROM PYTHON SOURCE LINES 182-192
 
 Define the run-function
 ~~~~~~~~~~~~~~~~~~~~~~~ 
 
-The run-function defines how the objective that we want to maximize is computed. It takes a `config` dictionary as input and often returns a scalar value that we want to maximize. The `config` contains a sample value of hyperparameters that we want to tune. In this example we will search for:
+The run-function defines how the objective that we want to maximize is computed. It takes a :code:`config` dictionary as input and often returns a scalar value that we want to maximize. The :code:`config` contains a sample value of hyperparameters that we want to tune. In this example we will search for:
 
-* `num_epochs` (default value: `10`)
-* `batch_size` (default value: `64`)
-* `learning_rate` (default value: `5`)
+* :code:`num_epochs` (default value: :code:`10`)
+* :code:`batch_size` (default value: :code:`64`)
+* :code:`learning_rate` (default value: :code:`5`)
 
-A hyperparameter value can be acessed easily in the dictionary through the corresponding key, for example `config["units"]`.
+A hyperparameter value can be acessed easily in the dictionary through the corresponding key, for example :code:`config["units"]`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 193-218
+.. GENERATED FROM PYTHON SOURCE LINES 194-219
 
 .. code-block:: Python
 
@@ -374,11 +375,11 @@ A hyperparameter value can be acessed easily in the dictionary through the corre
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 219-220
+.. GENERATED FROM PYTHON SOURCE LINES 220-221
 
-We create two versions of `run`, one quicker to evaluate for the seacrh, with a small training dataset, and another one, for performance evaluation, which uses a normal training/validation ratio.
+We create two versions of :code:`run`, one quicker to evaluate for the seacrh, with a small training dataset, and another one, for performance evaluation, which uses a normal training/validation ratio.
 
-.. GENERATED FROM PYTHON SOURCE LINES 222-225
+.. GENERATED FROM PYTHON SOURCE LINES 223-226
 
 .. code-block:: Python
 
@@ -392,26 +393,26 @@ We create two versions of `run`, one quicker to evaluate for the seacrh, with a 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 226-229
+.. GENERATED FROM PYTHON SOURCE LINES 227-230
 
-.. note:: The objective maximised by DeepHyper is the scalar value returned by the `run`-function.
+.. note:: The objective maximised by DeepHyper is the scalar value returned by the :code:`run`-function.
 
 In this tutorial it corresponds to the validation accuracy of the model after training.
 
-.. GENERATED FROM PYTHON SOURCE LINES 231-241
+.. GENERATED FROM PYTHON SOURCE LINES 232-242
 
 Define the Hyperparameter optimization problem
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
 
 Hyperparameter ranges are defined using the following syntax:
 
-* Discrete integer ranges are generated from a tuple `(lower: int, upper: int)`
-* Continuous prarameters are generated from a tuple `(lower: float, upper: float)`
-* Categorical or nonordinal hyperparameter ranges can be given as a list of possible values `[val1, val2, ...]`
+* Discrete integer ranges are generated from a tuple :code:`(lower: int, upper: int)`
+* Continuous prarameters are generated from a tuple :code:`(lower: float, upper: float)`
+* Categorical or nonordinal hyperparameter ranges can be given as a list of possible values :code:`[val1, val2, ...]`
 
 We provide the default configuration of hyperparameters as a starting point of the problem.
 
-.. GENERATED FROM PYTHON SOURCE LINES 243-256
+.. GENERATED FROM PYTHON SOURCE LINES 244-257
 
 .. code-block:: Python
 
@@ -446,28 +447,25 @@ We provide the default configuration of hyperparameters as a starting point of t
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 257-261
+.. GENERATED FROM PYTHON SOURCE LINES 258-262
 
 Evaluate a default configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We evaluate the performance of the default set of hyperparameters provided in the Pytorch tutorial.
 
-.. GENERATED FROM PYTHON SOURCE LINES 263-265
-
-We launch the Ray run-time and execute the `run` function
-with the default configuration
-
-.. GENERATED FROM PYTHON SOURCE LINES 265-280
+.. GENERATED FROM PYTHON SOURCE LINES 262-279
 
 .. code-block:: Python
 
 
+    #We launch the Ray run-time and execute the `run` function
+    #with the default configuration
     if is_gpu_available:
         if not(ray.is_initialized()):
             ray.init(num_cpus=n_gpus, num_gpus=n_gpus, log_to_driver=False)
     
-        run_default = ray.remote(num_cpus=1, num_gpus=0)(perf_run)
+        run_default = ray.remote(num_cpus=1, num_gpus=1)(perf_run)
         objective_default = ray.get(run_default.remote(problem.default_configuration))
     else:
         if not(ray.is_initialized()):
@@ -484,12 +482,12 @@ with the default configuration
 .. code-block:: pytb
 
     Traceback (most recent call last):
-      File "/Users/35e/Projects/DeepHyper/deephyper/examples/examples_hpo/plot_hpo_text_classification.py", line 276, in <module>
+      File "/Users/35e/Projects/DeepHyper/deephyper/examples/examples_hpo/plot_hpo_text_classification.py", line 275, in <module>
         objective_default = run_default(problem.default_configuration)
                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      File "/Users/35e/Projects/DeepHyper/deephyper/examples/examples_hpo/plot_hpo_text_classification.py", line 212, in run
+      File "/Users/35e/Projects/DeepHyper/deephyper/examples/examples_hpo/plot_hpo_text_classification.py", line 213, in run
         train(model, criterion, optimizer, train_dataloader)
-      File "/Users/35e/Projects/DeepHyper/deephyper/examples/examples_hpo/plot_hpo_text_classification.py", line 166, in train
+      File "/Users/35e/Projects/DeepHyper/deephyper/examples/examples_hpo/plot_hpo_text_classification.py", line 167, in train
         torch.nn.utils.clip_grad_norm_(model.parameters(), 0.1)
       File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/torch/nn/utils/clip_grad.py", line 55, in clip_grad_norm_
         norms.extend(torch._foreach_norm(grads, norm_type))
@@ -543,34 +541,40 @@ with the default configuration
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 281-305
+.. GENERATED FROM PYTHON SOURCE LINES 280-286
 
 Define the evaluator object
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
 
-The `Evaluator` object allows to change the parallelization backend used by DeepHyper.  
-It is a standalone object which schedules the execution of remote tasks. All evaluators needs a `run_function` to be instantiated.  
-Then a keyword `method` defines the backend (e.g., `"ray"`) and the `method_kwargs` corresponds to keyword arguments of this chosen `method`.
+The :code:`Evaluator` object allows to change the parallelization backend used by DeepHyper.  
+It is a standalone object which schedules the execution of remote tasks. All evaluators needs a :code:`run_function` to be instantiated.  
+Then a keyword :code:`method` defines the backend (e.g., :code:`"ray"`) and the :code:`method_kwargs` corresponds to keyword arguments of this chosen :code:`method`.
 
-```python
-evaluator = Evaluator.create(run_function, method, method_kwargs)
-```
+.. GENERATED FROM PYTHON SOURCE LINES 288-290
 
-Once created the `evaluator.num_workers` gives access to the number of available parallel workers.
+.. code-block:: python
+  evaluator = Evaluator.create(run_function, method, method_kwargs)
+
+.. GENERATED FROM PYTHON SOURCE LINES 292-295
+
+Once created the :code:`evaluator.num_workers` gives access to the number of available parallel workers.
 
 Finally, to submit and collect tasks to the evaluator one just needs to use the following interface:
 
-```python
-configs = [...]
-evaluator.submit(configs)
-...
-tasks_done = evaluator.get("BATCH", size=1) # For asynchronous
-tasks_done = evaluator.get("ALL") # For batch synchronous
-```
+.. GENERATED FROM PYTHON SOURCE LINES 297-303
+
+.. code-block:: python
+  configs = [...]
+  evaluator.submit(configs)
+  ...
+  tasks_done = evaluator.get("BATCH", size=1) # For asynchronous
+  tasks_done = evaluator.get("ALL") # For batch synchronous
+
+.. GENERATED FROM PYTHON SOURCE LINES 305-306
 
 .. warning:: Each `Evaluator` saves its own state, therefore it is crucial to create a new evaluator when launching a fresh search.
 
-.. GENERATED FROM PYTHON SOURCE LINES 307-337
+.. GENERATED FROM PYTHON SOURCE LINES 308-338
 
 .. code-block:: Python
 
@@ -605,69 +609,70 @@ tasks_done = evaluator.get("ALL") # For batch synchronous
     evaluator_1 = get_evaluator(quick_run)
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 338-342
+.. GENERATED FROM PYTHON SOURCE LINES 339-343
 
 Define and run the Centralized Bayesian Optimization search (CBO)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
 
-We create the CBO using the `problem` and `evaluator` defined above.
+We create the CBO using the :code:`problem` and :code:`evaluator` defined above.
 
-.. GENERATED FROM PYTHON SOURCE LINES 344-346
+.. GENERATED FROM PYTHON SOURCE LINES 345-347
 
 .. code-block:: Python
 
     from deephyper.hpo import CBO
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 347-348
+.. GENERATED FROM PYTHON SOURCE LINES 348-349
 
 Instanciate the search with the problem and a specific evaluator
 
-.. GENERATED FROM PYTHON SOURCE LINES 348-350
+.. GENERATED FROM PYTHON SOURCE LINES 349-351
 
 .. code-block:: Python
 
     search = CBO(problem, evaluator_1)
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 351-356
+.. GENERATED FROM PYTHON SOURCE LINES 352-357
 
 .. note:: All DeepHyper's search algorithm have two stopping criteria:
-          *
-          *`max_evals (int)`</code>: Defines the maximum number of evaluations that we want to perform. Default to <code>-1</code> for an infinite number.</li>
-          * <code>`timeout (int)`</code>: Defines a time budget (in seconds) before stopping the search. Default to <code>None</code> for an infinite time budget.</li>
+
+* :code:`max_evals (int)`: Defines the maximum number of evaluations that we want to perform. Default to :code:`-1` for an infinite number.
+* :code:`timeout (int)`: Defines a time budget (in seconds) before stopping the search. Default to :code:`None` for an infinite time budget.
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 358-360
+.. GENERATED FROM PYTHON SOURCE LINES 359-361
 
 .. code-block:: Python
 
     results = search.search(max_evals=30)
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 361-367
+.. GENERATED FROM PYTHON SOURCE LINES 362-368
 
 The returned `results` is a Pandas Dataframe where columns are hyperparameters and information stored by the evaluator:
 
-* `job_id` is a unique identifier corresponding to the order of creation of tasks
-* `objective` is the value returned by the run-function
-* `timestamp_submit` is the time (in seconds) when the hyperparameter configuration was submitted by the `Evaluator` relative to the creation of the evaluator.
-* `timestamp_gather` is the time (in seconds) when the hyperparameter configuration was collected by the `Evaluator` relative to the creation of the evaluator.
+* :code:`job_id` is a unique identifier corresponding to the order of creation of tasks
+* :code:`objective` is the value returned by the run-function
+* :code:`timestamp_submit` is the time (in seconds) when the hyperparameter configuration was submitted by the :code:`Evaluator` relative to the creation of the evaluator.
+* code:`timestamp_gather` is the time (in seconds) when the hyperparameter configuration was collected by the :code:`Evaluator` relative to the creation of the evaluator.
 
-.. GENERATED FROM PYTHON SOURCE LINES 369-371
+.. GENERATED FROM PYTHON SOURCE LINES 370-372
 
 .. code-block:: Python
 
     results
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 372-375
+.. GENERATED FROM PYTHON SOURCE LINES 373-377
 
-## Evaluate the best configuration
+Evaluate the best configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Now that the search is over, let us print the best configuration found during this run and evaluate it on the full training dataset.
 
-.. GENERATED FROM PYTHON SOURCE LINES 377-387
+.. GENERATED FROM PYTHON SOURCE LINES 379-389
 
 .. code-block:: Python
 
@@ -682,7 +687,7 @@ Now that the search is over, let us print the best configuration found during th
     print(json.dumps(best_config, indent=4))
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 388-392
+.. GENERATED FROM PYTHON SOURCE LINES 390-394
 
 .. code-block:: Python
 
@@ -694,7 +699,7 @@ Now that the search is over, let us print the best configuration found during th
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 15.217 seconds)
+   **Total running time of the script:** (0 minutes 15.129 seconds)
 
 
 .. _sphx_glr_download_examples_examples_hpo_plot_hpo_text_classification.py:
