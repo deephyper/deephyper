@@ -51,6 +51,7 @@ def boltzmann_distribution(x, beta=1):
 
 OBJECTIVE_VALUE_FAILURE = "F"
 
+# TODO: add check to notify that optimizer="ga" cannot work with categorical or integer values
 
 class Optimizer(object):
     """Run bayesian optimisation loop in DeepHyper.
