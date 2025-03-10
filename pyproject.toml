@@ -122,7 +122,7 @@ exclude_lines = ["if __name__ == '__main__':"]
 [tool.ruff]
 exclude = [
     "docs",
-    "examples",
+    # "examples",
     "src/deephyper/skopt",
     "src/deephyper/analysis/hpo/_paxplot.py",
     "tests/skopt",
@@ -137,6 +137,7 @@ ignore = ["D107"]
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
+"examples/*" = ["D205", "D212", "D415", "E501", "D103"]
 "tests/*" = ["D"]
 
 [tool.uv.workspace]
