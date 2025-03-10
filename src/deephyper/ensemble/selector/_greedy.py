@@ -75,7 +75,8 @@ class GreedySelector(Selector):
         bagged_predictors = None
 
         if self.verbose:
-            print(f"Ensemble initialized with {selected_indices}")
+            tmp = [losses[i] for i in selected_indices]
+            print(f"Ensemble initialized with {selected_indices} with loss {tmp}")
 
         # Greedy steps
         it = 0
@@ -127,7 +128,10 @@ class GreedySelector(Selector):
             selected_indices.append(i_min_)
 
             if self.verbose:
-                print(f"Step {it}, ensemble is {selected_indices}")
+                print(
+                    f"Step {it}, ensemble is {selected_indices}, new member {i_min_} with"
+                    f" loss {loss_min}"
+                )
 
         selected_indices, selected_indices_weights = np.unique(selected_indices, return_counts=True)
         selected_indices_weights = selected_indices_weights / np.sum(selected_indices_weights)

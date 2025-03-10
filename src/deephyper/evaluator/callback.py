@@ -9,6 +9,7 @@ import abc
 
 import numpy as np
 
+from deephyper.evaluator import HPOJob
 from deephyper.evaluator._evaluator import _test_ipython_interpretor
 from deephyper.skopt.moo import hypervolume
 
@@ -126,18 +127,22 @@ class LoggerCallback(Callback):
 class TqdmCallback(Callback):
     """Print information when jobs are completed by the ``Evaluator``.
 
+    Args:
+        description (str, optional): an optional description to add to the progressbar.
+
     An example usage can be:
 
     >>> evaluator.create(method="ray", method_kwargs={..., "callbacks": [TqdmCallback()]})
     """
 
-    def __init__(self):
+    def __init__(self, description: str = None):
         self._best_objective = None
         self._n_done = 0
         self._n_failures = 0
         self._max_evals = None
         self._tqdm = None
         self._objective_func = ObjectiveRecorder()
+        self._description = description
 
     def set_max_evals(self, max_evals):
         """Setter for the maximum number of evaluations.
@@ -159,22 +164,26 @@ class TqdmCallback(Callback):
             else:
                 self._tqdm = tqdm()
 
+            if self._description:
+                self._tqdm.set_description(self._description)
+
         self._n_done += 1
         self._tqdm.update(1)
 
-        # Test if multi objectives are received
-        if np.ndim(job.objective) > 0:
-            if not (any(not (np.isreal(objective_i)) for objective_i in job.objective)):
-                self._best_objective = self._objective_func(job)
+        if isinstance(job, HPOJob):
+            # Test if multi objectives are received
+            if np.ndim(job.objective) > 0:
+                if not (any(not (np.isreal(objective_i)) for objective_i in job.objective)):
+                    self._best_objective = self._objective_func(job)
+                else:
+                    self._n_failures += 1
+                self._tqdm.set_postfix({"failures": self._n_failures, "hvi": self._best_objective})
             else:
-                self._n_failures += 1
-            self._tqdm.set_postfix({"failures": self._n_failures, "hvi": self._best_objective})
-        else:
-            if np.isreal(job.objective):
-                self._best_objective = self._objective_func(job)
-            else:
-                self._n_failures += 1
-            self._tqdm.set_postfix(objective=self._best_objective, failures=self._n_failures)
+                if np.isreal(job.objective):
+                    self._best_objective = self._objective_func(job)
+                else:
+                    self._n_failures += 1
+                self._tqdm.set_postfix(objective=self._best_objective, failures=self._n_failures)
 
 
 class SearchEarlyStopping(Callback):

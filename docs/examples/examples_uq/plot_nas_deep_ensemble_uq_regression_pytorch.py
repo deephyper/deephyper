@@ -699,7 +699,7 @@ _ = plt.grid(which="both", linestyle=":")
 # 
 # - ``initial_points``: is a list of initial hyperparameter configurations to test, we add the baseline hyperparameters as we want to be at least better than this configuration.
 # - ``surrogate_model_*``: are parameters related to the surrogate model we use, here ``"ET"`` is an alias for the Extremely Randomized Trees regression model.
-# - ``multi_point_strategy``: is the strategy we use for parallel suggestion of hyperparameters, here we use the `qUCBd` that will sample for each new parallel configuration a different :math:`\kappa^j_i` value from an exponential with mean :math:`\kappa_i` where :math:`j` is the index in the current generated parallel batch and :math:`i` is the iteration of the Bayesian optimization loop. ``UCB`` corresponds to the Upper Confidence Bound acquisition function:
+# - ``multi_point_strategy``: is the strategy we use for parallel suggestion of hyperparameters, here we use the ``qUCBd`` that will sample for each new parallel configuration a different :math:`\kappa^j_i` value from an exponential with mean :math:`\kappa_i` where :math:`j` is the index in the current generated parallel batch and :math:`i` is the iteration of the Bayesian optimization loop. ``UCB`` corresponds to the Upper Confidence Bound acquisition function:
 # 
 # .. math::
 #     
@@ -707,7 +707,7 @@ _ = plt.grid(which="both", linestyle=":")
 #
 # where :math:`\mu_\text{ET}(\theta)` and :math:`\sigma_\text{ET}^2(\theta)` are respectively estimators of :math:`E_C[C|\Theta=\theta]` and :math:`V_C[C|\Theta=\theta]` with :math:`C` the random variable describing the objective (or cost) and :math:`\Theta` the random variable describing the hyperparameters alone.
 #
-# Finally the ``"d"`` postfix in ``"qUCBd"`` means that we will only consider the epistemic component of the uncertainty returned by the surrogate model.
+# Finally the ``"d"`` postfix in ``qUCBd`` means that we will only consider the epistemic component of the uncertainty returned by the surrogate model.
 # Thanks to the law of total variance we have the following decomposition:
 #
 # .. math::
@@ -723,7 +723,7 @@ _ = plt.grid(which="both", linestyle=":")
 #
 # Interestingly the same trick will be used later to decompose the uncertainty of the deep ensemble.
 #
-# - ``acq_optimizer_*```: are parameters related to optimization of the previously defined acquisition function.
+# - ``acq_optimizer_*``: are parameters related to optimization of the previously defined acquisition function.
 # - ``kappa`` and ``scheduler``: are the parameters that define the schedule of :math:`\kappa^j_i` previously mentionned.
 # - ``objective_scaler``: is a parameter that can be used to rescale the observed objectives (e.g., identity, min-max, log).
 search_kwargs = {
@@ -817,7 +817,7 @@ def run_neural_architecture_search(problem, max_evals):
 # You can download precomputed results if you want to skip the slow neural architecture search. We provide the following two set of precomputed results:
 #
 # - Link to precomputed results without stopper: ``https://drive.google.com/uc?id=1VOV-UM0ws0lopHvoYT_9RAiRdT1y4Kus``
-# - Link to precomputed results with median stopper: ``https://drive.google.com/uc?id=1VOV-UM0ws0lopHvoYT_9RAiRdT1y4Kus``
+# - Link to precomputed results with median stopper: ``https://drive.google.com/uc?id=1I09-ZaH4BzQfBOw6YmhzgKLFWBsdrvpg``
 #
 # Then run the following commands and adapt the url:
 #

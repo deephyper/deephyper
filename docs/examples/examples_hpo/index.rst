@@ -17,52 +17,18 @@ Hyperparameter optimization
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
+    <div class="sphx-glr-thumbcontainer" tooltip="In this example, you will learn how to treat the choice of a learning method as just another hyperparameter. We consider the Random Forest (RF) and Gradient Boosting (GB) classifiers from Scikit-Learn on the Airlines dataset.">
 
 .. only:: html
 
-  .. image:: /examples/examples_hpo/images/thumb/sphx_glr_plot_experimental_design_thumb.png
+  .. image:: /examples/examples_hpo/images/thumb/sphx_glr_plot_hpo_for_rf_and_overfitting_thumb.png
     :alt:
 
-  :ref:`sphx_glr_examples_examples_hpo_plot_experimental_design.py`
+  :ref:`sphx_glr_examples_examples_hpo_plot_hpo_for_rf_and_overfitting.py`
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">Experimental Design with Grid Search</div>
-    </div>
-
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
-
-.. only:: html
-
-  .. image:: /examples/examples_hpo/images/thumb/sphx_glr_plot_notify_failures_hpo_thumb.png
-    :alt:
-
-  :ref:`sphx_glr_examples_examples_hpo_plot_notify_failures_hpo.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Notify Failures in Hyperparameter optimization</div>
-    </div>
-
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
-
-.. only:: html
-
-  .. image:: /examples/examples_hpo/images/thumb/sphx_glr_plot_transfer_learning_for_hpo_thumb.png
-    :alt:
-
-  :ref:`sphx_glr_examples_examples_hpo_plot_transfer_learning_for_hpo.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Applying Transfer Learning to Hyperparameter Optimization</div>
+      <div class="sphx-glr-thumbnail-title">Hyperparameter optimization and overfitting</div>
     </div>
 
 
@@ -76,7 +42,5 @@ Hyperparameter optimization
 .. toctree::
    :hidden:
 
-   /examples/examples_hpo/plot_experimental_design
-   /examples/examples_hpo/plot_notify_failures_hpo
-   /examples/examples_hpo/plot_transfer_learning_for_hpo
+   /examples/examples_hpo/plot_hpo_for_rf_and_overfitting
 
