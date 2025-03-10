@@ -278,10 +278,7 @@ autodoc_mock_imports = [
     "ray",
     "redis",
     "sklearn",
-    "tensorflow_probability",
-    "tensorflow",
     "torch",
-    "tf_keras",
     # "tqdm",
     "xgboost",
 ]

@@ -17,7 +17,6 @@ We use markers to classify tests that have specific requirements. Possible marks
 
 - ``slow``: marks to define a slow test. For example, the training of a model or the execution of Bayesian optimization.
 - ``torch``: marks to define a test that requires PyTorch installed.
-- ``tf_keras2``: marks to define a test that requires Tensorflow/Keras 2 installed.
 - ``ray``: marks tests which needs Ray installed.
 - ``mpi``: marks tests which needs mpi4py and an MPI implementation (e.g., openmpi, mpich) installed.
 - ``redis``: marks tests which needs Redis-Stack installed (i.e., includes RedisJSON).
