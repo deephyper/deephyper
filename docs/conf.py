@@ -279,7 +279,6 @@ autodoc_mock_imports = [
     "redis",
     "sklearn",
     "torch",
-    "tf_keras",
     # "tqdm",
     "xgboost",
 ]

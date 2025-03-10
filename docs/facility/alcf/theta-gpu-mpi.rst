@@ -35,7 +35,6 @@ Start by creating a script named ``activate-dhenv.sh`` to initialize your enviro
     This ``activate-dhenv`` script can be very useful to tailor the execution's environment to your needs. Here are a few tips that can be useful:
 
     - To activate XLA optimized compilation add ``export TF_XLA_FLAGS=--tf_xla_enable_xla_devices``
-    - To change the log level of Tensorflow add ``export TF_CPP_MIN_LOG_LEVEL=3``
 
 Then create a new file named ``job-deephyper.sh`` and make it executable. It will correspond to your submission script.
 
