@@ -174,33 +174,6 @@ Adapt the executed Python application depending on your needs. Here is an applic
             results.to_csv(os.path.join(search_log_dir, f"results.csv"))
 
 .. note::
-
-    If you are using tensorflow, you might want to add this snippet to your script in order to ensure that each worker is restricted to its own gpu (and doesn't access other workers memory):
-
-    .. code-block:: python
-
-        from mpi4py import MPI
-        comm = MPI.COMM_WORLD
-        rank = comm.Get_rank()
-        gpu_local_idx = rank % gpu_per_node
-        node = int(rank / gpu_per_node)
-
-        import tensorflow as tf
-        gpus = tf.config.list_physical_devices("GPU")
-        if gpus:
-            # Restrict TensorFlow to only use the first GPU
-            try:
-                tf.config.set_visible_devices(gpus[gpu_local_idx], "GPU")
-                tf.config.experimental.set_memory_growth(gpus[gpu_local_idx], True)
-                logical_gpus = tf.config.list_logical_devices("GPU")
-                logging.info(f"[r={rank}]: {len(gpus)} Physical GPUs, {len(logical_gpus)} Logical GPU")
-            except RuntimeError as e:
-                # Visible devices must be set before GPUs have been initialized
-                logging.info(f"{e}")
-
-    With ``gpu_per_node`` being equal to the ``RANKS_PER_NODE`` value specified in ``job-deephyper.sh``.
-
-.. note::
     If you are using PyTorch, most of the code from myscript.py starts off similar:
 
     .. code-block:: python
