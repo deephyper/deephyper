@@ -18,12 +18,12 @@ class MeanAggregator(Aggregator):
           - ✅
 
     Args:
-        with_uncertainty (bool, optional): a boolean that sets if the uncertainty should be returned
-            when calling the aggregator. Defaults to ``False``.
+        with_scale (bool, optional): a boolean that sets if the standard deviation of the
+            predictions should be returned when calling the aggregator. Defaults to ``False``.
     """
 
-    def __init__(self, with_uncertainty: bool = False):
-        self.with_uncertainty = with_uncertainty
+    def __init__(self, with_scale: bool = False):
+        self.with_scale = with_scale
 
     def aggregate(
         self,
@@ -60,9 +60,11 @@ class MeanAggregator(Aggregator):
         stacked_y = self._np.stack(y, axis=0)
         avg = self._np.average(stacked_y, axis=0, weights=weights)
 
-        if not self.with_uncertainty:
+        if not self.with_scale:
             return avg
 
-        uncertainty = self._np.average(self._np.square(stacked_y - avg), axis=0, weights=weights)
+        scale = self._np.sqrt(
+            self._np.average(self._np.square(stacked_y - avg), axis=0, weights=weights)
+        )
 
-        return {"loc": avg, "uncertainty": uncertainty}
+        return {"loc": avg, "scale": scale}

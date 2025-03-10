@@ -1,0 +1,1989 @@
+{
+ "CBO": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo._cbo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "CBO"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo._search",
+   "module_short": "deephyper.hpo",
+   "name": "Search"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "Search"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Search"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  }
+ ],
+ "CLASSIFIERS": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "dict"
+  }
+ ],
+ "CLASSIFIERS.items": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
+ "Evaluator.create": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.evaluator.Evaluator",
+   "module_short": "deephyper.evaluator.Evaluator",
+   "name": "create"
+  }
+ ],
+ "GradientBoostingClassifier": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.ensemble._gb",
+   "module_short": "sklearn.ensemble",
+   "name": "GradientBoostingClassifier"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.ensemble",
+   "module_short": "sklearn.ensemble",
+   "name": "GradientBoostingClassifier"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "GradientBoostingClassifier"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.base",
+   "module_short": "sklearn.base",
+   "name": "ClassifierMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "ClassifierMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.ensemble._gb",
+   "module_short": "sklearn.ensemble._gb",
+   "name": "BaseGradientBoosting"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.ensemble",
+   "module_short": "sklearn.ensemble",
+   "name": "BaseGradientBoosting"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "BaseGradientBoosting"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.ensemble._base",
+   "module_short": "sklearn.ensemble",
+   "name": "BaseEnsemble"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.ensemble",
+   "module_short": "sklearn.ensemble",
+   "name": "BaseEnsemble"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "BaseEnsemble"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.base",
+   "module_short": "sklearn.base",
+   "name": "MetaEstimatorMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "MetaEstimatorMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.base",
+   "module_short": "sklearn.base",
+   "name": "BaseEstimator"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "BaseEstimator"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.utils._estimator_html_repr",
+   "module_short": "sklearn.utils._estimator_html_repr",
+   "name": "_HTMLDocumentationLinkMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.utils",
+   "module_short": "sklearn.utils",
+   "name": "_HTMLDocumentationLinkMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "_HTMLDocumentationLinkMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.utils._metadata_requests",
+   "module_short": "sklearn.utils._metadata_requests",
+   "name": "_MetadataRequester"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.utils",
+   "module_short": "sklearn.utils",
+   "name": "_MetadataRequester"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "_MetadataRequester"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sklearn.ensemble",
+   "module_short": "sklearn.ensemble",
+   "name": "GradientBoostingClassifier"
+  }
+ ],
+ "HEIGHT_PLOTS": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  }
+ ],
+ "HpProblem": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo._problem",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  }
+ ],
+ "LabelEncoder": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.preprocessing._label",
+   "module_short": "sklearn.preprocessing",
+   "name": "LabelEncoder"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.preprocessing",
+   "module_short": "sklearn.preprocessing",
+   "name": "LabelEncoder"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "LabelEncoder"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.base",
+   "module_short": "sklearn.base",
+   "name": "TransformerMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "TransformerMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.base",
+   "module_short": "sklearn.base",
+   "name": "BaseEstimator"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "BaseEstimator"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.utils._set_output",
+   "module_short": "sklearn.utils._set_output",
+   "name": "_SetOutputMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.utils",
+   "module_short": "sklearn.utils",
+   "name": "_SetOutputMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "_SetOutputMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.utils._estimator_html_repr",
+   "module_short": "sklearn.utils._estimator_html_repr",
+   "name": "_HTMLDocumentationLinkMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.utils",
+   "module_short": "sklearn.utils",
+   "name": "_HTMLDocumentationLinkMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "_HTMLDocumentationLinkMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.utils._metadata_requests",
+   "module_short": "sklearn.utils._metadata_requests",
+   "name": "_MetadataRequester"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.utils",
+   "module_short": "sklearn.utils",
+   "name": "_MetadataRequester"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "_MetadataRequester"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sklearn.preprocessing",
+   "module_short": "sklearn.preprocessing",
+   "name": "LabelEncoder"
+  }
+ ],
+ "RandomForestClassifier": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.ensemble._forest",
+   "module_short": "sklearn.ensemble",
+   "name": "RandomForestClassifier"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.ensemble",
+   "module_short": "sklearn.ensemble",
+   "name": "RandomForestClassifier"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "RandomForestClassifier"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.ensemble._forest",
+   "module_short": "sklearn.ensemble._forest",
+   "name": "ForestClassifier"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.ensemble",
+   "module_short": "sklearn.ensemble",
+   "name": "ForestClassifier"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "ForestClassifier"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.base",
+   "module_short": "sklearn.base",
+   "name": "ClassifierMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "ClassifierMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.ensemble._forest",
+   "module_short": "sklearn.ensemble._forest",
+   "name": "BaseForest"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.ensemble",
+   "module_short": "sklearn.ensemble",
+   "name": "BaseForest"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "BaseForest"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.base",
+   "module_short": "sklearn.base",
+   "name": "MultiOutputMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "MultiOutputMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.ensemble._base",
+   "module_short": "sklearn.ensemble",
+   "name": "BaseEnsemble"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.ensemble",
+   "module_short": "sklearn.ensemble",
+   "name": "BaseEnsemble"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "BaseEnsemble"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.base",
+   "module_short": "sklearn.base",
+   "name": "MetaEstimatorMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "MetaEstimatorMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.base",
+   "module_short": "sklearn.base",
+   "name": "BaseEstimator"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "BaseEstimator"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.utils._estimator_html_repr",
+   "module_short": "sklearn.utils._estimator_html_repr",
+   "name": "_HTMLDocumentationLinkMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.utils",
+   "module_short": "sklearn.utils",
+   "name": "_HTMLDocumentationLinkMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "_HTMLDocumentationLinkMixin"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.utils._metadata_requests",
+   "module_short": "sklearn.utils._metadata_requests",
+   "name": "_MetadataRequester"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn.utils",
+   "module_short": "sklearn.utils",
+   "name": "_MetadataRequester"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sklearn",
+   "module_short": "sklearn",
+   "name": "_MetadataRequester"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sklearn.ensemble",
+   "module_short": "sklearn.ensemble",
+   "name": "RandomForestClassifier"
+  }
+ ],
+ "TqdmCallback": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.evaluator.callback",
+   "module_short": "deephyper.evaluator.callback",
+   "name": "TqdmCallback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.evaluator",
+   "module_short": "deephyper.evaluator",
+   "name": "TqdmCallback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "TqdmCallback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.evaluator.callback",
+   "module_short": "deephyper.evaluator.callback",
+   "name": "Callback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.evaluator",
+   "module_short": "deephyper.evaluator",
+   "name": "Callback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Callback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.evaluator.callback",
+   "module_short": "deephyper.evaluator.callback",
+   "name": "TqdmCallback"
+  }
+ ],
+ "WIDTH_PLOTS": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "_": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.text",
+   "module_short": "matplotlib.text",
+   "name": "Text"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Text"
+  }
+ ],
+ "accuracy_score": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sklearn.metrics",
+   "module_short": "sklearn.metrics",
+   "name": "accuracy_score"
+  }
+ ],
+ "ax": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes._axes",
+   "module_short": "matplotlib.axes",
+   "name": "Axes"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes",
+   "module_short": "matplotlib.axes",
+   "name": "Axes"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Axes"
+  }
+ ],
+ "check_random_state": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sklearn.utils",
+   "module_short": "sklearn.utils",
+   "name": "check_random_state"
+  }
+ ],
+ "classifier": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace.hyperparameters.categorical",
+   "module_short": "ConfigSpace",
+   "name": "CategoricalHyperparameter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace.hyperparameters",
+   "module_short": "ConfigSpace",
+   "name": "CategoricalHyperparameter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "CategoricalHyperparameter"
+  }
+ ],
+ "config": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "dict"
+  }
+ ],
+ "config.items": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
+ "criterion": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace.hyperparameters.categorical",
+   "module_short": "ConfigSpace",
+   "name": "CategoricalHyperparameter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace.hyperparameters",
+   "module_short": "ConfigSpace",
+   "name": "CategoricalHyperparameter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "CategoricalHyperparameter"
+  }
+ ],
+ "cs.EqualsCondition": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace.conditions",
+   "module_short": "ConfigSpace",
+   "name": "EqualsCondition"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "EqualsCondition"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace.conditions",
+   "module_short": "ConfigSpace.conditions",
+   "name": "BinaryOpCondition"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "BinaryOpCondition"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace.conditions",
+   "module_short": "ConfigSpace.conditions",
+   "name": "Condition"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "Condition"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "EqualsCondition"
+  }
+ ],
+ "cs.ForbiddenAndConjunction": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace.forbidden",
+   "module_short": "ConfigSpace",
+   "name": "ForbiddenAndConjunction"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "ForbiddenAndConjunction"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace.forbidden",
+   "module_short": "ConfigSpace.forbidden",
+   "name": "ForbiddenConjunction"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "ForbiddenConjunction"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "ForbiddenAndConjunction"
+  }
+ ],
+ "cs.ForbiddenEqualsClause": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace.forbidden",
+   "module_short": "ConfigSpace",
+   "name": "ForbiddenEqualsClause"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "ForbiddenEqualsClause"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace.forbidden",
+   "module_short": "ConfigSpace.forbidden",
+   "name": "ForbiddenClause"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "ForbiddenClause"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "ForbiddenEqualsClause"
+  }
+ ],
+ "cs.ForbiddenInClause": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace.forbidden",
+   "module_short": "ConfigSpace",
+   "name": "ForbiddenInClause"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "ForbiddenInClause"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace.forbidden",
+   "module_short": "ConfigSpace.forbidden",
+   "name": "ForbiddenClause"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "ForbiddenClause"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "ForbiddenInClause"
+  }
+ ],
+ "evaluate_baseline": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "evaluate_config": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "evaluator": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.evaluator._ray",
+   "module_short": "deephyper.evaluator",
+   "name": "RayEvaluator"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.evaluator",
+   "module_short": "deephyper.evaluator",
+   "name": "RayEvaluator"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "RayEvaluator"
+  }
+ ],
+ "evaluator.num_workers": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "fig": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.figure",
+   "module_short": "matplotlib.figure",
+   "name": "Figure"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Figure"
+  }
+ ],
+ "filter_parameters": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "forbidden_criterion_gb": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace.forbidden",
+   "module_short": "ConfigSpace",
+   "name": "ForbiddenAndConjunction"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "ForbiddenAndConjunction"
+  }
+ ],
+ "forbidden_criterion_rf": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace.forbidden",
+   "module_short": "ConfigSpace",
+   "name": "ForbiddenAndConjunction"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "ForbiddenAndConjunction"
+  }
+ ],
+ "gradient_boosting_hp": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
+  }
+ ],
+ "hp_i": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace.hyperparameters.uniform_float",
+   "module_short": "ConfigSpace",
+   "name": "UniformFloatHyperparameter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace.hyperparameters",
+   "module_short": "ConfigSpace",
+   "name": "UniformFloatHyperparameter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "UniformFloatHyperparameter"
+  }
+ ],
+ "learning_rate": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace.hyperparameters.uniform_float",
+   "module_short": "ConfigSpace",
+   "name": "UniformFloatHyperparameter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace.hyperparameters",
+   "module_short": "ConfigSpace",
+   "name": "UniformFloatHyperparameter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "UniformFloatHyperparameter"
+  }
+ ],
+ "load_data": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "load_subsampled_data": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "loss": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace.hyperparameters.categorical",
+   "module_short": "ConfigSpace",
+   "name": "CategoricalHyperparameter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace.hyperparameters",
+   "module_short": "ConfigSpace",
+   "name": "CategoricalHyperparameter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "CategoricalHyperparameter"
+  }
+ ],
+ "max_evals": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "np.random.RandomState": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "numpy.random.mtrand",
+   "module_short": "numpy.random",
+   "name": "RandomState"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "numpy.random",
+   "module_short": "numpy.random",
+   "name": "RandomState"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "RandomState"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy.random",
+   "module_short": "numpy.random",
+   "name": "RandomState"
+  }
+ ],
+ "np.shape": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "_ArrayFunctionDispatcher"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "shape"
+  }
+ ],
+ "openml.datasets.get_dataset": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "openml.datasets",
+   "module_short": "openml.datasets",
+   "name": "get_dataset"
+  }
+ ],
+ "plot_search_trajectory_single_objective_hpo": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.analysis.hpo",
+   "module_short": "deephyper.analysis.hpo",
+   "name": "plot_search_trajectory_single_objective_hpo"
+  }
+ ],
+ "plt.subplots": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "subplots"
+  }
+ ],
+ "plt.title": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "title"
+  }
+ ],
+ "problem": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._problem",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "HpProblem"
+  }
+ ],
+ "problem.add_condition": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._problem",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem.add_condition"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem.add_condition"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "HpProblem.add_condition"
+  }
+ ],
+ "problem.add_forbidden_clause": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._problem",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem.add_forbidden_clause"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem.add_forbidden_clause"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "HpProblem.add_forbidden_clause"
+  }
+ ],
+ "problem.add_hyperparameter": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._problem",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem.add_hyperparameter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem.add_hyperparameter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "HpProblem.add_hyperparameter"
+  }
+ ],
+ "resample": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sklearn.utils",
+   "module_short": "sklearn.utils",
+   "name": "resample"
+  }
+ ],
+ "results": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.frame",
+   "module_short": "pandas.core.frame",
+   "name": "DataFrame"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "DataFrame"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "DataFrame"
+  }
+ ],
+ "results.iloc": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.frame",
+   "module_short": "pandas.core.frame",
+   "name": "DataFrame.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "DataFrame.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "DataFrame.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.generic",
+   "module_short": "pandas.core.generic",
+   "name": "NDFrame.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "NDFrame.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "NDFrame.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.arraylike",
+   "module_short": "pandas.core.arraylike",
+   "name": "OpsMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "OpsMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "OpsMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.base",
+   "module_short": "pandas.core.base",
+   "name": "PandasObject.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "PandasObject.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "PandasObject.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.indexing",
+   "module_short": "pandas.core.indexing",
+   "name": "IndexingMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "IndexingMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "IndexingMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.accessor",
+   "module_short": "pandas.core.accessor",
+   "name": "DirNamesMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "DirNamesMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "DirNamesMixin.iloc"
+  }
+ ],
+ "results.nlargest": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.frame",
+   "module_short": "pandas.core.frame",
+   "name": "DataFrame.nlargest"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "DataFrame.nlargest"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "DataFrame.nlargest"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.generic",
+   "module_short": "pandas.core.generic",
+   "name": "NDFrame.nlargest"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "NDFrame.nlargest"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "NDFrame.nlargest"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.arraylike",
+   "module_short": "pandas.core.arraylike",
+   "name": "OpsMixin.nlargest"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "OpsMixin.nlargest"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "OpsMixin.nlargest"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.base",
+   "module_short": "pandas.core.base",
+   "name": "PandasObject.nlargest"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "PandasObject.nlargest"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "PandasObject.nlargest"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.indexing",
+   "module_short": "pandas.core.indexing",
+   "name": "IndexingMixin.nlargest"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "IndexingMixin.nlargest"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "IndexingMixin.nlargest"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.accessor",
+   "module_short": "pandas.core.accessor",
+   "name": "DirNamesMixin.nlargest"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "DirNamesMixin.nlargest"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "DirNamesMixin.nlargest"
+  }
+ ],
+ "results.objective.argmax": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.series",
+   "module_short": "pandas.core.series",
+   "name": "Series.argmax"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "Series.argmax"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "Series.argmax"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.base",
+   "module_short": "pandas.core.base",
+   "name": "IndexOpsMixin.argmax"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "IndexOpsMixin.argmax"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "IndexOpsMixin.argmax"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.generic",
+   "module_short": "pandas.core.generic",
+   "name": "NDFrame.argmax"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "NDFrame.argmax"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "NDFrame.argmax"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.arraylike",
+   "module_short": "pandas.core.arraylike",
+   "name": "OpsMixin.argmax"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "OpsMixin.argmax"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "OpsMixin.argmax"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.base",
+   "module_short": "pandas.core.base",
+   "name": "PandasObject.argmax"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "PandasObject.argmax"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "PandasObject.argmax"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.indexing",
+   "module_short": "pandas.core.indexing",
+   "name": "IndexingMixin.argmax"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "IndexingMixin.argmax"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "IndexingMixin.argmax"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.accessor",
+   "module_short": "pandas.core.accessor",
+   "name": "DirNamesMixin.argmax"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "DirNamesMixin.argmax"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "DirNamesMixin.argmax"
+  }
+ ],
+ "run": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "search": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._cbo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "CBO"
+  }
+ ],
+ "search.search": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._cbo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "CBO.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._search",
+   "module_short": "deephyper.hpo",
+   "name": "Search.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "Search.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Search.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC.search"
+  }
+ ],
+ "signature": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "inspect",
+   "module_short": "inspect",
+   "name": "signature"
+  }
+ ],
+ "subsample": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace.hyperparameters.uniform_float",
+   "module_short": "ConfigSpace",
+   "name": "UniformFloatHyperparameter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace.hyperparameters",
+   "module_short": "ConfigSpace",
+   "name": "UniformFloatHyperparameter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "UniformFloatHyperparameter"
+  }
+ ],
+ "train_test_split": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sklearn.model_selection",
+   "module_short": "sklearn.model_selection",
+   "name": "train_test_split"
+  }
+ ]
+}

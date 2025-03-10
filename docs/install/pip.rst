@@ -1,7 +1,7 @@
 .. _install-pip:
 
-Install DeepHyper with pip
-**************************
+Install with pip
+****************
 
 DeepHyper installation requires ``Python>=3.10``.
 
@@ -12,18 +12,16 @@ DeepHyper is available on `PyPI <https://pypi.org/project/deephyper/>`_ and can 
 .. code-block:: console
 
     $ # Core set of features
-    $ pip install "deephyper[core]" # <=> "deephyper[sdv,tf-keras2,jax-cpu,torch]"
+    $ pip install "deephyper[core]" # <=> "deephyper[jax-cpu,torch]"
     
     $ # Isolated features
-    $ pip install "deephyper" # Install Hyperparameter Optimization (HPO).
-    $ pip install "deephyper[sdv]" # Install SDV for HPO (Transfer Learning).
-    $ pip install "deephyper[jax-cpu]" # Install JAX with CPU support for Learning Curve Extrapolation Stopper.
-    $ pip install "deephyper[jax-cuda]" # Install JAX with GPU (cuda) support for Learning Curve Extrapolation Stopper.
-    $ pip install "deephyper[tf-keras2]" # Install DeepHyper with Tensorflow/Keras2 support.
-    $ pip install "deephyper[torch]" # Install DeepHyper with Pytorch support.
+    $ pip install "deephyper"             # install hyperparameter optimization (HPO)
+    $ pip install "deephyper[jax-cpu]"    # install JAX with CPU support for Learning Curve Extrapolation Stopper
+    $ pip install "deephyper[jax-cuda]"   # install JAX with GPU (Cuda) support for Learning Curve Extrapolation Stopper
+    $ pip install "deephyper[torch]"      # install with Pytorch support
     
     $ # For developers (Tests, Documentation, etc...)
-    $ pip install "deephyper[dev]" # Install Developer Stack (tests, documentation, etc...)
+    $ pip install "deephyper[dev]"        # install developer stack (tests, documentation, etc.)
 
 
 In Bayesian optimization, the Mondrian Forest surrogate model can be used. This model provides better uncertainty estimates used in the acquisition function. To install the Mondrian Forest surrogate model, you need to install the modified ``scikit-garden`` package from our repository. This package is not available on PyPI but can be installed through ``pip`` from the GitHub repository:
@@ -40,10 +38,10 @@ DeepHyper supports distributed computation with different backends. ``MPI`` demo
 
 .. code-block:: console
 
-    $ pip install "deephyper[mpi]" # Install python bindings for MPI.
-    $ pip install "deephyper[ray]" # Install Ray.
-    $ pip install "deephyper[redis]" # Install Redis Client.
-    $ pip install "deephyper[redis-hiredis]" # Install Redis Client with Hiredis for better performance.
+    $ pip install "deephyper[mpi]"            # install python bindings for MPI
+    $ pip install "deephyper[ray]"            # install Ray
+    $ pip install "deephyper[redis]"          # install Redis client
+    $ pip install "deephyper[redis-hiredis]"  # install Redis client with Hiredis for better performance
 
 
 Redis

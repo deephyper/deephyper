@@ -1,0 +1,828 @@
+{
+ "CBO": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo._cbo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "CBO"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo._search",
+   "module_short": "deephyper.hpo",
+   "name": "Search"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "Search"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Search"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  }
+ ],
+ "Evaluator.create": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.evaluator.Evaluator",
+   "module_short": "deephyper.evaluator.Evaluator",
+   "name": "create"
+  }
+ ],
+ "HEIGHT_PLOTS": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  }
+ ],
+ "HpProblem": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo._problem",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  }
+ ],
+ "TqdmCallback": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.evaluator.callback",
+   "module_short": "deephyper.evaluator.callback",
+   "name": "TqdmCallback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.evaluator",
+   "module_short": "deephyper.evaluator",
+   "name": "TqdmCallback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "TqdmCallback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.evaluator.callback",
+   "module_short": "deephyper.evaluator.callback",
+   "name": "Callback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.evaluator",
+   "module_short": "deephyper.evaluator",
+   "name": "Callback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Callback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.evaluator.callback",
+   "module_short": "deephyper.evaluator.callback",
+   "name": "TqdmCallback"
+  }
+ ],
+ "WIDTH_PLOTS": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "axes": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "deephyper.hpo.CBO": [
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  }
+ ],
+ "df": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.frame",
+   "module_short": "pandas.core.frame",
+   "name": "DataFrame"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "DataFrame"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "DataFrame"
+  }
+ ],
+ "df.objective.dtype": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.series",
+   "module_short": "pandas.core.series",
+   "name": "Series.dtype"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "Series.dtype"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "Series.dtype"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.base",
+   "module_short": "pandas.core.base",
+   "name": "IndexOpsMixin.dtype"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "IndexOpsMixin.dtype"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "IndexOpsMixin.dtype"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.generic",
+   "module_short": "pandas.core.generic",
+   "name": "NDFrame.dtype"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "NDFrame.dtype"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "NDFrame.dtype"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.arraylike",
+   "module_short": "pandas.core.arraylike",
+   "name": "OpsMixin.dtype"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "OpsMixin.dtype"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "OpsMixin.dtype"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.base",
+   "module_short": "pandas.core.base",
+   "name": "PandasObject.dtype"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "PandasObject.dtype"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "PandasObject.dtype"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.indexing",
+   "module_short": "pandas.core.indexing",
+   "name": "IndexingMixin.dtype"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "IndexingMixin.dtype"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "IndexingMixin.dtype"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.accessor",
+   "module_short": "pandas.core.accessor",
+   "name": "DirNamesMixin.dtype"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "DirNamesMixin.dtype"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "DirNamesMixin.dtype"
+  }
+ ],
+ "df.objective.str.startswith": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.strings.accessor",
+   "module_short": "pandas.core.strings.accessor",
+   "name": "StringMethods.startswith"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.strings",
+   "module_short": "pandas.core.strings",
+   "name": "StringMethods.startswith"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "StringMethods.startswith"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "StringMethods.startswith"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.base",
+   "module_short": "pandas.core.base",
+   "name": "NoNewAttributesMixin.startswith"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "NoNewAttributesMixin.startswith"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "NoNewAttributesMixin.startswith"
+  }
+ ],
+ "evaluator": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.evaluator._thread_pool",
+   "module_short": "deephyper.evaluator",
+   "name": "ThreadPoolEvaluator"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.evaluator",
+   "module_short": "deephyper.evaluator",
+   "name": "ThreadPoolEvaluator"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "ThreadPoolEvaluator"
+  }
+ ],
+ "failure_strategy": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "fig": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.figure",
+   "module_short": "matplotlib.figure",
+   "name": "Figure"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Figure"
+  }
+ ],
+ "i": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "mask_failed": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "mask_success": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "max_evals": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "np.arange": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "arange"
+  }
+ ],
+ "np.float64": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "float64"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "floating"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "inexact"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "number"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "generic"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "float64"
+  }
+ ],
+ "np.where": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "_ArrayFunctionDispatcher"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "where"
+  }
+ ],
+ "np.zeros": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "zeros"
+  }
+ ],
+ "plt.subplots": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "subplots"
+  }
+ ],
+ "problem": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._problem",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "HpProblem"
+  }
+ ],
+ "problem.add_hyperparameter": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._problem",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem.add_hyperparameter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem.add_hyperparameter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "HpProblem.add_hyperparameter"
+  }
+ ],
+ "results": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "dict"
+  }
+ ],
+ "results.items": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
+ "run": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "search": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._cbo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "CBO"
+  }
+ ],
+ "search.search": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._cbo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "CBO.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._search",
+   "module_short": "deephyper.hpo",
+   "name": "Search.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "Search.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Search.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC.search"
+  }
+ ],
+ "x": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "x_failed": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "x_failed.shape": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "tuple"
+  }
+ ],
+ "x_success": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "y_success": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.series",
+   "module_short": "pandas.core.series",
+   "name": "Series"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "Series"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "Series"
+  }
+ ]
+}

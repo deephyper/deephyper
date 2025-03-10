@@ -1,0 +1,813 @@
+{
+ "CBO": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo._cbo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "CBO"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo._search",
+   "module_short": "deephyper.hpo",
+   "name": "Search"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "Search"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Search"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  }
+ ],
+ "Evaluator.create": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.evaluator.Evaluator",
+   "module_short": "deephyper.evaluator.Evaluator",
+   "name": "create"
+  }
+ ],
+ "HpProblem": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo._problem",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  }
+ ],
+ "Pool": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "method"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "multiprocessing",
+   "module_short": "multiprocessing",
+   "name": "Pool"
+  }
+ ],
+ "SharedMemoryStorage": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.evaluator.storage",
+   "module_short": "deephyper.evaluator.storage",
+   "name": "SharedMemoryStorage"
+  }
+ ],
+ "TqdmCallback": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.evaluator.callback",
+   "module_short": "deephyper.evaluator.callback",
+   "name": "TqdmCallback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.evaluator",
+   "module_short": "deephyper.evaluator",
+   "name": "TqdmCallback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "TqdmCallback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.evaluator.callback",
+   "module_short": "deephyper.evaluator.callback",
+   "name": "Callback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.evaluator",
+   "module_short": "deephyper.evaluator",
+   "name": "Callback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Callback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.evaluator.callback",
+   "module_short": "deephyper.evaluator.callback",
+   "name": "TqdmCallback"
+  }
+ ],
+ "__name__": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "ax": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes._axes",
+   "module_short": "matplotlib.axes",
+   "name": "Axes"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes",
+   "module_short": "matplotlib.axes",
+   "name": "Axes"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Axes"
+  }
+ ],
+ "ax.set_xlim": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes._axes",
+   "module_short": "matplotlib.axes",
+   "name": "Axes.set_xlim"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes",
+   "module_short": "matplotlib.axes",
+   "name": "Axes.set_xlim"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Axes.set_xlim"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes._base",
+   "module_short": "matplotlib.axes._base",
+   "name": "_AxesBase.set_xlim"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes",
+   "module_short": "matplotlib.axes",
+   "name": "_AxesBase.set_xlim"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "_AxesBase.set_xlim"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.artist",
+   "module_short": "matplotlib.artist",
+   "name": "Artist.set_xlim"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Artist.set_xlim"
+  }
+ ],
+ "axes": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "black_box.run_ackley": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "black_box_util",
+   "module_short": "black_box_util",
+   "name": "run_ackley"
+  }
+ ],
+ "df": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.frame",
+   "module_short": "pandas.core.frame",
+   "name": "DataFrame"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "DataFrame"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "DataFrame"
+  }
+ ],
+ "execute_centralized_bo": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "execute_centralized_bo_with_share_memory": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "dbo_util",
+   "module_short": "dbo_util",
+   "name": "execute_centralized_bo_with_share_memory"
+  }
+ ],
+ "execute_decentralized_bo": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "fig": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.figure",
+   "module_short": "matplotlib.figure",
+   "name": "Figure"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Figure"
+  }
+ ],
+ "figure_size": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.analysis",
+   "module_short": "deephyper.analysis",
+   "name": "figure_size"
+  }
+ ],
+ "i": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "key": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "label": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "labels": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "dict"
+  }
+ ],
+ "labels.items": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
+ "nb_dim": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "num_workers": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "plot_search_trajectory_single_objective_hpo": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.analysis.hpo",
+   "module_short": "deephyper.analysis.hpo",
+   "name": "plot_search_trajectory_single_objective_hpo"
+  }
+ ],
+ "plot_worker_utilization": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.analysis.hpo",
+   "module_short": "deephyper.analysis.hpo",
+   "name": "plot_worker_utilization"
+  }
+ ],
+ "plt.grid": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "grid"
+  }
+ ],
+ "plt.legend": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "legend"
+  }
+ ],
+ "plt.show": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "show"
+  }
+ ],
+ "plt.subplots": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "subplots"
+  }
+ ],
+ "plt.tight_layout": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "tight_layout"
+  }
+ ],
+ "plt.xlabel": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "xlabel"
+  }
+ ],
+ "plt.ylabel": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "ylabel"
+  }
+ ],
+ "plt.yscale": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "yscale"
+  }
+ ],
+ "preprocess_results": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "problem": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._problem",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "HpProblem"
+  }
+ ],
+ "problem.add_hyperparameter": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._problem",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem.add_hyperparameter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem.add_hyperparameter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "HpProblem.add_hyperparameter"
+  }
+ ],
+ "results": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "dict"
+  }
+ ],
+ "results.dropna": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "dict"
+  }
+ ],
+ "run_function_kwargs": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "dict"
+  }
+ ],
+ "search_kwargs": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "dict"
+  }
+ ],
+ "ss.expon.rvs": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "scipy.stats._continuous_distns",
+   "module_short": "scipy.stats._continuous_distns",
+   "name": "expon_gen.rvs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "scipy.stats",
+   "module_short": "scipy.stats",
+   "name": "expon_gen.rvs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "scipy",
+   "module_short": "scipy",
+   "name": "expon_gen.rvs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "scipy.stats._distn_infrastructure",
+   "module_short": "scipy.stats",
+   "name": "rv_continuous.rvs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "scipy.stats",
+   "module_short": "scipy.stats",
+   "name": "rv_continuous.rvs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "scipy",
+   "module_short": "scipy",
+   "name": "rv_continuous.rvs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "scipy.stats._distn_infrastructure",
+   "module_short": "scipy.stats._distn_infrastructure",
+   "name": "rv_generic.rvs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "scipy.stats",
+   "module_short": "scipy.stats",
+   "name": "rv_generic.rvs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "scipy",
+   "module_short": "scipy",
+   "name": "rv_generic.rvs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "scipy.stats.expon",
+   "module_short": "scipy.stats.expon",
+   "name": "rvs"
+  }
+ ],
+ "timeout": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "x_max": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "float64"
+  }
+ ],
+ "x_min": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "float64"
+  }
+ ]
+}

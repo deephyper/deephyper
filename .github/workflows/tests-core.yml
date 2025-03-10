@@ -1,9 +1,11 @@
 name: Tests Core
 
 on: 
-  pull_request:
+  push:
     branches:
       - master
+  pull_request:
+    branches:
       - develop
 
 jobs:
@@ -29,9 +31,3 @@ jobs:
       
       - name: Run Torch tests 
         run: pytest -m torch --run-marks-subset torch tests/
-
-      - name: Run TF/Keras2 tests
-        run: pytest -m tf_keras2 --run-marks-subset tf_keras2 tests/
-      
-      - name: Run SDV tests
-        run: pytest -m sdv --run-marks-subset sdv tests/

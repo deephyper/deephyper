@@ -1,0 +1,907 @@
+{
+ "CBO": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo._cbo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "CBO"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo._search",
+   "module_short": "deephyper.hpo",
+   "name": "Search"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "Search"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Search"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  }
+ ],
+ "Evaluator.create": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.evaluator.Evaluator",
+   "module_short": "deephyper.evaluator.Evaluator",
+   "name": "create"
+  }
+ ],
+ "HpProblem": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo._problem",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  }
+ ],
+ "RandomSearch": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo._random",
+   "module_short": "deephyper.hpo",
+   "name": "RandomSearch"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "RandomSearch"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "RandomSearch"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo._search",
+   "module_short": "deephyper.hpo",
+   "name": "Search"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "Search"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Search"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "RandomSearch"
+  }
+ ],
+ "TqdmCallback": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.evaluator.callback",
+   "module_short": "deephyper.evaluator.callback",
+   "name": "TqdmCallback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.evaluator",
+   "module_short": "deephyper.evaluator",
+   "name": "TqdmCallback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "TqdmCallback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.evaluator.callback",
+   "module_short": "deephyper.evaluator.callback",
+   "name": "Callback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.evaluator",
+   "module_short": "deephyper.evaluator",
+   "name": "Callback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Callback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.evaluator.callback",
+   "module_short": "deephyper.evaluator.callback",
+   "name": "TqdmCallback"
+  }
+ ],
+ "ax": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes._axes",
+   "module_short": "matplotlib.axes",
+   "name": "Axes"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes",
+   "module_short": "matplotlib.axes",
+   "name": "Axes"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Axes"
+  }
+ ],
+ "axes": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "black_box.run_ackley": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "black_box_util",
+   "module_short": "black_box_util",
+   "name": "run_ackley"
+  }
+ ],
+ "df": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.frame",
+   "module_short": "pandas.core.frame",
+   "name": "DataFrame"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "DataFrame"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "DataFrame"
+  }
+ ],
+ "fig": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.figure",
+   "module_short": "matplotlib.figure",
+   "name": "Figure"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Figure"
+  }
+ ],
+ "figure_size": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.analysis",
+   "module_short": "deephyper.analysis",
+   "name": "figure_size"
+  }
+ ],
+ "i": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "key": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "label": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "labels": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "dict"
+  }
+ ],
+ "labels.items": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
+ "nb_dim": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "offset": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "float64"
+  }
+ ],
+ "parallel_evaluator": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.evaluator._thread_pool",
+   "module_short": "deephyper.evaluator",
+   "name": "ThreadPoolEvaluator"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.evaluator",
+   "module_short": "deephyper.evaluator",
+   "name": "ThreadPoolEvaluator"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "ThreadPoolEvaluator"
+  }
+ ],
+ "parallel_search": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._cbo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "CBO"
+  }
+ ],
+ "parallel_search.search": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._cbo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "CBO.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._search",
+   "module_short": "deephyper.hpo",
+   "name": "Search.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "Search.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Search.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC.search"
+  }
+ ],
+ "plot_search_trajectory_single_objective_hpo": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.analysis.hpo",
+   "module_short": "deephyper.analysis.hpo",
+   "name": "plot_search_trajectory_single_objective_hpo"
+  }
+ ],
+ "plot_worker_utilization": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.analysis.hpo",
+   "module_short": "deephyper.analysis.hpo",
+   "name": "plot_worker_utilization"
+  }
+ ],
+ "plt.grid": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "grid"
+  }
+ ],
+ "plt.legend": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "legend"
+  }
+ ],
+ "plt.show": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "show"
+  }
+ ],
+ "plt.subplots": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "subplots"
+  }
+ ],
+ "plt.tight_layout": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "tight_layout"
+  }
+ ],
+ "plt.xlabel": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "xlabel"
+  }
+ ],
+ "plt.ylabel": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "ylabel"
+  }
+ ],
+ "plt.yscale": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "yscale"
+  }
+ ],
+ "problem": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._problem",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "HpProblem"
+  }
+ ],
+ "problem.add_hyperparameter": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._problem",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem.add_hyperparameter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem.add_hyperparameter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "HpProblem.add_hyperparameter"
+  }
+ ],
+ "random_search": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._random",
+   "module_short": "deephyper.hpo",
+   "name": "RandomSearch"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "RandomSearch"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "RandomSearch"
+  }
+ ],
+ "random_search.search": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._random",
+   "module_short": "deephyper.hpo",
+   "name": "RandomSearch.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "RandomSearch.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "RandomSearch.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._search",
+   "module_short": "deephyper.hpo",
+   "name": "Search.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "Search.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Search.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC.search"
+  }
+ ],
+ "results": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "dict"
+  }
+ ],
+ "results.items": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
+ "search_kwargs": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "dict"
+  }
+ ],
+ "sequential_evaluator": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.evaluator._thread_pool",
+   "module_short": "deephyper.evaluator",
+   "name": "ThreadPoolEvaluator"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.evaluator",
+   "module_short": "deephyper.evaluator",
+   "name": "ThreadPoolEvaluator"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "ThreadPoolEvaluator"
+  }
+ ],
+ "sequential_search": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._cbo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "CBO"
+  }
+ ],
+ "sequential_search.search": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._cbo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "CBO.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._search",
+   "module_short": "deephyper.hpo",
+   "name": "Search.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "Search.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Search.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC.search"
+  }
+ ],
+ "strategy": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "timeout": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ]
+}

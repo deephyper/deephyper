@@ -14,10 +14,10 @@ from sklearn.base import is_regressor
 import deephyper.core.exceptions
 import deephyper.skopt
 from deephyper.analysis.hpo import filter_failed_objectives
-from deephyper.core.utils import CaptureSTD
 from deephyper.evaluator import HPOJob
 from deephyper.hpo._problem import convert_to_skopt_space
 from deephyper.hpo._search import Search
+from deephyper.hpo.gmm import GMMSampler
 from deephyper.skopt.moo import (
     MoScalarFunction,
     moo_functions,
@@ -784,7 +784,10 @@ class CBO(Search):
         self._opt.tell(x, y)
 
     def fit_generative_model(
-        self, df, q=0.90, n_samples=100, verbose=False, **generative_model_kwargs
+        self,
+        df,
+        q=0.90,
+        verbose=False,
     ):
         """Fits a generative model for sampling during BO.
 
@@ -806,30 +809,12 @@ class CBO(Search):
                 the search. Defaults to ``0.90`` which select the top-10% configurations from
                 ``df``.
 
-            n_samples (int, optional): the number of samples used to score the generative model.
-
             verbose (bool, optional): If set to ``True`` it will print the score of the generative
                 model. Defaults to ``False``.
 
-            generative_model_kwargs (dict, optional): additional parameters to pass to the
-                generative model.
-
         Returns:
-            tuple: ``score, model`` which are a metric which measures the quality of the learned
-                generated-model and the generative model respectively.
+            model: the generative model.
         """
-        # to make sdv optional
-        try:
-            import sdv
-        except ModuleNotFoundError:
-            raise deephyper.core.exceptions.MissingRequirementError(
-                "Installing 'sdv' is required to use 'fit_generative_model' please run "
-                "'pip install \"deephyper[sdv]\"'"
-            )
-
-        from sdv.evaluation.single_table import evaluate_quality
-        from sdv.single_table import TVAESynthesizer
-
         if type(df) is str and df[-4:] == ".csv":
             df = pd.read_csv(df)
         assert isinstance(df, pd.DataFrame)
@@ -874,73 +859,12 @@ class CBO(Search):
         req_df = req_df[["job_id"] + hp_cols]
         req_df = req_df.rename(columns={k: k[2:] for k in hp_cols if k.startswith("p:")})
 
-        # constraints
-        scalar_constraints = []
-        columns_metadata = {}
-        for hp_name in self._problem.space:
-            if hp_name in req_df.columns:
-                hp = self._problem.space[hp_name]
+        model = GMMSampler(self._problem.space, random_state=self._random_state)
+        model.fit(req_df)
 
-                # TODO: Categorical and Ordinal are both considered non-ordered for SDV
-                # TODO: it could be useful to use the "category"  type of Pandas and the
-                # TODO: ordered=True/False argument to extend the capability of SDV
-                if isinstance(hp, csh.CategoricalHyperparameter) or isinstance(
-                    hp, csh.OrdinalHyperparameter
-                ):
-                    req_df[hp_name] = req_df[hp_name].astype("O")
-                    columns_metadata[hp_name] = {"sdtype": "categorical"}
-                else:
-                    scalar_constraints.append(
-                        {
-                            "constraint_class": "ScalarRange",
-                            "constraint_parameters": {
-                                "column_name": hp_name,
-                                "low_value": hp.lower,
-                                "high_value": hp.upper,
-                                "strict_boundaries": False,
-                            },
-                        }
-                    )
-                    columns_metadata[hp_name] = {"sdtype": "numerical"}
-                    if isinstance(hp, csh.IntegerHyperparameter):
-                        req_df[hp_name] = req_df[hp_name].astype(int)
-                    elif isinstance(hp, csh.FloatHyperparameter):
-                        req_df[hp_name] = req_df[hp_name].astype(float)
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            req_df_metadata = sdv.metadata.SingleTableMetadata()
-            req_df_metadata.detect_from_dataframe(req_df)
-            req_df_metadata.set_primary_key("job_id")
-            # !The `detect_from_dataframe` seems to wrongly detect categorical in some cases
-            # !We enforce the following for safety
-            req_df_metadata.update_columns_metadata(columns_metadata)
-
-            model = TVAESynthesizer(
-                req_df_metadata,
-                enforce_min_max_values=False,
-                verbose=False,
-                **generative_model_kwargs,
-            )
-            model.add_constraints(scalar_constraints)
-            model.fit(req_df)
-            with CaptureSTD():
-                synthetic_data = model.sample(n_samples)
-            score = evaluate_quality(
-                real_data=req_df,
-                synthetic_data=synthetic_data,
-                metadata=req_df_metadata,
-                verbose=False,
-            ).get_score()
-
-            if verbose:
-                print(f"Synthetic data score: {score}")
-
-        # we pass the learned generative model from sdv to the
-        # skopt Optimizer
         self._opt_kwargs["model_sdv"] = model
 
-        return score, model
+        return model
 
     def fit_search_space(self, df, fac_numerical=0.125, fac_categorical=10):
         """Apply prior-guided transfer learning based on a DataFrame of results.

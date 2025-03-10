@@ -1,9 +1,7 @@
 .. _install-conda:
 
-Install DeepHyper with conda
-****************************
-
-DeepHyper installation requires ``Python>=3.10``.
+Install with Conda
+******************
 
 .. warning:: All packages required for your application need to be installed in the same environment.
 

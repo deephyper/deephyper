@@ -51,6 +51,7 @@ def boltzmann_distribution(x, beta=1):
 
 OBJECTIVE_VALUE_FAILURE = "F"
 
+# TODO: add check to notify that optimizer="ga" cannot work with categorical or integer values
 
 class Optimizer(object):
     """Run bayesian optimisation loop in DeepHyper.
@@ -1240,15 +1241,17 @@ class Optimizer(object):
 
                     algorithm = GA(pop=pop, sampling=init_pop)
 
-                    res = minimize(
-                        problem,
-                        algorithm,
-                        termination=DefaultSingleObjectiveTermination(
-                            **self._pymoo_termination_kwargs
-                        ),
-                        seed=self.rng.randint(0, np.iinfo(np.int32).max),
-                        verbose=False,
-                    )
+                    with warnings.catch_warnings(action="ignore", category=DeprecationWarning):
+
+                        res = minimize(
+                            problem,
+                            algorithm,
+                            termination=DefaultSingleObjectiveTermination(
+                                **self._pymoo_termination_kwargs
+                            ),
+                            seed=self.rng.randint(0, np.iinfo(np.int32).max),
+                            verbose=False,
+                        )
 
                     next_x = res.X
 

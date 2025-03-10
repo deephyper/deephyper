@@ -24,8 +24,7 @@ class MedianStopper(Stopper):
         self,
         max_steps: int,
         min_steps: int = 1,
-        min_competing: int = 0,
-        min_fully_completed: int = 0,
+        min_competing: int = 10,
         interval_steps: int = 1,
         epsilon: float = 1e-10,
     ) -> None:
@@ -33,7 +32,6 @@ class MedianStopper(Stopper):
 
         self.min_steps = min_steps
         self._min_competing = min_competing
-        self._min_fully_completed = min_fully_completed
         self._interval_steps = interval_steps
         self.epsilon = epsilon
 
@@ -53,12 +51,6 @@ class MedianStopper(Stopper):
         # Filter out non numerical values (e.g., "F" for failed jobs)
         values = [v for v in values if isinstance(v, Number)]
         return values
-
-    def _num_fully_completed(self) -> int:
-        search_id, _ = self.job.id.split(".")
-        stopped = self.job.storage.load_metadata_from_all_jobs(search_id, "_completed")
-        num = sum(int(s) for s in stopped)
-        return num
 
     def observe(self, budget: float, objective: float):
         super().observe(budget, objective)
@@ -80,12 +72,6 @@ class MedianStopper(Stopper):
             return True
 
         if not (self._is_halting_budget()):
-            return False
-
-        if (
-            self._min_fully_completed > 0
-            and self._num_fully_completed() < self._min_fully_completed
-        ):
             return False
 
         # Apply Median Pruning

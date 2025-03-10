@@ -16,16 +16,14 @@ def test_mean_aggregator_valid_input():
     expected = np.mean(np.stack(y, axis=0), axis=0)
     assert np.allclose(result, expected), "MeanAggregator failed with valid input."
 
-    aggregator = MeanAggregator(with_uncertainty=True)
+    aggregator = MeanAggregator(with_scale=True)
     result = aggregator.aggregate(y)
     assert isinstance(result, dict)
-    assert "loc" in result and "uncertainty" in result
+    assert "loc" in result and "scale" in result
     expected_loc = np.mean(np.stack(y, axis=0), axis=0)
-    expected_uncertainty = np.var(np.stack(y, axis=0), axis=0)
+    expected_scale = np.std(np.stack(y, axis=0), axis=0)
     assert np.allclose(result["loc"], expected_loc), "MeanAggregator failed with valid input."
-    assert np.allclose(result["uncertainty"], expected_uncertainty), (
-        "MeanAggregator failed with valid input."
-    )
+    assert np.allclose(result["scale"], expected_scale), "MeanAggregator failed with valid input."
 
 
 def test_mean_aggregator_with_weights():

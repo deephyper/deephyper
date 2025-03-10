@@ -1,0 +1,4068 @@
+{
+ "CBO": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo._cbo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "CBO"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo._search",
+   "module_short": "deephyper.hpo",
+   "name": "Search"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "Search"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Search"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  }
+ ],
+ "ConfigSpace.GreaterThanCondition": [
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "GreaterThanCondition"
+  }
+ ],
+ "DataLoader": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.utils.data.dataloader",
+   "module_short": "torch.utils.data",
+   "name": "DataLoader"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.utils.data",
+   "module_short": "torch.utils.data",
+   "name": "DataLoader"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.utils",
+   "module_short": "torch.utils",
+   "name": "DataLoader"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "DataLoader"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "typing",
+   "module_short": "typing",
+   "name": "Generic"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.utils.data",
+   "module_short": "torch.utils.data",
+   "name": "DataLoader"
+  }
+ ],
+ "DeepNormalRegressor": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "__main__",
+   "module_short": "__main__",
+   "name": "DeepNormalRegressor"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules.module",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Module"
+  }
+ ],
+ "EnsemblePredictor": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.ensemble._ensemble",
+   "module_short": "deephyper.ensemble",
+   "name": "EnsemblePredictor"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.ensemble",
+   "module_short": "deephyper.ensemble",
+   "name": "EnsemblePredictor"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "EnsemblePredictor"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.predictor._predictor",
+   "module_short": "deephyper.predictor",
+   "name": "Predictor"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.predictor",
+   "module_short": "deephyper.predictor",
+   "name": "Predictor"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Predictor"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.ensemble",
+   "module_short": "deephyper.ensemble",
+   "name": "EnsemblePredictor"
+  }
+ ],
+ "Evaluator.create": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.evaluator.Evaluator",
+   "module_short": "deephyper.evaluator.Evaluator",
+   "name": "create"
+  }
+ ],
+ "GreaterThanCondition": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace.conditions",
+   "module_short": "ConfigSpace",
+   "name": "GreaterThanCondition"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "GreaterThanCondition"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace.conditions",
+   "module_short": "ConfigSpace.conditions",
+   "name": "BinaryOpCondition"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "BinaryOpCondition"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace.conditions",
+   "module_short": "ConfigSpace.conditions",
+   "name": "Condition"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "Condition"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ConfigSpace",
+   "module_short": "ConfigSpace",
+   "name": "GreaterThanCondition"
+  }
+ ],
+ "GreedySelector": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.ensemble.selector._greedy",
+   "module_short": "deephyper.ensemble.selector",
+   "name": "GreedySelector"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.ensemble.selector",
+   "module_short": "deephyper.ensemble.selector",
+   "name": "GreedySelector"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.ensemble",
+   "module_short": "deephyper.ensemble",
+   "name": "GreedySelector"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "GreedySelector"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.ensemble.selector._selector",
+   "module_short": "deephyper.ensemble.selector",
+   "name": "Selector"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.ensemble.selector",
+   "module_short": "deephyper.ensemble.selector",
+   "name": "Selector"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.ensemble",
+   "module_short": "deephyper.ensemble",
+   "name": "Selector"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Selector"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.ensemble.selector",
+   "module_short": "deephyper.ensemble.selector",
+   "name": "GreedySelector"
+  }
+ ],
+ "HEIGHT_PLOTS": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  }
+ ],
+ "HpProblem": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo._problem",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  }
+ ],
+ "MixedNormalAggregator": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.ensemble.aggregator._mixed_normal",
+   "module_short": "deephyper.ensemble.aggregator",
+   "name": "MixedNormalAggregator"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.ensemble.aggregator",
+   "module_short": "deephyper.ensemble.aggregator",
+   "name": "MixedNormalAggregator"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.ensemble",
+   "module_short": "deephyper.ensemble",
+   "name": "MixedNormalAggregator"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "MixedNormalAggregator"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.ensemble.aggregator._aggregator",
+   "module_short": "deephyper.ensemble.aggregator",
+   "name": "Aggregator"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.ensemble.aggregator",
+   "module_short": "deephyper.ensemble.aggregator",
+   "name": "Aggregator"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.ensemble",
+   "module_short": "deephyper.ensemble",
+   "name": "Aggregator"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Aggregator"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.ensemble.aggregator",
+   "module_short": "deephyper.ensemble.aggregator",
+   "name": "MixedNormalAggregator"
+  }
+ ],
+ "NormalNegLogLikelihood": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.ensemble.loss",
+   "module_short": "deephyper.ensemble.loss",
+   "name": "NormalNegLogLikelihood"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.ensemble",
+   "module_short": "deephyper.ensemble",
+   "name": "NormalNegLogLikelihood"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "NormalNegLogLikelihood"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.ensemble.loss",
+   "module_short": "deephyper.ensemble.loss",
+   "name": "Loss"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.ensemble",
+   "module_short": "deephyper.ensemble",
+   "name": "Loss"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Loss"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.ensemble.loss",
+   "module_short": "deephyper.ensemble.loss",
+   "name": "NormalNegLogLikelihood"
+  }
+ ],
+ "NormalTorchPredictor": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "__main__",
+   "module_short": "__main__",
+   "name": "NormalTorchPredictor"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.predictor.torch._predictor_torch",
+   "module_short": "deephyper.predictor.torch",
+   "name": "TorchPredictor"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.predictor.torch",
+   "module_short": "deephyper.predictor.torch",
+   "name": "TorchPredictor"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.predictor",
+   "module_short": "deephyper.predictor",
+   "name": "TorchPredictor"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "TorchPredictor"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.predictor._predictor",
+   "module_short": "deephyper.predictor",
+   "name": "Predictor"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.predictor",
+   "module_short": "deephyper.predictor",
+   "name": "Predictor"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Predictor"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC"
+  }
+ ],
+ "RunningJob": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.evaluator._job",
+   "module_short": "deephyper.evaluator",
+   "name": "RunningJob"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.evaluator",
+   "module_short": "deephyper.evaluator",
+   "name": "RunningJob"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "RunningJob"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "MutableMapping"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "MutableMapping"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Mapping"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Mapping"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Collection"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Collection"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Sized"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Sized"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Iterable"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Iterable"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Container"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Container"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.evaluator",
+   "module_short": "deephyper.evaluator",
+   "name": "RunningJob"
+  }
+ ],
+ "TensorDataset": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.utils.data.dataset",
+   "module_short": "torch.utils.data",
+   "name": "TensorDataset"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.utils.data",
+   "module_short": "torch.utils.data",
+   "name": "TensorDataset"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.utils",
+   "module_short": "torch.utils",
+   "name": "TensorDataset"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "TensorDataset"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.utils.data.dataset",
+   "module_short": "torch.utils.data",
+   "name": "Dataset"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.utils.data",
+   "module_short": "torch.utils.data",
+   "name": "Dataset"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.utils",
+   "module_short": "torch.utils",
+   "name": "Dataset"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Dataset"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "typing",
+   "module_short": "typing",
+   "name": "Generic"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.utils.data",
+   "module_short": "torch.utils.data",
+   "name": "TensorDataset"
+  }
+ ],
+ "TorchPredictor": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.predictor.torch._predictor_torch",
+   "module_short": "deephyper.predictor.torch",
+   "name": "TorchPredictor"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.predictor.torch",
+   "module_short": "deephyper.predictor.torch",
+   "name": "TorchPredictor"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.predictor",
+   "module_short": "deephyper.predictor",
+   "name": "TorchPredictor"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "TorchPredictor"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.predictor._predictor",
+   "module_short": "deephyper.predictor",
+   "name": "Predictor"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.predictor",
+   "module_short": "deephyper.predictor",
+   "name": "Predictor"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Predictor"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.predictor.torch",
+   "module_short": "deephyper.predictor.torch",
+   "name": "TorchPredictor"
+  }
+ ],
+ "TqdmCallback": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.evaluator.callback",
+   "module_short": "deephyper.evaluator.callback",
+   "name": "TqdmCallback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.evaluator",
+   "module_short": "deephyper.evaluator",
+   "name": "TqdmCallback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "TqdmCallback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.evaluator.callback",
+   "module_short": "deephyper.evaluator.callback",
+   "name": "Callback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper.evaluator",
+   "module_short": "deephyper.evaluator",
+   "name": "Callback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Callback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.evaluator.callback",
+   "module_short": "deephyper.evaluator.callback",
+   "name": "TqdmCallback"
+  }
+ ],
+ "WIDTH_PLOTS": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "_": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "NoneType"
+  }
+ ],
+ "axes": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "baseline_dir": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "baseline_results": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "dict"
+  }
+ ],
+ "create_hpo_problem": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "create_model": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "deephyper.ensemble.EnsemblePredictor": [
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "deephyper.ensemble",
+   "module_short": "deephyper.ensemble",
+   "name": "EnsemblePredictor"
+  }
+ ],
+ "deephyper.ensemble.aggregator.MixedNormalAggregator": [
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "deephyper.ensemble.aggregator",
+   "module_short": "deephyper.ensemble.aggregator",
+   "name": "MixedNormalAggregator"
+  },
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "deephyper.ensemble.aggregator",
+   "module_short": "deephyper.ensemble.aggregator",
+   "name": "MixedNormalAggregator"
+  }
+ ],
+ "deephyper.ensemble.selector.GreedySelector": [
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "deephyper.ensemble.selector",
+   "module_short": "deephyper.ensemble.selector",
+   "name": "GreedySelector"
+  }
+ ],
+ "deephyper.ensemble.selector.TopKSelector": [
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "deephyper.ensemble.selector",
+   "module_short": "deephyper.ensemble.selector",
+   "name": "TopKSelector"
+  }
+ ],
+ "deephyper.evaluator.Evaluator": [
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "deephyper.evaluator",
+   "module_short": "deephyper.evaluator",
+   "name": "Evaluator"
+  },
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "deephyper.evaluator",
+   "module_short": "deephyper.evaluator",
+   "name": "Evaluator"
+  }
+ ],
+ "deephyper.hpo.CBO": [
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  },
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "CBO"
+  }
+ ],
+ "deephyper.hpo.HpProblem": [
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  }
+ ],
+ "deephyper.predictor.Predictor": [
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "deephyper.predictor",
+   "module_short": "deephyper.predictor",
+   "name": "Predictor"
+  }
+ ],
+ "deephyper.predictor.torch.TorchPredictor": [
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "deephyper.predictor.torch",
+   "module_short": "deephyper.predictor.torch",
+   "name": "TorchPredictor"
+  },
+  {
+   "is_class": false,
+   "is_explicit": true,
+   "module": "deephyper.predictor.torch",
+   "module_short": "deephyper.predictor.torch",
+   "name": "TorchPredictor"
+  }
+ ],
+ "device": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "device_count": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "dtype": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "dtype"
+  }
+ ],
+ "ensemble": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.ensemble._ensemble",
+   "module_short": "deephyper.ensemble",
+   "name": "EnsemblePredictor"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.ensemble",
+   "module_short": "deephyper.ensemble",
+   "name": "EnsemblePredictor"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "EnsemblePredictor"
+  }
+ ],
+ "ensemble.predict": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.ensemble._ensemble",
+   "module_short": "deephyper.ensemble",
+   "name": "EnsemblePredictor.predict"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.ensemble",
+   "module_short": "deephyper.ensemble",
+   "name": "EnsemblePredictor.predict"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "EnsemblePredictor.predict"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.predictor._predictor",
+   "module_short": "deephyper.predictor",
+   "name": "Predictor.predict"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.predictor",
+   "module_short": "deephyper.predictor",
+   "name": "Predictor.predict"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Predictor.predict"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC.predict"
+  }
+ ],
+ "evaluate_baseline": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "fig": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.figure",
+   "module_short": "matplotlib.figure",
+   "name": "Figure"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Figure"
+  }
+ ],
+ "file_name": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "file_name.endswith": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
+ "filter_failed_objectives": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.analysis.hpo",
+   "module_short": "deephyper.analysis.hpo",
+   "name": "filter_failed_objectives"
+  }
+ ],
+ "hpo_dir": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "hpo_results": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.frame",
+   "module_short": "pandas.core.frame",
+   "name": "DataFrame"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "DataFrame"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "DataFrame"
+  }
+ ],
+ "hpo_results.iloc": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.frame",
+   "module_short": "pandas.core.frame",
+   "name": "DataFrame.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "DataFrame.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "DataFrame.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.generic",
+   "module_short": "pandas.core.generic",
+   "name": "NDFrame.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "NDFrame.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "NDFrame.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.arraylike",
+   "module_short": "pandas.core.arraylike",
+   "name": "OpsMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "OpsMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "OpsMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.base",
+   "module_short": "pandas.core.base",
+   "name": "PandasObject.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "PandasObject.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "PandasObject.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.indexing",
+   "module_short": "pandas.core.indexing",
+   "name": "IndexingMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "IndexingMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "IndexingMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.accessor",
+   "module_short": "pandas.core.accessor",
+   "name": "DirNamesMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "DirNamesMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "DirNamesMixin.iloc"
+  }
+ ],
+ "hpo_results_failed": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.frame",
+   "module_short": "pandas.core.frame",
+   "name": "DataFrame"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "DataFrame"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "DataFrame"
+  }
+ ],
+ "hpo_results_path": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "i_max": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "int64"
+  }
+ ],
+ "job_id": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "int64"
+  }
+ ],
+ "job_id_predictors": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
+  }
+ ],
+ "job_id_predictors.append": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
+ "json.loads": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "json",
+   "module_short": "json",
+   "name": "loads"
+  }
+ ],
+ "k": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "kappa": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  }
+ ],
+ "load_data": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "max_evals": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "max_n_epochs": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "model_checkpoint_dir": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "multiprocessing.cpu_count": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "module.cpu_count"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "multiprocessing",
+   "module_short": "multiprocessing",
+   "name": "cpu_count"
+  }
+ ],
+ "nll": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "nn.Dropout": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules.dropout",
+   "module_short": "torch.nn",
+   "name": "Dropout"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Dropout"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Dropout"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Dropout"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules.dropout",
+   "module_short": "torch.nn.modules.dropout",
+   "name": "_DropoutNd"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn.modules",
+   "name": "_DropoutNd"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "_DropoutNd"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "_DropoutNd"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules.module",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Module"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Dropout"
+  }
+ ],
+ "nn.GELU": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules.activation",
+   "module_short": "torch.nn",
+   "name": "GELU"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "GELU"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "GELU"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "GELU"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules.module",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Module"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "GELU"
+  }
+ ],
+ "nn.Linear": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules.linear",
+   "module_short": "torch.nn",
+   "name": "Linear"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Linear"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Linear"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Linear"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules.module",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Module"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Linear"
+  }
+ ],
+ "nn.Mish": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules.activation",
+   "module_short": "torch.nn",
+   "name": "Mish"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Mish"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Mish"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Mish"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules.module",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Module"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Mish"
+  }
+ ],
+ "nn.Module": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules.module",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Module"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Module"
+  }
+ ],
+ "nn.ReLU": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules.activation",
+   "module_short": "torch.nn",
+   "name": "ReLU"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "ReLU"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "ReLU"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "ReLU"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules.module",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Module"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "ReLU"
+  }
+ ],
+ "nn.Sequential": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules.container",
+   "module_short": "torch.nn",
+   "name": "Sequential"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Sequential"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Sequential"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Sequential"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules.module",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Module"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Sequential"
+  }
+ ],
+ "nn.SiLU": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules.activation",
+   "module_short": "torch.nn",
+   "name": "SiLU"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "SiLU"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "SiLU"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "SiLU"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules.module",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Module"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "SiLU"
+  }
+ ],
+ "nn.Sigmoid": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules.activation",
+   "module_short": "torch.nn",
+   "name": "Sigmoid"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Sigmoid"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Sigmoid"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Sigmoid"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules.module",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Module"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Sigmoid"
+  }
+ ],
+ "nn.Softplus": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules.activation",
+   "module_short": "torch.nn",
+   "name": "Softplus"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Softplus"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Softplus"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Softplus"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules.module",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Module"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Softplus"
+  }
+ ],
+ "nn.Tanh": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules.activation",
+   "module_short": "torch.nn",
+   "name": "Tanh"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Tanh"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Tanh"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Tanh"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules.module",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Module"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Module"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Tanh"
+  }
+ ],
+ "np.arange": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "arange"
+  }
+ ],
+ "np.array": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "array"
+  }
+ ],
+ "np.concatenate": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "_ArrayFunctionDispatcher"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "concatenate"
+  }
+ ],
+ "np.cos": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ufunc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "cos"
+  }
+ ],
+ "np.inf": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "inf"
+  }
+ ],
+ "np.linspace": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "_ArrayFunctionDispatcher"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "linspace"
+  }
+ ],
+ "np.mean": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "_ArrayFunctionDispatcher"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "mean"
+  }
+ ],
+ "np.random.RandomState": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "numpy.random.mtrand",
+   "module_short": "numpy.random",
+   "name": "RandomState"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "numpy.random",
+   "module_short": "numpy.random",
+   "name": "RandomState"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "RandomState"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy.random",
+   "module_short": "numpy.random",
+   "name": "RandomState"
+  }
+ ],
+ "np.sin": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ufunc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "sin"
+  }
+ ],
+ "np.std": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "_ArrayFunctionDispatcher"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "std"
+  }
+ ],
+ "os.listdir": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "os",
+   "module_short": "os",
+   "name": "listdir"
+  }
+ ],
+ "os.path.exists": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "os.path",
+   "module_short": "os.path",
+   "name": "exists"
+  }
+ ],
+ "os.path.join": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "os.path",
+   "module_short": "os.path",
+   "name": "join"
+  }
+ ],
+ "parameters": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "dict"
+  }
+ ],
+ "parameters_from_row": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.analysis.hpo",
+   "module_short": "deephyper.analysis.hpo",
+   "name": "parameters_from_row"
+  }
+ ],
+ "pathlib.Path": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "pathlib",
+   "module_short": "pathlib",
+   "name": "Path"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "pathlib",
+   "module_short": "pathlib",
+   "name": "PurePath"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pathlib",
+   "module_short": "pathlib",
+   "name": "Path"
+  }
+ ],
+ "pd.read_csv": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "read_csv"
+  }
+ ],
+ "plot_search_trajectory_single_objective_hpo": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.analysis.hpo",
+   "module_short": "deephyper.analysis.hpo",
+   "name": "plot_search_trajectory_single_objective_hpo"
+  }
+ ],
+ "plot_worker_utilization": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.analysis.hpo",
+   "module_short": "deephyper.analysis.hpo",
+   "name": "plot_worker_utilization"
+  }
+ ],
+ "plt.figure": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "figure"
+  }
+ ],
+ "plt.fill_between": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "fill_between"
+  }
+ ],
+ "plt.grid": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "grid"
+  }
+ ],
+ "plt.legend": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "legend"
+  }
+ ],
+ "plt.plot": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "plot"
+  }
+ ],
+ "plt.scatter": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "scatter"
+  }
+ ],
+ "plt.subplots": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "subplots"
+  }
+ ],
+ "plt.tight_layout": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "tight_layout"
+  }
+ ],
+ "plt.xlabel": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "xlabel"
+  }
+ ],
+ "plt.xlim": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "xlim"
+  }
+ ],
+ "plt.ylabel": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "ylabel"
+  }
+ ],
+ "plt.ylim": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "ylim"
+  }
+ ],
+ "predictor": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "__main__",
+   "module_short": "__main__",
+   "name": "NormalTorchPredictor"
+  }
+ ],
+ "predictor.predict": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "__main__",
+   "module_short": "__main__",
+   "name": "NormalTorchPredictor.predict"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.predictor.torch._predictor_torch",
+   "module_short": "deephyper.predictor.torch",
+   "name": "TorchPredictor.predict"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.predictor.torch",
+   "module_short": "deephyper.predictor.torch",
+   "name": "TorchPredictor.predict"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.predictor",
+   "module_short": "deephyper.predictor",
+   "name": "TorchPredictor.predict"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "TorchPredictor.predict"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.predictor._predictor",
+   "module_short": "deephyper.predictor",
+   "name": "Predictor.predict"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.predictor",
+   "module_short": "deephyper.predictor",
+   "name": "Predictor.predict"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Predictor.predict"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC.predict"
+  }
+ ],
+ "predictors": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
+  }
+ ],
+ "predictors.append": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
+ "problem": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._problem",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "HpProblem"
+  }
+ ],
+ "problem.add_conditions": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._problem",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem.add_conditions"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem.add_conditions"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "HpProblem.add_conditions"
+  }
+ ],
+ "problem.add_hyperparameter": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._problem",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem.add_hyperparameter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem.add_hyperparameter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "HpProblem.add_hyperparameter"
+  }
+ ],
+ "problem.default_configuration": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo._problem",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem.default_configuration"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.hpo",
+   "module_short": "deephyper.hpo",
+   "name": "HpProblem.default_configuration"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "HpProblem.default_configuration"
+  }
+ ],
+ "row": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.series",
+   "module_short": "pandas.core.series",
+   "name": "Series"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "Series"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "Series"
+  }
+ ],
+ "row.iloc": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.series",
+   "module_short": "pandas.core.series",
+   "name": "Series.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "Series.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "Series.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.base",
+   "module_short": "pandas.core.base",
+   "name": "IndexOpsMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "IndexOpsMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "IndexOpsMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.generic",
+   "module_short": "pandas.core.generic",
+   "name": "NDFrame.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "NDFrame.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "NDFrame.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.arraylike",
+   "module_short": "pandas.core.arraylike",
+   "name": "OpsMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "OpsMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "OpsMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.base",
+   "module_short": "pandas.core.base",
+   "name": "PandasObject.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "PandasObject.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "PandasObject.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.indexing",
+   "module_short": "pandas.core.indexing",
+   "name": "IndexingMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "IndexingMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "IndexingMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core.accessor",
+   "module_short": "pandas.core.accessor",
+   "name": "DirNamesMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas.core",
+   "module_short": "pandas.core",
+   "name": "DirNamesMixin.iloc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pandas",
+   "module_short": "pandas",
+   "name": "DirNamesMixin.iloc"
+  }
+ ],
+ "run": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "run_neural_architecture_search": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "search_kwargs": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "dict"
+  }
+ ],
+ "selected_predictors_indexes": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
+  }
+ ],
+ "selected_predictors_job_ids": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "selected_predictors_weights": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
+  }
+ ],
+ "selector": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.ensemble.selector._greedy",
+   "module_short": "deephyper.ensemble.selector",
+   "name": "GreedySelector"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.ensemble.selector",
+   "module_short": "deephyper.ensemble.selector",
+   "name": "GreedySelector"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.ensemble",
+   "module_short": "deephyper.ensemble",
+   "name": "GreedySelector"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "GreedySelector"
+  }
+ ],
+ "selector.select": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.ensemble.selector._greedy",
+   "module_short": "deephyper.ensemble.selector",
+   "name": "GreedySelector.select"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.ensemble.selector",
+   "module_short": "deephyper.ensemble.selector",
+   "name": "GreedySelector.select"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.ensemble",
+   "module_short": "deephyper.ensemble",
+   "name": "GreedySelector.select"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "GreedySelector.select"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.ensemble.selector._selector",
+   "module_short": "deephyper.ensemble.selector",
+   "name": "Selector.select"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.ensemble.selector",
+   "module_short": "deephyper.ensemble.selector",
+   "name": "Selector.select"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.ensemble",
+   "module_short": "deephyper.ensemble",
+   "name": "Selector.select"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper",
+   "module_short": "deephyper",
+   "name": "Selector.select"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC.select"
+  }
+ ],
+ "squared_error": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "test_X": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "test_X.reshape": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
+ "test_y": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "test_y.reshape": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
+ "to_numpy": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "to_torch": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "torch.cuda.is_available": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.cuda",
+   "module_short": "torch.cuda",
+   "name": "is_available"
+  }
+ ],
+ "torch.distributions.Normal": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.distributions.normal",
+   "module_short": "torch.distributions",
+   "name": "Normal"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.distributions",
+   "module_short": "torch.distributions",
+   "name": "Normal"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Normal"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.distributions.exp_family",
+   "module_short": "torch.distributions",
+   "name": "ExponentialFamily"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.distributions",
+   "module_short": "torch.distributions",
+   "name": "ExponentialFamily"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "ExponentialFamily"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.distributions.distribution",
+   "module_short": "torch.distributions",
+   "name": "Distribution"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.distributions",
+   "module_short": "torch.distributions",
+   "name": "Distribution"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Distribution"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.distributions",
+   "module_short": "torch.distributions",
+   "name": "Normal"
+  }
+ ],
+ "torch.float32": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "dtype"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "float32"
+  }
+ ],
+ "torch.from_numpy": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "from_numpy"
+  }
+ ],
+ "torch.load": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "load"
+  }
+ ],
+ "torch.mean": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "mean"
+  }
+ ],
+ "torch.optim.Adam": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.optim.adam",
+   "module_short": "torch.optim",
+   "name": "Adam"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.optim",
+   "module_short": "torch.optim",
+   "name": "Adam"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Adam"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.optim.optimizer",
+   "module_short": "torch.optim",
+   "name": "Optimizer"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.optim",
+   "module_short": "torch.optim",
+   "name": "Optimizer"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Optimizer"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.optim",
+   "module_short": "torch.optim",
+   "name": "Adam"
+  }
+ ],
+ "torch.optim.lr_scheduler.ReduceLROnPlateau": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.optim.lr_scheduler",
+   "module_short": "torch.optim.lr_scheduler",
+   "name": "ReduceLROnPlateau"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.optim",
+   "module_short": "torch.optim",
+   "name": "ReduceLROnPlateau"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "ReduceLROnPlateau"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.optim.lr_scheduler",
+   "module_short": "torch.optim.lr_scheduler",
+   "name": "LRScheduler"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch.optim",
+   "module_short": "torch.optim",
+   "name": "LRScheduler"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "LRScheduler"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.optim.lr_scheduler",
+   "module_short": "torch.optim.lr_scheduler",
+   "name": "ReduceLROnPlateau"
+  }
+ ],
+ "torch.save": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "save"
+  }
+ ],
+ "torch_module": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "__main__",
+   "module_short": "__main__",
+   "name": "DeepNormalRegressor"
+  }
+ ],
+ "torch_module.eval": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "__main__",
+   "module_short": "__main__",
+   "name": "DeepNormalRegressor.eval"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn.modules.module",
+   "module_short": "torch.nn",
+   "name": "Module.eval"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Module.eval"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Module.eval"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Module.eval"
+  }
+ ],
+ "torch_module.forward": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "__main__",
+   "module_short": "__main__",
+   "name": "DeepNormalRegressor.forward"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn.modules.module",
+   "module_short": "torch.nn",
+   "name": "Module.forward"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Module.forward"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Module.forward"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Module.forward"
+  }
+ ],
+ "torch_module.load_state_dict": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "__main__",
+   "module_short": "__main__",
+   "name": "DeepNormalRegressor.load_state_dict"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn.modules.module",
+   "module_short": "torch.nn",
+   "name": "Module.load_state_dict"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Module.load_state_dict"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Module.load_state_dict"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Module.load_state_dict"
+  }
+ ],
+ "torch_module.to": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "__main__",
+   "module_short": "__main__",
+   "name": "DeepNormalRegressor.to"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn.modules.module",
+   "module_short": "torch.nn",
+   "name": "Module.to"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn.modules",
+   "module_short": "torch.nn",
+   "name": "Module.to"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch.nn",
+   "module_short": "torch.nn",
+   "name": "Module.to"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "torch",
+   "module_short": "torch",
+   "name": "Module.to"
+  }
+ ],
+ "tqdm": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "tqdm.std",
+   "module_short": "tqdm",
+   "name": "tqdm"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "tqdm",
+   "module_short": "tqdm",
+   "name": "tqdm"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "tqdm.utils",
+   "module_short": "tqdm.utils",
+   "name": "Comparable"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "tqdm",
+   "module_short": "tqdm",
+   "name": "Comparable"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "tqdm",
+   "module_short": "tqdm",
+   "name": "tqdm"
+  }
+ ],
+ "train": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "train_X": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "train_loss": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
+  }
+ ],
+ "train_loss.append": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
+ "train_one_step": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "train_test_split": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sklearn.model_selection",
+   "module_short": "sklearn.model_selection",
+   "name": "train_test_split"
+  }
+ ],
+ "train_y": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "val_loss": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
+  }
+ ],
+ "val_loss.append": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
+ "valid_X": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "valid_y": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "weights_path": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "x_lim": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "x_max": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "int64"
+  }
+ ],
+ "x_min": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "int64"
+  }
+ ],
+ "x_values": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "x_values.max": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
+ "x_values.min": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
+ "y_lim": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "y_mu": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "float64"
+  }
+ ],
+ "y_pred": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "dict"
+  }
+ ],
+ "y_pred.loc": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "dict"
+  }
+ ],
+ "y_pred.scale": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "dict"
+  }
+ ],
+ "y_pred_mean": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "y_pred_std": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "y_predictors": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
+  }
+ ],
+ "y_predictors.append": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
+ "y_std": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "float64"
+  }
+ ]
+}
