@@ -1,4 +1,0 @@
---index-url https://pypi.python.org/simple/
-
-jupyter
--e ..[default,mpi,redis,dev,analytics]
