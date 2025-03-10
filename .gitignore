@@ -194,3 +194,4 @@ context.yaml
 prof/*.prof
 *.code-workspace
 *.pkl
+uv.lock
