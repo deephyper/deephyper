@@ -64,8 +64,8 @@ core = [
     "deephyper[jax-cpu]",
 ]
 dev = [
+    "build",
     "pytest",
-    "tox",
     "twine",
     "ruff",
     "rstcheck",
