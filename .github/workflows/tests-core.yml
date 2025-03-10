@@ -1,9 +1,11 @@
 name: Tests Core
 
 on: 
-  pull_request:
+  push:
     branches:
       - master
+  pull_request:
+    branches:
       - develop
 
 jobs:
