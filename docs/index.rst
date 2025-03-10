@@ -26,7 +26,7 @@ The :ref:`pip installation <install-pip>` is recommended. It requires **Python >
     pip install deephyper
 
 
-If you would like to install DeepHyper with its core set of machine learning features (Tensorflow/Keras2, Pytorch, Transfer-Learning for HPO and Learning Curve Extrapolation) use the following command:
+If you would like to install DeepHyper with its core set of machine learning features (Pytorch and Learning Curve Extrapolation) use the following command:
 
 .. code-block:: python
 
