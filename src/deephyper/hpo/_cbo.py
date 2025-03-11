@@ -25,6 +25,8 @@ from deephyper.skopt.moo import (
     non_dominated_set_ranked,
 )
 
+__all__ = ["CBO"]
+
 # Adapt minimization -> maximization with DeepHyper
 MAP_multi_point_strategy = {
     "cl_min": "cl_max",
@@ -862,7 +864,7 @@ class CBO(Search):
         model = GMMSampler(self._problem.space, random_state=self._random_state)
         model.fit(req_df)
 
-        self._opt_kwargs["model_sdv"] = model
+        self._opt_kwargs["custom_sampler"] = model
 
         return model
 
