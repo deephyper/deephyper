@@ -41,7 +41,7 @@ class SuccessiveHalvingStopper(Stopper):
 
         min_steps (float, optional):
             The minimum number of steps to run the evaluation. Defaults to 1.
-            
+
         reduction_factor (float, optional):
             At each halving step the current model is kept only if among the
             top-``1/reduction_factor*100``%. Defaults to 3.
@@ -51,7 +51,7 @@ class SuccessiveHalvingStopper(Stopper):
 
         min_competing (int, optional):
             The minimum number of competitors necessary to check the top-k condition. Defaults to 0.
-            
+
         min_fully_completed (int, optional):
             The minimum number of evaluation evaluated with ``max_steps``. Defaults to 1.
     """

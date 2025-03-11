@@ -12,7 +12,7 @@ class LokyEvaluator(Evaluator):
     """This evaluator uses the ``ProcessPoolExecutor`` from ``loky`` as backend.
 
     The ``loky`` backend uses ``cloudpickle`` to serialize by value the called function and
-    its arguments. This allows to pass lambda or local functions to the ``Evaluator`` as 
+    its arguments. This allows to pass lambda or local functions to the ``Evaluator`` as
     ``run_function.``
 
     Args:
