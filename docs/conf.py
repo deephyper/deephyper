@@ -269,17 +269,14 @@ todo_include_todos = False
 autodoc_mock_imports = [
     "deepxde",
     "jax",
-    # "joblib",
     "matplotlib",
     "mpi4py",
-    # "nbformat",
     "networkx",
     "numpyro",
     "ray",
     "redis",
     "sklearn",
     "torch",
-    # "tqdm",
     "xgboost",
 ]
 autosummary_mock_imports = autodoc_mock_imports + [
