@@ -31,62 +31,113 @@ using the Ackley function:
   :width: 400
   :alt: Ackley Function in 2D
 
-We will use the ``time.sleep`` function to simulate a budget of 2 secondes of
-execution in average which helps illustrate the advantage of parallel
-evaluations. The ``@profile`` decorator is useful to collect starting/ending
-time of the ``run``-function execution which help us know exactly when we are
-inside the black-box. This decorator is necessary when profiling the worker
-utilization. When using this decorator, the ``run``-function will return a
-dictionnary with 2 new keys ``"timestamp_start"`` and ``"timestamp_end"``.
-The ``run``-function is defined in a separate module because of
-the "multiprocessing" backend that we are using in this example.
+.. GENERATED FROM PYTHON SOURCE LINES 16-32
 
-.. literalinclude:: ../../examples/black_box_util.py
-   :language: python
-   :emphasize-lines: 19-28
-   :linenos:
+.. dropdown:: Code (Import statements)
 
-After defining the black-box we can continue with the definition of our main script:
+    .. code-block:: Python
 
-.. GENERATED FROM PYTHON SOURCE LINES 32-45
+
+        import time
+
+        import matplotlib.pyplot as plt
+        import numpy as np
+
+        from deephyper.analysis import figure_size
+        from deephyper.analysis.hpo import (
+            plot_search_trajectory_single_objective_hpo,
+            plot_worker_utilization,
+        )
+        from deephyper.evaluator import Evaluator, profile
+        from deephyper.evaluator.callback import TqdmCallback
+        from deephyper.hpo import CBO, HpProblem
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 33-34
+
+We define the Ackley function:
+
+.. GENERATED FROM PYTHON SOURCE LINES 34-45
+
+.. dropdown:: Code (Ackley function)
+
+    .. code-block:: Python
+
+
+        def ackley(x, a=20, b=0.2, c=2 * np.pi):
+            d = len(x)
+            s1 = np.sum(x**2)
+            s2 = np.sum(np.cos(c * x))
+            term1 = -a * np.exp(-b * np.sqrt(s1 / d))
+            term2 = -np.exp(s2 / d)
+            y = term1 + term2 + a + np.exp(1)
+            return y
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 46-52
+
+We will use the ``time.sleep`` function to simulate a budget of 2 secondes of execution in average 
+which helps illustrate the advantage of parallel evaluations. The ``@profile`` decorator is useful 
+to collect starting/ending time of the ``run``-function execution which help us know exactly when 
+we are inside the black-box. This decorator is necessary when profiling the worker utilization. When 
+using this decorator, the ``run``-function will return a dictionnary with 2 new keys ``"timestamp_start"`` 
+and ``"timestamp_end"``.
+
+.. GENERATED FROM PYTHON SOURCE LINES 52-65
 
 .. code-block:: Python
 
 
-    import black_box_util as black_box
-    import matplotlib.pyplot as plt
+    @profile
+    def run_ackley(config, sleep_loc=2, sleep_scale=0.5):
+        # to simulate the computation of an expensive black-box
+        if sleep_loc > 0:
+            t_sleep = np.random.normal(loc=sleep_loc, scale=sleep_scale)
+            t_sleep = max(t_sleep, 0)
+            time.sleep(t_sleep)
 
-    from deephyper.analysis import figure_size
-    from deephyper.analysis.hpo import (
-        plot_search_trajectory_single_objective_hpo,
-        plot_worker_utilization,
-    )
-    from deephyper.evaluator import Evaluator
-    from deephyper.evaluator.callback import TqdmCallback
-    from deephyper.hpo import CBO, HpProblem
-
-
+        x = np.array([config[k] for k in config if "x" in k])
+        x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
+        return -ackley(x)  # maximisation is performed
 
 
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 46-49
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 66-69
 
 Then we define the variable(s) we want to optimize. For this problem we
 optimize Ackley in a 2-dimensional search space, the true minimul is
 located at ``(0, 0)``.
 
-.. GENERATED FROM PYTHON SOURCE LINES 49-57
+.. GENERATED FROM PYTHON SOURCE LINES 69-81
 
 .. code-block:: Python
 
 
-    nb_dim = 2
-    problem = HpProblem()
-    for i in range(nb_dim):
-        problem.add_hyperparameter((-32.768, 32.768), f"x{i}")
+    def create_problem(nb_dim=2):
+        nb_dim = 2
+        problem = HpProblem()
+        for i in range(nb_dim):
+            problem.add_hyperparameter((-32.768, 32.768), f"x{i}")
+        return problem
+
+    problem = create_problem()
     problem
 
 
@@ -107,308 +158,118 @@ located at ``(0, 0)``.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 58-59
+.. GENERATED FROM PYTHON SOURCE LINES 82-83
 
 Then we define a parallel search.
 
-.. GENERATED FROM PYTHON SOURCE LINES 59-80
+.. GENERATED FROM PYTHON SOURCE LINES 83-109
 
 .. code-block:: Python
 
-
-    if __name__ == "__main__":
-        timeout = 20
-        num_workers = 4
-        results = {}
+    def execute_search(timeout, num_workers):
 
         evaluator = Evaluator.create(
-            black_box.run_ackley,
+            run_ackley,
             method="process",
             method_kwargs={
                 "num_workers": num_workers,
                 "callbacks": [TqdmCallback()],
             },
         )
+
         search = CBO(
             problem,
             evaluator,
             random_state=42,
         )
+
         results = search.search(timeout=timeout)
 
+        return results
 
+    if __name__ == "__main__":
+        timeout = 20
+        num_workers = 4
+        results = execute_search(timeout, num_workers)
 
 
 
 .. rst-class:: sphx-glr-script-out
 
- .. code-block:: none
-
-
-
-
-    0it [00:00, ?it/s]
-
-
-    1it [00:00, 2763.05it/s, failures=0, objective=-19.8]
-
-
-    2it [00:00, 11.22it/s, failures=0, objective=-19.8]  
-
-
-    2it [00:00, 11.22it/s, failures=0, objective=-19.8]
-
-
-    3it [00:00, 11.22it/s, failures=0, objective=-19.8]
-
-
-    4it [00:01,  3.48it/s, failures=0, objective=-19.8]
-
-
-    4it [00:01,  3.48it/s, failures=0, objective=-19.8]
-
-
-    5it [00:01,  3.23it/s, failures=0, objective=-19.8]
-
-
-    5it [00:01,  3.23it/s, failures=0, objective=-15.4]
-
-
-    6it [00:01,  3.23it/s, failures=0, objective=-15.4]
-
-
-    7it [00:01,  3.71it/s, failures=0, objective=-15.4]
-
-
-    7it [00:01,  3.71it/s, failures=0, objective=-15.4]
-
-
-    8it [00:02,  2.07it/s, failures=0, objective=-15.4]
-
-
-    8it [00:02,  2.07it/s, failures=0, objective=-15.4]
-
-
-    9it [00:03,  2.25it/s, failures=0, objective=-15.4]
-
-
-    9it [00:03,  2.25it/s, failures=0, objective=-15.4]
-
-
-    10it [00:03,  2.60it/s, failures=0, objective=-15.4]
-
-
-    10it [00:03,  2.60it/s, failures=0, objective=-12.6]
-
-
-    11it [00:03,  2.58it/s, failures=0, objective=-12.6]
-
-
-    11it [00:03,  2.58it/s, failures=0, objective=-12.6]
-
-
-    12it [00:04,  1.76it/s, failures=0, objective=-12.6]
-
-
-    12it [00:04,  1.76it/s, failures=0, objective=-12.6]
-
-
-    13it [00:05,  2.16it/s, failures=0, objective=-12.6]
-
-
-    13it [00:05,  2.16it/s, failures=0, objective=-12.6]
-
-
-    14it [00:06,  1.72it/s, failures=0, objective=-12.6]
-
-
-    14it [00:06,  1.72it/s, failures=0, objective=-12.6]
-
-
-    15it [00:06,  1.57it/s, failures=0, objective=-12.6]
-
-
-    15it [00:06,  1.57it/s, failures=0, objective=-12.6]
-
-
-    16it [00:07,  1.68it/s, failures=0, objective=-12.6]
-
-
-    16it [00:07,  1.68it/s, failures=0, objective=-12.6]
-
-
-    17it [00:08,  1.47it/s, failures=0, objective=-12.6]
-
-
-    17it [00:08,  1.47it/s, failures=0, objective=-12.6]
-
-
-    18it [00:08,  1.69it/s, failures=0, objective=-12.6]
-
-
-    18it [00:08,  1.69it/s, failures=0, objective=-12.6]
-
-
-    19it [00:09,  1.63it/s, failures=0, objective=-12.6]
-
-
-    19it [00:09,  1.63it/s, failures=0, objective=-12.6]
-
-
-    20it [00:09,  2.07it/s, failures=0, objective=-12.6]
-
-
-    20it [00:09,  2.07it/s, failures=0, objective=-12.6]
-
-
-    21it [00:09,  2.30it/s, failures=0, objective=-12.6]
-
-
-    21it [00:09,  2.30it/s, failures=0, objective=-12.6]
-
-
-    22it [00:10,  1.68it/s, failures=0, objective=-12.6]
-
-
-    22it [00:10,  1.68it/s, failures=0, objective=-12.6]
-
-
-    23it [00:12,  1.21it/s, failures=0, objective=-12.6]
-
-
-    23it [00:12,  1.21it/s, failures=0, objective=-12.6]
-
-
-    24it [00:12,  1.62it/s, failures=0, objective=-12.6]
-
-
-    24it [00:12,  1.62it/s, failures=0, objective=-12.6]
-
-
-    25it [00:12,  1.62it/s, failures=0, objective=-12.6]
-
-
-    26it [00:12,  2.27it/s, failures=0, objective=-12.6]
-
-
-    26it [00:12,  2.27it/s, failures=0, objective=-12.6]
-
-
-    27it [00:13,  1.62it/s, failures=0, objective=-12.6]
-
-
-    27it [00:13,  1.62it/s, failures=0, objective=-12.6]
-
-
-    28it [00:14,  1.66it/s, failures=0, objective=-12.6]
-
-
-    28it [00:14,  1.66it/s, failures=0, objective=-12.6]
-
-
-    29it [00:14,  2.07it/s, failures=0, objective=-12.6]
-
-
-    29it [00:14,  2.07it/s, failures=0, objective=-12.6]
-
-
-    30it [00:14,  2.31it/s, failures=0, objective=-12.6]
-
-
-    30it [00:14,  2.31it/s, failures=0, objective=-12.6]
-
-
-    31it [00:15,  1.68it/s, failures=0, objective=-12.6]
-
-
-    31it [00:15,  1.68it/s, failures=0, objective=-12.6]
-
-
-    32it [00:16,  1.79it/s, failures=0, objective=-12.6]
-
-
-    32it [00:16,  1.79it/s, failures=0, objective=-12.6]
-
-
-    33it [00:16,  2.24it/s, failures=0, objective=-12.6]
-
-
-    33it [00:16,  2.24it/s, failures=0, objective=-12.6]
-
-
-    34it [00:16,  2.89it/s, failures=0, objective=-12.6]
-
-
-    34it [00:16,  2.89it/s, failures=0, objective=-12.6]
-
-
-    35it [00:18,  1.28it/s, failures=0, objective=-12.6]
-
-
-    35it [00:18,  1.28it/s, failures=0, objective=-12.6]
-
-
-    36it [00:18,  1.51it/s, failures=0, objective=-12.6]
-
-
-    36it [00:18,  1.51it/s, failures=0, objective=-12.6]
-
-
-    37it [00:18,  1.51it/s, failures=0, objective=-12.6]
-
-
-    38it [00:18,  1.51it/s, failures=0, objective=-12.6]
-
-
-
-.. GENERATED FROM PYTHON SOURCE LINES 81-82
+.. code-block:: pytb
+
+    Traceback (most recent call last):
+      File "/Users/romainegele/Documents/DeepHyper/deephyper/examples/examples_parallelism/plot_profile_worker_utilization.py", line 107, in <module>
+        results = execute_search(timeout, num_workers)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "/Users/romainegele/Documents/DeepHyper/deephyper/examples/examples_parallelism/plot_profile_worker_utilization.py", line 100, in execute_search
+        results = search.search(timeout=timeout)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "/Users/romainegele/Documents/DeepHyper/deephyper/src/deephyper/hpo/_search.py", line 209, in search
+        self._search(max_evals, timeout, max_evals_strict)
+      File "/Users/romainegele/Documents/DeepHyper/deephyper/src/deephyper/hpo/_cbo.py", line 569, in _search
+        super()._search(max_evals, timeout, max_evals_strict)
+      File "/Users/romainegele/Documents/DeepHyper/deephyper/src/deephyper/hpo/_search.py", line 316, in _search
+        new_results = self._evaluator.gather(self.gather_type, self.gather_batch_size)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "/Users/romainegele/Documents/DeepHyper/deephyper/src/deephyper/evaluator/_evaluator.py", line 425, in gather
+        local_results = self.process_local_tasks_done(self._tasks_done)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "/Users/romainegele/Documents/DeepHyper/deephyper/src/deephyper/evaluator/_evaluator.py", line 508, in process_local_tasks_done
+        job = task.result()
+              ^^^^^^^^^^^^^
+      File "/Users/romainegele/Documents/DeepHyper/deephyper/src/deephyper/evaluator/_evaluator.py", line 350, in _execute
+        job = await self.execute(job)
+              ^^^^^^^^^^^^^^^^^^^^^^^
+      File "/Users/romainegele/Documents/DeepHyper/deephyper/src/deephyper/evaluator/_process_pool.py", line 79, in execute
+        output = await asyncio.wait_for(
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+      File "/opt/homebrew/Cellar/python@3.12/3.12.7_1/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+        return await fut
+               ^^^^^^^^^
+    concurrent.futures.process.BrokenProcessPool: A process in the process pool was terminated abruptly while the future was running or pending.
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 110-111
 
 Finally, we plot the results from the collected DataFrame.
 
-.. GENERATED FROM PYTHON SOURCE LINES 82-106
+.. GENERATED FROM PYTHON SOURCE LINES 111-135
 
-.. code-block:: Python
+.. dropdown:: Code (Plot search trajectory an workers utilization)
 
-
-    if __name__ == "__main__":
-        t0 = results["m:timestamp_start"].iloc[0]
-        results["m:timestamp_start"] = results["m:timestamp_start"] - t0
-        results["m:timestamp_end"] = results["m:timestamp_end"] - t0
-        tmax = results["m:timestamp_end"].max()
-
-        fig, axes = plt.subplots(
-            nrows=2,
-            ncols=1,
-            sharex=True,
-            figsize=figure_size(width=600),
-        )
-
-        plot_search_trajectory_single_objective_hpo(
-            results, mode="min", x_units="seconds", ax=axes[0]
-        )
-
-        plot_worker_utilization(
-            results, num_workers=num_workers, profile_type="start/end", ax=axes[1]
-        )
-
-        plt.tight_layout()
-        plt.show()
+    .. code-block:: Python
 
 
+        if __name__ == "__main__":
+            t0 = results["m:timestamp_start"].iloc[0]
+            results["m:timestamp_start"] = results["m:timestamp_start"] - t0
+            results["m:timestamp_end"] = results["m:timestamp_end"] - t0
+            tmax = results["m:timestamp_end"].max()
 
-.. image-sg:: /examples/examples_parallelism/images/sphx_glr_plot_profile_worker_utilization_001.png
-   :alt: plot profile worker utilization
-   :srcset: /examples/examples_parallelism/images/sphx_glr_plot_profile_worker_utilization_001.png
-   :class: sphx-glr-single-img
+            fig, axes = plt.subplots(
+                nrows=2,
+                ncols=1,
+                sharex=True,
+                figsize=figure_size(width=600),
+                tight_layout=True,
+            )
 
+            plot_search_trajectory_single_objective_hpo(
+                results, mode="min", x_units="seconds", ax=axes[0],
+            )
 
-
-
+            plot_worker_utilization(
+                results, num_workers=num_workers, profile_type="start/end", ax=axes[1],
+            )
+            plt.show()
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 23.647 seconds)
+   **Total running time of the script:** (0 minutes 2.371 seconds)
 
 
 .. _sphx_glr_download_examples_examples_parallelism_plot_profile_worker_utilization.py:

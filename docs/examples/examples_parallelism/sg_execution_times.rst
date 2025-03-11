@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**04:40.591** total execution time for 3 files **from examples/examples_parallelism**:
+**00:02.371** total execution time for 3 files **from examples/examples_parallelism**:
 
 .. container::
 
@@ -32,12 +32,12 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
+   * - :ref:`sphx_glr_examples_examples_parallelism_plot_profile_worker_utilization.py` (``plot_profile_worker_utilization.py``)
+     - 00:02.371
+     - 0.0
    * - :ref:`sphx_glr_examples_examples_parallelism_plot_from_serial_to_parallel_hpo.py` (``plot_from_serial_to_parallel_hpo.py``)
-     - 03:07.177
+     - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_examples_examples_parallelism_plot_scaling_bo.py` (``plot_scaling_bo.py``)
-     - 01:09.766
-     - 0.0
-   * - :ref:`sphx_glr_examples_examples_parallelism_plot_profile_worker_utilization.py` (``plot_profile_worker_utilization.py``)
-     - 00:23.647
+     - 00:00.000
      - 0.0
