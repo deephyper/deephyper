@@ -23,15 +23,16 @@ Profile the Worker Utilization
 
 **Author(s)**: Romain Egele.
 
-This example demonstrates the advantages of parallel evaluations over serial
-evaluations. We start by defining an artificial black-box ``run``-function by
-using the Ackley function:
+In this example, you will learn how to profile the activity of workers during a 
+search. 
+
+We start by defining an artificial black-box ``run``-function by using the Ackley function:
 
 .. image:: https://www.sfu.ca/~ssurjano/ackley.png
   :width: 400
   :alt: Ackley Function in 2D
 
-.. GENERATED FROM PYTHON SOURCE LINES 16-32
+.. GENERATED FROM PYTHON SOURCE LINES 17-33
 
 .. dropdown:: Code (Import statements)
 
@@ -59,11 +60,11 @@ using the Ackley function:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 33-34
+.. GENERATED FROM PYTHON SOURCE LINES 34-35
 
 We define the Ackley function:
 
-.. GENERATED FROM PYTHON SOURCE LINES 34-45
+.. GENERATED FROM PYTHON SOURCE LINES 35-46
 
 .. dropdown:: Code (Ackley function)
 
@@ -86,7 +87,7 @@ We define the Ackley function:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 46-52
+.. GENERATED FROM PYTHON SOURCE LINES 47-53
 
 We will use the ``time.sleep`` function to simulate a budget of 2 secondes of execution in average 
 which helps illustrate the advantage of parallel evaluations. The ``@profile`` decorator is useful 
@@ -95,7 +96,7 @@ we are inside the black-box. This decorator is necessary when profiling the work
 using this decorator, the ``run``-function will return a dictionnary with 2 new keys ``"timestamp_start"`` 
 and ``"timestamp_end"``.
 
-.. GENERATED FROM PYTHON SOURCE LINES 52-65
+.. GENERATED FROM PYTHON SOURCE LINES 53-66
 
 .. code-block:: Python
 
@@ -119,13 +120,13 @@ and ``"timestamp_end"``.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 66-69
+.. GENERATED FROM PYTHON SOURCE LINES 67-70
 
 Then we define the variable(s) we want to optimize. For this problem we
 optimize Ackley in a 2-dimensional search space, the true minimul is
 located at ``(0, 0)``.
 
-.. GENERATED FROM PYTHON SOURCE LINES 69-81
+.. GENERATED FROM PYTHON SOURCE LINES 70-82
 
 .. code-block:: Python
 
@@ -158,11 +159,13 @@ located at ``(0, 0)``.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 82-83
+.. GENERATED FROM PYTHON SOURCE LINES 83-86
 
 Then we define a parallel search.
+ As the ``run``-function is defined in the same module  we use the "loky" backend 
+that serialize by value.
 
-.. GENERATED FROM PYTHON SOURCE LINES 83-109
+.. GENERATED FROM PYTHON SOURCE LINES 86-112
 
 .. code-block:: Python
 
@@ -170,7 +173,7 @@ Then we define a parallel search.
 
         evaluator = Evaluator.create(
             run_ackley,
-            method="process",
+            method="loky",
             method_kwargs={
                 "num_workers": num_workers,
                 "callbacks": [TqdmCallback()],
@@ -194,49 +197,21 @@ Then we define a parallel search.
 
 
 
+
+
 .. rst-class:: sphx-glr-script-out
 
-.. code-block:: pytb
+ .. code-block:: none
 
-    Traceback (most recent call last):
-      File "/Users/romainegele/Documents/DeepHyper/deephyper/examples/examples_parallelism/plot_profile_worker_utilization.py", line 107, in <module>
-        results = execute_search(timeout, num_workers)
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      File "/Users/romainegele/Documents/DeepHyper/deephyper/examples/examples_parallelism/plot_profile_worker_utilization.py", line 100, in execute_search
-        results = search.search(timeout=timeout)
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      File "/Users/romainegele/Documents/DeepHyper/deephyper/src/deephyper/hpo/_search.py", line 209, in search
-        self._search(max_evals, timeout, max_evals_strict)
-      File "/Users/romainegele/Documents/DeepHyper/deephyper/src/deephyper/hpo/_cbo.py", line 569, in _search
-        super()._search(max_evals, timeout, max_evals_strict)
-      File "/Users/romainegele/Documents/DeepHyper/deephyper/src/deephyper/hpo/_search.py", line 316, in _search
-        new_results = self._evaluator.gather(self.gather_type, self.gather_batch_size)
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      File "/Users/romainegele/Documents/DeepHyper/deephyper/src/deephyper/evaluator/_evaluator.py", line 425, in gather
-        local_results = self.process_local_tasks_done(self._tasks_done)
-                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      File "/Users/romainegele/Documents/DeepHyper/deephyper/src/deephyper/evaluator/_evaluator.py", line 508, in process_local_tasks_done
-        job = task.result()
-              ^^^^^^^^^^^^^
-      File "/Users/romainegele/Documents/DeepHyper/deephyper/src/deephyper/evaluator/_evaluator.py", line 350, in _execute
-        job = await self.execute(job)
-              ^^^^^^^^^^^^^^^^^^^^^^^
-      File "/Users/romainegele/Documents/DeepHyper/deephyper/src/deephyper/evaluator/_process_pool.py", line 79, in execute
-        output = await asyncio.wait_for(
-                 ^^^^^^^^^^^^^^^^^^^^^^^
-      File "/opt/homebrew/Cellar/python@3.12/3.12.7_1/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
-        return await fut
-               ^^^^^^^^^
-    concurrent.futures.process.BrokenProcessPool: A process in the process pool was terminated abruptly while the future was running or pending.
+    0it [00:00, ?it/s]    1it [00:00, 4505.16it/s, failures=0, objective=-21.5]    2it [00:00, 12.79it/s, failures=0, objective=-21.5]      2it [00:00, 12.79it/s, failures=0, objective=-19.8]    3it [00:00, 12.79it/s, failures=0, objective=-19.8]    4it [00:00,  9.29it/s, failures=0, objective=-19.8]    4it [00:00,  9.29it/s, failures=0, objective=-19.8]    5it [00:01,  2.22it/s, failures=0, objective=-19.8]    5it [00:01,  2.22it/s, failures=0, objective=-15.4]    6it [00:02,  1.80it/s, failures=0, objective=-15.4]    6it [00:02,  1.80it/s, failures=0, objective=-15.4]    7it [00:02,  2.27it/s, failures=0, objective=-15.4]    7it [00:02,  2.27it/s, failures=0, objective=-15.4]    8it [00:02,  2.27it/s, failures=0, objective=-15.4]    9it [00:04,  1.75it/s, failures=0, objective=-15.4]    9it [00:04,  1.75it/s, failures=0, objective=-15.4]    10it [00:04,  1.89it/s, failures=0, objective=-15.4]    10it [00:04,  1.89it/s, failures=0, objective=-15.4]    11it [00:04,  2.29it/s, failures=0, objective=-15.4]    11it [00:04,  2.29it/s, failures=0, objective=-15.4]    12it [00:05,  2.08it/s, failures=0, objective=-15.4]    12it [00:05,  2.08it/s, failures=0, objective=-12.6]    13it [00:06,  1.73it/s, failures=0, objective=-12.6]    13it [00:06,  1.73it/s, failures=0, objective=-12.6]    14it [00:06,  1.90it/s, failures=0, objective=-12.6]    14it [00:06,  1.90it/s, failures=0, objective=-12.6]    15it [00:07,  1.78it/s, failures=0, objective=-12.6]    15it [00:07,  1.78it/s, failures=0, objective=-12.6]    16it [00:08,  1.33it/s, failures=0, objective=-12.6]    16it [00:08,  1.33it/s, failures=0, objective=-12.6]    17it [00:08,  1.47it/s, failures=0, objective=-12.6]    17it [00:08,  1.47it/s, failures=0, objective=-6.37]    18it [00:09,  1.92it/s, failures=0, objective=-6.37]    18it [00:09,  1.92it/s, failures=0, objective=-6.37]    19it [00:09,  1.84it/s, failures=0, objective=-6.37]    19it [00:09,  1.84it/s, failures=0, objective=-6.37]    20it [00:10,  1.56it/s, failures=0, objective=-6.37]    20it [00:10,  1.56it/s, failures=0, objective=-6.37]    21it [00:10,  2.02it/s, failures=0, objective=-6.37]    21it [00:10,  2.02it/s, failures=0, objective=-6.37]    22it [00:11,  2.16it/s, failures=0, objective=-6.37]    22it [00:11,  2.16it/s, failures=0, objective=-6.37]    23it [00:11,  1.85it/s, failures=0, objective=-6.37]    23it [00:11,  1.85it/s, failures=0, objective=-6.37]    24it [00:12,  1.48it/s, failures=0, objective=-6.37]    24it [00:12,  1.48it/s, failures=0, objective=-6.37]    25it [00:12,  1.80it/s, failures=0, objective=-6.37]    25it [00:12,  1.80it/s, failures=0, objective=-6.37]    26it [00:13,  2.34it/s, failures=0, objective=-6.37]    26it [00:13,  2.34it/s, failures=0, objective=-6.37]    27it [00:14,  1.43it/s, failures=0, objective=-6.37]    27it [00:14,  1.43it/s, failures=0, objective=-6.37]    28it [00:14,  1.85it/s, failures=0, objective=-6.37]    28it [00:14,  1.85it/s, failures=0, objective=-6.37]    29it [00:14,  2.45it/s, failures=0, objective=-6.37]    29it [00:14,  2.45it/s, failures=0, objective=-6.37]    30it [00:15,  1.62it/s, failures=0, objective=-6.37]    30it [00:15,  1.62it/s, failures=0, objective=-6.37]    31it [00:16,  1.59it/s, failures=0, objective=-6.37]    31it [00:16,  1.59it/s, failures=0, objective=-6.37]    32it [00:16,  1.86it/s, failures=0, objective=-6.37]    32it [00:16,  1.86it/s, failures=0, objective=-6.37]    33it [00:16,  2.39it/s, failures=0, objective=-6.37]    33it [00:16,  2.39it/s, failures=0, objective=-6.37]    34it [00:17,  2.46it/s, failures=0, objective=-6.37]    34it [00:17,  2.46it/s, failures=0, objective=-6.37]    35it [00:19,  1.02it/s, failures=0, objective=-6.37]    35it [00:19,  1.02it/s, failures=0, objective=-6.37]    36it [00:19,  1.02it/s, failures=0, objective=-6.37]    37it [00:19,  1.02it/s, failures=0, objective=-6.37]
 
 
 
-
-.. GENERATED FROM PYTHON SOURCE LINES 110-111
+.. GENERATED FROM PYTHON SOURCE LINES 113-114
 
 Finally, we plot the results from the collected DataFrame.
 
-.. GENERATED FROM PYTHON SOURCE LINES 111-135
+.. GENERATED FROM PYTHON SOURCE LINES 114-138
 
 .. dropdown:: Code (Plot search trajectory an workers utilization)
 
@@ -267,9 +242,27 @@ Finally, we plot the results from the collected DataFrame.
             plt.show()
 
 
+
+.. image-sg:: /examples/examples_parallelism/images/sphx_glr_plot_profile_worker_utilization_001.png
+   :alt: plot profile worker utilization
+   :srcset: /examples/examples_parallelism/images/sphx_glr_plot_profile_worker_utilization_001.png
+   :class: sphx-glr-single-img
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+    /Users/romainegele/Documents/DeepHyper/deephyper/examples/examples_parallelism/plot_profile_worker_utilization.py:137: UserWarning: FigureCanvasAgg is non-interactive, and thus cannot be shown
+      plt.show()
+
+
+
+
+
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 2.371 seconds)
+   **Total running time of the script:** (0 minutes 24.738 seconds)
 
 
 .. _sphx_glr_download_examples_examples_parallelism_plot_profile_worker_utilization.py:

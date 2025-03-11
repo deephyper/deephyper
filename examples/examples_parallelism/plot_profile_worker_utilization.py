@@ -4,9 +4,10 @@ Profile the Worker Utilization
 
 **Author(s)**: Romain Egele.
 
-This example demonstrates the advantages of parallel evaluations over serial
-evaluations. We start by defining an artificial black-box ``run``-function by
-using the Ackley function:
+In this example, you will learn how to profile the activity of workers during a 
+search. 
+
+We start by defining an artificial black-box ``run``-function by using the Ackley function:
 
 .. image:: https://www.sfu.ca/~ssurjano/ackley.png
   :width: 400
