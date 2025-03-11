@@ -718,6 +718,22 @@
    "name": "builtin_function_or_method"
   }
  ],
+ "multiprocessing.cpu_count": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "module.cpu_count"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "multiprocessing",
+   "module_short": "multiprocessing",
+   "name": "cpu_count"
+  }
+ ],
  "nb_dim": [
   {
    "is_class": false,

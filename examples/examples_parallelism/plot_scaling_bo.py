@@ -21,6 +21,7 @@ Therefore, we start by defining a black-box ``run``-function that implements the
 # %%
 
 # .. dropdown:: Import statements
+import multiprocessing
 import time
 
 import matplotlib.pyplot as plt
@@ -169,7 +170,6 @@ if __name__ == "__main__":
         search_kwargs=search_kwargs,
         timeout=timeout,
     )
-    results["centralized"]
 
 # %%
 # We can now plot the results of the centralized search. The first plot shows the evolution of the objective.
@@ -186,11 +186,11 @@ if __name__ == "__main__":
         tight_layout=True,
     )
 
-    plot_search_trajectory_single_objective_hpo(
+    fig, ax = plot_search_trajectory_single_objective_hpo(
         results["centralized"], mode="min", x_units="seconds", ax=axes[0]
     )
 
-    plot_worker_utilization(
+    fig, ax = plot_worker_utilization(
         results["centralized"], num_workers=None, profile_type="start/end", ax=axes[1]
     )
 
@@ -305,7 +305,7 @@ if __name__ == "__main__":
         log_dir="search_decentralized",
         search_kwargs=search_kwargs,
         timeout=timeout,
-        n_processes=10,
+        n_processes=multiprocessing.cpu_count(),
     )
 
 # %%
@@ -321,11 +321,11 @@ if __name__ == "__main__":
         tight_layout=True,
     )
 
-    plot_search_trajectory_single_objective_hpo(
+    fig, ax = plot_search_trajectory_single_objective_hpo(
         results["decentralized"], mode="min", x_units="seconds", ax=axes[0]
     )
 
-    plot_worker_utilization(
+    fig, ax = plot_worker_utilization(
         results["decentralized"], num_workers=None, profile_type="start/end", ax=axes[1]
     )
 

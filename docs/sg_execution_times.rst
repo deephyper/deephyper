@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**01:10.609** total execution time for 11 files **from all galleries**:
+**01:09.840** total execution time for 11 files **from all galleries**:
 
 .. container::
 
@@ -33,7 +33,7 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_examples_examples_parallelism_plot_scaling_bo.py` (``../examples/examples_parallelism/plot_scaling_bo.py``)
-     - 01:10.609
+     - 01:09.840
      - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization.py` (``../examples/examples_bbo/plot_black_box_optimization.py``)
      - 00:00.000
