@@ -19,11 +19,3 @@ DeepHyper installation requires ``Python>=3.10``.
    pip (recommended) <pip>
    spack <spack>
    uv <uv>
-
-.. toctree::
-   :maxdepth: 1
-   :caption: High Performance Computing Centers
-
-   hpc/alcf
-   hpc/nersc
-   hpc/olcf

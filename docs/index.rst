@@ -233,14 +233,6 @@ Table of Contents
     Publications <https://deephyper.github.io/papers>
     Authors <https://deephyper.github.io/aboutus>
 
-.. toctree:: 2
-   :caption: Facility Guides
-   :maxdepth: 1
-   :titlesonly:
-
-   facility/alcf/index
-   facility/nersc
-   facility/olcf
 
 .. toctree::
     :caption: API Reference
