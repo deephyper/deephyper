@@ -20,6 +20,8 @@ from deephyper.evaluator import Evaluator, HPOJob
 from deephyper.evaluator.callback import TqdmCallback
 from deephyper.skopt.moo import non_dominated_set
 
+__all__ = ["Search"]
+
 
 class Search(abc.ABC):
     """Abstract class which represents a search algorithm.

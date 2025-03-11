@@ -11,6 +11,8 @@ from deephyper.evaluator.storage import Storage
 from deephyper.hpo._cbo import CBO
 from deephyper.stopper import Stopper
 
+__all__ = ["MPIDistributedBO"]
+
 MAP_acq_func = {
     "UCB": "LCB",
 }

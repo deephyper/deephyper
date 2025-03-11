@@ -46,6 +46,7 @@ from deephyper.evaluator._decorator import profile
 from deephyper.evaluator._encoder import parse_subprocess_result, to_json
 from deephyper.evaluator._evaluator import EVALUATORS, Evaluator
 from deephyper.evaluator._job import HPOJob, Job, JobStatus, RunningJob
+from deephyper.evaluator._loky import LokyEvaluator
 from deephyper.evaluator._process_pool import ProcessPoolEvaluator
 from deephyper.evaluator._queued import queued
 from deephyper.evaluator._serial import SerialEvaluator
@@ -59,6 +60,7 @@ __all__ = [
     "JobStatus",
     "parse_subprocess_result",
     "ProcessPoolEvaluator",
+    "LokyEvaluator",
     "profile",
     "queued",
     "RunningJob",
