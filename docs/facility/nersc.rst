@@ -51,7 +51,6 @@ Then we install some of the other dependencies:
     
 .. code-block:: console
 
-    $ pip install tensorflow==2.9.2
     $ pip install kiwisolver
     $ pip install cycler
     $ pip install matplotlib
