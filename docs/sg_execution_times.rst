@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:45.382** total execution time for 11 files **from all galleries**:
+**02:23.304** total execution time for 11 files **from all galleries**:
 
 .. container::
 
@@ -32,8 +32,8 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_examples_examples_uq_plot_hpo_tree_ensemble_uq_classification_sklearn.py` (``../examples/examples_uq/plot_hpo_tree_ensemble_uq_classification_sklearn.py``)
-     - 00:45.382
+   * - :ref:`sphx_glr_examples_examples_bbo_plot_notify_failures_hpo.py` (``../examples/examples_bbo/plot_notify_failures_hpo.py``)
+     - 02:23.304
      - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization.py` (``../examples/examples_bbo/plot_black_box_optimization.py``)
      - 00:00.000
@@ -42,9 +42,6 @@ Computation times
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_multi_objective_optimization.py` (``../examples/examples_bbo/plot_multi_objective_optimization.py``)
-     - 00:00.000
-     - 0.0
-   * - :ref:`sphx_glr_examples_examples_bbo_plot_notify_failures_hpo.py` (``../examples/examples_bbo/plot_notify_failures_hpo.py``)
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_transfer_learning_for_hpo.py` (``../examples/examples_bbo/plot_transfer_learning_for_hpo.py``)
@@ -60,6 +57,9 @@ Computation times
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_examples_examples_parallelism_plot_scaling_bo.py` (``../examples/examples_parallelism/plot_scaling_bo.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_examples_examples_uq_plot_hpo_tree_ensemble_uq_classification_sklearn.py` (``../examples/examples_uq/plot_hpo_tree_ensemble_uq_classification_sklearn.py``)
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_examples_examples_uq_plot_nas_deep_ensemble_uq_regression_pytorch.py` (``../examples/examples_uq/plot_nas_deep_ensemble_uq_regression_pytorch.py``)
