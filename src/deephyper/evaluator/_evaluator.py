@@ -452,7 +452,6 @@ class Evaluator(abc.ABC):
         other_results = []
         if len(job_id_not_gathered) > 0:
             jobs_data = self._storage.load_jobs(job_id_not_gathered)
-            print(f"{jobs_data}")
 
             for job_id in job_id_not_gathered:
                 job_data = jobs_data[job_id]
