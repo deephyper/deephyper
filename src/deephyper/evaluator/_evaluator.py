@@ -15,8 +15,7 @@ import numpy as np
 from deephyper.evaluator._job import Job, HPOJob, JobStatus
 from deephyper.skopt.optimizer import OBJECTIVE_VALUE_FAILURE
 from deephyper.evaluator.storage import Storage, MemoryStorage
-from deephyper.core.exceptions import MaximumJobsSpawnReached
-from deephyper.core.warnings import deprecated_api
+from deephyper.hpo._search import MaximumJobsSpawnReached
 
 EVALUATORS = {
     "mpicomm": "_mpi_comm.MPICommEvaluator",
@@ -730,13 +729,6 @@ class Evaluator(abc.ABC):
 
                     writer.writerows(resultsList)
                     self.jobs_done = []
-
-    def dump_evals(self, log_dir: str = ".", filename="results.csv", flush: bool = False):
-        deprecated_api(
-            "The ``Evaluator.dump_evals(...)`` method is deprecated and will be removed. The "
-            "``Evaluator.dump_jobs_done_to_csv(...)`` method should be used instead."
-        )
-        self.dump_jobs_done_to_csv(log_dir, filename, flush)
 
     @property
     def is_master(self):

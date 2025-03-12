@@ -83,7 +83,7 @@ dev = [
 ]
 
 [project.scripts]
-deephyper = "deephyper.core.cli._cli:main"
+deephyper = "deephyper.cli._cli:main"
 
 [project.urls]
 Documentation = "http://deephyper.readthedocs.io"

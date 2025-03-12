@@ -10,7 +10,7 @@ from sklearn.base import clone, is_regressor
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.utils import check_random_state
 
-from deephyper.core.utils.joblib_utils import Parallel, delayed
+from deephyper.skopt.joblib import Parallel, delayed
 
 from ..acquisition import _gaussian_acquisition, gaussian_acquisition_1D
 from ..learning import GaussianProcessRegressor

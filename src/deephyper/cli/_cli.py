@@ -20,7 +20,7 @@ It can be used in the shell with:
 
 import argparse
 
-from deephyper.core.cli import _hpo
+from . import _hpo
 
 
 def create_parser():

@@ -1,6 +1,7 @@
 import abc
 import asyncio
 import copy
+import json
 import logging
 import os
 import pathlib
@@ -12,15 +13,51 @@ import yaml
 
 from typing import List, Dict
 
-from deephyper.core.exceptions import SearchTerminationError
-from deephyper.core.exceptions import MaximumJobsSpawnReached
-from deephyper.core.exceptions import TimeoutReached
-from deephyper.core.utils._introspection import get_init_params_as_json
 from deephyper.evaluator import Evaluator, HPOJob
 from deephyper.evaluator.callback import TqdmCallback
 from deephyper.skopt.moo import non_dominated_set
 
 __all__ = ["Search"]
+
+
+class SearchTerminationError(RuntimeError):
+    """Raised when a search is terminated."""
+
+
+class MaximumJobsSpawnReached(SearchTerminationError):
+    """Raised when the maximum number of jobs is reached."""
+
+
+class TimeoutReached(SearchTerminationError):
+    """Raised when the timeout of the search was reached."""
+
+
+def get_init_params_as_json(obj):
+    """Get the parameters of an object in a json format.
+
+    Args:
+        obj (any): The object of which we want to know the ``__init__`` arguments.
+
+    Returns:
+        params (dict): Parameter names mapped to their values.
+    """
+    if hasattr(obj, "_init_params"):
+        base_init_params = obj._init_params
+        if "self" in base_init_params:
+            base_init_params.pop("self")
+    else:
+        base_init_params = dict()
+    params = dict()
+    for k, v in base_init_params.items():
+        if "__" not in k:
+            if hasattr(v, "to_json"):
+                params[k] = v.to_json()
+            else:
+                try:
+                    params[k] = json.loads(json.dumps(v))
+                except Exception:
+                    params[k] = "NA"
+    return params
 
 
 class Search(abc.ABC):

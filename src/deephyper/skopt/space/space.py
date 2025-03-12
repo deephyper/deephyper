@@ -10,7 +10,7 @@ from ConfigSpace.util import deactivate_inactive_hyperparameters
 from scipy.stats import gaussian_kde
 from sklearn.utils import check_random_state
 
-from deephyper.core.utils.joblib_utils import Parallel, delayed
+from deephyper.skopt.joblib import Parallel, delayed
 
 from .transformers import (
     CategoricalEncoder,

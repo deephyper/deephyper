@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.ensemble import ExtraTreesRegressor as _sk_ExtraTreesRegressor
 from sklearn.ensemble._forest import DecisionTreeRegressor, ForestRegressor
 
-from deephyper.core.utils.joblib_utils import Parallel, delayed
+from deephyper.skopt.joblib import Parallel, delayed
 
 
 def _accumulate_prediction_disentangled(tree, X, min_variance, out, lock):
