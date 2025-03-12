@@ -17,6 +17,7 @@ It can be used in the shell with:
 
     optional arguments:
     -h, --help            show this help message and exit
+
 """  # noqa: D205
 
 import argparse
