@@ -6,11 +6,13 @@ import logging
 import os
 import pathlib
 import time
-from typing import Dict, List
+from typing import Dict, List, Union, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 import yaml
+
+from pydantic import BaseModel
 
 from deephyper.evaluator import Evaluator, HPOJob, MaximumJobsSpawnReached
 from deephyper.evaluator.callback import TqdmCallback
@@ -45,6 +47,14 @@ def get_init_params_as_json(obj):
                 except Exception:
                     params[k] = "NA"
     return params
+
+
+class Evaluation(BaseModel):
+    """Represents the evaluation of parameters."""
+
+    id: int
+    parameters: Dict[str, Optional[Union[str, int, float]]]
+    objective: Optional[Union[Union[float, str], Tuple[float, str], List[float, str]]]
 
 
 class Search(abc.ABC):
@@ -375,7 +385,7 @@ class Search(abc.ABC):
             n (int, optional): The number of configurations to ask. Defaults to 1.
 
         Returns:
-            List[Dict]: a list of hyperparameter configurations to evaluate.
+            List[Evaluation]: a list of hyperparameter configurations to evaluate.
         """
         logging.info(f"Asking {n} configuration(s)...")
         t1 = time.time()
@@ -387,32 +397,32 @@ class Search(abc.ABC):
         return new_samples
 
     @abc.abstractmethod
-    def _ask(self, n: int = 1) -> List[Dict]:
+    def _ask(self, n: int = 1) -> List[Evaluation]:
         """Ask the search for new configurations to evaluate.
 
         Args:
             n (int, optional): The number of configurations to ask. Defaults to 1.
 
         Returns:
-            List[Dict]: a list of hyperparameter configurations to evaluate.
+            List[Evaluation]: a list of hyperparameter configurations to evaluate.
         """
 
-    def tell(self, results: List[HPOJob]):
+    def tell(self, results: List[Evaluation]):
         """Tell the search the results of the evaluations.
 
         Args:
-            results (List[HPOJob]): a list of HPOJobs from which hyperparameters and objectives can
-            be retrieved.
+            results (List[Evaluation]): a list of Evaluations from which hyperparameters and 
+            objectives can be retrieved.
         """
         self._tell(results)
 
     @abc.abstractmethod
-    def _tell(self, results: List[HPOJob]):
+    def _tell(self, results: List[Evaluation]):
         """Tell the search the results of the evaluations.
 
         Args:
-            results (List[HPOJob]): a list of HPOJobs from which hyperparameters and objectives can
-                be retrieved.
+            results (List[Evaluation]): a list of Evaluation from which hyperparameters and 
+            objectives can be retrieved.
         """
 
     def dump_jobs_done_to_csv(self, flush: bool = False):
