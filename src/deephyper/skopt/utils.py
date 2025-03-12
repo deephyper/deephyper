@@ -23,15 +23,6 @@ from .learning.gaussian_process.kernels import ConstantKernel, HammingKernel, Ma
 from .sampler import Grid, Halton, Hammersly, InitialPointGenerator, Lhs, Sobol
 from .space import Dimension, Space
 
-# Try to import Mondrian Forest
-MF_INSTALLED = False
-try:
-    from .learning import MondrianForestRegressor
-
-    MF_INSTALLED = True
-except ImportError:
-    MF_INSTALLED = False
-
 __all__ = (
     "load",
     "dump",
@@ -305,9 +296,6 @@ def has_gradients(estimator):
         RandomForestRegressor,
         GradientBoostingQuantileRegressor,
     ]
-
-    if MF_INSTALLED:
-        tree_estimators.append(MondrianForestRegressor)
 
     tree_estimators = tuple(tree_estimators)
 

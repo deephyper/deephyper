@@ -384,10 +384,7 @@ class Optimizer(object):
         self.space.set_transformer(transformer)
 
         # normalize space if GP regressor
-        if (
-            isinstance(self.base_estimator_, GaussianProcessRegressor)
-            or type(self.base_estimator_).__name__ == "MondrianForestRegressor"
-        ):
+        if isinstance(self.base_estimator_, GaussianProcessRegressor):
             self.space.dimensions = normalize_dimensions(self.space.dimensions)
 
         if self.space.config_space:

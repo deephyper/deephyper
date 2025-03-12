@@ -48,7 +48,7 @@ class MPIDistributedBO(CBO):
             function. Defaults to ``None`` which does not use any stopper.
 
         surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Surrogate model used by
-            the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "MF", "GBRT",
+            the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "GBRT",
             "DUMMY"]`` or a sklearn regressor. ``"ET"`` is for Extremely Randomized Trees which is
             the best compromise between speed and quality when performing a lot of parallel
             evaluations, i.e., reaching more than hundreds of evaluations. ``"GP"`` is for Gaussian-

@@ -6,13 +6,13 @@ It can be used in the shell with:
 
     $ deephyper --help
 
-    usage: deephyper [-h] {hps} ...
+    usage: deephyper [-h] {hpo} ...
 
     DeepHyper command line.
 
     positional arguments:
-    {hps}
-        hps                 Command line to run hyperparameter search.
+    {hpo}
+        hpo                 Command line to run hyperparameter optimization.
 
     optional arguments:
     -h, --help            show this help message and exit

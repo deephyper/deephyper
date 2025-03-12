@@ -121,7 +121,7 @@ class CBO(Search):
             function. Defaults to ``None`` which does not use any stopper.
 
         surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Surrogate model used by
-            the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "MF", "GBRT",
+            the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "GBRT",
             "DUMMY"]`` or a sklearn regressor. ``"ET"`` is for Extremely Randomized Trees which is
             the best compromise between speed and quality when performing a lot of parallel
             evaluations, i.e., reaching more than hundreds of evaluations. ``"GP"`` is for Gaussian-
@@ -283,7 +283,6 @@ class CBO(Search):
             "ET",
             "TB",
             "RS",
-            "MF",
             # Other models
             "GBRT",
             "GP",
@@ -591,7 +590,7 @@ class CBO(Search):
             ValueError: when the name of the surrogate model is unknown.
         """
         # Check if the surrogate model is supported
-        accepted_names = ["RF", "ET", "TB", "RS", "GBRT", "DUMMY", "GP", "MF", "HGBRT"]
+        accepted_names = ["RF", "ET", "TB", "RS", "GBRT", "DUMMY", "GP", "HGBRT"]
         if name not in accepted_names:
             raise ValueError(
                 f"Unknown surrogate model {name}, please choose among {accepted_names}."
@@ -601,7 +600,7 @@ class CBO(Search):
             surrogate_model_kwargs = {}
 
         # Define default surrogate model parameters
-        if name in ["RF", "ET", "TB", "RS", "MF"]:
+        if name in ["RF", "ET", "TB", "RS"]:
             default_surrogate_model_kwargs = dict(
                 n_estimators=100,
                 max_samples=0.8,
@@ -633,9 +632,6 @@ class CBO(Search):
                 default_surrogate_model_kwargs["bootstrap"] = False
                 default_surrogate_model_kwargs["max_samples"] = None
                 default_surrogate_model_kwargs["max_features"] = "sqrt"
-            elif name == "MF":
-                default_surrogate_model_kwargs["bootstrap"] = False
-                default_surrogate_model_kwargs["max_samples"] = None
 
         elif name == "GBRT":
             default_surrogate_model_kwargs = dict(
@@ -658,17 +654,6 @@ class CBO(Search):
                 **default_surrogate_model_kwargs,
             )
 
-        # Model: Mondrian Forest
-        elif name == "MF":
-            try:
-                surrogate = deephyper.skopt.learning.MondrianForestRegressor(
-                    **default_surrogate_model_kwargs,
-                )
-            except AttributeError:
-                raise deephyper.core.exceptions.MissingRequirementError(
-                    "Installing 'deephyper/scikit-garden' is required to use MondrianForest (MF) "
-                    "regressor as a surrogate model!"
-                )
         # Model: Gradient Boosting Regression Tree (based on quantiles)
         # https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingRegressor.html
         elif name == "GBRT":

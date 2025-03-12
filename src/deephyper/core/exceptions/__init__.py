@@ -32,7 +32,3 @@ class RunFunctionError(RuntimeError):
 
     def __str__(self) -> str:  # noqa: D105
         return self.msg
-
-
-class MissingRequirementError(RuntimeError):
-    """Raised when a requirement is not installed properly."""
